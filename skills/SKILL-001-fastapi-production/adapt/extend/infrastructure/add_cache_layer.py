@@ -25,7 +25,7 @@ import textwrap
 import time
 from pathlib import Path
 
-from adapt.contracts import ToolInput, ToolResult
+from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 # ---------------------------------------------------------------------------
@@ -49,6 +49,10 @@ def add_cache_layer(inp: ToolInput) -> ToolResult:
     """
     start = time.monotonic()
     project = Path(inp.project_dir)
+    err = validate_project_dir(inp.project_dir)
+    if err:
+        return ToolResult(status="error", error=err)
+
     app_dir = project / "app"
 
     # --- Idempotency guard ---------------------------------------------------
@@ -366,26 +370,28 @@ def _write_cache_keys(dest: Path) -> None:
         from __future__ import annotations
 
         import logging
+        from contextvars import ContextVar
         from typing import Callable
 
         logger = logging.getLogger(__name__)
 
-        _TENANT_CTX: str | None = None
+        _tenant_var: ContextVar[str | None] = ContextVar("cache_tenant", default=None)
 
 
         def set_tenant(tenant_id: str | None) -> None:
-            \"\"\"Set current tenant for key namespacing.
+            \"\"\"Set current tenant for key namespacing (request-scoped via ContextVar).
+
+            Uses a ``ContextVar`` so concurrent requests never share tenant state.
 
             Args:
                 tenant_id: Tenant identifier, or None for global namespace.
             \"\"\"
-            global _TENANT_CTX
-            _TENANT_CTX = tenant_id
+            _tenant_var.set(tenant_id)
 
 
         def get_tenant() -> str:
             \"\"\"Return current tenant string (falls back to 'global').\"\"\"
-            return _TENANT_CTX or "global"
+            return _tenant_var.get() or "global"
 
 
         def build_key(

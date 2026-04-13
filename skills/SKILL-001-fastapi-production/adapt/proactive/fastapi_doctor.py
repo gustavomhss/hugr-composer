@@ -935,6 +935,17 @@ def fastapi_doctor(inp: ToolInput) -> ToolResult:
             execution_time_ms=_elapsed_ms(start),
         )
 
+    if inp.dry_run:
+        return ToolResult(
+            status="success",
+            notes=[
+                "[dry_run] fastapi_doctor is read-only; no baseline file would be written.",
+                "[dry_run] Re-run without dry_run=True to produce the full report.",
+            ],
+            next_steps=["Re-run without dry_run=True to run all VERIFY tool checks."],
+            execution_time_ms=_elapsed_ms(start),
+        )
+
     mode = getattr(inp, "mode", "full") or "full"
     report_format = getattr(inp, "report_format", "markdown") or "markdown"
     emit_fix_plan = getattr(inp, "emit_fix_plan", True)

@@ -27,7 +27,7 @@ import textwrap
 import time
 from pathlib import Path
 
-from adapt.contracts import ToolInput, ToolResult
+from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 _DEFAULT_MAX_BATCH: int = 50
 _DEFAULT_TIMEOUT_MS: int = 5000
@@ -52,6 +52,10 @@ def add_batch_endpoint(inp: ToolInput) -> ToolResult:
     """
     start = time.monotonic()
     project = Path(inp.project_dir)
+    err = validate_project_dir(inp.project_dir)
+    if err:
+        return ToolResult(status="error", error=err)
+
     app_dir = project / "app"
 
     batch_core = app_dir / "core" / "batch_core.py"

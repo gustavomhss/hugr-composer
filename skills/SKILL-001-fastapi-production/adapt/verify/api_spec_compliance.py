@@ -26,7 +26,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from adapt.contracts import ToolInput, ToolResult
+from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 # ---------------------------------------------------------------------------
@@ -48,6 +48,10 @@ def api_spec_compliance(inp: ToolInput) -> ToolResult:
     """
     start = time.monotonic()
     project = Path(inp.project_dir)
+    err = validate_project_dir(inp.project_dir)
+    if err:
+        return ToolResult(status="error", error=err)
+
 
     # --- Idempotency guard ---------------------------------------------------
     script = project / "scripts" / "api_spec_compliance.py"

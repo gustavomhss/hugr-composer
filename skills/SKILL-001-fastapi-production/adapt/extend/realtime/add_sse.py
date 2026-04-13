@@ -27,7 +27,7 @@ import textwrap
 import time
 from pathlib import Path
 
-from adapt.contracts import ToolInput, ToolResult
+from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 # ---------------------------------------------------------------------------
@@ -62,6 +62,10 @@ def add_sse(
     """
     start = time.monotonic()
     project = Path(inp.project_dir)
+    err = validate_project_dir(inp.project_dir)
+    if err:
+        return ToolResult(status="error", error=err)
+
     app_dir = project / "app"
 
     # --- Pre-flight: already installed? ------------------------------------

@@ -7,9 +7,28 @@ callers pattern-match on ``status`` without importing individual tools.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel, Field
+
+
+def validate_project_dir(project_dir: str) -> str | None:
+    """Return an error message if *project_dir* is invalid, else ``None``.
+
+    Args:
+        project_dir: Absolute path to the FastAPI project root.
+
+    Returns:
+        A human-readable error string when the path does not exist or is not a
+        directory, or ``None`` when the path is valid.
+    """
+    p = Path(project_dir)
+    if not p.exists():
+        return f"project_dir does not exist: {project_dir}"
+    if not p.is_dir():
+        return f"project_dir is not a directory: {project_dir}"
+    return None
 
 
 class ToolInput(BaseModel):

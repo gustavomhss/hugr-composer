@@ -35,7 +35,7 @@ import time
 from pathlib import Path
 from typing import Literal
 
-from adapt.contracts import ToolInput, ToolResult
+from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 # ---------------------------------------------------------------------------
@@ -72,6 +72,10 @@ def add_webhook_receiver(
     """
     start = time.monotonic()
     project = Path(inp.project_dir)
+    err = validate_project_dir(inp.project_dir)
+    if err:
+        return ToolResult(status="error", error=err)
+
     app_dir = project / "app"
     enabled_providers = providers or ["stripe", "github", "internal"]
 

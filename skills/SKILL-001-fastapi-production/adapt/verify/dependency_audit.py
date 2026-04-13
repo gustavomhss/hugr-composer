@@ -25,7 +25,7 @@ import textwrap
 import time
 from pathlib import Path
 
-from adapt.contracts import ToolInput, ToolResult
+from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 _DEFAULT_LICENSES = ["MIT", "BSD", "BSD-2-Clause", "BSD-3-Clause", "Apache-2.0",
                      "Apache Software License", "ISC", "MPL-2.0", "PSF", "Python Software Foundation License"]
@@ -49,6 +49,10 @@ def dependency_audit(inp: ToolInput) -> ToolResult:
     """
     start = time.monotonic()
     project = Path(inp.project_dir)
+    err = validate_project_dir(inp.project_dir)
+    if err:
+        return ToolResult(status="error", error=err)
+
 
     # --- Idempotency guard ---------------------------------------------------
     orchestrator = project / "scripts" / "run_audit.py"

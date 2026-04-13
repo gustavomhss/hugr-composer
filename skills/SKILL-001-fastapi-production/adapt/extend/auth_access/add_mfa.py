@@ -26,7 +26,7 @@ import textwrap
 import time
 from pathlib import Path
 
-from adapt.contracts import ToolInput, ToolResult
+from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 # ---------------------------------------------------------------------------
@@ -48,6 +48,10 @@ def add_mfa(inp: ToolInput) -> ToolResult:
     """
     start = time.monotonic()
     project = Path(inp.project_dir)
+    err = validate_project_dir(inp.project_dir)
+    if err:
+        return ToolResult(status="error", error=err)
+
     app_dir = project / "app"
 
     # --- Pre-flight: idempotency guard -----------------------------------
@@ -786,10 +790,11 @@ def _write_routes(dest: Path) -> None:
             _SECRET_KEY: str = settings.SECRET_KEY
             _CODES_COUNT: int = int(getattr(settings, "MFA_RECOVERY_CODES_COUNT", 10))
             _WINDOW: int = int(getattr(settings, "MFA_TOTP_WINDOW", 1))
-        except Exception:  # pragma: no cover
-            _SECRET_KEY = "changeme"
-            _CODES_COUNT = 10
-            _WINDOW = 1
+        except Exception as _cfg_exc:  # pragma: no cover
+            raise RuntimeError(
+                "SECRET_KEY not configured — MFA requires a valid secret key. "
+                "Set SECRET_KEY in your environment or app/core/config.py."
+            ) from _cfg_exc
 
         PENDING_TOKEN_TTL_S = 300  # 5 minutes
 

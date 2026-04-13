@@ -36,7 +36,7 @@ import textwrap
 import time
 from pathlib import Path
 
-from adapt.contracts import ToolInput, ToolResult
+from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 _VALID_LANGUAGES = frozenset({"python", "typescript", "go", "rust", "java"})
 
@@ -78,6 +78,10 @@ def generate_sdk(
     """
     start = time.monotonic()
     project = Path(inp.project_dir)
+    err = validate_project_dir(inp.project_dir)
+    if err:
+        return ToolResult(status="error", error=err)
+
     languages = languages or ["python"]
 
     invalid = set(languages) - _VALID_LANGUAGES
@@ -85,6 +89,21 @@ def generate_sdk(
         return ToolResult(
             status="error",
             error=f"Unknown languages: {sorted(invalid)}. Choose from: {sorted(_VALID_LANGUAGES)}",
+            execution_time_ms=_elapsed_ms(start),
+        )
+
+    # dry_run check BEFORE any I/O (including _extract_schema which imports app code
+    # and may create __pycache__ files as a side-effect)
+    if inp.dry_run:
+        return ToolResult(
+            status="success",
+            notes=[
+                f"[dry_run] languages={languages}",
+                f"[dry_run] Would generate SDKs in {output_dir}/",
+                "[dry_run] No files written.",
+                "[dry_run] Schema hash will be computed on real run.",
+            ],
+            next_steps=["Re-run without dry_run=True to generate SDKs."],
             execution_time_ms=_elapsed_ms(start),
         )
 
@@ -99,19 +118,6 @@ def generate_sdk(
 
     pkg_name = package_name or _schema_package_name(schema)
     schema_hash = hashlib.sha256(json.dumps(schema, sort_keys=True).encode()).hexdigest()[:12]
-
-    if inp.dry_run:
-        return ToolResult(
-            status="success",
-            notes=[
-                f"[dry_run] languages={languages} package={pkg_name}",
-                f"[dry_run] Schema hash: {schema_hash}",
-                f"[dry_run] Would generate SDKs in {output_dir}/",
-                "[dry_run] No files written.",
-            ],
-            next_steps=["Re-run without dry_run=True to generate SDKs."],
-            execution_time_ms=_elapsed_ms(start),
-        )
 
     sdks_dir = project / output_dir
     sdks_dir.mkdir(parents=True, exist_ok=True)

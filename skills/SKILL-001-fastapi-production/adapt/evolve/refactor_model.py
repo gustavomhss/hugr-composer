@@ -34,7 +34,7 @@ import textwrap
 import time
 from pathlib import Path
 
-from adapt.contracts import ToolInput, ToolResult
+from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 _SUPPORTED_OPERATIONS = frozenset(
     {"rename_model", "rename_field", "change_type", "split_model"}
@@ -74,6 +74,10 @@ def refactor_model(
     """
     start = time.monotonic()
     project = Path(inp.project_dir)
+    err = validate_project_dir(inp.project_dir)
+    if err:
+        return ToolResult(status="error", error=err)
+
 
     if operation not in _SUPPORTED_OPERATIONS:
         return ToolResult(
