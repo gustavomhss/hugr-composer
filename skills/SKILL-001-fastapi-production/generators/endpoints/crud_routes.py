@@ -394,7 +394,7 @@ def _build_route(
     """Build a single route function as a string block."""
     # Decorator
     status_arg = f", status_code=status.HTTP_201_CREATED" if status_code == 201 else ""
-    decorator = f'@router.{method}("{path}"{status_arg})'
+    decorator = f'@router.{method}("{path}", response_model={return_type}{status_arg})'
 
     body = "\n".join(body_lines)
 

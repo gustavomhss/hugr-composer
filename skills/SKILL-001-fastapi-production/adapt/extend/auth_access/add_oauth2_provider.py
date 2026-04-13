@@ -1196,7 +1196,7 @@ def _write_routes(dest: Path) -> None:
             return os.environ.get("FRONTEND_HOST", _FRONTEND_HOST).rstrip("/")
 
 
-        @router.get("/{provider}/login")
+        @router.get("/{provider}/login", response_model=None)
         async def oauth_login(
             provider: str,
             request: Request,
@@ -1244,7 +1244,35 @@ def _write_routes(dest: Path) -> None:
             )
 
 
-        @router.get("/{provider}/callback", name="oauth_callback")
+        async def _exchange_and_fetch_user(p, code: str, code_verifier: str, redirect_uri: str):
+            \"\"\"Exchange authorization code for tokens and fetch user info.
+
+            Args:
+                p: Provider instance with exchange_code() and fetch_user() methods.
+                code: Authorization code from the provider callback query string.
+                code_verifier: PKCE verifier from the state object.
+                redirect_uri: OAuth redirect URI registered with the provider.
+
+            Returns:
+                Tuple of (tokens, user_info).
+
+            Raises:
+                HTTPException 400: Code exchange or user info fetch failed.
+            \"\"\"
+            try:
+                tokens = await p.exchange_code(code, code_verifier, redirect_uri)
+            except Exception:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Code exchange failed")
+            try:
+                info = await p.fetch_user(tokens.access_token)
+            except Exception:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to fetch user info")
+            if not info.email_verified:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Provider email is not verified")
+            return tokens, info
+
+
+        @router.get("/{provider}/callback", response_model=None, name="oauth_callback")
         async def oauth_callback(
             provider: str,
             code: str,
@@ -1254,7 +1282,7 @@ def _write_routes(dest: Path) -> None:
         ) -> RedirectResponse:
             \"\"\"Handle the OAuth2 callback: exchange code, link account, issue JWT.
 
-            Atomically consumes the state token (single-use).  Validates provider match,
+            Atomically consumes the state token (single-use). Validates provider match,
             email verification, and account-linking policy before issuing a JWT.
 
             Args:
@@ -1275,56 +1303,22 @@ def _write_routes(dest: Path) -> None:
             if provider not in list_providers():
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Unknown provider")
             p = get_provider(provider)
-
             redis = await _get_redis()
             state_obj = await consume_state(redis, state)
             if state_obj is None:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired state"
-                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired state")
             if state_obj.provider != provider:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Provider mismatch"
-                )
-
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Provider mismatch")
             redirect_uri = str(request.url_for("oauth_callback", provider=provider))
-            try:
-                tokens = await p.exchange_code(code, state_obj.code_verifier, redirect_uri)
-            except Exception:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Code exchange failed"
-                )
-
-            try:
-                info = await p.fetch_user(tokens.access_token)
-            except Exception:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to fetch user info"
-                )
-
-            if not info.email_verified:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Provider email is not verified",
-                )
-
+            tokens, info = await _exchange_and_fetch_user(p, code, state_obj.code_verifier, redirect_uri)
             user = await _resolve_or_create_user(session, provider, info)
-            await crud_oauth.upsert(
-                session,
-                provider=provider,
-                provider_user_id=info.provider_user_id,
-                provider_email=info.email,
-                user_id=user.id,
-                tokens=tokens,
-            )
-
+            await crud_oauth.upsert(session, provider=provider, provider_user_id=info.provider_user_id,
+                provider_email=info.email, user_id=user.id, tokens=tokens)
             jwt = _create_jwt(user.id)
             return_to = state_obj.return_to or "/"
             safe_target = return_to if return_to.startswith("/") else "/"
-            return RedirectResponse(
-                url=f"{_frontend_host()}{safe_target}?token={quote(jwt)}",
-                status_code=status.HTTP_302_FOUND,
-            )
+            return RedirectResponse(url=f"{_frontend_host()}{safe_target}?token={quote(jwt)}",
+                status_code=status.HTTP_302_FOUND)
 
 
         async def _resolve_or_create_user(session, provider: str, info):

@@ -281,6 +281,34 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
             return result
 
 
+        async def _run_search_query(
+            session: _SearchSession,
+            stmt,
+            rank_expr,
+            cursor_score: float | None,
+            page_size: int,
+        ) -> tuple[int, list]:
+            \"\"\"Execute count + paginated ranked query and return (total, rows).
+
+            Args:
+                session: Async SQLAlchemy session.
+                stmt: Base SELECT statement with match filter already applied.
+                rank_expr: ts_rank_cd label expression for ordering.
+                cursor_score: Optional rank cursor for keyset pagination.
+                page_size: Page size (one extra row fetched to detect has_more).
+
+            Returns:
+                Tuple of (total_count, rows) where rows is at most page_size + 1 items.
+            \"\"\"
+            count_stmt = _select(_func.count()).select_from(stmt.subquery())
+            total = (await session.execute(count_stmt)).scalar_one()
+            if cursor_score is not None:
+                stmt = stmt.where(rank_expr < cursor_score)
+            stmt = stmt.order_by(rank_expr.desc(), MODEL_NAME_CLS.id.desc()).limit(page_size + 1)
+            result = await session.execute(stmt)
+            return total, list(result.all())
+
+
         async def search(
             session: _SearchSession,
             *,
@@ -311,33 +339,17 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
             \"\"\"
             if not q or len(q.strip()) < 2:
                 raise ValueError("Search query must be at least 2 characters.")
-
             tsquery_expr = _func.websearch_to_tsquery(_text("'" + language + "'"), q)
             tv = _build_search_tsvector(language)
-            match_expr = tv.op("@@")(tsquery_expr)
             rank_expr = _func.ts_rank_cd(tv, tsquery_expr).label("rank")
-
-            stmt = _select(MODEL_NAME_CLS, rank_expr).where(match_expr)
-
+            stmt = _select(MODEL_NAME_CLS, rank_expr).where(tv.op("@@")(tsquery_expr))
             if hasattr(MODEL_NAME_CLS, "is_deleted"):
                 stmt = stmt.where(MODEL_NAME_CLS.is_deleted == False)  # noqa: E712
             if owner_id is not None and hasattr(MODEL_NAME_CLS, "owner_id"):
                 stmt = stmt.where(MODEL_NAME_CLS.owner_id == owner_id)
-
-            count_stmt = _select(_func.count()).select_from(stmt.subquery())
-            total = (await session.execute(count_stmt)).scalar_one()
-
-            if cursor_score is not None:
-                stmt = stmt.where(rank_expr < cursor_score)
-
-            stmt = stmt.order_by(rank_expr.desc(), MODEL_NAME_CLS.id.desc())
-            stmt = stmt.limit(page_size + 1)
-
-            result = await session.execute(stmt)
-            rows = list(result.all())
+            total, rows = await _run_search_query(session, stmt, rank_expr, cursor_score, page_size)
             has_more = len(rows) > page_size
             rows = rows[:page_size]
-
             data = [{**r[0].__dict__, "rank": float(r[1])} for r in rows]
             next_cursor = float(rows[-1][1]) if has_more and rows else None
             return {"data": data, "count": total, "has_more": has_more, "next_cursor": next_cursor}

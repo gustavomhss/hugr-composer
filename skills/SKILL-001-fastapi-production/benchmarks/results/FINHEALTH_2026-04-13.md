@@ -1,27 +1,27 @@
 # FinHealth Benchmark Results
 
-**Date:** 2026-04-13 21:59:55 UTC  
-**Git SHA:** `3bcdd84`  
-**Project:** `/var/folders/lt/z11pyzhj0m17vn798jkk69hh0000gn/T/finhealth_qeonhd67`  
+**Date:** 2026-04-13 22:30:38 UTC  
+**Git SHA:** `18b3f78`  
+**Project:** `/var/folders/lt/z11pyzhj0m17vn798jkk69hh0000gn/T/finhealth_t6efi2id`  
 **Elapsed:** 1.4s  
 
 ---
 
-## Score: 93/100 — Grade **A**
+## Score: 100/100 — Grade **S**
 
 | Category | Passed | Total | Score |
 |----------|--------|-------|-------|
-| A. Multi-Tenancy & Isolation | 14 | 15 | `██████████████░` |
-| B. Auth, RBAC & MFA | 14 | 15 | `██████████████░` |
-| C. Data Integrity & Audit | 14 | 15 | `██████████████░` |
-| D. Payments & Webhooks | 14 | 15 | `██████████████░` |
+| A. Multi-Tenancy & Isolation | 15 | 15 | `███████████████` |
+| B. Auth, RBAC & MFA | 15 | 15 | `███████████████` |
+| C. Data Integrity & Audit | 15 | 15 | `███████████████` |
+| D. Payments & Webhooks | 15 | 15 | `███████████████` |
 | E. File Upload & Search | 10 | 10 | `██████████` |
 | F. Infrastructure & Observability | 15 | 15 | `███████████████` |
-| G. Code Quality & Security | 12 | 15 | `████████████░░░` |
+| G. Code Quality & Security | 15 | 15 | `███████████████` |
 
 ---
 
-## A. Multi-Tenancy & Isolation  (14/15)
+## A. Multi-Tenancy & Isolation  (15/15)
 
 - ✅ **A1**: Tenant model has slug, name, and is_active/status fields.
 - ✅ **A2**: Every business model has tenant_id FK with ondelete=RESTRICT.
@@ -30,8 +30,7 @@
 - ✅ **A5**: Superadmin is not exempted from tenant filter (no bypass pattern).
 - ✅ **A6**: Tenant context uses ContextVar (not a global variable).
 - ✅ **A7**: Multi-tenancy docs/code mentions explicit tenant_id in background jobs.
-- ❌ **A8**: Webhook handler sets tenant context from payload before processing.
-  - _Webhook handlers do not set tenant context from payload_
+- ✅ **A8**: Webhook handler sets tenant context from payload before processing.
 - ✅ **A9**: Alembic migration adds tenant_id to all business tables with backfill.
 - ✅ **A10**: Composite index (tenant_id, created_at) on business models.
 - ✅ **A11**: POST /tenants requires superadmin auth.
@@ -39,7 +38,7 @@
 - ✅ **A13**: SSE channels namespaced by tenant.
 - ✅ **A14**: Cache keys namespaced by tenant (cache:{tenant_id}:...).
 - ✅ **A15**: Search results filtered by tenant (tsvector query includes tenant_id).
-## B. Auth, RBAC & MFA  (14/15)
+## B. Auth, RBAC & MFA  (15/15)
 
 - ✅ **B1**: Password hashing uses argon2id (NOT bcrypt).
 - ✅ **B2**: JWT uses PyJWT (NOT python-jose).
@@ -54,10 +53,9 @@
 - ✅ **B11**: OAuth2 state token in Redis with TTL, single-use (SET NX EX).
 - ✅ **B12**: Login returns mfa_pending_token for MFA-enrolled users (not final JWT).
 - ✅ **B13**: DELETE /patients/{id} requires patients:delete permission AND MFA challenge.
-- ❌ **B14**: Audit log captures authentication method (password, api_key, oauth2).
-  - _Audit log does not capture authentication method_
+- ✅ **B14**: Audit log captures authentication method (password, api_key, oauth2).
 - ✅ **B15**: Feature flag evaluable per-tenant with deterministic SHA-256 bucketing.
-## C. Data Integrity & Audit  (14/15)
+## C. Data Integrity & Audit  (15/15)
 
 - ✅ **C1**: Soft delete on Patient, Appointment but NOT InsuranceClaim, Payment.
 - ✅ **C2**: Cursor pagination on list endpoints (no offset).
@@ -66,8 +64,7 @@
 - ✅ **C5**: Audit log captures old_values and new_values as JSONB diff.
 - ✅ **C6**: Audit log partitioned by month with at least 3 initial partitions.
 - ✅ **C7**: ssn_encrypted uses Fernet encryption at rest.
-- ❌ **C8**: ssn_encrypted NEVER appears in PatientPublic output schema.
-  - _ssn_encrypted may be exposed in PatientPublic schema_
+- ✅ **C8**: ssn_encrypted NEVER appears in PatientPublic output schema.
 - ✅ **C9**: Bulk operations on claims use all_or_nothing isolation.
 - ✅ **C10**: Data export GET /export filtered by tenant.
 - ✅ **C11**: Data export streams (no full dataset in memory).
@@ -75,14 +72,13 @@
 - ✅ **C13**: Full-text search uses setweight('A') for name, ('B') for diagnosis.
 - ✅ **C14**: GET /patients/search never returns patients from another tenant.
 - ✅ **C15**: Migration for ssn_encrypted has server_default for existing rows.
-## D. Payments & Webhooks  (14/15)
+## D. Payments & Webhooks  (15/15)
 
 - ✅ **D1**: Stripe webhook verifies HMAC-SHA256 with hmac.compare_digest.
 - ✅ **D2**: Webhook handler idempotent via Redis SET NX EX.
 - ✅ **D3**: Webhook endpoint dispatches async (returns 200 quickly).
 - ✅ **D4**: Raw card numbers never stored or logged (no PAN patterns in code).
-- ❌ **D5**: stripe_payment_intent_id has UNIQUE constraint.
-  - _stripe_payment_intent_id missing UNIQUE constraint_
+- ✅ **D5**: stripe_payment_intent_id has UNIQUE constraint.
 - ✅ **D6**: Payment status transitions validated (pending→succeeded|failed, no backward).
 - ✅ **D7**: Outbox pattern for payment state change → downstream notification.
 - ✅ **D8**: Outbox uses SELECT FOR UPDATE SKIP LOCKED for concurrent workers.
@@ -122,17 +118,14 @@
 - ✅ **F13**: Long-running task with progress tracking.
 - ✅ **F14**: Dead code finder configured (tool exists).
 - ✅ **F15**: Blast radius analysis available as MCP tool.
-## G. Code Quality & Security  (12/15)
+## G. Code Quality & Security  (15/15)
 
 - ✅ **G1**: Zero eval(), exec(), pickle.loads() in generated code.
 - ✅ **G2**: Zero f-string SQL (all queries use parameterized ORM).
 - ✅ **G3**: All generated .py files pass ast.parse.
-- ❌ **G4**: No function > 50 LOC in generated application code.
-  - _Functions > 50 LOC: idempotency.py:dispatch (72 lines); multipart_upload.py:upload_multipart (66 lines); cursor_paginator.py:paginate (69 lines)_
-- ❌ **G5**: Every public function has docstring.
-  - _5 public functions missing docstrings: idempotency.py:dispatch, security_headers.py:dispatch, body_size.py:dispatch_
-- ❌ **G6**: All endpoints have response_model declared.
-  - _Endpoints missing response_model: mfa.py: @router.post("/challenge"); mfa.py: @router.post("/disable")_
+- ✅ **G4**: No function > 50 LOC in generated application code.
+- ✅ **G5**: Every public function has docstring.
+- ✅ **G6**: All endpoints have response_model declared.
 - ✅ **G7**: Pydantic schemas use extra=forbid and max_length on string fields.
 - ✅ **G8**: CORS never uses wildcard (*) — explicit origin list.
 - ✅ **G9**: Security headers middleware (X-Content-Type-Options, X-Frame-Options).
@@ -145,7 +138,7 @@
 
 ---
 
-**Final Score: 93/100 — Grade A**
+**Final Score: 100/100 — Grade S**
 
 | Grade | Score | Meaning |
 |-------|-------|---------|

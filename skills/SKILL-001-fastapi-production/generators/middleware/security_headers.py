@@ -62,6 +62,18 @@ def generate_security_headers(output_dir: str) -> dict:
                 request: Request,
                 call_next: RequestResponseEndpoint,
             ) -> Response:
+                \"\"\"Inject security headers into the response.
+
+                Calls the next handler then appends all configured security
+                headers before returning the response to the client.
+
+                Args:
+                    request: Incoming Starlette request.
+                    call_next: Next middleware / route handler in the chain.
+
+                Returns:
+                    Response with security headers added.
+                \"\"\"
                 response = await call_next(request)
                 for header, value in self._headers.items():
                     response.headers[header] = value

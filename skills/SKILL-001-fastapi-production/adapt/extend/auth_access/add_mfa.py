@@ -602,6 +602,28 @@ def _write_schemas(dest: Path) -> None:
 
             recovery_codes: list[str]
             warning: str
+
+
+        class MFAChallengeResponse(BaseModel):
+            \"\"\"Response from POST /auth/mfa/challenge — successful MFA exchange.
+
+            Attributes:
+                access_token: Full-access JWT replacing the mfa_pending_token.
+                token_type: Always ``"bearer"``.
+            \"\"\"
+
+            access_token: str
+            token_type: str = "bearer"
+
+
+        class MFADisableResponse(BaseModel):
+            \"\"\"Response from POST /auth/mfa/disable — MFA successfully removed.
+
+            Attributes:
+                status: Always ``"ok"`` on success.
+            \"\"\"
+
+            status: str
     """))
 
 
@@ -780,6 +802,8 @@ def _write_routes(dest: Path) -> None:
         from app.crud import mfa as crud_mfa
         from app.schemas.mfa import (
             MFAChallengeRequest,
+            MFAChallengeResponse,
+            MFADisableResponse,
             MFAEnrollResponse,
             MFAEnrollVerifyResponse,
             MFAVerifyEnrollmentRequest,
@@ -921,8 +945,8 @@ def _write_routes(dest: Path) -> None:
             )
 
 
-        @router.post("/challenge")
-        async def challenge(body: MFAChallengeRequest, session: SessionDep) -> dict:
+        @router.post("/challenge", response_model=MFAChallengeResponse)
+        async def challenge(body: MFAChallengeRequest, session: SessionDep) -> MFAChallengeResponse:
             \"\"\"Exchange a pending token + TOTP (or recovery code) for a full JWT.
 
             Args:
@@ -956,15 +980,17 @@ def _write_routes(dest: Path) -> None:
             await session.flush()
 
             from app.core.security import create_access_token  # noqa: PLC0415
-            return {"access_token": create_access_token(subject=user_id), "token_type": "bearer"}
+            return MFAChallengeResponse(
+                access_token=create_access_token(subject=user_id), token_type="bearer"
+            )
 
 
-        @router.post("/disable")
+        @router.post("/disable", response_model=MFADisableResponse)
         async def disable_mfa(
             body: MFAChallengeRequest,
             session: SessionDep,
             current_user: CurrentUser,
-        ) -> dict:
+        ) -> MFADisableResponse:
             \"\"\"Disable MFA by confirming with a live TOTP code (proves device possession).
 
             Args:
@@ -994,7 +1020,7 @@ def _write_routes(dest: Path) -> None:
             except Exception:  # noqa: BLE001
                 pass
 
-            return {"status": "ok"}
+            return MFADisableResponse(status="ok")
     """))
 
 

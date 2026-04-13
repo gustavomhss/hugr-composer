@@ -571,6 +571,18 @@ def _write_task_registry(dest: Path) -> None:
                     TypeError: If the decorated function is not a coroutine function.
                 \"\"\"
                 def decorator(func: Callable) -> Callable:
+                    \"\"\"Register the decorated coroutine under *task_type*.
+
+                    Args:
+                        func: Async handler to register.
+
+                    Returns:
+                        The original function, unmodified.
+
+                    Raises:
+                        ValueError: If *task_type* is already registered.
+                        TypeError: If *func* is not a coroutine function.
+                    \"\"\"
                     if task_type in self._handlers:
                         raise ValueError(f"Task type '{task_type}' is already registered.")
                     if not inspect.iscoroutinefunction(func):
@@ -727,6 +739,7 @@ def _write_task_routes(dest: Path) -> None:
 
         @router.post(
             "",
+            response_model=None,
             status_code=status.HTTP_202_ACCEPTED,
             summary="Submit a long-running task",
         )

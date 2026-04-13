@@ -580,6 +580,27 @@ def _write_presigned_urls(dest: Path) -> None:
         from typing import Any
 
 
+        def _build_presign_conditions(
+            content_type: str, max_size_bytes: int | None
+        ) -> list[Any]:
+            \"\"\"Build the conditions list for a presigned POST request.
+
+            Args:
+                content_type: MIME type to enforce on the upload.
+                max_size_bytes: Optional maximum file size limit.
+
+            Returns:
+                List of S3 presign condition dicts/lists.
+            \"\"\"
+            conditions: list[Any] = [
+                {"Content-Type": content_type},
+                ["starts-with", "$key", "uploads/"],
+            ]
+            if max_size_bytes is not None:
+                conditions.append(["content-length-range", 1, max_size_bytes])
+            return conditions
+
+
         def generate_upload_url(
             *,
             file_id: uuid.UUID,
@@ -609,21 +630,11 @@ def _write_presigned_urls(dest: Path) -> None:
             client = boto3.client("s3", region_name=settings.AWS_REGION)
             ext = extension.lstrip(".")[:10]
             stored_key = f"uploads/{file_id}.{ext}"
-
-            conditions: list[Any] = [
-                {"Content-Type": content_type},
-                ["starts-with", "$key", "uploads/"],
-            ]
-            if max_size_bytes is not None:
-                conditions.append(["content-length-range", 1, max_size_bytes])
-
+            conditions = _build_presign_conditions(content_type, max_size_bytes)
             response = client.generate_presigned_post(
                 Bucket=settings.S3_BUCKET,
                 Key=stored_key,
-                Fields={
-                    "Content-Type": content_type,
-                    "x-amz-server-side-encryption": "AES256",
-                },
+                Fields={"Content-Type": content_type, "x-amz-server-side-encryption": "AES256"},
                 Conditions=conditions,
                 ExpiresIn=expires_in,
             )
@@ -818,48 +829,88 @@ def _write_multipart_upload(dest: Path) -> None:
             from app.core.config import settings
 
             client = boto3.client("s3", region_name=settings.AWS_REGION)
+            upload_id = _start_multipart(client, settings.S3_BUCKET, stored_key, content_type)
+            try:
+                parts = _upload_parts(client, file, settings.S3_BUCKET, stored_key, upload_id)
+                return _complete_multipart(client, settings.S3_BUCKET, stored_key, upload_id, parts)
+            except Exception:
+                client.abort_multipart_upload(
+                    Bucket=settings.S3_BUCKET, Key=stored_key, UploadId=upload_id
+                )
+                raise
+
+
+        def _start_multipart(client, bucket: str, key: str, content_type: str) -> str:
+            \"\"\"Initiate a multipart upload and return the upload ID.
+
+            Args:
+                client: Boto3 S3 client.
+                bucket: S3 bucket name.
+                key: S3 object key.
+                content_type: MIME type for the uploaded object.
+
+            Returns:
+                The UploadId string from the S3 create_multipart_upload response.
+            \"\"\"
             mpu = client.create_multipart_upload(
-                Bucket=settings.S3_BUCKET,
-                Key=stored_key,
+                Bucket=bucket,
+                Key=key,
                 ContentType=content_type,
                 ServerSideEncryption="AES256",
             )
-            upload_id = mpu["UploadId"]
+            return mpu["UploadId"]
+
+
+        def _upload_parts(
+            client, file: BinaryIO, bucket: str, key: str, upload_id: str
+        ) -> list[dict]:
+            \"\"\"Upload all chunks of *file* and return the completed parts list.
+
+            Args:
+                client: Boto3 S3 client.
+                file: Readable binary file-like object.
+                bucket: S3 bucket name.
+                key: S3 object key.
+                upload_id: Active multipart upload ID.
+
+            Returns:
+                List of dicts with ``PartNumber`` and ``ETag`` for each chunk.
+            \"\"\"
             parts: list[dict] = []
             part_number = 1
-
-            try:
-                while True:
-                    chunk = file.read(PART_SIZE_BYTES)
-                    if not chunk:
-                        break
-                    response = client.upload_part(
-                        Bucket=settings.S3_BUCKET,
-                        Key=stored_key,
-                        UploadId=upload_id,
-                        PartNumber=part_number,
-                        Body=chunk,
-                    )
-                    parts.append({"PartNumber": part_number, "ETag": response["ETag"]})
-                    part_number += 1
-
-                complete = client.complete_multipart_upload(
-                    Bucket=settings.S3_BUCKET,
-                    Key=stored_key,
-                    UploadId=upload_id,
-                    MultipartUpload={"Parts": parts},
+            while True:
+                chunk = file.read(PART_SIZE_BYTES)
+                if not chunk:
+                    break
+                response = client.upload_part(
+                    Bucket=bucket, Key=key, UploadId=upload_id,
+                    PartNumber=part_number, Body=chunk,
                 )
-                return {
-                    "ETag": complete.get("ETag", ""),
-                    "VersionId": complete.get("VersionId", ""),
-                }
-            except Exception:
-                client.abort_multipart_upload(
-                    Bucket=settings.S3_BUCKET,
-                    Key=stored_key,
-                    UploadId=upload_id,
-                )
-                raise
+                parts.append({"PartNumber": part_number, "ETag": response["ETag"]})
+                part_number += 1
+            return parts
+
+
+        def _complete_multipart(
+            client, bucket: str, key: str, upload_id: str, parts: list[dict]
+        ) -> dict[str, str]:
+            \"\"\"Finalise a multipart upload and return ETag/VersionId.
+
+            Args:
+                client: Boto3 S3 client.
+                bucket: S3 bucket name.
+                key: S3 object key.
+                upload_id: Active multipart upload ID.
+                parts: List of completed part dicts (PartNumber + ETag).
+
+            Returns:
+                Dict with ``ETag`` and ``VersionId`` from the S3 response.
+            \"\"\"
+            complete = client.complete_multipart_upload(
+                Bucket=bucket, Key=key, UploadId=upload_id,
+                MultipartUpload={"Parts": parts},
+            )
+            return {"ETag": complete.get("ETag", ""), "VersionId": complete.get("VersionId", "")}
         """)
     dest.write_text(content)
 
@@ -1265,6 +1316,28 @@ def _write_file_routes(dest: Path) -> None:
             response_model=PresignedUploadResponse,
             summary="Generate presigned URL for direct S3 upload (Phase 1 of 2)",
         )
+        def _validate_upload_request(body: PresignedUploadRequest, settings) -> None:
+            \"\"\"Raise HTTPException if content-type or file size is disallowed.
+
+            Args:
+                body: Upload request schema with content_type and size_bytes.
+                settings: App settings object with ALLOWED_FILE_TYPES / MAX_UPLOAD_SIZE_MB.
+
+            Raises:
+                HTTPException 422: Content type not in allowed set.
+                HTTPException 413: File size exceeds configured limit.
+            \"\"\"
+            allowed_set = frozenset(getattr(settings, "ALLOWED_FILE_TYPES", None) or SAFE_DEFAULTS)
+            if body.content_type not in allowed_set:
+                raise HTTPException(status_code=422, detail=f"Content type '{body.content_type}' not allowed")
+            max_bytes = getattr(settings, "MAX_UPLOAD_SIZE_MB", 10) * 1024 * 1024
+            if body.size_bytes > max_bytes:
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"File too large (max {getattr(settings, 'MAX_UPLOAD_SIZE_MB', 10)} MB)",
+                )
+
+
         async def request_presigned_upload(
             body: PresignedUploadRequest,
             session: SessionDep,
@@ -1283,38 +1356,18 @@ def _write_file_routes(dest: Path) -> None:
             from app.core.config import settings
             from app.core.presigned_urls import generate_upload_url
 
-            allowed = getattr(settings, "ALLOWED_FILE_TYPES", None) or SAFE_DEFAULTS
-            allowed_set = frozenset(allowed)
-            if body.content_type not in allowed_set:
-                raise HTTPException(
-                    status_code=422,
-                    detail=f"Content type '{body.content_type}' not allowed",
-                )
-            max_bytes = getattr(settings, "MAX_UPLOAD_SIZE_MB", 10) * 1024 * 1024
-            if body.size_bytes > max_bytes:
-                raise HTTPException(
-                    status_code=413,
-                    detail=f"File too large (max {getattr(settings, 'MAX_UPLOAD_SIZE_MB', 10)} MB)",
-                )
-
+            _validate_upload_request(body, settings)
             file_id = uuid.uuid4()
             ext = (body.filename.rsplit(".", 1)[-1] if "." in body.filename else "bin")[:10]
             result = generate_upload_url(
-                file_id=file_id,
-                extension=ext,
-                content_type=body.content_type,
-                max_size_bytes=body.size_bytes,
+                file_id=file_id, extension=ext,
+                content_type=body.content_type, max_size_bytes=body.size_bytes,
             )
             await crud_file.create_pending(
-                session,
-                id=file_id,
-                original_filename=body.filename[:255],
-                stored_key=result["stored_key"],
-                content_type=body.content_type,
-                size_bytes=body.size_bytes,
-                uploaded_by=current_user.id,
-                resource_type=body.resource_type,
-                resource_id=body.resource_id,
+                session, id=file_id, original_filename=body.filename[:255],
+                stored_key=result["stored_key"], content_type=body.content_type,
+                size_bytes=body.size_bytes, uploaded_by=current_user.id,
+                resource_type=body.resource_type, resource_id=body.resource_id,
             )
             return PresignedUploadResponse(file_id=file_id, **result)
 
@@ -1375,6 +1428,38 @@ def _write_file_routes(dest: Path) -> None:
             status_code=status.HTTP_201_CREATED,
             summary="Direct file upload for local storage path",
         )
+        async def _persist_local_upload(session, storage, file_id, filename, stored_key, actual_mime, size_bytes, owner_id):
+            \"\"\"Write metadata row, confirm upload, or rollback storage on DB error.
+
+            Args:
+                session: Async SQLAlchemy session.
+                storage: Storage backend with .delete() for rollback.
+                file_id: Pre-assigned UUID for the new file record.
+                filename: Original client-provided filename (truncated to 255 chars).
+                stored_key: Storage-layer key returned by storage.save().
+                actual_mime: Validated MIME type string.
+                size_bytes: Exact byte count from storage.
+                owner_id: UUID of the uploading user.
+
+            Returns:
+                Confirmed FileMetadata ORM instance.
+
+            Raises:
+                HTTPException 500: DB write failed (storage object is deleted on rollback).
+            \"\"\"
+            try:
+                row = await crud_file.create_pending(
+                    session, id=file_id, original_filename=filename[:255],
+                    stored_key=stored_key, content_type=actual_mime,
+                    size_bytes=size_bytes, uploaded_by=owner_id,
+                )
+                return await crud_file.confirm(session, file_id=row.id, size_bytes=size_bytes,
+                    confirmed_at=datetime.now(timezone.utc))
+            except Exception as exc:
+                await storage.delete(stored_key)
+                raise HTTPException(status_code=500, detail=f"DB insert failed: {exc}") from exc
+
+
         async def upload_file_local(
             file: UploadFile,
             session: SessionDep,
@@ -1398,49 +1483,27 @@ def _write_file_routes(dest: Path) -> None:
             max_bytes = getattr(settings, "MAX_UPLOAD_SIZE_MB", 10) * 1024 * 1024
             if file.size is not None and file.size > max_bytes:
                 raise HTTPException(status_code=413, detail="File too large")
-
             allowed = frozenset(getattr(settings, "ALLOWED_FILE_TYPES", None) or SAFE_DEFAULTS)
             try:
                 actual_mime = validate_file(file.file, file.content_type or "", allowed)
             except ValueError as exc:
                 raise HTTPException(status_code=422, detail=str(exc)) from exc
-
             storage = get_storage()
             file_id = uuid.uuid4()
             try:
                 stored_key, size_bytes = await storage.save(file.file, actual_mime)
             except Exception as exc:
-                raise HTTPException(
-                    status_code=500, detail=f"Storage write failed: {exc}"
-                ) from exc
-
-            try:
-                row = await crud_file.create_pending(
-                    session,
-                    id=file_id,
-                    original_filename=(file.filename or "upload")[:255],
-                    stored_key=stored_key,
-                    content_type=actual_mime,
-                    size_bytes=size_bytes,
-                    uploaded_by=current_user.id,
-                )
-                confirmed = await crud_file.confirm(
-                    session,
-                    file_id=row.id,
-                    size_bytes=size_bytes,
-                    confirmed_at=datetime.now(timezone.utc),
-                )
-            except Exception as exc:
-                await storage.delete(stored_key)
-                raise HTTPException(
-                    status_code=500, detail=f"DB insert failed: {exc}"
-                ) from exc
-
+                raise HTTPException(status_code=500, detail=f"Storage write failed: {exc}") from exc
+            confirmed = await _persist_local_upload(
+                session, storage, file_id, file.filename or "upload",
+                stored_key, actual_mime, size_bytes, current_user.id,
+            )
             return FileMetadataPublic.model_validate(confirmed)
 
 
         @router.get(
             "/{file_id}",
+            response_model=None,
             summary="Download or get presigned URL for a file",
         )
         async def download_file(
@@ -1492,6 +1555,7 @@ def _write_file_routes(dest: Path) -> None:
 
         @router.delete(
             "/{file_id}",
+            response_model=None,
             status_code=status.HTTP_204_NO_CONTENT,
             summary="Delete file from storage and remove metadata",
         )

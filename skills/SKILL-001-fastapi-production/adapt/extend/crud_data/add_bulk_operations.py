@@ -461,6 +461,74 @@ def _patch_crud(crud_file: Path, model_name: str) -> None:
             _pg_insert = None  # type: ignore[assignment]
 
 
+        async def _bulk_insert_all_or_nothing_{lower}(
+            session: _BulkSession, items: list, owner_id: _bulk_uuid.UUID
+        ) -> tuple[list, int, int]:
+            \"\"\"Insert all {model_name} rows atomically; rollback entire batch on failure.
+
+            Args:
+                session: Async SQLAlchemy session.
+                items: Pydantic schema instances with ``.model_dump()``.
+                owner_id: UUID assigned as owner_id on every inserted row.
+
+            Returns:
+                Tuple of (results_list, succeeded_count, failed_count).
+            \"\"\"
+            from app.schemas.{lower} import BulkResultItem  # type: ignore[import]
+            rows = [{{**item.model_dump(), "owner_id": owner_id, "id": _bulk_uuid.uuid4()}} for item in items]
+            try:
+                if _pg_insert is not None:
+                    stmt = _pg_insert({model_name}).values(rows).returning({model_name}.id)
+                else:
+                    stmt = {model_name}.__table__.insert().values(rows).returning({model_name}.id)  # type: ignore[attr-defined]
+                db_result = await session.execute(stmt)
+                inserted_ids = list(db_result.scalars())
+                await session.flush()
+                results = [BulkResultItem(index=idx, id=row_id, success=True) for idx, row_id in enumerate(inserted_ids)]
+                return results, len(inserted_ids), 0
+            except _IntegrityError as exc:
+                await session.rollback()
+                results = [
+                    BulkResultItem(index=idx, success=False, error=str(exc.orig), error_code="INTEGRITY_ERROR")
+                    for idx in range(len(items))
+                ]
+                return results, 0, len(items)
+
+
+        async def _bulk_insert_best_effort_{lower}(
+            session: _BulkSession, items: list, owner_id: _bulk_uuid.UUID
+        ) -> tuple[list, int, int]:
+            \"\"\"Insert {model_name} rows one by one using savepoints; skip failed rows.
+
+            Args:
+                session: Async SQLAlchemy session.
+                items: Pydantic schema instances with ``.model_dump()``.
+                owner_id: UUID assigned as owner_id on every inserted row.
+
+            Returns:
+                Tuple of (results_list, succeeded_count, failed_count).
+            \"\"\"
+            from app.schemas.{lower} import BulkResultItem  # type: ignore[import]
+            results: list = []
+            succeeded = 0
+            failed = 0
+            for idx, item in enumerate(items):
+                try:
+                    sp = await session.begin_nested()
+                    new_obj = {model_name}(**item.model_dump(), owner_id=owner_id, id=_bulk_uuid.uuid4())
+                    session.add(new_obj)
+                    await session.flush()
+                    await sp.commit()
+                    results.append(BulkResultItem(index=idx, id=new_obj.id, success=True))
+                    succeeded += 1
+                except Exception as exc:
+                    await sp.rollback()
+                    results.append(BulkResultItem(index=idx, success=False, error=str(exc), error_code="INSERT_ERROR"))
+                    failed += 1
+            await session.flush()
+            return results, succeeded, failed
+
+
         async def bulk_create_{lower}s(
             session: _BulkSession,
             *,
@@ -479,66 +547,59 @@ def _patch_crud(crud_file: Path, model_name: str) -> None:
             Returns:
                 BulkResponse-compatible dict with total, succeeded, failed, partial, results.
             \"\"\"
-            from app.schemas.{lower} import BulkResultItem, BulkResponse  # type: ignore[import]
+            from app.schemas.{lower} import BulkResponse  # type: ignore[import]
+            if mode == "all_or_nothing":
+                results, succeeded, failed = await _bulk_insert_all_or_nothing_{lower}(session, items, owner_id)
+            else:
+                results, succeeded, failed = await _bulk_insert_best_effort_{lower}(session, items, owner_id)
+            return BulkResponse(
+                total=len(items), succeeded=succeeded, failed=failed,
+                partial=(failed > 0 and mode == "best_effort"), results=results,
+            ).model_dump()
 
+
+        async def _apply_bulk_updates_{lower}(
+            session: _BulkSession, updates: list[dict], found_ids: set
+        ) -> tuple[list, int, int]:
+            \"\"\"Apply per-row PATCH updates using savepoints; skip unowned rows.
+
+            Args:
+                session: Async SQLAlchemy session.
+                updates: List of update dicts each containing ``id``.
+                found_ids: Set of IDs verified as owned by the caller.
+
+            Returns:
+                Tuple of (results_list, succeeded_count, failed_count).
+            \"\"\"
+            from app.schemas.{lower} import BulkResultItem  # type: ignore[import]
             results: list = []
             succeeded = 0
             failed = 0
-
-            if mode == "all_or_nothing":
-                rows = [
-                    {{**item.model_dump(), "owner_id": owner_id, "id": _bulk_uuid.uuid4()}}
-                    for item in items
-                ]
+            for idx, upd in enumerate(updates):
+                row_id = _bulk_uuid.UUID(str(upd.get("id")))
+                if row_id not in found_ids:
+                    results.append(BulkResultItem(
+                        index=idx, id=row_id, success=False,
+                        error="Item not found or not owned by caller", error_code="NOT_FOUND",
+                    ))
+                    failed += 1
+                    continue
                 try:
-                    if _pg_insert is not None:
-                        stmt = _pg_insert({model_name}).values(rows).returning({model_name}.id)
-                    else:
-                        stmt = {model_name}.__table__.insert().values(rows).returning({model_name}.id)  # type: ignore[attr-defined]
-                    db_result = await session.execute(stmt)
-                    inserted_ids = list(db_result.scalars())
-                    await session.flush()
-                    for idx, row_id in enumerate(inserted_ids):
-                        results.append(BulkResultItem(index=idx, id=row_id, success=True))
-                    succeeded = len(inserted_ids)
-                except _IntegrityError as exc:
-                    await session.rollback()
-                    for idx in range(len(items)):
-                        results.append(
-                            BulkResultItem(
-                                index=idx, success=False,
-                                error=str(exc.orig), error_code="INTEGRITY_ERROR",
-                            )
-                        )
-                    failed = len(items)
-            else:
-                for idx, item in enumerate(items):
-                    try:
-                        sp = await session.begin_nested()
-                        new_obj = {model_name}(**item.model_dump(), owner_id=owner_id, id=_bulk_uuid.uuid4())
-                        session.add(new_obj)
-                        await session.flush()
-                        await sp.commit()
-                        results.append(BulkResultItem(index=idx, id=new_obj.id, success=True))
-                        succeeded += 1
-                    except Exception as exc:
-                        await sp.rollback()
-                        results.append(
-                            BulkResultItem(
-                                index=idx, success=False,
-                                error=str(exc), error_code="INSERT_ERROR",
-                            )
-                        )
-                        failed += 1
-                await session.flush()
-
-            return BulkResponse(
-                total=len(items),
-                succeeded=succeeded,
-                failed=failed,
-                partial=(failed > 0 and mode == "best_effort"),
-                results=results,
-            ).model_dump()
+                    sp = await session.begin_nested()
+                    patch = {{k: v for k, v in upd.items() if k != "id"}}
+                    stmt = _sql_update({model_name}).where({model_name}.id == row_id).values(**patch)
+                    await session.execute(stmt)
+                    await sp.commit()
+                    results.append(BulkResultItem(index=idx, id=row_id, success=True))
+                    succeeded += 1
+                except Exception as exc:
+                    await sp.rollback()
+                    results.append(BulkResultItem(
+                        index=idx, id=row_id, success=False, error=str(exc), error_code="UPDATE_ERROR",
+                    ))
+                    failed += 1
+            await session.flush()
+            return results, succeeded, failed
 
 
         async def bulk_update_{lower}s(
@@ -562,57 +623,44 @@ def _patch_crud(crud_file: Path, model_name: str) -> None:
             Returns:
                 BulkResponse-compatible dict.
             \"\"\"
-            from app.schemas.{lower} import BulkResultItem, BulkResponse  # type: ignore[import]
-
-            results: list = []
-            succeeded = 0
-            failed = 0
-
+            from app.schemas.{lower} import BulkResponse  # type: ignore[import]
             ids = [_bulk_uuid.UUID(str(u["id"])) for u in updates if "id" in u]
             existing_stmt = _bulk_select({model_name}.id).where(
                 {model_name}.id.in_(ids), {model_name}.owner_id == owner_id
             )
-            db_result = await session.execute(existing_stmt)
-            found_ids = set(db_result.scalars().all())
-
-            for idx, upd in enumerate(updates):
-                row_id = _bulk_uuid.UUID(str(upd.get("id")))
-                if row_id not in found_ids:
-                    results.append(
-                        BulkResultItem(
-                            index=idx, id=row_id, success=False,
-                            error="Item not found or not owned by caller",
-                            error_code="NOT_FOUND",
-                        )
-                    )
-                    failed += 1
-                    continue
-                try:
-                    sp = await session.begin_nested()
-                    patch = {{k: v for k, v in upd.items() if k != "id"}}
-                    stmt = _sql_update({model_name}).where({model_name}.id == row_id).values(**patch)
-                    await session.execute(stmt)
-                    await sp.commit()
-                    results.append(BulkResultItem(index=idx, id=row_id, success=True))
-                    succeeded += 1
-                except Exception as exc:
-                    await sp.rollback()
-                    results.append(
-                        BulkResultItem(
-                            index=idx, id=row_id, success=False,
-                            error=str(exc), error_code="UPDATE_ERROR",
-                        )
-                    )
-                    failed += 1
-            await session.flush()
-
+            found_ids = set((await session.execute(existing_stmt)).scalars().all())
+            results, succeeded, failed = await _apply_bulk_updates_{lower}(session, updates, found_ids)
             return BulkResponse(
-                total=len(updates),
-                succeeded=succeeded,
-                failed=failed,
-                partial=(failed > 0),
-                results=results,
+                total=len(updates), succeeded=succeeded, failed=failed,
+                partial=(failed > 0), results=results,
             ).model_dump()
+
+
+        async def _check_delete_ownership_{lower}(
+            session: _BulkSession, ids: list, owner_id: _bulk_uuid.UUID
+        ) -> tuple[set, list, list]:
+            \"\"\"Resolve which IDs are owned by the caller vs not found.
+
+            Args:
+                session: Async SQLAlchemy session.
+                ids: Requested UUIDs to delete.
+                owner_id: UUID of the requesting user.
+
+            Returns:
+                Tuple of (owned_ids_set, not_owned_list, not_found_results_list).
+            \"\"\"
+            from app.schemas.{lower} import BulkResultItem  # type: ignore[import]
+            owned_stmt = _bulk_select({model_name}.id).where(
+                {model_name}.id.in_(ids), {model_name}.owner_id == owner_id
+            )
+            owned_ids = set((await session.execute(owned_stmt)).scalars().all())
+            not_owned = [i for i in ids if i not in owned_ids]
+            not_found_results = [
+                BulkResultItem(index=idx, id=item_id, success=False,
+                    error="Item not found or not owned by caller", error_code="NOT_FOUND")
+                for idx, item_id in enumerate(ids) if item_id not in owned_ids
+            ]
+            return owned_ids, not_owned, not_found_results
 
 
         async def bulk_delete_{lower}s(
@@ -638,57 +686,24 @@ def _patch_crud(crud_file: Path, model_name: str) -> None:
                 BulkResponse-compatible dict.
             \"\"\"
             from app.schemas.{lower} import BulkResultItem, BulkResponse  # type: ignore[import]
-
-            owned_stmt = _bulk_select({model_name}.id).where(
-                {model_name}.id.in_(ids), {model_name}.owner_id == owner_id
-            )
-            db_result = await session.execute(owned_stmt)
-            owned_ids = set(db_result.scalars().all())
-            not_owned = [i for i in ids if i not in owned_ids]
-
-            results: list = []
-            for idx, item_id in enumerate(ids):
-                if item_id not in owned_ids:
-                    results.append(
-                        BulkResultItem(
-                            index=idx, id=item_id, success=False,
-                            error="Item not found or not owned by caller",
-                            error_code="NOT_FOUND",
-                        )
-                    )
-
+            owned_ids, not_owned, results = await _check_delete_ownership_{lower}(session, ids, owner_id)
             if mode == "all_or_nothing" and not_owned:
                 await session.rollback()
-                return BulkResponse(
-                    total=len(ids),
-                    succeeded=0,
-                    failed=len(ids),
-                    partial=False,
-                    results=results + [
-                        BulkResultItem(
-                            index=len(not_owned) + i, id=oid, success=False,
-                            error="Rolled back due to unowned IDs",
-                            error_code="ROLLBACK",
-                        )
-                        for i, oid in enumerate(owned_ids)
-                    ],
-                ).model_dump()
-
+                rollback_items = [
+                    BulkResultItem(index=len(not_owned) + i, id=oid, success=False,
+                        error="Rolled back due to unowned IDs", error_code="ROLLBACK")
+                    for i, oid in enumerate(owned_ids)
+                ]
+                return BulkResponse(total=len(ids), succeeded=0, failed=len(ids),
+                    partial=False, results=results + rollback_items).model_dump()
             del_stmt = _sql_delete({model_name}).where({model_name}.id.in_(list(owned_ids)))
-            del_result = await session.execute(del_stmt)
-            succeeded = del_result.rowcount
+            succeeded = (await session.execute(del_stmt)).rowcount
             await session.flush()
-
             for idx, item_id in enumerate(ids):
                 if item_id in owned_ids:
                     results.append(BulkResultItem(index=idx, id=item_id, success=True))
-
-            return BulkResponse(
-                total=len(ids),
-                succeeded=succeeded,
-                failed=len(not_owned),
-                partial=(len(not_owned) > 0),
-                results=sorted(results, key=lambda r: r.index),
+            return BulkResponse(total=len(ids), succeeded=succeeded, failed=len(not_owned),
+                partial=(len(not_owned) > 0), results=sorted(results, key=lambda r: r.index),
             ).model_dump()
         """).replace("{model_name}", model_name).replace("{lower}", lower)
 

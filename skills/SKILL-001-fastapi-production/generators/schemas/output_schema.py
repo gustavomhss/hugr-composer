@@ -29,6 +29,11 @@ _TYPE_MAP: dict[str, str] = {
 # Fields that are NEVER exposed in API responses.
 _DEFAULT_EXCLUDE: list[str] = ["hashed_password", "password"]
 
+# Name patterns (substrings) that mark a field as sensitive.
+# Any field whose name contains one of these substrings is automatically
+# excluded from Public output schemas, regardless of explicit exclude_fields.
+_SENSITIVE_SUBSTRINGS: tuple[str, ...] = ("_encrypted", "_secret", "_hashed", "_hash")
+
 
 def generate_output_schema(
     output_dir: str,
@@ -71,6 +76,11 @@ def generate_output_schema(
     surviving: list[tuple[str, str, bool]] = []  # (name, py_type, optional)
     for field_name, raw_type in fields.items():
         if field_name in excluded:
+            continue
+        # Auto-exclude fields whose names contain sensitive substrings
+        # (e.g. ssn_encrypted, stripe_secret, password_hashed).
+        if any(substr in field_name for substr in _SENSITIVE_SUBSTRINGS):
+            excluded.add(field_name)
             continue
         optional = raw_type.endswith("?")
         type_key = raw_type.rstrip("?")

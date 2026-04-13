@@ -1114,7 +1114,7 @@ def _write_flag_routes(dest: Path) -> None:
             return FeatureFlagPublic.model_validate(flag)
 
 
-        @router.delete("/{key}", status_code=status.HTTP_204_NO_CONTENT)
+        @router.delete("/{key}", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
         async def delete_flag(
             key: str,
             session: SessionDep,

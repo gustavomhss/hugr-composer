@@ -502,7 +502,7 @@ def _write_outbox_admin_routes(dest: Path) -> None:
         router = APIRouter(prefix="/outbox", tags=["outbox"])
 
 
-        @router.get("/metrics")
+        @router.get("/metrics", response_model=dict)
         async def outbox_metrics() -> dict:
             \"\"\"Return counts of outbox events grouped by status.
 
@@ -521,7 +521,7 @@ def _write_outbox_admin_routes(dest: Path) -> None:
             }
 
 
-        @router.get("/dlq")
+        @router.get("/dlq", response_model=dict)
         async def outbox_dlq(
             skip: int = Query(default=0, ge=0),
             limit: int = Query(default=20, ge=1, le=100),

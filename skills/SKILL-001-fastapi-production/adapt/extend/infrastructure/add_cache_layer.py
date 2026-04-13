@@ -571,7 +571,7 @@ def _write_cache_stats_route(dest: Path) -> None:
         router = APIRouter(prefix="/cache", tags=["cache"])
 
 
-        @router.get("/stats")
+        @router.get("/stats", response_model=dict)
         async def cache_stats() -> dict:
             \"\"\"Return Redis cache statistics.  Admin use only.
 

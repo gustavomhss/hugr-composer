@@ -439,6 +439,31 @@ def _write_evaluator(dest: Path) -> None:
         from app.models.rbac import Permission, Role, RolePermission, UserRole
 
 
+        async def _collect_role_ids_via_bfs(
+            session: AsyncSession, seed_role_ids: list
+        ) -> set:
+            \"\"\"Walk the role inheritance DAG via BFS to collect all ancestor role IDs.
+
+            Args:
+                session: Async SQLAlchemy session.
+                seed_role_ids: Initial list of directly-assigned role IDs.
+
+            Returns:
+                Set of all role UUIDs reachable from the seeds (inclusive).
+            \"\"\"
+            role_ids: set = set()
+            queue = list(seed_role_ids)
+            while queue:
+                rid = queue.pop()
+                if rid in role_ids:
+                    continue
+                role_ids.add(rid)
+                role = (await session.execute(select(Role).where(Role.id == rid))).scalar_one_or_none()
+                if role and role.parent_id and role.parent_id not in role_ids:
+                    queue.append(role.parent_id)
+            return role_ids
+
+
         async def compute_effective_permissions(
             session: AsyncSession,
             user_id: UUID,
@@ -468,35 +493,17 @@ def _write_evaluator(dest: Path) -> None:
                 stmt = stmt.where(
                     (UserRole.tenant_id == tenant_id) | (UserRole.tenant_id.is_(None))
                 )
-
             user_roles = (await session.execute(stmt)).scalars().all()
             if not user_roles:
                 return set()
-
-            # BFS walk of role DAG to collect all ancestor role IDs
-            role_ids: set[UUID] = set()
-            queue = [ur.role_id for ur in user_roles]
-            while queue:
-                rid = queue.pop()
-                if rid in role_ids:
-                    continue
-                role_ids.add(rid)
-                role = (
-                    await session.execute(select(Role).where(Role.id == rid))
-                ).scalar_one_or_none()
-                if role and role.parent_id and role.parent_id not in role_ids:
-                    queue.append(role.parent_id)
-
+            role_ids = await _collect_role_ids_via_bfs(session, [ur.role_id for ur in user_roles])
             if not role_ids:
                 return set()
-
-            # Fetch all permission codes assigned to collected roles
-            stmt2 = (
+            rows = (await session.execute(
                 select(Permission.code)
                 .join(RolePermission, RolePermission.permission_id == Permission.id)
                 .where(RolePermission.role_id.in_(role_ids))
-            )
-            rows = (await session.execute(stmt2)).scalars().all()
+            )).scalars().all()
             return set(rows)
 
 
@@ -1067,7 +1074,7 @@ def _write_routes(dest: Path) -> None:
             return await crud_rbac.create_role(session, r_in=r_in)
 
 
-        @router.post("/users/{user_id}/roles", status_code=201)
+        @router.post("/users/{user_id}/roles", response_model=dict, status_code=201)
         async def assign_role(
             user_id: str,
             binding: RoleAssignment,
@@ -1100,7 +1107,7 @@ def _write_routes(dest: Path) -> None:
             return {"status": "ok"}
 
 
-        @router.delete("/users/{user_id}/roles/{role_id}", status_code=200)
+        @router.delete("/users/{user_id}/roles/{role_id}", response_model=dict, status_code=200)
         async def revoke_role(
             user_id: str,
             role_id: str,

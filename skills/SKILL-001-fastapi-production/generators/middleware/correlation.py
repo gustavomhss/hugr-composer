@@ -52,6 +52,19 @@ def generate_correlation_id(output_dir: str) -> dict:
                 request: Request,
                 call_next: RequestResponseEndpoint,
             ) -> Response:
+                \"\"\"Attach a correlation ID to the request context and response header.
+
+                Reuses the incoming ``X-Correlation-ID`` header if present,
+                otherwise generates a new UUID4.  Binds the ID to structlog
+                contextvars for the duration of the request.
+
+                Args:
+                    request: Incoming Starlette request.
+                    call_next: Next middleware / route handler in the chain.
+
+                Returns:
+                    Response with ``X-Correlation-ID`` header set.
+                \"\"\"
                 correlation_id = request.headers.get(_HEADER) or str(uuid.uuid4())
 
                 # Bind to structlog so all downstream logs include it
