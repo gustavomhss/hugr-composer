@@ -514,36 +514,44 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
         return
 
     lower = model_name.lower()
-    # Build import block + two new endpoints
+
+    # Build import header — flat single-line imports to avoid duplicate
+    # "from app.crud.X import (" opening lines when multiple tools patch the
+    # same route file.  Only include lines not already present.
+    import_header_lines = [
+        f"from app.crud.{lower} import search as _crud_search",
+        f"from app.crud.{lower} import autocomplete as _crud_autocomplete",
+        f"from app.schemas.{lower} import {model_name}_SearchResponse",
+        f"from app.schemas.{lower} import {model_name}_SearchResultItem",
+        f"from app.schemas.{lower} import {model_name}_AutocompleteResult",
+        "from fastapi import HTTPException",
+        "from fastapi import Query as _SearchQuery",
+    ]
+    new_imports = "\n".join(
+        line for line in import_header_lines if line.strip() not in src
+    )
+
+    # Build two new endpoints
     additions = textwrap.dedent("""\
 
 
         # ---------------------------------------------------------------------------
         # Full-text search endpoints — added by add_search tool
-        # IMPORTANT: Registered BEFORE /{id} route to avoid FastAPI path collision.
+        # IMPORTANT: Registered BEFORE /{{id}} route to avoid FastAPI path collision.
         # ---------------------------------------------------------------------------
-        from app.crud.LOWER import (
-            search as _crud_search,
-            autocomplete as _crud_autocomplete,
-        )
-        from app.schemas.LOWER import (
-            MODELNAME_SearchResponse,
-            MODELNAME_SearchResultItem,
-            MODELNAME_AutocompleteResult,
-        )
-        from fastapi import Query as _SearchQuery
+        {import_header}
 
 
-        @router.get("/search", response_model=MODELNAME_SearchResponse)
-        async def search_LOWERs(
+        @router.get("/search", response_model={model_name}_SearchResponse)
+        async def search_{lower}s(
             session: SessionDep,
             current_user: CurrentUser,
             q: str = _SearchQuery(..., min_length=2, max_length=200, description="Full-text query"),
             page_size: int = _SearchQuery(default=20, ge=1, le=100),
             cursor: float | None = _SearchQuery(default=None, description="Rank cursor for next page"),
             sort: str = _SearchQuery(default="relevance", pattern="^(relevance|recency)$"),
-        ) -> MODELNAME_SearchResponse:
-            \"\"\"Full-text search over LOWERs using PostgreSQL tsvector + GIN index.
+        ) -> {model_name}_SearchResponse:
+            \"\"\"Full-text search over {lower}s using PostgreSQL tsvector + GIN index.
 
             Results ordered by ts_rank_cd DESC (most relevant first).
             Supports rank-cursor pagination (never OFFSET).
@@ -552,14 +560,13 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
                 session: Injected async DB session.
                 current_user: Authenticated user (applied as owner filter).
                 q: Full-text query string (min 2, max 200 chars).
-                page_size: Page size (1–100).
+                page_size: Page size (1-100).
                 cursor: ts_rank cursor value from previous page's ``next_cursor``.
                 sort: 'relevance' (default) or 'recency'.
 
             Raises:
                 HTTPException: 422 if query is too short.
             \"\"\"
-            from fastapi import HTTPException
             try:
                 raw = await _crud_search(
                     session,
@@ -570,8 +577,8 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
                 )
             except ValueError as exc:
                 raise HTTPException(status_code=422, detail=str(exc)) from exc
-            items = [MODELNAME_SearchResultItem(id=str(r.get("id", "")), rank=r.get("rank")) for r in raw["data"]]
-            return MODELNAME_SearchResponse(
+            items = [{model_name}_SearchResultItem(id=str(r.get("id", "")), rank=r.get("rank")) for r in raw["data"]]
+            return {model_name}_SearchResponse(
                 data=items,
                 count=raw["count"],
                 has_more=raw["has_more"],
@@ -579,13 +586,13 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
             )
 
 
-        @router.get("/autocomplete", response_model=MODELNAME_AutocompleteResult)
-        async def autocomplete_LOWERs(
+        @router.get("/autocomplete", response_model={model_name}_AutocompleteResult)
+        async def autocomplete_{lower}s(
             session: SessionDep,
             current_user: CurrentUser,
             q: str = _SearchQuery(..., min_length=1, max_length=100, description="Partial query"),
-        ) -> MODELNAME_AutocompleteResult:
-            \"\"\"Prefix-match autocomplete for LOWERs. Up to 5 suggestions.
+        ) -> {model_name}_AutocompleteResult:
+            \"\"\"Prefix-match autocomplete for {lower}s. Up to 5 suggestions.
 
             Uses to_tsquery('term:*') for sub-20ms p99 latency.
 
@@ -599,8 +606,8 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
                 q=q,
                 owner_id=current_user.id,
             )
-            return MODELNAME_AutocompleteResult(suggestions=suggestions)
-        """).replace("LOWER", lower).replace("MODELNAME", model_name)
+            return {model_name}_AutocompleteResult(suggestions=suggestions)
+        """).format(lower=lower, model_name=model_name, import_header=new_imports)
 
     route_file.write_text(src + additions)
 

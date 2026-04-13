@@ -552,9 +552,19 @@ def _patch_model(model_file: Path, model_name: str) -> None:
             "from app.models.base import Base\nfrom app.models.mixins import TenantScopedMixin",
         )
 
-    # Add Index import if not present
-    if "Index" not in src and "from sqlalchemy import" in src:
-        src = src.replace("from sqlalchemy import", "from sqlalchemy import Index,")
+    # Add Index import if not present — handle both single-line and multi-line forms
+    if "Index" not in src:
+        import re as _re
+        # Multi-line: from sqlalchemy import (
+        #     Column,
+        # )
+        _multi = _re.search(r"(from sqlalchemy import\s*\()", src)
+        if _multi:
+            # Insert "Index,\n    " as the first item inside the parentheses
+            src = src[: _multi.end()] + "\n    Index," + src[_multi.end():]
+        elif "from sqlalchemy import" in src:
+            # Single-line: from sqlalchemy import Column, String
+            src = src.replace("from sqlalchemy import", "from sqlalchemy import Index,", 1)
 
     # Patch class declaration
     src = src.replace(

@@ -408,15 +408,24 @@ def _patch_crud(crud_file: Path, model_name: str) -> None:
         return
 
     lower = model_name.lower()
+
+    # Deduplicate imports that may already exist from a previously-run tool.
+    crud_import_lines = [
+        "from app.core.cursor_paginator import CursorPaginator as _CursorPaginator",
+        "from sqlalchemy.ext.asyncio import AsyncSession as _AsyncSession",
+        "from sqlalchemy import select as _select",
+        "import uuid as _uuid",
+    ]
+    new_crud_imports = "\n".join(
+        line for line in crud_import_lines if line.strip() not in src
+    )
+
     additions = textwrap.dedent("""\
 
         # ---------------------------------------------------------------------------
         # Cursor pagination — added by add_cursor_pagination tool
         # ---------------------------------------------------------------------------
-        from app.core.cursor_paginator import CursorPaginator as _CursorPaginator
-        from sqlalchemy.ext.asyncio import AsyncSession as _AsyncSession
-        from sqlalchemy import select as _select
-        import uuid as _uuid
+        {new_crud_imports}
 
         CURSOR_FIELD = "created_at"
         CURSOR_DIRECTION = "desc"
@@ -450,7 +459,7 @@ def _patch_crud(crud_file: Path, model_name: str) -> None:
             if hasattr({model_name}, "is_deleted"):
                 stmt = stmt.where({model_name}.is_deleted == False)  # noqa: E712
             return await _paginator.paginate(session, stmt, cursor=cursor, page_size=page_size)
-        """).replace("{model_name}", model_name)
+        """).replace("{new_crud_imports}", new_crud_imports).replace("{model_name}", model_name)
 
     crud_file.write_text(src + additions)
 
@@ -492,14 +501,24 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
         return
 
     lower = model_name.lower()
+
+    # Build import header — only include lines not already present in the file.
+    import_header_lines = [
+        f"from app.crud.{lower} import get_multi_cursor as _get_multi_cursor",
+        "from fastapi import HTTPException",
+        "from fastapi import Query as _Query",
+    ]
+    new_imports = "\n".join(
+        line for line in import_header_lines if line.strip() not in src
+    )
+
     additions = textwrap.dedent("""\
 
 
         # ---------------------------------------------------------------------------
         # Cursor pagination route — added by add_cursor_pagination tool
         # ---------------------------------------------------------------------------
-        from app.crud.{lower} import get_multi_cursor as _get_multi_cursor
-        from fastapi import Query as _Query
+        {import_header}
 
 
         @router.get("/cursor/", response_model={PublicList})
@@ -529,7 +548,6 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
             Raises:
                 HTTPException: 400 if cursor is malformed.
             \"\"\"
-            from fastapi import HTTPException
             try:
                 result = await _get_multi_cursor(
                     session,
@@ -546,6 +564,7 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
         lower=lower,
         model_name=model_name,
         PublicList=f"{model_name}sPublic",
+        import_header=new_imports,
     )
 
     route_file.write_text(src + additions)

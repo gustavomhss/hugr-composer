@@ -1,0 +1,88 @@
+# SKILL-001 MCP Server — Local Development Stack
+#
+# Spins up the MCP server in HTTP mode + a working Postgres + Redis so that
+# generated projects and adapt tools can run full integration tests locally.
+#
+# Usage:
+#   docker compose -f infra/docker/docker-compose.yml up
+#
+# The MCP server will be available at http://localhost:8000
+# Postgres at localhost:5432  (user: skill / pass: skill / db: skill_dev)
+# Redis   at localhost:6379
+
+version: "3.9"
+
+services:
+
+  # ── MCP server ──────────────────────────────────────────────────────────
+  mcp-server:
+    build:
+      context: ../..          # SKILL-001 root
+      dockerfile: infra/docker/Dockerfile
+    image: hugr-skill-fastapi:dev
+    container_name: skill001-mcp
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      PYTHONPATH: /skill
+      PYTHONUNBUFFERED: "1"
+      # Tell the server to use HTTP transport so it's reachable over the network
+      MCP_TRANSPORT: streamable-http
+    command:
+      - fastmcp
+      - run
+      - mcp_server.py:mcp
+      - --transport
+      - streamable-http
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ── PostgreSQL (used by generated projects during integration tests) ─────
+  postgres:
+    image: postgres:16-alpine
+    container_name: skill001-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: skill
+      POSTGRES_PASSWORD: skill
+      POSTGRES_DB: skill_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skill -d skill_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Redis (required by generated projects with auth / rate-limiting) ─────
+  redis:
+    image: redis:7-alpine
+    container_name: skill001-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --save "" --appendonly no --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_data:

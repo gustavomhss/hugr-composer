@@ -173,7 +173,11 @@ def _sub_factory_imports(model_name: str, all_models: list[str]) -> str:
         f"from tests.factories.{m.lower()}_factory import {m}Factory  # sub-factory (FK)"
         for m in others
     ]
-    return "\n".join(lines) + "\n"
+    # Join with newline + 12-space indent so that, after the first line is
+    # placed inline in the template (which already supplies 12 leading spaces),
+    # all subsequent lines also align correctly at the top-level indentation
+    # used by textwrap.dedent().
+    return ("\n" + "            ").join(lines) + "\n"
 
 
 def _write_factory(dest: Path, model_name: str, all_models: list[str], backend: str) -> None:
