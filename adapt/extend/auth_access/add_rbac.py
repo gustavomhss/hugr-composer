@@ -1011,6 +1011,8 @@ def _write_routes(dest: Path) -> None:
 
         from __future__ import annotations
 
+        import uuid as _uuid
+
         from fastapi import APIRouter, HTTPException, status
 
         from app.api.deps import CurrentSuperuser, SessionDep
@@ -1088,7 +1090,6 @@ def _write_routes(dest: Path) -> None:
             )
             cache = get_perm_cache()
             try:
-                import uuid as _uuid
                 await cache.invalidate_user(_uuid.UUID(user_id))
             except Exception:  # noqa: BLE001
                 pass
@@ -1116,7 +1117,6 @@ def _write_routes(dest: Path) -> None:
             await crud_rbac.revoke_user_role(session, user_id=user_id, role_id=role_id)
             cache = get_perm_cache()
             try:
-                import uuid as _uuid
                 await cache.invalidate_user(_uuid.UUID(user_id))
             except Exception:  # noqa: BLE001
                 pass

@@ -372,16 +372,24 @@ def _patch_crud(crud_file: Path, model_name: str) -> None:
         return
 
     lower = model_name.lower()
+
+    # Deduplicate imports that may already exist from a previously-run tool.
+    crud_import_lines = [
+        "import uuid as _uuid",
+        "from datetime import datetime as _dt, timezone as _tz",
+        "from sqlalchemy import func as _func, select as _select",
+        "from sqlalchemy.ext.asyncio import AsyncSession as _AsyncSession",
+    ]
+    new_crud_imports = "\n".join(
+        line for line in crud_import_lines if line.strip() not in src
+    )
+
     additions = textwrap.dedent("""\
 
         # ---------------------------------------------------------------------------
         # Soft-delete helpers — added by add_soft_delete tool
         # ---------------------------------------------------------------------------
-        import uuid as _uuid
-        from datetime import datetime as _dt, timezone as _tz
-
-        from sqlalchemy import func as _func, select as _select
-        from sqlalchemy.ext.asyncio import AsyncSession as _AsyncSession
+        {new_crud_imports}
 
 
         async def soft_delete(
@@ -496,7 +504,7 @@ def _patch_crud(crud_file: Path, model_name: str) -> None:
             total = (await session.execute(count_stmt)).scalar_one()
             result = await session.execute(stmt)
             return {{"data": list(result.scalars().all()), "count": total}}
-        """).replace("{model_name}", model_name)
+        """).replace("{new_crud_imports}", new_crud_imports).replace("{model_name}", model_name)
 
     crud_file.write_text(src + additions)
 
@@ -513,20 +521,30 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
         return
 
     lower = model_name.lower()
+
+    # Build a header with only the imports that are not already present.
+    # Using flat (single-line) imports avoids duplicate "from app.crud.X import ("
+    # opening lines when multiple tools patch the same route file.
+    import_header_lines = [
+        f"from app.crud.{lower} import soft_delete as _crud_soft_delete",
+        f"from app.crud.{lower} import restore as _crud_restore",
+        f"from app.crud.{lower} import hard_delete as _crud_hard_delete",
+        f"from app.crud.{lower} import list_deleted as _crud_list_deleted",
+        "import uuid as _route_uuid",
+        "from fastapi import HTTPException",
+        "from fastapi import Query as _Query",
+    ]
+    new_imports = "\n".join(
+        line for line in import_header_lines if line.strip() not in src
+    )
+
     additions = textwrap.dedent("""\
 
 
         # ---------------------------------------------------------------------------
         # Soft-delete endpoints — added by add_soft_delete tool
         # ---------------------------------------------------------------------------
-        from app.crud.{lower} import (
-            soft_delete as _crud_soft_delete,
-            restore as _crud_restore,
-            hard_delete as _crud_hard_delete,
-            list_deleted as _crud_list_deleted,
-        )
-        import uuid as _route_uuid
-        from fastapi import Query as _Query
+        {import_header}
 
 
         @router.delete("/{{item_id}}", response_model={PublicSchema})
@@ -545,7 +563,6 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
             Raises:
                 HTTPException: 404 if not found.
             \"\"\"
-            from fastapi import HTTPException
             item = await _crud_soft_delete(session, item_id, deleted_by=current_user.id)
             if item is None:
                 raise HTTPException(status_code=404, detail="{model_name} not found")
@@ -568,7 +585,6 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
             Raises:
                 HTTPException: 404 if not found in deleted records.
             \"\"\"
-            from fastapi import HTTPException
             item = await _crud_restore(session, item_id)
             if item is None:
                 raise HTTPException(status_code=404, detail="{model_name} not found in deleted records")
@@ -591,7 +607,6 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
             Raises:
                 HTTPException: 404 if not found.
             \"\"\"
-            from fastapi import HTTPException
             item = await _crud_hard_delete(session, item_id)
             if item is None:
                 raise HTTPException(status_code=404, detail="{model_name} not found")
@@ -619,6 +634,7 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
         model_name=model_name,
         PublicSchema=f"{model_name}Public",
         DeletedListSchema=f"{model_name}sDeletedPublic",
+        import_header=new_imports,
     )
 
     # Ensure CurrentSuperuser is imported

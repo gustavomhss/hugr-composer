@@ -199,6 +199,7 @@ def _tarjan_scc(graph: dict[str, set[str]]) -> list[list[str]]:
     sccs: list[list[str]] = []
 
     def strongconnect(node: str) -> None:
+        """Visit a node in Tarjan's SCC algorithm and update lowlink values."""
         index[node] = index_counter[0]
         lowlink[node] = index_counter[0]
         index_counter[0] += 1

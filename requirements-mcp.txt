@@ -1,0 +1,27 @@
+# SKILL-001 MCP Server — runtime dependencies
+#
+# These are the packages required to:
+#   1. Run the MCP server (fastmcp, pydantic)
+#   2. Run all adapt tools (pydantic, fastapi for type-checking stubs)
+#   3. Run the audit + test suite
+#
+# Generated projects bring their own requirements.txt at generation time.
+
+# MCP protocol server
+fastmcp>=2.3.0
+
+# Data validation (used by all adapt tool ToolInput / ToolResult contracts)
+pydantic>=2.10.0
+
+# FastAPI stubs used by adapt tools that inspect generated FastAPI code
+fastapi>=0.115.0
+
+# HTTP client (used by adapt/extend/realtime/add_webhook_sender,
+# adapt/operate/error_rate_analyzer, and generated project code)
+httpx>=0.28.0
+
+# SQLAlchemy (used by adapt tools that generate / inspect SQLAlchemy models)
+sqlalchemy[asyncio]>=2.0.36
+
+# Alembic (used by adapt tools that generate Alembic migrations)
+alembic>=1.14.0

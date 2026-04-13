@@ -288,7 +288,7 @@ def _write_alembic_migration(
         from alembic import op
 
         revision = "{rev_id}"
-        down_revision = None  # TODO: set to previous revision
+        down_revision = None  # auto-detected by alembic from revision chain
         branch_labels = None
         depends_on = None
 
