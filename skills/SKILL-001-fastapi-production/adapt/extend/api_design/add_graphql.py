@@ -127,6 +127,12 @@ def add_graphql(inp: ToolInput) -> ToolResult:
         _patch_main(main_file)
         files_modified.append(str(main_file))
 
+    # Step 10: add strawberry-graphql and aiodataloader to requirements.txt
+    requirements_file = project / "requirements.txt"
+    if requirements_file.exists():
+        _patch_requirements(requirements_file)
+        files_modified.append(str(requirements_file))
+
     warnings: list[str] = []
     for path_str in files_created:
         w = _validate_py(Path(path_str))
@@ -598,53 +604,50 @@ def _query_resolver_block(model_name: str) -> str:
         Python source for two strawberry.field methods.
     """
     lower = model_name.lower()
-    return textwrap.dedent("""\
-            @strawberry.field
-            async def {lower}(
-                self,
-                info: strawberry.types.Info["GraphQLContext", None],
-                id: strawberry.ID,
-            ) -> {Model}Type | None:
-                \"\"\"Fetch a single {Model} by ID using the dataloader.
-
-                Args:
-                    info: GraphQL resolve info carrying context.
-                    id: Primary key UUID as a strawberry ID string.
-
-                Returns:
-                    {Model}Type or None if not found.
-                \"\"\"
-                if not info.context.user:
-                    raise PermissionError("Authentication required")
-                return await info.context.loaders.{lower}_by_id.load(
-                    uuid.UUID(str(id))
-                )
-
-            @strawberry.field
-            async def {lower}s(
-                self,
-                info: strawberry.types.Info["GraphQLContext", None],
-                skip: int = 0,
-                limit: int = 20,
-            ) -> list[{Model}Type]:
-                \"\"\"List {Model} rows with pagination.
-
-                Args:
-                    info: GraphQL resolve info.
-                    skip: Pagination offset (default 0).
-                    limit: Page size, max 100 (default 20).
-
-                Returns:
-                    List of {Model}Type objects.
-                \"\"\"
-                if not info.context.user:
-                    raise PermissionError("Authentication required")
-                from app.crud.{lower} import list_{lower}s as _list
-                from app.core.db import async_session_maker as _maker
-                async with _maker() as session:
-                    rows = await _list(session, skip=skip, limit=min(limit, 100))
-                return rows
-        """).replace("{Model}", model_name).replace("{lower}", lower)
+    # NOTE: leading 4-space indent places methods inside the Query class body.
+    return (
+        "    @strawberry.field\n"
+        "    async def {lower}(\n"
+        "        self,\n"
+        "        info: strawberry.types.Info[\"GraphQLContext\", None],\n"
+        "        id: strawberry.ID,\n"
+        "    ) -> {Model}Type | None:\n"
+        "        \"\"\"Fetch a single {Model} by ID using the dataloader.\n\n"
+        "        Args:\n"
+        "            info: GraphQL resolve info carrying context.\n"
+        "            id: Primary key UUID as a strawberry ID string.\n\n"
+        "        Returns:\n"
+        "            {Model}Type or None if not found.\n"
+        "        \"\"\"\n"
+        "        if not info.context.user:\n"
+        "            raise PermissionError(\"Authentication required\")\n"
+        "        return await info.context.loaders.{lower}_by_id.load(\n"
+        "            uuid.UUID(str(id))\n"
+        "        )\n"
+        "\n"
+        "    @strawberry.field\n"
+        "    async def {lower}s(\n"
+        "        self,\n"
+        "        info: strawberry.types.Info[\"GraphQLContext\", None],\n"
+        "        skip: int = 0,\n"
+        "        limit: int = 20,\n"
+        "    ) -> list[{Model}Type]:\n"
+        "        \"\"\"List {Model} rows with pagination.\n\n"
+        "        Args:\n"
+        "            info: GraphQL resolve info.\n"
+        "            skip: Pagination offset (default 0).\n"
+        "            limit: Page size, max 100 (default 20).\n\n"
+        "        Returns:\n"
+        "            List of {Model}Type objects.\n"
+        "        \"\"\"\n"
+        "        if not info.context.user:\n"
+        "            raise PermissionError(\"Authentication required\")\n"
+        "        from app.crud.{lower} import list_{lower}s as _list\n"
+        "        from app.core.session import async_session as _maker\n"
+        "        async with _maker() as session:\n"
+        "            rows = await _list(session, skip=skip, limit=min(limit, 100))\n"
+        "        return rows\n"
+    ).replace("{Model}", model_name).replace("{lower}", lower)
 
 
 def _write_mutations(dest: Path, model_names: list[str]) -> None:
@@ -695,52 +698,49 @@ def _mutation_resolver_block(model_name: str) -> str:
         Python source for create/update/delete mutations.
     """
     lower = model_name.lower()
-    return textwrap.dedent("""\
-            @strawberry.mutation
-            async def create_{lower}(
-                self,
-                info: strawberry.types.Info["GraphQLContext", None],
-                data: {Model}CreateInput,
-            ) -> {Model}Type:
-                \"\"\"Create a new {Model}.  Delegates to CRUD create.
-
-                Args:
-                    info: GraphQL resolve info.
-                    data: Input fields for the new {Model}.
-
-                Returns:
-                    The created {Model}Type.
-                \"\"\"
-                if not info.context.user:
-                    raise PermissionError("Authentication required")
-                from app.crud.{lower} import create_{lower} as _create
-                from app.core.db import async_session_maker as _maker
-                async with _maker() as session:
-                    return await _create(session, item_in=data)
-
-            @strawberry.mutation
-            async def delete_{lower}(
-                self,
-                info: strawberry.types.Info["GraphQLContext", None],
-                id: strawberry.ID,
-            ) -> bool:
-                \"\"\"Delete a {Model} by ID.  Delegates to CRUD delete.
-
-                Args:
-                    info: GraphQL resolve info.
-                    id: Primary key UUID.
-
-                Returns:
-                    True on success, False if not found.
-                \"\"\"
-                if not info.context.user:
-                    raise PermissionError("Authentication required")
-                from app.crud.{lower} import delete_{lower} as _delete
-                from app.core.db import async_session_maker as _maker
-                async with _maker() as session:
-                    deleted = await _delete(session, uuid.UUID(str(id)))
-                    return deleted is not None
-        """).replace("{Model}", model_name).replace("{lower}", lower)
+    # NOTE: leading 4-space indent places methods inside the Mutation class body.
+    return (
+        "    @strawberry.mutation\n"
+        "    async def create_{lower}(\n"
+        "        self,\n"
+        "        info: strawberry.types.Info[\"GraphQLContext\", None],\n"
+        "        data: {Model}CreateInput,\n"
+        "    ) -> {Model}Type:\n"
+        "        \"\"\"Create a new {Model}.  Delegates to CRUD create.\n\n"
+        "        Args:\n"
+        "            info: GraphQL resolve info.\n"
+        "            data: Input fields for the new {Model}.\n\n"
+        "        Returns:\n"
+        "            The created {Model}Type.\n"
+        "        \"\"\"\n"
+        "        if not info.context.user:\n"
+        "            raise PermissionError(\"Authentication required\")\n"
+        "        from app.crud.{lower} import create_{lower} as _create\n"
+        "        from app.core.session import async_session as _maker\n"
+        "        async with _maker() as session:\n"
+        "            return await _create(session, item_in=data)\n"
+        "\n"
+        "    @strawberry.mutation\n"
+        "    async def delete_{lower}(\n"
+        "        self,\n"
+        "        info: strawberry.types.Info[\"GraphQLContext\", None],\n"
+        "        id: strawberry.ID,\n"
+        "    ) -> bool:\n"
+        "        \"\"\"Delete a {Model} by ID.  Delegates to CRUD delete.\n\n"
+        "        Args:\n"
+        "            info: GraphQL resolve info.\n"
+        "            id: Primary key UUID.\n\n"
+        "        Returns:\n"
+        "            True on success, False if not found.\n"
+        "        \"\"\"\n"
+        "        if not info.context.user:\n"
+        "            raise PermissionError(\"Authentication required\")\n"
+        "        from app.crud.{lower} import delete_{lower} as _delete\n"
+        "        from app.core.session import async_session as _maker\n"
+        "        async with _maker() as session:\n"
+        "            deleted = await _delete(session, uuid.UUID(str(id)))\n"
+        "            return deleted is not None\n"
+    ).replace("{Model}", model_name).replace("{lower}", lower)
 
 
 def _write_schema(dest: Path, model_names: list[str]) -> None:
@@ -835,6 +835,22 @@ def _validate_py(path: Path) -> str | None:
         return None
     except SyntaxError as exc:
         return f"SyntaxError in {path}: {exc}"
+
+
+def _patch_requirements(requirements_file: Path) -> None:
+    """Add ``strawberry-graphql[fastapi]`` and ``aiodataloader`` to requirements.txt.
+
+    Args:
+        requirements_file: Path to ``requirements.txt``.
+    """
+    src = requirements_file.read_text()
+    lines_to_add = []
+    if "strawberry-graphql" not in src:
+        lines_to_add.append("strawberry-graphql[fastapi]>=0.220.0")
+    if "aiodataloader" not in src:
+        lines_to_add.append("aiodataloader>=0.2.1")
+    if lines_to_add:
+        requirements_file.write_text(src.rstrip("\n") + "\n" + "\n".join(lines_to_add) + "\n")
 
 
 def _elapsed_ms(start: float) -> int:

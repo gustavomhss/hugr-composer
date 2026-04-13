@@ -134,6 +134,12 @@ def add_mfa(inp: ToolInput) -> ToolResult:
         migration_file = _write_migration(versions_dir)
         files_created.append(str(migration_file))
 
+    # Step 12: Add pyotp/segno to requirements.txt
+    requirements_file = project / "requirements.txt"
+    if requirements_file.exists():
+        _patch_requirements(requirements_file)
+        files_modified.append(str(requirements_file))
+
     return ToolResult(
         status="success",
         files_created=files_created,
@@ -1176,6 +1182,24 @@ def _write_migration(versions_dir: Path) -> Path:
 # ---------------------------------------------------------------------------
 # Utilities
 # ---------------------------------------------------------------------------
+
+def _patch_requirements(requirements_file: Path) -> None:
+    """Add pyotp, segno, and redis to requirements.txt if not already present.
+
+    Args:
+        requirements_file: Path to ``requirements.txt``.
+    """
+    src = requirements_file.read_text()
+    lines_to_add = []
+    if "pyotp" not in src:
+        lines_to_add.append("pyotp>=2.9.0")
+    if "segno" not in src:
+        lines_to_add.append("segno>=1.6.0")
+    if "redis" not in src:
+        lines_to_add.append("redis[hiredis]>=5.0.0")
+    if lines_to_add:
+        requirements_file.write_text(src.rstrip("\n") + "\n" + "\n".join(lines_to_add) + "\n")
+
 
 def _elapsed_ms(start: float) -> int:
     """Return elapsed milliseconds since *start*.

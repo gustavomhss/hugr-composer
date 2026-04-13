@@ -200,6 +200,24 @@ def add_webhook_receiver(
         _patch_api_main(api_main_file)
         files_modified.append(str(api_main_file))
 
+    # Step 12 – ensure app/core/redis.py exists (base project may not have it)
+    redis_module = app_dir / "core" / "redis.py"
+    if not redis_module.exists():
+        _write_redis_module(redis_module)
+        files_created.append(str(redis_module))
+
+    # Step 12b – ensure app/core/queue.py exists (provides get_arq_pool)
+    queue_module = app_dir / "core" / "queue.py"
+    if not queue_module.exists():
+        _write_queue_module(queue_module)
+        files_created.append(str(queue_module))
+
+    # Step 13 – add redis to requirements.txt
+    requirements_file = project / "requirements.txt"
+    if requirements_file.exists():
+        _patch_requirements(requirements_file)
+        files_modified.append(str(requirements_file))
+
     # Validate
     for path_str in files_created:
         _assert_parses(Path(path_str))
@@ -668,13 +686,20 @@ def _write_registry(dest: Path, enabled_providers: list[str]) -> None:
         dest: Absolute path for the new file.
         enabled_providers: List of provider names to pre-register.
     """
+    # Map provider names to their exact class names (must match _write_provider output)
+    _verifier_class = {
+        "stripe": "StripeVerifier",
+        "github": "GitHubVerifier",
+        "internal": "InternalVerifier",
+    }
     import_lines = "\n".join(
         f"from app.core.inbound_webhooks.providers.{p} import "
-        + p.capitalize() + "Verifier"
+        + _verifier_class.get(p, p.capitalize() + "Verifier")
         for p in enabled_providers
     )
     registry_entries = "\n".join(
-        f'    "{p}": {p.capitalize()}Verifier(),' for p in enabled_providers
+        f'    "{p}": {_verifier_class.get(p, p.capitalize() + "Verifier")}(),'
+        for p in enabled_providers
     )
 
     content = textwrap.dedent("""\
@@ -689,12 +714,12 @@ def _write_registry(dest: Path, enabled_providers: list[str]) -> None:
         {imports}
         from app.core.inbound_webhooks.base import InboundVerifier, VerifiedEvent
 
-        _VERIFIERS: dict[str, InboundVerifier] = {{
+        _VERIFIERS: dict[str, InboundVerifier] = {
         {entries}
-        }}
+        }
 
         # Handler registry: (provider, event_type) -> list[async callable]
-        _HANDLERS: dict[tuple[str, str], list] = {{}}
+        _HANDLERS: dict[tuple[str, str], list] = {}
 
 
         def get_verifier(provider: str) -> InboundVerifier:
@@ -711,7 +736,7 @@ def _write_registry(dest: Path, enabled_providers: list[str]) -> None:
             \"\"\"
             if provider not in _VERIFIERS:
                 from fastapi import HTTPException
-                raise HTTPException(404, f"Unknown webhook provider: {{provider!r}}")
+                raise HTTPException(404, f"Unknown webhook provider: {provider!r}")
             return _VERIFIERS[provider]
 
 
@@ -1160,7 +1185,7 @@ def _write_inbound_routes(dest: Path, max_payload_bytes: int) -> None:
             return "accepted"
 
 
-        @router.post("/incoming/{{provider}}", response_model=dict, status_code=status.HTTP_202_ACCEPTED)
+        @router.post("/incoming/{provider}", response_model=dict, status_code=status.HTTP_202_ACCEPTED)
         async def receive_webhook(
             provider: str,
             request: Request,
@@ -1177,7 +1202,7 @@ def _write_inbound_routes(dest: Path, max_payload_bytes: int) -> None:
                 session: Injected async DB session.
 
             Returns:
-                ``{{"status": "accepted"}}`` or ``{{"status": "duplicate"}}``.
+                ``{"status": "accepted"}`` or ``{"status": "duplicate"}``.
 
             Raises:
                 JSONResponse(413): If the body exceeds the size limit.
@@ -1186,9 +1211,9 @@ def _write_inbound_routes(dest: Path, max_payload_bytes: int) -> None:
             \"\"\"
             body = await request.body()
             if len(body) > _MAX_PAYLOAD_BYTES:
-                return JSONResponse({{"detail": "Payload too large"}},
+                return JSONResponse({"detail": "Payload too large"},
                     status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
-            headers = {{k.lower(): v for k, v in request.headers.items()}}
+            headers = {k.lower(): v for k, v in request.headers.items()}
             event = get_verifier(provider).verify(body, headers)
             tenant_id = event.payload.get("tenant_id")
             if tenant_id:
@@ -1198,12 +1223,12 @@ def _write_inbound_routes(dest: Path, max_payload_bytes: int) -> None:
                 await crud_iwh.upsert_duplicate(session, provider=event.provider,
                     provider_event_id=event.event_id, event_type=event.event_type)
                 await session.commit()
-                return {{"status": "duplicate"}}
+                return {"status": "duplicate"}
             status_str = await _persist_new_webhook(session, event, headers)
-            return {{"status": status_str}}
+            return {"status": status_str}
 
 
-        @router.post("/replay/{{event_id}}", response_model=dict, status_code=status.HTTP_202_ACCEPTED)
+        @router.post("/replay/{event_id}", response_model=dict, status_code=status.HTTP_202_ACCEPTED)
         async def replay_webhook(event_id: str, session: SessionDep) -> dict:
             \"\"\"Re-enqueue a previously received webhook event for reprocessing.
 
@@ -1216,7 +1241,7 @@ def _write_inbound_routes(dest: Path, max_payload_bytes: int) -> None:
                 session: Injected async DB session.
 
             Returns:
-                ``{{"status": "queued", "event_id": "..."}}``.
+                ``{"status": "queued", "event_id": "..."}``.
 
             Raises:
                 HTTPException(404): If no record with the given UUID exists.
@@ -1234,7 +1259,7 @@ def _write_inbound_routes(dest: Path, max_payload_bytes: int) -> None:
             pool = await get_arq_pool()
             await pool.enqueue_job("process_inbound_webhook", str(record.id))
 
-            return {{"status": "queued", "event_id": event_id}}
+            return {"status": "queued", "event_id": event_id}
         """).replace("{max_bytes}", str(max_payload_bytes))
     dest.write_text(content)
 
@@ -1405,6 +1430,92 @@ def _assert_parses(path: Path) -> None:
         ast.parse(path.read_text())
     except SyntaxError as exc:
         raise SyntaxError(f"Generated file {path} has a syntax error: {exc}") from exc
+
+
+def _write_queue_module(dest: Path) -> None:
+    """Write ``app/core/queue.py`` with an ARQ connection pool factory.
+
+    Created only when the base project does not already contain this module.
+    The webhook routes import ``get_arq_pool()`` from this module to enqueue
+    background jobs.
+
+    Args:
+        dest: Absolute destination path (``app/core/queue.py``).
+    """
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(textwrap.dedent("""\
+        \"\"\"ARQ connection pool factory for background job dispatch.\"\"\"
+
+        from __future__ import annotations
+
+        from arq.connections import ArqRedis, RedisSettings, create_pool
+
+        from app.core.config import settings
+
+
+        async def get_arq_pool() -> ArqRedis:
+            \"\"\"Return a connected ARQ Redis pool for enqueuing background jobs.
+
+            Uses ``settings.REDIS_URL``.
+
+            Returns:
+                Connected ``ArqRedis`` pool.
+            \"\"\"
+            redis_url = getattr(settings, "REDIS_URL", "redis://localhost:6379/0")
+            return await create_pool(RedisSettings.from_dsn(redis_url))
+    """))
+
+
+def _write_redis_module(dest: Path) -> None:
+    """Write ``app/core/redis.py`` with a simple async Redis client factory.
+
+    Created only when the base project does not already contain this module.
+    Realtime tools (SSE, webhook) depend on ``get_redis()`` from this module.
+
+    Args:
+        dest: Absolute destination path (``app/core/redis.py``).
+    """
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(textwrap.dedent("""\
+        \"\"\"Async Redis client factory for realtime features (SSE, webhooks).\"\"\"
+
+        from __future__ import annotations
+
+        import redis.asyncio as redis
+
+        from app.core.config import settings
+
+
+        async def get_redis() -> redis.Redis:
+            \"\"\"Return a connected async Redis client.
+
+            Uses ``settings.REDIS_URL``.  Caller is responsible for closing
+            the connection via ``await client.aclose()`` when done.
+
+            Returns:
+                Connected ``redis.asyncio.Redis`` instance.
+            \"\"\"
+            return redis.from_url(
+                getattr(settings, "REDIS_URL", "redis://localhost:6379/0"),
+                decode_responses=True,
+            )
+    """))
+
+
+def _patch_requirements(requirements_file: Path) -> None:
+    """Add ``redis[hiredis]`` and ``arq`` to requirements.txt if not already present.
+
+    Args:
+        requirements_file: Path to ``requirements.txt``.
+    """
+    src = requirements_file.read_text()
+    lines_to_add = []
+    if "redis" not in src:
+        lines_to_add.append("redis[hiredis]>=5.0.0")
+    if "arq" not in src:
+        lines_to_add.append("arq>=0.25.0")
+    if lines_to_add:
+        requirements_file.write_text(src.rstrip("\n") + "\n" + "\n".join(lines_to_add) + "\n")
 
 
 def _elapsed_ms(start: float) -> int:

@@ -155,6 +155,18 @@ def add_sse(
         _patch_api_main(api_main_file)
         files_modified.append(str(api_main_file))
 
+    # Step 10 – ensure app/core/redis.py exists (base project may not have it)
+    redis_module = app_dir / "core" / "redis.py"
+    if not redis_module.exists():
+        _write_redis_module(redis_module)
+        files_created.append(str(redis_module))
+
+    # Step 11 – add redis to requirements.txt
+    requirements_file = project / "requirements.txt"
+    if requirements_file.exists():
+        _patch_requirements(requirements_file)
+        files_modified.append(str(requirements_file))
+
     # Validate all written files parse correctly
     for path_str in files_created:
         _assert_parses(Path(path_str))
@@ -974,6 +986,53 @@ def _assert_parses(path: Path) -> None:
         ast.parse(path.read_text())
     except SyntaxError as exc:
         raise SyntaxError(f"Generated file {path} has a syntax error: {exc}") from exc
+
+
+def _write_redis_module(dest: Path) -> None:
+    """Write ``app/core/redis.py`` with a simple async Redis client factory.
+
+    Created only when the base project does not already contain this module.
+    SSE and realtime tools depend on ``get_redis()`` from this module.
+
+    Args:
+        dest: Absolute destination path (``app/core/redis.py``).
+    """
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(textwrap.dedent("""\
+        \"\"\"Async Redis client factory for realtime features (SSE, webhooks).\"\"\"
+
+        from __future__ import annotations
+
+        import redis.asyncio as redis
+
+        from app.core.config import settings
+
+
+        async def get_redis() -> redis.Redis:
+            \"\"\"Return a connected async Redis client.
+
+            Uses ``settings.REDIS_URL``.  Caller is responsible for closing
+            the connection via ``await client.aclose()`` when done.
+
+            Returns:
+                Connected ``redis.asyncio.Redis`` instance.
+            \"\"\"
+            return redis.from_url(
+                getattr(settings, "REDIS_URL", "redis://localhost:6379/0"),
+                decode_responses=True,
+            )
+    """))
+
+
+def _patch_requirements(requirements_file: Path) -> None:
+    """Add ``redis[hiredis]`` to requirements.txt if not already present.
+
+    Args:
+        requirements_file: Path to ``requirements.txt``.
+    """
+    src = requirements_file.read_text()
+    if "redis" not in src:
+        requirements_file.write_text(src.rstrip("\n") + "\nredis[hiredis]>=5.0.0\n")
 
 
 def _elapsed_ms(start: float) -> int:

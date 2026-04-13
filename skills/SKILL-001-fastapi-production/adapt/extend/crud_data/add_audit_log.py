@@ -572,7 +572,7 @@ def _write_audit_listeners(dest: Path, model_names: list[str]) -> None:
     content = (
         content
         .replace("MODELIMPORTS", model_imports)
-        .replace("AUDITEDSET", "{" + audited_set + "}")
+        .replace("{AUDITEDSET}", "{" + audited_set + "}")
     )
     dest.write_text(content)
 

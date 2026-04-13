@@ -473,7 +473,7 @@ def _write_tenant_middleware(dest: Path) -> None:
         from starlette.middleware.base import BaseHTTPMiddleware
         from starlette.responses import JSONResponse
 
-        from app.core.db import async_session_maker
+        from app.core.session import async_session as async_session_maker
         from app.core.tenant_context import set_current_tenant
         from app.models.tenant import Tenant
 
