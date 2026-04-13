@@ -943,12 +943,12 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
 
         _EXPORT_ASYNC_THRESHOLD: int = int(__import__("os").getenv("EXPORT_ASYNC_THRESHOLD", "10000"))
 
-        _FORMAT_META: dict = {{
+        _FORMAT_META: dict = {
             "csv":     (_export_csv,     "text/csv",                   "{lower}s.csv"),
             "json":    (_export_ndjson,  "application/x-ndjson",       "{lower}s.ndjson"),
             "xlsx":    (_export_xlsx,    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "{lower}s.xlsx"),
             "parquet": (_export_parquet, "application/octet-stream",   "{lower}s.parquet"),
-        }}
+        }
 
         _DEFAULT_EXPORT_COLUMNS: list[str] = [
             c.name for c in _{model_name}.__table__.columns
@@ -1006,12 +1006,12 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
             if total > _EXPORT_ASYNC_THRESHOLD:
                 job_id = await _dispatch_export_job(
                     user_id=current_user.id, model="{model_name}", format=format,
-                    filters={{"owner_id": str(current_user.id)}},
+                    filters={"owner_id": str(current_user.id)},
                 )
-                return _JSONResponse(status_code=202, content={{
+                return _JSONResponse(status_code=202, content={
                     "status": "queued", "job_id": str(job_id), "row_estimate": total,
-                    "message": f"Export queued ({{total:,}} rows). You will receive an email with a download link.",
-                }})
+                    "message": f"Export queued ({total:,} rows). You will receive an email with a download link.",
+                })
             requested = [c.strip() for c in columns.split(",")] if columns else _DEFAULT_EXPORT_COLUMNS
             safe_cols = [c for c in requested if c in _DEFAULT_EXPORT_COLUMNS]
             if not safe_cols:
@@ -1019,7 +1019,7 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
             gen_fn, media_type, filename = _FORMAT_META[format]
             return _StreamingResponse(
                 gen_fn(session, base_stmt, safe_cols), media_type=media_type,
-                headers={{"Content-Disposition": f'attachment; filename="{{filename}}"'}},
+                headers={"Content-Disposition": f'attachment; filename="{filename}"'},
             )
         """).replace("{lower}", lower).replace("{model_name}", model_name)
 

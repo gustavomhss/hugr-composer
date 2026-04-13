@@ -650,6 +650,10 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
     # Ensure Message is imported
     if "from app.schemas.message import Message" not in src:
         src = src + "\nfrom app.schemas.message import Message\n"
+    # Ensure ItemsDeletedPublic schema is imported in the routes file
+    deleted_list_schema = f"{model_name}sDeletedPublic"
+    if deleted_list_schema not in src:
+        src = src + f"\nfrom app.schemas.{lower} import {deleted_list_schema}\n"
 
     route_file.write_text(src + additions)
 
