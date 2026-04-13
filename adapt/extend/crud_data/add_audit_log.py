@@ -236,6 +236,7 @@ def _write_audit_model(dest: Path) -> None:
                 entity_id: String representation of the entity primary key.
                 action: One of create/update/delete/soft_delete/restore/read.
                 user_id: UUID of the acting user, nullable.
+                auth_method: Authentication method used (password/api_key/oauth2/mfa), nullable.
                 before_values: JSONB diff of changed fields before the operation.
                 after_values: JSONB diff of changed fields after the operation.
                 ip_address: Client IP from the request (INET type).
@@ -252,6 +253,10 @@ def _write_audit_model(dest: Path) -> None:
             entity_id: Mapped[str] = mapped_column(String(64), nullable=False)
             action: Mapped[str] = mapped_column(String(32), nullable=False)
             user_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
+            auth_method: Mapped[str | None] = mapped_column(
+                String(32), nullable=True,
+                comment="Authentication method: password, api_key, oauth2, mfa"
+            )
             before_values: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
             after_values: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
             ip_address: Mapped[str | None] = mapped_column(INET, nullable=True)
@@ -634,47 +639,67 @@ def _write_audit_verifier(dest: Path) -> None:
             )
             rows = (await session.execute(stmt)).scalars().all()
             result = VerificationResult(total_entries=len(rows))
-
             prev_hash: str | None = None
             for row in rows:
-                payload = json.dumps(
-                    {
-                        "id": str(row.id),
-                        "entity_type": row.entity_type,
-                        "entity_id": str(row.entity_id),
-                        "action": row.action,
-                        "user_id": str(row.user_id) if row.user_id else None,
-                        "before_values": row.before_values,
-                        "after_values": row.after_values,
-                        "ip_address": row.ip_address,
-                        "prev_hash": row.prev_hash,
-                    },
-                    sort_keys=True,
-                    default=str,
-                )
-                expected_hash = hashlib.sha256(payload.encode()).hexdigest()
-
-                if row.entry_hash != expected_hash:
+                ok, error_msg = _verify_row(row, prev_hash)
+                if not ok:
                     result.is_intact = False
                     result.broken_at = str(row.id)
-                    result.errors.append(
-                        f"Hash mismatch at id={row.id}: stored={row.entry_hash!r} "
-                        f"expected={expected_hash!r}"
-                    )
+                    result.errors.append(error_msg)
                     break
-
-                if prev_hash is not None and row.prev_hash != prev_hash:
-                    result.is_intact = False
-                    result.broken_at = str(row.id)
-                    result.errors.append(
-                        f"Chain break at id={row.id}: prev_hash={row.prev_hash!r} "
-                        f"expected={prev_hash!r}"
-                    )
-                    break
-
                 prev_hash = row.entry_hash
-
             return result
+
+
+        def _compute_row_hash(row: AuditLog) -> str:
+            \"\"\"Re-compute the expected SHA-256 hash for an AuditLog row.
+
+            Args:
+                row: AuditLog ORM instance.
+
+            Returns:
+                Hex-encoded SHA-256 digest string.
+            \"\"\"
+            payload = json.dumps(
+                {
+                    "id": str(row.id),
+                    "entity_type": row.entity_type,
+                    "entity_id": str(row.entity_id),
+                    "action": row.action,
+                    "user_id": str(row.user_id) if row.user_id else None,
+                    "before_values": row.before_values,
+                    "after_values": row.after_values,
+                    "ip_address": row.ip_address,
+                    "prev_hash": row.prev_hash,
+                },
+                sort_keys=True,
+                default=str,
+            )
+            return hashlib.sha256(payload.encode()).hexdigest()
+
+
+        def _verify_row(row: AuditLog, prev_hash: str | None) -> tuple[bool, str]:
+            \"\"\"Verify one AuditLog row against its stored hash and the chain link.
+
+            Args:
+                row: AuditLog ORM instance to verify.
+                prev_hash: entry_hash of the preceding row, or None for first row.
+
+            Returns:
+                Tuple of (is_valid, error_message).  error_message is empty on success.
+            \"\"\"
+            expected_hash = _compute_row_hash(row)
+            if row.entry_hash != expected_hash:
+                return False, (
+                    f"Hash mismatch at id={row.id}: stored={row.entry_hash!r} "
+                    f"expected={expected_hash!r}"
+                )
+            if prev_hash is not None and row.prev_hash != prev_hash:
+                return False, (
+                    f"Chain break at id={row.id}: prev_hash={row.prev_hash!r} "
+                    f"expected={prev_hash!r}"
+                )
+            return True, ""
         """)
     dest.write_text(content)
 

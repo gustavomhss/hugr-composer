@@ -793,6 +793,32 @@ def _write_arq_worker(dest: Path) -> None:
         }
 
 
+        async def _stream_export_to_storage(
+            session, storage, gen_fn, stmt, cols: list, job_id: str, format: str
+        ) -> str:
+            \"\"\"Stream rows through a generator into storage and return a presigned URL.
+
+            Args:
+                session: Async SQLAlchemy session.
+                storage: Storage backend (has .save() and .presigned_url()).
+                gen_fn: Async generator function that yields bytes chunks.
+                stmt: Filtered SQLAlchemy SELECT statement.
+                cols: Column names to include in the export.
+                job_id: Export job UUID string (used as storage key prefix).
+                format: File format extension (e.g. ``csv``, ``json``).
+
+            Returns:
+                Presigned download URL valid for 24 h.
+            \"\"\"
+            buf = io.BytesIO()
+            async for chunk in gen_fn(session, stmt, cols):
+                buf.write(chunk)
+            buf.seek(0)
+            key = f"exports/{job_id}.{format}"
+            await storage.save(buf, key, content_type=_CONTENT_TYPES.get(format, "application/octet-stream"))
+            return await storage.presigned_url(key, expires_in=86400)
+
+
         async def run_export(
             ctx: dict,
             *,
@@ -821,36 +847,23 @@ def _write_arq_worker(dest: Path) -> None:
             gen_fn = _GENERATORS.get(format)
             if gen_fn is None:
                 raise ValueError(f"run_export: unknown format={format!r}")
-
-            session = ctx["session"]
-            storage = get_storage()
-
             from app.core.export_progress import ExportStatus, set_export_progress
             from app.core.model_registry import build_filtered_stmt, get_model_class
 
+            session = ctx["session"]
+            storage = get_storage()
             redis = ctx.get("redis")
             if redis:
                 await set_export_progress(redis, job_id, ExportStatus.RUNNING)
-
             model_cls = get_model_class(model)
             stmt = build_filtered_stmt(model_cls, filters)
             cols = [
                 c.name for c in model_cls.__table__.columns
                 if c.name not in __import__("app.core.export", fromlist=["SENSITIVE_COLUMNS"]).SENSITIVE_COLUMNS
             ]
-
-            buf = io.BytesIO()
-            async for chunk in gen_fn(session, stmt, cols):
-                buf.write(chunk)
-            buf.seek(0)
-
-            key = f"exports/{job_id}.{format}"
-            await storage.save(buf, key, content_type=_CONTENT_TYPES.get(format, "application/octet-stream"))
-            url = await storage.presigned_url(key, expires_in=86400)
-
+            url = await _stream_export_to_storage(session, storage, gen_fn, stmt, cols, job_id, format)
             if redis:
                 await set_export_progress(redis, job_id, ExportStatus.COMPLETE, download_url=url)
-
             _try_send_email(ctx, user_id, model, url, job_id)
             logger.info("export_complete job_id=%s model=%s format=%s user=%s", job_id, model, format, user_id)
             return {"job_id": job_id, "url": url, "status": "complete"}
@@ -943,7 +956,26 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
         ]
 
 
-        @router.get("/export", summary="Export {model_name} records (GDPR Art. 20 data portability)")
+        async def _build_export_base_stmt_{lower}(session, current_user):
+            \"\"\"Build scoped base SELECT statement and count for {model_name} export.
+
+            Args:
+                session: Async SQLAlchemy session.
+                current_user: Authenticated user (scopes query via owner_id and tenant_id).
+
+            Returns:
+                Tuple of (base_stmt, total_row_count).
+            \"\"\"
+            base_stmt = _select(_{model_name}).where(_{model_name}.owner_id == current_user.id)
+            if hasattr(_{model_name}, "is_deleted"):
+                base_stmt = base_stmt.where(_{model_name}.is_deleted.is_(False))
+            if hasattr(_{model_name}, "tenant_id") and hasattr(current_user, "tenant_id"):
+                base_stmt = base_stmt.where(_{model_name}.tenant_id == current_user.tenant_id)
+            total: int = (await session.execute(_select(_func.count()).select_from(base_stmt.subquery()))).scalar_one()
+            return base_stmt, total
+
+
+        @router.get("/export", response_model=None, summary="Export {model_name} records (GDPR Art. 20 data portability)")
         async def export_{lower}s(
             session: SessionDep,
             current_user: CurrentUser,
@@ -955,9 +987,9 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
         ) -> _StreamingResponse | _JSONResponse:
             \"\"\"Export the current user's {model_name} records.
 
-            Small exports (below threshold) stream synchronously via StreamingResponse.
+            Small exports stream synchronously via StreamingResponse.
             Large exports are queued as ARQ background jobs and return HTTP 202.
-            Sensitive columns are always excluded regardless of the columns param.
+            Sensitive columns are always excluded.
 
             Args:
                 session: Injected async DB session.
@@ -970,44 +1002,23 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
             \"\"\"
             from fastapi import HTTPException
 
-            base_stmt = _select(_{model_name}).where(_{model_name}.owner_id == current_user.id)
-            if hasattr(_{model_name}, "is_deleted"):
-                base_stmt = base_stmt.where(_{model_name}.is_deleted.is_(False))
-            if hasattr(_{model_name}, "tenant_id") and hasattr(current_user, "tenant_id"):
-                base_stmt = base_stmt.where(_{model_name}.tenant_id == current_user.tenant_id)
-
-            count_stmt = _select(_func.count()).select_from(base_stmt.subquery())
-            total: int = (await session.execute(count_stmt)).scalar_one()
-
+            base_stmt, total = await _build_export_base_stmt_{lower}(session, current_user)
             if total > _EXPORT_ASYNC_THRESHOLD:
                 job_id = await _dispatch_export_job(
-                    user_id=current_user.id,
-                    model="{model_name}",
-                    format=format,
+                    user_id=current_user.id, model="{model_name}", format=format,
                     filters={{"owner_id": str(current_user.id)}},
                 )
-                return _JSONResponse(
-                    status_code=202,
-                    content={{
-                        "status": "queued",
-                        "job_id": str(job_id),
-                        "row_estimate": total,
-                        "message": (
-                            f"Export queued ({{total:,}} rows). "
-                            "You will receive an email with a download link."
-                        ),
-                    }},
-                )
-
+                return _JSONResponse(status_code=202, content={{
+                    "status": "queued", "job_id": str(job_id), "row_estimate": total,
+                    "message": f"Export queued ({{total:,}} rows). You will receive an email with a download link.",
+                }})
             requested = [c.strip() for c in columns.split(",")] if columns else _DEFAULT_EXPORT_COLUMNS
             safe_cols = [c for c in requested if c in _DEFAULT_EXPORT_COLUMNS]
             if not safe_cols:
                 raise HTTPException(status_code=422, detail="No valid columns selected after security filtering.")
-
             gen_fn, media_type, filename = _FORMAT_META[format]
             return _StreamingResponse(
-                gen_fn(session, base_stmt, safe_cols),
-                media_type=media_type,
+                gen_fn(session, base_stmt, safe_cols), media_type=media_type,
                 headers={{"Content-Disposition": f'attachment; filename="{{filename}}"'}},
             )
         """).replace("{lower}", lower).replace("{model_name}", model_name)

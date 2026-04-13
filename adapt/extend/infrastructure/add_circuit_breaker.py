@@ -411,7 +411,7 @@ def _write_circuits_admin_route(dest: Path) -> None:
         router = APIRouter(prefix="/admin/circuits", tags=["circuits"])
 
 
-        @router.get("/{name}")
+        @router.get("/{name}", response_model=dict)
         async def inspect_circuit(name: str) -> dict:
             \"\"\"Inspect current state of a named circuit.
 
@@ -424,7 +424,7 @@ def _write_circuits_admin_route(dest: Path) -> None:
             return await get_circuit_info(name)
 
 
-        @router.post("/{name}/reset")
+        @router.post("/{name}/reset", response_model=dict)
         async def reset_circuit(name: str) -> dict:
             \"\"\"Force-close a circuit (use after confirming downstream recovery).
 
@@ -441,7 +441,7 @@ def _write_circuits_admin_route(dest: Path) -> None:
             return {"name": name, "state": CircuitState.CLOSED, "action": "reset"}
 
 
-        @router.post("/{name}/open")
+        @router.post("/{name}/open", response_model=dict)
         async def force_open_circuit(name: str) -> dict:
             \"\"\"Force-open a circuit during a known incident.
 

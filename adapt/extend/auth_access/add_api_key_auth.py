@@ -633,6 +633,65 @@ def _write_deps(dest: Path) -> None:
             return parts[1], parts[2]
 
 
+        async def _fetch_api_key(
+            session: AsyncSession,
+            key_id: str,
+            secret: str,
+        ) -> APIKey:
+            \"\"\"Fetch and secret-verify an APIKey row; raises 401 on any mismatch.
+
+            Uses a constant-time dummy hash when the key_id is not found to prevent
+            enumeration timing oracles.
+
+            Args:
+                session: Async SQLAlchemy session.
+                key_id: Public key identifier portion.
+                secret: Raw secret portion to verify.
+
+            Returns:
+                APIKey ORM instance with matching key_id.
+
+            Raises:
+                HTTPException 401: key_id not found or secret mismatch.
+            \"\"\"
+            stmt = select(APIKey).where(APIKey.key_id == key_id)
+            api_key = (await session.execute(stmt)).scalar_one_or_none()
+            if api_key is None:
+                verify_secret(secret, DUMMY_HASH)  # constant-time dummy
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+            if not verify_secret(secret, api_key.secret_hash):
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+            return api_key
+
+
+        async def _check_api_key_validity(api_key: APIKey, session: AsyncSession) -> None:
+            \"\"\"Enforce status, expiry, and rate-limit constraints on an API key.
+
+            Args:
+                api_key: Fetched and secret-verified APIKey ORM instance.
+                session: Async SQLAlchemy session (needed to flush expiry status update).
+
+            Raises:
+                HTTPException 401: Key is not active or has expired.
+                HTTPException 429: Per-key rate limit exceeded.
+            \"\"\"
+            if api_key.status != "active":
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="API key is not active",
+                )
+            if api_key.expires_at and api_key.expires_at < datetime.now(timezone.utc):
+                api_key.status = "expired"
+                await session.flush()
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="API key expired")
+            if not await check_rate_limit(api_key.id):
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail="Rate limit exceeded",
+                    headers={"Retry-After": "60"},
+                )
+
+
         async def get_current_api_key(
             request: Request,
             session: SessionDep,
@@ -640,9 +699,9 @@ def _write_deps(dest: Path) -> None:
         ) -> APIKey:
             \"\"\"Validate the API key from the Authorization header.
 
-            Performs full constant-time verification including a DUMMY_HASH check for
-            unknown key_ids, status and expiry validation, rate-limit enforcement, and
-            audit field updates.
+            Delegates to ``_fetch_api_key`` (DB + secret check) and
+            ``_check_api_key_validity`` (status, expiry, rate-limit), then updates
+            audit fields before returning the authenticated key.
 
             Args:
                 request: Incoming FastAPI request (for IP and user-agent capture).
@@ -664,50 +723,12 @@ def _write_deps(dest: Path) -> None:
                     headers={"WWW-Authenticate": "Bearer"},
                 )
             key_id, secret = parsed
-
-            stmt = select(APIKey).where(APIKey.key_id == key_id)
-            api_key = (await session.execute(stmt)).scalar_one_or_none()
-            if api_key is None:
-                # Constant-time dummy check — prevents enumeration timing oracle
-                verify_secret(secret, DUMMY_HASH)
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid API key",
-                )
-
-            if not verify_secret(secret, api_key.secret_hash):
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid API key",
-                )
-
-            if api_key.status != "active":
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="API key is not active",
-                )
-
-            if api_key.expires_at and api_key.expires_at < datetime.now(timezone.utc):
-                api_key.status = "expired"
-                await session.flush()
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="API key expired",
-                )
-
-            if not await check_rate_limit(api_key.id):
-                raise HTTPException(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail="Rate limit exceeded",
-                    headers={"Retry-After": "60"},
-                )
-
-            # Update audit fields — best-effort, non-blocking flush
+            api_key = await _fetch_api_key(session, key_id, secret)
+            await _check_api_key_validity(api_key, session)
             api_key.last_used_at = datetime.now(timezone.utc)
             api_key.last_used_ip = request.client.host if request.client else None  # type: ignore[attr-defined]
             api_key.last_used_ua = (request.headers.get("user-agent", "") or "")[:500]
             await session.flush()
-
             return api_key
 
 
@@ -1090,7 +1111,7 @@ def _write_routes(dest: Path) -> None:
             )
 
 
-        @router.post("/{key_id}/revoke", status_code=status.HTTP_204_NO_CONTENT)
+        @router.post("/{key_id}/revoke", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
         async def revoke_api_key(
             key_id: str,
             session: SessionDep,

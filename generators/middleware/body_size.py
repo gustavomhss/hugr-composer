@@ -57,6 +57,20 @@ def generate_body_size_middleware(
                 request: Request,
                 call_next: RequestResponseEndpoint,
             ) -> Response:
+                """Reject requests whose declared body exceeds the size limit.
+
+                Uses the ``Content-Length`` header for a fast pre-read check.
+                Returns HTTP 413 if the declared size exceeds ``max_bytes``, or
+                HTTP 400 if the header value is not a valid integer.
+
+                Args:
+                    request: Incoming Starlette request.
+                    call_next: Next middleware / route handler in the chain.
+
+                Returns:
+                    JSONResponse(413) if oversized, JSONResponse(400) if the
+                    Content-Length header is malformed, or the normal response.
+                """
                 # Fast path: reject by declared Content-Length.
                 content_length = request.headers.get("content-length")
                 if content_length is not None:

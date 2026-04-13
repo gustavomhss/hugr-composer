@@ -61,6 +61,15 @@ def generate_request_logging(
                 request: Request,
                 call_next: RequestResponseEndpoint,
             ) -> Response:
+                """Log method, path, status, timing, and client IP for the request.
+
+                Args:
+                    request: Incoming Starlette request.
+                    call_next: Next middleware / route handler in the chain.
+
+                Returns:
+                    The unmodified response from downstream.
+                """
                 start = time.perf_counter()
 
                 response = await call_next(request)

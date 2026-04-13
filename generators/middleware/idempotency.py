@@ -67,6 +67,20 @@ def generate_idempotency_middleware(
                 request: Request,
                 call_next: RequestResponseEndpoint,
             ) -> Response:
+                """Process a request applying idempotency-key cache semantics.
+
+                For mutating methods with an ``Idempotency-Key`` header, checks
+                Redis for a cached response and returns it immediately on a hit.
+                On a miss, executes the request and caches 2xx/4xx responses.
+                Passes through unchanged if Redis is unavailable (fail-open).
+
+                Args:
+                    request: Incoming Starlette request.
+                    call_next: Next middleware / route handler in the chain.
+
+                Returns:
+                    Cached JSON response on duplicate, or the live response.
+                """
                 if request.method not in _MUTATING_METHODS:
                     return await call_next(request)
 
@@ -81,60 +95,87 @@ def generate_idempotency_middleware(
                     return await call_next(request)
 
                 try:
-                    cached = await redis.get(cache_key)
-                    if cached is not None:
-                        try:
-                            payload = json.loads(cached)
-                            return JSONResponse(
-                                status_code=payload["status"],
-                                content=payload["body"],
-                                headers=payload.get("headers", {{}}),
-                            )
-                        except (json.JSONDecodeError, KeyError):
-                            _log.warning(
-                                "idempotency_cache_corrupt", extra={{"key": cache_key}}
-                            )
+                    cached_response = await _check_cache(redis, cache_key)
+                    if cached_response is not None:
+                        return cached_response
 
                     response = await call_next(request)
-
-                    # Only cache successful / client-error responses
-                    # (2xx, 4xx).  Avoid caching 5xx so transient server
-                    # failures can be retried normally.
-                    if 200 <= response.status_code < 500:
-                        body_bytes = b""
-                        async for chunk in response.body_iterator:
-                            body_bytes += chunk
-
-                        try:
-                            body_json = json.loads(body_bytes) if body_bytes else None
-                        except json.JSONDecodeError:
-                            body_json = None
-
-                        if body_json is not None:
-                            payload = {{
-                                "status": response.status_code,
-                                "body": body_json,
-                                "headers": {{
-                                    k: v
-                                    for k, v in response.headers.items()
-                                    if k.lower() in {{"content-type"}}
-                                }},
-                            }}
-                            await redis.set(
-                                cache_key,
-                                json.dumps(payload),
-                                ex=_IDEMPOTENCY_TTL,
-                            )
-
-                        return Response(
-                            content=body_bytes,
-                            status_code=response.status_code,
-                            headers=dict(response.headers),
-                            media_type=response.media_type,
-                        )
-                    return response
+                    return await _store_response(redis, cache_key, response)
                 finally:
                     await redis.aclose()
+
+
+        async def _check_cache(redis, cache_key: str):
+            """Return a cached JSONResponse if one exists, else None.
+
+            Args:
+                redis: Async Redis client.
+                cache_key: Computed idempotency cache key.
+
+            Returns:
+                A ``JSONResponse`` built from the cached payload, or ``None``.
+            """
+            cached = await redis.get(cache_key)
+            if cached is None:
+                return None
+            try:
+                payload = json.loads(cached)
+                return JSONResponse(
+                    status_code=payload["status"],
+                    content=payload["body"],
+                    headers=payload.get("headers", {{}}),
+                )
+            except (json.JSONDecodeError, KeyError):
+                _log = logging.getLogger(__name__)
+                _log.warning("idempotency_cache_corrupt", extra={{"key": cache_key}})
+                return None
+
+
+        async def _store_response(redis, cache_key: str, response: Response) -> Response:
+            """Cache a cacheable response and return a re-readable Response.
+
+            Only caches 2xx and 4xx responses (skips 5xx so retries are safe).
+            Returns a new ``Response`` with the body bytes already read so the
+            caller can forward it downstream.
+
+            Args:
+                redis: Async Redis client.
+                cache_key: Computed idempotency cache key.
+                response: The live response from the route handler.
+
+            Returns:
+                A ``Response`` whose body has been read and can be forwarded.
+            """
+            if not (200 <= response.status_code < 500):
+                return response
+
+            body_bytes = b""
+            async for chunk in response.body_iterator:
+                body_bytes += chunk
+
+            try:
+                body_json = json.loads(body_bytes) if body_bytes else None
+            except json.JSONDecodeError:
+                body_json = None
+
+            if body_json is not None:
+                payload = {{
+                    "status": response.status_code,
+                    "body": body_json,
+                    "headers": {{
+                        k: v
+                        for k, v in response.headers.items()
+                        if k.lower() in {{"content-type"}}
+                    }},
+                }}
+                await redis.set(cache_key, json.dumps(payload), ex=_IDEMPOTENCY_TTL)
+
+            return Response(
+                content=body_bytes,
+                status_code=response.status_code,
+                headers=dict(response.headers),
+                media_type=response.media_type,
+            )
 
 
         def _cache_key(method: str, path: str, key: str) -> str:

@@ -250,6 +250,7 @@ def _write_inbound_model(dest: Path) -> None:
             JSON,
             CheckConstraint,
             DateTime,
+            ForeignKey,
             String,
             UniqueConstraint,
             Uuid,
@@ -268,6 +269,7 @@ def _write_inbound_model(dest: Path) -> None:
 
             Attributes:
                 id: UUID primary key.
+                tenant_id: FK to tenants for multi-tenant context propagation.
                 provider: Provider name (stripe / github / internal).
                 provider_event_id: Provider-assigned event id for deduplication.
                 event_type: Provider event type string.
@@ -282,6 +284,13 @@ def _write_inbound_model(dest: Path) -> None:
             __tablename__ = "inbound_webhooks"
 
             id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+            tenant_id: Mapped[uuid.UUID | None] = mapped_column(
+                Uuid,
+                ForeignKey("tenants.id", ondelete="SET NULL"),
+                nullable=True,
+                index=True,
+                comment="Tenant context for multi-tenant webhook routing",
+            )
             provider: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
             provider_event_id: Mapped[str] = mapped_column(String(255), nullable=False)
             event_type: Mapped[str] = mapped_column(String(127), nullable=False)
@@ -583,6 +592,35 @@ def _write_internal_verifier(dest: Path, tolerance: int) -> None:
 
             name = "internal"
 
+            @staticmethod
+            def _check_hmac_signature(secret: str, body: bytes, sig: str) -> None:
+                \"\"\"Verify an inline HMAC-SHA256 ``t=<ts>,v1=<hex>`` signature.
+
+                Args:
+                    secret: Shared HMAC secret string.
+                    body: Raw request body bytes.
+                    sig: Raw ``X-Signature`` header value.
+
+                Raises:
+                    HTTPException(400): Invalid timestamp, timestamp drift > 300 s, or mismatch.
+                \"\"\"
+                import hashlib
+                import hmac
+                import time
+                parts = dict(p.split("=", 1) for p in sig.split(",") if "=" in p)
+                try:
+                    ts = int(parts.get("t", 0))
+                except ValueError:
+                    raise HTTPException(400, "Invalid X-Signature timestamp")
+                if abs(int(time.time()) - ts) > 300:
+                    raise HTTPException(400, "X-Signature timestamp out of tolerance")
+                expected = hmac.new(
+                    secret.encode("utf-8"), f"{ts}.".encode("utf-8") + body, hashlib.sha256
+                ).hexdigest()
+                if not hmac.compare_digest(expected, parts.get("v1", "")):
+                    raise HTTPException(400, "Internal signature mismatch")
+
+
             def verify(self, body: bytes, headers: dict[str, str]) -> VerifiedEvent:
                 \"\"\"Verify an internally-signed webhook request.
 
@@ -595,55 +633,29 @@ def _write_internal_verifier(dest: Path, tolerance: int) -> None:
 
                 Raises:
                     HTTPException(401): If the ``x-signature`` header is missing.
-                    HTTPException(400): If the signature is invalid or the body is invalid JSON.
+                    HTTPException(400): If signature invalid or body is invalid JSON.
                 \"\"\"
                 sig = headers.get("x-signature")
                 if not sig:
                     raise HTTPException(401, "Missing X-Signature header")
-
                 from app.core.config import settings as _settings
                 secret = getattr(_settings, "INTERNAL_WEBHOOK_SECRET", "")
-
-                # Import signer lazily to avoid circular imports.
                 try:
                     from app.core.webhooks.signer import verify_signature
                     if not verify_signature(secret, body, sig):
                         raise HTTPException(400, "Internal signature mismatch")
                 except ImportError:
-                    # Fallback: inline verify for projects without add_webhook_sender.
-                    import hashlib
-                    import hmac
-                    import time
-
-                    parts = dict(p.split("=", 1) for p in sig.split(",") if "=" in p)
-                    try:
-                        ts = int(parts.get("t", 0))
-                    except ValueError:
-                        raise HTTPException(400, "Invalid X-Signature timestamp")
-                    if abs(int(time.time()) - ts) > 300:
-                        raise HTTPException(400, "X-Signature timestamp out of tolerance")
-                    signed_payload = f"{ts}.".encode("utf-8") + body
-                    expected = hmac.new(
-                        secret.encode("utf-8"), signed_payload, hashlib.sha256
-                    ).hexdigest()
-                    if not hmac.compare_digest(expected, parts.get("v1", "")):
-                        raise HTTPException(400, "Internal signature mismatch")
-
+                    self._check_hmac_signature(secret, body, sig)
                 try:
                     payload = json.loads(body)
                 except json.JSONDecodeError:
                     raise HTTPException(400, "Invalid JSON body")
-
                 event_id = headers.get("x-event-id")
                 if not event_id:
                     raise HTTPException(400, "Missing X-Event-Id header")
-                event_type = headers.get("x-event-type", "unknown")
-
                 return VerifiedEvent(
-                    provider="internal",
-                    event_id=event_id,
-                    event_type=event_type,
-                    payload=payload,
+                    provider="internal", event_id=event_id,
+                    event_type=headers.get("x-event-type", "unknown"), payload=payload,
                 )
         """)
     dest.write_text(content)
@@ -1101,6 +1113,8 @@ def _write_inbound_routes(dest: Path, max_payload_bytes: int) -> None:
         \"\"\"
         from __future__ import annotations
 
+        import uuid as _uuid
+
         from fastapi import APIRouter, Request, status
         from fastapi.responses import JSONResponse
 
@@ -1110,18 +1124,52 @@ def _write_inbound_routes(dest: Path, max_payload_bytes: int) -> None:
         from app.core.queue import get_arq_pool
         from app.crud import inbound_webhook as crud_iwh
 
-        router = APIRouter(prefix="/webhooks/incoming", tags=["webhooks-incoming"])
+        try:
+            from app.core.tenant_context import set_current_tenant
+        except ImportError:  # tenant context not installed — no-op
+            def set_current_tenant(tenant_id):  # type: ignore[misc]
+                \"\"\"No-op fallback when multi-tenancy is not installed.\"\"\"
+
+        router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
         _MAX_PAYLOAD_BYTES = {max_bytes}
 
 
-        @router.post("/{{provider}}", status_code=status.HTTP_202_ACCEPTED)
+        async def _persist_new_webhook(session, event, headers: dict) -> str:
+            \"\"\"Create an InboundWebhook row, commit, and enqueue the ARQ job.
+
+            Args:
+                session: Async SQLAlchemy session.
+                event: Verified WebhookEvent with provider, event_id, event_type, payload.
+                headers: Lowercased request headers dict (stored for debugging).
+
+            Returns:
+                Always ``"accepted"``.
+            \"\"\"
+            inbound = await crud_iwh.create_received(
+                session,
+                provider=event.provider,
+                provider_event_id=event.event_id,
+                event_type=event.event_type,
+                payload=event.payload,
+                raw_headers=headers,
+            )
+            await session.commit()
+            pool = await get_arq_pool()
+            await pool.enqueue_job("process_inbound_webhook", str(inbound.id))
+            return "accepted"
+
+
+        @router.post("/incoming/{{provider}}", response_model=dict, status_code=status.HTTP_202_ACCEPTED)
         async def receive_webhook(
             provider: str,
             request: Request,
             session: SessionDep,
         ) -> dict:
             \"\"\"Receive, verify, deduplicate, persist, and dispatch a webhook event.
+
+            Sets tenant context from the event payload before any processing
+            so background handlers execute within the correct tenant scope.
 
             Args:
                 provider: Provider name from the path (e.g. ``stripe``).
@@ -1138,40 +1186,55 @@ def _write_inbound_routes(dest: Path, max_payload_bytes: int) -> None:
             \"\"\"
             body = await request.body()
             if len(body) > _MAX_PAYLOAD_BYTES:
-                return JSONResponse(
-                    {{"detail": "Payload too large"}},
-                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                )
-
+                return JSONResponse({{"detail": "Payload too large"}},
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
             headers = {{k.lower(): v for k, v in request.headers.items()}}
-            verifier = get_verifier(provider)  # 404 on unknown provider
-            event = verifier.verify(body, headers)  # 400/401 on bad signature
-
+            event = get_verifier(provider).verify(body, headers)
+            tenant_id = event.payload.get("tenant_id")
+            if tenant_id:
+                set_current_tenant(tenant_id)
             is_first = await claim_event(event.provider, event.event_id)
             if not is_first:
-                await crud_iwh.upsert_duplicate(
-                    session,
-                    provider=event.provider,
-                    provider_event_id=event.event_id,
-                    event_type=event.event_type,
-                )
+                await crud_iwh.upsert_duplicate(session, provider=event.provider,
+                    provider_event_id=event.event_id, event_type=event.event_type)
                 await session.commit()
                 return {{"status": "duplicate"}}
+            status_str = await _persist_new_webhook(session, event, headers)
+            return {{"status": status_str}}
 
-            inbound = await crud_iwh.create_received(
-                session,
-                provider=event.provider,
-                provider_event_id=event.event_id,
-                event_type=event.event_type,
-                payload=event.payload,
-                raw_headers=headers,
-            )
+
+        @router.post("/replay/{{event_id}}", response_model=dict, status_code=status.HTTP_202_ACCEPTED)
+        async def replay_webhook(event_id: str, session: SessionDep) -> dict:
+            \"\"\"Re-enqueue a previously received webhook event for reprocessing.
+
+            Fetches the InboundWebhook record by ``event_id``, resets its status
+            to ``received``, and enqueues it for the ARQ worker again.  Useful
+            for ops teams recovering from handler failures.
+
+            Args:
+                event_id: UUID string of the InboundWebhook row to replay.
+                session: Injected async DB session.
+
+            Returns:
+                ``{{"status": "queued", "event_id": "..."}}``.
+
+            Raises:
+                HTTPException(404): If no record with the given UUID exists.
+            \"\"\"
+            from fastapi import HTTPException  # noqa: PLC0415
+
+            record = await crud_iwh.get(session, id=_uuid.UUID(event_id))
+            if record is None:
+                raise HTTPException(status_code=404, detail="Webhook event not found")
+
+            record.status = "received"
+            await session.flush()
             await session.commit()
 
             pool = await get_arq_pool()
-            await pool.enqueue_job("process_inbound_webhook", str(inbound.id))
+            await pool.enqueue_job("process_inbound_webhook", str(record.id))
 
-            return {{"status": "accepted"}}
+            return {{"status": "queued", "event_id": event_id}}
         """).replace("{max_bytes}", str(max_payload_bytes))
     dest.write_text(content)
 

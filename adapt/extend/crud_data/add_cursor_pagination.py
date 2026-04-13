@@ -338,7 +338,24 @@ def _write_cursor_paginator(dest: Path) -> None:
                 \"\"\"
                 count_stmt = select(func.count()).select_from(base_stmt.subquery())
                 total: int = (await session.execute(count_stmt)).scalar_one()
+                data_stmt = self._apply_cursor_filter(base_stmt, cursor)
+                rows, has_more = await self._fetch_page(session, data_stmt, page_size)
+                next_cursor = self._build_next_cursor(rows, has_more)
+                return {"data": rows, "count": total, "next_cursor": next_cursor, "has_more": has_more}
 
+            def _apply_cursor_filter(self, base_stmt: Any, cursor: str | None) -> Any:
+                \"\"\"Apply cursor-based WHERE clause and ORDER BY to the statement.
+
+                Args:
+                    base_stmt: Base SELECT without ORDER BY or LIMIT.
+                    cursor: Encoded cursor string, or ``None`` for first page.
+
+                Returns:
+                    Statement with cursor filter and ordering applied.
+
+                Raises:
+                    ValueError: If the cursor encodes a different field than expected.
+                \"\"\"
                 data_stmt = base_stmt
                 if cursor is not None:
                     decoded = decode_cursor(cursor)
@@ -352,34 +369,50 @@ def _write_cursor_paginator(dest: Path) -> None:
                         data_stmt = data_stmt.where(self._col < cursor_val)
                     else:
                         data_stmt = data_stmt.where(self._col > cursor_val)
-
                 col_ordered = (
                     self._col.desc() if self.direction == "desc" else self._col.asc()
                 )
-                data_stmt = data_stmt.order_by(col_ordered).limit(page_size + 1)
-                rows: list[Any] = list(
-                    (await session.execute(data_stmt)).scalars().all()
-                )
+                return data_stmt.order_by(col_ordered)
 
+            async def _fetch_page(
+                self, session: AsyncSession, data_stmt: Any, page_size: int
+            ) -> tuple[list[Any], bool]:
+                \"\"\"Fetch one page of rows and detect whether more pages exist.
+
+                Args:
+                    session: Async SQLAlchemy session.
+                    data_stmt: Ordered statement without LIMIT.
+                    page_size: Maximum rows to return.
+
+                Returns:
+                    Tuple of (rows trimmed to page_size, has_more flag).
+                \"\"\"
+                rows: list[Any] = list(
+                    (await session.execute(data_stmt.limit(page_size + 1))).scalars().all()
+                )
                 has_more = len(rows) > page_size
                 if has_more:
                     rows = rows[:page_size]
+                return rows, has_more
 
-                next_cursor: str | None = None
-                if has_more and rows:
-                    last = rows[-1]
-                    val = getattr(last, self.cursor_field)
-                    id_val = (
-                        str(getattr(last, "id")) if self._id_col is not None else None
-                    )
-                    next_cursor = encode_cursor(self.cursor_field, val, id_val)
+            def _build_next_cursor(self, rows: list[Any], has_more: bool) -> str | None:
+                \"\"\"Build the next-page cursor from the last row in the current page.
 
-                return {
-                    "data": rows,
-                    "count": total,
-                    "next_cursor": next_cursor,
-                    "has_more": has_more,
-                }
+                Args:
+                    rows: Rows returned for the current page (already trimmed).
+                    has_more: Whether a subsequent page exists.
+
+                Returns:
+                    Encoded cursor string, or ``None`` if this is the last page.
+                \"\"\"
+                if not has_more or not rows:
+                    return None
+                last = rows[-1]
+                val = getattr(last, self.cursor_field)
+                id_val = (
+                    str(getattr(last, "id")) if self._id_col is not None else None
+                )
+                return encode_cursor(self.cursor_field, val, id_val)
 
             def _coerce_value(self, raw: Any) -> Any:
                 \"\"\"Coerce a decoded cursor value to the correct Python type for the column.

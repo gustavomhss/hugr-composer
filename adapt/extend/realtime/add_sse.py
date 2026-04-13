@@ -654,6 +654,44 @@ def _write_manager(dest: Path, heartbeat_seconds: int, max_connections_per_user:
             One instance per application (singleton via ``get_sse_manager``).
             \"\"\"
 
+            async def _pubsub_loop(
+                self,
+                ps,
+                channel: str,
+            ) -> AsyncIterator[bytes]:
+                \"\"\"Subscribe to a Redis pubsub channel and yield SSE messages.
+
+                Sends ``:keepalive\\\\n\\\\n`` pings every ``_HEARTBEAT_SECONDS``.
+                Unsubscribes and closes the pubsub handle on exit.
+
+                Args:
+                    ps: Redis pubsub object (already subscribed on entry).
+                    channel: Logical channel name (used only for unsubscribe).
+
+                Yields:
+                    SSE-formatted byte chunks (messages or keepalives).
+                \"\"\"
+                heartbeat_task: asyncio.Task[None] = asyncio.create_task(self._heartbeat_sleep())
+                try:
+                    while True:
+                        msg_task: asyncio.Task[object] = asyncio.create_task(
+                            ps.get_message(ignore_subscribe_messages=True, timeout=1.0)
+                        )
+                        done, _ = await asyncio.wait({msg_task, heartbeat_task},
+                            return_when=asyncio.FIRST_COMPLETED)
+                        if heartbeat_task in done:
+                            yield b":keepalive\\n\\n"
+                            heartbeat_task = asyncio.create_task(self._heartbeat_sleep())
+                        if msg_task in done:
+                            msg = msg_task.result()
+                            if msg and isinstance(msg, dict) and msg.get("type") == "message":
+                                yield self._format_message(msg["data"])
+                finally:
+                    heartbeat_task.cancel()
+                    await ps.unsubscribe(PUBSUB_CHANNEL.format(channel=channel))
+                    await ps.aclose()
+
+
             async def stream(
                 self,
                 user_id: UUID,
@@ -673,46 +711,20 @@ def _write_manager(dest: Path, heartbeat_seconds: int, max_connections_per_user:
                 redis = await get_redis()
                 uid = str(user_id)
                 conn_key = CONNECTION_COUNT_KEY.format(user_id=uid)
-
                 count = await redis.incr(conn_key)
                 await redis.expire(conn_key, 86400)
                 if count > _MAX_CONNECTIONS_PER_USER:
                     await redis.decr(conn_key)
                     yield self._format_error("connection_limit_exceeded")
                     return
-
                 try:
                     if last_event_id:
                         async for chunk in self._replay(redis, channel, last_event_id):
                             yield chunk
-
                     ps = redis.pubsub()
                     await ps.subscribe(PUBSUB_CHANNEL.format(channel=channel))
-                    heartbeat_task: asyncio.Task[None] = asyncio.create_task(
-                        self._heartbeat_sleep()
-                    )
-                    try:
-                        while True:
-                            msg_task: asyncio.Task[object] = asyncio.create_task(
-                                ps.get_message(ignore_subscribe_messages=True, timeout=1.0)
-                            )
-                            done, _ = await asyncio.wait(
-                                {msg_task, heartbeat_task},
-                                return_when=asyncio.FIRST_COMPLETED,
-                            )
-                            if heartbeat_task in done:
-                                yield b":keepalive\\n\\n"
-                                heartbeat_task = asyncio.create_task(
-                                    self._heartbeat_sleep()
-                                )
-                            if msg_task in done:
-                                msg = msg_task.result()
-                                if msg and isinstance(msg, dict) and msg.get("type") == "message":
-                                    yield self._format_message(msg["data"])
-                    finally:
-                        heartbeat_task.cancel()
-                        await ps.unsubscribe(PUBSUB_CHANNEL.format(channel=channel))
-                        await ps.aclose()
+                    async for chunk in self._pubsub_loop(ps, channel):
+                        yield chunk
                 finally:
                     await redis.decr(conn_key)
 
@@ -835,7 +847,7 @@ def _write_events_route(dest: Path) -> None:
         router = APIRouter(prefix="/events", tags=["events"])
 
 
-        @router.get("/stream")
+        @router.get("/stream", response_model=None)
         async def stream_events(
             current_user: CurrentUser,
             channel: Annotated[str, Query(min_length=3, max_length=255)],

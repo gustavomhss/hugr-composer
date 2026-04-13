@@ -147,7 +147,7 @@ async def login_access_token(
     return Token(access_token=access_token)
 
 
-@router.post("/login/test-token")
+@router.post("/login/test-token", response_model=dict)
 async def test_token(current_user: CurrentUser) -> dict:
     \"\"\"Test access token validity.
 

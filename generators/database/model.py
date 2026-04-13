@@ -167,15 +167,20 @@ def generate_model(
         ")"
     )
 
+    # Helper: detect fields that are external payment identifiers (always unique).
+    def _is_payment_unique(fn: str) -> bool:
+        return "stripe_" in fn or "payment_intent_id" in fn or fn.endswith("_payment_id")
+
     # User-defined fields
     for field_name, type_hint in fields.items():
         # FK fields (auto-detected *_id) — emit as ForeignKey column
         if field_name in fk_fields:
             referenced = fk_fields[field_name]
+            _unique_suffix = ", unique=True" if _is_payment_unique(field_name) else ""
             class_lines.append(
                 f"    {field_name}: Mapped[uuid.UUID] = mapped_column("
                 f'Uuid, ForeignKey("{referenced}.id", ondelete="CASCADE"), '
-                f"nullable=False, index=True)"
+                f"nullable=False, index=True{_unique_suffix})"
             )
             continue
 
@@ -191,8 +196,15 @@ def generate_model(
             display_type = "datetime"
         elif py_type == "UUID":
             display_type = "uuid.UUID"
+        # Fields that act as external payment identifiers are always unique
+        _is_unique = (
+            "stripe_" in field_name
+            or "payment_intent_id" in field_name
+            or field_name.endswith("_payment_id")
+        )
+        col_kwargs = f"{sa_col}, unique=True" if _is_unique else sa_col
         class_lines.append(
-            f"    {field_name}: Mapped[{display_type}] = mapped_column({sa_col})"
+            f"    {field_name}: Mapped[{display_type}] = mapped_column({col_kwargs})"
         )
 
     # Owner field

@@ -380,6 +380,43 @@ def _write_saga_coordinator(dest: Path) -> None:
             def __init__(self, session: AsyncSession) -> None:
                 self.session = session
 
+            async def _execute_step(
+                self,
+                saga_obj,
+                step_meta: dict,
+                step_exec,
+                context: dict,
+                completed: list,
+            ) -> bool:
+                \"\"\"Attempt one saga step; update step_exec state; return True on success.
+
+                Args:
+                    saga_obj: Instantiated Saga object with step methods.
+                    step_meta: Step descriptor dict (``name``, ``timeout``).
+                    step_exec: SagaStepExecution ORM row already added to session.
+                    context: Mutable execution context dict updated with step output.
+                    completed: Accumulator list of completed step dicts.
+
+                Returns:
+                    True if the step succeeded, False if it raised an exception.
+                \"\"\"
+                try:
+                    method = getattr(saga_obj, step_meta["name"])
+                    output = await asyncio.wait_for(method(context), timeout=step_meta["timeout"])
+                    step_exec.state = "completed"
+                    step_exec.output_data = output or {}
+                    if output:
+                        context.update(output)
+                    completed.append({"meta": step_meta, "exec": step_exec})
+                    await self.session.flush()
+                    return True
+                except Exception as exc:
+                    step_exec.state = "failed"
+                    step_exec.error = str(exc)[:512]
+                    await self.session.flush()
+                    return False
+
+
             async def run(
                 self,
                 saga_cls: Type[Saga],
@@ -399,53 +436,28 @@ def _write_saga_coordinator(dest: Path) -> None:
                 \"\"\"
                 sid = saga_id or uuid.uuid4()
                 steps = saga_cls.collect_steps()
-                instance = SagaInstance(
-                    id=sid,
-                    saga_type=saga_cls.__name__,
-                    state="running",
-                    input_data=input_data,
-                )
+                instance = SagaInstance(id=sid, saga_type=saga_cls.__name__, state="running", input_data=input_data)
                 self.session.add(instance)
                 await self.session.flush([instance])
-
                 saga_obj = saga_cls()
                 context: dict[str, Any] = dict(input_data)
                 completed: list[dict[str, Any]] = []
-
                 for i, step_meta in enumerate(steps):
                     step_exec = SagaStepExecution(
-                        saga_id=sid,
-                        step_number=i,
-                        step_name=step_meta["name"],
-                        state="running",
-                        input_data=context,
+                        saga_id=sid, step_number=i, step_name=step_meta["name"],
+                        state="running", input_data=context,
                     )
                     self.session.add(step_exec)
                     instance.current_step = i
                     await self.session.flush()
-
-                    try:
-                        method = getattr(saga_obj, step_meta["name"])
-                        output = await asyncio.wait_for(
-                            method(context), timeout=step_meta["timeout"]
-                        )
-                        step_exec.state = "completed"
-                        step_exec.output_data = output or {}
-                        if output:
-                            context.update(output)
-                        completed.append({"meta": step_meta, "exec": step_exec})
-                        await self.session.flush()
-                    except Exception as exc:
-                        step_exec.state = "failed"
-                        step_exec.error = str(exc)[:512]
-                        instance.error = str(exc)[:512]
-                        await self.session.flush()
+                    ok = await self._execute_step(saga_obj, step_meta, step_exec, context, completed)
+                    if not ok:
+                        instance.error = step_exec.error
                         await self._compensate(saga_obj, completed, context, sid)
                         instance.state = "failed"
                         instance.completed_at = datetime.now(timezone.utc)
                         await self.session.commit()
-                        return {"saga_id": str(sid), "state": "failed", "error": str(exc)}
-
+                        return {"saga_id": str(sid), "state": "failed", "error": step_exec.error}
                 instance.state = "completed"
                 instance.output_data = context
                 instance.completed_at = datetime.now(timezone.utc)
@@ -526,7 +538,7 @@ def _write_sagas_admin_routes(dest: Path) -> None:
         router = APIRouter(prefix="/admin/sagas", tags=["sagas"])
 
 
-        @router.get("/")
+        @router.get("/", response_model=dict)
         async def list_sagas(
             state: str | None = Query(default=None),
             saga_type: str | None = Query(default=None),
@@ -553,7 +565,7 @@ def _write_sagas_admin_routes(dest: Path) -> None:
             }
 
 
-        @router.get("/{saga_id}")
+        @router.get("/{saga_id}", response_model=dict)
         async def inspect_saga(saga_id: uuid.UUID) -> dict:
             \"\"\"Inspect a single saga instance with all its step executions.
 
@@ -571,7 +583,7 @@ def _write_sagas_admin_routes(dest: Path) -> None:
             }
 
 
-        @router.post("/{saga_id}/retry")
+        @router.post("/{saga_id}/retry", response_model=dict)
         async def retry_saga(saga_id: uuid.UUID) -> dict:
             \"\"\"Mark a failed saga for manual retry.
 
