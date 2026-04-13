@@ -1,0 +1,160 @@
+skill:
+  id: SKILL-001
+  name: FastAPI Production
+  version: 3.1.0
+  description: >
+    Convention over Configuration for FastAPI. 50 generators + 8 adapt tools
+    produce production-grade code — the LLM customizes business logic only.
+    Scores 35/35 (100%) on 35-check production audit backed by
+    OWASP, CVE, NIST, RFC, and CIS standards.
+    86 files, 29,822 LOC. 13/13 adapt tools battle tested.
+  paradigm: convention-over-configuration
+  mcp_server: mcp_server.py
+  knowledge: core/KNOWLEDGE.md
+
+generators:
+  total: 50
+  categories:
+    infra: 10
+    database: 5
+    auth: 5
+    middleware: 5
+    endpoints: 4
+    schemas: 3
+    deployment: 4
+    observability: 3
+    testing: 2
+    orchestrator: 1
+    adapt: 8
+
+  orchestrator:
+    tool: fastapi_generate_project
+    description: "One call → 53-file production project"
+
+  infra:
+    app: { tool: fastapi_generate_app, generates: "main.py" }
+    config: { tool: fastapi_generate_config, generates: "core/config.py" }
+    dockerfile: { tool: fastapi_generate_dockerfile, generates: "Dockerfile + .dockerignore" }
+    env_example: { tool: fastapi_generate_env_example, generates: ".env.example" }
+    initial_data: { tool: fastapi_generate_initial_data, generates: "initial_data.py" }
+    prestart: { tool: fastapi_generate_prestart, generates: "backend_pre_start.py" }
+    readme: { tool: fastapi_generate_readme, generates: "README.md" }
+    precommit: { tool: fastapi_generate_precommit, generates: ".pre-commit-config.yaml" }
+    email: { tool: fastapi_generate_email, generates: "utils/email.py" }
+    gitignore: { tool: fastapi_generate_gitignore, generates: ".gitignore" }
+
+  database:
+    engine: { tool: fastapi_generate_engine, generates: "core/db.py" }
+    session: { tool: fastapi_generate_session, generates: "core/session.py" }
+    model: { tool: fastapi_generate_model, generates: "models/{name}.py" }
+    crud: { tool: fastapi_generate_crud, generates: "crud/{name}.py" }
+    alembic: { tool: fastapi_generate_alembic, generates: "alembic/" }
+
+  auth:
+    all: { tool: fastapi_generate_auth, generates: "5 files (hasher, jwt, deps, routes, schemas)" }
+    defaults:
+      hasher: "argon2id via pwdlib (OWASP 2024)"
+      jwt: "PyJWT (not python-jose — CVE-2024-33663)"
+      timing: "DUMMY_HASH prevents enumeration (CWE-208)"
+      recovery: "Same response for existing/non-existing emails"
+
+  middleware:
+    stack: { tool: fastapi_generate_middleware, generates: "middleware/ (5 files)" }
+    order: "Correlation → CORS → SecurityHeaders → Logging (→ GZip)"
+
+  endpoints:
+    health: { tool: fastapi_generate_health, generates: "routes/health.py" }
+    errors: { tool: fastapi_generate_errors, generates: "core/errors.py" }
+    crud_routes: { tool: fastapi_generate_crud_routes, generates: "api/routes/{name}.py" }
+    user_routes: { tool: fastapi_generate_user_routes, generates: "api/routes/users.py" }
+
+  schemas:
+    all: { tool: fastapi_generate_schemas, generates: "schemas/{name}.py + _public.py + _list.py" }
+
+  deployment:
+    docker_compose: { tool: fastapi_generate_docker_compose, generates: "docker-compose.yml" }
+    k8s: { tool: fastapi_generate_k8s, generates: "k8s/ (6 files)" }
+    ci: { tool: fastapi_generate_ci, generates: ".github/workflows/ci.yml" }
+    loadtest: { tool: fastapi_generate_loadtest, generates: "loadtest.js" }
+
+  observability:
+    otel: { tool: fastapi_generate_otel, generates: "observability/telemetry.py" }
+    prometheus: { tool: fastapi_generate_prometheus, generates: "observability/metrics.py" }
+    alerting: { tool: fastapi_generate_alerting, generates: "alerts/ (2 files)" }
+
+  testing:
+    all: { tool: fastapi_generate_tests, generates: "tests/ (conftest + test suite)" }
+
+adapt_tools:
+  total: 8
+  battle_tested: "13/13"
+  tools:
+    add_model:
+      tool: fastapi_add_model
+      params: [project_dir, name, fields, owner_field]
+      description: "Add model + CRUD + schemas + routes to existing project. Wires router + models/__init__. Idempotent."
+    add_endpoint:
+      tool: fastapi_add_endpoint
+      params: [project_dir, route_file, method, path, name, auth, request_body, response_model, description]
+      description: "Add custom endpoint to existing/new route file. Generates inline Pydantic model for request_body."
+    add_middleware:
+      tool: fastapi_add_middleware
+      params: [project_dir, name, code, position]
+      positions: [outermost, after_cors, before_logging, innermost]
+      description: "Add middleware to stack. Writes file + updates register_middleware()."
+    add_background_job:
+      tool: fastapi_add_background_job
+      params: [project_dir, name, queue, retry_max, cron]
+      description: "ARQ async job. Creates worker.py + core/arq.py (first time), jobs/{name}.py always. Optional cron."
+    add_websocket:
+      tool: fastapi_add_websocket
+      params: [project_dir, name, path, auth]
+      description: "WebSocket with ConnectionManager (rooms, broadcast), JWT auth from query param, heartbeat ping/30s."
+    add_integration:
+      tool: fastapi_add_integration
+      params: [project_dir, service, config]
+      services:
+        stripe: "checkout + webhook"
+        s3: "upload/presigned/delete"
+        sendgrid: "email"
+        redis: "cache + @cached decorator"
+      description: "External service integration. Each adds config entries + requirements."
+    fix_findings:
+      tool: fastapi_fix_findings
+      params: [project_dir]
+      proven: "21/35 → 35/35 on Sonnet naked project"
+      fixes: [bcrypt→argon2id, python-jose→PyJWT, security headers, structured logging, health checks, multi-stage Docker, async engine, pool config, lifespan]
+      description: "Auto-fix analyzer failures. Takes any project to 35/35."
+    migrate_db:
+      tool: fastapi_migrate_db
+      params: [project_dir, message]
+      description: "Creates Alembic migration helper script + returns exact commands."
+
+mcp_tools:
+  total: 49
+  tiers:
+    orchestrator: [fastapi_generate_project]
+    generators: 26
+    project_files: 7
+    testing: 1
+    adapt: [fastapi_add_model, fastapi_add_endpoint, fastapi_add_middleware, fastapi_add_background_job, fastapi_add_websocket, fastapi_add_integration, fastapi_fix_findings, fastapi_migrate_db]
+    verification: [fastapi_analyze, fastapi_analyze_project_v2, fastapi_fix_findings, fastapi_check_health, fastapi_check_headers]
+
+verification:
+  analyzer:
+    tool: fastapi_analyze
+    checks: 35
+    sources: "OWASP, CVE, NIST SP 800-63B, RFC 7515/7807, CIS Docker Benchmark, W3C Trace Context"
+
+  test_suites:
+    edge_cases: { file: "benchmark/test_generators.py", tests: 8 }
+    integration: { file: "benchmark/test_integration.py", tests: "generate → install → import" }
+    functional: { file: "benchmark/test_functional.py", tests: 25 }
+
+benchmark:
+  skill_v3: "35/35 (100%)"
+  golden_tiangolo_42k_stars: "24/35 (69%)"
+  benavlabs_1800_stars: "20/35 (57%)"
+  sonnet_naked: "21/35 (60%)"
+  haiku_naked: "23/35 (66%)"
+  functional_e2e: "25/25 endpoints pass"

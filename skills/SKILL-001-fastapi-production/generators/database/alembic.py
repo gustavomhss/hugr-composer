@@ -1,0 +1,208 @@
+"""Generator for Alembic async migration scaffolding."""
+
+from __future__ import annotations
+
+import textwrap
+from pathlib import Path
+
+
+def generate_alembic(output_dir: str) -> dict:
+    """Generate Alembic configuration files for async PostgreSQL migrations.
+
+    Creates:
+        - ``alembic.ini`` (project root config)
+        - ``alembic/env.py`` (async migration runner)
+        - ``alembic/script.mako`` (revision template)
+        - ``alembic/versions/`` (empty directory for migration scripts)
+
+    Args:
+        output_dir: Project root directory.
+
+    Returns:
+        Dict with files_created and notes.
+    """
+    out = Path(output_dir)
+    alembic_dir = out / "alembic"
+    versions_dir = alembic_dir / "versions"
+    versions_dir.mkdir(parents=True, exist_ok=True)
+
+    files_created: list[str] = []
+
+    # --- alembic.ini ------------------------------------------------------
+    ini_content = textwrap.dedent("""\
+        # Alembic configuration — async PostgreSQL
+        [alembic]
+        script_location = alembic
+        prepend_sys_path = .
+
+        # sqlalchemy.url is set programmatically in env.py from app settings.
+        # Do NOT put credentials here.
+        # sqlalchemy.url =
+
+        [post_write_hooks]
+
+        [loggers]
+        keys = root,sqlalchemy,alembic
+
+        [handlers]
+        keys = console
+
+        [formatters]
+        keys = generic
+
+        [logger_root]
+        level = WARN
+        handlers = console
+
+        [logger_sqlalchemy]
+        level = WARN
+        handlers =
+        qualname = sqlalchemy.engine
+
+        [logger_alembic]
+        level = INFO
+        handlers =
+        qualname = alembic
+
+        [handler_console]
+        class = StreamHandler
+        args = (sys.stderr,)
+        level = NOTSET
+        formatter = generic
+
+        [formatter_generic]
+        format = %(levelname)-5.5s [%(name)s] %(message)s
+        datefmt = %H:%M:%S
+    """)
+
+    ini_path = out / "alembic.ini"
+    ini_path.write_text(ini_content)
+    files_created.append(str(ini_path))
+
+    # --- alembic/env.py ---------------------------------------------------
+    env_content = textwrap.dedent("""\
+        \"\"\"Alembic environment — async migration runner.\"\"\"
+
+        import asyncio
+        from logging.config import fileConfig
+
+        from alembic import context
+        from sqlalchemy import pool
+        from sqlalchemy.ext.asyncio import async_engine_from_config
+
+        from app.core.config import settings
+
+        # Import ALL models so Alembic sees them in target_metadata.
+        from app.models import *  # noqa: F401, F403
+        from app.models.base import Base
+
+        config = context.config
+
+        # Logging
+        if config.config_file_name is not None:
+            fileConfig(config.config_file_name)
+
+        target_metadata = Base.metadata
+
+        # Inject the real database URL (never stored in alembic.ini).
+        config.set_main_option("sqlalchemy.url", str(settings.SQLALCHEMY_DATABASE_URI))
+
+
+        def run_migrations_offline() -> None:
+            \"\"\"Run migrations in 'offline' mode — emit SQL to stdout.\"\"\"
+            url = config.get_main_option("sqlalchemy.url")
+            context.configure(
+                url=url,
+                target_metadata=target_metadata,
+                literal_binds=True,
+                dialect_opts={"paramstyle": "named"},
+            )
+
+            with context.begin_transaction():
+                context.run_migrations()
+
+
+        def do_run_migrations(connection):
+            \"\"\"Configure context and run migrations synchronously.\"\"\"
+            context.configure(connection=connection, target_metadata=target_metadata)
+
+            with context.begin_transaction():
+                context.run_migrations()
+
+
+        async def run_async_migrations() -> None:
+            \"\"\"Run migrations inside an async engine.\"\"\"
+            connectable = async_engine_from_config(
+                config.get_section(config.config_ini_section, {}),
+                prefix="sqlalchemy.",
+                poolclass=pool.NullPool,
+            )
+
+            async with connectable.connect() as connection:
+                await connection.run_sync(do_run_migrations)
+
+            await connectable.dispose()
+
+
+        def run_migrations_online() -> None:
+            \"\"\"Run migrations in 'online' mode — connect to the database.\"\"\"
+            asyncio.run(run_async_migrations())
+
+
+        if context.is_offline_mode():
+            run_migrations_offline()
+        else:
+            run_migrations_online()
+    """)
+
+    env_path = alembic_dir / "env.py"
+    env_path.write_text(env_content)
+    files_created.append(str(env_path))
+
+    # --- alembic/script.mako ----------------------------------------------
+    mako_content = textwrap.dedent("""\
+        \"\"\"${message}
+
+        Revision ID: ${up_revision}
+        Revises: ${down_revision | comma,n}
+        Create Date: ${create_date}
+        \"\"\"
+
+        from typing import Sequence, Union
+
+        import sqlalchemy as sa
+        from alembic import op
+        ${imports if imports else ""}
+
+        # revision identifiers, used by Alembic.
+        revision: str = ${repr(up_revision)}
+        down_revision: Union[str, None] = ${repr(down_revision)}
+        branch_labels: Union[str, Sequence[str], None] = ${repr(branch_labels)}
+        depends_on: Union[str, Sequence[str], None] = ${repr(depends_on)}
+
+
+        def upgrade() -> None:
+            ${upgrades if upgrades else "pass"}
+
+
+        def downgrade() -> None:
+            ${downgrades if downgrades else "pass"}
+    """)
+
+    mako_path = alembic_dir / "script.mako"
+    mako_path.write_text(mako_content)
+    files_created.append(str(mako_path))
+
+    # --- alembic/versions/.gitkeep ----------------------------------------
+    gitkeep = versions_dir / ".gitkeep"
+    gitkeep.write_text("")
+    files_created.append(str(gitkeep))
+
+    return {
+        "files_created": files_created,
+        "notes": [
+            "Generated alembic.ini, alembic/env.py (async), alembic/script.mako, and versions/ directory.",
+            "Database URL is injected from app.core.config.settings — never hardcoded in alembic.ini.",
+            "Import all model modules in env.py so autogenerate detects schema changes.",
+        ],
+    }
