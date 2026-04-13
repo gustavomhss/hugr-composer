@@ -32,7 +32,7 @@ import textwrap
 import time
 from pathlib import Path
 
-from adapt.contracts import ToolInput, ToolResult
+from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 _CANONICAL_SECTIONS = ["api", "models", "schemas", "deployment", "architecture"]
 _VALID_DEPLOY_TARGETS = frozenset({"none", "github_pages", "s3", "netlify"})
@@ -65,6 +65,10 @@ def generate_docs(
     """
     start = time.monotonic()
     project = Path(inp.project_dir)
+    err = validate_project_dir(inp.project_dir)
+    if err:
+        return ToolResult(status="error", error=err)
+
 
     if deploy_target not in _VALID_DEPLOY_TARGETS:
         return ToolResult(

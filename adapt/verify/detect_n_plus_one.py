@@ -25,7 +25,7 @@ import textwrap
 import time
 from pathlib import Path
 
-from adapt.contracts import ToolInput, ToolResult
+from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 # ---------------------------------------------------------------------------
@@ -48,6 +48,10 @@ def detect_n_plus_one(inp: ToolInput) -> ToolResult:
     """
     start = time.monotonic()
     project = Path(inp.project_dir)
+    err = validate_project_dir(inp.project_dir)
+    if err:
+        return ToolResult(status="error", error=err)
+
     app_dir = project / "app"
 
     # --- Idempotency guard ---------------------------------------------------
@@ -507,9 +511,24 @@ def _patch_main(main_file: Path) -> None:
             )
         """)
 
-    # Append after first `app = FastAPI(` block
+    # Append after the closing `)` of the `app = FastAPI(...)` call.
+    # The constructor may span multiple lines, so we must find the matching
+    # closing paren rather than just the first newline after `app = FastAPI(`.
     if "app = FastAPI(" in src:
-        insert_after = src.find("\n", src.find("app = FastAPI("))
+        open_pos = src.find("app = FastAPI(") + len("app = FastAPI(")
+        depth = 1
+        pos = open_pos
+        while pos < len(src) and depth > 0:
+            if src[pos] == "(":
+                depth += 1
+            elif src[pos] == ")":
+                depth -= 1
+            pos += 1
+        # pos now points one char past the closing `)`.
+        # Advance to end of that line so we insert after the full statement.
+        insert_after = src.find("\n", pos)
+        if insert_after == -1:
+            insert_after = len(src)
         src = src[:insert_after] + middleware_block + src[insert_after:]
     else:
         src = src + middleware_block

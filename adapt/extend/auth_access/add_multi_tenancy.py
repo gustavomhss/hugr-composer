@@ -26,7 +26,7 @@ import textwrap
 import time
 from pathlib import Path
 
-from adapt.contracts import ToolInput, ToolResult
+from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 # ---------------------------------------------------------------------------
@@ -50,6 +50,10 @@ def add_multi_tenancy(inp: ToolInput) -> ToolResult:
     """
     start = time.monotonic()
     project = Path(inp.project_dir)
+    err = validate_project_dir(inp.project_dir)
+    if err:
+        return ToolResult(status="error", error=err)
+
     app_dir = project / "app"
 
     # --- Pre-flight: idempotency check ---
@@ -189,27 +193,31 @@ def _discover_models(app_dir: Path) -> list[str]:
         stem = f.stem
         if stem in skip:
             continue
-        names.append(stem.capitalize())
+        # Derive PascalCase class name: item -> Item, order_item -> OrderItem
+        names.append("".join(w.capitalize() for w in stem.split("_")))
     return names
 
 
 def _write_mixin(dest: Path) -> None:
-    """Write ``app/models/mixins.py`` with ``TenantScopedMixin``.
+    """Write or extend ``app/models/mixins.py`` with ``TenantScopedMixin``.
+
+    If the file already exists (e.g. SoftDeleteMixin was added by
+    add_soft_delete), the new class is APPENDed so existing mixins are
+    preserved.  Duplicate imports are suppressed.
 
     Args:
-        dest: Absolute path for the new file.
+        dest: Absolute path for the file.
     """
     dest.parent.mkdir(parents=True, exist_ok=True)
-    content = textwrap.dedent("""\
-        \"\"\"Reusable SQLAlchemy mixin that adds tenant_id FK column.\"\"\"
 
-        from __future__ import annotations
+    new_imports = [
+        "from __future__ import annotations",
+        "import uuid",
+        "from sqlalchemy import ForeignKey, Uuid",
+        "from sqlalchemy.orm import Mapped, declared_attr, mapped_column",
+    ]
 
-        import uuid
-
-        from sqlalchemy import ForeignKey, Uuid
-        from sqlalchemy.orm import Mapped, declared_attr, mapped_column
-
+    mixin_body = textwrap.dedent("""\
 
         class TenantScopedMixin:
             \"\"\"Add tenant_id FK to every business model for hard isolation.
@@ -232,7 +240,27 @@ def _write_mixin(dest: Path) -> None:
                     index=True,
                 )
         """)
-    dest.write_text(content)
+
+    if dest.exists():
+        existing = dest.read_text()
+        # Inject only the imports that are not already present
+        lines_to_add = [imp for imp in new_imports if imp not in existing]
+        if lines_to_add:
+            # Insert after the module docstring / existing imports block
+            existing = existing.rstrip("\n") + "\n" + "\n".join(lines_to_add) + "\n"
+        dest.write_text(existing + mixin_body)
+    else:
+        header = textwrap.dedent("""\
+            \"\"\"Reusable SQLAlchemy mixins.\"\"\"
+
+            from __future__ import annotations
+
+            import uuid
+
+            from sqlalchemy import ForeignKey, Uuid
+            from sqlalchemy.orm import Mapped, declared_attr, mapped_column
+            """)
+        dest.write_text(header + mixin_body)
 
 
 def _write_tenant_model(dest: Path) -> None:

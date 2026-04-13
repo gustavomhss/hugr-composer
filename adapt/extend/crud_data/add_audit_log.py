@@ -28,7 +28,7 @@ import textwrap
 import time
 from pathlib import Path
 
-from adapt.contracts import ToolInput, ToolResult
+from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 # ---------------------------------------------------------------------------
@@ -52,6 +52,10 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
     """
     start = time.monotonic()
     project = Path(inp.project_dir)
+    err = validate_project_dir(inp.project_dir)
+    if err:
+        return ToolResult(status="error", error=err)
+
     app_dir = project / "app"
 
     # --- Pre-flight: is audit log already installed? ----------------------
@@ -178,7 +182,8 @@ def _discover_models(app_dir: Path) -> list[str]:
         stem = f.stem
         if stem in skip:
             continue
-        names.append(stem.capitalize())
+        # Derive PascalCase class name: item -> Item, order_item -> OrderItem
+        names.append("".join(w.capitalize() for w in stem.split("_")))
     return names
 
 
@@ -443,18 +448,26 @@ def _write_audit_listeners(dest: Path, model_names: list[str]) -> None:
 
 
         def _get_prev_hash(session: Session) -> str | None:
-            \"\"\"Fetch the entry_hash of the most recently added audit entry in this session.
+            \"\"\"Fetch the entry_hash of the most recent persisted audit entry.
+
+            Queries the database directly so the chain is correct even when
+            earlier audit entries from the same request were already flushed
+            and are no longer in ``session.new``.
 
             Args:
                 session: Active SQLAlchemy session.
 
             Returns:
-                SHA-256 hex string or None if no prior entry in this flush.
+                SHA-256 hex string or None if the audit_logs table is empty.
             \"\"\"
-            for obj in session.new:
-                if isinstance(obj, AuditLog) and obj.entry_hash is not None:
-                    return obj.entry_hash
-            return None
+            from sqlalchemy import text as _text
+            row = session.execute(
+                _text(
+                    "SELECT entry_hash FROM audit_logs "
+                    "ORDER BY created_at DESC LIMIT 1"
+                )
+            ).first()
+            return row[0] if row else None
 
 
         def _compute_entry_hash(entry: AuditLog) -> str:
@@ -989,17 +1002,62 @@ def _patch_main(main_file: Path) -> None:
 def _write_migration(versions_dir: Path) -> Path:
     """Generate an Alembic migration for audit_logs with partition + trigger.
 
+    Creates 3 initial monthly child partitions (previous, current, and next
+    month) computed dynamically at tool-run time so INSERT never fails on a
+    missing partition.  Uses ``prevent_audit_mutation`` PL/pgSQL function and
+    ``trg_audit_log_immutable`` trigger to enforce row immutability at the DB
+    level.
+
     Args:
         versions_dir: ``alembic/versions/`` directory.
 
     Returns:
         Path of the created migration file.
     """
+    from datetime import datetime, timezone
+    from calendar import monthrange
+
     rev_id = "add_audit_log"
     existing = sorted(versions_dir.glob("*.py"))
     down_rev = "0001_initial"
     if existing:
         down_rev = existing[-1].stem
+
+    # --- Compute 3 monthly partitions: previous, current, next ---------------
+    def _month_bounds(year: int, month: int) -> tuple[str, str]:
+        """Return (first_day, exclusive_upper) for the given month."""
+        _, last_day = monthrange(year, month)
+        start = f"{year:04d}-{month:02d}-01"
+        # exclusive upper: first day of next month
+        next_year, next_month = (year, month + 1) if month < 12 else (year + 1, 1)
+        end = f"{next_year:04d}-{next_month:02d}-01"
+        return start, end
+
+    now = datetime.now(timezone.utc)
+    # previous month
+    prev_year, prev_month = (now.year, now.month - 1) if now.month > 1 else (now.year - 1, 12)
+    # next month
+    next_year, next_month = (now.year, now.month + 1) if now.month < 12 else (now.year + 1, 1)
+
+    partitions = [
+        (f"y{prev_year}m{prev_month:02d}", *_month_bounds(prev_year, prev_month)),
+        (f"y{now.year}m{now.month:02d}", *_month_bounds(now.year, now.month)),
+        (f"y{next_year}m{next_month:02d}", *_month_bounds(next_year, next_month)),
+    ]
+
+    # Indentation: 4 spaces (matches dedented template where def body uses 4 spaces)
+    partition_creates = "\n".join(
+        f'    op.execute(\"\"\"\n'
+        f'        CREATE TABLE audit_logs_{name}\n'
+        f'        PARTITION OF audit_logs\n'
+        f"        FOR VALUES FROM ('{frm}') TO ('{to}')\n"
+        f'    \"\"\")'
+        for name, frm, to in partitions
+    )
+    partition_drops = "\n".join(
+        f'    op.drop_table("audit_logs_{name}")'
+        for name, _, __ in reversed(partitions)
+    )
 
     content = textwrap.dedent("""\
         \"\"\"Create audit_logs partitioned table with immutability trigger.
@@ -1019,22 +1077,20 @@ def _write_migration(versions_dir: Path) -> Path:
         depends_on = None
 
         IMMUTABLE_TRIGGER_SQL = \"\"\"
-        CREATE OR REPLACE FUNCTION fn_audit_log_immutable()
-        RETURNS trigger LANGUAGE plpgsql AS $$
+        CREATE OR REPLACE FUNCTION prevent_audit_mutation() RETURNS TRIGGER AS $$
         BEGIN
-            RAISE EXCEPTION
-                'audit_log is immutable: % on audit_logs is forbidden', TG_OP;
+            RAISE EXCEPTION 'audit_logs rows are immutable';
         END;
-        $$;
+        $$ LANGUAGE plpgsql;
 
         CREATE TRIGGER trg_audit_log_immutable
-        BEFORE UPDATE OR DELETE ON audit_logs
-        FOR EACH ROW EXECUTE FUNCTION fn_audit_log_immutable();
+            BEFORE UPDATE OR DELETE ON audit_logs
+            FOR EACH ROW EXECUTE FUNCTION prevent_audit_mutation();
         \"\"\"
 
         IMMUTABLE_TRIGGER_DROP = \"\"\"
         DROP TRIGGER IF EXISTS trg_audit_log_immutable ON audit_logs;
-        DROP FUNCTION IF EXISTS fn_audit_log_immutable();
+        DROP FUNCTION IF EXISTS prevent_audit_mutation();
         \"\"\"
 
 
@@ -1060,16 +1116,7 @@ def _write_migration(versions_dir: Path) -> Path:
                     )
                 ) PARTITION BY RANGE (created_at)
             \"\"\")
-            op.execute(\"\"\"
-                CREATE TABLE audit_logs_y2026m04
-                PARTITION OF audit_logs
-                FOR VALUES FROM ('2026-04-01') TO ('2026-05-01')
-            \"\"\")
-            op.execute(\"\"\"
-                CREATE TABLE audit_logs_y2026m05
-                PARTITION OF audit_logs
-                FOR VALUES FROM ('2026-05-01') TO ('2026-06-01')
-            \"\"\")
+        PARTITION_CREATES_HERE
             op.create_index("ix_audit_entity", "audit_logs", ["entity_type", "entity_id", "created_at"])
             op.create_index("ix_audit_user", "audit_logs", ["user_id", "created_at"])
             op.create_index("ix_audit_action", "audit_logs", ["action", "created_at"])
@@ -1082,10 +1129,12 @@ def _write_migration(versions_dir: Path) -> Path:
             op.drop_index("ix_audit_action", table_name="audit_logs")
             op.drop_index("ix_audit_user", table_name="audit_logs")
             op.drop_index("ix_audit_entity", table_name="audit_logs")
-            op.drop_table("audit_logs_y2026m05")
-            op.drop_table("audit_logs_y2026m04")
+        PARTITION_DROPS_HERE
             op.drop_table("audit_logs")
-        """).replace("DOWN_REV", down_rev)
+        """) \
+        .replace("DOWN_REV", down_rev) \
+        .replace("PARTITION_CREATES_HERE\n", partition_creates + "\n") \
+        .replace("PARTITION_DROPS_HERE\n", partition_drops + "\n")
 
     migration_file = versions_dir / f"{rev_id}.py"
     migration_file.write_text(content)

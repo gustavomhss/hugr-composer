@@ -25,7 +25,7 @@ import textwrap
 import time
 from pathlib import Path
 
-from adapt.contracts import ToolInput, ToolResult
+from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 # Maximum items per bulk request — hard cap enforced at schema and CRUD layer.
 DEFAULT_MAX_BATCH: int = 1000
@@ -51,6 +51,10 @@ def add_bulk_operations(inp: ToolInput) -> ToolResult:
     """
     start = time.monotonic()
     project = Path(inp.project_dir)
+    err = validate_project_dir(inp.project_dir)
+    if err:
+        return ToolResult(status="error", error=err)
+
     app_dir = project / "app"
 
     # --- Pre-flight: are bulk routes already enabled? ----------------------

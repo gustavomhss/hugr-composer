@@ -35,7 +35,7 @@ import textwrap
 import time
 from pathlib import Path
 
-from adapt.contracts import ToolInput, ToolResult
+from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 # Locales with RTL text direction
 _RTL_LOCALES = frozenset({"ar", "he", "fa", "ur", "ar_SA", "ar_EG", "he_IL"})
@@ -69,6 +69,10 @@ def add_i18n(
     """
     start = time.monotonic()
     project = Path(inp.project_dir)
+    err = validate_project_dir(inp.project_dir)
+    if err:
+        return ToolResult(status="error", error=err)
+
     app_dir = project / "app"
     supported_locales = supported_locales or [default_locale]
     fallback_chain = fallback_chain or {}

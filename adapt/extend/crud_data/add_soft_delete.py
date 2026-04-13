@@ -28,7 +28,7 @@ import textwrap
 import time
 from pathlib import Path
 
-from adapt.contracts import ToolInput, ToolResult
+from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 # ---------------------------------------------------------------------------
@@ -52,6 +52,10 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
     """
     start = time.monotonic()
     project = Path(inp.project_dir)
+    err = validate_project_dir(inp.project_dir)
+    if err:
+        return ToolResult(status="error", error=err)
+
     app_dir = project / "app"
 
     # --- Pre-flight: is soft-delete already enabled? ----------------------
@@ -173,8 +177,8 @@ def _discover_models(app_dir: Path) -> list[str]:
         stem = f.stem
         if stem in skip:
             continue
-        # Derive class name: item -> Item
-        names.append(stem.capitalize())
+        # Derive PascalCase class name: item -> Item, order_item -> OrderItem
+        names.append("".join(w.capitalize() for w in stem.split("_")))
     return names
 
 

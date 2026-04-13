@@ -31,7 +31,7 @@ import textwrap
 import time
 from pathlib import Path
 
-from adapt.contracts import ToolInput, ToolResult
+from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 _VALID_BROKERS = frozenset({"redis_streams", "kafka", "nats"})
 
@@ -65,6 +65,10 @@ def add_event_driven(
     """
     start = time.monotonic()
     project = Path(inp.project_dir)
+    err = validate_project_dir(inp.project_dir)
+    if err:
+        return ToolResult(status="error", error=err)
+
     events = events or []
 
     if broker not in _VALID_BROKERS:

@@ -32,7 +32,7 @@ import textwrap
 import time
 from pathlib import Path
 
-from adapt.contracts import ToolInput, ToolResult
+from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 # ---------------------------------------------------------------------------
@@ -63,6 +63,10 @@ def generate_admin_panel(
     """
     start = time.monotonic()
     project = Path(inp.project_dir)
+    err = validate_project_dir(inp.project_dir)
+    if err:
+        return ToolResult(status="error", error=err)
+
     app_dir = project / "app"
     admin_dir = app_dir / "admin"
     read_only_models = read_only_models or []
@@ -191,7 +195,8 @@ def _discover_models(app_dir: Path) -> list[str]:
     names = []
     for f in sorted(models_dir.glob("*.py")):
         if f.stem.lower() not in skip:
-            names.append(f.stem.capitalize())
+            # Derive PascalCase class name: item -> Item, order_item -> OrderItem
+            names.append("".join(w.capitalize() for w in f.stem.split("_")))
     return names
 
 
@@ -209,39 +214,47 @@ def _admin_init_content(models: list[str], mount_path: str) -> str:
         f"from app.admin.views.{m.lower()}_view import {m}Admin" for m in models
     )
     view_registrations = "\n    ".join(f"admin.add_view({m}Admin)" for m in models)
-    return textwrap.dedent(f"""\
-        \"\"\"sqladmin admin panel setup.
-
-        Mount at {mount_path} in app/main.py:
-
-            from app.admin import create_admin
-            admin = create_admin(app, engine)
-        \"\"\"
-        from __future__ import annotations
-
-        from sqladmin import Admin  # type: ignore[import-untyped]
-
-        {view_imports}
-        from app.admin.auth import AdminAuth
-        from app.admin.audit import register_audit_listeners
-
-
-        def create_admin(app, engine) -> Admin:  # type: ignore[no-untyped-def]
-            \"\"\"Create and configure the sqladmin Admin instance.
-
-            Args:
-                app: FastAPI application instance.
-                engine: SQLAlchemy async engine.
-
-            Returns:
-                Configured ``Admin`` instance mounted at ``{mount_path}``.
-            \"\"\"
-            auth_backend = AdminAuth(secret_key="CHANGE-ME-USE-ENV-VAR")
-            admin = Admin(app, engine, base_url="{mount_path}", authentication_backend=auth_backend)
-            {view_registrations}
-            register_audit_listeners()
-            return admin
-    """)
+    # Use placeholder+replace to avoid textwrap.dedent mangling multi-line
+    # f-string variables that have different leading-whitespace than the template.
+    template = (
+        '"""sqladmin admin panel setup.\n'
+        "\n"
+        "Mount at MOUNT_PATH in app/main.py:\n"
+        "\n"
+        "    from app.admin import create_admin\n"
+        "    admin = create_admin(app, engine)\n"
+        '"""\n'
+        "from __future__ import annotations\n"
+        "\n"
+        "from sqladmin import Admin  # type: ignore[import-untyped]\n"
+        "\n"
+        "VIEW_IMPORTS_PLACEHOLDER\n"
+        "from app.admin.auth import AdminAuth\n"
+        "from app.admin.audit import register_audit_listeners\n"
+        "\n"
+        "\n"
+        "def create_admin(app, engine) -> Admin:  # type: ignore[no-untyped-def]\n"
+        '    """Create and configure the sqladmin Admin instance.\n'
+        "\n"
+        "    Args:\n"
+        "        app: FastAPI application instance.\n"
+        "        engine: SQLAlchemy async engine.\n"
+        "\n"
+        "    Returns:\n"
+        "        Configured ``Admin`` instance mounted at ``MOUNT_PATH``.\n"
+        '    """\n'
+        '    auth_backend = AdminAuth(secret_key="CHANGE-ME-USE-ENV-VAR")\n'
+        "    admin = Admin(app, engine, base_url=\"MOUNT_PATH\", authentication_backend=auth_backend)\n"
+        "    VIEW_REGISTRATIONS_PLACEHOLDER\n"
+        "    register_audit_listeners()\n"
+        "    return admin\n"
+    )
+    return (
+        template
+        .replace("MOUNT_PATH", mount_path)
+        .replace("VIEW_IMPORTS_PLACEHOLDER", view_imports)
+        .replace("VIEW_REGISTRATIONS_PLACEHOLDER", view_registrations)
+    )
 
 
 def _auth_content(auth_dependency: str) -> str:
