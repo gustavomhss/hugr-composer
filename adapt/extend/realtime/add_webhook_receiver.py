@@ -39,6 +39,15 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 from adapt.contracts.migration_helper import find_migration_head
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_webhook_receiver",
+    "description": "Add inbound webhook receiver with signature verification and idempotency.",
+    "tags": ["extend", "realtime"],
+    "entry": "add_webhook_receiver",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

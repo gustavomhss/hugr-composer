@@ -29,6 +29,15 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
+MCP_TOOL = {
+    "name": "fastapi_security_scan",
+    "description": "Run security-focused static analysis on the FastAPI project.",
+    "tags": ["verify", "security"],
+    "entry": "security_scan",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

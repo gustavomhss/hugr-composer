@@ -35,6 +35,15 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
+MCP_TOOL = {
+    "name": "fastapi_generate_admin_panel",
+    "description": "Generate an admin panel (SQLAdmin or Starlette-admin) wired to all models.",
+    "tags": ["evolve"],
+    "entry": "generate_admin_panel",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

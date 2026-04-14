@@ -32,6 +32,15 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 from adapt.contracts.migration_helper import find_migration_head
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_audit_log",
+    "description": "Add immutable audit log to record all create/update/delete operations.",
+    "tags": ["extend", "crud_data"],
+    "entry": "add_audit_log",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

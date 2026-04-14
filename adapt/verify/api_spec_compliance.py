@@ -29,6 +29,15 @@ from typing import Any
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
+MCP_TOOL = {
+    "name": "fastapi_api_spec_compliance",
+    "description": "Check that the running API conforms to its own OpenAPI specification.",
+    "tags": ["verify"],
+    "entry": "api_spec_compliance",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

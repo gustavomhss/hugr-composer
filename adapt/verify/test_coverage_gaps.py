@@ -32,6 +32,15 @@ from adapt.contracts import ToolInput, ToolResult
 _HIGH_RISK_PATTERNS = ["auth", "payment", "admin", "security", "token", "billing", "delete", "write"]
 
 
+MCP_TOOL = {
+    "name": "fastapi_test_coverage_gaps",
+    "description": "Identify test coverage gaps with risk-weighted analysis.",
+    "tags": ["verify"],
+    "entry": "test_coverage_gaps",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

@@ -29,6 +29,15 @@ from typing import Literal
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_factory",
+    "description": "Add factory_boy fixtures for all models to accelerate test authoring.",
+    "tags": ["extend", "testing"],
+    "entry": "add_factory",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

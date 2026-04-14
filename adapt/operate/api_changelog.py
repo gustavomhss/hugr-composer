@@ -41,6 +41,15 @@ _REMOVED = "REMOVED"
 _DEPRECATED = "DEPRECATED"
 
 
+MCP_TOOL = {
+    "name": "fastapi_api_changelog",
+    "description": "Generate a human-readable API changelog by diffing OpenAPI specs across git history.",
+    "tags": ["operate"],
+    "entry": "api_changelog",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

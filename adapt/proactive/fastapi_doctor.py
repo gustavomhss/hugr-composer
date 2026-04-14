@@ -898,6 +898,15 @@ class DoctorOrchestrator:
         return counts
 
 
+MCP_TOOL = {
+    "name": "fastapi_doctor",
+    "description": "Holistic FastAPI health-check and audit engine.",
+    "tags": ["proactive"],
+    "entry": "fastapi_doctor",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

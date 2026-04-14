@@ -33,6 +33,15 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 from adapt.contracts.migration_helper import find_migration_head
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_long_running_task",
+    "description": "Add async long-running task pattern with polling endpoint and status tracking.",
+    "tags": ["extend", "api_design"],
+    "entry": "add_long_running_task",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

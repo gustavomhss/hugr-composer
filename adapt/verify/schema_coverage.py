@@ -28,6 +28,15 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
+MCP_TOOL = {
+    "name": "fastapi_schema_coverage",
+    "description": "Measure how well the OpenAPI schema covers all routes and models.",
+    "tags": ["verify"],
+    "entry": "schema_coverage",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

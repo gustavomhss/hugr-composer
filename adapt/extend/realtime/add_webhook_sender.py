@@ -34,6 +34,15 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 from adapt.contracts.migration_helper import find_migration_head
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_webhook_sender",
+    "description": "Add outbound webhook delivery system with retry, signature, and delivery log.",
+    "tags": ["extend", "realtime"],
+    "entry": "add_webhook_sender",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

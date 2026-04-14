@@ -55,6 +55,15 @@ class DeadSymbol:
     reason: str
 
 
+MCP_TOOL = {
+    "name": "fastapi_dead_code_finder",
+    "description": "Find unreachable routes, unused dependencies, and dead models.",
+    "tags": ["operate"],
+    "entry": "dead_code_finder",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

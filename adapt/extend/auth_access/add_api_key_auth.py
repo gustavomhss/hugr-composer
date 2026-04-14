@@ -31,6 +31,15 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 from adapt.contracts.migration_helper import find_migration_head
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_api_key_auth",
+    "description": "Add API key authentication alongside the existing JWT auth.",
+    "tags": ["extend", "auth_access"],
+    "entry": "add_api_key_auth",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

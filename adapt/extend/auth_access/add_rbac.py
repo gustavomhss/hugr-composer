@@ -31,6 +31,15 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 from adapt.contracts.migration_helper import find_migration_head
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_rbac",
+    "description": "Add role-based access control (RBAC) with hierarchical roles and permissions.",
+    "tags": ["extend", "auth_access"],
+    "entry": "add_rbac",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

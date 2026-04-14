@@ -30,6 +30,15 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 from adapt.contracts.migration_helper import find_migration_head
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_mfa",
+    "description": "Add multi-factor authentication (TOTP + backup codes) to the auth stack.",
+    "tags": ["extend", "auth_access"],
+    "entry": "add_mfa",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
