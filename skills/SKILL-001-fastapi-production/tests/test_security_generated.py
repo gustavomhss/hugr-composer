@@ -1,0 +1,794 @@
+"""test_security_generated.py — Brutal hardening round 4B.
+
+Security audit on GENERATED code.  Generates a full project, applies all
+10 adapt tools, and verifies 15 security invariants via static grep.
+
+If any check fails it is a REAL security bug in the generated code.
+Bugs are documented but NOT fixed here.
+
+Run:
+    PYTHONPATH=. python3 tests/test_security_generated.py
+    # or via pytest:
+    PYTHONPATH=. python3 -m pytest tests/test_security_generated.py -v
+"""
+
+from __future__ import annotations
+
+import ast
+import re
+import sys
+import tempfile
+import textwrap
+from pathlib import Path
+
+import pytest
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+
+_SKILL_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(_SKILL_ROOT))
+
+# ---------------------------------------------------------------------------
+# Fixture: one generated project shared by all security tests
+# ---------------------------------------------------------------------------
+
+
+def _generate_project_with_all_tools(output_dir: Path) -> Path:
+    """Generate project + apply all 10 adapt tools.  Returns the project dir."""
+    from generators.orchestrator import generate_project  # noqa: PLC0415
+    from adapt.contracts import ToolInput  # noqa: PLC0415
+    from adapt.extend.crud_data.add_soft_delete import add_soft_delete  # noqa: PLC0415
+    from adapt.extend.auth_access.add_multi_tenancy import add_multi_tenancy  # noqa: PLC0415
+    from adapt.extend.auth_access.add_rbac import add_rbac  # noqa: PLC0415
+    from adapt.extend.auth_access.add_mfa import add_mfa  # noqa: PLC0415
+    from adapt.extend.auth_access.add_api_key_auth import add_api_key_auth  # noqa: PLC0415
+    from adapt.extend.crud_data.add_audit_log import add_audit_log  # noqa: PLC0415
+    from adapt.extend.realtime.add_webhook_receiver import add_webhook_receiver  # noqa: PLC0415
+    from adapt.extend.infrastructure.add_cache_layer import add_cache_layer  # noqa: PLC0415
+    from adapt.extend.crud_data.add_search import add_search  # noqa: PLC0415
+    from adapt.extend.crud_data.add_file_upload import add_file_upload  # noqa: PLC0415
+
+    project_dir = output_dir / "sec"
+    result = generate_project(
+        output_dir=str(project_dir),
+        name="sec",
+        models={
+            "Patient": {
+                "name": "str",
+                "ssn_encrypted": "bytes",
+                "diagnosis": "str",
+            }
+        },
+        owner_models={"Patient": "user"},
+        with_otel=False,
+        with_prometheus=False,
+    )
+    assert result["total_files"] > 0, "orchestrator produced no files"
+
+    inp = ToolInput(project_dir=str(project_dir))
+    tools = [
+        ("soft_delete", add_soft_delete),
+        ("multi_tenancy", add_multi_tenancy),
+        ("rbac", add_rbac),
+        ("mfa", add_mfa),
+        ("api_key_auth", add_api_key_auth),
+        ("audit_log", add_audit_log),
+        ("webhook_receiver", add_webhook_receiver),
+        ("cache_layer", add_cache_layer),
+        ("search", add_search),
+        ("file_upload", add_file_upload),
+    ]
+    for tool_name, fn in tools:
+        res = fn(inp)
+        assert res.status in ("success", "no_op"), (
+            f"Tool '{tool_name}' failed: {res.error}"
+        )
+
+    return project_dir
+
+
+@pytest.fixture(scope="module")
+def sec_project(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Module-scoped fixture — generates the project once for all 15 checks."""
+    base = tmp_path_factory.mktemp("sec_audit")
+    return _generate_project_with_all_tools(base)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+_COMMENT_OR_DOCSTRING_RE = re.compile(
+    r'(?:#[^\n]*|"""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\')',
+    re.MULTILINE,
+)
+
+
+def _src_files(project_dir: Path, *, exclude_tests: bool = False) -> list[Path]:
+    """All .py files under *project_dir*, optionally excluding tests/."""
+    files = [
+        f for f in sorted(project_dir.rglob("*.py"))
+        if ".venv" not in str(f)
+    ]
+    if exclude_tests:
+        files = [f for f in files if "/tests/" not in str(f) and f.name != "conftest.py"]
+    return files
+
+
+def _strip_comments(src: str) -> str:
+    """Remove Python comments and docstrings from source text."""
+    return _COMMENT_OR_DOCSTRING_RE.sub("", src)
+
+
+def _collect_matches(
+    project_dir: Path,
+    pattern: str,
+    *,
+    exclude_tests: bool = False,
+    strip_comments: bool = True,
+    flags: int = 0,
+) -> list[tuple[Path, int, str]]:
+    """Return (file, lineno, line) tuples for every match of *pattern*."""
+    regex = re.compile(pattern, flags)
+    hits: list[tuple[Path, int, str]] = []
+    for f in _src_files(project_dir, exclude_tests=exclude_tests):
+        src = f.read_text(errors="replace")
+        if strip_comments:
+            src_clean = _strip_comments(src)
+        else:
+            src_clean = src
+        # Scan line-by-line on the cleaned source but report original line numbers
+        for lineno, line in enumerate(src.splitlines(), 1):
+            # Check the cleaned version of this line
+            cleaned_line = _strip_comments(line)
+            if regex.search(cleaned_line):
+                hits.append((f, lineno, line.strip()))
+    return hits
+
+
+def _format_hits(hits: list[tuple[Path, int, str]], project_dir: Path) -> str:
+    lines = []
+    for f, lineno, line in hits[:20]:
+        rel = f.relative_to(project_dir)
+        lines.append(f"  {rel}:{lineno}  {line}")
+    if len(hits) > 20:
+        lines.append(f"  ... and {len(hits) - 20} more")
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# SEC-01 — No hardcoded secrets
+# ---------------------------------------------------------------------------
+
+class TestNoHardcodedSecrets:
+    """SEC-01: No hardcoded credentials/secrets in generated code."""
+
+    PATTERNS = [
+        r'(?<![#\w])"changeme"',
+        r"""password\s*=\s*["'][^"']{3,}["']""",
+        r"""token\s*=\s*["'][^"']{8,}["']""",
+        r"""secret\s*=\s*["'][^"']{8,}["']""",
+        r"""api_key\s*=\s*["'][^"']{8,}["']""",
+    ]
+
+    def test_no_changeme_literal(self, sec_project: Path) -> None:
+        """'changeme' must never appear as a bare string literal."""
+        hits = _collect_matches(sec_project, self.PATTERNS[0], exclude_tests=True)
+        assert not hits, (
+            "SEC-01 FAIL — hardcoded 'changeme' found:\n"
+            + _format_hits(hits, sec_project)
+        )
+
+    def test_no_hardcoded_password(self, sec_project: Path) -> None:
+        """password = '...' must not appear in production code."""
+        hits = _collect_matches(sec_project, self.PATTERNS[1], exclude_tests=True)
+        assert not hits, (
+            "SEC-01 FAIL — hardcoded password found:\n"
+            + _format_hits(hits, sec_project)
+        )
+
+    def test_no_hardcoded_secret(self, sec_project: Path) -> None:
+        """secret = '...' must not appear in production code."""
+        hits = _collect_matches(sec_project, self.PATTERNS[3], exclude_tests=True)
+        assert not hits, (
+            "SEC-01 FAIL — hardcoded secret found:\n"
+            + _format_hits(hits, sec_project)
+        )
+
+
+# ---------------------------------------------------------------------------
+# SEC-02 — No eval/exec/unsafe deserialisation
+# ---------------------------------------------------------------------------
+
+class TestNoEvalExec:
+    """SEC-02: No eval, exec, pickle.loads, or unsafe yaml.load."""
+
+    def test_no_eval(self, sec_project: Path) -> None:
+        """eval() must never appear in generated production code."""
+        # Allow redis.eval() — it is a Redis Lua script call, not Python eval
+        hits = []
+        for f, lineno, line in _collect_matches(sec_project, r"\beval\(", exclude_tests=True):
+            # Filter out redis.eval(...) calls
+            if re.search(r"redis.*\.eval\(|\.eval\(", line):
+                continue
+            hits.append((f, lineno, line))
+        assert not hits, (
+            "SEC-02 FAIL — eval() found:\n" + _format_hits(hits, sec_project)
+        )
+
+    def test_no_exec(self, sec_project: Path) -> None:
+        """exec() must never appear in generated production code."""
+        hits = _collect_matches(sec_project, r"\bexec\(", exclude_tests=True)
+        assert not hits, (
+            "SEC-02 FAIL — exec() found:\n" + _format_hits(hits, sec_project)
+        )
+
+    def test_no_pickle_loads(self, sec_project: Path) -> None:
+        """pickle.loads() must never appear (RCE vector)."""
+        hits = _collect_matches(sec_project, r"pickle\.loads\(", exclude_tests=True)
+        assert not hits, (
+            "SEC-02 FAIL — pickle.loads() found:\n" + _format_hits(hits, sec_project)
+        )
+
+    def test_no_unsafe_yaml_load(self, sec_project: Path) -> None:
+        """yaml.load() without SafeLoader is a code-execution vector."""
+        # yaml.safe_load() and yaml.load(..., Loader=yaml.SafeLoader) are OK
+        hits = []
+        for f, lineno, line in _collect_matches(sec_project, r"yaml\.load\(", exclude_tests=True):
+            # Safe pattern: yaml.load(..., Loader=yaml.SafeLoader)
+            if "SafeLoader" in line or "safe_load" in line:
+                continue
+            hits.append((f, lineno, line))
+        assert not hits, (
+            "SEC-02 FAIL — unsafe yaml.load() found:\n" + _format_hits(hits, sec_project)
+        )
+
+
+# ---------------------------------------------------------------------------
+# SEC-03 — No f-string SQL injection
+# ---------------------------------------------------------------------------
+
+class TestNoFstringSql:
+    """SEC-03: SQL must never be built with f-strings."""
+
+    SQL_KEYWORDS = ["SELECT", "INSERT", "UPDATE", "DELETE", "FROM", "WHERE"]
+
+    def test_no_fstring_sql(self, sec_project: Path) -> None:
+        """f-string SQL (f\"SELECT ...\") is a SQLi vector — must be zero."""
+        pattern = r"""f["'](SELECT|INSERT|UPDATE|DELETE|FROM|WHERE)"""
+        hits = _collect_matches(sec_project, pattern, flags=re.IGNORECASE)
+        assert not hits, (
+            "SEC-03 FAIL — f-string SQL found:\n" + _format_hits(hits, sec_project)
+        )
+
+    def test_no_string_format_sql(self, sec_project: Path) -> None:
+        """'SELECT %s' % var or .format() SQL is also a SQLi vector."""
+        pattern = r"""["'](SELECT|INSERT|UPDATE|DELETE)\b.*["']\s*(%|\.format\()"""
+        hits = _collect_matches(sec_project, pattern, flags=re.IGNORECASE)
+        assert not hits, (
+            "SEC-03 FAIL — string-format SQL found:\n"
+            + _format_hits(hits, sec_project)
+        )
+
+
+# ---------------------------------------------------------------------------
+# SEC-04 — Timing-safe comparisons
+# ---------------------------------------------------------------------------
+
+class TestTimingSafeAuth:
+    """SEC-04: Secrets/tokens must be compared with hmac.compare_digest."""
+
+    _SENSITIVE_VAR_PATTERN = re.compile(
+        r"\b(\w*(hash|token|secret|signature|hmac|key)\w*)\s*==\s*",
+        re.IGNORECASE,
+    )
+
+    def test_no_direct_equality_on_secrets(self, sec_project: Path) -> None:
+        """Variables named *hash*, *token*, *secret*, *signature* must never
+        be compared with plain ``==``.
+
+        Known safe exceptions:
+        - status comparisons (status == "active")
+        - type/role strings
+        - None checks
+        """
+        hits = []
+        for f in _src_files(sec_project, exclude_tests=True):
+            src = _strip_comments(f.read_text(errors="replace"))
+            for lineno, line in enumerate(src.splitlines(), 1):
+                m = self._SENSITIVE_VAR_PATTERN.search(line)
+                if not m:
+                    continue
+                var_name = m.group(1).lower()
+                # Allow: token_type, token_url, key_type (not actual secrets)
+                skip_suffixes = ("_type", "_url", "_name", "_id", "_field", "_column")
+                if any(var_name.endswith(s) for s in skip_suffixes):
+                    continue
+                # Allow None checks: token == None
+                if re.search(r"==\s*None\b", line):
+                    continue
+                hits.append((f, lineno, line.strip()))
+
+        assert not hits, (
+            "SEC-04 FAIL — direct == comparison on sensitive variable:\n"
+            + _format_hits(hits, sec_project)
+        )
+
+
+# ---------------------------------------------------------------------------
+# SEC-05 — Sensitive fields excluded from Public schemas
+# ---------------------------------------------------------------------------
+
+class TestSensitiveFieldsInPublicSchemas:
+    """SEC-05: Sensitive fields must NEVER appear in *Public schemas."""
+
+    SENSITIVE_FIELDS = [
+        "ssn_encrypted",
+        "hashed_password",
+        "secret_hash",
+        "token_hash",
+    ]
+
+    def _find_public_class_bodies(self, src: str) -> list[str]:
+        """Return source blocks for every class whose name ends with 'Public'."""
+        blocks = []
+        try:
+            tree = ast.parse(src)
+        except SyntaxError:
+            return blocks
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef) and "Public" in node.name:
+                # Collect all attribute names defined in the class
+                attrs = []
+                for item in ast.walk(node):
+                    if isinstance(item, ast.AnnAssign):
+                        if isinstance(item.target, ast.Name):
+                            attrs.append(item.target.id)
+                    if isinstance(item, (ast.Assign,)):
+                        for t in item.targets:
+                            if isinstance(t, ast.Name):
+                                attrs.append(t.id)
+                blocks.append((node.name, attrs))
+        return blocks
+
+    def test_sensitive_fields_not_in_public_schemas(self, sec_project: Path) -> None:
+        """ssn_encrypted, hashed_password, etc. must not be fields of *Public classes."""
+        violations = []
+        for f in _src_files(sec_project):
+            src = f.read_text(errors="replace")
+            if "Public" not in src:
+                continue
+            for class_name, attrs in self._find_public_class_bodies(src):
+                for field in self.SENSITIVE_FIELDS:
+                    if field in attrs:
+                        rel = f.relative_to(sec_project)
+                        violations.append(f"  {rel}: class {class_name} exposes '{field}'")
+
+        assert not violations, (
+            "SEC-05 FAIL — sensitive fields in Public schemas:\n"
+            + "\n".join(violations)
+        )
+
+
+# ---------------------------------------------------------------------------
+# SEC-06 — Auth on all mutation endpoints
+# ---------------------------------------------------------------------------
+
+class TestAuthOnMutationEndpoints:
+    """SEC-06: POST/PATCH/DELETE routes must declare a dependency."""
+
+    # Endpoints that are legitimately public
+    _PUBLIC_ROUTE_PATTERNS = re.compile(
+        r"(login|signup|register|webhook|health|token|refresh|verify)",
+        re.IGNORECASE,
+    )
+
+    def test_mutation_routes_have_dependency(self, sec_project: Path) -> None:
+        """Every @router.post/patch/delete must have Depends( in params or decorator."""
+        violations = []
+        route_pattern = re.compile(
+            r'@\w*router\.(post|patch|delete)\s*\(',
+            re.IGNORECASE,
+        )
+        for f in _src_files(sec_project, exclude_tests=True):
+            if "/api/routes/" not in str(f) and "/routes/" not in str(f):
+                continue
+            src = f.read_text(errors="replace")
+            lines = src.splitlines()
+            for i, line in enumerate(lines):
+                m = route_pattern.search(line)
+                if not m:
+                    continue
+
+                # Collect the decorator + function signature (up to 20 lines ahead)
+                chunk = "\n".join(lines[i : i + 20])
+
+                # Skip known public endpoints
+                if self._PUBLIC_ROUTE_PATTERNS.search(chunk):
+                    continue
+
+                # Check if Depends( appears in the chunk (up to async def body)
+                if "Depends(" not in chunk and "current_user" not in chunk:
+                    rel = f.relative_to(sec_project)
+                    violations.append(
+                        f"  {rel}:{i + 1}  {line.strip()}"
+                    )
+
+        assert not violations, (
+            "SEC-06 FAIL — mutation endpoint without auth dependency:\n"
+            + "\n".join(violations)
+        )
+
+
+# ---------------------------------------------------------------------------
+# SEC-07 — CORS not wildcard
+# ---------------------------------------------------------------------------
+
+class TestCorsNotWildcard:
+    """SEC-07: allow_origins must never contain '*'."""
+
+    def test_cors_allow_origins_not_wildcard(self, sec_project: Path) -> None:
+        """allow_origins=['*'] is a security misconfiguration."""
+        pattern = r"""allow_origins\s*=\s*\[["']\*["']\]"""
+        hits = _collect_matches(sec_project, pattern)
+        assert not hits, (
+            "SEC-07 FAIL — wildcard CORS allow_origins found:\n"
+            + _format_hits(hits, sec_project)
+        )
+
+    def test_cors_origins_from_config_not_literal(self, sec_project: Path) -> None:
+        """CORS origins should come from config, not hardcoded URL literals."""
+        # Hardcoded http:// or https:// inside allow_origins list
+        pattern = r"""allow_origins\s*=\s*\[["']https?://"""
+        hits = _collect_matches(sec_project, pattern, exclude_tests=True)
+        assert not hits, (
+            "SEC-07 FAIL — hardcoded URL in CORS allow_origins (use config):\n"
+            + _format_hits(hits, sec_project)
+        )
+
+
+# ---------------------------------------------------------------------------
+# SEC-08 — No debug / print in production code
+# ---------------------------------------------------------------------------
+
+class TestNoDebugInProduction:
+    """SEC-08: print() and docs_url=None must be respected in production config."""
+
+    def test_no_print_in_production_code(self, sec_project: Path) -> None:
+        """print() is a data-leak risk in production FastAPI code."""
+        hits = []
+        for f, lineno, line in _collect_matches(
+            sec_project,
+            r"\bprint\(",
+            exclude_tests=True,
+        ):
+            # Allow: commented out, inside docstring handled by strip_comments
+            hits.append((f, lineno, line))
+
+        assert not hits, (
+            "SEC-08 FAIL — print() in production code:\n"
+            + _format_hits(hits, sec_project)
+        )
+
+    def test_docs_url_disabled_in_prod_config(self, sec_project: Path) -> None:
+        """docs_url=None must be set for production (disable Swagger in prod)."""
+        # Look in config.py or settings.py for docs_url
+        config_files = list(sec_project.rglob("config.py")) + list(sec_project.rglob("settings.py"))
+        found_docs_url_none = False
+        for cf in config_files:
+            content = cf.read_text(errors="replace")
+            if "docs_url" in content and "None" in content:
+                found_docs_url_none = True
+                break
+        # Also check main.py for docs_url=None
+        main_files = list(sec_project.rglob("main.py"))
+        for mf in main_files:
+            content = mf.read_text(errors="replace")
+            if re.search(r'docs_url\s*=\s*None', content):
+                found_docs_url_none = True
+                break
+
+        assert found_docs_url_none, (
+            "SEC-08 FAIL — docs_url=None not found in config/settings/main.py. "
+            "Swagger UI should be disabled in production."
+        )
+
+
+# ---------------------------------------------------------------------------
+# SEC-09 — Rate limiting on auth endpoints
+# ---------------------------------------------------------------------------
+
+class TestRateLimitingOnAuth:
+    """SEC-09: Auth endpoints must have rate limiting."""
+
+    def test_rate_limit_imported_in_auth_routes(self, sec_project: Path) -> None:
+        """Rate limiting (slowapi / RateLimiter / Limiter) must be imported in auth routes."""
+        auth_route_files = (
+            list(sec_project.rglob("routes/auth*"))
+            + list(sec_project.rglob("routes/login*"))
+            + list(sec_project.rglob("auth/routes*"))
+        )
+        if not auth_route_files:
+            # Search broadly
+            auth_route_files = [
+                f for f in _src_files(sec_project, exclude_tests=True)
+                if "auth" in f.name.lower() and "route" in f.name.lower()
+            ]
+        if not auth_route_files:
+            pytest.skip("No auth route files found — cannot verify rate limiting")
+
+        rate_limit_patterns = ["slowapi", "RateLimiter", "Limiter", "rate_limit", "limiter"]
+        missing = []
+        for f in auth_route_files:
+            src = f.read_text(errors="replace")
+            if not any(p in src for p in rate_limit_patterns):
+                missing.append(str(f.relative_to(sec_project)))
+
+        assert not missing, (
+            "SEC-09 FAIL — auth route files missing rate limiting:\n"
+            + "\n".join(f"  {m}" for m in missing)
+        )
+
+    def test_rate_limit_config_exists(self, sec_project: Path) -> None:
+        """A rate_limit.py or rate_limiter module must exist in generated code."""
+        rate_files = (
+            list(sec_project.rglob("rate_limit*.py"))
+            + list(sec_project.rglob("rate_limiter*.py"))
+            + list(sec_project.rglob("limiter.py"))
+        )
+        # Filter out tests and __pycache__
+        rate_files = [
+            f for f in rate_files
+            if ".venv" not in str(f) and "__pycache__" not in str(f)
+        ]
+        assert rate_files, (
+            "SEC-09 FAIL — no rate_limit*.py module found in generated project"
+        )
+
+
+# ---------------------------------------------------------------------------
+# SEC-10 — Encryption at rest for sensitive data
+# ---------------------------------------------------------------------------
+
+class TestEncryptionAtRest:
+    """SEC-10: ssn_encrypted / sensitive bytes fields must use Fernet or equivalent."""
+
+    def test_fernet_or_crypto_imported(self, sec_project: Path) -> None:
+        """The generated project must import Fernet or AES from cryptography."""
+        crypto_patterns = ["from cryptography", "import cryptography", "Fernet", "AES"]
+        found = False
+        for f in _src_files(sec_project, exclude_tests=True):
+            src = f.read_text(errors="replace")
+            if any(p in src for p in crypto_patterns):
+                found = True
+                break
+        assert found, (
+            "SEC-10 FAIL — no cryptography/Fernet import found in generated code. "
+            "ssn_encrypted fields require encryption at rest."
+        )
+
+    def test_encrypt_decrypt_functions_exist(self, sec_project: Path) -> None:
+        """An encrypt() or decrypt() helper (or Fernet.encrypt) must exist."""
+        patterns = [r"\bFernet\b", r"\bencrypt\b", r"\bdecrypt\b"]
+        found = False
+        for f in _src_files(sec_project, exclude_tests=True):
+            src = f.read_text(errors="replace")
+            if any(re.search(p, src) for p in patterns):
+                found = True
+                break
+        assert found, (
+            "SEC-10 FAIL — no encrypt/decrypt/Fernet usage found. "
+            "Sensitive bytes fields must be encrypted."
+        )
+
+
+# ---------------------------------------------------------------------------
+# SEC-11 — CSRF protection
+# ---------------------------------------------------------------------------
+
+class TestCsrfProtection:
+    """SEC-11: If an admin panel is generated, CSRF middleware must exist."""
+
+    def test_csrf_middleware_or_no_admin_panel(self, sec_project: Path) -> None:
+        """CSRF protection is required if admin routes are generated."""
+        admin_files = [
+            f for f in _src_files(sec_project, exclude_tests=True)
+            if "admin" in f.name.lower() or "admin" in str(f.parent).lower()
+        ]
+        if not admin_files:
+            pytest.skip("No admin panel generated — CSRF check not applicable")
+
+        csrf_patterns = ["CSRFMiddleware", "csrf_protect", "starlette_csrf", "fastapi_csrf"]
+        csrf_found = False
+        for f in _src_files(sec_project, exclude_tests=True):
+            src = f.read_text(errors="replace")
+            if any(p in src for p in csrf_patterns):
+                csrf_found = True
+                break
+
+        assert csrf_found, (
+            "SEC-11 FAIL — admin panel exists but no CSRF middleware found.\n"
+            f"Admin files: {[str(f.relative_to(sec_project)) for f in admin_files]}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# SEC-12 — Secure cookie flags
+# ---------------------------------------------------------------------------
+
+class TestSecureCookieFlags:
+    """SEC-12: Session cookies must have httponly, secure, and samesite."""
+
+    def test_set_cookie_has_httponly(self, sec_project: Path) -> None:
+        """set_cookie() calls must include httponly=True."""
+        cookie_files = [
+            f for f in _src_files(sec_project, exclude_tests=True)
+            if "cookie" in f.read_text(errors="replace").lower()
+            and "set_cookie" in f.read_text(errors="replace")
+        ]
+        if not cookie_files:
+            pytest.skip("No set_cookie() calls in generated code")
+
+        violations = []
+        for f in cookie_files:
+            src = f.read_text(errors="replace")
+            lines = src.splitlines()
+            for i, line in enumerate(lines):
+                if "set_cookie" not in line:
+                    continue
+                # Collect the full call (may span several lines)
+                chunk = "\n".join(lines[i : i + 5])
+                if "httponly" not in chunk.lower():
+                    rel = f.relative_to(sec_project)
+                    violations.append(f"  {rel}:{i + 1}  {line.strip()}")
+
+        assert not violations, (
+            "SEC-12 FAIL — set_cookie() without httponly=True:\n"
+            + "\n".join(violations)
+        )
+
+    def test_set_cookie_has_secure_flag(self, sec_project: Path) -> None:
+        """set_cookie() calls must include secure=True."""
+        cookie_files = [
+            f for f in _src_files(sec_project, exclude_tests=True)
+            if "set_cookie" in f.read_text(errors="replace")
+        ]
+        if not cookie_files:
+            pytest.skip("No set_cookie() calls in generated code")
+
+        violations = []
+        for f in cookie_files:
+            src = f.read_text(errors="replace")
+            lines = src.splitlines()
+            for i, line in enumerate(lines):
+                if "set_cookie" not in line:
+                    continue
+                chunk = "\n".join(lines[i : i + 5])
+                # Allow tests and conftest
+                if not re.search(r'\bsecure\s*=\s*True\b', chunk):
+                    rel = f.relative_to(sec_project)
+                    violations.append(f"  {rel}:{i + 1}  {line.strip()}")
+
+        assert not violations, (
+            "SEC-12 FAIL — set_cookie() without secure=True:\n"
+            + "\n".join(violations)
+        )
+
+
+# ---------------------------------------------------------------------------
+# SEC-13 — No raw SQL with f-strings via SQLAlchemy text()
+# ---------------------------------------------------------------------------
+
+class TestNoRawSqlFstring:
+    """SEC-13: text() with f-string is a SQLi vector."""
+
+    def test_no_text_fstring(self, sec_project: Path) -> None:
+        """text(f\"...\") is unsafe — must be zero occurrences."""
+        pattern = r"""text\s*\(\s*f["']"""
+        hits = _collect_matches(sec_project, pattern)
+        assert not hits, (
+            "SEC-13 FAIL — text(f'...') found (SQL injection risk):\n"
+            + _format_hits(hits, sec_project)
+        )
+
+    def test_no_execute_with_format_string(self, sec_project: Path) -> None:
+        """execute() with % format string is unsafe."""
+        pattern = r"""\.execute\s*\(\s*["'][^"']*(SELECT|INSERT|UPDATE|DELETE)"""
+        hits = _collect_matches(sec_project, pattern, flags=re.IGNORECASE)
+        # Filter out test files for raw string execute that's actually parameterised
+        hits = [(f, l, line) for f, l, line in hits if "/tests/" not in str(f)]
+        assert not hits, (
+            "SEC-13 FAIL — raw .execute() with SQL string found:\n"
+            + _format_hits(hits, sec_project)
+        )
+
+
+# ---------------------------------------------------------------------------
+# SEC-14 — No directory listing via StaticFiles
+# ---------------------------------------------------------------------------
+
+class TestNoDirectoryListing:
+    """SEC-14: StaticFiles must not have html=True (enables directory listing)."""
+
+    def test_static_files_no_html_true(self, sec_project: Path) -> None:
+        """StaticFiles(html=True) enables directory listing — must be zero."""
+        pattern = r"""StaticFiles\s*\([^)]*html\s*=\s*True"""
+        hits = _collect_matches(sec_project, pattern)
+        assert not hits, (
+            "SEC-14 FAIL — StaticFiles(html=True) found (enables dir listing):\n"
+            + _format_hits(hits, sec_project)
+        )
+
+
+# ---------------------------------------------------------------------------
+# SEC-15 — No user input reflected in error responses (XSS)
+# ---------------------------------------------------------------------------
+
+class TestNoXssInErrors:
+    """SEC-15: Error handlers must not reflect user input verbatim."""
+
+    _REFLECT_PATTERNS = [
+        # Directly inserting request data into response body
+        r"""["\{].*\{request\.(query_params|path_params|body|form|headers)\b""",
+        r"""detail\s*=\s*f["'].*\{.*request\.""",
+        r"""content\s*=\s*\{[^}]*"detail"\s*:\s*f["'].*\{""",
+    ]
+
+    def test_error_handlers_dont_reflect_request_data(self, sec_project: Path) -> None:
+        """Error handlers must not embed raw request data in responses."""
+        error_handler_files = [
+            f for f in _src_files(sec_project, exclude_tests=True)
+            if "error" in f.name.lower() or "exception" in f.name.lower()
+        ]
+        if not error_handler_files:
+            # Check main.py for exception_handler decorators
+            error_handler_files = list(sec_project.rglob("main.py"))
+
+        violations = []
+        for f in error_handler_files:
+            src = f.read_text(errors="replace")
+            for pattern in self._REFLECT_PATTERNS:
+                for m in re.finditer(pattern, src, re.IGNORECASE):
+                    lineno = src[: m.start()].count("\n") + 1
+                    violations.append(
+                        f"  {f.relative_to(sec_project)}:{lineno}  {m.group()[:80]}"
+                    )
+
+        assert not violations, (
+            "SEC-15 FAIL — user input reflected in error responses (XSS):\n"
+            + "\n".join(violations)
+        )
+
+
+# ---------------------------------------------------------------------------
+# Standalone runner — produces the final score line
+# ---------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    import subprocess
+    import os
+
+    skill_root = Path(__file__).parent.parent
+    env = {**os.environ, "PYTHONPATH": str(skill_root)}
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            str(Path(__file__)),
+            "-v",
+            "--tb=short",
+            "--no-header",
+            "-q",
+        ],
+        cwd=str(skill_root),
+        env=env,
+        capture_output=False,
+        text=True,
+    )
+
+    # Parse summary
+    sys.exit(proc.returncode)

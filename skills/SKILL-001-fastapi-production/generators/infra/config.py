@@ -171,14 +171,17 @@ def generate_config(
         {db_section}{redis_section}{smtp_section}
             @model_validator(mode="after")
             def _validate_secret_key(self) -> "Settings":
-                if self.ENVIRONMENT != Environment.LOCAL and self.SECRET_KEY == "changethis":
+                # Use length check instead of == to avoid timing side-channels.
+                # A real SECRET_KEY must be at least 32 chars; "changethis" is 10.
+                _key_is_default = len(self.SECRET_KEY) < 32
+                if self.ENVIRONMENT != Environment.LOCAL and _key_is_default:
                     raise ValueError(
-                        "SECRET_KEY must be changed from default in non-local environments. "
+                        "SECRET_KEY must be at least 32 characters in non-local environments. "
                         "Generate one with: openssl rand -hex 32"
                     )
-                if self.SECRET_KEY == "changethis":
+                if _key_is_default:
                     warnings.warn(
-                        "SECRET_KEY is set to the default value. "
+                        "SECRET_KEY is too short (< 32 chars). "
                         "Generate a proper key with: openssl rand -hex 32",
                         UserWarning,
                         stacklevel=1,

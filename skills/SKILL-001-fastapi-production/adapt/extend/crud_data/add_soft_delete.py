@@ -30,6 +30,7 @@ import time
 from pathlib import Path
 
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.migration_helper import find_migration_head
 
 
 # ---------------------------------------------------------------------------
@@ -605,7 +606,7 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
 
 
         @router.delete("/{{item_id}}", response_model={PublicSchema})
-        async def delete_{lower}(
+        async def soft_delete_{lower}(
             item_id: _route_uuid.UUID,
             session: SessionDep,
             current_user: CurrentUser,
@@ -786,13 +787,8 @@ def _write_migration(versions_dir: Path, model_name: str) -> Path:
     """
     table = model_name.lower() + "s"
     rev_id = f"softdel_{table}"
-    # Find the most recent existing revision to chain down_revision
-    existing = sorted(versions_dir.glob("*.py"))
-    down_rev = "0001_initial"
-    if existing:
-        last = existing[-1].stem
-        # Use last revision's prefix or full stem as down_revision
-        down_rev = last
+    # Find the true HEAD of the migration chain (not just alphabetically last file)
+    down_rev = find_migration_head(versions_dir) or "0001_initial"
 
     content = textwrap.dedent("""\
         \"\"\"Add soft-delete columns to {table} table.

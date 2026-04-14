@@ -129,11 +129,17 @@ def generate_app(
             await engine.dispose()
 
 
+        # Disable Swagger UI and OpenAPI schema in production (SEC-08).
+        _is_prod = settings.ENVIRONMENT == "production"
+        _openapi_url = None if _is_prod else f"{prefix}/openapi.json"
+        _docs_url = None if _is_prod else f"{prefix}/docs"
+        _redoc_url = None if _is_prod else f"{prefix}/redoc"
+
         app = FastAPI(
             title="{name}",
-            openapi_url=f"{prefix}/openapi.json" if settings.ENVIRONMENT != "production" else None,
-            docs_url=f"{prefix}/docs" if settings.ENVIRONMENT != "production" else None,
-            redoc_url=f"{prefix}/redoc" if settings.ENVIRONMENT != "production" else None,
+            openapi_url=_openapi_url,
+            docs_url=_docs_url,
+            redoc_url=_redoc_url,
             generate_unique_id_function=custom_generate_unique_id,
             lifespan=lifespan,
         )

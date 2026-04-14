@@ -31,6 +31,7 @@ import time
 from pathlib import Path
 
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.migration_helper import find_migration_head
 
 
 # ---------------------------------------------------------------------------
@@ -96,8 +97,15 @@ def add_webhook_sender(
     files_modified: list[str] = []
 
     # Step 1 – models
-    _write_webhook_models(model_file)
-    files_created.append(str(model_file))
+    # If the project already has a webhook.py (e.g. a user-defined Webhook model),
+    # APPEND the sender models to the existing file instead of overwriting it.
+    # This preserves the user's Webhook class while adding WebhookEndpoint / WebhookDelivery.
+    if model_file.exists():
+        _append_webhook_models(model_file)
+        files_modified.append(str(model_file))
+    else:
+        _write_webhook_models(model_file)
+        files_created.append(str(model_file))
 
     # Step 2 – signer
     webhooks_core_dir = app_dir / "core" / "webhooks"
@@ -122,18 +130,30 @@ def add_webhook_sender(
     files_created.append(str(sender_file))
 
     # Step 5 – CRUD
+    # If app/crud/webhook.py already exists (generated from user's Webhook model),
+    # append the sender CRUD helpers rather than overwriting.
     crud_dir = app_dir / "crud"
     crud_dir.mkdir(parents=True, exist_ok=True)
     crud_file = crud_dir / "webhook.py"
-    _write_webhook_crud(crud_file)
-    files_created.append(str(crud_file))
+    if crud_file.exists():
+        _append_webhook_crud(crud_file)
+        files_modified.append(str(crud_file))
+    else:
+        _write_webhook_crud(crud_file)
+        files_created.append(str(crud_file))
 
     # Step 6 – schemas
+    # Guard: append sender schemas if app/schemas/webhook.py already exists
+    # (generated from user's Webhook model) to avoid overwriting user code.
     schemas_dir = app_dir / "schemas"
     schemas_dir.mkdir(parents=True, exist_ok=True)
     schema_file = schemas_dir / "webhook.py"
-    _write_webhook_schemas(schema_file)
-    files_created.append(str(schema_file))
+    if schema_file.exists() and "WebhookEndpointCreate" not in schema_file.read_text():
+        _append_webhook_schemas(schema_file)
+        files_modified.append(str(schema_file))
+    elif not schema_file.exists():
+        _write_webhook_schemas(schema_file)
+        files_created.append(str(schema_file))
 
     # Step 7 – ARQ worker
     workers_dir = app_dir / "workers"
@@ -350,6 +370,126 @@ def _write_webhook_models(dest: Path) -> None:
             )
         """)
     dest.write_text(content)
+
+
+def _append_webhook_models(dest: Path) -> None:
+    """Append ``WebhookEndpoint`` and ``WebhookDelivery`` to an existing models file.
+
+    Called when ``app/models/webhook.py`` already exists (e.g. the user has their
+    own ``Webhook`` model).  The new classes are appended so that all existing code
+    is preserved.
+
+    Args:
+        dest: Absolute path of the existing ``webhook.py`` model file.
+    """
+    existing = dest.read_text()
+    # Build only the new class blocks — omit the file header (imports already there)
+    classes_block = textwrap.dedent("""\
+
+        # ---------------------------------------------------------------------------
+        # Outbound webhook sender models — added by add_webhook_sender tool
+        # ---------------------------------------------------------------------------
+        import uuid as _wh_uuid
+        from datetime import datetime as _wh_datetime
+        from typing import TYPE_CHECKING as _WH_TYPE_CHECKING
+
+        from sqlalchemy import (
+            CheckConstraint as _wh_CC,
+            DateTime as _wh_DT,
+            ForeignKey as _wh_FK,
+            Integer as _wh_Int,
+            JSON as _wh_JSON,
+            String as _wh_String,
+            Uuid as _wh_Uuid,
+        )
+        from sqlalchemy.orm import Mapped as _wh_Mapped, mapped_column as _wh_mc, relationship as _wh_rel
+
+        if _WH_TYPE_CHECKING:
+            pass
+
+        from app.models.base import Base as _wh_Base
+
+
+        class WebhookEndpoint(_wh_Base):
+            \"\"\"Registered outbound webhook endpoint.
+
+            Attributes:
+                id: Primary key.
+                url: Target HTTPS URL to deliver events to.
+                description: Optional human-readable description.
+                events: JSON array of subscribed event type strings.
+                secret: HMAC-SHA256 signing secret (write-once).
+                status: Lifecycle state — active, disabled, or suspended.
+                consecutive_failures: Auto-disable counter.
+                user_id: Owner (FK to users.id).
+            \"\"\"
+
+            __tablename__ = "webhook_endpoints"
+
+            id: _wh_Mapped[_wh_uuid.UUID] = _wh_mc(_wh_Uuid, primary_key=True, default=_wh_uuid.uuid4)
+            url: _wh_Mapped[str] = _wh_mc(_wh_String(2048), nullable=False)
+            description: _wh_Mapped[str | None] = _wh_mc(_wh_String(500), nullable=True)
+            events: _wh_Mapped[list] = _wh_mc(_wh_JSON, server_default="[]", nullable=False)
+            secret: _wh_Mapped[str] = _wh_mc(_wh_String(128), nullable=False)
+            status: _wh_Mapped[str] = _wh_mc(_wh_String(16), server_default="active", nullable=False)
+            consecutive_failures: _wh_Mapped[int] = _wh_mc(_wh_Int, server_default="0", nullable=False)
+            last_success_at: _wh_Mapped[_wh_datetime | None] = _wh_mc(_wh_DT(timezone=True), nullable=True)
+            last_failure_at: _wh_Mapped[_wh_datetime | None] = _wh_mc(_wh_DT(timezone=True), nullable=True)
+            user_id: _wh_Mapped[_wh_uuid.UUID] = _wh_mc(
+                _wh_Uuid, _wh_FK("users.id", ondelete="CASCADE"), nullable=False
+            )
+            created_at: _wh_Mapped[_wh_datetime] = _wh_mc(
+                _wh_DT(timezone=True), server_default="now()", nullable=False
+            )
+
+            deliveries: _wh_Mapped[list["WebhookDelivery"]] = _wh_rel(
+                "WebhookDelivery", back_populates="endpoint", cascade="all, delete-orphan"
+            )
+
+            __table_args__ = (
+                _wh_CC("status IN ('active','disabled','suspended')", name="ck_webhook_endpoints_status"),
+                _wh_CC("url ~ '^https?://.+'", name="ck_webhook_endpoints_url_format"),
+            )
+
+
+        class WebhookDelivery(_wh_Base):
+            \"\"\"Individual delivery attempt for an outbound webhook event.
+
+            Attributes:
+                id: Primary key.
+                endpoint_id: FK to the parent WebhookEndpoint.
+                event_id: Stable UUID for the logical event (used for dedup).
+                event_type: Dot-separated event type string.
+                payload: JSON event payload.
+                status: Delivery outcome — pending, succeeded, failed, dead.
+                attempt_number: 1-based counter.
+                http_status: HTTP response status code, nullable.
+            \"\"\"
+
+            __tablename__ = "webhook_deliveries"
+
+            id: _wh_Mapped[_wh_uuid.UUID] = _wh_mc(_wh_Uuid, primary_key=True, default=_wh_uuid.uuid4)
+            endpoint_id: _wh_Mapped[_wh_uuid.UUID] = _wh_mc(
+                _wh_Uuid, _wh_FK("webhook_endpoints.id", ondelete="CASCADE"), nullable=False
+            )
+            event_id: _wh_Mapped[_wh_uuid.UUID] = _wh_mc(_wh_Uuid, nullable=False)
+            event_type: _wh_Mapped[str] = _wh_mc(_wh_String(127), nullable=False)
+            payload: _wh_Mapped[dict] = _wh_mc(_wh_JSON, nullable=False)
+            status: _wh_Mapped[str] = _wh_mc(_wh_String(16), server_default="pending", nullable=False)
+            attempt_number: _wh_Mapped[int] = _wh_mc(_wh_Int, server_default="0", nullable=False)
+            http_status: _wh_Mapped[int | None] = _wh_mc(_wh_Int, nullable=True)
+            response_body: _wh_Mapped[str | None] = _wh_mc(_wh_String(4096), nullable=True)
+            error: _wh_Mapped[str | None] = _wh_mc(_wh_String(500), nullable=True)
+            scheduled_at: _wh_Mapped[_wh_datetime | None] = _wh_mc(_wh_DT(timezone=True), nullable=True)
+            delivered_at: _wh_Mapped[_wh_datetime | None] = _wh_mc(_wh_DT(timezone=True), nullable=True)
+
+            endpoint: _wh_Mapped["WebhookEndpoint"] = _wh_rel("WebhookEndpoint", back_populates="deliveries")
+
+            __table_args__ = (
+                _wh_CC("status IN ('pending','succeeded','failed','dead')", name="ck_webhook_deliveries_status"),
+            )
+        """)
+    dest.write_text(existing.rstrip("\n") + "\n" + classes_block)
 
 
 def _write_signer(dest: Path) -> None:
@@ -801,6 +941,114 @@ def _write_webhook_crud(dest: Path) -> None:
     dest.write_text(content)
 
 
+def _append_webhook_crud(dest: Path) -> None:
+    """Append webhook sender CRUD helpers to an existing ``app/crud/webhook.py``.
+
+    Called when the file already contains user-defined CRUD for a ``Webhook``
+    model.  The sender functions (``create_endpoint``, ``create_delivery``, etc.)
+    use unique names that do not conflict with the standard CRUD primitives
+    (``create``, ``get``, ``get_multi``, ``update``, ``delete``).
+
+    Args:
+        dest: Path to the existing ``app/crud/webhook.py``.
+    """
+    existing = dest.read_text()
+    # Guard: don't append twice
+    if "create_endpoint" in existing:
+        return
+
+    block = textwrap.dedent("""\
+
+        # ---------------------------------------------------------------------------
+        # Outbound webhook sender CRUD — appended by add_webhook_sender tool
+        # ---------------------------------------------------------------------------
+        import secrets as _wh_secrets
+        import uuid as _wh_uuid
+        from sqlalchemy import select as _wh_select
+        from sqlalchemy.ext.asyncio import AsyncSession as _wh_AS
+        from sqlalchemy.dialects.postgresql import JSONB as _wh_JSONB
+
+        from app.models.webhook import WebhookDelivery, WebhookEndpoint
+        from app.schemas.webhook import (
+            WebhookEndpointCreate as _WHEPCreate,
+            WebhookEndpointUpdate as _WHEPUpdate,
+        )
+
+
+        async def create_endpoint(session: _wh_AS, *, in_: _WHEPCreate, user_id: _wh_uuid.UUID) -> WebhookEndpoint:
+            ep = WebhookEndpoint(
+                id=_wh_uuid.uuid4(), url=str(in_.url), description=in_.description,
+                events=in_.events, secret=_wh_secrets.token_hex(32), user_id=user_id,
+            )
+            session.add(ep)
+            await session.flush()
+            return ep
+
+
+        async def get_endpoint(session: _wh_AS, *, id: _wh_uuid.UUID) -> WebhookEndpoint | None:
+            stmt = _wh_select(WebhookEndpoint).where(WebhookEndpoint.id == id)
+            return (await session.execute(stmt)).scalar_one_or_none()
+
+
+        async def list_endpoints_for_user(session: _wh_AS, *, user_id: _wh_uuid.UUID) -> list[WebhookEndpoint]:
+            stmt = _wh_select(WebhookEndpoint).where(WebhookEndpoint.user_id == user_id)
+            return list((await session.execute(stmt)).scalars().all())
+
+
+        async def list_endpoints_for_event(session: _wh_AS, *, event_type: str) -> list[WebhookEndpoint]:
+            stmt = (
+                _wh_select(WebhookEndpoint)
+                .where(
+                    WebhookEndpoint.status == "active",
+                    WebhookEndpoint.events.cast(_wh_JSONB).contains([event_type]),
+                )
+            )
+            return list((await session.execute(stmt)).scalars().all())
+
+
+        async def update_endpoint(session: _wh_AS, *, ep: WebhookEndpoint, in_: _WHEPUpdate) -> WebhookEndpoint:
+            for field, value in in_.model_dump(exclude_unset=True).items():
+                setattr(ep, field, value)
+            await session.flush()
+            return ep
+
+
+        async def delete_endpoint(session: _wh_AS, *, ep: WebhookEndpoint) -> None:
+            await session.delete(ep)
+            await session.flush()
+
+
+        async def create_delivery(
+            session: _wh_AS, *, endpoint_id: _wh_uuid.UUID, event_id: _wh_uuid.UUID,
+            event_type: str, payload: dict,
+        ) -> WebhookDelivery:
+            delivery = WebhookDelivery(
+                id=_wh_uuid.uuid4(), endpoint_id=endpoint_id, event_id=event_id,
+                event_type=event_type, payload=payload,
+            )
+            session.add(delivery)
+            await session.flush()
+            return delivery
+
+
+        async def get_delivery(session: _wh_AS, *, id: _wh_uuid.UUID) -> WebhookDelivery | None:
+            stmt = _wh_select(WebhookDelivery).where(WebhookDelivery.id == id)
+            return (await session.execute(stmt)).scalar_one_or_none()
+
+
+        async def list_deliveries_for_endpoint(
+            session: _wh_AS, *, endpoint_id: _wh_uuid.UUID
+        ) -> list[WebhookDelivery]:
+            stmt = (
+                _wh_select(WebhookDelivery)
+                .where(WebhookDelivery.endpoint_id == endpoint_id)
+                .order_by(WebhookDelivery.scheduled_at.desc())
+            )
+            return list((await session.execute(stmt)).scalars().all())
+        """)
+    dest.write_text(existing.rstrip("\n") + "\n" + block)
+
+
 def _write_webhook_schemas(dest: Path) -> None:
     """Write ``app/schemas/webhook.py`` with Pydantic schemas.
 
@@ -926,6 +1174,81 @@ def _write_webhook_schemas(dest: Path) -> None:
             delivered_at: datetime | None
         """)
     dest.write_text(content)
+
+
+def _append_webhook_schemas(dest: Path) -> None:
+    """Append webhook sender Pydantic schemas to an existing ``app/schemas/webhook.py``.
+
+    Called when the file already contains user-defined schemas for a ``Webhook``
+    model.  The new ``WebhookEndpoint*`` and ``WebhookDelivery*`` schemas are
+    appended without modifying the existing content.
+
+    Args:
+        dest: Path to the existing ``app/schemas/webhook.py``.
+    """
+    existing = dest.read_text()
+    if "WebhookEndpointCreate" in existing:
+        return
+
+    block = textwrap.dedent("""\
+
+        # ---------------------------------------------------------------------------
+        # Outbound webhook sender schemas — appended by add_webhook_sender tool
+        # ---------------------------------------------------------------------------
+        import uuid as _wh_uuid
+        from datetime import datetime as _wh_datetime
+        from typing import Any as _wh_Any
+        from pydantic import AnyHttpUrl as _wh_AnyHttpUrl, BaseModel as _wh_BM, Field as _wh_Field
+
+
+        class WebhookEndpointCreate(_wh_BM):
+            \"\"\"Create a new webhook endpoint.\"\"\"
+            url: _wh_AnyHttpUrl
+            description: str | None = None
+            events: list[str] = _wh_Field(default_factory=list)
+
+
+        class WebhookEndpointUpdate(_wh_BM):
+            \"\"\"Partial update for a webhook endpoint.\"\"\"
+            url: _wh_AnyHttpUrl | None = None
+            description: str | None = None
+            events: list[str] | None = None
+            status: str | None = None
+
+
+        class WebhookEndpointPublic(_wh_BM):
+            \"\"\"Public view of a webhook endpoint (secret excluded).\"\"\"
+            model_config = {"from_attributes": True}
+            id: _wh_uuid.UUID
+            url: str
+            description: str | None
+            events: list[str]
+            status: str
+            user_id: _wh_uuid.UUID
+            created_at: _wh_datetime
+
+
+        class WebhookEndpointWithSecret(WebhookEndpointPublic):
+            \"\"\"Returned once at creation — includes the signing secret.\"\"\"
+            secret: str
+
+
+        class WebhookDeliveryPublic(_wh_BM):
+            \"\"\"Public view of a single delivery attempt.\"\"\"
+            model_config = {"from_attributes": True}
+            id: _wh_uuid.UUID
+            endpoint_id: _wh_uuid.UUID
+            event_id: _wh_uuid.UUID
+            event_type: str
+            status: str
+            attempt_number: int
+            http_status: int | None
+            response_body: str | None
+            error: str | None
+            scheduled_at: _wh_datetime | None
+            delivered_at: _wh_datetime | None
+        """)
+    dest.write_text(existing.rstrip("\n") + "\n" + block)
 
 
 def _write_webhook_worker(
@@ -1235,10 +1558,12 @@ def _write_webhook_migration(versions_dir: Path) -> Path:
     Returns:
         Path of the created migration file.
     """
+    down_rev = find_migration_head(versions_dir) or "0001_initial"
     content = textwrap.dedent("""\
         \"\"\"Add webhook_endpoints and webhook_deliveries tables.
 
         Revision ID: 0015_add_webhook_sender
+        Revises: {down_rev}
         Create Date: auto-generated by add_webhook_sender tool
         \"\"\"
         from __future__ import annotations
@@ -1247,7 +1572,7 @@ def _write_webhook_migration(versions_dir: Path) -> Path:
         from alembic import op
 
         revision = "0015_add_webhook_sender"
-        down_revision = None
+        down_revision = "{down_rev}"
         branch_labels = None
         depends_on = None
 
@@ -1331,7 +1656,7 @@ def _write_webhook_migration(versions_dir: Path) -> Path:
             op.drop_table("webhook_deliveries")
             op.drop_index("ix_webhook_endpoints_user_id", "webhook_endpoints")
             op.drop_table("webhook_endpoints")
-        """)
+        """).format(down_rev=down_rev)
     migration_file = versions_dir / "0015_add_webhook_sender.py"
     migration_file.write_text(content)
     return migration_file
