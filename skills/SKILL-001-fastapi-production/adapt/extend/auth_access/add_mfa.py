@@ -1195,6 +1195,8 @@ def _patch_requirements(requirements_file: Path) -> None:
         lines_to_add.append("pyotp>=2.9.0")
     if "segno" not in src:
         lines_to_add.append("segno>=1.6.0")
+    if "cryptography" not in src:
+        lines_to_add.append("cryptography>=43.0.0")
     if "redis" not in src:
         lines_to_add.append("redis[hiredis]>=5.0.0")
     if lines_to_add:

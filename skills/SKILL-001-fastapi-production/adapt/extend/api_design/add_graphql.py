@@ -167,6 +167,9 @@ def add_graphql(inp: ToolInput) -> ToolResult:
 def _discover_models(app_dir: Path) -> list[str]:
     """Return PascalCase model names found in ``app/models/``.
 
+    Only includes models that have a matching route file in ``app/api/routes/``
+    to avoid generating resolvers for infrastructure-only models.
+
     Args:
         app_dir: The ``app/`` package directory.
 
@@ -174,13 +177,23 @@ def _discover_models(app_dir: Path) -> list[str]:
         Sorted list of discovered model names.
     """
     models_dir = app_dir / "models"
+    routes_dir = app_dir / "api" / "routes"
     skip = {"base", "user", "mixins", "__init__"}
     names: list[str] = []
     if not models_dir.exists():
         return names
+    available_routes: set[str] = set()
+    if routes_dir.exists():
+        for r in routes_dir.glob("*.py"):
+            if r.stem != "__init__":
+                available_routes.add(r.stem)
     for f in sorted(models_dir.glob("*.py")):
-        if f.stem not in skip:
-            names.append(f.stem.capitalize())
+        if f.stem in skip:
+            continue
+        if f.stem not in available_routes:
+            continue
+        pascal = "".join(part.capitalize() for part in f.stem.split("_"))
+        names.append(pascal)
     return names
 
 
@@ -573,12 +586,10 @@ def _write_queries(dest: Path, model_names: list[str]) -> None:
         from __future__ import annotations
 
         import uuid
-        from typing import TYPE_CHECKING
 
         import strawberry
 
-        if TYPE_CHECKING:
-            from app.graphql.context import GraphQLContext
+        from app.graphql.context import GraphQLContext
 
         """) + "\n".join(
         f"from app.graphql.types import {m}Type"
@@ -667,12 +678,10 @@ def _write_mutations(dest: Path, model_names: list[str]) -> None:
         from __future__ import annotations
 
         import uuid
-        from typing import TYPE_CHECKING
 
         import strawberry
 
-        if TYPE_CHECKING:
-            from app.graphql.context import GraphQLContext
+        from app.graphql.context import GraphQLContext
 
         """) + "\n".join(
         f"from app.graphql.types import {m}Type, {m}CreateInput, {m}UpdateInput"
@@ -808,7 +817,7 @@ def _patch_main(main_file: Path) -> None:
         _graphql_app = _GraphQLRouter(
             _gql_schema,
             context_getter=_gql_ctx,
-            graphiql=True,
+            graphql_ide="graphiql",
         )
         app.include_router(_graphql_app, prefix="/graphql")
         """)

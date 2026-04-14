@@ -21,6 +21,7 @@ Example::
 
 from __future__ import annotations
 
+import ast
 import textwrap
 import time
 from pathlib import Path
@@ -64,13 +65,14 @@ def add_data_export(inp: ToolInput) -> ToolResult:
         )
 
     # --- Discover target models -------------------------------------------
-    model_names = _discover_models(app_dir)
-    if not model_names:
+    model_pairs = _discover_models(app_dir)
+    if not model_pairs:
         return ToolResult(
             status="error",
             error="No SQLAlchemy models found in app/models/. Generate models first.",
             execution_time_ms=_elapsed_ms(start),
         )
+    model_names = [pascal for _stem, pascal in model_pairs]
 
     if inp.dry_run:
         return ToolResult(
@@ -124,8 +126,8 @@ def add_data_export(inp: ToolInput) -> ToolResult:
     files_created.append(str(worker_file))
 
     # --- Step 7: Patch route files with /export endpoint -----------------
-    for model_name in model_names:
-        route_file = app_dir / "api" / "routes" / f"{model_name.lower()}.py"
+    for stem, model_name in model_pairs:
+        route_file = app_dir / "api" / "routes" / f"{stem}.py"
         if route_file.exists():
             _patch_routes(route_file, model_name)
             files_modified.append(str(route_file))
@@ -141,7 +143,7 @@ def add_data_export(inp: ToolInput) -> ToolResult:
         files_created=files_created,
         files_modified=files_modified,
         notes=[
-            f"Data export enabled for models: {', '.join(model_names)}",
+            f"Data export enabled for models: {', '.join(model_names or [])}",
             "Streaming export uses server-side cursors — never loads full dataset in RAM.",
             "Exports above EXPORT_ASYNC_THRESHOLD rows are dispatched as ARQ background jobs.",
             "SENSITIVE_COLUMNS (hashed_password, api_key, etc.) are always excluded from export output.",
@@ -161,24 +163,51 @@ def add_data_export(inp: ToolInput) -> ToolResult:
 # Step helpers — each < 50 LOC
 # ---------------------------------------------------------------------------
 
-def _discover_models(app_dir: Path) -> list[str]:
-    """Return PascalCase model names found in ``app/models/``, excluding User and Base.
+def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
+    """Return ``(snake_stem, PascalName)`` pairs from ``app/models/``, excluding system models.
+
+    Only includes models where:
+    1. The file contains a class named ``{pascal}`` inheriting from ``Base``.
+    2. A matching route file ``app/api/routes/{stem}.py`` exists.
 
     Args:
         app_dir: The ``app/`` package directory.
 
     Returns:
-        Sorted list of discovered model names (e.g. ``["Item"]``).
+        Sorted list of ``(snake_stem, PascalName)`` tuples.
     """
     models_dir = app_dir / "models"
+    routes_dir = app_dir / "api" / "routes"
     skip = {"base", "user", "mixins", "__init__"}
-    names = []
+    pairs: list[tuple[str, str]] = []
+    available_routes: set[str] = set()
+    if routes_dir.exists():
+        for r in routes_dir.glob("*.py"):
+            if r.stem != "__init__":
+                available_routes.add(r.stem)
     for f in sorted(models_dir.glob("*.py")):
         stem = f.stem
         if stem in skip:
             continue
-        names.append(stem.capitalize())
-    return names
+        if stem not in available_routes:
+            continue
+        pascal = "".join(w.capitalize() for w in stem.split("_"))
+        try:
+            tree = ast.parse(f.read_text())
+        except SyntaxError:
+            continue
+        base_subclasses = [
+            n.name for n in ast.walk(tree)
+            if isinstance(n, ast.ClassDef)
+            and any(
+                (isinstance(b, ast.Name) and b.id == "Base")
+                or (isinstance(b, ast.Attribute) and b.attr == "Base")
+                for b in n.bases
+            )
+        ]
+        if pascal in base_subclasses:
+            pairs.append((stem, pascal))
+    return pairs
 
 
 def _write_export_core(dest: Path) -> None:

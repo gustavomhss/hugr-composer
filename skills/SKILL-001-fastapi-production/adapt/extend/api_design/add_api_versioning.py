@@ -148,7 +148,13 @@ def add_api_versioning(inp: ToolInput) -> ToolResult:
 # ---------------------------------------------------------------------------
 
 def _discover_models(app_dir: Path) -> list[str]:
-    """Return PascalCase model names found in ``app/models/``.
+    """Return PascalCase model names found in ``app/models/`` that have a
+    matching route file in ``app/api/routes/``.
+
+    Only models with a corresponding ``app/api/routes/{stem}.py`` are included
+    so that versioned stubs can safely delegate to the existing router.  This
+    guards against infrastructure/auth models (e.g. ``api_key``, ``rbac``,
+    ``tenant``) whose route files use a different name or do not exist.
 
     Args:
         app_dir: The ``app/`` package directory.
@@ -157,12 +163,23 @@ def _discover_models(app_dir: Path) -> list[str]:
         Sorted list of discovered model names (e.g. ``["Item"]``).
     """
     models_dir = app_dir / "models"
+    routes_dir = app_dir / "api" / "routes"
     skip = {"base", "user", "mixins", "__init__"}
     names: list[str] = []
     if not models_dir.exists():
         return names
+    # Build the set of route stems available in app/api/routes/
+    available_routes: set[str] = set()
+    if routes_dir.exists():
+        for r in routes_dir.glob("*.py"):
+            if r.stem != "__init__":
+                available_routes.add(r.stem)
     for f in sorted(models_dir.glob("*.py")):
-        if f.stem not in skip:
+        if f.stem in skip:
+            continue
+        # Only include the model when a same-named route file exists,
+        # i.e. app/api/routes/{stem}.py is present.
+        if f.stem in available_routes:
             names.append(f.stem.capitalize())
     return names
 

@@ -24,6 +24,7 @@ Example::
 
 from __future__ import annotations
 
+import ast
 import textwrap
 import time
 from pathlib import Path
@@ -68,13 +69,14 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
         )
 
     # --- Discover target models -------------------------------------------
-    model_names = _discover_models(app_dir)
-    if not model_names:
+    model_pairs = _discover_models(app_dir)
+    if not model_pairs:
         return ToolResult(
             status="error",
             error="No SQLAlchemy models found in app/models/. Generate models first.",
             execution_time_ms=_elapsed_ms(start),
         )
+    model_names = [pascal for _stem, pascal in model_pairs]
 
     files_created: list[str] = []
     files_modified: list[str] = []
@@ -95,8 +97,8 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
     files_created.append(str(mixins_file))
 
     # --- Step 2: Patch each model to inherit SoftDeleteMixin --------------
-    for model_name in model_names:
-        model_file = app_dir / "models" / f"{model_name.lower()}.py"
+    for stem, model_name in model_pairs:
+        model_file = app_dir / "models" / f"{stem}.py"
         if model_file.exists():
             _patch_model(model_file, model_name)
             files_modified.append(str(model_file))
@@ -113,22 +115,22 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
         files_modified.append(str(main_file))
 
     # --- Step 5: Extend CRUD modules with helpers ------------------------
-    for model_name in model_names:
-        crud_file = app_dir / "crud" / f"{model_name.lower()}.py"
+    for stem, model_name in model_pairs:
+        crud_file = app_dir / "crud" / f"{stem}.py"
         if crud_file.exists():
             _patch_crud(crud_file, model_name)
             files_modified.append(str(crud_file))
 
     # --- Step 6: Patch route files with soft-delete endpoints ------------
-    for model_name in model_names:
-        route_file = app_dir / "api" / "routes" / f"{model_name.lower()}.py"
+    for stem, model_name in model_pairs:
+        route_file = app_dir / "api" / "routes" / f"{stem}.py"
         if route_file.exists():
             _patch_routes(route_file, model_name)
             files_modified.append(str(route_file))
 
     # --- Step 7: Patch schemas with ItemDeletedPublic --------------------
-    for model_name in model_names:
-        schema_file = app_dir / "schemas" / f"{model_name.lower()}.py"
+    for stem, model_name in model_pairs:
+        schema_file = app_dir / "schemas" / f"{stem}.py"
         if schema_file.exists():
             _patch_schema(schema_file, model_name)
             files_modified.append(str(schema_file))
@@ -136,7 +138,7 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
     # --- Step 8: Generate Alembic migration ------------------------------
     versions_dir = project / "alembic" / "versions"
     if versions_dir.exists():
-        for model_name in model_names:
+        for _stem, model_name in model_pairs:
             migration_file = _write_migration(versions_dir, model_name)
             files_created.append(str(migration_file))
 
@@ -161,44 +163,82 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
 # Step helpers — each < 50 LOC
 # ---------------------------------------------------------------------------
 
-def _discover_models(app_dir: Path) -> list[str]:
-    """Return PascalCase model names found in ``app/models/``, excluding User and Base.
+def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
+    """Return ``(snake_stem, PascalName)`` pairs from ``app/models/``, excluding system files.
+
+    Only includes models where:
+    1. The file contains a class named ``{pascal}`` inheriting from ``Base``.
+    2. A matching route file ``app/api/routes/{stem}.py`` exists.
+
+    This avoids patching infrastructure models added by other tools (e.g.
+    ``feature_flag.py`` → ``feature_flags.py`` route, ``mfa.py`` → no matching
+    ``Mfa(Base)`` class, ``tenant.py`` → ``tenant.py`` route but already skipped).
 
     Args:
         app_dir: The ``app/`` package directory.
 
     Returns:
-        Sorted list of discovered model names (e.g. ``["Item"]``).
+        Sorted list of ``(snake_stem, PascalName)`` tuples.
     """
     models_dir = app_dir / "models"
+    routes_dir = app_dir / "api" / "routes"
     skip = {"base", "user", "mixins", "__init__"}
-    names = []
+    pairs: list[tuple[str, str]] = []
+    available_routes: set[str] = set()
+    if routes_dir.exists():
+        for r in routes_dir.glob("*.py"):
+            if r.stem != "__init__":
+                available_routes.add(r.stem)
     for f in sorted(models_dir.glob("*.py")):
         stem = f.stem
         if stem in skip:
             continue
-        # Derive PascalCase class name: item -> Item, order_item -> OrderItem
-        names.append("".join(w.capitalize() for w in stem.split("_")))
-    return names
+        if stem not in available_routes:
+            continue
+        pascal = "".join(w.capitalize() for w in stem.split("_"))
+        try:
+            tree = ast.parse(f.read_text())
+        except SyntaxError:
+            continue
+        base_subclasses = [
+            n.name for n in ast.walk(tree)
+            if isinstance(n, ast.ClassDef)
+            and any(
+                (isinstance(b, ast.Name) and b.id == "Base")
+                or (isinstance(b, ast.Attribute) and b.attr == "Base")
+                for b in n.bases
+            )
+        ]
+        if pascal in base_subclasses:
+            pairs.append((stem, pascal))
+    return pairs
 
 
 def _write_mixin(dest: Path) -> None:
-    """Write ``app/models/mixins.py`` with ``SoftDeleteMixin``.
+    """Write or extend ``app/models/mixins.py`` with ``SoftDeleteMixin``.
+
+    If the file already exists (e.g. ``TenantScopedMixin`` was added by
+    ``add_multi_tenancy``), the new class is APPENDed so existing mixins are
+    preserved.
 
     Args:
-        dest: Absolute path for the new file.
+        dest: Absolute path for the file.
     """
     dest.parent.mkdir(parents=True, exist_ok=True)
-    content = textwrap.dedent("""\
-        \"\"\"Reusable SQLAlchemy mixin that adds soft-delete columns.\"\"\"
 
-        from __future__ import annotations
+    # Standalone block that works whether we write fresh or append.
+    # Imports are repeated deliberately so the class is self-contained when appended.
+    mixin_block = textwrap.dedent("""\
 
-        import uuid
-        from datetime import datetime
-
-        from sqlalchemy import Boolean, DateTime, ForeignKey, Uuid
-        from sqlalchemy.orm import Mapped, declared_attr, mapped_column
+        # ---------------------------------------------------------------------------
+        # SoftDeleteMixin — added by add_soft_delete tool
+        # ---------------------------------------------------------------------------
+        import uuid as _sd_uuid
+        from datetime import datetime as _sd_datetime
+        from sqlalchemy import Boolean as _sd_Boolean, DateTime as _sd_DateTime
+        from sqlalchemy import ForeignKey as _sd_ForeignKey, Uuid as _sd_Uuid
+        from sqlalchemy.orm import declared_attr as _sd_declared_attr
+        from sqlalchemy.orm import Mapped as _sd_Mapped, mapped_column as _sd_mapped_column
 
 
         class SoftDeleteMixin:
@@ -215,25 +255,35 @@ def _write_mixin(dest: Path) -> None:
                 deleted_by: FK to users.id, nullable, SET NULL on user delete.
             \"\"\"
 
-            @declared_attr
-            def is_deleted(cls) -> Mapped[bool]:
-                return mapped_column(
-                    Boolean, default=False, nullable=False, server_default="false"
+            @_sd_declared_attr
+            def is_deleted(cls) -> _sd_Mapped[bool]:
+                return _sd_mapped_column(
+                    _sd_Boolean, default=False, nullable=False, server_default="false"
                 )
 
-            @declared_attr
-            def deleted_at(cls) -> Mapped[datetime | None]:
-                return mapped_column(DateTime(timezone=True), nullable=True)
+            @_sd_declared_attr
+            def deleted_at(cls) -> _sd_Mapped[_sd_datetime | None]:
+                return _sd_mapped_column(_sd_DateTime(timezone=True), nullable=True)
 
-            @declared_attr
-            def deleted_by(cls) -> Mapped[uuid.UUID | None]:
-                return mapped_column(
-                    Uuid,
-                    ForeignKey("users.id", ondelete="SET NULL"),
+            @_sd_declared_attr
+            def deleted_by(cls) -> _sd_Mapped[_sd_uuid.UUID | None]:
+                return _sd_mapped_column(
+                    _sd_Uuid,
+                    _sd_ForeignKey("users.id", ondelete="SET NULL"),
                     nullable=True,
                 )
         """)
-    dest.write_text(content)
+
+    if dest.exists():
+        existing = dest.read_text()
+        dest.write_text(existing.rstrip("\n") + "\n" + mixin_block)
+    else:
+        header = textwrap.dedent("""\
+            \"\"\"Reusable SQLAlchemy mixins for soft-delete and other cross-cutting concerns.\"\"\"
+
+            from __future__ import annotations
+            """)
+        dest.write_text(header + mixin_block)
 
 
 def _patch_model(model_file: Path, model_name: str) -> None:
@@ -259,12 +309,15 @@ def _patch_model(model_file: Path, model_name: str) -> None:
             "from app.models.base import Base\nfrom app.models.mixins import SoftDeleteMixin",
         )
 
-    # Add Index to sqlalchemy imports if missing
-    if "Index" not in src and "from sqlalchemy import" in src:
-        src = src.replace(
-            "from sqlalchemy import",
-            "from sqlalchemy import Index,",
-        )
+    # Add Index to sqlalchemy imports if missing — handle both single-line and
+    # multi-line forms (e.g., "from sqlalchemy import (\n    Column,\n)")
+    import re as _re
+    if "Index" not in src:
+        _multi = _re.search(r"(from sqlalchemy import\s*\()", src)
+        if _multi:
+            src = src[: _multi.end()] + "\n    Index," + src[_multi.end():]
+        elif "from sqlalchemy import" in src:
+            src = src.replace("from sqlalchemy import", "from sqlalchemy import Index,", 1)
 
     # Patch class declaration: class Foo(Base) -> class Foo(SoftDeleteMixin, Base)
     src = src.replace(

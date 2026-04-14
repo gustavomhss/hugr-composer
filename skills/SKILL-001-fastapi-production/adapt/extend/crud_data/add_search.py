@@ -25,6 +25,7 @@ Example::
 
 from __future__ import annotations
 
+import ast
 import textwrap
 import time
 from pathlib import Path
@@ -76,12 +77,13 @@ def add_search(inp: ToolInput) -> ToolResult:
             execution_time_ms=_elapsed_ms(start),
         )
 
+    pascal_names = [pascal for (_stem, pascal) in model_map.keys()]
+
     if inp.dry_run:
-        model_names = list(model_map.keys())
         return ToolResult(
             status="success",
             notes=[
-                f"[dry_run] Would add full-text search for models: {', '.join(model_names)}",
+                f"[dry_run] Would add full-text search for models: {', '.join(pascal_names)}",
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
@@ -91,24 +93,23 @@ def add_search(inp: ToolInput) -> ToolResult:
     files_created: list[str] = []
     files_modified: list[str] = []
 
-    for model_name, text_fields in model_map.items():
-        lower = model_name.lower()
-        table = lower + "s"
+    for (stem, model_name), text_fields in model_map.items():
+        table = stem + "s"
 
         # --- Step 1: Patch CRUD with search() and autocomplete helpers ----
-        crud_file = app_dir / "crud" / f"{lower}.py"
+        crud_file = app_dir / "crud" / f"{stem}.py"
         if crud_file.exists():
             _patch_crud(crud_file, model_name, text_fields)
             files_modified.append(str(crud_file))
 
         # --- Step 2: Patch schemas with SearchParams / SearchResponse -----
-        schema_file = app_dir / "schemas" / f"{lower}.py"
+        schema_file = app_dir / "schemas" / f"{stem}.py"
         if schema_file.exists():
             _patch_schema(schema_file, model_name)
             files_modified.append(str(schema_file))
 
         # --- Step 3: Patch routes with search + autocomplete endpoints ----
-        route_file = app_dir / "api" / "routes" / f"{lower}.py"
+        route_file = app_dir / "api" / "routes" / f"{stem}.py"
         if route_file.exists():
             _patch_routes(route_file, model_name)
             files_modified.append(str(route_file))
@@ -124,7 +125,7 @@ def add_search(inp: ToolInput) -> ToolResult:
         files_created=files_created,
         files_modified=files_modified,
         notes=[
-            f"Full-text search enabled for: {', '.join(model_map.keys())}",
+            f"Full-text search enabled for: {', '.join(pascal_names)}",
             "GIN index created via CONCURRENTLY (migration must run outside a transaction).",
             "User input always parameterized via websearch_to_tsquery — no LIKE/ILIKE.",
             "Autocomplete uses prefix tsquery (term:*) with LIMIT 5.",
@@ -163,34 +164,57 @@ def _search_already_installed(app_dir: Path) -> bool:
     return False
 
 
-def _discover_models_with_fields(app_dir: Path) -> dict[str, list[str]]:
-    """Return PascalCase model names mapped to their text field names.
+def _discover_models_with_fields(app_dir: Path) -> dict[tuple[str, str], list[str]]:
+    """Return ``(snake_stem, PascalName)`` pairs mapped to their text field names.
 
-    Scans ``app/models/*.py`` for mapped_column definitions.  Falls back to
-    a default ``["title", "description"]`` if the model file cannot be parsed.
+    Only includes models where:
+    1. The file contains a class named ``{pascal}`` inheriting from ``Base``.
+    2. A matching route file ``app/api/routes/{stem}.py`` exists.
+
+    Falls back to ``["title", "description"]`` if the model has no text fields.
 
     Args:
         app_dir: The ``app/`` package directory.
 
     Returns:
-        Dict mapping model name to list of text fields.
+        Dict mapping ``(stem, pascal)`` to list of text fields.
     """
     models_dir = app_dir / "models"
+    routes_dir = app_dir / "api" / "routes"
     skip = {"base", "user", "mixins", "__init__"}
-    result: dict[str, list[str]] = {}
+    result: dict[tuple[str, str], list[str]] = {}
+    available_routes: set[str] = set()
+    if routes_dir.exists():
+        for r in routes_dir.glob("*.py"):
+            if r.stem != "__init__":
+                available_routes.add(r.stem)
 
     for f in sorted(models_dir.glob("*.py")):
         stem = f.stem
         if stem in skip:
             continue
-        model_name = stem.capitalize()
+        if stem not in available_routes:
+            continue
+        pascal = "".join(w.capitalize() for w in stem.split("_"))
         src = f.read_text()
+        try:
+            tree = ast.parse(src)
+        except SyntaxError:
+            continue
+        base_subclasses = [
+            n.name for n in ast.walk(tree)
+            if isinstance(n, ast.ClassDef)
+            and any(
+                (isinstance(b, ast.Name) and b.id == "Base")
+                or (isinstance(b, ast.Attribute) and b.attr == "Base")
+                for b in n.bases
+            )
+        ]
+        if pascal not in base_subclasses:
+            continue
         # Collect str / String / Text column names from mapped_column lines
         fields = _extract_text_fields(src)
-        if fields:
-            result[model_name] = fields
-        else:
-            result[model_name] = ["title", "description"]
+        result[(stem, pascal)] = fields if fields else ["title", "description"]
 
     return result
 

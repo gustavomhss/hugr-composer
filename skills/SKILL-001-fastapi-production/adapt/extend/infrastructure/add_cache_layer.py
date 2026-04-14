@@ -111,6 +111,19 @@ def add_cache_layer(inp: ToolInput) -> ToolResult:
         _patch_main(main_file)
         files_modified.append(str(main_file))
 
+    # --- Step 4: Patch requirements.txt ---------------------------------------
+    req_file = project / "requirements.txt"
+    if req_file.exists():
+        req_src = req_file.read_text()
+        req_adds = []
+        if "msgpack" not in req_src:
+            req_adds.append("msgpack>=1.0.0")
+        if "redis" not in req_src:
+            req_adds.append("redis[hiredis]>=5.0.0")
+        if req_adds:
+            req_file.write_text(req_src.rstrip("\n") + "\n" + "\n".join(req_adds) + "\n")
+            files_modified.append(str(req_file))
+
     return ToolResult(
         status="success",
         files_created=files_created,

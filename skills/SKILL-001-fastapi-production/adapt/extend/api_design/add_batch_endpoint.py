@@ -66,20 +66,22 @@ def add_batch_endpoint(inp: ToolInput) -> ToolResult:
             execution_time_ms=_elapsed_ms(start),
         )
 
-    model_names = _discover_models(app_dir)
-    if not model_names:
+    model_pairs = _discover_models(app_dir)
+    if not model_pairs:
         return ToolResult(
             status="error",
             error="No SQLAlchemy models found in app/models/. Generate models first.",
             execution_time_ms=_elapsed_ms(start),
         )
 
+    pascal_names = [p for _, p in model_pairs]
+
     if inp.dry_run:
         return ToolResult(
             status="success",
             notes=[
                 "[dry_run] Would add BatchCore + bulk routes.",
-                f"[dry_run] Models: {', '.join(model_names)}",
+                f"[dry_run] Models: {', '.join(pascal_names)}",
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
@@ -93,10 +95,18 @@ def add_batch_endpoint(inp: ToolInput) -> ToolResult:
     _write_batch_core(batch_core, _DEFAULT_MAX_BATCH, _DEFAULT_TIMEOUT_MS)
     files_created.append(str(batch_core))
 
-    # Step 2: idempotency store
+    # Step 2: idempotency store — only write if not already present.
+    # add_bulk_operations may have already written a richer idempotency.py
+    # (with IdempotencyCache / get_idempotency_cache).  Overwriting it would
+    # break the bulk-operations routes that import those symbols.
     idempotency_file = app_dir / "core" / "idempotency.py"
-    _write_idempotency(idempotency_file)
-    files_created.append(str(idempotency_file))
+    if not idempotency_file.exists():
+        _write_idempotency(idempotency_file)
+        files_created.append(str(idempotency_file))
+    else:
+        # Ensure get_idempotency_store is available alongside any existing symbols.
+        _merge_idempotency_store(idempotency_file)
+        files_modified.append(str(idempotency_file))
 
     # Step 3: per-model bulk route files
     bulk_dir = app_dir / "api" / "routes" / "bulk"
@@ -105,16 +115,16 @@ def add_batch_endpoint(inp: ToolInput) -> ToolResult:
     bulk_init.write_text('"""Bulk route modules — one per model."""\n')
     files_created.append(str(bulk_init))
 
-    for model in model_names:
-        route_file = bulk_dir / f"{model.lower()}_bulk.py"
-        _write_bulk_route(route_file, model, _DEFAULT_MAX_BATCH, _DEFAULT_TIMEOUT_MS)
+    for stem, pascal in model_pairs:
+        route_file = bulk_dir / f"{stem}_bulk.py"
+        _write_bulk_route(route_file, stem, pascal, _DEFAULT_MAX_BATCH, _DEFAULT_TIMEOUT_MS)
         files_created.append(str(route_file))
 
     # Step 4: patch main.py / api router
     api_main = app_dir / "api" / "main.py"
     target = api_main if api_main.exists() else app_dir / "main.py"
     if target.exists():
-        _patch_router(target, model_names)
+        _patch_router(target, model_pairs)
         files_modified.append(str(target))
 
     warnings: list[str] = []
@@ -129,7 +139,7 @@ def add_batch_endpoint(inp: ToolInput) -> ToolResult:
         files_modified=files_modified,
         warnings=warnings,
         notes=[
-            f"Batch endpoints added for: {', '.join(model_names)}.",
+            f"Batch endpoints added for: {', '.join(pascal_names)}.",
             f"POST /{{model}}s/bulk — HTTP 207 Multi-Status.",
             f"Max batch size: {_DEFAULT_MAX_BATCH}. Rejects larger payloads with 422.",
             "Supports all_or_nothing and best_effort transaction modes.",
@@ -148,24 +158,56 @@ def add_batch_endpoint(inp: ToolInput) -> ToolResult:
 # Step helpers
 # ---------------------------------------------------------------------------
 
-def _discover_models(app_dir: Path) -> list[str]:
-    """Return PascalCase model names found in ``app/models/``.
+def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
+    """Return ``(snake_stem, PascalName)`` pairs for models in ``app/models/``
+    that have a matching schema file defining ``{PascalName}Create``.
+
+    Only includes models that satisfy the batch template's import requirements:
+    * ``app/schemas/{snake_stem}.py`` must exist
+    * ``{PascalName}Create`` must be defined in that schema file
+
+    This guards against infrastructure/auth models added by other tools
+    (e.g. ``api_key``, ``tenant``, ``rbac``) whose schema classes use
+    different naming conventions and don't define a simple ``{Name}Create``
+    counterpart needed by the batch endpoint template.
 
     Args:
         app_dir: The ``app/`` package directory.
 
     Returns:
-        Sorted list of discovered model names.
+        Sorted list of ``(snake_stem, PascalName)`` tuples
+        (e.g. ``[("audit_log", "AuditLog"), ("item", "Item")]``).
     """
     models_dir = app_dir / "models"
+    schemas_dir = app_dir / "schemas"
     skip = {"base", "user", "mixins", "__init__"}
-    names: list[str] = []
+    pairs: list[tuple[str, str]] = []
     if not models_dir.exists():
-        return names
+        return pairs
     for f in sorted(models_dir.glob("*.py")):
-        if f.stem not in skip:
-            names.append(f.stem.capitalize())
-    return names
+        if f.stem in skip:
+            continue
+        stem = f.stem
+        # Convert snake_case stem to PascalCase (e.g. "audit_log" → "AuditLog").
+        pascal = "".join(part.capitalize() for part in stem.split("_"))
+        # Only include when the schema file exists and defines ``{pascal}Create``.
+        # This excludes infra/auth models (APIKeyCreate, etc.) automatically.
+        schema_file = schemas_dir / f"{stem}.py"
+        if schema_file.exists():
+            schema_src = schema_file.read_text()
+            # Require both ``class {pascal}Create`` and ``class {pascal}Public``
+            # to be *defined* (not merely referenced) in the schema file.
+            # The batch route template imports both symbols; if either is missing
+            # the generated route will raise an ImportError at boot time.
+            # add_bulk_operations may add a ``list[FileCreate]`` reference to
+            # file.py without defining the class, so a substring check is not
+            # sufficient — we check for the class statement explicitly.
+            if (
+                f"class {pascal}Create" in schema_src
+                and f"class {pascal}Public" in schema_src
+            ):
+                pairs.append((stem, pascal))
+    return pairs
 
 
 def _write_batch_core(dest: Path, max_batch: int, timeout_ms: int) -> None:
@@ -396,6 +438,70 @@ def _write_batch_core(dest: Path, max_batch: int, timeout_ms: int) -> None:
     dest.write_text(content)
 
 
+def _merge_idempotency_store(dest: Path) -> None:
+    """Append ``IdempotencyStore`` and ``get_idempotency_store`` to an existing
+    ``idempotency.py`` if they are not already present.
+
+    Called when a prior tool (e.g. ``add_bulk_operations``) has already written
+    an ``idempotency.py`` with its own symbols.  We must not overwrite that file
+    because doing so would remove symbols those routes depend on.  Instead we
+    append only the missing parts that ``add_batch_endpoint`` needs.
+
+    Args:
+        dest: Absolute path to the existing ``app/core/idempotency.py``.
+    """
+    src = dest.read_text()
+    if "get_idempotency_store" in src:
+        return  # Already present — nothing to do.
+
+    addition = textwrap.dedent("""\
+
+
+        # ---------------------------------------------------------------------------
+        # IdempotencyStore — added by add_batch_endpoint tool
+        # ---------------------------------------------------------------------------
+        import threading as _threading
+        from typing import Any as _Any
+
+
+        class IdempotencyStore:
+            \"\"\"Thread-safe in-memory idempotency store for batch requests.
+
+            Attributes:
+                _store: Internal dict mapping keys to cached results.
+                _lock: Thread lock protecting concurrent access.
+            \"\"\"
+
+            def __init__(self) -> None:
+                self._store: dict[str, _Any] = {}
+                self._lock = _threading.Lock()
+
+            def get(self, key: str) -> _Any | None:
+                \"\"\"Return cached result for *key*, or None.\"\"\"
+                with self._lock:
+                    return self._store.get(key)
+
+            def put(self, key: str, result: _Any) -> None:
+                \"\"\"Store *result* under *key*.\"\"\"
+                with self._lock:
+                    self._store[key] = result
+
+            def seen(self, key: str) -> bool:
+                \"\"\"Return True if *key* was already processed.\"\"\"
+                with self._lock:
+                    return key in self._store
+
+
+        _batch_store: IdempotencyStore = IdempotencyStore()
+
+
+        def get_idempotency_store() -> IdempotencyStore:
+            \"\"\"Return the process-wide IdempotencyStore singleton.\"\"\"
+            return _batch_store
+    """)
+    dest.write_text(src + addition)
+
+
 def _write_idempotency(dest: Path) -> None:
     """Write ``app/core/idempotency.py`` with in-memory idempotency store.
 
@@ -481,18 +587,22 @@ def _write_idempotency(dest: Path) -> None:
 
 
 def _write_bulk_route(
-    dest: Path, model_name: str, max_batch: int, timeout_ms: int
+    dest: Path, snake_stem: str, model_name: str, max_batch: int, timeout_ms: int
 ) -> None:
     """Write a bulk route file for one model.
 
     Args:
         dest: Absolute destination path.
-        model_name: PascalCase model name.
+        snake_stem: Original snake_case model file stem (e.g. "audit_log").
+            Used for schema/crud import paths that mirror the file layout.
+        model_name: PascalCase model name (e.g. "AuditLog").
         max_batch: Hard cap on batch size.
         timeout_ms: Per-item timeout in milliseconds.
     """
     dest.parent.mkdir(parents=True, exist_ok=True)
-    lower = model_name.lower()
+    # Use the original snake_case stem for imports so that multi-word models
+    # (e.g. audit_log → app/schemas/audit_log.py) resolve correctly.
+    lower = snake_stem
     timeout_s = timeout_ms / 1000.0
     content = textwrap.dedent("""\
         \"\"\"Bulk create endpoint for {Model} — POST /{lower}s/bulk, HTTP 207.\"\"\"
@@ -585,24 +695,24 @@ def _write_bulk_route(
     dest.write_text(content)
 
 
-def _patch_router(router_file: Path, model_names: list[str]) -> None:
+def _patch_router(router_file: Path, model_pairs: list[tuple[str, str]]) -> None:
     """Register bulk routers inside the API main router file.
 
     Args:
         router_file: Path to the API router assembly file.
-        model_names: PascalCase model names.
+        model_pairs: List of ``(snake_stem, PascalName)`` tuples.
     """
     src = router_file.read_text()
     if "bulk_create" in src or "/bulk" in src:
         return
 
     import_lines = "\n".join(
-        f"from app.api.routes.bulk.{m.lower()}_bulk import router as _{m.lower()}_bulk_router"
-        for m in model_names
+        f"from app.api.routes.bulk.{stem}_bulk import router as _{stem}_bulk_router"
+        for stem, _ in model_pairs
     )
     include_lines = "\n".join(
-        f"api_router.include_router(_{m.lower()}_bulk_router, prefix='/{m.lower()}s', tags=['bulk'])"
-        for m in model_names
+        f"api_router.include_router(_{stem}_bulk_router, prefix='/{stem}s', tags=['bulk'])"
+        for stem, _ in model_pairs
     )
 
     src = src.rstrip("\n") + "\n\n" + import_lines + "\n" + include_lines + "\n"

@@ -21,6 +21,7 @@ Example::
 
 from __future__ import annotations
 
+import ast
 import textwrap
 import time
 from pathlib import Path
@@ -65,6 +66,8 @@ def add_bulk_operations(inp: ToolInput) -> ToolResult:
             notes=["IdempotencyCache already present — bulk operations already enabled, skipped."],
             execution_time_ms=_elapsed_ms(start),
         )
+    # If add_batch_endpoint already wrote idempotency.py (with get_idempotency_store),
+    # we must NOT overwrite it — merge the IdempotencyCache content instead.
 
     # --- Discover target models -------------------------------------------
     model_names = _discover_models(app_dir)
@@ -90,8 +93,13 @@ def add_bulk_operations(inp: ToolInput) -> ToolResult:
     files_modified: list[str] = []
 
     # --- Step 1: Idempotency cache module --------------------------------
-    _write_idempotency(idempotency_file)
-    files_created.append(str(idempotency_file))
+    if not idempotency_file.exists():
+        _write_idempotency(idempotency_file)
+        files_created.append(str(idempotency_file))
+    else:
+        # File exists (written by add_batch_endpoint) — append IdempotencyCache block
+        _merge_idempotency_cache(idempotency_file)
+        files_created.append(str(idempotency_file))
 
     # --- Step 2: Patch schemas with Bulk* models -------------------------
     for model_name in model_names:
@@ -153,7 +161,11 @@ def add_bulk_operations(inp: ToolInput) -> ToolResult:
 # ---------------------------------------------------------------------------
 
 def _discover_models(app_dir: Path) -> list[str]:
-    """Return PascalCase model names found in ``app/models/``, excluding User and Base.
+    """Return PascalCase model names found in ``app/models/``, excluding system files.
+
+    Only includes models where:
+    1. The file contains a class named ``{pascal}`` inheriting from ``Base``.
+    2. A matching route file ``app/api/routes/{stem}.py`` exists.
 
     Args:
         app_dir: The ``app/`` package directory.
@@ -162,13 +174,36 @@ def _discover_models(app_dir: Path) -> list[str]:
         Sorted list of discovered model names (e.g. ``["Item"]``).
     """
     models_dir = app_dir / "models"
+    routes_dir = app_dir / "api" / "routes"
     skip = {"base", "user", "mixins", "__init__"}
+    available_routes: set[str] = set()
+    if routes_dir.exists():
+        for r in routes_dir.glob("*.py"):
+            if r.stem != "__init__":
+                available_routes.add(r.stem)
     names = []
     for f in sorted(models_dir.glob("*.py")):
         stem = f.stem
         if stem in skip:
             continue
-        names.append(stem.capitalize())
+        if stem not in available_routes:
+            continue
+        pascal = "".join(w.capitalize() for w in stem.split("_"))
+        try:
+            tree = ast.parse(f.read_text())
+        except SyntaxError:
+            continue
+        base_subclasses = [
+            n.name for n in ast.walk(tree)
+            if isinstance(n, ast.ClassDef)
+            and any(
+                (isinstance(b, ast.Name) and b.id == "Base")
+                or (isinstance(b, ast.Attribute) and b.attr == "Base")
+                for b in n.bases
+            )
+        ]
+        if pascal in base_subclasses:
+            names.append(pascal)
     return names
 
 
@@ -269,6 +304,82 @@ def _write_idempotency(dest: Path) -> None:
                     logger.warning("idempotency_cache_set_failed key=%s exc=%s", key, exc)
         """)
     dest.write_text(content)
+
+
+def _merge_idempotency_cache(dest: Path) -> None:
+    """Append ``IdempotencyCache`` and ``get_idempotency_cache`` to an existing
+    ``app/core/idempotency.py`` file written by a different tool.
+
+    When ``add_batch_endpoint`` runs first, it creates ``idempotency.py`` with
+    ``IdempotencyStore``.  This function appends the complementary
+    ``IdempotencyCache`` block so bulk routes can import ``get_idempotency_cache``
+    without the full file being overwritten.
+
+    Args:
+        dest: Path to the existing ``app/core/idempotency.py``.
+    """
+    src = dest.read_text()
+    if "IdempotencyCache" in src:
+        return
+
+    cache_block = textwrap.dedent("""\
+
+        # ---------------------------------------------------------------------------
+        # IdempotencyCache — added by add_bulk_operations tool
+        # ---------------------------------------------------------------------------
+        import json as _idem_json
+        import logging as _idem_logging
+        import redis.asyncio as _idem_aioredis
+        from typing import Any as _idem_Any
+
+        _idem_logger = _idem_logging.getLogger(__name__)
+        _idem_redis: _idem_aioredis.Redis | None = None
+
+
+        def init_idempotency_cache(redis_url: str) -> None:
+            \"\"\"Initialise the global idempotency Redis client.
+
+            Args:
+                redis_url: Redis connection URL.
+            \"\"\"
+            global _idem_redis
+            _idem_redis = _idem_aioredis.from_url(redis_url, decode_responses=True)
+
+
+        def get_idempotency_cache() -> "IdempotencyCache":
+            \"\"\"Return a cache wrapper bound to the current Redis client.
+
+            Returns:
+                ``IdempotencyCache`` instance (safe when Redis is None).
+            \"\"\"
+            return IdempotencyCache(_idem_redis)
+
+
+        class IdempotencyCache:
+            \"\"\"Thin wrapper around Redis providing get/set for idempotency keys.\"\"\"
+
+            def __init__(self, redis: _idem_aioredis.Redis | None) -> None:
+                self._redis = redis
+
+            async def get(self, key: str) -> dict | None:
+                if self._redis is None:
+                    return None
+                try:
+                    raw = await self._redis.get(f"idem:{key}")
+                    return _idem_json.loads(raw) if raw else None
+                except Exception as exc:
+                    _idem_logger.warning("idempotency_cache_get_failed key=%s exc=%s", key, exc)
+                    return None
+
+            async def set(self, key: str, value: _idem_Any, ttl: int = 86400) -> None:
+                if self._redis is None:
+                    return
+                try:
+                    await self._redis.setex(f"idem:{key}", ttl, _idem_json.dumps(value))
+                except Exception as exc:
+                    _idem_logger.warning("idempotency_cache_set_failed key=%s exc=%s", key, exc)
+        """)
+    dest.write_text(src.rstrip("\n") + "\n" + cache_block)
 
 
 def _patch_schema(schema_file: Path, model_name: str) -> None:
