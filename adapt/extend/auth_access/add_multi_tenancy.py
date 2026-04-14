@@ -346,7 +346,7 @@ def _write_tenant_model(dest: Path) -> None:
                     name="ck_tenants_status",
                 ),
                 CheckConstraint(
-                    "slug ~ '^[a-z0-9][a-z0-9-]{0,62}$'",
+                    "length(slug) >= 1 AND length(slug) <= 63",
                     name="ck_tenants_slug_format",
                 ),
             )
@@ -512,6 +512,7 @@ def _write_tenant_middleware(dest: Path) -> None:
 
         TENANT_FREE_PATHS = {
             "/api/v1/login/access-token",
+            "/api/v1/users/signup",
             "/api/v1/auth/register",
             "/health",
             "/healthz",
@@ -519,6 +520,7 @@ def _write_tenant_middleware(dest: Path) -> None:
             "/docs",
             "/redoc",
             "/openapi.json",
+            "/api/v1/openapi.json",
         }
 
 
@@ -1131,7 +1133,7 @@ def _write_migration(versions_dir: Path, model_names: list[str]) -> Path:
                     name="ck_tenants_status",
                 ),
                 sa.CheckConstraint(
-                    "slug ~ '^[a-z0-9][a-z0-9-]{{0,62}}$'",
+                    "length(slug) >= 1 AND length(slug) <= 63",
                     name="ck_tenants_slug_format",
                 ),
             )

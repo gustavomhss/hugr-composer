@@ -308,7 +308,7 @@ def _write_webhook_models(dest: Path) -> None:
                     name="ck_webhook_endpoints_status",
                 ),
                 CheckConstraint(
-                    "url ~ '^https?://.+'",
+                    "url LIKE 'http://%' OR url LIKE 'https://%'",
                     name="ck_webhook_endpoints_url_format",
                 ),
             )
@@ -448,7 +448,7 @@ def _append_webhook_models(dest: Path) -> None:
 
             __table_args__ = (
                 _wh_CC("status IN ('active','disabled','suspended')", name="ck_webhook_endpoints_status"),
-                _wh_CC("url ~ '^https?://.+'", name="ck_webhook_endpoints_url_format"),
+                _wh_CC("url LIKE 'http://%' OR url LIKE 'https://%'", name="ck_webhook_endpoints_url_format"),
             )
 
 
@@ -814,7 +814,9 @@ def _write_webhook_crud(dest: Path) -> None:
         ) -> list[WebhookEndpoint]:
             \"\"\"Return active endpoints subscribed to *event_type*.
 
-            Uses a JSON ``@>`` containment check on the ``events`` column.
+            Filters active endpoints whose ``events`` JSON list contains the
+            given *event_type*.  Uses a database-agnostic approach (works with
+            both PostgreSQL and SQLite).
 
             Args:
                 session: Async database session.
@@ -823,18 +825,9 @@ def _write_webhook_crud(dest: Path) -> None:
             Returns:
                 List of matching active ``WebhookEndpoint`` instances.
             \"\"\"
-            from sqlalchemy import cast, func, text
-            from sqlalchemy.dialects.postgresql import JSONB
-            stmt = (
-                select(WebhookEndpoint)
-                .where(
-                    WebhookEndpoint.status == "active",
-                    WebhookEndpoint.events.cast(JSONB).contains(  # type: ignore[attr-defined]
-                        cast(func.jsonb_build_array(event_type), JSONB)
-                    ),
-                )
-            )
-            return list((await session.execute(stmt)).scalars().all())
+            stmt = select(WebhookEndpoint).where(WebhookEndpoint.status == "active")
+            rows = list((await session.execute(stmt)).scalars().all())
+            return [ep for ep in rows if event_type in (ep.events or [])]
 
 
         async def update_endpoint(
@@ -966,8 +959,6 @@ def _append_webhook_crud(dest: Path) -> None:
         import uuid as _wh_uuid
         from sqlalchemy import select as _wh_select
         from sqlalchemy.ext.asyncio import AsyncSession as _wh_AS
-        from sqlalchemy.dialects.postgresql import JSONB as _wh_JSONB
-
         from app.models.webhook import WebhookDelivery, WebhookEndpoint
         from app.schemas.webhook import (
             WebhookEndpointCreate as _WHEPCreate,
@@ -996,14 +987,9 @@ def _append_webhook_crud(dest: Path) -> None:
 
 
         async def list_endpoints_for_event(session: _wh_AS, *, event_type: str) -> list[WebhookEndpoint]:
-            stmt = (
-                _wh_select(WebhookEndpoint)
-                .where(
-                    WebhookEndpoint.status == "active",
-                    WebhookEndpoint.events.cast(_wh_JSONB).contains([event_type]),
-                )
-            )
-            return list((await session.execute(stmt)).scalars().all())
+            stmt = _wh_select(WebhookEndpoint).where(WebhookEndpoint.status == "active")
+            rows = list((await session.execute(stmt)).scalars().all())
+            return [ep for ep in rows if event_type in (ep.events or [])]
 
 
         async def update_endpoint(session: _wh_AS, *, ep: WebhookEndpoint, in_: _WHEPUpdate) -> WebhookEndpoint:
@@ -1607,7 +1593,7 @@ def _write_webhook_migration(versions_dir: Path) -> Path:
                     name="ck_webhook_endpoints_status",
                 ),
                 sa.CheckConstraint(
-                    "url ~ '^https?://.+'",
+                    "url LIKE 'http://%' OR url LIKE 'https://%'",
                     name="ck_webhook_endpoints_url_format",
                 ),
             )

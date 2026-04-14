@@ -202,7 +202,7 @@ def _write_rbac_models(dest: Path) -> None:
 
             __table_args__ = (
                 CheckConstraint(
-                    r"code ~ '^([a-z][a-z0-9_-]{0,62}|\\*):([a-z][a-z0-9_-]{0,62}|\\*)$'",
+                    "code LIKE '%:%'",
                     name="ck_permissions_code_format",
                 ),
             )
@@ -242,7 +242,7 @@ def _write_rbac_models(dest: Path) -> None:
 
             __table_args__ = (
                 CheckConstraint(
-                    "name ~ '^[a-z][a-z0-9_-]{0,62}$'",
+                    "length(name) >= 1 AND length(name) <= 63",
                     name="ck_roles_name_format",
                 ),
             )
@@ -1201,7 +1201,7 @@ def _write_migration(versions_dir: Path) -> Path:
                     nullable=False,
                 ),
                 sa.CheckConstraint(
-                    r"code ~ '^([a-z][a-z0-9_-]{{0,62}}|\\*):([a-z][a-z0-9_-]{{0,62}}|\\*)$'",
+                    "code LIKE '%:%'",
                     name="ck_permissions_code_format",
                 ),
                 sa.UniqueConstraint("code"),
@@ -1232,7 +1232,7 @@ def _write_migration(versions_dir: Path) -> Path:
                     nullable=False,
                 ),
                 sa.CheckConstraint(
-                    "name ~ '^[a-z][a-z0-9_-]{{0,62}}$'", name="ck_roles_name_format"
+                    "length(name) >= 1 AND length(name) <= 63", name="ck_roles_name_format"
                 ),
                 sa.UniqueConstraint("name"),
             )
