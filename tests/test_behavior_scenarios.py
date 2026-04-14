@@ -1033,6 +1033,62 @@ EMAIL_TEMPLATES = Scenario(
 # Registry + runner
 # ---------------------------------------------------------------------------
 
+# ===========================================================================
+# SCENARIO 12 — Admin panel (SQLAdmin)
+# ===========================================================================
+
+async def flow_sqladmin(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
+    """Verify admin panel infra: setup module, auth, views, config."""
+
+    # Config fields patched into Settings
+    cfg_mod = importlib.import_module("app.core.config")
+    s = cfg_mod.settings
+    has_cfg = all(hasattr(s, f) for f in [
+        "ADMIN_PATH", "ADMIN_TITLE", "ADMIN_REQUIRE_SUPERUSER",
+    ])
+    ctx.record("admin_settings_patched", has_cfg,
+               f"ADMIN_PATH={getattr(s, 'ADMIN_PATH', None)}")
+
+    # Setup module is importable with lazy sqladmin
+    setup_mod = importlib.import_module("app.admin.setup")
+    has_setup = callable(getattr(setup_mod, "setup_admin", None))
+    ctx.record("setup_admin_callable", has_setup,
+               "app.admin.setup.setup_admin is callable")
+
+    # Auth backend is importable
+    auth_mod = importlib.import_module("app.admin.auth")
+    has_auth = hasattr(auth_mod, "AdminAuthBackend")
+    ctx.record("auth_backend_present", has_auth,
+               "AdminAuthBackend class present")
+
+    # Views module has MODEL_ADMINS
+    views_mod = importlib.import_module("app.admin.views")
+    model_admins = getattr(views_mod, "MODEL_ADMINS", [])
+    ctx.record("model_admins_discovered", len(model_admins) >= 2,
+               f"{len(model_admins)} ModelAdmin classes generated")
+
+    # main.py has setup_admin(app) call
+    main_src = (ctx.project_dir / "app/main.py").read_text()
+    ctx.record("main_py_patched", "setup_admin(app)" in main_src,
+               "setup_admin(app) present in main.py")
+
+    return ctx.report_section
+
+
+SQLADMIN = Scenario(
+    name="sqladmin_panel",
+    archetype="FastAPI-native admin panel with SQLAdmin + auth gate",
+    models={
+        "Invoice": {"number": "str", "total": "float", "status": "str"},
+    },
+    tools=[
+        ("add_multi_tenancy", "adapt.extend.auth_access.add_multi_tenancy"),
+        ("add_sqladmin",      "adapt.extend.infrastructure.add_sqladmin"),
+    ],
+    flow=flow_sqladmin,
+)
+
+
 SCENARIOS: list[Scenario] = [
     ECOMMERCE,
     SAAS_B2B,
@@ -1045,6 +1101,7 @@ SCENARIOS: list[Scenario] = [
     ARQ_WORKER,
     STRIPE_CHECKOUT,
     EMAIL_TEMPLATES,
+    SQLADMIN,
 ]
 
 
