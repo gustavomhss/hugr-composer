@@ -26,6 +26,7 @@ Example::
 from __future__ import annotations
 
 import ast
+import re
 import textwrap
 import time
 from pathlib import Path
@@ -650,7 +651,20 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
             return {model_name}_AutocompleteResult(suggestions=suggestions)
         """).format(lower=lower, model_name=model_name, import_header=new_imports)
 
-    route_file.write_text(src + additions)
+    # Insert BEFORE the first @router.get("/{...}") route so FastAPI doesn't
+    # match /search against the {id} path parameter (route ordering matters).
+    # Matches both @router.get("/{id}" and @router.get("/{item_id}" patterns.
+    id_route_match = re.search(r'^@router\.get\("/?\{', src, re.MULTILINE)
+
+    if id_route_match is not None:
+        insert_pos = id_route_match.start()
+        # Walk back over any blank lines / decorator comments preceding the match
+        while insert_pos > 0 and src[insert_pos - 1] == "\n":
+            insert_pos -= 1
+        route_file.write_text(src[:insert_pos] + additions + "\n" + src[insert_pos:])
+    else:
+        # Fallback: no {id} route found — append at the end (safe, no collision)
+        route_file.write_text(src + additions)
 
 
 def _write_migration(

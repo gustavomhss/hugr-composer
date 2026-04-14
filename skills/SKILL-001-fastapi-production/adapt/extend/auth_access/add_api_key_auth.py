@@ -234,7 +234,7 @@ def _write_model(dest: Path) -> None:
                     name="ck_api_keys_status",
                 ),
                 CheckConstraint(
-                    "key_id ~ '^[a-z0-9]{16,32}$'",
+                    "length(key_id) >= 16 AND length(key_id) <= 32",
                     name="ck_api_keys_key_id_format",
                 ),
                 Index("ix_api_keys_user_status", "user_id", "status"),
@@ -1225,7 +1225,7 @@ def _write_migration(versions_dir: Path) -> Path:
                     "status IN ('active','revoked','expired')", name="ck_api_keys_status"
                 ),
                 sa.CheckConstraint(
-                    "key_id ~ '^[a-z0-9]{{16,32}}$'", name="ck_api_keys_key_id_format"
+                    "length(key_id) >= 16 AND length(key_id) <= 32", name="ck_api_keys_key_id_format"
                 ),
             )
             op.create_index("ix_api_keys_key_id", "api_keys", ["key_id"], unique=True)

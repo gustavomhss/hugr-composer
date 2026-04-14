@@ -255,7 +255,7 @@ def _write_flag_model(dest: Path) -> None:
                     name="ck_feature_flags_rollout_range",
                 ),
                 CheckConstraint(
-                    "key ~ '^[a-z][a-z0-9_-]{0,126}$'",
+                    "length(key) >= 1 AND length(key) <= 127",
                     name="ck_feature_flags_key_format",
                 ),
             )
@@ -1223,7 +1223,7 @@ def _write_migration(versions_dir: Path) -> Path:
                     name="ck_feature_flags_rollout_range",
                 ),
                 sa.CheckConstraint(
-                    "key ~ '^[a-z][a-z0-9_-]{{0,126}}$'",
+                    "length(key) >= 1 AND length(key) <= 127",
                     name="ck_feature_flags_key_format",
                 ),
             )

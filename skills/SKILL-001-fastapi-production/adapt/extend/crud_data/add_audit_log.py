@@ -252,7 +252,7 @@ def _write_audit_model(dest: Path) -> None:
             Uuid,
             func,
         )
-        from sqlalchemy.dialects.postgresql import INET, JSONB
+        from sqlalchemy import JSON
         from sqlalchemy.orm import Mapped, mapped_column
 
         from app.models.base import Base
@@ -288,9 +288,9 @@ def _write_audit_model(dest: Path) -> None:
                 String(32), nullable=True,
                 comment="Authentication method: password, api_key, oauth2, mfa"
             )
-            before_values: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-            after_values: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-            ip_address: Mapped[str | None] = mapped_column(INET, nullable=True)
+            before_values: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+            after_values: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+            ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
             user_agent: Mapped[str | None] = mapped_column(String(512), nullable=True)
             entry_hash: Mapped[str | None] = mapped_column(
                 String(64), nullable=True, comment="SHA-256 hex of this row chained to prev"
