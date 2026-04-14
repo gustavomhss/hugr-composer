@@ -19,6 +19,8 @@ Example::
 
 from __future__ import annotations
 
+__test__ = False  # not a pytest module — this is a tool implementation
+
 import json
 import textwrap
 import time

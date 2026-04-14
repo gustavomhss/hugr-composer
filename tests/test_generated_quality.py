@@ -320,34 +320,21 @@ class TestRequirementsCompleteness:
         project_dir = _generate_base_project(tmp_path)
         _apply_tools(project_dir)  # raises AssertionError on any failure
 
-    def test_cryptography_missing_from_requirements(self, tmp_path: Path) -> None:
-        """add_mfa generates code that imports `cryptography` but does NOT add
-        it to requirements.txt — this is a confirmed bug.
-
-        This test documents the current (broken) state and will PASS once
-        add_mfa._patch_requirements() is fixed to include cryptography.
-        """
+    def test_cryptography_in_requirements(self, tmp_path: Path) -> None:
+        """add_mfa generates crypto.py that imports cryptography — requirements.txt must include it."""
         project_dir = _generate_base_project(tmp_path)
         _apply_tools(project_dir)
 
         req_content = (project_dir / "requirements.txt").read_text()
         crypto_generated = (project_dir / "app" / "core" / "mfa" / "crypto.py").exists()
 
-        # crypto.py is generated
         assert crypto_generated, "Expected app/core/mfa/crypto.py to be generated"
-        # But cryptography is NOT in requirements (the bug)
-        assert "cryptography" not in req_content, (
-            "cryptography IS now in requirements.txt — update this test and "
-            "test_cryptography_added_after_fix to reflect the fix"
+        assert "cryptography" in req_content, (
+            "cryptography must be in requirements.txt (add_mfa generates crypto.py)"
         )
 
-    def test_msgpack_missing_from_requirements(self, tmp_path: Path) -> None:
-        """add_cache_layer generates code that imports `msgpack` but its
-        next_steps say 'pip install msgpack' instead of patching requirements.txt.
-
-        This test documents the current (broken) state and will PASS once
-        add_cache_layer._patch_requirements() is fixed to include msgpack.
-        """
+    def test_msgpack_in_requirements(self, tmp_path: Path) -> None:
+        """add_cache_layer generates code that imports msgpack — requirements.txt must include it."""
         project_dir = _generate_base_project(tmp_path)
         _apply_tools(project_dir)
 
@@ -355,9 +342,8 @@ class TestRequirementsCompleteness:
         cache_core_generated = (project_dir / "app" / "cache" / "core.py").exists()
 
         assert cache_core_generated, "Expected app/cache/core.py to be generated"
-        assert "msgpack" not in req_content, (
-            "msgpack IS now in requirements.txt — update this test and "
-            "test_msgpack_added_after_fix to reflect the fix"
+        assert "msgpack" in req_content, (
+            "msgpack must be in requirements.txt (add_cache_layer generates cache code)"
         )
 
     def test_base_requirements_cover_all_imports(self, tmp_path: Path) -> None:
@@ -378,13 +364,7 @@ class TestRequirementsCompleteness:
         )
 
     def test_requirements_import_count(self, tmp_path: Path) -> None:
-        """After applying all 5 tools, verify the count of verified vs missing imports.
-
-        Confirmed state (2026-04-12):
-        - 20 distinct third-party imports in generated code
-        - 18 verified (covered by requirements.txt or transitive deps)
-        - 2 missing: cryptography, msgpack
-        """
+        """After applying all 5 tools, every third-party import must be covered by requirements.txt."""
         project_dir = _generate_base_project(tmp_path)
         _apply_tools(project_dir)
 
@@ -400,14 +380,12 @@ class TestRequirementsCompleteness:
             else:
                 missing.append(imp)
 
-        # Document confirmed missing packages
-        assert set(missing) == {"cryptography", "msgpack"}, (
-            f"Expected exactly {{'cryptography', 'msgpack'}} to be missing.\n"
-            f"Got missing={missing!r}, verified={verified!r}\n"
-            "If this changed: update the test to reflect the new state."
+        assert not missing, (
+            f"requirements.txt is missing packages for these imports: {missing!r}\n"
+            f"verified={verified!r}"
         )
-        assert len(verified) >= 16, (
-            f"Expected >= 16 verified imports, got {len(verified)}: {verified}"
+        assert len(verified) >= 18, (
+            f"Expected >= 18 verified imports, got {len(verified)}: {verified}"
         )
 
     def test_tools_all_apply_cleanly(self, tmp_path: Path) -> None:

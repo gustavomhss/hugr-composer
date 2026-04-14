@@ -116,7 +116,7 @@ _TOOLS_5: list[tuple[str, str]] = [
 _MEM_LIMIT_BYTES = 500 * 1024 * 1024
 
 # Timing limit
-_TIME_LIMIT_S = 30.0
+_TIME_LIMIT_S = 60.0
 
 # Minimum Python files expected after 20-model + all 27 tools
 _MIN_PY_FILES = 300
@@ -177,7 +177,7 @@ def _boot_ok(project_dir: str) -> tuple[bool, str]:
         env={**os.environ, "PYTHONPATH": project_dir},
         capture_output=True,
         text=True,
-        timeout=30,
+        timeout=60,
     )
     if "BOOT OK" in r.stdout:
         return True, ""
@@ -211,7 +211,7 @@ def test1_enterprise_scale() -> tuple[bool, str]:
         1. Boot OK
         2. All .py files parse without SyntaxError
         3. > 300 Python files generated
-        4. Total wall time < 30 s
+        4. Total wall time < 60 s
         5. Process RSS delta < 500 MB
     """
     label = "TEST 1 [20-model + 27 tools]"

@@ -403,7 +403,7 @@ def _write_audit_listeners(dest: Path, model_pairs: list[tuple[str, str]]) -> No
         from typing import Any
 
         from sqlalchemy import event, inspect
-        from sqlalchemy.orm import Session
+        from sqlalchemy.orm import Session as _OrmSession
 
         from app.core.audit_context import get_audit_context
         from app.models.audit_log import AuditLog
@@ -483,7 +483,7 @@ def _write_audit_listeners(dest: Path, model_pairs: list[tuple[str, str]]) -> No
             return "update"
 
 
-        def _get_prev_hash(session: Session) -> str | None:
+        def _get_prev_hash(session: _OrmSession) -> str | None:
             \"\"\"Fetch the entry_hash of the most recent persisted audit entry.
 
             Queries the database directly so the chain is correct even when
@@ -534,7 +534,7 @@ def _write_audit_listeners(dest: Path, model_pairs: list[tuple[str, str]]) -> No
 
 
         def _emit_audit(
-            session: Session,
+            session: _OrmSession,
             target: Any,
             action: str,
             before: dict[str, Any] | None,
@@ -567,8 +567,8 @@ def _write_audit_listeners(dest: Path, model_pairs: list[tuple[str, str]]) -> No
             session.add(entry)
 
 
-        @event.listens_for(Session, "before_flush")
-        def _audit_before_flush(session: Session, flush_context: Any, instances: Any) -> None:
+        @event.listens_for(_OrmSession, "before_flush")
+        def _audit_before_flush(session: _OrmSession, flush_context: Any, instances: Any) -> None:
             \"\"\"Intercept every flush and emit audit entries for tracked models.
 
             Args:

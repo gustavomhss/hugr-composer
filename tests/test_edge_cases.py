@@ -387,10 +387,11 @@ def _collect_migration_meta(versions_dir: Path) -> dict[str, dict]:
                         elif target.id == "down_revision":
                             if isinstance(node.value, ast.Constant):
                                 record["down_revision"] = node.value.value
-                            elif isinstance(node.value, ast.NameConstant):
-                                # Python < 3.8 compat (None as NameConstant)
-                                record["down_revision"] = node.value.value  # type: ignore[attr-defined]
-                            # None literal becomes ast.Constant(value=None)
+            elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+                if node.target.id == "revision" and node.value and isinstance(node.value, ast.Constant):
+                    revision_id = node.value.value
+                elif node.target.id == "down_revision" and node.value and isinstance(node.value, ast.Constant):
+                    record["down_revision"] = node.value.value
             elif isinstance(node, ast.FunctionDef) or isinstance(
                 node, ast.AsyncFunctionDef
             ):
