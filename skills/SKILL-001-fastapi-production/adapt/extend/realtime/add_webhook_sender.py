@@ -107,6 +107,16 @@ def add_webhook_sender(
         _write_webhook_models(model_file)
         files_created.append(str(model_file))
 
+    # Register webhook sender models in app/models/__init__.py for
+    # metadata.create_all().
+    _patch_models_init(
+        app_dir / "models" / "__init__.py",
+        [
+            ("webhook", "WebhookEndpoint"),
+            ("webhook", "WebhookDelivery"),
+        ],
+    )
+
     # Step 2 – signer
     webhooks_core_dir = app_dir / "core" / "webhooks"
     webhooks_core_dir.mkdir(parents=True, exist_ok=True)
@@ -223,6 +233,28 @@ def add_webhook_sender(
 # ---------------------------------------------------------------------------
 # File writers — each < 50 LOC
 # ---------------------------------------------------------------------------
+
+def _patch_models_init(
+    models_init: Path,
+    class_imports: list[tuple[str, str]],
+) -> None:
+    """Append model imports to ``app/models/__init__.py`` idempotently."""
+    if not models_init.exists():
+        return
+    content = models_init.read_text()
+    new_lines: list[str] = []
+    for module, cls in class_imports:
+        marker = f"from app.models.{module} import {cls}"
+        if marker in content:
+            continue
+        new_lines.append(f"{marker}  # noqa: F401")
+    if not new_lines:
+        return
+    if not content.endswith("\n"):
+        content += "\n"
+    content += "\n".join(new_lines) + "\n"
+    models_init.write_text(content)
+
 
 def _write_webhook_models(dest: Path) -> None:
     """Write ``app/models/webhook.py`` with ``WebhookEndpoint`` and ``WebhookDelivery``.

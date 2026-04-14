@@ -99,6 +99,14 @@ def add_multi_tenancy(inp: ToolInput) -> ToolResult:
     _write_tenant_model(tenant_model_file)
     files_created.append(str(tenant_model_file))
 
+    # Register Tenant in app/models/__init__.py so metadata.create_all()
+    # discovers its Table. Without this, tests using create_all() get
+    # UndefinedTableError when querying the tenants table.
+    _patch_models_init(
+        app_dir / "models" / "__init__.py",
+        [("tenant", "Tenant")],
+    )
+
     # --- Step 3: Tenant context (ContextVar) ---
     context_file = app_dir / "core" / "tenant_context.py"
     _write_tenant_context(context_file)
@@ -178,6 +186,42 @@ def add_multi_tenancy(inp: ToolInput) -> ToolResult:
 # ---------------------------------------------------------------------------
 # Step helpers — each < 50 LOC
 # ---------------------------------------------------------------------------
+
+def _patch_models_init(
+    models_init: Path,
+    class_imports: list[tuple[str, str]],
+) -> None:
+    """Append model imports to ``app/models/__init__.py`` idempotently.
+
+    ``metadata.create_all()`` relies on ``app/models/__init__.py`` importing
+    every model module so that their Table definitions are attached to
+    ``Base.metadata``.  New model files created by adapt tools MUST be
+    registered here or tests that use ``create_all()`` will silently skip
+    their tables.
+
+    Args:
+        models_init: Absolute path to ``app/models/__init__.py``.
+        class_imports: List of ``(module_name, class_name)`` pairs, where
+            ``module_name`` is the module under ``app.models`` (e.g.
+            ``"tenant"``) and ``class_name`` is the class to import
+            (e.g. ``"Tenant"``).
+    """
+    if not models_init.exists():
+        return
+    content = models_init.read_text()
+    new_lines: list[str] = []
+    for module, cls in class_imports:
+        marker = f"from app.models.{module} import {cls}"
+        if marker in content:
+            continue
+        new_lines.append(f"{marker}  # noqa: F401")
+    if not new_lines:
+        return
+    if not content.endswith("\n"):
+        content += "\n"
+    content += "\n".join(new_lines) + "\n"
+    models_init.write_text(content)
+
 
 def _discover_models(app_dir: Path) -> list[str]:
     """Return PascalCase business model names, excluding User/Base/Tenant/mixins.
@@ -481,6 +525,27 @@ def _write_tenant_filter(dest: Path) -> None:
                     include_aliases=True,
                 )
             )
+
+
+        @event.listens_for(Session, "before_flush")
+        def _auto_populate_tenant_id(session, flush_context, instances) -> None:
+            \"\"\"Auto-populate tenant_id on INSERT for every TenantScopedMixin row.
+
+            The CRUD code typically does ``session.add(Model(**data))`` without
+            an explicit tenant_id; the middleware has already set the
+            current_tenant_id ContextVar, so we inject it here right before the
+            flush hits the database. This means route handlers NEVER need to
+            pass tenant_id — the framework does it invisibly.
+
+            Skipped when there is no current tenant (e.g. system/background job)
+            or when the caller explicitly set tenant_id already.
+            \"\"\"
+            tenant_id = get_current_tenant()
+            if tenant_id is None:
+                return
+            for obj in session.new:
+                if isinstance(obj, TenantScopedMixin) and getattr(obj, "tenant_id", None) is None:
+                    obj.tenant_id = tenant_id
         """)
     dest.write_text(content)
 

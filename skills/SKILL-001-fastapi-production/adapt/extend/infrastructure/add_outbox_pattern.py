@@ -79,6 +79,15 @@ def add_outbox_pattern(inp: ToolInput) -> ToolResult:
     _write_outbox_model(outbox_model)
     files_created.append(str(outbox_model))
 
+    # Register Outbox models in app/models/__init__.py for metadata.create_all().
+    _patch_models_init(
+        app_dir / "models" / "__init__.py",
+        [
+            ("outbox", "OutboxEvent"),
+            ("outbox", "OutboxDlq"),
+        ],
+    )
+
     # --- Step 2: OutboxService -----------------------------------------------
     (app_dir / "services").mkdir(parents=True, exist_ok=True)
     service_file = app_dir / "services" / "outbox.py"
@@ -135,6 +144,28 @@ def add_outbox_pattern(inp: ToolInput) -> ToolResult:
 # ---------------------------------------------------------------------------
 # File writers — each < 50 LOC
 # ---------------------------------------------------------------------------
+
+def _patch_models_init(
+    models_init: Path,
+    class_imports: list[tuple[str, str]],
+) -> None:
+    """Append model imports to ``app/models/__init__.py`` idempotently."""
+    if not models_init.exists():
+        return
+    content = models_init.read_text()
+    new_lines: list[str] = []
+    for module, cls in class_imports:
+        marker = f"from app.models.{module} import {cls}"
+        if marker in content:
+            continue
+        new_lines.append(f"{marker}  # noqa: F401")
+    if not new_lines:
+        return
+    if not content.endswith("\n"):
+        content += "\n"
+    content += "\n".join(new_lines) + "\n"
+    models_init.write_text(content)
+
 
 def _write_outbox_model(dest: Path) -> None:
     """Write ``app/models/outbox.py`` with OutboxEvent and OutboxDlq.

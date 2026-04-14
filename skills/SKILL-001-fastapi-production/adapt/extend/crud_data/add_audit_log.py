@@ -96,6 +96,12 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
     _write_audit_model(audit_model)
     files_created.append(str(audit_model))
 
+    # Register AuditLog in app/models/__init__.py for metadata.create_all().
+    _patch_models_init(
+        app_dir / "models" / "__init__.py",
+        [("audit_log", "AuditLog")],
+    )
+
     # --- Step 2: Audit context (contextvars for user_id + request meta) --
     context_file = app_dir / "core" / "audit_context.py"
     _write_audit_context(context_file)
@@ -167,6 +173,28 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
 # ---------------------------------------------------------------------------
 # Discovery helpers
 # ---------------------------------------------------------------------------
+
+def _patch_models_init(
+    models_init: Path,
+    class_imports: list[tuple[str, str]],
+) -> None:
+    """Append model imports to ``app/models/__init__.py`` idempotently."""
+    if not models_init.exists():
+        return
+    content = models_init.read_text()
+    new_lines: list[str] = []
+    for module, cls in class_imports:
+        marker = f"from app.models.{module} import {cls}"
+        if marker in content:
+            continue
+        new_lines.append(f"{marker}  # noqa: F401")
+    if not new_lines:
+        return
+    if not content.endswith("\n"):
+        content += "\n"
+    content += "\n".join(new_lines) + "\n"
+    models_init.write_text(content)
+
 
 def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
     """Return (snake_stem, PascalCase) pairs found in ``app/models/``, excluding system models.
@@ -422,17 +450,36 @@ def _write_audit_listeners(dest: Path, model_pairs: list[tuple[str, str]]) -> No
         def _serialize(value: Any) -> Any:
             \"\"\"Serialize a value to a JSON-safe type for JSONB storage.
 
+            Handles date, datetime, time, UUID, Decimal, bytes, and Enum —
+            the non-JSON-native types commonly found in ORM columns. Unknown
+            types fall through to ``str(value)`` to avoid crashing the flush.
+
             Args:
                 value: Any Python value.
 
             Returns:
                 JSON-serializable equivalent.
             \"\"\"
-            if isinstance(value, datetime):
+            import datetime as _dt
+            import decimal as _dec
+            import enum as _enum
+            if value is None or isinstance(value, (str, int, float, bool)):
+                return value
+            if isinstance(value, (_dt.datetime, _dt.date, _dt.time)):
                 return value.isoformat()
             if isinstance(value, uuid.UUID):
                 return str(value)
-            return value
+            if isinstance(value, _dec.Decimal):
+                return str(value)
+            if isinstance(value, bytes):
+                return value.hex()
+            if isinstance(value, _enum.Enum):
+                return value.value
+            if isinstance(value, (list, tuple)):
+                return [_serialize(v) for v in value]
+            if isinstance(value, dict):
+                return {str(k): _serialize(v) for k, v in value.items()}
+            return str(value)
 
 
         def _compute_diff(target: Any) -> tuple[dict[str, Any], dict[str, Any]]:

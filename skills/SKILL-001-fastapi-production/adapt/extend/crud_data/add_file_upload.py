@@ -88,6 +88,12 @@ def add_file_upload(inp: ToolInput) -> ToolResult:
     _write_file_model(model_file)
     files_created.append(str(model_file))
 
+    # Register FileMetadata in app/models/__init__.py for metadata.create_all().
+    _patch_models_init(
+        app_dir / "models" / "__init__.py",
+        [("file", "FileMetadata")],
+    )
+
     # --- Step 2: Storage backend ABC + LocalStorage + S3Storage ----------
     storage_file = app_dir / "core" / "storage.py"
     _write_storage(storage_file)
@@ -194,6 +200,28 @@ def add_file_upload(inp: ToolInput) -> ToolResult:
 # ---------------------------------------------------------------------------
 # Step helpers — each < 50 LOC
 # ---------------------------------------------------------------------------
+
+def _patch_models_init(
+    models_init: Path,
+    class_imports: list[tuple[str, str]],
+) -> None:
+    """Append model imports to ``app/models/__init__.py`` idempotently."""
+    if not models_init.exists():
+        return
+    content = models_init.read_text()
+    new_lines: list[str] = []
+    for module, cls in class_imports:
+        marker = f"from app.models.{module} import {cls}"
+        if marker in content:
+            continue
+        new_lines.append(f"{marker}  # noqa: F401")
+    if not new_lines:
+        return
+    if not content.endswith("\n"):
+        content += "\n"
+    content += "\n".join(new_lines) + "\n"
+    models_init.write_text(content)
+
 
 def _write_file_model(dest: Path) -> None:
     """Write ``app/models/file.py`` with the ``FileMetadata`` model.

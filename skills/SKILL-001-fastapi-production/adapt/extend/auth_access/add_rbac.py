@@ -84,6 +84,17 @@ def add_rbac(inp: ToolInput) -> ToolResult:
     _write_rbac_models(rbac_model_file, has_tenants=has_tenants)
     files_created.append(str(rbac_model_file))
 
+    # Register RBAC models in app/models/__init__.py for metadata.create_all().
+    _patch_models_init(
+        app_dir / "models" / "__init__.py",
+        [
+            ("rbac", "Permission"),
+            ("rbac", "Role"),
+            ("rbac", "RolePermission"),
+            ("rbac", "UserRole"),
+        ],
+    )
+
     # Step 2: Inheritance resolver (pure Python, no DB)
     inheritance_file = app_dir / "core" / "rbac" / "inheritance.py"
     _write_inheritance(inheritance_file)
@@ -154,6 +165,33 @@ def add_rbac(inp: ToolInput) -> ToolResult:
 # ---------------------------------------------------------------------------
 # Step helpers — each < 50 LOC
 # ---------------------------------------------------------------------------
+
+def _patch_models_init(
+    models_init: Path,
+    class_imports: list[tuple[str, str]],
+) -> None:
+    """Append model imports to ``app/models/__init__.py`` idempotently.
+
+    Ensures new model modules are loaded at package import time so their
+    Table definitions attach to ``Base.metadata`` for ``create_all()`` and
+    Alembic autogenerate.
+    """
+    if not models_init.exists():
+        return
+    content = models_init.read_text()
+    new_lines: list[str] = []
+    for module, cls in class_imports:
+        marker = f"from app.models.{module} import {cls}"
+        if marker in content:
+            continue
+        new_lines.append(f"{marker}  # noqa: F401")
+    if not new_lines:
+        return
+    if not content.endswith("\n"):
+        content += "\n"
+    content += "\n".join(new_lines) + "\n"
+    models_init.write_text(content)
+
 
 def _write_rbac_models(dest: Path, has_tenants: bool = False) -> None:
     """Write app/models/rbac.py with Permission, Role, RolePermission, UserRole.
