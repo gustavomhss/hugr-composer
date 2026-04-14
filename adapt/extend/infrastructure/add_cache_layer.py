@@ -324,6 +324,7 @@ def _write_cache_decorator(dest: Path) -> None:
 
         from __future__ import annotations
 
+        import asyncio
         import functools
         import logging
         from typing import Any, Callable
@@ -333,25 +334,50 @@ def _write_cache_decorator(dest: Path) -> None:
 
         logger = logging.getLogger(__name__)
 
+        # Supported schema version constant — bump when cache value format changes
+        _STAMPEDE_LOCK_TTL = 10  # seconds
+        _STAMPEDE_RETRY_DELAY = 0.05  # seconds
+
+
+        def _should_skip_cache(request: Any) -> bool:
+            \"\"\"Return True if this request should bypass the cache.\"\"\"
+            if request is None:
+                return False
+            # INV-CACHE-08: only cache GET requests
+            if getattr(request, "method", "GET").upper() != "GET":
+                return True
+            # INV-CACHE-04: bypass via Cache-Control header or ?nocache=1
+            if request.headers.get("cache-control") == "no-cache":
+                return True
+            if request.query_params.get("nocache"):
+                return True
+            return False
+
+
+        async def _acquire_stampede_lock(cache: Any, key: str) -> bool:
+            \"\"\"Try to acquire an anti-stampede lock (INV-CACHE-06).\"\"\"
+            lock_key = f"cache_lock:{key}"
+            return await cache.redis.set(lock_key, "1", nx=True, ex=_STAMPEDE_LOCK_TTL)
+
+
+        async def _release_stampede_lock(cache: Any, key: str) -> None:
+            \"\"\"Release the anti-stampede lock.\"\"\"
+            await cache.redis.delete(f"cache_lock:{key}")
+
 
         def cached(
             ttl: int = 300,
             key_pattern: str | None = None,
             vary_on: list[str] | None = None,
         ) -> Callable:
-            \"\"\"Decorator that caches the return value of an async function.
-
-            Key is built from *key_pattern* (formatted with ``**kwargs``) or
-            *vary_on* list combined with the function's module + name.
-
-            Args:
-                ttl: Cache TTL in seconds.
-                key_pattern: Optional format string, e.g. ``"items:{item_id}"``.
-                vary_on: List of kwarg names to include in the cache key.
-            \"\"\"
+            \"\"\"Decorator that caches GET handler return values with anti-stampede.\"\"\"
             def decorator(func: Callable) -> Callable:
                 @functools.wraps(func)
                 async def wrapper(*args: Any, **kwargs: Any) -> Any:
+                    request = kwargs.get("request")
+                    if _should_skip_cache(request):
+                        return await func(*args, **kwargs)
+
                     cache = get_cache()
                     if cache is None:
                         return await func(*args, **kwargs)
@@ -361,10 +387,20 @@ def _write_cache_decorator(dest: Path) -> None:
                     if cached_value is not None:
                         return cached_value
 
-                    result = await func(*args, **kwargs)
-                    if result is not None:
-                        await cache.set(key, result, ttl=ttl)
-                    return result
+                    lock_acquired = await _acquire_stampede_lock(cache, key)
+                    if not lock_acquired:
+                        await asyncio.sleep(_STAMPEDE_RETRY_DELAY)
+                        cached_value = await cache.get(key)
+                        if cached_value is not None:
+                            return cached_value
+                    try:
+                        result = await func(*args, **kwargs)
+                        if result is not None:
+                            await cache.set(key, result, ttl=ttl)
+                        return result
+                    finally:
+                        if lock_acquired:
+                            await _release_stampede_lock(cache, key)
 
                 return wrapper
             return decorator
@@ -577,22 +613,26 @@ def _write_cache_stats_route(dest: Path) -> None:
 
         from __future__ import annotations
 
-        from fastapi import APIRouter, HTTPException
+        from fastapi import APIRouter, Depends, HTTPException
 
+        from app.api.deps import get_current_superuser
         from app.cache.core import get_cache
 
         router = APIRouter(prefix="/cache", tags=["cache"])
 
 
-        @router.get("/stats", response_model=dict)
+        @router.get("/stats", response_model=dict, dependencies=[Depends(get_current_superuser)])
         async def cache_stats() -> dict:
             \"\"\"Return Redis cache statistics.  Admin use only.
+
+            Requires superuser authentication (INV-CACHE-07).
 
             Returns:
                 Dict with ``connected``, ``memory_used_bytes``, ``memory_human``,
                 and ``keyspace`` from Redis INFO.
 
             Raises:
+                HTTPException: 401/403 if not authenticated as superuser.
                 HTTPException: 503 if cache backend is not initialised.
             \"\"\"
             cache = get_cache()

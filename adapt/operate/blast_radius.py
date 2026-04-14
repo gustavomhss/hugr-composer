@@ -22,6 +22,7 @@ Example::
 from __future__ import annotations
 
 import ast
+import json
 import subprocess
 import time
 from pathlib import Path
@@ -70,10 +71,17 @@ def blast_radius(
             execution_time_ms=_ms(start),
         )
 
-    # Build import graph
-    graph = _build_import_graph(project)
+    # Build import graph (with on-disk cache for speed — INV-BR-03)
+    # Skip cache writes during dry_run to avoid modifying the project dir
+    graph = _build_import_graph(project) if inp.dry_run else _build_import_graph_cached(project)
     reverse = _build_reverse_graph(graph)
     symbol_defs = _collect_symbol_defs(project)
+
+    # Augment graph with route → handler edges (INV-BR-05)
+    route_edges = _map_routes(project)
+    for route_file, handler_file in route_edges:
+        graph.setdefault(route_file, set()).add(handler_file)
+        reverse.setdefault(handler_file, set()).add(route_file)
 
     # Resolve seeds
     if diff_ref:
@@ -131,6 +139,119 @@ def blast_radius(
 # ---------------------------------------------------------------------------
 # Graph construction
 # ---------------------------------------------------------------------------
+
+_GRAPH_CACHE_FILE = ".blast_radius_cache.json"
+
+
+def _build_import_graph_cached(project: Path) -> dict[str, set[str]]:
+    """Build import graph, reusing an on-disk cache when no file has changed.
+
+    Cache is stored in ``<project>/.blast_radius_cache.json`` as a JSON
+    object with ``mtimes`` (file → mtime float) and ``graph`` (file →
+    list of imported files).  When all mtimes match the cache is returned
+    directly without re-parsing any AST.  (INV-BR-03)
+
+    Args:
+        project: Root of the FastAPI project.
+
+    Returns:
+        Dict mapping relative file paths to the set of relative paths they
+        import within the project.
+    """
+    cache_path = project / _GRAPH_CACHE_FILE
+    py_files = sorted(project.rglob("*.py"))
+
+    # Compute current mtimes
+    current_mtimes: dict[str, float] = {
+        _rel(f, project): f.stat().st_mtime for f in py_files
+    }
+
+    # Try to load existing cache
+    if cache_path.exists():
+        try:
+            cached = json.loads(cache_path.read_text(encoding="utf-8"))
+            if cached.get("mtimes") == current_mtimes:
+                return {k: set(v) for k, v in cached["graph"].items()}
+        except Exception:
+            pass  # Cache unreadable — rebuild
+
+    # Build fresh graph
+    graph = _build_import_graph(project)
+
+    # Persist to cache
+    try:
+        cache_path.write_text(
+            json.dumps(
+                {
+                    "mtimes": current_mtimes,
+                    "graph": {k: sorted(v) for k, v in graph.items()},
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass  # Non-fatal: cache write failure just means next run rebuilds
+
+    return graph
+
+
+def _map_routes(project: Path) -> list[tuple[str, str]]:
+    """Map URL routes to their handler source files via subprocess inspection.
+
+    Imports ``app.main:app`` in a subprocess to list ``app.routes``, then
+    maps each route's endpoint function back to its source file using
+    ``inspect.getfile``.  Returns a list of ``(route_file, handler_file)``
+    relative-path pairs so callers can add them as graph edges.  (INV-BR-05)
+
+    Args:
+        project: Root of the FastAPI project.
+
+    Returns:
+        List of ``(route_relative_path, handler_relative_path)`` tuples.
+        Returns an empty list if the import fails or the app cannot be loaded.
+    """
+    script = (
+        "import json, inspect, sys\n"
+        "sys.path.insert(0, '.')\n"
+        "try:\n"
+        "    from app.main import app\n"
+        "    edges = []\n"
+        "    for route in getattr(app, 'routes', []):\n"
+        "        ep = getattr(route, 'endpoint', None)\n"
+        "        if ep is None:\n"
+        "            continue\n"
+        "        try:\n"
+        "            src = inspect.getfile(ep)\n"
+        "            edges.append(src)\n"
+        "        except (TypeError, OSError):\n"
+        "            pass\n"
+        "    print(json.dumps(edges))\n"
+        "except Exception as exc:\n"
+        "    print(json.dumps([]))\n"
+    )
+    try:
+        out = subprocess.check_output(
+            ["python", "-c", script],
+            cwd=str(project),
+            stderr=subprocess.DEVNULL,
+            timeout=15,
+        ).decode().strip()
+        handler_abs_paths: list[str] = json.loads(out)
+    except Exception:
+        return []
+
+    edges: list[tuple[str, str]] = []
+    # Use a synthetic "routes" node for route-level edges
+    routes_rel = "app/api/routes/__init__.py"
+    for abs_path in handler_abs_paths:
+        try:
+            handler_rel = _rel(Path(abs_path), project)
+        except Exception:
+            continue
+        edges.append((routes_rel, handler_rel))
+    return edges
+
 
 def _build_import_graph(project: Path) -> dict[str, set[str]]:
     """Return mapping file -> set of files it imports (project-internal only).
