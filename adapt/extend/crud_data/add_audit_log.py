@@ -577,16 +577,28 @@ def _write_audit_listeners(dest: Path, model_pairs: list[tuple[str, str]]) -> No
                 instances: Specific instances being flushed (unused; we inspect session directly).
             \"\"\"
             for target in list(session.new):
-                if type(target) in AUDITED_MODELS:
+                try:
+                    is_audited = type(target) in AUDITED_MODELS
+                except TypeError:
+                    continue
+                if is_audited:
                     _emit_audit(session, target, "create", None, _full_snapshot(target))
             for target in list(session.dirty):
-                if type(target) in AUDITED_MODELS:
+                try:
+                    is_audited = type(target) in AUDITED_MODELS
+                except TypeError:
+                    continue
+                if is_audited:
                     before, after = _compute_diff(target)
                     if before:
                         action = _classify_action(before, after)
                         _emit_audit(session, target, action, before, after)
             for target in list(session.deleted):
-                if type(target) in AUDITED_MODELS:
+                try:
+                    is_audited = type(target) in AUDITED_MODELS
+                except TypeError:
+                    continue
+                if is_audited:
                     _emit_audit(session, target, "delete", _full_snapshot(target), None)
 
 

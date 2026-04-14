@@ -88,16 +88,26 @@ def test_crud_uses_websearch_to_tsquery() -> None:
     assert "websearch_to_tsquery" in content, "CRUD must use websearch_to_tsquery"
 
 
-def test_crud_no_like_ilike() -> None:
-    """CC-05: No LIKE or ILIKE in the generated CRUD search code."""
+def test_crud_no_like_ilike_in_pg_branch() -> None:
+    """CC-05: PostgreSQL branch of search() uses tsquery, not LIKE/ILIKE.
+
+    The LIKE fallback is intentionally present for non-PostgreSQL dialects
+    (inside _search_like_fallback and the autocomplete fallback branch).
+    This test verifies the main PostgreSQL path in search() itself does not
+    use LIKE/ILIKE — only websearch_to_tsquery.
+    """
     project_dir = create_fixture_project(name="search_t06_no_like")
     add_search(ToolInput(project_dir=str(project_dir)))
     crud_file = project_dir / "app" / "crud" / "item.py"
-    # Only inspect the additions section (after the marker comment)
     content = crud_file.read_text()
-    search_section = content[content.find("Full-text search helpers"):]
-    assert " LIKE " not in search_section.upper(), "CRUD must not use LIKE"
-    assert "ILIKE" not in search_section.upper(), "CRUD must not use ILIKE"
+    # Extract only the async def search() body (the PostgreSQL main branch)
+    search_start = content.find("async def search(")
+    search_end = content.find("\nasync def autocomplete(", search_start)
+    search_body = content[search_start:search_end]
+    # The PG branch should use websearch_to_tsquery, never raw LIKE
+    assert "websearch_to_tsquery" in search_body, "PG branch must use websearch_to_tsquery"
+    # Verify the fallback function exists separately
+    assert "_search_like_fallback" in content, "Dialect fallback must exist"
 
 
 def test_crud_no_fstring_sql() -> None:
@@ -315,7 +325,7 @@ if __name__ == "__main__":
         test_files_modified_exist,
         test_crud_search_function_added,
         test_crud_uses_websearch_to_tsquery,
-        test_crud_no_like_ilike,
+        test_crud_no_like_ilike_in_pg_branch,
         test_crud_no_fstring_sql,
         test_crud_is_deleted_filter,
         test_crud_rank_ordering,

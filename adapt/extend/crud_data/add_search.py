@@ -1,10 +1,16 @@
-"""TOOL-004: add_search — add PostgreSQL full-text search to a FastAPI/SQLAlchemy project.
+"""TOOL-004: add_search — add full-text search to a FastAPI/SQLAlchemy project.
 
-Adds a stored ``tsvector`` column with a GIN index on all requested text fields, a
-``SearchParams`` Pydantic schema, a ``search()`` CRUD helper using
-``websearch_to_tsquery`` + ``ts_rank_cd`` ranking (never LIKE/ILIKE), an autocomplete
-endpoint using prefix ``to_tsquery('term:*')``, the matching route handlers, and an
-Alembic migration generated via raw SQL (``CONCURRENTLY`` outside transaction).
+On PostgreSQL: adds a stored ``tsvector`` column with a GIN index on all requested
+text fields, a ``SearchParams`` Pydantic schema, a ``search()`` CRUD helper using
+``websearch_to_tsquery`` + ``ts_rank_cd`` ranking, an autocomplete endpoint using
+prefix ``to_tsquery('term:*')``, the matching route handlers, and an Alembic migration
+generated via raw SQL (``CONCURRENTLY`` outside transaction).
+
+On non-PostgreSQL databases (SQLite, MySQL, etc.): the generated ``search()`` and
+``autocomplete()`` functions detect the dialect at runtime and fall back to
+case-insensitive LIKE matching across all searchable text columns. This ensures the
+same generated code works in development (SQLite) and production (PostgreSQL) without
+crashes.
 
 User input is ALWAYS parameterized through SQLAlchemy bind values — no f-string
 interpolation into raw SQL anywhere in the generated code.
@@ -129,8 +135,9 @@ def add_search(inp: ToolInput) -> ToolResult:
         notes=[
             f"Full-text search enabled for: {', '.join(pascal_names)}",
             "GIN index created via CONCURRENTLY (migration must run outside a transaction).",
-            "User input always parameterized via websearch_to_tsquery — no LIKE/ILIKE.",
-            "Autocomplete uses prefix tsquery (term:*) with LIMIT 5.",
+            "User input always parameterized via websearch_to_tsquery on PostgreSQL.",
+            "Dialect-aware: falls back to ILIKE on non-PostgreSQL databases (SQLite, MySQL).",
+            "Autocomplete uses prefix tsquery (term:*) on PostgreSQL, ILIKE prefix on others.",
         ],
         next_steps=[
             "alembic upgrade head",
@@ -283,8 +290,20 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
         # Full-text search helpers — added by add_search tool
         # ---------------------------------------------------------------------------
         import uuid as _search_uuid
-        from sqlalchemy import func as _func, select as _select, text as _text
+        from sqlalchemy import func as _func, select as _select, text as _text, or_ as _or
         from sqlalchemy.ext.asyncio import AsyncSession as _SearchSession
+
+        # Columns used for search (same as tsvector fields, for LIKE fallback)
+        _SEARCH_TEXT_COLUMNS: list[str] = SEARCH_FIELD_NAMES
+
+
+        def _get_dialect_name(session: _SearchSession) -> str:
+            \"\"\"Return the dialect name of the current session's bind (e.g. 'postgresql', 'sqlite').
+
+            Returns 'unknown' if the bind is not available (should not happen in practice).
+            \"\"\"
+            bind = session.get_bind()
+            return str(bind.dialect.name) if bind else "unknown"
 
 
         def _build_search_tsvector(language: str = "english"):
@@ -292,6 +311,8 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
 
             Field weights: first field = A (highest), subsequent = B/C/D.
             Uses setweight + coalesce so NULL columns are treated as empty strings.
+
+            Note: This is only used when the database dialect is PostgreSQL.
 
             Args:
                 language: PostgreSQL text search dictionary name.
@@ -335,36 +356,64 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
             return total, list(result.all())
 
 
-        async def search(
+        async def _search_like_fallback(
             session: _SearchSession,
             *,
             q: str,
             page_size: int = 20,
-            cursor_score: float | None = None,
             owner_id: "_search_uuid.UUID | None" = None,
-            language: str = "english",
         ) -> dict:
-            \"\"\"Full-text search using PostgreSQL tsvector + GIN index.
+            \"\"\"Cross-database fallback search using case-insensitive LIKE.
 
-            User input is ALWAYS parameterized via websearch_to_tsquery — never
-            interpolated into SQL strings.
+            Used when the database dialect is not PostgreSQL (e.g. SQLite, MySQL).
+            Splits the query into terms (max 5) and matches each term against all
+            searchable text columns using ILIKE/case-insensitive LIKE.
 
             Args:
                 session: Async SQLAlchemy session.
                 q: Search query string (min 2 chars enforced at HTTP layer).
-                page_size: Number of results per page (1–100).
-                cursor_score: ts_rank cursor for rank-based next-page pagination.
+                page_size: Number of results per page (1-100).
                 owner_id: Filter by owner (applied if model has owner_id column).
-                language: PostgreSQL text search dictionary.
 
             Returns:
-                Dict with ``data``, ``count``, ``has_more``, ``next_cursor``.
-
-            Raises:
-                ValueError: If query is shorter than 2 characters.
+                Dict with ``data``, ``count``, ``has_more``, ``next_cursor`` (always None).
             \"\"\"
-            if not q or len(q.strip()) < 2:
-                raise ValueError("Search query must be at least 2 characters.")
+            terms = q.strip().split()[:5]
+            conditions = []
+            for col_name in _SEARCH_TEXT_COLUMNS:
+                col = getattr(MODEL_NAME_CLS, col_name, None)
+                if col is None:
+                    continue
+                for term in terms:
+                    conditions.append(col.ilike(f"%{term}%"))
+            if conditions:
+                stmt = _select(MODEL_NAME_CLS).where(_or(*conditions))
+            else:
+                stmt = _select(MODEL_NAME_CLS)
+            if hasattr(MODEL_NAME_CLS, "is_deleted"):
+                stmt = stmt.where(MODEL_NAME_CLS.is_deleted == False)  # noqa: E712
+            if owner_id is not None and hasattr(MODEL_NAME_CLS, "owner_id"):
+                stmt = stmt.where(MODEL_NAME_CLS.owner_id == owner_id)
+            count_stmt = _select(_func.count()).select_from(stmt.subquery())
+            total = (await session.execute(count_stmt)).scalar_one()
+            stmt = stmt.order_by(MODEL_NAME_CLS.id.desc()).limit(page_size + 1)
+            result = await session.execute(stmt)
+            rows = list(result.scalars().all())
+            has_more = len(rows) > page_size
+            rows = rows[:page_size]
+            data = [{**r.__dict__, "rank": None} for r in rows]
+            return {"data": data, "count": total, "has_more": has_more, "next_cursor": None}
+
+
+        async def _search_postgres(
+            session: _SearchSession,
+            q: str,
+            page_size: int,
+            cursor_score: float | None,
+            owner_id: "_search_uuid.UUID | None",
+            language: str,
+        ) -> dict:
+            \"\"\"PostgreSQL FTS path: tsvector + GIN + ts_rank_cd.\"\"\"
             tsquery_expr = _func.websearch_to_tsquery(_text("'" + language + "'"), q)
             tv = _build_search_tsvector(language)
             rank_expr = _func.ts_rank_cd(tv, tsquery_expr).label("rank")
@@ -381,6 +430,58 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
             return {"data": data, "count": total, "has_more": has_more, "next_cursor": next_cursor}
 
 
+        async def search(
+            session: _SearchSession,
+            *,
+            q: str,
+            page_size: int = 20,
+            cursor_score: float | None = None,
+            owner_id: "_search_uuid.UUID | None" = None,
+            language: str = "english",
+        ) -> dict:
+            \"\"\"Full-text search with dialect-aware implementation.
+
+            On PostgreSQL: tsvector + GIN index + websearch_to_tsquery + ts_rank_cd.
+            On other databases: case-insensitive LIKE across all searchable columns.
+            User input is ALWAYS parameterized — never interpolated into SQL.
+
+            Args:
+                session: Async SQLAlchemy session.
+                q: Search query string (min 2 chars).
+                page_size: Results per page (1-100).
+                cursor_score: ts_rank cursor for next-page (PostgreSQL only).
+                owner_id: Owner filter if model has owner_id column.
+                language: PostgreSQL text search dictionary.
+
+            Returns:
+                Dict with ``data``, ``count``, ``has_more``, ``next_cursor``.
+
+            Raises:
+                ValueError: If query is shorter than 2 characters.
+            \"\"\"
+            if not q or len(q.strip()) < 2:
+                raise ValueError("Search query must be at least 2 characters.")
+            if _get_dialect_name(session) != "postgresql":
+                return await _search_like_fallback(session, q=q, page_size=page_size, owner_id=owner_id)
+            return await _search_postgres(session, q, page_size, cursor_score, owner_id, language)
+
+
+        async def _autocomplete_like(
+            session: _SearchSession, q: str, owner_id: "_search_uuid.UUID | None",
+        ) -> list[str]:
+            \"\"\"LIKE-based autocomplete fallback for non-PostgreSQL databases.\"\"\"
+            first_token = q.strip().split()[0]
+            first_col_name = _SEARCH_TEXT_COLUMNS[0] if _SEARCH_TEXT_COLUMNS else "id"
+            col = getattr(MODEL_NAME_CLS, first_col_name, MODEL_NAME_CLS.id)
+            stmt = _select(col).where(col.ilike(f"{first_token}%")).order_by(MODEL_NAME_CLS.id.desc()).limit(5)
+            if hasattr(MODEL_NAME_CLS, "is_deleted"):
+                stmt = stmt.where(MODEL_NAME_CLS.is_deleted == False)  # noqa: E712
+            if owner_id is not None and hasattr(MODEL_NAME_CLS, "owner_id"):
+                stmt = stmt.where(MODEL_NAME_CLS.owner_id == owner_id)
+            result = await session.execute(stmt)
+            return [row[0] for row in result.all() if row[0]]
+
+
         async def autocomplete(
             session: _SearchSession,
             *,
@@ -388,9 +489,12 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
             owner_id: "_search_uuid.UUID | None" = None,
             language: str = "english",
         ) -> list[str]:
-            \"\"\"Prefix-match autocomplete using to_tsquery('term:*').
+            \"\"\"Prefix-match autocomplete with dialect-aware implementation.
 
-            Returns up to 5 suggestions. Target latency < 20ms p99.
+            On PostgreSQL: uses to_tsquery('term:*') for sub-20ms p99 latency.
+            On other databases: falls back to case-insensitive LIKE prefix match.
+
+            Returns up to 5 suggestions.
 
             Args:
                 session: Async SQLAlchemy session.
@@ -403,6 +507,9 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
             \"\"\"
             if not q or not q.strip():
                 return []
+            if _get_dialect_name(session) != "postgresql":
+                return await _autocomplete_like(session, q, owner_id)
+
             first_token = q.strip().split()[0]
             prefix_query = _func.to_tsquery(
                 _text("'" + language + "'"),
@@ -436,9 +543,13 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
 
     first_field = text_fields[0] if text_fields else "id"
 
+    # Build the list of field name strings for the LIKE fallback
+    search_field_names_literal = repr(text_fields[:4])
+
     additions = (
         additions
         .replace("MODEL_NAME_CLS", model_name)
+        .replace("SEARCH_FIELD_NAMES", search_field_names_literal)
         .replace("FIELD_VECS", field_vecs_block)
         .replace("FIRST_FIELD", first_field)
         .replace("MODEL_NAME", model_name)
