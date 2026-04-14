@@ -729,6 +729,86 @@ WEBSOCKET_CHAT = Scenario(
 )
 
 
+# ===========================================================================
+# SCENARIO 9 — Background job queue (arq)
+# ===========================================================================
+
+async def flow_arq(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
+    """Verify arq worker infra: schema, settings, worker module, routes."""
+    from sqlalchemy import inspect
+
+    # jobs table exists
+    async with ctx.engine.connect() as conn:
+        tables = await conn.run_sync(lambda sc: inspect(sc).get_table_names())
+    ctx.record("jobs_table", "jobs" in tables, f"jobs table: {'jobs' in tables}")
+
+    # Worker module imports with the right WorkerSettings shape
+    worker_mod = importlib.import_module("app.workers.arq_worker")
+    ws_cls = worker_mod.WorkerSettings
+    ctx.record(
+        "worker_settings_shape",
+        hasattr(ws_cls, "functions") and hasattr(ws_cls, "redis_settings") and hasattr(ws_cls, "max_jobs"),
+        f"functions={len(ws_cls.functions)}, max_jobs={ws_cls.max_jobs}",
+    )
+
+    # TASK_REGISTRY has the 3 example tasks
+    tasks_mod = importlib.import_module("app.workers.tasks")
+    task_names = [getattr(fn, "__name__", "?") for fn in tasks_mod.TASK_REGISTRY]
+    has_expected = {"send_email_task", "cleanup_task", "webhook_retry_task"}.issubset(set(task_names))
+    ctx.record("task_registry_populated", has_expected, f"tasks: {sorted(task_names)}")
+
+    # Config fields patched
+    cfg_mod = importlib.import_module("app.core.config")
+    s = cfg_mod.settings
+    has_cfg = all(hasattr(s, f) for f in [
+        "ARQ_MAX_JOBS", "ARQ_JOB_TIMEOUT_SECONDS", "ARQ_MAX_TRIES", "ARQ_KEEP_RESULTS_SECONDS"
+    ])
+    ctx.record(
+        "arq_settings_patched",
+        has_cfg,
+        f"ARQ_MAX_JOBS={getattr(s, 'ARQ_MAX_JOBS', None)}",
+    )
+
+    # HTTP routes registered
+    r = await ctx.client.get("/api/v1/openapi.json")
+    paths = r.json().get("paths", {}) if r.status_code == 200 else {}
+    has_status = any("/jobs/{job_id}/status" in p for p in paths)
+    has_active = any("/jobs/active" in p for p in paths)
+    ctx.record("jobs_routes_registered", has_status and has_active,
+               f"status+active routes: {has_status and has_active}")
+
+    # Enqueue helper is importable (but we don't actually connect to Redis here)
+    enqueue_mod = importlib.import_module("app.workers.enqueue")
+    ctx.record(
+        "enqueue_helper_importable",
+        callable(getattr(enqueue_mod, "create_arq_pool", None))
+        and callable(getattr(enqueue_mod, "close_arq_pool", None))
+        and callable(getattr(enqueue_mod, "enqueue", None)),
+        "create_arq_pool + close_arq_pool + enqueue present",
+    )
+
+    # Dockerfile.worker was emitted
+    dockerfile_worker = ctx.project_dir / "Dockerfile.worker"
+    ctx.record("dockerfile_worker_emitted", dockerfile_worker.exists(),
+               f"Dockerfile.worker: {dockerfile_worker.exists()}")
+
+    return ctx.report_section
+
+
+ARQ_WORKER = Scenario(
+    name="arq_worker_queue",
+    archetype="Async background job queue via arq + Redis + FastAPI lifespan",
+    models={
+        "Note": {"title": "str", "body": "text"},
+    },
+    tools=[
+        ("add_multi_tenancy",    "adapt.extend.auth_access.add_multi_tenancy"),
+        ("add_arq_worker",       "adapt.extend.infrastructure.add_arq_worker"),
+    ],
+    flow=flow_arq,
+)
+
+
 # ---------------------------------------------------------------------------
 # Registry + runner
 # ---------------------------------------------------------------------------
@@ -742,6 +822,7 @@ SCENARIOS: list[Scenario] = [
     ANALYTICS,
     MODERATION,
     WEBSOCKET_CHAT,
+    ARQ_WORKER,
 ]
 
 
