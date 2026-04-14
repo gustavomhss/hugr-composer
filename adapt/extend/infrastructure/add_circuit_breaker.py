@@ -95,6 +95,19 @@ def add_circuit_breaker(inp: ToolInput) -> ToolResult:
         _patch_main(main_file)
         files_modified.append(str(main_file))
 
+    # --- Step 5: Patch requirements.txt ----------------------------------------
+    req_file = project / "requirements.txt"
+    if req_file.exists():
+        req_src = req_file.read_text()
+        req_adds = []
+        if "prometheus" not in req_src and "prometheus_client" not in req_src:
+            req_adds.append("prometheus-client>=0.20.0")
+        if "redis" not in req_src:
+            req_adds.append("redis[hiredis]>=5.0.0")
+        if req_adds:
+            req_file.write_text(req_src.rstrip("\n") + "\n" + "\n".join(req_adds) + "\n")
+            files_modified.append(str(req_file))
+
     return ToolResult(
         status="success",
         files_created=files_created,

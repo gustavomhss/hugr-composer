@@ -108,6 +108,17 @@ def add_saga(inp: ToolInput) -> ToolResult:
         migration_file = _write_saga_migration(versions_dir)
         files_created.append(str(migration_file))
 
+    # --- Step 7: Patch requirements.txt ----------------------------------------
+    req_file = project / "requirements.txt"
+    if req_file.exists():
+        req_src = req_file.read_text()
+        req_adds = []
+        if "prometheus" not in req_src and "prometheus_client" not in req_src:
+            req_adds.append("prometheus-client>=0.20.0")
+        if req_adds:
+            req_file.write_text(req_src.rstrip("\n") + "\n" + "\n".join(req_adds) + "\n")
+            files_modified.append(str(req_file))
+
     return ToolResult(
         status="success",
         files_created=files_created,
