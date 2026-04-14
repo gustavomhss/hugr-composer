@@ -587,7 +587,19 @@ def _patch_crud(crud_file: Path, model_name: str) -> None:
                 Tuple of (results_list, succeeded_count, failed_count).
             \"\"\"
             from app.schemas.{lower} import BulkResultItem  # type: ignore[import]
-            rows = [{**item.model_dump(), "owner_id": owner_id, "id": _bulk_uuid.uuid4()} for item in items]
+            # Auto-inject tenant_id when add_multi_tenancy is active. Raw
+            # SQL inserts bypass the ORM before_flush listener, so we have
+            # to populate it here. Falls back silently for projects without
+            # multi-tenancy.
+            try:
+                from app.core.tenant_context import get_current_tenant as _get_tenant
+                _tid = _get_tenant()
+            except Exception:
+                _tid = None
+            _base_extra = {"owner_id": owner_id, "id": _bulk_uuid.uuid4()}
+            if _tid is not None:
+                _base_extra["tenant_id"] = _tid
+            rows = [{**item.model_dump(), **{**_base_extra, "id": _bulk_uuid.uuid4()}} for item in items]
             try:
                 if _pg_insert is not None:
                     stmt = _pg_insert({model_name}).values(rows).returning({model_name}.id)

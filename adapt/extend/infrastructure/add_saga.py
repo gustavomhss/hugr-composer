@@ -78,6 +78,15 @@ def add_saga(inp: ToolInput) -> ToolResult:
     _write_saga_models(saga_model)
     files_created.append(str(saga_model))
 
+    # Register Saga models in app/models/__init__.py for metadata.create_all().
+    _patch_models_init(
+        app_dir / "models" / "__init__.py",
+        [
+            ("saga", "SagaInstance"),
+            ("saga", "SagaStepExecution"),
+        ],
+    )
+
     # --- Step 2: Saga base class + decorator ---------------------------------
     (app_dir / "core").mkdir(parents=True, exist_ok=True)
     core_file = app_dir / "core" / "saga.py"
@@ -144,6 +153,28 @@ def add_saga(inp: ToolInput) -> ToolResult:
 # ---------------------------------------------------------------------------
 # File writers — each < 50 LOC
 # ---------------------------------------------------------------------------
+
+def _patch_models_init(
+    models_init: Path,
+    class_imports: list[tuple[str, str]],
+) -> None:
+    """Append model imports to ``app/models/__init__.py`` idempotently."""
+    if not models_init.exists():
+        return
+    content = models_init.read_text()
+    new_lines: list[str] = []
+    for module, cls in class_imports:
+        marker = f"from app.models.{module} import {cls}"
+        if marker in content:
+            continue
+        new_lines.append(f"{marker}  # noqa: F401")
+    if not new_lines:
+        return
+    if not content.endswith("\n"):
+        content += "\n"
+    content += "\n".join(new_lines) + "\n"
+    models_init.write_text(content)
+
 
 def _write_saga_models(dest: Path) -> None:
     """Write ``app/models/saga.py`` with SagaInstance and SagaStepExecution.

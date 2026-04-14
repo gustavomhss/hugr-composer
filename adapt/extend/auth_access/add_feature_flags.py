@@ -85,6 +85,15 @@ def add_feature_flags(inp: ToolInput) -> ToolResult:
     _write_flag_model(flag_model_file)
     files_created.append(str(flag_model_file))
 
+    # Register FeatureFlag models in app/models/__init__.py.
+    _patch_models_init(
+        app_dir / "models" / "__init__.py",
+        [
+            ("feature_flag", "FeatureFlag"),
+            ("feature_flag", "FeatureFlagAudit"),
+        ],
+    )
+
     # --- Step 2: In-process LRU cache with Redis pubsub invalidation ---
     cache_file = app_dir / "core" / "feature_flag_cache.py"
     _write_flag_cache(cache_file)
@@ -151,6 +160,28 @@ def add_feature_flags(inp: ToolInput) -> ToolResult:
 # ---------------------------------------------------------------------------
 # Step helpers — each < 50 LOC
 # ---------------------------------------------------------------------------
+
+def _patch_models_init(
+    models_init: Path,
+    class_imports: list[tuple[str, str]],
+) -> None:
+    """Append model imports to ``app/models/__init__.py`` idempotently."""
+    if not models_init.exists():
+        return
+    content = models_init.read_text()
+    new_lines: list[str] = []
+    for module, cls in class_imports:
+        marker = f"from app.models.{module} import {cls}"
+        if marker in content:
+            continue
+        new_lines.append(f"{marker}  # noqa: F401")
+    if not new_lines:
+        return
+    if not content.endswith("\n"):
+        content += "\n"
+    content += "\n".join(new_lines) + "\n"
+    models_init.write_text(content)
+
 
 def _write_flag_model(dest: Path) -> None:
     """Write ``app/models/feature_flag.py`` with FeatureFlag + FeatureFlagAudit.
