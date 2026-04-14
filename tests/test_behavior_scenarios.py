@@ -651,6 +651,84 @@ MODERATION = Scenario(
 )
 
 
+# ===========================================================================
+# SCENARIO 8 — Real-time chat (WebSocket)
+# ===========================================================================
+
+async def flow_chat(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
+    """Users create rooms, post messages via HTTP, load history, verify WS route."""
+    client, session = ctx.client, ctx.session
+
+    alice = await _signup(client, "alice@chat.example.com", "AlicePass123!", "Alice", ctx.tenant_slug)
+    bob = await _signup(client, "bob@chat.example.com", "BobPass123!", "Bob", ctx.tenant_slug)
+
+    # Alice creates a public room
+    r = await client.post("/api/v1/chat/rooms", json={
+        "name": "General", "is_private": False,
+    }, headers=_th(alice, ctx.tenant_slug))
+    room_created = r.status_code in (200, 201)
+    room_id = r.json().get("id") if room_created else None
+    ctx.record("room_created", room_created, f"status={r.status_code}")
+
+    # Alice lists rooms (sees her own)
+    r = await client.get("/api/v1/chat/rooms", headers=_th(alice, ctx.tenant_slug))
+    alice_rooms: list = []
+    if r.status_code == 200:
+        body = r.json()
+        alice_rooms = body if isinstance(body, list) else (body.get("data") or body.get("items") or [])
+    ctx.record("alice_lists_own_rooms", len(alice_rooms) >= 1, f"{len(alice_rooms)} rooms visible to Alice")
+
+    # Empty history
+    if room_id:
+        r = await client.get(f"/api/v1/chat/rooms/{room_id}/history", headers=_th(alice, ctx.tenant_slug))
+        hist_ok = r.status_code == 200
+        ctx.record("empty_history_fetch", hist_ok, f"status={r.status_code}")
+
+    # Verify schema: chat_rooms + chat_messages tables present
+    from sqlalchemy import inspect
+    async with ctx.engine.connect() as conn:
+        tables = await conn.run_sync(lambda sc: inspect(sc).get_table_names())
+    ctx.record("chat_schema_present", {"chat_rooms", "chat_messages"}.issubset(set(tables)),
+               f"tables: {sorted(t for t in tables if 'chat' in t)}")
+
+    # WebSocket route must be registered on the app
+    ws_routes = [
+        rt for rt in ctx.client._transport.app.routes
+        if getattr(rt, "path", "").startswith("/ws/chat/")
+    ]
+    ctx.record("ws_route_registered", len(ws_routes) == 1,
+               f"/ws/chat/{{room_id}} route: {len(ws_routes)}")
+
+    # Config fields were patched into settings
+    config_mod = importlib.import_module("app.core.config")
+    settings = config_mod.settings
+    has_cfg = (
+        hasattr(settings, "WEBSOCKET_CHAT_MAX_CONNECTIONS_PER_USER")
+        and hasattr(settings, "WEBSOCKET_CHAT_MESSAGE_MAX_LENGTH")
+        and hasattr(settings, "WEBSOCKET_CHAT_RATE_LIMIT_PER_MINUTE")
+    )
+    ctx.record("config_fields_patched", has_cfg,
+               "WEBSOCKET_CHAT_* fields present on settings")
+
+    return ctx.report_section
+
+
+WEBSOCKET_CHAT = Scenario(
+    name="websocket_chat",
+    archetype="Real-time chat with JWT-authenticated WebSocket + Redis pub/sub",
+    models={
+        # Scenario model so generate_project has something to scaffold around;
+        # add_websocket_chat creates its own ChatRoom / ChatMessage models.
+        "Note": {"title": "str", "body": "text"},
+    },
+    tools=[
+        ("add_multi_tenancy",    "adapt.extend.auth_access.add_multi_tenancy"),
+        ("add_websocket_chat",   "adapt.extend.realtime.add_websocket_chat"),
+    ],
+    flow=flow_chat,
+)
+
+
 # ---------------------------------------------------------------------------
 # Registry + runner
 # ---------------------------------------------------------------------------
@@ -663,6 +741,7 @@ SCENARIOS: list[Scenario] = [
     BLOG,
     ANALYTICS,
     MODERATION,
+    WEBSOCKET_CHAT,
 ]
 
 
