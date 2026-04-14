@@ -120,12 +120,11 @@ def add_batch_endpoint(inp: ToolInput) -> ToolResult:
         _write_bulk_route(route_file, stem, pascal, _DEFAULT_MAX_BATCH, _DEFAULT_TIMEOUT_MS)
         files_created.append(str(route_file))
 
-    # Step 4: patch main.py / api router
-    api_main = app_dir / "api" / "main.py"
-    target = api_main if api_main.exists() else app_dir / "main.py"
-    if target.exists():
-        _patch_router(target, model_pairs)
-        files_modified.append(str(target))
+    # Step 4: register bulk routers in app/routes/__init__.py
+    routes_init = app_dir / "routes" / "__init__.py"
+    if routes_init.exists():
+        _patch_router(routes_init, model_pairs)
+        files_modified.append(str(routes_init))
 
     warnings: list[str] = []
     for path_str in files_created:
@@ -670,7 +669,7 @@ def _write_bulk_route(
             if len(request.items) > _MAX_BATCH:
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Batch size {{len(request.items)}} exceeds maximum {{_MAX_BATCH}}.",
+                    detail=f"Batch size {len(request.items)} exceeds maximum {_MAX_BATCH}.",
                 )
             store = get_idempotency_store()
             if x_idempotency_key and store.seen(x_idempotency_key):
@@ -689,27 +688,56 @@ def _write_bulk_route(
 
 
 def _patch_router(router_file: Path, model_pairs: list[tuple[str, str]]) -> None:
-    """Register bulk routers inside the API main router file.
+    """Register bulk routers in ``app/routes/__init__.py``.
+
+    The real router assembly lives in ``app/routes/__init__.py`` (see
+    ``generators/orchestrator.py``), NOT ``app/api/main.py`` (which does not
+    exist in the generated scaffold). Idempotent per-model — only registers
+    pairs whose import is not already present.
 
     Args:
-        router_file: Path to the API router assembly file.
+        router_file: Path to ``app/routes/__init__.py``.
         model_pairs: List of ``(snake_stem, PascalName)`` tuples.
     """
     src = router_file.read_text()
-    if "bulk_create" in src or "/bulk" in src:
-        return
+    lines = src.splitlines()
 
-    import_lines = "\n".join(
-        f"from app.api.routes.bulk.{stem}_bulk import router as _{stem}_bulk_router"
-        for stem, _ in model_pairs
-    )
-    include_lines = "\n".join(
-        f"api_router.include_router(_{stem}_bulk_router, prefix='/{stem}s', tags=['bulk'])"
-        for stem, _ in model_pairs
-    )
+    for stem, _ in model_pairs:
+        import_line = (
+            f"from app.api.routes.bulk.{stem}_bulk import router as _{stem}_bulk_router"
+        )
+        include_line = (
+            f"api_router.include_router("
+            f"_{stem}_bulk_router, prefix='/{stem}s', tags=['bulk'])"
+        )
+        if import_line in "\n".join(lines):
+            continue
 
-    src = src.rstrip("\n") + "\n\n" + import_lines + "\n" + include_lines + "\n"
-    router_file.write_text(src)
+        # Insert import after last ``from app.*`` line.
+        last_app_import_idx = -1
+        for idx, line in enumerate(lines):
+            if line.startswith("from app."):
+                last_app_import_idx = idx
+        if last_app_import_idx == -1:
+            for idx, line in enumerate(lines):
+                if "api_router" in line and "APIRouter()" in line:
+                    last_app_import_idx = idx - 1
+                    break
+        lines.insert(last_app_import_idx + 1, import_line)
+
+        # Insert include after last ``api_router.include_router(...)`` line.
+        last_include_idx = -1
+        for idx, line in enumerate(lines):
+            if line.startswith("api_router.include_router"):
+                last_include_idx = idx
+        if last_include_idx == -1:
+            for idx, line in enumerate(lines):
+                if "api_router" in line and "APIRouter()" in line:
+                    last_include_idx = idx
+                    break
+        lines.insert(last_include_idx + 1, include_line)
+
+    router_file.write_text("\n".join(lines) + ("\n" if src.endswith("\n") else ""))
 
 
 # ---------------------------------------------------------------------------

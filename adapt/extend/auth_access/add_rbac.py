@@ -76,8 +76,12 @@ def add_rbac(inp: ToolInput) -> ToolResult:
     files_created: list[str] = []
     files_modified: list[str] = []
 
+    # Detect whether add_multi_tenancy was applied so UserRole.tenant_id
+    # only emits a FK when the tenants table actually exists.
+    has_tenants = (app_dir / "models" / "tenant.py").exists()
+
     # Step 1: Models
-    _write_rbac_models(rbac_model_file)
+    _write_rbac_models(rbac_model_file, has_tenants=has_tenants)
     files_created.append(str(rbac_model_file))
 
     # Step 2: Inheritance resolver (pure Python, no DB)
@@ -115,11 +119,11 @@ def add_rbac(inp: ToolInput) -> ToolResult:
     _write_routes(routes_file)
     files_created.append(str(routes_file))
 
-    # Step 9: Patch app/api/main.py to include router
-    api_main = app_dir / "api" / "main.py"
-    if api_main.exists():
-        _patch_api_main(api_main)
-        files_modified.append(str(api_main))
+    # Step 9: Patch app/routes/__init__.py to include router
+    routes_init = app_dir / "routes" / "__init__.py"
+    if routes_init.exists():
+        _patch_api_main(routes_init)
+        files_modified.append(str(routes_init))
 
     # Step 10: Alembic migration
     versions_dir = project / "alembic" / "versions"
@@ -151,11 +155,14 @@ def add_rbac(inp: ToolInput) -> ToolResult:
 # Step helpers — each < 50 LOC
 # ---------------------------------------------------------------------------
 
-def _write_rbac_models(dest: Path) -> None:
+def _write_rbac_models(dest: Path, has_tenants: bool = False) -> None:
     """Write app/models/rbac.py with Permission, Role, RolePermission, UserRole.
 
     Args:
         dest: Absolute destination path.
+        has_tenants: When True, emit UserRole.tenant_id with a FK to tenants.id.
+            When False, emit a plain Uuid column with no FK (add_multi_tenancy
+            was not applied, so the tenants table does not exist).
     """
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(textwrap.dedent("""\
@@ -310,6 +317,16 @@ def _write_rbac_models(dest: Path) -> None:
                 UniqueConstraint("user_id", "role_id", "tenant_id", name="uq_user_roles"),
             )
     """))
+    # Strip the tenants FK when add_multi_tenancy was NOT applied — the
+    # tenants table does not exist and SQLAlchemy would raise
+    # NoReferencedTableError at metadata resolution time.
+    if not has_tenants:
+        src = dest.read_text()
+        src = src.replace(
+            'Uuid, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True',
+            "Uuid, nullable=True  # no FK — add_multi_tenancy not applied",
+        )
+        dest.write_text(src)
 
 
 def _write_inheritance(dest: Path) -> None:
@@ -1136,25 +1153,65 @@ def _write_routes(dest: Path) -> None:
     """))
 
 
-def _patch_api_main(api_main: Path) -> None:
-    """Include the RBAC router in app/api/main.py if not already present.
+def _patch_api_main(routes_init: Path) -> None:
+    """Register the RBAC router in ``app/routes/__init__.py``.
+
+    The real router assembly lives in ``app/routes/__init__.py`` (see
+    ``generators/orchestrator.py``), NOT ``app/api/main.py`` (which does not
+    exist in the generated scaffold). Idempotent — no-op if already present.
 
     Args:
-        api_main: Path to ``app/api/main.py``.
+        routes_init: Path to ``app/routes/__init__.py``.
     """
-    src = api_main.read_text()
-    if "rbac" in src:
+    _register_router_in_routes_init(
+        routes_init,
+        import_line="from app.api.routes.rbac import router as rbac_router",
+        include_line="api_router.include_router(rbac_router)",
+    )
+
+
+def _register_router_in_routes_init(
+    routes_init: Path,
+    *,
+    import_line: str,
+    include_line: str,
+) -> None:
+    """Idempotently add an import + ``api_router.include_router`` call.
+
+    Args:
+        routes_init: Path to ``app/routes/__init__.py``.
+        import_line: Import statement to insert (no trailing newline).
+        include_line: ``api_router.include_router(...)`` call (no trailing newline).
+    """
+    src = routes_init.read_text()
+    if import_line in src:
         return
-    router_import = "from app.api.routes import rbac as rbac_routes\n"
-    router_include = 'api_router.include_router(rbac_routes.router)\n'
-    src = router_import + src
-    if "api_router.include_router" in src:
-        # Insert before last include_router call
-        last_include = src.rfind("api_router.include_router")
-        src = src[:last_include] + router_include + src[last_include:]
-    else:
-        src = src + "\n" + router_include
-    api_main.write_text(src)
+
+    lines = src.splitlines()
+
+    last_app_import_idx = -1
+    for idx, line in enumerate(lines):
+        if line.startswith("from app."):
+            last_app_import_idx = idx
+    if last_app_import_idx == -1:
+        for idx, line in enumerate(lines):
+            if "api_router" in line and "APIRouter()" in line:
+                last_app_import_idx = idx - 1
+                break
+    lines.insert(last_app_import_idx + 1, import_line)
+
+    last_include_idx = -1
+    for idx, line in enumerate(lines):
+        if line.startswith("api_router.include_router"):
+            last_include_idx = idx
+    if last_include_idx == -1:
+        for idx, line in enumerate(lines):
+            if "api_router" in line and "APIRouter()" in line:
+                last_include_idx = idx
+                break
+    lines.insert(last_include_idx + 1, include_line)
+
+    routes_init.write_text("\n".join(lines) + ("\n" if src.endswith("\n") else ""))
 
 
 def _write_migration(versions_dir: Path) -> Path:

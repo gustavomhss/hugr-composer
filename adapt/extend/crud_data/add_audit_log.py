@@ -280,6 +280,9 @@ def _write_audit_model(dest: Path) -> None:
             __tablename__ = "audit_logs"
 
             id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+            # created_at is part of the composite PK because PostgreSQL requires
+            # the partition key to be included in any unique constraint on a
+            # partitioned table (PARTITION BY RANGE (created_at) below).
             entity_type: Mapped[str] = mapped_column(String(64), nullable=False)
             entity_id: Mapped[str] = mapped_column(String(64), nullable=False)
             action: Mapped[str] = mapped_column(String(32), nullable=False)
@@ -299,7 +302,10 @@ def _write_audit_model(dest: Path) -> None:
                 String(64), nullable=True, comment="entry_hash of the preceding audit entry"
             )
             created_at: Mapped[datetime] = mapped_column(
-                DateTime(timezone=True), server_default=func.now(), nullable=False
+                DateTime(timezone=True),
+                server_default=func.now(),
+                nullable=False,
+                primary_key=True,
             )
 
             __table_args__ = (

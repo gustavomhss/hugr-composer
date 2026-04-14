@@ -59,10 +59,14 @@ _MODELS_20: dict[str, dict[str, str]] = {
     "AuditEntry": {"actor_id": "UUID", "action": "str", "resource_type": "str", "resource_id": "UUID"},
     "Setting":   {"key": "str", "value": "str", "scope": "str"},
     "ApiToken":  {"user_id": "UUID", "token_hash": "str", "expires_at": "datetime"},
-    "Webhook":   {"url": "str", "events": "str", "is_active": "bool"},
+    # Renamed from "Webhook" to avoid schemas/webhook.py collision with
+    # add_webhook_sender, which reserves that module for its own schemas.
+    "Notification": {"url": "str", "events": "str", "is_active": "bool"},
     "Campaign":  {"name": "str", "start_date": "date", "end_date": "date", "budget_cents": "int"},
     "Report":    {"name": "str", "generated_at": "datetime", "file_key": "str"},
-    "Role":      {"name": "str", "permissions": "str"},
+    # Renamed from "Role" to "AppRole" to avoid table-name collision with
+    # add_rbac, which reserves the "roles" tablename for its own RBAC model.
+    "AppRole":   {"name": "str", "permissions": "str"},
     "Session":   {"user_id": "UUID", "token": "str", "expires_at": "datetime", "ip_address": "str"},
 }
 
