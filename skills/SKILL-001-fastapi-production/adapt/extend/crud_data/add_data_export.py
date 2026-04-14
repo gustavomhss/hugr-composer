@@ -139,6 +139,21 @@ def add_data_export(inp: ToolInput) -> ToolResult:
         migration_file = _write_migration(versions_dir)
         files_created.append(str(migration_file))
 
+    # --- Step 9: Patch requirements.txt ----------------------------------------
+    req_file = project / "requirements.txt"
+    if req_file.exists():
+        req_src = req_file.read_text()
+        req_adds = []
+        if "pyarrow" not in req_src:
+            req_adds.append("pyarrow>=17.0.0")
+        if "xlsxwriter" not in req_src:
+            req_adds.append("xlsxwriter>=3.2.0")
+        if "redis" not in req_src:
+            req_adds.append("redis[hiredis]>=5.0.0")
+        if req_adds:
+            req_file.write_text(req_src.rstrip("\n") + "\n" + "\n".join(req_adds) + "\n")
+            files_modified.append(str(req_file))
+
     return ToolResult(
         status="success",
         files_created=files_created,
