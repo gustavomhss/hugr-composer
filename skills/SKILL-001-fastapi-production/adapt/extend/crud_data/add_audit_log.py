@@ -845,7 +845,9 @@ def _write_audit_crud(dest: Path) -> None:
 
         from __future__ import annotations
 
-        from sqlalchemy import func, select
+        from datetime import datetime, timedelta, timezone
+
+        from sqlalchemy import func, select, text
         from sqlalchemy.ext.asyncio import AsyncSession
 
         from app.models.audit_log import AuditLog
@@ -892,6 +894,35 @@ def _write_audit_crud(dest: Path) -> None:
 
             items = [AuditLogEntry.model_validate(r) for r in rows]
             return AuditLogPage(items=items, total=total, offset=offset, limit=limit)
+
+
+        async def purge_expired_audit_logs(
+            session: AsyncSession,
+            retain_days: int,
+        ) -> int:
+            \"\"\"Delete audit log entries older than *retain_days* days.
+
+            NEVER deletes rows newer than the computed cutoff timestamp.
+            The cutoff is ``now() - retain_days`` so only rows strictly older
+            than the retention window are removed.
+
+            Args:
+                session: Async SQLAlchemy session (caller must commit).
+                retain_days: Number of days to retain.  Rows with
+                    ``created_at < now() - interval '{retain_days} days'``
+                    are deleted.
+
+            Returns:
+                Number of rows deleted.
+            \"\"\"
+            cutoff = datetime.now(timezone.utc) - timedelta(days=retain_days)
+            result = await session.execute(
+                text(
+                    "DELETE FROM audit_logs WHERE created_at < :cutoff"
+                ),
+                {"cutoff": cutoff},
+            )
+            return result.rowcount
         """)
     dest.write_text(content)
 

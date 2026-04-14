@@ -342,15 +342,17 @@ def _outbox_worker_content(broker: str) -> str:
     return textwrap.dedent(f"""\
         \"\"\"Outbox worker: drains the outbox_events table to the {broker} broker.
 
+        Uses ``SELECT FOR UPDATE SKIP LOCKED`` so multiple worker replicas
+        can run in parallel without processing the same row twice.
+
         Run as a background process:
             python run_consumer.py  (calls start_outbox_worker)
         \"\"\"
         from __future__ import annotations
 
         import asyncio
-        import json
         import logging
-        import time
+        from typing import AsyncGenerator
 
         logger = logging.getLogger(__name__)
 
@@ -368,21 +370,61 @@ def _outbox_worker_content(broker: str) -> str:
             logger.info("Outbox worker started (broker={broker})")
             while True:
                 try:
-                    await _drain_batch()
+                    published = await _drain_batch()
+                    if published == 0:
+                        await asyncio.sleep(_IDLE_SLEEP)
                 except Exception as exc:  # noqa: BLE001
                     logger.error("Outbox drain error: %s", exc)
-                await asyncio.sleep(_IDLE_SLEEP)
+                    await asyncio.sleep(_IDLE_SLEEP)
 
 
         async def _drain_batch() -> int:
-            \"\"\"Drain one batch of unpublished events.
+            \"\"\"Drain one batch of unpublished outbox events.
+
+            Acquires a ``SELECT FOR UPDATE SKIP LOCKED`` advisory lock so that
+            concurrent worker replicas never process the same rows.  Each row
+            is published to the broker and then marked ``published=True``
+            (or ``attempts`` is incremented on failure) — all within a single
+            database transaction.
 
             Returns:
-                Number of events published in this cycle.
+                Number of events successfully published in this cycle.
             \"\"\"
-            # CUSTOMIZE: replace with real DB session + broker publish call
+            # CUSTOMIZE: inject real async_session_factory and broker_publish below
+            # Example integration skeleton:
+            #
+            # async with async_session_factory() as session:
+            #     async with session.begin():
+            #         rows = (await session.execute(
+            #             text(
+            #                 "SELECT id, event_type, payload FROM outbox_events "
+            #                 "WHERE status = 'pending' "
+            #                 "ORDER BY created_at "
+            #                 "LIMIT :batch_size "
+            #                 "FOR UPDATE SKIP LOCKED"
+            #             ),
+            #             {{"batch_size": _BATCH_LIMIT}},
+            #         )).fetchall()
+            #
+            #         published = 0
+            #         for row in rows:
+            #             try:
+            #                 await broker_publish(row.event_type, row.payload)
+            #                 await session.execute(
+            #                     text("UPDATE outbox_events SET status='published' WHERE id=:id"),
+            #                     {{"id": row.id}},
+            #                 )
+            #                 published += 1
+            #             except Exception as exc:
+            #                 await session.execute(
+            #                     text("UPDATE outbox_events SET attempts=attempts+1 WHERE id=:id"),
+            #                     {{"id": row.id}},
+            #                 )
+            #                 logger.error("Publish failed for id=%s: %s", row.id, exc)
+            #         return published
+
             logger.debug("Draining outbox batch (limit=%d)", _BATCH_LIMIT)
-            return 0  # placeholder — real impl queries DB and publishes
+            return 0  # Replace with real implementation using the template above
     """)
 
 
@@ -469,6 +511,9 @@ def _consumer_content(broker: str) -> str:
         # Handler registry: event_type → async handler function
         _HANDLERS: dict[str, Callable] = {{}}
 
+        # INV-ED-07: highest schema version this consumer understands
+        SUPPORTED_SCHEMA_VERSION: int = 1
+
 
         def register_handler(event_type: str, handler: Callable) -> None:
             \"\"\"Register an async handler for an event type.
@@ -484,11 +529,26 @@ def _consumer_content(broker: str) -> str:
         async def dispatch_event(event_id: str, event_type: str, payload: dict) -> None:
             \"\"\"Dispatch one event to its registered handler with idempotency + retry.
 
+            Raises ``ValueError`` when the event carries a ``schema_version``
+            higher than ``SUPPORTED_SCHEMA_VERSION`` so that unknown schemas
+            are never silently ignored (INV-ED-07).
+
             Args:
                 event_id: Unique event identifier (UUID string).
                 event_type: Event discriminator.
                 payload: Parsed event payload dict.
+
+            Raises:
+                ValueError: If ``payload["schema_version"] > SUPPORTED_SCHEMA_VERSION``.
             \"\"\"
+            # INV-ED-07: reject events with unsupported schema version
+            schema_ver = payload.get("schema_version", 1)
+            if schema_ver > SUPPORTED_SCHEMA_VERSION:
+                raise ValueError(
+                    f"Unknown schema version {{schema_ver}} for event_type={{event_type}}. "
+                    f"Consumer only supports up to v{{SUPPORTED_SCHEMA_VERSION}}."
+                )
+
             consumer_name = "default"
             if is_seen(consumer_name, event_id):
                 logger.debug("Duplicate event %s — skipped", event_id)

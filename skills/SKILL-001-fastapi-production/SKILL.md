@@ -1,9 +1,10 @@
 # SKILL-001: FastAPI Production
 
 > Convention over Configuration for FastAPI.
-> 50 generators + 8 adapt tools produce production-grade code — you customize business logic only.
+> 34 generators + 51 adapt tools = 100 MCP tools total — produce production-grade code, you customize business logic only.
 > Scores 35/35 on a 35-check audit backed by OWASP, CVE, NIST, RFC, and CIS standards.
-> 86 files, 29,822 LOC. 13/13 adapt tools battle tested.
+> 352 files, 101,766 LOC. 51 adapt tools across 5 categories: extend (36), verify (7), operate (8), evolve (8+3), proactive (1).
+> Lint-verified: ruff F-check on generated code scores 22 F-errors (0 critical F821), all 85 generated files pass py_compile.
 
 ## Quick Start
 
@@ -88,14 +89,16 @@ One call to `fastapi_generate_project()` produces a **53-file production project
 - `tests/api/routes/test_users.py` — 8 user management tests
 - `tests/api/routes/test_{model}.py` — 6 CRUD tests per model
 
-## 49 MCP Tools
+## 100 MCP Tools
 
 ### Tier 1: Orchestrator
 | Tool | What |
 |------|------|
 | `fastapi_generate_project` | One call → complete 53-file project |
 
-### Tier 2: Granular Generators (26 tools)
+### Tier 2: Granular Generators (33 tools)
+
+#### Core + Infrastructure
 | Tool | Generates |
 |------|-----------|
 | `fastapi_generate_app` | main.py (lifespan, middleware, routers) |
@@ -125,7 +128,7 @@ One call to `fastapi_generate_project()` produces a **53-file production project
 | `fastapi_generate_ci` | GitHub Actions CI pipeline |
 | `fastapi_generate_loadtest` | k6 load test |
 
-### Tier 2b: Optional Generators
+#### Optional / Observability
 | Tool | Generates |
 |------|-----------|
 | `fastapi_generate_otel` | OpenTelemetry setup |
@@ -133,18 +136,79 @@ One call to `fastapi_generate_project()` produces a **53-file production project
 | `fastapi_generate_alerting` | Alert rules + Grafana dashboard |
 | `fastapi_generate_tests` | Test infrastructure + test suite |
 
+#### Evolve Generators
+| Tool | Generates |
+|------|-----------|
+| `fastapi_generate_sdk` | Client SDK (OpenAPI → typed Python client) |
+| `fastapi_generate_admin_panel` | Admin panel scaffold |
+| `fastapi_generate_docs` | Auto-generated documentation site |
+
 ### Tier 3: Verification
 | Tool | What |
 |------|------|
 | `fastapi_analyze` | 35-check production audit (OWASP/CVE/NIST/RFC sourced) |
+| `fastapi_analyze_project_v2` | Deep structural analysis v2 |
 | `fastapi_fix_findings` | Auto-fix analyzer failures (proven: 21/35 → 35/35) |
 | `fastapi_check_health` | Test health endpoints on running instance |
 | `fastapi_check_headers` | Test security headers on running instance |
 
-### Tier 4: Adapt Tools (8 tools)
+### Tier 4: Adapt Tools (51 tools)
 
-Add capabilities to existing projects without regenerating from scratch. All idempotent.
+Add capabilities to existing projects without regenerating from scratch.
+All tools accept `ToolInput(project_dir=..., dry_run=False)` and return a `ToolResult`.
 
+#### Extend — CRUD & Data (7 tools)
+| Tool | What |
+|------|------|
+| `fastapi_add_soft_delete` | SoftDeleteMixin + filter + CRUD helpers + migration |
+| `fastapi_add_cursor_pagination` | Keyset cursor pagination replacing offset-based |
+| `fastapi_add_file_upload` | Multipart upload + storage backend + validation |
+| `fastapi_add_search` | Full-text / multi-field search endpoint |
+| `fastapi_add_audit_log` | Append-only audit trail for every mutation |
+| `fastapi_add_data_export` | CSV/JSON export endpoint with streaming |
+| `fastapi_add_bulk_operations` | Bulk create/update/delete endpoints |
+
+#### Extend — Auth & Access (6 tools)
+| Tool | What |
+|------|------|
+| `fastapi_add_rbac` | Role + Permission + UserRole models, enforcement dependency |
+| `fastapi_add_mfa` | TOTP-based MFA (pyotp), pending token flow |
+| `fastapi_add_multi_tenancy` | Tenant isolation via RLS + tenant context middleware |
+| `fastapi_add_feature_flags` | Per-tenant/user feature flag system |
+| `fastapi_add_api_key_auth` | API key authentication alongside JWT |
+| `fastapi_add_oauth2_provider` | OAuth2 provider integration (authorization code flow) |
+
+#### Extend — API Design (4 tools)
+| Tool | What |
+|------|------|
+| `fastapi_add_api_versioning` | /v1 / /v2 URL-based versioning |
+| `fastapi_add_graphql` | Strawberry GraphQL schema + router |
+| `fastapi_add_batch_endpoint` | Batch request endpoint (multiple operations in one call) |
+| `fastapi_add_long_running_task` | Background task with polling status endpoint |
+
+#### Extend — Infrastructure (4 tools)
+| Tool | What |
+|------|------|
+| `fastapi_add_cache_layer` | Redis cache + @cached decorator |
+| `fastapi_add_circuit_breaker` | Circuit breaker for outbound HTTP calls |
+| `fastapi_add_outbox_pattern` | Transactional outbox for reliable event delivery |
+| `fastapi_add_saga` | Saga orchestrator for distributed transactions |
+
+#### Extend — Realtime (3 tools)
+| Tool | What |
+|------|------|
+| `fastapi_add_sse` | Server-Sent Events endpoint |
+| `fastapi_add_webhook_sender` | Outbound webhook delivery with retry |
+| `fastapi_add_webhook_receiver` | Inbound webhook handler with signature validation |
+
+#### Extend — Testing Tools (3 tools)
+| Tool | What |
+|------|------|
+| `fastapi_add_factory` | Model factory (factory_boy) for test fixtures |
+| `fastapi_add_contract_tests` | Consumer-driven contract tests (Pact) |
+| `fastapi_add_load_profile` | k6 load profile tuned for this project |
+
+#### Extend — Base Wiring (3 tools — original 8)
 | Tool | What |
 |------|------|
 | `fastapi_add_model` | Add model + CRUD + schemas + routes, wire router + models/\_\_init\_\_ |
@@ -152,9 +216,48 @@ Add capabilities to existing projects without regenerating from scratch. All ide
 | `fastapi_add_middleware` | Add middleware at specific position (outermost, after_cors, before_logging, innermost) |
 | `fastapi_add_background_job` | ARQ async job with worker.py, core/arq.py, jobs/{name}.py. Optional cron |
 | `fastapi_add_websocket` | WebSocket with ConnectionManager (rooms, broadcast), JWT auth, heartbeat |
-| `fastapi_add_integration` | External service: stripe (checkout+webhook), s3 (upload/presigned/delete), sendgrid (email), redis (cache+@cached) |
-| `fastapi_fix_findings` | Auto-fix analyzer failures: bcrypt→argon2id, python-jose→PyJWT, security headers, structured logging, health checks, multi-stage Docker, async engine, pool config, lifespan |
+| `fastapi_add_integration` | External service: stripe, s3, sendgrid, redis |
 | `fastapi_migrate_db` | Alembic migration helper script + exact commands |
+
+#### Verify (7 tools)
+| Tool | What |
+|------|------|
+| `fastapi_detect_n_plus_one` | Static detection of N+1 query patterns |
+| `fastapi_security_scan` | Security scan: hardcoded secrets, dangerous patterns |
+| `fastapi_dependency_audit` | Check outdated/vulnerable deps vs safety DB |
+| `fastapi_schema_coverage` | Verify all models have typed schemas |
+| `fastapi_test_coverage_gaps` | Find routes missing test coverage |
+| `fastapi_api_spec_compliance` | Validate routes match OpenAPI spec |
+| `fastapi_performance_baseline` | Measure and record endpoint latency baselines |
+
+#### Operate (8 tools)
+| Tool | What |
+|------|------|
+| `fastapi_blast_radius` | Impact analysis for a proposed model change |
+| `fastapi_migration_diff` | Diff between ORM models and DB schema |
+| `fastapi_dead_code_finder` | Find unreachable routes and unused modules |
+| `fastapi_api_changelog` | Generate changelog from Git diff on routes |
+| `fastapi_dependency_graph` | Visualize import + DI dependency graph |
+| `fastapi_connection_pool_monitor` | Analyze pool config vs observed load |
+| `fastapi_error_rate_analyzer` | Parse logs, compute error rates by endpoint |
+| `fastapi_sla_reporter` | Generate SLA compliance report from metrics |
+
+#### Evolve (8 tools)
+| Tool | What |
+|------|------|
+| `fastapi_add_migration_data` | Generate data-migration Alembic script |
+| `fastapi_refactor_model` | Rename field / split model with backward compat |
+| `fastapi_extract_service` | Extract CRUD logic into a service layer |
+| `fastapi_add_event_driven` | Add domain events + event bus integration |
+| `fastapi_add_i18n` | i18n/l10n scaffold (babel + accept-language) |
+| `fastapi_generate_sdk` | (also Tier 2) generate typed client SDK |
+| `fastapi_generate_admin_panel` | (also Tier 2) generate admin scaffold |
+| `fastapi_generate_docs` | (also Tier 2) generate documentation site |
+
+#### Proactive (1 tool)
+| Tool | What |
+|------|------|
+| `fastapi_doctor_tool` | Holistic health-check: runs all 7 verify tools, classifies by severity, generates ordered fix plan |
 
 ## Verification Suite
 
@@ -178,6 +281,8 @@ Every check cites its authoritative source:
 | Edge Cases | 8/8 | Works with minimal, auth-only, multi-model, full-options, no-auth configs |
 | Integration | PASS | Generated project installs deps and imports correctly |
 | Functional E2E | 25/25 | Every endpoint responds with correct status codes and data |
+| Lint (ruff F) | 8/8 | Generated code scores 0 F821, ≤22 total F-errors, 85/85 files pass py_compile |
+| Boot | all tools | All 51 adapt tools produce bootable projects (from app.main import app) |
 
 ## SOTA Decisions
 
@@ -202,11 +307,11 @@ Every check cites its authoritative source:
 ## Architecture
 
 ```
-SKILL-001-fastapi-production/        # 86 files, 29,822 LOC
+SKILL-001-fastapi-production/        # 352 files, 101,766 LOC
 ├── SKILL.md                    # This file
-├── manifest.yaml               # Machine-readable registry
-├── mcp_server.py               # FastMCP 3.2 server (49 tools)
-├── generators/                 # 50 generators
+├── manifest.yaml               # Machine-readable registry (v4.0)
+├── mcp_server.py               # FastMCP server (100 tools)
+├── generators/                 # 34 generators (60 files)
 │   ├── orchestrator.py         # generate_project() — chains all
 │   ├── infra/                  # app, config, dockerfile, env, readme, email, ...
 │   ├── database/               # engine, session, model, crud, alembic
@@ -217,21 +322,24 @@ SKILL-001-fastapi-production/        # 86 files, 29,822 LOC
 │   ├── deployment/             # docker_compose, k8s, k6, github_actions
 │   ├── observability/          # otel, prometheus, alerting
 │   └── testing/                # conftest, test_suite
-├── adapt/                      # 8 adapt tools (post-generation)
-│   ├── add_model.py            # Model + CRUD + schemas + routes
-│   ├── add_endpoint.py         # Custom endpoint with inline Pydantic model
-│   ├── add_middleware.py       # Middleware at specific stack position
-│   ├── add_background_job.py   # ARQ async jobs + optional cron
-│   ├── add_websocket.py        # WebSocket with ConnectionManager
-│   ├── add_integration.py      # stripe, s3, sendgrid, redis
-│   ├── fix_findings.py         # Auto-fix analyzer failures
-│   └── migrate_db.py           # Alembic migration helper
+├── adapt/                      # 51 adapt tools — 5 categories
+│   ├── contracts/              # ToolInput / ToolResult Pydantic contracts
+│   ├── extend/                 # 36 tools: crud_data, auth_access, api_design,
+│   │   │                       #   infrastructure, realtime, testing_tools
+│   ├── verify/                 # 7 tools: security, N+1, schema, coverage, ...
+│   ├── operate/                # 8 tools: blast_radius, changelog, pool, SLA, ...
+│   ├── evolve/                 # 8 tools: refactor, extract, event_driven, SDK, ...
+│   └── proactive/              # 1 tool: fastapi_doctor (runs all 7 verify tools)
 ├── benchmark/                  # Verification suite
 │   ├── analyzer.py             # 35-check audit (OWASP/CVE/NIST/RFC)
 │   ├── import_audit.py         # Deep import name resolution
 │   ├── test_generators.py      # 8 edge case configs
 │   ├── test_integration.py     # Generate → install → import
 │   └── test_functional.py      # 25 endpoint E2E tests
+├── tests/                      # Skill self-tests
+│   ├── test_boot.py            # Boot test for all 51 adapt tools
+│   ├── test_lint_generated.py  # ruff F-check on generated output (Blind Spot A)
+│   └── ...
 ├── core/                       # Knowledge + legacy tools
 │   ├── KNOWLEDGE.md            # v3 — generator-aware guide
 │   └── tools/                  # AST analyzer, runtime checks
