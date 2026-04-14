@@ -27,6 +27,7 @@ import time
 from pathlib import Path
 
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.migration_helper import find_migration_head
 
 # Maximum items per bulk request — hard cap enforced at schema and CRUD layer.
 DEFAULT_MAX_BATCH: int = 1000
@@ -1008,11 +1009,8 @@ def _write_migration(versions_dir: Path, model_name: str) -> Path:
         Path of the created migration file.
     """
     table = model_name.lower() + "s"
-    existing = sorted(versions_dir.glob("*.py"))
-    down_rev = "0001_initial"
-    if existing:
-        down_rev = existing[-1].stem
-
+        # Find the true HEAD of the migration chain (not just the alphabetically last file)
+    down_rev = find_migration_head(versions_dir) or "0001_initial"
     content = textwrap.dedent("""\
         \"\"\"Add composite index for bulk query optimisation on {table} table.
 

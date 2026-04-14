@@ -28,6 +28,7 @@ import time
 from pathlib import Path
 
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.migration_helper import find_migration_head
 
 
 # ---------------------------------------------------------------------------
@@ -1148,11 +1149,8 @@ def _write_migration(versions_dir: Path) -> Path:
         Path of the created migration file.
     """
     rev_id = "0009_add_feature_flags"
-    existing = sorted(versions_dir.glob("*.py"))
-    down_rev = "0001_initial"
-    if existing:
-        down_rev = existing[-1].stem
-
+        # Find the true HEAD of the migration chain (not just the alphabetically last file)
+    down_rev = find_migration_head(versions_dir) or "0001_initial"
     content = textwrap.dedent("""\
         \"\"\"Add feature_flags and feature_flag_audit tables.
 

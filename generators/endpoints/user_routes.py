@@ -150,7 +150,7 @@ async def update_user_by_id(
     session: SessionDep,
     user_id: uuid.UUID,
     body: UserUpdate,
-    _superuser: CurrentSuperuser,
+    current_user: CurrentSuperuser,
 ) -> UserPublic:
     """Update any user by UUID.
 

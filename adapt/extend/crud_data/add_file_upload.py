@@ -29,6 +29,7 @@ import time
 from pathlib import Path
 
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.migration_helper import find_migration_head
 
 
 # ---------------------------------------------------------------------------
@@ -1311,11 +1312,6 @@ def _write_file_routes(dest: Path) -> None:
         router = APIRouter(prefix="/files", tags=["files"])
 
 
-        @router.post(
-            "/presign",
-            response_model=PresignedUploadResponse,
-            summary="Generate presigned URL for direct S3 upload (Phase 1 of 2)",
-        )
         def _validate_upload_request(body: PresignedUploadRequest, settings) -> None:
             \"\"\"Raise HTTPException if content-type or file size is disallowed.
 
@@ -1338,6 +1334,11 @@ def _write_file_routes(dest: Path) -> None:
                 )
 
 
+        @router.post(
+            "/presign",
+            response_model=PresignedUploadResponse,
+            summary="Generate presigned URL for direct S3 upload (Phase 1 of 2)",
+        )
         async def request_presigned_upload(
             body: PresignedUploadRequest,
             session: SessionDep,
@@ -1422,12 +1423,6 @@ def _write_file_routes(dest: Path) -> None:
             return FileMetadataPublic.model_validate(confirmed)
 
 
-        @router.post(
-            "/",
-            response_model=FileMetadataPublic,
-            status_code=status.HTTP_201_CREATED,
-            summary="Direct file upload for local storage path",
-        )
         async def _persist_local_upload(session, storage, file_id, filename, stored_key, actual_mime, size_bytes, owner_id):
             \"\"\"Write metadata row, confirm upload, or rollback storage on DB error.
 
@@ -1460,6 +1455,12 @@ def _write_file_routes(dest: Path) -> None:
                 raise HTTPException(status_code=500, detail=f"DB insert failed: {exc}") from exc
 
 
+        @router.post(
+            "/",
+            response_model=FileMetadataPublic,
+            status_code=status.HTTP_201_CREATED,
+            summary="Direct file upload for local storage path",
+        )
         async def upload_file_local(
             file: UploadFile,
             session: SessionDep,
@@ -1668,11 +1669,8 @@ def _write_migration(versions_dir: Path) -> Path:
         Path of the created migration file.
     """
     rev_id = "create_files_table"
-    existing = sorted(versions_dir.glob("*.py"))
-    down_rev = "0001_initial"
-    if existing:
-        down_rev = existing[-1].stem
-
+        # Find the true HEAD of the migration chain (not just the alphabetically last file)
+    down_rev = find_migration_head(versions_dir) or "0001_initial"
     content = textwrap.dedent("""\
         \"\"\"Create files table for file upload system.
 

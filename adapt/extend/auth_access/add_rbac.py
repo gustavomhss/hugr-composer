@@ -28,6 +28,7 @@ import time
 from pathlib import Path
 
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.migration_helper import find_migration_head
 
 
 # ---------------------------------------------------------------------------
@@ -1042,14 +1043,14 @@ def _write_routes(dest: Path) -> None:
 
         @router.post("/permissions", response_model=PermissionPublic, status_code=201)
         async def create_permission(
-            p_in: PermissionCreate, session: SessionDep, _: CurrentSuperuser
+            p_in: PermissionCreate, session: SessionDep, current_user: CurrentSuperuser
         ) -> PermissionPublic:
             \"\"\"Create a new permission code. Superuser only.
 
             Args:
                 p_in: Permission creation payload.
                 session: Injected async DB session.
-                _: CurrentSuperuser guard (unused directly).
+                current_user: CurrentSuperuser guard — ensures caller is a superuser.
 
             Returns:
                 The created Permission.
@@ -1059,14 +1060,14 @@ def _write_routes(dest: Path) -> None:
 
         @router.post("/roles", response_model=RolePublic, status_code=201)
         async def create_role(
-            r_in: RoleCreate, session: SessionDep, _: CurrentSuperuser
+            r_in: RoleCreate, session: SessionDep, current_user: CurrentSuperuser
         ) -> RolePublic:
             \"\"\"Create a new role. Superuser only.
 
             Args:
                 r_in: Role creation payload.
                 session: Injected async DB session.
-                _: CurrentSuperuser guard.
+                current_user: CurrentSuperuser guard — ensures caller is a superuser.
 
             Returns:
                 The created Role.
@@ -1112,7 +1113,7 @@ def _write_routes(dest: Path) -> None:
             user_id: str,
             role_id: str,
             session: SessionDep,
-            _: CurrentSuperuser,
+            current_user: CurrentSuperuser,
         ) -> dict:
             \"\"\"Revoke a role from a user. Superuser only.
 
@@ -1120,7 +1121,7 @@ def _write_routes(dest: Path) -> None:
                 user_id: UUID string of the target user.
                 role_id: UUID string of the role to revoke.
                 session: Injected async DB session.
-                _: CurrentSuperuser guard.
+                current_user: CurrentSuperuser guard — ensures caller is a superuser.
 
             Returns:
                 JSON ``{"status": "ok"}``.
@@ -1165,11 +1166,8 @@ def _write_migration(versions_dir: Path) -> Path:
     Returns:
         Path to the created migration file.
     """
-    existing = sorted(versions_dir.glob("*.py"))
-    down_rev = "0001_initial"
-    if existing:
-        down_rev = existing[-1].stem
-
+        # Find the true HEAD of the migration chain (not just the alphabetically last file)
+    down_rev = find_migration_head(versions_dir) or "0001_initial"
     content = textwrap.dedent("""\
         \"\"\"Add RBAC tables: permissions, roles, role_permissions, user_roles.
 

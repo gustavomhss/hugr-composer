@@ -28,6 +28,7 @@ import time
 from pathlib import Path
 
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.migration_helper import find_migration_head
 
 
 # ---------------------------------------------------------------------------
@@ -1174,11 +1175,8 @@ def _write_migration(versions_dir: Path) -> Path:
     Returns:
         Path of the created migration file.
     """
-    existing = sorted(versions_dir.glob("*.py"))
-    down_rev = "0001_initial"
-    if existing:
-        down_rev = existing[-1].stem
-
+        # Find the true HEAD of the migration chain (not just the alphabetically last file)
+    down_rev = find_migration_head(versions_dir) or "0001_initial"
     content = textwrap.dedent("""\
         \"\"\"Add api_keys table.
 
