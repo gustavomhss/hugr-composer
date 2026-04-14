@@ -63,7 +63,7 @@ ALL_TOOLS: list[tuple[str, str]] = [
     ("add_outbox_pattern",    "adapt.extend.infrastructure.add_outbox_pattern"),
     ("add_saga",              "adapt.extend.infrastructure.add_saga"),
     ("add_sse",               "adapt.extend.realtime.add_sse"),
-    # add_webhook_receiver excluded — has hard FK to tenants.id
+    ("add_webhook_receiver",  "adapt.extend.realtime.add_webhook_receiver"),
     ("add_webhook_sender",    "adapt.extend.realtime.add_webhook_sender"),
     ("add_api_versioning",    "adapt.extend.api_design.add_api_versioning"),
     ("add_batch_endpoint",    "adapt.extend.api_design.add_batch_endpoint"),

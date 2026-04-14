@@ -106,7 +106,8 @@ def add_webhook_receiver(
     files_modified: list[str] = []
 
     # Step 1 – model
-    _write_inbound_model(model_file)
+    has_tenants = (app_dir / "models" / "tenant.py").exists()
+    _write_inbound_model(model_file, has_tenants=has_tenants)
     files_created.append(str(model_file))
 
     # Step 2 – verifier ABC + providers
@@ -178,7 +179,7 @@ def add_webhook_receiver(
     # Step 9 – migration
     versions_dir = project / "alembic" / "versions"
     if versions_dir.exists():
-        migration_file = _write_inbound_migration(versions_dir)
+        migration_file = _write_inbound_migration(versions_dir, has_tenants=has_tenants)
         files_created.append(str(migration_file))
 
     # Step 10 – patch config
@@ -251,13 +252,39 @@ def add_webhook_receiver(
 # File writers — each < 50 LOC
 # ---------------------------------------------------------------------------
 
-def _write_inbound_model(dest: Path) -> None:
+def _write_inbound_model(dest: Path, *, has_tenants: bool = False) -> None:
     """Write ``app/models/webhook_inbound.py`` with ``InboundWebhook``.
 
     Args:
         dest: Absolute path for the new file.
+        has_tenants: Whether ``app/models/tenant.py`` exists.  When *True* the
+            ``tenant_id`` column includes a ``ForeignKey("tenants.id")``
+            reference; otherwise it is a plain nullable UUID column (no FK).
     """
     dest.parent.mkdir(parents=True, exist_ok=True)
+
+    if has_tenants:
+        fk_import = "ForeignKey,\n        "
+        tenant_id_col = (
+            '    tenant_id: Mapped[uuid.UUID | None] = mapped_column(\n'
+            '        Uuid,\n'
+            '        ForeignKey("tenants.id", ondelete="SET NULL"),\n'
+            '        nullable=True,\n'
+            '        index=True,\n'
+            '        comment="Tenant context for multi-tenant webhook routing",\n'
+            '    )'
+        )
+    else:
+        fk_import = ""
+        tenant_id_col = (
+            '    tenant_id: Mapped[uuid.UUID | None] = mapped_column(\n'
+            '        Uuid,\n'
+            '        nullable=True,\n'
+            '        index=True,\n'
+            '        comment="Tenant context for multi-tenant webhook routing",\n'
+            '    )'
+        )
+
     content = textwrap.dedent("""\
         \"\"\"SQLAlchemy model for inbound webhook event records.\"\"\"
         from __future__ import annotations
@@ -269,8 +296,7 @@ def _write_inbound_model(dest: Path) -> None:
             JSON,
             CheckConstraint,
             DateTime,
-            ForeignKey,
-            String,
+            {fk_import}String,
             UniqueConstraint,
             Uuid,
             func,
@@ -288,7 +314,7 @@ def _write_inbound_model(dest: Path) -> None:
 
             Attributes:
                 id: UUID primary key.
-                tenant_id: FK to tenants for multi-tenant context propagation.
+                tenant_id: Tenant UUID for multi-tenant context propagation.
                 provider: Provider name (stripe / github / internal).
                 provider_event_id: Provider-assigned event id for deduplication.
                 event_type: Provider event type string.
@@ -303,13 +329,7 @@ def _write_inbound_model(dest: Path) -> None:
             __tablename__ = "inbound_webhooks"
 
             id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-            tenant_id: Mapped[uuid.UUID | None] = mapped_column(
-                Uuid,
-                ForeignKey("tenants.id", ondelete="SET NULL"),
-                nullable=True,
-                index=True,
-                comment="Tenant context for multi-tenant webhook routing",
-            )
+            TENANT_ID_PLACEHOLDER
             provider: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
             provider_event_id: Mapped[str] = mapped_column(String(255), nullable=False)
             event_type: Mapped[str] = mapped_column(String(127), nullable=False)
@@ -337,7 +357,9 @@ def _write_inbound_model(dest: Path) -> None:
                     name="ck_inbound_webhooks_status",
                 ),
             )
-        """)
+        """).replace("{fk_import}", fk_import).replace(
+        "    TENANT_ID_PLACEHOLDER", tenant_id_col,
+    )
     dest.write_text(content)
 
 
@@ -454,13 +476,6 @@ def _write_stripe_verifier(dest: Path, tolerance: int) -> None:
             def verify(self, body: bytes, headers: dict[str, str]) -> VerifiedEvent:
                 \"\"\"Verify a Stripe-signed webhook request.
 
-                Args:
-                    body: Raw request body bytes.
-                    headers: Lowercased request headers dict.
-
-                Returns:
-                    A ``VerifiedEvent`` containing the parsed Stripe event.
-
                 Raises:
                     HTTPException(401): If ``stripe-signature`` header is missing.
                     HTTPException(400): If the timestamp is out of tolerance or the
@@ -469,33 +484,24 @@ def _write_stripe_verifier(dest: Path, tolerance: int) -> None:
                 sig_header = headers.get("stripe-signature")
                 if not sig_header:
                     raise HTTPException(401, "Missing Stripe-Signature header")
-
-                parts = dict(
-                    p.split("=", 1) for p in sig_header.split(",") if "=" in p
-                )
+                parts = dict(p.split("=", 1) for p in sig_header.split(",") if "=" in p)
                 try:
                     ts = int(parts.get("t", 0))
                 except ValueError:
                     raise HTTPException(400, "Invalid Stripe signature timestamp")
-
                 if abs(int(time.time()) - ts) > _TOLERANCE:
                     raise HTTPException(400, "Stripe signature timestamp out of tolerance")
 
                 from app.core.config import settings as _settings
                 secret = getattr(_settings, "STRIPE_WEBHOOK_SECRET", "")
                 signed_payload = f"{ts}.".encode("ascii") + body
-                expected = hmac.new(
-                    secret.encode("utf-8"), signed_payload, hashlib.sha256
-                ).hexdigest()
-                actual = parts.get("v1", "")
-                if not hmac.compare_digest(expected, actual):
+                expected = hmac.new(secret.encode("utf-8"), signed_payload, hashlib.sha256).hexdigest()
+                if not hmac.compare_digest(expected, parts.get("v1", "")):
                     raise HTTPException(400, "Stripe signature mismatch")
-
                 try:
                     event = json.loads(body)
                 except json.JSONDecodeError:
                     raise HTTPException(400, "Invalid JSON body")
-
                 return VerifiedEvent(
                     provider="stripe",
                     event_id=event.get("id", ""),
@@ -1265,16 +1271,32 @@ def _write_inbound_routes(dest: Path, max_payload_bytes: int) -> None:
     dest.write_text(content)
 
 
-def _write_inbound_migration(versions_dir: Path) -> Path:
+def _write_inbound_migration(versions_dir: Path, *, has_tenants: bool = False) -> Path:
     """Generate ``alembic/versions/0016_add_webhook_receiver.py``.
 
     Args:
         versions_dir: Path to ``alembic/versions/`` directory.
+        has_tenants: Whether multi-tenancy is installed.  When *True* the
+            ``tenant_id`` column references ``tenants.id`` via FK; otherwise
+            it is a plain nullable UUID column.
 
     Returns:
         Path of the created migration file.
     """
     down_rev = find_migration_head(versions_dir) or "0001_initial"
+
+    if has_tenants:
+        tenant_col = (
+            '        sa.Column(\n'
+            '            "tenant_id", sa.Uuid(), sa.ForeignKey("tenants.id", ondelete="SET NULL"),\n'
+            '            nullable=True, index=True,\n'
+            '        ),'
+        )
+    else:
+        tenant_col = (
+            '        sa.Column("tenant_id", sa.Uuid(), nullable=True, index=True),'
+        )
+
     content = textwrap.dedent("""\
         \"\"\"Add inbound_webhooks table.
 
@@ -1298,6 +1320,7 @@ def _write_inbound_migration(versions_dir: Path) -> Path:
             op.create_table(
                 "inbound_webhooks",
                 sa.Column("id", sa.Uuid(), primary_key=True),
+                TENANT_COL_PLACEHOLDER
                 sa.Column("provider", sa.String(32), nullable=False),
                 sa.Column("provider_event_id", sa.String(255), nullable=False),
                 sa.Column("event_type", sa.String(127), nullable=False),
@@ -1338,7 +1361,9 @@ def _write_inbound_migration(versions_dir: Path) -> Path:
             op.drop_index("ix_inbound_webhooks_received_at", "inbound_webhooks")
             op.drop_index("ix_inbound_webhooks_provider", "inbound_webhooks")
             op.drop_table("inbound_webhooks")
-        """).format(down_rev=down_rev)
+        """).replace("{down_rev}", down_rev).replace(
+        "        TENANT_COL_PLACEHOLDER", tenant_col,
+    )
     migration_file = versions_dir / "0016_add_webhook_receiver.py"
     migration_file.write_text(content)
     return migration_file

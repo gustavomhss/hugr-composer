@@ -1278,6 +1278,41 @@ def _write_webhook_worker(
         _DISABLE_AFTER = {disable}
 
 
+        async def _attempt_delivery(delivery: object, endpoint: object) -> None:
+            \"\"\"Perform one HTTP POST attempt and record the outcome on ``delivery``.
+
+            Args:
+                delivery: The ``WebhookDelivery`` ORM row being processed.
+                endpoint: The parent ``WebhookEndpoint`` ORM row.
+            \"\"\"
+            delivery.attempt_number += 1  # type: ignore[attr-defined]
+            body_bytes = json.dumps(
+                delivery.payload, separators=(",", ":"), sort_keys=True  # type: ignore[attr-defined]
+            ).encode("utf-8")
+            sig_header = sign_payload(endpoint.secret, body_bytes).to_header_value()  # type: ignore[attr-defined]
+            headers = {
+                "Content-Type": "application/json",
+                "X-Signature": sig_header,
+                "X-Event-Id": str(delivery.event_id),  # type: ignore[attr-defined]
+                "X-Event-Type": delivery.event_type,  # type: ignore[attr-defined]
+                "X-Attempt": str(delivery.attempt_number),  # type: ignore[attr-defined]
+            }
+            try:
+                async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT) as client:
+                    resp = await client.post(endpoint.url, content=body_bytes, headers=headers)  # type: ignore[attr-defined]
+                delivery.http_status = resp.status_code  # type: ignore[attr-defined]
+                delivery.response_body = resp.text[:4096]  # type: ignore[attr-defined]
+                if 200 <= resp.status_code < 300:
+                    delivery.status = "succeeded"  # type: ignore[attr-defined]
+                    delivery.delivered_at = datetime.now(timezone.utc)  # type: ignore[attr-defined]
+                    endpoint.last_success_at = delivery.delivered_at  # type: ignore[attr-defined]
+                    endpoint.consecutive_failures = 0  # type: ignore[attr-defined]
+                else:
+                    _mark_failure(delivery, endpoint, f"HTTP {resp.status_code}")
+            except (httpx.RequestError, httpx.TimeoutException) as exc:
+                _mark_failure(delivery, endpoint, repr(exc)[:500])
+
+
         async def deliver_webhook(ctx: dict, delivery_id: str) -> None:
             \"\"\"ARQ task: attempt delivery, persist outcome, retry if needed.
 
@@ -1295,39 +1330,7 @@ def _write_webhook_worker(
                     await session.commit()
                     return
 
-                delivery.attempt_number += 1
-                body_bytes = json.dumps(
-                    delivery.payload, separators=(",", ":"), sort_keys=True
-                ).encode("utf-8")
-                sig_header = sign_payload(endpoint.secret, body_bytes).to_header_value()
-
-                try:
-                    async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT) as client:
-                        resp = await client.post(
-                            endpoint.url,
-                            content=body_bytes,
-                            headers={
-                                "Content-Type": "application/json",
-                                "X-Signature": sig_header,
-                                "X-Event-Id": str(delivery.event_id),
-                                "X-Event-Type": delivery.event_type,
-                                "X-Attempt": str(delivery.attempt_number),
-                            },
-                        )
-                    delivery.http_status = resp.status_code
-                    delivery.response_body = resp.text[:4096]
-
-                    if 200 <= resp.status_code < 300:
-                        delivery.status = "succeeded"
-                        delivery.delivered_at = datetime.now(timezone.utc)
-                        endpoint.last_success_at = delivery.delivered_at
-                        endpoint.consecutive_failures = 0
-                    else:
-                        _mark_failure(delivery, endpoint, f"HTTP {resp.status_code}")
-
-                except (httpx.RequestError, httpx.TimeoutException) as exc:
-                    _mark_failure(delivery, endpoint, repr(exc)[:500])
-
+                await _attempt_delivery(delivery, endpoint)
                 await session.commit()
 
             if delivery.status == "pending":

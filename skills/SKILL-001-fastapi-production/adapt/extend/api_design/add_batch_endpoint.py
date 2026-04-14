@@ -629,6 +629,25 @@ def _write_bulk_route(
         _TIMEOUT_S: float = {timeout_s}
 
 
+        async def _run_bulk_{lower}(
+            request: BatchRequest[{Model}Create], session: SessionDep,
+        ) -> dict:
+            \"\"\"Execute the bulk-create engine and return the serialized response body.\"\"\"
+            from app.crud.{lower} import create_{lower} as _crud_create
+
+            async def _handle(item: {Model}Create):
+                return await _crud_create(session, item_in=item)
+
+            engine = BatchCore(_handle, timeout_per_item_s=_TIMEOUT_S)
+            results = await engine.run(
+                request.items,
+                mode=request.mode,
+                strategy=request.strategy,
+                idempotency_keys=request.idempotency_keys,
+            )
+            return BatchResponse.build(results).model_dump()
+
+
         @router.post(
             "/bulk",
             status_code=status.HTTP_207_MULTI_STATUS,
@@ -644,50 +663,24 @@ def _write_bulk_route(
             \"\"\"Bulk-create up to {max_batch} {Model} records in a single request.
 
             Returns HTTP 207 Multi-Status with per-item outcomes.
-            Items with 2xx status_code were created; others carry an error message.
-
-            Args:
-                request: Validated bulk request body.
-                session: Injected async DB session.
-                current_user: Authenticated user.
-                x_idempotency_key: Optional request-level idempotency key.
-
-            Returns:
-                JSONResponse with HTTP 207 and BatchResponse body.
 
             Raises:
                 HTTPException: 422 if batch size exceeds {max_batch}.
-                HTTPException: 409 if idempotency key already processed.
             \"\"\"
             if len(request.items) > _MAX_BATCH:
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=f"Batch size {{len(request.items)}} exceeds maximum {{_MAX_BATCH}}.",
                 )
-
             store = get_idempotency_store()
             if x_idempotency_key and store.seen(x_idempotency_key):
-                cached = store.get(x_idempotency_key)
-                return JSONResponse(content=cached, status_code=status.HTTP_207_MULTI_STATUS)
-
-            from app.crud.{lower} import create_{lower} as _crud_create
-
-            async def _handle(item: {Model}Create):
-                return await _crud_create(session, item_in=item)
-
-            engine = BatchCore(_handle, timeout_per_item_s=_TIMEOUT_S)
-            results = await engine.run(
-                request.items,
-                mode=request.mode,
-                strategy=request.strategy,
-                idempotency_keys=request.idempotency_keys,
-            )
-            response_body = BatchResponse.build(results)
-            payload = response_body.model_dump()
-
+                return JSONResponse(
+                    content=store.get(x_idempotency_key),
+                    status_code=status.HTTP_207_MULTI_STATUS,
+                )
+            payload = await _run_bulk_{lower}(request, session)
             if x_idempotency_key:
                 store.put(x_idempotency_key, payload)
-
             return JSONResponse(content=payload, status_code=status.HTTP_207_MULTI_STATUS)
         """).replace("{Model}", model_name).replace("{lower}", lower).replace(
         "{max_batch}", str(max_batch)
