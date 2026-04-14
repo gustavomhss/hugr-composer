@@ -1,0 +1,15 @@
+{
+  "_comment": "Example .mcp.json for Claude Code. Copy to ~/.claude/mcp.json or ./.mcp.json in your project. Replace the absolute paths below with your install location.",
+
+  "mcpServers": {
+    "fastapi-production": {
+      "command": "/Users/YOU/.hugr-skills/skills/SKILL-001-fastapi-production/.venv/bin/python",
+      "args": [
+        "/Users/YOU/.hugr-skills/skills/SKILL-001-fastapi-production/mcp_server.py"
+      ],
+      "env": {
+        "PYTHONPATH": "/Users/YOU/.hugr-skills/skills/SKILL-001-fastapi-production"
+      }
+    }
+  }
+}
