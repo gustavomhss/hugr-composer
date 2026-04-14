@@ -23,6 +23,7 @@ Example::
 
 from __future__ import annotations
 
+import ast
 import textwrap
 import time
 from pathlib import Path
@@ -67,13 +68,14 @@ def add_cursor_pagination(inp: ToolInput) -> ToolResult:
         )
 
     # --- Discover target models -------------------------------------------
-    model_names = _discover_models(app_dir)
-    if not model_names:
+    model_pairs = _discover_models(app_dir)
+    if not model_pairs:
         return ToolResult(
             status="error",
             error="No SQLAlchemy models found in app/models/. Generate models first.",
             execution_time_ms=_elapsed_ms(start),
         )
+    model_names = [pascal for _stem, pascal in model_pairs]
 
     files_created: list[str] = []
     files_modified: list[str] = []
@@ -102,18 +104,18 @@ def add_cursor_pagination(inp: ToolInput) -> ToolResult:
         files_created.append(str(paginator_file))
 
     # --- Step 3: Patch CRUD, schema, routes per model --------------------
-    for model_name in model_names:
-        crud_file = app_dir / "crud" / f"{model_name.lower()}.py"
+    for stem, model_name in model_pairs:
+        crud_file = app_dir / "crud" / f"{stem}.py"
         if crud_file.exists():
             _patch_crud(crud_file, model_name)
             files_modified.append(str(crud_file))
 
-        schema_file = app_dir / "schemas" / f"{model_name.lower()}.py"
+        schema_file = app_dir / "schemas" / f"{stem}.py"
         if schema_file.exists():
             _patch_schema(schema_file, model_name)
             files_modified.append(str(schema_file))
 
-        route_file = app_dir / "api" / "routes" / f"{model_name.lower()}.py"
+        route_file = app_dir / "api" / "routes" / f"{stem}.py"
         if route_file.exists():
             _patch_routes(route_file, model_name)
             files_modified.append(str(route_file))
@@ -121,7 +123,7 @@ def add_cursor_pagination(inp: ToolInput) -> ToolResult:
     # --- Step 4: Generate Alembic migration for cursor indexes -----------
     versions_dir = project / "alembic" / "versions"
     if versions_dir.exists():
-        for model_name in model_names:
+        for _stem, model_name in model_pairs:
             migration_file = _write_migration(versions_dir, model_name)
             files_created.append(str(migration_file))
 
@@ -147,24 +149,51 @@ def add_cursor_pagination(inp: ToolInput) -> ToolResult:
 # Step helpers — each < 50 LOC
 # ---------------------------------------------------------------------------
 
-def _discover_models(app_dir: Path) -> list[str]:
-    """Return PascalCase model names found in ``app/models/``, excluding base files.
+def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
+    """Return ``(snake_stem, PascalName)`` pairs from ``app/models/``, excluding base files.
+
+    Only includes models where:
+    1. The file contains a class named ``{pascal}`` inheriting from ``Base``.
+    2. A matching route file ``app/api/routes/{stem}.py`` exists.
 
     Args:
         app_dir: The ``app/`` package directory.
 
     Returns:
-        Sorted list of discovered model names (e.g. ``["Item"]``).
+        Sorted list of ``(snake_stem, PascalName)`` tuples.
     """
     models_dir = app_dir / "models"
+    routes_dir = app_dir / "api" / "routes"
     skip = {"base", "user", "mixins", "__init__"}
-    names = []
+    pairs: list[tuple[str, str]] = []
+    available_routes: set[str] = set()
+    if routes_dir.exists():
+        for r in routes_dir.glob("*.py"):
+            if r.stem != "__init__":
+                available_routes.add(r.stem)
     for f in sorted(models_dir.glob("*.py")):
         stem = f.stem
         if stem in skip:
             continue
-        names.append(stem.capitalize())
-    return names
+        if stem not in available_routes:
+            continue
+        pascal = "".join(w.capitalize() for w in stem.split("_"))
+        try:
+            tree = ast.parse(f.read_text())
+        except SyntaxError:
+            continue
+        base_subclasses = [
+            n.name for n in ast.walk(tree)
+            if isinstance(n, ast.ClassDef)
+            and any(
+                (isinstance(b, ast.Name) and b.id == "Base")
+                or (isinstance(b, ast.Attribute) and b.attr == "Base")
+                for b in n.bases
+            )
+        ]
+        if pascal in base_subclasses:
+            pairs.append((stem, pascal))
+    return pairs
 
 
 def _write_cursor_module(dest: Path) -> None:
@@ -529,12 +558,28 @@ def _patch_schema(schema_file: Path, model_name: str) -> None:
 def _patch_routes(route_file: Path, model_name: str) -> None:
     """Replace ``skip/limit`` list route with ``cursor/page_size`` variant.
 
+    Only adds the cursor endpoint when the corresponding ``{model_name}sPublic``
+    schema class is already referenced in the route file (or its schema file), so
+    that infrastructure/auth models whose schemas use a different naming convention
+    (e.g. ``TenantPublic`` instead of ``TenantsPublic``) are not accidentally
+    broken.
+
     Args:
         route_file: Path to ``app/api/routes/{name}.py``.
         model_name: PascalCase model name.
     """
     src = route_file.read_text()
     if "get_multi_cursor" in src:
+        return
+
+    # Guard: only patch if the plural schema class is referenced in the route
+    # file or in the matching schema file.  When the schema uses a different
+    # naming convention (e.g. TenantPublic, not TenantsPublic) the cursor
+    # endpoint would reference an undefined name and cause a NameError at boot.
+    plural_class = f"{model_name}sPublic"
+    schema_file = route_file.parent.parent.parent / "schemas" / f"{model_name.lower()}.py"
+    schema_src = schema_file.read_text() if schema_file.exists() else ""
+    if plural_class not in src and plural_class not in schema_src:
         return
 
     lower = model_name.lower()

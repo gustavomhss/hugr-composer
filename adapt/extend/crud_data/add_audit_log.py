@@ -68,13 +68,14 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
         )
 
     # --- Discover target models -------------------------------------------
-    model_names = _discover_models(app_dir)
-    if not model_names:
+    model_pairs = _discover_models(app_dir)
+    if not model_pairs:
         return ToolResult(
             status="error",
             error="No SQLAlchemy models found in app/models/. Generate models first.",
             execution_time_ms=_elapsed_ms(start),
         )
+    model_names = [pascal for _stem, pascal in model_pairs]
 
     if inp.dry_run:
         return ToolResult(
@@ -101,7 +102,7 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
 
     # --- Step 3: Event listeners (before_flush capture) ------------------
     listeners_file = app_dir / "core" / "audit_listeners.py"
-    _write_audit_listeners(listeners_file, model_names)
+    _write_audit_listeners(listeners_file, model_pairs)
     files_created.append(str(listeners_file))
 
     # --- Step 4: Hash-chain verifier -------------------------------------
@@ -166,25 +167,54 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
 # Discovery helpers
 # ---------------------------------------------------------------------------
 
-def _discover_models(app_dir: Path) -> list[str]:
-    """Return PascalCase model names found in ``app/models/``, excluding system models.
+def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
+    """Return (snake_stem, PascalCase) pairs found in ``app/models/``, excluding system models.
+
+    Only includes models where:
+    1. The file contains a class named ``{pascal}`` inheriting from ``Base``.
+    2. A matching route file ``app/api/routes/{stem}.py`` exists.
 
     Args:
         app_dir: The ``app/`` package directory.
 
     Returns:
-        Sorted list of discovered model names.
+        Sorted list of ``(snake_stem, PascalName)`` tuples.
     """
+    import ast as _ast
+
     models_dir = app_dir / "models"
+    routes_dir = app_dir / "api" / "routes"
     skip = {"base", "user", "mixins", "audit_log", "__init__"}
-    names = []
+    pairs: list[tuple[str, str]] = []
+    available_routes: set[str] = set()
+    if routes_dir.exists():
+        for r in routes_dir.glob("*.py"):
+            if r.stem != "__init__":
+                available_routes.add(r.stem)
     for f in sorted(models_dir.glob("*.py")):
         stem = f.stem
         if stem in skip:
             continue
+        if stem not in available_routes:
+            continue
         # Derive PascalCase class name: item -> Item, order_item -> OrderItem
-        names.append("".join(w.capitalize() for w in stem.split("_")))
-    return names
+        pascal = "".join(w.capitalize() for w in stem.split("_"))
+        try:
+            tree = _ast.parse(f.read_text())
+        except SyntaxError:
+            continue
+        base_subclasses = [
+            n.name for n in _ast.walk(tree)
+            if isinstance(n, _ast.ClassDef)
+            and any(
+                (isinstance(b, _ast.Name) and b.id == "Base")
+                or (isinstance(b, _ast.Attribute) and b.attr == "Base")
+                for b in n.bases
+            )
+        ]
+        if pascal in base_subclasses:
+            pairs.append((stem, pascal))
+    return pairs
 
 
 # ---------------------------------------------------------------------------
@@ -340,7 +370,7 @@ def _write_audit_context(dest: Path) -> None:
     dest.write_text(content)
 
 
-def _write_audit_listeners(dest: Path, model_names: list[str]) -> None:
+def _write_audit_listeners(dest: Path, model_pairs: list[tuple[str, str]]) -> None:
     """Write ``app/core/audit_listeners.py`` with before_flush event listener.
 
     The listener intercepts every flush cycle and emits AuditLog rows for
@@ -348,14 +378,14 @@ def _write_audit_listeners(dest: Path, model_names: list[str]) -> None:
 
     Args:
         dest: Absolute destination path.
-        model_names: PascalCase model names to register in AUDITED_MODELS.
+        model_pairs: ``(snake_stem, PascalName)`` pairs for models to register.
     """
     dest.parent.mkdir(parents=True, exist_ok=True)
 
     model_imports = "\n".join(
-        f"from app.models.{n.lower()} import {n}" for n in model_names
+        f"from app.models.{stem} import {pascal}" for stem, pascal in model_pairs
     )
-    audited_set = ", ".join(model_names)
+    audited_set = ", ".join(pascal for _stem, pascal in model_pairs)
 
     content = textwrap.dedent("""\
         \"\"\"SQLAlchemy Session.before_flush listeners for automatic audit capture.

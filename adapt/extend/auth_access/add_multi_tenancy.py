@@ -22,6 +22,7 @@ Example::
 
 from __future__ import annotations
 
+import ast
 import textwrap
 import time
 from pathlib import Path
@@ -180,6 +181,13 @@ def add_multi_tenancy(inp: ToolInput) -> ToolResult:
 def _discover_models(app_dir: Path) -> list[str]:
     """Return PascalCase business model names, excluding User/Base/Tenant/mixins.
 
+    Only includes models where:
+    1. The file contains a class named ``{pascal}`` inheriting from ``Base``.
+    2. A matching route file ``app/api/routes/{stem}.py`` exists.
+
+    This avoids patching infrastructure files like ``mfa.py``, ``api_key.py``,
+    or ``feature_flag.py`` (route is ``feature_flags.py``, not ``feature_flag.py``).
+
     Args:
         app_dir: The ``app/`` package directory.
 
@@ -187,14 +195,38 @@ def _discover_models(app_dir: Path) -> list[str]:
         Sorted list of discovered model names (e.g. ``["Item"]``).
     """
     models_dir = app_dir / "models"
+    routes_dir = app_dir / "api" / "routes"
     skip = {"base", "user", "mixins", "tenant", "__init__"}
+    available_routes: set[str] = set()
+    if routes_dir.exists():
+        for r in routes_dir.glob("*.py"):
+            if r.stem != "__init__":
+                available_routes.add(r.stem)
     names = []
     for f in sorted(models_dir.glob("*.py")):
         stem = f.stem
         if stem in skip:
             continue
+        if stem not in available_routes:
+            continue
         # Derive PascalCase class name: item -> Item, order_item -> OrderItem
-        names.append("".join(w.capitalize() for w in stem.split("_")))
+        pascal = "".join(w.capitalize() for w in stem.split("_"))
+        # Verify the file contains a class with exactly this name inheriting Base
+        try:
+            tree = ast.parse(f.read_text())
+        except SyntaxError:
+            continue
+        base_subclasses = [
+            n.name for n in ast.walk(tree)
+            if isinstance(n, ast.ClassDef)
+            and any(
+                (isinstance(b, ast.Name) and b.id == "Base")
+                or (isinstance(b, ast.Attribute) and b.attr == "Base")
+                for b in n.bases
+            )
+        ]
+        if pascal in base_subclasses:
+            names.append(pascal)
     return names
 
 
