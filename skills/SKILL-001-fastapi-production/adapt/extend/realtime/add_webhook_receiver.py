@@ -194,13 +194,11 @@ def add_webhook_receiver(
         )
         files_modified.append(str(config_file))
 
-    # Step 11 – patch api main
-    api_main_file = app_dir / "api" / "main.py"
-    if not api_main_file.exists():
-        api_main_file = app_dir / "main.py"
-    if api_main_file.exists():
-        _patch_api_main(api_main_file)
-        files_modified.append(str(api_main_file))
+    # Step 11 – register inbound_webhooks router in app/routes/__init__.py
+    routes_init = app_dir / "routes" / "__init__.py"
+    if routes_init.exists():
+        _patch_api_main(routes_init)
+        files_modified.append(str(routes_init))
 
     # Step 12 – ensure app/core/redis.py exists (base project may not have it)
     redis_module = app_dir / "core" / "redis.py"
@@ -1409,36 +1407,67 @@ def _patch_config(
     config_file.write_text(src.rstrip("\n") + snippet + "\n")
 
 
-def _patch_api_main(api_main_file: Path) -> None:
-    """Register the inbound webhooks router in the API main module.
+def _patch_api_main(routes_init: Path) -> None:
+    """Register the inbound_webhooks router in ``app/routes/__init__.py``.
+
+    The real router assembly lives in ``app/routes/__init__.py`` (see
+    ``generators/orchestrator.py``), NOT ``app/api/main.py`` (which does not
+    exist in the generated scaffold). Idempotent — no-op if already present.
 
     Args:
-        api_main_file: Path to the API main module.
+        routes_init: Path to ``app/routes/__init__.py``.
     """
-    src = api_main_file.read_text()
-    if "inbound_webhooks" in src:
-        return
-    if "from app.api.routes.inbound_webhooks import router as inbound_webhooks_router" in src:
-        return
-
-    router_import = (
-        "\nfrom app.api.routes.inbound_webhooks import router as inbound_webhooks_router\n"
+    _register_router_in_routes_init(
+        routes_init,
+        import_line=(
+            "from app.api.routes.inbound_webhooks import router as inbound_webhooks_router"
+        ),
+        include_line="api_router.include_router(inbound_webhooks_router)",
     )
-    router_include = "\napi_router.include_router(inbound_webhooks_router)\n"
 
-    if "include_router" in src:
-        last_include = src.rfind("include_router")
-        end_of_line = src.find("\n", last_include)
-        src = (
-            src[: end_of_line + 1]
-            + router_import
-            + router_include
-            + src[end_of_line + 1 :]
-        )
-    else:
-        src = src + router_import + router_include
 
-    api_main_file.write_text(src)
+def _register_router_in_routes_init(
+    routes_init: Path,
+    *,
+    import_line: str,
+    include_line: str,
+) -> None:
+    """Idempotently add an import + ``api_router.include_router`` call.
+
+    Args:
+        routes_init: Path to ``app/routes/__init__.py``.
+        import_line: Import statement to insert (no trailing newline).
+        include_line: ``api_router.include_router(...)`` call (no trailing newline).
+    """
+    src = routes_init.read_text()
+    if import_line in src:
+        return
+
+    lines = src.splitlines()
+
+    last_app_import_idx = -1
+    for idx, line in enumerate(lines):
+        if line.startswith("from app."):
+            last_app_import_idx = idx
+    if last_app_import_idx == -1:
+        for idx, line in enumerate(lines):
+            if "api_router" in line and "APIRouter()" in line:
+                last_app_import_idx = idx - 1
+                break
+    lines.insert(last_app_import_idx + 1, import_line)
+
+    last_include_idx = -1
+    for idx, line in enumerate(lines):
+        if line.startswith("api_router.include_router"):
+            last_include_idx = idx
+    if last_include_idx == -1:
+        for idx, line in enumerate(lines):
+            if "api_router" in line and "APIRouter()" in line:
+                last_include_idx = idx
+                break
+    lines.insert(last_include_idx + 1, include_line)
+
+    routes_init.write_text("\n".join(lines) + ("\n" if src.endswith("\n") else ""))
 
 
 # ---------------------------------------------------------------------------

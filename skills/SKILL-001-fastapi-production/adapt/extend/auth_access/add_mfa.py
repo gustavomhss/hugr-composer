@@ -123,11 +123,11 @@ def add_mfa(inp: ToolInput) -> ToolResult:
         _patch_login(login_file)
         files_modified.append(str(login_file))
 
-    # Step 10: Patch app/api/main.py to include router
-    api_main = app_dir / "api" / "main.py"
-    if api_main.exists():
-        _patch_api_main(api_main)
-        files_modified.append(str(api_main))
+    # Step 10: Patch app/routes/__init__.py to include router
+    routes_init = app_dir / "routes" / "__init__.py"
+    if routes_init.exists():
+        _patch_api_main(routes_init)
+        files_modified.append(str(routes_init))
 
     # Step 11: Alembic migration
     versions_dir = project / "alembic" / "versions"
@@ -140,6 +140,12 @@ def add_mfa(inp: ToolInput) -> ToolResult:
     if requirements_file.exists():
         _patch_requirements(requirements_file)
         files_modified.append(str(requirements_file))
+
+    # Step 13: Patch app/core/config.py to declare MFA settings fields
+    config_file = app_dir / "core" / "config.py"
+    if config_file.exists():
+        _patch_config(config_file)
+        files_modified.append(str(config_file))
 
     return ToolResult(
         status="success",
@@ -396,15 +402,18 @@ def _write_totp(dest: Path) -> None:
         def qr_svg(uri: str) -> str:
             \"\"\"Render a provisioning URI as an inline SVG string.
 
+            segno.save() writes bytes regardless of kind, so we use BytesIO
+            and decode the result. StringIO would raise TypeError.
+
             Args:
                 uri: Provisioning URI from ``provisioning_uri()``.
 
             Returns:
                 SVG markup string suitable for embedding in HTML.
             \"\"\"
-            buf = io.StringIO()
+            buf = io.BytesIO()
             segno.make(uri, error="m").save(buf, kind="svg", scale=4, dark="black", light="white")
-            return buf.getvalue()
+            return buf.getvalue().decode("utf-8")
 
 
         def verify_totp(secret: str, code: str, valid_window: int | None = None) -> bool:
@@ -1060,24 +1069,74 @@ def _patch_login(login_file: Path) -> None:
     login_file.write_text(src)
 
 
-def _patch_api_main(api_main: Path) -> None:
-    """Include the MFA router in app/api/main.py if not already present.
+def _patch_api_main(routes_init: Path) -> None:
+    """Register the MFA router in ``app/routes/__init__.py`` if not already present.
+
+    The real router assembly lives in ``app/routes/__init__.py`` (see
+    ``generators/orchestrator.py``), NOT ``app/api/main.py`` (which does not
+    exist in the generated scaffold). This patcher is idempotent — if the
+    MFA import is already present it is a no-op.
 
     Args:
-        api_main: Path to ``app/api/main.py``.
+        routes_init: Path to ``app/routes/__init__.py``.
     """
-    src = api_main.read_text()
-    if "mfa" in src:
+    _register_router_in_routes_init(
+        routes_init,
+        import_line="from app.api.routes.mfa import router as mfa_router",
+        include_line="api_router.include_router(mfa_router)",
+    )
+
+
+def _register_router_in_routes_init(
+    routes_init: Path,
+    *,
+    import_line: str,
+    include_line: str,
+) -> None:
+    """Idempotently add an import + ``api_router.include_router`` call.
+
+    Inserts ``import_line`` after the last existing ``from app.`` import and
+    ``include_line`` after the last existing ``api_router.include_router(...)``
+    call (before ``__all__``). No-op if ``import_line`` is already present.
+
+    Args:
+        routes_init: Path to ``app/routes/__init__.py``.
+        import_line: Import statement to insert (no trailing newline).
+        include_line: ``api_router.include_router(...)`` call (no trailing newline).
+    """
+    src = routes_init.read_text()
+    if import_line in src:
         return
-    router_import = "from app.api.routes import mfa as mfa_routes\n"
-    router_include = "api_router.include_router(mfa_routes.router)\n"
-    src = router_import + src
-    if "api_router.include_router" in src:
-        last_include = src.rfind("api_router.include_router")
-        src = src[:last_include] + router_include + src[last_include:]
-    else:
-        src = src + "\n" + router_include
-    api_main.write_text(src)
+
+    lines = src.splitlines()
+
+    # Find index to insert the import: after the last ``from app.*`` import.
+    last_app_import_idx = -1
+    for idx, line in enumerate(lines):
+        if line.startswith("from app."):
+            last_app_import_idx = idx
+    if last_app_import_idx == -1:
+        # Defensive: insert before ``api_router = APIRouter()``.
+        for idx, line in enumerate(lines):
+            if "api_router" in line and "APIRouter()" in line:
+                last_app_import_idx = idx - 1
+                break
+    lines.insert(last_app_import_idx + 1, import_line)
+
+    # Find index to insert the include: after the last ``api_router.include_router(...)``
+    # call; if none exist, after ``api_router = APIRouter()``.
+    last_include_idx = -1
+    for idx, line in enumerate(lines):
+        if line.startswith("api_router.include_router"):
+            last_include_idx = idx
+    if last_include_idx == -1:
+        for idx, line in enumerate(lines):
+            if "api_router" in line and "APIRouter()" in line:
+                last_include_idx = idx
+                break
+    lines.insert(last_include_idx + 1, include_line)
+
+    routes_init.write_text("\n".join(lines) + ("\n" if src.endswith("\n") else ""))
 
 
 def _write_migration(versions_dir: Path) -> Path:
@@ -1180,6 +1239,46 @@ def _write_migration(versions_dir: Path) -> Path:
 # ---------------------------------------------------------------------------
 # Utilities
 # ---------------------------------------------------------------------------
+
+def _patch_config(config_file: Path) -> None:
+    """Declare MFA settings fields on the Settings class in app/core/config.py.
+
+    Adds the five env-driven fields the generated MFA code reads:
+
+    - ``MFA_FERNET_KEY`` — symmetric key for TOTP secret encryption
+    - ``MFA_ISSUER`` — issuer label shown in authenticator apps
+    - ``MFA_TOTP_WINDOW`` — acceptable step drift when validating codes
+    - ``MFA_RECOVERY_CODES_COUNT`` — number of single-use backup codes
+    - ``MFA_MAX_ATTEMPTS_PER_15MIN`` — brute-force limit for code validation
+
+    Args:
+        config_file: Path to ``app/core/config.py``.
+    """
+    src = config_file.read_text()
+    if "MFA_FERNET_KEY" in src:
+        return  # already patched
+
+    block = textwrap.dedent("""\
+
+        # --- MFA (TOTP) ---
+        MFA_FERNET_KEY: str = ""
+        MFA_ISSUER: str = "MyApp"
+        MFA_TOTP_WINDOW: int = 1
+        MFA_RECOVERY_CODES_COUNT: int = 10
+        MFA_MAX_ATTEMPTS_PER_15MIN: int = 5
+    """)
+
+    # Insert inside the Settings class — before any @computed_field or the
+    # closing of the class. Anchor on an existing field we know is present.
+    anchor = "ACCESS_TOKEN_EXPIRE_MINUTES: int = 30"
+    if anchor in src:
+        indented = "\n".join("    " + line if line.strip() else line for line in block.splitlines())
+        src = src.replace(anchor, anchor + "\n" + indented)
+    else:
+        # Fallback: append at end of file — pydantic-settings will still pick it up
+        src = src + "\n" + block
+    config_file.write_text(src)
+
 
 def _patch_requirements(requirements_file: Path) -> None:
     """Add pyotp, segno, and redis to requirements.txt if not already present.

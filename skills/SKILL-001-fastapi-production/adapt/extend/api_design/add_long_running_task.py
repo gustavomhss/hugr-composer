@@ -113,12 +113,11 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
         migration_file = _write_migration(versions_dir)
         files_created.append(str(migration_file))
 
-    # Step 7: patch main.py or api/main.py
-    api_main = app_dir / "api" / "main.py"
-    target = api_main if api_main.exists() else app_dir / "main.py"
-    if target.exists():
-        _patch_router(target)
-        files_modified.append(str(target))
+    # Step 7: register tasks router in app/routes/__init__.py
+    routes_init = app_dir / "routes" / "__init__.py"
+    if routes_init.exists():
+        _patch_router(routes_init)
+        files_modified.append(str(routes_init))
 
     warnings: list[str] = []
     for path_str in files_created:
@@ -1041,27 +1040,46 @@ def _write_migration(versions_dir: Path) -> Path:
 
 
 def _patch_router(router_file: Path) -> None:
-    """Register the tasks router in the API main router file.
+    """Register the tasks router in ``app/routes/__init__.py``.
+
+    The real router assembly lives in ``app/routes/__init__.py`` (see
+    ``generators/orchestrator.py``), NOT ``app/api/main.py`` (which does not
+    exist in the generated scaffold). Idempotent — no-op if already present.
 
     Args:
-        router_file: Path to the API router assembly file.
+        router_file: Path to ``app/routes/__init__.py``.
     """
     src = router_file.read_text()
-    if "tasks" in src and "prefix=" in src:
+    import_line = "from app.api.routes.tasks import router as _tasks_router"
+    include_line = "api_router.include_router(_tasks_router)"
+    if import_line in src:
         return
 
-    addition = textwrap.dedent("""\
+    lines = src.splitlines()
 
-        from app.api.routes.tasks import router as _tasks_router
-        api_router.include_router(_tasks_router)
-        """)
+    last_app_import_idx = -1
+    for idx, line in enumerate(lines):
+        if line.startswith("from app."):
+            last_app_import_idx = idx
+    if last_app_import_idx == -1:
+        for idx, line in enumerate(lines):
+            if "api_router" in line and "APIRouter()" in line:
+                last_app_import_idx = idx - 1
+                break
+    lines.insert(last_app_import_idx + 1, import_line)
 
-    if "api_router" in src:
-        src = src.rstrip("\n") + addition
-    else:
-        src = src.rstrip("\n") + addition.replace("api_router", "app")
+    last_include_idx = -1
+    for idx, line in enumerate(lines):
+        if line.startswith("api_router.include_router"):
+            last_include_idx = idx
+    if last_include_idx == -1:
+        for idx, line in enumerate(lines):
+            if "api_router" in line and "APIRouter()" in line:
+                last_include_idx = idx
+                break
+    lines.insert(last_include_idx + 1, include_line)
 
-    router_file.write_text(src)
+    router_file.write_text("\n".join(lines) + ("\n" if src.endswith("\n") else ""))
 
 
 # ---------------------------------------------------------------------------

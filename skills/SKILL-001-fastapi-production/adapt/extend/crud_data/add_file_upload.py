@@ -145,11 +145,11 @@ def add_file_upload(inp: ToolInput) -> ToolResult:
     _write_file_routes(files_route)
     files_created.append(str(files_route))
 
-    # --- Step 11: Register router in api/main.py -------------------------
-    api_main = app_dir / "api" / "main.py"
-    if api_main.exists():
-        _patch_api_main(api_main)
-        files_modified.append(str(api_main))
+    # --- Step 11: Register router in app/routes/__init__.py --------------
+    routes_init = app_dir / "routes" / "__init__.py"
+    if routes_init.exists():
+        _patch_api_main(routes_init)
+        files_modified.append(str(routes_init))
 
     # --- Step 12: Add settings to config.py ------------------------------
     config_file = app_dir / "core" / "config.py"
@@ -1593,27 +1593,65 @@ def _write_file_routes(dest: Path) -> None:
     dest.write_text(content)
 
 
-def _patch_api_main(api_main: Path) -> None:
-    """Register the files router in ``app/api/main.py``.
+def _patch_api_main(routes_init: Path) -> None:
+    """Register the files router in ``app/routes/__init__.py``.
+
+    The real router assembly lives in ``app/routes/__init__.py`` (see
+    ``generators/orchestrator.py``), NOT ``app/api/main.py`` (which does not
+    exist in the generated scaffold). Idempotent — no-op if already present.
 
     Args:
-        api_main: Path to ``app/api/main.py``.
+        routes_init: Path to ``app/routes/__init__.py``.
     """
-    src = api_main.read_text()
-    if "files" in src and "files.router" in src:
+    _register_router_in_routes_init(
+        routes_init,
+        import_line="from app.api.routes.files import router as files_router",
+        include_line="api_router.include_router(files_router)",
+    )
+
+
+def _register_router_in_routes_init(
+    routes_init: Path,
+    *,
+    import_line: str,
+    include_line: str,
+) -> None:
+    """Idempotently add an import + ``api_router.include_router`` call.
+
+    Args:
+        routes_init: Path to ``app/routes/__init__.py``.
+        import_line: Import statement to insert (no trailing newline).
+        include_line: ``api_router.include_router(...)`` call (no trailing newline).
+    """
+    src = routes_init.read_text()
+    if import_line in src:
         return
-    if "from app.api.routes import" in src:
-        src = src.replace(
-            "from app.api.routes import",
-            "from app.api.routes import files as files_routes\nfrom app.api.routes import",
-        )
-        src = src + "\napi_router.include_router(files_routes.router)\n"
-    else:
-        src = src + (
-            "\nfrom app.api.routes import files as files_routes\n"
-            "api_router.include_router(files_routes.router)\n"
-        )
-    api_main.write_text(src)
+
+    lines = src.splitlines()
+
+    last_app_import_idx = -1
+    for idx, line in enumerate(lines):
+        if line.startswith("from app."):
+            last_app_import_idx = idx
+    if last_app_import_idx == -1:
+        for idx, line in enumerate(lines):
+            if "api_router" in line and "APIRouter()" in line:
+                last_app_import_idx = idx - 1
+                break
+    lines.insert(last_app_import_idx + 1, import_line)
+
+    last_include_idx = -1
+    for idx, line in enumerate(lines):
+        if line.startswith("api_router.include_router"):
+            last_include_idx = idx
+    if last_include_idx == -1:
+        for idx, line in enumerate(lines):
+            if "api_router" in line and "APIRouter()" in line:
+                last_include_idx = idx
+                break
+    lines.insert(last_include_idx + 1, include_line)
+
+    routes_init.write_text("\n".join(lines) + ("\n" if src.endswith("\n") else ""))
 
 
 def _patch_config(config_file: Path) -> None:

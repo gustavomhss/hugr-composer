@@ -561,7 +561,7 @@ def _patch_crud(crud_file: Path, model_name: str) -> None:
             )
             total = (await session.execute(count_stmt)).scalar_one()
             result = await session.execute(stmt)
-            return {{"data": list(result.scalars().all()), "count": total}}
+            return {"data": list(result.scalars().all()), "count": total}
         """).replace("{new_crud_imports}", new_crud_imports).replace("{model_name}", model_name)
 
     crud_file.write_text(src + additions)

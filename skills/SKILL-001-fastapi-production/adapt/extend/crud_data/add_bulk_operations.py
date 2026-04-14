@@ -587,7 +587,7 @@ def _patch_crud(crud_file: Path, model_name: str) -> None:
                 Tuple of (results_list, succeeded_count, failed_count).
             \"\"\"
             from app.schemas.{lower} import BulkResultItem  # type: ignore[import]
-            rows = [{{**item.model_dump(), "owner_id": owner_id, "id": _bulk_uuid.uuid4()}} for item in items]
+            rows = [{**item.model_dump(), "owner_id": owner_id, "id": _bulk_uuid.uuid4()} for item in items]
             try:
                 if _pg_insert is not None:
                     stmt = _pg_insert({model_name}).values(rows).returning({model_name}.id)
@@ -698,7 +698,7 @@ def _patch_crud(crud_file: Path, model_name: str) -> None:
                     continue
                 try:
                     sp = await session.begin_nested()
-                    patch = {{k: v for k, v in upd.items() if k != "id"}}
+                    patch = {k: v for k, v in upd.items() if k != "id"}
                     stmt = _sql_update({model_name}).where({model_name}.id == row_id).values(**patch)
                     await session.execute(stmt)
                     await sp.commit()
@@ -897,7 +897,7 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
             if result.failed > 0 and payload.mode == "all_or_nothing":
                 raise HTTPException(
                     status_code=422,
-                    detail={{"message": "Batch failed", "results": result_dict}},
+                    detail={"message": "Batch failed", "results": result_dict},
                 )
             return result
 

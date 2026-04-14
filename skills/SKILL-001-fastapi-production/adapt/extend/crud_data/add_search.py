@@ -268,8 +268,11 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
 
     lower = model_name.lower()
 
-    # Build setweight lines for each field (A, B, C, D order)
-    weight_labels = ["'A'", "'B'", "'C'", "'D'"]
+    # Build setweight lines for each field (A, B, C, D order).
+    # Weight labels must be passed as SQL string literals (with quotes) not
+    # as bare identifiers — PostgreSQL would otherwise interpret 'A' as a
+    # column name and raise "column 'a' does not exist".
+    weight_labels = ["A", "B", "C", "D"]
     setweight_parts = []
     for i, field in enumerate(text_fields[:4]):
         label = weight_labels[i]
@@ -277,7 +280,7 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
             "        _func.setweight("
             + "\n            _func.to_tsvector(_text(_lang_literal), _func.coalesce(getattr("
             + f"{model_name}, '{field}'), '')),\n"
-            + f"            _text({label}),\n"
+            + f"            _text(\"'{label}'\"),\n"
             + "        )"
         )
     tsvector_expr = "\n        .op('||')(\n        ".join(setweight_parts) + ")" * (len(setweight_parts) - 1)
@@ -530,14 +533,17 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
             return [row[0] for row in result.all() if row[0]]
         """)
 
-    # Build the FIELD_VECS assignment for _build_search_tsvector
+    # Build the FIELD_VECS assignment for _build_search_tsvector.
+    # Weight labels must be wrapped as SQL string literals ('A', not A) —
+    # PostgreSQL treats bare A as an identifier and raises "column 'a' does
+    # not exist". _text(\"'A'\") produces the quoted literal in the emitted SQL.
     field_vec_lines = []
-    weight_labels_bare = ["'A'", "'B'", "'C'", "'D'"]
+    weight_labels_bare = ["A", "B", "C", "D"]
     for i, field in enumerate(text_fields[:4]):
         label = weight_labels_bare[i]
         field_vec_lines.append(
             "    _func.setweight(_func.to_tsvector(_text(\"'\" + lang + \"'\"),"
-            + f" _func.coalesce({model_name}.{field}, '')), _text({label})),"
+            + f" _func.coalesce({model_name}.{field}, '')), _text(\"'{label}'\")),"
         )
     field_vecs_block = "[\n" + "\n".join(field_vec_lines) + "\n    ]"
 
