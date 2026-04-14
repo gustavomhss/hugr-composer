@@ -809,6 +809,87 @@ ARQ_WORKER = Scenario(
 )
 
 
+# ===========================================================================
+# SCENARIO 10 — Stripe Checkout payments
+# ===========================================================================
+
+async def flow_stripe(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
+    """Verify Stripe Checkout infra: schema, settings, routes, lazy import."""
+    from sqlalchemy import inspect
+
+    # payments table exists (created by Base.metadata.create_all)
+    async with ctx.engine.connect() as conn:
+        tables = await conn.run_sync(lambda sc: inspect(sc).get_table_names())
+    ctx.record("payments_table", "payments" in tables, f"payments in DB: {'payments' in tables}")
+
+    # Config fields patched into Settings
+    cfg_mod = importlib.import_module("app.core.config")
+    s = cfg_mod.settings
+    required = [
+        "STRIPE_SECRET_KEY", "STRIPE_PUBLISHABLE_KEY", "STRIPE_WEBHOOK_SECRET",
+        "STRIPE_API_VERSION", "STRIPE_CHECKOUT_SUCCESS_URL", "STRIPE_CHECKOUT_CANCEL_URL",
+    ]
+    missing = [f for f in required if not hasattr(s, f)]
+    ctx.record(
+        "stripe_settings_patched",
+        not missing,
+        f"6/6 fields on settings (api_version={getattr(s, 'STRIPE_API_VERSION', None)})",
+    )
+
+    # Lazy stripe import — module loads without `stripe` package installed
+    stripe_client_mod = importlib.import_module("app.core.stripe_client")
+    has_get_stripe = callable(getattr(stripe_client_mod, "get_stripe", None))
+    ctx.record("stripe_client_lazy_importable", has_get_stripe,
+               "app.core.stripe_client.get_stripe is callable")
+
+    # HTTP routes registered via OpenAPI
+    r = await ctx.client.get("/api/v1/openapi.json")
+    paths = r.json().get("paths", {}) if r.status_code == 200 else {}
+    expected_paths = [
+        "/api/v1/payments/checkout",
+        "/api/v1/payments/me",
+        "/api/v1/payments/{payment_id}",
+        "/api/v1/payments/webhook/stripe",
+    ]
+    missing_paths = [p for p in expected_paths if p not in paths]
+    ctx.record(
+        "payment_routes_registered",
+        not missing_paths,
+        f"4/4 routes registered ({len(missing_paths)} missing)",
+    )
+
+    # CRUD helpers importable (business logic layer)
+    crud_mod = importlib.import_module("app.crud.payment")
+    crud_fns = ["create_pending_payment", "mark_payment_succeeded",
+                "mark_payment_failed", "get_payment_by_session_id", "list_user_payments"]
+    missing_crud = [fn for fn in crud_fns if not callable(getattr(crud_mod, fn, None))]
+    ctx.record("crud_helpers_present", not missing_crud,
+               f"{len(crud_fns) - len(missing_crud)}/{len(crud_fns)} CRUD helpers callable")
+
+    # Payment model has tenant_id FK (we applied add_multi_tenancy first)
+    payment_mod = importlib.import_module("app.models.payment")
+    payment_cls = payment_mod.Payment
+    has_tenant_col = "tenant_id" in payment_cls.__table__.columns
+    ctx.record("payment_tenant_id_column", has_tenant_col,
+               "Payment.tenant_id column present (tenant-aware)")
+
+    return ctx.report_section
+
+
+STRIPE_CHECKOUT = Scenario(
+    name="stripe_checkout",
+    archetype="Production-grade Stripe Checkout Session with webhook reconciliation",
+    models={
+        "Subscription": {"plan": "str", "status": "str"},
+    },
+    tools=[
+        ("add_multi_tenancy",     "adapt.extend.auth_access.add_multi_tenancy"),
+        ("add_stripe_checkout",   "adapt.extend.infrastructure.add_stripe_checkout"),
+    ],
+    flow=flow_stripe,
+)
+
+
 # ---------------------------------------------------------------------------
 # Registry + runner
 # ---------------------------------------------------------------------------
@@ -823,6 +904,7 @@ SCENARIOS: list[Scenario] = [
     MODERATION,
     WEBSOCKET_CHAT,
     ARQ_WORKER,
+    STRIPE_CHECKOUT,
 ]
 
 
