@@ -38,6 +38,15 @@ _CANONICAL_SECTIONS = ["api", "models", "schemas", "deployment", "architecture"]
 _VALID_DEPLOY_TARGETS = frozenset({"none", "github_pages", "s3", "netlify"})
 
 
+MCP_TOOL = {
+    "name": "fastapi_generate_docs",
+    "description": "Generate developer documentation from the project's code and OpenAPI spec.",
+    "tags": ["evolve"],
+    "entry": "generate_docs",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

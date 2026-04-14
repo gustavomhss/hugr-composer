@@ -32,6 +32,15 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 from adapt.contracts.migration_helper import find_migration_head
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_cursor_pagination",
+    "description": "Replace offset pagination with cursor-based pagination across all list endpoints.",
+    "tags": ["extend", "crud_data"],
+    "entry": "add_cursor_pagination",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

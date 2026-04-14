@@ -50,6 +50,15 @@ _GENERATORS: dict[str, str] = {
 }
 
 
+MCP_TOOL = {
+    "name": "fastapi_generate_sdk",
+    "description": "Generate a typed Python SDK client from the project's OpenAPI spec.",
+    "tags": ["evolve"],
+    "entry": "generate_sdk",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

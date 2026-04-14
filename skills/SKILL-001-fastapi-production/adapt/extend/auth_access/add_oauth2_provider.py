@@ -31,6 +31,15 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 from adapt.contracts.migration_helper import find_migration_head
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_oauth2_provider",
+    "description": "Add OAuth2 provider (authorization server) capabilities to the project.",
+    "tags": ["extend", "auth_access"],
+    "entry": "add_oauth2_provider",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

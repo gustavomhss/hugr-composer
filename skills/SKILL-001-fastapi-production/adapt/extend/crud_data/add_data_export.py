@@ -30,6 +30,15 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 from adapt.contracts.migration_helper import find_migration_head
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_data_export",
+    "description": "Add CSV/XLSX data export endpoints for all major resources.",
+    "tags": ["extend", "crud_data"],
+    "entry": "add_data_export",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

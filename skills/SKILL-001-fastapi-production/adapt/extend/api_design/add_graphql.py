@@ -29,6 +29,15 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_graphql",
+    "description": "Add GraphQL endpoint (Strawberry) alongside the existing REST API.",
+    "tags": ["extend", "api_design"],
+    "entry": "add_graphql",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

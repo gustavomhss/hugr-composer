@@ -27,6 +27,15 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_saga",
+    "description": "Add saga orchestration pattern for distributed transaction management.",
+    "tags": ["extend", "infrastructure"],
+    "entry": "add_saga",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

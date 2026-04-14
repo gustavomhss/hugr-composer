@@ -28,6 +28,15 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_cache_layer",
+    "description": "Add Redis caching layer with decorator, invalidation strategy, and TTL management.",
+    "tags": ["extend", "infrastructure"],
+    "entry": "add_cache_layer",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

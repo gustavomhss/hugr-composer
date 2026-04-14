@@ -26,6 +26,15 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult
 
 
+MCP_TOOL = {
+    "name": "fastapi_dependency_graph",
+    "description": "Render the FastAPI dependency injection graph as a Mermaid diagram.",
+    "tags": ["operate"],
+    "entry": "dependency_graph",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

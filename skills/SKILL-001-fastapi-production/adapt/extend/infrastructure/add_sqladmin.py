@@ -63,6 +63,15 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_sqladmin",
+    "description": "Add a production-grade admin panel (SQLAdmin) with superuser-only auth and auto-generated model views.",
+    "tags": ["extend", "infrastructure"],
+    "entry": "add_sqladmin",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

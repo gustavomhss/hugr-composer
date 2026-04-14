@@ -82,6 +82,15 @@ class SLOResult:
     warnings: list[str] = field(default_factory=list)
 
 
+MCP_TOOL = {
+    "name": "fastapi_sla_reporter",
+    "description": "Generate SLA compliance report from Prometheus or log data.",
+    "tags": ["operate"],
+    "entry": "sla_reporter",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

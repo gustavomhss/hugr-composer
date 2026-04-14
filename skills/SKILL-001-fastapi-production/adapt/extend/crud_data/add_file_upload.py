@@ -32,6 +32,15 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 from adapt.contracts.migration_helper import find_migration_head
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_file_upload",
+    "description": "Add file upload support (multipart/form-data) with S3-compatible storage backend.",
+    "tags": ["extend", "crud_data"],
+    "entry": "add_file_upload",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

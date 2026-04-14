@@ -33,6 +33,15 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 from adapt.contracts.migration_helper import find_migration_head
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_soft_delete",
+    "description": "Add soft delete to all models in the project.",
+    "tags": ["extend", "crud_data"],
+    "entry": "add_soft_delete",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

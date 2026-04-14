@@ -38,6 +38,15 @@ from typing import Any
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
+MCP_TOOL = {
+    "name": "fastapi_extract_service",
+    "description": "Extract business logic from route handlers into a dedicated service layer.",
+    "tags": ["evolve"],
+    "entry": "extract_service",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

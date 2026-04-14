@@ -36,6 +36,15 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 _VALID_BROKERS = frozenset({"redis_streams", "kafka", "nats"})
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_event_driven",
+    "description": "Add event-driven architecture with domain events and async handlers.",
+    "tags": ["evolve"],
+    "entry": "add_event_driven",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

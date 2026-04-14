@@ -28,6 +28,15 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
+MCP_TOOL = {
+    "name": "fastapi_detect_n_plus_one",
+    "description": "Detect N+1 query patterns in SQLAlchemy ORM code.",
+    "tags": ["verify"],
+    "entry": "detect_n_plus_one",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

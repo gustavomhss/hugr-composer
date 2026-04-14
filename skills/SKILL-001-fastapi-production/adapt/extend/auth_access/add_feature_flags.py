@@ -31,6 +31,15 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 from adapt.contracts.migration_helper import find_migration_head
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_feature_flags",
+    "description": "Add feature flag system with per-user, per-tenant, and global toggles.",
+    "tags": ["extend", "auth_access"],
+    "entry": "add_feature_flags",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

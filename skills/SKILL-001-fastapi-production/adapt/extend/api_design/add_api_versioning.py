@@ -31,6 +31,15 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_api_versioning",
+    "description": "Add URL-based API versioning (/api/v1, /api/v2) with deprecation headers.",
+    "tags": ["extend", "api_design"],
+    "entry": "add_api_versioning",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

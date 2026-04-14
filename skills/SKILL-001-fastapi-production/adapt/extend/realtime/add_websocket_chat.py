@@ -47,6 +47,15 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 from adapt.contracts.migration_helper import find_migration_head
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_websocket_chat",
+    "description": "Add production-grade WebSocket chat with JWT auth, Redis pub/sub, rooms, and message history.",
+    "tags": ["extend", "realtime"],
+    "entry": "add_websocket_chat",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

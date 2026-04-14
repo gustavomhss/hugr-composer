@@ -56,6 +56,15 @@ _UNSAFE_OPS: frozenset[str] = frozenset(
 )
 
 
+MCP_TOOL = {
+    "name": "fastapi_migration_diff",
+    "description": "Compare pending Alembic migrations against the current database schema.",
+    "tags": ["operate"],
+    "entry": "migration_diff",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

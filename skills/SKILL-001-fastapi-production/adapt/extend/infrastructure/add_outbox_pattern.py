@@ -28,6 +28,15 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
+MCP_TOOL = {
+    "name": "fastapi_add_outbox_pattern",
+    "description": "Add transactional outbox pattern for reliable event publishing.",
+    "tags": ["extend", "infrastructure"],
+    "entry": "add_outbox_pattern",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------

@@ -31,6 +31,15 @@ from typing import Any
 from adapt.contracts import ToolInput, ToolResult
 
 
+MCP_TOOL = {
+    "name": "fastapi_blast_radius",
+    "description": "Estimate the blast radius of a change by mapping module dependencies.",
+    "tags": ["operate"],
+    "entry": "blast_radius",
+}
+
+
+
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
