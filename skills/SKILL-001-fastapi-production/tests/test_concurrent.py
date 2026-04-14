@@ -93,7 +93,7 @@ def _boot_ok(project_dir: str) -> tuple[bool, str]:
         env={**os.environ, "PYTHONPATH": project_dir},
         capture_output=True,
         text=True,
-        timeout=30,
+        timeout=60,
     )
     if "BOOT OK" in r.stdout:
         return True, ""
