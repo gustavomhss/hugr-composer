@@ -292,11 +292,25 @@ def scaffold_prerequisites(
         *prereqs: Prerequisites to scaffold if missing.
 
     Returns:
-        List of relative paths that were created. Empty if everything
-        already existed.
+        List of ABSOLUTE paths to ``.py`` files that were created. Empty
+        if everything already existed. Non-Python artefacts (``.gitkeep``,
+        ``requirements.txt``, alembic versions directory) are scaffolded
+        on disk but NOT included in the return list, because downstream
+        tools iterate the list and call ``ast.parse(p.read_text())`` on
+        every entry, which crashes on non-Python content.
     """
     created: list[str] = []
-    root = Path(project_dir)
+    root = Path(project_dir).resolve()
+
+    def _record(path: Path) -> None:
+        """Append *path* to ``created`` only when it is a real ``.py`` file.
+
+        Non-Python scaffold artefacts (requirements.txt, .gitkeep, etc.)
+        are excluded so downstream ``_validate_py`` loops in adapt tools
+        don't choke on them.
+        """
+        if path.suffix == ".py" and path.is_file():
+            created.append(str(path))
 
     # Collect the set of paths that have explicit scaffold content so the
     # parent-package __init__.py creation below doesn't pre-empt them with
@@ -311,7 +325,7 @@ def scaffold_prerequisites(
     if not app_init.exists() and "app/__init__.py" not in explicit_targets:
         app_init.parent.mkdir(parents=True, exist_ok=True)
         app_init.write_text('"""Application package."""\n')
-        created.append("app/__init__.py")
+        _record(app_init)
 
     for prereq in prereqs:
         if prereq not in _SCAFFOLDS:
@@ -321,10 +335,16 @@ def scaffold_prerequisites(
         target = root / rel_path
 
         if prereq == Prereq.ALEMBIC_VERSIONS:
-            if not (root / "alembic" / "versions").is_dir():
-                (root / "alembic" / "versions").mkdir(parents=True, exist_ok=True)
-                (root / "alembic" / "versions" / ".gitkeep").write_text("")
-                created.append("alembic/versions/")
+            versions_dir = root / "alembic" / "versions"
+            if not versions_dir.is_dir():
+                versions_dir.mkdir(parents=True, exist_ok=True)
+                (versions_dir / ".gitkeep").write_text("")
+                # Directory created, but NOT appended to ``created``: the
+                # list is consumed by downstream tools that iterate it and
+                # call ``ast.parse(p.read_text())``. A directory path or a
+                # non-Python placeholder file would crash that loop. The
+                # scaffolded directory is represented implicitly by the
+                # absence of the crash, not by a list entry.
             continue
 
         if target.exists():
@@ -343,9 +363,9 @@ def scaffold_prerequisites(
                 if parent_rel in explicit_targets:
                     continue
                 parent_init.write_text(f'"""{parent.name} package."""\n')
-                created.append(parent_rel)
+                _record(parent_init)
 
         target.write_text(content)
-        created.append(rel_path)
+        _record(target)
 
     return created
