@@ -1,0 +1,237 @@
+name: SKILL-001 CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'skills/SKILL-001-fastapi-production/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'skills/SKILL-001-fastapi-production/**'
+
+defaults:
+  run:
+    working-directory: skills/SKILL-001-fastapi-production
+
+jobs:
+  unit-tests:
+    name: Unit tests (1279+)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --quiet -r requirements-mcp.txt
+          .venv/bin/pip install --quiet pytest pytest-asyncio aiosqlite
+      - name: Run unit tests
+        run: PYTHONPATH=. .venv/bin/python -m pytest adapt/ -q --tb=short
+        env:
+          RATE_LIMITING_ENABLED: 'false'
+          ENVIRONMENT: local
+
+  boot-tests:
+    name: Boot individual (32 tools)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --quiet -r requirements-mcp.txt
+          .venv/bin/pip install --quiet pytest aiosqlite
+      - name: Run boot tests
+        run: PYTHONPATH=. .venv/bin/python tests/test_boot.py
+        env:
+          SECRET_KEY: ci-test-secret-key-must-be-32-chars-long!!!
+          RATE_LIMITING_ENABLED: 'false'
+          ENVIRONMENT: local
+
+  property-tests:
+    name: Property tests (55 tools × 5)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --quiet -r requirements-mcp.txt
+          .venv/bin/pip install --quiet aiosqlite
+      - name: Run property tests
+        run: PYTHONPATH=. .venv/bin/python tests/property_tests.py
+        env:
+          SECRET_KEY: ci-test-secret-key-must-be-32-chars-long!!!
+          RATE_LIMITING_ENABLED: 'false'
+          ENVIRONMENT: local
+
+  sqlite-e2e:
+    name: SQLite E2E hardcore (12 scenarios)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --quiet -r requirements-mcp.txt
+          .venv/bin/pip install --quiet pytest aiosqlite httpx
+      - name: Run SQLite E2E
+        run: PYTHONPATH=. .venv/bin/python tests/test_e2e_hardcore.py
+        env:
+          SECRET_KEY: ci-test-secret-key-must-be-32-chars-long!!!
+          RATE_LIMITING_ENABLED: 'false'
+          ENVIRONMENT: local
+
+  postgres-e2e:
+    name: PostgreSQL E2E (8 scenarios, 27 tools)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: skill
+          POSTGRES_PASSWORD: skill
+          POSTGRES_DB: skill_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --quiet -r requirements-mcp.txt
+          .venv/bin/pip install --quiet pytest aiosqlite httpx asyncpg
+      - name: Run PostgreSQL E2E
+        run: PYTHONPATH=. .venv/bin/python tests/test_e2e_postgres.py
+        env:
+          SECRET_KEY: ci-test-secret-key-must-be-32-chars-long!!!
+          RATE_LIMITING_ENABLED: 'false'
+          ENVIRONMENT: local
+          MFA_FERNET_KEY: L7gvXDh2v6syV65J0-iwLQMTYbVavNXO2vuXgntcFBo=
+          E2E_POSTGRES_URL: postgresql+asyncpg://skill:skill@localhost:5432/skill_e2e
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: '5432'
+          POSTGRES_USER: skill
+          POSTGRES_PASSWORD: skill
+          POSTGRES_DB: skill_e2e
+
+  behavior-scenarios:
+    name: Behavior scenarios (12 domains, 65+ assertions)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: skill
+          POSTGRES_PASSWORD: skill
+          POSTGRES_DB: skill_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --quiet -r requirements-mcp.txt
+          .venv/bin/pip install --quiet pytest aiosqlite httpx asyncpg
+      - name: Run behavior scenarios
+        run: PYTHONPATH=. .venv/bin/python tests/test_behavior_scenarios.py
+        env:
+          SECRET_KEY: ci-test-secret-key-must-be-32-chars-long!!!
+          RATE_LIMITING_ENABLED: 'false'
+          ENVIRONMENT: local
+          MFA_FERNET_KEY: L7gvXDh2v6syV65J0-iwLQMTYbVavNXO2vuXgntcFBo=
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: '5432'
+          POSTGRES_USER: skill
+          POSTGRES_PASSWORD: skill
+          POSTGRES_DB: skill_e2e
+
+  benchmark:
+    name: FinHealth benchmark (100/100)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --quiet -r requirements-mcp.txt
+          .venv/bin/pip install --quiet aiosqlite
+      - name: Run FinHealth benchmark
+        run: PYTHONPATH=. .venv/bin/python benchmarks/run_finhealth.py
+        env:
+          SECRET_KEY: ci-test-secret-key-must-be-32-chars-long!!!
+          RATE_LIMITING_ENABLED: 'false'
+          ENVIRONMENT: local
+
+  mcp-discovery:
+    name: MCP discovery (105 tools)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --quiet -r requirements-mcp.txt
+      - name: Verify MCP tool discovery
+        run: |
+          PYTHONPATH=. .venv/bin/python -c "
+          import asyncio
+          from mcp_tools.server import mcp
+          from mcp_tools.discovery import discover_and_register
+          count = discover_and_register(mcp)
+          assert count >= 105, f'Expected >= 105 tools, got {count}'
+          tools = asyncio.run(mcp.list_tools())
+          assert len(tools) >= 105, f'list_tools returned {len(tools)}'
+          print(f'MCP discovery: {len(tools)} tools registered')
+          "
