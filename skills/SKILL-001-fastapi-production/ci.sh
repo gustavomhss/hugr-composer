@@ -44,13 +44,19 @@ failed=0
 skipped=0
 results=()
 
+CI_LOG_DIR="${SKILL_ROOT}/.ci-logs"
+mkdir -p "$CI_LOG_DIR"
+
 run_suite() {
     local name="$1"
     shift
+    local slug
+    slug=$(echo "$name" | tr -c '[:alnum:]' '_' | tr -s '_' | sed 's/^_//;s/_$//')
+    local log="${CI_LOG_DIR}/${slug}.log"
     printf "${C}▶${N} ${B}%-45s${N} " "$name"
     local t0
     t0=$(date +%s)
-    if "$@" > /tmp/ci_suite_output.txt 2>&1; then
+    if "$@" > "$log" 2>&1; then
         local elapsed=$(( $(date +%s) - t0 ))
         printf "${G}PASS${N}  (%ds)\n" "$elapsed"
         ((passed++))
@@ -58,8 +64,11 @@ run_suite() {
     else
         local elapsed=$(( $(date +%s) - t0 ))
         printf "${R}FAIL${N}  (%ds)\n" "$elapsed"
-        # Show last 10 lines on failure
-        tail -10 /tmp/ci_suite_output.txt | sed 's/^/       /'
+        # Forensic output: every FAILED line + last 30 lines (summary tail)
+        echo "       ── full log: $log"
+        grep -E "^FAILED|^ERROR" "$log" | sed 's/^/       /' || true
+        echo "       ── tail ──"
+        tail -30 "$log" | sed 's/^/       /'
         ((failed++))
         results+=("FAIL  $name")
     fi
