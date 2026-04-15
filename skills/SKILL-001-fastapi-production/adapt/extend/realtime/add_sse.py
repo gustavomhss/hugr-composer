@@ -199,9 +199,18 @@ def add_sse(
         _patch_requirements(requirements_file)
         files_modified.append(str(requirements_file))
 
-    # Validate all written files parse correctly
+    # Validate all written .py files parse correctly.
+    # Scaffolded prerequisites may include non-Python artefacts
+    # (requirements.txt, alembic/versions/.gitkeep) and relative paths —
+    # skip those, and resolve relative paths against the project root.
     for path_str in files_created:
-        _assert_parses(Path(path_str))
+        p = Path(path_str)
+        if p.suffix != ".py":
+            continue
+        if not p.is_absolute():
+            p = project / p
+        if p.is_file():
+            _assert_parses(p)
 
     return ToolResult(
         status="success",

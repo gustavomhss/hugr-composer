@@ -72,7 +72,7 @@ _MODELS_20: dict[str, dict[str, str]] = {
     "Session":   {"user_id": "UUID", "token": "str", "expires_at": "datetime", "ip_address": "str"},
 }
 
-# All 32 EXTEND tools: (display_name, dotted_module)
+# All 34 EXTEND tools: (display_name, dotted_module)
 _ALL_TOOLS: list[tuple[str, str]] = [
     # api_design (4)
     ("add_api_versioning",   "adapt.extend.api_design.add_api_versioning"),
@@ -94,7 +94,7 @@ _ALL_TOOLS: list[tuple[str, str]] = [
     ("add_file_upload",      "adapt.extend.crud_data.add_file_upload"),
     ("add_search",           "adapt.extend.crud_data.add_search"),
     ("add_soft_delete",      "adapt.extend.crud_data.add_soft_delete"),
-    # infrastructure (8)
+    # infrastructure (10)
     ("add_cache_layer",      "adapt.extend.infrastructure.add_cache_layer"),
     ("add_circuit_breaker",  "adapt.extend.infrastructure.add_circuit_breaker"),
     ("add_outbox_pattern",   "adapt.extend.infrastructure.add_outbox_pattern"),
@@ -102,6 +102,8 @@ _ALL_TOOLS: list[tuple[str, str]] = [
     ("add_arq_worker",       "adapt.extend.infrastructure.add_arq_worker"),
     ("add_stripe_checkout",  "adapt.extend.infrastructure.add_stripe_checkout"),
     ("add_email_templates",  "adapt.extend.infrastructure.add_email_templates"),
+    ("add_rate_limiting",    "adapt.extend.infrastructure.add_rate_limiting"),
+    ("add_scheduled_tasks",  "adapt.extend.infrastructure.add_scheduled_tasks"),
     ("add_sqladmin",         "adapt.extend.infrastructure.add_sqladmin"),
     # realtime (4)
     ("add_sse",              "adapt.extend.realtime.add_sse"),
