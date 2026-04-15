@@ -1121,39 +1121,42 @@ def _write_chat_endpoint(
 
 
         @router.websocket("/ws/chat/{room_id}")
-        async def chat_endpoint(ws: WebSocket, room_id: str) -> None:
-            \"\"\"Open a WebSocket chat session on *room_id*.
-
-            Auth: JWT via ``?token=`` or ``Authorization: Bearer``.  Rejection
-            uses close code ``1008 Policy Violation``.
-
-            Args:
-                ws: The incoming ``WebSocket``.
-                room_id: UUID string of the target room (path parameter).
-            \"\"\"
+        async def _validate_ws_connection(ws: WebSocket, room_id: str):
+            \"\"\"Validate token + room access. Returns (user_id, user_name) or None.\"\"\"
             token = _extract_token(ws)
             if token is None:
                 await ws.close(code=status.WS_1008_POLICY_VIOLATION)
-                return
+                return None
             auth = _authenticate_token(token)
             if auth is None:
                 await ws.close(code=status.WS_1008_POLICY_VIOLATION)
-                return
+                return None
             user_id, user_name = auth
-
             try:
                 room_uuid = _uuid.UUID(room_id)
             except ValueError:
                 await ws.close(code=status.WS_1008_POLICY_VIOLATION)
-                return
-
+                return None
             async with async_session_maker() as session:
                 allowed = await crud_chat.check_user_can_join(
-                    session, room_id=room_uuid, user_id=_uuid.UUID(user_id)
+                    session, room_id=room_uuid, user_id=_uuid.UUID(user_id),
                 )
             if not allowed:
                 await ws.close(code=status.WS_1008_POLICY_VIOLATION)
+                return None
+            return user_id, user_name
+
+
+        async def chat_endpoint(ws: WebSocket, room_id: str) -> None:
+            \"\"\"Open a WebSocket chat session on *room_id*.
+
+            Auth: JWT via ``?token=`` or ``Authorization: Bearer``.
+            Rejection uses close code ``1008 Policy Violation``.
+            \"\"\"
+            result = await _validate_ws_connection(ws, room_id)
+            if result is None:
                 return
+            user_id, user_name = result
 
             await ws.accept()
             manager = get_ws_manager()
@@ -1162,18 +1165,13 @@ def _write_chat_endpoint(
                 await _send_error(ws, "connection_limit", "Per-user connection cap reached")
                 await ws.close(code=status.WS_1008_POLICY_VIOLATION)
                 return
-
             try:
                 await _run_chat_session(
-                    ws,
-                    user_id=user_id,
-                    user_name=user_name,
-                    room_id=room_id,
-                    manager=manager,
+                    ws, user_id=user_id, user_name=user_name,
+                    room_id=room_id, manager=manager,
                 )
             finally:
                 await manager.disconnect(ws, room_id=room_id, user_id=user_id)
-                _ = time.monotonic()  # placeholder for optional latency metric
         """).replace("{rpm}", str(rate_limit_per_minute)).replace(
         "{max_len}", str(message_max_length),
     )
