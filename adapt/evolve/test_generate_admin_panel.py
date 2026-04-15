@@ -47,6 +47,10 @@ def _make_project(tmp: Path, models: list[str] | None = None) -> Path:
     (models_dir / "base.py").write_text(
         "from sqlalchemy.orm import DeclarativeBase\nclass Base(DeclarativeBase): pass\n"
     )
+    (app_dir / "core").mkdir(parents=True, exist_ok=True)
+    (app_dir / "core" / "config.py").write_text(
+        "from pydantic_settings import BaseSettings\nclass Settings(BaseSettings): pass\nsettings = Settings()\n"
+    )
     for model in (models or ["user", "item"]):
         (models_dir / f"{model.lower()}.py").write_text(
             f"from app.models.base import Base\nclass {model.capitalize()}(Base):\n    __tablename__ = '{model.lower()}s'\n"

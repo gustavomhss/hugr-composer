@@ -49,7 +49,9 @@ _MODELS_20: dict[str, dict[str, str]] = {
     "Order":     {"customer_id": "UUID", "total_cents": "int", "status": "str"},
     "OrderItem": {"order_id": "UUID", "product_id": "UUID", "quantity": "int", "unit_price": "int"},
     "Invoice":   {"order_id": "UUID", "amount_cents": "int", "due_date": "date", "paid_at": "datetime"},
-    "Payment":   {"invoice_id": "UUID", "amount_cents": "int", "method": "str", "status": "str"},
+    # Renamed from "Payment" to avoid crud/payment.py collision with
+    # add_stripe_checkout, which reserves that module for its own CRUD.
+    "Charge":    {"invoice_ref": "str", "amount_cents": "int", "method": "str", "status": "str"},
     "Subscription": {"customer_id": "UUID", "plan": "str", "status": "str", "renews_at": "datetime"},
     "Ticket":    {"customer_id": "UUID", "subject": "str", "priority": "str", "status": "str"},
     "Comment":   {"ticket_id": "UUID", "author_id": "UUID", "body": "str"},

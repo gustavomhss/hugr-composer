@@ -40,6 +40,9 @@ def _make_project(tmp: Path) -> Path:
     app_dir.mkdir()
     core_dir = app_dir / "core"
     core_dir.mkdir()
+    (core_dir / "config.py").write_text(
+        "from pydantic_settings import BaseSettings\nclass Settings(BaseSettings): pass\nsettings = Settings()\n"
+    )
     api_dir = app_dir / "api" / "middleware"
     api_dir.mkdir(parents=True)
     (app_dir / "main.py").write_text(

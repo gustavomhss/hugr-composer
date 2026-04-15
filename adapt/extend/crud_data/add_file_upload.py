@@ -66,6 +66,35 @@ def add_file_upload(inp: ToolInput) -> ToolResult:
     if err:
         return ToolResult(status="error", error=err)
 
+    # --- Prerequisite check (standalone mode) --------------------------------
+    from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
+
+    prereq_errors, scaffolded = ensure_prerequisites(
+        inp.project_dir,
+        Prereq.BASE_MODEL,
+        Prereq.MODELS_INIT,
+        Prereq.CONFIG_SETTINGS,
+        Prereq.ROUTES_INIT,
+        Prereq.ALEMBIC_VERSIONS,
+        Prereq.REQUIREMENTS_TXT,
+        auto_scaffold=not inp.dry_run,
+    )
+    if prereq_errors:
+        return ToolResult(
+            status="error",
+            error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
+            notes=[
+                "These prerequisites cannot be auto-created.",
+                "Generate a base project first:",
+                "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
+            ],
+            execution_time_ms=_elapsed_ms(start),
+        )
+
+    files_created: list[str] = []
+    if scaffolded:
+        files_created.extend(scaffolded)
+
     app_dir = project / "app"
 
     # --- Pre-flight: already patched? -------------------------------------
@@ -90,7 +119,6 @@ def add_file_upload(inp: ToolInput) -> ToolResult:
             execution_time_ms=_elapsed_ms(start),
         )
 
-    files_created: list[str] = []
     files_modified: list[str] = []
 
     # --- Step 1: FileMetadata model ---------------------------------------

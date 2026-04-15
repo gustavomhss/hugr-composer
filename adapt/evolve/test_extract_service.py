@@ -43,6 +43,15 @@ def _make_project(tmp: Path) -> Path:
     (app_dir / "main.py").write_text(
         "from fastapi import FastAPI\napp = FastAPI()\n"
     )
+    # Prereq files
+    (app_dir / "models").mkdir(parents=True, exist_ok=True)
+    (app_dir / "models" / "base.py").write_text(
+        "from sqlalchemy.orm import DeclarativeBase\nclass Base(DeclarativeBase): pass\n"
+    )
+    (app_dir / "core").mkdir(parents=True, exist_ok=True)
+    (app_dir / "core" / "config.py").write_text(
+        "from pydantic_settings import BaseSettings\nclass Settings(BaseSettings): pass\nsettings = Settings()\n"
+    )
     # Sample route
     routes_dir = app_dir / "routes"
     routes_dir.mkdir()
