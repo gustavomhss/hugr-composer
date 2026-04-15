@@ -67,26 +67,32 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
     if err:
         return ToolResult(status="error", error=err)
 
-    # --- Prerequisite check -----------------------------------------------
-    from adapt.contracts.prerequisites import check_prerequisites, Prereq
+    # --- Prerequisite check (standalone mode) --------------------------------
+    from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
 
-    prereq_errors = check_prerequisites(
+    prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
         Prereq.BASE_MODEL,
         Prereq.MODELS_INIT,
         Prereq.CONFIG_SETTINGS,
         Prereq.ALEMBIC_VERSIONS,
+        auto_scaffold=not inp.dry_run,
     )
     if prereq_errors:
         return ToolResult(
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
             notes=[
+                "These prerequisites cannot be auto-created.",
                 "Generate a base project first:",
-                "  fastapi_generate_project(output_dir='...', profile='minimal', models={...})",
+                "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
             ],
             execution_time_ms=_elapsed_ms(start),
         )
+
+    files_created: list[str] = []
+    if scaffolded:
+        files_created.extend(scaffolded)
 
     app_dir = project / "app"
 
@@ -109,7 +115,6 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
         )
     model_names = [pascal for _stem, pascal in model_pairs]
 
-    files_created: list[str] = []
     files_modified: list[str] = []
 
     if inp.dry_run:
@@ -224,7 +229,10 @@ def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
         stem = f.stem
         if stem in skip:
             continue
-        if stem not in available_routes:
+        # When no route files exist (standalone / bring-your-own project),
+        # discover all models regardless. When routes DO exist, only
+        # include models that have a matching route file.
+        if available_routes and stem not in available_routes:
             continue
         pascal = "".join(w.capitalize() for w in stem.split("_"))
         try:
