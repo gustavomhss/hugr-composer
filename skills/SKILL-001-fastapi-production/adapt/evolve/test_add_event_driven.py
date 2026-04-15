@@ -42,6 +42,13 @@ def _make_project(tmp: Path) -> Path:
         "from fastapi import FastAPI\napp = FastAPI()\n"
     )
     (app_dir / "models").mkdir()
+    (app_dir / "models" / "base.py").write_text(
+        "from sqlalchemy.orm import DeclarativeBase\nclass Base(DeclarativeBase): pass\n"
+    )
+    (app_dir / "core").mkdir(parents=True, exist_ok=True)
+    (app_dir / "core" / "config.py").write_text(
+        "from pydantic_settings import BaseSettings\nclass Settings(BaseSettings): pass\nsettings = Settings()\n"
+    )
     return project
 
 

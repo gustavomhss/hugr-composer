@@ -76,6 +76,31 @@ def generate_admin_panel(
     if err:
         return ToolResult(status="error", error=err)
 
+    # --- Prerequisite check (standalone mode) --------------------------------
+    from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
+
+    prereq_errors, scaffolded = ensure_prerequisites(
+        inp.project_dir,
+        Prereq.BASE_MODEL,
+        Prereq.CONFIG_SETTINGS,
+        auto_scaffold=not inp.dry_run,
+    )
+    if prereq_errors:
+        return ToolResult(
+            status="error",
+            error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
+            notes=[
+                "These prerequisites cannot be auto-created.",
+                "Generate a base project first:",
+                "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
+            ],
+            execution_time_ms=_elapsed_ms(start),
+        )
+
+    files_created: list[str] = []
+    if scaffolded:
+        files_created.extend(scaffolded)
+
     app_dir = project / "app"
     admin_dir = app_dir / "admin"
     read_only_models = read_only_models or []
@@ -112,7 +137,6 @@ def generate_admin_panel(
             execution_time_ms=_elapsed_ms(start),
         )
 
-    files_created: list[str] = []
     files_modified: list[str] = []
 
     # Create directory structure

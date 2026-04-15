@@ -103,6 +103,18 @@ def migration_diff(
             execution_time_ms=_ms(start),
         )
 
+    # --- Prerequisite check ---------------------------------------------------
+    from adapt.contracts.prerequisites import check_prerequisites, Prereq
+
+    prereq_errors = check_prerequisites(inp.project_dir, Prereq.ALEMBIC_VERSIONS)
+    if prereq_errors:
+        return ToolResult(
+            status="error",
+            error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
+            notes=["Generate a base project first: fastapi_generate_project(...)"],
+            execution_time_ms=_ms(start),
+        )
+
     versions_dir = project / "alembic" / "versions"
     if not versions_dir.exists():
         return ToolResult(

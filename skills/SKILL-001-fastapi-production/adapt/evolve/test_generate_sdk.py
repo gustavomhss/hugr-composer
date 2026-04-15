@@ -42,6 +42,10 @@ def _make_project(tmp: Path) -> Path:
     (app_dir / "main.py").write_text(
         "from fastapi import FastAPI\napp = FastAPI(title='TestAPI', version='1.2.3')\n"
     )
+    (app_dir / "core").mkdir(parents=True, exist_ok=True)
+    (app_dir / "core" / "config.py").write_text(
+        "from pydantic_settings import BaseSettings\nclass Settings(BaseSettings): pass\nsettings = Settings()\n"
+    )
     return project
 
 

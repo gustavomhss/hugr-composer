@@ -36,6 +36,8 @@ def _make_project(tmp: Path) -> Path:
     """
     project = tmp / "test_proj"
     project.mkdir(parents=True, exist_ok=True)
+    (project / "alembic" / "versions").mkdir(parents=True, exist_ok=True)
+    (project / "alembic" / "versions" / ".gitkeep").write_text("")
     return project
 
 

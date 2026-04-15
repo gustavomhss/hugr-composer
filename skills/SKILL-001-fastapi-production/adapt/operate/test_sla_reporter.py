@@ -32,6 +32,10 @@ def _make_project(tmp: Path) -> Path:
     """Create a minimal project root."""
     proj = tmp / "proj"
     proj.mkdir()
+    (proj / "app" / "core").mkdir(parents=True, exist_ok=True)
+    (proj / "app" / "core" / "config.py").write_text(
+        "from pydantic_settings import BaseSettings\nclass Settings(BaseSettings): pass\nsettings = Settings()\n"
+    )
     return proj
 
 

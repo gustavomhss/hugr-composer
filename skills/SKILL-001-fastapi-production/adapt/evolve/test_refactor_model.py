@@ -40,10 +40,15 @@ def _make_project(tmp: Path, with_model: bool = True) -> Path:
     if with_model:
         app_dir = project / "app" / "models"
         app_dir.mkdir(parents=True, exist_ok=True)
+        (app_dir / "base.py").write_text(
+            "from sqlalchemy.orm import DeclarativeBase\nclass Base(DeclarativeBase): pass\n"
+        )
         model_file = app_dir / "user.py"
         model_file.write_text(
             "from app.models.base import Base\n\nclass User(Base):\n    email: str\n"
         )
+    (project / "alembic" / "versions").mkdir(parents=True, exist_ok=True)
+    (project / "alembic" / "versions" / ".gitkeep").write_text("")
     return project
 
 
@@ -237,7 +242,7 @@ def test_alembic_migration_created_when_versions_exist() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         project = _make_project(Path(tmp))
         versions_dir = project / "alembic" / "versions"
-        versions_dir.mkdir(parents=True)
+        versions_dir.mkdir(parents=True, exist_ok=True)
         result = refactor_model(
             ToolInput(project_dir=str(project)),
             operation="rename_field",
@@ -255,7 +260,7 @@ def test_alembic_migration_parses() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         project = _make_project(Path(tmp))
         versions_dir = project / "alembic" / "versions"
-        versions_dir.mkdir(parents=True)
+        versions_dir.mkdir(parents=True, exist_ok=True)
         refactor_model(
             ToolInput(project_dir=str(project)),
             operation="rename_field",

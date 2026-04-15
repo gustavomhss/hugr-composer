@@ -40,6 +40,10 @@ def _make_project(tmp: Path) -> Path:
     (app_dir / "main.py").write_text(
         "from fastapi import FastAPI\napp = FastAPI(title='MyAPI', version='1.0.0')\n"
     )
+    (app_dir / "core").mkdir(parents=True, exist_ok=True)
+    (app_dir / "core" / "config.py").write_text(
+        "from pydantic_settings import BaseSettings\nclass Settings(BaseSettings): pass\nsettings = Settings()\n"
+    )
     # Minimal pyproject.toml
     (project / "pyproject.toml").write_text(
         '[project]\nname = "myapi"\nversion = "1.0.0"\n'

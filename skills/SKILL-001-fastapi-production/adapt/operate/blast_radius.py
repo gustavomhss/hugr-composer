@@ -80,6 +80,18 @@ def blast_radius(
             execution_time_ms=_ms(start),
         )
 
+    # --- Prerequisite check ---------------------------------------------------
+    from adapt.contracts.prerequisites import check_prerequisites, Prereq
+
+    prereq_errors = check_prerequisites(inp.project_dir, Prereq.BASE_MODEL)
+    if prereq_errors:
+        return ToolResult(
+            status="error",
+            error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
+            notes=["Generate a base project first: fastapi_generate_project(...)"],
+            execution_time_ms=_ms(start),
+        )
+
     # Build import graph (with on-disk cache for speed — INV-BR-03)
     # Skip cache writes during dry_run to avoid modifying the project dir
     graph = _build_import_graph(project) if inp.dry_run else _build_import_graph_cached(project)

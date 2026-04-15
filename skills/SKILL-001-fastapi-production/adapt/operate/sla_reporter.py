@@ -130,6 +130,18 @@ def sla_reporter(
             execution_time_ms=_ms(start),
         )
 
+    # --- Prerequisite check ---------------------------------------------------
+    from adapt.contracts.prerequisites import check_prerequisites, Prereq
+
+    prereq_errors = check_prerequisites(inp.project_dir, Prereq.CONFIG_SETTINGS)
+    if prereq_errors:
+        return ToolResult(
+            status="error",
+            error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
+            notes=["Generate a base project first: fastapi_generate_project(...)"],
+            execution_time_ms=_ms(start),
+        )
+
     config_path = project / sla_config_file
     targets = _load_sla_config(config_path, p99_budget_ms, availability_target_pct)
 
