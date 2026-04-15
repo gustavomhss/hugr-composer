@@ -182,3 +182,4 @@ Every new tool must pass, before merging:
 - **Not building** a frontend framework (that's SKILL-002: Next.js).
 - **Not building** a mobile SDK (that's SKILL-003: React Native / Flutter).
 - **Not building** an alternative to FastAPI (this is a FastAPI skill).
+# CI trigger
