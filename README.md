@@ -16,7 +16,7 @@ produces verified, production-grade code. The LLM customizes only the business l
 ### SKILL-001: FastAPI Production
 
 Convention over Configuration for FastAPI.
-100 MCP tools (51 adapt + 49 generators) producing production-grade code.
+105 MCP tools (56 adapt + 49 generators) producing production-grade code.
 
 | Metric | Value |
 |--------|-------|
@@ -24,7 +24,7 @@ Convention over Configuration for FastAPI.
 | vs. tiangolo (42.5K stars) | 100% vs 69% |
 | Test suites | 18 suites |
 | Unit tests | 1,280+ |
-| Adapt tools | 51 (extend, verify, operate, evolve, proactive) |
+| Adapt tools | 56 (extend, verify, operate, evolve, proactive) |
 | Generators | 49 |
 | Generated project | 53 files, production-ready |
 | LOC | 101,766 |
@@ -81,7 +81,7 @@ PYTHONPATH=. python3 benchmarks/run_finhealth.py
 skills/
   SKILL-001-fastapi-production/
     SKILL.md          # Full skill spec and tool catalog
-    adapt/            # 51 adapt tools + 1,280+ unit tests
+    adapt/            # 56 adapt tools + 1,280+ unit tests
     generators/       # 49 project generator tools
     benchmarks/       # 100-check compliance benchmark
     tests/            # Integration, E2E, property, boot tests

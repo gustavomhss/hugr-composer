@@ -13,7 +13,7 @@ mcp = FastMCP(
         "PRIMARY TOOL: fastapi_generate_project — one call, full project.\n"
         "GRANULAR: Use individual generate_* tools for specific components.\n"
         "VERIFY: Use fastapi_analyze to audit any FastAPI project (35 checks).\n\n"
-        "ADAPT TOOLS (51+ tools for existing projects):\n"
+        "ADAPT TOOLS (56 tools for existing projects):\n"
         "  EXTEND: fastapi_add_soft_delete, fastapi_add_cursor_pagination, "
         "fastapi_add_file_upload, fastapi_add_search, fastapi_add_audit_log, "
         "fastapi_add_data_export, fastapi_add_bulk_operations, "

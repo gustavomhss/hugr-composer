@@ -64,16 +64,21 @@ AUTH_CHAIN: list[tuple[str, str, str]] = [
 ]
 
 RT_INFRA_CHAIN: list[tuple[str, str, str]] = [
-    ("add_cache_layer",      "adapt.extend.infrastructure.add_cache_layer", "add_cache_layer"),
-    ("add_circuit_breaker",  "adapt.extend.infrastructure.add_circuit_breaker","add_circuit_breaker"),
-    ("add_outbox_pattern",   "adapt.extend.infrastructure.add_outbox_pattern","add_outbox_pattern"),
-    ("add_saga",             "adapt.extend.infrastructure.add_saga",        "add_saga"),
-    ("add_sse",              "adapt.extend.realtime.add_sse",               "add_sse"),
-    ("add_webhook_receiver", "adapt.extend.realtime.add_webhook_receiver",  "add_webhook_receiver"),
-    ("add_webhook_sender",   "adapt.extend.realtime.add_webhook_sender",    "add_webhook_sender"),
+    ("add_cache_layer",      "adapt.extend.infrastructure.add_cache_layer",      "add_cache_layer"),
+    ("add_circuit_breaker",  "adapt.extend.infrastructure.add_circuit_breaker",  "add_circuit_breaker"),
+    ("add_outbox_pattern",   "adapt.extend.infrastructure.add_outbox_pattern",   "add_outbox_pattern"),
+    ("add_saga",             "adapt.extend.infrastructure.add_saga",             "add_saga"),
+    ("add_arq_worker",       "adapt.extend.infrastructure.add_arq_worker",       "add_arq_worker"),
+    ("add_stripe_checkout",  "adapt.extend.infrastructure.add_stripe_checkout",  "add_stripe_checkout"),
+    ("add_email_templates",  "adapt.extend.infrastructure.add_email_templates",  "add_email_templates"),
+    ("add_sqladmin",         "adapt.extend.infrastructure.add_sqladmin",         "add_sqladmin"),
+    ("add_sse",              "adapt.extend.realtime.add_sse",                    "add_sse"),
+    ("add_webhook_receiver", "adapt.extend.realtime.add_webhook_receiver",       "add_webhook_receiver"),
+    ("add_webhook_sender",   "adapt.extend.realtime.add_webhook_sender",         "add_webhook_sender"),
+    ("add_websocket_chat",   "adapt.extend.realtime.add_websocket_chat",         "add_websocket_chat"),
 ]
 
-ALL_27_TOOLS_FORWARD: list[tuple[str, str, str]] = [
+ALL_TOOLS_FORWARD: list[tuple[str, str, str]] = [
     # auth_access
     ("add_api_key_auth",      "adapt.extend.auth_access.add_api_key_auth",    "add_api_key_auth"),
     ("add_feature_flags",     "adapt.extend.auth_access.add_feature_flags",   "add_feature_flags"),
@@ -90,26 +95,31 @@ ALL_27_TOOLS_FORWARD: list[tuple[str, str, str]] = [
     ("add_search",            "adapt.extend.crud_data.add_search",            "add_search"),
     ("add_soft_delete",       "adapt.extend.crud_data.add_soft_delete",       "add_soft_delete"),
     # infrastructure
-    ("add_cache_layer",       "adapt.extend.infrastructure.add_cache_layer",  "add_cache_layer"),
-    ("add_circuit_breaker",   "adapt.extend.infrastructure.add_circuit_breaker","add_circuit_breaker"),
-    ("add_outbox_pattern",    "adapt.extend.infrastructure.add_outbox_pattern","add_outbox_pattern"),
-    ("add_saga",              "adapt.extend.infrastructure.add_saga",         "add_saga"),
+    ("add_cache_layer",       "adapt.extend.infrastructure.add_cache_layer",      "add_cache_layer"),
+    ("add_circuit_breaker",   "adapt.extend.infrastructure.add_circuit_breaker",  "add_circuit_breaker"),
+    ("add_outbox_pattern",    "adapt.extend.infrastructure.add_outbox_pattern",   "add_outbox_pattern"),
+    ("add_saga",              "adapt.extend.infrastructure.add_saga",             "add_saga"),
+    ("add_arq_worker",        "adapt.extend.infrastructure.add_arq_worker",       "add_arq_worker"),
+    ("add_stripe_checkout",   "adapt.extend.infrastructure.add_stripe_checkout",  "add_stripe_checkout"),
+    ("add_email_templates",   "adapt.extend.infrastructure.add_email_templates",  "add_email_templates"),
+    ("add_sqladmin",          "adapt.extend.infrastructure.add_sqladmin",         "add_sqladmin"),
     # realtime
-    ("add_sse",               "adapt.extend.realtime.add_sse",                "add_sse"),
-    ("add_webhook_receiver",  "adapt.extend.realtime.add_webhook_receiver",   "add_webhook_receiver"),
-    ("add_webhook_sender",    "adapt.extend.realtime.add_webhook_sender",     "add_webhook_sender"),
+    ("add_sse",               "adapt.extend.realtime.add_sse",                    "add_sse"),
+    ("add_webhook_receiver",  "adapt.extend.realtime.add_webhook_receiver",       "add_webhook_receiver"),
+    ("add_webhook_sender",    "adapt.extend.realtime.add_webhook_sender",         "add_webhook_sender"),
+    ("add_websocket_chat",    "adapt.extend.realtime.add_websocket_chat",         "add_websocket_chat"),
     # api_design
-    ("add_api_versioning",    "adapt.extend.api_design.add_api_versioning",   "add_api_versioning"),
-    ("add_batch_endpoint",    "adapt.extend.api_design.add_batch_endpoint",   "add_batch_endpoint"),
-    ("add_long_running_task", "adapt.extend.api_design.add_long_running_task","add_long_running_task"),
-    ("add_graphql",           "adapt.extend.api_design.add_graphql",          "add_graphql"),
+    ("add_api_versioning",    "adapt.extend.api_design.add_api_versioning",       "add_api_versioning"),
+    ("add_batch_endpoint",    "adapt.extend.api_design.add_batch_endpoint",       "add_batch_endpoint"),
+    ("add_long_running_task", "adapt.extend.api_design.add_long_running_task",    "add_long_running_task"),
+    ("add_graphql",           "adapt.extend.api_design.add_graphql",              "add_graphql"),
     # testing_tools
-    ("add_contract_tests",    "adapt.extend.testing_tools.add_contract_tests","add_contract_tests"),
-    ("add_factory",           "adapt.extend.testing_tools.add_factory",       "add_factory"),
-    ("add_load_profile",      "adapt.extend.testing_tools.add_load_profile",  "add_load_profile"),
+    ("add_contract_tests",    "adapt.extend.testing_tools.add_contract_tests",    "add_contract_tests"),
+    ("add_factory",           "adapt.extend.testing_tools.add_factory",           "add_factory"),
+    ("add_load_profile",      "adapt.extend.testing_tools.add_load_profile",      "add_load_profile"),
 ]
 
-ALL_27_TOOLS_REVERSE: list[tuple[str, str, str]] = list(reversed(ALL_27_TOOLS_FORWARD))
+ALL_TOOLS_REVERSE: list[tuple[str, str, str]] = list(reversed(ALL_TOOLS_FORWARD))
 
 
 # ---------------------------------------------------------------------------
@@ -202,8 +212,8 @@ CHAINS = [
     ("crud",     "CRUD 7 tools (forward)",       CRUD_CHAIN),
     ("auth",     "Auth 6 tools (forward)",        AUTH_CHAIN),
     ("rt_infra", "RT+Infra 7 tools (forward)",    RT_INFRA_CHAIN),
-    ("full_fwd", "Full 27 tools (forward)",        ALL_27_TOOLS_FORWARD),
-    ("full_rev", "Full 27 tools (reverse)",        ALL_27_TOOLS_REVERSE),
+    ("full_fwd", "Full 32 tools (forward)",        ALL_TOOLS_FORWARD),
+    ("full_rev", "Full 32 tools (reverse)",        ALL_TOOLS_REVERSE),
 ]
 
 

@@ -70,7 +70,7 @@ _MODELS_20: dict[str, dict[str, str]] = {
     "Session":   {"user_id": "UUID", "token": "str", "expires_at": "datetime", "ip_address": "str"},
 }
 
-# All 27 EXTEND tools: (display_name, dotted_module)
+# All 32 EXTEND tools: (display_name, dotted_module)
 _ALL_TOOLS: list[tuple[str, str]] = [
     # api_design (4)
     ("add_api_versioning",   "adapt.extend.api_design.add_api_versioning"),
@@ -92,15 +92,20 @@ _ALL_TOOLS: list[tuple[str, str]] = [
     ("add_file_upload",      "adapt.extend.crud_data.add_file_upload"),
     ("add_search",           "adapt.extend.crud_data.add_search"),
     ("add_soft_delete",      "adapt.extend.crud_data.add_soft_delete"),
-    # infrastructure (4)
+    # infrastructure (8)
     ("add_cache_layer",      "adapt.extend.infrastructure.add_cache_layer"),
     ("add_circuit_breaker",  "adapt.extend.infrastructure.add_circuit_breaker"),
     ("add_outbox_pattern",   "adapt.extend.infrastructure.add_outbox_pattern"),
     ("add_saga",             "adapt.extend.infrastructure.add_saga"),
-    # realtime (3)
+    ("add_arq_worker",       "adapt.extend.infrastructure.add_arq_worker"),
+    ("add_stripe_checkout",  "adapt.extend.infrastructure.add_stripe_checkout"),
+    ("add_email_templates",  "adapt.extend.infrastructure.add_email_templates"),
+    ("add_sqladmin",         "adapt.extend.infrastructure.add_sqladmin"),
+    # realtime (4)
     ("add_sse",              "adapt.extend.realtime.add_sse"),
     ("add_webhook_receiver", "adapt.extend.realtime.add_webhook_receiver"),
     ("add_webhook_sender",   "adapt.extend.realtime.add_webhook_sender"),
+    ("add_websocket_chat",   "adapt.extend.realtime.add_websocket_chat"),
     # testing_tools (3)
     ("add_contract_tests",   "adapt.extend.testing_tools.add_contract_tests"),
     ("add_factory",          "adapt.extend.testing_tools.add_factory"),
