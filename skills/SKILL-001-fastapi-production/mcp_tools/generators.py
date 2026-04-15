@@ -32,6 +32,7 @@ def register_generators(mcp_app) -> int:
         prefix: str = "/api/v1",
         models: dict[str, dict[str, str]] | None = None,
         owner_models: dict[str, str] | None = None,
+        profile: str = "full",
         with_auth: bool = True,
         with_redis: bool = False,
         cors_origins: list[str] | None = None,
@@ -41,10 +42,18 @@ def register_generators(mcp_app) -> int:
     ) -> dict:
         """Generate a complete production-ready FastAPI project.
 
-        One call produces 30-50 files: config, models, CRUD, auth (argon2id +
-        PyJWT), middleware (CORS + security headers + correlation ID + logging),
-        health checks (3-level), Dockerfile (multi-stage, non-root), Alembic
-        migrations, docker-compose, and optionally K8s manifests + CI pipeline.
+        One call produces 15-80 files depending on the profile. Profiles:
+
+        - "minimal" (~15 files): models + DB + health check. No auth, middleware,
+          deployment, or tests. Great for prototyping.
+        - "api" (~50 files): models + auth + middleware + health. No deployment
+          or observability. Good for backend development.
+        - "full" (~80 files, default): Everything including deployment, CI,
+          observability, and tests. Production-ready.
+        - "worker" (~20 files): models + DB + config. No API routes or auth.
+          For background job services.
+
+        Individual flags (with_auth, with_k8s, etc.) override the profile preset.
 
         The LLM should NOT modify generated infra. Customize only business logic.
 
@@ -54,6 +63,7 @@ def register_generators(mcp_app) -> int:
             prefix: API URL prefix (e.g. "/api/v1").
             models: Domain models. {"Product": {"name": "str", "price": "Decimal"}}
             owner_models: Which models have owner FK. {"Product": "user"}
+            profile: Project profile preset: "minimal", "api", "full", "worker".
             with_auth: Generate auth stack (password hasher, JWT, login routes).
             with_redis: Add Redis support (config, health checks, docker-compose).
             cors_origins: Allowed CORS origins. Never wildcard.
@@ -62,12 +72,13 @@ def register_generators(mcp_app) -> int:
             with_ci: Generate GitHub Actions CI pipeline.
 
         Returns:
-            Dict with files_created, notes, phases, total_files.
+            Dict with files_created, notes, phases, total_files, profile, profile_description.
 
         Example:
             fastapi_generate_project(
                 output_dir="/tmp/ecommerce",
                 name="ecommerce",
+                profile="api",
                 models={"Product": {"name": "str", "price": "Decimal", "stock": "int"}},
                 owner_models={"Product": "user"},
             )
@@ -78,6 +89,7 @@ def register_generators(mcp_app) -> int:
             prefix=prefix,
             models=models,
             owner_models=owner_models,
+            profile=profile,
             with_auth=with_auth,
             with_redis=with_redis,
             cors_origins=cors_origins,

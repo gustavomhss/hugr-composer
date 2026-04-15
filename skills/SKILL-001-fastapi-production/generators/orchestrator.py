@@ -23,6 +23,80 @@ from __future__ import annotations
 
 from pathlib import Path
 
+# ---------------------------------------------------------------------------
+# Sentinel for "parameter not passed by caller"
+# ---------------------------------------------------------------------------
+_UNSET = object()
+
+# ---------------------------------------------------------------------------
+# Project profiles — presets that control which phases are generated.
+# Users pick a profile, then override individual flags as needed.
+# ---------------------------------------------------------------------------
+PROFILES: dict[str, dict] = {
+    "minimal": {
+        "description": "Bare minimum: 1+ models, health check, no auth, no middleware. ~15 files.",
+        "with_auth": False,
+        "with_redis": False,
+        "with_docker_compose": False,
+        "with_ci": False,
+        "with_otel": False,
+        "with_prometheus": False,
+        "with_alerting": False,
+        "with_k8s": False,
+        "with_loadtest": False,
+        "skip_middleware": True,
+        "skip_deployment": True,
+        "skip_testing": True,
+        "skip_email_utils": True,
+        "skip_precommit": True,
+    },
+    "api": {
+        "description": "Production API: models + auth + middleware + health. ~50 files. No deployment/observability.",
+        "with_auth": True,
+        "with_redis": True,
+        "with_docker_compose": False,
+        "with_ci": False,
+        "with_otel": False,
+        "with_prometheus": False,
+        "with_alerting": False,
+        "with_k8s": False,
+        "with_loadtest": False,
+        "skip_middleware": False,
+        "skip_deployment": True,
+        "skip_testing": False,
+        "skip_email_utils": True,
+        "skip_precommit": True,
+    },
+    "full": {
+        "description": "Everything: auth + middleware + deployment + observability + testing. ~80 files.",
+        "skip_middleware": False,
+        "skip_deployment": False,
+        "skip_testing": False,
+        "skip_email_utils": False,
+        "skip_precommit": False,
+    },
+    "worker": {
+        "description": "Background worker only: models + DB + config. No API routes, no auth, no middleware. ~20 files.",
+        "with_auth": False,
+        "with_redis": True,
+        "with_docker_compose": False,
+        "with_ci": False,
+        "with_otel": False,
+        "with_prometheus": False,
+        "with_alerting": False,
+        "with_k8s": False,
+        "with_loadtest": False,
+        "skip_middleware": True,
+        "skip_deployment": True,
+        "skip_testing": True,
+        "skip_email_utils": True,
+        "skip_precommit": True,
+        "skip_routes": True,
+        "skip_app_entry": True,
+    },
+}
+
+
 # --- Infra ---
 from generators.infra.app import generate_app
 from generators.infra.config import generate_config
@@ -85,19 +159,20 @@ def generate_project(
     models: dict[str, dict[str, str]] | None = None,
     owner_models: dict[str, str] | None = None,
     *,
-    with_auth: bool = True,
+    profile: str = "full",
+    with_auth: bool | object = _UNSET,
     with_sentry: bool = False,
-    with_redis: bool = False,
+    with_redis: bool | object = _UNSET,
     with_gzip: bool = False,
     cors_origins: list[str] | None = None,
     python_version: str = "3.12",
-    with_docker_compose: bool = True,
-    with_k8s: bool = False,
-    with_ci: bool = True,
-    with_loadtest: bool = False,
-    with_otel: bool = True,
-    with_prometheus: bool = True,
-    with_alerting: bool = False,
+    with_docker_compose: bool | object = _UNSET,
+    with_k8s: bool | object = _UNSET,
+    with_ci: bool | object = _UNSET,
+    with_loadtest: bool | object = _UNSET,
+    with_otel: bool | object = _UNSET,
+    with_prometheus: bool | object = _UNSET,
+    with_alerting: bool | object = _UNSET,
 ) -> dict:
     """Generate a complete, production-ready FastAPI project.
 
@@ -113,6 +188,10 @@ def generate_project(
             ``{"Product": {"name": "str", "price": "Decimal"}, ...}``
         owner_models: Which models have an ``owner_id`` FK.
             ``{"Product": "user"}`` means ``Product.owner_id -> users.id``.
+        profile: Project profile preset. ``"minimal"`` (~15 files),
+            ``"api"`` (~50 files), ``"full"`` (~80 files, default),
+            or ``"worker"`` (~20 files).  Individual ``with_*`` flags
+            override the profile when explicitly passed.
         with_auth: Generate full auth stack (hasher, JWT, deps, routes).
         with_sentry: Include Sentry SDK in main.py.
         with_redis: Add Redis to config + docker-compose + health checks.
@@ -128,8 +207,53 @@ def generate_project(
         with_alerting: Generate alerting rules + Grafana dashboard.
 
     Returns:
-        Dict with ``files_created``, ``notes``, and ``phases`` summary.
+        Dict with ``files_created``, ``notes``, ``phases``, ``total_files``,
+        ``profile``, and ``profile_description``.
+
+    Raises:
+        ValueError: If *profile* is not one of the known profile names.
     """
+    # ------------------------------------------------------------------
+    # Profile resolution: apply preset defaults for any flag the caller
+    # did not explicitly pass.  Explicit kwargs always win.
+    # ------------------------------------------------------------------
+    if profile not in PROFILES:
+        raise ValueError(
+            f"Unknown profile '{profile}'. Valid profiles: {list(PROFILES.keys())}"
+        )
+    p = PROFILES[profile]
+
+    if with_auth is _UNSET:
+        with_auth = p.get("with_auth", True)
+    if with_redis is _UNSET:
+        with_redis = p.get("with_redis", False)
+    if with_docker_compose is _UNSET:
+        with_docker_compose = p.get("with_docker_compose", True)
+    if with_k8s is _UNSET:
+        with_k8s = p.get("with_k8s", False)
+    if with_ci is _UNSET:
+        with_ci = p.get("with_ci", True)
+    if with_loadtest is _UNSET:
+        with_loadtest = p.get("with_loadtest", False)
+    if with_otel is _UNSET:
+        with_otel = p.get("with_otel", True)
+    if with_prometheus is _UNSET:
+        with_prometheus = p.get("with_prometheus", True)
+    if with_alerting is _UNSET:
+        with_alerting = p.get("with_alerting", False)
+
+    # Cast to bool after sentinel resolution (keeps type checkers happy
+    # and avoids passing _UNSET deeper into the call chain).
+    with_auth = bool(with_auth)
+    with_redis = bool(with_redis)
+    with_docker_compose = bool(with_docker_compose)
+    with_k8s = bool(with_k8s)
+    with_ci = bool(with_ci)
+    with_loadtest = bool(with_loadtest)
+    with_otel = bool(with_otel)
+    with_prometheus = bool(with_prometheus)
+    with_alerting = bool(with_alerting)
+
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
@@ -353,70 +477,75 @@ def generate_project(
             phases["message_schema"] = {"files": 1, "status": "done"}
 
     # ---------------------------------------------------------------
-    # Phase 4: Middleware
+    # Phase 4: Middleware (skipped by minimal/worker profiles)
     # ---------------------------------------------------------------
-    # NOTE: cors_config.py was deprecated. CORS is configured directly
-    # in middleware/__init__.py using settings.BACKEND_CORS_ORIGINS.
-    # The generate_cors() generator is no longer called here.
-    _run("security_headers", generate_security_headers(output_dir=str(app_dir)))
-    _run("correlation_id", generate_correlation_id(output_dir=str(app_dir)))
-    _run("request_logging", generate_request_logging(output_dir=str(app_dir)))
-    _run("body_size", generate_body_size_middleware(output_dir=str(app_dir)))
-    _run("idempotency", generate_idempotency_middleware(output_dir=str(app_dir)))
-    _run("middleware_stack", generate_middleware_stack(
-        output_dir=str(app_dir),
-        cors_origins=cors_origins,
-        with_gzip=with_gzip,
-    ))
+    if not p.get("skip_middleware"):
+        # NOTE: cors_config.py was deprecated. CORS is configured directly
+        # in middleware/__init__.py using settings.BACKEND_CORS_ORIGINS.
+        # The generate_cors() generator is no longer called here.
+        _run("security_headers", generate_security_headers(output_dir=str(app_dir)))
+        _run("correlation_id", generate_correlation_id(output_dir=str(app_dir)))
+        _run("request_logging", generate_request_logging(output_dir=str(app_dir)))
+        _run("body_size", generate_body_size_middleware(output_dir=str(app_dir)))
+        _run("idempotency", generate_idempotency_middleware(output_dir=str(app_dir)))
+        _run("middleware_stack", generate_middleware_stack(
+            output_dir=str(app_dir),
+            cors_origins=cors_origins,
+            with_gzip=with_gzip,
+        ))
 
     # ---------------------------------------------------------------
-    # Phase 5: Endpoints
+    # Phase 5: Endpoints (skipped by worker profile)
     # ---------------------------------------------------------------
-    _run("health_checks", generate_health_checks(
-        output_dir=str(app_dir),
-        check_redis=with_redis,
-    ))
-    _run("error_handlers", generate_error_handlers(output_dir=str(app_dir)))
+    if not p.get("skip_routes"):
+        _run("health_checks", generate_health_checks(
+            output_dir=str(app_dir),
+            check_redis=with_redis,
+        ))
+        _run("error_handlers", generate_error_handlers(output_dir=str(app_dir)))
 
-    # CRUD routes for domain models
-    if models:
-        route_auth = "required" if with_auth else "none"
-        for model_name, fields in models.items():
-            owner = (owner_models or {}).get(model_name)
-            _run(f"routes_{model_name}", generate_crud_routes(
-                output_dir=str(app_dir),
-                model_name=model_name,
-                fields=fields,
-                auth=route_auth,
-                owner_field=owner if with_auth else None,
-            ))
+        # CRUD routes for domain models
+        if models:
+            route_auth = "required" if with_auth else "none"
+            for model_name, fields in models.items():
+                owner = (owner_models or {}).get(model_name)
+                _run(f"routes_{model_name}", generate_crud_routes(
+                    output_dir=str(app_dir),
+                    model_name=model_name,
+                    fields=fields,
+                    auth=route_auth,
+                    owner_field=owner if with_auth else None,
+                ))
 
     # ---------------------------------------------------------------
     # Phase 5b: Package init files + router assembly
     # ---------------------------------------------------------------
-    _generate_package_inits(app_dir, models or {}, with_auth)
+    if not p.get("skip_routes"):
+        _generate_package_inits(app_dir, models or {}, with_auth)
 
     # ---------------------------------------------------------------
-    # Phase 6: Application entry point (depends on everything above)
+    # Phase 6: Application entry point (skipped by worker profile)
     # ---------------------------------------------------------------
-    _run("app", generate_app(
-        output_dir=str(app_dir),
-        name=name,
-        prefix=prefix,
-        with_sentry=with_sentry,
-        with_rate_limit=with_auth,
-        with_prometheus=with_prometheus,
-    ))
+    if not p.get("skip_app_entry"):
+        _run("app", generate_app(
+            output_dir=str(app_dir),
+            name=name,
+            prefix=prefix,
+            with_sentry=with_sentry,
+            with_rate_limit=with_auth,
+            with_prometheus=with_prometheus,
+        ))
 
     # ---------------------------------------------------------------
-    # Phase 7: Deployment
+    # Phase 7: Deployment (skipped by minimal/api/worker profiles)
     # ---------------------------------------------------------------
-    _run("dockerfile", generate_dockerfile(
-        output_dir=str(out),
-        python_version=python_version,
-    ))
+    if not p.get("skip_deployment"):
+        _run("dockerfile", generate_dockerfile(
+            output_dir=str(out),
+            python_version=python_version,
+        ))
 
-    if with_docker_compose:
+    if not p.get("skip_deployment") and with_docker_compose:
         try:
             from generators.deployment.docker_compose import generate_docker_compose
             _run("docker_compose", generate_docker_compose(
@@ -426,7 +555,7 @@ def generate_project(
         except ImportError:
             phases["docker_compose"] = {"files": 0, "status": "skipped (generator not built yet)"}
 
-    if with_k8s:
+    if not p.get("skip_deployment") and with_k8s:
         try:
             from generators.deployment.k8s import generate_k8s_manifests
             _run("k8s", generate_k8s_manifests(
@@ -436,7 +565,7 @@ def generate_project(
         except ImportError:
             phases["k8s"] = {"files": 0, "status": "skipped (generator not built yet)"}
 
-    if with_ci:
+    if not p.get("skip_deployment") and with_ci:
         try:
             from generators.deployment.github_actions import generate_github_actions
             _run("ci", generate_github_actions(
@@ -446,7 +575,7 @@ def generate_project(
         except ImportError:
             phases["ci"] = {"files": 0, "status": "skipped (generator not built yet)"}
 
-    if with_loadtest:
+    if not p.get("skip_deployment") and with_loadtest:
         try:
             from generators.deployment.k6_loadtest import generate_k6_loadtest
             _run("loadtest", generate_k6_loadtest(
@@ -499,11 +628,13 @@ def generate_project(
     _run("readme", generate_readme(
         output_dir=str(out), name=name, prefix=prefix,
     ))
-    _run("precommit", generate_precommit(output_dir=str(out)))
+    if not p.get("skip_precommit"):
+        _run("precommit", generate_precommit(output_dir=str(out)))
     _run("gitignore", generate_gitignore(output_dir=str(out)))
 
     # Python source utilities (live under app/)
-    _run("email_utils", generate_email_utils(output_dir=str(app_dir)))
+    if not p.get("skip_email_utils"):
+        _run("email_utils", generate_email_utils(output_dir=str(app_dir)))
 
     if with_auth:
         _run("initial_data", generate_initial_data(output_dir=str(app_dir)))
@@ -518,9 +649,9 @@ def generate_project(
     phases["requirements"] = {"files": 1, "status": "done"}
 
     # ---------------------------------------------------------------
-    # Phase 11: Test infrastructure + test suite
+    # Phase 11: Test infrastructure + test suite (skipped by minimal/worker)
     # ---------------------------------------------------------------
-    if models or with_auth:
+    if not p.get("skip_testing") and (models or with_auth):
         _run("test_infra", generate_test_infrastructure(
             output_dir=str(out), with_auth=with_auth,
         ))
@@ -536,6 +667,8 @@ def generate_project(
         "notes": all_notes,
         "phases": phases,
         "total_files": len(all_files),
+        "profile": profile,
+        "profile_description": p["description"],
     }
 
 
