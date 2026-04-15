@@ -71,6 +71,8 @@ RT_INFRA_CHAIN: list[tuple[str, str, str]] = [
     ("add_arq_worker",       "adapt.extend.infrastructure.add_arq_worker",       "add_arq_worker"),
     ("add_stripe_checkout",  "adapt.extend.infrastructure.add_stripe_checkout",  "add_stripe_checkout"),
     ("add_email_templates",  "adapt.extend.infrastructure.add_email_templates",  "add_email_templates"),
+    ("add_rate_limiting",    "adapt.extend.infrastructure.add_rate_limiting",    "add_rate_limiting"),
+    ("add_scheduled_tasks",  "adapt.extend.infrastructure.add_scheduled_tasks",  "add_scheduled_tasks"),
     ("add_sqladmin",         "adapt.extend.infrastructure.add_sqladmin",         "add_sqladmin"),
     ("add_sse",              "adapt.extend.realtime.add_sse",                    "add_sse"),
     ("add_webhook_receiver", "adapt.extend.realtime.add_webhook_receiver",       "add_webhook_receiver"),
@@ -102,6 +104,8 @@ ALL_TOOLS_FORWARD: list[tuple[str, str, str]] = [
     ("add_arq_worker",        "adapt.extend.infrastructure.add_arq_worker",       "add_arq_worker"),
     ("add_stripe_checkout",   "adapt.extend.infrastructure.add_stripe_checkout",  "add_stripe_checkout"),
     ("add_email_templates",   "adapt.extend.infrastructure.add_email_templates",  "add_email_templates"),
+    ("add_rate_limiting",     "adapt.extend.infrastructure.add_rate_limiting",    "add_rate_limiting"),
+    ("add_scheduled_tasks",   "adapt.extend.infrastructure.add_scheduled_tasks",  "add_scheduled_tasks"),
     ("add_sqladmin",          "adapt.extend.infrastructure.add_sqladmin",         "add_sqladmin"),
     # realtime
     ("add_sse",               "adapt.extend.realtime.add_sse",                    "add_sse"),
@@ -212,8 +216,8 @@ CHAINS = [
     ("crud",     "CRUD 7 tools (forward)",       CRUD_CHAIN),
     ("auth",     "Auth 6 tools (forward)",        AUTH_CHAIN),
     ("rt_infra", "RT+Infra 7 tools (forward)",    RT_INFRA_CHAIN),
-    ("full_fwd", "Full 32 tools (forward)",        ALL_TOOLS_FORWARD),
-    ("full_rev", "Full 32 tools (reverse)",        ALL_TOOLS_REVERSE),
+    ("full_fwd", "Full 34 tools (forward)",        ALL_TOOLS_FORWARD),
+    ("full_rev", "Full 34 tools (reverse)",        ALL_TOOLS_REVERSE),
 ]
 
 
