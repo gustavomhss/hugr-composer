@@ -58,14 +58,19 @@ _TOOL_REGISTRY: list[tuple[str, str, dict]] = [
     ("adapt.extend.crud_data.add_search",           "add_search",          {}),
     ("adapt.extend.crud_data.add_soft_delete",      "add_soft_delete",     {}),
     # extend / infrastructure
-    ("adapt.extend.infrastructure.add_cache_layer",    "add_cache_layer",     {}),
-    ("adapt.extend.infrastructure.add_circuit_breaker","add_circuit_breaker", {}),
-    ("adapt.extend.infrastructure.add_outbox_pattern", "add_outbox_pattern",  {}),
-    ("adapt.extend.infrastructure.add_saga",            "add_saga",            {}),
+    ("adapt.extend.infrastructure.add_cache_layer",      "add_cache_layer",      {}),
+    ("adapt.extend.infrastructure.add_circuit_breaker",  "add_circuit_breaker",  {}),
+    ("adapt.extend.infrastructure.add_outbox_pattern",   "add_outbox_pattern",   {}),
+    ("adapt.extend.infrastructure.add_saga",             "add_saga",             {}),
+    ("adapt.extend.infrastructure.add_arq_worker",       "add_arq_worker",       {}),
+    ("adapt.extend.infrastructure.add_stripe_checkout",  "add_stripe_checkout",  {}),
+    ("adapt.extend.infrastructure.add_email_templates",  "add_email_templates",  {}),
+    ("adapt.extend.infrastructure.add_sqladmin",         "add_sqladmin",         {}),
     # extend / realtime
     ("adapt.extend.realtime.add_sse",              "add_sse",              {}),
     ("adapt.extend.realtime.add_webhook_receiver", "add_webhook_receiver", {}),
     ("adapt.extend.realtime.add_webhook_sender",   "add_webhook_sender",   {}),
+    ("adapt.extend.realtime.add_websocket_chat",   "add_websocket_chat",   {}),
     # extend / testing_tools
     ("adapt.extend.testing_tools.add_contract_tests","add_contract_tests", {}),
     ("adapt.extend.testing_tools.add_factory",       "add_factory",        {}),

@@ -1,9 +1,9 @@
 # SKILL-001: FastAPI Production
 
 > Convention over Configuration for FastAPI.
-> 34 generators + 51 adapt tools = 100 MCP tools total — produce production-grade code, you customize business logic only.
+> 34 generators + 56 adapt tools = 105 MCP tools total — produce production-grade code, you customize business logic only.
 > Scores 35/35 on a 35-check audit backed by OWASP, CVE, NIST, RFC, and CIS standards.
-> 352 files, 101,766 LOC. 51 adapt tools across 5 categories: extend (36), verify (7), operate (8), evolve (8+3), proactive (1).
+> 352 files, 101,766 LOC. 56 adapt tools across 5 categories: extend (41), verify (7), operate (8), evolve (8+3), proactive (1).
 > Lint-verified: ruff F-check on generated code scores 22 F-errors (0 critical F821), all 85 generated files pass py_compile.
 
 ## Quick Start
@@ -20,6 +20,18 @@ fastapi_generate_project(
 # Audit any existing project
 fastapi_analyze("/path/to/project")
 ```
+
+## What's New in v5.0
+
+5 new Tier-1 EXTEND tools for common production patterns:
+
+| Tool | What |
+|------|------|
+| `fastapi_add_websocket_chat` | Real-time WebSocket chat with JWT auth + Redis pub/sub |
+| `fastapi_add_arq_worker` | Async background job queue via arq |
+| `fastapi_add_stripe_checkout` | Stripe Checkout Session + webhook reconciliation |
+| `fastapi_add_email_templates` | Jinja2 transactional email with pluggable providers |
+| `fastapi_add_sqladmin` | FastAPI-native admin panel with auth gate |
 
 ## Benchmark
 
@@ -89,7 +101,7 @@ One call to `fastapi_generate_project()` produces a **53-file production project
 - `tests/api/routes/test_users.py` — 8 user management tests
 - `tests/api/routes/test_{model}.py` — 6 CRUD tests per model
 
-## 100 MCP Tools
+## 105 MCP Tools
 
 ### Tier 1: Orchestrator
 | Tool | What |
@@ -152,7 +164,7 @@ One call to `fastapi_generate_project()` produces a **53-file production project
 | `fastapi_check_health` | Test health endpoints on running instance |
 | `fastapi_check_headers` | Test security headers on running instance |
 
-### Tier 4: Adapt Tools (51 tools)
+### Tier 4: Adapt Tools (56 tools)
 
 Add capabilities to existing projects without regenerating from scratch.
 All tools accept `ToolInput(project_dir=..., dry_run=False)` and return a `ToolResult`.
@@ -186,20 +198,24 @@ All tools accept `ToolInput(project_dir=..., dry_run=False)` and return a `ToolR
 | `fastapi_add_batch_endpoint` | Batch request endpoint (multiple operations in one call) |
 | `fastapi_add_long_running_task` | Background task with polling status endpoint |
 
-#### Extend — Infrastructure (4 tools)
+#### Extend — Infrastructure (7 tools)
 | Tool | What |
 |------|------|
 | `fastapi_add_cache_layer` | Redis cache + @cached decorator |
 | `fastapi_add_circuit_breaker` | Circuit breaker for outbound HTTP calls |
 | `fastapi_add_outbox_pattern` | Transactional outbox for reliable event delivery |
 | `fastapi_add_saga` | Saga orchestrator for distributed transactions |
+| `fastapi_add_arq_worker` | Async background job queue via arq |
+| `fastapi_add_stripe_checkout` | Stripe Checkout Session + webhook reconciliation |
+| `fastapi_add_email_templates` | Jinja2 transactional email with pluggable providers |
 
-#### Extend — Realtime (3 tools)
+#### Extend — Realtime (4 tools)
 | Tool | What |
 |------|------|
 | `fastapi_add_sse` | Server-Sent Events endpoint |
 | `fastapi_add_webhook_sender` | Outbound webhook delivery with retry |
 | `fastapi_add_webhook_receiver` | Inbound webhook handler with signature validation |
+| `fastapi_add_websocket_chat` | Real-time WebSocket chat with JWT auth + Redis pub/sub |
 
 #### Extend — Testing Tools (3 tools)
 | Tool | What |
@@ -207,6 +223,11 @@ All tools accept `ToolInput(project_dir=..., dry_run=False)` and return a `ToolR
 | `fastapi_add_factory` | Model factory (factory_boy) for test fixtures |
 | `fastapi_add_contract_tests` | Consumer-driven contract tests (Pact) |
 | `fastapi_add_load_profile` | k6 load profile tuned for this project |
+
+#### Extend — Admin (1 tool)
+| Tool | What |
+|------|------|
+| `fastapi_add_sqladmin` | FastAPI-native admin panel with auth gate |
 
 #### Extend — Base Wiring (3 tools — original 8)
 | Tool | What |
@@ -282,7 +303,7 @@ Every check cites its authoritative source:
 | Integration | PASS | Generated project installs deps and imports correctly |
 | Functional E2E | 25/25 | Every endpoint responds with correct status codes and data |
 | Lint (ruff F) | 8/8 | Generated code scores 0 F821, ≤22 total F-errors, 85/85 files pass py_compile |
-| Boot | all tools | All 51 adapt tools produce bootable projects (from app.main import app) |
+| Boot | all tools | All 56 adapt tools produce bootable projects (from app.main import app) |
 
 ## SOTA Decisions
 
@@ -309,8 +330,8 @@ Every check cites its authoritative source:
 ```
 SKILL-001-fastapi-production/        # 352 files, 101,766 LOC
 ├── SKILL.md                    # This file
-├── manifest.yaml               # Machine-readable registry (v4.0)
-├── mcp_server.py               # FastMCP server (100 tools)
+├── manifest.yaml               # Machine-readable registry (v5.0)
+├── mcp_server.py               # FastMCP server (105 tools)
 ├── generators/                 # 34 generators (60 files)
 │   ├── orchestrator.py         # generate_project() — chains all
 │   ├── infra/                  # app, config, dockerfile, env, readme, email, ...
@@ -322,9 +343,9 @@ SKILL-001-fastapi-production/        # 352 files, 101,766 LOC
 │   ├── deployment/             # docker_compose, k8s, k6, github_actions
 │   ├── observability/          # otel, prometheus, alerting
 │   └── testing/                # conftest, test_suite
-├── adapt/                      # 51 adapt tools — 5 categories
+├── adapt/                      # 56 adapt tools — 5 categories
 │   ├── contracts/              # ToolInput / ToolResult Pydantic contracts
-│   ├── extend/                 # 36 tools: crud_data, auth_access, api_design,
+│   ├── extend/                 # 41 tools: crud_data, auth_access, api_design,
 │   │   │                       #   infrastructure, realtime, testing_tools
 │   ├── verify/                 # 7 tools: security, N+1, schema, coverage, ...
 │   ├── operate/                # 8 tools: blast_radius, changelog, pool, SLA, ...
@@ -337,7 +358,7 @@ SKILL-001-fastapi-production/        # 352 files, 101,766 LOC
 │   ├── test_integration.py     # Generate → install → import
 │   └── test_functional.py      # 25 endpoint E2E tests
 ├── tests/                      # Skill self-tests
-│   ├── test_boot.py            # Boot test for all 51 adapt tools
+│   ├── test_boot.py            # Boot test for all 56 adapt tools
 │   ├── test_lint_generated.py  # ruff F-check on generated output (Blind Spot A)
 │   └── ...
 ├── core/                       # Knowledge + legacy tools

@@ -1,18 +1,18 @@
 skill:
   id: SKILL-001
   name: FastAPI Production
-  version: 4.0.0
+  version: 5.0.0
   description: >
-    Convention over Configuration for FastAPI. 34 generators + 51 adapt tools = 100 MCP tools.
+    Convention over Configuration for FastAPI. 34 generators + 56 adapt tools = 105 MCP tools.
     Produce production-grade code — the LLM customizes business logic only.
     Scores 35/35 (100%) on 35-check production audit backed by
     OWASP, CVE, NIST, RFC, and CIS standards.
-    352 files, 101,766 LOC. 51 adapt tools across 5 categories: extend, verify, operate, evolve, proactive.
+    352 files, 101,766 LOC. 56 adapt tools across 5 categories: extend, verify, operate, evolve, proactive.
     Lint-verified: ruff F-check on generated output = 22 F-errors, 0 critical F821, 85/85 py_compile pass.
   paradigm: convention-over-configuration
   mcp_server: mcp_server.py
   knowledge: core/KNOWLEDGE.md
-  mcp_tools_total: 100
+  mcp_tools_total: 105
 
 generators:
   total: 34
@@ -87,12 +87,12 @@ generators:
   testing:
     all: { tool: fastapi_generate_tests, generates: "tests/ (conftest + test suite)" }
 
-adapt_tools_v4:
-  total: 51
+adapt_tools_v5:
+  total: 56
   input_contract: "adapt.contracts.ToolInput(project_dir: str, dry_run: bool = False)"
   output_contract: "adapt.contracts.ToolResult"
   categories:
-    extend: 36
+    extend: 41
     verify: 7
     operate: 8
     evolve: 8
@@ -132,10 +132,16 @@ adapt_tools_v4:
       - fastapi_add_circuit_breaker  # circuit breaker for outbound HTTP
       - fastapi_add_outbox_pattern   # transactional outbox for reliable events
       - fastapi_add_saga             # saga orchestrator for distributed transactions
+      - fastapi_add_arq_worker       # async background job queue via arq
+      - fastapi_add_stripe_checkout  # Stripe Checkout Session + webhook reconciliation
+      - fastapi_add_email_templates  # Jinja2 transactional email with pluggable providers
     realtime:
       - fastapi_add_sse              # Server-Sent Events
       - fastapi_add_webhook_sender   # outbound webhook delivery with retry
       - fastapi_add_webhook_receiver  # inbound webhook + signature validation
+      - fastapi_add_websocket_chat   # real-time WebSocket chat with JWT auth + Redis pub/sub
+    admin:
+      - fastapi_add_sqladmin         # FastAPI-native admin panel with auth gate
     testing_tools:
       - fastapi_add_factory          # factory_boy model factories
       - fastapi_add_contract_tests   # Pact consumer-driven contract tests
@@ -174,12 +180,12 @@ adapt_tools_v4:
     - fastapi_doctor_tool            # runs all 7 verify tools, ordered fix plan
 
 mcp_tools:
-  total: 100
+  total: 105
   tiers:
     orchestrator: [fastapi_generate_project]
     generators: 33
     verification: [fastapi_analyze, fastapi_analyze_project_v2, fastapi_fix_findings, fastapi_check_health, fastapi_check_headers]
-    adapt_extend: 36
+    adapt_extend: 41
     adapt_verify: 7
     adapt_operate: 8
     adapt_evolve: 8
@@ -198,7 +204,7 @@ verification:
     lint_generated: { file: "tests/test_lint_generated.py", tests: 8, notes: "ruff F-check + py_compile on generated output" }
 
 benchmark:
-  skill_v4: "35/35 (100%) + 100 tools + lint-verified output"
+  skill_v5: "35/35 (100%) + 105 tools + lint-verified output"
   golden_tiangolo_42k_stars: "24/35 (69%)"
   benavlabs_1800_stars: "20/35 (57%)"
   sonnet_naked: "21/35 (60%)"
