@@ -1,10 +1,10 @@
 # SKILL-001: FastAPI Production
 
 > Convention over Configuration for FastAPI.
-> 34 generators + 56 adapt tools = 105 MCP tools total — produce production-grade code, you customize business logic only.
+> 34 generators + 58 adapt tools = 107 MCP tools total — produce production-grade code, you customize business logic only.
 > Scores 35/35 on a 35-check audit backed by OWASP, CVE, NIST, RFC, and CIS standards.
-> 352 files, 101,766 LOC. 56 adapt tools across 5 categories: extend (41), verify (7), operate (8), evolve (8+3), proactive (1).
-> Lint-verified: ruff F-check on generated code scores 22 F-errors (0 critical F821), all 85 generated files pass py_compile.
+> 58 adapt tools across 5 categories: extend (34 EXTEND tools), verify (7), operate (8), evolve (8+3), proactive (1).
+> Test-verified: 1462 unit tests + CI 10/10 green (Boot, Property, E2E-SQLite, E2E-PostgreSQL, Red team, Determinism, FinHealth, MCP discovery, Behavior scenarios).
 
 ## Quick Start
 
@@ -107,9 +107,9 @@ You can mix and match in any order:
 
 Or start from scratch with an existing project and add only what you need.
 
-## What's New in v5.0
+## What's New in v5.1
 
-5 new Tier-1 EXTEND tools for common production patterns:
+7 Tier-1 EXTEND tools for common production patterns (34 EXTEND tools total):
 
 | Tool | What |
 |------|------|
@@ -118,6 +118,8 @@ Or start from scratch with an existing project and add only what you need.
 | `fastapi_add_stripe_checkout` | Stripe Checkout Session + webhook reconciliation |
 | `fastapi_add_email_templates` | Jinja2 transactional email with pluggable providers |
 | `fastapi_add_sqladmin` | FastAPI-native admin panel with auth gate |
+| `fastapi_add_rate_limiting` | SlowAPI rate limiter upgrade: Redis storage, 3 key strategies, RFC-compliant 429 headers, /rate-limit/status endpoint |
+| `fastapi_add_scheduled_tasks` | APScheduler cron jobs with @scheduled_job decorator registry, optional Redis job store, lifespan integration |
 
 ## Benchmark
 

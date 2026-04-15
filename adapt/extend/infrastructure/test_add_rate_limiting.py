@@ -283,6 +283,184 @@ def test_idempotent_project_still_parses() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Category D — Mutation-killing regression tests
+# ---------------------------------------------------------------------------
+
+def test_register_rate_limiting_positioned_after_fastapi() -> None:
+    """T-21: register_rate_limiting(app) MUST appear AFTER `app = FastAPI(...)`,
+    not before it and not at the end of the file.
+
+    Kills mutations in _patch_main's paren-matching loop that move the
+    insertion point to wrong positions.
+    """
+    project_dir = create_fixture_project(name="rl_t21")
+    add_rate_limiting(ToolInput(project_dir=str(project_dir)))
+    content = (project_dir / "app" / "main.py").read_text()
+    app_idx = content.find("app = FastAPI(")
+    reg_idx = content.find("register_rate_limiting(app)")
+    assert app_idx >= 0, "FastAPI marker not found"
+    assert reg_idx >= 0, "register_rate_limiting call not inserted"
+    assert reg_idx > app_idx, (
+        f"register_rate_limiting at {reg_idx} must come AFTER "
+        f"FastAPI() at {app_idx}"
+    )
+    # The call must appear *close* to the FastAPI construction, not at EOF
+    fastapi_end = content.find(")", app_idx)
+    assert 0 < (reg_idx - fastapi_end) < 200, (
+        f"register_rate_limiting not placed close to FastAPI() end: "
+        f"fastapi_end={fastapi_end}, reg_idx={reg_idx}"
+    )
+
+
+def test_limiter_symbol_exported_at_module_level() -> None:
+    """T-22: generated `app/core/rate_limit.py` MUST expose `limiter` as a
+    module-level symbol (backward compat with the base project's main.py).
+
+    Kills mutations that convert `limiter: Limiter = _build_limiter()` to
+    a function-only definition or remove the assignment.
+    """
+    project_dir = create_fixture_project(name="rl_t22")
+    add_rate_limiting(ToolInput(project_dir=str(project_dir)))
+    content = (project_dir / "app" / "core" / "rate_limit.py").read_text()
+    import ast as _ast
+    tree = _ast.parse(content)
+    top_level_names: set[str] = set()
+    for node in tree.body:
+        if isinstance(node, _ast.AnnAssign) and isinstance(node.target, _ast.Name):
+            top_level_names.add(node.target.id)
+        elif isinstance(node, _ast.Assign):
+            for t in node.targets:
+                if isinstance(t, _ast.Name):
+                    top_level_names.add(t.id)
+    assert "limiter" in top_level_names, (
+        f"Module-level `limiter` symbol missing. Top-level names: {top_level_names}"
+    )
+
+
+def test_rate_limit_default_is_positive_quota() -> None:
+    """T-23: RATE_LIMIT_DEFAULT MUST be a positive quota string matching
+    slowapi format (e.g. "100/minute"), never empty or disabled.
+
+    Kills mutations that change the default to "0/minute" or "".
+    """
+    project_dir = create_fixture_project(name="rl_t23")
+    add_rate_limiting(ToolInput(project_dir=str(project_dir)))
+    content = (project_dir / "app" / "core" / "config.py").read_text()
+    # Find the RATE_LIMIT_DEFAULT line
+    for line in content.splitlines():
+        if "RATE_LIMIT_DEFAULT" in line and "=" in line:
+            # Expect: `    RATE_LIMIT_DEFAULT: str = "100/minute"`
+            assert '"' in line, f"expected string literal: {line!r}"
+            value = line.split('=', 1)[1].strip().strip('"').strip("'")
+            assert "/" in value, f"quota must be N/period, got {value!r}"
+            quota, period = value.split("/", 1)
+            assert quota.isdigit() and int(quota) > 0, (
+                f"quota must be positive int, got {quota!r}"
+            )
+            assert period in {"second", "minute", "hour", "day"}, (
+                f"period must be slowapi-compatible, got {period!r}"
+            )
+            return
+    raise AssertionError("RATE_LIMIT_DEFAULT line not found in config.py")
+
+
+def test_three_key_strategies_have_distinct_bodies() -> None:
+    """T-24: key_ip, key_user, and key_user_endpoint MUST have distinct
+    function bodies (not just aliases).
+
+    Kills mutations that collapse all three into the same return expression.
+    """
+    project_dir = create_fixture_project(name="rl_t24")
+    add_rate_limiting(ToolInput(project_dir=str(project_dir)))
+    content = (project_dir / "app" / "core" / "rate_limit.py").read_text()
+    import ast as _ast
+    tree = _ast.parse(content)
+    bodies: dict[str, str] = {}
+    for node in _ast.walk(tree):
+        if isinstance(node, _ast.FunctionDef) and node.name in {
+            "key_ip", "key_user", "key_user_endpoint"
+        }:
+            bodies[node.name] = _ast.unparse(node).strip()
+    assert len(bodies) == 3, f"expected 3 key fns, got {list(bodies.keys())}"
+    assert bodies["key_ip"] != bodies["key_user"]
+    assert bodies["key_user"] != bodies["key_user_endpoint"]
+    assert bodies["key_ip"] != bodies["key_user_endpoint"]
+    # key_user_endpoint MUST mention request.url.path to differentiate per-route
+    assert "request.url.path" in bodies["key_user_endpoint"]
+
+
+def test_429_handler_sets_retry_after_and_ratelimit_headers() -> None:
+    """T-25: rate_limit_exceeded_handler MUST return 429 with BOTH
+    Retry-After and X-RateLimit-Limit headers populated from the exception.
+
+    Kills mutations that drop one header or invert the status code.
+    """
+    project_dir = create_fixture_project(name="rl_t25")
+    add_rate_limiting(ToolInput(project_dir=str(project_dir)))
+    content = (project_dir / "app" / "middleware" / "rate_limit.py").read_text()
+    # The handler must contain both header names inside the headers dict
+    # and status_code=429 (not 4xx anything else).
+    assert "status_code=429" in content
+    assert '"Retry-After"' in content
+    assert '"X-RateLimit-Limit"' in content
+    # Ensure the handler is an async def
+    assert "async def rate_limit_exceeded_handler" in content
+
+
+def test_settings_fields_exactly_four_not_three() -> None:
+    """T-26: The tool MUST patch config.py with EXACTLY the 4 RATE_LIMIT_*
+    fields — dropping any one would produce incomplete config.
+
+    Kills mutations that off-by-one the field count.
+    """
+    project_dir = create_fixture_project(name="rl_t26")
+    add_rate_limiting(ToolInput(project_dir=str(project_dir)))
+    content = (project_dir / "app" / "core" / "config.py").read_text()
+    expected = [
+        "RATE_LIMIT_ENABLED",
+        "RATE_LIMIT_DEFAULT",
+        "RATE_LIMIT_STRATEGY",
+        "RATE_LIMIT_HEADERS_ENABLED",
+    ]
+    for field in expected:
+        assert content.count(field) >= 1, f"field {field} missing"
+    # Count distinct field lines in the Settings class body
+    distinct_lines = {
+        line.strip() for line in content.splitlines()
+        if any(f in line for f in expected) and ":" in line and "=" in line
+    }
+    assert len(distinct_lines) == 4, (
+        f"expected 4 distinct RATE_LIMIT_* field lines, got {len(distinct_lines)}: "
+        f"{distinct_lines}"
+    )
+
+
+def test_unsafe_methods_not_in_scope_remain_untouched() -> None:
+    """T-27: The tool MUST NOT mutate files outside its scope.
+
+    Lists every .py file in the fixture before the tool runs, then asserts
+    that only files listed in result.files_created/modified changed. Kills
+    mutations that accidentally overwrite unrelated files.
+    """
+    project_dir = create_fixture_project(name="rl_t27")
+    before = {
+        p: p.read_text()
+        for p in sorted(project_dir.rglob("*.py"))
+    }
+    result = add_rate_limiting(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success"
+    changed_paths: set[Path] = set()
+    for path_str in list(result.files_created) + list(result.files_modified):
+        changed_paths.add(Path(path_str).resolve())
+    for p, original in before.items():
+        if p.resolve() in changed_paths:
+            continue
+        assert p.read_text() == original, (
+            f"File {p} was modified but not reported in files_modified"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
 
