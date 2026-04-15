@@ -66,23 +66,25 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
     if err:
         return ToolResult(status="error", error=err)
 
-    # --- Prerequisite check -----------------------------------------------
-    from adapt.contracts.prerequisites import check_prerequisites, Prereq
+    # --- Prerequisite check (standalone mode) --------------------------------
+    from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
 
-    prereq_errors = check_prerequisites(
+    prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
         Prereq.BASE_MODEL,
         Prereq.MODELS_INIT,
         Prereq.CONFIG_SETTINGS,
         Prereq.ALEMBIC_VERSIONS,
+        auto_scaffold=not inp.dry_run,
     )
     if prereq_errors:
         return ToolResult(
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
             notes=[
+                "These prerequisites cannot be auto-created.",
                 "Generate a base project first:",
-                "  fastapi_generate_project(output_dir='...', profile='minimal', models={...})",
+                "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
             ],
             execution_time_ms=_elapsed_ms(start),
         )
@@ -120,6 +122,8 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
         )
 
     files_created: list[str] = []
+    if scaffolded:
+        files_created.extend(scaffolded)
     files_modified: list[str] = []
 
     # --- Step 1: AuditLog model ------------------------------------------
