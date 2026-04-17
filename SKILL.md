@@ -1,10 +1,10 @@
 # SKILL-001: FastAPI Production
 
 > Convention over Configuration for FastAPI.
-> 34 generators + 58 adapt tools = 107 MCP tools total — produce production-grade code, you customize business logic only.
+> 34 generators + 64 adapt tools = 113 MCP tools total — produce production-grade code, you customize business logic only.
 > Scores 35/35 on a 35-check audit backed by OWASP, CVE, NIST, RFC, and CIS standards.
-> 58 adapt tools across 5 categories: extend (34 EXTEND tools), verify (7), operate (8), evolve (8+3), proactive (1).
-> Test-verified: 1462 unit tests + CI 10/10 green (Boot, Property, E2E-SQLite, E2E-PostgreSQL, Red team, Determinism, FinHealth, MCP discovery, Behavior scenarios).
+> 64 adapt tools across 5 categories: extend (40 EXTEND tools), verify (7), operate (8), evolve (8+3), proactive (1).
+> Test-verified: 1602 unit + behavior tests, 504 property checks (63×8), CI 10/10 green. Soak: 16K requests / 0 errors. Cross-composition: 200+ scenarios / 0 failures.
 
 ## Quick Start
 
@@ -107,9 +107,9 @@ You can mix and match in any order:
 
 Or start from scratch with an existing project and add only what you need.
 
-## What's New in v5.1
+## What's New in v6.0
 
-7 Tier-1 EXTEND tools for common production patterns (34 EXTEND tools total):
+13 Tier-1 EXTEND tools added (40 EXTEND tools total):
 
 | Tool | What |
 |------|------|
@@ -118,8 +118,14 @@ Or start from scratch with an existing project and add only what you need.
 | `fastapi_add_stripe_checkout` | Stripe Checkout Session + webhook reconciliation |
 | `fastapi_add_email_templates` | Jinja2 transactional email with pluggable providers |
 | `fastapi_add_sqladmin` | FastAPI-native admin panel with auth gate |
-| `fastapi_add_rate_limiting` | SlowAPI rate limiter upgrade: Redis storage, 3 key strategies, RFC-compliant 429 headers, /rate-limit/status endpoint |
-| `fastapi_add_scheduled_tasks` | APScheduler cron jobs with @scheduled_job decorator registry, optional Redis job store, lifespan integration |
+| `fastapi_add_rate_limiting` | SlowAPI upgrade: Redis storage, 3 key strategies, RFC 6585 429 headers |
+| `fastapi_add_scheduled_tasks` | APScheduler cron jobs with decorator registry + Redis job store |
+| `fastapi_add_celery_beat` | Celery worker + beat scheduler + task registry (separate process) |
+| `fastapi_add_s3_storage` | S3/MinIO presigned URL uploads, content-type validation, UUID keys |
+| `fastapi_add_health_deep` | Deep health checks: DB pool, Redis, disk, memory + dependency matrix |
+| `fastapi_add_websocket_presence` | Online presence tracking: heartbeat TTL, multi-device, pub/sub events |
+| `fastapi_add_notifications` | In-app + push (FCM) + email notifications with channel abstraction |
+| `fastapi_add_feature_toggles_api` | DB-persisted feature toggles: percentage rollout, allowlist, env priority |
 
 ## Benchmark
 
