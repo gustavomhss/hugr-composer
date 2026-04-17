@@ -72,12 +72,13 @@ _MODELS_20: dict[str, dict[str, str]] = {
     "Session":   {"user_id": "UUID", "token": "str", "expires_at": "datetime", "ip_address": "str"},
 }
 
-# All 46 EXTEND tools: (display_name, dotted_module)
+# All 49 EXTEND tools: (display_name, dotted_module)
 _ALL_TOOLS: list[tuple[str, str]] = [
     # api_design (4)
     ("add_api_versioning",   "adapt.extend.api_design.add_api_versioning"),
     ("add_batch_endpoint",   "adapt.extend.api_design.add_batch_endpoint"),
     ("add_graphql",          "adapt.extend.api_design.add_graphql"),
+    ("add_graphql_subscriptions","adapt.extend.api_design.add_graphql_subscriptions"),
     ("add_long_running_task","adapt.extend.api_design.add_long_running_task"),
     # auth_access (6)
     ("add_api_key_auth",     "adapt.extend.auth_access.add_api_key_auth"),
@@ -123,6 +124,8 @@ _ALL_TOOLS: list[tuple[str, str]] = [
     ("add_websocket_presence","adapt.extend.realtime.add_websocket_presence"),
     # auth_access (extended)
     ("add_feature_toggles_api","adapt.extend.auth_access.add_feature_toggles_api"),
+    ("add_cedar_policies","adapt.extend.auth_access.add_cedar_policies"),
+    ("add_opa_integration","adapt.extend.auth_access.add_opa_integration"),
     # testing_tools (3)
     ("add_contract_tests",   "adapt.extend.testing_tools.add_contract_tests"),
     ("add_factory",          "adapt.extend.testing_tools.add_factory"),

@@ -79,12 +79,15 @@ _TOOL_REGISTRY: list[tuple[str, str, dict]] = [
     ("adapt.extend.infrastructure.add_ml_gpu_inference","add_ml_gpu_inference",{}),
     ("adapt.extend.infrastructure.add_ml_model_registry","add_ml_model_registry",{}),
     ("adapt.extend.auth_access.add_feature_toggles_api","add_feature_toggles_api",{}),
+    ("adapt.extend.auth_access.add_cedar_policies","add_cedar_policies",{}),
+    ("adapt.extend.auth_access.add_opa_integration","add_opa_integration",{}),
     ("adapt.extend.realtime.add_websocket_presence",    "add_websocket_presence",{}),
     # extend / realtime
     ("adapt.extend.realtime.add_sse",              "add_sse",              {}),
     ("adapt.extend.realtime.add_webhook_receiver", "add_webhook_receiver", {}),
     ("adapt.extend.realtime.add_webhook_sender",   "add_webhook_sender",   {}),
     ("adapt.extend.realtime.add_websocket_chat",   "add_websocket_chat",   {}),
+    ("adapt.extend.api_design.add_graphql_subscriptions","add_graphql_subscriptions",{}),
     # extend / testing_tools
     ("adapt.extend.testing_tools.add_contract_tests","add_contract_tests", {}),
     ("adapt.extend.testing_tools.add_factory",       "add_factory",        {}),
