@@ -34,6 +34,7 @@ EXTEND_TOOLS: list[tuple[str, str, str]] = [
     ("add_api_versioning",  "adapt.extend.api_design.add_api_versioning",  "add_api_versioning"),
     ("add_batch_endpoint",  "adapt.extend.api_design.add_batch_endpoint",  "add_batch_endpoint"),
     ("add_graphql",         "adapt.extend.api_design.add_graphql",         "add_graphql"),
+    ("add_graphql_subscriptions","adapt.extend.api_design.add_graphql_subscriptions","add_graphql_subscriptions"),
     ("add_long_running_task","adapt.extend.api_design.add_long_running_task","add_long_running_task"),
     # auth_access
     ("add_api_key_auth",    "adapt.extend.auth_access.add_api_key_auth",   "add_api_key_auth"),
@@ -73,6 +74,8 @@ EXTEND_TOOLS: list[tuple[str, str, str]] = [
     ("add_notifications",    "adapt.extend.infrastructure.add_notifications",    "add_notifications"),
     # auth_access (extended)
     ("add_feature_toggles_api","adapt.extend.auth_access.add_feature_toggles_api","add_feature_toggles_api"),
+    ("add_cedar_policies","adapt.extend.auth_access.add_cedar_policies","add_cedar_policies"),
+    ("add_opa_integration","adapt.extend.auth_access.add_opa_integration","add_opa_integration"),
     # realtime
     ("add_sse",              "adapt.extend.realtime.add_sse",                    "add_sse"),
     ("add_webhook_receiver", "adapt.extend.realtime.add_webhook_receiver",       "add_webhook_receiver"),

@@ -129,6 +129,8 @@ ALL_TOOLS_FORWARD: list[tuple[str, str, str]] = [
     ("add_ml_model_registry","adapt.extend.infrastructure.add_ml_model_registry","add_ml_model_registry"),
     # auth_access (extended)
     ("add_feature_toggles_api","adapt.extend.auth_access.add_feature_toggles_api","add_feature_toggles_api"),
+    ("add_cedar_policies","adapt.extend.auth_access.add_cedar_policies","add_cedar_policies"),
+    ("add_opa_integration","adapt.extend.auth_access.add_opa_integration","add_opa_integration"),
     # realtime
     ("add_sse",               "adapt.extend.realtime.add_sse",                    "add_sse"),
     ("add_webhook_receiver",  "adapt.extend.realtime.add_webhook_receiver",       "add_webhook_receiver"),
@@ -140,6 +142,7 @@ ALL_TOOLS_FORWARD: list[tuple[str, str, str]] = [
     ("add_batch_endpoint",    "adapt.extend.api_design.add_batch_endpoint",       "add_batch_endpoint"),
     ("add_long_running_task", "adapt.extend.api_design.add_long_running_task",    "add_long_running_task"),
     ("add_graphql",           "adapt.extend.api_design.add_graphql",              "add_graphql"),
+    ("add_graphql_subscriptions","adapt.extend.api_design.add_graphql_subscriptions","add_graphql_subscriptions"),
     # testing_tools
     ("add_contract_tests",    "adapt.extend.testing_tools.add_contract_tests",    "add_contract_tests"),
     ("add_factory",           "adapt.extend.testing_tools.add_factory",           "add_factory"),
@@ -239,8 +242,8 @@ CHAINS = [
     ("crud",     "CRUD 7 tools (forward)",       CRUD_CHAIN),
     ("auth",     "Auth 6 tools (forward)",        AUTH_CHAIN),
     ("rt_infra", "RT+Infra 7 tools (forward)",    RT_INFRA_CHAIN),
-    ("full_fwd", "Full 46 tools (forward)",        ALL_TOOLS_FORWARD),
-    ("full_rev", "Full 46 tools (reverse)",        ALL_TOOLS_REVERSE),
+    ("full_fwd", "Full 49 tools (forward)",        ALL_TOOLS_FORWARD),
+    ("full_rev", "Full 49 tools (reverse)",        ALL_TOOLS_REVERSE),
 ]
 
 
