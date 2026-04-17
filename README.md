@@ -24,9 +24,9 @@ real-time, background jobs, and more.
 | Benchmark score | 35/35 (100%) |
 | vs. tiangolo (42.5K stars) | 100% vs 69% |
 | EXTEND tools | 49 |
-| Adapt tools total | 73 (extend + verify + operate + evolve + proactive) |
-| Generators | 34 |
-| MCP tools total | 113+ |
+| Adapt tools total | 72 (extend + verify + operate + evolve + proactive) |
+| Generators | 52 |
+| MCP tools total | 124 |
 | Unit + behavior tests | 2,100+ |
 | Property checks | 576 (72 tools x 8 properties) |
 | Formal specs | 64 (16 sections each) |

@@ -60,13 +60,13 @@ A skill principal. Convention over Configuration para FastAPI.
 
 ```
 49 EXTEND tools
-73 adapt tools total (extend + verify + operate + evolve + proactive)
-34 generators
-113+ MCP tools total
+72 adapt tools total (49 extend + 6 verify + 8 operate + 8 evolve + 1 proactive)
+52 generators
+124 MCP tools total
 64 formal specs (16 sections each)
 ~2100+ tests (unit + behavior + E2E)
 576 property checks (72 × 8 properties)
-12 behavior scenarios (real HTTP flows)
+22 behavior scenarios (12 original + 10 new tools)
 ```
 
 ### Comandos
