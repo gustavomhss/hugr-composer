@@ -1,8 +1,7 @@
-# SKILL-001 Expansion Roadmap — v5.0
+# SKILL-001 Expansion Roadmap — v6.0
 
-> **Status**: Planned. This doc tracks 11 new contexts + ~35 new tools
-> that will bring SKILL-001 from "production-grade REST CRUD" to
-> "production-grade anything FastAPI can do."
+> **Status**: In progress. 13 of ~35 planned tools shipped (v6.0).
+> SKILL-001 now covers 40 EXTEND tools across 15+ contexts.
 
 ## Current coverage (v4.x)
 
@@ -45,8 +44,8 @@ SKILL-001 v4.x covers **15 distinct FastAPI contexts** via 100 MCP tools
 
 | New tool | Generates |
 |---|---|
-| `add_websocket_chat` | `/ws/chat/{room}` endpoint, Redis pub/sub, auth handshake, room membership |
-| `add_websocket_presence` | `/ws/presence` with heartbeat, online/offline/idle tracking, TTL-based expiry |
+| `add_websocket_chat` | `/ws/chat/{room}` endpoint, Redis pub/sub, auth handshake, room membership | ✅ SHIPPED |
+| `add_websocket_presence` | `/ws/presence` with heartbeat, online/offline/idle tracking, TTL-based expiry | ✅ SHIPPED |
 
 **Use cases**: chat apps, collaborative editors, live dashboards, multiplayer games.
 
@@ -54,11 +53,11 @@ SKILL-001 v4.x covers **15 distinct FastAPI contexts** via 100 MCP tools
 
 **Gap**: `add_outbox_pattern` gives transactional event dispatch, but there's no job runner.
 
-| New tool | Generates |
-|---|---|
-| `add_arq_worker` | arq (Redis) worker + `TaskRegistry` + `@task` decorator + CLI `python -m app.worker` |
-| `add_celery` | Celery + broker config + result backend + periodic tasks (beat) |
-| `add_temporal_workflow` | Temporal SDK workflows + activities + workers + durable execution |
+| New tool | Generates | Status |
+|---|---|---|
+| `add_arq_worker` | arq (Redis) worker + `TaskRegistry` + `@task` decorator + CLI `python -m app.worker` | ✅ SHIPPED |
+| `add_celery_beat` | Celery + broker config + result backend + periodic tasks (beat) | ✅ SHIPPED |
+| `add_temporal_workflow` | Temporal SDK workflows + activities + workers + durable execution | Planned |
 
 **Use cases**: email sending, report generation, data imports, scheduled reconciliation.
 
@@ -80,7 +79,7 @@ SKILL-001 v4.x covers **15 distinct FastAPI contexts** via 100 MCP tools
 
 | New tool | Generates |
 |---|---|
-| `add_sqladmin` | SQLAdmin (FastAPI-native) mounted at `/admin`, per-model CRUD UI, auth gate |
+| `add_sqladmin` | SQLAdmin (FastAPI-native) mounted at `/admin`, per-model CRUD UI, auth gate | ✅ SHIPPED |
 | `add_piccolo_admin` | Piccolo Admin alternative for teams that prefer it |
 
 **Use cases**: back-office data management without building custom UI.
@@ -91,7 +90,7 @@ SKILL-001 v4.x covers **15 distinct FastAPI contexts** via 100 MCP tools
 
 | New tool | Generates |
 |---|---|
-| `add_stripe_checkout` | `POST /checkout` → creates Stripe Checkout Session, returns URL, success/cancel webhooks wired |
+| `add_stripe_checkout` | `POST /checkout` → creates Stripe Checkout Session, returns URL, success/cancel webhooks wired | ✅ SHIPPED |
 | `add_stripe_subscription` | Subscription lifecycle (create/upgrade/cancel), billing portal, proration handling |
 | `add_stripe_refund_flow` | `POST /refunds`, idempotency, audit trail, reconciliation queue |
 
@@ -103,7 +102,7 @@ SKILL-001 v4.x covers **15 distinct FastAPI contexts** via 100 MCP tools
 
 | New tool | Generates |
 |---|---|
-| `add_email_templates` | Jinja2 templates dir, MJML→HTML pipeline, template registry, localization hooks |
+| `add_email_templates` | Jinja2 templates dir, MJML→HTML pipeline, template registry, localization hooks | ✅ SHIPPED |
 | `add_transactional_email` | Resend/Postmark/SendGrid adapter, delivery tracking, bounce handling |
 
 **Use cases**: signup confirmation, password reset, receipts, notifications.
@@ -112,15 +111,15 @@ SKILL-001 v4.x covers **15 distinct FastAPI contexts** via 100 MCP tools
 
 | New tool | Generates |
 |---|---|
-| `add_push_notifications` | APNs + FCM adapters, device token registration, topic-based fanout |
+| `add_push_notifications` | APNs + FCM adapters, device token registration, topic-based fanout | Planned |
 
 **Use cases**: mobile push for iOS/Android apps.
 
-### 8. Notification fanout (1 tool)
+### 8. Notification fanout (1 tool) — ✅ SHIPPED as `add_notifications`
 
-| New tool | Generates |
-|---|---|
-| `add_notification_service` | Orchestrator: email + push + in-app, per-user preferences, digest mode |
+| New tool | Generates | Status |
+|---|---|---|
+| `add_notifications` | Orchestrator: in-app + push (FCM) + email channels, per-user delivery, DB audit trail | ✅ SHIPPED |
 
 **Use cases**: consolidated notification layer with user-controlled channels.
 
@@ -153,17 +152,26 @@ Extension:
 - Pluralization + gender + number formatting
 - Translation memory / fuzzy matching
 
-## Total: 11 new contexts, ~18 new tools
+## Shipped tools not in original plan
 
-After v5.0, the skill will cover **26 FastAPI contexts via ~118 MCP tools**.
+These tools were added based on real user feedback and gap analysis:
 
-## Prioritization
+| Tool | Context | Status |
+|---|---|---|
+| `add_rate_limiting` | SlowAPI upgrade: Redis storage, 3 key strategies, RFC 6585 | ✅ SHIPPED |
+| `add_scheduled_tasks` | APScheduler cron jobs with decorator registry | ✅ SHIPPED |
+| `add_s3_storage` | S3/MinIO presigned URLs, content-type validation, UUID keys | ✅ SHIPPED |
+| `add_health_deep` | Deep health checks: DB pool, Redis, disk, memory, dependency matrix | ✅ SHIPPED |
+| `add_feature_toggles_api` | DB-persisted feature toggles with percentage rollout + allowlist | ✅ SHIPPED |
 
-1. **Tier 1 — ship in v5.0**: WebSocket chat, arq worker, stripe checkout,
-   email templates, sqladmin (top 5 most-requested in FastAPI community)
-2. **Tier 2 — v5.1**: background jobs (celery + temporal), ML inference,
-   notification fanout, push notifications
-3. **Tier 3 — v5.2**: policy engines, GraphQL subscriptions, i18n expansion
+## Total shipped: 13 new EXTEND tools (40 total)
+
+## Remaining planned tools
+
+1. **Next batch**: `add_temporal_workflow`, `add_stripe_subscription`, `add_stripe_refund_flow`
+2. **ML serving**: `add_ml_model_server`, `add_ml_gpu_inference`, `add_ml_model_registry`
+3. **Policy**: `add_opa_policy`, `add_cedar_policy`
+4. **i18n**: Full expansion with Babel integration
 
 ## Success criteria per tool
 
