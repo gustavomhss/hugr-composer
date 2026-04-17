@@ -1,6 +1,6 @@
 """Cross-composition test — verify that any N-tool subset boots cleanly.
 
-Applies all 34 EXTEND tools in N-at-a-time combinations to a fresh project
+Applies all 40 EXTEND tools in N-at-a-time combinations to a fresh project
 and verifies that the project still boots (``from app.main import app``),
 every ``.py`` file AST-parses, and no tool returns ``status="error"``.
 
@@ -43,7 +43,7 @@ from tests.common.fixture_factory import create_fixture_project
 
 
 # ---------------------------------------------------------------------------
-# Tool registry — all 34 EXTEND tools
+# Tool registry — all 40 EXTEND tools
 # ---------------------------------------------------------------------------
 
 ALL_EXTEND: list[tuple[str, str]] = [
@@ -73,11 +73,18 @@ ALL_EXTEND: list[tuple[str, str]] = [
     ("add_rate_limiting",     "adapt.extend.infrastructure.add_rate_limiting"),
     ("add_scheduled_tasks",   "adapt.extend.infrastructure.add_scheduled_tasks"),
     ("add_sqladmin",          "adapt.extend.infrastructure.add_sqladmin"),
-    # realtime (4)
+    ("add_celery_beat",       "adapt.extend.infrastructure.add_celery_beat"),
+    ("add_s3_storage",        "adapt.extend.infrastructure.add_s3_storage"),
+    ("add_health_deep",       "adapt.extend.infrastructure.add_health_deep"),
+    ("add_notifications",     "adapt.extend.infrastructure.add_notifications"),
+    # realtime (5)
     ("add_sse",               "adapt.extend.realtime.add_sse"),
     ("add_webhook_receiver",  "adapt.extend.realtime.add_webhook_receiver"),
     ("add_webhook_sender",    "adapt.extend.realtime.add_webhook_sender"),
     ("add_websocket_chat",    "adapt.extend.realtime.add_websocket_chat"),
+    ("add_websocket_presence","adapt.extend.realtime.add_websocket_presence"),
+    # auth_access extended
+    ("add_feature_toggles_api","adapt.extend.auth_access.add_feature_toggles_api"),
     # api_design (4)
     ("add_api_versioning",    "adapt.extend.api_design.add_api_versioning"),
     ("add_batch_endpoint",    "adapt.extend.api_design.add_batch_endpoint"),
@@ -99,6 +106,8 @@ _CONFIG_PATCHERS = [
         "add_sqladmin", "add_sse", "add_webhook_receiver",
         "add_webhook_sender", "add_websocket_chat", "add_mfa",
         "add_feature_flags", "add_long_running_task",
+        "add_celery_beat", "add_s3_storage", "add_health_deep",
+        "add_notifications", "add_websocket_presence", "add_feature_toggles_api",
     }
 ]
 
@@ -199,7 +208,7 @@ def _tool_by_name(name: str) -> tuple[str, str]:
 # ---------------------------------------------------------------------------
 
 def test_full_stack() -> tuple[bool, str]:
-    """Apply all 34 EXTEND tools in order → project boots + parses."""
+    """Apply all 40 EXTEND tools in order → project boots + parses."""
     project_dir = create_fixture_project(name="xcomp_full")
     results = _apply_tools(project_dir, ALL_EXTEND)
 
@@ -307,7 +316,7 @@ def test_random_subsets(n_draws: int = 20, subset_size: int = 5) -> tuple[bool, 
 # ---------------------------------------------------------------------------
 
 def test_reverse_stack() -> tuple[bool, str]:
-    """Apply all 34 EXTEND tools in REVERSE order → project boots."""
+    """Apply all 40 EXTEND tools in REVERSE order → project boots."""
     reversed_tools = list(reversed(ALL_EXTEND))
     project_dir = create_fixture_project(name="xcomp_rev")
     results = _apply_tools(project_dir, reversed_tools)
