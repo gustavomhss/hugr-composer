@@ -72,7 +72,7 @@ _MODELS_20: dict[str, dict[str, str]] = {
     "Session":   {"user_id": "UUID", "token": "str", "expires_at": "datetime", "ip_address": "str"},
 }
 
-# All 34 EXTEND tools: (display_name, dotted_module)
+# All 37 EXTEND tools: (display_name, dotted_module)
 _ALL_TOOLS: list[tuple[str, str]] = [
     # api_design (4)
     ("add_api_versioning",   "adapt.extend.api_design.add_api_versioning"),
@@ -105,6 +105,9 @@ _ALL_TOOLS: list[tuple[str, str]] = [
     ("add_rate_limiting",    "adapt.extend.infrastructure.add_rate_limiting"),
     ("add_scheduled_tasks",  "adapt.extend.infrastructure.add_scheduled_tasks"),
     ("add_sqladmin",         "adapt.extend.infrastructure.add_sqladmin"),
+    ("add_celery_beat",      "adapt.extend.infrastructure.add_celery_beat"),
+    ("add_s3_storage",       "adapt.extend.infrastructure.add_s3_storage"),
+    ("add_health_deep",      "adapt.extend.infrastructure.add_health_deep"),
     # realtime (4)
     ("add_sse",              "adapt.extend.realtime.add_sse"),
     ("add_webhook_receiver", "adapt.extend.realtime.add_webhook_receiver"),
