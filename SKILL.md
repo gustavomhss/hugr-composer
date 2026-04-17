@@ -1,9 +1,9 @@
 # SKILL-001: FastAPI Production
 
 > Convention over Configuration for FastAPI.
-> 34 generators + 73 adapt tools = 122 MCP tools total — produce production-grade code, you customize business logic only.
+> 52 generators + 72 adapt tools = 124 MCP tools total — produce production-grade code, you customize business logic only.
 > Scores 35/35 on a 35-check audit backed by OWASP, CVE, NIST, RFC, and CIS standards.
-> 73 adapt tools across 5 categories: extend (49 EXTEND tools), verify (7), operate (8), evolve (8+3), proactive (1).
+> 72 adapt tools across 5 categories: extend (49), verify (6), operate (8), evolve (8), proactive (1).
 > Test-verified: 2,100+ unit + behavior tests, 576 property checks (72x8), CI 10/10 green. Soak: 16K requests / 0 errors. Cross-composition: 200+ scenarios / 0 failures.
 
 ## Quick Start
