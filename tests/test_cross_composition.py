@@ -1,6 +1,6 @@
 """Cross-composition test — verify that any N-tool subset boots cleanly.
 
-Applies all 40 EXTEND tools in N-at-a-time combinations to a fresh project
+Applies all 49 EXTEND tools in N-at-a-time combinations to a fresh project
 and verifies that the project still boots (``from app.main import app``),
 every ``.py`` file AST-parses, and no tool returns ``status="error"``.
 
@@ -43,7 +43,7 @@ from tests.common.fixture_factory import create_fixture_project
 
 
 # ---------------------------------------------------------------------------
-# Tool registry — all 40 EXTEND tools
+# Tool registry — all 49 EXTEND tools
 # ---------------------------------------------------------------------------
 
 ALL_EXTEND: list[tuple[str, str]] = [
@@ -77,6 +77,12 @@ ALL_EXTEND: list[tuple[str, str]] = [
     ("add_s3_storage",        "adapt.extend.infrastructure.add_s3_storage"),
     ("add_health_deep",       "adapt.extend.infrastructure.add_health_deep"),
     ("add_notifications",     "adapt.extend.infrastructure.add_notifications"),
+    ("add_stripe_subscription","adapt.extend.infrastructure.add_stripe_subscription"),
+    ("add_stripe_refund_flow","adapt.extend.infrastructure.add_stripe_refund_flow"),
+    ("add_temporal_workflow", "adapt.extend.infrastructure.add_temporal_workflow"),
+    ("add_ml_model_server",   "adapt.extend.infrastructure.add_ml_model_server"),
+    ("add_ml_gpu_inference",  "adapt.extend.infrastructure.add_ml_gpu_inference"),
+    ("add_ml_model_registry", "adapt.extend.infrastructure.add_ml_model_registry"),
     # realtime (5)
     ("add_sse",               "adapt.extend.realtime.add_sse"),
     ("add_webhook_receiver",  "adapt.extend.realtime.add_webhook_receiver"),
@@ -85,11 +91,14 @@ ALL_EXTEND: list[tuple[str, str]] = [
     ("add_websocket_presence","adapt.extend.realtime.add_websocket_presence"),
     # auth_access extended
     ("add_feature_toggles_api","adapt.extend.auth_access.add_feature_toggles_api"),
-    # api_design (4)
+    ("add_cedar_policies",   "adapt.extend.auth_access.add_cedar_policies"),
+    ("add_opa_integration",  "adapt.extend.auth_access.add_opa_integration"),
+    # api_design (5)
     ("add_api_versioning",    "adapt.extend.api_design.add_api_versioning"),
     ("add_batch_endpoint",    "adapt.extend.api_design.add_batch_endpoint"),
     ("add_graphql",           "adapt.extend.api_design.add_graphql"),
     ("add_long_running_task", "adapt.extend.api_design.add_long_running_task"),
+    ("add_graphql_subscriptions","adapt.extend.api_design.add_graphql_subscriptions"),
     # testing_tools (3)
     ("add_contract_tests",    "adapt.extend.testing_tools.add_contract_tests"),
     ("add_factory",           "adapt.extend.testing_tools.add_factory"),
@@ -108,6 +117,9 @@ _CONFIG_PATCHERS = [
         "add_feature_flags", "add_long_running_task",
         "add_celery_beat", "add_s3_storage", "add_health_deep",
         "add_notifications", "add_websocket_presence", "add_feature_toggles_api",
+        "add_stripe_subscription", "add_stripe_refund_flow", "add_temporal_workflow",
+        "add_ml_model_server", "add_ml_model_registry",
+        "add_cedar_policies", "add_opa_integration", "add_graphql_subscriptions",
     }
 ]
 
@@ -208,7 +220,7 @@ def _tool_by_name(name: str) -> tuple[str, str]:
 # ---------------------------------------------------------------------------
 
 def test_full_stack() -> tuple[bool, str]:
-    """Apply all 40 EXTEND tools in order → project boots + parses."""
+    """Apply all 49 EXTEND tools in order → project boots + parses."""
     project_dir = create_fixture_project(name="xcomp_full")
     results = _apply_tools(project_dir, ALL_EXTEND)
 
@@ -316,7 +328,7 @@ def test_random_subsets(n_draws: int = 20, subset_size: int = 5) -> tuple[bool, 
 # ---------------------------------------------------------------------------
 
 def test_reverse_stack() -> tuple[bool, str]:
-    """Apply all 40 EXTEND tools in REVERSE order → project boots."""
+    """Apply all 49 EXTEND tools in REVERSE order → project boots."""
     reversed_tools = list(reversed(ALL_EXTEND))
     project_dir = create_fixture_project(name="xcomp_rev")
     results = _apply_tools(project_dir, reversed_tools)

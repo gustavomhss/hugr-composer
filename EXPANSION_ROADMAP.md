@@ -1,7 +1,7 @@
 # SKILL-001 Expansion Roadmap — v6.0
 
 > **Status**: In progress. 13 of ~35 planned tools shipped (v6.0).
-> SKILL-001 now covers 40 EXTEND tools across 15+ contexts.
+> SKILL-001 now covers 49 EXTEND tools across 20+ contexts.
 
 ## Current coverage (v4.x)
 

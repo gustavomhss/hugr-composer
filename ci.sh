@@ -171,7 +171,7 @@ run_suite "FinHealth benchmark (100/100)" \
 # ---------------------------------------------------------------------------
 # Suite 8: MCP discovery
 # ---------------------------------------------------------------------------
-run_suite "MCP discovery (113+ tools)" \
+run_suite "MCP discovery (124 tools)" \
     "$PY" -c "
 import asyncio
 from mcp_tools.server import mcp
