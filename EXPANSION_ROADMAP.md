@@ -163,15 +163,23 @@ These tools were added based on real user feedback and gap analysis:
 | `add_s3_storage` | S3/MinIO presigned URLs, content-type validation, UUID keys | ✅ SHIPPED |
 | `add_health_deep` | Deep health checks: DB pool, Redis, disk, memory, dependency matrix | ✅ SHIPPED |
 | `add_feature_toggles_api` | DB-persisted feature toggles with percentage rollout + allowlist | ✅ SHIPPED |
+| `add_stripe_subscription` | Subscription lifecycle, billing portal, proration | ✅ SHIPPED |
+| `add_stripe_refund_flow` | Refund model, auto-approve, idempotency, audit trail | ✅ SHIPPED |
+| `add_temporal_workflow` | Temporal SDK: durable workflows, compensation, signals | ✅ SHIPPED |
+| `add_ml_model_server` | /predict, ModelRegistry, batch prediction, timeout | ✅ SHIPPED |
+| `add_ml_gpu_inference` | CUDA detect, mixed precision, MemoryGuard, CPU fallback | ✅ SHIPPED |
+| `add_ml_model_registry` | Model versioning, promote/rollback, A/B split | ✅ SHIPPED |
+| `add_cedar_policies` | AWS Cedar policy engine, .cedar files, default deny | ✅ SHIPPED |
+| `add_opa_integration` | OPA sidecar client, circuit breaker, .rego policies | ✅ SHIPPED |
+| `add_graphql_subscriptions` | GraphQL WS subscriptions, PubSub, async generators | ✅ SHIPPED |
 
-## Total shipped: 13 new EXTEND tools (40 total)
+## Total shipped: 22 new EXTEND tools (49 total)
 
 ## Remaining planned tools
 
-1. **Next batch**: `add_temporal_workflow`, `add_stripe_subscription`, `add_stripe_refund_flow`
-2. **ML serving**: `add_ml_model_server`, `add_ml_gpu_inference`, `add_ml_model_registry`
-3. **Policy**: `add_opa_policy`, `add_cedar_policy`
-4. **i18n**: Full expansion with Babel integration
+1. **Messaging**: `add_transactional_email`, `add_push_notifications`
+2. **i18n**: Full expansion with Babel integration
+3. **Admin**: `add_piccolo_admin`
 
 ## Success criteria per tool
 

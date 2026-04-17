@@ -1,10 +1,10 @@
 # SKILL-001: FastAPI Production
 
 > Convention over Configuration for FastAPI.
-> 34 generators + 64 adapt tools = 113 MCP tools total — produce production-grade code, you customize business logic only.
+> 34 generators + 73 adapt tools = 122 MCP tools total — produce production-grade code, you customize business logic only.
 > Scores 35/35 on a 35-check audit backed by OWASP, CVE, NIST, RFC, and CIS standards.
-> 64 adapt tools across 5 categories: extend (40 EXTEND tools), verify (7), operate (8), evolve (8+3), proactive (1).
-> Test-verified: 1602 unit + behavior tests, 504 property checks (63×8), CI 10/10 green. Soak: 16K requests / 0 errors. Cross-composition: 200+ scenarios / 0 failures.
+> 73 adapt tools across 5 categories: extend (49 EXTEND tools), verify (7), operate (8), evolve (8+3), proactive (1).
+> Test-verified: 2,100+ unit + behavior tests, 576 property checks (72x8), CI 10/10 green. Soak: 16K requests / 0 errors. Cross-composition: 200+ scenarios / 0 failures.
 
 ## Quick Start
 
@@ -109,7 +109,7 @@ Or start from scratch with an existing project and add only what you need.
 
 ## What's New in v6.0
 
-13 Tier-1 EXTEND tools added (40 EXTEND tools total):
+22 Tier-1 EXTEND tools added (49 EXTEND tools total):
 
 | Tool | What |
 |------|------|
@@ -126,6 +126,15 @@ Or start from scratch with an existing project and add only what you need.
 | `fastapi_add_websocket_presence` | Online presence tracking: heartbeat TTL, multi-device, pub/sub events |
 | `fastapi_add_notifications` | In-app + push (FCM) + email notifications with channel abstraction |
 | `fastapi_add_feature_toggles_api` | DB-persisted feature toggles: percentage rollout, allowlist, env priority |
+| `fastapi_add_stripe_subscription` | Subscription lifecycle, billing portal, proration, webhook verification |
+| `fastapi_add_stripe_refund_flow` | Refund model, auto-approve threshold, idempotency, audit trail |
+| `fastapi_add_temporal_workflow` | Temporal SDK: durable workflows, compensation pattern, signal support |
+| `fastapi_add_ml_model_server` | /predict endpoint, ModelRegistry, batch prediction, timeout guard |
+| `fastapi_add_ml_gpu_inference` | CUDA detect, mixed precision, MemoryGuard, CPU fallback |
+| `fastapi_add_ml_model_registry` | Model versioning, promote/rollback, A/B split via feature toggles |
+| `fastapi_add_cedar_policies` | AWS Cedar policy engine, .cedar files, default deny, authz middleware |
+| `fastapi_add_opa_integration` | OPA sidecar client, circuit breaker, .rego policies, decision logs |
+| `fastapi_add_graphql_subscriptions` | GraphQL WebSocket subscriptions, PubSub (memory + Redis), async generators |
 
 ## Benchmark
 
@@ -397,7 +406,7 @@ Every check cites its authoritative source:
 | Integration | PASS | Generated project installs deps and imports correctly |
 | Functional E2E | 25/25 | Every endpoint responds with correct status codes and data |
 | Lint (ruff F) | 8/8 | Generated code scores 0 F821, ≤22 total F-errors, 85/85 files pass py_compile |
-| Boot | all tools | All 56 adapt tools produce bootable projects (from app.main import app) |
+| Boot | all tools | All 73 adapt tools produce bootable projects (from app.main import app) |
 
 ## SOTA Decisions
 
@@ -437,7 +446,7 @@ SKILL-001-fastapi-production/        # 352 files, 101,766 LOC
 │   ├── deployment/             # docker_compose, k8s, k6, github_actions
 │   ├── observability/          # otel, prometheus, alerting
 │   └── testing/                # conftest, test_suite
-├── adapt/                      # 56 adapt tools — 5 categories
+├── adapt/                      # 73 adapt tools — 5 categories
 │   ├── contracts/              # ToolInput / ToolResult Pydantic contracts
 │   ├── extend/                 # 41 tools: crud_data, auth_access, api_design,
 │   │   │                       #   infrastructure, realtime, testing_tools
@@ -452,7 +461,7 @@ SKILL-001-fastapi-production/        # 352 files, 101,766 LOC
 │   ├── test_integration.py     # Generate → install → import
 │   └── test_functional.py      # 25 endpoint E2E tests
 ├── tests/                      # Skill self-tests
-│   ├── test_boot.py            # Boot test for all 56 adapt tools
+│   ├── test_boot.py            # Boot test for all 73 adapt tools
 │   ├── test_lint_generated.py  # ruff F-check on generated output (Blind Spot A)
 │   └── ...
 ├── core/                       # Knowledge + legacy tools
