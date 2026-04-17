@@ -72,6 +72,9 @@ _TOOL_REGISTRY: list[tuple[str, str, dict]] = [
     ("adapt.extend.infrastructure.add_s3_storage",       "add_s3_storage",       {}),
     ("adapt.extend.infrastructure.add_health_deep",      "add_health_deep",      {}),
     ("adapt.extend.infrastructure.add_notifications",    "add_notifications",    {}),
+    ("adapt.extend.infrastructure.add_stripe_subscription","add_stripe_subscription",{}),
+    ("adapt.extend.infrastructure.add_stripe_refund_flow","add_stripe_refund_flow",{}),
+    ("adapt.extend.infrastructure.add_temporal_workflow","add_temporal_workflow",{}),
     ("adapt.extend.auth_access.add_feature_toggles_api","add_feature_toggles_api",{}),
     ("adapt.extend.realtime.add_websocket_presence",    "add_websocket_presence",{}),
     # extend / realtime
