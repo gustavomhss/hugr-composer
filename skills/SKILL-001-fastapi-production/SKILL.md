@@ -434,8 +434,8 @@ Every check cites its authoritative source:
 SKILL-001-fastapi-production/        # 352 files, 101,766 LOC
 ├── SKILL.md                    # This file
 ├── manifest.yaml               # Machine-readable registry (v5.0)
-├── mcp_server.py               # FastMCP server (105 tools)
-├── generators/                 # 34 generators (60 files)
+├── mcp_tools/                  # FastMCP server + auto-discovery (124 tools)
+├── generators/                 # 52 generators (60 files)
 │   ├── orchestrator.py         # generate_project() — chains all
 │   ├── infra/                  # app, config, dockerfile, env, readme, email, ...
 │   ├── database/               # engine, session, model, crud, alembic

@@ -230,7 +230,7 @@ Operators: `== ↔ !=`, `< ↔ <=`, `> ↔ >=`, `+ ↔ -`, `and ↔ or`, `True �
 5. Red team (25 attacks)
 6. Determinism (4 tests)
 7. FinHealth benchmark (100/100)
-8. MCP discovery (113+ tools)
+8. MCP discovery (124 tools)
 9. PostgreSQL E2E (8 scenarios) — requires Docker
 10. Behavior scenarios (12 domains) — requires Docker
 
