@@ -72,7 +72,7 @@ _MODELS_20: dict[str, dict[str, str]] = {
     "Session":   {"user_id": "UUID", "token": "str", "expires_at": "datetime", "ip_address": "str"},
 }
 
-# All 43 EXTEND tools: (display_name, dotted_module)
+# All 46 EXTEND tools: (display_name, dotted_module)
 _ALL_TOOLS: list[tuple[str, str]] = [
     # api_design (4)
     ("add_api_versioning",   "adapt.extend.api_design.add_api_versioning"),
@@ -111,6 +111,9 @@ _ALL_TOOLS: list[tuple[str, str]] = [
     ("add_stripe_subscription","adapt.extend.infrastructure.add_stripe_subscription","add_stripe_subscription"),
     ("add_stripe_refund_flow","adapt.extend.infrastructure.add_stripe_refund_flow","add_stripe_refund_flow"),
     ("add_temporal_workflow","adapt.extend.infrastructure.add_temporal_workflow","add_temporal_workflow"),
+    ("add_ml_model_server","adapt.extend.infrastructure.add_ml_model_server","add_ml_model_server"),
+    ("add_ml_gpu_inference","adapt.extend.infrastructure.add_ml_gpu_inference","add_ml_gpu_inference"),
+    ("add_ml_model_registry","adapt.extend.infrastructure.add_ml_model_registry","add_ml_model_registry"),
     ("add_notifications",    "adapt.extend.infrastructure.add_notifications"),
     # realtime (5)
     ("add_sse",              "adapt.extend.realtime.add_sse"),

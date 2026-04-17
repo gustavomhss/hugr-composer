@@ -75,6 +75,60 @@ Before you report "READY", verify EACH of these yourself:
 - [ ] ALL tests pass when you run `pytest` yourself
 - [ ] Delivery contract JSON validates against `tests/contracts/delivery_contract.py`
 
+## MANDATORY: Generated code quality verification
+
+After writing the tool, you MUST generate a real project, apply your tool,
+and then programmatically verify the QUALITY of the generated code. This is
+NOT optional. Write these checks into your behavior test file.
+
+```python
+# IN YOUR BEHAVIOR TEST — verify generated code quality:
+
+# 1. PII-safe schemas: any *Public schema must NOT contain sensitive fields
+#    as ACTUAL FIELDS (docstring mentions are OK)
+for cls in ast.walk(tree):
+    if isinstance(cls, ast.ClassDef) and cls.name.endswith("Public"):
+        # Check class BODY for PII field assignments (not docstring)
+        for node in cls.body:
+            if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+                assert node.target.id not in SENSITIVE_FIELDS
+
+# 2. Lazy SDK imports: verify optional SDK is NOT in module-level imports
+#    of ANY generated file under app/ (except workers/ and admin/)
+for py in (project / "app").rglob("*.py"):
+    tree = ast.parse(py.read_text())
+    for node in tree.body:  # ONLY top-level
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                assert SDK_NAME not in alias.name
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            assert SDK_NAME not in node.module
+
+# 3. Max function LOC: verify ALL functions in generated app/ are ≤ 50 LOC
+for py in (project / "app").rglob("*.py"):
+    tree = ast.parse(py.read_text())
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if node.end_lineno:
+                assert node.end_lineno - node.lineno + 1 <= 50
+
+# 4. No dead imports: run ruff --select F401 on generated app/
+result = subprocess.run(["python", "-m", "ruff", "check", "--select", "F401",
+                         str(project / "app")], capture_output=True)
+assert result.returncode == 0 or "F401" not in result.stdout
+
+# 5. Webhook sig before DB (if applicable): verify construct_event appears
+#    BEFORE any session/commit reference in webhook handler
+
+# 6. Config fields inside Settings class: verify 4-space indent
+for line in config_content.splitlines():
+    if FIELD_NAME in line and ":" in line and "=" in line:
+        assert line.startswith("    "), f"field not inside class body"
+```
+
+If ANY of these checks fail, FIX your tool before reporting. Do NOT report
+PASS with known quality failures.
+
 ## Completeness Criteria (CC) — EVERY delivery must satisfy ALL
 
 | CC | Criterion | How to verify |

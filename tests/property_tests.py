@@ -75,6 +75,9 @@ _TOOL_REGISTRY: list[tuple[str, str, dict]] = [
     ("adapt.extend.infrastructure.add_stripe_subscription","add_stripe_subscription",{}),
     ("adapt.extend.infrastructure.add_stripe_refund_flow","add_stripe_refund_flow",{}),
     ("adapt.extend.infrastructure.add_temporal_workflow","add_temporal_workflow",{}),
+    ("adapt.extend.infrastructure.add_ml_model_server","add_ml_model_server",{}),
+    ("adapt.extend.infrastructure.add_ml_gpu_inference","add_ml_gpu_inference",{}),
+    ("adapt.extend.infrastructure.add_ml_model_registry","add_ml_model_registry",{}),
     ("adapt.extend.auth_access.add_feature_toggles_api","add_feature_toggles_api",{}),
     ("adapt.extend.realtime.add_websocket_presence",    "add_websocket_presence",{}),
     # extend / realtime
