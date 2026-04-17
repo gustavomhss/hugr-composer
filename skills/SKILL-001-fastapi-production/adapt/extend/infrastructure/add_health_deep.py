@@ -382,8 +382,6 @@ def _write_health_models(dest: Path) -> None:
 
         from __future__ import annotations
 
-        from enum import str as str_enum
-        from enum import auto
         from typing import Any
 
         from pydantic import BaseModel, Field
@@ -814,12 +812,12 @@ def _patch_main(main_file: Path) -> None:
 
     health_import = (
         "\nfrom app.api.routes.health_deep import router as health_deep_router"
-        "  # noqa: F401 — deep health\n"
+        "  # noqa: E402 — deep health\n"
     )
     health_register = textwrap.dedent("""\
 
         # Deep health checks — added by add_health_deep tool
-        _health_deep_import = None  # router registered below
+        app.include_router(health_deep_router)
     """)
 
     if "from fastapi import FastAPI" in src:

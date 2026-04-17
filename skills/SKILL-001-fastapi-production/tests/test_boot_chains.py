@@ -77,6 +77,7 @@ RT_INFRA_CHAIN: list[tuple[str, str, str]] = [
     ("add_celery_beat",      "adapt.extend.infrastructure.add_celery_beat",      "add_celery_beat"),
     ("add_s3_storage",       "adapt.extend.infrastructure.add_s3_storage",       "add_s3_storage"),
     ("add_health_deep",      "adapt.extend.infrastructure.add_health_deep",      "add_health_deep"),
+    ("add_notifications",    "adapt.extend.infrastructure.add_notifications",    "add_notifications"),
     ("add_sse",              "adapt.extend.realtime.add_sse",                    "add_sse"),
     ("add_webhook_receiver", "adapt.extend.realtime.add_webhook_receiver",       "add_webhook_receiver"),
     ("add_webhook_sender",   "adapt.extend.realtime.add_webhook_sender",         "add_webhook_sender"),
@@ -113,11 +114,15 @@ ALL_TOOLS_FORWARD: list[tuple[str, str, str]] = [
     ("add_celery_beat",       "adapt.extend.infrastructure.add_celery_beat",      "add_celery_beat"),
     ("add_s3_storage",        "adapt.extend.infrastructure.add_s3_storage",       "add_s3_storage"),
     ("add_health_deep",       "adapt.extend.infrastructure.add_health_deep",      "add_health_deep"),
+    ("add_notifications",     "adapt.extend.infrastructure.add_notifications",    "add_notifications"),
+    # auth_access (extended)
+    ("add_feature_toggles_api","adapt.extend.auth_access.add_feature_toggles_api","add_feature_toggles_api"),
     # realtime
     ("add_sse",               "adapt.extend.realtime.add_sse",                    "add_sse"),
     ("add_webhook_receiver",  "adapt.extend.realtime.add_webhook_receiver",       "add_webhook_receiver"),
     ("add_webhook_sender",    "adapt.extend.realtime.add_webhook_sender",         "add_webhook_sender"),
     ("add_websocket_chat",    "adapt.extend.realtime.add_websocket_chat",         "add_websocket_chat"),
+    ("add_websocket_presence","adapt.extend.realtime.add_websocket_presence",    "add_websocket_presence"),
     # api_design
     ("add_api_versioning",    "adapt.extend.api_design.add_api_versioning",       "add_api_versioning"),
     ("add_batch_endpoint",    "adapt.extend.api_design.add_batch_endpoint",       "add_batch_endpoint"),
@@ -222,8 +227,8 @@ CHAINS = [
     ("crud",     "CRUD 7 tools (forward)",       CRUD_CHAIN),
     ("auth",     "Auth 6 tools (forward)",        AUTH_CHAIN),
     ("rt_infra", "RT+Infra 7 tools (forward)",    RT_INFRA_CHAIN),
-    ("full_fwd", "Full 37 tools (forward)",        ALL_TOOLS_FORWARD),
-    ("full_rev", "Full 37 tools (reverse)",        ALL_TOOLS_REVERSE),
+    ("full_fwd", "Full 40 tools (forward)",        ALL_TOOLS_FORWARD),
+    ("full_rev", "Full 40 tools (reverse)",        ALL_TOOLS_REVERSE),
 ]
 
 

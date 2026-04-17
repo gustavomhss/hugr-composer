@@ -71,6 +71,9 @@ _TOOL_REGISTRY: list[tuple[str, str, dict]] = [
     ("adapt.extend.infrastructure.add_celery_beat",      "add_celery_beat",      {}),
     ("adapt.extend.infrastructure.add_s3_storage",       "add_s3_storage",       {}),
     ("adapt.extend.infrastructure.add_health_deep",      "add_health_deep",      {}),
+    ("adapt.extend.infrastructure.add_notifications",    "add_notifications",    {}),
+    ("adapt.extend.auth_access.add_feature_toggles_api","add_feature_toggles_api",{}),
+    ("adapt.extend.realtime.add_websocket_presence",    "add_websocket_presence",{}),
     # extend / realtime
     ("adapt.extend.realtime.add_sse",              "add_sse",              {}),
     ("adapt.extend.realtime.add_webhook_receiver", "add_webhook_receiver", {}),
