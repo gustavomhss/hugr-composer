@@ -147,6 +147,28 @@ ALL_TOOLS_FORWARD: list[tuple[str, str, str]] = [
     ("add_contract_tests",    "adapt.extend.testing_tools.add_contract_tests",    "add_contract_tests"),
     ("add_factory",           "adapt.extend.testing_tools.add_factory",           "add_factory"),
     ("add_load_profile",      "adapt.extend.testing_tools.add_load_profile",      "add_load_profile"),
+    # NEW TOOLS (Batch 4)
+    ("add_cors_config",          "adapt.extend.infrastructure.add_cors_config",            "add_cors_config"),
+    ("add_cqrs",                 "adapt.extend.api_design.add_cqrs",                       "add_cqrs"),
+    ("add_csrf_protection",      "adapt.extend.infrastructure.add_csrf_protection",        "add_csrf_protection"),
+    ("add_data_import",          "adapt.extend.crud_data.add_data_import",                 "add_data_import"),
+    ("add_data_versioning",      "adapt.extend.crud_data.add_data_versioning",             "add_data_versioning"),
+    ("add_database_migrations_ci", "adapt.extend.testing_tools.add_database_migrations_ci",  "add_database_migrations_ci"),
+    ("add_docker_production",    "adapt.extend.infrastructure.add_docker_production",      "add_docker_production"),
+    ("add_e2e_test_suite",       "adapt.extend.testing_tools.add_e2e_test_suite",          "add_e2e_test_suite"),
+    ("add_event_sourcing",       "adapt.extend.crud_data.add_event_sourcing",              "add_event_sourcing"),
+    ("add_excel_export",         "adapt.extend.infrastructure.add_excel_export",           "add_excel_export"),
+    ("add_input_sanitization",   "adapt.extend.infrastructure.add_input_sanitization",     "add_input_sanitization"),
+    ("add_kubernetes_manifests", "adapt.extend.infrastructure.add_kubernetes_manifests",   "add_kubernetes_manifests"),
+    ("add_opentelemetry",        "adapt.extend.infrastructure.add_opentelemetry",          "add_opentelemetry"),
+    ("add_passkey_auth",         "adapt.extend.auth_access.add_passkey_auth",              "add_passkey_auth"),
+    ("add_pdf_reports",          "adapt.extend.infrastructure.add_pdf_reports",            "add_pdf_reports"),
+    ("add_prometheus_metrics",   "adapt.extend.infrastructure.add_prometheus_metrics",     "add_prometheus_metrics"),
+    ("add_push_notifications_native", "adapt.extend.infrastructure.add_push_notifications_native", "add_push_notifications_native"),
+    ("add_sms_otp",              "adapt.extend.auth_access.add_sms_otp",                   "add_sms_otp"),
+    ("add_social_login",         "adapt.extend.auth_access.add_social_login",              "add_social_login"),
+    ("add_structured_logging",   "adapt.extend.infrastructure.add_structured_logging",     "add_structured_logging"),
+    ("add_transactional_email",  "adapt.extend.infrastructure.add_transactional_email",    "add_transactional_email"),
 ]
 
 ALL_TOOLS_REVERSE: list[tuple[str, str, str]] = list(reversed(ALL_TOOLS_FORWARD))
@@ -242,8 +264,8 @@ CHAINS = [
     ("crud",     "CRUD 7 tools (forward)",       CRUD_CHAIN),
     ("auth",     "Auth 6 tools (forward)",        AUTH_CHAIN),
     ("rt_infra", "RT+Infra 7 tools (forward)",    RT_INFRA_CHAIN),
-    ("full_fwd", "Full 49 tools (forward)",        ALL_TOOLS_FORWARD),
-    ("full_rev", "Full 49 tools (reverse)",        ALL_TOOLS_REVERSE),
+    ("full_fwd", "Full 70 tools (forward)",        ALL_TOOLS_FORWARD),
+    ("full_rev", "Full 70 tools (reverse)",        ALL_TOOLS_REVERSE),
 ]
 
 

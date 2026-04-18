@@ -1,6 +1,6 @@
 """Cross-composition test — verify that any N-tool subset boots cleanly.
 
-Applies all 49 EXTEND tools in N-at-a-time combinations to a fresh project
+Applies all 70 EXTEND tools in N-at-a-time combinations to a fresh project
 and verifies that the project still boots (``from app.main import app``),
 every ``.py`` file AST-parses, and no tool returns ``status="error"``.
 
@@ -43,7 +43,7 @@ from tests.common.fixture_factory import create_fixture_project
 
 
 # ---------------------------------------------------------------------------
-# Tool registry — all 49 EXTEND tools
+# Tool registry — all 70 EXTEND tools
 # ---------------------------------------------------------------------------
 
 ALL_EXTEND: list[tuple[str, str]] = [
@@ -99,6 +99,28 @@ ALL_EXTEND: list[tuple[str, str]] = [
     ("add_graphql",           "adapt.extend.api_design.add_graphql"),
     ("add_long_running_task", "adapt.extend.api_design.add_long_running_task"),
     ("add_graphql_subscriptions","adapt.extend.api_design.add_graphql_subscriptions"),
+        # NEW TOOLS (Batch 4)
+    ("add_cors_config",          "adapt.extend.infrastructure.add_cors_config"),
+    ("add_cqrs",                 "adapt.extend.api_design.add_cqrs"),
+    ("add_csrf_protection",      "adapt.extend.infrastructure.add_csrf_protection"),
+    ("add_data_import",          "adapt.extend.crud_data.add_data_import"),
+    ("add_data_versioning",      "adapt.extend.crud_data.add_data_versioning"),
+    ("add_database_migrations_ci", "adapt.extend.testing_tools.add_database_migrations_ci"),
+    ("add_docker_production",    "adapt.extend.infrastructure.add_docker_production"),
+    ("add_e2e_test_suite",       "adapt.extend.testing_tools.add_e2e_test_suite"),
+    ("add_event_sourcing",       "adapt.extend.crud_data.add_event_sourcing"),
+    ("add_excel_export",         "adapt.extend.infrastructure.add_excel_export"),
+    ("add_input_sanitization",   "adapt.extend.infrastructure.add_input_sanitization"),
+    ("add_kubernetes_manifests", "adapt.extend.infrastructure.add_kubernetes_manifests"),
+    ("add_opentelemetry",        "adapt.extend.infrastructure.add_opentelemetry"),
+    ("add_passkey_auth",         "adapt.extend.auth_access.add_passkey_auth"),
+    ("add_pdf_reports",          "adapt.extend.infrastructure.add_pdf_reports"),
+    ("add_prometheus_metrics",   "adapt.extend.infrastructure.add_prometheus_metrics"),
+    ("add_push_notifications_native", "adapt.extend.infrastructure.add_push_notifications_native"),
+    ("add_sms_otp",              "adapt.extend.auth_access.add_sms_otp"),
+    ("add_social_login",         "adapt.extend.auth_access.add_social_login"),
+    ("add_structured_logging",   "adapt.extend.infrastructure.add_structured_logging"),
+    ("add_transactional_email",  "adapt.extend.infrastructure.add_transactional_email"),
     # testing_tools (3)
     ("add_contract_tests",    "adapt.extend.testing_tools.add_contract_tests"),
     ("add_factory",           "adapt.extend.testing_tools.add_factory"),
@@ -220,7 +242,7 @@ def _tool_by_name(name: str) -> tuple[str, str]:
 # ---------------------------------------------------------------------------
 
 def test_full_stack() -> tuple[bool, str]:
-    """Apply all 49 EXTEND tools in order → project boots + parses."""
+    """Apply all 70 EXTEND tools in order → project boots + parses."""
     project_dir = create_fixture_project(name="xcomp_full")
     results = _apply_tools(project_dir, ALL_EXTEND)
 
@@ -328,7 +350,7 @@ def test_random_subsets(n_draws: int = 20, subset_size: int = 5) -> tuple[bool, 
 # ---------------------------------------------------------------------------
 
 def test_reverse_stack() -> tuple[bool, str]:
-    """Apply all 49 EXTEND tools in REVERSE order → project boots."""
+    """Apply all 70 EXTEND tools in REVERSE order → project boots."""
     reversed_tools = list(reversed(ALL_EXTEND))
     project_dir = create_fixture_project(name="xcomp_rev")
     results = _apply_tools(project_dir, reversed_tools)
