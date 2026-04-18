@@ -24,6 +24,7 @@ Example::
 
 from __future__ import annotations
 
+import ast
 import textwrap
 import time
 from pathlib import Path
@@ -64,7 +65,7 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err)
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     # --- Prerequisite check (standalone mode) --------------------------------
     from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
@@ -243,8 +244,6 @@ def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
     Returns:
         Sorted list of ``(snake_stem, PascalName)`` tuples.
     """
-    import ast as _ast
-
     models_dir = app_dir / "models"
     routes_dir = app_dir / "api" / "routes"
     skip = {"base", "user", "mixins", "audit_log", "__init__"}
@@ -263,15 +262,15 @@ def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
         # Derive PascalCase class name: item -> Item, order_item -> OrderItem
         pascal = "".join(w.capitalize() for w in stem.split("_"))
         try:
-            tree = _ast.parse(f.read_text())
+            tree = ast.parse(f.read_text())
         except SyntaxError:
             continue
         base_subclasses = [
-            n.name for n in _ast.walk(tree)
-            if isinstance(n, _ast.ClassDef)
+            n.name for n in ast.walk(tree)
+            if isinstance(n, ast.ClassDef)
             and any(
-                (isinstance(b, _ast.Name) and b.id == "Base")
-                or (isinstance(b, _ast.Attribute) and b.attr == "Base")
+                (isinstance(b, ast.Name) and b.id == "Base")
+                or (isinstance(b, ast.Attribute) and b.attr == "Base")
                 for b in n.bases
             )
         ]
@@ -467,7 +466,6 @@ def _write_audit_listeners(dest: Path, model_pairs: list[tuple[str, str]]) -> No
         import hashlib
         import json
         import uuid
-        from datetime import datetime, timezone
         from typing import Any
 
         from sqlalchemy import event, inspect

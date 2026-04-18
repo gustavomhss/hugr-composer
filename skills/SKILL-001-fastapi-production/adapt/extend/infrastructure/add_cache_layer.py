@@ -21,6 +21,7 @@ Example::
 
 from __future__ import annotations
 
+import ast
 import textwrap
 import time
 from pathlib import Path
@@ -60,7 +61,7 @@ def add_cache_layer(inp: ToolInput) -> ToolResult:
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err)
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     # --- Prerequisite check (standalone mode) --------------------------------
     from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
@@ -157,6 +158,18 @@ def add_cache_layer(inp: ToolInput) -> ToolResult:
             req_file.write_text(req_src.rstrip("\n") + "\n" + "\n".join(req_adds) + "\n")
             files_modified.append(str(req_file))
 
+    for path_str in files_created:
+        p = Path(path_str)
+        if p.suffix == ".py" and p.is_file():
+            try:
+                ast.parse(p.read_text())
+            except SyntaxError as exc:
+                return ToolResult(
+                    status="error",
+                    error=f"Generated file has syntax error: {p}: {exc}",
+                    execution_time_ms=_elapsed_ms(start),
+                )
+
     return ToolResult(
         status="success",
         files_created=files_created,
@@ -220,10 +233,12 @@ def _write_cache_core(dest: Path) -> None:
         from __future__ import annotations
 
         import logging
-        from typing import Any
+        from typing import TYPE_CHECKING, Any
 
         import msgpack
-        from redis.asyncio import Redis
+
+        if TYPE_CHECKING:
+            from redis.asyncio import Redis
 
         logger = logging.getLogger(__name__)
 
@@ -238,7 +253,7 @@ def _write_cache_core(dest: Path) -> None:
                 default_ttl: Default key expiration in seconds.
             \"\"\"
 
-            def __init__(self, redis: Redis, default_ttl: int = 300) -> None:
+            def __init__(self, redis: "Redis", default_ttl: int = 300) -> None:
                 self.redis = redis
                 self.default_ttl = default_ttl
 
@@ -325,6 +340,7 @@ def _write_cache_core(dest: Path) -> None:
                 default_ttl: Default key expiration in seconds.
             \"\"\"
             global _cache
+            from redis.asyncio import Redis
             redis = Redis.from_url(redis_url, decode_responses=False)
             _cache = CacheBackend(redis, default_ttl=default_ttl)
 

@@ -23,6 +23,7 @@ Example::
 
 from __future__ import annotations
 
+import ast
 import textwrap
 import time
 from pathlib import Path
@@ -63,7 +64,7 @@ def add_oauth2_provider(inp: ToolInput) -> ToolResult:
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err)
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     # --- Prerequisite check (standalone mode) --------------------------------
     from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
@@ -174,6 +175,18 @@ def add_oauth2_provider(inp: ToolInput) -> ToolResult:
     if versions_dir.exists():
         migration = _write_migration(versions_dir)
         files_created.append(str(migration))
+
+    for path_str in files_created:
+        p = Path(path_str)
+        if p.suffix == ".py" and p.is_file():
+            try:
+                ast.parse(p.read_text())
+            except SyntaxError as exc:
+                return ToolResult(
+                    status="error",
+                    error=f"Generated file has syntax error: {p}: {exc}",
+                    execution_time_ms=_elapsed_ms(start),
+                )
 
     return ToolResult(
         status="success",
@@ -433,8 +446,6 @@ def _write_oauth_google(dest: Path) -> None:
 
         from urllib.parse import urlencode
 
-        import httpx
-
         from app.core.oauth.base import OAuthProvider, OAuthTokens, OAuthUserInfo
 
 
@@ -487,6 +498,7 @@ def _write_oauth_google(dest: Path) -> None:
                 Returns:
                     ``OAuthTokens`` with Google access and refresh tokens.
                 \"\"\"
+                import httpx
                 import os
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     resp = await client.post(
@@ -518,6 +530,7 @@ def _write_oauth_google(dest: Path) -> None:
                 Returns:
                     ``OAuthUserInfo`` with Google sub, email, email_verified, name.
                 \"\"\"
+                import httpx
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     resp = await client.get(
                         self.USERINFO_ENDPOINT,
@@ -548,8 +561,6 @@ def _write_oauth_github(dest: Path) -> None:
         from __future__ import annotations
 
         from urllib.parse import urlencode
-
-        import httpx
 
         from app.core.oauth.base import OAuthProvider, OAuthTokens, OAuthUserInfo
 
@@ -600,6 +611,7 @@ def _write_oauth_github(dest: Path) -> None:
                 Returns:
                     ``OAuthTokens`` with GitHub access token.
                 \"\"\"
+                import httpx
                 import os
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     resp = await client.post(
@@ -630,6 +642,7 @@ def _write_oauth_github(dest: Path) -> None:
                 Returns:
                     ``OAuthUserInfo`` with GitHub id, verified primary email, name.
                 \"\"\"
+                import httpx
                 headers = {"Authorization": f"Bearer {access_token}"}
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     user_resp = await client.get(self.USERINFO_ENDPOINT, headers=headers)
@@ -664,8 +677,6 @@ def _write_oauth_facebook(dest: Path) -> None:
         from __future__ import annotations
 
         from urllib.parse import urlencode
-
-        import httpx
 
         from app.core.oauth.base import OAuthProvider, OAuthTokens, OAuthUserInfo
 
@@ -716,6 +727,7 @@ def _write_oauth_facebook(dest: Path) -> None:
                 Returns:
                     ``OAuthTokens`` with Facebook access token.
                 \"\"\"
+                import httpx
                 import os
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     resp = await client.get(
@@ -747,6 +759,7 @@ def _write_oauth_facebook(dest: Path) -> None:
                     ``OAuthUserInfo`` — note: Facebook email_verified is assumed True
                     when the email field is present.
                 \"\"\"
+                import httpx
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     resp = await client.get(
                         self.USERINFO_ENDPOINT,
@@ -777,8 +790,6 @@ def _write_oauth_microsoft(dest: Path) -> None:
         from __future__ import annotations
 
         from urllib.parse import urlencode
-
-        import httpx
 
         from app.core.oauth.base import OAuthProvider, OAuthTokens, OAuthUserInfo
 
@@ -835,6 +846,7 @@ def _write_oauth_microsoft(dest: Path) -> None:
                 Returns:
                     ``OAuthTokens`` with Microsoft access and refresh tokens.
                 \"\"\"
+                import httpx
                 import os
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     resp = await client.post(
@@ -866,6 +878,7 @@ def _write_oauth_microsoft(dest: Path) -> None:
                 Returns:
                     ``OAuthUserInfo`` with Microsoft sub, mail, name.
                 \"\"\"
+                import httpx
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     resp = await client.get(
                         "https://graph.microsoft.com/v1.0/me",
@@ -1121,7 +1134,6 @@ def _write_oauth_crypto(dest: Path) -> None:
             if ciphertext is None:
                 return None
             try:
-                from cryptography.fernet import InvalidToken
                 return _get_fernet().decrypt(ciphertext).decode("utf-8")
             except Exception:
                 return None
@@ -1464,7 +1476,6 @@ def _write_routes(dest: Path) -> None:
                 from app.core.security import create_access_token  # type: ignore[import]
                 return create_access_token(subject=user_id)
             except Exception:
-                import uuid as _uuid
                 return f"jwt-for-{user_id}"
         """)
     dest.write_text(content)

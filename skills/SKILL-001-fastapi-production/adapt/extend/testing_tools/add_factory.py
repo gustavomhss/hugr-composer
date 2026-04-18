@@ -21,6 +21,7 @@ Example::
 
 from __future__ import annotations
 
+import ast
 import textwrap
 import time
 from pathlib import Path
@@ -69,7 +70,7 @@ def add_factory(
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err)
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     # --- Prerequisite check (standalone mode) --------------------------------
     from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
@@ -98,14 +99,13 @@ def add_factory(
     factories_dir = project / "tests" / "factories"
 
     # --- Pre-flight: already installed? -------------------------------------
-    if (factories_dir / "__init__.py").exists():
-        init_src = (factories_dir / "__init__.py").read_text()
-        if "Factory" in init_src or "FACTORY_REGISTRY" in init_src:
-            return ToolResult(
-                status="no_op",
-                notes=["tests/factories/ already contains factories — skipped."],
-                execution_time_ms=_elapsed_ms(start),
-            )
+    _init_py = factories_dir / "__init__.py"
+    if _init_py.exists() and "FACTORY_REGISTRY" in _init_py.read_text():
+        return ToolResult(
+            status="no_op",
+            notes=["tests/factories/ already contains factories — skipped."],
+            execution_time_ms=_elapsed_ms(start),
+        )
 
     # --- Discover models ----------------------------------------------------
     discovered = _discover_models(project / "app")
@@ -150,6 +150,19 @@ def add_factory(
     if conftest_file.exists():
         _patch_conftest(conftest_file, target_models)
         files_modified.append(str(conftest_file))
+
+    # --- AST validation ------------------------------------------------------
+    for path_str in files_created:
+        p = Path(path_str)
+        if p.suffix == ".py" and p.is_file():
+            try:
+                ast.parse(p.read_text())
+            except SyntaxError as exc:
+                return ToolResult(
+                    status="error",
+                    error=f"Generated file has syntax error: {p}: {exc}",
+                    execution_time_ms=_elapsed_ms(start),
+                )
 
     return ToolResult(
         status="success",

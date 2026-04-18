@@ -84,7 +84,7 @@ def add_webhook_receiver(
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err)
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     # --- Prerequisite check (standalone mode) --------------------------------
     from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
@@ -782,7 +782,7 @@ def _write_registry(dest: Path, enabled_providers: list[str]) -> None:
         from __future__ import annotations
 
         {imports}
-        from app.core.inbound_webhooks.base import InboundVerifier, VerifiedEvent
+        from app.core.inbound_webhooks.base import InboundVerifier
 
         _VERIFIERS: dict[str, InboundVerifier] = {
         {entries}
@@ -1611,12 +1611,10 @@ def _write_redis_module(dest: Path) -> None:
 
         from __future__ import annotations
 
-        import redis.asyncio as redis
-
         from app.core.config import settings
 
 
-        async def get_redis() -> redis.Redis:
+        async def get_redis():
             \"\"\"Return a connected async Redis client.
 
             Uses ``settings.REDIS_URL``.  Caller is responsible for closing
@@ -1625,7 +1623,8 @@ def _write_redis_module(dest: Path) -> None:
             Returns:
                 Connected ``redis.asyncio.Redis`` instance.
             \"\"\"
-            return redis.from_url(
+            import redis.asyncio as _redis
+            return _redis.from_url(
                 getattr(settings, "REDIS_URL", "redis://localhost:6379/0"),
                 decode_responses=True,
             )

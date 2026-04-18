@@ -73,7 +73,7 @@ def add_sse(
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err)
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     # --- Prerequisite check (standalone mode) --------------------------------
     from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
@@ -441,8 +441,10 @@ def _write_connection_registry(dest: Path) -> None:
         from __future__ import annotations
 
         from dataclasses import dataclass
+        from typing import TYPE_CHECKING
 
-        import redis.asyncio as aioredis
+        if TYPE_CHECKING:
+            import redis.asyncio as aioredis
 
 
         CONNECTION_KEY = "sse:connections:{user_id}"
@@ -472,7 +474,7 @@ def _write_connection_registry(dest: Path) -> None:
                 max_per_user: Maximum simultaneous connections allowed (default 5).
             \"\"\"
 
-            def __init__(self, client: aioredis.Redis, max_per_user: int = 5) -> None:
+            def __init__(self, client: "aioredis.Redis", max_per_user: int = 5) -> None:
                 self._redis = client
                 self._max = max_per_user
 
@@ -1079,12 +1081,10 @@ def _write_redis_module(dest: Path) -> None:
 
         from __future__ import annotations
 
-        import redis.asyncio as redis
-
         from app.core.config import settings
 
 
-        async def get_redis() -> redis.Redis:
+        async def get_redis():
             \"\"\"Return a connected async Redis client.
 
             Uses ``settings.REDIS_URL``.  Caller is responsible for closing
@@ -1093,7 +1093,8 @@ def _write_redis_module(dest: Path) -> None:
             Returns:
                 Connected ``redis.asyncio.Redis`` instance.
             \"\"\"
-            return redis.from_url(
+            import redis.asyncio as _redis
+            return _redis.from_url(
                 getattr(settings, "REDIS_URL", "redis://localhost:6379/0"),
                 decode_responses=True,
             )

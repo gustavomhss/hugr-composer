@@ -23,6 +23,7 @@ Example::
 
 from __future__ import annotations
 
+import ast
 import textwrap
 import time
 from pathlib import Path
@@ -63,7 +64,7 @@ def add_feature_flags(inp: ToolInput) -> ToolResult:
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err)
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     # --- Prerequisite check (standalone mode) --------------------------------
     from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
@@ -171,6 +172,19 @@ def add_feature_flags(inp: ToolInput) -> ToolResult:
     if main_file.exists():
         _patch_main(main_file)
         files_modified.append(str(main_file))
+
+    # --- AST validation ------------------------------------------------------
+    for path_str in files_created:
+        p = Path(path_str)
+        if p.suffix == ".py" and p.is_file():
+            try:
+                ast.parse(p.read_text())
+            except SyntaxError as exc:
+                return ToolResult(
+                    status="error",
+                    error=f"Generated file has syntax error: {p}: {exc}",
+                    execution_time_ms=_elapsed_ms(start),
+                )
 
     return ToolResult(
         status="success",
@@ -792,8 +806,7 @@ def _write_flag_deps(dest: Path) -> None:
 
         from __future__ import annotations
 
-        from fastapi import Depends, HTTPException, status
-        from sqlalchemy.ext.asyncio import AsyncSession
+        from fastapi import HTTPException, status
 
         from app.api.deps import CurrentUser, SessionDep
         from app.core.feature_flag_evaluator import FlagContext, is_enabled
@@ -1099,7 +1112,6 @@ def _write_flag_routes(dest: Path) -> None:
         from fastapi import APIRouter, HTTPException, status
 
         from app.api.deps import CurrentSuperuser, SessionDep
-        from app.core.feature_flag_cache import publish_invalidation
         from app.crud import feature_flag as crud_flag
         from app.schemas.feature_flag import (
             FeatureFlagCreate,

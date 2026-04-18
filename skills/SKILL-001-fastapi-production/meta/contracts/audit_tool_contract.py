@@ -80,6 +80,11 @@ SECRET_ALLOWLIST: list[str] = [
     'default=',
     'PLACEHOLDER',
     'example',
+    'canary',       # canary tokens use fake credentials deliberately
+    'honeypot',
+    'decoy',
+    'dummy',
+    'AKIA0000',     # clearly fake AWS key pattern
 ]
 
 

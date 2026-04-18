@@ -30,6 +30,7 @@ Example::
 
 from __future__ import annotations
 
+import ast
 import textwrap
 import time
 from pathlib import Path
@@ -81,7 +82,7 @@ def add_load_profile(
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err)
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     # --- Prerequisite check (standalone mode) --------------------------------
     from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
@@ -110,14 +111,13 @@ def add_load_profile(
     load_dir = project / "tests" / "load"
 
     # --- Pre-flight: already installed? -------------------------------------
-    if (load_dir / "locustfile.py").exists():
-        existing = (load_dir / "locustfile.py").read_text()
-        if "AuthMixin" in existing or "BrowsingUser" in existing:
-            return ToolResult(
-                status="no_op",
-                notes=["tests/load/locustfile.py already present — skipped."],
-                execution_time_ms=_elapsed_ms(start),
-            )
+    _locustfile = load_dir / "locustfile.py"
+    if _locustfile.exists() and "BrowsingUser" in _locustfile.read_text():
+        return ToolResult(
+            status="no_op",
+            notes=["tests/load/locustfile.py already present — skipped."],
+            execution_time_ms=_elapsed_ms(start),
+        )
 
     if inp.dry_run:
         return ToolResult(
@@ -187,6 +187,19 @@ def add_load_profile(
     ci_file = ci_dir / "load-tests.yml"
     _write_ci_workflow(ci_file, users, spawn_rate, duration_seconds)
     files_created.append(str(ci_file))
+
+    # --- AST validation ------------------------------------------------------
+    for path_str in files_created:
+        p = Path(path_str)
+        if p.suffix == ".py" and p.is_file():
+            try:
+                ast.parse(p.read_text())
+            except SyntaxError as exc:
+                return ToolResult(
+                    status="error",
+                    error=f"Generated file has syntax error: {p}: {exc}",
+                    execution_time_ms=_elapsed_ms(start),
+                )
 
     return ToolResult(
         status="success",

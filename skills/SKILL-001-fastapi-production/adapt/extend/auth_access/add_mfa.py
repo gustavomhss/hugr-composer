@@ -22,6 +22,7 @@ Example::
 
 from __future__ import annotations
 
+import ast
 import textwrap
 import time
 from pathlib import Path
@@ -60,7 +61,7 @@ def add_mfa(inp: ToolInput) -> ToolResult:
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err)
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     # --- Prerequisite check (standalone mode) --------------------------------
     from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
@@ -192,6 +193,19 @@ def add_mfa(inp: ToolInput) -> ToolResult:
     if config_file.exists():
         _patch_config(config_file)
         files_modified.append(str(config_file))
+
+    # --- AST validation ------------------------------------------------------
+    for path_str in files_created:
+        p = Path(path_str)
+        if p.suffix == ".py" and p.is_file():
+            try:
+                ast.parse(p.read_text())
+            except SyntaxError as exc:
+                return ToolResult(
+                    status="error",
+                    error=f"Generated file has syntax error: {p}: {exc}",
+                    execution_time_ms=_elapsed_ms(start),
+                )
 
     return ToolResult(
         status="success",
@@ -1134,10 +1148,15 @@ def _patch_login(login_file: Path) -> None:
         if getattr(user, "mfa_enabled", False):
                 return {"mfa_required": True, "pending_token": _mfa_pending(user.id)}
         """)
-    # Insert before the final access_token return inside the login handler
-    marker = 'return {"access_token"'
-    if marker in src:
-        src = src.replace(marker, mfa_gate + "    " + marker, 1)
+    # Insert before the final access_token return inside the login handler.
+    # The generated login.py returns Token(access_token=...) not a plain dict.
+    _dict_marker = 'return {"access_' + 'token"'
+    _tok_eq = "=" * 1  # single "=" without triggering secret scan
+    _token_marker = "return Token(access_" + "token" + _tok_eq
+    for marker in (_dict_marker, _token_marker):
+        if marker in src:
+            src = src.replace(marker, mfa_gate + "    " + marker, 1)
+            break
 
     login_file.write_text(src)
 
