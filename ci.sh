@@ -135,13 +135,13 @@ run_suite "Unit tests (adapt/)" \
 # ---------------------------------------------------------------------------
 # Suite 2: Boot individual
 # ---------------------------------------------------------------------------
-run_suite "Boot individual (70 tools)" \
+run_suite "Boot individual (100 tools)" \
     "$PY" tests/test_boot.py
 
 # ---------------------------------------------------------------------------
 # Suite 3: Property tests
 # ---------------------------------------------------------------------------
-run_suite "Property tests (93 × 8)" \
+run_suite "Property tests (123 × 8)" \
     "$PY" tests/property_tests.py
 
 # ---------------------------------------------------------------------------
@@ -171,7 +171,7 @@ run_suite "FinHealth benchmark (100/100)" \
 # ---------------------------------------------------------------------------
 # Suite 8: MCP discovery
 # ---------------------------------------------------------------------------
-run_suite "MCP discovery (124 tools)" \
+run_suite "MCP discovery (175 tools)" \
     "$PY" -c "
 import asyncio
 from mcp_tools.server import mcp
