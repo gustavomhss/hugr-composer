@@ -15,21 +15,21 @@ produces verified, production-grade code. The LLM customizes only the business l
 
 ### SKILL-001: FastAPI Production
 
-Convention over Configuration for FastAPI. 49 EXTEND tools covering every
+Convention over Configuration for FastAPI. 100 EXTEND tools covering every
 production concern: auth, CRUD, payments, ML serving, policy engines,
-real-time, background jobs, and more.
+real-time, background jobs, security, resiliency, observability, and more.
 
 | Metric | Value |
 |--------|-------|
 | Benchmark score | 35/35 (100%) |
 | vs. tiangolo (42.5K stars) | 100% vs 69% |
-| EXTEND tools | 49 |
-| Adapt tools total | 72 (extend + verify + operate + evolve + proactive) |
+| EXTEND tools | 100 |
+| Adapt tools total | 123 (extend + verify + operate + evolve + proactive) |
 | Generators | 52 |
-| MCP tools total | 124 |
-| Unit + behavior tests | 2,100+ |
-| Property checks | 576 (72 tools x 8 properties) |
-| Formal specs | 64 (16 sections each) |
+| MCP tools total | 175 |
+| Unit + behavior tests | 3,000+ |
+| Property checks | 984 (123 tools x 8 properties) |
+| Formal specs | 73 (16 sections each) |
 | E2E scenarios | 12 domain archetypes (real HTTP flows) |
 | Cross-composition | 200+ tool combination scenarios |
 | Soak test | 16K requests / 0 errors / 5 min |
@@ -89,7 +89,7 @@ source .venv/bin/activate
 # Unit + behavior tests
 PYTHONPATH=. python3 -m pytest adapt/ -q
 
-# Property tests (8 properties x 72 tools)
+# Property tests (8 properties x 123 tools)
 PYTHONPATH=. python3 tests/property_tests.py
 
 # E2E (12 scenarios, SQLite)
@@ -112,7 +112,7 @@ skills/
   SKILL-001-fastapi-production/
     SKILL.md              # Skill spec + tool catalog
     EXPANSION_ROADMAP.md  # Expansion roadmap
-    adapt/                # 73 adapt tools (49 EXTEND)
+    adapt/                # 123 adapt tools (100 EXTEND)
     generators/           # 34 project generators
     specs/                # 64 formal specifications
     tests/                # Full test infrastructure

@@ -143,6 +143,38 @@ _TOOL_REGISTRY: list[tuple[str, str, dict]] = [
     ("adapt.verify.security_scan",          "security_scan",         {}),
     # proactive
     ("adapt.proactive.fastapi_doctor",      "fastapi_doctor",        {}),
+
+    # BATCH 5 (30 tools)
+    ("adapt.extend.infrastructure.add_adaptive_throttle","add_adaptive_throttle",{},),
+    ("adapt.extend.infrastructure.add_adaptive_timeouts","add_adaptive_timeouts",{},),
+    ("adapt.extend.infrastructure.add_anomaly_detector","add_anomaly_detector",{},),
+    ("adapt.extend.api_design.add_api_deprecation","add_api_deprecation",{},),
+    ("adapt.extend.testing_tools.add_api_fuzzer","add_api_fuzzer",{},),
+    ("adapt.extend.infrastructure.add_api_monetization","add_api_monetization",{},),
+    ("adapt.extend.infrastructure.add_api_replay_debugger","add_api_replay_debugger",{},),
+    ("adapt.extend.auth_access.add_bola_guard","add_bola_guard",{},),
+    ("adapt.extend.infrastructure.add_bulkhead_isolation","add_bulkhead_isolation",{},),
+    ("adapt.extend.infrastructure.add_canary_tokens","add_canary_tokens",{},),
+    ("adapt.extend.infrastructure.add_chaos_testing","add_chaos_testing",{},),
+    ("adapt.extend.infrastructure.add_compliance_engine","add_compliance_engine",{},),
+    ("adapt.extend.infrastructure.add_cost_tracker","add_cost_tracker",{},),
+    ("adapt.extend.testing_tools.add_data_seeder","add_data_seeder",{},),
+    ("adapt.extend.infrastructure.add_dependency_health_map","add_dependency_health_map",{},),
+    ("adapt.extend.infrastructure.add_dlp_shield","add_dlp_shield",{},),
+    ("adapt.extend.auth_access.add_dpop_tokens","add_dpop_tokens",{},),
+    ("adapt.extend.infrastructure.add_graceful_shutdown","add_graceful_shutdown",{},),
+    ("adapt.extend.infrastructure.add_load_shedding","add_load_shedding",{},),
+    ("adapt.extend.infrastructure.add_request_fingerprint","add_request_fingerprint",{},),
+    ("adapt.extend.auth_access.add_request_signing","add_request_signing",{},),
+    ("adapt.extend.infrastructure.add_request_tracing_ui","add_request_tracing_ui",{},),
+    ("adapt.extend.infrastructure.add_response_armor","add_response_armor",{},),
+    ("adapt.extend.infrastructure.add_retry_budget","add_retry_budget",{},),
+    ("adapt.extend.infrastructure.add_runtime_sentinel","add_runtime_sentinel",{},),
+    ("adapt.extend.testing_tools.add_sbom_guardian","add_sbom_guardian",{},),
+    ("adapt.extend.testing_tools.add_schema_enforcer","add_schema_enforcer",{},),
+    ("adapt.extend.testing_tools.add_schema_evolution_guard","add_schema_evolution_guard",{},),
+    ("adapt.extend.infrastructure.add_secret_rotation","add_secret_rotation",{},),
+    ("adapt.extend.infrastructure.add_tenant_onboarding","add_tenant_onboarding",{},),
 ]
 
 

@@ -1,6 +1,6 @@
 """Cross-composition test — verify that any N-tool subset boots cleanly.
 
-Applies all 70 EXTEND tools in N-at-a-time combinations to a fresh project
+Applies all 100 EXTEND tools in N-at-a-time combinations to a fresh project
 and verifies that the project still boots (``from app.main import app``),
 every ``.py`` file AST-parses, and no tool returns ``status="error"``.
 
@@ -43,7 +43,7 @@ from tests.common.fixture_factory import create_fixture_project
 
 
 # ---------------------------------------------------------------------------
-# Tool registry — all 70 EXTEND tools
+# Tool registry — all 100 EXTEND tools
 # ---------------------------------------------------------------------------
 
 ALL_EXTEND: list[tuple[str, str]] = [
@@ -125,6 +125,38 @@ ALL_EXTEND: list[tuple[str, str]] = [
     ("add_contract_tests",    "adapt.extend.testing_tools.add_contract_tests"),
     ("add_factory",           "adapt.extend.testing_tools.add_factory"),
     ("add_load_profile",      "adapt.extend.testing_tools.add_load_profile"),
+
+    # BATCH 5 (30 tools)
+    ("add_adaptive_throttle",    "adapt.extend.infrastructure.add_adaptive_throttle"),
+    ("add_adaptive_timeouts",    "adapt.extend.infrastructure.add_adaptive_timeouts"),
+    ("add_anomaly_detector",     "adapt.extend.infrastructure.add_anomaly_detector"),
+    ("add_api_deprecation",      "adapt.extend.api_design.add_api_deprecation"),
+    ("add_api_fuzzer",           "adapt.extend.testing_tools.add_api_fuzzer"),
+    ("add_api_monetization",     "adapt.extend.infrastructure.add_api_monetization"),
+    ("add_api_replay_debugger",  "adapt.extend.infrastructure.add_api_replay_debugger"),
+    ("add_bola_guard",           "adapt.extend.auth_access.add_bola_guard"),
+    ("add_bulkhead_isolation",   "adapt.extend.infrastructure.add_bulkhead_isolation"),
+    ("add_canary_tokens",        "adapt.extend.infrastructure.add_canary_tokens"),
+    ("add_chaos_testing",        "adapt.extend.infrastructure.add_chaos_testing"),
+    ("add_compliance_engine",    "adapt.extend.infrastructure.add_compliance_engine"),
+    ("add_cost_tracker",         "adapt.extend.infrastructure.add_cost_tracker"),
+    ("add_data_seeder",          "adapt.extend.testing_tools.add_data_seeder"),
+    ("add_dependency_health_map", "adapt.extend.infrastructure.add_dependency_health_map"),
+    ("add_dlp_shield",           "adapt.extend.infrastructure.add_dlp_shield"),
+    ("add_dpop_tokens",          "adapt.extend.auth_access.add_dpop_tokens"),
+    ("add_graceful_shutdown",    "adapt.extend.infrastructure.add_graceful_shutdown"),
+    ("add_load_shedding",        "adapt.extend.infrastructure.add_load_shedding"),
+    ("add_request_fingerprint",  "adapt.extend.infrastructure.add_request_fingerprint"),
+    ("add_request_signing",      "adapt.extend.auth_access.add_request_signing"),
+    ("add_request_tracing_ui",   "adapt.extend.infrastructure.add_request_tracing_ui"),
+    ("add_response_armor",       "adapt.extend.infrastructure.add_response_armor"),
+    ("add_retry_budget",         "adapt.extend.infrastructure.add_retry_budget"),
+    ("add_runtime_sentinel",     "adapt.extend.infrastructure.add_runtime_sentinel"),
+    ("add_sbom_guardian",        "adapt.extend.testing_tools.add_sbom_guardian"),
+    ("add_schema_enforcer",      "adapt.extend.testing_tools.add_schema_enforcer"),
+    ("add_schema_evolution_guard", "adapt.extend.testing_tools.add_schema_evolution_guard"),
+    ("add_secret_rotation",      "adapt.extend.infrastructure.add_secret_rotation"),
+    ("add_tenant_onboarding",    "adapt.extend.infrastructure.add_tenant_onboarding"),
 ]
 
 # Tools known to patch THESE shared files — high-risk pairs.
@@ -242,7 +274,7 @@ def _tool_by_name(name: str) -> tuple[str, str]:
 # ---------------------------------------------------------------------------
 
 def test_full_stack() -> tuple[bool, str]:
-    """Apply all 70 EXTEND tools in order → project boots + parses."""
+    """Apply all 100 EXTEND tools in order → project boots + parses."""
     project_dir = create_fixture_project(name="xcomp_full")
     results = _apply_tools(project_dir, ALL_EXTEND)
 
@@ -350,7 +382,7 @@ def test_random_subsets(n_draws: int = 20, subset_size: int = 5) -> tuple[bool, 
 # ---------------------------------------------------------------------------
 
 def test_reverse_stack() -> tuple[bool, str]:
-    """Apply all 70 EXTEND tools in REVERSE order → project boots."""
+    """Apply all 100 EXTEND tools in REVERSE order → project boots."""
     reversed_tools = list(reversed(ALL_EXTEND))
     project_dir = create_fixture_project(name="xcomp_rev")
     results = _apply_tools(project_dir, reversed_tools)

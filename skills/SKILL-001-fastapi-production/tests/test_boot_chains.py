@@ -169,6 +169,38 @@ ALL_TOOLS_FORWARD: list[tuple[str, str, str]] = [
     ("add_social_login",         "adapt.extend.auth_access.add_social_login",              "add_social_login"),
     ("add_structured_logging",   "adapt.extend.infrastructure.add_structured_logging",     "add_structured_logging"),
     ("add_transactional_email",  "adapt.extend.infrastructure.add_transactional_email",    "add_transactional_email"),
+
+    # BATCH 5 (30 tools)
+    ("add_adaptive_throttle",    "adapt.extend.infrastructure.add_adaptive_throttle",      "add_adaptive_throttle"),
+    ("add_adaptive_timeouts",    "adapt.extend.infrastructure.add_adaptive_timeouts",      "add_adaptive_timeouts"),
+    ("add_anomaly_detector",     "adapt.extend.infrastructure.add_anomaly_detector",       "add_anomaly_detector"),
+    ("add_api_deprecation",      "adapt.extend.api_design.add_api_deprecation",            "add_api_deprecation"),
+    ("add_api_fuzzer",           "adapt.extend.testing_tools.add_api_fuzzer",              "add_api_fuzzer"),
+    ("add_api_monetization",     "adapt.extend.infrastructure.add_api_monetization",       "add_api_monetization"),
+    ("add_api_replay_debugger",  "adapt.extend.infrastructure.add_api_replay_debugger",    "add_api_replay_debugger"),
+    ("add_bola_guard",           "adapt.extend.auth_access.add_bola_guard",                "add_bola_guard"),
+    ("add_bulkhead_isolation",   "adapt.extend.infrastructure.add_bulkhead_isolation",     "add_bulkhead_isolation"),
+    ("add_canary_tokens",        "adapt.extend.infrastructure.add_canary_tokens",          "add_canary_tokens"),
+    ("add_chaos_testing",        "adapt.extend.infrastructure.add_chaos_testing",          "add_chaos_testing"),
+    ("add_compliance_engine",    "adapt.extend.infrastructure.add_compliance_engine",      "add_compliance_engine"),
+    ("add_cost_tracker",         "adapt.extend.infrastructure.add_cost_tracker",           "add_cost_tracker"),
+    ("add_data_seeder",          "adapt.extend.testing_tools.add_data_seeder",             "add_data_seeder"),
+    ("add_dependency_health_map", "adapt.extend.infrastructure.add_dependency_health_map",  "add_dependency_health_map"),
+    ("add_dlp_shield",           "adapt.extend.infrastructure.add_dlp_shield",             "add_dlp_shield"),
+    ("add_dpop_tokens",          "adapt.extend.auth_access.add_dpop_tokens",               "add_dpop_tokens"),
+    ("add_graceful_shutdown",    "adapt.extend.infrastructure.add_graceful_shutdown",      "add_graceful_shutdown"),
+    ("add_load_shedding",        "adapt.extend.infrastructure.add_load_shedding",          "add_load_shedding"),
+    ("add_request_fingerprint",  "adapt.extend.infrastructure.add_request_fingerprint",    "add_request_fingerprint"),
+    ("add_request_signing",      "adapt.extend.auth_access.add_request_signing",           "add_request_signing"),
+    ("add_request_tracing_ui",   "adapt.extend.infrastructure.add_request_tracing_ui",     "add_request_tracing_ui"),
+    ("add_response_armor",       "adapt.extend.infrastructure.add_response_armor",         "add_response_armor"),
+    ("add_retry_budget",         "adapt.extend.infrastructure.add_retry_budget",           "add_retry_budget"),
+    ("add_runtime_sentinel",     "adapt.extend.infrastructure.add_runtime_sentinel",       "add_runtime_sentinel"),
+    ("add_sbom_guardian",        "adapt.extend.testing_tools.add_sbom_guardian",           "add_sbom_guardian"),
+    ("add_schema_enforcer",      "adapt.extend.testing_tools.add_schema_enforcer",         "add_schema_enforcer"),
+    ("add_schema_evolution_guard", "adapt.extend.testing_tools.add_schema_evolution_guard",  "add_schema_evolution_guard"),
+    ("add_secret_rotation",      "adapt.extend.infrastructure.add_secret_rotation",        "add_secret_rotation"),
+    ("add_tenant_onboarding",    "adapt.extend.infrastructure.add_tenant_onboarding",      "add_tenant_onboarding"),
 ]
 
 ALL_TOOLS_REVERSE: list[tuple[str, str, str]] = list(reversed(ALL_TOOLS_FORWARD))
@@ -264,8 +296,8 @@ CHAINS = [
     ("crud",     "CRUD 7 tools (forward)",       CRUD_CHAIN),
     ("auth",     "Auth 6 tools (forward)",        AUTH_CHAIN),
     ("rt_infra", "RT+Infra 7 tools (forward)",    RT_INFRA_CHAIN),
-    ("full_fwd", "Full 70 tools (forward)",        ALL_TOOLS_FORWARD),
-    ("full_rev", "Full 70 tools (reverse)",        ALL_TOOLS_REVERSE),
+    ("full_fwd", "Full 100 tools (forward)",        ALL_TOOLS_FORWARD),
+    ("full_rev", "Full 100 tools (reverse)",        ALL_TOOLS_REVERSE),
 ]
 
 

@@ -1,10 +1,10 @@
 # SKILL-001: FastAPI Production
 
 > Convention over Configuration for FastAPI.
-> 52 generators + 72 adapt tools = 124 MCP tools total — produce production-grade code, you customize business logic only.
+> 52 generators + 123 adapt tools = 175 MCP tools total — produce production-grade code, you customize business logic only.
 > Scores 35/35 on a 35-check audit backed by OWASP, CVE, NIST, RFC, and CIS standards.
-> 72 adapt tools across 5 categories: extend (49), verify (6), operate (8), evolve (8), proactive (1).
-> Test-verified: 2,100+ unit + behavior tests, 576 property checks (72x8), CI 10/10 green. Soak: 16K requests / 0 errors. Cross-composition: 200+ scenarios / 0 failures.
+> 123 adapt tools across 5 categories: extend (100 EXTEND tools), verify (6), operate (8), evolve (8), proactive (1).
+> Test-verified: 3,000+ unit + behavior tests, 984 property checks (123x8), 32 behavior scenarios (288 assertions), CI 10/10 green. Soak: 16K requests / 0 errors. Cross-composition: 200+ scenarios.
 
 ## Quick Start
 
@@ -109,7 +109,7 @@ Or start from scratch with an existing project and add only what you need.
 
 ## What's New in v6.0
 
-22 Tier-1 EXTEND tools added (49 EXTEND tools total):
+66 Tier-1 EXTEND tools added (100 EXTEND tools total):
 
 | Tool | What |
 |------|------|
@@ -406,7 +406,7 @@ Every check cites its authoritative source:
 | Integration | PASS | Generated project installs deps and imports correctly |
 | Functional E2E | 25/25 | Every endpoint responds with correct status codes and data |
 | Lint (ruff F) | 8/8 | Generated code scores 0 F821, ≤22 total F-errors, 85/85 files pass py_compile |
-| Boot | all tools | All 73 adapt tools produce bootable projects (from app.main import app) |
+| Boot | all tools | All 123 adapt tools produce bootable projects (from app.main import app) |
 
 ## SOTA Decisions
 
@@ -446,7 +446,7 @@ SKILL-001-fastapi-production/        # 352 files, 101,766 LOC
 │   ├── deployment/             # docker_compose, k8s, k6, github_actions
 │   ├── observability/          # otel, prometheus, alerting
 │   └── testing/                # conftest, test_suite
-├── adapt/                      # 73 adapt tools — 5 categories
+├── adapt/                      # 123 adapt tools — 5 categories
 │   ├── contracts/              # ToolInput / ToolResult Pydantic contracts
 │   ├── extend/                 # 41 tools: crud_data, auth_access, api_design,
 │   │   │                       #   infrastructure, realtime, testing_tools
@@ -461,7 +461,7 @@ SKILL-001-fastapi-production/        # 352 files, 101,766 LOC
 │   ├── test_integration.py     # Generate → install → import
 │   └── test_functional.py      # 25 endpoint E2E tests
 ├── tests/                      # Skill self-tests
-│   ├── test_boot.py            # Boot test for all 73 adapt tools
+│   ├── test_boot.py            # Boot test for all 123 adapt tools
 │   ├── test_lint_generated.py  # ruff F-check on generated output (Blind Spot A)
 │   └── ...
 ├── core/                       # Knowledge + legacy tools

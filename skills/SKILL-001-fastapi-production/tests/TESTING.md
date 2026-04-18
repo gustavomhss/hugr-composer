@@ -15,16 +15,16 @@
                     │  Cross-Composition   │  200+ tool combos boot
                     │  Soak Test           │  16K req / 0 errors / 5 min
                     ├─────────────────────┤
-                    │  Behavior Tests      │  15 files, ~10 tests each
+                    │  Behavior Tests      │  45 files, ~10 tests each
                     │  (ASGI transport)    │  boot + endpoint + quality
                     ├─────────────────────┤
-                    │  Property Tests      │  8 properties × 72 tools
+                    │  Property Tests      │  8 properties × 123 tools
                     │  (universal laws)    │  idempotency, dry_run, etc.
                     ├─────────────────────┤
-                    │  Boot Tests          │  49 tools boot individually
-                    │  Boot Chains         │  49 tools forward + reverse
+                    │  Boot Tests          │  100 tools boot individually
+                    │  Boot Chains         │  100 tools forward + reverse
                     ├─────────────────────┤
-                    │  Structural Tests    │  49 files, ~22 tests each
+                    │  Structural Tests    │  100 files, ~22 tests each
                     │  (per-tool unit)     │  success, no_op, files, parse
                     └─────────────────────┘
 ```
@@ -88,22 +88,22 @@ Each behavior test:
 **Location:** `tests/test_boot.py`, `tests/test_boot_chains.py`
 **What they prove:** Every tool produces a project that BOOTS.
 
-### Boot Individual (49 tools)
+### Boot Individual (100 tools)
 For each tool: generate project → apply tool → `from app.main import app` in subprocess → verify "BOOT_OK" in stdout.
 
 ### Boot Chains (5 chains)
 - CRUD chain (7 tools, forward)
 - Auth chain (6 tools, forward)
 - RT+Infra chain (forward)
-- Full 49 tools (forward order)
-- Full 49 tools (reverse order)
+- Full 100 tools (forward order)
+- Full 100 tools (reverse order)
 
 **Run:** `PYTHONPATH=. python tests/test_boot.py`
 
 ## Layer 4: Property Tests
 
 **Location:** `tests/property_tests.py`
-**Count:** 8 properties × 72 tools = 576 checks
+**Count:** 8 properties × 123 tools = 984 checks
 **What they prove:** Universal invariants hold for EVERY tool.
 
 | Property | What it checks |
@@ -184,7 +184,7 @@ Generates a 4-model e-commerce project, applies 23 tools, boots with SQLite, fir
 **Location:** `tests/test_cross_composition.py`
 **What it proves:** ANY combination of tools boots cleanly.
 
-- Full stack (49 tools, canonical order) → boots
+- Full stack (100 tools, canonical order) → boots
 - Config-patcher pairs (all pairs of tools that patch config.py) → all boot
 - Main.py-patcher pairs (all pairs that patch main.py) → all boot
 - Random 5-tool subsets (20 draws, seed 42) → all boot
@@ -224,13 +224,13 @@ Operators: `== ↔ !=`, `< ↔ <=`, `> ↔ >=`, `+ ↔ -`, `and ↔ or`, `True �
 
 10 suites in sequence:
 1. Unit tests (adapt/) — all structural + behavior tests
-2. Boot individual (49 tools)
-3. Property tests (72 × 8)
+2. Boot individual (100 tools)
+3. Property tests (123 × 8)
 4. SQLite E2E (12 scenarios)
 5. Red team (25 attacks)
 6. Determinism (4 tests)
 7. FinHealth benchmark (100/100)
-8. MCP discovery (124 tools)
+8. MCP discovery (175 tools)
 9. PostgreSQL E2E (8 scenarios) — requires Docker
 10. Behavior scenarios (12 domains) — requires Docker
 

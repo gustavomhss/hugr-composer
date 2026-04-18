@@ -24,7 +24,7 @@ HuGR_Skills/
 │       ├── SKILL.md                    # Entry point da skill
 │       ├── EXPANSION_ROADMAP.md        # Roadmap de expansão
 │       ├── generators/                 # 34 code generators
-│       ├── adapt/                      # 49 EXTEND + 24 other adapt tools
+│       ├── adapt/                      # 100 EXTEND + 23 other adapt tools
 │       │   ├── extend/                 # Feature tools (crud, auth, infra, realtime, api, testing)
 │       │   ├── verify/                 # Validation tools
 │       │   ├── operate/                # Operations tools
@@ -34,10 +34,10 @@ HuGR_Skills/
 │       ├── tests/                      # Test infrastructure
 │       │   ├── common/                 # Fixture factory
 │       │   ├── contracts/              # Pydantic delivery contract + agent briefing
-│       │   ├── test_boot.py            # 49-tool boot test
+│       │   ├── test_boot.py            # 100-tool boot test
 │       │   ├── test_boot_chains.py     # Forward + reverse chain tests
-│       │   ├── test_stress.py          # 49-tool stress test
-│       │   ├── property_tests.py       # 8 properties × 72 tools
+│       │   ├── test_stress.py          # 100-tool stress test
+│       │   ├── property_tests.py       # 8 properties × 123 tools
 │       │   ├── test_e2e_hardcore.py    # 12 E2E scenarios (SQLite)
 │       │   ├── test_e2e_postgres.py    # 8 E2E scenarios (PostgreSQL)
 │       │   ├── test_behavior_scenarios.py  # 12 domain archetypes
@@ -59,14 +59,14 @@ A skill principal. Convention over Configuration para FastAPI.
 ### Números atuais
 
 ```
-49 EXTEND tools
-72 adapt tools total (49 extend + 6 verify + 8 operate + 8 evolve + 1 proactive)
+100 EXTEND tools
+123 adapt tools total (100 extend + 6 verify + 8 operate + 8 evolve + 1 proactive)
 52 generators
-124 MCP tools total
-64 formal specs (16 sections each)
-~2100+ tests (unit + behavior + E2E)
-576 property checks (72 × 8 properties)
-22 behavior scenarios (12 original + 10 new tools)
+175 MCP tools total
+73 formal specs (16 sections each)
+~3000+ tests (unit + behavior + E2E)
+984 property checks (123 × 8 properties)
+32 behavior scenarios (288 assertions)
 ```
 
 ### Comandos
@@ -77,10 +77,10 @@ cd skills/SKILL-001-fastapi-production
 # Rodar todos os testes
 PYTHONPATH=. .venv/bin/python -m pytest adapt/ -q
 
-# Boot test (49 tools)
+# Boot test (100 tools)
 PYTHONPATH=. .venv/bin/python tests/test_boot.py
 
-# Property tests (8 properties × 72 tools)
+# Property tests (8 properties × 123 tools)
 PYTHONPATH=. .venv/bin/python tests/property_tests.py
 
 # E2E hardcore (12 cenários, SQLite)
