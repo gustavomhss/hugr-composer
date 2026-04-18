@@ -790,12 +790,10 @@ def _write_redis_module(dest: Path) -> None:
         \"\"\"Async Redis client factory for realtime features (SSE, webhooks, presence).\"\"\"
         from __future__ import annotations
 
-        import redis.asyncio as redis
-
         from app.core.config import settings
 
 
-        async def get_redis() -> redis.Redis:
+        async def get_redis():
             \"\"\"Return a connected async Redis client.
 
             Uses ``settings.REDIS_URL``.  Caller is responsible for closing
@@ -804,7 +802,8 @@ def _write_redis_module(dest: Path) -> None:
             Returns:
                 Connected ``redis.asyncio.Redis`` instance.
             \"\"\"
-            return redis.from_url(
+            import redis.asyncio as _redis
+            return _redis.from_url(
                 getattr(settings, "REDIS_URL", "redis://localhost:6379/0"),
                 decode_responses=True,
             )

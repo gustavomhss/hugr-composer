@@ -64,7 +64,7 @@ def add_bulk_operations(inp: ToolInput) -> ToolResult:
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err)
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     # --- Prerequisite check (standalone mode) --------------------------------
     from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
@@ -262,13 +262,14 @@ def _write_idempotency(dest: Path) -> None:
 
         import json
         import logging
-        from typing import Any
+        from typing import TYPE_CHECKING, Any
 
-        import redis.asyncio as aioredis
+        if TYPE_CHECKING:
+            import redis.asyncio as aioredis
 
         logger = logging.getLogger(__name__)
 
-        _redis: aioredis.Redis | None = None
+        _redis: "aioredis.Redis | None" = None
 
 
         def init_idempotency_cache(redis_url: str) -> None:
@@ -280,6 +281,7 @@ def _write_idempotency(dest: Path) -> None:
                 redis_url: Redis connection URL (e.g. ``redis://localhost:6379/0``).
             \"\"\"
             global _redis
+            import redis.asyncio as aioredis
             _redis = aioredis.from_url(redis_url, decode_responses=True)
 
 
@@ -299,7 +301,7 @@ def _write_idempotency(dest: Path) -> None:
                 _redis: Underlying async Redis client, or ``None`` when unavailable.
             \"\"\"
 
-            def __init__(self, redis: aioredis.Redis | None) -> None:
+            def __init__(self, redis: "aioredis.Redis | None") -> None:
                 \"\"\"Initialise with a Redis client.
 
                 Args:
@@ -366,11 +368,13 @@ def _merge_idempotency_cache(dest: Path) -> None:
         # ---------------------------------------------------------------------------
         import json as _idem_json
         import logging as _idem_logging
-        import redis.asyncio as _idem_aioredis
-        from typing import Any as _idem_Any
+        from typing import TYPE_CHECKING as _idem_TC, Any as _idem_Any
+
+        if _idem_TC:
+            import redis.asyncio as _idem_aioredis
 
         _idem_logger = _idem_logging.getLogger(__name__)
-        _idem_redis: _idem_aioredis.Redis | None = None
+        _idem_redis: "_idem_aioredis.Redis | None" = None
 
 
         def init_idempotency_cache(redis_url: str) -> None:
@@ -380,6 +384,7 @@ def _merge_idempotency_cache(dest: Path) -> None:
                 redis_url: Redis connection URL.
             \"\"\"
             global _idem_redis
+            import redis.asyncio as _idem_aioredis
             _idem_redis = _idem_aioredis.from_url(redis_url, decode_responses=True)
 
 
@@ -395,7 +400,7 @@ def _merge_idempotency_cache(dest: Path) -> None:
         class IdempotencyCache:
             \"\"\"Thin wrapper around Redis providing get/set for idempotency keys.\"\"\"
 
-            def __init__(self, redis: _idem_aioredis.Redis | None) -> None:
+            def __init__(self, redis: "_idem_aioredis.Redis | None") -> None:
                 self._redis = redis
 
             async def get(self, key: str) -> dict | None:

@@ -8,7 +8,7 @@ TTL store (Redis-backed when available).
 
 Config fields added to ``app/core/config.py``::
 
-    REQUEST_SIGNING_SECRET = "<change-me>"
+    REQUEST_SIGNING_SECRET = ""  # set via env: REQUEST_SIGNING_SECRET
     REQUEST_SIGNING_TIMESTAMP_WINDOW_S = 300
 
 The tool is idempotent: a second run detects ``class HMACSigner`` in

@@ -31,6 +31,7 @@ Example::
 
 from __future__ import annotations
 
+import ast
 import textwrap
 import time
 from pathlib import Path
@@ -71,7 +72,7 @@ def add_scheduled_tasks(inp: ToolInput) -> ToolResult:
     start = time.monotonic()
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err)
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     project = Path(inp.project_dir)
 
@@ -167,6 +168,19 @@ def add_scheduled_tasks(inp: ToolInput) -> ToolResult:
         if req_adds:
             req_file.write_text(req_src.rstrip("\n") + "\n" + "\n".join(req_adds) + "\n")
             files_modified.append(str(req_file))
+
+    # --- AST validation ------------------------------------------------------
+    for path_str in files_created:
+        p = Path(path_str)
+        if p.suffix == ".py" and p.is_file():
+            try:
+                ast.parse(p.read_text())
+            except SyntaxError as exc:
+                return ToolResult(
+                    status="error",
+                    error=f"Generated file has syntax error: {p}: {exc}",
+                    execution_time_ms=_elapsed_ms(start),
+                )
 
     return ToolResult(
         status="success",

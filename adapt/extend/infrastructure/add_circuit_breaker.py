@@ -20,6 +20,7 @@ Example::
 
 from __future__ import annotations
 
+import ast
 import textwrap
 import time
 from pathlib import Path
@@ -57,7 +58,7 @@ def add_circuit_breaker(inp: ToolInput) -> ToolResult:
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err)
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     # --- Prerequisite check (standalone mode) --------------------------------
     from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
@@ -141,6 +142,18 @@ def add_circuit_breaker(inp: ToolInput) -> ToolResult:
             req_file.write_text(req_src.rstrip("\n") + "\n" + "\n".join(req_adds) + "\n")
             files_modified.append(str(req_file))
 
+    for path_str in files_created:
+        p = Path(path_str)
+        if p.suffix == ".py" and p.is_file():
+            try:
+                ast.parse(p.read_text())
+            except SyntaxError as exc:
+                return ToolResult(
+                    status="error",
+                    error=f"Generated file has syntax error: {p}: {exc}",
+                    execution_time_ms=_elapsed_ms(start),
+                )
+
     return ToolResult(
         status="success",
         files_created=files_created,
@@ -191,9 +204,10 @@ def _write_circuit_breaker_core(dest: Path) -> None:
         import logging
         import time as _time
         from enum import Enum
-        from typing import Any, Callable
+        from typing import TYPE_CHECKING, Any, Callable
 
-        import redis.asyncio as aioredis
+        if TYPE_CHECKING:
+            import redis.asyncio as aioredis
 
         logger = logging.getLogger(__name__)
 
@@ -449,7 +463,6 @@ def _write_circuits_admin_route(dest: Path) -> None:
         from app.core.circuit_breaker import (
             CircuitState,
             get_circuit_info,
-            set_circuit_redis,
             _set_state,
             get_circuit_redis,
         )

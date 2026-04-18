@@ -61,7 +61,7 @@ def add_data_export(inp: ToolInput) -> ToolResult:
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err)
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     # --- Prerequisite check (standalone mode) --------------------------------
     from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
@@ -531,9 +531,10 @@ def _write_export_progress(dest: Path) -> None:
 
         import json
         from enum import Enum
-        from typing import Any
+        from typing import TYPE_CHECKING, Any
 
-        import redis.asyncio as aioredis
+        if TYPE_CHECKING:
+            import redis.asyncio as aioredis
 
         JOB_TTL_SECONDS: int = 90_000  # 25 h — covers presigned URL lifetime
 
@@ -548,7 +549,7 @@ def _write_export_progress(dest: Path) -> None:
 
 
         async def set_export_progress(
-            redis: aioredis.Redis,
+            redis: "aioredis.Redis",
             job_id: str,
             status: ExportStatus,
             *,
@@ -583,7 +584,7 @@ def _write_export_progress(dest: Path) -> None:
 
 
         async def get_export_progress(
-            redis: aioredis.Redis, job_id: str
+            redis: "aioredis.Redis", job_id: str
         ) -> dict[str, Any] | None:
             \"\"\"Fetch current job progress. Returns None if job_id unknown or expired.
 

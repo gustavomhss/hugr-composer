@@ -73,7 +73,7 @@ def add_search(inp: ToolInput) -> ToolResult:
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err)
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     # --- Prerequisite check (standalone mode) --------------------------------
     from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
@@ -198,9 +198,8 @@ def _search_already_installed(app_dir: Path) -> bool:
     crud_dir = app_dir / "crud"
     if not crud_dir.exists():
         return False
-    for f in crud_dir.glob("*.py"):
-        src = f.read_text()
-        if "Full-text search helpers" in src and "async def search" in src:
+    for f in sorted(crud_dir.glob("*.py")):
+        if f.exists() and "Full-text search helpers" in f.read_text():
             return True
     return False
 

@@ -530,10 +530,16 @@ def _check_generated_quality(
                                 loc=loc,
                             )
 
-        # Lazy imports
+        # Lazy imports — only check files CREATED by the tool, not base project files
+        base_files = {str(py.relative_to(project)) for py in (project / "app").rglob("*.py")}
+        tool_created = {str(Path(p).relative_to(project)) for p in result.files_created if Path(p).suffix == ".py"}
+
         violations = []
         for py in sorted((project / "app").rglob("*.py")):
             rel = str(py.relative_to(project))
+            # Skip base project files (not created by this tool)
+            if rel not in tool_created:
+                continue
             if "workers/" in rel or "admin/" in rel:
                 continue
             try:

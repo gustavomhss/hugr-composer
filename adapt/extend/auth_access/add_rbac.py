@@ -23,6 +23,7 @@ Example::
 
 from __future__ import annotations
 
+import ast
 import textwrap
 import time
 from pathlib import Path
@@ -61,7 +62,7 @@ def add_rbac(inp: ToolInput) -> ToolResult:
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err)
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     # --- Prerequisite check (standalone mode) --------------------------------
     from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
@@ -177,6 +178,19 @@ def add_rbac(inp: ToolInput) -> ToolResult:
     if versions_dir.exists():
         migration_file = _write_migration(versions_dir)
         files_created.append(str(migration_file))
+
+    # --- AST validation ------------------------------------------------------
+    for path_str in files_created:
+        p = Path(path_str)
+        if p.suffix == ".py" and p.is_file():
+            try:
+                ast.parse(p.read_text())
+            except SyntaxError as exc:
+                return ToolResult(
+                    status="error",
+                    error=f"Generated file has syntax error: {p}: {exc}",
+                    execution_time_ms=_elapsed_ms(start),
+                )
 
     return ToolResult(
         status="success",
@@ -984,7 +998,7 @@ def _write_crud(dest: Path) -> None:
         from sqlalchemy import select
         from sqlalchemy.ext.asyncio import AsyncSession
 
-        from app.models.rbac import Permission, Role, RolePermission, UserRole
+        from app.models.rbac import Permission, Role, UserRole
         from app.schemas.rbac import PermissionCreate, RoleCreate
 
 
@@ -1116,10 +1130,10 @@ def _write_routes(dest: Path) -> None:
 
         import uuid as _uuid
 
-        from fastapi import APIRouter, HTTPException, status
+        from fastapi import APIRouter
 
         from app.api.deps import CurrentSuperuser, SessionDep
-        from app.core.rbac.cache import get_perm_cache, publish_invalidation
+        from app.core.rbac.cache import get_perm_cache
         from app.crud import rbac as crud_rbac
         from app.schemas.rbac import (
             PermissionCreate,
