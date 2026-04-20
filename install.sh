@@ -27,12 +27,12 @@ SKILL_DIR="${INSTALL_DIR}/skills/SKILL-001-${SKILL}"
 # Pretty output helpers
 # ---------------------------------------------------------------------------
 
-c_reset='\033[0m'
-c_bold='\033[1m'
-c_green='\033[32m'
-c_cyan='\033[36m'
-c_yellow='\033[33m'
-c_red='\033[31m'
+c_reset=$'\033[0m'
+c_bold=$'\033[1m'
+c_green=$'\033[32m'
+c_cyan=$'\033[36m'
+c_yellow=$'\033[33m'
+c_red=$'\033[31m'
 
 log()   { printf "${c_cyan}→${c_reset} %s\n" "$*"; }
 ok()    { printf "${c_green}✓${c_reset} %s\n" "$*"; }
@@ -113,15 +113,18 @@ ${c_cyan}{
   }
 }${c_reset}
 
-After adding the stanza, restart your IDE.  The skill exposes ${c_bold}100 MCP tools${c_reset}
-for generating production-grade FastAPI projects:
+After adding the stanza, restart your IDE.  The skill exposes ${c_bold}180 MCP tools${c_reset}
+(100 slice generators + 60 macro generators + 20 adapt/ops + 2 discovery
+tools) for generating production-grade FastAPI projects:
 
   fastapi_generate_project      — one call → 53-file production API
   fastapi_add_rbac              — add role-based access control
   fastapi_add_mfa               — add TOTP two-factor auth
   fastapi_add_audit_log         — add tamper-evident audit trail
   fastapi_add_soft_delete       — add is_deleted flag + restore endpoint
-  ...and 95 more
+  fastapi_find_primitive        — JIT discovery: "which primitive for X?"
+  fastapi_suggest_composition   — recipe index: "combine these for webhook + dedup"
+  ...and 174 more
 
 ${c_bold}Quick test:${c_reset}
   ${PY_PATH} ${MCP_SERVER_PATH} --list-tools
