@@ -1,0 +1,544 @@
+{
+  "agent_id": 5,
+  "codename": "SECURITY",
+  "primitives": [
+    {
+      "name": "PasswordHasher",
+      "namespace": "security",
+      "purpose": "Derive a verifier from a user-supplied secret using a memory-hard KDF with per-credential salt, tunable cost, and constant-time comparison.",
+      "api_signature": "from typing import Protocol\n\nclass PasswordHasher(Protocol):\n    def hash(self, plaintext: str) -> str: ...\n    def verify(self, plaintext: str, stored: str) -> bool: ...\n    def needs_rehash(self, stored: str) -> bool: ...",
+      "invariants": [
+        "Stored verifier MUST encode algorithm identifier, cost parameters, salt, and digest so rotation is self-describing.",
+        "verify() MUST run in constant time with respect to digest bytes and NEVER branch on character-by-character equality.",
+        "Salt MUST be drawn from a CSPRNG, be ≥16 bytes, and MUST NEVER be reused across credentials.",
+        "hash() MUST use a memory-hard function (Argon2id / scrypt / bcrypt) and SHALL NEVER use raw SHA-2, MD5, or PBKDF2-SHA1.",
+        "needs_rehash() MUST return True when stored cost parameters are below the configured floor, and the caller MUST rehash on next successful login.",
+        "Plaintext MUST NEVER be logged, serialized, or included in exceptions raised by this primitive."
+      ],
+      "extension_contract": "Downstream tools register alternative KDF adapters that implement the Protocol; the adapter declares algorithm id, cost vector, and encoding prefix. The registry refuses to bind an algorithm that lacks constant-time verify or writable cost parameters.",
+      "consumption_example": "def authenticate(email: str, plaintext: str, hasher: PasswordHasher, repo) -> bool:\n    record = repo.get_credential(email)\n    if record is None:\n        return False\n    if not hasher.verify(plaintext, record.digest):\n        return False\n    if hasher.needs_rehash(record.digest):\n        repo.update_digest(email, hasher.hash(plaintext))\n    return True",
+      "sources": [
+        {
+          "source": "OWASP ASVS 4.0.3",
+          "locator": "V2.4 Credential Storage Requirements (V2.4.1–V2.4.5)"
+        },
+        {
+          "source": "NIST SP 800-63B",
+          "locator": "Section 5.1.1.2 Memorized Secret Verifiers"
+        },
+        {
+          "source": "OWASP Top 10 2021",
+          "locator": "A02:2021 Cryptographic Failures — password storage guidance"
+        }
+      ],
+      "why_essential": "A shared hasher forces algorithm, cost, and rotation policy to live in one place; duplicating KDF wiring per tool produces divergent cost floors and eventually a credential store with mixed weak hashes.",
+      "alternatives_considered": [
+        "Per-tool bcrypt call with hardcoded cost — drifts apart over time and blocks coordinated migration.",
+        "Pluggable cryptography library passed as dependency — leaks algorithm choice into every caller.",
+        "Database-side hashing via pgcrypto — couples auth to a specific data backend and loses constant-time verify."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "AuthorizationCodeFlow",
+      "namespace": "auth",
+      "purpose": "Execute the OAuth 2.0 authorization-code grant with PKCE, enforcing state, nonce, redirect URI pinning, and one-time code exchange against the token endpoint.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass AuthorizationRequest:\n    authorization_url: str\n    state: str\n    nonce: str\n    code_verifier: str\n\nclass AuthorizationCodeFlow(Protocol):\n    def begin(self, scopes: list[str]) -> AuthorizationRequest: ...\n    def exchange(self, code: str, state: str, stored: AuthorizationRequest) -> dict: ...",
+      "invariants": [
+        "begin() MUST generate state and nonce from a CSPRNG with ≥128 bits of entropy and MUST NEVER reuse either value.",
+        "exchange() MUST reject any callback whose state does not byte-equal the stored state and SHALL abort before touching the token endpoint.",
+        "The code_verifier MUST be bound to the authorization request and CANNOT be substituted at exchange time (PKCE S256).",
+        "Redirect URI sent on exchange MUST exactly match the URI registered with the authorization server; wildcard suffixes are FORBIDDEN.",
+        "Authorization codes MUST be single-use; replay of the same code SHALL produce an invalid_grant error from the client adapter.",
+        "Tokens received MUST NEVER be logged in full; only opaque hashes MAY appear in audit traces."
+      ],
+      "extension_contract": "New identity providers register as provider adapters implementing the Protocol and publishing metadata (authorization_endpoint, token_endpoint, jwks_uri). The registry refuses to bind a provider that does not advertise PKCE S256 and code_challenge_methods_supported.",
+      "consumption_example": "def start_login(flow: AuthorizationCodeFlow, session) -> str:\n    request = flow.begin(scopes=[\"openid\", \"profile\"])\n    session[\"oauth_request\"] = request\n    return request.authorization_url\n\ndef finish_login(flow: AuthorizationCodeFlow, session, code: str, state: str) -> dict:\n    return flow.exchange(code=code, state=state, stored=session.pop(\"oauth_request\"))",
+      "sources": [
+        {
+          "source": "RFC 6749",
+          "locator": "Section 4.1 Authorization Code Grant"
+        },
+        {
+          "source": "RFC 7636",
+          "locator": "Sections 4.1–4.6 PKCE code_verifier/code_challenge"
+        },
+        {
+          "source": "OpenID Connect Core 1.0",
+          "locator": "Section 3.1 Authentication using the Authorization Code Flow"
+        }
+      ],
+      "why_essential": "Every tool that accepts federated login needs the same state/nonce/PKCE discipline; reimplementing the dance per integration spawns subtle CSRF and code-injection bugs that no test catches.",
+      "alternatives_considered": [
+        "Implicit flow — deprecated by OAuth 2.1; tokens leak through browser history.",
+        "Resource-owner password credentials grant — forbidden by OAuth 2.1 for untrusted clients.",
+        "Per-provider bespoke flow in each microservice — guarantees divergent state validation."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "TokenIntrospector",
+      "namespace": "auth",
+      "purpose": "Validate access tokens by signature, issuer, audience, expiry, and not-before claims, with optional RFC 7662 introspection for opaque tokens.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass TokenClaims:\n    subject: str\n    scopes: frozenset[str]\n    audience: frozenset[str]\n    issuer: str\n    expires_at: int\n\nclass TokenIntrospector(Protocol):\n    def introspect(self, token: str, required_audience: str) -> TokenClaims: ...",
+      "invariants": [
+        "JWT verification MUST reject the 'none' algorithm and MUST pin the accepted algorithm set per issuer.",
+        "introspect() MUST reject tokens whose aud claim does not include required_audience and SHALL raise a typed error.",
+        "Expired tokens (now ≥ exp) and not-yet-valid tokens (now < nbf) MUST be rejected with no claim surface returned.",
+        "Signing keys MUST be fetched from the issuer's JWKS with bounded caching; stale keys beyond max-age CANNOT be trusted.",
+        "Opaque tokens MUST be introspected against the authorization server per RFC 7662 and NEVER parsed locally.",
+        "Introspection results MUST NEVER be cached past the token's exp or past the documented TTL, whichever is lower."
+      ],
+      "extension_contract": "Token formats register as introspector adapters (JWT, opaque, DPoP-bound) implementing the Protocol. An adapter plugin declares supported issuers and the key resolution strategy; the registry rejects adapters that accept the 'none' alg or skip aud checking.",
+      "consumption_example": "def require_scope(scope: str, introspector: TokenIntrospector, audience: str):\n    def dependency(token: str) -> TokenClaims:\n        claims = introspector.introspect(token, required_audience=audience)\n        if scope not in claims.scopes:\n            raise PermissionError(f\"missing scope: {scope}\")\n        return claims\n    return dependency",
+      "sources": [
+        {
+          "source": "RFC 6749",
+          "locator": "Section 7 Accessing Protected Resources (audience, scope)"
+        },
+        {
+          "source": "RFC 7662",
+          "locator": "Section 2 Introspection Request/Response"
+        },
+        {
+          "source": "OpenID Connect Core 1.0",
+          "locator": "Section 3.1.3.7 ID Token Validation"
+        }
+      ],
+      "why_essential": "Each resource server must apply the same claim checks in the same order; scattering verification across controllers yields endpoints that accept tokens meant for another audience.",
+      "alternatives_considered": [
+        "Trust the upstream gateway to verify — leaves services vulnerable if the gateway is bypassed.",
+        "Parse JWT inline with a library call per handler — produces inconsistent alg and aud policy.",
+        "Always introspect remotely — unacceptable latency for JWT deployments at scale."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "WebAuthnAuthenticator",
+      "namespace": "auth",
+      "purpose": "Register and assert passkey credentials per the Web Authentication API, binding credentials to an RP ID and verifying attestation, challenge, origin, and signature counter.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass RegistrationResult:\n    credential_id: bytes\n    public_key: bytes\n    sign_count: int\n    aaguid: bytes\n\nclass WebAuthnAuthenticator(Protocol):\n    def begin_registration(self, user_id: bytes, user_name: str) -> dict: ...\n    def finish_registration(self, challenge: bytes, response: dict) -> RegistrationResult: ...\n    def begin_assertion(self, credential_ids: list[bytes]) -> dict: ...\n    def finish_assertion(self, challenge: bytes, response: dict, stored_public_key: bytes, stored_sign_count: int) -> int: ...",
+      "invariants": [
+        "Challenges MUST be ≥16 bytes from a CSPRNG and MUST be single-use; replaying a challenge SHALL reject the response.",
+        "The origin in clientDataJSON MUST exactly match the configured RP origin; subdomain or scheme mismatch CANNOT be accepted.",
+        "The RP ID hash in authenticatorData MUST equal SHA-256(rp_id); mismatch MUST fail verification.",
+        "finish_assertion() MUST reject when the new sign_count is ≤ the stored sign_count, except when the authenticator always returns 0.",
+        "User verification flag MUST be enforced for authenticators registered as user-verifying; absence SHALL fail the assertion.",
+        "Credential public keys MUST be stored bound to (user_id, credential_id) and NEVER shared across users."
+      ],
+      "extension_contract": "Attestation formats register as attestation-statement verifiers (packed, fido-u2f, tpm, android-key, apple) implementing a verifier Protocol. The registry refuses to bind a statement type unless it returns an AAGUID and a trust path rooted in a configured metadata service.",
+      "consumption_example": "def register_passkey(auth: WebAuthnAuthenticator, user_id: bytes, user_name: str, client_response: dict, challenge: bytes):\n    result = auth.finish_registration(challenge=challenge, response=client_response)\n    store_credential(user_id=user_id, credential_id=result.credential_id, public_key=result.public_key, sign_count=result.sign_count)",
+      "sources": [
+        {
+          "source": "W3C WebAuthn Level 3 Recommendation",
+          "locator": "Section 7.1 Registering a New Credential; Section 7.2 Verifying an Authentication Assertion"
+        },
+        {
+          "source": "OWASP ASVS 4.0.3",
+          "locator": "V2.7 Out of Band Verifier Requirements; V2.9 Cryptographic Software and Devices"
+        }
+      ],
+      "why_essential": "Passkey onboarding fails in narrow, catastrophic ways (wrong origin, no sign-count check, challenge reuse); a shared primitive encodes the ceremony once so no service can ship a broken variant.",
+      "alternatives_considered": [
+        "Vendor SDK per platform — fragments RP ID policy and challenge storage.",
+        "Delegate to hosted passkey provider — loses control of credential export and silent migration.",
+        "Stay on TOTP — retains phishable shared secret model the FIDO stack replaces."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "TotpVerifier",
+      "namespace": "auth",
+      "purpose": "Generate and verify six-digit time-based one-time passwords per RFC 6238 with constant-time comparison, clock-skew tolerance, and replay prevention.",
+      "api_signature": "from typing import Protocol\n\nclass TotpVerifier(Protocol):\n    def provision_uri(self, account: str, issuer: str, secret: bytes) -> str: ...\n    def verify(self, secret: bytes, code: str, last_used_step: int | None) -> int: ...",
+      "invariants": [
+        "Shared secrets MUST be ≥160 bits drawn from a CSPRNG and MUST NEVER be transmitted outside the enrollment channel.",
+        "verify() MUST compare codes in constant time and NEVER short-circuit on prefix match.",
+        "Accepted skew MUST be bounded to ±1 step (±30s); larger windows SHALL be rejected by configuration.",
+        "A successfully used step number MUST be recorded and the same step CANNOT be accepted again for the same secret.",
+        "Codes SHALL be six decimal digits derived from HMAC-SHA1 truncation per RFC 4226; alternative digit counts MUST be explicitly opted in."
+      ],
+      "extension_contract": "Alternative HOTP/TOTP schemes (SHA-256, 8-digit, custom step) register as verifier adapters implementing the Protocol and declaring their digest and period. The registry rejects adapters that skip replay-step persistence.",
+      "consumption_example": "def confirm_mfa(totp: TotpVerifier, user, submitted_code: str) -> None:\n    next_step = totp.verify(secret=user.totp_secret, code=submitted_code, last_used_step=user.last_totp_step)\n    user.last_totp_step = next_step\n    repo.save(user)",
+      "sources": [
+        {
+          "source": "RFC 6238",
+          "locator": "Sections 4 and 5 TOTP algorithm and security considerations"
+        },
+        {
+          "source": "NIST SP 800-63B",
+          "locator": "Section 5.1.4 Single-Factor OTP"
+        },
+        {
+          "source": "OWASP ASVS 4.0.3",
+          "locator": "V2.8 One Time Verifier Requirements"
+        }
+      ],
+      "why_essential": "Every service that keeps TOTP reimplements the replay-step check and skew window; centralizing the verifier eliminates off-by-one-step bypasses and the classic 'accept any code in the last 10 minutes' bug.",
+      "alternatives_considered": [
+        "SMS OTP only — phishable and deprecated for high-assurance in SP 800-63B.",
+        "Email magic link — couples MFA to mailbox security and adds latency.",
+        "Per-service TOTP library call — no shared replay protection."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "SessionStore",
+      "namespace": "auth",
+      "purpose": "Issue, rotate, and revoke server-side session records keyed by high-entropy identifiers, with fixation resistance and explicit lifetime boundaries.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass Session:\n    id: str\n    subject: str\n    created_at: int\n    idle_expires_at: int\n    absolute_expires_at: int\n\nclass SessionStore(Protocol):\n    def create(self, subject: str) -> Session: ...\n    def load(self, session_id: str) -> Session | None: ...\n    def rotate(self, session_id: str) -> Session: ...\n    def revoke(self, session_id: str) -> None: ...\n    def revoke_all_for_subject(self, subject: str) -> int: ...",
+      "invariants": [
+        "Session ids MUST carry ≥128 bits of entropy from a CSPRNG and MUST NEVER encode user-controlled input.",
+        "On privilege elevation (login, role change, MFA step-up) the session id MUST be rotated; the prior id CANNOT be reused.",
+        "Sessions MUST expire at min(idle_timeout, absolute_timeout); server-side revocation MUST win over client-held cookies.",
+        "Session cookies MUST be set Secure, HttpOnly, and with SameSite=Lax or Strict; Domain SHALL NEVER be broader than the application host.",
+        "revoke_all_for_subject() MUST terminate every live session for that subject atomically and MUST be invoked on password change.",
+        "load() MUST NEVER extend a session past absolute_expires_at even on activity."
+      ],
+      "extension_contract": "Storage backends register as session-store adapters (redis, postgres, signed-cookie) implementing the Protocol. Adapters that cannot perform server-side revocation (pure signed cookies) are forbidden from binding when revoke_all_for_subject is required by policy.",
+      "consumption_example": "def login(store: SessionStore, response, subject: str) -> None:\n    session = store.create(subject=subject)\n    response.set_cookie(\"sid\", session.id, secure=True, httponly=True, samesite=\"lax\")\n\ndef escalate(store: SessionStore, response, old_sid: str) -> None:\n    rotated = store.rotate(old_sid)\n    response.set_cookie(\"sid\", rotated.id, secure=True, httponly=True, samesite=\"lax\")",
+      "sources": [
+        {
+          "source": "OWASP ASVS 4.0.3",
+          "locator": "V3 Session Management Requirements (V3.2 Session Binding, V3.3 Session Logout)"
+        },
+        {
+          "source": "OWASP Top 10 2021",
+          "locator": "A07:2021 Identification and Authentication Failures"
+        }
+      ],
+      "why_essential": "Fixation, idle timeout, and subject-wide revocation are the shared burden of every authenticated product; without a shared store each team reinvents one missing control and the security posture decays to the weakest.",
+      "alternatives_considered": [
+        "Pure JWT sessions with no server state — cannot revoke without a parallel denylist.",
+        "Framework default session middleware — often lacks idle-plus-absolute dual clock.",
+        "Sticky-session in memory — fails revoke_all_for_subject under horizontal scale."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "CsrfGuard",
+      "namespace": "security",
+      "purpose": "Bind state-changing HTTP requests to the authenticated session through per-session tokens validated against a matching header or form field.",
+      "api_signature": "from typing import Protocol\n\nclass CsrfGuard(Protocol):\n    def issue(self, session_id: str) -> str: ...\n    def verify(self, session_id: str, submitted_token: str) -> None: ...",
+      "invariants": [
+        "Tokens MUST be bound to the session id and MUST NEVER be accepted for a different session.",
+        "verify() MUST compare tokens in constant time and MUST raise on mismatch with no information about the expected value.",
+        "Safe methods (GET, HEAD, OPTIONS) MUST NEVER mutate state; the guard SHALL only be enforced for unsafe methods.",
+        "Cross-origin requests lacking both a valid token and a same-site cookie CANNOT be processed.",
+        "Tokens MUST be rotated on session rotation and on explicit logout; stale tokens SHALL be rejected."
+      ],
+      "extension_contract": "Delivery shapes (double-submit cookie, synchronizer token, custom-header-only for SPAs) register as csrf-strategy adapters implementing the Protocol. The registry refuses to bind a strategy that does not validate Origin/Referer for cookie-only flows.",
+      "consumption_example": "def mutate(guard: CsrfGuard, session_id: str, submitted_token: str, do_work):\n    guard.verify(session_id=session_id, submitted_token=submitted_token)\n    return do_work()",
+      "sources": [
+        {
+          "source": "OWASP ASVS 4.0.3",
+          "locator": "V4.2 Operation Level Access Control (CSRF)"
+        },
+        {
+          "source": "OWASP Top 10 2021",
+          "locator": "A01:2021 Broken Access Control — CSRF subsection"
+        }
+      ],
+      "why_essential": "CSRF defenses are trivial to get wrong in a single controller; centralizing issuance and verification removes the one endpoint that forgot to bind the token to the session.",
+      "alternatives_considered": [
+        "SameSite=Strict cookies only — blocks legitimate cross-site navigation and is bypassed by subdomain takeover.",
+        "Origin header check only — insufficient when Origin is missing (old browsers, same-origin XHR).",
+        "Per-form hidden token with no session binding — accepts any valid token from any user."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "ContentSecurityPolicy",
+      "namespace": "security",
+      "purpose": "Compose, serialize, and enforce a Content Security Policy header that constrains script, style, frame, and connection origins with strict-dynamic and nonce-based script allowance.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass Directive:\n    name: str\n    sources: tuple[str, ...]\n\nclass ContentSecurityPolicy(Protocol):\n    def with_directive(self, directive: Directive) -> \"ContentSecurityPolicy\": ...\n    def with_nonce(self, nonce: str) -> \"ContentSecurityPolicy\": ...\n    def render_header(self) -> tuple[str, str]: ...",
+      "invariants": [
+        "default-src MUST be set; a policy without default-src CANNOT be rendered.",
+        "script-src MUST NEVER include 'unsafe-inline' together with a nonce; the two are mutually exclusive per CSP3.",
+        "Nonces MUST be ≥128 bits from a CSPRNG and MUST be unique per response; reuse SHALL invalidate the guarantee.",
+        "object-src MUST be set to 'none' unless the caller explicitly opts in with a reason string.",
+        "base-uri and frame-ancestors MUST be set to a closed list; wildcard values are FORBIDDEN in production profiles.",
+        "report-only and enforce modes MUST be separate header names and MUST NEVER both block and merely report the same directive."
+      ],
+      "extension_contract": "Per-route policy overrides register as policy-builder decorators that compose on top of a base policy. A decorator is refused if it attempts to widen default-src or reintroduce 'unsafe-inline' on script-src.",
+      "consumption_example": "def apply_csp(response, policy: ContentSecurityPolicy, nonce: str):\n    header_name, header_value = policy.with_nonce(nonce).render_header()\n    response.headers[header_name] = header_value",
+      "sources": [
+        {
+          "source": "OWASP ASVS 4.0.3",
+          "locator": "V14.4 HTTP Security Headers Requirements"
+        },
+        {
+          "source": "OWASP Top 10 2021",
+          "locator": "A05:2021 Security Misconfiguration — response headers"
+        }
+      ],
+      "why_essential": "CSP rules drift quickly when each team edits its own header string; a composable primitive keeps the baseline coherent and makes 'unsafe-inline' regressions reviewable as a single change.",
+      "alternatives_considered": [
+        "Static nginx header — not nonce-aware; breaks strict-dynamic.",
+        "Framework meta-tag CSP — ignored for navigation responses and reporting.",
+        "Per-endpoint hand-written header — accumulates divergence and dead directives."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "CorsPolicy",
+      "namespace": "policy",
+      "purpose": "Evaluate cross-origin preflight and simple-request allowance against a closed list of origins, methods, headers, and credential mode without reflecting arbitrary Origin values.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass CorsDecision:\n    allow_origin: str | None\n    allow_methods: tuple[str, ...]\n    allow_headers: tuple[str, ...]\n    allow_credentials: bool\n    max_age_seconds: int\n\nclass CorsPolicy(Protocol):\n    def evaluate(self, origin: str, method: str, requested_headers: tuple[str, ...]) -> CorsDecision: ...",
+      "invariants": [
+        "evaluate() MUST NEVER echo back an Origin that is not in the configured allowlist.",
+        "When allow_credentials is True, allow_origin CANNOT be '*' and MUST be a single exact origin.",
+        "Vary: Origin MUST be emitted on any response that decides per-origin, or the policy SHALL reject evaluation.",
+        "Preflight caching (Access-Control-Max-Age) MUST be ≤86400 seconds and MUST NEVER default to unbounded.",
+        "Null origin ('null') MUST be rejected in credentialed mode because it collapses distinct sandboxed contexts."
+      ],
+      "extension_contract": "Origin matchers register as matcher plugins (exact, suffix-tenant, regex-with-review) implementing a predicate Protocol. The registry refuses to bind a regex matcher that accepts '.*' or an empty pattern.",
+      "consumption_example": "def handle_preflight(policy: CorsPolicy, request, response):\n    decision = policy.evaluate(origin=request.headers[\"Origin\"], method=request.headers[\"Access-Control-Request-Method\"], requested_headers=tuple(request.headers.get(\"Access-Control-Request-Headers\", \"\").split(\",\")))\n    if decision.allow_origin is None:\n        response.status = 403\n        return response\n    response.headers.update({\"Access-Control-Allow-Origin\": decision.allow_origin, \"Access-Control-Allow-Credentials\": str(decision.allow_credentials).lower()})\n    return response",
+      "sources": [
+        {
+          "source": "OWASP ASVS 4.0.3",
+          "locator": "V14.5 HTTP Request Header Validation Requirements (CORS)"
+        },
+        {
+          "source": "OWASP Top 10 2021",
+          "locator": "A05:2021 Security Misconfiguration — CORS hardening"
+        }
+      ],
+      "why_essential": "Reflecting Origin is the default footgun of every ad-hoc CORS filter; a primitive with a closed allowlist removes the possibility of writing that line anywhere else.",
+      "alternatives_considered": [
+        "Framework default CORS middleware with origin='*' — incompatible with credentials and leaks data.",
+        "Nginx-level CORS — cannot inspect auth state or per-tenant origin lists.",
+        "Per-route ad-hoc header writing — reinvents the matcher each time."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "OutputEncoder",
+      "namespace": "security",
+      "purpose": "Encode untrusted values for a named sink (HTML text, HTML attribute, JavaScript string, URL path, URL query, CSS value) using sink-specific escaping rules.",
+      "api_signature": "from enum import Enum\nfrom typing import Protocol\n\nclass Sink(str, Enum):\n    HTML_TEXT = \"html_text\"\n    HTML_ATTRIBUTE = \"html_attribute\"\n    JS_STRING = \"js_string\"\n    URL_PATH = \"url_path\"\n    URL_QUERY = \"url_query\"\n    CSS_VALUE = \"css_value\"\n\nclass OutputEncoder(Protocol):\n    def encode(self, value: str, sink: Sink) -> str: ...",
+      "invariants": [
+        "encode() MUST produce output that cannot break out of the named sink; a string encoded for HTML_ATTRIBUTE MUST NEVER enable script execution when inserted into that sink.",
+        "The caller MUST declare the sink; the encoder SHALL NEVER infer sink from context.",
+        "Encoders MUST be applied at the last possible moment before sink insertion; pre-encoded storage is FORBIDDEN to avoid double-encoding.",
+        "CSS_VALUE encoding MUST reject values containing expression()-style sequences and MUST hex-escape control characters.",
+        "URL_QUERY encoding MUST percent-encode per RFC 3986 unreserved set; space MUST become %20 inside a path and MAY become + only in form-encoded bodies."
+      ],
+      "extension_contract": "New sinks register as encoder plugins implementing the Protocol with an extended Sink enum value. A plugin that cannot produce a deterministic context-safe output for its sink CANNOT be bound.",
+      "consumption_example": "def render_user_mention(encoder: OutputEncoder, user_name: str) -> str:\n    safe = encoder.encode(user_name, sink=Sink.HTML_TEXT)\n    return f\"<span class='mention'>@{safe}</span>\"",
+      "sources": [
+        {
+          "source": "OWASP ASVS 4.0.3",
+          "locator": "V5.3 Output Encoding and Injection Prevention"
+        },
+        {
+          "source": "OWASP Top 10 2021",
+          "locator": "A03:2021 Injection — cross-site scripting"
+        }
+      ],
+      "why_essential": "XSS is overwhelmingly produced by encoding-in-the-wrong-context; a named-sink encoder makes the sink explicit in every call site and eliminates the 'escape once at ingest' anti-pattern.",
+      "alternatives_considered": [
+        "Template autoescape only — misses JS_STRING and URL_QUERY contexts mixed inside HTML.",
+        "Single generic escape function — encodes for HTML_TEXT regardless of sink; unsafe in attributes.",
+        "Sanitize on input — loses fidelity and re-introduces bugs when output context changes."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "SecretsVault",
+      "namespace": "security",
+      "purpose": "Fetch, cache, rotate, and audit application secrets through a named-secret interface backed by an external key management or secrets service.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass SecretVersion:\n    name: str\n    version: int\n    material: bytes\n    not_after: int | None\n\nclass SecretsVault(Protocol):\n    def get(self, name: str) -> SecretVersion: ...\n    def rotate(self, name: str) -> SecretVersion: ...\n    def invalidate(self, name: str) -> None: ...",
+      "invariants": [
+        "Secret material MUST NEVER be logged, included in tracebacks, or serialized to telemetry.",
+        "get() MUST honor a time-bounded cache; cached material MUST NEVER outlive not_after or the configured max-age.",
+        "rotate() MUST produce a strictly increasing version and MUST NEVER return the same material for a different version.",
+        "Every get()/rotate() call SHALL emit a structured audit event naming the secret (not the material) and the caller identity.",
+        "When the underlying backend is unavailable, the vault MUST fail closed for cold secrets and CANNOT surface stale material past its cache TTL."
+      ],
+      "extension_contract": "Backends register as vault adapters (AWS Secrets Manager, HashiCorp Vault, GCP Secret Manager, filesystem-for-dev) implementing the Protocol. An adapter is refused if it cannot produce a monotonically increasing version identifier or does not support rotation callbacks.",
+      "consumption_example": "def load_signing_key(vault: SecretsVault):\n    version = vault.get(\"jwt-signing-key\")\n    return version.material, version.version",
+      "sources": [
+        {
+          "source": "OWASP ASVS 4.0.3",
+          "locator": "V6.4 Secret Management"
+        },
+        {
+          "source": "NIST SP 800-63B",
+          "locator": "Section 5.1.1.2 — authenticator secret protection requirements"
+        }
+      ],
+      "why_essential": "Secrets scattered in environment variables and config files rotate on no one's schedule; a shared vault primitive makes rotation, caching, and audit a single policy decision rather than a per-service migration.",
+      "alternatives_considered": [
+        "Env vars injected at deploy — no rotation, no audit, leaks into crash dumps.",
+        "Per-service SDK call — inconsistent caching and blast-radius controls.",
+        "Encrypted config file checked into repo — key management problem reappears one level down."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "CryptoEnvelope",
+      "namespace": "security",
+      "purpose": "Encrypt and decrypt payloads with authenticated encryption, key-id-tagged ciphertext, and deterministic header framing that enables key rotation without re-encryption on read.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass Envelope:\n    key_id: str\n    nonce: bytes\n    ciphertext: bytes\n    aad: bytes\n\nclass CryptoEnvelope(Protocol):\n    def seal(self, plaintext: bytes, aad: bytes) -> Envelope: ...\n    def open(self, envelope: Envelope, aad: bytes) -> bytes: ...",
+      "invariants": [
+        "seal() MUST use an AEAD construction (AES-GCM, ChaCha20-Poly1305) and CANNOT emit an envelope without an authentication tag.",
+        "Nonces MUST NEVER repeat for a given key; nonce reuse under AES-GCM SHALL be treated as a critical incident.",
+        "open() MUST verify aad byte-for-byte; mismatched aad MUST abort before returning plaintext.",
+        "key_id MUST resolve to a live key in the vault; decryption with an unknown key_id CANNOT return partial plaintext.",
+        "Keys MUST be rotatable without re-encrypting stored ciphertext; open() MUST resolve the correct key by key_id from the envelope.",
+        "Plaintext buffers SHALL be zeroed where the runtime allows after use; plaintext MUST NEVER be logged."
+      ],
+      "extension_contract": "AEAD algorithms register as cipher adapters implementing the Protocol and declaring the nonce size, tag size, and key handle type. The registry refuses to bind an adapter that exposes non-AEAD modes (CBC without HMAC, ECB) or allows nonce reuse.",
+      "consumption_example": "def store_pii(env: CryptoEnvelope, record_id: str, pii: bytes):\n    sealed = env.seal(plaintext=pii, aad=record_id.encode())\n    repo.save(record_id=record_id, ciphertext=sealed.ciphertext, nonce=sealed.nonce, key_id=sealed.key_id)",
+      "sources": [
+        {
+          "source": "OWASP ASVS 4.0.3",
+          "locator": "V6.2 Algorithms (V6.2.4, V6.2.5); V6.3 Random Values"
+        },
+        {
+          "source": "OWASP Top 10 2021",
+          "locator": "A02:2021 Cryptographic Failures — algorithm and mode selection"
+        }
+      ],
+      "why_essential": "Callers that roll their own AES invariably ship CBC-without-HMAC, key-in-cleartext, or nonce-from-timestamp bugs; a shared AEAD envelope moves those decisions out of application code.",
+      "alternatives_considered": [
+        "Raw AES-CBC with HMAC composition — easy to mis-pair; PAD oracle risk.",
+        "pgcrypto pgp_sym_encrypt — opaque to app-layer rotation and audit.",
+        "Field-level library per model — scatters key policy across schemas."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "SignatureVerifier",
+      "namespace": "security",
+      "purpose": "Produce and verify detached digital signatures with key-id selection, typed message framing, and refusal of weak or unannounced algorithms.",
+      "api_signature": "from typing import Protocol\n\nclass SignatureVerifier(Protocol):\n    def sign(self, message: bytes, key_id: str) -> bytes: ...\n    def verify(self, message: bytes, signature: bytes, key_id: str) -> None: ...",
+      "invariants": [
+        "verify() MUST raise on signature mismatch and MUST NEVER return a boolean indicating partial verification.",
+        "Accepted algorithms MUST be declared per key_id; algorithm confusion (substituting HS256 for RS256) CANNOT occur.",
+        "sign() MUST use deterministic signing (RFC 6979 for ECDSA) or a CSPRNG nonce; ECDSA nonce reuse SHALL be treated as key compromise.",
+        "Public keys used for verify MUST be fetched from a pinned trust anchor and MUST NEVER be learned from the same message being verified.",
+        "verify() MUST be constant-time with respect to the signature bytes; timing leaks on tag comparison are FORBIDDEN."
+      ],
+      "extension_contract": "New signature schemes (Ed25519, RSA-PSS, ECDSA-P256, HMAC-SHA256) register as signer adapters implementing the Protocol and declaring their key handle format. The registry refuses to bind adapters for algorithms deprecated by the profile (RSA-PKCS1-v1_5, ECDSA with SHA-1).",
+      "consumption_example": "def issue_token(signer: SignatureVerifier, payload: bytes, key_id: str) -> bytes:\n    signature = signer.sign(message=payload, key_id=key_id)\n    return payload + b\".\" + signature",
+      "sources": [
+        {
+          "source": "OWASP ASVS 4.0.3",
+          "locator": "V6.2 Algorithms (V6.2.7 asymmetric algorithms)"
+        },
+        {
+          "source": "OWASP Top 10 2021",
+          "locator": "A02:2021 Cryptographic Failures"
+        }
+      ],
+      "why_essential": "Every JWT, webhook, and signed URL uses signatures; without a shared verifier the service accidentally accepts 'alg: none' or compares MACs with != instead of compare_digest.",
+      "alternatives_considered": [
+        "Raw library call per call-site — algorithm confusion bugs stay endemic.",
+        "HMAC-only for all signing — does not meet non-repudiation for outbound signatures.",
+        "Gateway-terminated signatures only — leaves internal services vulnerable if bypassed."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "InputValidator",
+      "namespace": "security",
+      "purpose": "Parse and constrain inbound payloads against a declared schema with typed coercion, length and range bounds, and rejection of unknown fields.",
+      "api_signature": "from typing import Protocol, TypeVar\n\nT = TypeVar(\"T\")\n\nclass InputValidator(Protocol):\n    def parse(self, raw: object, schema: type[T]) -> T: ...",
+      "invariants": [
+        "parse() MUST reject payloads with unknown fields unless the schema explicitly opts into extras; silent field drop is FORBIDDEN.",
+        "Length, range, and pattern bounds MUST be enforced before any business rule touches the value; unbounded strings CANNOT be accepted.",
+        "Type coercion MUST be narrowing (string→int only when digits-only); widening coercion (int→string for structured ids) SHALL require explicit opt-in.",
+        "parse() MUST raise a typed validation error containing the offending field path; error payloads MUST NEVER include attacker-controlled content verbatim in structured logs.",
+        "Recursion depth and collection size MUST be bounded; payloads exceeding the configured limits SHALL be rejected before parsing."
+      ],
+      "extension_contract": "Schema libraries register as validator adapters (pydantic, attrs+cattrs, msgspec) implementing the Protocol. The registry refuses to bind an adapter that defaults to extra='allow' or that lacks size/depth limits.",
+      "consumption_example": "def create_order(validator: InputValidator, raw_body: object, handler) -> object:\n    order = validator.parse(raw_body, schema=OrderCreate)\n    return handler(order)",
+      "sources": [
+        {
+          "source": "OWASP ASVS 4.0.3",
+          "locator": "V5.1 Input Validation Requirements"
+        },
+        {
+          "source": "OWASP Top 10 2021",
+          "locator": "A03:2021 Injection — input validation principles"
+        }
+      ],
+      "why_essential": "Handlers that parse dicts directly forget length limits and leak implementation types; a validator primitive forces schema-first ingress and centralizes the 'reject unknown fields' decision.",
+      "alternatives_considered": [
+        "Manual dict.get() per endpoint — inconsistent bounds and accepts extras silently.",
+        "Framework body-parsing with default permissive mode — admits unbounded nested structures.",
+        "Regex-only validation — cannot express structural constraints."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "RateLimiter",
+      "namespace": "security",
+      "purpose": "Enforce sliding-window request quotas keyed by principal, ip, and route to blunt credential stuffing, enumeration, and brute-force attacks.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass RateDecision:\n    allowed: bool\n    retry_after_seconds: int\n    remaining: int\n\nclass RateLimiter(Protocol):\n    def check(self, key: str, cost: int = 1) -> RateDecision: ...\n    def reset(self, key: str) -> None: ...",
+      "invariants": [
+        "check() MUST be atomic under concurrent callers; lost-update races that under-count requests are FORBIDDEN.",
+        "Key composition MUST include a principal identifier and an endpoint selector; rate limits keyed only by IP SHALL be augmented for authenticated requests.",
+        "Denied requests MUST return a Retry-After that does not leak internal reset times beyond the window; negative values CANNOT be emitted.",
+        "reset() MUST NEVER be callable from unauthenticated request paths; administrative reset is an out-of-band operation.",
+        "Authentication endpoints MUST be subject to stricter quotas than general traffic per ASVS V11."
+      ],
+      "extension_contract": "Storage backends (redis token-bucket, in-memory leaky-bucket, cloud-provider-quota) register as limiter adapters implementing the Protocol. The registry refuses to bind an adapter that does not guarantee atomic check-and-decrement under concurrent access.",
+      "consumption_example": "def login(limiter: RateLimiter, username: str, ip: str, attempt):\n    decision = limiter.check(key=f\"login:{username}:{ip}\")\n    if not decision.allowed:\n        raise TooManyRequests(retry_after=decision.retry_after_seconds)\n    return attempt()",
+      "sources": [
+        {
+          "source": "OWASP ASVS 4.0.3",
+          "locator": "V11.1 Business Logic Security Requirements; V2.2 General Authenticator Requirements (anti-automation)"
+        },
+        {
+          "source": "NIST SP 800-63B",
+          "locator": "Section 5.2.2 Throttling"
+        },
+        {
+          "source": "OWASP Top 10 2021",
+          "locator": "A07:2021 Identification and Authentication Failures"
+        }
+      ],
+      "why_essential": "Login endpoints without throttling are a published attack surface; a shared limiter primitive moves the per-endpoint quota decision into configuration and guarantees atomicity no single handler can reimplement wrong.",
+      "alternatives_considered": [
+        "CDN-only rate limits — cannot key on authenticated principal.",
+        "Fixed-window counter — allows 2x burst at window boundary.",
+        "Per-handler counter in process memory — fails under horizontal scale."
+      ],
+      "maturity": "battle_tested"
+    }
+  ],
+  "cross_cutting_insights": [
+    "Authentication primitives (PasswordHasher, WebAuthnAuthenticator, TotpVerifier) all require constant-time comparison; leaving timing discipline to caller code is the single most common implementation failure.",
+    "Every credential-facing primitive (hasher, session, vault, envelope) has a rotation dimension; the catalog must treat 'rotatable' as a first-class invariant, not a roadmap item.",
+    "OWASP ASVS 4.0.3 V6 (cryptography) and RFC/NIST guidance converge on AEAD, bounded-nonce use, and key-id-tagged ciphertext; the envelope-and-verifier pair is the minimum shared surface.",
+    "OAuth 2.0 (RFC 6749), PKCE (RFC 7636), OIDC Core 1.0, and token introspection (RFC 7662) are only safe in combination; pulling any one out reintroduces state-injection or algorithm-confusion bugs.",
+    "Session-fixation prevention (ASVS V3) and CSRF binding both require session-rotation plumbing; a split ownership between SessionStore and CsrfGuard reflects that dependency explicitly.",
+    "Defense-in-depth at the HTTP edge is three separate policies (CSP, CORS, cookie attributes), not one header; conflating them produces the classic 'unsafe-inline plus credentialed wildcard' failure mode.",
+    "Input validation and output encoding are orthogonal: validators constrain shape; encoders constrain sink. Teams that conflate the two end up with either encoded data stored or raw data rendered.",
+    "Rate limiting belongs in the security surface, not in resiliency, because NIST SP 800-63B §5.2.2 and ASVS V2/V11 both scope it as an authentication control against automated guessing."
+  ],
+  "source_coverage": {
+    "OWASP ASVS 4.0.3": 12,
+    "OWASP Top 10 2021": 8,
+    "NIST SP 800-63B": 4,
+    "RFC 6749": 2,
+    "RFC 7636": 1,
+    "RFC 7662": 1,
+    "OpenID Connect Core 1.0": 2,
+    "W3C WebAuthn Level 3 Recommendation": 1,
+    "RFC 6238": 1
+  },
+  "gaps_observed": [
+    "SKILL-001 lacks a first-class PasswordHasher primitive with rotation-aware needs_rehash semantics; tools that touch credentials inline with bcrypt drift apart.",
+    "No WebAuthn/passkey registration primitive — current auth additions assume shared-secret factors and miss origin/RP-ID binding.",
+    "CryptoEnvelope with key-id tagging is not surfaced; field-level encryption tools roll their own AES without rotation support.",
+    "SecretsVault with rotation and audit hooks is absent; generators rely on environment variables injected at deploy time.",
+    "CSP composer is missing; tools emitting HTML responses ship without a nonce-aware, strict-dynamic policy.",
+    "RateLimiter is not scoped as a security primitive today; add_rate_limit lives in resiliency and misses principal-keyed login throttling per NIST SP 800-63B §5.2.2.",
+    "TokenIntrospector abstraction is absent — JWT verification is reimplemented per tool with inconsistent audience enforcement.",
+    "SessionStore lacks a revoke_all_for_subject operation in current tooling; password-change rotation is not guaranteed to terminate live sessions."
+  ]
+}

@@ -1,0 +1,495 @@
+{
+  "agent_id": 7,
+  "codename": "OBSERVABILITY",
+  "primitives": [
+    {
+      "name": "Tracer",
+      "namespace": "obs",
+      "purpose": "Create spans that represent a unit of work, attach attributes and events, link related spans, and propagate context across process and network boundaries.",
+      "api_signature": "from contextlib import AbstractContextManager\nfrom typing import Protocol, Mapping, Sequence\n\nclass Span(Protocol):\n    def set_attribute(self, key: str, value: str | int | float | bool) -> None: ...\n    def add_event(self, name: str, attributes: Mapping[str, object] | None = None) -> None: ...\n    def record_exception(self, exc: BaseException) -> None: ...\n    def set_status(self, code: str, description: str | None = None) -> None: ...\n\nclass Tracer(Protocol):\n    def start_as_current_span(\n        self,\n        name: str,\n        *,\n        kind: str = 'INTERNAL',\n        attributes: Mapping[str, object] | None = None,\n        links: Sequence[object] = (),\n    ) -> AbstractContextManager[Span]: ...\n    def inject(self, carrier: dict[str, str]) -> None: ...\n    def extract(self, carrier: Mapping[str, str]) -> object: ...\n",
+      "invariants": [
+        "Every span MUST have a non-empty name, a start timestamp, and an end timestamp in that causal order.",
+        "A span CANNOT be ended twice; a second end call SHALL be a no-op with a recorded internal warning.",
+        "The tracer MUST honor W3C Trace Context headers (traceparent, tracestate) on both inject and extract without mutation of unknown tracestate vendor entries.",
+        "Recording an exception MUST set the span status code to ERROR unless the caller explicitly overrides with OK.",
+        "Attribute values MUST be one of: string, bool, int, float, or a homogeneous sequence of those types; nested structures are FORBIDDEN.",
+        "The tracer SHALL NEVER block the caller waiting for exporter acknowledgement; export is asynchronous."
+      ],
+      "extension_contract": "A downstream tool extends tracing by registering a SpanProcessor adapter against the TracerProvider; custom attribute semantics are added via a semantic-convention plugin that maps domain keys to OTel attribute names, and context propagation formats are added by registering a TextMapPropagator implementation.",
+      "consumption_example": "def charge_card(tracer: Tracer, amount_cents: int, customer_id: str) -> str:\n    with tracer.start_as_current_span(\n        'payment.charge',\n        kind='CLIENT',\n        attributes={'payment.amount_cents': amount_cents, 'enduser.id': customer_id},\n    ) as span:\n        try:\n            receipt_id = _call_gateway(amount_cents)\n        except Exception as exc:\n            span.record_exception(exc)\n            raise\n        span.set_attribute('payment.receipt_id', receipt_id)\n        return receipt_id\n",
+      "sources": [
+        {
+          "source": "OpenTelemetry Specification 1.32 — Trace API",
+          "locator": "specification/trace/api.md sections 'Tracer', 'Span', 'SpanKind', 'Span.End'"
+        },
+        {
+          "source": "W3C Trace Context Recommendation Level 1",
+          "locator": "https://www.w3.org/TR/trace-context/ section 3 (traceparent) and section 4 (tracestate)"
+        },
+        {
+          "source": "Majors, Fong-Jones, Miranda — Observability Engineering (2022)",
+          "locator": "Chapter 6 'Stitching Events into Traces' pp. 73-84"
+        }
+      ],
+      "why_essential": "Without a shared tracer contract, each tool emits incompatible span shapes and context headers, breaking cross-service causality and forcing bespoke propagation glue at every network hop.",
+      "alternatives_considered": [
+        "Per-framework tracer (FastAPI-specific decorator) — rejected because propagation breaks at the first out-of-framework hop (worker, CLI, cron).",
+        "OpenTracing API — rejected as archived in 2022; its successor OpenTelemetry is the active standard.",
+        "Log-only correlation with request_id — rejected because it loses parent/child causality and span timing."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "MetricMeter",
+      "namespace": "obs",
+      "purpose": "Record numeric measurements through four instrument shapes — counter, up-down counter, histogram, asynchronous gauge — under OpenTelemetry metric semantics.",
+      "api_signature": "from typing import Protocol, Mapping, Callable, Sequence\n\nclass Counter(Protocol):\n    def add(self, value: int | float, attributes: Mapping[str, str] | None = None) -> None: ...\n\nclass UpDownCounter(Protocol):\n    def add(self, value: int | float, attributes: Mapping[str, str] | None = None) -> None: ...\n\nclass Histogram(Protocol):\n    def record(self, value: int | float, attributes: Mapping[str, str] | None = None) -> None: ...\n\nclass MetricMeter(Protocol):\n    def counter(self, name: str, *, unit: str, description: str) -> Counter: ...\n    def up_down_counter(self, name: str, *, unit: str, description: str) -> UpDownCounter: ...\n    def histogram(self, name: str, *, unit: str, description: str, boundaries: Sequence[float] | None = None) -> Histogram: ...\n    def observable_gauge(self, name: str, callback: Callable[[], float], *, unit: str, description: str) -> None: ...\n",
+      "invariants": [
+        "Counter instruments MUST only accept non-negative values; negative deltas SHALL raise and are FORBIDDEN to be silently clamped.",
+        "Histogram boundaries MUST be finite, strictly increasing, and immutable once the instrument is created.",
+        "Instrument names MUST match the regex '^[A-Za-z][A-Za-z0-9_./-]{0,62}$' per OTel specification and CANNOT collide with a differently-typed instrument of the same name.",
+        "Every instrument MUST carry a UCUM unit string (e.g. 'ms', 's', 'By') — an empty unit is FORBIDDEN.",
+        "Observable gauge callbacks MUST be idempotent within a collection cycle and SHALL NEVER raise; exceptions are logged and the measurement is dropped.",
+        "Attribute sets attached to measurements NEVER include unbounded-cardinality keys (user id, request id, full URL path)."
+      ],
+      "extension_contract": "Downstream tools register a MetricReader adapter (pull-based Prometheus scrape or push-based OTLP exporter) and extend instrumentation by subclassing the meter provider to add a View that renames, filters, or re-aggregates instruments without mutating existing instrument contracts.",
+      "consumption_example": "def record_checkout(meter: MetricMeter, duration_ms: float, status: str) -> None:\n    latency = meter.histogram('http.server.duration', unit='ms', description='HTTP server latency')\n    errors = meter.counter('checkout.failures', unit='1', description='Failed checkouts')\n    latency.record(duration_ms, {'http.route': '/checkout', 'http.response.status_code': status})\n    if status.startswith('5'):\n        errors.add(1, {'http.route': '/checkout'})\n",
+      "sources": [
+        {
+          "source": "OpenTelemetry Specification 1.32 — Metrics API",
+          "locator": "specification/metrics/api.md sections 'Instruments', 'Counter', 'Histogram', 'Asynchronous Gauge'"
+        },
+        {
+          "source": "Prometheus Documentation — Histograms and Summaries (prometheus.io/docs/practices)",
+          "locator": "https://prometheus.io/docs/practices/histograms/ 'When to use which' and 'Errors of quantile estimation'"
+        },
+        {
+          "source": "OpenTelemetry Semantic Conventions 1.27 — Metric Naming",
+          "locator": "semconv/general/metrics.md 'Instrument naming' and 'Units (UCUM)'"
+        }
+      ],
+      "why_essential": "Centralizing instrument creation is the only way to keep units, names, and attribute sets aligned across services; ad-hoc per-tool meters silently fork names and aggregations, making dashboards non-portable.",
+      "alternatives_considered": [
+        "StatsD client per tool — rejected because it has no unit or description metadata and offers no histogram bucket control.",
+        "Prometheus client library directly — rejected because it binds code to pull-only collection and blocks push-based deployment models.",
+        "Pure log-derived metrics — rejected because aggregation at ingest is costly and loses millisecond-resolution histograms."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "StructuredLogger",
+      "namespace": "obs",
+      "purpose": "Emit machine-parseable key/value log records with a fixed level taxonomy, attached trace and span identifiers, and no positional string formatting.",
+      "api_signature": "from typing import Protocol, Mapping, Any\n\nclass StructuredLogger(Protocol):\n    def debug(self, event: str, **fields: Any) -> None: ...\n    def info(self, event: str, **fields: Any) -> None: ...\n    def warn(self, event: str, **fields: Any) -> None: ...\n    def error(self, event: str, *, exc: BaseException | None = None, **fields: Any) -> None: ...\n    def bind(self, **fields: Any) -> 'StructuredLogger': ...\n    def with_context(self, context: Mapping[str, Any]) -> 'StructuredLogger': ...\n",
+      "invariants": [
+        "Every emitted record MUST be a single line of valid UTF-8 JSON with keys 'ts', 'level', 'event', plus the caller-provided fields.",
+        "Log level SHALL be one of DEBUG, INFO, WARN, ERROR; TRACE and FATAL are FORBIDDEN to prevent drift from OTel log severity ranges.",
+        "When a span is active in the current context, the record MUST automatically include 'trace_id' and 'span_id' in hex form.",
+        "Printf-style formatting with %s or f-strings inside the event message is FORBIDDEN; values ALWAYS travel as typed fields.",
+        "Secrets matching registered redaction patterns (authorization headers, bearer tokens, card PANs) MUST be replaced with '[REDACTED]' before serialization.",
+        "Binding a field NEVER mutates the parent logger; bind returns a new immutable logger instance."
+      ],
+      "extension_contract": "A downstream tool plugs in a redaction filter via the register-processor hook, adds custom severity-to-sink routing by composing a WriteAdapter, or injects static fields (service.version, git.sha) through a bound child logger that decorators and middleware receive as dependency.",
+      "consumption_example": "def handle_webhook(logger: StructuredLogger, event_id: str, payload_size: int) -> None:\n    scoped = logger.bind(event_id=event_id, integration='stripe')\n    scoped.info('webhook.received', payload_size=payload_size)\n    try:\n        _process(event_id)\n    except ValueError as exc:\n        scoped.error('webhook.rejected', reason='invalid_signature', exc=exc)\n        raise\n    scoped.info('webhook.processed')\n",
+      "sources": [
+        {
+          "source": "OpenTelemetry Specification 1.32 — Logs Data Model",
+          "locator": "specification/logs/data-model.md sections 'Field: SeverityNumber', 'Field: Body', 'Field: TraceId/SpanId'"
+        },
+        {
+          "source": "Majors, Fong-Jones, Miranda — Observability Engineering (2022)",
+          "locator": "Chapter 3 'Lessons from Scaling Without Observability' pp. 32-38 on structured events"
+        },
+        {
+          "source": "Google SRE Book — Monitoring Distributed Systems",
+          "locator": "Chapter 6 'Monitoring Distributed Systems' section 'Logs vs Metrics'"
+        }
+      ],
+      "why_essential": "A shared logger is the only way to guarantee every record is parseable by the same ingest pipeline and automatically carries trace correlation; per-tool loggers forget to inject span context and produce grep-friendly-but-query-hostile prose.",
+      "alternatives_considered": [
+        "Python stdlib logging with a JSON formatter — rejected because the default API encourages positional formatting and loses types at the boundary.",
+        "Per-service print statements + log shipper — rejected because line parsing is fragile and trace correlation becomes post-hoc regex.",
+        "Binary structured logging (protobuf) — rejected because debuggability in production terminals requires human-readable output."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "CorrelationContext",
+      "namespace": "obs",
+      "purpose": "Propagate a stable request identifier and optional baggage across threads, async tasks, and network hops so every downstream record can be joined back to the originating request.",
+      "api_signature": "from contextlib import AbstractContextManager\nfrom typing import Protocol, Mapping\n\nclass CorrelationContext(Protocol):\n    @property\n    def request_id(self) -> str: ...\n    @property\n    def trace_id(self) -> str | None: ...\n    def baggage(self) -> Mapping[str, str]: ...\n    def activate(self) -> AbstractContextManager[None]: ...\n    @classmethod\n    def current(cls) -> 'CorrelationContext': ...\n    @classmethod\n    def from_headers(cls, headers: Mapping[str, str]) -> 'CorrelationContext': ...\n    def to_headers(self) -> Mapping[str, str]: ...\n",
+      "invariants": [
+        "The request_id MUST be a lowercase hex or ULID string of at least 16 characters and SHALL be stable for the entire request lifecycle.",
+        "Baggage values MUST be ASCII and each individual value CANNOT exceed 8192 bytes per W3C Baggage specification.",
+        "Activating a context MUST restore the prior context on exit even if an exception is raised.",
+        "When extracting from headers, an invalid traceparent value SHALL cause a new trace id to be generated and NEVER falls back to an empty trace context.",
+        "Baggage keys reserved for authentication (password, authorization, cookie) are FORBIDDEN and SHALL be stripped on ingest.",
+        "CorrelationContext NEVER leaks across event loops; asynchronous task spawns copy-on-capture the current context via contextvars."
+      ],
+      "extension_contract": "Downstream tools register a middleware that extracts the context from inbound transport headers (HTTP, gRPC, SQS message attributes) and compose a propagator adapter that re-injects the context into outbound calls; baggage keys are extended by registering a namespaced key prefix through the bind method.",
+      "consumption_example": "async def enqueue_job(ctx: CorrelationContext, payload: dict, queue) -> None:\n    headers = dict(ctx.to_headers())\n    headers['x-request-id'] = ctx.request_id\n    await queue.send(body=payload, attributes=headers)\n    current = CorrelationContext.current()\n    assert current.request_id == ctx.request_id\n",
+      "sources": [
+        {
+          "source": "W3C Baggage Recommendation",
+          "locator": "https://www.w3.org/TR/baggage/ sections 3.2 (member format) and 3.3 (value length)"
+        },
+        {
+          "source": "OpenTelemetry Specification 1.32 — Context and Propagation",
+          "locator": "specification/context/context.md and specification/context/api-propagators.md"
+        },
+        {
+          "source": "Majors, Fong-Jones, Miranda — Observability Engineering (2022)",
+          "locator": "Chapter 4 'How Observability and Monitoring Come Together' pp. 48-52 on request-scoped context"
+        }
+      ],
+      "why_essential": "Without a single correlation primitive, each layer invents its own header (X-Request-Id, X-Trace-Id, X-Correlation) and async boundaries drop context silently, making end-to-end reconstruction impossible.",
+      "alternatives_considered": [
+        "Thread-local storage — rejected because it does not survive async/await task switches in Python asyncio.",
+        "Manually threading the context through every function signature — rejected because it does not survive framework callbacks and middleware.",
+        "Attaching context only to the root span — rejected because logs emitted outside the span (startup, shutdown, background tasks) lose correlation."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "ErrorSink",
+      "namespace": "obs",
+      "purpose": "Capture uncaught exceptions with fingerprint grouping, attach current trace and correlation context, apply sampling, and forward to an error-tracking backend.",
+      "api_signature": "from typing import Protocol, Mapping, Callable\n\nclass ErrorSink(Protocol):\n    def capture_exception(\n        self,\n        exc: BaseException,\n        *,\n        level: str = 'error',\n        tags: Mapping[str, str] | None = None,\n        extras: Mapping[str, object] | None = None,\n    ) -> str: ...\n    def capture_message(self, message: str, *, level: str = 'error', tags: Mapping[str, str] | None = None) -> str: ...\n    def register_fingerprinter(self, fn: Callable[[BaseException], list[str]]) -> None: ...\n    def before_send(self, fn: Callable[[dict], dict | None]) -> None: ...\n",
+      "invariants": [
+        "Every captured event MUST include the active trace_id, span_id, and request_id when any of those are set.",
+        "A fingerprint MUST be deterministic for the same exception type plus top-three stack frames; otherwise identical incidents SHALL NEVER split into separate issues.",
+        "capture_exception MUST redact registered PII field names (email, password, authorization) before transport.",
+        "The sink CANNOT block the caller; serialization and network transmission SHALL run on a background worker.",
+        "before_send hooks returning None MUST drop the event and NEVER partially transmit it.",
+        "Sampling SHALL apply AFTER fingerprinting so rare variants are not accidentally suppressed by head-of-queue drops."
+      ],
+      "extension_contract": "Tools extend the sink by registering a fingerprinter callable that returns a list of grouping keys, by registering a before_send filter that redacts or drops events, and by implementing a TransportAdapter that speaks the target vendor's envelope while preserving the neutral event payload.",
+      "consumption_example": "def process_order(sink: ErrorSink, order_id: str) -> None:\n    try:\n        _settle(order_id)\n    except PaymentDeclined as exc:\n        event_id = sink.capture_exception(\n            exc,\n            level='warning',\n            tags={'order.id': order_id, 'payment.gateway': 'stripe'},\n            extras={'retry_count': 2},\n        )\n        _notify_ops(event_id)\n        raise\n",
+      "sources": [
+        {
+          "source": "Majors, Fong-Jones, Miranda — Observability Engineering (2022)",
+          "locator": "Chapter 5 'Structured Events Are the Building Blocks of Observability' pp. 57-62"
+        },
+        {
+          "source": "OpenTelemetry Specification 1.32 — Exceptions",
+          "locator": "specification/trace/semantic_conventions/exceptions.md (exception.type, exception.message, exception.stacktrace)"
+        },
+        {
+          "source": "Google SRE Book — Monitoring Distributed Systems",
+          "locator": "Chapter 6 section 'Four Golden Signals' on error-rate grouping"
+        }
+      ],
+      "why_essential": "Per-tool error handling drops trace context and produces duplicate issues; one sink with fingerprinting and context-attachment is the only way to keep error groups stable and joinable to the originating trace.",
+      "alternatives_considered": [
+        "Relying on log aggregation for errors — rejected because log pipelines lack fingerprint-based grouping and alert fatigue follows.",
+        "Per-framework exception middleware — rejected because background jobs, CLI, and consumers fall outside framework boundaries.",
+        "Raw stacktrace hashing as the only fingerprint — rejected because line-number drift from refactors splits stable issues."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "SamplingPolicy",
+      "namespace": "obs",
+      "purpose": "Decide whether a given trace or span is retained, combining head-based (at span start) and tail-based (post hoc) rules and honoring the parent sampling decision.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol, Mapping, Sequence\n\n@dataclass(frozen=True)\nclass SamplingDecision:\n    sampled: bool\n    attributes: Mapping[str, str]\n    trace_state: str | None\n\nclass SamplingPolicy(Protocol):\n    def should_sample(\n        self,\n        *,\n        parent_context: object | None,\n        trace_id: str,\n        name: str,\n        kind: str,\n        attributes: Mapping[str, object],\n        links: Sequence[object],\n    ) -> SamplingDecision: ...\n    def description(self) -> str: ...\n",
+      "invariants": [
+        "When a parent span carries the sampled flag, child spans MUST inherit that decision unless the policy explicitly declares itself parent-overriding.",
+        "The sampling decision SHALL be deterministic for the same trace_id so that siblings agree without coordination.",
+        "Probabilistic sampling MUST use the trace_id hash modulo a rate, NEVER a per-span random draw, to keep entire traces intact.",
+        "Policies CANNOT raise; a failing policy SHALL fall back to the default deny and emit an internal counter increment.",
+        "Tail-based sampling decisions MUST NOT retroactively modify already-exported spans; they ALWAYS run before export buffering flushes.",
+        "description() returns a stable, human-readable string that NEVER includes secret keys or cardinality-exploding values."
+      ],
+      "extension_contract": "Downstream tools compose a new policy by implementing the SamplingPolicy protocol and register it with the TracerProvider; composite policies chain via the compose adapter (latency-threshold OR error-seen OR head-probability) and trace-state propagation is preserved by returning the caller's trace_state unmodified when undecided.",
+      "consumption_example": "def build_sampler(head_ratio: float, keep_errors: bool) -> SamplingPolicy:\n    class Combined:\n        def should_sample(self, *, parent_context, trace_id, name, kind, attributes, links):\n            if keep_errors and attributes.get('error') is True:\n                return SamplingDecision(True, {'sampler.reason': 'error'}, None)\n            keep = int(trace_id[-8:], 16) / 0xFFFFFFFF < head_ratio\n            return SamplingDecision(keep, {'sampler.reason': 'head'}, None)\n        def description(self) -> str:\n            return f'combined(head={head_ratio}, errors={keep_errors})'\n    policy: SamplingPolicy = Combined()\n    return policy\n",
+      "sources": [
+        {
+          "source": "OpenTelemetry Specification 1.32 — Sampling",
+          "locator": "specification/trace/sdk.md section 'Sampler' and 'ParentBased' / 'TraceIdRatioBased' builtins"
+        },
+        {
+          "source": "Majors, Fong-Jones, Miranda — Observability Engineering (2022)",
+          "locator": "Chapter 17 'Cheap and Accurate Enough: Sampling' pp. 207-220"
+        },
+        {
+          "source": "Google SRE Book — Monitoring Distributed Systems",
+          "locator": "Chapter 6 section 'Sampling' on trace-driven debugging"
+        }
+      ],
+      "why_essential": "Ingest cost scales with trace volume; without a coherent policy primitive, tools each invent their own drop rules and break the property that a trace is retained or dropped as a whole.",
+      "alternatives_considered": [
+        "100% sampling — rejected because storage and egress costs grow linearly with traffic without a bounded slope.",
+        "Random per-span sampling — rejected because it shatters traces into partial subtrees that cannot be reconstructed.",
+        "Client-side header-only sampling — rejected because error-only and latency-only decisions require span-time or post-hoc evaluation."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "SemanticAttributes",
+      "namespace": "obs",
+      "purpose": "Expose the OpenTelemetry semantic-convention attribute keys as typed constants and enforce that primitives populate required keys for HTTP, database, messaging, and GenAI operations.",
+      "api_signature": "from typing import Final\n\nclass SemanticAttributes:\n    SERVICE_NAME: Final[str] = 'service.name'\n    SERVICE_VERSION: Final[str] = 'service.version'\n    DEPLOYMENT_ENVIRONMENT: Final[str] = 'deployment.environment.name'\n    HTTP_REQUEST_METHOD: Final[str] = 'http.request.method'\n    HTTP_ROUTE: Final[str] = 'http.route'\n    HTTP_RESPONSE_STATUS_CODE: Final[str] = 'http.response.status_code'\n    DB_SYSTEM: Final[str] = 'db.system'\n    DB_STATEMENT: Final[str] = 'db.statement'\n    MESSAGING_SYSTEM: Final[str] = 'messaging.system'\n    MESSAGING_DESTINATION_NAME: Final[str] = 'messaging.destination.name'\n    GEN_AI_SYSTEM: Final[str] = 'gen_ai.system'\n    GEN_AI_REQUEST_MODEL: Final[str] = 'gen_ai.request.model'\n    GEN_AI_USAGE_INPUT_TOKENS: Final[str] = 'gen_ai.usage.input_tokens'\n    GEN_AI_USAGE_OUTPUT_TOKENS: Final[str] = 'gen_ai.usage.output_tokens'\n",
+      "invariants": [
+        "Attribute keys MUST match the lowercase dotted notation specified by OpenTelemetry Semantic Conventions 1.27 and SHALL NEVER be aliased to custom names.",
+        "Required keys for a given domain (http.request.method for HTTP server spans, db.system for DB spans) MUST be populated before a span ends.",
+        "Values for enum attributes (db.system, messaging.system) MUST come from the SemConv registry and CANNOT be free-form strings.",
+        "Deprecated keys SHALL be aliased to the current key with a one-time warning, NEVER silently dropped.",
+        "The full SQL statement under db.statement MUST be redacted when the deployment environment is production; literal parameter values are FORBIDDEN.",
+        "SemanticAttributes class keys are immutable class attributes and NEVER reassigned at runtime."
+      ],
+      "extension_contract": "New domains extend the attribute set by subclassing SemanticAttributes and adding Final-typed constants that track a specific semconv version; the subclass is bound to a namespace via register() so linting tools can enforce that domain spans carry the subclass's required keys.",
+      "consumption_example": "def annotate_http_span(span, method: str, route: str, status: int) -> None:\n    span.set_attribute(SemanticAttributes.HTTP_REQUEST_METHOD, method)\n    span.set_attribute(SemanticAttributes.HTTP_ROUTE, route)\n    span.set_attribute(SemanticAttributes.HTTP_RESPONSE_STATUS_CODE, status)\n",
+      "sources": [
+        {
+          "source": "OpenTelemetry Semantic Conventions 1.27 — General",
+          "locator": "semconv/resource/README.md and semconv/general/attributes.md 'service.*' and 'deployment.*'"
+        },
+        {
+          "source": "OpenTelemetry Semantic Conventions 1.27 — HTTP",
+          "locator": "semconv/http/http-spans.md 'Required attributes' and 'http.request.method' enum"
+        },
+        {
+          "source": "OpenTelemetry Semantic Conventions 1.27 — GenAI",
+          "locator": "semconv/gen-ai/gen-ai-spans.md (gen_ai.system, gen_ai.request.model, gen_ai.usage.*)"
+        }
+      ],
+      "why_essential": "Shared keys are what make traces, metrics, and logs from different services joinable in a backend; without a single source of attribute names, every team invents 'httpMethod' vs 'http_method' and queries fragment.",
+      "alternatives_considered": [
+        "Free-form string keys — rejected because every team spells the same concept differently and dashboards cannot be shared.",
+        "Per-tool attribute modules — rejected because they drift from upstream semconv updates and miss required-key enforcement.",
+        "OpenTracing tag taxonomy — rejected because it was frozen in 2019 and lacks HTTP, DB, messaging, and GenAI coverage."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "CardinalityGuard",
+      "namespace": "obs",
+      "purpose": "Bound the unique attribute-value combinations attached to a metric or log stream to prevent label explosion from breaking time-series databases.",
+      "api_signature": "from typing import Protocol, Mapping\n\nclass CardinalityGuard(Protocol):\n    def admit(self, metric_name: str, attributes: Mapping[str, str]) -> Mapping[str, str]: ...\n    def configure(self, *, per_metric_limit: int, per_key_limit: int, overflow_label: str = 'overflow') -> None: ...\n    def stats(self, metric_name: str) -> Mapping[str, int]: ...\n",
+      "invariants": [
+        "When the per-metric series limit is reached, new attribute combinations MUST be collapsed into a single 'overflow' series and NEVER emitted with their original values.",
+        "The guard MUST reject any attribute key whose value has been seen in more than per_key_limit distinct forms across the window.",
+        "User identifiers, full URL paths, email addresses, and freeform query strings as attribute values are FORBIDDEN by the default deny-list.",
+        "Admission decisions SHALL be deterministic given the same (metric_name, attributes) tuple within a single aggregation window.",
+        "The guard NEVER mutates the caller's attribute mapping in place; it ALWAYS returns a new mapping.",
+        "Overflow events MUST be observable through a dedicated counter so operators can detect label pressure before ingestion breaks.",
+        "Configure CANNOT be invoked after the first admit call in a given process to preserve deterministic behavior."
+      ],
+      "extension_contract": "Teams extend the guard by registering a domain-specific key classifier (e.g. an adapter that maps user_id → 'uid_redacted'), by composing a deny-list plugin that supplements the default patterns, and by subclassing the guard to emit overflow events to a custom TelemetrySink.",
+      "consumption_example": "def record_request(meter: MetricMeter, guard: CardinalityGuard, route: str, user_id: str, status: int) -> None:\n    hist = meter.histogram('http.server.duration', unit='ms', description='HTTP latency')\n    safe_attrs = guard.admit('http.server.duration', {'http.route': route, 'user.id': user_id, 'http.response.status_code': str(status)})\n    hist.record(12.4, safe_attrs)\n    assert 'user.id' not in safe_attrs or safe_attrs['user.id'] == 'overflow'\n",
+      "sources": [
+        {
+          "source": "Prometheus Documentation — Instrumentation (prometheus.io/docs/practices)",
+          "locator": "https://prometheus.io/docs/practices/instrumentation/ section 'Do not overuse labels' and 'Cardinality is hard'"
+        },
+        {
+          "source": "Majors, Fong-Jones, Miranda — Observability Engineering (2022)",
+          "locator": "Chapter 1 'What Is Observability?' pp. 8-12 on high-cardinality data and its costs"
+        },
+        {
+          "source": "OpenTelemetry Specification 1.32 — Metrics SDK Views",
+          "locator": "specification/metrics/sdk.md section 'View' on attribute filtering and aggregation selection"
+        }
+      ],
+      "why_essential": "A single unbounded label (user id, raw URL) can 10x a metrics bill overnight and make dashboards unqueryable; without a shared guard primitive, each tool ships its own footgun.",
+      "alternatives_considered": [
+        "Relying on operators to audit dashboards — rejected because the blast radius lands in production before review.",
+        "Per-metric hardcoded allowlists — rejected because coverage drifts as new instruments are added.",
+        "Downstream TSDB-side label limits — rejected because by the time the TSDB refuses the write, the agent buffer and network have already paid the cost."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "HistogramBuckets",
+      "namespace": "obs",
+      "purpose": "Define explicit latency and size bucket boundaries for histogram instruments so quantile estimation is accurate and comparable across services.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Sequence\n\n@dataclass(frozen=True)\nclass HistogramBuckets:\n    name: str\n    unit: str\n    boundaries: Sequence[float]\n\n    @classmethod\n    def latency_ms_default(cls) -> 'HistogramBuckets': ...\n    @classmethod\n    def payload_bytes_default(cls) -> 'HistogramBuckets': ...\n",
+      "invariants": [
+        "Boundaries MUST be strictly increasing, finite, non-negative, and SHALL include at least five buckets below the target p99.",
+        "Once assigned to an instrument, boundaries are immutable; changing them at runtime is FORBIDDEN because it invalidates historical quantile comparisons.",
+        "Latency boundaries MUST be expressed in milliseconds with unit 'ms' and NEVER mixed with seconds on the same instrument.",
+        "The lowest boundary MUST be smaller than the realistic floor of the measured distribution so the first bucket is not saturated.",
+        "Bucket count SHALL NOT exceed 20 per instrument to bound per-series storage cost.",
+        "Default bucket sets for HTTP latency and payload size MUST be derived from the OpenTelemetry HTTP semconv recommendation and CANNOT be silently overridden at instrument creation."
+      ],
+      "extension_contract": "Tools extend the defaults by registering a named bucket preset (e.g. 'db.query.latency', 'llm.completion.latency') through a HistogramProvider adapter; callers bind a preset to an instrument at creation time, and the preset carries version metadata so dashboards can detect a boundary change.",
+      "consumption_example": "def checkout_latency(meter: MetricMeter) -> None:\n    preset = HistogramBuckets.latency_ms_default()\n    instrument = meter.histogram(preset.name, unit=preset.unit, description='checkout latency', boundaries=preset.boundaries)\n    instrument.record(34.5, {'checkout.step': 'payment'})\n    assert preset.unit == 'ms'\n",
+      "sources": [
+        {
+          "source": "Prometheus Documentation — Histograms and Summaries (prometheus.io/docs/practices)",
+          "locator": "https://prometheus.io/docs/practices/histograms/ 'Errors of quantile estimation' and default bucket guidance"
+        },
+        {
+          "source": "OpenTelemetry Semantic Conventions 1.27 — HTTP Metrics",
+          "locator": "semconv/http/http-metrics.md 'http.server.request.duration' recommended buckets"
+        },
+        {
+          "source": "Google SRE Book — Monitoring Distributed Systems",
+          "locator": "Chapter 6 section 'Four Golden Signals' on latency bucket selection"
+        }
+      ],
+      "why_essential": "Heterogeneous bucket boundaries make p99 numbers across services non-comparable; sharing a bucket primitive is how every dashboard stops lying about tail latency.",
+      "alternatives_considered": [
+        "Exponential histogram (HDR style) — rejected as of 2026 because backend support is still uneven; retained as an emerging opt-in.",
+        "Summary quantiles computed client-side — rejected because they cannot be aggregated across instances without error.",
+        "Per-service ad-hoc buckets — rejected because cross-service comparison is a required SRE operation."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "ResourceDescriptor",
+      "namespace": "obs",
+      "purpose": "Describe the entity producing telemetry — service, version, deployment environment, instance id — and attach that identity to every span, metric, and log record.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Mapping\n\n@dataclass(frozen=True)\nclass ResourceDescriptor:\n    service_name: str\n    service_namespace: str | None\n    service_version: str\n    service_instance_id: str\n    deployment_environment: str\n    attributes: Mapping[str, str]\n\n    def merged_with(self, overrides: Mapping[str, str]) -> 'ResourceDescriptor': ...\n    def to_attributes(self) -> Mapping[str, str]: ...\n",
+      "invariants": [
+        "service.name MUST be non-empty; a missing service.name SHALL cause telemetry initialization to fail fast rather than emit 'unknown_service'.",
+        "service.instance.id MUST be unique per running process and SHALL be stable for the lifetime of that process.",
+        "deployment.environment.name MUST be one of a declared enum (development / staging / production / preview) and free-form values are FORBIDDEN.",
+        "The resource descriptor is immutable after construction; merged_with ALWAYS returns a new descriptor.",
+        "Attribute values injected through to_attributes MUST use the canonical semconv keys (service.name, not serviceName).",
+        "The descriptor NEVER contains secrets, credentials, or personally identifiable data."
+      ],
+      "extension_contract": "Platforms extend resource detection by registering a ResourceDetector plugin (Kubernetes, ECS, Lambda) that contributes additional semconv-compliant attributes; the merge adapter resolves conflicts by giving explicit configuration priority over auto-detected values.",
+      "consumption_example": "def build_resource() -> ResourceDescriptor:\n    desc = ResourceDescriptor(\n        service_name='checkout',\n        service_namespace='payments',\n        service_version='2026.04.3',\n        service_instance_id='pod-abc-123',\n        deployment_environment='production',\n        attributes={'cloud.provider': 'aws', 'cloud.region': 'us-east-1'},\n    )\n    return desc\n",
+      "sources": [
+        {
+          "source": "OpenTelemetry Semantic Conventions 1.27 — Resource",
+          "locator": "semconv/resource/README.md 'Service', 'Deployment', 'Cloud' sections"
+        },
+        {
+          "source": "OpenTelemetry Specification 1.32 — Resource SDK",
+          "locator": "specification/resource/sdk.md 'Resource' and 'ResourceDetector' contract"
+        },
+        {
+          "source": "Google SRE Book — Monitoring Distributed Systems",
+          "locator": "Chapter 6 section 'Targets' on per-instance identity"
+        }
+      ],
+      "why_essential": "Without a shared resource primitive, the same service reports under three different names across exporters, and dashboards cannot aggregate by environment; identity is the glue of every multi-service query.",
+      "alternatives_considered": [
+        "Attaching service.name at each span call site — rejected because it bloats instrumentation and drifts across modules.",
+        "Environment variables consumed ad hoc by each tool — rejected because typing, validation, and drift detection are missing.",
+        "Kubernetes downward API alone — rejected because non-Kubernetes environments (Lambda, ECS, bare metal) require distinct detectors."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "TelemetryExporter",
+      "namespace": "obs",
+      "purpose": "Serialize batched spans, metrics, or log records into an OTLP-compatible envelope and deliver them to a configured endpoint with retry and backpressure.",
+      "api_signature": "from enum import Enum\nfrom typing import Protocol, Sequence\n\nclass Signal(str, Enum):\n    TRACES = 'traces'\n    METRICS = 'metrics'\n    LOGS = 'logs'\n\nclass ExportResult(str, Enum):\n    SUCCESS = 'success'\n    FAILURE = 'failure'\n    TIMEOUT = 'timeout'\n\nclass TelemetryExporter(Protocol):\n    signal: Signal\n\n    def export(self, batch: Sequence[object], *, timeout_s: float) -> ExportResult: ...\n    def force_flush(self, *, timeout_s: float) -> bool: ...\n    def shutdown(self, *, timeout_s: float) -> bool: ...\n",
+      "invariants": [
+        "Exporter calls MUST be non-blocking on the hot path; the caller SHALL always enqueue through an intermediate batch processor.",
+        "On transient failure the exporter MUST retry with exponential backoff, capped at a configurable maximum, and NEVER retry indefinitely.",
+        "Shutdown MUST flush the in-flight batch within the provided timeout and CANNOT accept new export calls afterwards.",
+        "The wire format MUST conform to OTLP/HTTP protobuf or OTLP/gRPC as defined by OpenTelemetry Specification 1.32.",
+        "Authentication headers attached to exports are FORBIDDEN from appearing in any log record, span attribute, or error event emitted by the exporter itself.",
+        "Export results SHALL be observable via an internal counter keyed by (signal, result) so operators can alert on sustained failure."
+      ],
+      "extension_contract": "A backend adapter implements the TelemetryExporter Protocol for its wire format, registers itself with the signal-specific provider, and is composed behind a BatchSpanProcessor / PeriodicExportingMetricReader so batching and retry semantics are preserved independently of the adapter.",
+      "consumption_example": "def flush_on_shutdown(exporter: TelemetryExporter) -> None:\n    ok = exporter.force_flush(timeout_s=5.0)\n    if not ok:\n        raise RuntimeError('telemetry flush timed out')\n    exporter.shutdown(timeout_s=2.0)\n",
+      "sources": [
+        {
+          "source": "OpenTelemetry Specification 1.32 — OTLP Protocol",
+          "locator": "specification/protocol/otlp.md 'Request' and 'Response' and retry semantics"
+        },
+        {
+          "source": "OpenTelemetry Specification 1.32 — SDK Exporters",
+          "locator": "specification/trace/sdk.md 'SpanExporter' and specification/metrics/sdk.md 'MetricExporter'"
+        },
+        {
+          "source": "Google SRE Book — Monitoring Distributed Systems",
+          "locator": "Chapter 6 section 'Setting Reasonable Expectations for Monitoring' on exporter reliability"
+        }
+      ],
+      "why_essential": "Batching, retry, backpressure, and authentication are non-trivial and must not be reinvented per tool; one exporter primitive keeps the hot path cheap and the failure mode predictable.",
+      "alternatives_considered": [
+        "Direct synchronous writes from the hot path — rejected because any network hiccup becomes tail-latency for end users.",
+        "Vendor-native SDKs only — rejected because they couple code to a single backend and block multi-destination fan-out.",
+        "File-based export + sidecar forwarder — rejected as a primary path because disk-queue management belongs in infra, not in-process."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "AuditEvent",
+      "namespace": "compliance",
+      "purpose": "Emit a tamper-evident, append-only record of a security-relevant action with actor, subject, action verb, outcome, and a cryptographic chain link.",
+      "api_signature": "from dataclasses import dataclass\nfrom datetime import datetime\nfrom typing import Mapping, Protocol\n\n@dataclass(frozen=True)\nclass AuditEvent:\n    event_id: str\n    occurred_at: datetime\n    actor_id: str\n    actor_type: str\n    action: str\n    resource_type: str\n    resource_id: str\n    outcome: str\n    attributes: Mapping[str, str]\n    prev_hash: str\n    event_hash: str\n\nclass AuditEventSink(Protocol):\n    def emit(self, event: AuditEvent) -> None: ...\n    def verify_chain(self, from_event_id: str | None = None) -> bool: ...\n",
+      "invariants": [
+        "event_hash MUST be computed as SHA-256 over the canonical serialization of all non-hash fields concatenated with prev_hash; a mismatched hash SHALL invalidate the chain.",
+        "Once emitted, an AuditEvent is append-only and CANNOT be updated, deleted, or logically superseded.",
+        "outcome MUST be one of 'success', 'failure', 'denied'; any other value is FORBIDDEN to keep reporting queryable.",
+        "actor_id MUST be set even for system-initiated actions; 'system' is a reserved literal and NEVER empty.",
+        "occurred_at MUST be an absolute UTC timestamp with at least millisecond precision; naive timestamps are FORBIDDEN.",
+        "action verbs MUST come from a controlled vocabulary (CREATE / READ / UPDATE / DELETE / GRANT / REVOKE / EXPORT) and ALWAYS use that controlled set for cross-system joins."
+      ],
+      "extension_contract": "Domains extend the vocabulary by registering a namespaced action prefix (e.g. 'payment.refund') through an AuditVocabulary provider; sinks are added by implementing AuditEventSink and composing them into a FanOutSink so WORM storage, SIEM, and warm-query stores each receive the same stream.",
+      "consumption_example": "def record_user_export(sink, actor: str, user_id: str, prev_hash: str) -> AuditEvent:\n    from hashlib import sha256\n    from datetime import datetime, timezone\n    event_id = 'evt_01J9ZX'\n    canonical = f'{event_id}|{actor}|user|EXPORT|{user_id}|success|{prev_hash}'\n    evt = AuditEvent(\n        event_id=event_id,\n        occurred_at=datetime.now(timezone.utc),\n        actor_id=actor,\n        actor_type='human',\n        action='EXPORT',\n        resource_type='user',\n        resource_id=user_id,\n        outcome='success',\n        attributes={'reason': 'dsar'},\n        prev_hash=prev_hash,\n        event_hash=sha256(canonical.encode()).hexdigest(),\n    )\n    sink.emit(evt)\n    return evt\n",
+      "sources": [
+        {
+          "source": "NIST Special Publication 800-92 — Guide to Computer Security Log Management",
+          "locator": "Section 3.2 'Infrastructure for Log Management' and 3.3 'Log Analysis'"
+        },
+        {
+          "source": "Majors, Fong-Jones, Miranda — Observability Engineering (2022)",
+          "locator": "Chapter 14 'Observability and the Software Supply Chain' pp. 173-178 on audit records"
+        },
+        {
+          "source": "OpenTelemetry Semantic Conventions 1.27 — General",
+          "locator": "semconv/general/attributes.md 'enduser.id', 'enduser.role' for actor identity keys"
+        }
+      ],
+      "why_essential": "Regulated domains (SOC2, HIPAA, PCI-DSS) require a verifiable audit trail that per-tool loggers cannot produce; the hash chain is what distinguishes audit from logging and it must be enforced centrally.",
+      "alternatives_considered": [
+        "Reusing StructuredLogger for audit — rejected because logs are mutable at the pipeline level and lack a tamper-evident chain.",
+        "Database row CRUD history — rejected because it captures state deltas, not actor intent or denied actions.",
+        "External SIEM-only ingestion — rejected because the SIEM becomes the source of truth and proof-of-intent is delegated offsite."
+      ],
+      "maturity": "battle_tested"
+    }
+  ],
+  "cross_cutting_insights": [
+    "Traces, metrics, and logs are three projections of the same structured event; every primitive here assumes they share service.name, trace_id, and timestamp so backends can join them without post-hoc glue.",
+    "Every signal carries the same identity: ResourceDescriptor plus CorrelationContext appear in Tracer, MetricMeter, StructuredLogger, ErrorSink, and AuditEvent — identity is not per-signal, it is per-process.",
+    "Cardinality is the single biggest operational footgun; CardinalityGuard, SemanticAttributes enum values, and SamplingPolicy each attack a different vector (labels, keys, volume) of the same failure mode.",
+    "Asynchronous export is mandatory across the board — Tracer, MetricMeter, ErrorSink, and TelemetryExporter all forbid blocking the hot path because production traffic cannot pay for collector latency.",
+    "Semantic conventions 1.27 is the interface contract between instrumentation code and analysis tools; any primitive that invents its own attribute names defeats the purpose of portable telemetry.",
+    "Sampling decisions must be trace-coherent, not span-local — SamplingPolicy, Tracer context propagation, and TelemetryExporter batching all rely on the invariant that an entire trace is kept or dropped as a unit.",
+    "Audit and observability share primitives but diverge on mutability — AuditEvent is append-only and chain-verified, while spans and metrics are best-effort and lossy; conflating them is a compliance failure."
+  ],
+  "source_coverage": {
+    "OpenTelemetry Specification 1.32 — Trace API": 1,
+    "OpenTelemetry Specification 1.32 — Metrics API": 1,
+    "OpenTelemetry Specification 1.32 — Logs Data Model": 1,
+    "OpenTelemetry Specification 1.32 — Context and Propagation": 1,
+    "OpenTelemetry Specification 1.32 — Sampling": 1,
+    "OpenTelemetry Specification 1.32 — Metrics SDK Views": 1,
+    "OpenTelemetry Specification 1.32 — Resource SDK": 1,
+    "OpenTelemetry Specification 1.32 — OTLP Protocol": 1,
+    "OpenTelemetry Specification 1.32 — SDK Exporters": 1,
+    "OpenTelemetry Specification 1.32 — Exceptions": 1,
+    "OpenTelemetry Semantic Conventions 1.27 — General": 2,
+    "OpenTelemetry Semantic Conventions 1.27 — HTTP": 1,
+    "OpenTelemetry Semantic Conventions 1.27 — HTTP Metrics": 1,
+    "OpenTelemetry Semantic Conventions 1.27 — GenAI": 1,
+    "OpenTelemetry Semantic Conventions 1.27 — Metric Naming": 1,
+    "OpenTelemetry Semantic Conventions 1.27 — Resource": 1,
+    "Majors, Fong-Jones, Miranda — Observability Engineering (2022)": 6,
+    "Google SRE Book — Monitoring Distributed Systems": 5,
+    "Prometheus Documentation — Histograms and Summaries (prometheus.io/docs/practices)": 2,
+    "Prometheus Documentation — Instrumentation (prometheus.io/docs/practices)": 1,
+    "W3C Trace Context Recommendation Level 1": 1,
+    "W3C Baggage Recommendation": 1,
+    "NIST Special Publication 800-92 — Guide to Computer Security Log Management": 1
+  },
+  "gaps_observed": [
+    "SKILL-001 lacks a dedicated Tracer primitive — spans are created ad hoc per tool and propagation across Celery/arq workers is not enforced.",
+    "No CardinalityGuard equivalent exists; metric attribute sets are free-form and user_id-like keys can reach the TSDB uncapped.",
+    "Error capture is coupled to request middleware, so background jobs, scheduled tasks, and CLI entrypoints emit errors without trace_id.",
+    "SemanticAttributes keys are not centralized — HTTP and DB spans use inconsistent keys across generators, blocking cross-service queries.",
+    "There is no SamplingPolicy primitive; sampling is either all-or-nothing at the exporter level and cannot keep error traces selectively.",
+    "AuditEvent exists in audit tools but does not enforce a hash-chain invariant, so tamper evidence depends on downstream WORM storage.",
+    "ResourceDescriptor detection is manual; Kubernetes and AWS auto-detectors are not wired into the default telemetry bootstrap.",
+    "HistogramBuckets presets are hardcoded per tool, so p99 comparisons across checkout, payments, and auth latencies are not apples-to-apples."
+  ]
+}

@@ -1,0 +1,469 @@
+{
+  "agent_id": 8,
+  "codename": "LLM_ERA",
+  "primitives": [
+    {
+      "name": "PromptTemplate",
+      "namespace": "llm",
+      "purpose": "Declare a named, versioned, parameterized prompt whose text, variables, and target model are pinned so two runs of the same version produce identical rendered payloads.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Mapping\n\nclass PromptTemplate(Protocol):\n    name: str\n    version: int\n    target_model: str\n    variables: tuple[str, ...]\n    def render(self, values: Mapping[str, str]) -> str: ...\n    def fingerprint(self) -> str: ...\n",
+      "invariants": [
+        "Rendered output MUST be byte-identical across two calls with the same (version, values) pair.",
+        "A published version MUST NEVER be mutated; changes SHALL produce a new integer version.",
+        "render() MUST raise when a declared variable is missing from values and MUST NEVER silently inject an empty string.",
+        "fingerprint() MUST cover template text, target_model, and variable names so drift in any of them SHALL change the fingerprint.",
+        "Variable interpolation MUST use explicit delimiters and CANNOT treat unescaped user input as template syntax."
+      ],
+      "extension_contract": "Downstream code registers a new prompt by declaring a subclass or a decorator-annotated factory; the registry rejects a register() call that reuses (name, version) so that every published pair resolves to exactly one template object.",
+      "consumption_example": "from typing import Protocol\n\ndef run_extraction(tpl: PromptTemplate, payload: dict[str, str]) -> str:\n    rendered = tpl.render(payload)\n    fp = tpl.fingerprint()\n    return f\"model={tpl.target_model} fp={fp} text={rendered}\"\n",
+      "sources": [
+        {
+          "source": "Langfuse 2.x architecture and tracing model",
+          "locator": "Prompt Management section: versioned prompts, labels, compile()"
+        },
+        {
+          "source": "Weights & Biases Weave (weave-python 0.50+)",
+          "locator": "weave.Prompt / StringPrompt reference — versioned prompt objects"
+        }
+      ],
+      "why_essential": "Without a pinned, diffable prompt object, evaluations cannot be reproduced and production incidents cannot be traced back to the exact text that generated the bad output.",
+      "alternatives_considered": [
+        "Inline f-strings per call site — loses version identity and makes rollback impossible.",
+        "Loading prompts from plain files on disk — no fingerprint, no immutability guarantee, no named versions."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "ModelRegistry",
+      "namespace": "llm",
+      "purpose": "Resolve a logical model handle to a concrete provider endpoint plus declared capabilities (context window, tool-use, streaming, max output tokens) so call sites never hardcode provider identifiers.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nclass ModelSpec(Protocol):\n    handle: str\n    provider: str\n    context_window_tokens: int\n    max_output_tokens: int\n    supports_tools: bool\n    supports_streaming: bool\n    modality: Literal[\"text\", \"vision\", \"audio\"]\n\nclass ModelRegistry(Protocol):\n    def resolve(self, handle: str) -> ModelSpec: ...\n    def list_handles(self) -> tuple[str, ...]: ...\n",
+      "invariants": [
+        "resolve() MUST raise when the handle is unknown and MUST NEVER fall back to a default model.",
+        "A ModelSpec returned by resolve() MUST be immutable for the lifetime of a process.",
+        "context_window_tokens and max_output_tokens MUST reflect the provider's published limit, NEVER a soft internal estimate.",
+        "Two distinct handles CANNOT map to the same provider endpoint unless their capability tuples also differ.",
+        "The registry SHALL be the only component that reads provider identifiers from configuration; call sites MUST use handles."
+      ],
+      "extension_contract": "A downstream skill registers a new model by providing a ModelSpec adapter for the provider and calling register(handle, spec); adapters MUST be pure metadata plus a client factory and CANNOT embed business logic.",
+      "consumption_example": "def pick_model(registry: ModelRegistry, needs_tools: bool) -> str:\n    for handle in registry.list_handles():\n        spec = registry.resolve(handle)\n        if spec.supports_tools == needs_tools and spec.context_window_tokens >= 200_000:\n            return spec.handle\n    raise LookupError(\"no model with required capability\")\n",
+      "sources": [
+        {
+          "source": "LiteLLM 1.x unified completion interface",
+          "locator": "model_cost_map.json + router.Router configuration (provider, max_tokens)"
+        },
+        {
+          "source": "Weights & Biases Models (wandb 0.17+)",
+          "locator": "Model Registry: linked artifacts with alias + metadata"
+        }
+      ],
+      "why_essential": "Call sites that embed provider names and token limits cannot be retargeted, split-tested, or priced without touching every feature; the registry centralizes those facts.",
+      "alternatives_considered": [
+        "Environment variables per feature — fan-out explodes and drifts between services.",
+        "Hardcoded provider SDK imports at call site — cannot switch providers without code changes."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "VectorStore",
+      "namespace": "llm",
+      "purpose": "Expose upsert, similarity search, metadata filter, and delete over embedded documents with per-tenant scoping so retrieval augmentation cannot leak rows across tenants or return deleted content.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Mapping, Sequence\n\nclass VectorHit(Protocol):\n    doc_id: str\n    score: float\n    metadata: Mapping[str, str]\n\nclass VectorStore(Protocol):\n    def upsert(self, tenant_id: str, doc_id: str, embedding: Sequence[float], metadata: Mapping[str, str]) -> None: ...\n    def search(self, tenant_id: str, query_embedding: Sequence[float], top_k: int, filter: Mapping[str, str] | None = None) -> tuple[VectorHit, ...]: ...\n    def delete(self, tenant_id: str, doc_id: str) -> bool: ...\n",
+      "invariants": [
+        "search() MUST scope results to the supplied tenant_id and MUST NEVER return a hit owned by a different tenant.",
+        "upsert() SHALL be idempotent on (tenant_id, doc_id); a second call with identical embedding CANNOT create a duplicate row.",
+        "delete() MUST remove the document from subsequent search results within a bounded staleness window declared by the adapter.",
+        "Embedding dimensionality MUST be validated against the store's configured dimension and MUST raise on mismatch.",
+        "Metadata filter keys MUST be constrained to a registered schema; arbitrary free-form keys are FORBIDDEN to prevent index explosion."
+      ],
+      "extension_contract": "New backends (pgvector, Qdrant, etc.) plug in as adapters implementing the VectorStore protocol; adapters register with the DI container and MUST implement the tenant-scoping invariant even when the underlying engine has no native tenancy.",
+      "consumption_example": "def retrieve_context(store: VectorStore, tenant: str, qvec: list[float]) -> list[str]:\n    hits = store.search(tenant, qvec, top_k=5, filter={\"kind\": \"policy\"})\n    return [h.doc_id for h in hits if h.score > 0.75]\n",
+      "sources": [
+        {
+          "source": "OWASP Top 10 for LLM Applications (2023)",
+          "locator": "LLM08: Excessive Agency / LLM06: Sensitive Information Disclosure — tenant isolation on retrieved context"
+        },
+        {
+          "source": "Anthropic Model Context Protocol (MCP) 1.x specification",
+          "locator": "Resources & Tools: structured access to external data with scoped permissions"
+        }
+      ],
+      "why_essential": "Retrieval augmentation is the single largest cross-tenant leak vector in LLM apps; centralizing the store ensures tenancy, dimension checks, and delete propagation are enforced once.",
+      "alternatives_considered": [
+        "Direct SQL calls to pgvector per feature — tenant filter is easy to forget in one of N queries.",
+        "Embedding a provider SDK at call site — cannot swap backends or add deletion propagation uniformly."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "InputGuardrail",
+      "namespace": "llm",
+      "purpose": "Intercept user input before it reaches a model and reject, redact, or transform it according to deterministic rules (PII, injection markers) and optional LLM-judged classifications.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nclass GuardDecision(Protocol):\n    action: Literal[\"allow\", \"redact\", \"block\"]\n    reason: str\n    redacted_text: str | None\n\nclass InputGuardrail(Protocol):\n    name: str\n    def evaluate(self, text: str, context: dict[str, str]) -> GuardDecision: ...\n",
+      "invariants": [
+        "evaluate() MUST be deterministic for a given (text, context) unless the guardrail declares itself probabilistic via its name suffix.",
+        "A BLOCK decision MUST halt the pipeline; the caller CANNOT silently downgrade it to allow.",
+        "REDACT decisions SHALL return redacted_text and MUST NEVER return the original text under a redact verdict.",
+        "Every decision MUST carry a non-empty reason so downstream audit can explain the verdict.",
+        "Guardrails MUST NEVER store raw blocked inputs in logs in clear form; storage SHALL be hashed or truncated."
+      ],
+      "extension_contract": "Projects add a guardrail by implementing the InputGuardrail protocol and registering it in an ordered chain; the chain runs rules as a pipeline of interceptors, stopping at the first BLOCK verdict.",
+      "consumption_example": "def check_prompt(guards: list[InputGuardrail], text: str) -> str:\n    for g in guards:\n        d = g.evaluate(text, {\"user_role\": \"customer\"})\n        if d.action == \"block\":\n            raise PermissionError(f\"{g.name}: {d.reason}\")\n        if d.action == \"redact\" and d.redacted_text is not None:\n            text = d.redacted_text\n    return text\n",
+      "sources": [
+        {
+          "source": "OWASP Top 10 for LLM Applications (2023)",
+          "locator": "LLM01: Prompt Injection — input classifiers and escaping"
+        },
+        {
+          "source": "OWASP Top 10 for LLM Applications (2023)",
+          "locator": "LLM06: Sensitive Information Disclosure — PII redaction before prompt assembly"
+        }
+      ],
+      "why_essential": "Prompt injection and PII leakage must be screened before any model call; leaving this per-feature guarantees inconsistent coverage and silent bypasses.",
+      "alternatives_considered": [
+        "Regex inside each endpoint — impossible to centrally audit or update when threat patterns change.",
+        "Relying on the model itself to refuse — bypassable and not auditable."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "OutputGuardrail",
+      "namespace": "llm",
+      "purpose": "Inspect model output after generation and reject, rewrite, or annotate it against schema, policy, and safety rules before the caller or downstream tools receive it.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nclass OutputVerdict(Protocol):\n    action: Literal[\"pass\", \"rewrite\", \"block\"]\n    reason: str\n    replacement: str | None\n\nclass OutputGuardrail(Protocol):\n    name: str\n    def evaluate(self, output: str, schema_ref: str | None) -> OutputVerdict: ...\n",
+      "invariants": [
+        "evaluate() MUST reject output that fails schema validation when schema_ref is provided; CANNOT pass malformed JSON as pass.",
+        "A BLOCK verdict MUST prevent the output from being returned to the caller or passed to any downstream tool.",
+        "REWRITE verdicts MUST provide a replacement; a replacement of None under rewrite SHALL be treated as a contract violation.",
+        "Output guardrails MUST NEVER execute tool calls embedded in the output before passing safety checks.",
+        "Every verdict SHALL be recorded with the guardrail name so post-hoc analysis can attribute the decision."
+      ],
+      "extension_contract": "Additional output checks register as adapters in an ordered chain; downstream libraries compose schema, policy, and safety checks by appending adapters that implement the OutputGuardrail protocol.",
+      "consumption_example": "def post_process(guards: list[OutputGuardrail], raw: str, schema: str) -> str:\n    current = raw\n    for g in guards:\n        v = g.evaluate(current, schema)\n        if v.action == \"block\":\n            raise ValueError(f\"{g.name}: {v.reason}\")\n        if v.action == \"rewrite\" and v.replacement is not None:\n            current = v.replacement\n    return current\n",
+      "sources": [
+        {
+          "source": "OWASP Top 10 for LLM Applications (2023)",
+          "locator": "LLM02: Insecure Output Handling — validate before downstream use"
+        },
+        {
+          "source": "OWASP Top 10 for LLM Applications (2023)",
+          "locator": "LLM09: Overreliance — programmatic verification of model output"
+        }
+      ],
+      "why_essential": "Treating model text as trusted is the second-leading class of LLM vulnerability; a shared output guard ensures every call path applies the same checks before tool execution or user display.",
+      "alternatives_considered": [
+        "Ad-hoc JSON parsing at each call site — silent failures and no shared policy.",
+        "Relying on function-calling schemas alone — does not catch policy or safety issues, only shape."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "HumanCheckpoint",
+      "namespace": "llm",
+      "purpose": "Block an agent workflow at a named step until an authorized human approves, rejects, or edits the proposed action, persisting the decision and the reviewer identity.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nclass CheckpointDecision(Protocol):\n    verdict: Literal[\"approved\", \"rejected\", \"edited\"]\n    reviewer_id: str\n    edited_payload: dict[str, str] | None\n    decided_at_iso: str\n\nclass HumanCheckpoint(Protocol):\n    step_name: str\n    def request(self, payload: dict[str, str], required_role: str) -> str: ...\n    def await_decision(self, ticket_id: str, timeout_seconds: int) -> CheckpointDecision: ...\n",
+      "invariants": [
+        "await_decision() MUST block until a reviewer with the required_role acts or the timeout is reached; an anonymous approval SHALL be rejected.",
+        "A checkpoint ticket CANNOT be approved by the same identity that created the ticket when required_role declares segregation.",
+        "Every decision MUST be persisted with reviewer_id and decided_at_iso before the call returns.",
+        "edited payloads SHALL be returned verbatim to the workflow and MUST NEVER be merged silently with the original payload.",
+        "On timeout, request SHALL default to reject rather than continue; silent continuation is FORBIDDEN."
+      ],
+      "extension_contract": "Teams plug in notification transports (email, Slack, in-app) as adapters implementing a notify() hook; the checkpoint core handles ticket persistence and decision recording while adapters only deliver the notification.",
+      "consumption_example": "def propose_refund(cp: HumanCheckpoint, payload: dict[str, str]) -> dict[str, str]:\n    ticket = cp.request(payload, required_role=\"finance_lead\")\n    decision = cp.await_decision(ticket, timeout_seconds=3600)\n    if decision.verdict == \"rejected\":\n        raise PermissionError(\"refund denied\")\n    return decision.edited_payload or payload\n",
+      "sources": [
+        {
+          "source": "OWASP Top 10 for LLM Applications (2023)",
+          "locator": "LLM08: Excessive Agency — require human-in-the-loop for high-impact actions"
+        },
+        {
+          "source": "Anthropic Model Context Protocol (MCP) 1.x specification",
+          "locator": "Sampling / elicitation flow: client-mediated approval of model-proposed actions"
+        }
+      ],
+      "why_essential": "High-impact actions proposed by an LLM must not execute without authorized human approval; a shared primitive makes the approval path auditable and consistent.",
+      "alternatives_considered": [
+        "Inline confirmation prompts in each feature — skip-once attitude erodes the safety net.",
+        "External ticket queue with manual linking — loses binding between decision and the proposed payload."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "EvalHarness",
+      "namespace": "llm",
+      "purpose": "Execute a golden dataset against a prompt-plus-model pair and compute graded verdicts via deterministic metrics and optional judge models, emitting a replayable run record.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Sequence\n\nclass EvalCase(Protocol):\n    case_id: str\n    inputs: dict[str, str]\n    expected: dict[str, str]\n\nclass EvalResult(Protocol):\n    case_id: str\n    scores: dict[str, float]\n    passed: bool\n\nclass EvalHarness(Protocol):\n    def run(self, dataset: Sequence[EvalCase], prompt_version: int, model_handle: str) -> tuple[EvalResult, ...]: ...\n    def aggregate(self, results: Sequence[EvalResult]) -> dict[str, float]: ...\n",
+      "invariants": [
+        "run() MUST execute every case in the dataset and MUST NEVER short-circuit on the first failure.",
+        "Each EvalResult SHALL reference the exact prompt_version and model_handle used; rerunning with the same pair MUST yield equivalent scores modulo sampling noise declared in metadata.",
+        "Judge-model scores MUST be recorded alongside the judge's prompt_version so eval drift is attributable.",
+        "An eval run CANNOT be marked passing while any case fails a metric declared blocking.",
+        "Dataset modifications SHALL produce a new dataset version; the harness MUST reject runs referencing a mutated dataset id."
+      ],
+      "extension_contract": "Custom metrics register as callables returning a float score and a pass flag; teams add new metrics via a decorator that the harness discovers at load, and judge models plug in as adapters exposing an evaluate() method.",
+      "consumption_example": "def ci_gate(h: EvalHarness, cases: list[EvalCase]) -> bool:\n    results = h.run(cases, prompt_version=7, model_handle=\"planner-v2\")\n    agg = h.aggregate(results)\n    return agg.get(\"exact_match\", 0.0) >= 0.8\n",
+      "sources": [
+        {
+          "source": "Weights & Biases Weave (weave-python 0.50+)",
+          "locator": "weave.Evaluation: dataset + scorers + model, with run_id linkage"
+        },
+        {
+          "source": "Langfuse 2.x architecture and tracing model",
+          "locator": "Datasets + Evaluations: linking trace_id to dataset_item and scores"
+        }
+      ],
+      "why_essential": "Without a shared eval primitive, every team builds an incompatible grading loop and regressions ship unnoticed; a common harness lets every skill gate releases on the same evidence.",
+      "alternatives_considered": [
+        "Hand-rolled pytest comparisons — no run linkage to prompt/model identity, no aggregation.",
+        "Spreadsheet review of sample outputs — neither deterministic nor repeatable."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "TokenMeter",
+      "namespace": "cost",
+      "purpose": "Record prompt tokens, completion tokens, cache-read tokens, and provider-reported cost for every model call, attributing each unit of consumption to a tenant, user, and feature label.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol\n\nclass TokenUsage(Protocol):\n    prompt_tokens: int\n    completion_tokens: int\n    cache_read_tokens: int\n    cache_write_tokens: int\n    cost_usd: float\n\nclass TokenMeter(Protocol):\n    def record(self, model_handle: str, usage: TokenUsage, labels: dict[str, str]) -> None: ...\n    def sum(self, labels: dict[str, str], window_seconds: int) -> TokenUsage: ...\n",
+      "invariants": [
+        "record() MUST be called exactly once per completed model call; double-counting is FORBIDDEN.",
+        "cost_usd SHALL be computed from provider-reported counts via the ModelRegistry's pricing, NEVER estimated from string length.",
+        "labels MUST include a tenant identifier; an unlabelled record CANNOT be accepted.",
+        "cache_read_tokens MUST be reported separately from prompt_tokens so cache hit ratios are auditable.",
+        "sum() queries SHALL respect tenant isolation and MUST NEVER aggregate across tenant boundaries without explicit cross-tenant scope."
+      ],
+      "extension_contract": "Backends (Prometheus, a ledger table, a provider gateway webhook) implement a sink adapter that register with the meter; the meter fans out record() events to every registered sink without requiring call-site changes.",
+      "consumption_example": "def after_call(meter: TokenMeter, usage: TokenUsage, tenant: str, feature: str) -> None:\n    meter.record(\"planner-v2\", usage, {\"tenant\": tenant, \"feature\": feature})\n",
+      "sources": [
+        {
+          "source": "Portkey gateway architecture (portkey-ai 1.x)",
+          "locator": "Usage + cost observability: per-request token and cost fields surfaced via gateway headers"
+        },
+        {
+          "source": "OpenTelemetry Semantic Conventions for Generative AI (1.27+)",
+          "locator": "gen_ai.usage.input_tokens / gen_ai.usage.output_tokens attribute definitions"
+        }
+      ],
+      "why_essential": "Model cost is the highest variable expense in LLM products and the only defense against runaway multi-tenant abuse; per-feature attribution must be captured at one chokepoint.",
+      "alternatives_considered": [
+        "Reading invoices monthly — too slow to catch abuse or runaway loops.",
+        "Per-feature log lines parsed later — lossy and not tenant-attributable in real time."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "ResponseCache",
+      "namespace": "llm",
+      "purpose": "Reuse a prior model response when a call resolves to the same cache key (exact prompt hash or semantic embedding match within a threshold), returning the cached payload.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nclass CacheKey(Protocol):\n    mode: Literal[\"exact\", \"semantic\"]\n    value: str\n    namespace: str\n\nclass ResponseCache(Protocol):\n    def lookup(self, key: CacheKey, threshold: float | None = None) -> str | None: ...\n    def store(self, key: CacheKey, response: str, ttl_seconds: int) -> None: ...\n",
+      "invariants": [
+        "lookup() under mode=exact MUST hit only when the key value matches byte-for-byte; near-matches CANNOT be returned.",
+        "lookup() under mode=semantic MUST require a threshold argument and SHALL miss when similarity falls below it.",
+        "Cached payloads MUST NEVER be served across namespace boundaries; a tenant namespace is FORBIDDEN to share entries with another.",
+        "store() SHALL respect TTL; expired entries MUST be filtered out at lookup time, not only at write time.",
+        "Cache hits MUST be reported to TokenMeter with cache_read_tokens so cost accounting remains truthful."
+      ],
+      "extension_contract": "Backends (Redis, SQLite, Postgres) plug in as adapters implementing lookup/store; a decorator on call sites binds a ResponseCache instance to a function so memoization is declarative rather than manual.",
+      "consumption_example": "def cached_completion(cache: ResponseCache, prompt_hash: str, tenant: str) -> str | None:\n    key = type(\"K\", (), {\"mode\": \"exact\", \"value\": prompt_hash, \"namespace\": tenant})()\n    return cache.lookup(key)\n",
+      "sources": [
+        {
+          "source": "Helicone gateway architecture (helicone.ai)",
+          "locator": "Cache feature: keyed by request hash with bucketed TTL, reporting cache hits in usage"
+        },
+        {
+          "source": "Langfuse 2.x architecture and tracing model",
+          "locator": "Observation metadata: cache_hit flag propagated on generation events"
+        }
+      ],
+      "why_essential": "Repeated or near-repeated prompts dominate real-world LLM traffic; a shared cache primitive saves cost and latency while preserving tenancy and audit properties.",
+      "alternatives_considered": [
+        "No cache — pays full price for duplicate traffic in chat and batch workloads.",
+        "Per-feature Redis keys — re-implements tenancy, TTL, and hit accounting each time."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "ModelRouter",
+      "namespace": "llm",
+      "purpose": "Select a concrete model handle for a request based on declared policy (cheapest-first, quality-floor, tenant override) and fall back to the next candidate on rate limit, timeout, or provider error.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Sequence\n\nclass RoutePolicy(Protocol):\n    candidates: tuple[str, ...]\n    quality_floor: str\n    budget_usd_cents: int\n\nclass ModelRouter(Protocol):\n    def choose(self, policy: RoutePolicy, tenant_id: str) -> str: ...\n    def failover(self, exhausted: Sequence[str], policy: RoutePolicy) -> str: ...\n",
+      "invariants": [
+        "choose() MUST honour the policy's quality_floor; a candidate below the floor CANNOT be returned even when it is cheapest.",
+        "failover() MUST NEVER return a handle present in the exhausted list within the same request scope.",
+        "The router SHALL refuse to route when the tenant's BudgetGuard reports the tenant is over budget.",
+        "Routing decisions MUST be recorded with the chosen handle and reason so fallback chains are reconstructable.",
+        "Tenant overrides SHALL take precedence over global policy and CANNOT be silently ignored by default policy."
+      ],
+      "extension_contract": "Projects add custom strategies (e.g., canary routing) by implementing a RoutePolicy provider and registering it; the router composes registered strategies via a middleware chain whose order is declared at boot.",
+      "consumption_example": "def call_planner(router: ModelRouter, policy: RoutePolicy, tenant: str) -> str:\n    handle = router.choose(policy, tenant)\n    return handle\n",
+      "sources": [
+        {
+          "source": "LiteLLM 1.x unified completion interface",
+          "locator": "Router class: model_list with weights, fallbacks, and rpm/tpm limits"
+        },
+        {
+          "source": "Portkey gateway architecture (portkey-ai 1.x)",
+          "locator": "Config: routing strategies (loadbalance, fallback, conditional) and retry semantics"
+        }
+      ],
+      "why_essential": "Provider outages and rate limits are routine; single-provider call sites either crash or silently degrade, while a shared router expresses failover policy declaratively.",
+      "alternatives_considered": [
+        "Try/except around one provider SDK — no visibility into why it fell back, no policy.",
+        "Client-side round-robin — cannot honour quality floors or tenant overrides."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "ToolSchema",
+      "namespace": "llm",
+      "purpose": "Describe a callable tool by name, JSON-schema input, side-effect class, and required scopes so function calling validates arguments and enforces authorization before executing the tool.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nclass ToolSchema(Protocol):\n    name: str\n    description: str\n    input_schema: dict[str, object]\n    side_effect: Literal[\"read\", \"write\", \"external\"]\n    required_scopes: tuple[str, ...]\n    def validate_arguments(self, args: dict[str, object]) -> dict[str, object]: ...\n",
+      "invariants": [
+        "validate_arguments() MUST reject arguments that fail the input_schema and MUST NEVER coerce missing required fields to defaults.",
+        "A tool with side_effect=write or external CANNOT be invoked without the caller presenting every entry in required_scopes.",
+        "The schema name MUST match the executable binding one-to-one; two tools sharing a name are FORBIDDEN.",
+        "Tool descriptions SHALL be static strings; dynamic descriptions that change per call are FORBIDDEN to keep model behaviour reproducible.",
+        "validate_arguments() MUST NEVER perform side effects; it is a pure validator and the caller SHALL trigger execution explicitly."
+      ],
+      "extension_contract": "Each new tool is registered by implementing the ToolSchema protocol and binding it to a handler via a decorator; the registry publishes the JSON-schema list to the model prompt and rejects duplicate names at load time.",
+      "consumption_example": "def dispatch(schema: ToolSchema, raw_args: dict[str, object], scopes: set[str]) -> dict[str, object]:\n    missing = set(schema.required_scopes) - scopes\n    if missing:\n        raise PermissionError(f\"missing scopes: {missing}\")\n    return schema.validate_arguments(raw_args)\n",
+      "sources": [
+        {
+          "source": "Anthropic Model Context Protocol (MCP) 1.x specification",
+          "locator": "Tools: name, description, inputSchema (JSON Schema) and capability negotiation"
+        },
+        {
+          "source": "OWASP Top 10 for LLM Applications (2023)",
+          "locator": "LLM08: Excessive Agency — scope-limit tools and validate inputs before execution"
+        }
+      ],
+      "why_essential": "Function calling without argument validation and scope checks is the primary agent-excess-agency risk; a shared schema primitive enforces both uniformly across every tool.",
+      "alternatives_considered": [
+        "Passing raw model output to Python functions — argument types and authorization silently elided.",
+        "Per-tool ad-hoc validation code — drifts and skips edge cases in one tool out of N."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "LlmTrace",
+      "namespace": "obs",
+      "purpose": "Emit structured spans for each model call with attributes aligned to OpenTelemetry GenAI semantic conventions so token counts, model identity, and prompt/response linkage land in traces consistently.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, ContextManager\n\nclass LlmTrace(Protocol):\n    def start(self, operation: str, model_handle: str, prompt_fingerprint: str) -> ContextManager[\"LlmSpan\"]: ...\n\nclass LlmSpan(Protocol):\n    def set_usage(self, input_tokens: int, output_tokens: int) -> None: ...\n    def set_finish_reason(self, reason: str) -> None: ...\n    def record_error(self, code: str, message: str) -> None: ...\n",
+      "invariants": [
+        "Every model call SHALL open exactly one LlmTrace span; unspanned calls are FORBIDDEN.",
+        "Span attribute names MUST match the OpenTelemetry GenAI semantic conventions (gen_ai.system, gen_ai.request.model, gen_ai.usage.input_tokens, gen_ai.usage.output_tokens).",
+        "Spans MUST record prompt_fingerprint so the trace can be correlated with the PromptTemplate version that generated it.",
+        "On provider error the span MUST call record_error before exiting; swallowing the error without recording is FORBIDDEN.",
+        "Child tool-call spans MUST nest under the model-call span so the causal chain is reconstructable end-to-end."
+      ],
+      "extension_contract": "The trace core is a thin adapter over an OpenTelemetry tracer; projects add exporters (OTLP, Langfuse, vendor-specific) by registering them against the OTel provider without modifying call-site code.",
+      "consumption_example": "def call_model(tracer: LlmTrace, fp: str):\n    with tracer.start(\"completion\", \"planner-v2\", fp) as span:\n        span.set_usage(1200, 340)\n        span.set_finish_reason(\"stop\")\n",
+      "sources": [
+        {
+          "source": "OpenTelemetry Semantic Conventions for Generative AI (1.27+)",
+          "locator": "gen_ai.* attribute namespace: system, request.model, usage.input_tokens, usage.output_tokens, response.finish_reasons"
+        },
+        {
+          "source": "Langfuse 2.x architecture and tracing model",
+          "locator": "Trace / Observation / Generation hierarchy with prompt_version linkage"
+        }
+      ],
+      "why_essential": "Without standardized spans, cost, latency, and quality questions cannot be answered with one query; aligning on OTel GenAI conventions makes every vendor-neutral dashboard work out of the box.",
+      "alternatives_considered": [
+        "Plain log lines per call — no span hierarchy, no vendor-neutral attribute names.",
+        "Vendor-specific SDK tracing only — locks observability to one provider's schema."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "BudgetGuard",
+      "namespace": "cost",
+      "purpose": "Enforce per-tenant, per-feature, and per-time-window spending ceilings by consulting the TokenMeter and rejecting or throttling new model calls when the configured budget is exhausted.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nclass BudgetVerdict(Protocol):\n    action: Literal[\"allow\", \"throttle\", \"deny\"]\n    remaining_usd_cents: int\n    window_seconds: int\n\nclass BudgetGuard(Protocol):\n    def check(self, tenant_id: str, feature: str, est_cost_usd_cents: int) -> BudgetVerdict: ...\n    def set_limit(self, tenant_id: str, feature: str, ceiling_usd_cents: int, window_seconds: int) -> None: ...\n",
+      "invariants": [
+        "check() MUST deny when est_cost_usd_cents + already-spent exceeds ceiling_usd_cents within the window.",
+        "remaining_usd_cents MUST NEVER be reported as negative; exhaustion is represented by action=deny with remaining=0.",
+        "set_limit() SHALL require both a ceiling and a window; an open-ended limit is FORBIDDEN.",
+        "Throttle action MUST be deterministic with respect to the configured strategy so two services applying the same policy agree on throttle timing.",
+        "A missing tenant or feature binding MUST default to deny rather than allow; unknown-scope billing is FORBIDDEN."
+      ],
+      "extension_contract": "Teams plug in limit stores (Redis counter, database row) as adapters implementing increment/read; new throttle strategies (leaky bucket, token bucket) register as middleware that the guard invokes between check and its verdict.",
+      "consumption_example": "def guarded_call(guard: BudgetGuard, tenant: str, feature: str, est: int) -> str:\n    v = guard.check(tenant, feature, est)\n    if v.action == \"deny\":\n        raise PermissionError(f\"budget exhausted (window {v.window_seconds}s)\")\n    return \"allowed\"\n",
+      "sources": [
+        {
+          "source": "Helicone gateway architecture (helicone.ai)",
+          "locator": "Rate limits and cost ceilings per user / organization with window resets"
+        },
+        {
+          "source": "Portkey gateway architecture (portkey-ai 1.x)",
+          "locator": "Virtual keys: per-key budget ceilings and enforcement at gateway"
+        }
+      ],
+      "why_essential": "Without a budget guard, a single runaway loop or abusive tenant can consume a month of budget in hours; ceiling enforcement has to live adjacent to the token meter to be believed.",
+      "alternatives_considered": [
+        "Post-hoc alerts from billing dashboards — triggers after the money is already spent.",
+        "Fixed per-call rate limit only — rate limits do not represent spend, only frequency."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "PromptInjectionFilter",
+      "namespace": "llm",
+      "purpose": "Quarantine untrusted text (retrieved documents, tool outputs, user messages) by wrapping it in delimiters and stripping instruction-like fragments that target the model.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nclass QuarantinedText(Protocol):\n    kind: Literal[\"user\", \"retrieved\", \"tool_output\"]\n    wrapped: str\n    stripped_fragments: tuple[str, ...]\n\nclass PromptInjectionFilter(Protocol):\n    def quarantine(self, raw: str, kind: str) -> QuarantinedText: ...\n",
+      "invariants": [
+        "quarantine() MUST wrap the raw text in delimiters the model is instructed to treat as data; raw insertion into system prompts is FORBIDDEN.",
+        "Fragments matching known instruction patterns (imperative directives, role-override phrases) SHALL be stripped and the removed text returned in stripped_fragments for audit.",
+        "The filter MUST NEVER execute or interpret the raw text; it only transforms text.",
+        "Every quarantined block SHALL declare its kind so downstream guardrails can apply kind-specific rules (retrieved vs user vs tool_output).",
+        "Quarantining is NEVER optional for retrieved or tool_output content; skipping the filter on those sources is FORBIDDEN."
+      ],
+      "extension_contract": "Projects extend the pattern catalog by registering stripping rules as adapters; each rule implements a pattern matcher and a redactor, composed into a pipeline the filter runs in declared order.",
+      "consumption_example": "def build_context(f: PromptInjectionFilter, snippets: list[tuple[str, str]]) -> list[str]:\n    return [f.quarantine(text, kind).wrapped for kind, text in snippets]\n",
+      "sources": [
+        {
+          "source": "OWASP Top 10 for LLM Applications (2023)",
+          "locator": "LLM01: Prompt Injection — indirect injection via retrieved content and tool outputs"
+        },
+        {
+          "source": "Anthropic Model Context Protocol (MCP) 1.x specification",
+          "locator": "Server-provided resources: treated as untrusted context, surfaced with provenance"
+        }
+      ],
+      "why_essential": "Indirect prompt injection through retrieved documents and tool outputs is the leading unpatched LLM failure mode; a shared quarantine primitive ensures every context-assembly path applies the same defense.",
+      "alternatives_considered": [
+        "String concatenation of retrieved content into system prompt — directly exploitable.",
+        "Relying on model refusal — inconsistent and not auditable."
+      ],
+      "maturity": "emerging"
+    }
+  ],
+  "cross_cutting_insights": [
+    "Token accounting and budget enforcement must share identity: TokenMeter records what BudgetGuard decides against, and both pivot on the tenant/feature label pair used by ModelRouter.",
+    "Prompt identity is the linchpin — PromptTemplate.fingerprint threads through EvalHarness run records, LlmTrace span attributes, and ResponseCache keys so every observation is pinned to an exact text version.",
+    "Defense against LLM01 injection requires two coordinated primitives: PromptInjectionFilter wraps untrusted context, while InputGuardrail rejects or redacts before prompt assembly; neither is sufficient alone.",
+    "Model substitution safety depends on ModelRegistry (capability truth) plus ModelRouter (policy) plus BudgetGuard (economic guardrail); call sites that bypass any of the three silently break reproducibility or cost controls.",
+    "Output trust is the OWASP LLM02/LLM08 dividing line: OutputGuardrail validates shape and safety before ToolSchema.validate_arguments gates side effects, and HumanCheckpoint inserts when the action is high-impact.",
+    "Observability convergence around OpenTelemetry GenAI attributes lets vendor backends (Langfuse, W&B Weave, Portkey, Helicone) ingest the same span data without per-vendor instrumentation code at call sites.",
+    "Multi-tenancy is a non-local property of the LLM venous system: VectorStore, ResponseCache, TokenMeter, and BudgetGuard each enforce tenant isolation, and any single bypass constitutes a cross-tenant data or cost leak."
+  ],
+  "source_coverage": {
+    "OWASP Top 10 for LLM Applications (2023)": 6,
+    "Anthropic Model Context Protocol (MCP) 1.x specification": 4,
+    "Langfuse 2.x architecture and tracing model": 4,
+    "Weights & Biases Weave (weave-python 0.50+)": 2,
+    "Weights & Biases Models (wandb 0.17+)": 1,
+    "LiteLLM 1.x unified completion interface": 2,
+    "Portkey gateway architecture (portkey-ai 1.x)": 3,
+    "Helicone gateway architecture (helicone.ai)": 2,
+    "OpenTelemetry Semantic Conventions for Generative AI (1.27+)": 2
+  },
+  "gaps_observed": [
+    "SKILL-001 lacks a first-class PromptTemplate object with versioned fingerprint; prompts today are inline strings without diffable identity.",
+    "No shared VectorStore primitive exists in SKILL-001, so tenant scoping and deletion propagation are re-solved per feature.",
+    "No OutputGuardrail chain is wired to the tool-call dispatcher; OWASP LLM02 validation is implicit and per-endpoint.",
+    "HumanCheckpoint is absent; high-impact actions that should require approval currently execute on model output alone.",
+    "TokenMeter and BudgetGuard are not factored out, so cost attribution relies on post-hoc log parsing rather than a call-time ledger.",
+    "LlmTrace does not yet align with OpenTelemetry GenAI semantic convention attribute names, blocking vendor-neutral observability backends.",
+    "PromptInjectionFilter is missing, meaning retrieved documents and tool outputs are concatenated into prompts without a quarantine step."
+  ]
+}

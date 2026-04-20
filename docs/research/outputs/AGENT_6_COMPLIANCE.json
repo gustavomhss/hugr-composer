@@ -1,0 +1,350 @@
+{
+  "agent_id": 6,
+  "codename": "COMPLIANCE",
+  "primitives": [
+    {
+      "name": "TamperEvidentAuditLog",
+      "namespace": "compliance",
+      "purpose": "Append-only record of security-relevant events, hash-chained and signed so any retroactive mutation is detectable by verification.",
+      "api_signature": "from typing import Protocol, Mapping, Any\n\nclass TamperEvidentAuditLog(Protocol):\n    def append(self, actor: str, action: str, resource: str, outcome: str, attributes: Mapping[str, Any]) -> str: ...\n    def verify_chain(self, start_seq: int | None = None, end_seq: int | None = None) -> bool: ...\n    def get(self, seq: int) -> Mapping[str, Any]: ...\n    def export(self, since_seq: int) -> bytes: ...",
+      "invariants": [
+        "Entries MUST be append-only; the store SHALL reject UPDATE or DELETE on any prior sequence.",
+        "Each entry MUST contain the SHA-256 of the prior entry, forming a chain that CANNOT be mutated without detection.",
+        "Each entry MUST carry a signature from a key whose private half is NEVER held by the writing service.",
+        "Sequence numbers MUST be monotonically increasing with no gaps; verify_chain SHALL fail on gap or regression.",
+        "Actor, action, resource, outcome, and timestamp MUST be present on every entry; absence SHALL raise.",
+        "Clock source MUST be monotonic server-side; client-supplied timestamps SHALL be rejected."
+      ],
+      "extension_contract": "Downstream targets register a signer adapter (KMS/HSM) and a storage backend (object-lock S3, WORM volume, ledger DB) by implementing the TamperEvidentAuditLog Protocol. Additional attribute fields compose via an attribute-enrichment hook invoked before signing.",
+      "consumption_example": "def record_admin_reset(log: TamperEvidentAuditLog, admin_id: str, user_id: str) -> None:\n    seq = log.append(\n        actor=admin_id,\n        action='user.password_reset',\n        resource=f'user:{user_id}',\n        outcome='success',\n        attributes={'via': 'admin_console'},\n    )\n    assert log.verify_chain(end_seq=None) is True, 'audit chain broke'",
+      "sources": [
+        {"source": "AICPA SOC 2 Trust Services Criteria (2017, 2022 revision)", "locator": "CC7.2 — detection of security events and anomalies"},
+        {"source": "NIST SP 800-53 revision 5", "locator": "AU-9 Protection of Audit Information; AU-10 Non-repudiation"},
+        {"source": "HIPAA Security Rule 45 CFR §§ 164.308-164.312", "locator": "§ 164.312(b) Audit controls"}
+      ],
+      "why_essential": "Without a shared chain-verified log, each tool writes its own audit stream and regulators cannot prove evidence integrity; a centralized primitive forces one signed chain per tenant.",
+      "alternatives_considered": [
+        "Per-table shadow columns (updated_by, updated_at) — trivially tamperable by DBA and fails CC7.2 non-repudiation.",
+        "Database binlog replay — captures DML but not business actor/outcome and is not signed.",
+        "Application log aggregation to SIEM only — breaks on SIEM outage and has no chain verification."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "RetentionPolicy",
+      "namespace": "compliance",
+      "purpose": "Declarative binding of a data class to a maximum lifetime, enforced by scheduled purge and blocked at write-time if unclassified.",
+      "api_signature": "from dataclasses import dataclass\nfrom datetime import timedelta\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass RetentionPolicy:\n    data_class: str\n    max_age: timedelta\n    legal_basis: str\n    deletion_mode: str  # 'hard' | 'crypto_shred' | 'anonymize'\n\nclass RetentionEnforcer(Protocol):\n    def bind(self, policy: RetentionPolicy) -> None: ...\n    def enforce_on_write(self, data_class: str, record_id: str) -> None: ...\n    def sweep(self) -> int: ...",
+      "invariants": [
+        "Every persisted record MUST be tagged with a data_class that maps to a registered RetentionPolicy; writes of untagged data SHALL be rejected.",
+        "max_age MUST be finite and > 0; an open-ended 'keep forever' policy CANNOT be registered without an explicit legal_basis override.",
+        "deletion_mode MUST be one of 'hard', 'crypto_shred', or 'anonymize'; other values SHALL raise on bind.",
+        "The sweep job MUST be idempotent and SHALL not delete records under an active LegalHold.",
+        "Every purge action MUST emit an entry to the TamperEvidentAuditLog with the policy id and record count."
+      ],
+      "extension_contract": "Target applications register a policy per data_class and plug in deletion adapters (SQL delete, object-store lifecycle, crypto-shred key destroy). Custom deletion_modes are added by implementing a DeletionAdapter and binding it through the registry.",
+      "consumption_example": "from datetime import timedelta\n\npolicy = RetentionPolicy(\n    data_class='access_token',\n    max_age=timedelta(days=90),\n    legal_basis='GDPR Art 5(1)(e) storage limitation',\n    deletion_mode='hard',\n)\nenforcer.bind(policy)\npurged = enforcer.sweep()",
+      "sources": [
+        {"source": "EU GDPR Regulation 2016/679 Articles 5, 6, 7, 15, 17, 30, 32", "locator": "Article 5(1)(e) storage limitation"},
+        {"source": "PCI-DSS v4.0", "locator": "Requirement 3.2 — do not store cardholder data beyond retention need"},
+        {"source": "NIST SP 800-53 revision 5", "locator": "SI-12 Information Management and Retention"}
+      ],
+      "why_essential": "Retention without a shared primitive decays into per-table ad-hoc cron jobs that drift from policy; a single binding fixes data-class-to-lifetime across the whole target.",
+      "alternatives_considered": [
+        "Database TTL indexes — only work per collection and ignore legal_basis, legal hold, and deletion_mode.",
+        "Cron scripts per table — drift silently when schema evolves and produce no audit evidence.",
+        "Leaving retention to ops runbooks — moves the rule outside code review and fails SOC 2 evidence."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "ConsentLedger",
+      "namespace": "compliance",
+      "purpose": "Records granular per-subject, per-purpose consent grants and revocations with timestamp and version of the notice accepted.",
+      "api_signature": "from typing import Protocol\nfrom datetime import datetime\n\nclass ConsentLedger(Protocol):\n    def grant(self, subject_id: str, purpose: str, notice_version: str, at: datetime) -> str: ...\n    def revoke(self, subject_id: str, purpose: str, at: datetime) -> None: ...\n    def is_granted(self, subject_id: str, purpose: str, at: datetime | None = None) -> bool: ...\n    def history(self, subject_id: str) -> list[dict]: ...",
+      "invariants": [
+        "Consent MUST be keyed by (subject_id, purpose); a blanket grant across purposes CANNOT be recorded.",
+        "Every grant MUST reference a notice_version string so the exact text the subject accepted is reconstructible; missing version SHALL raise.",
+        "Revocation MUST be as easy as grant and SHALL take effect immediately; future is_granted calls for that (subject, purpose) MUST return False.",
+        "History entries MUST be append-only; a revocation NEVER erases a prior grant, it supersedes it in time.",
+        "is_granted MUST be evaluated against the state at `at` (or now), not the latest, so audits can reproduce past authorizations."
+      ],
+      "extension_contract": "Target applications register purposes (e.g. 'marketing_email', 'analytics_profiling') and plug a NoticeVersionProvider adapter. Consent-gated code paths compose the ledger via a policy decorator that blocks execution when is_granted is False.",
+      "consumption_example": "from datetime import datetime, timezone\n\ndef send_marketing(ledger: ConsentLedger, subject_id: str) -> None:\n    now = datetime.now(timezone.utc)\n    if not ledger.is_granted(subject_id, 'marketing_email', now):\n        raise PermissionError('no marketing consent')\n    # ... dispatch email",
+      "sources": [
+        {"source": "EU GDPR Regulation 2016/679 Articles 5, 6, 7, 15, 17, 30, 32", "locator": "Article 7 Conditions for consent; Article 6(1)(a) lawful basis"},
+        {"source": "AICPA SOC 2 Trust Services Criteria (2017, 2022 revision)", "locator": "Privacy criteria P3.1 — consent collection and documentation"}
+      ],
+      "why_essential": "Consent scattered in flags or CRM fields cannot prove lawful basis at a point in time; a shared ledger keeps every grant reproducible and every revocation effective in one place.",
+      "alternatives_considered": [
+        "Boolean column on users table — no history, no notice version, no temporal query.",
+        "CRM tool as source of truth — outside the transactional boundary, racy against data processing.",
+        "Cookie banner state only — covers web UI consent, not API/backend-initiated processing."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "DataSubjectRequest",
+      "namespace": "compliance",
+      "purpose": "Coordinates the lifecycle of an access or erasure request across all stores that hold data about the subject, with a SLA clock.",
+      "api_signature": "from typing import Protocol, Literal\nfrom datetime import datetime\n\nDsrKind = Literal['access', 'portability', 'erasure', 'rectification']\n\nclass DataSubjectRequest(Protocol):\n    def open(self, subject_id: str, kind: DsrKind, received_at: datetime) -> str: ...\n    def attach_artifact(self, request_id: str, store: str, manifest: bytes) -> None: ...\n    def close(self, request_id: str, outcome: str) -> None: ...\n    def due_at(self, request_id: str) -> datetime: ...",
+      "invariants": [
+        "Every request MUST have a statutory due_at computed from received_at; the clock NEVER pauses for internal delays.",
+        "Every registered store holding subject data MUST attach an artifact before close; a request CANNOT close with missing stores.",
+        "Erasure requests MUST invoke the ErasureCascade; a close with kind='erasure' and no cascade artifact SHALL be rejected.",
+        "Open, artifact, and close actions MUST each emit a TamperEvidentAuditLog entry for regulator replay.",
+        "Access and portability exports MUST be delivered via a time-bound, signed URL; exports NEVER live beyond the delivery window."
+      ],
+      "extension_contract": "Each data store implements a StoreAdapter (with .collect(subject_id) and .erase(subject_id)) and registers itself. Kind-specific workflow steps are added as plugins that subscribe to the request lifecycle hook.",
+      "consumption_example": "from datetime import datetime, timezone\n\ndef handle_rtbf(dsr: DataSubjectRequest, subject_id: str) -> str:\n    rid = dsr.open(subject_id, 'erasure', datetime.now(timezone.utc))\n    for store in ('users', 'events', 'backups'):\n        dsr.attach_artifact(rid, store, b'erased')\n    dsr.close(rid, outcome='completed')\n    return rid",
+      "sources": [
+        {"source": "EU GDPR Regulation 2016/679 Articles 5, 6, 7, 15, 17, 30, 32", "locator": "Article 15 right of access; Article 17 right to erasure"},
+        {"source": "HIPAA Security Rule 45 CFR §§ 164.308-164.312", "locator": "§ 164.308(a)(4) access management — individual access obligations"}
+      ],
+      "why_essential": "An ad-hoc ticket per erasure guarantees missed stores and blown deadlines; a primitive forces a closed-loop manifest across every adapter before the request can be marked complete.",
+      "alternatives_considered": [
+        "Support-desk ticket workflow — no programmatic cascade, no SLA enforcement, no audit evidence.",
+        "Per-service DELETE endpoints without coordination — impossible to prove completeness to a regulator.",
+        "A generic job queue — lacks kind-specific statutory deadlines and artifact manifest."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "PiiClassification",
+      "namespace": "data",
+      "purpose": "Schema-level annotation that tags every field as one of PII, PHI, PCI, or public, gating serialization and logging through a central mask.",
+      "api_signature": "from enum import Enum\nfrom typing import Protocol, Any, Mapping\n\nclass PiiClass(str, Enum):\n    PUBLIC = 'public'\n    INTERNAL = 'internal'\n    PII = 'pii'\n    PHI = 'phi'\n    PCI = 'pci'\n\nclass PiiClassification(Protocol):\n    def classify(self, model: type, field: str) -> PiiClass: ...\n    def mask(self, obj: Any, audience: str) -> Mapping[str, Any]: ...\n    def audit_leak(self, obj: Any, sink: str) -> None: ...",
+      "invariants": [
+        "Every persisted field MUST carry a PiiClass annotation; fields without one SHALL fail schema registration at import time.",
+        "Serializers and log formatters MUST route through mask() before emission; writing a raw object to a sink is FORBIDDEN.",
+        "PHI and PCI fields MUST NEVER be emitted to unauthenticated audiences, even masked, unless the field is explicitly PUBLIC.",
+        "mask() output for an audience MUST be deterministic so diff tests can assert non-leakage.",
+        "Reclassifying a field down the sensitivity ladder (PHI → PII → PUBLIC) MUST require an audit log entry with approver id."
+      ],
+      "extension_contract": "Frameworks register a schema walker that extracts the annotation and plug an AudienceResolver adapter mapping request contexts to audiences. Custom PiiClass values are added by subclassing the enum and registering a mask policy for each new class.",
+      "consumption_example": "from dataclasses import dataclass\nfrom typing import Annotated\n\n@dataclass\nclass Patient:\n    id: str\n    ssn: str\n    dob: str\n\ndef serialize(classifier: PiiClassification, p: Patient, audience: str) -> dict:\n    return dict(classifier.mask(p, audience=audience))",
+      "sources": [
+        {"source": "HIPAA Security Rule 45 CFR §§ 164.308-164.312", "locator": "§ 164.514(b) de-identification safe-harbor field list"},
+        {"source": "PCI-DSS v4.0", "locator": "Requirement 3.4 — render PAN unreadable (masking, truncation, hashing)"},
+        {"source": "NIST SP 800-53 revision 5", "locator": "MP-3 Media Marking; MP-4 Media Storage"}
+      ],
+      "why_essential": "Without a schema-level classifier, every endpoint re-invents masking and one forgotten field leaks an SSN to a log; one central primitive makes leakage a type error, not a code-review catch.",
+      "alternatives_considered": [
+        "Regex scrubbers on log output — lossy, high false-negative rate, cannot tell PHI from PII.",
+        "Per-endpoint DTO mapping by hand — drifts when schema evolves, provides no provable coverage.",
+        "Storing raw then redacting at export — still leaks to logs, backups, and replication."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "AccessLog",
+      "namespace": "obs",
+      "purpose": "Records every successful read of classified data with actor, purpose-of-use, and record identifier, distinct from the security audit log.",
+      "api_signature": "from typing import Protocol\nfrom datetime import datetime\n\nclass AccessLog(Protocol):\n    def record_read(self, actor: str, record_id: str, data_class: str, purpose_of_use: str, at: datetime) -> None: ...\n    def query(self, record_id: str | None = None, actor: str | None = None) -> list[dict]: ...\n    def count_by_actor(self, actor: str, since: datetime) -> int: ...",
+      "invariants": [
+        "Every read of a PiiClassification-tagged record MUST emit one AccessLog entry before the response leaves the process.",
+        "purpose_of_use MUST be one of a registered set; ad-hoc free-text values SHALL be rejected.",
+        "AccessLog entries MUST NEVER be merged with the TamperEvidentAuditLog so high-volume read traffic cannot mask low-volume security events.",
+        "Actor MUST be a resolved identity (user, service account, or break-glass id); 'system' without a concrete id is FORBIDDEN.",
+        "Retention of AccessLog MUST follow a RetentionPolicy bound at registration; unbounded accumulation CANNOT occur."
+      ],
+      "extension_contract": "Repositories wrap reads with an access-log interceptor that calls record_read. Custom purpose-of-use codes are added via register_purpose(code, description). Export adapters subscribe to the log to feed HIPAA accounting-of-disclosures reports.",
+      "consumption_example": "from datetime import datetime, timezone\n\ndef read_patient(access: AccessLog, actor: str, patient_id: str) -> dict:\n    record = _repo_get(patient_id)\n    access.record_read(actor, patient_id, 'phi', 'treatment', datetime.now(timezone.utc))\n    return record",
+      "sources": [
+        {"source": "HIPAA Security Rule 45 CFR §§ 164.308-164.312", "locator": "§ 164.312(b) Audit controls — recording and examining access"},
+        {"source": "AICPA SOC 2 Trust Services Criteria (2017, 2022 revision)", "locator": "CC6.1 — logical access to protected information"}
+      ],
+      "why_essential": "Mixing reads into the security audit drowns anomaly detection and breaks HIPAA's accounting-of-disclosures requirement; a separate primitive keeps volumes, retention, and semantics distinct.",
+      "alternatives_considered": [
+        "Single combined audit stream — hides security events under read noise and miscounts for 164.528 disclosures.",
+        "Database-level query logging — captures SQL not business actor or purpose_of_use.",
+        "HTTP access logs at the proxy — lacks record identity and data classification."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "EncryptionPolicy",
+      "namespace": "policy",
+      "purpose": "Declares cipher, key provider, and rotation cadence for a data class at rest and in transit, and rejects storage without a bound policy.",
+      "api_signature": "from dataclasses import dataclass\nfrom datetime import timedelta\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass EncryptionPolicy:\n    data_class: str\n    at_rest_cipher: str  # e.g. 'AES-256-GCM'\n    in_transit_min_tls: str  # e.g. 'TLS1.2'\n    key_provider: str  # kms uri\n    rotation: timedelta\n\nclass EncryptionRegistry(Protocol):\n    def bind(self, policy: EncryptionPolicy) -> None: ...\n    def resolve(self, data_class: str) -> EncryptionPolicy: ...\n    def require_tls(self, endpoint: str) -> None: ...",
+      "invariants": [
+        "Every data_class that stores PII, PHI, or PCI MUST have an EncryptionPolicy bound; writes without resolve() succeeding SHALL fail.",
+        "at_rest_cipher MUST be one of the approved set (AES-256-GCM, ChaCha20-Poly1305); unapproved ciphers SHALL raise on bind.",
+        "in_transit_min_tls MUST be TLS1.2 or higher; binding TLS1.0 or TLS1.1 is FORBIDDEN.",
+        "key_provider MUST reference an external KMS; raw key material in configuration files is NEVER permitted.",
+        "rotation MUST be ≤ 365 days for PCI data_classes; a longer cadence CANNOT be bound."
+      ],
+      "extension_contract": "Storage adapters register themselves and call resolve(data_class) on every write; TLS-terminating entrypoints register via require_tls(endpoint) middleware. New ciphers are added by extending the approved set through a governance-reviewed registration decorator.",
+      "consumption_example": "from datetime import timedelta\n\npolicy = EncryptionPolicy(\n    data_class='cardholder_pan',\n    at_rest_cipher='AES-256-GCM',\n    in_transit_min_tls='TLS1.2',\n    key_provider='aws-kms://alias/pci-pan',\n    rotation=timedelta(days=365),\n)\nregistry.bind(policy)\nresolved = registry.resolve('cardholder_pan')",
+      "sources": [
+        {"source": "PCI-DSS v4.0", "locator": "Requirement 3.5 Protect stored cryptographic keys; 4.2 Strong cryptography in transit"},
+        {"source": "HIPAA Security Rule 45 CFR §§ 164.308-164.312", "locator": "§ 164.312(a)(2)(iv) Encryption and decryption; § 164.312(e)(2)(ii) Transmission encryption"},
+        {"source": "NIST SP 800-53 revision 5", "locator": "SC-13 Cryptographic Protection; SC-8 Transmission Confidentiality"}
+      ],
+      "why_essential": "Per-service encryption choices drift into weak ciphers and hard-coded keys; a single registry makes cipher approval, KMS usage, and rotation cadence enforceable rather than conventional.",
+      "alternatives_considered": [
+        "Trust cloud defaults for disk encryption — does not cover field-level encryption or key ownership.",
+        "TLS enforced only at the load balancer — internal hops bypass the rule and leak on VPC peering.",
+        "Ad-hoc env var keys — no rotation, no KMS audit trail, violates PCI 3.5."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "KeyRotationSchedule",
+      "namespace": "policy",
+      "purpose": "Drives rotation of data-encryption keys on a fixed cadence with overlap window, and blocks new writes with a key past its cutover.",
+      "api_signature": "from dataclasses import dataclass\nfrom datetime import datetime, timedelta\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass KeyRotationSchedule:\n    key_alias: str\n    cadence: timedelta\n    overlap: timedelta\n    next_rotation_at: datetime\n\nclass KeyRotator(Protocol):\n    def schedule(self, sched: KeyRotationSchedule) -> None: ...\n    def rotate_now(self, key_alias: str) -> str: ...\n    def active_key(self, key_alias: str, at: datetime) -> str: ...",
+      "invariants": [
+        "A new key version MUST be produced on or before next_rotation_at; missing a rotation SHALL raise an alert to the compliance channel.",
+        "overlap MUST be > 0 so decryption of records written with the prior version NEVER fails during cutover.",
+        "active_key() MUST return exactly one current key per alias at any instant; ties or gaps CANNOT occur.",
+        "Keys past cadence + overlap MUST be marked decrypt-only; new writes with such keys SHALL be rejected.",
+        "Rotation events MUST emit a TamperEvidentAuditLog entry capturing old and new key versions."
+      ],
+      "extension_contract": "KMS providers implement a RotationAdapter with .create_version(alias) and .set_primary(alias, version). Target applications register schedules at startup; custom post-rotation steps are added via a rotation hook that runs inside the rotation transaction.",
+      "consumption_example": "from datetime import datetime, timedelta, timezone\n\nsched = KeyRotationSchedule(\n    key_alias='alias/pii-field',\n    cadence=timedelta(days=90),\n    overlap=timedelta(days=7),\n    next_rotation_at=datetime.now(timezone.utc) + timedelta(days=90),\n)\nrotator.schedule(sched)\nkid = rotator.active_key('alias/pii-field', datetime.now(timezone.utc))",
+      "sources": [
+        {"source": "PCI-DSS v4.0", "locator": "Requirement 3.7.4 — cryptographic key changes at defined cryptoperiod"},
+        {"source": "NIST SP 800-53 revision 5", "locator": "SC-12 Cryptographic Key Establishment and Management"}
+      ],
+      "why_essential": "Rotation done via quarterly runbooks silently lapses; a scheduled primitive turns cadence into code and makes missed rotations a failing build signal rather than an audit finding.",
+      "alternatives_considered": [
+        "Manual rotation via ops playbook — depends on humans and misses under load.",
+        "Cloud-managed auto-rotation only — covers CMKs but not application-scoped DEKs or HMAC keys.",
+        "Single long-lived key with periodic audit — leaves a long blast radius on compromise."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "ProcessingRecord",
+      "namespace": "compliance",
+      "purpose": "Machine-readable record of processing activities that a controller must maintain, generated from code rather than a separate document.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass ProcessingRecord:\n    activity: str\n    controller: str\n    purposes: tuple[str, ...]\n    data_classes: tuple[str, ...]\n    recipients: tuple[str, ...]\n    retention_ref: str\n    legal_basis: str\n    transfers_outside_eea: tuple[str, ...] = ()\n\nclass ProcessingRegistry(Protocol):\n    def register(self, record: ProcessingRecord) -> None: ...\n    def export_ropa(self) -> bytes: ...",
+      "invariants": [
+        "Every code path that reads or writes PII MUST be annotated with a registered ProcessingRecord.activity; unregistered activities SHALL fail at startup.",
+        "Each record MUST reference a retention_ref that resolves to a bound RetentionPolicy; dangling refs CANNOT register.",
+        "legal_basis MUST be one of GDPR Article 6(1)(a-f); free-text values SHALL raise.",
+        "transfers_outside_eea entries MUST be ISO-3166 country codes; other formats are FORBIDDEN.",
+        "export_ropa() output MUST be byte-for-byte reproducible given the same registry so auditors can hash and diff releases."
+      ],
+      "extension_contract": "Frameworks register activities via a decorator on handler functions that emits the ProcessingRecord at import time. Custom export adapters (e.g. OneTrust CSV, JSON-LD DPF) are added by implementing a RopaExporter and binding it to the registry.",
+      "consumption_example": "record = ProcessingRecord(\n    activity='user.signup',\n    controller='AcmeCorp GmbH',\n    purposes=('account_creation',),\n    data_classes=('pii_email', 'pii_name'),\n    recipients=('internal',),\n    retention_ref='retention:user_account',\n    legal_basis='GDPR Art 6(1)(b) contract',\n)\nregistry.register(record)",
+      "sources": [
+        {"source": "EU GDPR Regulation 2016/679 Articles 5, 6, 7, 15, 17, 30, 32", "locator": "Article 30 Records of processing activities"}
+      ],
+      "why_essential": "ROPA maintained as a spreadsheet drifts from the code within a sprint; a registry built from decorators keeps the record synchronized to what the system actually does.",
+      "alternatives_considered": [
+        "Externally-maintained spreadsheet — drifts from reality by definition.",
+        "Privacy team interviews every release — lossy, expensive, not reproducible.",
+        "Data-flow scanners only — detect flows but cannot assert purpose or legal basis."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "LegalHold",
+      "namespace": "data",
+      "purpose": "Suspends retention-driven deletion and erasure cascades for records covered by a litigation or regulatory hold until the hold is released.",
+      "api_signature": "from dataclasses import dataclass\nfrom datetime import datetime\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass LegalHold:\n    hold_id: str\n    scope_query: str\n    opened_at: datetime\n    opened_by: str\n\nclass LegalHoldRegistry(Protocol):\n    def open(self, hold: LegalHold) -> None: ...\n    def release(self, hold_id: str, released_by: str) -> None: ...\n    def covers(self, record_id: str) -> bool: ...",
+      "invariants": [
+        "RetentionPolicy.sweep and DataSubjectRequest erasure MUST call covers(record_id) before deletion; deletion of held records is FORBIDDEN.",
+        "Opening and releasing a hold MUST each emit a TamperEvidentAuditLog entry with actor and scope.",
+        "A hold CANNOT be silently released; release requires a distinct released_by actor from opened_by or an explicit override flag.",
+        "Held records MUST remain readable to authorized investigators; indexes SHALL NOT drop held rows.",
+        "scope_query MUST be stable against schema evolution; unresolved fields SHALL raise on open rather than silently miss records."
+      ],
+      "extension_contract": "Storage adapters implement a HoldCheck hook that intercepts delete operations. Target applications extend the registry with custom scope resolvers (e.g. tenant_id = X) by subclassing the scope query evaluator and registering it.",
+      "consumption_example": "from datetime import datetime, timezone\n\nhold = LegalHold(\n    hold_id='case-2024-1138',\n    scope_query=\"tenant_id = 'acme' AND created_at >= '2023-01-01'\",\n    opened_at=datetime.now(timezone.utc),\n    opened_by='counsel@acme.com',\n)\nregistry.open(hold)\nassert registry.covers('user:42') in (True, False)",
+      "sources": [
+        {"source": "AICPA SOC 2 Trust Services Criteria (2017, 2022 revision)", "locator": "CC2.3 — internal communication about obligations; evidence preservation"},
+        {"source": "NIST SP 800-53 revision 5", "locator": "AU-11 Audit Record Retention — preservation for investigations"}
+      ],
+      "why_essential": "Without an explicit hold primitive, the retention sweeper destroys evidence under active litigation and the erasure endpoint fulfills an RTBF request that should have been paused; one flag cannot carry that logic.",
+      "alternatives_considered": [
+        "A boolean column 'do_not_delete' — no scope, no audit, no release protocol.",
+        "Disabling the purge job globally — over-broad, violates retention for unrelated data.",
+        "Email-based legal notice to ops — not enforceable in code."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "BreachNotificationQueue",
+      "namespace": "compliance",
+      "purpose": "Tracks suspected and confirmed personal-data incidents with a statutory notification clock, so the 72-hour window is enforced in code.",
+      "api_signature": "from typing import Protocol, Literal\nfrom datetime import datetime\n\nSeverity = Literal['low', 'medium', 'high', 'critical']\n\nclass BreachNotificationQueue(Protocol):\n    def open_incident(self, detected_at: datetime, severity: Severity, summary: str) -> str: ...\n    def confirm(self, incident_id: str, confirmed_at: datetime, data_classes: tuple[str, ...]) -> None: ...\n    def notify_authority(self, incident_id: str, authority: str, at: datetime, reference: str) -> None: ...\n    def close(self, incident_id: str, outcome: str) -> None: ...",
+      "invariants": [
+        "An incident confirmed as affecting personal data MUST have a notify_authority call within 72 hours of confirmed_at; the queue SHALL emit a breach-of-SLA alert at T-24h.",
+        "open_incident MUST be callable from any service with write access to the queue; there is NEVER a gating step that delays detection recording.",
+        "Every state transition (open, confirm, notify, close) MUST emit a TamperEvidentAuditLog entry.",
+        "data_classes on confirm MUST be a non-empty tuple of PiiClassification-registered classes; empty tuples SHALL raise.",
+        "An incident CANNOT close without either a notify_authority entry or an explicit 'no_notification_required' outcome with a legal_basis field."
+      ],
+      "extension_contract": "Detection sources (IDS, anomaly scoring, manual reports) call open_incident. Notification channel plugins (DPA portal adapters, HHS OCR form submitters) subscribe to the notify phase and register themselves as NotificationChannel implementations.",
+      "consumption_example": "from datetime import datetime, timezone\n\ndef on_anomaly(queue: BreachNotificationQueue, evidence: str) -> str:\n    now = datetime.now(timezone.utc)\n    return queue.open_incident(detected_at=now, severity='high', summary=evidence)",
+      "sources": [
+        {"source": "EU GDPR Regulation 2016/679 Articles 5, 6, 7, 15, 17, 30, 32", "locator": "Article 33 notification of personal data breach to supervisory authority within 72 hours"},
+        {"source": "HIPAA Security Rule 45 CFR §§ 164.308-164.312", "locator": "§ 164.308(a)(6) Security incident procedures"}
+      ],
+      "why_essential": "Incident trackers in ticketing tools have no statutory clock; a domain-specific queue makes the 72-hour GDPR window and HIPAA incident response requirement computable and alertable.",
+      "alternatives_considered": [
+        "Generic Jira project for incidents — no statutory clock, no authority-notification tracking.",
+        "PagerDuty postmortems — operational focus, not regulatory evidence.",
+        "Email distribution list — untracked, non-reproducible state."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "DataResidencyPolicy",
+      "namespace": "policy",
+      "purpose": "Binds a data class to a set of permitted storage and processing regions, refusing writes or cross-border transfers outside the allow-list.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass DataResidencyPolicy:\n    data_class: str\n    allowed_regions: tuple[str, ...]\n    transfer_mechanism: str  # e.g. 'SCC_2021/914', 'adequacy_decision', 'intra_group_BCR'\n\nclass ResidencyEnforcer(Protocol):\n    def bind(self, policy: DataResidencyPolicy) -> None: ...\n    def check_write(self, data_class: str, region: str) -> None: ...\n    def check_transfer(self, data_class: str, source: str, destination: str) -> None: ...",
+      "invariants": [
+        "allowed_regions MUST be ISO-3166 codes; arbitrary strings SHALL raise on bind.",
+        "A write to a non-allowed region MUST fail loudly; silent replication outside the policy is FORBIDDEN.",
+        "A cross-border transfer outside the EEA CANNOT proceed without a valid transfer_mechanism reference on the bound policy.",
+        "check_write MUST be called before any persistence primitive stores the record; policies enforced only at read time NEVER satisfy residency.",
+        "Policy changes MUST emit a TamperEvidentAuditLog entry so region scope changes are reviewable."
+      ],
+      "extension_contract": "Storage adapters call check_write before persisting; replication and backup jobs call check_transfer for each destination. Custom transfer_mechanism values are added by registering a TransferMechanism adapter that validates the legal artifact (SCC signed, adequacy decision id).",
+      "consumption_example": "policy = DataResidencyPolicy(\n    data_class='eu_user_profile',\n    allowed_regions=('DE', 'IE', 'FR'),\n    transfer_mechanism='SCC_2021/914',\n)\nenforcer.bind(policy)\nenforcer.check_write('eu_user_profile', region='DE')",
+      "sources": [
+        {"source": "EU GDPR Regulation 2016/679 Articles 5, 6, 7, 15, 17, 30, 32", "locator": "Articles 44-50 (Chapter V) transfers of personal data to third countries"},
+        {"source": "PCI-DSS v4.0", "locator": "Requirement 12.8 — third-party service providers and cross-border processing"}
+      ],
+      "why_essential": "Residency implemented as a single config flag misses replicas, backups, and analytics copies; a per-class primitive forces every write-path and transfer-path to prove eligibility against the same registry.",
+      "alternatives_considered": [
+        "Deploy per-region and hope traffic stays put — ignores analytics, backups, and support read-paths.",
+        "Network-level geo fencing — breaks on VPN and does not cover application-layer logical copies.",
+        "Contractual clauses alone — enforceable against vendors but not against one's own replication jobs."
+      ],
+      "maturity": "emerging"
+    }
+  ],
+  "cross_cutting_insights": [
+    "Every compliance primitive hangs off TamperEvidentAuditLog: retention purges, DSAR closures, hold open/release, breach notifications, key rotations, and residency policy changes all emit chained entries — one signed stream is the spine.",
+    "PiiClassification is upstream of almost every other primitive: AccessLog, EncryptionPolicy, RetentionPolicy, ProcessingRecord, and DataResidencyPolicy all key their behavior on the data_class label, so mis-tagging a field multiplies through the system.",
+    "Retention and erasure conflict with evidence preservation; LegalHold is the explicit reconciliation primitive, and without it GDPR Art 17 erasure and NIST AU-11 preservation become contradictory runtime behaviors.",
+    "Consent and ProcessingRecord are two sides of lawful basis: consent carries subject-level state per purpose (Art 7), while ProcessingRecord carries controller-level state per activity (Art 30); neither alone proves compliance.",
+    "Time is first-class: DSAR due_at, BreachNotificationQueue 72h clock, KeyRotationSchedule cadence, and RetentionPolicy max_age each model a statutory or cryptographic deadline that MUST fire in code, not in runbooks.",
+    "Separation of AccessLog from TamperEvidentAuditLog is a volume decision enforced by regulation — HIPAA accounting-of-disclosures (164.528) would be unworkable if every PHI read drowned the security event stream.",
+    "Every POLICY-namespace primitive (EncryptionPolicy, KeyRotationSchedule, DataResidencyPolicy) is a registry-bound fail-closed gate: binding is at startup, enforcement is at every write, no runtime escape hatch."
+  ],
+  "source_coverage": {
+    "EU GDPR Regulation 2016/679 Articles 5, 6, 7, 15, 17, 30, 32": 6,
+    "AICPA SOC 2 Trust Services Criteria (2017, 2022 revision)": 4,
+    "HIPAA Security Rule 45 CFR §§ 164.308-164.312": 5,
+    "PCI-DSS v4.0": 4,
+    "NIST SP 800-53 revision 5": 5
+  },
+  "gaps_observed": [
+    "SKILL-001 has no hash-chained audit primitive; writes land in structured logs without per-entry signature or chain verification.",
+    "No declarative RetentionPolicy binding exists — retention is per-table, enforced by ad-hoc scripts without legal_basis traceability.",
+    "ConsentLedger-like primitive is absent; consent state is modeled as boolean flags without notice-version history.",
+    "DSAR/RTBF requires a cross-store cascade; no current primitive enforces that every registered store attaches an artifact before closing a request.",
+    "PiiClassification at schema level is missing — masking is left to serializer code, which means a new field ships unclassified by default.",
+    "AccessLog separate from the security audit is not provided, blocking HIPAA 164.528 accounting-of-disclosures reports.",
+    "EncryptionPolicy per data_class is not enforced at write; at-rest encryption is trusted to cloud defaults without cipher or rotation guarantees.",
+    "LegalHold primitive is absent, so retention sweepers can destroy evidence under active investigation.",
+    "Breach notification lacks a statutory clock — incidents live in generic tickets with no 72-hour SLA alerting.",
+    "DataResidencyPolicy is not modeled; region binding relies on deployment topology and ignores replicas and backups."
+  ]
+}

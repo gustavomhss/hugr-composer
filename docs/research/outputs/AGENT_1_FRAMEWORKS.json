@@ -1,0 +1,546 @@
+{
+  "agent_id": 1,
+  "codename": "FRAMEWORKS",
+  "primitives": [
+    {
+      "name": "DiContainer",
+      "namespace": "data",
+      "purpose": "Registry that resolves a typed request for a dependency into a constructed instance obeying the declared lifetime scope.",
+      "api_signature": "from typing import Callable, Protocol, Type, TypeVar\n\nT = TypeVar('T')\n\nclass DiContainer(Protocol):\n    def register(self, iface: Type[T], impl: Type[T] | Callable[..., T], *, scope: str) -> None: ...\n    def resolve(self, iface: Type[T]) -> T: ...\n    def create_scope(self) -> 'DiContainer': ...\n",
+      "invariants": [
+        "MUST resolve a dependency graph without re-entering a partially-constructed node (cycle detection SHALL raise).",
+        "NEVER returns an instance whose declared scope outlives the resolving scope (scoped CANNOT leak into singleton).",
+        "ALWAYS disposes instances it owns when the owning scope ends; callers MUST NOT dispose externally-created instances.",
+        "MUST NOT silently replace a prior registration for the same key; re-registration SHALL be explicit.",
+        "register() MUST accept the interface type as the resolution key; keyed registrations MUST use an extra discriminator."
+      ],
+      "extension_contract": "Downstream code registers services via register() or a provider decorator; to plug a non-default container, implement the Protocol and bind an adapter that forwards resolve()/register()/create_scope() without changing lifetime semantics.",
+      "consumption_example": "def build_container(c: DiContainer) -> None:\n    c.register(UserRepo, SqlUserRepo, scope='singleton')\n    c.register(RequestClock, SystemClock, scope='scoped')\n\ndef handle(container: DiContainer) -> None:\n    with container.create_scope() as scope:\n        repo = scope.resolve(UserRepo)\n        repo.save(...)\n",
+      "sources": [
+        {
+          "source": "ASP.NET Core 8.0 Fundamentals — Dependency Injection",
+          "locator": "learn.microsoft.com/aspnet/core/fundamentals/dependency-injection section 'Service registration methods' (IServiceCollection, IServiceProvider)"
+        },
+        {
+          "source": "Spring Framework Reference — Core Container",
+          "locator": "docs.spring.io/spring-framework/reference/core/beans/factory-scopes.html — BeanFactory/ApplicationContext scopes"
+        },
+        {
+          "source": "Quarkus 3.x Guide — Contexts and Dependency Injection",
+          "locator": "quarkus.io/guides/cdi — jakarta.inject.Inject, ArC container"
+        }
+      ],
+      "why_essential": "Without a shared container contract, every tool grows its own construction code; cross-tool substitution (fakes in tests, adapters in prod) CANNOT work and lifetime bugs become per-feature surprises.",
+      "alternatives_considered": [
+        "Hand-wired constructors per entry point — loses uniform test substitution",
+        "Service-locator singleton — hides dependencies and defeats unit tests",
+        "Module import side-effects — couples wiring to import order"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "LifetimeScope",
+      "namespace": "data",
+      "purpose": "Typed enumeration that fixes how long a resolved instance lives: the whole process, one request, or one injection point.",
+      "api_signature": "from enum import Enum\n\nclass LifetimeScope(str, Enum):\n    SINGLETON = 'singleton'\n    SCOPED = 'scoped'\n    TRANSIENT = 'transient'\n",
+      "invariants": [
+        "SINGLETON instances MUST be shared process-wide and created at most once per container.",
+        "SCOPED instances MUST be created at most once per scope and disposed when the scope ends.",
+        "TRANSIENT instances MUST be created per resolution call and NEVER reused across call sites.",
+        "A SINGLETON MUST NEVER depend on a SCOPED or TRANSIENT disposable that requires a live request scope.",
+        "The value set MUST be closed: any new lifetime requires an explicit enum addition, NEVER a string literal."
+      ],
+      "extension_contract": "Alternative frameworks map their native lifetimes (Spring 'request', Nest.js 'REQUEST', ASP.NET 'Scoped', Quarkus '@RequestScoped') onto this enum via an adapter that translates register() calls; new lifetimes require extending the enum, not bypassing it.",
+      "consumption_example": "def register_scoped(c: DiContainer, iface: type, impl: type) -> None:\n    scope = LifetimeScope.SCOPED\n    c.register(iface, impl, scope=scope.value)\n\nassert LifetimeScope.SINGLETON.value == 'singleton'\n",
+      "sources": [
+        {
+          "source": "ASP.NET Core 8.0 Fundamentals — Service lifetimes",
+          "locator": "learn.microsoft.com/aspnet/core/fundamentals/dependency-injection#service-lifetimes (AddSingleton, AddScoped, AddTransient)"
+        },
+        {
+          "source": "Spring Framework Reference — Bean Scopes",
+          "locator": "docs.spring.io/spring-framework/reference/core/beans/factory-scopes.html (singleton, prototype, request)"
+        },
+        {
+          "source": "Nest.js 10 Documentation — Injection scopes",
+          "locator": "docs.nestjs.com/fundamentals/injection-scopes — Scope.DEFAULT, Scope.REQUEST, Scope.TRANSIENT"
+        },
+        {
+          "source": "Quarkus 3.x CDI Guide",
+          "locator": "quarkus.io/guides/cdi — @ApplicationScoped, @RequestScoped, @Dependent, @Singleton"
+        }
+      ],
+      "why_essential": "Mixing lifetimes is the #1 source of latent bugs: a shared singleton holding a scoped dependency crashes only under load. One vocabulary SHALL be enforceable at registration time rather than debugged in production.",
+      "alternatives_considered": [
+        "Free-form string scope names — no compile-time check, drift across tools",
+        "Boolean 'shared/not shared' — collapses SCOPED and SINGLETON distinction",
+        "Framework-specific annotations only — breaks cross-framework portability"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "RequestContext",
+      "namespace": "api",
+      "purpose": "Per-request bag that carries identity, headers, correlation id, and free-form assigns through the handler stack without global state.",
+      "api_signature": "from typing import Any, Mapping, Protocol\n\nclass RequestContext(Protocol):\n    request_id: str\n    principal: object | None\n    headers: Mapping[str, str]\n    assigns: dict[str, Any]\n\n    def put(self, key: str, value: Any) -> 'RequestContext': ...\n    def halt(self) -> 'RequestContext': ...\n",
+      "invariants": [
+        "MUST be constructed once per inbound request and disposed when the response is sent.",
+        "NEVER leaks across request boundaries; a background task CANNOT reuse a parent context as live state.",
+        "put() MUST be idempotent for the same (key, value); overwriting an existing key SHALL be explicit.",
+        "halt() MUST cause subsequent middleware/interceptors to skip, but SHALL NOT abort already-queued response bytes.",
+        "request_id MUST be populated before the first user code runs; a missing id SHALL be replaced with a generated UUID."
+      ],
+      "extension_contract": "Middleware reads/writes via put() and assigns; cross-cutting concerns subscribe by registering a plug/interceptor/middleware component that receives the context, mutates assigns, and returns the context (or halts).",
+      "consumption_example": "def auth_plug(ctx: RequestContext, cfg: dict) -> RequestContext:\n    if 'authorization' not in ctx.headers:\n        return ctx.halt()\n    return ctx.put('principal', parse_token(ctx.headers['authorization']))\n\ndef correlation(ctx: RequestContext) -> str:\n    return ctx.request_id\n",
+      "sources": [
+        {
+          "source": "ASP.NET Core 8.0 — HttpContext",
+          "locator": "learn.microsoft.com/aspnet/core/fundamentals/http-context — HttpContext.User, HttpContext.TraceIdentifier, HttpContext.Items"
+        },
+        {
+          "source": "Plug 1.x — Plug.Conn struct",
+          "locator": "hexdocs.pm/plug/Plug.Conn.html — assigns, req_headers, halt/1"
+        },
+        {
+          "source": "Ruby on Rails 7 Guides — ActiveSupport::CurrentAttributes",
+          "locator": "api.rubyonrails.org/classes/ActiveSupport/CurrentAttributes.html — attribute/reset"
+        }
+      ],
+      "why_essential": "Any feature touching identity, tenancy, or tracing needs the same per-request state surface; if every tool defines its own, observability and authorization fragment and memory leaks appear at shutdown.",
+      "alternatives_considered": [
+        "Thread-local globals — break under asyncio/threadpools",
+        "Per-call argument threading — explodes function signatures across layers",
+        "Pass dict everywhere — no type safety, no lifecycle guarantees"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "CurrentPrincipal",
+      "namespace": "auth",
+      "purpose": "Read-only view of the authenticated identity for the active request, including subject id, tenant, roles, and claim set.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import FrozenSet, Mapping\n\n@dataclass(frozen=True)\nclass CurrentPrincipal:\n    subject_id: str\n    tenant_id: str | None\n    roles: FrozenSet[str]\n    claims: Mapping[str, str]\n    is_anonymous: bool\n",
+      "invariants": [
+        "MUST be immutable once bound to a RequestContext; a later middleware CANNOT mutate subject_id.",
+        "NEVER represents a successful auth state with is_anonymous=True; these two fields SHALL be mutually exclusive.",
+        "roles MUST be a frozen set; consumers CANNOT add a role at call time to bypass authorization.",
+        "subject_id MUST be stable across requests for the same identity; rotation NEVER happens silently.",
+        "Serialization for logs MUST omit raw claims by default; sensitive claim values SHALL be redacted."
+      ],
+      "extension_contract": "An auth middleware/plug/guard decodes the incoming credential and binds a CurrentPrincipal to the RequestContext; downstream code reads it via dependency injection or context.principal and CANNOT construct one without passing through the registered provider.",
+      "consumption_example": "def require_role(role: str, p: CurrentPrincipal) -> None:\n    if p.is_anonymous or role not in p.roles:\n        raise PermissionError(role)\n\nanon = CurrentPrincipal('', None, frozenset(), {}, True)\nassert anon.is_anonymous\n",
+      "sources": [
+        {
+          "source": "ASP.NET Core 8.0 — HttpContext.User (ClaimsPrincipal)",
+          "locator": "learn.microsoft.com/aspnet/core/fundamentals/http-context#access-httpcontext — Context.User.Identity.Name"
+        },
+        {
+          "source": "Ruby on Rails 7 — ActiveSupport::CurrentAttributes",
+          "locator": "api.rubyonrails.org/classes/ActiveSupport/CurrentAttributes.html — 'Current.user' pattern"
+        },
+        {
+          "source": "Nest.js 10 — CanActivate and ExecutionContext",
+          "locator": "docs.nestjs.com/guards — context.switchToHttp().getRequest().user"
+        }
+      ],
+      "why_essential": "Identity threads through almost every business rule; if each tool invents its own 'current user' type, authorization logic duplicates and drifts and audit trails stop agreeing on who did what.",
+      "alternatives_considered": [
+        "Pass a raw JWT string everywhere — forces repeated parsing and errors",
+        "Put user dict into RequestContext.assigns — loses type discipline",
+        "Module-level globals like Rails pre-7 — unsafe under threaded/async models"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "CorrelationId",
+      "namespace": "obs",
+      "purpose": "Opaque string that travels with a request across services and log lines so a reader can stitch together the work done for one user action.",
+      "api_signature": "from typing import NewType, Protocol\n\nCorrelationId = NewType('CorrelationId', str)\n\nclass CorrelationIdProvider(Protocol):\n    def current(self) -> CorrelationId: ...\n    def generate(self) -> CorrelationId: ...\n",
+      "invariants": [
+        "MUST be populated for every inbound request before the first log line is emitted.",
+        "NEVER regenerates a present upstream id (propagates 'traceparent'/'X-Request-Id' when valid).",
+        "Generated ids MUST use a cryptographically-random 16+ byte encoding; sequential counters SHALL NOT be used.",
+        "MUST appear in every emitted log, metric exemplar, and outbound HTTP request header.",
+        "CANNOT be mutated mid-request; a new id SHALL mean a new logical request."
+      ],
+      "extension_contract": "A middleware/plug/interceptor reads the inbound header, or generates via the provider, then binds the id to the RequestContext and the logger MDC; structured-log formatters subscribe via a filter or hook to inject it automatically.",
+      "consumption_example": "def extract(headers: dict[str, str]) -> CorrelationId:\n    raw = headers.get('x-request-id') or headers.get('traceparent', '')\n    return CorrelationId(raw) if raw else CorrelationId('gen-xyz')\n\nlog_ctx: dict[str, str] = {'corr': extract({'x-request-id': 'abc'})}\n",
+      "sources": [
+        {
+          "source": "ASP.NET Core 8.0 — HttpContext.TraceIdentifier",
+          "locator": "learn.microsoft.com/dotnet/api/microsoft.aspnetcore.http.httpcontext.traceidentifier"
+        },
+        {
+          "source": "Ruby on Rails 7 — CurrentAttributes request_id example",
+          "locator": "api.rubyonrails.org/classes/ActiveSupport/CurrentAttributes.html — 'attribute :request_id, default: -> { SecureRandom.uuid }'"
+        },
+        {
+          "source": "Plug 1.x — Plug.RequestId",
+          "locator": "hexdocs.pm/plug/Plug.RequestId.html — 'x-request-id' header handling"
+        }
+      ],
+      "why_essential": "Distributed debugging CANNOT work if each tool picks its own id format and header name; a single contract lets logs, metrics, and traces be joined without a specialist's knowledge.",
+      "alternatives_considered": [
+        "Only OpenTelemetry trace-id — omits requests outside the tracer",
+        "Per-service random ids — breaks cross-hop correlation",
+        "Autoincrementing request counter — leaks traffic volume, collides across nodes"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "MiddlewarePipeline",
+      "namespace": "api",
+      "purpose": "Ordered chain of components that each transform the RequestContext and decide whether to call the next, enabling cross-cutting concerns.",
+      "api_signature": "from typing import Awaitable, Callable, Protocol\n\nNext = Callable[[], Awaitable[None]]\n\nclass Middleware(Protocol):\n    async def __call__(self, ctx: RequestContext, call_next: Next) -> None: ...\n\nclass MiddlewarePipeline(Protocol):\n    def use(self, mw: Middleware) -> 'MiddlewarePipeline': ...\n    async def run(self, ctx: RequestContext) -> None: ...\n",
+      "invariants": [
+        "Execution order MUST be the registration order; swap or insert operations SHALL be explicit, never implicit.",
+        "A middleware that does NOT await call_next MUST short-circuit the remainder of the pipeline.",
+        "Each middleware CANNOT bypass downstream error handling: exceptions NEVER skip registered error filters.",
+        "Registration MUST be frozen before run() is first called; adding middleware at request time SHALL raise.",
+        "MUST produce a response even if every middleware halts; an unhandled halt SHALL yield a 500 by contract."
+      ],
+      "extension_contract": "Consumers add behavior by implementing Middleware and calling pipeline.use(); alternative styles (NestJS interceptor, Plug module, ASP.NET IMiddleware, Rack app) MUST be bound via an adapter that forwards (ctx, call_next) and preserves ordering.",
+      "consumption_example": "async def timing(ctx: RequestContext, call_next: Next) -> None:\n    t0 = 0.0\n    await call_next()\n    ctx.put('elapsed_ms', t0)\n\ndef build(p: MiddlewarePipeline) -> MiddlewarePipeline:\n    return p.use(timing)\n",
+      "sources": [
+        {
+          "source": "Plug 1.x — Plug specification (init/1, call/2)",
+          "locator": "hexdocs.pm/plug/readme.html — 'Plug' behaviour section"
+        },
+        {
+          "source": "ASP.NET Core 8.0 — Middleware order",
+          "locator": "learn.microsoft.com/aspnet/core/fundamentals/middleware — RequestDelegate, app.Use pattern"
+        },
+        {
+          "source": "Nest.js 10 — Interceptors (NestInterceptor.intercept)",
+          "locator": "docs.nestjs.com/interceptors — intercept(context, next) returns Observable"
+        }
+      ],
+      "why_essential": "Authentication, logging, rate limiting, and error shaping are the same kind of component; without one chain contract, each feature reimplements ordering and every new concern reopens the same debate.",
+      "alternatives_considered": [
+        "AOP via bytecode weaving — invisible and hard to debug",
+        "Decorators per handler — combinatorial explosion",
+        "Monkey-patching dispatcher — breaks framework upgrades"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "RequestGuard",
+      "namespace": "auth",
+      "purpose": "Predicate invoked before a handler runs that returns allow/deny based on RequestContext and CurrentPrincipal, short-circuiting the pipeline on deny.",
+      "api_signature": "from typing import Protocol\n\nclass RequestGuard(Protocol):\n    async def allow(self, ctx: RequestContext, principal: CurrentPrincipal) -> bool: ...\n",
+      "invariants": [
+        "A False return MUST prevent the handler from running and SHALL produce a 401/403 response.",
+        "Guards MUST NOT mutate the request body; they CANNOT transform payloads, only accept or reject.",
+        "Multiple guards MUST be composed with logical AND: any False blocks the request.",
+        "Guards MUST execute before interceptors/pipes but after authentication middleware has bound a principal.",
+        "A guard that raises NEVER gets silently treated as allow; exceptions SHALL map to 500 by the error filter."
+      ],
+      "extension_contract": "Downstream tools implement RequestGuard and register via a decorator (e.g. @UseGuards on a controller, a register() call on the pipeline, or a Plug inserted before dispatch); guards compose, they CANNOT replace one another.",
+      "consumption_example": "class RoleGuard:\n    def __init__(self, role: str) -> None:\n        self.role = role\n    async def allow(self, ctx: RequestContext, principal: CurrentPrincipal) -> bool:\n        return not principal.is_anonymous and self.role in principal.roles\n\ng: RequestGuard = RoleGuard('admin')\n",
+      "sources": [
+        {
+          "source": "Nest.js 10 — Guards (CanActivate)",
+          "locator": "docs.nestjs.com/guards — canActivate(context) returns boolean | Promise | Observable"
+        },
+        {
+          "source": "ASP.NET Core 8.0 — Authorization policies",
+          "locator": "learn.microsoft.com/aspnet/core/security/authorization/policies — IAuthorizationRequirement, [Authorize]"
+        }
+      ],
+      "why_essential": "Authorization must be declarative and uniform across handlers; when each handler reimplements role checks, audit coverage CANNOT be proven and policy changes SHALL ripple unsafely.",
+      "alternatives_considered": [
+        "Inline role checks in handlers — no central audit, easy to forget",
+        "Single monolithic authorization middleware — cannot attach different policies per route",
+        "Decorator metadata only — requires a reader and still needs a guard to enforce"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "ValueTransform",
+      "namespace": "api",
+      "purpose": "Strongly-typed parse/validate step that converts a raw inbound argument (body/query/param) into the typed value the handler expects.",
+      "api_signature": "from typing import Protocol, TypeVar\nfrom dataclasses import dataclass\n\nI = TypeVar('I')\nO = TypeVar('O')\n\n@dataclass(frozen=True)\nclass ArgumentMetadata:\n    kind: str\n    metatype: type | None\n    data: str | None\n\nclass ValueTransform(Protocol):\n    def transform(self, value: I, meta: ArgumentMetadata) -> O: ...\n",
+      "invariants": [
+        "transform() MUST raise a typed validation error on bad input; it NEVER returns None to signal invalid.",
+        "A ValueTransform MUST be pure: same (value, meta) SHALL produce the same output with no observable side effects.",
+        "metatype MUST drive the coercion target; CANNOT silently ignore the declared type.",
+        "Composed transforms MUST apply left-to-right in declaration order; swapping order SHALL be explicit.",
+        "NEVER mutates the incoming value in place; the returned value is always fresh."
+      ],
+      "extension_contract": "Downstream tools implement ValueTransform (e.g. a ZodValidationPipe-style class) and bind it with a decorator/register call on a parameter or handler; built-in transforms (ParseInt, Validation) MUST satisfy the same Protocol and compose cleanly.",
+      "consumption_example": "class ParseInt:\n    def transform(self, value: str, meta: ArgumentMetadata) -> int:\n        return int(value)\n\nmeta = ArgumentMetadata(kind='param', metatype=int, data='id')\nv: ValueTransform = ParseInt()\nassert v.transform('7', meta) == 7\n",
+      "sources": [
+        {
+          "source": "Nest.js 10 — Pipes (PipeTransform, ArgumentMetadata)",
+          "locator": "docs.nestjs.com/pipes — transform(value, metadata: ArgumentMetadata) where kind ∈ body|query|param|custom"
+        },
+        {
+          "source": "ASP.NET Core 8.0 — Model binding and validation",
+          "locator": "learn.microsoft.com/aspnet/core/mvc/models/model-binding — ModelBinder, [FromBody]/[FromQuery]"
+        }
+      ],
+      "why_essential": "A handler that receives raw strings has to re-validate the same fields on every path; one contract lets validators/coercers be shared across all entry points and keeps error shapes consistent.",
+      "alternatives_considered": [
+        "Validation inside each handler — duplicated logic, inconsistent errors",
+        "Manual parsing with framework helpers only — no composition of custom rules",
+        "JSON-Schema only — cannot express cross-field rules cleanly"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "ConfigBinding",
+      "namespace": "data",
+      "purpose": "Binds a namespaced slice of the runtime configuration to a typed record, validated at startup so misconfiguration fails loud, not silent.",
+      "api_signature": "from typing import Protocol, Type, TypeVar\n\nT = TypeVar('T')\n\nclass ConfigBinding(Protocol):\n    def bind(self, prefix: str, schema: Type[T]) -> T: ...\n    def reload(self) -> None: ...\n",
+      "invariants": [
+        "bind() MUST fail loudly if required keys are missing or typed coercion fails; it NEVER returns a partially-filled record.",
+        "Bound records MUST be frozen/immutable; runtime code CANNOT mutate a bound option to affect another consumer.",
+        "reload() MUST produce a new record without aliasing the previous one; references already handed out SHALL NOT silently mutate.",
+        "Unknown keys under the prefix MUST be reported as errors by default (strict binding) and NEVER silently dropped.",
+        "Precedence order (env > file > defaults) MUST be fixed and documented; a later source CANNOT override a value an operator pinned."
+      ],
+      "extension_contract": "Downstream tools declare a dataclass schema and call bind(prefix, schema); alternative sources (YAML file, env, Vault, ConfigMap) plug in as providers via a registered adapter/provider that the binding composes left-to-right.",
+      "consumption_example": "from dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass DbOpts:\n    url: str\n    pool: int = 10\n\ndef load(binder: ConfigBinding) -> DbOpts:\n    return binder.bind('db', DbOpts)\n",
+      "sources": [
+        {
+          "source": "Spring Boot 3.x Reference — Type-safe Configuration Properties",
+          "locator": "docs.spring.io/spring-boot/reference/features/external-config.html — @ConfigurationProperties, ConstructorBinding, DefaultValue"
+        },
+        {
+          "source": "ASP.NET Core 8.0 — Options pattern",
+          "locator": "learn.microsoft.com/aspnet/core/fundamentals/configuration/options — IOptions<T>, Configure<T>(section)"
+        }
+      ],
+      "why_essential": "Parsing env vars and dictionary lookups scattered through a codebase is a long tail of production outages; one binder catches errors at startup and gives every tool the same typed window into config.",
+      "alternatives_considered": [
+        "Read os.environ directly — no schema, silent typos",
+        "Dict-of-dicts passed around — no validation, no defaults",
+        "Per-module singleton loaders — drift in key naming and precedence"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "HealthProbe",
+      "namespace": "obs",
+      "purpose": "Small probe that reports UP/DOWN/DEGRADED with optional detail so orchestrators (Kubernetes, load balancers) can route traffic safely.",
+      "api_signature": "from dataclasses import dataclass, field\nfrom enum import Enum\nfrom typing import Mapping, Protocol\n\nclass HealthStatus(str, Enum):\n    UP = 'up'\n    DOWN = 'down'\n    DEGRADED = 'degraded'\n\n@dataclass(frozen=True)\nclass HealthReport:\n    status: HealthStatus\n    details: Mapping[str, str] = field(default_factory=dict)\n\nclass HealthProbe(Protocol):\n    name: str\n    async def check(self) -> HealthReport: ...\n",
+      "invariants": [
+        "check() MUST complete within a declared timeout; a hanging probe SHALL be treated as DOWN.",
+        "A probe MUST NEVER throw; unexpected exceptions SHALL be caught and turned into DOWN with the exception class as detail.",
+        "name MUST be unique within the registry; duplicate registrations SHALL be rejected.",
+        "details MUST NOT leak secrets (connection strings, tokens); callers CANNOT rely on raw credentials appearing.",
+        "The aggregated readiness endpoint MUST be UP only when every required probe is UP; optional probes CANNOT force readiness false."
+      ],
+      "extension_contract": "Downstream tools implement HealthProbe and register via a decorator/register() call; the aggregator composes probes into readiness and liveness groups, and new probe sources plug in without changing the endpoint code.",
+      "consumption_example": "class DbProbe:\n    name = 'db'\n    async def check(self) -> HealthReport:\n        ok = True\n        return HealthReport(HealthStatus.UP if ok else HealthStatus.DOWN)\n\np: HealthProbe = DbProbe()\n",
+      "sources": [
+        {
+          "source": "Spring Boot 3.x Actuator — HealthIndicator",
+          "locator": "docs.spring.io/spring-boot/reference/actuator/endpoints.html — HealthIndicator.health(), Health.up()/down()/status()"
+        },
+        {
+          "source": "ASP.NET Core 8.0 — Health checks",
+          "locator": "learn.microsoft.com/aspnet/core/host-and-deploy/health-checks — IHealthCheck.CheckHealthAsync"
+        }
+      ],
+      "why_essential": "Kubernetes and load balancers make routing decisions from the /health endpoint; if every tool owns its own probe shape, readiness signals conflict and deployments fail to roll back safely.",
+      "alternatives_considered": [
+        "Single monolithic /health handler — every team edits the same file",
+        "TCP port open as readiness — ignores app-level failures",
+        "Per-service custom /ping formats — blocks generic orchestrator checks"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "LifecycleHook",
+      "namespace": "obs",
+      "purpose": "Named callback fired at a defined application phase (starting, ready, stopping) so tools can initialize resources and shut down cleanly.",
+      "api_signature": "from enum import Enum\nfrom typing import Awaitable, Callable\n\nclass LifecyclePhase(str, Enum):\n    STARTING = 'starting'\n    READY = 'ready'\n    STOPPING = 'stopping'\n    STOPPED = 'stopped'\n\nLifecycleCallback = Callable[[], Awaitable[None]]\n\nclass LifecycleHook:\n    def __init__(self, phase: LifecyclePhase, cb: LifecycleCallback) -> None:\n        self.phase = phase\n        self.cb = cb\n",
+      "invariants": [
+        "READY MUST fire exactly once, after STARTING and all startup callbacks have completed successfully.",
+        "STOPPING hooks MUST run in reverse registration order (LIFO) so later-initialized resources drain first.",
+        "A failing STARTING hook MUST prevent READY from firing; the app SHALL transition to STOPPED with non-zero exit.",
+        "Hooks MUST NOT block indefinitely; each hook SHALL obey a configured timeout and be cancelled otherwise.",
+        "No hook CAN re-enter its own phase; recursive registration of the same callback in the same phase SHALL raise."
+      ],
+      "extension_contract": "Downstream tools instantiate LifecycleHook and register via a decorator/register()/@Observes-style binder on the application's lifecycle registry; alternative sources (Spring ApplicationReadyEvent, Quarkus StartupEvent, ASP.NET IHostApplicationLifetime) plug in through adapters that map native events onto LifecyclePhase.",
+      "consumption_example": "async def warm_cache() -> None:\n    return None\n\nhook = LifecycleHook(LifecyclePhase.READY, warm_cache)\nassert hook.phase == LifecyclePhase.READY\n",
+      "sources": [
+        {
+          "source": "Spring Boot 3.x Reference — Application Events and Listeners",
+          "locator": "docs.spring.io/spring-boot/reference/features/spring-application.html — ApplicationStartingEvent, ApplicationReadyEvent, ApplicationFailedEvent"
+        },
+        {
+          "source": "Quarkus 3.x Lifecycle Guide",
+          "locator": "quarkus.io/guides/lifecycle — io.quarkus.runtime.StartupEvent, ShutdownEvent, @Observes"
+        },
+        {
+          "source": "ASP.NET Core 8.0 — IHostApplicationLifetime",
+          "locator": "learn.microsoft.com/dotnet/api/microsoft.extensions.hosting.ihostapplicationlifetime — ApplicationStarted, ApplicationStopping, ApplicationStopped"
+        }
+      ],
+      "why_essential": "Graceful startup and shutdown sequencing (warm caches, drain connections, flush buffers) CANNOT be invented per tool; a shared hook vocabulary lets orchestrators trust the app's readiness and shutdown signals.",
+      "alternatives_considered": [
+        "atexit-style hooks only — no STARTING phase, no async support",
+        "Per-tool startup scripts — ordering is ad-hoc, failures invisible",
+        "Single giant startup function — monolithic, blocks parallel init"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "FeatureToggle",
+      "namespace": "flags",
+      "purpose": "Named boolean (or variant) predicate, evaluated against the current context, that controls whether a code path is live for a given request.",
+      "api_signature": "from typing import Protocol\nfrom dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass ToggleContext:\n    principal_id: str | None\n    tenant_id: str | None\n    environment: str\n\nclass FeatureToggle(Protocol):\n    key: str\n    def is_active(self, ctx: ToggleContext) -> bool: ...\n",
+      "invariants": [
+        "is_active() MUST be pure given the same (key, ctx); side effects (I/O, random draws) SHALL NEVER leak into evaluation.",
+        "Evaluation MUST default to False (off) when the backing store is unreachable; CANNOT default to on.",
+        "A toggle key MUST be unique within the registry and SHALL follow a fixed naming convention.",
+        "The evaluation path MUST record an observability event (toggle key + decision) for every call; audit entries NEVER are dropped.",
+        "Removing a toggle MUST be a two-step deprecation: mark stale, then delete; code references CANNOT disappear abruptly."
+      ],
+      "extension_contract": "Downstream tools declare a FeatureToggle (e.g. an enum member or a class), register a strategy/provider (percent-rollout, per-tenant, per-role), and evaluation runs through the configured provider so new stores (Togglz/Spring @ConditionalOnProperty/OpenFeature) plug in as adapters.",
+      "consumption_example": "class HotFeature:\n    key = 'hot_feature'\n    def is_active(self, ctx: ToggleContext) -> bool:\n        return ctx.environment == 'prod' and ctx.tenant_id == 'acme'\n\nft: FeatureToggle = HotFeature()\nassert ft.key == 'hot_feature'\n",
+      "sources": [
+        {
+          "source": "Togglz 4.x — Feature enum and isActive()",
+          "locator": "togglz.org/documentation/usage.html — 'MyFeatures.HOT_NEW_FEATURE.isActive()'"
+        },
+        {
+          "source": "Spring Boot 3.x Reference — Conditional beans",
+          "locator": "org.springframework.boot.autoconfigure.condition.ConditionalOnProperty — 'name', 'havingValue'"
+        },
+        {
+          "source": "Spring Framework — Profiles",
+          "locator": "org.springframework.context.annotation.Profile — @Profile('production'), '!production'"
+        }
+      ],
+      "why_essential": "Feature flags straddle code, product, and ops; without one contract, each tool reinvents on-off logic, audits drift, and there is no single place to list what is live in prod.",
+      "alternatives_considered": [
+        "If-statements on env vars — no per-user rollout, no audit",
+        "Runtime config reloads only — no context-aware evaluation",
+        "Manual DNS/Traffic splits — wrong layer; operates on infrastructure not logic"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "RouterPipeline",
+      "namespace": "api",
+      "purpose": "Named bundle of middleware (e.g. 'browser', 'api') that a route joins with pipe_through so groups of endpoints share the same pre-dispatch chain.",
+      "api_signature": "from typing import Protocol, Sequence\n\nclass RouterPipeline(Protocol):\n    name: str\n    middleware: Sequence['Middleware']\n\n    def attach(self, route: str) -> None: ...\n",
+      "invariants": [
+        "A pipeline MUST run its middleware in declared order, every time; reorder at runtime SHALL NEVER happen.",
+        "A route joined to a pipeline MUST execute its chain before the handler; the chain CANNOT be bypassed per request.",
+        "Pipelines MUST NOT share mutable state across requests; any state SHALL live in RequestContext.assigns.",
+        "Joining a route to a pipeline MUST be declarative; programmatic attach CANNOT happen after the router is sealed.",
+        "A pipeline name MUST be unique within the router; duplicate declarations SHALL raise at boot."
+      ],
+      "extension_contract": "Downstream tools declare a pipeline via a register() call or a pipeline/2-style macro, then scoped routes join it with a pipe_through directive; frameworks like Phoenix or Rails Rack chains plug in by providing their own adapter that respects the name and order invariants.",
+      "consumption_example": "def build_api(router: dict) -> None:\n    p: RouterPipeline = router['pipelines']['api']\n    p.attach('/v1/users/:id')\n\n# At compile time, pipeline ensures order:\nassert hasattr(RouterPipeline, 'attach')\n",
+      "sources": [
+        {
+          "source": "Phoenix 1.7 Router — pipeline/2, pipe_through/1",
+          "locator": "hexdocs.pm/phoenix/Phoenix.Router.html — 'Pipelines' and 'Scopes' sections"
+        },
+        {
+          "source": "Plug 1.x — Plug.Builder pipelines",
+          "locator": "hexdocs.pm/plug/Plug.Builder.html — 'plug' directive composition"
+        }
+      ],
+      "why_essential": "Route groups share concerns (auth, parsing, throttling); without one vocabulary, 'add auth to /api' becomes a per-file change and regressions appear when a route is added outside the group.",
+      "alternatives_considered": [
+        "Per-route decorator stacks — duplication across many handlers",
+        "Single global middleware chain — cannot vary by route group",
+        "URL-prefix-based conditionals in middleware — fragile, easy to miss"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "EventBus",
+      "namespace": "obs",
+      "purpose": "In-process publish/subscribe point for named framework and application events (e.g. sql.active_record, http.request) with structured payloads.",
+      "api_signature": "from typing import Any, Callable, Mapping, Protocol\n\nSubscriber = Callable[[str, Mapping[str, Any]], None]\n\nclass EventBus(Protocol):\n    def publish(self, name: str, payload: Mapping[str, Any]) -> None: ...\n    def subscribe(self, pattern: str, handler: Subscriber) -> Callable[[], None]: ...\n",
+      "invariants": [
+        "publish() MUST deliver to every matching subscriber synchronously OR through a declared executor; delivery order per subscriber SHALL be the subscription order.",
+        "A subscriber that raises MUST NOT abort delivery to other subscribers; the error SHALL be reported to the observability sink.",
+        "The returned unsubscribe callable MUST be idempotent; calling it twice CANNOT remove a different subscription.",
+        "Event names MUST follow a dotted namespace (e.g. 'sql.active_record'); wildcards SHALL use a documented pattern syntax.",
+        "Payloads MUST be treated as immutable by subscribers; mutating a payload to signal another subscriber is FORBIDDEN."
+      ],
+      "extension_contract": "Downstream tools publish named events via publish() and consumers subscribe via subscribe()/an @EventListener-style decorator; tracing/metrics plug in as a provider that subscribes to patterns (e.g. '*.active_record') without touching producers.",
+      "consumption_example": "def on_sql(name: str, payload: dict) -> None:\n    duration = payload.get('duration', 0)\n    _ = (name, duration)\n\nbus: EventBus\nunsub = bus.subscribe('sql.*', on_sql)\nbus.publish('sql.query', {'duration': 12})\nunsub()\n",
+      "sources": [
+        {
+          "source": "Ruby on Rails 7 — ActiveSupport::Notifications",
+          "locator": "guides.rubyonrails.org/active_support_instrumentation.html — subscribe/instrument, Event.duration/payload"
+        },
+        {
+          "source": "Spring Boot 3.x — Application Events and @EventListener",
+          "locator": "docs.spring.io/spring-boot/reference/features/spring-application.html — ApplicationReadyEvent, @EventListener"
+        }
+      ],
+      "why_essential": "Observability code (tracing, audit, metrics) MUST attach to framework internals without forking the framework; a bus turns 'I need to know when X happens' into a subscription instead of a patch.",
+      "alternatives_considered": [
+        "AOP/monkey-patching around framework methods — fragile and invisible",
+        "Dedicated callbacks per concern — combinatorial wiring",
+        "External broker for in-process events — overkill latency and ops burden"
+      ],
+      "maturity": "battle_tested"
+    }
+  ],
+  "cross_cutting_insights": [
+    "All six frameworks converge on three lifetimes (process, request, per-call); the naming differs (Spring 'request' vs ASP.NET 'Scoped' vs Nest.js 'REQUEST') but the semantics are identical and portable.",
+    "Every framework exposes a per-request state carrier (HttpContext, Plug.Conn, CurrentAttributes, ExecutionContext) — identity, correlation id, and tenant are ALWAYS attached here, never via thread-local globals.",
+    "Configuration binding is a startup concern (Spring @ConfigurationProperties, ASP.NET IOptions<T>): validation happens once, results are immutable, and unknown keys fail fast rather than at first read.",
+    "Middleware/Plug/Interceptor chains are all the same pattern under different names: ordered (ctx, call_next) callables with short-circuit via halt()/non-call, making ordering a first-class contract.",
+    "Lifecycle hooks have stabilized into STARTING/READY/STOPPING phases (Spring ApplicationReadyEvent, Quarkus StartupEvent/ShutdownEvent, ASP.NET IHostApplicationLifetime); orchestrators rely on the READY signal to gate traffic.",
+    "Health endpoints are composite: a registry of named probes aggregated by a StatusAggregator (Spring) or equivalent; readiness != liveness and the two MUST be reported separately.",
+    "Guard-vs-Pipe-vs-Interceptor ordering (Nest.js) encodes a production truth: authorize before transforming, transform before handling, observe around all of them.",
+    "Feature flags and Spring @ConditionalOnProperty / @Profile share one mental model: a named predicate evaluated against context controls whether a wiring or code path is live."
+  ],
+  "source_coverage": {
+    "ASP.NET Core 8.0 Fundamentals — Dependency Injection": 1,
+    "Spring Framework Reference — Core Container": 1,
+    "Quarkus 3.x Guide — Contexts and Dependency Injection": 1,
+    "ASP.NET Core 8.0 Fundamentals — Service lifetimes": 1,
+    "Spring Framework Reference — Bean Scopes": 1,
+    "Nest.js 10 Documentation — Injection scopes": 1,
+    "Quarkus 3.x CDI Guide": 1,
+    "ASP.NET Core 8.0 — HttpContext": 1,
+    "Plug 1.x — Plug.Conn struct": 1,
+    "Ruby on Rails 7 Guides — ActiveSupport::CurrentAttributes": 1,
+    "ASP.NET Core 8.0 — HttpContext.User (ClaimsPrincipal)": 1,
+    "Ruby on Rails 7 — ActiveSupport::CurrentAttributes": 1,
+    "Nest.js 10 — CanActivate and ExecutionContext": 1,
+    "ASP.NET Core 8.0 — HttpContext.TraceIdentifier": 1,
+    "Ruby on Rails 7 — CurrentAttributes request_id example": 1,
+    "Plug 1.x — Plug.RequestId": 1,
+    "Plug 1.x — Plug specification (init/1, call/2)": 1,
+    "ASP.NET Core 8.0 — Middleware order": 1,
+    "Nest.js 10 — Interceptors (NestInterceptor.intercept)": 1,
+    "Nest.js 10 — Guards (CanActivate)": 1,
+    "ASP.NET Core 8.0 — Authorization policies": 1,
+    "Nest.js 10 — Pipes (PipeTransform, ArgumentMetadata)": 1,
+    "ASP.NET Core 8.0 — Model binding and validation": 1,
+    "Spring Boot 3.x Reference — Type-safe Configuration Properties": 1,
+    "ASP.NET Core 8.0 — Options pattern": 1,
+    "Spring Boot 3.x Actuator — HealthIndicator": 1,
+    "ASP.NET Core 8.0 — Health checks": 1,
+    "Spring Boot 3.x Reference — Application Events and Listeners": 1,
+    "Quarkus 3.x Lifecycle Guide": 1,
+    "ASP.NET Core 8.0 — IHostApplicationLifetime": 1,
+    "Togglz 4.x — Feature enum and isActive()": 1,
+    "Spring Boot 3.x Reference — Conditional beans": 1,
+    "Spring Framework — Profiles": 1,
+    "Phoenix 1.7 Router — pipeline/2, pipe_through/1": 1,
+    "Plug 1.x — Plug.Builder pipelines": 1,
+    "Ruby on Rails 7 — ActiveSupport::Notifications": 1,
+    "Spring Boot 3.x — Application Events and @EventListener": 1
+  },
+  "gaps_observed": [
+    "SKILL-001 lacks a LifetimeScope enum; lifetimes are currently implicit in tool bodies rather than declared at registration.",
+    "CorrelationId propagation across outbound HTTP/queue calls is not a declared primitive; each integration tool handles headers its own way.",
+    "No unified HealthProbe registry aggregating /readyz and /livez across tools; each generator adds its own path with its own shape.",
+    "LifecycleHook phases (STARTING/READY/STOPPING) are not a first-class primitive; startup wiring is scattered across generators.",
+    "FeatureToggle as a context-aware predicate is absent; the current flag story is environment-variable checks without per-tenant evaluation."
+  ]
+}

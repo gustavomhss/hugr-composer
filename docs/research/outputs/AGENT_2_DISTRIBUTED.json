@@ -1,0 +1,522 @@
+{
+  "agent_id": 2,
+  "codename": "DISTRIBUTED",
+  "primitives": [
+    {
+      "name": "StateStore",
+      "namespace": "data",
+      "purpose": "Key addressed durable key-value CRUD surface with optimistic concurrency tokens and optional TTL for language neutral state access.",
+      "api_signature": "from typing import Protocol, Any\n\nclass StateStore(Protocol):\n    async def get(self, key: str) -> tuple[bytes, str | None]: ...\n    async def save(self, key: str, value: bytes, etag: str | None = None, ttl_s: int | None = None) -> str: ...\n    async def delete(self, key: str, etag: str | None = None) -> None: ...\n    async def bulk_get(self, keys: list[str]) -> dict[str, tuple[bytes, str | None]]: ...",
+      "invariants": [
+        "Save with a non None etag MUST reject when the stored etag differs and raise a conflict error.",
+        "Delete with a non None etag MUST NOT remove the entry when the etag no longer matches the stored version.",
+        "TTL expiry SHALL cause subsequent get calls to return a miss without invoking save or delete callbacks.",
+        "The returned etag on save MUST change whenever the stored value bytes change for a given key.",
+        "Bulk get MUST return a result for every requested key, using an absence marker for missing ones rather than omitting them.",
+        "Keys NEVER cross a tenant scope because store selection binds the scope at component configuration time."
+      ],
+      "extension_contract": "Plug a new backend by implementing the StateStore protocol as a component adapter, register it under a name in the runtime component registry, and expose the same etag and TTL semantics; higher layers extend behavior by composing middleware around the protocol (encrypt on save, audit on delete).",
+      "consumption_example": "async def bump_counter(store: StateStore, key: str) -> int:\n    raw, etag = await store.get(key)\n    count = int(raw or b'0') + 1\n    await store.save(key, str(count).encode(), etag=etag)\n    return count",
+      "sources": [
+        {
+          "source": "Dapr 1.14 State Management building block overview",
+          "locator": "docs.dapr.io/developing-applications/building-blocks/state-management/state-management-overview/ sections CRUD, Concurrency, TTL"
+        },
+        {
+          "source": "Dapr 1.14 State Management building block overview",
+          "locator": "docs.dapr.io/.../state-management-overview/ Consistency and Last Write Wins section"
+        }
+      ],
+      "why_essential": "Without a shared contract every worker reinvents ETag handling and TTL, so rollbacks of partial writes and conflict detection diverge across stacks and become untestable at the skill boundary.",
+      "alternatives_considered": [
+        "Exposing a raw Redis client per worker which leaks driver errors and skips ETag semantics",
+        "A thin repository per entity which pushes concurrency control into every tool instead of centralizing it"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "TransactionalBatch",
+      "namespace": "data",
+      "purpose": "Atomic multi key write unit that commits a set of upsert and delete operations to one state store under a single transaction boundary.",
+      "api_signature": "from typing import Protocol, Literal, Any\nfrom dataclasses import dataclass\n\n@dataclass\nclass _Op:\n    op: Literal['upsert', 'delete']\n    key: str\n    value: bytes | None\n    etag: str | None\n\nclass TransactionalBatch(Protocol):\n    def upsert(self, key: str, value: bytes, etag: str | None = None) -> 'TransactionalBatch': ...\n    def delete(self, key: str, etag: str | None = None) -> 'TransactionalBatch': ...\n    async def commit(self) -> None: ...",
+      "invariants": [
+        "Commit MUST apply every queued operation atomically or apply none of them, with no partial visible state.",
+        "A conflicting etag on any queued operation MUST abort the entire batch and surface a conflict error.",
+        "After commit returns successfully the batch MUST NOT be reusable; reusing it SHALL raise a state error.",
+        "Operations inside one batch ALWAYS target the same state store instance to preserve the atomicity boundary.",
+        "Read operations are FORBIDDEN inside the batch because the contract covers only writes and deletes."
+      ],
+      "extension_contract": "Backend authors extend the protocol by implementing an adapter for their store's native transaction API (Redis MULTI, Postgres BEGIN, Kafka transactions via transactional.id); composition happens at the runtime, which binds one adapter per configured store name.",
+      "consumption_example": "async def transfer(batch: TransactionalBatch, src: str, dst: str, amount: int) -> None:\n    batch.upsert(src, str(-amount).encode()).upsert(dst, str(amount).encode())\n    await batch.commit()",
+      "sources": [
+        {
+          "source": "Dapr 1.14 State Management building block overview",
+          "locator": "docs.dapr.io/.../state-management-overview/ Transactional API section"
+        },
+        {
+          "source": "Confluent Kafka Design: Message Delivery Semantics",
+          "locator": "docs.confluent.io/kafka/design/delivery-semantics.html Transactional Producer paragraph"
+        }
+      ],
+      "why_essential": "Cross key consistency is a runtime level capability, so pushing it to each tool forces ad hoc compensation code; a shared batch primitive centralizes the atomicity boundary and its error type.",
+      "alternatives_considered": [
+        "Two phase commit coordinator per tool which adds operational cost and rarely matches store capabilities",
+        "Saga compensation at the application layer which is a different tradeoff and not a replacement for local atomicity"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "EventEnvelope",
+      "namespace": "events",
+      "purpose": "Canonical CloudEvents 1.0 shape that normalizes id, source, type, time and payload so downstream handlers parse the same structure regardless of transport.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Any\n\n@dataclass(frozen=True)\nclass EventEnvelope:\n    id: str\n    source: str\n    type: str\n    specversion: str = '1.0'\n    datacontenttype: str | None = None\n    dataschema: str | None = None\n    subject: str | None = None\n    time: str | None = None\n    data: Any = None\n    extensions: dict[str, str] | None = None",
+      "invariants": [
+        "Producers MUST make the tuple (source, id) unique per distinct occurrence so consumers can deduplicate.",
+        "Resending the same logical event ALWAYS reuses the original id so retries do not appear as new occurrences.",
+        "specversion MUST equal '1.0' for envelopes produced under this contract.",
+        "Extension attribute names MUST follow the same naming rules as core attributes and CANNOT collide with reserved names.",
+        "time when present SHALL be an RFC 3339 timestamp in UTC with no timezone offset ambiguity."
+      ],
+      "extension_contract": "Add custom attributes by registering an extension name in the extensions map following CloudEvents Extension Context Attributes rules; consumers extend by composing filters on type or subject via a decorator that wraps the handler.",
+      "consumption_example": "def is_retry(e: EventEnvelope, seen: set[tuple[str, str]]) -> bool:\n    key = (e.source, e.id)\n    if key in seen:\n        return True\n    seen.add(key)\n    return False",
+      "sources": [
+        {
+          "source": "CloudEvents 1.0.2 Core Specification",
+          "locator": "github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md sections Required Attributes, Optional Attributes"
+        },
+        {
+          "source": "CloudEvents 1.0.2 Core Specification",
+          "locator": "github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md Extension Context Attributes section"
+        }
+      ],
+      "why_essential": "Dedup, replay and audit all depend on a stable identity tuple; if each producer invents its own event shape the skill cannot compose cross transport without adapters everywhere.",
+      "alternatives_considered": [
+        "Plain JSON blobs per producer which breaks dedup and forces per consumer parsing rules",
+        "AsyncAPI style schema registry coupling which pins transports earlier than needed"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "TopicBus",
+      "namespace": "events",
+      "purpose": "Publish and subscribe facade over a broker topic that delivers CloudEvents at least once to named subscriber groups with optional dead letter routing.",
+      "api_signature": "from typing import Protocol, Callable, Awaitable\n\nAck = Callable[[], Awaitable[None]]\nNack = Callable[[str], Awaitable[None]]\n\nclass TopicBus(Protocol):\n    async def publish(self, topic: str, envelope: 'EventEnvelope') -> None: ...\n    def subscribe(self, topic: str, group: str, handler: Callable[['EventEnvelope', Ack, Nack], Awaitable[None]]) -> None: ...",
+      "invariants": [
+        "Delivery to a subscribed handler MUST be at least once by default, so handlers SHALL tolerate duplicates.",
+        "Inside one consumer group a given message ALWAYS goes to exactly one handler instance at a time.",
+        "Negative acknowledgement MUST cause redelivery or routing to a dead letter destination when configured.",
+        "Subscribers CANNOT rely on global ordering across topic partitions, only on partition local order.",
+        "Publish NEVER succeeds without the broker confirming the persisted append."
+      ],
+      "extension_contract": "Swap brokers by implementing a TopicBus adapter per backend (Kafka, NATS JetStream, Redis Streams, RabbitMQ) and register it as a pubsub component; cross cutting behavior (retry, tracing, audit) plugs in as middleware wrapping the handler.",
+      "consumption_example": "async def on_order(e: EventEnvelope, ack: Ack, nack: Nack) -> None:\n    try:\n        await process(e)\n        await ack()\n    except Exception:\n        await nack('transient')\n\ndef wire(bus: TopicBus) -> None:\n    bus.subscribe('orders', 'fulfillment', on_order)",
+      "sources": [
+        {
+          "source": "Dapr 1.14 Publish and Subscribe building block overview",
+          "locator": "docs.dapr.io/developing-applications/building-blocks/pubsub/pubsub-overview/ Delivery guarantees and Dead letter topics sections"
+        },
+        {
+          "source": "Confluent Kafka Design: Message Delivery Semantics",
+          "locator": "docs.confluent.io/kafka/design/delivery-semantics.html At-least-once section"
+        }
+      ],
+      "why_essential": "Every worker needs to emit domain events the same way; centralizing publish and subscribe with ack/nack and groups lets the skill compose across backends without leaking broker APIs into business code.",
+      "alternatives_considered": [
+        "Direct broker SDK in each tool which couples business logic to Kafka or NATS APIs",
+        "HTTP webhooks only which lose ordering and group semantics"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "StreamSubject",
+      "namespace": "events",
+      "purpose": "Hierarchical dot separated event routing name that supports single token and trailing wildcard matching for consumer filters and stream captures.",
+      "api_signature": "from dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass StreamSubject:\n    name: str\n\n    def matches(self, pattern: str) -> bool:\n        name_tokens = self.name.split('.')\n        pattern_tokens = pattern.split('.')\n        for i, tok in enumerate(pattern_tokens):\n            if tok == '>':\n                return i <= len(name_tokens)\n            if i >= len(name_tokens):\n                return False\n            if tok != '*' and tok != name_tokens[i]:\n                return False\n        return len(pattern_tokens) == len(name_tokens)",
+      "invariants": [
+        "Subject names MUST NOT contain null, whitespace, '.', '*' or '>' inside a token because these are the reserved separators.",
+        "The '>' wildcard SHALL appear only as the final token of a pattern and match one or more remaining tokens.",
+        "The '*' wildcard MUST match exactly one token, never zero and never multiple.",
+        "Names starting with '$' are FORBIDDEN for user subjects because that prefix is reserved for system use.",
+        "Publishers ALWAYS send to a fully specified subject; wildcards CANNOT appear in a publish call."
+      ],
+      "extension_contract": "Extend routing by composing a StreamSubject with a predicate filter or by registering a subject mapping adapter on stream ingestion; custom taxonomies plug in by implementing a naming convention validator that wraps the constructor.",
+      "consumption_example": "def route(subjects: list[StreamSubject], pattern: str) -> list[StreamSubject]:\n    return [s for s in subjects if s.matches(pattern)]",
+      "sources": [
+        {
+          "source": "NATS 2.10 Subjects concept documentation",
+          "locator": "docs.nats.io/nats-concepts/subjects sections Wildcards, Naming Rules"
+        },
+        {
+          "source": "NATS 2.10 JetStream overview",
+          "locator": "docs.nats.io/nats-concepts/jetstream Subject mapping transformations paragraph"
+        }
+      ],
+      "why_essential": "Hierarchical subject matching is the substrate for fan out, filtering and multi tenant isolation; a shared type prevents every tool from reimplementing a buggy wildcard matcher.",
+      "alternatives_considered": [
+        "Plain string equality topics which lose the hierarchical fan out pattern",
+        "Regex based routing which is expressive but rejects NATS style constraints and costs more at scale"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "DeadLetterRoute",
+      "namespace": "events",
+      "purpose": "Named destination where undeliverable or repeatedly failed messages are routed after the redelivery budget is exhausted so they can be inspected or replayed.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass DeadLetterRoute:\n    source_topic: str\n    destination_topic: str\n    max_deliveries: int\n\nclass DeadLetterSink(Protocol):\n    async def send(self, route: DeadLetterRoute, envelope: 'EventEnvelope', reason: str, attempt: int) -> None: ...",
+      "invariants": [
+        "A message delivered more than max_deliveries times MUST be routed to destination_topic and NEVER returned to the main topic.",
+        "The original EventEnvelope id and source ALWAYS survive routing so downstream audit can correlate.",
+        "max_deliveries MUST be a positive integer; zero or negative values SHALL raise a configuration error.",
+        "Routing to the dead letter destination CANNOT itself dead letter recursively in the same route.",
+        "The sink MUST record the terminal failure reason so operators can decide whether to replay."
+      ],
+      "extension_contract": "Backends register a DeadLetterSink adapter per transport (Dapr deadLetterTopic, Kafka DLT, NATS dedicated stream) and the runtime composes it with the TopicBus; custom policies extend via a decorator that chooses different destinations based on failure type.",
+      "consumption_example": "async def park(sink, envelope: EventEnvelope, err: str) -> None:\n    route = DeadLetterRoute(source_topic='orders', destination_topic='orders.dlq', max_deliveries=5)\n    await sink.send(route, envelope, err, attempt=route.max_deliveries + 1)",
+      "sources": [
+        {
+          "source": "Dapr 1.14 Publish and Subscribe building block overview",
+          "locator": "docs.dapr.io/developing-applications/building-blocks/pubsub/pubsub-overview/ Dead letter topics feature"
+        },
+        {
+          "source": "Apache Kafka 3.x documentation concepts",
+          "locator": "kafka.apache.org/documentation/ intro_concepts_and_terms discussion of retry topics and DLT pattern"
+        }
+      ],
+      "why_essential": "Without a shared dead letter contract every consumer invents its own failure bucket and loses replay ability; standardizing the route lets audit, replay and alerting reuse one surface.",
+      "alternatives_considered": [
+        "Logging failed messages to stdout only which is not replayable",
+        "Parking lot queues coded per tool which diverge in schema and ownership"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "PartitionLog",
+      "namespace": "events",
+      "purpose": "Ordered append only per partition event log identified by topic and partition number whose position is addressed by a monotonically increasing offset.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol, AsyncIterator\n\n@dataclass(frozen=True)\nclass PartitionLog:\n    topic: str\n    partition: int\n\nclass PartitionReader(Protocol):\n    async def read_from(self, log: PartitionLog, offset: int) -> AsyncIterator[tuple[int, bytes]]: ...\n    async def committed_offset(self, log: PartitionLog, group: str) -> int: ...",
+      "invariants": [
+        "Offsets inside one PartitionLog MUST be strictly monotonically increasing for successfully appended records.",
+        "Reads at offset N ALWAYS return the same bytes for the lifetime of the log retention window.",
+        "A consumer group committed offset NEVER decreases except by an explicit reset operation initiated by an operator.",
+        "Cross partition ordering is FORBIDDEN as an assumption; only within one PartitionLog is order preserved.",
+        "When isolation is set to read_committed the reader CANNOT observe records from open or aborted transactions."
+      ],
+      "extension_contract": "Adapters implement PartitionReader over a concrete broker client and plug into the ingestion pipeline; downstream processors extend by composing a projection handler that subscribes to a range of offsets via a decorator.",
+      "consumption_example": "async def tail(reader: PartitionReader, log: PartitionLog, group: str) -> list[int]:\n    start = await reader.committed_offset(log, group)\n    collected: list[int] = []\n    async for off, _payload in reader.read_from(log, start):\n        collected.append(off)\n    return collected",
+      "sources": [
+        {
+          "source": "Confluent Kafka Design: Message Delivery Semantics",
+          "locator": "docs.confluent.io/kafka/design/delivery-semantics.html Consumer offsets and read_committed paragraphs"
+        },
+        {
+          "source": "Apache Kafka 3.x documentation concepts",
+          "locator": "kafka.apache.org/documentation/ intro_concepts_and_terms Topic and Partition definitions"
+        }
+      ],
+      "why_essential": "Replay, back pressure and projection builds all depend on stable offset semantics; modeling the log as a primitive keeps ordering guarantees explicit across tools.",
+      "alternatives_considered": [
+        "Only exposing a high level consumer which hides offsets and prevents deterministic replay",
+        "Snapshot only stores which omit the log and lose event sourced history"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "WorkflowRun",
+      "namespace": "jobs",
+      "purpose": "Durable replayable orchestration identified by a workflow id that survives worker restarts and reconstructs state from a recorded event history.",
+      "api_signature": "from typing import Protocol, Any\nfrom dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass WorkflowRun:\n    workflow_id: str\n    run_id: str\n    task_queue: str\n\nclass WorkflowClient(Protocol):\n    async def start(self, workflow_type: str, workflow_id: str, task_queue: str, args: tuple[Any, ...]) -> WorkflowRun: ...\n    async def describe(self, workflow_id: str) -> WorkflowRun: ...\n    async def cancel(self, workflow_id: str) -> None: ...",
+      "invariants": [
+        "Workflow code MUST be deterministic so replay from the event history reconstructs the same decisions.",
+        "Non deterministic calls (random, wall clock time, direct network IO) are FORBIDDEN inside the workflow function.",
+        "A completed or canceled WorkflowRun CANNOT be resumed under the same run_id; reruns ALWAYS allocate a new run_id.",
+        "Every externally observable effect MUST flow through an activity, timer, signal or child workflow rather than direct side effects.",
+        "Starting a workflow with an id that already has an open run SHALL either reject or reuse according to the configured id reuse policy."
+      ],
+      "extension_contract": "Register new workflow types as decorated functions on a worker polling a named task queue; extend behavior by composing interceptors on the worker that wrap workflow and activity invocations, and by implementing custom payload converters as adapters.",
+      "consumption_example": "async def kickoff(client: WorkflowClient) -> WorkflowRun:\n    run: WorkflowRun = await client.start('ShipOrder', workflow_id='order-42', task_queue='orders', args=(42,))\n    return run",
+      "sources": [
+        {
+          "source": "Temporal 1.24 Workflows concept page",
+          "locator": "docs.temporal.io/workflows Workflow Definition and Determinism paragraphs"
+        },
+        {
+          "source": "Temporal 1.24 Workflows concept page",
+          "locator": "docs.temporal.io/workflows Event History and Replay paragraphs"
+        }
+      ],
+      "why_essential": "Long running orchestration cannot be invented per tool; a shared contract pins the determinism rules and the identity model so operators can observe and cancel runs uniformly.",
+      "alternatives_considered": [
+        "Chained Celery tasks which lack durable replay and event history",
+        "Custom state machines per worker which repeat the same determinism bugs"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "ActivityCall",
+      "namespace": "jobs",
+      "purpose": "Workflow scoped unit of side effectful work scheduled with explicit timeouts and a retry policy that the runtime executes at least once on a worker.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol, Any\n\n@dataclass(frozen=True)\nclass RetryPolicy:\n    initial_interval_s: float\n    backoff_coefficient: float\n    maximum_attempts: int\n\n@dataclass(frozen=True)\nclass ActivityCall:\n    name: str\n    task_queue: str\n    start_to_close_s: int\n    schedule_to_close_s: int | None\n    heartbeat_s: int | None\n    retry: RetryPolicy\n    args: tuple[Any, ...] = ()\n\nclass ActivityExecutor(Protocol):\n    async def execute(self, call: ActivityCall) -> Any: ...",
+      "invariants": [
+        "Execution semantics are at least once, so activity code MUST be idempotent under retry.",
+        "start_to_close_s MUST be set and be a positive integer; a missing value SHALL raise a configuration error.",
+        "Long running activities ALWAYS heartbeat within heartbeat_s; a missed heartbeat CANNOT be treated as success.",
+        "A failure whose attempt count reaches RetryPolicy.maximum_attempts MUST surface to the workflow as a terminal error.",
+        "Heartbeat details NEVER persist across a successful completion; they scope only to the in flight attempt and its retries."
+      ],
+      "extension_contract": "Register activity implementations on a worker for a named task queue and extend cross cutting behavior with worker interceptors that wrap execute; adapters implement transport specific payload conversion.",
+      "consumption_example": "async def charge(executor: ActivityExecutor, order_id: int) -> str:\n    call = ActivityCall(\n        name='ChargeCard',\n        task_queue='payments',\n        start_to_close_s=30,\n        schedule_to_close_s=120,\n        heartbeat_s=10,\n        retry=RetryPolicy(initial_interval_s=1.0, backoff_coefficient=2.0, maximum_attempts=5),\n        args=(order_id,),\n    )\n    return await executor.execute(call)",
+      "sources": [
+        {
+          "source": "Temporal 1.24 Activities concept page",
+          "locator": "docs.temporal.io/activities At least once semantics and Heartbeat paragraphs"
+        },
+        {
+          "source": "Temporal 1.24 Activities concept page",
+          "locator": "docs.temporal.io/activities Retry policy and Timeouts paragraphs"
+        }
+      ],
+      "why_essential": "A common activity contract is the seam between deterministic orchestration and messy side effects; without it every tool invents its own retry loop and loses heartbeat progress on crash.",
+      "alternatives_considered": [
+        "Bare retrying with tenacity which lacks timeouts scoped to schedule and heartbeat",
+        "A custom worker queue per feature which duplicates scheduling and observability plumbing"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "DurableTimer",
+      "namespace": "jobs",
+      "purpose": "Workflow scoped sleep that persists across worker outages and fires after a logical delay so long delays do not hold process resources.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass DurableTimer:\n    workflow_id: str\n    timer_id: str\n    delay_s: float\n\nclass TimerService(Protocol):\n    async def start(self, timer: DurableTimer) -> None: ...\n    async def cancel(self, workflow_id: str, timer_id: str) -> None: ...",
+      "invariants": [
+        "A fired timer MUST be recorded as an event so workflow replay reconstructs the same fire point.",
+        "Wall clock sleep calls inside a workflow are FORBIDDEN because they break determinism and do not survive outages.",
+        "A canceled timer SHALL NEVER fire; cancellation ALWAYS reaches the workflow before a fired event is recorded.",
+        "delay_s MUST be non negative; a negative delay CANNOT be scheduled and raises an argument error.",
+        "A single worker NEVER caps the number of concurrent durable timers at the process level because timers persist server side."
+      ],
+      "extension_contract": "Add scheduling backends by implementing TimerService as an adapter over the orchestrator, and compose cross cutting policies (quota, fairness) by wrapping start with middleware registered on the worker.",
+      "consumption_example": "async def park_until(svc: TimerService, wf_id: str, seconds: float) -> None:\n    timer = DurableTimer(workflow_id=wf_id, timer_id=f'wait-{seconds}', delay_s=seconds)\n    await svc.start(timer)",
+      "sources": [
+        {
+          "source": "Temporal 1.24 Python timers guide",
+          "locator": "docs.temporal.io/develop/python/timers Durability and Replay safety paragraphs"
+        },
+        {
+          "source": "Temporal 1.24 Workflows concept page",
+          "locator": "docs.temporal.io/workflows Durability and Event History section"
+        }
+      ],
+      "why_essential": "Long waits without holding a thread, and deterministic replay of delays, are orchestrator level primitives; each tool rolling its own asyncio sleep loses persistence and replay correctness.",
+      "alternatives_considered": [
+        "asyncio.sleep inside workflow code which disappears on process restart",
+        "External cron style schedulers which cannot correlate to a workflow run id"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "WorkflowSignal",
+      "namespace": "jobs",
+      "purpose": "Asynchronous fire and forget write that delivers named input to an open workflow run and is recorded into the event history for replay.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol, Any\n\n@dataclass(frozen=True)\nclass WorkflowSignal:\n    workflow_id: str\n    name: str\n    payload: Any\n\nclass SignalSender(Protocol):\n    async def send(self, signal: WorkflowSignal) -> None: ...\n    async def send_with_start(self, signal: WorkflowSignal, workflow_type: str, task_queue: str) -> str: ...",
+      "invariants": [
+        "A signal MUST be recorded as an event in the workflow history before it is considered delivered.",
+        "The sender CANNOT observe a return value from the signal; any response shape SHALL use an update or query instead.",
+        "Signals to a workflow that has closed MUST be rejected with a not found style error; signals NEVER start a closed run.",
+        "send_with_start ALWAYS atomically starts a new run or targets the existing open run under the same workflow id.",
+        "Handler code for a signal MUST follow the same determinism rules as the workflow itself."
+      ],
+      "extension_contract": "Declare named signal handlers on the workflow type using a decorator; extend delivery semantics by composing worker interceptors that wrap the handler (for example, rate limiting or authorization).",
+      "consumption_example": "async def notify(sender: SignalSender, wf_id: str) -> None:\n    sig = WorkflowSignal(workflow_id=wf_id, name='cancel_requested', payload={'reason': 'user'})\n    await sender.send(sig)",
+      "sources": [
+        {
+          "source": "Temporal 1.24 Encyclopedia: Workflow Message Passing",
+          "locator": "docs.temporal.io/encyclopedia/workflow-message-passing Signals vs Updates vs Queries table"
+        },
+        {
+          "source": "Temporal 1.24 Workflows concept page",
+          "locator": "docs.temporal.io/workflows Event History recording of signals"
+        }
+      ],
+      "why_essential": "External nudges into running orchestration need a durable, replay safe channel; without a shared signal contract tools resort to side channels that miss the history and break audit.",
+      "alternatives_considered": [
+        "Polling a state store from the workflow which wastes task slots and is not event driven",
+        "HTTP callbacks to the workflow worker which bypass the history and break replay"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "VirtualActor",
+      "namespace": "extras",
+      "purpose": "Location transparent single writer object addressed by type and id that holds private state and processes one message at a time on activation.",
+      "api_signature": "from typing import Protocol, Any\nfrom dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass ActorId:\n    actor_type: str\n    key: str\n\nclass VirtualActor(Protocol):\n    async def invoke(self, id: ActorId, method: str, payload: bytes) -> bytes: ...\n    async def set_reminder(self, id: ActorId, name: str, period_s: int, ttl_s: int | None = None) -> None: ...\n    async def cancel_reminder(self, id: ActorId, name: str) -> None: ...",
+      "invariants": [
+        "Only one invocation of a given ActorId runs at a time; concurrent calls MUST queue in arrival order.",
+        "Actor state NEVER escapes the actor instance; callers ALWAYS read it through invoke, never via direct store access.",
+        "Reminders MUST survive actor deactivation and restart; they SHALL fire after the configured period regardless of host.",
+        "Timers within an actor CANNOT outlive deactivation; reminders are the durable option.",
+        "Caller code MUST NOT depend on the physical host of an actor because placement can migrate on failover."
+      ],
+      "extension_contract": "Implement new actor behaviors by subclassing a base actor type and registering it with the runtime; cross cutting concerns (tracing, policy) plug in as server side interceptors around invoke.",
+      "consumption_example": "async def credit(bank: VirtualActor, user: str, amount: int) -> bytes:\n    account = ActorId(actor_type='Account', key=user)\n    return await bank.invoke(account, method='credit', payload=str(amount).encode())",
+      "sources": [
+        {
+          "source": "Dapr 1.14 Actors building block overview",
+          "locator": "docs.dapr.io/developing-applications/building-blocks/actors/actors-overview/ Turn based access, Placement, Timers vs Reminders sections"
+        }
+      ],
+      "why_essential": "Per entity serialization (single writer) is a common need for accounts, devices and sessions; centralizing the primitive prevents ad hoc locks sprinkled across tools that drift under load.",
+      "alternatives_considered": [
+        "Row level locks in the database which do not scale horizontally and couple correctness to a single DB",
+        "Rebuilding actor semantics with consumer groups which lacks reminders and state affinity"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "DistributedLock",
+      "namespace": "cache",
+      "purpose": "Named mutex with lease expiry that grants one holder exclusive access across processes and is released explicitly or by lease timeout on crash.",
+      "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass LockHandle:\n    resource_id: str\n    owner_id: str\n    lease_s: int\n\nclass DistributedLock(Protocol):\n    async def try_lock(self, resource_id: str, owner_id: str, lease_s: int) -> LockHandle | None: ...\n    async def unlock(self, handle: LockHandle) -> None: ...",
+      "invariants": [
+        "At most one caller MUST hold a given resource_id at a time; try_lock on a held lock returns None.",
+        "Locks ALWAYS auto release after lease_s elapses so a crashed holder CANNOT deadlock the resource forever.",
+        "Unlock with a non matching owner_id MUST be rejected so callers cannot release locks they do not own.",
+        "lease_s MUST be positive; a zero or negative lease SHALL raise a configuration error.",
+        "The primitive NEVER guarantees fairness across callers beyond the single holder invariant."
+      ],
+      "extension_contract": "Swap backends by implementing DistributedLock as an adapter (Redis SET NX PX, etcd lease, Consul session) and register it as a component; higher guarantees (fencing tokens) plug in by wrapping try_lock in a middleware that annotates the handle.",
+      "consumption_example": "async def with_critical_section(lock: DistributedLock, resource: str, owner: str) -> bool:\n    handle = await lock.try_lock(resource, owner, lease_s=30)\n    if handle is None:\n        return False\n    try:\n        return True\n    finally:\n        await lock.unlock(handle)",
+      "sources": [
+        {
+          "source": "Dapr 1.14 Distributed Lock building block overview",
+          "locator": "docs.dapr.io/developing-applications/building-blocks/distributed-lock/distributed-lock-api-overview/ Lease, TryLock, Unlock sections"
+        }
+      ],
+      "why_essential": "Coordinating rare sequential work across workers (backfills, leader only cron) needs one contract; scattering ad hoc Redis SETNX code loses lease semantics and owner checks.",
+      "alternatives_considered": [
+        "Advisory Postgres locks which tie correctness to one database and one transaction",
+        "Quorum based leader election which solves a bigger problem and is often overkill"
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "KeyValueBucket",
+      "namespace": "cache",
+      "purpose": "Named bucket of key value entries with optimistic create and update and a watch channel for change notifications derived from an underlying stream.",
+      "api_signature": "from typing import Protocol, AsyncIterator\nfrom dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass KvEntry:\n    key: str\n    value: bytes\n    revision: int\n\nclass KeyValueBucket(Protocol):\n    async def create(self, key: str, value: bytes) -> KvEntry: ...\n    async def update(self, key: str, value: bytes, revision: int) -> KvEntry: ...\n    async def get(self, key: str) -> KvEntry | None: ...\n    async def delete(self, key: str, revision: int | None = None) -> None: ...\n    def watch(self, key: str) -> AsyncIterator[KvEntry]: ...",
+      "invariants": [
+        "create MUST fail when the key already exists; it NEVER overwrites a present value.",
+        "update MUST fail when the supplied revision does not match the stored revision (compare and swap semantics).",
+        "Every successful write ALWAYS increases the entry revision monotonically.",
+        "Watch channels SHALL emit changes in revision order for a given key and CANNOT skip a revision without a gap signal.",
+        "Deleting a key NEVER frees its historical revisions if history retention is configured greater than one."
+      ],
+      "extension_contract": "Backends implement KeyValueBucket as an adapter over JetStream, etcd or equivalent compare and swap store and register per bucket name; watchers extend via a decorator that composes filters on key prefix or revision range.",
+      "consumption_example": "async def ensure_feature(kv: KeyValueBucket, name: str) -> bytes:\n    existing = await kv.get(name)\n    if existing is not None:\n        return existing.value\n    entry = await kv.create(name, b'off')\n    return entry.value",
+      "sources": [
+        {
+          "source": "NATS 2.10 JetStream overview",
+          "locator": "docs.nats.io/nats-concepts/jetstream Key Value Store section: create, update, watch, revisions"
+        }
+      ],
+      "why_essential": "Feature flags, session tokens and config blobs need compare and swap plus change notifications; a shared bucket contract prevents every tool from rebuilding optimistic update on top of a raw cache.",
+      "alternatives_considered": [
+        "Plain string cache with TTL only which lacks compare and swap and change notification",
+        "Full relational row with triggers which is far heavier than the access pattern needs"
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "RpcInterceptor",
+      "namespace": "extras",
+      "purpose": "Per call middleware that wraps a remote procedure invocation to read or mutate metadata, enforce deadlines and translate errors consistently across services.",
+      "api_signature": "from typing import Protocol, Callable, Awaitable, Any\nfrom dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass RpcContext:\n    method: str\n    deadline_ms: int | None\n    metadata: dict[str, str]\n\nHandler = Callable[[RpcContext, bytes], Awaitable[bytes]]\n\nclass RpcInterceptor(Protocol):\n    async def intercept(self, ctx: RpcContext, payload: bytes, next: Handler) -> bytes: ...",
+      "invariants": [
+        "Interceptors MUST call next exactly once per invocation unless they deliberately short circuit with a status.",
+        "Metadata keys that end with '-bin' ALWAYS carry binary values and CANNOT be compared as plain strings.",
+        "Keys starting with 'grpc-' are FORBIDDEN for user metadata because that prefix is reserved by the runtime.",
+        "A deadline propagated in ctx MUST NOT be extended by an interceptor; it SHALL only be shortened or respected.",
+        "Cancellation signals NEVER cross interceptor boundaries silently; every interceptor SHALL honor cancel or raise a cancellation error."
+      ],
+      "extension_contract": "Plug an interceptor into the chain by registering it on the client or server channel at construction time; compose multiple interceptors as an ordered list where earlier entries sit closer to the network and later entries closer to the handler.",
+      "consumption_example": "class AuthInterceptor(RpcInterceptor):\n    async def intercept(self, ctx: RpcContext, payload: bytes, next: Handler) -> bytes:\n        if 'authorization' not in ctx.metadata:\n            raise PermissionError('missing token')\n        return await next(ctx, payload)",
+      "sources": [
+        {
+          "source": "gRPC Core Concepts guide",
+          "locator": "grpc.io/docs/what-is-grpc/core-concepts/ Metadata and Deadlines/Timeouts paragraphs"
+        },
+        {
+          "source": "gRPC Interceptors guide",
+          "locator": "grpc.io/docs/guides/interceptors/ When to use, Client vs Server, Interceptor ordering sections"
+        }
+      ],
+      "why_essential": "Authentication, tracing, rate limiting and deadline discipline must apply uniformly to every RPC; an interceptor contract is where those concerns compose without editing each generated stub.",
+      "alternatives_considered": [
+        "Decorators on each service method which duplicate logic per endpoint",
+        "Global monkey patching of the RPC client which breaks generated stubs on upgrade"
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "OutboundBinding",
+      "namespace": "extras",
+      "purpose": "Declarative adapter that lets the application invoke an external resource through a named operation and metadata without embedding the vendor SDK.",
+      "api_signature": "from typing import Protocol\nfrom dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass BindingInvocation:\n    binding_name: str\n    operation: str\n    data: bytes\n    metadata: dict[str, str]\n\nclass OutboundBinding(Protocol):\n    async def invoke(self, request: BindingInvocation) -> tuple[bytes, dict[str, str]]: ...",
+      "invariants": [
+        "The operation field MUST be one of the operations declared by the binding component; unknown values SHALL be rejected.",
+        "binding_name ALWAYS refers to a component already registered in the runtime; an unresolved name CANNOT invoke anything.",
+        "Metadata keys NEVER include secrets in plaintext because binding metadata can be logged by observability layers.",
+        "Binary payloads MUST round trip unchanged; the adapter CANNOT mutate data bytes implicitly.",
+        "Invocation timeouts SHALL be honored by the adapter or explicitly surfaced as a deadline error."
+      ],
+      "extension_contract": "Add a new external system by implementing the OutboundBinding adapter (HTTP, S3, SMTP, SendGrid) and declaring it as a component with supported operations; applications extend by composing decorators around invoke for retry or circuit breaking.",
+      "consumption_example": "async def email(binding: OutboundBinding, to: str, body: bytes) -> None:\n    inv = BindingInvocation(\n        binding_name='sendgrid',\n        operation='create',\n        data=body,\n        metadata={'emailTo': to},\n    )\n    await binding.invoke(inv)",
+      "sources": [
+        {
+          "source": "Dapr 1.14 Bindings building block overview",
+          "locator": "docs.dapr.io/developing-applications/building-blocks/bindings/bindings-overview/ Output bindings, operation field, metadata sections"
+        }
+      ],
+      "why_essential": "Keeping every external integration behind one declarative adapter protects the skill from SDK churn and makes capabilities addressable by name; tools reference bindings instead of vendor packages.",
+      "alternatives_considered": [
+        "Direct vendor SDK calls inside each tool which couples deployments and credentials management",
+        "HTTP only facade which loses operation taxonomy and typed metadata"
+      ],
+      "maturity": "battle_tested"
+    }
+  ],
+  "cross_cutting_insights": [
+    "Every durable transport in the catalog (Kafka, NATS JetStream, Dapr pub/sub) ships at-least-once by default, pushing idempotency and dedup keys into the application contract rather than the broker.",
+    "Identity tuples recur across sources: (source, id) in CloudEvents, (topic, partition, offset) in Kafka, (workflow_id, run_id) in Temporal, (actor_type, key) in Dapr actors - one shape per concern.",
+    "Optimistic concurrency is the shared write gate: ETags in Dapr state, revisions in NATS KV, sequence numbers in Kafka idempotent producer, and maximum_attempts in Temporal retry policies all reject stale writes.",
+    "Component and interceptor chains are the universal extension seam - Dapr component adapters, gRPC interceptors, Temporal worker interceptors and Kafka consumer interceptors all compose around a core primitive.",
+    "Determinism boundaries mark the orchestration primitives: Temporal workflows forbid direct IO and wall clock, funneling all side effects through activities, timers and signals recorded in an event history.",
+    "Dead letter and retry topology is explicit in every durable broker: Dapr deadLetterTopic, Kafka retry topics, NATS max deliveries - tools that ignore this reinvent parking lots per feature.",
+    "Placement transparency appears in Dapr virtual actors and Temporal task queues: callers address logical ids and the runtime chooses the host, which is why tools MUST NOT cache host identity."
+  ],
+  "source_coverage": {
+    "Dapr 1.14 State Management building block overview": 2,
+    "Confluent Kafka Design: Message Delivery Semantics": 3,
+    "CloudEvents 1.0.2 Core Specification": 1,
+    "Dapr 1.14 Publish and Subscribe building block overview": 2,
+    "NATS 2.10 Subjects concept documentation": 1,
+    "NATS 2.10 JetStream overview": 2,
+    "Apache Kafka 3.x documentation concepts": 2,
+    "Temporal 1.24 Workflows concept page": 3,
+    "Temporal 1.24 Activities concept page": 1,
+    "Temporal 1.24 Python timers guide": 1,
+    "Temporal 1.24 Encyclopedia: Workflow Message Passing": 1,
+    "Dapr 1.14 Actors building block overview": 1,
+    "Dapr 1.14 Distributed Lock building block overview": 1,
+    "gRPC Core Concepts guide": 1,
+    "gRPC Interceptors guide": 1,
+    "Dapr 1.14 Bindings building block overview": 1
+  },
+  "gaps_observed": [
+    "SKILL-001 lacks a durable workflow primitive; long running orchestration is still modeled as chained background jobs without event history.",
+    "No CloudEvents envelope shape is enforced on the existing event bus, so (source, id) dedup is not guaranteed across producers.",
+    "Virtual actor style single writer entities are missing; hot keys fall back to row locks or in process asyncio locks.",
+    "Distributed lock primitive with lease expiry is not exposed; tools reuse cache TTL tricks that drift under clock skew.",
+    "Dead letter route configuration is ad hoc per tool and not a first class primitive tied to the TopicBus contract.",
+    "No key value bucket with compare and swap plus watch; feature flag and session stores rely on plain cache semantics."
+  ]
+}

@@ -1,0 +1,461 @@
+{
+  "agent_id": 4,
+  "codename": "RESILIENCY",
+  "primitives": [
+    {
+      "name": "CircuitBreaker",
+      "namespace": "resiliency",
+      "purpose": "Short-circuit calls to a failing dependency by transitioning between closed, open, and half-open states driven by a rolling failure metric.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Awaitable, Callable, TypeVar, Literal\n\nT = TypeVar('T')\nState = Literal['closed', 'open', 'half_open']\n\nclass CircuitBreaker(Protocol):\n    name: str\n    state: State\n    async def call(self, fn: Callable[..., Awaitable[T]], /, *args, **kwargs) -> T: ...\n    def on_success(self, elapsed_ms: float) -> None: ...\n    def on_failure(self, exc: BaseException, elapsed_ms: float) -> None: ...\n    def force_open(self, reason: str) -> None: ...\n    def allow_probe(self) -> bool: ...\n",
+      "invariants": [
+        "When state is open the breaker MUST reject calls without invoking the wrapped function.",
+        "The transition from open to half-open SHALL occur only after the configured cooldown interval has elapsed.",
+        "A half-open breaker MUST permit at most the configured permitted_calls_in_half_open probes concurrently.",
+        "A single failure recorded while half-open SHALL force the state back to open and restart the cooldown.",
+        "The breaker CANNOT make a transition decision using a sample smaller than minimum_number_of_calls.",
+        "The breaker NEVER mutates state without emitting a state_transition event on the observability bus."
+      ],
+      "extension_contract": "Adopters register a FailureClassifier provider that decides which exceptions count as failures, slow_call_duration_threshold, and a state listener hook; the sliding window type (count-based or time-based) is selected via a SlidingWindowPolicy adapter. Rolling metrics and the state machine itself remain sealed.",
+      "consumption_example": "async def charge(order_id: str) -> Receipt:\n    return await CircuitBreaker.call(_charge_impl, order_id)\n\nbreaker = CircuitBreaker  # type: ignore[assignment]\nif not breaker.allow_probe():\n    raise DependencyUnavailable('payments')\n",
+      "sources": [
+        {
+          "source": "Nygard, Release It! 2nd edition (2018), Pragmatic Bookshelf",
+          "locator": "Chapter 5 'Stability Patterns', section 'Circuit Breaker', pages 104-111"
+        },
+        {
+          "source": "resilience4j 2.2.0 reference documentation",
+          "locator": "core-modules/circuitbreaker, subsection 'Create a CircuitBreakerRegistry' and 'State transitions'"
+        },
+        {
+          "source": "Netflix Tech Blog, 'Making the Netflix API More Resilient' (Ben Christensen, 2011)",
+          "locator": "section describing Hystrix command state machine and half-open probing"
+        }
+      ],
+      "why_essential": "Without a shared breaker every caller reinvents its own failure-detection loop, creating inconsistent thresholds, divergent cooldowns and thundering-herd recovery storms against a convalescing dependency.",
+      "alternatives_considered": [
+        "Per-call timeout only: detects slowness but NEVER stops the caller from piling load onto a sick dependency.",
+        "Retry with exponential backoff alone: amplifies load during outages instead of shedding it.",
+        "Client-side rate limiter: caps throughput but cannot react to the dependency's actual health signals."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "Bulkhead",
+      "namespace": "resiliency",
+      "purpose": "Partition concurrency so that saturation or stalls inside one dependency cannot exhaust the resources needed by unrelated dependencies.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Awaitable, Callable, TypeVar, Literal\n\nT = TypeVar('T')\nKind = Literal['semaphore', 'thread_pool']\n\nclass Bulkhead(Protocol):\n    name: str\n    kind: Kind\n    max_concurrent_calls: int\n    max_wait_duration_ms: int\n    async def submit(self, fn: Callable[..., Awaitable[T]], /, *args, **kwargs) -> T: ...\n    def available_permits(self) -> int: ...\n",
+      "invariants": [
+        "The number of in-flight calls per partition MUST NEVER exceed max_concurrent_calls.",
+        "A caller that waits longer than max_wait_duration_ms for a permit SHALL receive BulkheadFull and NEVER be admitted.",
+        "A rejection by Bulkhead MUST NOT be retried inside the same partition in the same request.",
+        "Permits CANNOT be shared across partitions; each partition holds an isolated counter.",
+        "The bulkhead SHALL emit a rejection metric labelled with the partition name on every rejection."
+      ],
+      "extension_contract": "Adopters register a partition by name and select a kind adapter (semaphore for async I/O, thread_pool for blocking code); a PartitionRouter hook maps requests to partition names, enabling per-tenant or per-dependency isolation. The permit accounting is sealed.",
+      "consumption_example": "async def call_fraud() -> FraudScore:\n    return await Bulkhead.submit(_fraud_client.score, principal)\n\npartition = Bulkhead\nif partition.available_permits() == 0:\n    raise BulkheadFull('fraud')\n",
+      "sources": [
+        {
+          "source": "Nygard, Release It! 2nd edition (2018), Pragmatic Bookshelf",
+          "locator": "Chapter 5 'Stability Patterns', section 'Bulkheads', pages 98-103"
+        },
+        {
+          "source": "resilience4j 2.2.0 reference documentation",
+          "locator": "core-modules/bulkhead, comparison of SemaphoreBulkhead vs FixedThreadPoolBulkhead"
+        }
+      ],
+      "why_essential": "A single shared thread pool or connection pool is a ship without watertight compartments; without partitioning, one slow dependency drowns all traffic that shared the pool, violating blast-radius guarantees.",
+      "alternatives_considered": [
+        "Global connection pool: shares resources but allows one slow dependency to exhaust everything.",
+        "Process-per-dependency isolation: provides strong isolation yet multiplies operational cost and cold-start overhead.",
+        "Cooperative quotas enforced in application code: relies on every call site to behave correctly and NEVER composes."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "TimeoutBudget",
+      "namespace": "resiliency",
+      "purpose": "Attach a monotonic deadline to an inbound request and propagate the remaining budget to every downstream call so no call outlives its originating request.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol\nfrom contextvars import ContextVar\n\nclass TimeoutBudget(Protocol):\n    deadline_ns: int\n    origin: str\n    def remaining_ms(self) -> int: ...\n    def for_call(self, max_ms: int) -> int: ...\n    def expired(self) -> bool: ...\n\nCURRENT_BUDGET: ContextVar[TimeoutBudget | None] = ContextVar('current_budget', default=None)\n",
+      "invariants": [
+        "Every outbound call MUST use min(local_timeout, TimeoutBudget.remaining_ms()) and NEVER the local timeout alone.",
+        "The deadline MUST be measured on a monotonic clock and SHALL NOT move backward on wall-clock jumps.",
+        "A call issued when remaining_ms is not positive SHALL be refused before any socket I/O begins.",
+        "The budget CANNOT be extended inside the request scope; extensions FORBIDDEN without a new request boundary.",
+        "The budget SHALL be propagated across task boundaries via the context variable, never via thread-local state."
+      ],
+      "extension_contract": "Adopters bind a DeadlineSource adapter to ingress (HTTP header, gRPC deadline, CLI flag) and register a propagation middleware for each transport client so the remaining budget is written into outbound headers (e.g. grpc-timeout, X-Deadline-Ms).",
+      "consumption_example": "async def fetch_profile(uid: str) -> Profile:\n    budget = TimeoutBudget\n    call_ms = budget.for_call(max_ms=250)\n    return await http.get(f'/profile/{uid}', timeout_ms=call_ms)\n",
+      "sources": [
+        {
+          "source": "Google SRE Workbook (Beyer et al., O'Reilly, 2018)",
+          "locator": "Chapter 22 'Addressing Cascading Failures', section 'Server Overload' discussing deadline propagation"
+        },
+        {
+          "source": "Nygard, Release It! 2nd edition (2018), Pragmatic Bookshelf",
+          "locator": "Chapter 5 'Stability Patterns', section 'Timeouts', pages 91-97"
+        },
+        {
+          "source": "Envoy proxy documentation, HTTP connection manager",
+          "locator": "api-v3/config/route/v3/route_components.proto RouteAction.timeout and idle_timeout semantics"
+        }
+      ],
+      "why_essential": "Per-call timeouts set locally diverge from the caller's real deadline, allowing a chain of retries to exceed the inbound SLA by multiples and convert a slow dependency into a stampede of zombie work.",
+      "alternatives_considered": [
+        "Static per-client timeout: cannot shrink as the request ages through hops.",
+        "Server-side cancellation only: wastes client and network resources before the server decides.",
+        "Budget enforced via exception unwinding: triggers too late to free downstream resources."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "RetryPolicy",
+      "namespace": "resiliency",
+      "purpose": "Describe under which conditions a failed call may be retried, bounded by max attempts, backoff with jitter, a retry budget and an idempotency requirement.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Callable, Awaitable, TypeVar\n\nT = TypeVar('T')\n\nclass RetryPolicy(Protocol):\n    max_attempts: int\n    initial_interval_ms: int\n    multiplier: float\n    max_interval_ms: int\n    jitter: float\n    budget_ratio: float\n    requires_idempotency: bool\n    def should_retry(self, attempt: int, exc: BaseException) -> bool: ...\n    def next_delay_ms(self, attempt: int) -> int: ...\n    async def execute(self, fn: Callable[[], Awaitable[T]]) -> T: ...\n",
+      "invariants": [
+        "A call MUST NEVER be retried unless it is marked idempotent or the policy has requires_idempotency set to False by an explicit operator decision.",
+        "The total retry attempts across a service MUST NEVER exceed budget_ratio of successful traffic in the trailing window.",
+        "Backoff intervals SHALL include jitter in the range [0, jitter * base_interval] to prevent synchronized retry storms.",
+        "Retries CANNOT be issued when the governing TimeoutBudget.remaining_ms is less than or equal to zero.",
+        "A retry policy SHALL classify errors as retryable, non-retryable, or fatal and NEVER retry a non-retryable error."
+      ],
+      "extension_contract": "Adopters subclass or register a RetryClassifier that maps exceptions to retryable or fatal, and bind a BackoffStrategy provider (exponential, exponential_with_jitter, decorrelated_jitter). The retry budget enforcer is sealed and reads from a shared metric source.",
+      "consumption_example": "policy = RetryPolicy  # resolved from registry\nasync def post_charge() -> Receipt:\n    return await policy.execute(lambda: _charge('idempotency-key-42'))\n",
+      "sources": [
+        {
+          "source": "Google SRE Workbook (Beyer et al., O'Reilly, 2018)",
+          "locator": "Chapter 22 'Addressing Cascading Failures', section 'Retries' introducing retry amplification and budgets"
+        },
+        {
+          "source": "AWS Architecture Blog, 'Exponential Backoff and Jitter' (Marc Brooker, 2015)",
+          "locator": "section 'Full Jitter' and 'Decorrelated Jitter' formulas"
+        },
+        {
+          "source": "Envoy proxy documentation, retry policy",
+          "locator": "api-v3/config/route/v3/route_components.proto RetryPolicy fields retry_on, num_retries, retry_budget"
+        }
+      ],
+      "why_essential": "Ad-hoc retry loops scattered in call sites collide with timeouts and each other, multiplying failing traffic by factors of N per layer; a shared, budget-aware policy is the only place to cap that amplification.",
+      "alternatives_considered": [
+        "Transport-level retry only (HTTP client default): lacks knowledge of idempotency and budget.",
+        "Caller-written try/except loops: reinvent classification and NEVER coordinate across callers.",
+        "Fire-and-forget retries via queue: shifts the problem and CANNOT enforce deadlines."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "LoadShedder",
+      "namespace": "resiliency",
+      "purpose": "Drop or reject low-priority work when the server enters an overload regime so that high-priority traffic continues to meet its SLA.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nPriority = Literal['critical', 'normal', 'sheddable_plus', 'sheddable']\n\nclass LoadShedder(Protocol):\n    def admit(self, priority: Priority, queue_depth: int, cpu_load_ewma: float) -> bool: ...\n    def current_cutoff(self) -> Priority: ...\n    def shed_rate(self) -> float: ...\n",
+      "invariants": [
+        "The shedder SHALL admit strictly by descending priority class and MUST NEVER admit a lower class while a higher class is being rejected.",
+        "A rejected request MUST be returned with an explicit overload signal (HTTP 503 or status UNAVAILABLE) and a retry-after hint.",
+        "The cutoff priority CANNOT change more than once per control_interval_ms to prevent oscillation.",
+        "A request that passed admission control SHALL NEVER be shed later in the pipeline.",
+        "The shedder MUST publish the current cutoff as a metric so clients can cooperate with backoff."
+      ],
+      "extension_contract": "Adopters register a LoadSignal provider (CPU, queue depth, event-loop lag, p99 latency) and a PriorityExtractor hook that reads the priority class from request context; the composition rule across signals is selected via a CompositionAdapter (max, ewma, quantile).",
+      "consumption_example": "if not LoadShedder.admit('sheddable', queue_depth=len(q), cpu_load_ewma=cpu):\n    return Response(status=503, headers={'Retry-After': '1'})\n",
+      "sources": [
+        {
+          "source": "Google SRE Workbook (Beyer et al., O'Reilly, 2018)",
+          "locator": "Chapter 21 'Managing Load', section 'Graceful Service Degradation' and 'Load Shedding'"
+        },
+        {
+          "source": "Google SRE Book (Beyer et al., O'Reilly, 2016)",
+          "locator": "Chapter 22 'Addressing Cascading Failures', section 'Preventing Server Overload'"
+        }
+      ],
+      "why_essential": "Without an admission decision that knows priority, overload degrades every class equally, causing critical paths to fail first because they were competing for resources with batch or crawler traffic.",
+      "alternatives_considered": [
+        "Fixed rate limiter: caps QPS but CANNOT differentiate priorities and under-uses idle capacity.",
+        "Backpressure from downstream only: reacts too late, after a queue has already formed.",
+        "Autoscaling alone: scale-out latency NEVER matches a sub-second overload spike."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "BackpressureSignal",
+      "namespace": "resiliency",
+      "purpose": "Carry producer-visible pressure information from a consumer or queue so upstream components can slow down rather than fill unbounded buffers.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nLevel = Literal['nominal', 'elevated', 'saturated']\n\nclass BackpressureSignal(Protocol):\n    level: Level\n    lag_ms: int\n    queue_fill_ratio: float\n    def acquire(self, bytes_or_items: int, timeout_ms: int) -> bool: ...\n    def report(self, level: Level, lag_ms: int, queue_fill_ratio: float) -> None: ...\n",
+      "invariants": [
+        "A producer MUST consult acquire() before enqueuing and SHALL NEVER enqueue on a False return.",
+        "When level is saturated the signal MUST cause a synchronous slow-path (block, reject, or drop-newest) and NEVER an unbounded append.",
+        "Reported metrics CANNOT be stale by more than report_interval_ms; a missing report SHALL be treated as saturated.",
+        "Every backpressure decision SHALL be logged with level, lag_ms and queue_fill_ratio for capacity analysis.",
+        "The signal NEVER unilaterally changes the producer's throughput; it only exposes state for the producer to obey."
+      ],
+      "extension_contract": "Adopters provide a SaturationSource adapter that computes level and lag from their transport (Kafka consumer lag, async queue depth, event-loop lag) and register a ProducerPolicyHook that defines behavior at each level (block, reject, drop-oldest). The signal transport is sealed.",
+      "consumption_example": "signal = BackpressureSignal\nif not signal.acquire(bytes_or_items=1, timeout_ms=20):\n    raise Saturated(signal.level, signal.lag_ms)\n",
+      "sources": [
+        {
+          "source": "Reactive Streams Specification 1.0.4",
+          "locator": "sections 2.1 and 3.6 on Subscription.request(n) and non-blocking backpressure"
+        },
+        {
+          "source": "Google SRE Workbook (Beyer et al., O'Reilly, 2018)",
+          "locator": "Chapter 22 'Addressing Cascading Failures', subsection 'Queue Management'"
+        },
+        {
+          "source": "Nygard, Release It! 2nd edition (2018), Pragmatic Bookshelf",
+          "locator": "Chapter 4 'Stability Antipatterns', section 'Unbounded Result Sets' and 'Blocked Threads'"
+        }
+      ],
+      "why_essential": "Without an explicit signal, producers assume their consumer is infinite; bounded queues turn into unbounded queues, latency explodes and memory pressure triggers the cascade the bulkhead was meant to stop.",
+      "alternatives_considered": [
+        "Hoping the GC or OS kills the producer first: NEVER a design and ALWAYS catastrophic under load.",
+        "Dropping on enqueue without a signal: loses data silently and CANNOT inform the producer.",
+        "Static rate limit on the producer: cannot adapt to real consumer speed."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "FallbackChain",
+      "namespace": "resiliency",
+      "purpose": "Deliver a typed degraded result when the primary path fails or is shed, via an ordered list of fallbacks that preserve the response contract.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Awaitable, Callable, TypeVar, Sequence\n\nT = TypeVar('T')\n\nclass FallbackChain(Protocol[T]):\n    steps: Sequence[Callable[..., Awaitable[T]]]\n    async def execute(self, *args, **kwargs) -> T: ...\n    def on_degraded(self, step_name: str, exc: BaseException) -> None: ...\n",
+      "invariants": [
+        "Every fallback step SHALL return a value of the same declared type as the primary and CANNOT widen it to an error union.",
+        "A step MUST be invoked only after the preceding step raised or returned a structurally invalid result.",
+        "The chain MUST NEVER call a fallback that itself depends on the failing primary dependency (no circular fallbacks).",
+        "A degraded result MUST be tagged in observability (e.g. span attribute fallback=true) so dashboards can distinguish it.",
+        "The total elapsed time across all steps SHALL NEVER exceed the governing TimeoutBudget.remaining_ms."
+      ],
+      "extension_contract": "Adopters register steps via an ordered decorator or a compose() builder, each step being a Callable plus a declared Dependencies set; the framework rejects registration if a step declares the failing primary as a dependency, closing the circular-fallback loophole.",
+      "consumption_example": "async def profile(uid: str) -> Profile:\n    return await FallbackChain.execute(uid)\n",
+      "sources": [
+        {
+          "source": "Nygard, Release It! 2nd edition (2018), Pragmatic Bookshelf",
+          "locator": "Chapter 5 'Stability Patterns', section 'Fail Fast' and 'Decoupling Middleware', pages 131-137"
+        },
+        {
+          "source": "Netflix Hystrix wiki archive (github.com/Netflix/Hystrix, 2018 retirement notice)",
+          "locator": "page 'How-To-Use', section 'Fallback', and 'Hystrix is now in maintenance mode' notice"
+        },
+        {
+          "source": "resilience4j 2.2.0 reference documentation",
+          "locator": "addon-modules/decorators, section 'Fallback' composition via Decorators.ofCompletionStage"
+        }
+      ],
+      "why_essential": "A failure that reaches the user as a 500 is a failure twice; a typed fallback turns an unavailable dependency into a degraded-but-valid response so the outer system keeps its contract with its own callers.",
+      "alternatives_considered": [
+        "Return a cached stale value inline: works for reads but NEVER for commands that must not repeat side-effects.",
+        "Redirect to an error page: acceptable for UI but CANNOT serve an API client that expects a typed body.",
+        "Swallow the exception and return null: corrupts callers that did not expect optionality."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "OutlierEjection",
+      "namespace": "resiliency",
+      "purpose": "Remove a backend instance from the load-balancing pool when its error rate or latency statistics exceed the cluster baseline and reinstate it after a cooldown.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol\n\nclass OutlierEjection(Protocol):\n    consecutive_5xx: int\n    success_rate_stdev_factor: float\n    base_ejection_time_ms: int\n    max_ejection_percent: int\n    def record(self, host_id: str, ok: bool, elapsed_ms: float) -> None: ...\n    def is_ejected(self, host_id: str) -> bool: ...\n    def healthy_hosts(self) -> list[str]: ...\n",
+      "invariants": [
+        "The share of ejected hosts MUST NEVER exceed max_ejection_percent of the pool, to preserve quorum.",
+        "A host SHALL be re-admitted only after base_ejection_time_ms multiplied by its ejection count has elapsed.",
+        "Ejection decisions CANNOT use a sample smaller than minimum_request_volume per host.",
+        "An ejected host MUST NOT receive any non-active-health-check traffic while ejected.",
+        "The detector SHALL emit an ejection_event on every transition so the control plane can alert and correlate."
+      ],
+      "extension_contract": "Adopters bind a HostHealthSource adapter (local tally, external health check, OpenTelemetry RED metrics) and register a DetectorStrategy (consecutive_5xx, success_rate, failure_percentage); the capped ejection accountant is sealed to enforce the quorum invariant.",
+      "consumption_example": "detector = OutlierEjection\ndetector.record(host_id='payments-a', ok=False, elapsed_ms=812.0)\ntargets = [h for h in all_hosts if not detector.is_ejected(h)]\n",
+      "sources": [
+        {
+          "source": "Envoy proxy documentation, outlier detection",
+          "locator": "api-v3/config/cluster/v3/outlier_detection.proto fields consecutive_5xx, success_rate_stdev_factor, max_ejection_percent"
+        },
+        {
+          "source": "Google SRE Book (Beyer et al., O'Reilly, 2016)",
+          "locator": "Chapter 20 'Load Balancing in the Datacenter', subsection 'Lame Duck State'"
+        }
+      ],
+      "why_essential": "A single poisoned instance in a large pool produces a minority of errors that retries mask; without ejection those retries amplify toward the sick host until it tips the cluster, which a shared detector prevents.",
+      "alternatives_considered": [
+        "Rely on active health checks alone: miss data-plane failures that the health endpoint does not exhibit.",
+        "Manual rolling restart: slow, blocks on human reaction time and CANNOT react to transient poisonings.",
+        "Client-side random choice: distributes errors uniformly instead of removing their source."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "ChaosInjector",
+      "namespace": "resiliency",
+      "purpose": "Deliberately introduce latency, errors or partial partitions in controlled scopes so resiliency primitives are exercised in production-like conditions.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal, Awaitable, Callable, TypeVar\n\nT = TypeVar('T')\nFault = Literal['latency', 'error', 'abort', 'partition']\n\nclass ChaosInjector(Protocol):\n    name: str\n    enabled: bool\n    blast_radius_percent: float\n    async def apply(self, fault: Fault, fn: Callable[..., Awaitable[T]], /, *args, **kwargs) -> T: ...\n    def arm(self, fault: Fault, rate: float, scope: str) -> None: ...\n    def disarm(self, fault: Fault) -> None: ...\n",
+      "invariants": [
+        "Injection MUST be gated by an explicit feature flag whose default value is disabled in every environment.",
+        "The injector SHALL NEVER fire when blast_radius_percent exceeds a globally configured ceiling.",
+        "Every injected fault MUST be tagged in logs and traces with chaos=true and a scope identifier.",
+        "The injector CANNOT alter persisted data; faults are limited to latency, errors, aborts and network partitions.",
+        "Disarming a fault MUST take effect within one control_interval_ms and NEVER require a process restart."
+      ],
+      "extension_contract": "Adopters register a FaultProvider plugin per fault kind, a ScopeSelector hook that decides which requests are eligible (by header, tenant, shadow traffic), and an AbortRule middleware that stops injection if any SLO regression is detected in real time.",
+      "consumption_example": "async def read_profile(uid: str) -> Profile:\n    return await ChaosInjector.apply('latency', _read_profile_impl, uid)\n",
+      "sources": [
+        {
+          "source": "Basiri et al., 'Chaos Engineering' IEEE Software (2016)",
+          "locator": "section 2 'Principles of Chaos' defining steady-state hypothesis and minimized blast radius"
+        },
+        {
+          "source": "Nygard, Release It! 2nd edition (2018), Pragmatic Bookshelf",
+          "locator": "Chapter 17 'Transparency', subsection on adaptation and experiment-driven operations"
+        },
+        {
+          "source": "Envoy proxy documentation, HTTP fault injection filter",
+          "locator": "api-v3/extensions/filters/http/fault/v3/fault.proto fields abort, delay, upstream_cluster"
+        }
+      ],
+      "why_essential": "Resiliency primitives that are never exercised decay into paper; controlled fault injection is how a CircuitBreaker or FallbackChain is proven to work before a real outage exercises them without a safety harness.",
+      "alternatives_considered": [
+        "Game-day exercises in staging: valuable but CANNOT reproduce real production traffic and dependency graphs.",
+        "Synthetic canaries only: detect regressions but NEVER validate the recovery path end to end.",
+        "Trust the design document: untested designs are untested, no matter how thorough the document."
+      ],
+      "maturity": "emerging"
+    },
+    {
+      "name": "RateLimiter",
+      "namespace": "resiliency",
+      "purpose": "Enforce a maximum rate of admitted operations over a rolling window, with optional waiting semantics, applied per caller, tenant or resource.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nAlgorithm = Literal['token_bucket', 'leaky_bucket', 'sliding_window']\n\nclass RateLimiter(Protocol):\n    algorithm: Algorithm\n    rate_per_second: float\n    burst: int\n    async def acquire(self, key: str, cost: int = 1, wait_ms: int = 0) -> bool: ...\n    def try_acquire(self, key: str, cost: int = 1) -> bool: ...\n    def current_rate(self, key: str) -> float: ...\n",
+      "invariants": [
+        "The long-run admitted rate per key MUST NEVER exceed rate_per_second over any window longer than burst / rate_per_second seconds.",
+        "A caller SHALL NEVER block for longer than wait_ms; after that the limiter MUST reject with a typed RateLimited error.",
+        "State for a key CANNOT be shared across unrelated services; key scoping is FORBIDDEN from being implicit.",
+        "A rejection MUST include retry-after information computed from the current depletion of the bucket.",
+        "The limiter SHALL distinguish cost > 1 so large operations consume proportional tokens and NEVER equal cost 1."
+      ],
+      "extension_contract": "Adopters register an AlgorithmProvider (token_bucket, leaky_bucket, sliding_window_log) and bind a KeyExtractor middleware that produces the partition key from request context (tenant, api_key, route_pattern). Counter storage is pluggable via a CounterAdapter (in-memory, Redis, distributed log).",
+      "consumption_example": "limiter = RateLimiter\nif not await limiter.acquire(key=tenant_id, cost=1, wait_ms=50):\n    raise TooManyRequests(tenant_id)\n",
+      "sources": [
+        {
+          "source": "Nygard, Release It! 2nd edition (2018), Pragmatic Bookshelf",
+          "locator": "Chapter 5 'Stability Patterns', section 'Governor' and 'Shed Load', pages 137-143"
+        },
+        {
+          "source": "Google SRE Workbook (Beyer et al., O'Reilly, 2018)",
+          "locator": "Chapter 21 'Managing Load', section 'Handling Overload' discussing per-client quotas"
+        },
+        {
+          "source": "Envoy proxy documentation, local and global rate limiting",
+          "locator": "api-v3/extensions/filters/http/local_ratelimit/v3 and ratelimit/v3 fields token_bucket, descriptors"
+        }
+      ],
+      "why_essential": "Rate limits enforced only at the edge leave internal fan-out unbounded; a primitive that is composable per tenant and per resource is the only way to stop one noisy tenant from harming all others.",
+      "alternatives_considered": [
+        "Edge-only rate limiting: ignores internal fan-out amplification per request.",
+        "Quotas enforced by billing after the fact: NEVER prevents real-time damage.",
+        "Connection count limits: a proxy for rate that CANNOT distinguish cheap from expensive calls."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "HealthProbe",
+      "namespace": "resiliency",
+      "purpose": "Expose a typed liveness and readiness signal that reflects the real state of dependencies so orchestrators route traffic and restart processes correctly.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nStatus = Literal['up', 'degraded', 'down']\n\nclass HealthProbe(Protocol):\n    name: str\n    status: Status\n    async def liveness(self) -> Status: ...\n    async def readiness(self) -> Status: ...\n    def register_dependency(self, name: str, check: 'HealthProbe') -> None: ...\n",
+      "invariants": [
+        "Liveness MUST only report down when the process itself CANNOT make forward progress; a slow dependency SHALL NEVER flip liveness.",
+        "Readiness SHALL report down when any hard dependency declared in register_dependency reports down.",
+        "A probe endpoint MUST respond within probe_timeout_ms and SHALL NEVER perform unbounded work.",
+        "The probe CANNOT expose internal secrets, connection strings or stack traces in its response body.",
+        "A transition from up to down SHALL be throttled by a debounce window to prevent flapping of the routing plane."
+      ],
+      "extension_contract": "Adopters subclass HealthProbe per dependency kind (database, broker, cache), register each via register_dependency, and bind an AggregationRule adapter that composes child statuses into a parent status (worst-wins, quorum, weighted).",
+      "consumption_example": "db_probe = HealthProbe  # adapter for the primary database\nif (await db_probe.readiness()) == 'down':\n    raise NotReady('db')\n",
+      "sources": [
+        {
+          "source": "Kubernetes documentation, 'Configure Liveness, Readiness and Startup Probes' (kubernetes.io, v1.29)",
+          "locator": "section distinguishing liveness vs readiness and 'What happens when a Pod fails a probe'"
+        },
+        {
+          "source": "Google SRE Workbook (Beyer et al., O'Reilly, 2018)",
+          "locator": "Chapter 22 'Addressing Cascading Failures', subsection 'Health Checks and Lame Duck'"
+        },
+        {
+          "source": "Nygard, Release It! 2nd edition (2018), Pragmatic Bookshelf",
+          "locator": "Chapter 17 'Transparency', section 'Health Checks and Observability'"
+        }
+      ],
+      "why_essential": "Confusing liveness with readiness is the classic way to turn a slow dependency into a crash-loop; a shared primitive with separate semantics is how orchestrators stop making the outage worse.",
+      "alternatives_considered": [
+        "A single /healthz endpoint returning 200: conflates two signals the orchestrator treats differently.",
+        "No probes at all: forces the orchestrator to guess and CANNOT prevent restart loops.",
+        "Probes that run the full dependency graph: cascade flaps and NEVER recover quickly."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "RequestShape",
+      "namespace": "extras",
+      "purpose": "Capture a request's resiliency context (priority class, deadline, idempotency key, retry-count-so-far) in a single immutable record propagated across boundaries.",
+      "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nPriority = Literal['critical', 'normal', 'sheddable_plus', 'sheddable']\n\nclass RequestShape(Protocol):\n    request_id: str\n    priority: Priority\n    deadline_ns: int\n    idempotency_key: str | None\n    attempt: int\n    origin: str\n    def to_headers(self) -> dict[str, str]: ...\n    @classmethod\n    def from_headers(cls, headers: dict[str, str]) -> 'RequestShape': ...\n",
+      "invariants": [
+        "Fields on a RequestShape instance MUST be immutable after construction; in-place mutation is FORBIDDEN.",
+        "A request without an explicit priority SHALL default to normal and NEVER silently to critical.",
+        "The attempt counter MUST monotonically increase; a decrement CANNOT occur and breaks retry accounting.",
+        "to_headers and from_headers SHALL be mutual inverses on the defined fields, round-tripping without loss.",
+        "An idempotency_key once set MUST NEVER be altered across retries of the same logical request."
+      ],
+      "extension_contract": "Adopters register a HeaderAdapter per transport (HTTP, gRPC metadata, queue message attributes) and a PriorityPolicy hook that derives priority from authenticated principal, route, or tenant tier; the wire format is versioned so unknown fields are preserved and not dropped.",
+      "consumption_example": "shape = RequestShape.from_headers(incoming.headers)\noutgoing.headers.update(shape.to_headers())\nif shape.attempt > 3:\n    raise TooManyAttempts(shape.request_id)\n",
+      "sources": [
+        {
+          "source": "Google SRE Workbook (Beyer et al., O'Reilly, 2018)",
+          "locator": "Chapter 21 'Managing Load', subsection 'Criticality' and 'Client-side throttling'"
+        },
+        {
+          "source": "Envoy proxy documentation, HTTP connection manager",
+          "locator": "api-v3/config/core/v3/base.proto RequestMethod, and x-envoy-expected-rq-timeout-ms header semantics"
+        },
+        {
+          "source": "Nygard, Release It! 2nd edition (2018), Pragmatic Bookshelf",
+          "locator": "Chapter 8 'Processes on Machines', section on request-context propagation"
+        }
+      ],
+      "why_essential": "Resiliency decisions depend on metadata that is easy to lose across hops; a single immutable record that survives transport boundaries turns scattered headers into a contract every primitive can rely on.",
+      "alternatives_considered": [
+        "Ad-hoc headers per client: diverge in naming and CANNOT be validated end to end.",
+        "Thread-local storage only: breaks across async boundaries and worker processes.",
+        "Rebuild context per layer: wastes CPU and NEVER preserves idempotency keys reliably."
+      ],
+      "maturity": "emerging"
+    }
+  ],
+  "cross_cutting_insights": [
+    "Resiliency primitives compose into a pipeline: RequestShape arrives, LoadShedder admits, Bulkhead partitions, TimeoutBudget bounds, CircuitBreaker guards, RetryPolicy amplifies with care, FallbackChain degrades.",
+    "Every primitive depends on a monotonic deadline; without TimeoutBudget propagation, retries and circuit-breaker cooldowns drift past the request's real SLA and create zombie work.",
+    "Separating liveness from readiness (HealthProbe) and separating ejection from breaking (OutlierEjection vs CircuitBreaker) prevents the classic cascade where a slow dependency triggers a crash-loop.",
+    "Retry budgets and jitter turn the naive N-per-layer retry amplification into a capped, desynchronized correction, which is the difference between recovery and a synchronized retry storm.",
+    "Backpressure and load shedding are dual: one slows producers, the other rejects consumers; both require priority awareness carried by RequestShape to prefer critical over sheddable traffic.",
+    "Chaos injection is the only mechanism that keeps the other primitives honest; without ChaosInjector exercising them, CircuitBreaker and FallbackChain decay into untested code paths.",
+    "Every resiliency decision SHALL be observable: state transitions, ejections, sheds, fallbacks and injections MUST emit structured events so the control plane can alert and operators can correlate."
+  ],
+  "source_coverage": {
+    "Nygard, Release It! 2nd edition (2018), Pragmatic Bookshelf": 6,
+    "resilience4j 2.2.0 reference documentation": 3,
+    "Google SRE Workbook (Beyer et al., O'Reilly, 2018)": 6,
+    "Google SRE Book (Beyer et al., O'Reilly, 2016)": 2,
+    "Envoy proxy documentation, HTTP connection manager": 2,
+    "Envoy proxy documentation, retry policy": 1,
+    "Envoy proxy documentation, outlier detection": 1,
+    "Envoy proxy documentation, local and global rate limiting": 1,
+    "Envoy proxy documentation, HTTP fault injection filter": 1,
+    "Netflix Tech Blog, 'Making the Netflix API More Resilient' (Ben Christensen, 2011)": 1,
+    "Netflix Hystrix wiki archive (github.com/Netflix/Hystrix, 2018 retirement notice)": 1,
+    "AWS Architecture Blog, 'Exponential Backoff and Jitter' (Marc Brooker, 2015)": 1,
+    "Reactive Streams Specification 1.0.4": 1,
+    "Basiri et al., 'Chaos Engineering' IEEE Software (2016)": 1,
+    "Kubernetes documentation, 'Configure Liveness, Readiness and Startup Probes' (kubernetes.io, v1.29)": 1
+  },
+  "gaps_observed": [
+    "SKILL-001 lacks a shared TimeoutBudget primitive; per-call timeouts are set locally and do not propagate across async boundaries.",
+    "No first-class Bulkhead partitioning exists in SKILL-001; worker pools and HTTP clients share resources without isolation.",
+    "Retry logic in SKILL-001 is ad-hoc per tool and does not enforce a global retry budget or idempotency requirement.",
+    "A priority-aware LoadShedder is absent; admission control is effectively binary at the reverse proxy.",
+    "Chaos injection hooks are not wired into the resiliency primitives, so their behavior is unverified in production-like conditions.",
+    "RequestShape-like immutable context is not propagated end-to-end; priority and idempotency keys are lost across hops."
+  ]
+}

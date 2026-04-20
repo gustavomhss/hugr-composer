@@ -1,0 +1,668 @@
+{
+  "agent_id": 3,
+  "codename": "PATTERNS",
+  "primitives": [
+    {
+      "name": "UnitOfWork",
+      "namespace": "data",
+      "purpose": "Tracks object changes during a business transaction and flushes them to storage as one atomic commit or rollback.",
+      "api_signature": "from typing import Protocol, Any\n\nclass UnitOfWork(Protocol):\n    def register_new(self, obj: Any) -> None: ...\n    def register_dirty(self, obj: Any) -> None: ...\n    def register_removed(self, obj: Any) -> None: ...\n    def commit(self) -> None: ...\n    def rollback(self) -> None: ...\n    def __enter__(self) -> 'UnitOfWork': ...\n    def __exit__(self, exc_type, exc, tb) -> bool: ...",
+      "invariants": [
+        "A successful commit MUST apply every registered new, dirty, and removed object in a single database transaction.",
+        "On any exception before commit, the implementation MUST rollback and discard all tracked changes.",
+        "The same object instance SHALL NEVER be registered in more than one of (new, dirty, removed) within one unit.",
+        "A UnitOfWork instance CANNOT be reused after commit or rollback; a fresh unit MUST be opened for the next transaction.",
+        "Repositories operating inside a unit MUST enlist their mutations with that unit rather than writing directly to the database.",
+        "The unit ALWAYS exposes its lifecycle via context-manager semantics so leaks on exception paths are impossible."
+      ],
+      "extension_contract": "Downstream tools extend UnitOfWork by subclassing the abstract implementation or by registering a new flush phase hook (before_commit, on_commit, after_commit) via a register callable; the existing order of inserts, updates, deletes MUST remain intact.",
+      "consumption_example": "def transfer(uow: UnitOfWork, src_id: int, dst_id: int, amount: int) -> None:\n    with uow:\n        src = accounts.get(src_id)\n        dst = accounts.get(dst_id)\n        src.debit(amount)\n        dst.credit(amount)\n        uow.register_dirty(src)\n        uow.register_dirty(dst)\n        uow.commit()",
+      "sources": [
+        {
+          "source": "Fowler 'Patterns of Enterprise Application Architecture' (2002)",
+          "locator": "Chapter 11, Unit of Work pattern, pp. 184-194"
+        },
+        {
+          "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+          "locator": "Chapter 12, Repositories, Unit of Work collaboration, pp. 416-419"
+        }
+      ],
+      "why_essential": "Without one shared primitive, each tool invents its own commit boundary and transactions leak across features, producing partial writes and lost updates when two tools share a request.",
+      "alternatives_considered": [
+        "Auto-commit per repository call: trades atomicity for simplicity and breaks multi-aggregate invariants.",
+        "Session-per-request middleware only: implicit boundaries hide rollback semantics from the caller.",
+        "Manual BEGIN/COMMIT in each tool: duplicates logic and diverges on error handling."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "Repository",
+      "namespace": "data",
+      "purpose": "Mediates between the domain model and data mapping layer using a collection-like interface to access aggregate roots.",
+      "api_signature": "from typing import Protocol, Generic, TypeVar, Optional, Iterable\n\nT = TypeVar('T')\n\nclass Repository(Protocol, Generic[T]):\n    def get(self, id: object) -> Optional[T]: ...\n    def add(self, entity: T) -> None: ...\n    def remove(self, entity: T) -> None: ...\n    def find(self, spec: object) -> Iterable[T]: ...",
+      "invariants": [
+        "A Repository MUST only expose aggregate roots, NEVER internal child entities of another aggregate.",
+        "Query methods MUST accept a Specification object or a named finder and SHALL NOT leak SQL, ORM, or storage syntax to callers.",
+        "A single logical aggregate type MUST have exactly one Repository; duplicate repositories for the same root are FORBIDDEN.",
+        "Mutations (add, remove) MUST enlist with the active UnitOfWork and NEVER issue direct writes bypassing it.",
+        "The Repository CANNOT return stale in-memory copies when an IdentityMap is present; it MUST consult the map first."
+      ],
+      "extension_contract": "Domain tools extend Repository by subclassing the abstract base per aggregate root, or by registering a new Specification translator via a decorator; the collection-contract (get/add/remove/find) SHALL remain invariant under extension.",
+      "consumption_example": "def close_dormant_accounts(repo: Repository, policy) -> int:\n    closed = 0\n    for account in repo.find(policy.dormancy_spec):\n        account.close()\n        closed += 1\n    return closed",
+      "sources": [
+        {
+          "source": "Evans 'Domain-Driven Design' (2003)",
+          "locator": "Chapter 6, Repositories, pp. 147-154"
+        },
+        {
+          "source": "Fowler 'Patterns of Enterprise Application Architecture' (2002)",
+          "locator": "Chapter 18, Repository pattern, pp. 322-327"
+        },
+        {
+          "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+          "locator": "Chapter 12, Repositories, pp. 397-446"
+        }
+      ],
+      "why_essential": "Without a shared contract, each tool reinvents query surfaces; domain logic ends up coupled to ORM internals and test doubles diverge in behavior across tools.",
+      "alternatives_considered": [
+        "Active Record per entity: couples persistence with domain behavior; breaks aggregate boundaries at scale.",
+        "Raw DAO returning rows: leaks storage shape into the domain layer.",
+        "Query objects without a collection facade: loses the get/add/remove symmetry Evans requires."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "IdentityMap",
+      "namespace": "data",
+      "purpose": "Caches loaded domain objects by identity inside one session so the same row is never represented twice in memory.",
+      "api_signature": "from typing import Protocol, Any, Optional\n\nclass IdentityMap(Protocol):\n    def get(self, type_: type, id: object) -> Optional[Any]: ...\n    def add(self, obj: Any) -> None: ...\n    def remove(self, type_: type, id: object) -> None: ...\n    def contains(self, type_: type, id: object) -> bool: ...",
+      "invariants": [
+        "Given the same (type, id) within one session, the IdentityMap MUST return the same Python object reference on every lookup.",
+        "An object CANNOT be inserted twice for the same identity; a second add with a new instance SHALL raise a conflict error.",
+        "The map MUST be scoped to a single UnitOfWork or session and NEVER shared across concurrent transactions.",
+        "On UnitOfWork disposal the map ALWAYS clears its contents; retaining references beyond the session is FORBIDDEN."
+      ],
+      "extension_contract": "Storage backends extend IdentityMap by implementing the Protocol and binding it into the UnitOfWork factory; eviction policies are added via a register hook, but referential-identity within a session SHALL NOT be weakened.",
+      "consumption_example": "def load_order(repo, imap: IdentityMap, order_id: int):\n    cached = imap.get(Order, order_id)\n    if cached is not None:\n        return cached\n    order = repo.get(order_id)\n    imap.add(order)\n    return order",
+      "sources": [
+        {
+          "source": "Fowler 'Patterns of Enterprise Application Architecture' (2002)",
+          "locator": "Chapter 11, Identity Map pattern, pp. 195-200"
+        }
+      ],
+      "why_essential": "Absent a shared map, two reads of the same row yield two divergent objects; updates on one silently overwrite the other when flushed through the same UnitOfWork.",
+      "alternatives_considered": [
+        "Per-query result caching: does not guarantee referential identity across queries.",
+        "Rely on ORM internal session cache only: obscures the contract and blocks non-ORM repositories.",
+        "Global process cache: violates session scoping and corrupts concurrent transactions."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "DataMapper",
+      "namespace": "data",
+      "purpose": "Moves state between in-memory domain objects and rows in storage while keeping both ignorant of each other.",
+      "api_signature": "from typing import Protocol, TypeVar, Generic, Any\n\nT = TypeVar('T')\n\nclass DataMapper(Protocol, Generic[T]):\n    def load(self, row: dict) -> T: ...\n    def insert(self, entity: T) -> dict: ...\n    def update(self, entity: T) -> dict: ...\n    def delete(self, entity: T) -> dict: ...",
+      "invariants": [
+        "The domain object MUST have no import-time or runtime dependency on storage types; persistence knowledge SHALL live exclusively in the mapper.",
+        "Given a row r, load(r) followed by insert or update on the resulting entity MUST yield a row with the same identity key.",
+        "The mapper CANNOT mutate the domain object for persistence convenience; derived columns MUST be computed in map methods, never injected into the domain.",
+        "A DataMapper NEVER issues database I/O directly; it returns parameterized payloads the UnitOfWork flush executes."
+      ],
+      "extension_contract": "New persistent types extend DataMapper by implementing the Protocol per aggregate and registering the pair via a register call on the mapper registry; storage-specific encodings plug in through an adapter (for JSONB, arrays, encrypted columns) without the domain being recompiled.",
+      "consumption_example": "def persist(entity, mapper: DataMapper, uow) -> None:\n    payload = mapper.update(entity) if entity.id else mapper.insert(entity)\n    uow.enqueue_write(payload)",
+      "sources": [
+        {
+          "source": "Fowler 'Patterns of Enterprise Application Architecture' (2002)",
+          "locator": "Chapter 10, Data Mapper pattern, pp. 165-182"
+        }
+      ],
+      "why_essential": "Without a shared mapper contract, every tool either smears ORM-specific types across the domain or reinvents row-to-object translation with subtle conversion bugs.",
+      "alternatives_considered": [
+        "Active Record: collapses domain and persistence and prevents pure-domain unit tests.",
+        "Table Module with record sets: suits simple CRUD but not rich aggregates.",
+        "ORM auto-mapping only: magical, brittle across schema evolution, and ties the domain to ORM types."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "Specification",
+      "namespace": "data",
+      "purpose": "Encapsulates a predicate over a domain object so selection, validation, and building criteria share one reusable rule.",
+      "api_signature": "from typing import Protocol, TypeVar, Generic\n\nT = TypeVar('T')\n\nclass Specification(Protocol, Generic[T]):\n    def is_satisfied_by(self, candidate: T) -> bool: ...\n    def and_(self, other: 'Specification[T]') -> 'Specification[T]': ...\n    def or_(self, other: 'Specification[T]') -> 'Specification[T]': ...\n    def not_(self) -> 'Specification[T]': ...",
+      "invariants": [
+        "is_satisfied_by MUST be a pure predicate: no I/O, no mutation of the candidate, and NEVER time-dependent unless time is injected.",
+        "Composed specifications (and_, or_, not_) MUST preserve the identity laws of boolean algebra so refactors cannot change semantics.",
+        "A Specification CANNOT depend on the persistence layer; repository translation MUST be delegated to a separate visitor or translator.",
+        "The same Specification used for in-memory filtering and repository querying SHALL produce logically equivalent results."
+      ],
+      "extension_contract": "New rules extend Specification by subclassing and overriding is_satisfied_by, or by registering a translator adapter that converts the spec tree to a backend query; composition operators SHALL NOT be overridden by subclasses.",
+      "consumption_example": "def eligible_accounts(repo, dormant: Specification, high_value: Specification):\n    criterion = dormant.and_(high_value.not_())\n    return [a for a in repo.find_all() if criterion.is_satisfied_by(a)]",
+      "sources": [
+        {
+          "source": "Evans 'Domain-Driven Design' (2003)",
+          "locator": "Chapter 9, Specification pattern, pp. 224-240"
+        },
+        {
+          "source": "Fowler and Evans 'Specifications' white paper (2002)",
+          "locator": "Section 'Composite Specification' and 'Querying'"
+        }
+      ],
+      "why_essential": "If selection rules live only as inline lambdas or ORM filters, the same policy gets re-implemented divergently in validation, UI filtering, and reports, making policy drift silent.",
+      "alternatives_considered": [
+        "Inline lambdas per callsite: duplicated logic and no composition algebra.",
+        "Raw SQL fragments: storage-coupled and untestable in-memory.",
+        "Rule-engine DSL: heavier than needed for the 80% case and opaque to domain experts."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "Aggregate",
+      "namespace": "data",
+      "purpose": "Defines a consistency boundary around a cluster of entities and value objects governed by a single root responsible for invariants.",
+      "api_signature": "from typing import Protocol, TypeVar, Generic, Iterable\n\nID = TypeVar('ID')\n\nclass Aggregate(Protocol, Generic[ID]):\n    @property\n    def id(self) -> ID: ...\n    @property\n    def version(self) -> int: ...\n    def pull_events(self) -> Iterable[object]: ...",
+      "invariants": [
+        "Only the aggregate root MUST be referenced from outside the aggregate; external references to internal children are FORBIDDEN.",
+        "A single transaction MUST modify at most one aggregate instance; cross-aggregate changes SHALL be coordinated via domain events.",
+        "All invariants defined by the root MUST hold at the end of every public method; intermediate illegal states CANNOT be exposed.",
+        "The aggregate version NEVER decreases and MUST increment on every state-changing operation for optimistic concurrency.",
+        "External collaborators SHALL reference other aggregates by identifier only, NEVER by object reference."
+      ],
+      "extension_contract": "New aggregate types extend Aggregate by subclassing the abstract root and binding repository, mapper, and event publisher via compose; invariant-enforcing methods extend by adding domain-specific commands that continue to pull events through pull_events.",
+      "consumption_example": "def handle(cmd, repo):\n    aggr: Aggregate = repo.get(cmd.id)\n    aggr.apply(cmd)\n    repo.save(aggr)\n    return list(aggr.pull_events())",
+      "sources": [
+        {
+          "source": "Evans 'Domain-Driven Design' (2003)",
+          "locator": "Chapter 6, Aggregates, pp. 125-140"
+        },
+        {
+          "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+          "locator": "Chapter 10, Aggregates, pp. 347-396"
+        }
+      ],
+      "why_essential": "Without one shared definition, teams disagree on what constitutes a transactional boundary, and eventually consistent updates across aggregates get treated as strongly consistent, producing silent corruption.",
+      "alternatives_considered": [
+        "Transaction-per-operation anemic domain: loses invariant enforcement and pushes rules into services.",
+        "Whole-graph aggregates: contention hot-spots and oversized transactions.",
+        "Entity-only modeling without roots: ambiguous ownership of invariants."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "ValueObject",
+      "namespace": "data",
+      "purpose": "Represents a descriptive concept whose identity is defined entirely by its attributes and which is immutable once constructed.",
+      "api_signature": "from typing import Protocol\n\nclass ValueObject(Protocol):\n    def __eq__(self, other: object) -> bool: ...\n    def __hash__(self) -> int: ...\n    def with_changes(self, **kwargs) -> 'ValueObject': ...",
+      "invariants": [
+        "Instances MUST be immutable after construction; attribute assignment post-init is FORBIDDEN.",
+        "Two instances with the same attribute values MUST compare equal and MUST share the same hash.",
+        "A ValueObject CANNOT hold a reference to an Aggregate root or Entity whose identity is unstable.",
+        "Construction SHALL validate every invariant eagerly; a partially-valid instance NEVER exists."
+      ],
+      "extension_contract": "Domain tools extend ValueObject by subclassing a frozen dataclass base and registering a coercion adapter for serialization; adding derived fields is allowed through with_changes, but mutation in place SHALL remain FORBIDDEN.",
+      "consumption_example": "def apply_discount(price: ValueObject, pct: int) -> ValueObject:\n    return price.with_changes(amount=price.amount * (100 - pct) // 100)",
+      "sources": [
+        {
+          "source": "Evans 'Domain-Driven Design' (2003)",
+          "locator": "Chapter 5, Value Objects, pp. 97-106"
+        },
+        {
+          "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+          "locator": "Chapter 6, Value Objects, pp. 219-240"
+        }
+      ],
+      "why_essential": "Without a shared contract, Money, Email, DateRange are each reimplemented per tool with divergent validation, and equality semantics silently diverge between comparisons and hashing.",
+      "alternatives_considered": [
+        "Plain dicts or tuples: lose validation and type safety.",
+        "Mutable dataclasses: break equality-by-value and invite aliasing bugs.",
+        "Primitive obsession: scatters validation across every consumer."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "BoundedContext",
+      "namespace": "data",
+      "purpose": "Declares the explicit linguistic and model boundary within which one ubiquitous language and one set of invariants apply.",
+      "api_signature": "from typing import Protocol, Mapping\n\nclass BoundedContext(Protocol):\n    @property\n    def name(self) -> str: ...\n    @property\n    def language(self) -> Mapping[str, str]: ...\n    def owns(self, aggregate_type: type) -> bool: ...\n    def translator_to(self, other: 'BoundedContext') -> object: ...",
+      "invariants": [
+        "Every Aggregate type MUST be owned by exactly one BoundedContext; shared ownership across contexts is FORBIDDEN.",
+        "Cross-context calls MUST pass through an AntiCorruptionLayer or a published-language schema; raw object sharing is NEVER permitted.",
+        "The ubiquitous language of a context SHALL be locally consistent: one term CANNOT carry two meanings inside the same BoundedContext.",
+        "A BoundedContext ALWAYS exposes its integration points through a ContextMap relationship (Customer-Supplier, Conformist, Partnership, Open Host)."
+      ],
+      "extension_contract": "New domains are introduced by subclassing BoundedContext and registering translator adapters for each upstream or downstream neighbor; redefining an existing context's language in place is FORBIDDEN — the extension MUST declare a new context.",
+      "consumption_example": "def route(cmd, ctx: BoundedContext):\n    if not ctx.owns(type(cmd.aggregate)):\n        raise RuntimeError('wrong context')\n    return ctx.handle(cmd)",
+      "sources": [
+        {
+          "source": "Evans 'Domain-Driven Design' (2003)",
+          "locator": "Chapter 14, Bounded Context, pp. 335-346"
+        },
+        {
+          "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+          "locator": "Chapter 2, Domains, Subdomains, Bounded Contexts, pp. 43-80"
+        }
+      ],
+      "why_essential": "Without an explicit shared primitive, model terms bleed across services, the same word means different things, and integration bugs recur because nobody owns the translation.",
+      "alternatives_considered": [
+        "One canonical enterprise model: impossible to keep consistent at scale and collapses under concurrent change.",
+        "Per-service ad hoc boundaries: no shared vocabulary for integration policy.",
+        "Database-schema-as-boundary: couples physical storage to logical context."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "AntiCorruptionLayer",
+      "namespace": "data",
+      "purpose": "Translates between a local model and a foreign or legacy model so upstream semantics cannot leak into the local BoundedContext.",
+      "api_signature": "from typing import Protocol, TypeVar\n\nLocal = TypeVar('Local')\nForeign = TypeVar('Foreign')\n\nclass AntiCorruptionLayer(Protocol):\n    def to_local(self, foreign: Foreign) -> Local: ...\n    def to_foreign(self, local: Local) -> Foreign: ...\n    def guard(self, foreign: Foreign) -> None: ...",
+      "invariants": [
+        "Foreign types MUST NEVER cross the boundary of the local BoundedContext; all inbound payloads SHALL be translated through to_local before entering domain logic.",
+        "guard MUST reject inbound payloads that violate local invariants and raise before the payload reaches any local aggregate.",
+        "Translation SHALL be stateless with respect to the local domain; the ACL CANNOT read or mutate local repositories during translation.",
+        "Versioning of the foreign contract MUST be explicit; unversioned ACLs are FORBIDDEN."
+      ],
+      "extension_contract": "New integrations extend AntiCorruptionLayer by implementing an adapter per external system and registering the facade with the local BoundedContext; versioned schemas plug in via decorator over to_local / to_foreign so older payloads continue to be handled.",
+      "consumption_example": "def consume(msg, acl: AntiCorruptionLayer, repo):\n    acl.guard(msg)\n    local = acl.to_local(msg)\n    repo.add(local)",
+      "sources": [
+        {
+          "source": "Evans 'Domain-Driven Design' (2003)",
+          "locator": "Chapter 14, Anticorruption Layer, pp. 364-368"
+        },
+        {
+          "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+          "locator": "Chapter 3, Context Maps, Anticorruption Layer, pp. 106-111"
+        }
+      ],
+      "why_essential": "Without a shared primitive, each integration tool silently imports upstream vocabulary, and legacy system concepts infect the domain model until refactors become impossible.",
+      "alternatives_considered": [
+        "Direct consumer against upstream SDK: couples domain to upstream release cadence.",
+        "One central translation service: bottleneck and ownership ambiguity.",
+        "Shared kernel with upstream: violates the exact coupling the ACL exists to prevent."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "ContextMap",
+      "namespace": "api",
+      "purpose": "Catalogs every BoundedContext and the integration relationship (Partnership, Customer-Supplier, Conformist, Open Host) between each pair.",
+      "api_signature": "from typing import Protocol, Iterable, Tuple\n\nclass ContextMap(Protocol):\n    def contexts(self) -> Iterable[str]: ...\n    def relationship(self, upstream: str, downstream: str) -> str: ...\n    def add_relationship(self, upstream: str, downstream: str, kind: str) -> None: ...\n    def integrations(self) -> Iterable[Tuple[str, str, str]]: ...",
+      "invariants": [
+        "Every pairwise integration between contexts MUST be classified by one of the canonical relationship kinds; ad-hoc or blank relationships are FORBIDDEN.",
+        "The graph of contexts SHALL be acyclic for Customer-Supplier relationships; a cycle CANNOT be introduced without promotion to Partnership.",
+        "A BoundedContext CANNOT participate in an integration absent from the ContextMap; shadow integrations MUST be surfaced.",
+        "Relationship changes ALWAYS require an explicit mutation through add_relationship so history is auditable."
+      ],
+      "extension_contract": "New integration kinds extend ContextMap by registering a relationship-kind plugin with translation and governance semantics; existing canonical kinds SHALL NOT be redefined by downstream consumers.",
+      "consumption_example": "def needs_acl(m: ContextMap, upstream: str, downstream: str) -> bool:\n    kind = m.relationship(upstream, downstream)\n    return kind in {'Conformist', 'Anticorruption Layer', 'Customer-Supplier'}",
+      "sources": [
+        {
+          "source": "Evans 'Domain-Driven Design' (2003)",
+          "locator": "Chapter 14, Context Map, pp. 344-366"
+        },
+        {
+          "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+          "locator": "Chapter 3, Context Maps, pp. 83-134"
+        }
+      ],
+      "why_essential": "Without a shared primitive, integration policy is tribal knowledge; ownership of translations is ambiguous and producers change contracts without notifying downstream contexts.",
+      "alternatives_considered": [
+        "Architecture diagrams in Confluence: rot quickly and are not programmatically enforceable.",
+        "Service catalog with no relationship kind: records existence, not governance.",
+        "ADRs only: chronicle decisions but do not expose live topology."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "MaterializedView",
+      "namespace": "data",
+      "purpose": "Maintains a pre-computed query result kept up to date by an incremental feed so read queries never recompute from base tables.",
+      "api_signature": "from typing import Protocol, Any, Iterable\n\nclass MaterializedView(Protocol):\n    @property\n    def name(self) -> str: ...\n    def apply(self, event: Any) -> None: ...\n    def rebuild(self, source: Iterable[Any]) -> None: ...\n    def query(self, criteria: object) -> Iterable[Any]: ...",
+      "invariants": [
+        "apply MUST be deterministic: given the same event stream in the same order, the view state SHALL converge to the same contents.",
+        "The view CANNOT be the system of record; rebuild MUST be able to regenerate state purely from the source feed.",
+        "Reads against the view MUST tolerate bounded staleness and NEVER claim linearizability with the base data.",
+        "Schema evolution SHALL trigger a rebuild path; silent backfill with stale rows is FORBIDDEN."
+      ],
+      "extension_contract": "New projections extend MaterializedView by subclassing the Protocol and registering event-handler functions via a decorator per aggregate type; storage backends plug in through an adapter interface so the same projection can target OLTP, OLAP, or a search index.",
+      "consumption_example": "def on_event(ev, view: MaterializedView):\n    view.apply(ev)\n    # periodic, gated full rebuild is callable when schema evolves\n    return view.query({'ready_to_serve': True})",
+      "sources": [
+        {
+          "source": "Kleppmann 'Designing Data-Intensive Applications' (2017)",
+          "locator": "Chapter 11, Stream Processing, materialized views, pp. 461-466"
+        },
+        {
+          "source": "Richardson 'Microservices Patterns' (2018)",
+          "locator": "Chapter 7, CQRS and materialized views, pp. 253-278"
+        }
+      ],
+      "why_essential": "Without a shared primitive, each tool builds its own cache-or-view with divergent invalidation rules and nobody can tell which rows are stale when a customer disputes a balance.",
+      "alternatives_considered": [
+        "On-demand recomputation: unbounded latency for hot reads.",
+        "Hand-rolled caches with TTL: stale forever on missed invalidations.",
+        "OLAP cube refresh nightly: too coarse for operational reads."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "ChangeDataCapture",
+      "namespace": "data",
+      "purpose": "Publishes an ordered stream of row-level changes from a source database so downstream systems can consume mutations without dual writes.",
+      "api_signature": "from typing import Protocol, Iterator, Any\n\nclass ChangeDataCapture(Protocol):\n    def subscribe(self, table: str, from_position: object) -> Iterator[Any]: ...\n    def checkpoint(self, position: object) -> None: ...\n    def schema(self, table: str) -> dict: ...",
+      "invariants": [
+        "Every committed row change in the source MUST appear in the stream exactly once in commit order; reordering across transactions is FORBIDDEN.",
+        "Consumers MUST be able to resume from a persisted checkpoint; the stream SHALL carry a monotonically increasing position.",
+        "CDC events NEVER include uncommitted changes; dirty reads are forbidden on the downstream side.",
+        "Schema changes at the source MUST surface as schema events so consumers CANNOT silently parse new columns with the old parser."
+      ],
+      "extension_contract": "New sources extend ChangeDataCapture by implementing a connector plugin that emits position-tagged change events and registering it with the stream broker; transformations are added via composed filter stages that MUST NOT reorder events within a transaction.",
+      "consumption_example": "def relay_orders(cdc: ChangeDataCapture, producer, pos):\n    for change in cdc.subscribe('orders', pos):\n        producer.publish('order.changes', change)\n        cdc.checkpoint(change['pos'])",
+      "sources": [
+        {
+          "source": "Kleppmann 'Designing Data-Intensive Applications' (2017)",
+          "locator": "Chapter 11, Change Data Capture, pp. 454-461"
+        },
+        {
+          "source": "Richardson 'Microservices Patterns' (2018)",
+          "locator": "Chapter 3, Transactional messaging, CDC section, pp. 96-102"
+        }
+      ],
+      "why_essential": "Without a shared primitive, each tool reaches for dual writes (DB then broker) and loses either the database update or the event on failure, breaking downstream consistency.",
+      "alternatives_considered": [
+        "Dual write from application code: non-atomic; either DB or broker writes fail independently.",
+        "Polling last_modified columns: misses deletes and creates read load.",
+        "Trigger-based outbox inside DB: works but constrains schema and complicates migrations."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "DomainEvent",
+      "namespace": "events",
+      "purpose": "Records an immutable fact about something meaningful that happened in the domain and can be published to downstream consumers.",
+      "api_signature": "from typing import Protocol, Mapping, Any\n\nclass DomainEvent(Protocol):\n    @property\n    def event_id(self) -> str: ...\n    @property\n    def aggregate_id(self) -> str: ...\n    @property\n    def occurred_at(self) -> str: ...\n    @property\n    def version(self) -> int: ...\n    @property\n    def payload(self) -> Mapping[str, Any]: ...",
+      "invariants": [
+        "A DomainEvent MUST be immutable after publication; mutation or retroactive edit is FORBIDDEN.",
+        "event_id MUST be globally unique and stable so idempotent consumers can dedupe reliably.",
+        "The event NEVER carries commands or intents; it only states that something already happened.",
+        "version SHALL increment per aggregate and serve as the ordering key within one aggregate stream."
+      ],
+      "extension_contract": "New event types extend DomainEvent by subclassing a frozen event base and registering the schema with the event registry via a register call; schema evolution adds fields through additive versions, CANNOT remove or rename fields without a new event type.",
+      "consumption_example": "def publish(bus, evt: DomainEvent):\n    bus.publish(evt.aggregate_id, {\n        'id': evt.event_id,\n        'v': evt.version,\n        'at': evt.occurred_at,\n        'body': dict(evt.payload),\n    })",
+      "sources": [
+        {
+          "source": "Evans 'Domain-Driven Design' (2003)",
+          "locator": "Chapter 8, Domain Events (later-adopted glossary, reinforced in reprints)"
+        },
+        {
+          "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+          "locator": "Chapter 8, Domain Events, pp. 281-320"
+        },
+        {
+          "source": "Richardson 'Microservices Patterns' (2018)",
+          "locator": "Chapter 5, Event-driven architecture, event structure, pp. 162-170"
+        }
+      ],
+      "why_essential": "Without a shared primitive, each tool invents its own payload shape and identifier strategy, breaking cross-service replay, deduplication, and audit traceability.",
+      "alternatives_considered": [
+        "Integration-only messages: miss the domain semantics and couple to transport.",
+        "Bare payload dicts: no stable identity, ordering, or schema contract.",
+        "CRUD notifications: leak storage shape and lose intent."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "TransactionalOutbox",
+      "namespace": "events",
+      "purpose": "Stores outgoing messages in the same local transaction as the state change so a relay can publish them atomically with the commit.",
+      "api_signature": "from typing import Protocol, Any, Iterable\n\nclass TransactionalOutbox(Protocol):\n    def enqueue(self, destination: str, payload: Any, key: str) -> None: ...\n    def pending(self, limit: int) -> Iterable[dict]: ...\n    def mark_published(self, message_id: str) -> None: ...\n    def mark_failed(self, message_id: str, reason: str) -> None: ...",
+      "invariants": [
+        "enqueue MUST write the outbox row inside the same database transaction as the originating state change; cross-transaction writes are FORBIDDEN.",
+        "A message MUST NOT be marked published until the broker has acknowledged it.",
+        "The relay SHALL deliver at-least-once; consumers MUST therefore be idempotent, and duplicate suppression CANNOT be assumed.",
+        "Ordering per partition key ALWAYS follows transaction commit order; reordering across commits is FORBIDDEN."
+      ],
+      "extension_contract": "New brokers extend TransactionalOutbox by implementing a publisher adapter and registering it with the outbox relay; storage backends for the outbox table plug in through an adapter, but atomicity with the domain transaction SHALL remain invariant.",
+      "consumption_example": "def place_order(uow, outbox: TransactionalOutbox, order):\n    with uow:\n        orders.add(order)\n        outbox.enqueue('orders.placed', order.to_event(), key=order.id)\n        uow.commit()",
+      "sources": [
+        {
+          "source": "Richardson 'Microservices Patterns' (2018)",
+          "locator": "Chapter 3, Transactional Outbox pattern, pp. 97-99"
+        },
+        {
+          "source": "Kleppmann 'Designing Data-Intensive Applications' (2017)",
+          "locator": "Chapter 11, Idempotence and at-least-once delivery, pp. 478-483"
+        }
+      ],
+      "why_essential": "Without a shared primitive, tools resort to dual writes (DB + broker) and lose messages on crash between the two, producing silent data divergence across services.",
+      "alternatives_considered": [
+        "Two-phase commit (XA) across DB and broker: high latency, limited broker support, operational complexity.",
+        "Publish-then-save: loses the DB write on crash, corrupts state.",
+        "Save-then-publish: loses the message on crash, breaks downstream state."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "InboxDeduplicator",
+      "namespace": "events",
+      "purpose": "Records processed message identifiers in the consumer's database so redelivered messages are detected and skipped exactly once.",
+      "api_signature": "from typing import Protocol\n\nclass InboxDeduplicator(Protocol):\n    def seen(self, message_id: str, consumer: str) -> bool: ...\n    def record(self, message_id: str, consumer: str) -> None: ...\n    def purge_older_than(self, iso_timestamp: str) -> int: ...",
+      "invariants": [
+        "record MUST be written in the same transaction as the consumer's side-effect; writing after the side-effect is FORBIDDEN.",
+        "Given the same (message_id, consumer), seen MUST be deterministic; the consumer CANNOT double-apply the effect.",
+        "Retention policy SHALL cover at least the broker's maximum redelivery window; premature purging is NEVER allowed.",
+        "The deduplicator NEVER silently reclassifies unseen messages as duplicates; a missing record ALWAYS means first delivery."
+      ],
+      "extension_contract": "Storage backends extend InboxDeduplicator by implementing the Protocol and binding the table or key space via a register call on the inbox factory; eviction policies plug in through a hook while preserving the redelivery window guarantee.",
+      "consumption_example": "def handle(msg, inbox: InboxDeduplicator, uow, apply_effect):\n    with uow:\n        if inbox.seen(msg.id, 'orders_consumer'):\n            return\n        apply_effect(msg)\n        inbox.record(msg.id, 'orders_consumer')\n        uow.commit()",
+      "sources": [
+        {
+          "source": "Richardson 'Microservices Patterns' (2018)",
+          "locator": "Chapter 3, Idempotent Consumer pattern, pp. 101-104"
+        },
+        {
+          "source": "Kleppmann 'Designing Data-Intensive Applications' (2017)",
+          "locator": "Chapter 11, Exactly-once processing via idempotent writes, pp. 476-479"
+        }
+      ],
+      "why_essential": "Without a shared primitive, each consumer invents its own dedupe and frequently drops the 'write in same txn' rule, resulting in duplicate side-effects on replays.",
+      "alternatives_considered": [
+        "Broker-only dedupe: broker windows are short; late redelivery slips through.",
+        "Consumer-side idempotent operations only: works for upserts but not for effects like sending email.",
+        "Monotonic offset tracking: loses per-message granularity and cannot recover from poisonous messages."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "IdempotentConsumer",
+      "namespace": "events",
+      "purpose": "Applies a message's effect at most once per logical key while tolerating at-least-once delivery from the transport.",
+      "api_signature": "from typing import Protocol, Any\n\nclass IdempotentConsumer(Protocol):\n    def key_for(self, message: Any) -> str: ...\n    def handle(self, message: Any) -> None: ...\n    def on_duplicate(self, message: Any) -> None: ...",
+      "invariants": [
+        "Two messages with the same idempotency key MUST produce the same observable system state; divergence is FORBIDDEN.",
+        "handle CANNOT perform non-compensatable side-effects without first consulting an InboxDeduplicator or equivalent.",
+        "on_duplicate MUST NEVER raise as a primary error path; duplicates are an expected steady-state condition.",
+        "The consumer SHALL publish its own outputs through a TransactionalOutbox so downstream systems can dedupe similarly."
+      ],
+      "extension_contract": "New consumer types extend IdempotentConsumer by subclassing, overriding key_for and handle, and registering the consumer with the bus via register; pre- and post-processing plug in via middleware while the idempotency contract SHALL remain intact.",
+      "consumption_example": "def wire(bus, consumer: IdempotentConsumer):\n    @bus.subscribe('orders.placed')\n    def _on(msg):\n        consumer.handle(msg)",
+      "sources": [
+        {
+          "source": "Richardson 'Microservices Patterns' (2018)",
+          "locator": "Chapter 3, Idempotent Consumer, pp. 101-104"
+        },
+        {
+          "source": "Kleppmann 'Designing Data-Intensive Applications' (2017)",
+          "locator": "Chapter 11, Fault-tolerance of stream processing, pp. 476-479"
+        }
+      ],
+      "why_essential": "Without a shared contract, every consumer reimplements idempotency differently, and the one that gets it wrong quietly double-charges, double-emails, or double-ships.",
+      "alternatives_considered": [
+        "Exactly-once transport: not achievable end-to-end; only 'effectively-once' under specific conditions.",
+        "Manual ad-hoc dedupe per tool: inconsistent and fragile.",
+        "Pure upsert operations: ignores effectful consumers (email, payment, webhook)."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "SagaOrchestrator",
+      "namespace": "events",
+      "purpose": "Coordinates a multi-step business transaction across services by driving each step and triggering compensations when a later step fails.",
+      "api_signature": "from typing import Protocol, Any, Iterable, Tuple\n\nclass SagaOrchestrator(Protocol):\n    def start(self, correlation_id: str, input: Any) -> None: ...\n    def step(self, correlation_id: str, name: str, outcome: Any) -> None: ...\n    def compensate(self, correlation_id: str, from_step: str) -> None: ...\n    def status(self, correlation_id: str) -> Tuple[str, Iterable[str]]: ...",
+      "invariants": [
+        "Every forward step MUST declare a compensating action, or the saga CANNOT include it.",
+        "Compensation order SHALL be the reverse of the completed forward steps; out-of-order compensation is FORBIDDEN.",
+        "The orchestrator's state transitions MUST be persisted atomically with the command it emits so crashes NEVER leave dangling sagas.",
+        "A saga NEVER assumes strong consistency across services; all coordination SHALL be via asynchronous messages."
+      ],
+      "extension_contract": "New business flows extend SagaOrchestrator by declaring a step definition and registering a handler and its compensator via a register decorator; cross-cutting concerns (timeouts, retries) plug in through middleware that MUST NOT alter the compensation order.",
+      "consumption_example": "def kick_off(saga: SagaOrchestrator, order_id: str, payload):\n    saga.start(correlation_id=order_id, input=payload)\n    state, done = saga.status(order_id)\n    return state, list(done)",
+      "sources": [
+        {
+          "source": "Richardson 'Microservices Patterns' (2018)",
+          "locator": "Chapter 4, Managing Transactions with Sagas, pp. 114-149"
+        },
+        {
+          "source": "Garcia-Molina and Salem 'Sagas' (1987) as cited in Richardson",
+          "locator": "Richardson Chapter 4, 'Origins of Sagas', pp. 114-117"
+        }
+      ],
+      "why_essential": "Without a shared primitive, cross-service flows degrade into ad-hoc scripts where partial failures leave the system in states no single tool can observe or recover from.",
+      "alternatives_considered": [
+        "Distributed 2PC (XA): long locks, poor failure modes, not supported across HTTP services.",
+        "Pure choreography-only: simpler start but compensation logic gets duplicated per participant.",
+        "Ignore partial failure: silently corrupts cross-service state."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "EventStream",
+      "namespace": "events",
+      "purpose": "An ordered, append-only log of events partitioned by key and replayable from any offset by any number of consumers.",
+      "api_signature": "from typing import Protocol, Any, Iterator\n\nclass EventStream(Protocol):\n    def append(self, partition_key: str, event: Any) -> int: ...\n    def read_from(self, partition_key: str, offset: int) -> Iterator[Any]: ...\n    def tail(self, partition_key: str) -> int: ...\n    def truncate_before(self, offset: int) -> None: ...",
+      "invariants": [
+        "Events MUST be strictly ordered within a partition; cross-partition ordering is NEVER guaranteed.",
+        "Appended events CANNOT be mutated or deleted out of retention windows; immutability SHALL be enforced.",
+        "Consumers MUST be able to start from any valid offset and replay; destructive consumption is FORBIDDEN.",
+        "truncate_before ALWAYS obeys the configured retention policy; arbitrary backdated truncation is FORBIDDEN."
+      ],
+      "extension_contract": "New transports extend EventStream by implementing the Protocol as an adapter over the underlying log and registering it with the stream registry; processing topologies compose via pluggable stages that MUST NOT break per-partition order.",
+      "consumption_example": "def replay(stream: EventStream, key: str, start: int, fn):\n    end = stream.tail(key)\n    for event in stream.read_from(key, start):\n        fn(event)\n    return end",
+      "sources": [
+        {
+          "source": "Kleppmann 'Designing Data-Intensive Applications' (2017)",
+          "locator": "Chapter 11, Partitioned Logs and stream processing, pp. 444-454"
+        },
+        {
+          "source": "Richardson 'Microservices Patterns' (2018)",
+          "locator": "Chapter 3, Messaging and event logs, pp. 85-95"
+        }
+      ],
+      "why_essential": "Without a shared primitive, some tools emit point-in-time messages and others emit logs, making replay, debugging, and derived-view rebuilds impossible to compose.",
+      "alternatives_considered": [
+        "Transient queues: cannot replay, so downstream rebuilds require ad-hoc backfill.",
+        "Database tables as queues: awkward partition semantics and poor consumer scaling.",
+        "File-based archives: lose online read semantics and partition keys."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "EventSourcedStore",
+      "namespace": "events",
+      "purpose": "Persists aggregate state as an ordered sequence of domain events and reconstructs current state by folding them on load.",
+      "api_signature": "from typing import Protocol, Iterable, Any\n\nclass EventSourcedStore(Protocol):\n    def load(self, aggregate_id: str) -> Iterable[Any]: ...\n    def append(self, aggregate_id: str, expected_version: int, events: Iterable[Any]) -> int: ...\n    def snapshot(self, aggregate_id: str, version: int, state: Any) -> None: ...\n    def latest_snapshot(self, aggregate_id: str) -> Any: ...",
+      "invariants": [
+        "append MUST fail with a concurrency error when expected_version does not match the current tail; last-writer-wins is FORBIDDEN.",
+        "Events already written CANNOT be mutated; corrections SHALL be expressed as new, compensating events.",
+        "Snapshots MUST be reproducible from the event log; the store NEVER treats a snapshot as the source of truth.",
+        "Replays from zero ALWAYS produce the same logical state given the same event sequence; non-determinism is FORBIDDEN."
+      ],
+      "extension_contract": "New aggregate types extend EventSourcedStore by registering their event serializer and fold function via a register call on the store registry; storage backends plug in through an adapter without altering concurrency or replay semantics.",
+      "consumption_example": "def rebuild(store: EventSourcedStore, fold, aggregate_id: str):\n    events = list(store.load(aggregate_id))\n    state = None\n    for e in events:\n        state = fold(state, e)\n    return state, len(events)",
+      "sources": [
+        {
+          "source": "Fowler 'Patterns of Enterprise Application Architecture' (2002)",
+          "locator": "'Event Sourcing' supplementary pattern (2005 essay building on PEAA terminology)"
+        },
+        {
+          "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+          "locator": "Appendix A, Aggregates and Event Sourcing, pp. 577-595"
+        },
+        {
+          "source": "Richardson 'Microservices Patterns' (2018)",
+          "locator": "Chapter 6, Event Sourcing, pp. 181-226"
+        }
+      ],
+      "why_essential": "Without a shared primitive, tools that adopt event sourcing drift in concurrency control, serialization, and snapshot policy, making one team's stream unreadable by another's replay.",
+      "alternatives_considered": [
+        "State-based persistence only: loses audit, replay, and temporal queries.",
+        "Event log in a sidecar table with overwrites: gives the illusion of sourcing without the guarantees.",
+        "CRDT-based state: solves convergence but not intent tracking."
+      ],
+      "maturity": "battle_tested"
+    },
+    {
+      "name": "CommandQuerySeparator",
+      "namespace": "api",
+      "purpose": "Partitions the API into write commands that mutate state and read queries that observe it so each side can scale and evolve independently.",
+      "api_signature": "from typing import Protocol, Any\n\nclass CommandQuerySeparator(Protocol):\n    def dispatch_command(self, command: Any) -> Any: ...\n    def answer_query(self, query: Any) -> Any: ...\n    def register_command_handler(self, command_type: type, handler) -> None: ...\n    def register_query_handler(self, query_type: type, handler) -> None: ...",
+      "invariants": [
+        "A command handler MUST NEVER return query results synthesized from the write model; it SHALL return only acknowledgement and identifiers.",
+        "A query handler CANNOT mutate state, invoke commands, or block on external side-effects.",
+        "Each command type MUST have at most one registered handler; duplicate handler registration is FORBIDDEN.",
+        "Read models ALWAYS receive updates through the same event stream as the write model; separate in-band write paths for reads are FORBIDDEN."
+      ],
+      "extension_contract": "New operations extend CommandQuerySeparator by registering a command or query handler via a decorator and binding its schema to the API layer; cross-cutting policies (authz, logging) plug in through middleware that MUST respect the command/query split.",
+      "consumption_example": "def place(api: CommandQuerySeparator, cmd):\n    ack = api.dispatch_command(cmd)\n    view = api.answer_query({'order_id': cmd.order_id})\n    return ack, view",
+      "sources": [
+        {
+          "source": "Richardson 'Microservices Patterns' (2018)",
+          "locator": "Chapter 7, CQRS (Command Query Responsibility Segregation), pp. 253-296"
+        },
+        {
+          "source": "Fowler 'Patterns of Enterprise Application Architecture' (2002)",
+          "locator": "Meyer's Command-Query Separation principle referenced, Chapter 9, pp. 147-149"
+        },
+        {
+          "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+          "locator": "Chapter 4, Architecture, CQRS section, pp. 147-160"
+        }
+      ],
+      "why_essential": "Without an enforced split, read-optimized shapes smear into write aggregates, denormalization leaks into the domain, and every team invents its own convention for 'which calls mutate'.",
+      "alternatives_considered": [
+        "Single unified model: breaks at scale when read and write workloads diverge.",
+        "Conventional CRUD over ORM: entangles query projections with write invariants.",
+        "GraphQL resolvers without CQS: hides the mutation surface and complicates authorization."
+      ],
+      "maturity": "battle_tested"
+    }
+  ],
+  "cross_cutting_insights": [
+    "Atomicity is the unifying concern: UnitOfWork, TransactionalOutbox, InboxDeduplicator, and EventSourcedStore all refuse the dual-write trap by co-locating a side-effect's record with the state change in one transaction.",
+    "Identity is explicit infrastructure: IdentityMap, Aggregate.id, DomainEvent.event_id, and EventStream partition keys each declare who or what a change belongs to so replay and dedupe remain sound.",
+    "Boundary discipline cascades: Evans's BoundedContext, Vernon's ContextMap, and the AntiCorruptionLayer together prevent the silent model drift that Richardson's saga and CQRS primitives assume is already handled.",
+    "Immutability is the cheap trick that unlocks replay: ValueObject, DomainEvent, and EventStream all forbid in-place mutation, which is precisely what makes MaterializedView rebuilds and EventSourcedStore folds deterministic.",
+    "At-least-once delivery is assumed end-to-end: TransactionalOutbox, IdempotentConsumer, InboxDeduplicator, and SagaOrchestrator all treat duplicates as the normal case and encode exactly-once as a property of the consumer, not the transport (Kleppmann Ch. 11).",
+    "Specification, Repository, and CommandQuerySeparator share one refactor path: they move policy out of callsites into a named object that tests, optimizers, and projections can all inspect without re-reading SQL strings.",
+    "CDC and Event Sourcing are rival origins for the same downstream primitives (MaterializedView, EventStream); the choice determines whether the log is derived from rows or whether rows are derived from the log, but the consumer contract stays identical."
+  ],
+  "source_coverage": {
+    "Fowler 'Patterns of Enterprise Application Architecture' (2002)": 6,
+    "Evans 'Domain-Driven Design' (2003)": 7,
+    "Vernon 'Implementing Domain-Driven Design' (2013)": 8,
+    "Richardson 'Microservices Patterns' (2018)": 9,
+    "Kleppmann 'Designing Data-Intensive Applications' (2017)": 6,
+    "Fowler and Evans 'Specifications' white paper (2002)": 1,
+    "Garcia-Molina and Salem 'Sagas' (1987) as cited in Richardson": 1
+  },
+  "gaps_observed": [
+    "SKILL-001 lacks a first-class UnitOfWork primitive; commit boundaries are per-tool and leak across feature boundaries.",
+    "No TransactionalOutbox primitive exists; tools integrating with brokers rely on implicit dual writes.",
+    "IdempotentConsumer and InboxDeduplicator are not codified; each messaging consumer reinvents dedupe differently.",
+    "No ContextMap primitive is present; cross-module integration policy is tacit and undocumented.",
+    "MaterializedView and ChangeDataCapture are missing; cache and projection strategies vary by feature without a shared contract.",
+    "Specification is not a shared primitive; query criteria are inlined into repositories per tool.",
+    "SagaOrchestrator is absent; cross-service workflows are ad-hoc with no compensation registry.",
+    "EventSourcedStore is not offered as an option; aggregates cannot opt into sourcing without bespoke code.",
+    "CommandQuerySeparator is not enforced; read and write handlers intermix in most feature tools.",
+    "AntiCorruptionLayer has no primitive; third-party SDK types are imported directly into domain code."
+  ]
+}
