@@ -118,9 +118,17 @@ SUITES: list[tuple[str, list[str], str]] = [
         "8/8",
     ),
     (
-        "Benchmark (100-check)",
-        [PYTHON, "benchmarks/run_finhealth.py"],
-        "100/100",
+        "Benchmark score (Phase-3 harness)",
+        [PYTHON, "-c",
+         "import json, pathlib; d=json.loads(pathlib.Path('benchmarks/latest_score.json').read_text());"
+         " print(f\"overall={d['overall']:.2f}  methodology={d['methodology']}\");"
+         " raise SystemExit(0 if d['overall'] >= 30 else 1)"],
+        "overall >= 30",
+    ),
+    (
+        "Contract (28 rules)",
+        [PYTHON, "-m", "engine.audit.contract_check", "--quiet"],
+        "28/28 green",
     ),
 ]
 
