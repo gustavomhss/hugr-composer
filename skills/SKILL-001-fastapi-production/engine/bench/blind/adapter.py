@@ -425,53 +425,72 @@ def _build_prompt(spec, workdir: Path, *, has_kit_mcp: bool) -> str:  # noqa: AN
         kit_block = """
 ---
 
-KIT AVAILABLE — HuGR SkillKit SKILL-001 MCP tools are connected to this
-session. You MUST use this workflow when a spec invariant maps to an
-existing primitive (don't hand-roll primitives we already ship):
+YOU HAVE A SKILL. This MCP server is SKILL-001 — FastAPI production scaffold,
+the LLM-equivalent of `rails new`. You are NOT a human reading a library
+guide. You are an LLM and your job is to CALL THE SCAFFOLD TOOL with the
+business-domain parameters extracted from the brief, and let it write the
+project for you.
 
-  1. DISCOVER. Call `mcp__fastapi-production__fastapi_find_primitive`
-     for each capability you need (idempotency store, audit chain,
-     sharded counter, causal reorder buffer, session cache, …).
-     Also try `mcp__fastapi-production__fastapi_suggest_composition`
-     with natural-language intents like "webhook with dedup + audit"
-     or "lock-free reader serializable writer".
+REQUIRED WORKFLOW (do NOT skip step 1):
 
-  2. SCAFFOLD. Once you've identified the primitives you need, call
-     `mcp__fastapi-production__scaffold_venous` (or the appropriate
-     `fastapi_add_<capability>` slice tool) to COPY the primitive
-     source into your emitted package AND emit the import-ready
-     wiring. This is the critical step — find_primitive alone only
-     TELLS you the primitive exists; scaffold_venous/add_* actually
-     WRITES the code.
+  STEP 1 — scaffold (ONE call). Your FIRST action is:
 
-  3. IMPORT. In your handlers, use
-        `from core.venous.<namespace>.<Name> import <Name>`
-     exactly as the scaffold tool's output indicates. Do NOT
-     re-implement the primitive's body.
+      mcp__fastapi-production__fastapi_generate_project(
+          output_dir="<this cwd>",
+          name="<slug derived from brief>",
+          models={
+              "<EntityName>": {"field": "type", ...},
+              ...
+          },
+          owner_models={"<EntityName>": "user"},   # if spec has auth
+          profile="full",                           # or "minimal"
+      )
 
-  4. COMPOSE. Wire the primitives together in routes per the
-     spec's acceptance criteria.
+    This single call writes ~40-60 files: FastAPI app, auth, middleware
+    stack, CRUD routes, DB models, alembic migrations, Dockerfile,
+    health + metrics, tests. Running `uvicorn app.main:app` on the
+    emitted project returns 200 on /health immediately after the call.
+    You do NOT hand-write any of this.
 
-Spec invariants that map to kit primitives (partial list — query the
-MCP tools for the full set):
-  - Exact-once / idempotency → `IdempotentConsumer`, `IdempotencyStore`
-  - Tamper-evident audit     → `TamperEvidentAuditLog`, `AuditEvent`
-  - Transactional outbox     → `TransactionalOutbox`
-  - Unit of work             → `UnitOfWork`
-  - Optimistic concurrency   → `OptimisticConcurrency`
-  - Rate limiting + priority → `RateLimiter`, `Bulkhead`, `LoadShedder`
-  - Session cache (TTL)      → `SessionCache`
-  - Sharded hot counter      → `ShardedCounter`
-  - Causal reorder buffer    → `CausalReorderBuffer`
-  - Heterogeneous worker pool→ `HeterogeneousWorkerPool`
+  STEP 2 — add capability slices. For each feature in the brief that
+    the scaffold didn't cover by default, call the matching slice tool:
 
-Every primitive above is 10-tier gated upstream (compile / types /
-concurrency / chaos / observability). Hand-rolling your own version
-means the judge will catch the edge cases we've already closed.
+      mcp__fastapi-production__fastapi_add_rate_limiting(...)
+      mcp__fastapi-production__fastapi_add_webhook_receiver(...)
+      mcp__fastapi-production__fastapi_add_audit_log(...)
+      mcp__fastapi-production__fastapi_add_idempotency(...)
+      mcp__fastapi-production__fastapi_add_saga(...)
+      mcp__fastapi-production__fastapi_add_rbac(...)
+      mcp__fastapi-production__fastapi_add_event_sourcing(...)
+      ...and ~95 more. Call `ListMcpResourcesTool` or search for
+      `fastapi_add_` in the tool list to see the full catalog.
 
-REMEMBER: the judge scores you on actual behavior of the emitted app,
-not on whether you called our MCP tools. If a spec's invariant doesn't
-map to a kit primitive, write the code directly.
+    Each `fastapi_add_*` tool EDITS the emitted project — it doesn't
+    return code for you to paste. It writes the wiring into the same
+    `output_dir` from step 1.
+
+  STEP 3 — business logic. Only AFTER steps 1 and 2, write any
+    remaining route handlers that are pure business rules (not
+    infrastructure). Keep these minimal; the scaffold + slice tools
+    already cover auth, rate limits, idempotency, audit, etc.
+
+  STEP 4 — (only if needed) discovery. If the brief mentions a
+    capability and you can't find a matching `fastapi_add_*` tool,
+    then (and only then) call:
+      mcp__fastapi-production__fastapi_find_primitive(query, concern?)
+      mcp__fastapi-production__fastapi_suggest_composition(intent)
+    to locate a Lego block in `core.venous.*` that you import directly.
+
+ANTI-PATTERN: reading the brief, then hand-writing `app/main.py` +
+`app/models.py` + `app/auth.py` from scratch. That's naked agent
+behaviour. You have the skill — USE the scaffold tool. The judge
+will credit the BEHAVIOUR of the emitted app regardless of how many
+hand-written lines you contribute, but the scaffold-first workflow
+is 10× faster and ships production-grade invariants (idempotency,
+tamper-evident audit, rate limiting, graceful shutdown, observability)
+that naked agents routinely miss.
+
+TLDR: CALL `fastapi_generate_project` BEFORE YOU CALL `Write`.
 """
     return f"""You are a senior backend engineer. Produce a working FastAPI project that implements the requirements in the brief below. Write all files to the current working directory ({workdir}). The evaluator will boot your project with the boot command declared in the brief's metadata and run a sealed test suite you will NOT see.
 

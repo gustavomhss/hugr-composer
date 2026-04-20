@@ -661,6 +661,56 @@ def _r_bench_specs() -> tuple[bool, str]:
     return True, f"20 specs present (5/10/5) with all 4 required sections"
 
 
+def _r_index_manifest() -> tuple[bool, str]:
+    """B2.4 — engine/index/catalog.json is synced with the on-disk sources.
+
+    Runs `python -m engine.index.manifest build` into a tempdir, compares
+    the fresh stable-hash with the committed hash. Drift = failure.
+    Also asserts the committed file is schema-valid.
+    """
+    catalog = SKILL_ROOT / "engine" / "index" / "catalog.json"
+    if not catalog.exists():
+        return False, f"missing: {catalog.relative_to(SKILL_ROOT)}"
+    try:
+        data = json.loads(catalog.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        return False, f"catalog.json malformed: {exc}"
+    schema_version = data.get("schema_version")
+    if schema_version != "2":
+        return False, f"catalog.json schema_version={schema_version!r}; expected '2'"
+    counts = data.get("counts") or {}
+    for field, minimum in (("tools", 150), ("primitives", 100), ("recipes", 200)):
+        if int(counts.get(field, 0)) < minimum:
+            return False, f"catalog.json counts.{field}={counts.get(field)} < floor {minimum}"
+
+    # Determinism check — rebuild into a tempdir and compare stable hashes.
+    import tempfile
+    env_pythonpath = str(SKILL_ROOT)
+    with tempfile.TemporaryDirectory(prefix="hugr_manifest_") as tmp:
+        out_path = Path(tmp) / "catalog.json"
+        proc = subprocess.run(
+            [sys.executable, "-m", "engine.index.manifest", "verify", "--out", str(out_path)],
+            cwd=SKILL_ROOT, capture_output=True, text=True, check=False,
+            env={**__import__("os").environ, "PYTHONPATH": env_pythonpath},
+        )
+        if proc.returncode != 0:
+            return False, f"manifest verify failed: {(proc.stdout + proc.stderr)[-300:]}"
+        # Compare committed catalog's stable content (ignoring generated_at + kit_commit)
+        live = json.loads(out_path.read_text())
+        committed = json.loads(catalog.read_text())
+        for f in ("generated_at", "kit_commit"):
+            live.pop(f, None); committed.pop(f, None)
+        if json.dumps(live, sort_keys=True) != json.dumps(committed, sort_keys=True):
+            return False, (
+                "engine/index/catalog.json drifted from on-disk sources. "
+                "Regenerate via `python -m engine.index.manifest build` and commit."
+            )
+    return True, (
+        f"catalog synced: {counts.get('tools')} tools, "
+        f"{counts.get('primitives')} primitives, {counts.get('recipes')} recipes"
+    )
+
+
 def _r_bench_rubric_runner() -> tuple[bool, str]:
     """B3.2 + B3.3 — rubric and runner importable, stub run yields 0-score report."""
     rubric = SKILL_ROOT / "engine" / "bench" / "rubric.py"
@@ -926,6 +976,7 @@ RULES: list[Rule] = [
     Rule("B2.1", 2, "find_primitive MCP tool + BM25 quality gate", _r_find_primitive_discovery),
     Rule("B2.2", 2, "suggest_composition MCP tool + recipe quality gate", _r_suggest_composition),
     Rule("B2.3", 2, "reference docs site idempotent build", _r_docs_site),
+    Rule("B2.4", 2, "index catalog manifest synced + deterministic", _r_index_manifest),
     Rule("B3.1", 3, "20 benchmark specs (5 baseline / 10 mid / 5 adversarial)", _r_bench_specs),
     Rule("B3.2", 3, "scoring rubric implemented + tested", _r_bench_rubric_runner),
     Rule("B3.3", 3, "benchmark runner + stub Maestro + report JSON", _r_bench_rubric_runner),
