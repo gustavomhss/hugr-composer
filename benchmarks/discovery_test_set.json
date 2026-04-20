@@ -1,0 +1,129 @@
+{
+  "_meta": {
+    "purpose": "Ground-truth queries for CONTRACT §B2.1 quality gate. Each entry: a natural-language query a Rails-senior engineer would type, plus the primitive(s) they'd expect to see ranked #1. Gate: top-1 match ≥ 80% (16/20).",
+    "note": "Queries are authored blind to BM25 internals — they reflect Maestro intent, not index tricks.",
+    "version": 1
+  },
+  "queries": [
+    {
+      "id": "q01",
+      "concern": "",
+      "query": "circuit breaker",
+      "expected_top_1": "CircuitBreaker"
+    },
+    {
+      "id": "q02",
+      "concern": "",
+      "query": "deduplicate incoming webhook deliveries",
+      "expected_top_1": "IdempotentConsumer"
+    },
+    {
+      "id": "q03",
+      "concern": "",
+      "query": "verify webhook signature from stripe",
+      "expected_top_1": "SignatureVerifier"
+    },
+    {
+      "id": "q04",
+      "concern": "",
+      "query": "tamper evident audit log",
+      "expected_top_1": "TamperEvidentAuditLog"
+    },
+    {
+      "id": "q05",
+      "concern": "auth",
+      "query": "time based one time password",
+      "expected_top_1": "TotpVerifier"
+    },
+    {
+      "id": "q06",
+      "concern": "",
+      "query": "rate limit per api key",
+      "expected_top_1": "RateLimiter"
+    },
+    {
+      "id": "q07",
+      "concern": "",
+      "query": "retry with exponential backoff and jitter",
+      "expected_top_1": "RetryPolicy"
+    },
+    {
+      "id": "q08",
+      "concern": "",
+      "query": "bulkhead isolation pool",
+      "expected_top_1": "Bulkhead"
+    },
+    {
+      "id": "q09",
+      "concern": "",
+      "query": "feature toggle rollout",
+      "expected_top_1": "FeatureToggle"
+    },
+    {
+      "id": "q10",
+      "concern": "",
+      "query": "password hashing argon2",
+      "expected_top_1": "PasswordHasher"
+    },
+    {
+      "id": "q11",
+      "concern": "",
+      "query": "encrypt payload envelope",
+      "expected_top_1": "CryptoEnvelope"
+    },
+    {
+      "id": "q12",
+      "concern": "",
+      "query": "secrets vault runtime lookup",
+      "expected_top_1": "SecretsVault"
+    },
+    {
+      "id": "q13",
+      "concern": "",
+      "query": "outbox pattern transactional publish",
+      "expected_top_1": "TransactionalOutbox"
+    },
+    {
+      "id": "q14",
+      "concern": "",
+      "query": "saga orchestrator with compensations",
+      "expected_top_1": "SagaOrchestrator"
+    },
+    {
+      "id": "q15",
+      "concern": "events",
+      "query": "dead letter queue for poison messages",
+      "expected_top_1": "DeadLetterRoute"
+    },
+    {
+      "id": "q16",
+      "concern": "",
+      "query": "distributed lock across workers",
+      "expected_top_1": "DistributedLock"
+    },
+    {
+      "id": "q17",
+      "concern": "",
+      "query": "csrf token double submit cookie",
+      "expected_top_1": "CsrfGuard"
+    },
+    {
+      "id": "q18",
+      "concern": "",
+      "query": "structured json log with correlation id",
+      "expected_top_1": "StructuredLogger"
+    },
+    {
+      "id": "q19",
+      "concern": "",
+      "query": "graceful shutdown drain inflight requests",
+      "expected_top_1": "LifecycleHook"
+    },
+    {
+      "id": "q20",
+      "concern": "",
+      "query": "workflow durable long running task",
+      "expected_top_1": "WorkflowRun"
+    }
+  ]
+}
