@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.175294+00:00",
+  "source_tool": "auth_access/add_oauth2_provider.py",
+  "origin_candidate": {
+    "docstring": "Tokens returned from the provider's token endpoint.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 372,
+    "line_start": 359,
+    "name": "OAuthTokens",
+    "origin": "string_template",
+    "shape_hash": "25ac968bb941e4de",
+    "size_bytes": 407,
+    "size_lines": 14,
+    "tool": "auth_access/add_oauth2_provider.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1628
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

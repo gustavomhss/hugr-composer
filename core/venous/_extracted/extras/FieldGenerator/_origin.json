@@ -1,0 +1,20 @@
+{
+  "tool": "testing_tools/add_data_seeder.py",
+  "candidate": {
+    "docstring": "Generate realistic field values by column name and type hints.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 474,
+    "line_start": 340,
+    "name": "FieldGenerator",
+    "origin": "string_template",
+    "shape_hash": "888a83c59c6fc6f8",
+    "size_bytes": 4617,
+    "size_lines": 135,
+    "tool": "testing_tools/add_data_seeder.py",
+    "method_count": 9,
+    "complexity": 18,
+    "disqualified": false,
+    "primitive_score": 2991816
+  }
+}

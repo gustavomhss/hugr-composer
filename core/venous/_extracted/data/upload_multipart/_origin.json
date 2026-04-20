@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_file_upload.py",
+  "candidate": {
+    "docstring": "Upload a file to S3 using multipart upload for large files.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 919,
+    "line_start": 886,
+    "name": "upload_multipart",
+    "origin": "string_template",
+    "shape_hash": "97ef4c938dc2ff55",
+    "size_bytes": 1224,
+    "size_lines": 34,
+    "tool": "crud_data/add_file_upload.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 2448
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "FuzzResult",
+  "namespace": "extras",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Container for a single fuzz attempt result.",
+  "api_signature": "class FuzzResult: is_finding(...), to_dict(...)",
+  "invariants": [
+    "FUZZ_RESULT_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

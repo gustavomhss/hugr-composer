@@ -1,0 +1,17 @@
+{
+  "name": "RequestRecorder",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Redis ring-buffer recorder for HTTP requests and responses.",
+  "api_signature": "class RequestRecorder: record(...), list_records(...), get_record(...), flush(...)",
+  "invariants": [
+    "REQUEST_RECORDER_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:07.359828+00:00",
+  "source_tool": "infrastructure/add_arq_worker.py",
+  "origin_candidate": {
+    "docstring": "Retry a failed webhook delivery.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 544,
+    "line_start": 508,
+    "name": "webhook_retry_task",
+    "origin": "string_template",
+    "shape_hash": "e4b34dcb2778bf88",
+    "size_bytes": 1102,
+    "size_lines": 37,
+    "tool": "infrastructure/add_arq_worker.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 2204
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

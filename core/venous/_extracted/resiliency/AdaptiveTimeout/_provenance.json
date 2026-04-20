@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.187247+00:00",
+  "source_tool": "infrastructure/add_adaptive_timeouts.py",
+  "origin_candidate": {
+    "docstring": "Tracks latency statistics for a single downstream dependency.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 293,
+    "line_start": 212,
+    "name": "AdaptiveTimeout",
+    "origin": "string_template",
+    "shape_hash": "7b89fa6d0b9f3def",
+    "size_bytes": 2849,
+    "size_lines": 82,
+    "tool": "infrastructure/add_adaptive_timeouts.py",
+    "method_count": 5,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 170940
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

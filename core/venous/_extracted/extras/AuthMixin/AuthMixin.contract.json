@@ -1,0 +1,17 @@
+{
+  "name": "AuthMixin",
+  "namespace": "extras",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Mixin providing JWT authentication for Locust HttpUser subclasses.",
+  "api_signature": "class AuthMixin: login(...), refresh_token(...)",
+  "invariants": [
+    "AUTH_MIXIN_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

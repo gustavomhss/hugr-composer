@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_soft_delete.py",
+  "candidate": {
+    "docstring": "Return paginated soft-deleted rows. Admin use only.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 601,
+    "line_start": 572,
+    "name": "list_deleted",
+    "origin": "string_template",
+    "shape_hash": "4e22cd4f25175367",
+    "size_bytes": 999,
+    "size_lines": 30,
+    "tool": "crud_data/add_soft_delete.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1998
+  }
+}

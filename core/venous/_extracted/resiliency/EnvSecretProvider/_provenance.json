@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.969603+00:00",
+  "source_tool": "infrastructure/add_secret_rotation.py",
+  "origin_candidate": {
+    "docstring": "Environment-variable-backed secret provider (no external service).",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 380,
+    "line_start": 355,
+    "name": "EnvSecretProvider",
+    "origin": "string_template",
+    "shape_hash": "f9405477980bf952",
+    "size_bytes": 816,
+    "size_lines": 26,
+    "tool": "infrastructure/add_secret_rotation.py",
+    "method_count": 2,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 6528
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

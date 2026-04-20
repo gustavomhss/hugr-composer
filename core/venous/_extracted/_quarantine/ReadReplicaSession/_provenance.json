@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.448187+00:00",
+  "source_tool": "api_design/add_cqrs.py",
+  "origin_candidate": {
+    "docstring": "FastAPI dependency that yields a read-replica database session.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 578,
+    "line_start": 553,
+    "name": "ReadReplicaSession",
+    "origin": "string_template",
+    "shape_hash": "216d3d0147e4a009",
+    "size_bytes": 908,
+    "size_lines": 26,
+    "tool": "api_design/add_cqrs.py",
+    "method_count": 0,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 7264
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

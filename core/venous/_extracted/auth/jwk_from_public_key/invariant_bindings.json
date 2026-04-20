@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "JWK_FROM_PUBLIC_KEY_INV_01",
+      "invariant_text": "Only EC public keys are supported",
+      "confirms_test": "test_jwk_from_public_key_inv_01_confirms",
+      "prevents_test": "test_jwk_from_public_key_inv_01_prevents",
+      "under_failure_test": "test_jwk_from_public_key_inv_01_under_failure"
+    }
+  ]
+}

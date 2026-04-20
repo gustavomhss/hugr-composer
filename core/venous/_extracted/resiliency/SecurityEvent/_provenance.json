@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.111892+00:00",
+  "source_tool": "infrastructure/add_runtime_sentinel.py",
+  "origin_candidate": {
+    "docstring": "Immutable record of a detected attack attempt.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 223,
+    "line_start": 206,
+    "name": "SecurityEvent",
+    "origin": "string_template",
+    "shape_hash": "bb59a9f751b45d17",
+    "size_bytes": 651,
+    "size_lines": 18,
+    "tool": "infrastructure/add_runtime_sentinel.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 2604
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

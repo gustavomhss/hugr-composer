@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_anomaly_detector.py",
+  "candidate": {
+    "docstring": "Dispatch anomaly alerts to configured channels.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 464,
+    "line_start": 424,
+    "name": "AlertDispatcher",
+    "origin": "string_template",
+    "shape_hash": "e8aa610f6ba58c44",
+    "size_bytes": 1364,
+    "size_lines": 41,
+    "tool": "infrastructure/add_anomaly_detector.py",
+    "method_count": 2,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 32736
+  }
+}

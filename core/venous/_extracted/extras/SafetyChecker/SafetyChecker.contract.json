@@ -1,0 +1,17 @@
+{
+  "name": "SafetyChecker",
+  "namespace": "extras",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Detects destructive operations in Alembic migration files.",
+  "api_signature": "class SafetyChecker: detect_destructive(...)",
+  "invariants": [
+    "SAFETY_CHECKER_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

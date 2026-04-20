@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_bola_guard.py",
+  "candidate": {
+    "docstring": "Delegation policy allowing cross-user access grants.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 441,
+    "line_start": 407,
+    "name": "ResourceAccessPolicy",
+    "origin": "string_template",
+    "shape_hash": "9a27a3dfc227ab9d",
+    "size_bytes": 1196,
+    "size_lines": 35,
+    "tool": "auth_access/add_bola_guard.py",
+    "method_count": 1,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 14352
+  }
+}

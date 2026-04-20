@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.361759+00:00",
+  "source_tool": "realtime/add_webhook_receiver.py",
+  "origin_candidate": {
+    "docstring": "Verify GitHub webhook payloads using ``X-Hub-Signature-256``.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 649,
+    "line_start": 603,
+    "name": "GitHubVerifier",
+    "origin": "string_template",
+    "shape_hash": "6cd6614725241e4a",
+    "size_bytes": 1759,
+    "size_lines": 47,
+    "tool": "realtime/add_webhook_receiver.py",
+    "method_count": 1,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 28144
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

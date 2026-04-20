@@ -1,0 +1,12 @@
+{
+  "name": "TenantIsolationFilter",
+  "namespace": "auth",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Extracted primitive (auto-generated stub). Human MUST replace with a concrete purpose statement before promotion.",
+  "api_signature": "class TenantIsolationFilter: apply(...)",
+  "invariants": [
+    "TENANT_ISOLATION_FILTER_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged"
+}

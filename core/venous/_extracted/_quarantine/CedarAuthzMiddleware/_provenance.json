@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.946417+00:00",
+  "source_tool": "auth_access/add_cedar_policies.py",
+  "origin_candidate": {
+    "docstring": "Starlette middleware that enforces Cedar policies on every request.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 551,
+    "line_start": 474,
+    "name": "CedarAuthzMiddleware",
+    "origin": "string_template",
+    "shape_hash": "cb086c2063841774",
+    "size_bytes": 2795,
+    "size_lines": 78,
+    "tool": "auth_access/add_cedar_policies.py",
+    "method_count": 3,
+    "complexity": 5,
+    "disqualified": false,
+    "primitive_score": 167700
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

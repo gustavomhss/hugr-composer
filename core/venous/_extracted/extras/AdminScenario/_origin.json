@@ -1,0 +1,20 @@
+{
+  "tool": "testing_tools/add_load_profile.py",
+  "candidate": {
+    "docstring": "Admin-only scenario (5% of simulated traffic).",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 754,
+    "line_start": 730,
+    "name": "AdminScenario",
+    "origin": "string_template",
+    "shape_hash": "1e62d08fb4560c00",
+    "size_bytes": 757,
+    "size_lines": 25,
+    "tool": "testing_tools/add_load_profile.py",
+    "method_count": 2,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 6056
+  }
+}

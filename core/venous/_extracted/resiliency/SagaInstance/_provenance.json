@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.059953+00:00",
+  "source_tool": "infrastructure/add_saga.py",
+  "origin_candidate": {
+    "docstring": "Durable state record for one saga execution.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 294,
+    "line_start": 249,
+    "name": "SagaInstance",
+    "origin": "string_template",
+    "shape_hash": "4fb095b3c5de0dee",
+    "size_bytes": 1924,
+    "size_lines": 46,
+    "tool": "infrastructure/add_saga.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 7696
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

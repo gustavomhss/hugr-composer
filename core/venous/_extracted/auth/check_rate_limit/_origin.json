@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_api_key_auth.py",
+  "candidate": {
+    "docstring": "Return True if the key is under its rate limit, False if exceeded.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 495,
+    "line_start": 478,
+    "name": "check_rate_limit",
+    "origin": "string_template",
+    "shape_hash": "a631d6224cbf8c3a",
+    "size_bytes": 782,
+    "size_lines": 18,
+    "tool": "auth_access/add_api_key_auth.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1564
+  }
+}

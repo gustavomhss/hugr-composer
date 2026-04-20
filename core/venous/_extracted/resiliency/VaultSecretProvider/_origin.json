@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_secret_rotation.py",
+  "candidate": {
+    "docstring": "HashiCorp Vault KV v2 provider (lazy hvac import).",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 441,
+    "line_start": 383,
+    "name": "VaultSecretProvider",
+    "origin": "string_template",
+    "shape_hash": "1a3270d03d135fdc",
+    "size_bytes": 2012,
+    "size_lines": 59,
+    "tool": "infrastructure/add_secret_rotation.py",
+    "method_count": 4,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 96576
+  }
+}

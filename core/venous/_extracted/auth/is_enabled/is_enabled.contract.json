@@ -1,0 +1,12 @@
+{
+  "name": "is_enabled",
+  "namespace": "auth",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Extracted primitive (auto-generated stub). Human MUST replace with a concrete purpose statement before promotion.",
+  "api_signature": "",
+  "invariants": [
+    "IS_ENABLED_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged"
+}

@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "CIRCUIT_BREAKER_INV_01",
+      "invariant_text": "Circuit OPEN for {?} \u2014 fast-fail",
+      "confirms_test": "test_circuit_breaker_inv_01_confirms",
+      "prevents_test": "test_circuit_breaker_inv_01_prevents",
+      "under_failure_test": "test_circuit_breaker_inv_01_under_failure"
+    }
+  ]
+}

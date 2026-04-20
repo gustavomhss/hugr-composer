@@ -1,0 +1,26 @@
+from __future__ import annotations
+import time
+
+
+async def database_check() -> DependencyCheck:
+    """Check PostgreSQL connectivity and pool utilisation.
+
+    Executes ``SELECT 1`` and collects active/idle/overflow counts
+    from the SQLAlchemy async engine pool.
+
+    Returns:
+        DependencyCheck with pool stats in ``details``.
+    """
+    t0 = time.monotonic()
+    try:
+        from app.core.db import engine
+        async with engine.connect() as conn:
+            await conn.execute(__import__('sqlalchemy').text('SELECT 1'))
+        pool = engine.pool
+        details: dict = {'pool_size': getattr(pool, 'size', lambda: 0)(), 'checked_out': getattr(pool, 'checkedout', lambda: 0)(), 'overflow': getattr(pool, 'overflow', lambda: 0)(), 'checked_in': getattr(pool, 'checkedin', lambda: 0)()}
+        latency = int((time.monotonic() - t0) * 1000)
+        return DependencyCheck(name='database', status=HealthStatus.HEALTHY, latency_ms=latency, details=details)
+    except Exception as exc:
+        latency = int((time.monotonic() - t0) * 1000)
+        logger.warning('Database health check failed: %s', exc)
+        return DependencyCheck(name='database', status=HealthStatus.UNHEALTHY, latency_ms=latency, details={'error': str(exc)})

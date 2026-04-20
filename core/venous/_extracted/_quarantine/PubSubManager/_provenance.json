@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.434230+00:00",
+  "source_tool": "api_design/add_graphql_subscriptions.py",
+  "origin_candidate": {
+    "docstring": "Unified pub/sub facade that selects backend based on configuration.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 426,
+    "line_start": 371,
+    "name": "PubSubManager",
+    "origin": "string_template",
+    "shape_hash": "2126a8da4a9bd393",
+    "size_bytes": 1775,
+    "size_lines": 56,
+    "tool": "api_design/add_graphql_subscriptions.py",
+    "method_count": 4,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 85200
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

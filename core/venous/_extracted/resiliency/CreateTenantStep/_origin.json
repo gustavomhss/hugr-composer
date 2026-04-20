@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_tenant_onboarding.py",
+  "candidate": {
+    "docstring": "Create the tenant record in the database.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 428,
+    "line_start": 412,
+    "name": "CreateTenantStep",
+    "origin": "string_template",
+    "shape_hash": "42ebc0274a0fd6a7",
+    "size_bytes": 692,
+    "size_lines": 17,
+    "tool": "infrastructure/add_tenant_onboarding.py",
+    "method_count": 2,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 5536
+  }
+}

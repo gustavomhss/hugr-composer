@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_cost_tracker.py",
+  "candidate": {
+    "docstring": "Cost estimate for a single request.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 262,
+    "line_start": 248,
+    "name": "CostEstimate",
+    "origin": "string_template",
+    "shape_hash": "dfe10dedf9b1c514",
+    "size_bytes": 463,
+    "size_lines": 15,
+    "tool": "infrastructure/add_cost_tracker.py",
+    "method_count": 1,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1852
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_search.py",
+  "candidate": {
+    "docstring": "Prefix-match autocomplete with dialect-aware implementation.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 563,
+    "line_start": 518,
+    "name": "autocomplete",
+    "origin": "string_template",
+    "shape_hash": "09d76df7c15de7f7",
+    "size_bytes": 1575,
+    "size_lines": 46,
+    "tool": "crud_data/add_search.py",
+    "method_count": 0,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 12600
+  }
+}

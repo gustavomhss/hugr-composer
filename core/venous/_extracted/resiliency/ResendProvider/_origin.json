@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_email_templates.py",
+  "candidate": {
+    "docstring": "Resend HTTP API adapter.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 1203,
+    "line_start": 1172,
+    "name": "ResendProvider",
+    "origin": "string_template",
+    "shape_hash": "9aa0297782588e42",
+    "size_bytes": 1157,
+    "size_lines": 32,
+    "tool": "infrastructure/add_email_templates.py",
+    "method_count": 1,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 4628
+  }
+}

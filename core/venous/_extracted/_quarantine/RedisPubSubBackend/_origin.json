@@ -1,0 +1,20 @@
+{
+  "tool": "api_design/add_graphql_subscriptions.py",
+  "candidate": {
+    "docstring": "Redis-backed pub/sub for multi-worker deployments.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 368,
+    "line_start": 314,
+    "name": "RedisPubSubBackend",
+    "origin": "string_template",
+    "shape_hash": "74931c5672fbc511",
+    "size_bytes": 1934,
+    "size_lines": 55,
+    "tool": "api_design/add_graphql_subscriptions.py",
+    "method_count": 4,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 123776
+  }
+}

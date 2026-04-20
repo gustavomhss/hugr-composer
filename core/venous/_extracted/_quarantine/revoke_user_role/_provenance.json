@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.731233+00:00",
+  "source_tool": "auth_access/add_rbac.py",
+  "origin_candidate": {
+    "docstring": "Delete all UserRole bindings matching (user_id, role_id).",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 1114,
+    "line_start": 1089,
+    "name": "revoke_user_role",
+    "origin": "string_template",
+    "shape_hash": "ea6e3e824cce6295",
+    "size_bytes": 757,
+    "size_lines": 26,
+    "tool": "auth_access/add_rbac.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1514
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

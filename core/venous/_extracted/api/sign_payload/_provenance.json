@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.877731+00:00",
+  "source_tool": "realtime/add_webhook_sender.py",
+  "origin_candidate": {
+    "docstring": "Compute a Stripe-style HMAC-SHA256 signature header.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 631,
+    "line_start": 608,
+    "name": "sign_payload",
+    "origin": "string_template",
+    "shape_hash": "4ed232accb4c2a58",
+    "size_bytes": 802,
+    "size_lines": 24,
+    "tool": "realtime/add_webhook_sender.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1604
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

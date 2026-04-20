@@ -1,0 +1,17 @@
+{
+  "name": "TimeoutRegistry",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Registry that holds one AdaptiveTimeout per downstream dependency.",
+  "api_signature": "class TimeoutRegistry: get_or_create(...), all_stats(...), names(...)",
+  "invariants": [
+    "TIMEOUT_REGISTRY_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

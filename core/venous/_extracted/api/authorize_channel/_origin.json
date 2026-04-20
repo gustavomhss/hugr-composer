@@ -1,0 +1,20 @@
+{
+  "tool": "realtime/add_sse.py",
+  "candidate": {
+    "docstring": "Validate that *user* is allowed to subscribe to *channel*.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 580,
+    "line_start": 544,
+    "name": "authorize_channel",
+    "origin": "string_template",
+    "shape_hash": "e89550ec25cbe458",
+    "size_bytes": 1326,
+    "size_lines": 37,
+    "tool": "realtime/add_sse.py",
+    "method_count": 0,
+    "complexity": 6,
+    "disqualified": false,
+    "primitive_score": 15912
+  }
+}

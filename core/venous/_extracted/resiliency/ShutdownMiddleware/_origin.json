@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_graceful_shutdown.py",
+  "candidate": {
+    "docstring": "Reject new inbound requests during shutdown drain phase.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 502,
+    "line_start": 462,
+    "name": "ShutdownMiddleware",
+    "origin": "string_template",
+    "shape_hash": "6e35ccef720acefc",
+    "size_bytes": 1349,
+    "size_lines": 41,
+    "tool": "infrastructure/add_graceful_shutdown.py",
+    "method_count": 1,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 10792
+  }
+}

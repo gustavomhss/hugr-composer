@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_rbac.py",
+  "candidate": {
+    "docstring": "Resolve the effective permissions for the current user.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 852,
+    "line_start": 829,
+    "name": "get_effective_permissions",
+    "origin": "string_template",
+    "shape_hash": "b799f833dfc4f24b",
+    "size_bytes": 765,
+    "size_lines": 24,
+    "tool": "auth_access/add_rbac.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1530
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_feature_flags.py",
+  "candidate": {
+    "docstring": "Immutable audit record for every flag create/update/delete.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 376,
+    "line_start": 344,
+    "name": "FeatureFlagAudit",
+    "origin": "string_template",
+    "shape_hash": "6db3261acc6e1248",
+    "size_bytes": 1368,
+    "size_lines": 33,
+    "tool": "auth_access/add_feature_flags.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 5472
+  }
+}

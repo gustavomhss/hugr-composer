@@ -1,0 +1,12 @@
+{
+  "name": "StripeBilling",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Extracted primitive (auto-generated stub). Human MUST replace with a concrete purpose statement before promotion.",
+  "api_signature": "class StripeBilling: create_customer(...), create_subscription(...), cancel_subscription(...), change_plan(...), construct_webhook_event(...)",
+  "invariants": [
+    "STRIPE_BILLING_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged"
+}

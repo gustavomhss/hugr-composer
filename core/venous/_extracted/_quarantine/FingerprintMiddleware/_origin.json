@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_request_fingerprint.py",
+  "candidate": {
+    "docstring": "Deduplicate requests by SHA-256 fingerprint of user+method+path+body.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 538,
+    "line_start": 437,
+    "name": "FingerprintMiddleware",
+    "origin": "string_template",
+    "shape_hash": "ecfee2f20313acea",
+    "size_bytes": 3566,
+    "size_lines": 102,
+    "tool": "infrastructure/add_request_fingerprint.py",
+    "method_count": 4,
+    "complexity": 9,
+    "disqualified": false,
+    "primitive_score": 513504
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:05.587211+00:00",
+  "source_tool": "infrastructure/add_prometheus_metrics.py",
+  "origin_candidate": {
+    "docstring": "Starlette middleware that records RED metrics for each request.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 384,
+    "line_start": 349,
+    "name": "PrometheusMiddleware",
+    "origin": "string_template",
+    "shape_hash": "9e8c332df8dfd1b1",
+    "size_bytes": 1088,
+    "size_lines": 36,
+    "tool": "infrastructure/add_prometheus_metrics.py",
+    "method_count": 1,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 8704
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

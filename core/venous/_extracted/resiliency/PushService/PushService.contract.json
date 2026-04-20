@@ -1,0 +1,17 @@
+{
+  "name": "PushService",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Deliver push notifications to individual devices or FCM topics.",
+  "api_signature": "class PushService: send_to_device(...), send_to_topic(...)",
+  "invariants": [
+    "PUSH_SERVICE_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

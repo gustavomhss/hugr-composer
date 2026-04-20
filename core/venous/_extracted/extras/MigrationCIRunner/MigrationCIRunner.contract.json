@@ -1,0 +1,17 @@
+{
+  "name": "MigrationCIRunner",
+  "namespace": "extras",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Alembic CI runner for migration checks in CI pipelines.",
+  "api_signature": "class MigrationCIRunner: check_pending(...), verify_rollback(...), schema_diff(...)",
+  "invariants": [
+    "MIGRATION_CI_RUNNER_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.039460+00:00",
+  "source_tool": "auth_access/add_feature_flags.py",
+  "origin_candidate": {
+    "docstring": "Output schema for feature-flag API responses.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 1094,
+    "line_start": 1081,
+    "name": "FeatureFlagPublic",
+    "origin": "string_template",
+    "shape_hash": "7bb82b5ee80292ef",
+    "size_bytes": 394,
+    "size_lines": 14,
+    "tool": "auth_access/add_feature_flags.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1576
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_event_sourcing.py",
+  "candidate": {
+    "docstring": "Append-only store for domain events, keyed by stream_id.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 539,
+    "line_start": 385,
+    "name": "EventStore",
+    "origin": "string_template",
+    "shape_hash": "ca7111a7abfd1201",
+    "size_bytes": 4963,
+    "size_lines": 155,
+    "tool": "crud_data/add_event_sourcing.py",
+    "method_count": 5,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 198520
+  }
+}

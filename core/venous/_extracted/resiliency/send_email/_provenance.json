@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:07.237862+00:00",
+  "source_tool": "infrastructure/add_email_templates.py",
+  "origin_candidate": {
+    "docstring": "Render + send an email synchronously, persisting an audit row.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 1038,
+    "line_start": 993,
+    "name": "send_email",
+    "origin": "string_template",
+    "shape_hash": "faeacf29f2836ef2",
+    "size_bytes": 1592,
+    "size_lines": 46,
+    "tool": "infrastructure/add_email_templates.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 3184
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

@@ -1,0 +1,17 @@
+{
+  "name": "DegradationManager",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Manages which features are enabled based on the current degradation tier.",
+  "api_signature": "class DegradationManager: set_tier(...), is_feature_enabled(...), get_tier(...), disabled_features(...)",
+  "invariants": [
+    "DEGRADATION_MANAGER_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

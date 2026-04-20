@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.220402+00:00",
+  "source_tool": "infrastructure/add_stripe_subscription.py",
+  "origin_candidate": {
+    "docstring": "Thin wrapper around the Stripe SDK for subscription operations.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 608,
+    "line_start": 499,
+    "name": "StripeBilling",
+    "origin": "string_template",
+    "shape_hash": "74cec0e5ec6ca9fb",
+    "size_bytes": 3569,
+    "size_lines": 110,
+    "tool": "infrastructure/add_stripe_subscription.py",
+    "method_count": 6,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 85656
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

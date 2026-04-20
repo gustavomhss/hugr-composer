@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "S3_STORAGE_INV_01",
+      "invariant_text": "REPLACE_ME \u2014 describe the invariant.",
+      "confirms_test": "test_inv_save_confirms",
+      "prevents_test": "test_inv_save_prevents",
+      "under_failure_test": "test_inv_save_under_failure"
+    }
+  ]
+}

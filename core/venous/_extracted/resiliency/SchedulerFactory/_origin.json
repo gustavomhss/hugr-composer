@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_scheduled_tasks.py",
+  "candidate": {
+    "docstring": "Build and return an ``AsyncIOScheduler`` instance.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 273,
+    "line_start": 238,
+    "name": "SchedulerFactory",
+    "origin": "string_template",
+    "shape_hash": "dec1b1be9bd8ce66",
+    "size_bytes": 1394,
+    "size_lines": 36,
+    "tool": "infrastructure/add_scheduled_tasks.py",
+    "method_count": 1,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 11152
+  }
+}

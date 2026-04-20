@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.021792+00:00",
+  "source_tool": "infrastructure/add_saga.py",
+  "origin_candidate": {
+    "docstring": "Base class for saga orchestrations.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 434,
+    "line_start": 392,
+    "name": "Saga",
+    "origin": "string_template",
+    "shape_hash": "5775c88a83328cf5",
+    "size_bytes": 1531,
+    "size_lines": 43,
+    "tool": "infrastructure/add_saga.py",
+    "method_count": 1,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 24496
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

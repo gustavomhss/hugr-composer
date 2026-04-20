@@ -1,0 +1,17 @@
+{
+  "name": "EmailProvider",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Abstract provider interface.",
+  "api_signature": "class EmailProvider: send(...)",
+  "invariants": [
+    "EMAIL_PROVIDER_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

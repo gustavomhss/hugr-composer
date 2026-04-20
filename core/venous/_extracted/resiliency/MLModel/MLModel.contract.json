@@ -1,0 +1,17 @@
+{
+  "name": "MLModel",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "A versioned ML model artefact entry in the registry.",
+  "api_signature": "",
+  "invariants": [
+    "ML_MODEL_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

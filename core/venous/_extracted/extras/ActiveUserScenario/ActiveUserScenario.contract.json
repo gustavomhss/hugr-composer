@@ -1,0 +1,17 @@
+{
+  "name": "ActiveUserScenario",
+  "namespace": "extras",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Mixed read/write scenario (25% of simulated traffic).",
+  "api_signature": "class ActiveUserScenario: list_items(...), create_item(...), get_my_profile(...)",
+  "invariants": [
+    "ACTIVE_USER_SCENARIO_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

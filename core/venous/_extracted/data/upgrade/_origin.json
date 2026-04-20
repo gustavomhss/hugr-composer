@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_cursor_pagination.py",
+  "candidate": {
+    "docstring": "Add DESC index on created_at and composite (created_at, id) index.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 737,
+    "line_start": 722,
+    "name": "upgrade",
+    "origin": "string_template",
+    "shape_hash": "1372051da5765ae0",
+    "size_bytes": 594,
+    "size_lines": 16,
+    "tool": "crud_data/add_cursor_pagination.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1188
+  }
+}

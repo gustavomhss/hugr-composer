@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:05.234849+00:00",
+  "source_tool": "infrastructure/add_secret_rotation.py",
+  "origin_candidate": {
+    "docstring": "Starlette middleware that scans responses for secret leaks.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 658,
+    "line_start": 598,
+    "name": "LeakDetectorMiddleware",
+    "origin": "string_template",
+    "shape_hash": "8f03023af847c0e6",
+    "size_bytes": 2280,
+    "size_lines": 61,
+    "tool": "infrastructure/add_secret_rotation.py",
+    "method_count": 2,
+    "complexity": 5,
+    "disqualified": false,
+    "primitive_score": 91200
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_data_import.py",
+  "candidate": {
+    "docstring": "Parse and process CSV or Excel file data for a given import job.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 507,
+    "line_start": 410,
+    "name": "ImportProcessor",
+    "origin": "string_template",
+    "shape_hash": "e9afe5515c610a0f",
+    "size_bytes": 3343,
+    "size_lines": 98,
+    "tool": "crud_data/add_data_import.py",
+    "method_count": 5,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 200580
+  }
+}

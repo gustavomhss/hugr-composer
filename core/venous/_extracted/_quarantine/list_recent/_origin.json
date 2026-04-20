@@ -1,0 +1,20 @@
+{
+  "tool": "realtime/add_webhook_receiver.py",
+  "candidate": {
+    "docstring": "Return recent inbound webhook records, newest first.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 1022,
+    "line_start": 1003,
+    "name": "list_recent",
+    "origin": "string_template",
+    "shape_hash": "17c77ee5573bf033",
+    "size_bytes": 662,
+    "size_lines": 20,
+    "tool": "realtime/add_webhook_receiver.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1324
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_graceful_shutdown.py",
+  "candidate": {
+    "docstring": "Return the global GracefulShutdown instance (created on first call).",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 366,
+    "line_start": 351,
+    "name": "get_graceful_shutdown",
+    "origin": "string_template",
+    "shape_hash": "da255e583f152716",
+    "size_bytes": 593,
+    "size_lines": 16,
+    "tool": "infrastructure/add_graceful_shutdown.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1186
+  }
+}

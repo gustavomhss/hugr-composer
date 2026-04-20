@@ -1,0 +1,17 @@
+{
+  "name": "CostEstimatorProtocol",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Protocol that all cost estimators must satisfy.",
+  "api_signature": "class CostEstimatorProtocol: estimate(...), component(...)",
+  "invariants": [
+    "COST_ESTIMATOR_PROTOCOL_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

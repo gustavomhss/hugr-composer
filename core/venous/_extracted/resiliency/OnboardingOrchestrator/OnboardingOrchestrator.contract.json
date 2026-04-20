@@ -1,0 +1,17 @@
+{
+  "name": "OnboardingOrchestrator",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Executes an ordered list of onboarding steps with compensation.",
+  "api_signature": "class OnboardingOrchestrator: add_step(...), start(...)",
+  "invariants": [
+    "ONBOARDING_ORCHESTRATOR_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

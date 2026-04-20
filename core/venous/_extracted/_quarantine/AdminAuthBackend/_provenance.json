@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.205300+00:00",
+  "source_tool": "infrastructure/add_sqladmin.py",
+  "origin_candidate": {
+    "docstring": "Cookie-based auth backend for the SQLAdmin panel.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 766,
+    "line_start": 689,
+    "name": "AdminAuthBackend",
+    "origin": "string_template",
+    "shape_hash": "90240968ee2d4f76",
+    "size_bytes": 2518,
+    "size_lines": 78,
+    "tool": "infrastructure/add_sqladmin.py",
+    "method_count": 3,
+    "complexity": 6,
+    "disqualified": false,
+    "primitive_score": 181296
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

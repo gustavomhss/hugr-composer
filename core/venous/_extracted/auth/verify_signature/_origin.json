@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_request_signing.py",
+  "candidate": {
+    "docstring": "FastAPI dependency that verifies the HMAC request signature.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 555,
+    "line_start": 510,
+    "name": "verify_signature",
+    "origin": "string_template",
+    "shape_hash": "aee9af5ab822ea0e",
+    "size_bytes": 1677,
+    "size_lines": 46,
+    "tool": "auth_access/add_request_signing.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 6708
+  }
+}

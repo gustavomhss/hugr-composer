@@ -1,0 +1,17 @@
+{
+  "name": "SendgridProvider",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Send transactional emails via SendGrid.",
+  "api_signature": "class SendgridProvider: send(...)",
+  "invariants": [
+    "SENDGRID_PROVIDER_INV_01: sendgrid package is required: pip install sendgrid"
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 1,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

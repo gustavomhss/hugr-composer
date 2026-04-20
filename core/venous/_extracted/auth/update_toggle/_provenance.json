@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.752798+00:00",
+  "source_tool": "auth_access/add_feature_toggles_api.py",
+  "origin_candidate": {
+    "docstring": "Update a feature toggle. Superuser only.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 895,
+    "line_start": 874,
+    "name": "update_toggle",
+    "origin": "string_template",
+    "shape_hash": "38de1748fb16ff7e",
+    "size_bytes": 663,
+    "size_lines": 22,
+    "tool": "auth_access/add_feature_toggles_api.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1326
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

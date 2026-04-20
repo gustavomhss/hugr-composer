@@ -1,0 +1,17 @@
+{
+  "name": "test_pact_consumer_stub",
+  "namespace": "extras",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "test_pact_consumer_stub: primitive extracted from the HuGR EXTEND tool corpus. Docstring absent from source; human review MUST replace this line with a concrete purpose statement.",
+  "api_signature": "",
+  "invariants": [
+    "TEST_PACT_CONSUMER_STUB_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

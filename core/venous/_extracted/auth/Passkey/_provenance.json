@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.238167+00:00",
+  "source_tool": "auth_access/add_passkey_auth.py",
+  "origin_candidate": {
+    "docstring": "Stored WebAuthn credential for a user.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 379,
+    "line_start": 341,
+    "name": "Passkey",
+    "origin": "string_template",
+    "shape_hash": "d79402de04b576ab",
+    "size_bytes": 1614,
+    "size_lines": 39,
+    "tool": "auth_access/add_passkey_auth.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 6456
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

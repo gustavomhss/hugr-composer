@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_graceful_shutdown.py",
+  "candidate": {
+    "docstring": "Coordinates a clean process shutdown across three phases.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 348,
+    "line_start": 239,
+    "name": "GracefulShutdown",
+    "origin": "string_template",
+    "shape_hash": "6633c478d65aff86",
+    "size_bytes": 3887,
+    "size_lines": 110,
+    "tool": "infrastructure/add_graceful_shutdown.py",
+    "method_count": 8,
+    "complexity": 7,
+    "disqualified": false,
+    "primitive_score": 870688
+  }
+}

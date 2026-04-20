@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_compliance_engine.py",
+  "candidate": {
+    "docstring": "Encrypt *plaintext* with Fernet (lazy import).",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 490,
+    "line_start": 474,
+    "name": "encrypt_field",
+    "origin": "string_template",
+    "shape_hash": "af93e23d95fc7b31",
+    "size_bytes": 597,
+    "size_lines": 17,
+    "tool": "infrastructure/add_compliance_engine.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1194
+  }
+}

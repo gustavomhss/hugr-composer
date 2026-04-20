@@ -1,0 +1,17 @@
+{
+  "name": "test_create_item_wrong_type_returns_422",
+  "namespace": "extras",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "test_create_item_wrong_type_returns_422: primitive extracted from the HuGR EXTEND tool corpus. Docstring absent from source; human review MUST replace this line with a concrete purpose statement.",
+  "api_signature": "",
+  "invariants": [
+    "TEST_CREATE_ITEM_WRONG_TYPE_RETURNS_422_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:05.385787+00:00",
+  "source_tool": "infrastructure/add_ml_model_server.py",
+  "origin_candidate": {
+    "docstring": "Dict-based singleton registry for ML model instances.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 368,
+    "line_start": 277,
+    "name": "ModelRegistry",
+    "origin": "string_template",
+    "shape_hash": "055a4c3cc77d00cc",
+    "size_bytes": 3257,
+    "size_lines": 92,
+    "tool": "infrastructure/add_ml_model_server.py",
+    "method_count": 5,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 260560
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

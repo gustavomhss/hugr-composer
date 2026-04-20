@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_file_upload.py",
+  "candidate": {
+    "docstring": "Fetch a pending FileMetadata row, optionally scoped to an owner.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 1200,
+    "line_start": 1180,
+    "name": "get_pending",
+    "origin": "string_template",
+    "shape_hash": "c02617db5101a5bd",
+    "size_bytes": 691,
+    "size_lines": 21,
+    "tool": "crud_data/add_file_upload.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1382
+  }
+}

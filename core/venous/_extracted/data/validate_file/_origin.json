@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_file_upload.py",
+  "candidate": {
+    "docstring": "Detect actual MIME from magic bytes and validate against allowed list.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 641,
+    "line_start": 613,
+    "name": "validate_file",
+    "origin": "string_template",
+    "shape_hash": "e0b528c541d0d5f2",
+    "size_bytes": 1009,
+    "size_lines": 29,
+    "tool": "crud_data/add_file_upload.py",
+    "method_count": 0,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 6054
+  }
+}

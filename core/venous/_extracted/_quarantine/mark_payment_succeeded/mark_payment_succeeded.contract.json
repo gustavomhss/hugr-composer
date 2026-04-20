@@ -1,0 +1,12 @@
+{
+  "name": "mark_payment_succeeded",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Extracted primitive (auto-generated stub). Human MUST replace with a concrete purpose statement before promotion.",
+  "api_signature": "",
+  "invariants": [
+    "MARK_PAYMENT_SUCCEEDED_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged"
+}

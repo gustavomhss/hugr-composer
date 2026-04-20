@@ -1,0 +1,20 @@
+{
+  "tool": "realtime/add_sse.py",
+  "candidate": {
+    "docstring": "Serialize an SSEEvent to the text/event-stream wire format.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 306,
+    "line_start": 283,
+    "name": "format_event",
+    "origin": "string_template",
+    "shape_hash": "979b170f20f25bff",
+    "size_bytes": 907,
+    "size_lines": 24,
+    "tool": "realtime/add_sse.py",
+    "method_count": 0,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 7256
+  }
+}

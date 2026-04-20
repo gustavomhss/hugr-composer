@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.875535+00:00",
+  "source_tool": "testing_tools/add_sbom_guardian.py",
+  "origin_candidate": {
+    "docstring": "Detect dependency confusion: internal packages potentially shadowed on PyPI.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 381,
+    "line_start": 360,
+    "name": "detect_confusion",
+    "origin": "string_template",
+    "shape_hash": "066c478e130d0b71",
+    "size_bytes": 807,
+    "size_lines": 22,
+    "tool": "testing_tools/add_sbom_guardian.py",
+    "method_count": 0,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 4842
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "testing_tools/add_data_seeder.py",
+  "candidate": {
+    "docstring": "Build a dependency graph and produce a topological seed order.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 599,
+    "line_start": 502,
+    "name": "DependencyGraph",
+    "origin": "string_template",
+    "shape_hash": "738760135a9e9800",
+    "size_bytes": 3337,
+    "size_lines": 98,
+    "tool": "testing_tools/add_data_seeder.py",
+    "method_count": 4,
+    "complexity": 13,
+    "disqualified": false,
+    "primitive_score": 694096
+  }
+}

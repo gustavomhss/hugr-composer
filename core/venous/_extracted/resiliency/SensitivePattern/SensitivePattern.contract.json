@@ -1,0 +1,17 @@
+{
+  "name": "SensitivePattern",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "A named regex pattern with its sensitivity category.",
+  "api_signature": "",
+  "invariants": [
+    "SENSITIVE_PATTERN_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

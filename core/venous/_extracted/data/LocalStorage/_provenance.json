@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.922078+00:00",
+  "source_tool": "crud_data/add_file_upload.py",
+  "origin_candidate": {
+    "docstring": "Local filesystem storage with atomic temp-file rename (no partial writes).",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 483,
+    "line_start": 412,
+    "name": "LocalStorage",
+    "origin": "string_template",
+    "shape_hash": "6c4e793c54075637",
+    "size_bytes": 2580,
+    "size_lines": 72,
+    "tool": "crud_data/add_file_upload.py",
+    "method_count": 4,
+    "complexity": 6,
+    "disqualified": false,
+    "primitive_score": 247680
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

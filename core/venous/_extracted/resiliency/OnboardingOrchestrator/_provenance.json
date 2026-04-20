@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:05.495500+00:00",
+  "source_tool": "infrastructure/add_tenant_onboarding.py",
+  "origin_candidate": {
+    "docstring": "Executes an ordered list of onboarding steps with compensation.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 370,
+    "line_start": 288,
+    "name": "OnboardingOrchestrator",
+    "origin": "string_template",
+    "shape_hash": "a53a32394a3d682a",
+    "size_bytes": 3241,
+    "size_lines": 83,
+    "tool": "infrastructure/add_tenant_onboarding.py",
+    "method_count": 4,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 207424
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

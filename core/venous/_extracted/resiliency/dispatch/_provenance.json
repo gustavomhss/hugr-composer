@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.642279+00:00",
+  "source_tool": "infrastructure/add_notifications.py",
+  "origin_candidate": {
+    "docstring": "Route *notification* to the handler registered for *channel*.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 630,
+    "line_start": 615,
+    "name": "dispatch",
+    "origin": "string_template",
+    "shape_hash": "cc0742187e2aaf54",
+    "size_bytes": 637,
+    "size_lines": 16,
+    "tool": "infrastructure/add_notifications.py",
+    "method_count": 0,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 3822
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

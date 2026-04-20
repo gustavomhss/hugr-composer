@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_load_shedding.py",
+  "candidate": {
+    "docstring": "Middleware that enforces load shedding based on p99 latency.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 596,
+    "line_start": 554,
+    "name": "LoadSheddingMiddleware",
+    "origin": "string_template",
+    "shape_hash": "fda5b6d7cefbaf04",
+    "size_bytes": 1443,
+    "size_lines": 43,
+    "tool": "infrastructure/add_load_shedding.py",
+    "method_count": 1,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 11544
+  }
+}

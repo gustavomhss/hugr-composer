@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.865361+00:00",
+  "source_tool": "infrastructure/add_transactional_email.py",
+  "origin_candidate": {
+    "docstring": "Async helper for recording and querying email delivery events.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 702,
+    "line_start": 640,
+    "name": "DeliveryTracker",
+    "origin": "string_template",
+    "shape_hash": "71277228bd6d1706",
+    "size_bytes": 1981,
+    "size_lines": 63,
+    "tool": "infrastructure/add_transactional_email.py",
+    "method_count": 3,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 23772
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_load_shedding.py",
+  "candidate": {
+    "docstring": "Manages which features are enabled based on the current degradation tier.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 504,
+    "line_start": 462,
+    "name": "DegradationManager",
+    "origin": "string_template",
+    "shape_hash": "99b5c7dbe2c9854e",
+    "size_bytes": 1436,
+    "size_lines": 43,
+    "tool": "infrastructure/add_load_shedding.py",
+    "method_count": 5,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 28720
+  }
+}

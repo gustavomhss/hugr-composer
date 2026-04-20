@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.364010+00:00",
+  "source_tool": "auth_access/add_bola_guard.py",
+  "origin_candidate": {
+    "docstring": "Multi-tenant query isolation \u2014 auto-injects tenant_id filter.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 476,
+    "line_start": 444,
+    "name": "TenantIsolationFilter",
+    "origin": "string_template",
+    "shape_hash": "e2c2460d7acc4744",
+    "size_bytes": 1107,
+    "size_lines": 33,
+    "tool": "auth_access/add_bola_guard.py",
+    "method_count": 2,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 8856
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

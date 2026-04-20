@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.816976+00:00",
+  "source_tool": "infrastructure/add_cost_tracker.py",
+  "origin_candidate": {
+    "docstring": "Estimate cost of database queries in a request.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 436,
+    "line_start": 421,
+    "name": "DBQueryCostEstimator",
+    "origin": "string_template",
+    "shape_hash": "c12364c5d726918f",
+    "size_bytes": 534,
+    "size_lines": 16,
+    "tool": "infrastructure/add_cost_tracker.py",
+    "method_count": 2,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 4272
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

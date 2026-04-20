@@ -1,0 +1,17 @@
+{
+  "name": "FeatureFlagCache",
+  "namespace": "auth",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Bounded in-process LRU cache with TTL for feature-flag payloads.",
+  "api_signature": "class FeatureFlagCache: get(...), set(...), invalidate(...), clear(...), start_invalidation_listener(...), stop(...)",
+  "invariants": [
+    "FEATURE_FLAG_CACHE_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

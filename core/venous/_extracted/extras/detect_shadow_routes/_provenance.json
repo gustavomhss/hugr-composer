@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.896854+00:00",
+  "source_tool": "testing_tools/add_schema_enforcer.py",
+  "origin_candidate": {
+    "docstring": "Return routes present in *app_routes* but absent from *spec_routes*.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 298,
+    "line_start": 281,
+    "name": "detect_shadow_routes",
+    "origin": "string_template",
+    "shape_hash": "35044bc6e76173e6",
+    "size_bytes": 572,
+    "size_lines": 18,
+    "tool": "testing_tools/add_schema_enforcer.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 2288
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

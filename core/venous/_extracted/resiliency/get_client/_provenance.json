@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.778691+00:00",
+  "source_tool": "infrastructure/add_temporal_workflow.py",
+  "origin_candidate": {
+    "docstring": "Return the process-wide Temporal client, creating it lazily.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 405,
+    "line_start": 388,
+    "name": "get_client",
+    "origin": "string_template",
+    "shape_hash": "e5b579adc3d90942",
+    "size_bytes": 601,
+    "size_lines": 18,
+    "tool": "infrastructure/add_temporal_workflow.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1202
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

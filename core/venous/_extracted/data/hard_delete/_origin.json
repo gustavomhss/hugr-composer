@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_soft_delete.py",
+  "candidate": {
+    "docstring": "Permanently remove a row. Superuser-only path.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 569,
+    "line_start": 547,
+    "name": "hard_delete",
+    "origin": "string_template",
+    "shape_hash": "ede45324267944aa",
+    "size_bytes": 653,
+    "size_lines": 23,
+    "tool": "crud_data/add_soft_delete.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1306
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.814649+00:00",
+  "source_tool": "infrastructure/add_compliance_engine.py",
+  "origin_candidate": {
+    "docstring": "Return compliance events within a UTC date range.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 803,
+    "line_start": 776,
+    "name": "get_events_in_range",
+    "origin": "string_template",
+    "shape_hash": "4210d0513fc2b33b",
+    "size_bytes": 803,
+    "size_lines": 28,
+    "tool": "infrastructure/add_compliance_engine.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1606
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

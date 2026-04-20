@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.660046+00:00",
+  "source_tool": "infrastructure/add_outbox_pattern.py",
+  "origin_candidate": {
+    "docstring": "ARQ task: poll and dispatch a batch of pending outbox events.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 505,
+    "line_start": 457,
+    "name": "dispatch_pending_events",
+    "origin": "string_template",
+    "shape_hash": "6bedeae19290a7fe",
+    "size_bytes": 1878,
+    "size_lines": 49,
+    "tool": "infrastructure/add_outbox_pattern.py",
+    "method_count": 0,
+    "complexity": 5,
+    "disqualified": false,
+    "primitive_score": 18780
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

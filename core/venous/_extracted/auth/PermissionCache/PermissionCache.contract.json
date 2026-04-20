@@ -1,0 +1,17 @@
+{
+  "name": "PermissionCache",
+  "namespace": "auth",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Thread-safe async LRU permission cache.",
+  "api_signature": "class PermissionCache: get(...), set(...), invalidate_user(...), clear(...), start_listener(...)",
+  "invariants": [
+    "PERMISSION_CACHE_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

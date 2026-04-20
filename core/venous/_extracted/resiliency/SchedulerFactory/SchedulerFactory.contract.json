@@ -1,0 +1,17 @@
+{
+  "name": "SchedulerFactory",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Build and return an ``AsyncIOScheduler`` instance.",
+  "api_signature": "class SchedulerFactory: build(...)",
+  "invariants": [
+    "SCHEDULER_FACTORY_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

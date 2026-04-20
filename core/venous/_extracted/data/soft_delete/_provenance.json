@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.364519+00:00",
+  "source_tool": "crud_data/add_soft_delete.py",
+  "origin_candidate": {
+    "docstring": "Soft-delete: set is_deleted=True, deleted_at=now(UTC).",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 517,
+    "line_start": 490,
+    "name": "soft_delete",
+    "origin": "string_template",
+    "shape_hash": "f512915345c5fbb1",
+    "size_bytes": 871,
+    "size_lines": 28,
+    "tool": "crud_data/add_soft_delete.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 3484
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

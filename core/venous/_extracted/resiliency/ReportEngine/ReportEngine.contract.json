@@ -1,0 +1,18 @@
+{
+  "name": "ReportEngine",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Renders Jinja2 HTML templates to PDF using WeasyPrint.",
+  "api_signature": "class ReportEngine: render_template(...), render_html_to_pdf(...), generate_pdf_async(...)",
+  "invariants": [
+    "REPORT_ENGINE_INV_01: jinja2 is required: pip install jinja2",
+    "REPORT_ENGINE_INV_02: weasyprint is required: pip install weasyprint"
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 2,
+    "ambiguous": false,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

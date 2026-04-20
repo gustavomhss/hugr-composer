@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_feature_flags.py",
+  "candidate": {
+    "docstring": "Evaluate a boolean feature flag. Never raises; returns *default* on error.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 617,
+    "line_start": 593,
+    "name": "is_enabled",
+    "origin": "string_template",
+    "shape_hash": "3b548e61296b877c",
+    "size_bytes": 860,
+    "size_lines": 25,
+    "tool": "auth_access/add_feature_flags.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1720
+  }
+}

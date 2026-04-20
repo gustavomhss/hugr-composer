@@ -1,0 +1,20 @@
+{
+  "tool": "api_design/add_graphql.py",
+  "candidate": {
+    "docstring": "Build a fresh ``GraphQLContext`` for the current request.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 480,
+    "line_start": 457,
+    "name": "get_graphql_context",
+    "origin": "string_template",
+    "shape_hash": "1853252fce981962",
+    "size_bytes": 706,
+    "size_lines": 24,
+    "tool": "api_design/add_graphql.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1412
+  }
+}

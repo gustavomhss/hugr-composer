@@ -1,0 +1,17 @@
+{
+  "name": "TimeoutInjector",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Simulate a hung request to trigger upstream timeouts.",
+  "api_signature": "class TimeoutInjector: inject(...)",
+  "invariants": [
+    "TIMEOUT_INJECTOR_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

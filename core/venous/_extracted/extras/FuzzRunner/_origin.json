@@ -1,0 +1,20 @@
+{
+  "tool": "testing_tools/add_api_fuzzer.py",
+  "candidate": {
+    "docstring": "Orchestrates fuzzing: fetch schema, generate payloads, run requests.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 589,
+    "line_start": 492,
+    "name": "FuzzRunner",
+    "origin": "string_template",
+    "shape_hash": "5a4933416bb38ab9",
+    "size_bytes": 3427,
+    "size_lines": 98,
+    "tool": "testing_tools/add_api_fuzzer.py",
+    "method_count": 4,
+    "complexity": 6,
+    "disqualified": false,
+    "primitive_score": 328992
+  }
+}

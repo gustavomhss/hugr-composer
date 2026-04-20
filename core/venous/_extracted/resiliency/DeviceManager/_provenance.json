@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.920761+00:00",
+  "source_tool": "infrastructure/add_ml_gpu_inference.py",
+  "origin_candidate": {
+    "docstring": "Detect and expose the active inference device.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 368,
+    "line_start": 287,
+    "name": "DeviceManager",
+    "origin": "string_template",
+    "shape_hash": "9043a3816e0b1460",
+    "size_bytes": 2937,
+    "size_lines": 82,
+    "tool": "infrastructure/add_ml_gpu_inference.py",
+    "method_count": 3,
+    "complexity": 7,
+    "disqualified": false,
+    "primitive_score": 246708
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

@@ -1,0 +1,17 @@
+{
+  "name": "ModelRegistry",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Dict-based singleton registry for ML model instances.",
+  "api_signature": "class ModelRegistry: register(...), get(...), list_models(...), update_stats(...)",
+  "invariants": [
+    "MODEL_REGISTRY_INV_01: Model '{?}' is not registered"
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 1,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.098778+00:00",
+  "source_tool": "crud_data/add_cursor_pagination.py",
+  "origin_candidate": {
+    "docstring": "Encode a sort key into a URL-safe base64 cursor string.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 291,
+    "line_start": 259,
+    "name": "encode_cursor",
+    "origin": "string_template",
+    "shape_hash": "844d1b1783deb08f",
+    "size_bytes": 1139,
+    "size_lines": 33,
+    "tool": "crud_data/add_cursor_pagination.py",
+    "method_count": 0,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 9112
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

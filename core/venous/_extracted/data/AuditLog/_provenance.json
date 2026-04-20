@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.796878+00:00",
+  "source_tool": "crud_data/add_audit_log.py",
+  "origin_candidate": {
+    "docstring": "Immutable audit log entry.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 380,
+    "line_start": 321,
+    "name": "AuditLog",
+    "origin": "string_template",
+    "shape_hash": "cb3582d055431c9e",
+    "size_bytes": 2919,
+    "size_lines": 60,
+    "tool": "crud_data/add_audit_log.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 11676
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

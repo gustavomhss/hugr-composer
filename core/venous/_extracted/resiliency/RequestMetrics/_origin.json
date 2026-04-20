@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_prometheus_metrics.py",
+  "candidate": {
+    "docstring": "Prometheus RED metrics: request_total, duration_seconds, errors_total.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 303,
+    "line_start": 240,
+    "name": "RequestMetrics",
+    "origin": "string_template",
+    "shape_hash": "44add5d82b58cf42",
+    "size_bytes": 2193,
+    "size_lines": 64,
+    "tool": "infrastructure/add_prometheus_metrics.py",
+    "method_count": 3,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 78948
+  }
+}

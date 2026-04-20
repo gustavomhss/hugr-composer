@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_api_key_auth.py",
+  "candidate": {
+    "docstring": "Constant-time verification of a raw secret against its stored hash.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 445,
+    "line_start": 416,
+    "name": "verify_secret",
+    "origin": "string_template",
+    "shape_hash": "26253219286baf74",
+    "size_bytes": 1262,
+    "size_lines": 30,
+    "tool": "auth_access/add_api_key_auth.py",
+    "method_count": 0,
+    "complexity": 5,
+    "disqualified": false,
+    "primitive_score": 12620
+  }
+}

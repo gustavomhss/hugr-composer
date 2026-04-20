@@ -1,0 +1,12 @@
+{
+  "name": "create_delivery",
+  "namespace": "api",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Extracted primitive (auto-generated stub). Human MUST replace with a concrete purpose statement before promotion.",
+  "api_signature": "",
+  "invariants": [
+    "CREATE_DELIVERY_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged"
+}

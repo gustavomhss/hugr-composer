@@ -1,0 +1,17 @@
+{
+  "name": "DBQueryCostEstimator",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Estimate cost of database queries in a request.",
+  "api_signature": "class DBQueryCostEstimator: estimate(...)",
+  "invariants": [
+    "DB_QUERY_COST_ESTIMATOR_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

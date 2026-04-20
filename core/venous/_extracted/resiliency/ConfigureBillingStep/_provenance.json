@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.608341+00:00",
+  "source_tool": "infrastructure/add_tenant_onboarding.py",
+  "origin_candidate": {
+    "docstring": "Configure billing / subscription for the new tenant.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 494,
+    "line_start": 476,
+    "name": "ConfigureBillingStep",
+    "origin": "string_template",
+    "shape_hash": "8341745fb9784604",
+    "size_bytes": 757,
+    "size_lines": 19,
+    "tool": "infrastructure/add_tenant_onboarding.py",
+    "method_count": 2,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 6056
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

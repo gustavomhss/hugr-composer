@@ -1,0 +1,17 @@
+{
+  "name": "AttackPatternRegistry",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Thread-safe (GIL) in-memory registry of security events.",
+  "api_signature": "class AttackPatternRegistry: record(...), count(...), recent(...)",
+  "invariants": [
+    "ATTACK_PATTERN_REGISTRY_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

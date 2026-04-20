@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.459590+00:00",
+  "source_tool": "infrastructure/add_csrf_protection.py",
+  "origin_candidate": {
+    "docstring": "CSRF protection using HMAC-signed tokens (double-submit cookie pattern).",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 343,
+    "line_start": 243,
+    "name": "CSRFProtection",
+    "origin": "string_template",
+    "shape_hash": "1bc5f7b0170577f3",
+    "size_bytes": 3374,
+    "size_lines": 101,
+    "tool": "infrastructure/add_csrf_protection.py",
+    "method_count": 5,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 269920
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

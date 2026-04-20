@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_health_deep.py",
+  "candidate": {
+    "docstring": "Singleton registry for async health-check functions.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 365,
+    "line_start": 266,
+    "name": "HealthRegistry",
+    "origin": "string_template",
+    "shape_hash": "aa5d99f24b6b63e9",
+    "size_bytes": 3747,
+    "size_lines": 100,
+    "tool": "infrastructure/add_health_deep.py",
+    "method_count": 7,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 209832
+  }
+}

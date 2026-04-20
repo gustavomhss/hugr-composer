@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.375203+00:00",
+  "source_tool": "auth_access/add_multi_tenancy.py",
+  "origin_candidate": {
+    "docstring": "Resolve tenant from request; set in ContextVar before view runs.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 693,
+    "line_start": 627,
+    "name": "TenantMiddleware",
+    "origin": "string_template",
+    "shape_hash": "01e3ee3d4a0ad603",
+    "size_bytes": 2392,
+    "size_lines": 67,
+    "tool": "auth_access/add_multi_tenancy.py",
+    "method_count": 3,
+    "complexity": 9,
+    "disqualified": false,
+    "primitive_score": 258336
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

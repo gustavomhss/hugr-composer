@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:05.107969+00:00",
+  "source_tool": "infrastructure/add_dependency_health_map.py",
+  "origin_candidate": {
+    "docstring": "Discovers dependencies from environment and builds a health graph.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 260,
+    "line_start": 209,
+    "name": "HealthMapBuilder",
+    "origin": "string_template",
+    "shape_hash": "eb55037a96d5f095",
+    "size_bytes": 1919,
+    "size_lines": 52,
+    "tool": "infrastructure/add_dependency_health_map.py",
+    "method_count": 4,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 122816
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

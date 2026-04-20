@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_arq_worker.py",
+  "candidate": {
+    "docstring": "arq worker configuration.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 383,
+    "line_start": 361,
+    "name": "WorkerSettings",
+    "origin": "string_template",
+    "shape_hash": "a5ef9eb5f3ff1b0c",
+    "size_bytes": 983,
+    "size_lines": 23,
+    "tool": "infrastructure/add_arq_worker.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 3932
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_celery_beat.py",
+  "candidate": {
+    "docstring": "Build and return a configured Celery application instance.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 310,
+    "line_start": 269,
+    "name": "create_celery_app",
+    "origin": "string_template",
+    "shape_hash": "7a15e7beb75f43ba",
+    "size_bytes": 1509,
+    "size_lines": 42,
+    "tool": "infrastructure/add_celery_beat.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 3018
+  }
+}

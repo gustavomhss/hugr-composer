@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:07.162161+00:00",
+  "source_tool": "infrastructure/add_ml_model_registry.py",
+  "origin_candidate": {
+    "docstring": "Roll back the current production version; restore the previous one.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 740,
+    "line_start": 709,
+    "name": "rollback",
+    "origin": "string_template",
+    "shape_hash": "29da29b96e0aee2a",
+    "size_bytes": 1115,
+    "size_lines": 32,
+    "tool": "infrastructure/add_ml_model_registry.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 4460
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.982294+00:00",
+  "source_tool": "crud_data/add_file_upload.py",
+  "origin_candidate": {
+    "docstring": "Abstract storage backend.  Both implementations share this interface.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 409,
+    "line_start": 376,
+    "name": "StorageBackend",
+    "origin": "string_template",
+    "shape_hash": "28cee9c8fe4cc569",
+    "size_bytes": 1069,
+    "size_lines": 34,
+    "tool": "crud_data/add_file_upload.py",
+    "method_count": 3,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 12828
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

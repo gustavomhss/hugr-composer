@@ -1,0 +1,12 @@
+{
+  "name": "process_import_job",
+  "namespace": "data",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Extracted primitive (auto-generated stub). Human MUST replace with a concrete purpose statement before promotion.",
+  "api_signature": "",
+  "invariants": [
+    "PROCESS_IMPORT_JOB_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged"
+}

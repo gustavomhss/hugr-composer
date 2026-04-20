@@ -1,0 +1,17 @@
+{
+  "name": "AdminScenario",
+  "namespace": "extras",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Admin-only scenario (5% of simulated traffic).",
+  "api_signature": "class AdminScenario: list_users(...), check_health(...)",
+  "invariants": [
+    "ADMIN_SCENARIO_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

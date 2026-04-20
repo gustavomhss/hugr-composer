@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:05.707496+00:00",
+  "source_tool": "infrastructure/add_pdf_reports.py",
+  "origin_candidate": {
+    "docstring": "Renders Jinja2 HTML templates to PDF using WeasyPrint.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 507,
+    "line_start": 420,
+    "name": "ReportEngine",
+    "origin": "string_template",
+    "shape_hash": "972d85983b6f6f5c",
+    "size_bytes": 3045,
+    "size_lines": 88,
+    "tool": "infrastructure/add_pdf_reports.py",
+    "method_count": 4,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 97440
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

@@ -1,0 +1,17 @@
+{
+  "name": "CSRFProtection",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "CSRF protection using HMAC-signed tokens (double-submit cookie pattern).",
+  "api_signature": "class CSRFProtection: generate_token(...), validate_token(...), get_csrf_cookie(...)",
+  "invariants": [
+    "CSRF_PROTECTION_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "CanaryToken",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "A registered canary token.",
+  "api_signature": "",
+  "invariants": [
+    "CANARY_TOKEN_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

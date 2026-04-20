@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.047836+00:00",
+  "source_tool": "infrastructure/add_saga.py",
+  "origin_candidate": {
+    "docstring": "Drives a Saga through its steps with durable state and compensation.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 603,
+    "line_start": 463,
+    "name": "SagaCoordinator",
+    "origin": "string_template",
+    "shape_hash": "990f3582c66796f9",
+    "size_bytes": 5523,
+    "size_lines": 141,
+    "tool": "infrastructure/add_saga.py",
+    "method_count": 4,
+    "complexity": 8,
+    "disqualified": false,
+    "primitive_score": 706944
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

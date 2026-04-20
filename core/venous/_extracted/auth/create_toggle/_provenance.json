@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.524597+00:00",
+  "source_tool": "auth_access/add_feature_toggles_api.py",
+  "origin_candidate": {
+    "docstring": "Create a new feature toggle. Superuser only.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 870,
+    "line_start": 850,
+    "name": "create_toggle",
+    "origin": "string_template",
+    "shape_hash": "5bdaec496dbbb7cf",
+    "size_bytes": 712,
+    "size_lines": 21,
+    "tool": "auth_access/add_feature_toggles_api.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1424
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

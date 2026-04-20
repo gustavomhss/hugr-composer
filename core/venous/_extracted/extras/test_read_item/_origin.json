@@ -1,0 +1,20 @@
+{
+  "tool": "testing_tools/add_e2e_test_suite.py",
+  "candidate": {
+    "docstring": "GET /api/v1/items/{id} returns the created item.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 432,
+    "line_start": 418,
+    "name": "test_read_item",
+    "origin": "string_template",
+    "shape_hash": "7530002b75df92cc",
+    "size_bytes": 621,
+    "size_lines": 15,
+    "tool": "testing_tools/add_e2e_test_suite.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1242
+  }
+}

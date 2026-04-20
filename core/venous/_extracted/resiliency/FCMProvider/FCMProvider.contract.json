@@ -1,0 +1,17 @@
+{
+  "name": "FCMProvider",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Send push notifications via FCM.",
+  "api_signature": "class FCMProvider: send_to_device(...), send_to_topic(...)",
+  "invariants": [
+    "FCM_PROVIDER_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

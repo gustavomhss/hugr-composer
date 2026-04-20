@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_cache_layer.py",
+  "candidate": {
+    "docstring": "Thin async wrapper around Redis with msgpack serialization.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 326,
+    "line_start": 247,
+    "name": "CacheBackend",
+    "origin": "string_template",
+    "shape_hash": "5cd3f57e14ebe33a",
+    "size_bytes": 2875,
+    "size_lines": 80,
+    "tool": "infrastructure/add_cache_layer.py",
+    "method_count": 6,
+    "complexity": 6,
+    "disqualified": false,
+    "primitive_score": 414000
+  }
+}

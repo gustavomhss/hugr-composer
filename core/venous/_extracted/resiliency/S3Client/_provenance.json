@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:05.978456+00:00",
+  "source_tool": "infrastructure/add_s3_storage.py",
+  "origin_candidate": {
+    "docstring": "Thin wrapper around ``boto3.client('s3')`` with lazy import.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 595,
+    "line_start": 493,
+    "name": "S3Client",
+    "origin": "string_template",
+    "shape_hash": "36e64d3e614d223a",
+    "size_bytes": 3614,
+    "size_lines": 103,
+    "tool": "infrastructure/add_s3_storage.py",
+    "method_count": 6,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 86736
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

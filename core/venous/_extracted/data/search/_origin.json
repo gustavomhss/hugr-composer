@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_search.py",
+  "candidate": {
+    "docstring": "Full-text search with dialect-aware implementation.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 499,
+    "line_start": 466,
+    "name": "search",
+    "origin": "string_template",
+    "shape_hash": "7071b8de1b75bb5a",
+    "size_bytes": 1346,
+    "size_lines": 34,
+    "tool": "crud_data/add_search.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 5384
+  }
+}

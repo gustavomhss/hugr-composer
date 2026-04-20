@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.549374+00:00",
+  "source_tool": "realtime/add_sse.py",
+  "origin_candidate": {
+    "docstring": "Asyncio-safe token bucket.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 378,
+    "line_start": 340,
+    "name": "TokenBucket",
+    "origin": "string_template",
+    "shape_hash": "51d2e6a1e5fc3830",
+    "size_bytes": 1260,
+    "size_lines": 39,
+    "tool": "realtime/add_sse.py",
+    "method_count": 2,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 20160
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

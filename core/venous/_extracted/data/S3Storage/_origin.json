@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_file_upload.py",
+  "candidate": {
+    "docstring": "S3 storage backend \u2014 files uploaded directly by client via presigned URL.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 533,
+    "line_start": 486,
+    "name": "S3Storage",
+    "origin": "string_template",
+    "shape_hash": "47ae36ea88e93ddb",
+    "size_bytes": 1650,
+    "size_lines": 48,
+    "tool": "crud_data/add_file_upload.py",
+    "method_count": 3,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 19800
+  }
+}

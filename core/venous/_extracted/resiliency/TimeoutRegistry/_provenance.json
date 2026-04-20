@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.277787+00:00",
+  "source_tool": "infrastructure/add_adaptive_timeouts.py",
+  "origin_candidate": {
+    "docstring": "Registry that holds one AdaptiveTimeout per downstream dependency.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 429,
+    "line_start": 374,
+    "name": "TimeoutRegistry",
+    "origin": "string_template",
+    "shape_hash": "3a6ec0f651a01fd0",
+    "size_bytes": 1961,
+    "size_lines": 56,
+    "tool": "infrastructure/add_adaptive_timeouts.py",
+    "method_count": 4,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 31376
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

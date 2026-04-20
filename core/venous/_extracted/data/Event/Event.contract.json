@@ -1,0 +1,17 @@
+{
+  "name": "Event",
+  "namespace": "data",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Append-only event row in the event store.",
+  "api_signature": "",
+  "invariants": [
+    "EVENT_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

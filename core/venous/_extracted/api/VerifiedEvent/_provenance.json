@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.562294+00:00",
+  "source_tool": "realtime/add_webhook_receiver.py",
+  "origin_candidate": {
+    "docstring": "Value object returned by a successful verification.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 456,
+    "line_start": 443,
+    "name": "VerifiedEvent",
+    "origin": "string_template",
+    "shape_hash": "24e3680256576d54",
+    "size_bytes": 390,
+    "size_lines": 14,
+    "tool": "realtime/add_webhook_receiver.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1560
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

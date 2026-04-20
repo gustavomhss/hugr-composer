@@ -1,0 +1,17 @@
+{
+  "name": "FeatureFlagPublic",
+  "namespace": "auth",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Output schema for feature-flag API responses.",
+  "api_signature": "",
+  "invariants": [
+    "FEATURE_FLAG_PUBLIC_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

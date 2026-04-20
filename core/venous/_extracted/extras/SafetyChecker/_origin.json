@@ -1,0 +1,20 @@
+{
+  "tool": "testing_tools/add_database_migrations_ci.py",
+  "candidate": {
+    "docstring": "Detects destructive operations in Alembic migration files.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 497,
+    "line_start": 420,
+    "name": "SafetyChecker",
+    "origin": "string_template",
+    "shape_hash": "07228ab81f49797f",
+    "size_bytes": 2730,
+    "size_lines": 78,
+    "tool": "testing_tools/add_database_migrations_ci.py",
+    "method_count": 3,
+    "complexity": 8,
+    "disqualified": false,
+    "primitive_score": 262080
+  }
+}

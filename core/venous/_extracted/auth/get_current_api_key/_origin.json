@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_api_key_auth.py",
+  "candidate": {
+    "docstring": "Validate the API key from the Authorization header.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 810,
+    "line_start": 773,
+    "name": "get_current_api_key",
+    "origin": "string_template",
+    "shape_hash": "45319b6eaad7a3ef",
+    "size_bytes": 1503,
+    "size_lines": 38,
+    "tool": "auth_access/add_api_key_auth.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 3006
+  }
+}

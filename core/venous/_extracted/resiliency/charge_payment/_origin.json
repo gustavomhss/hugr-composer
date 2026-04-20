@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_temporal_workflow.py",
+  "candidate": {
+    "docstring": "Charge the payment instrument for an order.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 639,
+    "line_start": 613,
+    "name": "charge_payment",
+    "origin": "string_template",
+    "shape_hash": "e39b7263ce2bb375",
+    "size_bytes": 872,
+    "size_lines": 27,
+    "tool": "infrastructure/add_temporal_workflow.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1744
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "MemoryGuard",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Check GPU memory utilisation before allowing inference.",
+  "api_signature": "class MemoryGuard: threshold(...), check(...)",
+  "invariants": [
+    "MEMORY_GUARD_INV_01: GPU memory utilisation {?} exceeds threshold {?} \u2014 inference blocked"
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 1,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

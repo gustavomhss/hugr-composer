@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.797067+00:00",
+  "source_tool": "infrastructure/add_bulkhead_isolation.py",
+  "origin_candidate": {
+    "docstring": "Return BulkheadConfig populated from environment variables.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 416,
+    "line_start": 399,
+    "name": "get_default_config",
+    "origin": "string_template",
+    "shape_hash": "e6f5d5f4651972ed",
+    "size_bytes": 593,
+    "size_lines": 18,
+    "tool": "infrastructure/add_bulkhead_isolation.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1186
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

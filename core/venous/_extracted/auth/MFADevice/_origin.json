@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_mfa.py",
+  "candidate": {
+    "docstring": "One TOTP device per user (unique on user_id).",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 334,
+    "line_start": 290,
+    "name": "MFADevice",
+    "origin": "string_template",
+    "shape_hash": "bed4cd1ae7e8d731",
+    "size_bytes": 1749,
+    "size_lines": 45,
+    "tool": "auth_access/add_mfa.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 6996
+  }
+}

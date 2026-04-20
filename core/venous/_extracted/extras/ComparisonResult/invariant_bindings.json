@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "COMPARISON_RESULT_INV_01",
+      "invariant_text": "REPLACE_ME \u2014 describe the invariant.",
+      "confirms_test": "test_inv_is_breaking_confirms",
+      "prevents_test": "test_inv_is_breaking_prevents",
+      "under_failure_test": "test_inv_is_breaking_under_failure"
+    }
+  ]
+}

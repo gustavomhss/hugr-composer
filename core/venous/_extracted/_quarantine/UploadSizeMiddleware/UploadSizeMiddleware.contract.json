@@ -1,0 +1,12 @@
+{
+  "name": "UploadSizeMiddleware",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Extracted primitive (auto-generated stub). Human MUST replace with a concrete purpose statement before promotion.",
+  "api_signature": "class UploadSizeMiddleware: dispatch(...)",
+  "invariants": [
+    "UPLOAD_SIZE_MIDDLEWARE_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged"
+}

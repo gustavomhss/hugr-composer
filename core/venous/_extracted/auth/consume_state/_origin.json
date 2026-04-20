@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_oauth2_provider.py",
+  "candidate": {
+    "docstring": "Atomically read and delete a state token (single-use guarantee).",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 1059,
+    "line_start": 1039,
+    "name": "consume_state",
+    "origin": "string_template",
+    "shape_hash": "5ee70da165166bd5",
+    "size_bytes": 674,
+    "size_lines": 21,
+    "tool": "auth_access/add_oauth2_provider.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1348
+  }
+}

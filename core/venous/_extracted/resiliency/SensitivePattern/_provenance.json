@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.155502+00:00",
+  "source_tool": "infrastructure/add_dlp_shield.py",
+  "origin_candidate": {
+    "docstring": "A named regex pattern with its sensitivity category.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 211,
+    "line_start": 200,
+    "name": "SensitivePattern",
+    "origin": "string_template",
+    "shape_hash": "31a2ede0955ffee7",
+    "size_bytes": 317,
+    "size_lines": 12,
+    "tool": "infrastructure/add_dlp_shield.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1268
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

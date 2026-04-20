@@ -1,0 +1,20 @@
+{
+  "tool": "realtime/add_websocket_chat.py",
+  "candidate": {
+    "docstring": "Return the most recent messages in *room_id*, newest last.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 703,
+    "line_start": 669,
+    "name": "get_history",
+    "origin": "string_template",
+    "shape_hash": "3158c9ce308259c9",
+    "size_bytes": 1164,
+    "size_lines": 35,
+    "tool": "realtime/add_websocket_chat.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 4656
+  }
+}

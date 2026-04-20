@@ -1,0 +1,17 @@
+{
+  "name": "Permission",
+  "namespace": "auth",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "A single resource:action permission token (e.g. 'items:write').",
+  "api_signature": "",
+  "invariants": [
+    "PERMISSION_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

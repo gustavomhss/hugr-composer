@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.972927+00:00",
+  "source_tool": "testing_tools/add_sbom_guardian.py",
+  "origin_candidate": {
+    "docstring": "Query OSV API for known vulnerabilities.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 432,
+    "line_start": 404,
+    "name": "query_osv",
+    "origin": "string_template",
+    "shape_hash": "d5eba8c5507a1182",
+    "size_bytes": 890,
+    "size_lines": 29,
+    "tool": "testing_tools/add_sbom_guardian.py",
+    "method_count": 0,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 5340
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

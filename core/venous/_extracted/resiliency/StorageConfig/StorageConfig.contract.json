@@ -1,0 +1,17 @@
+{
+  "name": "StorageConfig",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Typed snapshot of S3/MinIO settings for a single request context.",
+  "api_signature": "class StorageConfig: from_settings(...)",
+  "invariants": [
+    "STORAGE_CONFIG_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

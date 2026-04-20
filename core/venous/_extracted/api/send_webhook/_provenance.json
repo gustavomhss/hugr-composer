@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.866516+00:00",
+  "source_tool": "realtime/add_webhook_sender.py",
+  "origin_candidate": {
+    "docstring": "Enqueue outbound webhook deliveries for *event_type*.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 792,
+    "line_start": 746,
+    "name": "send_webhook",
+    "origin": "string_template",
+    "shape_hash": "b63bc1356fa6aa48",
+    "size_bytes": 1732,
+    "size_lines": 47,
+    "tool": "realtime/add_webhook_sender.py",
+    "method_count": 0,
+    "complexity": 5,
+    "disqualified": false,
+    "primitive_score": 17320
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

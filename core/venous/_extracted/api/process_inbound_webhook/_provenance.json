@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.833186+00:00",
+  "source_tool": "realtime/add_webhook_receiver.py",
+  "origin_candidate": {
+    "docstring": "ARQ task: invoke handlers for an inbound webhook event.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 1166,
+    "line_start": 1123,
+    "name": "process_inbound_webhook",
+    "origin": "string_template",
+    "shape_hash": "dac5b4750ac7548b",
+    "size_bytes": 1590,
+    "size_lines": 44,
+    "tool": "realtime/add_webhook_receiver.py",
+    "method_count": 0,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 12720
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

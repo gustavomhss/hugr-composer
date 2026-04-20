@@ -1,0 +1,17 @@
+{
+  "name": "CreateAdminUserStep",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Create the admin user for the new tenant.",
+  "api_signature": "class CreateAdminUserStep: execute(...), compensate(...)",
+  "invariants": [
+    "CREATE_ADMIN_USER_STEP_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

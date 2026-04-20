@@ -1,0 +1,17 @@
+{
+  "name": "SoftDeleteMixin",
+  "namespace": "data",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Mix-in adding is_deleted, deleted_at, and deleted_by columns.",
+  "api_signature": "class SoftDeleteMixin: is_deleted(...), deleted_at(...), deleted_by(...)",
+  "invariants": [
+    "SOFT_DELETE_MIXIN_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

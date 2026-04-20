@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_runtime_sentinel.py",
+  "candidate": {
+    "docstring": "Thread-safe (GIL) in-memory registry of security events.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 295,
+    "line_start": 226,
+    "name": "AttackPatternRegistry",
+    "origin": "string_template",
+    "shape_hash": "6cb2371b182b4de3",
+    "size_bytes": 2368,
+    "size_lines": 70,
+    "tool": "infrastructure/add_runtime_sentinel.py",
+    "method_count": 4,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 75776
+  }
+}

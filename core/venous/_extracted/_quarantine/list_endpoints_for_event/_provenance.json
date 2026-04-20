@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.796648+00:00",
+  "source_tool": "realtime/add_webhook_sender.py",
+  "origin_candidate": {
+    "docstring": "Return active endpoints subscribed to *event_type*.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 895,
+    "line_start": 877,
+    "name": "list_endpoints_for_event",
+    "origin": "string_template",
+    "shape_hash": "91b42d4eabceacf8",
+    "size_bytes": 733,
+    "size_lines": 19,
+    "tool": "realtime/add_webhook_sender.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1466
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

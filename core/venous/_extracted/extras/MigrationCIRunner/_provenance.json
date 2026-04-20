@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.695562+00:00",
+  "source_tool": "testing_tools/add_database_migrations_ci.py",
+  "origin_candidate": {
+    "docstring": "Alembic CI runner for migration checks in CI pipelines.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 338,
+    "line_start": 235,
+    "name": "MigrationCIRunner",
+    "origin": "string_template",
+    "shape_hash": "839088d5021cd8b8",
+    "size_bytes": 3830,
+    "size_lines": 104,
+    "tool": "testing_tools/add_database_migrations_ci.py",
+    "method_count": 5,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 76600
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

@@ -1,0 +1,17 @@
+{
+  "name": "HealthMapBuilder",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Discovers dependencies from environment and builds a health graph.",
+  "api_signature": "class HealthMapBuilder: discover(...), register(...), build_graph(...)",
+  "invariants": [
+    "HEALTH_MAP_BUILDER_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.912654+00:00",
+  "source_tool": "testing_tools/add_sbom_guardian.py",
+  "origin_candidate": {
+    "docstring": "Return list of CRITICAL/HIGH severity vulnerability descriptions.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 454,
+    "line_start": 435,
+    "name": "find_critical_vulns",
+    "origin": "string_template",
+    "shape_hash": "e2efbc5e81e15577",
+    "size_bytes": 850,
+    "size_lines": 20,
+    "tool": "testing_tools/add_sbom_guardian.py",
+    "method_count": 0,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 5100
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

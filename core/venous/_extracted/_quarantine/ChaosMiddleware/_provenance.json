@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.561716+00:00",
+  "source_tool": "infrastructure/add_chaos_testing.py",
+  "origin_candidate": {
+    "docstring": "Apply chaos fault injection to incoming requests.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 500,
+    "line_start": 459,
+    "name": "ChaosMiddleware",
+    "origin": "string_template",
+    "shape_hash": "80312fc4378bf8a8",
+    "size_bytes": 1374,
+    "size_lines": 42,
+    "tool": "infrastructure/add_chaos_testing.py",
+    "method_count": 1,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 10992
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

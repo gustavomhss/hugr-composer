@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:05.867785+00:00",
+  "source_tool": "infrastructure/add_api_replay_debugger.py",
+  "origin_candidate": {
+    "docstring": "Redis ring-buffer recorder for HTTP requests and responses.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 376,
+    "line_start": 252,
+    "name": "RequestRecorder",
+    "origin": "string_template",
+    "shape_hash": "6a96e3749fc9b9c0",
+    "size_bytes": 4365,
+    "size_lines": 125,
+    "tool": "infrastructure/add_api_replay_debugger.py",
+    "method_count": 6,
+    "complexity": 7,
+    "disqualified": false,
+    "primitive_score": 733320
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

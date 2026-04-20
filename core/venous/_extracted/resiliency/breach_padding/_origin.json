@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_response_armor.py",
+  "candidate": {
+    "docstring": "Generate random padding bytes to defeat BREACH compression attacks.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 280,
+    "line_start": 266,
+    "name": "breach_padding",
+    "origin": "string_template",
+    "shape_hash": "0d014fdecf1280ea",
+    "size_bytes": 599,
+    "size_lines": 15,
+    "tool": "infrastructure/add_response_armor.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1198
+  }
+}

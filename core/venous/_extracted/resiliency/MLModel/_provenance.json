@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:05.292304+00:00",
+  "source_tool": "infrastructure/add_ml_model_registry.py",
+  "origin_candidate": {
+    "docstring": "A versioned ML model artefact entry in the registry.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 483,
+    "line_start": 433,
+    "name": "MLModel",
+    "origin": "string_template",
+    "shape_hash": "039afcfb3dd0ac99",
+    "size_bytes": 1841,
+    "size_lines": 51,
+    "tool": "infrastructure/add_ml_model_registry.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 7364
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

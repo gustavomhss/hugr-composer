@@ -1,0 +1,17 @@
+{
+  "name": "TimingCollector",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Collects named spans (middleware, db, external) for one request.",
+  "api_signature": "class TimingCollector: span(...), record_span(...), total_ms(...), flush(...)",
+  "invariants": [
+    "TIMING_COLLECTOR_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

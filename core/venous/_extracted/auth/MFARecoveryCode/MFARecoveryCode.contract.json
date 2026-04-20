@@ -1,0 +1,17 @@
+{
+  "name": "MFARecoveryCode",
+  "namespace": "auth",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Single-use recovery code row (Argon2id hash).",
+  "api_signature": "",
+  "invariants": [
+    "MFA_RECOVERY_CODE_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

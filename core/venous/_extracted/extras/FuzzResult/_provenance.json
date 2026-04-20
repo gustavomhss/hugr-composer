@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.643518+00:00",
+  "source_tool": "testing_tools/add_api_fuzzer.py",
+  "origin_candidate": {
+    "docstring": "Container for a single fuzz attempt result.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 489,
+    "line_start": 437,
+    "name": "FuzzResult",
+    "origin": "string_template",
+    "shape_hash": "e857903a3e672554",
+    "size_bytes": 1597,
+    "size_lines": 53,
+    "tool": "testing_tools/add_api_fuzzer.py",
+    "method_count": 3,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 38328
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

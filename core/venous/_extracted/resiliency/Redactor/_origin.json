@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_structured_logging.py",
+  "candidate": {
+    "docstring": "Structlog processor that redacts PII patterns in log event strings.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 326,
+    "line_start": 304,
+    "name": "Redactor",
+    "origin": "string_template",
+    "shape_hash": "47df7312b1c0de96",
+    "size_bytes": 725,
+    "size_lines": 23,
+    "tool": "infrastructure/add_structured_logging.py",
+    "method_count": 1,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 5800
+  }
+}

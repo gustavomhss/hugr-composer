@@ -1,0 +1,19 @@
+{
+  "name": "validate_file",
+  "namespace": "data",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "validate_file: primitive extracted from the HuGR EXTEND tool corpus. Docstring absent from source; human review MUST replace this line with a concrete purpose statement.",
+  "api_signature": "",
+  "invariants": [
+    "VALIDATE_FILE_INV_01: Could not detect file type from content (empty or unknown bytes)",
+    "VALIDATE_FILE_INV_02: File type '{?}' is unconditionally blocked",
+    "VALIDATE_FILE_INV_03: File type '{?}' is not in the allowed list"
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 3,
+    "ambiguous": false,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

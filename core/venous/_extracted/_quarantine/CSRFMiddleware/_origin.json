@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_csrf_protection.py",
+  "candidate": {
+    "docstring": "Double-submit CSRF protection middleware.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 468,
+    "line_start": 382,
+    "name": "CSRFMiddleware",
+    "origin": "string_template",
+    "shape_hash": "e78a0c9cb00a49a7",
+    "size_bytes": 2814,
+    "size_lines": 87,
+    "tool": "infrastructure/add_csrf_protection.py",
+    "method_count": 4,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 135072
+  }
+}

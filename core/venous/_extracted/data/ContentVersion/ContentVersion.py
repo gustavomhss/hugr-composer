@@ -1,0 +1,31 @@
+from __future__ import annotations
+from datetime import datetime
+from typing import Any
+import uuid
+
+
+class ContentVersion(Base):
+    """Stores a versioned snapshot of any content item.
+
+    Attributes:
+        id: UUID primary key.
+        content_id: Opaque string ID of the owning content item.
+        content_type: Lowercase type name (e.g. 'article', 'product').
+        version_number: Monotonically increasing integer per content_id.
+        status: Lifecycle state (pending, draft, published, archived).
+        data_json: Full content snapshot as a JSON object.
+        published_at: UTC timestamp when this version was published; None for drafts.
+        author_id: UUID of the user who created this version.
+        created_at: UTC creation timestamp (server default).
+    """
+    __tablename__ = 'content_versions'
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    content_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    content_type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    version_number: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default='draft', index=True)
+    data_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    author_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    __table_args__ = (Index('ix_content_versions_content_id_version', 'content_id', 'version_number', unique=True),)

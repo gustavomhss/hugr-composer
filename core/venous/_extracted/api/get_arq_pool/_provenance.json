@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.747969+00:00",
+  "source_tool": "realtime/add_webhook_receiver.py",
+  "origin_candidate": {
+    "docstring": "Return a connected ARQ Redis pool for enqueuing background jobs.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 1594,
+    "line_start": 1580,
+    "name": "get_arq_pool",
+    "origin": "string_template",
+    "shape_hash": "f594caf9287d8234",
+    "size_bytes": 614,
+    "size_lines": 15,
+    "tool": "realtime/add_webhook_receiver.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1228
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

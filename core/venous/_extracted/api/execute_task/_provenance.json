@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.727821+00:00",
+  "source_tool": "api_design/add_long_running_task.py",
+  "origin_candidate": {
+    "docstring": "ARQ job: run the handler for *task_type* and update Redis state.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 975,
+    "line_start": 943,
+    "name": "execute_task",
+    "origin": "string_template",
+    "shape_hash": "b4ff1bd9d4d3347f",
+    "size_bytes": 1320,
+    "size_lines": 33,
+    "tool": "api_design/add_long_running_task.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 5280
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

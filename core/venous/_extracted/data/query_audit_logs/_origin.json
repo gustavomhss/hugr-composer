@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_audit_log.py",
+  "candidate": {
+    "docstring": "Return paginated audit entries matching the given filters.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 993,
+    "line_start": 954,
+    "name": "query_audit_logs",
+    "origin": "string_template",
+    "shape_hash": "2fa589cb168103e1",
+    "size_bytes": 1456,
+    "size_lines": 40,
+    "tool": "crud_data/add_audit_log.py",
+    "method_count": 0,
+    "complexity": 6,
+    "disqualified": false,
+    "primitive_score": 17472
+  }
+}

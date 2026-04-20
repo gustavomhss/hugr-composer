@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.526279+00:00",
+  "source_tool": "testing_tools/add_load_profile.py",
+  "origin_candidate": {
+    "docstring": "Read-heavy browsing scenario (70% of simulated traffic).",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 689,
+    "line_start": 654,
+    "name": "BrowsingScenario",
+    "origin": "string_template",
+    "shape_hash": "adfc541ad5b611f3",
+    "size_bytes": 1211,
+    "size_lines": 36,
+    "tool": "testing_tools/add_load_profile.py",
+    "method_count": 2,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 29064
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

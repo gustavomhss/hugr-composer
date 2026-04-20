@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "MEMORY_GUARD_INV_01",
+      "invariant_text": "GPU memory utilisation {?} exceeds threshold {?} \u2014 inference blocked",
+      "confirms_test": "test_memory_guard_inv_01_confirms",
+      "prevents_test": "test_memory_guard_inv_01_prevents",
+      "under_failure_test": "test_memory_guard_inv_01_under_failure"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_mfa.py",
+  "candidate": {
+    "docstring": "Single-use recovery code row (Argon2id hash).",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 362,
+    "line_start": 337,
+    "name": "MFARecoveryCode",
+    "origin": "string_template",
+    "shape_hash": "4276f6f49a07735f",
+    "size_bytes": 932,
+    "size_lines": 26,
+    "tool": "auth_access/add_mfa.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 3728
+  }
+}

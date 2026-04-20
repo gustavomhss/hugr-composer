@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_data_import.py",
+  "candidate": {
+    "docstring": "Update progress counters on an active ImportJob.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 780,
+    "line_start": 756,
+    "name": "update_import_job_progress",
+    "origin": "string_template",
+    "shape_hash": "71821e22540a5f13",
+    "size_bytes": 775,
+    "size_lines": 25,
+    "tool": "crud_data/add_data_import.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1550
+  }
+}

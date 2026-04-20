@@ -1,0 +1,17 @@
+{
+  "name": "check_fields_removed",
+  "namespace": "extras",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "check_fields_removed: primitive extracted from the HuGR EXTEND tool corpus. Docstring absent from source; human review MUST replace this line with a concrete purpose statement.",
+  "api_signature": "",
+  "invariants": [
+    "CHECK_FIELDS_REMOVED_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

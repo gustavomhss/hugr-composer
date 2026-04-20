@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.949569+00:00",
+  "source_tool": "testing_tools/add_schema_enforcer.py",
+  "origin_candidate": {
+    "docstring": "Load the OpenAPI spec from disk or return an empty spec.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 266,
+    "line_start": 245,
+    "name": "load_spec",
+    "origin": "string_template",
+    "shape_hash": "adecda8f62b27930",
+    "size_bytes": 812,
+    "size_lines": 22,
+    "tool": "testing_tools/add_schema_enforcer.py",
+    "method_count": 0,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 4872
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

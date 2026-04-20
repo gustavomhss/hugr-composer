@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_saga.py",
+  "candidate": {
+    "docstring": "Context manager that records step duration histogram.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 771,
+    "line_start": 755,
+    "name": "time_saga_step",
+    "origin": "string_template",
+    "shape_hash": "d3401b798ca25c01",
+    "size_bytes": 438,
+    "size_lines": 17,
+    "tool": "infrastructure/add_saga.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 1752
+  }
+}

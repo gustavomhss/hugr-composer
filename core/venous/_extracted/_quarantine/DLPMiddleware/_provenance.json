@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.834373+00:00",
+  "source_tool": "infrastructure/add_dlp_shield.py",
+  "origin_candidate": {
+    "docstring": "Response middleware that detects and redacts PII/PHI/PCI in JSON.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 566,
+    "line_start": 513,
+    "name": "DLPMiddleware",
+    "origin": "string_template",
+    "shape_hash": "58b0bdaabd738581",
+    "size_bytes": 2005,
+    "size_lines": 54,
+    "tool": "infrastructure/add_dlp_shield.py",
+    "method_count": 2,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 64160
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

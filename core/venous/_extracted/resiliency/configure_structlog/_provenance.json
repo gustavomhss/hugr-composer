@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.553837+00:00",
+  "source_tool": "infrastructure/add_structured_logging.py",
+  "origin_candidate": {
+    "docstring": "Configure structlog for the application.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 268,
+    "line_start": 226,
+    "name": "configure_structlog",
+    "origin": "string_template",
+    "shape_hash": "28fbf80d06915342",
+    "size_bytes": 1467,
+    "size_lines": 43,
+    "tool": "infrastructure/add_structured_logging.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 5868
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

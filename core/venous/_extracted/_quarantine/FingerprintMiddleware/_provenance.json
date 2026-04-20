@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:05.048949+00:00",
+  "source_tool": "infrastructure/add_request_fingerprint.py",
+  "origin_candidate": {
+    "docstring": "Deduplicate requests by SHA-256 fingerprint of user+method+path+body.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 538,
+    "line_start": 437,
+    "name": "FingerprintMiddleware",
+    "origin": "string_template",
+    "shape_hash": "ecfee2f20313acea",
+    "size_bytes": 3566,
+    "size_lines": 102,
+    "tool": "infrastructure/add_request_fingerprint.py",
+    "method_count": 4,
+    "complexity": 9,
+    "disqualified": false,
+    "primitive_score": 513504
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

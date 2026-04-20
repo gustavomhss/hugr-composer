@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_input_sanitization.py",
+  "candidate": {
+    "docstring": "HTML/XSS sanitization with optional bleach support.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 313,
+    "line_start": 250,
+    "name": "InputSanitizer",
+    "origin": "string_template",
+    "shape_hash": "daf5156d4ffa7c00",
+    "size_bytes": 2193,
+    "size_lines": 64,
+    "tool": "infrastructure/add_input_sanitization.py",
+    "method_count": 4,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 35088
+  }
+}

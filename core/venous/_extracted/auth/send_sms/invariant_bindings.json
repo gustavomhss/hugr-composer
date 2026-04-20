@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "SEND_SMS_INV_01",
+      "invariant_text": "Unknown SMS_PROVIDER: {?}",
+      "confirms_test": "test_send_sms_inv_01_confirms",
+      "prevents_test": "test_send_sms_inv_01_prevents",
+      "under_failure_test": "test_send_sms_inv_01_under_failure"
+    }
+  ]
+}

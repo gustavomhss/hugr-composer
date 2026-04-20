@@ -1,0 +1,18 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "EXCEL_EXPORTER_INV_01",
+      "invariant_text": "openpyxl is required: pip install openpyxl",
+      "confirms_test": "test_excel_exporter_inv_01_confirms",
+      "prevents_test": "test_excel_exporter_inv_01_prevents",
+      "under_failure_test": "test_excel_exporter_inv_01_under_failure"
+    },
+    {
+      "invariant_id": "EXCEL_EXPORTER_INV_02",
+      "invariant_text": "Export exceeds EXCEL_MAX_ROWS={?}. Add filters to reduce the dataset.",
+      "confirms_test": "test_excel_exporter_inv_02_confirms",
+      "prevents_test": "test_excel_exporter_inv_02_prevents",
+      "under_failure_test": "test_excel_exporter_inv_02_under_failure"
+    }
+  ]
+}

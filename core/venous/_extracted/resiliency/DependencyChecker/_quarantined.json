@@ -1,0 +1,7 @@
+{
+  "reason": "domain_coupled",
+  "forbidden_modules": [
+    "redis.asyncio",
+    "sqlalchemy"
+  ]
+}

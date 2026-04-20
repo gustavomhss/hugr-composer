@@ -1,0 +1,17 @@
+{
+  "name": "RoleNode",
+  "namespace": "auth",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Lightweight role representation for in-memory DAG traversal.",
+  "api_signature": "",
+  "invariants": [
+    "ROLE_NODE_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

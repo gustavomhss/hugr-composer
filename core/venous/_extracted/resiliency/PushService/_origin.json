@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_push_notifications_native.py",
+  "candidate": {
+    "docstring": "Deliver push notifications to individual devices or FCM topics.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 474,
+    "line_start": 418,
+    "name": "PushService",
+    "origin": "string_template",
+    "shape_hash": "b470b06cb0169f93",
+    "size_bytes": 1954,
+    "size_lines": 57,
+    "tool": "infrastructure/add_push_notifications_native.py",
+    "method_count": 2,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 31264
+  }
+}

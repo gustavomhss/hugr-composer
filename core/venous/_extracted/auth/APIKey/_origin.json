@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_api_key_auth.py",
+  "candidate": {
+    "docstring": "Per-user API key record.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 318,
+    "line_start": 267,
+    "name": "APIKey",
+    "origin": "string_template",
+    "shape_hash": "40335d7fb94aedf4",
+    "size_bytes": 2355,
+    "size_lines": 52,
+    "tool": "auth_access/add_api_key_auth.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 9420
+  }
+}

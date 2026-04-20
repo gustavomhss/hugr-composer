@@ -1,0 +1,17 @@
+{
+  "name": "validate_error_response_structure",
+  "namespace": "extras",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "validate_error_response_structure: primitive extracted from the HuGR EXTEND tool corpus. Docstring absent from source; human review MUST replace this line with a concrete purpose statement.",
+  "api_signature": "",
+  "invariants": [
+    "VALIDATE_ERROR_RESPONSE_STRUCTURE_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

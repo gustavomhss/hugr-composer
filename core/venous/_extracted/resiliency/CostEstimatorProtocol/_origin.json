@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_cost_tracker.py",
+  "candidate": {
+    "docstring": "Protocol that all cost estimators must satisfy.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 275,
+    "line_start": 265,
+    "name": "CostEstimatorProtocol",
+    "origin": "string_template",
+    "shape_hash": "4842822d28b65a8e",
+    "size_bytes": 369,
+    "size_lines": 11,
+    "tool": "infrastructure/add_cost_tracker.py",
+    "method_count": 2,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 2952
+  }
+}

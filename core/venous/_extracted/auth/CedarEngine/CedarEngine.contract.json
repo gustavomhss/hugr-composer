@@ -1,0 +1,17 @@
+{
+  "name": "CedarEngine",
+  "namespace": "auth",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "File-based Cedar policy engine.",
+  "api_signature": "class CedarEngine: load_policies(...), is_authorized(...)",
+  "invariants": [
+    "CEDAR_ENGINE_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

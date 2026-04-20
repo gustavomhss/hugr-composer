@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.905030+00:00",
+  "source_tool": "infrastructure/add_stripe_refund_flow.py",
+  "origin_candidate": {
+    "docstring": "Return (rows, total_count) for a payment's refunds.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 801,
+    "line_start": 780,
+    "name": "list_refunds_for_payment",
+    "origin": "string_template",
+    "shape_hash": "fc2ce01d46af6d56",
+    "size_bytes": 702,
+    "size_lines": 22,
+    "tool": "infrastructure/add_stripe_refund_flow.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1404
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

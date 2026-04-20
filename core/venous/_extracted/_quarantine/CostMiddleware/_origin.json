@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_cost_tracker.py",
+  "candidate": {
+    "docstring": "Annotate each response with X-Request-Cost-Estimate header.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 556,
+    "line_start": 504,
+    "name": "CostMiddleware",
+    "origin": "string_template",
+    "shape_hash": "26dc751b836f56bf",
+    "size_bytes": 1748,
+    "size_lines": 53,
+    "tool": "infrastructure/add_cost_tracker.py",
+    "method_count": 2,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 41952
+  }
+}

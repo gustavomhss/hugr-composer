@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.005171+00:00",
+  "source_tool": "infrastructure/add_email_templates.py",
+  "origin_candidate": {
+    "docstring": "Pure-stdlib SMTP adapter \u2014 no third-party dependency.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 1317,
+    "line_start": 1310,
+    "name": "SMTPProvider",
+    "origin": "string_template",
+    "shape_hash": "59115daf4b18a883",
+    "size_bytes": 363,
+    "size_lines": 8,
+    "tool": "infrastructure/add_email_templates.py",
+    "method_count": 1,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1452
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

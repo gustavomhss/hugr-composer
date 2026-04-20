@@ -1,0 +1,17 @@
+{
+  "name": "S3CostEstimator",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Estimate cost of S3/blob-storage transfers in a request.",
+  "api_signature": "class S3CostEstimator: estimate(...)",
+  "invariants": [
+    "S3_COST_ESTIMATOR_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

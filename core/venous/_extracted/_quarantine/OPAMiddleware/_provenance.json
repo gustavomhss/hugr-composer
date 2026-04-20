@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.205670+00:00",
+  "source_tool": "auth_access/add_opa_integration.py",
+  "origin_candidate": {
+    "docstring": "Request-level OPA enforcement middleware.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 646,
+    "line_start": 600,
+    "name": "OPAMiddleware",
+    "origin": "string_template",
+    "shape_hash": "cf91aac76c751ac0",
+    "size_bytes": 1599,
+    "size_lines": 47,
+    "tool": "auth_access/add_opa_integration.py",
+    "method_count": 1,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 12792
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

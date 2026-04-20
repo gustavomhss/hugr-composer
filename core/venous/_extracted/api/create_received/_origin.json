@@ -1,0 +1,20 @@
+{
+  "tool": "realtime/add_webhook_receiver.py",
+  "candidate": {
+    "docstring": "Persist a newly received inbound webhook event.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 952,
+    "line_start": 921,
+    "name": "create_received",
+    "origin": "string_template",
+    "shape_hash": "f55bda32cfbc2f07",
+    "size_bytes": 885,
+    "size_lines": 32,
+    "tool": "realtime/add_webhook_receiver.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1770
+  }
+}

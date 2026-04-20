@@ -1,0 +1,17 @@
+{
+  "name": "BulkheadConfig",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Configuration for per-group concurrency limits.",
+  "api_signature": "",
+  "invariants": [
+    "BULKHEAD_CONFIG_INV_01: Bulkhead limit for '{?}' must be >= 1, got {?}"
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 1,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

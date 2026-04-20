@@ -1,0 +1,17 @@
+{
+  "name": "BrowsingScenario",
+  "namespace": "extras",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Read-heavy browsing scenario (70% of simulated traffic).",
+  "api_signature": "class BrowsingScenario: list_items(...), view_item(...)",
+  "invariants": [
+    "BROWSING_SCENARIO_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

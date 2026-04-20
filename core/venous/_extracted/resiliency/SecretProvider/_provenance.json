@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.102888+00:00",
+  "source_tool": "infrastructure/add_secret_rotation.py",
+  "origin_candidate": {
+    "docstring": "Abstract base for secret backends.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 352,
+    "line_start": 310,
+    "name": "SecretProvider",
+    "origin": "string_template",
+    "shape_hash": "f7e7ad11f27113f0",
+    "size_bytes": 1334,
+    "size_lines": 43,
+    "tool": "infrastructure/add_secret_rotation.py",
+    "method_count": 3,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 16008
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

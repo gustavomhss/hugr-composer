@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "SOCIAL_AUTH_PROVIDER_INV_01",
+      "invariant_text": "REPLACE_ME \u2014 describe the invariant.",
+      "confirms_test": "test_inv_build_authorization_url_confirms",
+      "prevents_test": "test_inv_build_authorization_url_prevents",
+      "under_failure_test": "test_inv_build_authorization_url_under_failure"
+    }
+  ]
+}

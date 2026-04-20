@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_request_signing.py",
+  "candidate": {
+    "docstring": "Middleware that enforces HMAC signing on every non-excluded request.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 654,
+    "line_start": 588,
+    "name": "RequestSigningMiddleware",
+    "origin": "string_template",
+    "shape_hash": "926356b6d205d157",
+    "size_bytes": 2548,
+    "size_lines": 67,
+    "tool": "auth_access/add_request_signing.py",
+    "method_count": 2,
+    "complexity": 5,
+    "disqualified": false,
+    "primitive_score": 101920
+  }
+}

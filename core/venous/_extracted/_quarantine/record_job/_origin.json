@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_arq_worker.py",
+  "candidate": {
+    "docstring": "Create a new ``queued`` audit row for a job about to be enqueued.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 921,
+    "line_start": 895,
+    "name": "record_job",
+    "origin": "string_template",
+    "shape_hash": "2cbba92e8986686e",
+    "size_bytes": 728,
+    "size_lines": 27,
+    "tool": "infrastructure/add_arq_worker.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1456
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "AUTHORIZE_CHANNEL_INV_01",
+      "invariant_text": "Unknown channel namespace: {?}",
+      "confirms_test": "test_authorize_channel_inv_01_confirms",
+      "prevents_test": "test_authorize_channel_inv_01_prevents",
+      "under_failure_test": "test_authorize_channel_inv_01_under_failure"
+    },
+    {
+      "invariant_id": "AUTHORIZE_CHANNEL_INV_02",
+      "invariant_text": "Cannot subscribe to another user's channel",
+      "confirms_test": "test_authorize_channel_inv_02_confirms",
+      "prevents_test": "test_authorize_channel_inv_02_prevents",
+      "under_failure_test": "test_authorize_channel_inv_02_under_failure"
+    },
+    {
+      "invariant_id": "AUTHORIZE_CHANNEL_INV_03",
+      "invariant_text": "Invalid channel format",
+      "confirms_test": "test_authorize_channel_inv_03_confirms",
+      "prevents_test": "test_authorize_channel_inv_03_prevents",
+      "under_failure_test": "test_authorize_channel_inv_03_under_failure"
+    },
+    {
+      "invariant_id": "AUTHORIZE_CHANNEL_INV_04",
+      "invariant_text": "Cannot subscribe to another tenant's channel",
+      "confirms_test": "test_authorize_channel_inv_04_confirms",
+      "prevents_test": "test_authorize_channel_inv_04_prevents",
+      "under_failure_test": "test_authorize_channel_inv_04_under_failure"
+    }
+  ]
+}

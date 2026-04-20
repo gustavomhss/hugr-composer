@@ -1,0 +1,17 @@
+{
+  "name": "SocialAuthProvider",
+  "namespace": "auth",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "OAuth2 social login provider.",
+  "api_signature": "class SocialAuthProvider: build_authorization_url(...), exchange_code(...)",
+  "invariants": [
+    "SOCIAL_AUTH_PROVIDER_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

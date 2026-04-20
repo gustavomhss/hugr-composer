@@ -1,0 +1,20 @@
+{
+  "tool": "realtime/add_webhook_receiver.py",
+  "candidate": {
+    "docstring": "Verify internal (sister-service) webhook payloads.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 746,
+    "line_start": 677,
+    "name": "InternalVerifier",
+    "origin": "string_template",
+    "shape_hash": "cb33ba5739db1375",
+    "size_bytes": 2746,
+    "size_lines": 70,
+    "tool": "realtime/add_webhook_receiver.py",
+    "method_count": 2,
+    "complexity": 8,
+    "disqualified": false,
+    "primitive_score": 175744
+  }
+}
