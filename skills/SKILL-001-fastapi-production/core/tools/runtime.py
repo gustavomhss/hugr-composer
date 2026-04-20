@@ -7,6 +7,14 @@ Uses httpx for async HTTP. All connection errors are handled gracefully.
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_check_health',
+    'description': 'Check 3-level health endpoints (/healthz, /readyz, /startupz) of a running instance.',
+    'tags': ['runtime', 'verify'],
+    'entry': 'mcp_fastapi_check_health',
+    'annotations': {'readOnlyHint': True},
+}
+
 import sys
 import time
 from pathlib import Path
@@ -294,3 +302,17 @@ async def check_security_headers(
         score=score,
         findings=findings,
     )
+
+
+def mcp_fastapi_check_health(base_url: str) -> list[dict]:
+    """MCP entry: check 3-level health endpoints (/healthz, /readyz, /startupz) of a running instance."""
+    import asyncio as _asyncio
+    results = _asyncio.run(check_health(base_url))
+    return [r.model_dump(mode="json") for r in results]
+
+
+def mcp_fastapi_check_headers(base_url: str) -> dict:
+    """MCP entry: check security headers and CORS of a running instance."""
+    import asyncio as _asyncio
+    result = _asyncio.run(check_security_headers(base_url))
+    return result.model_dump(mode="json")

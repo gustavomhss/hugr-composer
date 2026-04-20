@@ -6,6 +6,14 @@ No bias — either the code has it or it doesn't.
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_analyze',
+    'description': 'Audit a FastAPI project against 35 production-readiness checks.',
+    'tags': ['audit', 'verify'],
+    'entry': 'mcp_fastapi_analyze',
+    'annotations': {'readOnlyHint': True, 'destructiveHint': False},
+}
+
 import ast
 import os
 import re
@@ -611,3 +619,28 @@ if __name__ == "__main__":
 
     if len(results) > 1:
         print(compare_results(*results))
+
+
+def mcp_fastapi_analyze(project_path: str) -> dict:
+    """MCP entry: audit a FastAPI project against 35 production-readiness checks.
+
+    Categories: Security (10), Database (6), API Design (4),
+    Infrastructure (5), Deployment (5), Code Quality (5).
+
+    Returns score, per-category breakdown, and actionable failures.
+    Use AFTER generating or writing code to verify quality.
+    """
+    result = analyze(project_path)
+    return {
+        "score": f"{result.passed}/{result.total} ({result.score:.0f}%)",
+        "categories": {
+            cat: {"passed": p, "total": t, "status": "pass" if p == t else "fail"}
+            for cat, (p, t) in result.by_category().items()
+        },
+        "failures": [
+            {"check": c.name, "category": c.category, "detail": c.detail}
+            for c in result.checks if not c.passed
+        ],
+        "total_checks": result.total,
+        "passed_checks": result.passed,
+    }
