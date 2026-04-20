@@ -1,0 +1,106 @@
+{
+  "$schema_version": "1",
+  "description": "Maps every benchmark spec (benchmarks/specs/<tier>/<id>.md) to a local code-level verification surface. A spec is 'covered' when its `code_level_target` exists and runs green under pytest. Uncovered specs are honestly marked `pending` — the aggregate code_level score ONLY counts covered specs + a separate coverage ratio reports how many of the 20 specs have code-level surfaces.",
+  "entries": {
+    "baseline/01_crud_todos": {
+      "code_level_target": "examples/01-todos-crud",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers owner-scope 404-not-403, keyset stability under concurrent other-owner inserts, owner-only listing"
+    },
+    "baseline/02_auth_only_saas": {
+      "code_level_target": "examples/06-auth-saas",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers hash+verify roundtrip, logout revocation, single-use reset tokens, login rate limit per-email/per-ip, constant-time unknown-email path"
+    },
+    "baseline/03_webhook_sink": {
+      "code_level_target": "examples/02-webhook-sink",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers HMAC signature check, ±5min timestamp window, exactly-once on 10 parallel duplicates"
+    },
+    "baseline/04_rate_limited_api": {
+      "code_level_target": "examples/03-rate-limited-api",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers token-bucket refill at window boundary, priority bulkhead sheds low first, sharded counter accuracy under 10k concurrent"
+    },
+    "baseline/05_multi_tenant_admin": {
+      "code_level_target": "examples/07-multi-tenant-admin",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers cross-tenant 404 (not 403), impersonation records real user, tenant-purge leaves zero rows, audit hash-chain tamper detection"
+    },
+    "mid/01_saas_with_stripe_billing": {
+      "code_level_target": "examples/08-stripe-billing",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers duplicate-event dedup, bad-signature 401, plan change via webhook, idempotent grace job, cancel-at-period-end"
+    },
+    "mid/02_realtime_chat": {
+      "code_level_target": "examples/04-realtime-chat",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers monotonic offsets, reconnect-within-TTL replay, SessionCache TTL expiry, per-user connection cap"
+    },
+    "mid/03_event_sourced_orders": {
+      "code_level_target": "examples/09-event-sourced-orders",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers pure fold determinism, consumer-crash redelivery, outbox preserves events across publisher crash, replay=live"
+    },
+    "mid/04_rbac_with_audit": {
+      "code_level_target": "examples/05-rbac-audit",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers symmetric allow/deny auditing, hash-chain tamper detection, break-glass TTL + reason enforcement"
+    },
+    "mid/05_llm_agent_backend": {
+      "code_level_target": "examples/10-llm-agent",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers injection-pattern block + log, API-key redaction, 402 at 110% budget, per-tenant isolation, TTFT vs total-latency metric"
+    },
+    "mid/06_mobile_backend": {
+      "code_level_target": "examples/11-mobile-backend",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers CAS conflict convergence, stale push-token pruning, monotonic sync cursor, atomic batch / precise per-item errors"
+    },
+    "mid/07_compliance_log_aggregator": {
+      "code_level_target": "examples/12-compliance-log-aggregator",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers CC masking + PCI tag, hash-chain break on deletion, class-aware retention dry-run, auditor query stability + access log"
+    },
+    "mid/08_graphql_over_rest": {
+      "code_level_target": "examples/13-graphql-over-rest",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers 50-orders → 3 batched calls, 40-depth rejection, field-level ACL null+error, persisted-query allow-list"
+    },
+    "mid/09_workflow_orchestrator": {
+      "code_level_target": "examples/14-workflow-orchestrator",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers resume-from-last-step, idempotent-activity dedup, timeout triggers reverse-order compensation, one-instance-per-id"
+    },
+    "mid/10_bi_export_service": {
+      "code_level_target": "examples/15-bi-export-service",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers idempotent same-day export bytes, zero OLTP lock contention, third-retry page + last_success preserved, ad-hoc+scheduled concurrent"
+    },
+    "adversarial/01_rare_edge_exactly_once_weak_broker": {
+      "code_level_target": "examples/16-exactly-once-weak-broker",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers 100x-duplicate single-effect, out-of-order causal replay, stuck-predecessor gap emit, offset-corruption no-replay"
+    },
+    "adversarial/02_contradiction_stateless_but_session_aware": {
+      "code_level_target": "examples/17-stateless-session-aware",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers node-kill state preservation, 1s flag propagation, random-routing=sticky behavior, cold-cache rate-limit preservation"
+    },
+    "adversarial/03_conflicting_primitives_lockfree_serializable": {
+      "code_level_target": "examples/18-lockfree-serializable",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers lock-free reader under 10x writer contention, CAS-conflict retryable error, no-torn multi-field read, 100ms freshness"
+    },
+    "adversarial/04_missing_primitive_ml_inference_pool": {
+      "code_level_target": "examples/19-ml-inference-pool",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers depth-balanced 500-req burst (1.5x median cap), slow-worker de-prioritization, session stickiness + failover, capability-gated routing"
+    },
+    "adversarial/05_hidden_scaling_innocent_counter": {
+      "code_level_target": "examples/20-innocent-counter",
+      "runner": "pytest",
+      "acceptance_coverage_notes": "covers concurrent-increment correctness on hot key, cold-user zero read, monotonicity guard, per-shard ops + hot-key dashboard"
+    }
+  }
+}

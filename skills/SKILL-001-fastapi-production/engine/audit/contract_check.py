@@ -691,6 +691,51 @@ def _r_bench_nightly_workflow() -> tuple[bool, str]:
     return True, "benchmark-nightly.yml present with schedule + claude dispatch + score upload"
 
 
+def _r_code_level_benchmark() -> tuple[bool, str]:
+    """B3.6 — code-level harness published + perfect on covered specs.
+
+    The plan-level score (B3.5) measures the Maestro's requirement→primitive
+    mapping. The code-level score measures whether the ACTUAL code path
+    asserted by the spec's Acceptance criteria is exercised by a passing
+    test suite. Different signal; different failure modes.
+
+    Rule:
+      1. benchmarks/code_level_score.json exists and parses.
+      2. Every COVERED spec scores 100 (if the code path is exercised,
+         every assertion must pass — there is no "partial credit" at
+         the code level).
+      3. Coverage (covered / total) ≥ 25%. Raise this floor in the same
+         commit that adds the matching examples.
+    """
+    f = SKILL_ROOT / "benchmarks" / "code_level_score.json"
+    if not f.exists():
+        return False, "missing: benchmarks/code_level_score.json"
+    try:
+        data = json.loads(f.read_text())
+    except (json.JSONDecodeError, OSError):
+        return False, "code_level_score.json malformed"
+    covered = int(data.get("covered_specs", 0))
+    total = int(data.get("total_specs", 0))
+    score = float(data.get("code_level_score", 0))
+    coverage = float(data.get("coverage", 0))
+    if total != 20:
+        return False, f"code_level_score.json has {total} specs (expected 20)"
+    if covered < 5:
+        return False, f"only {covered}/{total} specs covered at code-level (need ≥5)"
+    if coverage < 25.0:
+        return False, f"coverage {coverage:.1f}% < 25% floor"
+    if score < 100.0:
+        fails = [
+            s["spec_id"] for s in data.get("spec_results", [])
+            if s.get("covered") and (s.get("score") or 0) < 100
+        ]
+        return False, f"covered specs not all at 100 ({score:.2f}): {fails[:3]}"
+    return True, (
+        f"code-level: {score:.2f} across {covered}/{total} covered specs "
+        f"({coverage:.1f}% coverage)"
+    )
+
+
 def _r_install_docker_ci() -> tuple[bool, str]:
     """B4.1 — install.sh + install-docker CI workflow present + hermetic."""
     installer = REPO_ROOT / "install.sh"
@@ -823,6 +868,7 @@ RULES: list[Rule] = [
     Rule("B3.3", 3, "benchmark runner + stub Maestro + report JSON", _r_bench_rubric_runner),
     Rule("B3.4", 3, "nightly benchmark CI workflow", _r_bench_nightly_workflow),
     Rule("B3.5", 3, "baseline benchmark score published", _r_benchmark_score),
+    Rule("B3.6", 3, "code-level harness published (perfect on covered, ≥25% coverage)", _r_code_level_benchmark),
     Rule("B4.1", 4, "install.sh + fresh-Docker CI", _r_install_docker_ci),
     Rule("B4.2", 4, "/examples/ populated (≥5 with README + MAESTRO_SESSION + cross-link)", _r_examples_populated),
     Rule("B4.3", 4, "docs site v1 (top-level docs + per-tool pages)", _r_docs_site_v1),

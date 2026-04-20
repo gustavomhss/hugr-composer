@@ -1,0 +1,209 @@
+{
+  "methodology": "code_level_pytest_direct",
+  "methodology_notes": "Runs pytest against the executable target declared for each spec in benchmarks/spec_code_level_map.json. code_level_score is the mean per-spec score across COVERED specs only; coverage reports the #covered / #total ratio. Pending specs are explicitly NOT scored (score=null) \u2014 conflating would hide the remaining work.",
+  "code_level_score": 100.0,
+  "coverage": 100.0,
+  "covered_specs": 20,
+  "total_specs": 20,
+  "by_tier": {
+    "baseline": {
+      "covered": 5,
+      "total": 5,
+      "score": 100.0
+    },
+    "mid": {
+      "covered": 10,
+      "total": 10,
+      "score": 100.0
+    },
+    "adversarial": {
+      "covered": 5,
+      "total": 5,
+      "score": 100.0
+    }
+  },
+  "spec_results": [
+    {
+      "spec_id": "baseline/01_crud_todos",
+      "tier": "baseline",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 4,
+      "tests_total": 4,
+      "notes": "pytest: 4/4 passed"
+    },
+    {
+      "spec_id": "baseline/02_auth_only_saas",
+      "tier": "baseline",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 7,
+      "tests_total": 7,
+      "notes": "pytest: 7/7 passed"
+    },
+    {
+      "spec_id": "baseline/03_webhook_sink",
+      "tier": "baseline",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 5,
+      "tests_total": 5,
+      "notes": "pytest: 5/5 passed"
+    },
+    {
+      "spec_id": "baseline/04_rate_limited_api",
+      "tier": "baseline",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 5,
+      "tests_total": 5,
+      "notes": "pytest: 5/5 passed"
+    },
+    {
+      "spec_id": "baseline/05_multi_tenant_admin",
+      "tier": "baseline",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 5,
+      "tests_total": 5,
+      "notes": "pytest: 5/5 passed"
+    },
+    {
+      "spec_id": "mid/01_saas_with_stripe_billing",
+      "tier": "mid",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 5,
+      "tests_total": 5,
+      "notes": "pytest: 5/5 passed"
+    },
+    {
+      "spec_id": "mid/02_realtime_chat",
+      "tier": "mid",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 5,
+      "tests_total": 5,
+      "notes": "pytest: 5/5 passed"
+    },
+    {
+      "spec_id": "mid/03_event_sourced_orders",
+      "tier": "mid",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 5,
+      "tests_total": 5,
+      "notes": "pytest: 5/5 passed"
+    },
+    {
+      "spec_id": "mid/04_rbac_with_audit",
+      "tier": "mid",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 5,
+      "tests_total": 5,
+      "notes": "pytest: 5/5 passed"
+    },
+    {
+      "spec_id": "mid/05_llm_agent_backend",
+      "tier": "mid",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 5,
+      "tests_total": 5,
+      "notes": "pytest: 5/5 passed"
+    },
+    {
+      "spec_id": "mid/06_mobile_backend",
+      "tier": "mid",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 5,
+      "tests_total": 5,
+      "notes": "pytest: 5/5 passed"
+    },
+    {
+      "spec_id": "mid/07_compliance_log_aggregator",
+      "tier": "mid",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 5,
+      "tests_total": 5,
+      "notes": "pytest: 5/5 passed"
+    },
+    {
+      "spec_id": "mid/08_graphql_over_rest",
+      "tier": "mid",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 5,
+      "tests_total": 5,
+      "notes": "pytest: 5/5 passed"
+    },
+    {
+      "spec_id": "mid/09_workflow_orchestrator",
+      "tier": "mid",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 4,
+      "tests_total": 4,
+      "notes": "pytest: 4/4 passed"
+    },
+    {
+      "spec_id": "mid/10_bi_export_service",
+      "tier": "mid",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 4,
+      "tests_total": 4,
+      "notes": "pytest: 4/4 passed"
+    },
+    {
+      "spec_id": "adversarial/01_rare_edge_exactly_once_weak_broker",
+      "tier": "adversarial",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 4,
+      "tests_total": 4,
+      "notes": "pytest: 4/4 passed"
+    },
+    {
+      "spec_id": "adversarial/02_contradiction_stateless_but_session_aware",
+      "tier": "adversarial",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 4,
+      "tests_total": 4,
+      "notes": "pytest: 4/4 passed"
+    },
+    {
+      "spec_id": "adversarial/03_conflicting_primitives_lockfree_serializable",
+      "tier": "adversarial",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 4,
+      "tests_total": 4,
+      "notes": "pytest: 4/4 passed"
+    },
+    {
+      "spec_id": "adversarial/04_missing_primitive_ml_inference_pool",
+      "tier": "adversarial",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 4,
+      "tests_total": 4,
+      "notes": "pytest: 4/4 passed"
+    },
+    {
+      "spec_id": "adversarial/05_hidden_scaling_innocent_counter",
+      "tier": "adversarial",
+      "covered": true,
+      "score": 100.0,
+      "tests_passed": 4,
+      "tests_total": 4,
+      "notes": "pytest: 4/4 passed"
+    }
+  ],
+  "kit_version": "e8312c0",
+  "generated_at": "2026-04-20T20:16:59+00:00"
+}
