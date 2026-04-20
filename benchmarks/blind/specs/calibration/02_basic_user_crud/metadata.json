@@ -1,0 +1,22 @@
+{
+  "tier": "calibration",
+  "authored_at": "2026-04-20",
+  "author": "Gustavo Schneiter",
+  "difficulty_axes": [
+    "type_safety",
+    "multi_invariant"
+  ],
+  "required_primitives": [
+    "Repository",
+    "InputValidator",
+    "ValueObject",
+    "HealthProbe"
+  ],
+  "predicted_naked_score": 80,
+  "predicted_kit_score": 92,
+  "boot_command": "python -m uvicorn app.main:app --port {PORT} --host 127.0.0.1",
+  "health_probe": "/health",
+  "timeout_s": 60,
+  "boot_health_timeout_s": 20,
+  "notes": "Calibration — basic CRUD. Naked typically misses duplicate-email check (409) or omits PATCH."
+}

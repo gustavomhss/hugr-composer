@@ -1,0 +1,26 @@
+{
+  "tier": "impossible",
+  "authored_at": "2026-04-20",
+  "author": "Gustavo Schneiter",
+  "difficulty_axes": [
+    "causal_order",
+    "concurrency",
+    "failure_injection",
+    "property_based",
+    "multi_invariant"
+  ],
+  "required_primitives": [
+    "CausalReorderBuffer",
+    "IdempotentConsumer",
+    "EventStream",
+    "DeadLetterRoute",
+    "EventEnvelope"
+  ],
+  "predicted_naked_score": 15,
+  "predicted_kit_score": 55,
+  "boot_command": "python -m uvicorn app.main:app --port {PORT} --host 127.0.0.1",
+  "health_probe": "/health",
+  "timeout_s": 120,
+  "boot_health_timeout_s": 25,
+  "notes": "Naked: delivers in arrival order; no buffer; no gap detection."
+}

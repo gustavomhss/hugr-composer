@@ -1,0 +1,24 @@
+{
+  "tier": "hard",
+  "authored_at": "2026-04-20",
+  "author": "Gustavo Schneiter",
+  "difficulty_axes": [
+    "concurrency",
+    "multi_invariant",
+    "failure_injection",
+    "large_n_scaling"
+  ],
+  "required_primitives": [
+    "RateLimiter",
+    "Bulkhead",
+    "LoadShedder",
+    "RequestShape"
+  ],
+  "predicted_naked_score": 35,
+  "predicted_kit_score": 75,
+  "boot_command": "python -m uvicorn app.main:app --port {PORT} --host 127.0.0.1",
+  "health_probe": "/health",
+  "timeout_s": 90,
+  "boot_health_timeout_s": 25,
+  "notes": "Trips naked on: (a) one shared bucket across classes, (b) fixed-window instead of rolling, (c) race under concurrency, (d) bills 401s."
+}

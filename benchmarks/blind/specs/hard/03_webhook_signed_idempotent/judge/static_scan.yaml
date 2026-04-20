@@ -1,0 +1,7 @@
+rules:
+  - id: naive_eq_compare_for_hmac
+    description: "String == for HMAC leaks timing; use hmac.compare_digest."
+    severity: fail
+    scope: "glob:**/*.py"
+    pattern_any_of:
+      - {kind: "source_regex", regex: "signature\\s*==\\s*"}

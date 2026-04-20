@@ -1,0 +1,19 @@
+{
+  "tier": "calibration",
+  "authored_at": "2026-04-20",
+  "author": "Gustavo Schneiter",
+  "difficulty_axes": [
+    "type_safety"
+  ],
+  "required_primitives": [
+    "HealthProbe",
+    "LifecycleHook"
+  ],
+  "predicted_naked_score": 80,
+  "predicted_kit_score": 95,
+  "boot_command": "python -m uvicorn app.main:app --port {PORT} --host 127.0.0.1",
+  "health_probe": "/health",
+  "timeout_s": 60,
+  "boot_health_timeout_s": 20,
+  "notes": "Near-saturation calibration. Both arms should clear easily; naked occasionally returns {\"ok\": \"true\"} (string) or omits /ready."
+}

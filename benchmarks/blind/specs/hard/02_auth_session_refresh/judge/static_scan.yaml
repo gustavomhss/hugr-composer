@@ -1,0 +1,7 @@
+rules:
+  - id: predictable_random_for_tokens
+    description: "Use of random.random / random.randint is predictable for token material."
+    severity: fail
+    scope: "glob:**/*.py"
+    pattern_any_of:
+      - {kind: "source_regex", regex: "random\\.randint\\("}

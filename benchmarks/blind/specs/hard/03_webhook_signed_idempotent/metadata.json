@@ -1,0 +1,24 @@
+{
+  "tier": "hard",
+  "authored_at": "2026-04-20",
+  "author": "Gustavo Schneiter",
+  "difficulty_axes": [
+    "security",
+    "exactly_once",
+    "concurrency",
+    "failure_injection"
+  ],
+  "required_primitives": [
+    "SignatureVerifier",
+    "InboundVerifier",
+    "IdempotencyStore",
+    "IdempotentConsumer"
+  ],
+  "predicted_naked_score": 40,
+  "predicted_kit_score": 85,
+  "boot_command": "python -m uvicorn app.main:app --port {PORT} --host 127.0.0.1",
+  "health_probe": "/health",
+  "timeout_s": 90,
+  "boot_health_timeout_s": 25,
+  "notes": "Trips naked on: (a) using == for HMAC (timing), (b) no idempotency store so dup counts increment, (c) race under concurrency."
+}

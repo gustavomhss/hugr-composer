@@ -1,0 +1,26 @@
+{
+  "tier": "impossible",
+  "authored_at": "2026-04-20",
+  "author": "Gustavo Schneiter",
+  "difficulty_axes": [
+    "concurrency",
+    "multi_invariant",
+    "property_based",
+    "large_n_scaling",
+    "failure_injection"
+  ],
+  "required_primitives": [
+    "OptimisticConcurrency",
+    "UnitOfWork",
+    "ShardedCounter",
+    "Repository",
+    "Bulkhead"
+  ],
+  "predicted_naked_score": 10,
+  "predicted_kit_score": 50,
+  "boot_command": "python -m uvicorn app.main:app --port {PORT} --host 127.0.0.1",
+  "health_probe": "/health",
+  "timeout_s": 120,
+  "boot_health_timeout_s": 25,
+  "notes": "Requires serializable multi-key swap + sub-millisecond freshness. Kit uses a single global lock + wall-clock timestamp."
+}
