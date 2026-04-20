@@ -1,0 +1,31 @@
+{
+  "name": "VectorStore",
+  "namespace": "llm",
+  "purpose": "Expose upsert, similarity search, metadata filter, and delete over embedded documents with per-tenant scoping so retrieval augmentation cannot leak rows across tenants or return deleted content.",
+  "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Mapping, Sequence\n\nclass VectorHit(Protocol):\n    doc_id: str\n    score: float\n    metadata: Mapping[str, str]\n\nclass VectorStore(Protocol):\n    def upsert(self, tenant_id: str, doc_id: str, embedding: Sequence[float], metadata: Mapping[str, str]) -> None: ...\n    def search(self, tenant_id: str, query_embedding: Sequence[float], top_k: int, filter: Mapping[str, str] | None = None) -> tuple[VectorHit, ...]: ...\n    def delete(self, tenant_id: str, doc_id: str) -> bool: ...\n",
+  "invariants": [
+    "search() MUST scope results to the supplied tenant_id and MUST NEVER return a hit owned by a different tenant.",
+    "upsert() SHALL be idempotent on (tenant_id, doc_id); a second call with identical embedding CANNOT create a duplicate row.",
+    "delete() MUST remove the document from subsequent search results within a bounded staleness window declared by the adapter.",
+    "Embedding dimensionality MUST be validated against the store's configured dimension and MUST raise on mismatch.",
+    "Metadata filter keys MUST be constrained to a registered schema; arbitrary free-form keys are FORBIDDEN to prevent index explosion."
+  ],
+  "extension_contract": "New backends (pgvector, Qdrant, etc.) plug in as adapters implementing the VectorStore protocol; adapters register with the DI container and MUST implement the tenant-scoping invariant even when the underlying engine has no native tenancy.",
+  "consumption_example": "def retrieve_context(store: VectorStore, tenant: str, qvec: list[float]) -> list[str]:\n    hits = store.search(tenant, qvec, top_k=5, filter={\"kind\": \"policy\"})\n    return [h.doc_id for h in hits if h.score > 0.75]\n",
+  "sources": [
+    {
+      "source": "OWASP Top 10 for LLM Applications (2023)",
+      "locator": "LLM08: Excessive Agency / LLM06: Sensitive Information Disclosure \u2014 tenant isolation on retrieved context"
+    },
+    {
+      "source": "Anthropic Model Context Protocol (MCP) 1.x specification",
+      "locator": "Resources & Tools: structured access to external data with scoped permissions"
+    }
+  ],
+  "why_essential": "Retrieval augmentation is the single largest cross-tenant leak vector in LLM apps; centralizing the store ensures tenancy, dimension checks, and delete propagation are enforced once.",
+  "alternatives_considered": [
+    "Direct SQL calls to pgvector per feature \u2014 tenant filter is easy to forget in one of N queries.",
+    "Embedding a provider SDK at call site \u2014 cannot swap backends or add deletion propagation uniformly."
+  ],
+  "maturity": "emerging"
+}

@@ -1,0 +1,31 @@
+{
+  "name": "DeadLetterRoute",
+  "namespace": "events",
+  "purpose": "Named destination where undeliverable or repeatedly failed messages are routed after the redelivery budget is exhausted so they can be inspected or replayed.",
+  "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass DeadLetterRoute:\n    source_topic: str\n    destination_topic: str\n    max_deliveries: int\n\nclass DeadLetterSink(Protocol):\n    async def send(self, route: DeadLetterRoute, envelope: 'EventEnvelope', reason: str, attempt: int) -> None: ...",
+  "invariants": [
+    "A message delivered more than max_deliveries times MUST be routed to destination_topic and NEVER returned to the main topic.",
+    "The original EventEnvelope id and source ALWAYS survive routing so downstream audit can correlate.",
+    "max_deliveries MUST be a positive integer; zero or negative values SHALL raise a configuration error.",
+    "Routing to the dead letter destination CANNOT itself dead letter recursively in the same route.",
+    "The sink MUST record the terminal failure reason so operators can decide whether to replay."
+  ],
+  "extension_contract": "Backends register a DeadLetterSink adapter per transport (Dapr deadLetterTopic, Kafka DLT, NATS dedicated stream) and the runtime composes it with the TopicBus; custom policies extend via a decorator that chooses different destinations based on failure type.",
+  "consumption_example": "async def park(sink, envelope: EventEnvelope, err: str) -> None:\n    route = DeadLetterRoute(source_topic='orders', destination_topic='orders.dlq', max_deliveries=5)\n    await sink.send(route, envelope, err, attempt=route.max_deliveries + 1)",
+  "sources": [
+    {
+      "source": "Dapr 1.14 Publish and Subscribe building block overview",
+      "locator": "docs.dapr.io/developing-applications/building-blocks/pubsub/pubsub-overview/ Dead letter topics feature"
+    },
+    {
+      "source": "Apache Kafka 3.x documentation concepts",
+      "locator": "kafka.apache.org/documentation/ intro_concepts_and_terms discussion of retry topics and DLT pattern"
+    }
+  ],
+  "why_essential": "Without a shared dead letter contract every consumer invents its own failure bucket and loses replay ability; standardizing the route lets audit, replay and alerting reuse one surface.",
+  "alternatives_considered": [
+    "Logging failed messages to stdout only which is not replayable",
+    "Parking lot queues coded per tool which diverge in schema and ownership"
+  ],
+  "maturity": "battle_tested"
+}

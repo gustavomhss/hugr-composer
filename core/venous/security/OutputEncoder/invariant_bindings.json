@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "OE_INV_01",
+      "invariant_text": "encode() MUST produce output that cannot break out of the named sink; an HTML_ATTRIBUTE encoded value MUST NEVER enable script execution.",
+      "confirms_test": "test_inv_sink_containment_confirms",
+      "prevents_test": "test_inv_sink_containment_prevents",
+      "under_failure_test": "test_inv_sink_containment_under_failure"
+    },
+    {
+      "invariant_id": "OE_INV_02",
+      "invariant_text": "The caller MUST declare the sink; the encoder SHALL NEVER infer the sink from context.",
+      "confirms_test": "test_inv_explicit_sink_confirms",
+      "prevents_test": "test_inv_explicit_sink_prevents",
+      "under_failure_test": "test_inv_explicit_sink_under_failure"
+    },
+    {
+      "invariant_id": "OE_INV_03",
+      "invariant_text": "Encoders MUST be applied at emission; pre-encoded storage is FORBIDDEN so values are NEVER double-encoded.",
+      "confirms_test": "test_inv_no_double_encode_confirms",
+      "prevents_test": "test_inv_no_double_encode_prevents",
+      "under_failure_test": "test_inv_no_double_encode_under_failure"
+    },
+    {
+      "invariant_id": "OE_INV_04",
+      "invariant_text": "CSS_VALUE encoding MUST reject expression()-style sequences and MUST hex-escape control characters.",
+      "confirms_test": "test_inv_css_hardening_confirms",
+      "prevents_test": "test_inv_css_hardening_prevents",
+      "under_failure_test": "test_inv_css_hardening_under_failure"
+    },
+    {
+      "invariant_id": "OE_INV_05",
+      "invariant_text": "URL_QUERY encoding MUST percent-encode per RFC 3986; space MUST become %20 and `+` MUST NEVER substitute for space on this path.",
+      "confirms_test": "test_inv_url_rfc3986_confirms",
+      "prevents_test": "test_inv_url_rfc3986_prevents",
+      "under_failure_test": "test_inv_url_rfc3986_under_failure"
+    }
+  ]
+}

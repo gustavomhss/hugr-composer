@@ -1,0 +1,32 @@
+{
+  "name": "CorsPolicy",
+  "namespace": "policy",
+  "purpose": "Evaluate cross-origin preflight and simple-request allowance against a closed list of origins, methods, headers, and credential mode without reflecting arbitrary Origin values.",
+  "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass CorsDecision:\n    allow_origin: str | None\n    allow_methods: tuple[str, ...]\n    allow_headers: tuple[str, ...]\n    allow_credentials: bool\n    max_age_seconds: int\n\nclass CorsPolicy(Protocol):\n    def evaluate(self, origin: str, method: str, requested_headers: tuple[str, ...]) -> CorsDecision: ...",
+  "invariants": [
+    "evaluate() MUST NEVER echo back an Origin that is not in the configured allowlist.",
+    "When allow_credentials is True, allow_origin CANNOT be '*' and MUST be a single exact origin.",
+    "Vary: Origin MUST be emitted on any response that decides per-origin, or the policy SHALL reject evaluation.",
+    "Preflight caching (Access-Control-Max-Age) MUST be \u226486400 seconds and MUST NEVER default to unbounded.",
+    "Null origin ('null') MUST be rejected in credentialed mode because it collapses distinct sandboxed contexts."
+  ],
+  "extension_contract": "Origin matchers register as matcher plugins (exact, suffix-tenant, regex-with-review) implementing a predicate Protocol. The registry refuses to bind a regex matcher that accepts '.*' or an empty pattern.",
+  "consumption_example": "def handle_preflight(policy: CorsPolicy, request, response):\n    decision = policy.evaluate(origin=request.headers[\"Origin\"], method=request.headers[\"Access-Control-Request-Method\"], requested_headers=tuple(request.headers.get(\"Access-Control-Request-Headers\", \"\").split(\",\")))\n    if decision.allow_origin is None:\n        response.status = 403\n        return response\n    response.headers.update({\"Access-Control-Allow-Origin\": decision.allow_origin, \"Access-Control-Allow-Credentials\": str(decision.allow_credentials).lower()})\n    return response",
+  "sources": [
+    {
+      "source": "OWASP ASVS 4.0.3",
+      "locator": "V14.5 HTTP Request Header Validation Requirements (CORS)"
+    },
+    {
+      "source": "OWASP Top 10 2021",
+      "locator": "A05:2021 Security Misconfiguration \u2014 CORS hardening"
+    }
+  ],
+  "why_essential": "Reflecting Origin is the default footgun of every ad-hoc CORS filter; a primitive with a closed allowlist removes the possibility of writing that line anywhere else.",
+  "alternatives_considered": [
+    "Framework default CORS middleware with origin='*' \u2014 incompatible with credentials and leaks data.",
+    "Nginx-level CORS \u2014 cannot inspect auth state or per-tenant origin lists.",
+    "Per-route ad-hoc header writing \u2014 reinvents the matcher each time."
+  ],
+  "maturity": "battle_tested"
+}

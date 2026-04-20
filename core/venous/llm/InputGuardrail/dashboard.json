@@ -1,0 +1,40 @@
+{
+  "title": "InputGuardrail — Chain Verdicts, Blocks, Redactions",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Decisions/sec (5m)",
+      "targets": [{"expr": "sum(rate(inputguardrail_decisions_total[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Blocks by Guard",
+      "targets": [{"expr": "sum by (guard_name) (rate(inputguardrail_blocks_total[5m]))"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Redactions by Guard",
+      "targets": [{"expr": "sum by (guard_name) (rate(inputguardrail_redactions_total[5m]))"}]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Apply Latency p50/p95/p99",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(inputguardrail_apply_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(inputguardrail_apply_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(inputguardrail_apply_duration_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 5,
+      "type": "gauge",
+      "title": "Audit Depth",
+      "targets": [{"expr": "avg(inputguardrail_audit_depth)"}]
+    }
+  ]
+}

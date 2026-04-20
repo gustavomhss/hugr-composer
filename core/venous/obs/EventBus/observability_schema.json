@@ -1,0 +1,60 @@
+{
+  "logs": [
+    {
+      "event_name": "eventbus.publish.started",
+      "required_attributes": ["event_name", "matching_subscribers"]
+    },
+    {
+      "event_name": "eventbus.publish.completed",
+      "required_attributes": ["event_name", "delivered", "errors"]
+    },
+    {
+      "event_name": "eventbus.subscriber.error",
+      "required_attributes": ["event_name", "exception_type", "pattern"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "eventbus.publish.count",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 200,
+      "label_keys": ["event_name"]
+    },
+    {
+      "name": "eventbus.delivery.latency",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 200,
+      "label_keys": ["event_name"]
+    },
+    {
+      "name": "eventbus.subscriber.errors",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["pattern", "exception_type"]
+    },
+    {
+      "name": "eventbus.subscribers.active",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["pattern"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "eventbus.publish",
+      "required_attributes": ["event.name", "matching.subscribers"]
+    },
+    {
+      "operation_name": "eventbus.subscribe",
+      "required_attributes": ["pattern"]
+    },
+    {
+      "operation_name": "eventbus.unsubscribe",
+      "required_attributes": ["pattern"]
+    }
+  ]
+}

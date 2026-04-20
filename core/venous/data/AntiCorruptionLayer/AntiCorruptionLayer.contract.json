@@ -1,0 +1,31 @@
+{
+  "name": "AntiCorruptionLayer",
+  "namespace": "data",
+  "purpose": "Translates between a local model and a foreign or legacy model so upstream semantics cannot leak into the local BoundedContext.",
+  "api_signature": "from typing import Protocol, TypeVar\n\nLocal = TypeVar('Local')\nForeign = TypeVar('Foreign')\n\nclass AntiCorruptionLayer(Protocol):\n    def to_local(self, foreign: Foreign) -> Local: ...\n    def to_foreign(self, local: Local) -> Foreign: ...\n    def guard(self, foreign: Foreign) -> None: ...",
+  "invariants": [
+    "Foreign types MUST NEVER cross the boundary of the local BoundedContext; all inbound payloads SHALL be translated through to_local before entering domain logic.",
+    "guard MUST reject inbound payloads that violate local invariants and raise before the payload reaches any local aggregate.",
+    "Translation SHALL be stateless with respect to the local domain; the ACL CANNOT read or mutate local repositories during translation.",
+    "Versioning of the foreign contract MUST be explicit; unversioned ACLs are FORBIDDEN."
+  ],
+  "extension_contract": "New integrations extend AntiCorruptionLayer by implementing an adapter per external system and registering the facade with the local BoundedContext; versioned schemas plug in via decorator over to_local / to_foreign so older payloads continue to be handled.",
+  "consumption_example": "def consume(msg, acl: AntiCorruptionLayer, repo):\n    acl.guard(msg)\n    local = acl.to_local(msg)\n    repo.add(local)",
+  "sources": [
+    {
+      "source": "Evans 'Domain-Driven Design' (2003)",
+      "locator": "Chapter 14, Anticorruption Layer, pp. 364-368"
+    },
+    {
+      "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+      "locator": "Chapter 3, Context Maps, Anticorruption Layer, pp. 106-111"
+    }
+  ],
+  "why_essential": "Without a shared primitive, each integration tool silently imports upstream vocabulary, and legacy system concepts infect the domain model until refactors become impossible.",
+  "alternatives_considered": [
+    "Direct consumer against upstream SDK: couples domain to upstream release cadence.",
+    "One central translation service: bottleneck and ownership ambiguity.",
+    "Shared kernel with upstream: violates the exact coupling the ACL exists to prevent."
+  ],
+  "maturity": "battle_tested"
+}

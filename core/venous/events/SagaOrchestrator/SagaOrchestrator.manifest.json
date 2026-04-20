@@ -1,0 +1,782 @@
+{
+  "name": "SagaOrchestrator",
+  "namespace": "events",
+  "maturity": "battle_tested",
+  "builder_agent_id": 3,
+  "catalog_entry_sha256": "0f88475c9861672c3576a5e427ca8595880be10aa59ba7e7fdd8e0a56fced83f",
+  "files": [
+    {
+      "path": "events/SagaOrchestrator/SagaOrchestrator.cfg",
+      "sha256": "279c648c17967d5874242552583bcd70ae9632ed36d1450c45687e04ea45127e",
+      "size_bytes": 170,
+      "kind": "test"
+    },
+    {
+      "path": "events/SagaOrchestrator/SagaOrchestrator.contract.json",
+      "sha256": "47aa85fbfd4f9fca976399d44dc8badca4e6a3ff3fec05317e731dab7eb06b20",
+      "size_bytes": 2475,
+      "kind": "contract_json"
+    },
+    {
+      "path": "events/SagaOrchestrator/SagaOrchestrator.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "events/SagaOrchestrator/SagaOrchestrator.md",
+      "sha256": "ba6c12a130fce89cec1c280d7ab9599115ff12d59e7d259a9fb843791508e957",
+      "size_bytes": 8124,
+      "kind": "spec_md"
+    },
+    {
+      "path": "events/SagaOrchestrator/SagaOrchestrator.py",
+      "sha256": "eb50aaf320e98edc26aa605fe7c63682b3d29e4aa0e67d47ced7b5601c20ec47",
+      "size_bytes": 29583,
+      "kind": "impl"
+    },
+    {
+      "path": "events/SagaOrchestrator/SagaOrchestrator.tla",
+      "sha256": "64dbc7ec1c6bb798728289757f2f2a3e711bb6fe47770e85701c3bc7db1414c8",
+      "size_bytes": 4573,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "events/SagaOrchestrator/behavioral_SagaOrchestrator.py",
+      "sha256": "6ecb7f25843be759107a041b94f5f373f024e57b601b05c96a14b930d39bbf33",
+      "size_bytes": 4590,
+      "kind": "behavioral"
+    },
+    {
+      "path": "events/SagaOrchestrator/chaos_SagaOrchestrator.py",
+      "sha256": "b5e7ddfa1c0b578ea270a9e322d1c8e91a8b55b21e00bbca3628398707ed7e59",
+      "size_bytes": 6024,
+      "kind": "chaos"
+    },
+    {
+      "path": "events/SagaOrchestrator/concurrent_SagaOrchestrator.py",
+      "sha256": "ef56b102255f5e4396a845ba65eeffea79e7948d6d7df78554f0b6a4d9e894e3",
+      "size_bytes": 4317,
+      "kind": "concurrent"
+    },
+    {
+      "path": "events/SagaOrchestrator/dashboard.json",
+      "sha256": "3b60ba421d3c1fbbc9f4ee5a10b0ba1da17e6a0d4dda7b2c3b2e7ab1053f09cc",
+      "size_bytes": 1015,
+      "kind": "dashboard"
+    },
+    {
+      "path": "events/SagaOrchestrator/invariant_bindings.json",
+      "sha256": "7fe9ddc8823f6f21c5acfb7f46985e5285c4e5073bdd7407f870e8f7f313aa6d",
+      "size_bytes": 1572,
+      "kind": "test"
+    },
+    {
+      "path": "events/SagaOrchestrator/metamorphic_SagaOrchestrator.py",
+      "sha256": "3ccc083b60ec2be0f0ae498c8f473f2f428187813a99f448f2814da2092a4d24",
+      "size_bytes": 4308,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "events/SagaOrchestrator/observability_SagaOrchestrator.py",
+      "sha256": "432d52acf05f0cbaa5d4e2eaefcbb84498c64e07a2e85af5d8ca2f1e9449007e",
+      "size_bytes": 2392,
+      "kind": "observability"
+    },
+    {
+      "path": "events/SagaOrchestrator/observability_schema.json",
+      "sha256": "123d350fb762f1d7e655fe185f09c1b39974b5c015abbaad5fbbcca8e62878dd",
+      "size_bytes": 1687,
+      "kind": "observability"
+    },
+    {
+      "path": "events/SagaOrchestrator/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "events/SagaOrchestrator/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "events/SagaOrchestrator/state_machine_SagaOrchestrator.py",
+      "sha256": "05c8f33055d14827583724f1695d349a7365d1b150c88a30f55c223e7bceb5ee",
+      "size_bytes": 3503,
+      "kind": "state_machine"
+    },
+    {
+      "path": "events/SagaOrchestrator/test_SagaOrchestrator.py",
+      "sha256": "c07ce613c18585b41ee49eb89f219525f0ce6153b2633b2ce6d370823a847ca1",
+      "size_bytes": 9523,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "SAGA_INV_01",
+      "invariant_text": "Every forward step MUST declare a compensating action, or the saga CANNOT include it.",
+      "confirms_test": "test_inv_compensator_required_confirms",
+      "prevents_test": "test_inv_compensator_required_prevents",
+      "under_failure_test": "test_inv_compensator_required_under_failure"
+    },
+    {
+      "invariant_id": "SAGA_INV_02",
+      "invariant_text": "Compensation order SHALL be the reverse of the completed forward steps; out-of-order compensation is FORBIDDEN.",
+      "confirms_test": "test_inv_reverse_compensation_confirms",
+      "prevents_test": "test_inv_reverse_compensation_prevents",
+      "under_failure_test": "test_inv_reverse_compensation_under_failure"
+    },
+    {
+      "invariant_id": "SAGA_INV_03",
+      "invariant_text": "The orchestrator's state transitions MUST be persisted atomically with the command it emits so crashes NEVER leave dangling sagas.",
+      "confirms_test": "test_inv_atomic_journal_confirms",
+      "prevents_test": "test_inv_atomic_journal_prevents",
+      "under_failure_test": "test_inv_atomic_journal_under_failure"
+    },
+    {
+      "invariant_id": "SAGA_INV_04",
+      "invariant_text": "A saga NEVER assumes strong consistency across services; all coordination SHALL be via asynchronous messages.",
+      "confirms_test": "test_inv_async_coordination_confirms",
+      "prevents_test": "test_inv_async_coordination_prevents",
+      "under_failure_test": "test_inv_async_coordination_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 2223,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 5 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 3702,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 5297,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 14520,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 3603,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 3798,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 100893,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "41 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 4495,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 4009,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 59481,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 204294,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MISSING-COMPENSATION",
+        "hypothesis": "Register a forward step with a null/None compensating action handler. If orchestrator accepts the step without rejecting registration, invariant #1 is violated and a later failure will leave partial state uncompensated.",
+        "input_fixture": "orchestrator.register_step(name='charge', forward=fn, compensation=None); orchestrator.start('cid-1', {})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REVERSE-ORDER-RACE",
+        "hypothesis": "Two concurrent threads call compensate(cid, from_step) with overlapping from_step values. A race in iterating the completed-steps list may cause compensations to execute in forward order or skip a step, violating strict reverse order.",
+        "input_fixture": "Thread A: compensate('cid-1','step3'); Thread B: compensate('cid-1','step2') fired within 1ms on same correlation_id after steps s1,s2,s3 completed.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CRASH-BETWEEN-PERSIST-EMIT",
+        "hypothesis": "Kill process (SIGKILL) between the DB commit of the new state and the message broker publish. On restart, status() reports 'step_2 done' but no command was ever emitted, leaving a dangling saga \u2014 atomicity invariant broken.",
+        "input_fixture": "start('cid-x',{}); step('cid-x','s1',ok); inject fault: after state write, before broker.publish \u2192 SIGKILL; restart; status('cid-x')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SYNC-RPC-SNEAK",
+        "hypothesis": "Orchestrator implementation uses a blocking HTTP call inside step() to fetch next-step data, implicitly assuming strong consistency. Introducing 10s latency on that service will stall the entire saga engine, violating async-only coordination.",
+        "input_fixture": "Mock downstream /reserve endpoint to sleep 30s; call step('cid','reserve',ok); observe orchestrator thread blocked.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-COMPENSATE-UNKNOWN-STEP",
+        "hypothesis": "Call compensate() with from_step name that was never executed or does not exist in saga definition. Expected: reject. Actual bet: orchestrator either no-ops silently or walks empty list, leaving user thinking compensation succeeded.",
+        "input_fixture": "start('cid-2',{}); step('cid-2','s1',ok); compensate('cid-2','nonexistent_step')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DUPLICATE-STEP-REPLAY",
+        "hypothesis": "Replay the same step() call twice with identical correlation_id+name+outcome (e.g., broker at-least-once delivery). If not idempotent, the step may be recorded twice and compensation will fire twice in reverse, double-refunding.",
+        "input_fixture": "start('cid-3',{}); step('cid-3','charge',{amt:100}); step('cid-3','charge',{amt:100}); then trigger failure \u2192 compensate",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CORRELATION-COLLISION",
+        "hypothesis": "Start two sagas with the same correlation_id (e.g., uuid reuse or client bug). Second start() may overwrite first saga's step log, so compensation of saga-1 runs in wrong order or against saga-2's state.",
+        "input_fixture": "start('cid-DUP', inputA); step(...); start('cid-DUP', inputB); compensate('cid-DUP','s1')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-ORDER",
+        "hypothesis": "If orchestrator orders completed steps by wall-clock timestamp from distributed workers, NTP skew of \u00b15s between workers will reorder compensations. Worker-B's earlier step may appear later and compensate in wrong order.",
+        "input_fixture": "Worker A clock +5s ahead. step('cid','s1',ok)@A t=10; step('cid','s2',ok)@B t=11 real but t=6 local. compensate('cid','s2')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED-OUTCOME",
+        "hypothesis": "Pass a non-serializable outcome (open file handle, lambda, circular dict) to step(). State persistence layer may throw after in-memory state mutated, breaking atomic-persist invariant.",
+        "input_fixture": "step('cid-4','s1', outcome={'self': None}); then o['self']=o (circular); later crash \u2192 inconsistent state",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-SAGA-COMPENSATE",
+        "hypothesis": "Call compensate() on a saga that has started but completed zero steps. Boundary case: reverse-iteration of empty list should be no-op, but some implementations emit a terminal 'saga_failed' event or mark status wrong.",
+        "input_fixture": "start('cid-5',{}); compensate('cid-5','any'); status('cid-5')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-COMPENSATION-FAILURE-AMPLIFY",
+        "hypothesis": "Compensation action itself fails and is retried without backoff. Retries amplify load on downstream and may re-execute side effects (non-idempotent refund), causing double-compensation storm.",
+        "input_fixture": "Mock refund API to return 500 always. Trigger compensate on 3-step saga; observe retry count and downstream call multiplier.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INJECTED-STEP-NAME",
+        "hypothesis": "Prompt/SQL injection via step name: name='s1; DROP TABLE sagas--'. If persistence uses string concat or if logs/LLM summarizer ingests names unsanitized, can corrupt state store or mislead operator LLM.",
+        "input_fixture": "step('cid-6', \"'; DELETE FROM saga_state WHERE '1'='1\", outcome={})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CREDENTIAL-LEAK-IN-OUTCOME",
+        "hypothesis": "Outcome payload contains secrets (API key, card PAN) and is persisted verbatim to saga log + emitted in compensation command. A subsequent status() call or audit export exposes credentials.",
+        "input_fixture": "step('cid-7','charge', outcome={'stripe_sk':'sk_live_xxx','pan':'4242...'}); later status('cid-7')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INT-OVERFLOW-STEP-INDEX",
+        "hypothesis": "Saga with 2^31 recorded step events (or attacker-forged step index) overflows a signed 32-bit counter used for ordering, wrapping to negative and corrupting reverse-order compensation traversal.",
+        "input_fixture": "Forge step log with index=2147483647; append one more step; compensate \u2192 traversal order",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-OLD-COMPENSATE",
+        "hypothesis": "Replay a stale compensate() message from broker dead-letter queue after saga has already completed successfully. Without fencing token / epoch, compensations fire on a committed saga, reversing real-world state.",
+        "input_fixture": "Complete saga 'cid-8' successfully (status=DONE). Re-deliver old compensate('cid-8','s3') message from 1h ago.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE-DUAL-STEP",
+        "hypothesis": "Two concurrent thread/coroutine calls to step(same_cid, same_name, different_outcome) arrive simultaneously before either is persisted. The orchestrator may record both, advance state twice, or emit two commands for the same step \u2014 breaking the exactly-once forward-progress guarantee and leaving compensation counts mismatched.",
+        "input_fixture": "Thread A: step('tx-001', 'reserve_inventory', {'ok': True}) | Thread B (same instant): step('tx-001', 'reserve_inventory', {'ok': False}) \u2014 no lock between read-state and write-state in the implementation",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-STEP-NO-COMPENSATOR",
+        "hypothesis": "Calling step() with a name that was never registered with a compensating action should be rejected. If the implementation silently accepts it and adds it to the completed-steps log, a later compensate() call will encounter a step with no handler, potentially skipping it and breaking reversal completeness.",
+        "input_fixture": "start('tx-002', {}); step('tx-002', 'unregistered_step_no_comp', {'ok': True}); compensate('tx-002', 'unregistered_step_no_comp')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-COMP-WRONG-ORDER",
+        "hypothesis": "Calling compensate() specifying from_step as a middle step (not the last completed one) could trick the orchestrator into running compensations in non-reverse order \u2014 e.g., undoing step 2 before step 3 \u2014 violating the strict reverse-order invariant and leaving services in an inconsistent half-state.",
+        "input_fixture": "start('tx-003', {}); step('tx-003', 'step_A', 'ok'); step('tx-003', 'step_B', 'ok'); step('tx-003', 'step_C', 'ok'); compensate('tx-003', 'step_A')  # skips C and B",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CRASH-AFTER-PERSIST-BEFORE-EMIT",
+        "hypothesis": "If the implementation persists the new state first and then emits the command, a crash between those two operations leaves the saga in an advanced state with no command ever dispatched. On restart the orchestrator thinks the step already happened and the service never received the command \u2014 a dangling saga with lost work.",
+        "input_fixture": "Inject process kill signal (SIGKILL) between db.commit(new_state) and message_bus.publish(command) during step('tx-004', 'charge_payment', {}); observe that on restart status('tx-004') returns state=PAYMENT_CHARGED but no message was ever consumed by the payment service",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CRASH-AFTER-EMIT-BEFORE-PERSIST",
+        "hypothesis": "Converse of the prior attack: if the command is emitted before the state is persisted and a crash occurs, on restart the orchestrator replays from the old state and re-emits the same command. The downstream service receives a duplicate command and executes the step twice, creating a double-charge or double-debit scenario.",
+        "input_fixture": "Inject crash between message_bus.publish(command) and db.commit(new_state) during step('tx-005', 'charge_payment', {}); restart orchestrator; observe duplicate 'charge_payment' command delivered to payment service",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY-STALE-STEP",
+        "hypothesis": "Re-delivering a step() outcome message (e.g., due to at-least-once message broker retry) after it was already applied should be idempotently ignored. If the orchestrator lacks idempotency keys it will advance the state machine a second time, potentially triggering the next step command twice or prematurely completing the saga.",
+        "input_fixture": "step('tx-006', 'book_seat', {'seat': '12A'}); # delivered twice by broker \u2014 simulate with identical second call step('tx-006', 'book_seat', {'seat': '12A'}); assert status('tx-006') state has not advanced past book_seat twice",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY-CORRELATION-ID",
+        "hypothesis": "Passing an empty string as correlation_id to start() may be accepted and stored, creating a saga keyed on ''. A subsequent step('', ...) from any caller would then accidentally attach to this saga, potentially hijacking another transaction's state or causing a key collision in persistent storage.",
+        "input_fixture": "start('', {'amount': 100}); step('', 'reserve_inventory', 'ok'); status('')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONE-TYPE-CORRELATION-ID",
+        "hypothesis": "Passing None as correlation_id to any method should raise a typed error immediately. If the implementation coerces None to the string 'None' it creates a singleton saga slot that any caller passing None can accidentally read or write, leaking state across unrelated transactions.",
+        "input_fixture": "start(None, {'order': 'X1'}); step(None, 'reserve_inventory', 'ok'); status(None) \u2014 verify that 'None' string saga is not silently created",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-COMPENSATION-FANOUT-LOOP",
+        "hypothesis": "If a compensation handler itself emits a saga step that fails, the orchestrator might call compensate() recursively without a cycle-detection guard. This creates an unbounded amplification loop: compensate triggers step, step fails, compensate is called again, indefinitely consuming memory and message queue capacity.",
+        "input_fixture": "Register compensate_step_A to publish a new step 'rollback_audit' that always returns failure; start('tx-007', {}); step('tx-007', 'step_A', 'ok'); compensate('tx-007', 'step_A'); observe whether orchestrator enters infinite compensate\u2192step\u2192fail\u2192compensate loop",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-STRONG-CONSISTENCY-SYNC-WAIT",
+        "hypothesis": "If the implementation internally blocks start() or step() waiting for a synchronous acknowledgement from a downstream service (e.g., an HTTP 200 before advancing state), it violates the async-message-only invariant. Under network partition the orchestrator deadlocks and the saga never advances or compensates.",
+        "input_fixture": "Introduce 60-second network blackhole to downstream service; call start('tx-008', {}); step('tx-008', 'reserve_inventory', {}); observe if call blocks >1s, indicating synchronous coupling instead of async fire-and-observe",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-STEP-AFTER-TERMINAL-STATE",
+        "hypothesis": "Calling step() after the saga has already reached a terminal state (COMPLETED or COMPENSATED) should be rejected. If accepted, the orchestrator may append a spurious entry to the completed-steps log, making a future compensate() call attempt to undo a step that was never part of the original transaction.",
+        "input_fixture": "start('tx-009', {}); step('tx-009', 'step_A', 'ok'); # assume saga completes here; step('tx-009', 'ghost_step', 'ok'); compensate('tx-009', 'ghost_step'); verify ghost_step compensation is not executed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-OVERFLOW-STEP-VOLUME",
+        "hypothesis": "Starting a saga and calling step() 100,000 times with unique step names stresses the compensation-stack storage. If compensation order is maintained via an in-process list rather than a durable ordered log, a crash mid-saga loses the ordering metadata and compensate() cannot determine the correct reverse sequence.",
+        "input_fixture": "start('tx-010', {}); [step('tx-010', f'step_{i}', 'ok') for i in range(100000)]; kill process; restart; compensate('tx-010', 'step_99999'); verify compensations fire in exact reverse order 99999..0",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PROMPT-INJECT-STEP-NAME",
+        "hypothesis": "Passing a step name containing log-parsing metacharacters or newline-delimited JSON payloads (e.g., 'step_A\\n{\"name\":\"step_B\",\"status\":\"ok\"}') could corrupt structured log entries. If the orchestrator reconstructs saga state from log replay (event sourcing), injected log lines may cause it to believe extra steps completed, triggering compensation of steps that never ran.",
+        "input_fixture": "step('tx-011', 'step_A\\n{\"step\":\"step_B\",\"outcome\":\"ok\"}', 'ok'); restart orchestrator in log-replay mode; status('tx-011') \u2014 verify state does not show step_B as completed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK-SKEW-OUT-OF-ORDER-DELIVERY",
+        "hypothesis": "In an async system, step outcome messages may arrive out of chronological order due to clock skew or network reordering. If the orchestrator uses wall-clock timestamps to determine step order rather than a logical sequence number, it may record steps in the wrong order and then execute compensations in an incorrect sequence.",
+        "input_fixture": "step('tx-012', 'step_B', 'ok') with timestamp T+10; step('tx-012', 'step_A', 'ok') with timestamp T+1 arriving late; compensate('tx-012', 'step_B'); verify compensation fires B then A not A then B",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MISSING_COMP_DECL",
+        "hypothesis": "Forward step accepted without any compensating action declared, violates INV-1 requirement",
+        "input_fixture": "start('saga-001', {}); step('saga-001', 'pay_supplier', {'amount': 500}); [no compensation defined]; step() should have failed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-FORWARD_COMP_ORDER",
+        "hypothesis": "Compensations execute in forward sequence instead of reverse, breaking saga atomicity guarantee",
+        "input_fixture": "step('s1','A',{}); step('s1','B',{}); step('s1','C',{}); compensate('s1','C'); compensate('s1','B'); compensate('s1','A'); => runs [A,B,C] not [C,B,A]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PERSIST_STATE_CMD_RACE",
+        "hypothesis": "State persisted but command emission fails or crashes mid-emit, leaves dangling saga in database",
+        "input_fixture": "step('saga-x', 'debit_acct', {amt:100}); [writes state to DB]; [crashes before message emit]; => DB has state, command never sent",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DB_FAIL_SILENT_PROCEED",
+        "hypothesis": "Database persistence fails silently, saga proceeds without atomic state save, crash loses everything",
+        "input_fixture": "DB connection lost; step() called; returns success but nothing persisted; application continues; crash => total state loss",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SYNC_BLOCK_SERVICE",
+        "hypothesis": "Orchestrator blocks waiting for synchronous service response, assumes strong consistency, violates async requirement",
+        "input_fixture": "step('saga-1', 'call_service', {url:'http://slow-service'}); blocks indefinitely if service down/slow => deadlock",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-IDEMPOTENT_STEP_DUPE",
+        "hypothesis": "Duplicate step() from network retry processed twice, only one compensation executes, saga over-executes",
+        "input_fixture": "step('saga-1', 'charge', {'cust_id':'c1','amt':50}) sent twice (retry); both processed => charged twice, compensate once only",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NULL_CORR_ID_MERGE",
+        "hypothesis": "Null or empty correlation_id allows multiple unrelated sagas to collapse into single tracked saga, state corruption",
+        "input_fixture": "start(None, {...}); start(None, {...}); both map to same saga; compensation on one corrupts the other",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK_SKEW_COMP_ORDER",
+        "hypothesis": "System uses timestamps for compensation ordering, distributed clock skew causes reverse-order violation",
+        "input_fixture": "step at t=100; step at t=50 (clock skew); compensate() uses timestamps => applies [t50, t100] not [t100, t50]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-STEP_INDEX_OVERFLOW",
+        "hypothesis": "Internal step counter integer overflow wraps to negative, compensation index corrupts, wrong steps compensated",
+        "input_fixture": "step_idx=2147483647; add_step() => idx wraps to -2147483648; compensate() uses wrong index => wrong step compensated",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNVALIDATED_OUTCOME_PERSIST",
+        "hypothesis": "Outcome not validated before persistence, malformed data stored, corrupts saga state recovery and compensation",
+        "input_fixture": "step('saga-1','process',outcome={'key':'value',undefined_field:'oops'}); persists invalid JSON; deserialize fails on recovery",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT_COMP_RACE",
+        "hypothesis": "Two threads call compensate() simultaneously, race condition eliminates reverse-order guarantee from INV-2",
+        "input_fixture": "Thread1: compensate('saga-1','step_B'); Thread2: compensate('saga-1','step_A'); execution order nondeterministic",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SECRET_PLAINTEXT_PERSIST",
+        "hypothesis": "Secrets in outcome persisted plaintext in database, exposed via backups or query injection, credentials leaked",
+        "input_fixture": "step('saga-1','auth_user',{'password':'secret123','api_key':'sk_live_abcd...'}); stored in DB; attacker SQL injection => secrets",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "saga.started",
+        "required_attributes": [
+          "correlation_id",
+          "saga_name"
+        ]
+      },
+      {
+        "event_name": "saga.step.completed",
+        "required_attributes": [
+          "correlation_id",
+          "step_name"
+        ]
+      },
+      {
+        "event_name": "saga.step.failed",
+        "required_attributes": [
+          "correlation_id",
+          "step_name",
+          "reason"
+        ]
+      },
+      {
+        "event_name": "saga.compensated",
+        "required_attributes": [
+          "correlation_id",
+          "step_name"
+        ]
+      },
+      {
+        "event_name": "saga.finished",
+        "required_attributes": [
+          "correlation_id",
+          "final_state"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "saga.started",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": [
+          "saga_name"
+        ]
+      },
+      {
+        "name": "saga.outcomes",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "saga_name",
+          "outcome"
+        ]
+      },
+      {
+        "name": "saga.compensations",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "saga_name",
+          "step_name"
+        ]
+      },
+      {
+        "name": "saga.step.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "saga_name",
+          "step_name"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "saga.start",
+        "required_attributes": [
+          "saga.correlation_id",
+          "saga.name"
+        ]
+      },
+      {
+        "operation_name": "saga.step",
+        "required_attributes": [
+          "saga.correlation_id",
+          "saga.step_name"
+        ]
+      },
+      {
+        "operation_name": "saga.compensate",
+        "required_attributes": [
+          "saga.correlation_id",
+          "saga.from_step"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol matches catalog api_signature verbatim; state machine and invariants align with spec. Minor: uses `input` as param name (shadows builtin) but matches signature."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "Covers all four invariants, state machine, idempotency, journal, middleware registration, compensation reverse order, terminal no-ops, introspection helpers. Middleware registration exists but is never actually applied around step invocations \u2014 minor gap vs extension contract."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Typed hierarchy rooted at SagaOrchestratorInvariantError; messages cite invariant IDs (SAGA-INV-0x); CompensationOrderError, UnknownSagaError, SagaDefinitionError distinct and specific."
+      },
+      {
+        "axis": "composability",
+        "score": 8,
+        "rationale": "Pluggable CommandSink, SagaDefinition decorator, middleware registration, deep-copy on ingress. Middleware not wired into execution path weakens extension contract slightly; otherwise clean Protocol + reference impl split."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 9,
+        "rationale": "Reentrant lock, sink invoked outside lock, journal persisted atomically with state, idempotency keys, deep copy defenses, BaseException guards around sink/compensator with documented rationale. In-memory only (documented by class name)."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Name, namespace intent, purpose, invariants, api_signature, extension_contract all reflected. Protocol signature matches exactly including `input` param. Middleware hook present per extension_contract though not invoked."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "The decorator-chaining pattern in the Usage example (`.register(...)(lambda ...)`) contradicts the prose description of `@sd.register(...)` \u2014 it's unclear which form is canonical.",
+          "`command_sink` is never explained: a junior reader doesn't know whether it's a queue client, a function, a URL, or something else.",
+          "Terms `correlation_id`, `journal`, and `eventually-consistent` appear without a one-sentence definition or analogy before they are used."
+        ],
+        "rewrite_suggestion": "Add a 'Key Concepts' box before the API surface that defines command_sink (a callable the orchestrator calls to emit a command, e.g. `async_bus.publish`), correlation_id (a unique ID that ties all steps of one saga together), and journal (an append-only log of every state change). Normalise the Usage example to match the decorator form described in prose."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "Idempotency is described as keyed on `(step_name, outcome_key)` but `outcome_key` is never defined \u2014 it's unclear whether it's a hash of the full outcome dict, a `__saga_id__` field callers must include, or something else.",
+          "The journal-replay recovery path (`saga.journal_for(cid)`) is mentioned but no API shape or replay procedure is shown, making it impossible to evaluate correctness of the crash-recovery claim.",
+          "Middleware signature is unspecified \u2014 `sd.add_middleware(fn)` appears in the Extension contract but what arguments `fn` receives, what it must return, and whether it is async-aware is absent."
+        ],
+        "rewrite_suggestion": "Add a short 'Idempotency key' note defining `outcome_key` precisely. Show the `journal_for()` return type and a one-paragraph replay walkthrough. Document the middleware protocol: `fn(step_name, payload, next) -> result`."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "No authorization model for `compensate(correlation_id, from_step)` \u2014 the 'operator escape hatch' has no access control discussion, yet misuse would trigger unwarranted refunds or cancellations.",
+          "The `correlation_id` namespace is unbounded: no guidance on whether an attacker submitting crafted IDs can exhaust memory via `known_correlations()` or pollute audit logs.",
+          "Audit completeness is not addressed \u2014 the journal is in-memory, so a process restart silently loses the audit trail; there is no mention of durable audit export or tamper-evidence."
+        ],
+        "rewrite_suggestion": "Add an 'Authorization & threat model' subsection covering: (1) who may call `start`/`compensate` and recommended authz check placement, (2) recommended correlation_id size limit + rate-limit guidance, (3) explicit note that InMemorySagaOrchestrator's journal is non-durable and requires an external store for compliance audit trails."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "`InMemorySagaOrchestrator` \u2014 the 'InMemory' qualifier implies no durability across restarts, which directly contradicts SAGA-INV-03 (atomic persistence). The doc never resolves this tension or names a durable implementation.",
+          "The alert query targets `saga_outcomes_total` but the metrics emission point, label schema, and whether a Prometheus client is bundled or must be wired by the caller are all unspecified.",
+          "No runbook for the `compensating` stuck state: the doc says a failing compensator halts at `compensating` with `last_error`, but gives no CLI/API procedure to inspect, retry, or forcibly resolve the saga."
+        ],
+        "rewrite_suggestion": "Add a 'Production deployment' note: explicitly state that InMemorySagaOrchestrator is for testing/dev and point to (or stub) a `DurableSagaOrchestrator` backed by a persistent store. Document the metrics emission contract and provide a short stuck-saga runbook: `saga.journal_for(cid)` \u2192 diagnose \u2192 `saga.compensate(cid, from_step)` after fix."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The business implication of 'eventually-consistent' is unstated: a customer could see a charge appear on their bank statement before the refund clears \u2014 the doc should acknowledge this and frame the customer-visible window.",
+          "No latency or throughput characteristics: PMs planning capacity or SLA commitments have no data point for how long a saga takes end-to-end or how many concurrent sagas the orchestrator supports.",
+          "The failure-rate alert (`rate(saga_outcomes_total{outcome=\"failed\"}[5m])`) is presented without a suggested threshold or incident-severity mapping, making it hard to translate into an SLO for a roadmap discussion."
+        ],
+        "rewrite_suggestion": "Add a 'Customer experience' note: 'Between failure detection and compensation completion, the customer may observe partial state (e.g., a charge without a shipment). Compensation typically settles within N seconds under normal conditions.' Add a one-row SLO table with suggested targets and link it to the alert query."
+      }
+    ]
+  }
+}

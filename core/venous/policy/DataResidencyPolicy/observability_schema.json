@@ -1,0 +1,16 @@
+{
+  "logs": [
+    {"event_name": "residency.policy_bound", "required_attributes": ["data_class", "regions"]},
+    {"event_name": "residency.denied", "required_attributes": ["data_class", "region"]}
+  ],
+  "metrics": [
+    {"name": "residency.bindings", "metric_type": "counter", "unit": "1", "cardinality_bound": 200, "label_keys": ["mechanism"]},
+    {"name": "residency.denied", "metric_type": "counter", "unit": "1", "cardinality_bound": 50, "label_keys": ["data_class"]},
+    {"name": "residency.checks", "metric_type": "counter", "unit": "1", "cardinality_bound": 500, "label_keys": ["operation"]}
+  ],
+  "spans": [
+    {"operation_name": "residency.bind", "required_attributes": ["data_class"]},
+    {"operation_name": "residency.check_write", "required_attributes": ["data_class", "region"]},
+    {"operation_name": "residency.check_transfer", "required_attributes": ["data_class", "source", "destination"]}
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "name": "ContentSecurityPolicy",
+  "namespace": "security",
+  "purpose": "Compose, serialize, and enforce a Content Security Policy header that constrains script, style, frame, and connection origins with strict-dynamic and nonce-based script allowance.",
+  "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass Directive:\n    name: str\n    sources: tuple[str, ...]\n\nclass ContentSecurityPolicy(Protocol):\n    def with_directive(self, directive: Directive) -> \"ContentSecurityPolicy\": ...\n    def with_nonce(self, nonce: str) -> \"ContentSecurityPolicy\": ...\n    def render_header(self) -> tuple[str, str]: ...",
+  "invariants": [
+    "default-src MUST be set; a policy without default-src CANNOT be rendered.",
+    "script-src MUST NEVER include 'unsafe-inline' together with a nonce; the two are mutually exclusive per CSP3.",
+    "Nonces MUST be ≥128 bits from a CSPRNG and MUST be unique per response; reuse SHALL invalidate the guarantee.",
+    "object-src MUST be set to 'none' unless the caller explicitly opts in with a reason string.",
+    "base-uri and frame-ancestors MUST be set to a closed list; wildcard values are FORBIDDEN in production profiles.",
+    "report-only and enforce modes MUST be separate header names and MUST NEVER both block and merely report the same directive."
+  ],
+  "extension_contract": "Per-route policy overrides register as policy-builder decorators that compose on top of a base policy. A decorator is refused if it attempts to widen default-src or reintroduce 'unsafe-inline' on script-src.",
+  "consumption_example": "def apply_csp(response, policy: ContentSecurityPolicy, nonce: str):\n    header_name, header_value = policy.with_nonce(nonce).render_header()\n    response.headers[header_name] = header_value",
+  "sources": [
+    {
+      "source": "OWASP ASVS 4.0.3",
+      "locator": "V14.4 HTTP Security Headers Requirements"
+    },
+    {
+      "source": "OWASP Top 10 2021",
+      "locator": "A05:2021 Security Misconfiguration — response headers"
+    }
+  ],
+  "why_essential": "CSP rules drift quickly when each team edits its own header string; a composable primitive keeps the baseline coherent and makes 'unsafe-inline' regressions reviewable as a single change.",
+  "alternatives_considered": [
+    "Static nginx header — not nonce-aware; breaks strict-dynamic.",
+    "Framework meta-tag CSP — ignored for navigation responses and reporting.",
+    "Per-endpoint hand-written header — accumulates divergence and dead directives."
+  ],
+  "maturity": "battle_tested"
+}

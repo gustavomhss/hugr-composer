@@ -1,0 +1,30 @@
+{
+  "title": "ContextMap — BoundedContext topology & integration governance",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Total registered edges",
+      "targets": [{"expr": "contextmap_edges_total"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Relationships added (rate by kind, 5m)",
+      "targets": [{"expr": "sum by (kind) (rate(contextmap_relationships_added_total[5m]))"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Relationships rejected by invariant (5m)",
+      "targets": [{"expr": "sum by (invariant_id) (rate(contextmap_relationships_rejected_total[5m]))"}]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Cycle-detection duration p95 (ms)",
+      "targets": [{"expr": "histogram_quantile(0.95, rate(contextmap_cycle_detection_duration_bucket[5m]))"}]
+    }
+  ]
+}

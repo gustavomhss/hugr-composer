@@ -1,0 +1,49 @@
+{
+  "logs": [
+    {
+      "event_name": "meter.instrument.created",
+      "required_attributes": ["name", "kind", "unit"]
+    },
+    {
+      "event_name": "meter.instrument.collision",
+      "required_attributes": ["name", "existing_kind", "attempted_kind"]
+    },
+    {
+      "event_name": "meter.gauge.dropped",
+      "required_attributes": ["name", "reason"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "meter.instruments.count",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 200,
+      "label_keys": ["kind"]
+    },
+    {
+      "name": "meter.values.rejected",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["reason"]
+    },
+    {
+      "name": "meter.gauge.callback.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 100,
+      "label_keys": ["name"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "metric.instrument.create",
+      "required_attributes": ["instrument.name", "instrument.kind"]
+    },
+    {
+      "operation_name": "metric.instrument.record",
+      "required_attributes": ["instrument.name"]
+    }
+  ]
+}

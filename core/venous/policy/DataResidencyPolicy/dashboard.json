@@ -1,0 +1,1 @@
+{"title": "DataResidencyPolicy", "schemaVersion": 38, "panels": [{"id": 1, "type": "stat", "title": "Denied", "targets": [{"expr": "sum(residency_denied_total)"}]}]}

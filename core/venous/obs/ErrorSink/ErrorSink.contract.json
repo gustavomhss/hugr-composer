@@ -1,0 +1,37 @@
+{
+  "name": "ErrorSink",
+  "namespace": "obs",
+  "purpose": "Capture uncaught exceptions with fingerprint grouping, attach current trace and correlation context, apply sampling, and forward to an error-tracking backend.",
+  "api_signature": "from typing import Protocol, Mapping, Callable\n\nclass ErrorSink(Protocol):\n    def capture_exception(\n        self,\n        exc: BaseException,\n        *,\n        level: str = 'error',\n        tags: Mapping[str, str] | None = None,\n        extras: Mapping[str, object] | None = None,\n    ) -> str: ...\n    def capture_message(self, message: str, *, level: str = 'error', tags: Mapping[str, str] | None = None) -> str: ...\n    def register_fingerprinter(self, fn: Callable[[BaseException], list[str]]) -> None: ...\n    def before_send(self, fn: Callable[[dict], dict | None]) -> None: ...\n",
+  "invariants": [
+    "Every captured event MUST include the active trace_id, span_id, and request_id when any of those are set.",
+    "A fingerprint MUST be deterministic for the same exception type plus top-three stack frames; otherwise identical incidents SHALL NEVER split into separate issues.",
+    "capture_exception MUST redact registered PII field names (email, password, authorization) before transport.",
+    "The sink CANNOT block the caller; serialization and network transmission SHALL run on a background worker.",
+    "before_send hooks returning None MUST drop the event and NEVER partially transmit it.",
+    "Sampling SHALL apply AFTER fingerprinting so rare variants are not accidentally suppressed by head-of-queue drops."
+  ],
+  "extension_contract": "Tools extend the sink by registering a fingerprinter callable that returns a list of grouping keys, by registering a before_send filter that redacts or drops events, and by implementing a TransportAdapter that speaks the target vendor's envelope while preserving the neutral event payload.",
+  "consumption_example": "def process_order(sink: ErrorSink, order_id: str) -> None:\n    try:\n        _settle(order_id)\n    except PaymentDeclined as exc:\n        event_id = sink.capture_exception(\n            exc,\n            level='warning',\n            tags={'order.id': order_id, 'payment.gateway': 'stripe'},\n            extras={'retry_count': 2},\n        )\n        _notify_ops(event_id)\n        raise\n",
+  "sources": [
+    {
+      "source": "Majors, Fong-Jones, Miranda \u2014 Observability Engineering (2022)",
+      "locator": "Chapter 5 'Structured Events Are the Building Blocks of Observability' pp. 57-62"
+    },
+    {
+      "source": "OpenTelemetry Specification 1.32 \u2014 Exceptions",
+      "locator": "specification/trace/semantic_conventions/exceptions.md (exception.type, exception.message, exception.stacktrace)"
+    },
+    {
+      "source": "Google SRE Book \u2014 Monitoring Distributed Systems",
+      "locator": "Chapter 6 section 'Four Golden Signals' on error-rate grouping"
+    }
+  ],
+  "why_essential": "Per-tool error handling drops trace context and produces duplicate issues; one sink with fingerprinting and context-attachment is the only way to keep error groups stable and joinable to the originating trace.",
+  "alternatives_considered": [
+    "Relying on log aggregation for errors \u2014 rejected because log pipelines lack fingerprint-based grouping and alert fatigue follows.",
+    "Per-framework exception middleware \u2014 rejected because background jobs, CLI, and consumers fall outside framework boundaries.",
+    "Raw stacktrace hashing as the only fingerprint \u2014 rejected because line-number drift from refactors splits stable issues."
+  ],
+  "maturity": "battle_tested"
+}

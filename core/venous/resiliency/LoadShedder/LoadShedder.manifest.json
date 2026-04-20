@@ -1,0 +1,653 @@
+{
+  "name": "LoadShedder",
+  "namespace": "resiliency",
+  "maturity": "battle_tested",
+  "builder_agent_id": 4,
+  "catalog_entry_sha256": "95ccde1b5d09bb0837af96b619e7a8d84965c056ce0e032cb77c8a495d8a737a",
+  "files": [
+    {
+      "path": "resiliency/LoadShedder/LoadShedder.cfg",
+      "sha256": "78a68c4a8907183ac0aa20ed6909d70f434f6fe9b863c483c8075600bf3c04e8",
+      "size_bytes": 114,
+      "kind": "test"
+    },
+    {
+      "path": "resiliency/LoadShedder/LoadShedder.contract.json",
+      "sha256": "5f43234c9e9c39d058b9fae4437ee42c916d9d45d60c318aa2976844aa157ade",
+      "size_bytes": 2604,
+      "kind": "contract_json"
+    },
+    {
+      "path": "resiliency/LoadShedder/LoadShedder.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "resiliency/LoadShedder/LoadShedder.md",
+      "sha256": "0f9bec8d7a3c0712bbe2acb7535184e10b6d221df7889c4e65dc90617d6ac999",
+      "size_bytes": 8031,
+      "kind": "spec_md"
+    },
+    {
+      "path": "resiliency/LoadShedder/LoadShedder.py",
+      "sha256": "06fef113b2b62bd81fb6206840ef4e98c999d5aa40dc6438e7b02a97531396d5",
+      "size_bytes": 15116,
+      "kind": "impl"
+    },
+    {
+      "path": "resiliency/LoadShedder/LoadShedder.tla",
+      "sha256": "35527f1c4ce0672d2c79945a1e2467c66d314c57e35eff159b6a1107814bf553",
+      "size_bytes": 3490,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "resiliency/LoadShedder/behavioral_LoadShedder.py",
+      "sha256": "06eb36f64dc0c3714c96ca18909246f6b6af0f06610a3704e883ab75e5b93736",
+      "size_bytes": 3799,
+      "kind": "behavioral"
+    },
+    {
+      "path": "resiliency/LoadShedder/chaos_LoadShedder.py",
+      "sha256": "1303caa544f35e26de15cd4cd867922dc3057f9cd0f92bb3dfec9b4582814349",
+      "size_bytes": 5083,
+      "kind": "chaos"
+    },
+    {
+      "path": "resiliency/LoadShedder/concurrent_LoadShedder.py",
+      "sha256": "ebade68a2c8e4af9f815cb8cbb00b8d7e2636fae156073ddc7edfd980fc7e356",
+      "size_bytes": 4350,
+      "kind": "concurrent"
+    },
+    {
+      "path": "resiliency/LoadShedder/dashboard.json",
+      "sha256": "cc2e436122dd8ea3e695e857cd1727021ca0f73897a531e4adaf8827c52ef2b1",
+      "size_bytes": 673,
+      "kind": "dashboard"
+    },
+    {
+      "path": "resiliency/LoadShedder/invariant_bindings.json",
+      "sha256": "2f01cd5d965ca62527c1139a1d56852108cff8f3e85f161c63b63c9ab8d37fce",
+      "size_bytes": 1887,
+      "kind": "test"
+    },
+    {
+      "path": "resiliency/LoadShedder/metamorphic_LoadShedder.py",
+      "sha256": "86dfe30e9208cc22764dd21795436b0d9b73e363b73c4ae154520a04f8b62c44",
+      "size_bytes": 4790,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "resiliency/LoadShedder/observability_LoadShedder.py",
+      "sha256": "1fdf14dd328e5d53e1bd2372b805dccf9efd6f8fb8dddf866d2cded1ee13452f",
+      "size_bytes": 2506,
+      "kind": "observability"
+    },
+    {
+      "path": "resiliency/LoadShedder/observability_schema.json",
+      "sha256": "a72307a5f2d539c93f6c5616c3a1e13d219cfadfe11b8d8ae45143672f3acecc",
+      "size_bytes": 1144,
+      "kind": "observability"
+    },
+    {
+      "path": "resiliency/LoadShedder/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "resiliency/LoadShedder/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "resiliency/LoadShedder/state_machine_LoadShedder.py",
+      "sha256": "bad36263f13429ff5a0ac2f997a5df3f066a5fefa64e1c20ba8d701fcad1333a",
+      "size_bytes": 3413,
+      "kind": "state_machine"
+    },
+    {
+      "path": "resiliency/LoadShedder/test_LoadShedder.py",
+      "sha256": "8e8e1a64bde3f4537fcdf31ba1e4603e7188a348e267b61c5707cf1960b0ba04",
+      "size_bytes": 9748,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "LSH_INV_01",
+      "invariant_text": "The shedder SHALL admit strictly by descending priority class and MUST NEVER admit a lower class while a higher class is being rejected.",
+      "confirms_test": "test_inv_priority_order_confirms",
+      "prevents_test": "test_inv_priority_order_prevents",
+      "under_failure_test": "test_inv_priority_order_under_failure"
+    },
+    {
+      "invariant_id": "LSH_INV_02",
+      "invariant_text": "A rejected request MUST be returned with an explicit overload signal (HTTP 503 or status UNAVAILABLE) and a retry-after hint.",
+      "confirms_test": "test_inv_overload_signal_confirms",
+      "prevents_test": "test_inv_overload_signal_prevents",
+      "under_failure_test": "test_inv_overload_signal_under_failure"
+    },
+    {
+      "invariant_id": "LSH_INV_03",
+      "invariant_text": "The cutoff priority CANNOT change more than once per control_interval_ms to prevent oscillation.",
+      "confirms_test": "test_inv_hysteresis_confirms",
+      "prevents_test": "test_inv_hysteresis_prevents",
+      "under_failure_test": "test_inv_hysteresis_under_failure"
+    },
+    {
+      "invariant_id": "LSH_INV_04",
+      "invariant_text": "A request that passed admission control SHALL NEVER be shed later in the pipeline.",
+      "confirms_test": "test_inv_no_shed_after_admit_confirms",
+      "prevents_test": "test_inv_no_shed_after_admit_prevents",
+      "under_failure_test": "test_inv_no_shed_after_admit_under_failure"
+    },
+    {
+      "invariant_id": "LSH_INV_05",
+      "invariant_text": "The shedder MUST publish the current cutoff as a metric so clients can cooperate with backoff.",
+      "confirms_test": "test_inv_publish_cutoff_confirms",
+      "prevents_test": "test_inv_publish_cutoff_prevents",
+      "under_failure_test": "test_inv_publish_cutoff_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 1106,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1585,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 2510,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 6606,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1758,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 1519,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 169503,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "28 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1071,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1085,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 68567,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 256102,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INVERSION-RACE",
+        "hypothesis": "Concurrent admit() calls with interleaved cutoff updates allow a 'sheddable' request to be admitted in the microsecond window after a 'normal' request was just rejected, violating strict descending-priority admission under load.",
+        "input_fixture": "Thread A: admit('normal', queue_depth=950, cpu=0.97) -> rejected. Thread B (same ms): admit('sheddable', queue_depth=950, cpu=0.97) -> admitted due to stale cutoff read.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-OSCILLATE-CLOCK-SKEW",
+        "hypothesis": "If control_interval_ms is enforced via wall-clock time.time() and NTP slews backwards, two cutoff changes occur within the same logical interval, breaking the once-per-interval guarantee.",
+        "input_fixture": "Mock time.time() to return [1000.0, 1000.4, 999.9, 1000.5]; call admit() with oscillating cpu_load_ewma=[0.5,0.95,0.5,0.95].",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CPU-NAN",
+        "hypothesis": "Passing cpu_load_ewma=float('nan') causes all comparisons to return False, so the shedder neither raises cutoff nor admits/rejects deterministically, silently admitting sheddable traffic during real overload.",
+        "input_fixture": "admit('sheddable', queue_depth=10000, cpu_load_ewma=float('nan'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NEG-QUEUE-DEPTH",
+        "hypothesis": "Negative queue_depth (e.g., from an unsigned underflow in upstream counter) is treated as 'very low load', forcing cutoff to 'sheddable' and admitting everything during real overload.",
+        "input_fixture": "admit('sheddable', queue_depth=-1, cpu_load_ewma=0.99)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INT-OVERFLOW-DEPTH",
+        "hypothesis": "queue_depth=2**63-1 overflows internal arithmetic (e.g., depth*weight) and wraps negative, inverting the overload decision and admitting sheddable traffic.",
+        "input_fixture": "admit('sheddable', queue_depth=9223372036854775807, cpu_load_ewma=0.5)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED-PRIORITY",
+        "hypothesis": "Literal type is not enforced at runtime; passing priority='SHEDDABLE' (uppercase) or 'urgent' bypasses comparison and is treated as critical, violating descending admission.",
+        "input_fixture": "admit('URGENT', queue_depth=10000, cpu_load_ewma=0.99) returns True while admit('critical',...) returns False due to dict miss.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NO-RETRY-AFTER",
+        "hypothesis": "admit() returns bare False with no structured overload signal/retry-after, so the HTTP layer cannot synthesize 503+Retry-After, violating the explicit overload contract.",
+        "input_fixture": "result = admit('sheddable', 10000, 0.99); assert hasattr(result, 'retry_after_ms')  # fails",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-LATE-SHED-PIPELINE",
+        "hypothesis": "A request admitted at t0 is later cancelled by a downstream timeout/circuit-breaker that reuses the shedder, violating 'admitted requests are never shed later'.",
+        "input_fixture": "admit('normal',...)=True; 50ms later downstream calls shedder.cancel(req_id) due to cpu spike.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-METRIC-STALE",
+        "hypothesis": "current_cutoff() reads a cached value updated only on admit() calls; during idle periods the published metric lies, so cooperating clients keep sending sheddable traffic that will be dropped \u2014 amplifying load.",
+        "input_fixture": "No admit() for 60s while background load rises; current_cutoff() still returns 'sheddable' though internal state moved to 'critical'.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SHED-RATE-DIVZERO",
+        "hypothesis": "shed_rate() computes rejected/total; with zero traffic it raises ZeroDivisionError or returns NaN, breaking metric scrape and hiding overload from operators.",
+        "input_fixture": "Fresh shedder, no admit() calls, then call shed_rate().",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-PRIORITY-SPOOF",
+        "hypothesis": "Client replays a captured 'critical' priority token from a prior request to bypass shedding; shedder trusts caller-supplied priority with no signing/auth, enabling amplification of sheddable traffic.",
+        "input_fixture": "Attacker loops admit('critical', 10000, 0.99) at 10k rps during overload; all admitted.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EWMA-FLOAT-DENORMAL",
+        "hypothesis": "cpu_load_ewma=1e-308 (denormal) combined with threshold comparisons using subtraction causes underflow to 0, masking sustained moderate load and preventing cutoff from rising.",
+        "input_fixture": "Repeated admit('normal', 800, 1e-308) for 1000 iterations; cutoff never escalates above 'sheddable'.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-INIT",
+        "hypothesis": "Calling current_cutoff() before any admit() returns None/empty string instead of a valid Priority, crashing downstream metric publishers and violating the always-published-cutoff invariant.",
+        "input_fixture": "shedder = LoadShedder(); shedder.current_cutoff()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE-CUTOFF-DOUBLE-WRITE",
+        "hypothesis": "Two goroutine/thread-equivalent callers simultaneously call admit() at the boundary of control_interval_ms, both observe the interval as expired, and both write a new cutoff. The resulting cutoff is whichever thread wins the last write, producing TWO cutoff changes inside one control window \u2014 violating the oscillation-prevention invariant.",
+        "input_fixture": "Thread A and Thread B concurrently call admit('normal', 9000, 0.95) at wall-clock time T and T+1ms where control_interval_ms=100. Both read last_change_ts=T-101ms (interval appears expired), both compute new cutoff independently, both write. Net effect: cutoff changes twice inside 100ms window.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NEG-QUEUE-ADMISSION-BYPASS",
+        "hypothesis": "Passing a negative queue_depth (e.g., -1 or INT_MIN) may underflow an unsigned comparison or flip a branch that checks 'queue_depth > threshold', causing the shedder to evaluate load as below-threshold and admit requests it should reject \u2014 including lower-priority classes while higher-priority classes are being rejected.",
+        "input_fixture": "shedder.admit('sheddable', -1, 0.99)  # cpu near saturation but queue appears 'empty' due to signed/unsigned confusion\nshedder.admit('critical', 5000, 0.99)  # should be admitted\n# If sheddable is admitted first due to negative queue bypass, invariant 1 is broken",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NAN-EWMA-COMPARISON-POISON",
+        "hypothesis": "Passing float('nan') for cpu_load_ewma causes all numeric comparisons (>, <, >=, <=) to return False in IEEE 754, so every threshold check fails silently. Depending on branch structure, this could cause the shedder to admit everything (cutoff stays at 'sheddable') even under genuine overload, or reject everything without publishing a valid metric signal.",
+        "input_fixture": "import math\nresult = shedder.admit('sheddable', 9999, math.nan)\n# NaN comparisons: nan > 0.8 == False, nan < 0.5 == False\n# Load appears neither high nor low \u2014 cutoff stuck at whatever default was set",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INF-EWMA-OVERFLOW-BRANCH",
+        "hypothesis": "Passing float('inf') for cpu_load_ewma may cause threshold arithmetic (e.g., ewma * weight + sample * (1-weight)) to produce inf or nan in derived calculations, corrupting the internal EWMA state permanently and causing the shedder to behave incorrectly for all subsequent calls even after load normalizes.",
+        "input_fixture": "import math\nshedder.admit('critical', 100, math.inf)  # corrupts internal state\nshedder.admit('critical', 0, 0.1)          # should be admitted freely but internal ewma is now nan/inf\nassert shedder.shed_rate() >= 0.0 and shedder.shed_rate() <= 1.0  # likely fails",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PRIORITY-SUBCLASS-INJECTION",
+        "hypothesis": "Python's Literal type hint is not enforced at runtime. Passing an arbitrary string such as 'CRITICAL' (wrong case), 'critical\\x00', or a subclass value like 'critical_vip' may bypass the priority ordering logic entirely, falling through to a default branch that either admits unconditionally or maps to the wrong tier, violating strict descending-priority admission.",
+        "input_fixture": "shedder.admit('CRITICAL', 5000, 0.99)   # uppercase bypass\nshedder.admit('critical\\x00', 5000, 0.99)  # null-byte suffix\nshedder.admit('', 5000, 0.99)               # empty string\nshedder.admit(None, 5000, 0.99)             # None type\n# Any of these admitted while 'normal' is rejected breaks INV-1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-OSCILLATION-RAPID-FIRE",
+        "hypothesis": "Rapidly alternating admit() calls with high and low cpu_load_ewma values within a single control_interval_ms window, if the shedder recalculates cutoff on every call rather than caching it per interval, causes the cutoff to oscillate multiple times within one window \u2014 exactly the behavior the oscillation guard is meant to prevent.",
+        "input_fixture": "import time\nstart = time.monotonic()\nchanges = []\nprev = shedder.current_cutoff()\nfor i in range(1000):\n    load = 0.95 if i % 2 == 0 else 0.1\n    shedder.admit('normal', 100, load)\n    curr = shedder.current_cutoff()\n    if curr != prev:\n        changes.append((time.monotonic() - start, curr))\n        prev = curr\n# Assert no more than 1 change per control_interval_ms window",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-POST-ADMIT-SHED-PIPELINE",
+        "hypothesis": "If the cutoff changes between the moment admit() returns True and the moment the request enters the downstream handler, and the downstream handler re-checks admission state (e.g., via current_cutoff()), a previously admitted request can be retroactively shed \u2014 violating the invariant that admission is irrevocable.",
+        "input_fixture": "# Simulate middleware re-checking after admit\nadmitted = shedder.admit('sheddable_plus', 100, 0.7)  # returns True\n# Inject load spike between admit and handler\nshedder.admit('critical', 9999, 0.98)  # triggers cutoff change to 'critical'\n# Downstream middleware re-evaluates:\nif shedder.current_cutoff() > 'sheddable_plus':  # priority comparison order issue\n    raise OverloadError()  # shed the already-admitted request \u2014 VIOLATES INV-4",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-503-MISSING-RETRY-AFTER",
+        "hypothesis": "When admit() returns False, the contract requires an explicit overload signal AND a retry-after hint. If the rejection path raises an exception, returns a bare False, or constructs a 503 response without the Retry-After header, the hint is silently missing. Clients without the hint will use aggressive retry, amplifying load further.",
+        "input_fixture": "result = shedder.admit('sheddable', 10000, 0.99)\nassert result == False\n# The caller must receive 503 + Retry-After \u2014 but admit() only returns bool\n# There is no mechanism in the signature to carry Retry-After\n# Any caller that wraps this in 'if not shedder.admit(...): raise HTTP503()'\n# will produce a 503 without Retry-After unless explicitly coded",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-METRIC-STALE-CUTOFF-PUBSUB",
+        "hypothesis": "current_cutoff() is polled by clients for cooperative backoff. If the metric is published asynchronously (e.g., pushed to a time-series store every N seconds), there is a window where the actual cutoff is 'critical' but published metric still shows 'normal'. Clients reading the stale metric continue sending sheddable traffic, overwhelming the shedder and defeating cooperative backoff entirely.",
+        "input_fixture": "# Simulate stale metric window\nshedder.admit('critical', 9000, 0.98)  # triggers cutoff to 'critical'\npublished = get_published_metric('load_shedder.cutoff')  # reads from metric store\nassert published == 'critical'  # FAILS if metric publication is async/delayed\n# Gap between cutoff change and metric publication = attack window",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SHED-RATE-OUT-OF-BOUNDS",
+        "hypothesis": "shed_rate() must return a value in [0.0, 1.0]. If the internal counter uses integer division or floating-point arithmetic that can produce values outside this range (e.g., admitted=0 and total=0 yields ZeroDivisionError or NaN; or a counter wraps around producing negative rates), downstream dashboards and clients using shed_rate() for load regulation receive corrupt signals.",
+        "input_fixture": "# Fresh shedder, no calls yet\nshedder_fresh = LoadShedderImpl()\nrate = shedder_fresh.shed_rate()  # total=0, admitted=0: 0/0 => ZeroDivisionError or NaN\nassert isinstance(rate, float)\nassert 0.0 <= rate <= 1.0\n# Also test integer overflow scenario:\nfor _ in range(2**32 + 1):\n    shedder.admit('normal', 0, 0.1)\nrate = shedder.shed_rate()\nassert 0.0 <= rate <= 1.0",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PRIORITY-ENUM-ORDER-INVERSION",
+        "hypothesis": "The priority ordering 'critical' > 'normal' > 'sheddable_plus' > 'sheddable' is implicit in string or enum comparison. If the implementation uses lexicographic string ordering instead of a defined ordinal mapping, 'sheddable' > 'normal' alphabetically (s > n), inverting the priority ladder and causing the shedder to protect low-priority traffic while shedding high-priority traffic.",
+        "input_fixture": "# Lexicographic order: critical < normal < sheddable < sheddable_plus\n# Correct order: critical > normal > sheddable_plus > sheddable\nimport functools\npriorities = ['critical', 'normal', 'sheddable_plus', 'sheddable']\nlexsorted = sorted(priorities)\nprint(lexsorted)  # ['critical', 'normal', 'sheddable', 'sheddable_plus'] \u2014 WRONG order\n# If cutoff comparison is: if priority >= current_cutoff (lexicographic)\n# then 'sheddable' >= 'normal' is True => sheddable is admitted while it should be rejected",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK-SKEW-INTERVAL-BYPASS",
+        "hypothesis": "If control_interval_ms uses wall-clock time (time.time()) rather than a monotonic clock, a system clock adjustment (NTP sync, DST change, or deliberate skew) can move the clock backward, making the interval appear expired immediately after a cutoff change. This allows an attacker with local clock manipulation to trigger arbitrarily many cutoff changes per second, defeating oscillation prevention.",
+        "input_fixture": "# Simulate NTP backward step\nimport time\nwith mock.patch('time.time') as mock_time:\n    mock_time.return_value = 1000.0\n    shedder.admit('normal', 100, 0.9)   # sets last_change_ts = 1000.0\n    mock_time.return_value = 999.5      # clock steps backward 500ms\n    shedder.admit('sheddable', 100, 0.1)  # interval check: 999.5 - 1000.0 = -0.5 < control_interval\n    # Depending on signed comparison, this may appear 'expired' or cause underflow",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-QUEUE-DEPTH-MAXINT-OVERFLOW",
+        "hypothesis": "Passing sys.maxsize or 2^63-1 for queue_depth may cause integer overflow in threshold arithmetic (e.g., queue_depth * weight or queue_depth / capacity) producing a negative or wrapped value. This could evaluate load as below threshold and admit sheddable traffic during genuine saturation.",
+        "input_fixture": "import sys\nresult = shedder.admit('sheddable', sys.maxsize, 0.99)\n# If internal calc: normalized = queue_depth / max_queue (e.g., 10000)\n# sys.maxsize / 10000 = huge float, may overflow in C extensions or produce inf\n# inf > threshold = True but subsequent arithmetic may wrap in fixed-width contexts",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ADMIT-REPLAY-STALE-TOKEN",
+        "hypothesis": "If admission is tracked via a token or ticket (e.g., a request ID that was admitted), and the token can be replayed after the admission window closes, a low-priority request can present a previously-issued admission token to bypass the current cutoff. This violates the invariant that admission is evaluated at request time against the current cutoff, not a past one.",
+        "input_fixture": "# Step 1: admit sheddable when load is low\ntoken = shedder.admit('sheddable', 10, 0.1)  # returns True + token\n# Step 2: load spikes, cutoff moves to 'critical'\nshedder.admit('critical', 9000, 0.98)\n# Step 3: replay old token for new sheddable request\nresult = shedder.verify_token(token, 'sheddable')  # if token-based, returns True\n# Admitted at time T0 but should be rejected at time T1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONCURRENT-CUTOFF-READ-TORN",
+        "hypothesis": "current_cutoff() and the internal cutoff write in admit() are not protected by a memory barrier or lock. On multi-core systems, a concurrent reader of current_cutoff() may observe a partially-written state (torn read) where the cutoff is neither the old nor new value \u2014 returning an undefined or zero-value Priority that clients interpret as 'admit everything', defeating cooperative backoff.",
+        "input_fixture": "import threading\nresults = []\ndef reader():\n    for _ in range(10000):\n        results.append(shedder.current_cutoff())\ndef writer():\n    for i in range(10000):\n        load = 0.95 if i % 2 == 0 else 0.1\n        shedder.admit('normal', 100, load)\nt1 = threading.Thread(target=reader)\nt2 = threading.Thread(target=writer)\nt1.start(); t2.start(); t1.join(); t2.join()\nvalid = {'critical','normal','sheddable_plus','sheddable'}\nassert all(r in valid for r in results)  # torn reads produce invalid values",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "load_shedder.admitted",
+        "required_attributes": [
+          "priority",
+          "cutoff",
+          "queue_depth",
+          "cpu_load"
+        ]
+      },
+      {
+        "event_name": "load_shedder.rejected",
+        "required_attributes": [
+          "priority",
+          "cutoff",
+          "retry_after_seconds",
+          "reason"
+        ]
+      },
+      {
+        "event_name": "load_shedder.cutoff.changed",
+        "required_attributes": [
+          "previous_cutoff",
+          "current_cutoff",
+          "pressure"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "load_shedder.current_cutoff",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 4,
+        "label_keys": [
+          "cutoff"
+        ]
+      },
+      {
+        "name": "load_shedder.admissions",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 8,
+        "label_keys": [
+          "priority",
+          "result"
+        ]
+      },
+      {
+        "name": "load_shedder.shed_rate",
+        "metric_type": "histogram",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "priority"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "load_shedder.admit",
+        "required_attributes": [
+          "priority",
+          "cutoff",
+          "admitted",
+          "queue_depth",
+          "cpu_load"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 10,
+        "rationale": "Protocol matches catalog api_signature verbatim: admit/current_cutoff/shed_rate with exact Priority Literal. Pressure bands match spec table exactly."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All 5 invariants implemented with explicit enforcement (hysteresis, sealed admit token, metric publish, rejection signal). Missing only admissions counter metric emission, but cutoff metric is published."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "LoadShedderInvariantError with INV-tagged messages; ValueError for ctor/queue_depth bounds; defensive CPU clamping. Sink exceptions suppressed per LSH-INV-04 rationale. Fabricated-token path raises clearly."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "CompositionAdapter pluggable with three built-ins; injectable clock and metric_sink; SealedAdmit wrapper; runtime_checkable Protocol; framework-agnostic RejectionSignal."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 9,
+        "rationale": "Thread-safe via single lock, O(1) reads, monotonic clock default, hysteresis seeded to allow first transition, rolling window bounded, telemetry never breaks admission path, zero import-time I/O."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 10,
+        "rationale": "Namespace/Protocol/Priority literal/method signatures verbatim. Invariants cited by ID throughout. Extension contract (LoadSignal via args, CompositionAdapter, PriorityExtractor via caller) honored."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'cpu_load_ewma' is used throughout but EWMA (Exponentially Weighted Moving Average) is never defined \u2014 a junior will not know what to pass or how to compute it.",
+          "The 'composition adapter' concept (compose_max, compose_ewma, compose_quantile) is introduced without a worked example; it's unclear which to pick or what the tradeoffs are.",
+          "The Protocol/typing syntax for LoadShedder is idiomatic Python but the doc never explains that callers use InMemoryLoadShedder, not the Protocol \u2014 the usage section saves it but only at the very end."
+        ],
+        "rewrite_suggestion": "Add a one-paragraph 'Inputs explained' block right after the API surface: define EWMA in one sentence, show a minimal cpu() helper, and call out InMemoryLoadShedder as the concrete class to import. Move the usage example earlier, directly after the API surface."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "The pressure composition formula is stated as 'composition(cpu_load_ewma, queue_depth / queue_saturation)' but 'queue_saturation' is never defined \u2014 it's unclear whether it's a constructor param, a config key, or a fixed constant.",
+          "Lock contention behavior under extreme concurrency is unspecified: is the lock a threading.Lock, asyncio.Lock, or both? Under async workloads this is a correctness question, not just performance.",
+          "The invariant bindings reference 'invariant_bindings.json' but neither its schema nor its location in the repo is given, making it impossible to audit test coverage without guessing the file path."
+        ],
+        "rewrite_suggestion": "Add a 'Configuration reference' table listing every constructor parameter (including queue_saturation) with type, default, and valid range. Document lock type explicitly in the thread-safety section. Add a relative path or anchor to invariant_bindings.json."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "The doc says PriorityExtractor 'MUST be authenticated input' but does not specify what happens on extractor failure \u2014 whether it fails open (admits as critical) or fails closed (rejects as sheddable) is a security-critical gap.",
+          "shed_rate and current_cutoff metrics are public read paths; the doc doesn't state whether these endpoints require authentication, which could leak traffic-priority topology to an attacker.",
+          "There is no mention of a self-elevation amplification scenario: a burst of unauthenticated critical-claiming requests before the PriorityExtractor rejects them could transiently starve legitimate traffic within one control_interval_ms window."
+        ],
+        "rewrite_suggestion": "Add a 'Failure modes' row to the security section: specify fail-closed default for PriorityExtractor exceptions, note that metric endpoints should be on an internal-only scrape path, and add a note that the extractor is called before the lock is acquired so extraction errors never produce an admission decision."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "'queue_saturation' appears in the pressure formula but is not in the operational characteristics section \u2014 an SRE tuning the system cannot find the knob that determines when queue depth starts pushing pressure.",
+          "The alert threshold 'shed_rate > 0.2 sustained' lacks a time window \u2014 'sustained' is ambiguous in an alerting rule; a concrete window (e.g. 5 minutes) is needed to write the PromQL.",
+          "The runbook lists 'verify signal providers are not reporting stale CPU EWMA' as the #1 oscillation cause but gives no signal staleness detection method or metric to check."
+        ],
+        "rewrite_suggestion": "Add a 'Tuning knobs' subsection under Operational characteristics listing queue_saturation, control_interval_ms, and composition adapter with their defaults and effect on pressure sensitivity. Replace 'sustained' in alert suggestions with explicit time windows. Add a 'Stale signal detection' note with the specific metric or log pattern to watch."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "There are no performance overhead numbers \u2014 PMs need to answer 'what does this cost per request in p99 latency?' before approving adoption; the doc is silent on this.",
+          "The 'when NOT to use' list covers technical anti-patterns but not organisational ones \u2014 e.g. 'do not use if you lack SLO definitions for priority classes' would prevent misuse in teams that haven't yet defined priorities.",
+          "Maturity level is referenced ('maturity' field in the contract schema) but never stated in the narrative \u2014 a PM cannot assess production-readiness without knowing whether this is alpha, beta, or stable."
+        ],
+        "rewrite_suggestion": "Add a one-line 'Maturity' badge near the top (e.g. 'Status: Beta \u2014 used in production at X scale'). Add a latency overhead estimate (even a range: '<1 \u00b5s per admit() call under no contention'). Extend the NOT-to-use list with the 'no defined priority SLOs' case."
+      }
+    ]
+  }
+}

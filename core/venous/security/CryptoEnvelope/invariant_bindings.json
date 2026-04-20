@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "CRY_INV_01",
+      "invariant_text": "seal() MUST use an AEAD construction (AES-GCM, ChaCha20-Poly1305) and CANNOT emit an envelope without an authentication tag.",
+      "confirms_test": "test_inv_aead_tag_confirms",
+      "prevents_test": "test_inv_aead_tag_prevents",
+      "under_failure_test": "test_inv_aead_tag_under_failure"
+    },
+    {
+      "invariant_id": "CRY_INV_02",
+      "invariant_text": "Nonces MUST NEVER repeat for a given key; nonce reuse under AES-GCM SHALL be treated as a critical incident.",
+      "confirms_test": "test_inv_nonce_uniqueness_confirms",
+      "prevents_test": "test_inv_nonce_uniqueness_prevents",
+      "under_failure_test": "test_inv_nonce_uniqueness_under_failure"
+    },
+    {
+      "invariant_id": "CRY_INV_03",
+      "invariant_text": "open() MUST verify aad byte-for-byte; mismatched aad MUST abort before returning plaintext.",
+      "confirms_test": "test_inv_aad_binding_confirms",
+      "prevents_test": "test_inv_aad_binding_prevents",
+      "under_failure_test": "test_inv_aad_binding_under_failure"
+    },
+    {
+      "invariant_id": "CRY_INV_04",
+      "invariant_text": "key_id MUST resolve to a live key in the vault; decryption with an unknown key_id CANNOT return partial plaintext.",
+      "confirms_test": "test_inv_key_resolution_confirms",
+      "prevents_test": "test_inv_key_resolution_prevents",
+      "under_failure_test": "test_inv_key_resolution_under_failure"
+    },
+    {
+      "invariant_id": "CRY_INV_05",
+      "invariant_text": "Keys MUST be rotatable without re-encrypting stored ciphertext; open() MUST resolve the correct key by key_id from the envelope.",
+      "confirms_test": "test_inv_key_rotation_confirms",
+      "prevents_test": "test_inv_key_rotation_prevents",
+      "under_failure_test": "test_inv_key_rotation_under_failure"
+    },
+    {
+      "invariant_id": "CRY_INV_06",
+      "invariant_text": "Plaintext buffers SHALL be zeroed where the runtime allows after use; plaintext MUST NEVER be logged.",
+      "confirms_test": "test_inv_no_plaintext_leak_confirms",
+      "prevents_test": "test_inv_no_plaintext_leak_prevents",
+      "under_failure_test": "test_inv_no_plaintext_leak_under_failure"
+    }
+  ]
+}

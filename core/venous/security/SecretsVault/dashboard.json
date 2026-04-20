@@ -1,0 +1,20 @@
+{
+  "title": "SecretsVault — access rate, cache-hit ratio, rotation cadence, outage watch",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "get ops/s",
+     "targets": [{"expr": "sum(rate(secrets_vault_operations_total{operation=\"get\"}[5m]))"}]},
+    {"id": 2, "type": "stat", "title": "cache-hit ratio",
+     "targets": [{"expr": "sum(rate(secrets_vault_cache_hits_total{outcome=\"hit\"}[5m])) / sum(rate(secrets_vault_cache_hits_total[5m]))"}]},
+    {"id": 3, "type": "timeseries", "title": "get/rotate p50/p95/p99 (ms)",
+     "targets": [
+       {"expr": "histogram_quantile(0.50, rate(secrets_vault_duration_bucket[5m]))"},
+       {"expr": "histogram_quantile(0.95, rate(secrets_vault_duration_bucket[5m]))"},
+       {"expr": "histogram_quantile(0.99, rate(secrets_vault_duration_bucket[5m]))"}
+     ]},
+    {"id": 4, "type": "stat", "title": "backend unavailable (alert > 0)",
+     "targets": [{"expr": "sum(increase(secrets_vault_backend_unavailable_total[5m]))"}]},
+    {"id": 5, "type": "timeseries", "title": "rotations / hour",
+     "targets": [{"expr": "sum(rate(secrets_vault_rotations_total[1h]))"}]}
+  ]
+}

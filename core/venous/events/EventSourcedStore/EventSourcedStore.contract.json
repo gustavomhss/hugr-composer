@@ -1,0 +1,35 @@
+{
+  "name": "EventSourcedStore",
+  "namespace": "events",
+  "purpose": "Persists aggregate state as an ordered sequence of domain events and reconstructs current state by folding them on load.",
+  "api_signature": "from typing import Protocol, Iterable, Any\n\nclass EventSourcedStore(Protocol):\n    def load(self, aggregate_id: str) -> Iterable[Any]: ...\n    def append(self, aggregate_id: str, expected_version: int, events: Iterable[Any]) -> int: ...\n    def snapshot(self, aggregate_id: str, version: int, state: Any) -> None: ...\n    def latest_snapshot(self, aggregate_id: str) -> Any: ...",
+  "invariants": [
+    "append MUST fail with a concurrency error when expected_version does not match the current tail; last-writer-wins is FORBIDDEN.",
+    "Events already written CANNOT be mutated; corrections SHALL be expressed as new, compensating events.",
+    "Snapshots MUST be reproducible from the event log; the store NEVER treats a snapshot as the source of truth.",
+    "Replays from zero ALWAYS produce the same logical state given the same event sequence; non-determinism is FORBIDDEN."
+  ],
+  "extension_contract": "New aggregate types extend EventSourcedStore by registering their event serializer and fold function via a register call on the store registry; storage backends plug in through an adapter without altering concurrency or replay semantics.",
+  "consumption_example": "def rebuild(store: EventSourcedStore, fold, aggregate_id: str):\n    events = list(store.load(aggregate_id))\n    state = None\n    for e in events:\n        state = fold(state, e)\n    return state, len(events)",
+  "sources": [
+    {
+      "source": "Fowler 'Patterns of Enterprise Application Architecture' (2002)",
+      "locator": "'Event Sourcing' supplementary pattern (2005 essay building on PEAA terminology)"
+    },
+    {
+      "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+      "locator": "Appendix A, Aggregates and Event Sourcing, pp. 577-595"
+    },
+    {
+      "source": "Richardson 'Microservices Patterns' (2018)",
+      "locator": "Chapter 6, Event Sourcing, pp. 181-226"
+    }
+  ],
+  "why_essential": "Without a shared primitive, tools that adopt event sourcing drift in concurrency control, serialization, and snapshot policy, making one team's stream unreadable by another's replay.",
+  "alternatives_considered": [
+    "State-based persistence only: loses audit, replay, and temporal queries.",
+    "Event log in a sidecar table with overwrites: gives the illusion of sourcing without the guarantees.",
+    "CRDT-based state: solves convergence but not intent tracking."
+  ],
+  "maturity": "battle_tested"
+}

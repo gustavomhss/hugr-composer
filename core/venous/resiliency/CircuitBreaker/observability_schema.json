@@ -1,0 +1,49 @@
+{
+  "logs": [
+    {
+      "event_name": "circuitbreaker.opened",
+      "required_attributes": ["breaker_name", "reason", "failure_rate"]
+    },
+    {
+      "event_name": "circuitbreaker.half.opened",
+      "required_attributes": ["breaker_name", "cooldown_ms"]
+    },
+    {
+      "event_name": "circuitbreaker.closed",
+      "required_attributes": ["breaker_name"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "circuitbreaker.transitions",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 30,
+      "label_keys": ["breaker", "from_state", "to_state"]
+    },
+    {
+      "name": "circuitbreaker.calls",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 60,
+      "label_keys": ["breaker", "outcome"]
+    },
+    {
+      "name": "circuitbreaker.call.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": ["breaker", "outcome"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "circuitbreaker.call",
+      "required_attributes": ["breaker.name", "breaker.state", "outcome"]
+    },
+    {
+      "operation_name": "circuitbreaker.transition",
+      "required_attributes": ["breaker.name", "from_state", "to_state", "reason"]
+    }
+  ]
+}

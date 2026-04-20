@@ -1,0 +1,33 @@
+{
+  "name": "WebAuthnAuthenticator",
+  "namespace": "auth",
+  "purpose": "Register and assert passkey credentials per the Web Authentication API, binding credentials to an RP ID and verifying attestation, challenge, origin, and signature counter.",
+  "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass RegistrationResult:\n    credential_id: bytes\n    public_key: bytes\n    sign_count: int\n    aaguid: bytes\n\nclass WebAuthnAuthenticator(Protocol):\n    def begin_registration(self, user_id: bytes, user_name: str) -> dict: ...\n    def finish_registration(self, challenge: bytes, response: dict) -> RegistrationResult: ...\n    def begin_assertion(self, credential_ids: list[bytes]) -> dict: ...\n    def finish_assertion(self, challenge: bytes, response: dict, stored_public_key: bytes, stored_sign_count: int) -> int: ...",
+  "invariants": [
+    "Challenges MUST be \u226516 bytes from a CSPRNG and MUST be single-use; replaying a challenge SHALL reject the response.",
+    "The origin in clientDataJSON MUST exactly match the configured RP origin; subdomain or scheme mismatch CANNOT be accepted.",
+    "The RP ID hash in authenticatorData MUST equal SHA-256(rp_id); mismatch MUST fail verification.",
+    "finish_assertion() MUST reject when the new sign_count is \u2264 the stored sign_count, except when the authenticator always returns 0.",
+    "User verification flag MUST be enforced for authenticators registered as user-verifying; absence SHALL fail the assertion.",
+    "Credential public keys MUST be stored bound to (user_id, credential_id) and NEVER shared across users."
+  ],
+  "extension_contract": "Attestation formats register as attestation-statement verifiers (packed, fido-u2f, tpm, android-key, apple) implementing a verifier Protocol. The registry refuses to bind a statement type unless it returns an AAGUID and a trust path rooted in a configured metadata service.",
+  "consumption_example": "def register_passkey(auth: WebAuthnAuthenticator, user_id: bytes, user_name: str, client_response: dict, challenge: bytes):\n    result = auth.finish_registration(challenge=challenge, response=client_response)\n    store_credential(user_id=user_id, credential_id=result.credential_id, public_key=result.public_key, sign_count=result.sign_count)",
+  "sources": [
+    {
+      "source": "W3C WebAuthn Level 3 Recommendation",
+      "locator": "Section 7.1 Registering a New Credential; Section 7.2 Verifying an Authentication Assertion"
+    },
+    {
+      "source": "OWASP ASVS 4.0.3",
+      "locator": "V2.7 Out of Band Verifier Requirements; V2.9 Cryptographic Software and Devices"
+    }
+  ],
+  "why_essential": "Passkey onboarding fails in narrow, catastrophic ways (wrong origin, no sign-count check, challenge reuse); a shared primitive encodes the ceremony once so no service can ship a broken variant.",
+  "alternatives_considered": [
+    "Vendor SDK per platform \u2014 fragments RP ID policy and challenge storage.",
+    "Delegate to hosted passkey provider \u2014 loses control of credential export and silent migration.",
+    "Stay on TOTP \u2014 retains phishable shared secret model the FIDO stack replaces."
+  ],
+  "maturity": "emerging"
+}

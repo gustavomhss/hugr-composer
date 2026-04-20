@@ -1,0 +1,31 @@
+{
+  "name": "ActivityCall",
+  "namespace": "jobs",
+  "purpose": "Workflow scoped unit of side effectful work scheduled with explicit timeouts and a retry policy that the runtime executes at least once on a worker.",
+  "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol, Any\n\n@dataclass(frozen=True)\nclass RetryPolicy:\n    initial_interval_s: float\n    backoff_coefficient: float\n    maximum_attempts: int\n\n@dataclass(frozen=True)\nclass ActivityCall:\n    name: str\n    task_queue: str\n    start_to_close_s: int\n    schedule_to_close_s: int | None\n    heartbeat_s: int | None\n    retry: RetryPolicy\n    args: tuple[Any, ...] = ()\n\nclass ActivityExecutor(Protocol):\n    async def execute(self, call: ActivityCall) -> Any: ...",
+  "invariants": [
+    "Execution semantics are at least once, so activity code MUST be idempotent under retry.",
+    "start_to_close_s MUST be set and be a positive integer; a missing value SHALL raise a configuration error.",
+    "Long running activities ALWAYS heartbeat within heartbeat_s; a missed heartbeat CANNOT be treated as success.",
+    "A failure whose attempt count reaches RetryPolicy.maximum_attempts MUST surface to the workflow as a terminal error.",
+    "Heartbeat details NEVER persist across a successful completion; they scope only to the in flight attempt and its retries."
+  ],
+  "extension_contract": "Register activity implementations on a worker for a named task queue and extend cross cutting behavior with worker interceptors that wrap execute; adapters implement transport specific payload conversion.",
+  "consumption_example": "async def charge(executor: ActivityExecutor, order_id: int) -> str:\n    call = ActivityCall(\n        name='ChargeCard',\n        task_queue='payments',\n        start_to_close_s=30,\n        schedule_to_close_s=120,\n        heartbeat_s=10,\n        retry=RetryPolicy(initial_interval_s=1.0, backoff_coefficient=2.0, maximum_attempts=5),\n        args=(order_id,),\n    )\n    return await executor.execute(call)",
+  "sources": [
+    {
+      "source": "Temporal 1.24 Activities concept page",
+      "locator": "docs.temporal.io/activities At least once semantics and Heartbeat paragraphs"
+    },
+    {
+      "source": "Temporal 1.24 Activities concept page",
+      "locator": "docs.temporal.io/activities Retry policy and Timeouts paragraphs"
+    }
+  ],
+  "why_essential": "A common activity contract is the seam between deterministic orchestration and messy side effects; without it every tool invents its own retry loop and loses heartbeat progress on crash.",
+  "alternatives_considered": [
+    "Bare retrying with tenacity which lacks timeouts scoped to schedule and heartbeat",
+    "A custom worker queue per feature which duplicates scheduling and observability plumbing"
+  ],
+  "maturity": "battle_tested"
+}

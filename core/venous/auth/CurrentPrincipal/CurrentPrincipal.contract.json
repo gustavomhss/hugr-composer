@@ -1,0 +1,36 @@
+{
+  "name": "CurrentPrincipal",
+  "namespace": "auth",
+  "purpose": "Read-only view of the authenticated identity for the active request, including subject id, tenant, roles, and claim set.",
+  "api_signature": "from dataclasses import dataclass\nfrom typing import FrozenSet, Mapping\n\n@dataclass(frozen=True)\nclass CurrentPrincipal:\n    subject_id: str\n    tenant_id: str | None\n    roles: FrozenSet[str]\n    claims: Mapping[str, str]\n    is_anonymous: bool\n",
+  "invariants": [
+    "MUST be immutable once bound to a RequestContext; a later middleware CANNOT mutate subject_id.",
+    "NEVER represents a successful auth state with is_anonymous=True; these two fields SHALL be mutually exclusive.",
+    "roles MUST be a frozen set; consumers CANNOT add a role at call time to bypass authorization.",
+    "subject_id MUST be stable across requests for the same identity; rotation NEVER happens silently.",
+    "Serialization for logs MUST omit raw claims by default; sensitive claim values SHALL be redacted."
+  ],
+  "extension_contract": "An auth middleware/plug/guard decodes the incoming credential and binds a CurrentPrincipal to the RequestContext; downstream code reads it via dependency injection or context.principal and CANNOT construct one without passing through the registered provider.",
+  "consumption_example": "def require_role(role: str, p: CurrentPrincipal) -> None:\n    if p.is_anonymous or role not in p.roles:\n        raise PermissionError(role)\n\nanon = CurrentPrincipal('', None, frozenset(), {}, True)\nassert anon.is_anonymous\n",
+  "sources": [
+    {
+      "source": "ASP.NET Core 8.0 \u2014 HttpContext.User (ClaimsPrincipal)",
+      "locator": "learn.microsoft.com/aspnet/core/fundamentals/http-context#access-httpcontext \u2014 Context.User.Identity.Name"
+    },
+    {
+      "source": "Ruby on Rails 7 \u2014 ActiveSupport::CurrentAttributes",
+      "locator": "api.rubyonrails.org/classes/ActiveSupport/CurrentAttributes.html \u2014 'Current.user' pattern"
+    },
+    {
+      "source": "Nest.js 10 \u2014 CanActivate and ExecutionContext",
+      "locator": "docs.nestjs.com/guards \u2014 context.switchToHttp().getRequest().user"
+    }
+  ],
+  "why_essential": "Identity threads through almost every business rule; if each tool invents its own 'current user' type, authorization logic duplicates and drifts and audit trails stop agreeing on who did what.",
+  "alternatives_considered": [
+    "Pass a raw JWT string everywhere \u2014 forces repeated parsing and errors",
+    "Put user dict into RequestContext.assigns \u2014 loses type discipline",
+    "Module-level globals like Rails pre-7 \u2014 unsafe under threaded/async models"
+  ],
+  "maturity": "battle_tested"
+}

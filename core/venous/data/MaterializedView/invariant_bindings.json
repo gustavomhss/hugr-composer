@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "MV_INV_01",
+      "invariant_text": "apply MUST be deterministic: given the same event stream in the same order, the view state SHALL converge to the same contents.",
+      "confirms_test": "test_inv_determinism_confirms",
+      "prevents_test": "test_inv_determinism_prevents",
+      "under_failure_test": "test_inv_determinism_under_failure"
+    },
+    {
+      "invariant_id": "MV_INV_02",
+      "invariant_text": "The view CANNOT be the system of record; rebuild MUST be able to regenerate state purely from the source feed.",
+      "confirms_test": "test_inv_rebuild_from_source_confirms",
+      "prevents_test": "test_inv_rebuild_from_source_prevents",
+      "under_failure_test": "test_inv_rebuild_from_source_under_failure"
+    },
+    {
+      "invariant_id": "MV_INV_03",
+      "invariant_text": "Reads against the view MUST tolerate bounded staleness and NEVER claim linearizability with the base data.",
+      "confirms_test": "test_inv_bounded_staleness_confirms",
+      "prevents_test": "test_inv_bounded_staleness_prevents",
+      "under_failure_test": "test_inv_bounded_staleness_under_failure"
+    },
+    {
+      "invariant_id": "MV_INV_04",
+      "invariant_text": "Schema evolution SHALL trigger a rebuild path; silent backfill with stale rows is FORBIDDEN.",
+      "confirms_test": "test_inv_schema_evolution_confirms",
+      "prevents_test": "test_inv_schema_evolution_prevents",
+      "under_failure_test": "test_inv_schema_evolution_under_failure"
+    },
+    {
+      "invariant_id": "MV_INV_05",
+      "invariant_text": "New projections extend MaterializedView by registering handlers per aggregate type; unknown event types MUST be rejected rather than silently dropped.",
+      "confirms_test": "test_inv_handler_registration_confirms",
+      "prevents_test": "test_inv_handler_registration_prevents",
+      "under_failure_test": "test_inv_handler_registration_under_failure"
+    }
+  ]
+}

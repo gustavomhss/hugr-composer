@@ -1,0 +1,26 @@
+{
+  "name": "SessionCache",
+  "namespace": "cache",
+  "purpose": "Stateless-tier, node-agnostic read-through cache keyed by session token for per-caller state with TTL and explicit miss/error separation.",
+  "api_signature": "from __future__ import annotations\nfrom collections.abc import Mapping\nfrom typing import Any, Optional, Protocol, runtime_checkable\n\n@runtime_checkable\nclass SessionCache(Protocol):\n    def get(self, token: str) -> Optional[Mapping[str, Any]]: ...\n    def set(self, token: str, value: Mapping[str, Any], ttl_s: int) -> None: ...\n    def invalidate(self, token: str) -> None: ...\n",
+  "invariants": [
+    {"id": "SC_INV_01", "rule": "get() is read-only; never mutates server-side state."},
+    {"id": "SC_INV_02", "rule": "Missing key returns None, not raise; caller distinguishes miss vs. error via SessionCacheError."},
+    {"id": "SC_INV_03", "rule": "invalidate() is idempotent and O(1)."},
+    {"id": "SC_INV_04", "rule": "TTL is honored; an expired entry is equivalent to missing."},
+    {"id": "SC_INV_05", "rule": "A node that has never seen a token resolves its session via the external store (cold-cache tolerant)."}
+  ],
+  "extension_contract": "Adopters swap InMemorySessionCache for ReadThroughSessionCache passing a loader. Backend adapters (Redis/Memcached) live under core/venous/_adapters/<backend>/SessionCacheAdapter.py; the five invariants MUST be preserved. Protocol surface is sealed.",
+  "consumption_example": "cache = ReadThroughSessionCache(load_session_from_redis, ttl_s=60)\nsession = cache.get(token)  # None if unknown\ncache.invalidate(token)     # on logout\n",
+  "sources": [
+    {"source": "Redis GETEX read-through", "locator": "https://redis.io/docs/latest/commands/getex/"},
+    {"source": "Envoy ext_authz external authorization", "locator": "https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/ext_authz_filter"}
+  ],
+  "why_essential": "Without a shared session cache, either every request hits the auth store (latency) or nodes diverge on session state (correctness). SessionCache pins the contract: read-only, explicit miss/error, TTL enforced.",
+  "alternatives_considered": [
+    "Per-node local-only cache — correctness hole: mutations on node A invisible on node B until TTL expiry.",
+    "Raise-on-miss API — conflates 'unknown token' with 'store down'; hides outages behind product errors.",
+    "Cache the value forever — security hole: revoked tokens continue to grant access."
+  ],
+  "maturity": "incubating"
+}

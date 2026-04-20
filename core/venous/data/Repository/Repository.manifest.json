@@ -1,0 +1,813 @@
+{
+  "name": "Repository",
+  "namespace": "data",
+  "maturity": "battle_tested",
+  "builder_agent_id": 3,
+  "catalog_entry_sha256": "ac08f7293ce3945abf16aeabf4efbd8baf78d90a1347307fea697a1bde396a87",
+  "files": [
+    {
+      "path": "data/Repository/Repository.cfg",
+      "sha256": "d324e2a165f5870d54a7e73a2d4c8d11fc3003abe5a3f650e0060056610fa965",
+      "size_bytes": 137,
+      "kind": "test"
+    },
+    {
+      "path": "data/Repository/Repository.contract.json",
+      "sha256": "1839fa6d5dd3de83bd870448a2728532fb4c39b40da10a1778206ea8acd8328d",
+      "size_bytes": 2617,
+      "kind": "contract_json"
+    },
+    {
+      "path": "data/Repository/Repository.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "data/Repository/Repository.md",
+      "sha256": "3b1a35e99db744fddda62bd92bf6e36e786182e75d19bc3a314b21add5f01acf",
+      "size_bytes": 6351,
+      "kind": "spec_md"
+    },
+    {
+      "path": "data/Repository/Repository.py",
+      "sha256": "18dfb07209b2e084d667a81eaf6f66d53279f42f6f78fe7dc0bc0490d0a58d1a",
+      "size_bytes": 15311,
+      "kind": "impl"
+    },
+    {
+      "path": "data/Repository/Repository.tla",
+      "sha256": "6273d4e1747c060b6cfed782d40b4451d9faf9394c1a3fb04683151de4690156",
+      "size_bytes": 1404,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "data/Repository/behavioral_Repository.py",
+      "sha256": "b304856379a889151eb6e6af53888e754cf4870753a84ec124a8fa79bcf12360",
+      "size_bytes": 4014,
+      "kind": "behavioral"
+    },
+    {
+      "path": "data/Repository/chaos_Repository.py",
+      "sha256": "492b8140258ccad2ef2e99363e5f1d8080acc426501149fbe9254060d2177eba",
+      "size_bytes": 4380,
+      "kind": "chaos"
+    },
+    {
+      "path": "data/Repository/concurrent_Repository.py",
+      "sha256": "20e6f3899bef959076ed62a66587d11dee95aeb1c5882e201abfe390980e1128",
+      "size_bytes": 3025,
+      "kind": "concurrent"
+    },
+    {
+      "path": "data/Repository/dashboard.json",
+      "sha256": "a8cedc8e1f42a077684da25f90b70cf6eaea2b9d4b7b558521d645fe6b6c3399",
+      "size_bytes": 731,
+      "kind": "dashboard"
+    },
+    {
+      "path": "data/Repository/invariant_bindings.json",
+      "sha256": "c2864e2ab1be6b0e5eff08c9ea642711932249836b692c6111c288b9757accdd",
+      "size_bytes": 1971,
+      "kind": "test"
+    },
+    {
+      "path": "data/Repository/metamorphic_Repository.py",
+      "sha256": "2c55c33c007844e5b8e29367e7d9943c71d95037e8dc566b69c34cb9c6717dda",
+      "size_bytes": 3101,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "data/Repository/observability_Repository.py",
+      "sha256": "c71e896d031d50fcff530741afc2f696b42acb3734bafba8d8ce0b19eab53909",
+      "size_bytes": 1976,
+      "kind": "observability"
+    },
+    {
+      "path": "data/Repository/observability_schema.json",
+      "sha256": "6f9c7e9c38866c55d66a13be2db9620f2746ca820239c800189b03441967ca80",
+      "size_bytes": 1596,
+      "kind": "observability"
+    },
+    {
+      "path": "data/Repository/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "data/Repository/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "data/Repository/state_machine_Repository.py",
+      "sha256": "ba82a397dba58ffb94ee09505798fb3ca4c797ba3788290fbe736e94adfe3ec2",
+      "size_bytes": 2400,
+      "kind": "state_machine"
+    },
+    {
+      "path": "data/Repository/test_Repository.py",
+      "sha256": "be6de853a5271b07b882b6ba8bb6dc4c7e6d6d9bcb7e73070731a7a4aa7bbc6b",
+      "size_bytes": 8983,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "REPO_INV_01",
+      "invariant_text": "A Repository MUST only expose aggregate roots, NEVER internal child entities of another aggregate.",
+      "confirms_test": "test_inv_aggregate_root_only_confirms",
+      "prevents_test": "test_inv_aggregate_root_only_prevents",
+      "under_failure_test": "test_inv_aggregate_root_only_under_failure"
+    },
+    {
+      "invariant_id": "REPO_INV_02",
+      "invariant_text": "Query methods MUST accept a Specification object or a named finder and SHALL NOT leak SQL, ORM, or storage syntax to callers.",
+      "confirms_test": "test_inv_specification_surface_confirms",
+      "prevents_test": "test_inv_specification_surface_prevents",
+      "under_failure_test": "test_inv_specification_surface_under_failure"
+    },
+    {
+      "invariant_id": "REPO_INV_03",
+      "invariant_text": "A single logical aggregate type MUST have exactly one Repository; duplicate repositories for the same root are FORBIDDEN.",
+      "confirms_test": "test_inv_singleton_root_confirms",
+      "prevents_test": "test_inv_singleton_root_prevents",
+      "under_failure_test": "test_inv_singleton_root_under_failure"
+    },
+    {
+      "invariant_id": "REPO_INV_04",
+      "invariant_text": "Mutations (add, remove) MUST enlist with the active UnitOfWork and NEVER issue direct writes bypassing it.",
+      "confirms_test": "test_inv_enlist_mutations_confirms",
+      "prevents_test": "test_inv_enlist_mutations_prevents",
+      "under_failure_test": "test_inv_enlist_mutations_under_failure"
+    },
+    {
+      "invariant_id": "REPO_INV_05",
+      "invariant_text": "The Repository CANNOT return stale in-memory copies when an IdentityMap is present; it MUST consult the map first.",
+      "confirms_test": "test_inv_identity_map_first_confirms",
+      "prevents_test": "test_inv_identity_map_first_prevents",
+      "under_failure_test": "test_inv_identity_map_first_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 427,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 8 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1104,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 1669,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 5823,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1522,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 1434,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 92142,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "44 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 3686,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 4692,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 55222,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 168459,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CHILD-ENTITY-LEAK",
+        "hypothesis": "Calling find() with a Specification matching child entities (e.g. OrderLineItem belonging to Order aggregate) returns the children directly, violating aggregate root encapsulation and allowing callers to mutate internal state.",
+        "input_fixture": "order_repo.find(LineItemSpec(sku='X')) returning [LineItem(...)] instead of [Order(...)]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SQL-LEAK-SPEC",
+        "hypothesis": "Specification object embeds raw SQL string (spec.sql='WHERE 1=1 OR DROP TABLE'), repository concatenates and executes it; storage syntax leaks both into the call site and into the persistence layer enabling SQLi.",
+        "input_fixture": "repo.find(RawSqlSpec(\"name LIKE '%' OR 1=1--\"))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DUPLICATE-REPO",
+        "hypothesis": "Two modules independently register UserRepository and UserRepositoryV2 for the same User root; container resolves both and writes diverge, breaking single-repo invariant and causing split-brain identity.",
+        "input_fixture": "container.register(User, UserRepository); container.register(User, UserRepositoryV2); repo_a.add(u); repo_b.get(u.id) -> None",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UOW-BYPASS",
+        "hypothesis": "add() called outside any active UnitOfWork scope issues an immediate session.flush()/INSERT, bypassing transactional boundary; rollback at outer scope cannot undo the write.",
+        "input_fixture": "repo.add(Entity(id=1))  # no uow.begin() context active",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-IDMAP-STALE-READ",
+        "hypothesis": "After uow.update mutates entity in IdentityMap, repo.get(id) bypasses the map and returns a freshly-hydrated stale row from DB cache, causing lost updates and divergent object identity.",
+        "input_fixture": "e=repo.get(1); e.name='new'; e2=repo.get(1); assert e2.name=='new' # fails",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-GET-NONHASHABLE-ID",
+        "hypothesis": "get() called with a non-hashable id (list, dict, unhashable custom object) crashes IdentityMap lookup with TypeError instead of returning None, violating Optional[T] contract.",
+        "input_fixture": "repo.get({'composite':'key'}) or repo.get([1,2])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CONCURRENT-ADD-RACE",
+        "hypothesis": "Two threads call repo.add(same_entity) concurrently within separate UoWs; both enlist, both flush, producing duplicate primary key or two IdentityMap entries for one logical id.",
+        "input_fixture": "Thread(repo.add(Entity(id=1))) x2 with shared in-memory backend",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REMOVE-DETACHED",
+        "hypothesis": "remove() called on an entity never loaded by this repo (constructed ad-hoc with same id) silently succeeds and issues DELETE bypassing IdentityMap eviction, leaving stale references live.",
+        "input_fixture": "repo.remove(Entity(id=99))  # never get()'d, fabricated",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FIND-ORM-QUERY-LEAK",
+        "hypothesis": "find() accepts a SQLAlchemy Query or Django QuerySet as 'spec' and returns it lazily; caller iterates and storage-specific behaviors (lazy joins, session binding) leak across boundaries.",
+        "input_fixture": "repo.find(session.query(User).filter(User.deleted==True))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UOW-CLOCK-SKEW-REPLAY",
+        "hypothesis": "Mutation enlisted in UoW carries a client timestamp; replaying the same add() after clock skew rollback produces duplicate insertion since fingerprint depends on wall clock not entity identity.",
+        "input_fixture": "freeze_time(t0); repo.add(e); freeze_time(t0-60); repo.add(e) again",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INT-OVERFLOW-ID",
+        "hypothesis": "get(id=2**63) overflows backend BIGINT bound, but IdentityMap stores Python int unbounded; subsequent get returns mapped object even though DB cannot persist that id, breaking consistency.",
+        "input_fixture": "repo.add(Entity(id=2**63+1)); repo.get(2**63+1)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-SPEC-FULL-SCAN",
+        "hypothesis": "find(None) or find(NullSpec()) returns ALL aggregates including soft-deleted, amplifying memory and leaking entities the caller has no authorization to see.",
+        "input_fixture": "repo.find(None) -> iterator over entire table",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CHILD-VIA-GET",
+        "hypothesis": "get(id) where id collides between root and child tables (shared sequence) returns a child entity cast to T, leaking non-root aggregate.",
+        "input_fixture": "repo_order.get(line_item_id_that_equals_order_id)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PROMPT-INJECTION-SPEC",
+        "hypothesis": "Named-finder spec name is taken from untrusted input ('find_by_name__or_1_eq_1'); dynamic dispatch via getattr executes unintended method, enabling injection through the finder namespace.",
+        "input_fixture": "repo.find(NamedFinder(user_input))  # user_input='__class__.__mro__'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CHILD_ENTITY_VIA_FIND_SPEC",
+        "hypothesis": "A Specification object whose `is_satisfied_by` traverses a parent aggregate and returns a child entity (e.g., an OrderLine inside an Order) can be passed to find(); if the repository yields whatever the spec's internal filter touches, it may surface child entities directly, violating the aggregate-root-only invariant.",
+        "input_fixture": "class OrderLineSpec:\n    def is_satisfied_by(self, entity): return isinstance(entity, OrderLine)\n\nrepo = OrderRepository(session)\nresults = list(repo.find(OrderLineSpec()))  # expects [] or TypeError, not OrderLine instances",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RAW_SQL_STRING_AS_SPEC",
+        "hypothesis": "Passing a raw SQL string as the `spec` argument to `find()` instead of a Specification object may cause the repository implementation to forward the string directly to the ORM/database layer, leaking storage syntax to the caller and allowing SQL injection.",
+        "input_fixture": "repo = UserRepository(session)\nresults = list(repo.find(\"email LIKE '%@evil.com' OR '1'='1'\"))  # must raise TypeError, not execute SQL",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ORM_QUERYSET_WRAPPED_SPEC",
+        "hypothesis": "A duck-typed object that wraps an SQLAlchemy Query or Django QuerySet and delegates `is_satisfied_by` to ORM filter calls passes structural type checks but leaks ORM syntax through the spec boundary; the repository may apply it without validation, violating the no-ORM-leak invariant.",
+        "input_fixture": "class OrmWrapSpec:\n    def __init__(self, qs): self._qs = qs\n    def is_satisfied_by(self, e): return self._qs.filter(id=e.id).exists()\n\nrepo.find(OrmWrapSpec(User.objects.all()))  # must reject or isolate, never proxy ORM call",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DUAL_REPO_CONCURRENT_REGISTER",
+        "hypothesis": "Two threads simultaneously instantiating separate Repository subclasses for the same aggregate root (e.g., UserRepository and LegacyUserRepository) can race past a singleton guard and both register themselves as the authoritative repo, violating the exactly-one-repository-per-aggregate invariant without either thread seeing an error.",
+        "input_fixture": "import threading\nerrors = []\ndef make(): \n    try: RepositoryRegistry.register(UserRepository(session))\n    except Exception as e: errors.append(e)\nthreads = [threading.Thread(target=make) for _ in range(20)]\n[t.start() for t in threads]; [t.join() for t in threads]\nassert len(errors) == 19, f'Expected 19 duplicates rejected, got {len(errors)}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ADD_WITHOUT_ACTIVE_UOW",
+        "hypothesis": "Calling `add()` on a repository when no UnitOfWork is active (e.g., outside a `with uow:` block or after the UoW has been committed and closed) should raise an error; if instead it silently issues a direct database write, the mutation bypasses the UoW and breaks transactional integrity.",
+        "input_fixture": "repo = OrderRepository(session)\nuow = UnitOfWork(session)\nuow.commit()  # UoW now closed\norder = Order(id=99, total=500)\nrepo.add(order)  # must raise NoActiveUnitOfWorkError, not INSERT directly",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REMOVE_AFTER_UOW_ROLLBACK",
+        "hypothesis": "If a UnitOfWork is rolled back and then `remove()` is called on the same repo instance (which may still hold a reference to the pre-rollback session), the remove may issue a DELETE against the rolled-back transaction context or open a new implicit transaction, bypassing the UoW guard entirely.",
+        "input_fixture": "with UnitOfWork(session) as uow:\n    repo = uow.repository(Order)\n    order = repo.get(1)\n    uow.rollback()\nrepo.remove(order)  # must raise, not execute DELETE outside UoW",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-STALE_IDENTITY_MAP_GET",
+        "hypothesis": "If entity with id=42 is fetched, mutated in-memory but not flushed, and then a second call to `get(42)` returns the IdentityMap's stale pre-mutation snapshot instead of the current in-memory state, callers receive a stale copy \u2014 violating the IdentityMap-first, never-stale invariant.",
+        "input_fixture": "with UnitOfWork(session) as uow:\n    repo = uow.repository(User)\n    u1 = repo.get(42)\n    u1.email = 'new@example.com'  # mutated in memory\n    u2 = repo.get(42)             # must return SAME object with new email\n    assert u2.email == 'new@example.com', 'Stale copy returned from IdentityMap'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK_SKEW_CACHE_STALENESS",
+        "hypothesis": "If the IdentityMap uses wall-clock TTLs to evict entries and the system clock jumps backward (NTP correction), a freshly-added entity may appear to have an 'expired' timestamp, causing the map to re-fetch from storage and potentially return a version that doesn't include in-flight mutations, producing a stale read.",
+        "input_fixture": "# Simulate clock skew: freeze time, add entity, rewind clock 60s, get same entity\nwith freeze_time('2026-04-19 10:00:00') as ft:\n    repo.add(User(id=7, name='Alice'))\nwith freeze_time('2026-04-19 09:59:00'):  # clock goes back\n    result = repo.get(7)\n    assert result is not None and result.name == 'Alice', 'Stale/missing after clock skew'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY_ADD_AFTER_REMOVE",
+        "hypothesis": "Replaying an `add()` call for an entity that was previously removed within the same UnitOfWork (using the same entity object) may cause the IdentityMap to retain the removed entity under its id, so a subsequent `get()` returns the ghost entity instead of None, corrupting the map's state.",
+        "input_fixture": "with UnitOfWork(session) as uow:\n    repo = uow.repository(Product)\n    p = Product(id=5, name='Widget')\n    repo.add(p)\n    repo.remove(p)\n    repo.add(p)   # replay \u2014 ghost resurrection attempt\n    uow.commit()\nassert repo.get(5) is not None  # either succeeds cleanly or raises, never returns ghost",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FIND_UNBOUNDED_AMPLIFICATION",
+        "hypothesis": "A Specification whose `is_satisfied_by` lazily triggers additional repository lookups for each evaluated entity (e.g., checking a related aggregate) can cause O(N) hidden queries inside `find()`, an amplification attack that exhausts DB connections and bypasses any query budget enforced at the caller level.",
+        "input_fixture": "class CrossAggregateSpec:\n    def __init__(self, order_repo): self.order_repo = order_repo\n    def is_satisfied_by(self, user):\n        return len(list(self.order_repo.find(OrdersByUserSpec(user.id)))) > 10\n\nresults = list(user_repo.find(CrossAggregateSpec(order_repo)))  # must cap or reject, not fan-out N queries",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CREDENTIAL_LEAK_VIA_EXCEPTION",
+        "hypothesis": "When `get()` or `find()` raises a storage-layer exception (e.g., connection refused, auth failure), the repository may propagate the raw exception message which includes the DSN string containing username and password, leaking credentials to the caller through the exception's `args` or `__str__`.",
+        "input_fixture": "repo = UserRepository('postgresql://admin:s3cr3t@db:5432/prod')\ntry:\n    repo.get(1)  # DB is unreachable\nexcept Exception as e:\n    assert 's3cr3t' not in str(e), f'Credential leaked in exception: {e}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONE_ID_BOUNDARY",
+        "hypothesis": "Calling `get(None)` should raise a TypeError or return None per contract, but if the repository forwards None to the ORM as a primary-key lookup, some ORMs perform a full-table scan or return the first row, silently violating the aggregate-root identity contract and potentially exposing an unrelated entity.",
+        "input_fixture": "repo = CustomerRepository(session)\nresult = repo.get(None)\nassert result is None, f'Expected None for get(None), got {result!r}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INT_OVERFLOW_ID",
+        "hypothesis": "Passing a Python integer larger than the database column's max value (e.g., 2**63 for a BIGINT column) to `get()` may cause silent truncation in some DB adapters, causing the repository to return an entity with a different id than requested \u2014 a phantom match that violates identity integrity.",
+        "input_fixture": "repo = OrderRepository(session)\nresult = repo.get(2**63)  # exceeds BIGINT max on most DBs\nassert result is None, f'Expected None for out-of-range id, got {result!r}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DUCK_TYPED_NON_SPEC",
+        "hypothesis": "An arbitrary object with a `matches` or `apply` method but not conforming to the Specification protocol may be accepted by `find()` due to duck-typing leniency; if the repo calls `spec.apply(query)` directly on an ORM query object passed as spec, it leaks storage syntax and executes attacker-controlled filter logic.",
+        "input_fixture": "class MaliciousSpec:\n    def apply(self, query): return query.filter_by(admin=True)  # ORM call smuggled\n\nresults = list(repo.find(MaliciousSpec()))  # must raise TypeError, not execute ORM filter",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DUPLICATE_REPO_SUBCLASS_BYPASS",
+        "hypothesis": "Creating a subclass of the canonical UserRepository (e.g., CachedUserRepository(UserRepository)) may bypass the duplicate-registration check if the guard uses exact type equality instead of aggregate-root type comparison; both repos coexist and callers receive inconsistent views of the same aggregate.",
+        "input_fixture": "class CachedUserRepository(UserRepository): pass\n\nRegistry.register(UserRepository(session))\nRegistry.register(CachedUserRepository(session))  # must raise DuplicateRepositoryError\nassert len(Registry.for_aggregate(User)) == 1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CHILD-ENTITY-LEAK",
+        "hypothesis": "Repository.find() with Specification targeting nested properties exposes child aggregates instead of limiting results to roots only.",
+        "input_fixture": "Repository<Order>.find(Specification(LineItem.price > 100)) returns LineItem instances as results",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SQL-INJECTION-SPEC",
+        "hypothesis": "Specification implementation uses string formatting without parameterization, allowing SQL injection through user-controlled input.",
+        "input_fixture": "Repository<User>.find(Specification(\"name = '; DROP TABLE users; --\")) executes malicious SQL",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ORM-FILTER-SYNTAX-LEAK",
+        "hypothesis": "Repository accepts ORM-specific filter objects (SQLAlchemy Column, Django Q) instead of Specification protocol.",
+        "input_fixture": "Repository<Product>.find(Product.price > 50) leaks SQLAlchemy BinaryExpression to caller",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DUPLICATE-REPO-RACE",
+        "hypothesis": "Race condition in RepositoryRegistry allows concurrent instantiation of duplicate Repository instances for same aggregate type.",
+        "input_fixture": "Thread-1: repo1=RepositoryRegistry.get_or_create(User); Thread-2: repo2=RepositoryRegistry.get_or_create(User); assert repo1 is repo2 fails",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DIRECT-WRITE-BYPASS",
+        "hypothesis": "Repository.add() writes directly to persistent storage without enlisting with active UnitOfWork transaction.",
+        "input_fixture": "repo.add(user) outside any UnitOfWork context writes immediately, bypassing transaction semantics",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REMOVE-OUTSIDE-UOW",
+        "hypothesis": "Repository.remove() commits deletion immediately instead of enlisting deletion with UnitOfWork.",
+        "input_fixture": "repo.remove(entity) executes storage delete without UnitOfWork.register_removal() call",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-IDENTITY-MAP-BYPASS",
+        "hypothesis": "Repository.get() fetches fresh copy from storage without consulting IdentityMap, returning stale in-memory mutations.",
+        "input_fixture": "user=repo.get(id); user.name='X'; user2=repo.get(id); user2.name=='Y' because copy ignored IdentityMap",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-IDENTITY-MAP-RACE",
+        "hypothesis": "Time-of-check-time-of-use race between IdentityMap lookup and storage fetch allows concurrent modification bypass.",
+        "input_fixture": "Thread-1 fetches from storage; Thread-2 modifies IdentityMap entry; Thread-1 IdentityMap lookup returns stale value",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CHILD-IDENTITY-COLLISION",
+        "hypothesis": "Child entity accidentally registered in IdentityMap under parent aggregate root ID causes get() to return wrong type.",
+        "input_fixture": "IdentityMap[order_id]=LineItem(id=order_id); Repository<Order>.get(order_id) returns LineItem not Order",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNTYPED-SPEC-INJECTION",
+        "hypothesis": "Repository.find() accepts arbitrary objects instead of validating Specification protocol, allowing SQL syntax objects through.",
+        "input_fixture": "Repository<Product>.find(raw_sql_query_obj) where object has __str__() returning SQL query string",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNBOUNDED-FIND-AMPLIFICATION",
+        "hypothesis": "Repository.find() with empty or minimal Specification returns unbounded result set causing memory exhaustion and DoS.",
+        "input_fixture": "Repository<AuditLog>.find(Specification()) loads 50M rows into memory, triggering OOM",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REPLAY-MUTATION-DUPLICATE",
+        "hypothesis": "Replayed add() request without idempotency tracking or UnitOfWork deduplication creates duplicate aggregate in storage.",
+        "input_fixture": "Network retransmits repo.add(entity) twice; both add() calls succeed, entity duplicated in persistent store",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-FOREIGN-AGGREGATE-FETCH",
+        "hypothesis": "Repository.get() accepts aggregate ID from foreign type without validating ID belongs to correct aggregate root.",
+        "input_fixture": "Repository<Order>.get(lineitem_id) where lineitem_id is valid but belongs to LineItem not Order",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UOW-COMMIT-TIMING-ESCAPE",
+        "hypothesis": "Mutations enlisted in UnitOfWork commit at wrong boundary: outside transaction scope or after context exit.",
+        "input_fixture": "with UnitOfWork(): repo.add(entity); [exit scope]; repo.commit() called externally with stale transaction state",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MULTI-REPO-CONCURRENT-ADD",
+        "hypothesis": "Same aggregate instance added via multiple Repository instances concurrently, violating single-repository-per-type constraint.",
+        "input_fixture": "repo_user.add(user); repo_actor.add(user); both repositories commit same entity, violates uniqueness",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "repo.added",
+        "required_attributes": [
+          "root_type",
+          "root_id"
+        ]
+      },
+      {
+        "event_name": "repo.removed",
+        "required_attributes": [
+          "root_type",
+          "root_id"
+        ]
+      },
+      {
+        "event_name": "repo.cache.hit",
+        "required_attributes": [
+          "root_type",
+          "root_id"
+        ]
+      },
+      {
+        "event_name": "repo.cache.miss",
+        "required_attributes": [
+          "root_type",
+          "root_id"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "repo.get.calls",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "root_type",
+          "result"
+        ]
+      },
+      {
+        "name": "repo.find.matched",
+        "metric_type": "histogram",
+        "unit": "1",
+        "cardinality_bound": 30,
+        "label_keys": [
+          "root_type"
+        ]
+      },
+      {
+        "name": "repo.mutations",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 40,
+        "label_keys": [
+          "root_type",
+          "op"
+        ]
+      },
+      {
+        "name": "repo.identity.map.hit.ratio",
+        "metric_type": "histogram",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "root_type"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "repo.get",
+        "required_attributes": [
+          "root.type",
+          "root.id",
+          "cache.hit"
+        ]
+      },
+      {
+        "operation_name": "repo.find",
+        "required_attributes": [
+          "root.type",
+          "spec.kind",
+          "match.count"
+        ]
+      },
+      {
+        "operation_name": "repo.add",
+        "required_attributes": [
+          "root.type",
+          "root.id"
+        ]
+      },
+      {
+        "operation_name": "repo.remove",
+        "required_attributes": [
+          "root.type",
+          "root.id"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol surface matches catalog api_signature (get/add/remove/find) verbatim with T generic; Optional[T] rendered as T|None is equivalent. All 5 invariants map to runtime-enforced code paths."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "Covers all 5 invariants, provides Specification/IdentityMap/UoW ports, in-memory IdentityMap ref impl, named finders, mark_dirty, direct_write trap, close() for test reset, tombstones, and introspection."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Single RepositoryInvariantError with invariant ID prefix (REPO-INV-0N:) and actionable messages citing expected vs got types and offending values. Consistent across all raise sites."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Protocol-typed UoW/IdentityMap ports allow any conforming impl; generic over T; register_finder extension; shard key enables multi-tenant reuse; close() permits clean teardown; zero import-time I/O."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe via per-instance and registry locks; loader runs outside lock avoiding deadlock; tombstones prevent resurrection. Minor: metrics cited in spec are not emitted in code (observability is documentation-only), and load_fn errors are not wrapped."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace/name align with data.Repository; Protocol is runtime_checkable and Generic[T]; extension_contract honored (subclass or register_finder); maturity battle_tested matches defensive enforcement. __all__ exports the full surface."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'Aggregate root', 'UnitOfWork', and 'IdentityMap' are used without definition \u2014 a first-time reader hits three unfamiliar terms before the first code example.",
+          "'Specification' appears in the API table and invariants but is never explained; junior devs won't know whether to import it, subclass it, or write raw predicates.",
+          "The 'mark_dirty' extension point is mentioned in prose but absent from the API table, making it invisible to anyone who reads the table and stops there."
+        ],
+        "rewrite_suggestion": "Add a one-sentence glossary box at the top (aggregate root = the single entry-point object for a group of related objects; UnitOfWork = tracks all changes so they commit together; IdentityMap = cache that prevents loading the same object twice). Move mark_dirty into the API table with a brief description."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "The extension contract says 'Subclass ConcreteRepository per aggregate root' but does not show the minimal abstract interface that subclasses must implement \u2014 a reader must locate the source to know the override surface.",
+          "'register_finder(name, fn)' is described only as adding a named query; the expected signature of fn and whether it receives the full store or a query cursor is unspecified.",
+          "Thread-safety note says the loader 'runs outside the repository lock' \u2014 it does not clarify whether the loader itself must be thread-safe or whether that is the caller's responsibility."
+        ],
+        "rewrite_suggestion": "Add a minimal subclass stub (3-5 lines) showing which methods must be overridden. Add fn signature for register_finder. Explicitly state: 'the loader provided to ConcreteRepository must be thread-safe independently; the repository does not serialise loader calls.'"
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "get(id) has no stated input validation contract \u2014 the doc is silent on whether passing a crafted id (path traversal, integer overflow, UUID format injection) is the repository's problem or the caller's.",
+          "'Static review should grep for any bypass method added in subclasses' is actionable advice but gives no grep pattern or CI hook example, leaving the enforcement entirely manual.",
+          "The IdentityMap secret warning ('prefer keeping secrets out of the aggregate entirely') is correct but has no enforcement path \u2014 there is no mention of whether the framework provides a hook to wipe sensitive fields on eviction."
+        ],
+        "rewrite_suggestion": "Add an explicit 'id validation contract' line (e.g., id must be a typed value object; raw strings are rejected). Provide the literal grep regex for bypass detection. Acknowledge that secret hygiene in aggregates is a design-time concern with no runtime enforcement."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Four metrics are named but no baseline thresholds, SLO targets, or alert severities are provided \u2014 an on-call engineer cannot set a meaningful alert without reverse-engineering them.",
+          "'Check the session scope' for falling hit-ratio is vague: it does not say which configuration knob controls eviction, or what a healthy hit ratio range looks like.",
+          "No mention of what happens to in-flight mutations when the backing store is unavailable \u2014 whether the UnitOfWork retries, surfaces an exception, or silently drops is not stated."
+        ],
+        "rewrite_suggestion": "Add a 'Baseline thresholds' table: e.g., hit_ratio < 0.7 \u2192 warn, < 0.4 \u2192 page. Name the session-scope config key. Add a 'Failure modes' row: 'UnitOfWork commit failure raises StorageError; no silent swallow.'"
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The business summary explains consistency guarantees well but says nothing about performance trade-offs \u2014 a PM cannot answer 'will this slow down the checkout page?' without additional context.",
+          "'Alternatives considered and rejected' uses technical labels (Active Record, Raw DAO) with no business-impact translation \u2014 the PM cannot relay to stakeholders why those alternatives were dropped.",
+          "There is no versioning or migration story: if a new field is added to an aggregate, does the Repository contract change? PMs need to know whether this is a breaking change for dependent teams."
+        ],
+        "rewrite_suggestion": "Add a one-sentence performance note ('get() is O(1) from the IdentityMap on cache hit; find() scales with store size and Specification complexity'). Reframe alternatives in business terms ('Active Record couples database changes to business logic, slowing feature delivery'). Add a 'Breaking changes' note: 'The four-method surface is stable; adding fields to an aggregate root is non-breaking.'"
+      }
+    ]
+  }
+}

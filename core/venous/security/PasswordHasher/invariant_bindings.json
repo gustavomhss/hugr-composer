@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "PWD_INV_01",
+      "invariant_text": "Stored verifier MUST encode algorithm identifier, cost parameters, salt, and digest so rotation is self-describing.",
+      "confirms_test": "test_inv_stored_format_confirms",
+      "prevents_test": "test_inv_stored_format_prevents",
+      "under_failure_test": "test_inv_stored_format_under_failure"
+    },
+    {
+      "invariant_id": "PWD_INV_02",
+      "invariant_text": "verify() MUST run in constant time with respect to digest bytes and NEVER branch on character-by-character equality.",
+      "confirms_test": "test_inv_constant_time_verify_confirms",
+      "prevents_test": "test_inv_constant_time_verify_prevents",
+      "under_failure_test": "test_inv_constant_time_verify_under_failure"
+    },
+    {
+      "invariant_id": "PWD_INV_03",
+      "invariant_text": "Salt MUST be drawn from a CSPRNG, be at least 16 bytes, and MUST NEVER be reused across credentials.",
+      "confirms_test": "test_inv_salt_entropy_confirms",
+      "prevents_test": "test_inv_salt_entropy_prevents",
+      "under_failure_test": "test_inv_salt_entropy_under_failure"
+    },
+    {
+      "invariant_id": "PWD_INV_04",
+      "invariant_text": "hash() MUST use a memory-hard function (Argon2id or scrypt) and SHALL NEVER use raw SHA-2, MD5, or PBKDF2-SHA1.",
+      "confirms_test": "test_inv_memory_hard_confirms",
+      "prevents_test": "test_inv_memory_hard_prevents",
+      "under_failure_test": "test_inv_memory_hard_under_failure"
+    },
+    {
+      "invariant_id": "PWD_INV_05",
+      "invariant_text": "needs_rehash() MUST return True when stored cost parameters are below the configured floor, and the caller MUST rehash on next successful login.",
+      "confirms_test": "test_inv_rotation_confirms",
+      "prevents_test": "test_inv_rotation_prevents",
+      "under_failure_test": "test_inv_rotation_under_failure"
+    },
+    {
+      "invariant_id": "PWD_INV_06",
+      "invariant_text": "Plaintext MUST NEVER be logged, serialized, or included in exceptions raised by this primitive.",
+      "confirms_test": "test_inv_no_plaintext_leak_confirms",
+      "prevents_test": "test_inv_no_plaintext_leak_prevents",
+      "under_failure_test": "test_inv_no_plaintext_leak_under_failure"
+    }
+  ]
+}

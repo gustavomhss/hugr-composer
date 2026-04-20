@@ -1,0 +1,32 @@
+{
+  "name": "ConfigBinding",
+  "namespace": "data",
+  "purpose": "Binds a namespaced slice of the runtime configuration to a typed record, validated at startup so misconfiguration fails loud, not silent.",
+  "api_signature": "from typing import Protocol, Type, TypeVar\n\nT = TypeVar('T')\n\nclass ConfigBinding(Protocol):\n    def bind(self, prefix: str, schema: Type[T]) -> T: ...\n    def reload(self) -> None: ...\n",
+  "invariants": [
+    "bind() MUST fail loudly if required keys are missing or typed coercion fails; it NEVER returns a partially-filled record.",
+    "Bound records MUST be frozen/immutable; runtime code CANNOT mutate a bound option to affect another consumer.",
+    "reload() MUST produce a new record without aliasing the previous one; references already handed out SHALL NOT silently mutate.",
+    "Unknown keys under the prefix MUST be reported as errors by default (strict binding) and NEVER silently dropped.",
+    "Precedence order (env > file > defaults) MUST be fixed and documented; a later source CANNOT override a value an operator pinned."
+  ],
+  "extension_contract": "Downstream tools declare a dataclass schema and call bind(prefix, schema); alternative sources (YAML file, env, Vault, ConfigMap) plug in as providers via a registered adapter/provider that the binding composes left-to-right.",
+  "consumption_example": "from dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass DbOpts:\n    url: str\n    pool: int = 10\n\ndef load(binder: ConfigBinding) -> DbOpts:\n    return binder.bind('db', DbOpts)\n",
+  "sources": [
+    {
+      "source": "Spring Boot 3.x Reference \u2014 Type-safe Configuration Properties",
+      "locator": "docs.spring.io/spring-boot/reference/features/external-config.html \u2014 @ConfigurationProperties, ConstructorBinding, DefaultValue"
+    },
+    {
+      "source": "ASP.NET Core 8.0 \u2014 Options pattern",
+      "locator": "learn.microsoft.com/aspnet/core/fundamentals/configuration/options \u2014 IOptions<T>, Configure<T>(section)"
+    }
+  ],
+  "why_essential": "Parsing env vars and dictionary lookups scattered through a codebase is a long tail of production outages; one binder catches errors at startup and gives every tool the same typed window into config.",
+  "alternatives_considered": [
+    "Read os.environ directly \u2014 no schema, silent typos",
+    "Dict-of-dicts passed around \u2014 no validation, no defaults",
+    "Per-module singleton loaders \u2014 drift in key naming and precedence"
+  ],
+  "maturity": "battle_tested"
+}

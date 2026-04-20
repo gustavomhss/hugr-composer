@@ -1,0 +1,53 @@
+{
+  "logs": [
+    {
+      "event_name": "binding.invoke.started",
+      "required_attributes": ["binding_name", "operation"]
+    },
+    {
+      "event_name": "binding.invoke.completed",
+      "required_attributes": ["binding_name", "operation", "duration_ms", "outcome"]
+    },
+    {
+      "event_name": "binding.invoke.deadline_exceeded",
+      "required_attributes": ["binding_name", "operation", "timeout_s"]
+    },
+    {
+      "event_name": "binding.metadata.rejected",
+      "required_attributes": ["binding_name", "reason"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "binding.invoke.calls",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 500,
+      "label_keys": ["binding_name", "operation", "outcome"]
+    },
+    {
+      "name": "binding.invoke.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 500,
+      "label_keys": ["binding_name", "operation"]
+    },
+    {
+      "name": "binding.invoke.payload_size",
+      "metric_type": "histogram",
+      "unit": "By",
+      "cardinality_bound": 100,
+      "label_keys": ["binding_name"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "binding.invoke",
+      "required_attributes": ["binding.name", "binding.operation"]
+    },
+    {
+      "operation_name": "binding.validate",
+      "required_attributes": ["binding.name"]
+    }
+  ]
+}

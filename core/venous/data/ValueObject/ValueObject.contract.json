@@ -1,0 +1,31 @@
+{
+  "name": "ValueObject",
+  "namespace": "data",
+  "purpose": "Represents a descriptive concept whose identity is defined entirely by its attributes and which is immutable once constructed.",
+  "api_signature": "from typing import Protocol\n\nclass ValueObject(Protocol):\n    def __eq__(self, other: object) -> bool: ...\n    def __hash__(self) -> int: ...\n    def with_changes(self, **kwargs) -> 'ValueObject': ...",
+  "invariants": [
+    "Instances MUST be immutable after construction; attribute assignment post-init is FORBIDDEN.",
+    "Two instances with the same attribute values MUST compare equal and MUST share the same hash.",
+    "A ValueObject CANNOT hold a reference to an Aggregate root or Entity whose identity is unstable.",
+    "Construction SHALL validate every invariant eagerly; a partially-valid instance NEVER exists."
+  ],
+  "extension_contract": "Domain tools extend ValueObject by subclassing a frozen dataclass base and registering a coercion adapter for serialization; adding derived fields is allowed through with_changes, but mutation in place SHALL remain FORBIDDEN.",
+  "consumption_example": "def apply_discount(price: ValueObject, pct: int) -> ValueObject:\n    return price.with_changes(amount=price.amount * (100 - pct) // 100)",
+  "sources": [
+    {
+      "source": "Evans 'Domain-Driven Design' (2003)",
+      "locator": "Chapter 5, Value Objects, pp. 97-106"
+    },
+    {
+      "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+      "locator": "Chapter 6, Value Objects, pp. 219-240"
+    }
+  ],
+  "why_essential": "Without a shared contract, Money, Email, DateRange are each reimplemented per tool with divergent validation, and equality semantics silently diverge between comparisons and hashing.",
+  "alternatives_considered": [
+    "Plain dicts or tuples: lose validation and type safety.",
+    "Mutable dataclasses: break equality-by-value and invite aliasing bugs.",
+    "Primitive obsession: scatters validation across every consumer."
+  ],
+  "maturity": "battle_tested"
+}

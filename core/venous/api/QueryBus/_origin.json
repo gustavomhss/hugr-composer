@@ -1,0 +1,20 @@
+{
+  "tool": "api_design/add_cqrs.py",
+  "candidate": {
+    "docstring": "Dispatch Queries to their registered async handlers.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 414,
+    "line_start": 380,
+    "name": "QueryBus",
+    "origin": "string_template",
+    "shape_hash": "91bc639aa31cca33",
+    "size_bytes": 1270,
+    "size_lines": 35,
+    "tool": "api_design/add_cqrs.py",
+    "method_count": 3,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 15240
+  }
+}

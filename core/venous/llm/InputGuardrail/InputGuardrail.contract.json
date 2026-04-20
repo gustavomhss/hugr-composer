@@ -1,0 +1,31 @@
+{
+  "name": "InputGuardrail",
+  "namespace": "llm",
+  "purpose": "Intercept user input before it reaches a model and reject, redact, or transform it according to deterministic rules (PII, injection markers) and optional LLM-judged classifications.",
+  "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nclass GuardDecision(Protocol):\n    action: Literal[\"allow\", \"redact\", \"block\"]\n    reason: str\n    redacted_text: str | None\n\nclass InputGuardrail(Protocol):\n    name: str\n    def evaluate(self, text: str, context: dict[str, str]) -> GuardDecision: ...\n",
+  "invariants": [
+    "evaluate() MUST be deterministic for a given (text, context) unless the guardrail declares itself probabilistic via its name suffix.",
+    "A BLOCK decision MUST halt the pipeline; the caller CANNOT silently downgrade it to allow.",
+    "REDACT decisions SHALL return redacted_text and MUST NEVER return the original text under a redact verdict.",
+    "Every decision MUST carry a non-empty reason so downstream audit can explain the verdict.",
+    "Guardrails MUST NEVER store raw blocked inputs in logs in clear form; storage SHALL be hashed or truncated."
+  ],
+  "extension_contract": "Projects add a guardrail by implementing the InputGuardrail protocol and registering it in an ordered chain; the chain runs rules as a pipeline of interceptors, stopping at the first BLOCK verdict.",
+  "consumption_example": "def check_prompt(guards: list[InputGuardrail], text: str) -> str:\n    for g in guards:\n        d = g.evaluate(text, {\"user_role\": \"customer\"})\n        if d.action == \"block\":\n            raise PermissionError(f\"{g.name}: {d.reason}\")\n        if d.action == \"redact\" and d.redacted_text is not None:\n            text = d.redacted_text\n    return text\n",
+  "sources": [
+    {
+      "source": "OWASP Top 10 for LLM Applications (2023)",
+      "locator": "LLM01: Prompt Injection \u2014 input classifiers and escaping"
+    },
+    {
+      "source": "OWASP Top 10 for LLM Applications (2023)",
+      "locator": "LLM06: Sensitive Information Disclosure \u2014 PII redaction before prompt assembly"
+    }
+  ],
+  "why_essential": "Prompt injection and PII leakage must be screened before any model call; leaving this per-feature guarantees inconsistent coverage and silent bypasses.",
+  "alternatives_considered": [
+    "Regex inside each endpoint \u2014 impossible to centrally audit or update when threat patterns change.",
+    "Relying on the model itself to refuse \u2014 bypassable and not auditable."
+  ],
+  "maturity": "emerging"
+}

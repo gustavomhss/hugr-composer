@@ -1,0 +1,32 @@
+{
+  "name": "Bulkhead",
+  "namespace": "resiliency",
+  "purpose": "Partition concurrency so that saturation or stalls inside one dependency cannot exhaust the resources needed by unrelated dependencies.",
+  "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Awaitable, Callable, TypeVar, Literal\n\nT = TypeVar('T')\nKind = Literal['semaphore', 'thread_pool']\n\nclass Bulkhead(Protocol):\n    name: str\n    kind: Kind\n    max_concurrent_calls: int\n    max_wait_duration_ms: int\n    async def submit(self, fn: Callable[..., Awaitable[T]], /, *args, **kwargs) -> T: ...\n    def available_permits(self) -> int: ...\n",
+  "invariants": [
+    "The number of in-flight calls per partition MUST NEVER exceed max_concurrent_calls.",
+    "A caller that waits longer than max_wait_duration_ms for a permit SHALL receive BulkheadFull and NEVER be admitted.",
+    "A rejection by Bulkhead MUST NOT be retried inside the same partition in the same request.",
+    "Permits CANNOT be shared across partitions; each partition holds an isolated counter.",
+    "The bulkhead SHALL emit a rejection metric labelled with the partition name on every rejection."
+  ],
+  "extension_contract": "Adopters register a partition by name and select a kind adapter (semaphore for async I/O, thread_pool for blocking code); a PartitionRouter hook maps requests to partition names, enabling per-tenant or per-dependency isolation. The permit accounting is sealed.",
+  "consumption_example": "async def call_fraud() -> FraudScore:\n    return await Bulkhead.submit(_fraud_client.score, principal)\n\npartition = Bulkhead\nif partition.available_permits() == 0:\n    raise BulkheadFull('fraud')\n",
+  "sources": [
+    {
+      "source": "Nygard, Release It! 2nd edition (2018), Pragmatic Bookshelf",
+      "locator": "Chapter 5 'Stability Patterns', section 'Bulkheads', pages 98-103"
+    },
+    {
+      "source": "resilience4j 2.2.0 reference documentation",
+      "locator": "core-modules/bulkhead, comparison of SemaphoreBulkhead vs FixedThreadPoolBulkhead"
+    }
+  ],
+  "why_essential": "A single shared thread pool or connection pool is a ship without watertight compartments; without partitioning, one slow dependency drowns all traffic that shared the pool, violating blast-radius guarantees.",
+  "alternatives_considered": [
+    "Global connection pool: shares resources but allows one slow dependency to exhaust everything.",
+    "Process-per-dependency isolation: provides strong isolation yet multiplies operational cost and cold-start overhead.",
+    "Cooperative quotas enforced in application code: relies on every call site to behave correctly and NEVER composes."
+  ],
+  "maturity": "battle_tested"
+}

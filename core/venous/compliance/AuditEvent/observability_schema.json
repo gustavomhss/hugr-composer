@@ -1,0 +1,14 @@
+{
+  "logs": [
+    {"event_name": "audit.event.emitted", "required_attributes": ["event_id", "action", "outcome"]},
+    {"event_name": "audit.chain.verify.failed", "required_attributes": ["event_id", "reason"]}
+  ],
+  "metrics": [
+    {"name": "audit.events.emitted", "metric_type": "counter", "unit": "1", "cardinality_bound": 30, "label_keys": ["action", "outcome"]},
+    {"name": "audit.chain.verify.failures", "metric_type": "counter", "unit": "1", "cardinality_bound": 10, "label_keys": ["reason"]}
+  ],
+  "spans": [
+    {"operation_name": "audit.emit", "required_attributes": ["event_id", "action"]},
+    {"operation_name": "audit.verify_chain", "required_attributes": ["from_event_id"]}
+  ]
+}

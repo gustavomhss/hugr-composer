@@ -1,0 +1,16 @@
+{
+  "logs": [
+    {"event_name": "consent.granted", "required_attributes": ["subject_id", "purpose", "notice_version"]},
+    {"event_name": "consent.revoked", "required_attributes": ["subject_id", "purpose"]}
+  ],
+  "metrics": [
+    {"name": "consent.grants", "metric_type": "counter", "unit": "1", "cardinality_bound": 200, "label_keys": ["purpose"]},
+    {"name": "consent.revocations", "metric_type": "counter", "unit": "1", "cardinality_bound": 200, "label_keys": ["purpose"]},
+    {"name": "consent.active", "metric_type": "gauge", "unit": "1", "cardinality_bound": 200, "label_keys": ["purpose"]}
+  ],
+  "spans": [
+    {"operation_name": "consent.grant", "required_attributes": ["subject_id", "purpose"]},
+    {"operation_name": "consent.revoke", "required_attributes": ["subject_id", "purpose"]},
+    {"operation_name": "consent.is_granted", "required_attributes": ["subject_id", "purpose"]}
+  ]
+}

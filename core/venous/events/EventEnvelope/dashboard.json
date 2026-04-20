@@ -1,0 +1,24 @@
+{
+  "title": "EventEnvelope — Ingestion, Dedup, Rejections",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Envelopes Constructed (5m)",
+      "targets": [{"expr": "sum(rate(event_envelope_constructed_total[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Rejections by invariant_id",
+      "targets": [{"expr": "sum by (invariant_id) (rate(event_envelope_rejected_total[5m]))"}]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Dedup Hit Ratio",
+      "targets": [{"expr": "sum(rate(event_envelope_dedup_decision{outcome=\"duplicate\"}[5m])) / sum(rate(event_envelope_dedup_decision[5m]))"}]
+    }
+  ]
+}

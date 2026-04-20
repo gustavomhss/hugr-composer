@@ -1,0 +1,36 @@
+{
+  "title": "AuthorizationCodeFlow — Begins, Exchanges, Rejections",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Exchanges OK (5m)",
+      "targets": [{"expr": "sum(rate(acf_exchange_count_total{result=\"ok\"}[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Exchanges Rejected (5m)",
+      "targets": [{"expr": "sum(rate(acf_exchange_count_total{result=~\"invalid_.*\"}[5m]))"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Exchange Duration p50/p95/p99 (ms)",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(acf_exchange_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(acf_exchange_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(acf_exchange_duration_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Begin / Exchange Ratio",
+      "targets": [
+        {"expr": "rate(acf_begin_count_total[5m]) / clamp_min(rate(acf_exchange_count_total[5m]), 1)"}
+      ]
+    }
+  ]
+}

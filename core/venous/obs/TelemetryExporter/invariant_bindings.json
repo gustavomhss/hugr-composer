@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "TEX_INV_01",
+      "invariant_text": "Exporter calls MUST be non-blocking on the hot path; the caller SHALL always enqueue through an intermediate batch processor.",
+      "confirms_test": "test_inv_nonblocking_confirms",
+      "prevents_test": "test_inv_nonblocking_prevents",
+      "under_failure_test": "test_inv_nonblocking_under_failure"
+    },
+    {
+      "invariant_id": "TEX_INV_02",
+      "invariant_text": "On transient failure the exporter MUST retry with exponential backoff, capped at a configurable maximum, and NEVER retry indefinitely.",
+      "confirms_test": "test_inv_bounded_retry_confirms",
+      "prevents_test": "test_inv_bounded_retry_prevents",
+      "under_failure_test": "test_inv_bounded_retry_under_failure"
+    },
+    {
+      "invariant_id": "TEX_INV_03",
+      "invariant_text": "Shutdown MUST flush the in-flight batch within the provided timeout and CANNOT accept new export calls afterwards.",
+      "confirms_test": "test_inv_shutdown_idempotent_confirms",
+      "prevents_test": "test_inv_shutdown_idempotent_prevents",
+      "under_failure_test": "test_inv_shutdown_idempotent_under_failure"
+    },
+    {
+      "invariant_id": "TEX_INV_04",
+      "invariant_text": "The wire format MUST conform to OTLP/HTTP protobuf or OTLP/gRPC as defined by OpenTelemetry Specification 1.32.",
+      "confirms_test": "test_inv_otlp_wire_confirms",
+      "prevents_test": "test_inv_otlp_wire_prevents",
+      "under_failure_test": "test_inv_otlp_wire_under_failure"
+    },
+    {
+      "invariant_id": "TEX_INV_05",
+      "invariant_text": "Authentication headers attached to exports are FORBIDDEN from appearing in any log record, span attribute, or error event emitted by the exporter itself.",
+      "confirms_test": "test_inv_auth_never_logged_confirms",
+      "prevents_test": "test_inv_auth_never_logged_prevents",
+      "under_failure_test": "test_inv_auth_never_logged_under_failure"
+    },
+    {
+      "invariant_id": "TEX_INV_06",
+      "invariant_text": "Export results SHALL be observable via an internal counter keyed by (signal, result) so operators can alert on sustained failure.",
+      "confirms_test": "test_inv_counter_observable_confirms",
+      "prevents_test": "test_inv_counter_observable_prevents",
+      "under_failure_test": "test_inv_counter_observable_under_failure"
+    }
+  ]
+}

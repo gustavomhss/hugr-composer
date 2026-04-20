@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "RATE_INV_01",
+      "invariant_text": "The long-run admitted rate per key MUST NEVER exceed rate_per_second over any window longer than burst / rate_per_second seconds.",
+      "confirms_test": "test_inv_rate_cap_confirms",
+      "prevents_test": "test_inv_rate_cap_prevents",
+      "under_failure_test": "test_inv_rate_cap_under_failure"
+    },
+    {
+      "invariant_id": "RATE_INV_02",
+      "invariant_text": "A caller SHALL NEVER block for longer than wait_ms; after that the limiter MUST reject with a typed RateLimited error.",
+      "confirms_test": "test_inv_wait_deadline_confirms",
+      "prevents_test": "test_inv_wait_deadline_prevents",
+      "under_failure_test": "test_inv_wait_deadline_under_failure"
+    },
+    {
+      "invariant_id": "RATE_INV_03",
+      "invariant_text": "State for a key CANNOT be shared across unrelated services; key scoping is FORBIDDEN from being implicit.",
+      "confirms_test": "test_inv_key_scope_confirms",
+      "prevents_test": "test_inv_key_scope_prevents",
+      "under_failure_test": "test_inv_key_scope_under_failure"
+    },
+    {
+      "invariant_id": "RATE_INV_04",
+      "invariant_text": "A rejection MUST include retry-after information computed from the current depletion of the bucket.",
+      "confirms_test": "test_inv_retry_after_confirms",
+      "prevents_test": "test_inv_retry_after_prevents",
+      "under_failure_test": "test_inv_retry_after_under_failure"
+    },
+    {
+      "invariant_id": "RATE_INV_05",
+      "invariant_text": "The limiter SHALL distinguish cost > 1 so large operations consume proportional tokens and NEVER equal cost 1.",
+      "confirms_test": "test_inv_cost_proportional_confirms",
+      "prevents_test": "test_inv_cost_proportional_prevents",
+      "under_failure_test": "test_inv_cost_proportional_under_failure"
+    }
+  ]
+}

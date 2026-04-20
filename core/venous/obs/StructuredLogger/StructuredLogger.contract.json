@@ -1,0 +1,37 @@
+{
+  "name": "StructuredLogger",
+  "namespace": "obs",
+  "purpose": "Emit machine-parseable key/value log records with a fixed level taxonomy, attached trace and span identifiers, and no positional string formatting.",
+  "api_signature": "from typing import Protocol, Mapping, Any\n\nclass StructuredLogger(Protocol):\n    def debug(self, event: str, **fields: Any) -> None: ...\n    def info(self, event: str, **fields: Any) -> None: ...\n    def warn(self, event: str, **fields: Any) -> None: ...\n    def error(self, event: str, *, exc: BaseException | None = None, **fields: Any) -> None: ...\n    def bind(self, **fields: Any) -> 'StructuredLogger': ...\n    def with_context(self, context: Mapping[str, Any]) -> 'StructuredLogger': ...\n",
+  "invariants": [
+    "Every emitted record MUST be a single line of valid UTF-8 JSON with keys 'ts', 'level', 'event', plus the caller-provided fields.",
+    "Log level SHALL be one of DEBUG, INFO, WARN, ERROR; TRACE and FATAL are FORBIDDEN to prevent drift from OTel log severity ranges.",
+    "When a span is active in the current context, the record MUST automatically include 'trace_id' and 'span_id' in hex form.",
+    "Printf-style formatting with %s or f-strings inside the event message is FORBIDDEN; values ALWAYS travel as typed fields.",
+    "Secrets matching registered redaction patterns (authorization headers, bearer tokens, card PANs) MUST be replaced with '[REDACTED]' before serialization.",
+    "Binding a field NEVER mutates the parent logger; bind returns a new immutable logger instance."
+  ],
+  "extension_contract": "A downstream tool plugs in a redaction filter via the register-processor hook, adds custom severity-to-sink routing by composing a WriteAdapter, or injects static fields (service.version, git.sha) through a bound child logger that decorators and middleware receive as dependency.",
+  "consumption_example": "def handle_webhook(logger: StructuredLogger, event_id: str, payload_size: int) -> None:\n    scoped = logger.bind(event_id=event_id, integration='stripe')\n    scoped.info('webhook.received', payload_size=payload_size)\n    try:\n        _process(event_id)\n    except ValueError as exc:\n        scoped.error('webhook.rejected', reason='invalid_signature', exc=exc)\n        raise\n    scoped.info('webhook.processed')\n",
+  "sources": [
+    {
+      "source": "OpenTelemetry Specification 1.32 \u2014 Logs Data Model",
+      "locator": "specification/logs/data-model.md sections 'Field: SeverityNumber', 'Field: Body', 'Field: TraceId/SpanId'"
+    },
+    {
+      "source": "Majors, Fong-Jones, Miranda \u2014 Observability Engineering (2022)",
+      "locator": "Chapter 3 'Lessons from Scaling Without Observability' pp. 32-38 on structured events"
+    },
+    {
+      "source": "Google SRE Book \u2014 Monitoring Distributed Systems",
+      "locator": "Chapter 6 'Monitoring Distributed Systems' section 'Logs vs Metrics'"
+    }
+  ],
+  "why_essential": "A shared logger is the only way to guarantee every record is parseable by the same ingest pipeline and automatically carries trace correlation; per-tool loggers forget to inject span context and produce grep-friendly-but-query-hostile prose.",
+  "alternatives_considered": [
+    "Python stdlib logging with a JSON formatter \u2014 rejected because the default API encourages positional formatting and loses types at the boundary.",
+    "Per-service print statements + log shipper \u2014 rejected because line parsing is fragile and trace correlation becomes post-hoc regex.",
+    "Binary structured logging (protobuf) \u2014 rejected because debuggability in production terminals requires human-readable output."
+  ],
+  "maturity": "battle_tested"
+}

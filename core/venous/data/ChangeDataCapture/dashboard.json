@@ -1,0 +1,34 @@
+{
+  "title": "ChangeDataCapture — Events Published, Commit Duration, Consumer Lag",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Events Published (5m)",
+      "targets": [{"expr": "sum(rate(cdc_events_published_total[5m])) by (table)"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Commit Duration p50/p95/p99 (ms)",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(cdc_tx_commit_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(cdc_tx_commit_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(cdc_tx_commit_duration_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Consumer Lag (positions behind head)",
+      "targets": [{"expr": "cdc_consumer_lag"}]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Last Committed Position",
+      "targets": [{"expr": "cdc_last_position"}]
+    }
+  ]
+}

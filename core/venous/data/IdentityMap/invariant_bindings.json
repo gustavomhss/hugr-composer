@@ -1,0 +1,32 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "IDMAP_INV_01",
+      "invariant_text": "Given the same (type, id) within one session, the IdentityMap MUST return the same Python object reference on every lookup.",
+      "confirms_test": "test_inv_same_reference_confirms",
+      "prevents_test": "test_inv_same_reference_prevents",
+      "under_failure_test": "test_inv_same_reference_under_failure"
+    },
+    {
+      "invariant_id": "IDMAP_INV_02",
+      "invariant_text": "An object CANNOT be inserted twice for the same identity; a second add with a new instance SHALL raise a conflict error.",
+      "confirms_test": "test_inv_no_duplicate_identity_confirms",
+      "prevents_test": "test_inv_no_duplicate_identity_prevents",
+      "under_failure_test": "test_inv_no_duplicate_identity_under_failure"
+    },
+    {
+      "invariant_id": "IDMAP_INV_03",
+      "invariant_text": "The map MUST be scoped to a single UnitOfWork or session and NEVER shared across concurrent transactions.",
+      "confirms_test": "test_inv_session_scoped_confirms",
+      "prevents_test": "test_inv_session_scoped_prevents",
+      "under_failure_test": "test_inv_session_scoped_under_failure"
+    },
+    {
+      "invariant_id": "IDMAP_INV_04",
+      "invariant_text": "On UnitOfWork disposal the map ALWAYS clears its contents; retaining references beyond the session is FORBIDDEN.",
+      "confirms_test": "test_inv_dispose_clears_confirms",
+      "prevents_test": "test_inv_dispose_clears_prevents",
+      "under_failure_test": "test_inv_dispose_clears_under_failure"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "name": "TelemetryExporter",
+  "namespace": "obs",
+  "purpose": "Serialize batched spans, metrics, or log records into an OTLP-compatible envelope and deliver them to a configured endpoint with retry and backpressure.",
+  "api_signature": "from enum import Enum\nfrom typing import Protocol, Sequence\n\nclass Signal(str, Enum):\n    TRACES = 'traces'\n    METRICS = 'metrics'\n    LOGS = 'logs'\n\nclass ExportResult(str, Enum):\n    SUCCESS = 'success'\n    FAILURE = 'failure'\n    TIMEOUT = 'timeout'\n\nclass TelemetryExporter(Protocol):\n    signal: Signal\n\n    def export(self, batch: Sequence[object], *, timeout_s: float) -> ExportResult: ...\n    def force_flush(self, *, timeout_s: float) -> bool: ...\n    def shutdown(self, *, timeout_s: float) -> bool: ...\n",
+  "invariants": [
+    "Exporter calls MUST be non-blocking on the hot path; the caller SHALL always enqueue through an intermediate batch processor.",
+    "On transient failure the exporter MUST retry with exponential backoff, capped at a configurable maximum, and NEVER retry indefinitely.",
+    "Shutdown MUST flush the in-flight batch within the provided timeout and CANNOT accept new export calls afterwards.",
+    "The wire format MUST conform to OTLP/HTTP protobuf or OTLP/gRPC as defined by OpenTelemetry Specification 1.32.",
+    "Authentication headers attached to exports are FORBIDDEN from appearing in any log record, span attribute, or error event emitted by the exporter itself.",
+    "Export results SHALL be observable via an internal counter keyed by (signal, result) so operators can alert on sustained failure."
+  ],
+  "extension_contract": "A backend adapter implements the TelemetryExporter Protocol for its wire format, registers itself with the signal-specific provider, and is composed behind a BatchSpanProcessor / PeriodicExportingMetricReader so batching and retry semantics are preserved independently of the adapter.",
+  "consumption_example": "def flush_on_shutdown(exporter: TelemetryExporter) -> None:\n    ok = exporter.force_flush(timeout_s=5.0)\n    if not ok:\n        raise RuntimeError('telemetry flush timed out')\n    exporter.shutdown(timeout_s=2.0)\n",
+  "sources": [
+    {
+      "source": "OpenTelemetry Specification 1.32 \u2014 OTLP Protocol",
+      "locator": "specification/protocol/otlp.md 'Request' and 'Response' and retry semantics"
+    },
+    {
+      "source": "OpenTelemetry Specification 1.32 \u2014 SDK Exporters",
+      "locator": "specification/trace/sdk.md 'SpanExporter' and specification/metrics/sdk.md 'MetricExporter'"
+    },
+    {
+      "source": "Google SRE Book \u2014 Monitoring Distributed Systems",
+      "locator": "Chapter 6 section 'Setting Reasonable Expectations for Monitoring' on exporter reliability"
+    }
+  ],
+  "why_essential": "Batching, retry, backpressure, and authentication are non-trivial and must not be reinvented per tool; one exporter primitive keeps the hot path cheap and the failure mode predictable.",
+  "alternatives_considered": [
+    "Direct synchronous writes from the hot path \u2014 rejected because any network hiccup becomes tail-latency for end users.",
+    "Vendor-native SDKs only \u2014 rejected because they couple code to a single backend and block multi-destination fan-out.",
+    "File-based export + sidecar forwarder \u2014 rejected as a primary path because disk-queue management belongs in infra, not in-process."
+  ],
+  "maturity": "battle_tested"
+}

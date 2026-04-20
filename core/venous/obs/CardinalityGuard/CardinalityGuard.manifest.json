@@ -1,0 +1,603 @@
+{
+  "name": "CardinalityGuard",
+  "namespace": "obs",
+  "maturity": "emerging",
+  "builder_agent_id": 9,
+  "catalog_entry_sha256": "80cbb389b69cfcd1a90864f9a1c0cb1ad196ca17e27081d9e5c8d2b2e0323415",
+  "files": [
+    {
+      "path": "obs/CardinalityGuard/CardinalityGuard.contract.json",
+      "sha256": "e8e0ef637ccb0e0e8551072620b8afc57f6835eaee8d8ecefc29338e96fc475a",
+      "size_bytes": 3671,
+      "kind": "contract_json"
+    },
+    {
+      "path": "obs/CardinalityGuard/CardinalityGuard.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "obs/CardinalityGuard/CardinalityGuard.md",
+      "sha256": "0108a38fbbf9f39a5de1aac4d620bd842d28418c1bf7826ca88e83614432a1af",
+      "size_bytes": 3564,
+      "kind": "spec_md"
+    },
+    {
+      "path": "obs/CardinalityGuard/CardinalityGuard.py",
+      "sha256": "9ea812704b5132ecd7fa0e995e0ef3697bfc50805a9a4107e7080a0cdad836d8",
+      "size_bytes": 5274,
+      "kind": "impl"
+    },
+    {
+      "path": "obs/CardinalityGuard/behavioral_CardinalityGuard.py",
+      "sha256": "7b0abf5b39d796f779270827478ecabb6428d1f12530582879bfac386f5ce9a9",
+      "size_bytes": 1690,
+      "kind": "behavioral"
+    },
+    {
+      "path": "obs/CardinalityGuard/conftest.py",
+      "sha256": "7c56f31974b08ec9142aebbd7c9995aae21ceef4211149bc0c595a4c4855ac4c",
+      "size_bytes": 528,
+      "kind": "test"
+    },
+    {
+      "path": "obs/CardinalityGuard/invariant_bindings.json",
+      "sha256": "5cb98fb1a93bb674b0d922affceb17e35460ed02d60e833b709ad97150c6db51",
+      "size_bytes": 2783,
+      "kind": "test"
+    },
+    {
+      "path": "obs/CardinalityGuard/metamorphic_CardinalityGuard.py",
+      "sha256": "e6bbb8852298955afec59120608d4f735a1c18a335579b1154397517c2fd7c9f",
+      "size_bytes": 1641,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "obs/CardinalityGuard/observability_CardinalityGuard.py",
+      "sha256": "6dbe10e62b0daac00228a82a7b9577e902ce20e51b6e490c78a7d26f1ba550b1",
+      "size_bytes": 1369,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/CardinalityGuard/observability_schema.json",
+      "sha256": "94582d28599c76ada3b4ba13ae8de014fb8e72b6572674d0f83cfc42b24b4f99",
+      "size_bytes": 719,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/CardinalityGuard/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "obs/CardinalityGuard/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "obs/CardinalityGuard/test_CardinalityGuard.py",
+      "sha256": "c48f26e61e7677a08eb43f5c4152ebb42a2aeb6d2375f8172adb57783aa1f7b7",
+      "size_bytes": 6000,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "CARD_INV_01",
+      "invariant_text": "When the per-metric series limit is reached, new attribute combinations MUST be collapsed into a single 'overflow' series and NEVER emitted with their original values.",
+      "confirms_test": "test_inv_per_metric_overflow_confirms",
+      "prevents_test": "test_inv_per_metric_overflow_prevents",
+      "under_failure_test": "test_inv_per_metric_overflow_under_failure"
+    },
+    {
+      "invariant_id": "CARD_INV_02",
+      "invariant_text": "The guard MUST reject any attribute key whose value has been seen in more than per_key_limit distinct forms across the window.",
+      "confirms_test": "test_inv_per_key_limit_confirms",
+      "prevents_test": "test_inv_per_key_limit_prevents",
+      "under_failure_test": "test_inv_per_key_limit_under_failure"
+    },
+    {
+      "invariant_id": "CARD_INV_03",
+      "invariant_text": "User identifiers, full URL paths, email addresses, and freeform query strings as attribute values are FORBIDDEN by the default deny-list.",
+      "confirms_test": "test_inv_deny_list_confirms",
+      "prevents_test": "test_inv_deny_list_prevents",
+      "under_failure_test": "test_inv_deny_list_under_failure"
+    },
+    {
+      "invariant_id": "CARD_INV_04",
+      "invariant_text": "Admission decisions SHALL be deterministic given the same (metric_name, attributes) tuple within a single aggregation window.",
+      "confirms_test": "test_inv_deterministic_admit_confirms",
+      "prevents_test": "test_inv_deterministic_admit_prevents",
+      "under_failure_test": "test_inv_deterministic_admit_under_failure"
+    },
+    {
+      "invariant_id": "CARD_INV_05",
+      "invariant_text": "The guard NEVER mutates the caller's attribute mapping in place; it ALWAYS returns a new mapping.",
+      "confirms_test": "test_inv_no_mutation_confirms",
+      "prevents_test": "test_inv_no_mutation_prevents",
+      "under_failure_test": "test_inv_no_mutation_under_failure"
+    },
+    {
+      "invariant_id": "CARD_INV_06",
+      "invariant_text": "Overflow events MUST be observable through a dedicated counter so operators can detect label pressure before ingestion breaks.",
+      "confirms_test": "test_inv_overflow_counter_confirms",
+      "prevents_test": "test_inv_overflow_counter_prevents",
+      "under_failure_test": "test_inv_overflow_counter_under_failure"
+    },
+    {
+      "invariant_id": "CARD_INV_07",
+      "invariant_text": "Configure CANNOT be invoked after the first admit call in a given process to preserve deterministic behavior.",
+      "confirms_test": "test_inv_configure_locked_confirms",
+      "prevents_test": "test_inv_configure_locked_prevents",
+      "under_failure_test": "test_inv_configure_locked_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 525,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 808,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 761,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 121744,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "42 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 2218,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 125967,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RACE-CONFIGURE-ADMIT",
+        "hypothesis": "Calling configure() concurrently with the first admit() from another thread creates a window where configure succeeds after admit has already registered state, violating the lock-in-after-first-admit invariant and yielding nondeterministic limits.",
+        "input_fixture": "Thread A: guard.admit('http.req', {'x':'1'}); Thread B (fired 1us earlier): guard.configure(per_metric_limit=5, per_key_limit=3). Interleave via barrier.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-OVERFLOW-LEAK-ORIG",
+        "hypothesis": "When per_metric_limit is reached, an implementation that copies attrs and only swaps a 'series' tag may still emit original high-cardinality keys (e.g. user_id) in the returned mapping, leaking originals past the overflow bucket.",
+        "input_fixture": "configure(per_metric_limit=2); admit('m',{'a':'1'}); admit('m',{'a':'2'}); admit('m',{'a':'3','user_id':'u-999'}) \u2014 inspect returned mapping for presence of 'user_id':'u-999'.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PERKEY-BYPASS-CASE",
+        "hypothesis": "Per-key distinct-value counting is likely case/whitespace sensitive; attacker sends 'GET','get','GET ' as method values to inflate distinct forms past per_key_limit without triggering rejection because internal set dedupes by normalized form only for some keys.",
+        "input_fixture": "for v in ['GET','get','GET ','Get','gEt','GET\\t','GET\\n']: guard.admit('http',{ 'method': v }) with per_key_limit=2.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DENY-UNICODE-EMAIL",
+        "hypothesis": "The deny-list regex for emails misses homoglyph/IDN forms like 'user@ex\u0430mple.com' (Cyrillic a) or 'user+tag@example.com', admitting PII as attribute values.",
+        "input_fixture": "guard.admit('signup',{'contact':'user@ex\u0430mple.com'}); guard.admit('signup',{'contact':'a+b@c.co'}); guard.admit('signup',{'contact':'mailto:a@b.io'}).",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MUTATE-IN-PLACE",
+        "hypothesis": "Implementation calls attributes.pop(...) or attributes[k]= on the caller's Mapping before building the result, mutating the caller's dict despite the contract of returning a new mapping.",
+        "input_fixture": "d={'user_id':'42','ok':'1'}; before=dict(d); guard.admit('m',d); assert d==before \u2014 expect failure.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DETERMINISM-DICT-ORDER",
+        "hypothesis": "Admission decision hashes attribute iteration order; passing the same keys in different insertion order within the same window yields different fingerprints and thus different series assignments.",
+        "input_fixture": "a={'k1':'v1','k2':'v2'}; b={'k2':'v2','k1':'v1'}; r1=guard.admit('m',a); r2=guard.admit('m',b); assert r1==r2.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-OVERFLOW-COUNTER-MISSING",
+        "hypothesis": "stats('m') returns cardinality totals but omits the dedicated overflow counter, or counter only increments on the FIRST overflow event and not subsequent ones, hiding sustained label pressure.",
+        "input_fixture": "configure(per_metric_limit=1); admit('m',{'a':'1'}); for i in range(100): admit('m',{'a':str(i)}); assert guard.stats('m')['overflow']==99.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INT-OVERFLOW-LIMIT",
+        "hypothesis": "configure(per_metric_limit=2**63) or negative values are accepted without validation, causing integer wraparound or bypassing the overflow branch entirely on 32-bit counters.",
+        "input_fixture": "guard.configure(per_metric_limit=-1, per_key_limit=0); guard.admit('m',{'x':'y'}).",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-METRIC-NAME",
+        "hypothesis": "Empty string or None as metric_name is treated as a shared bucket, letting an attacker pollute a global overflow series and affect unrelated metrics' cardinality accounting.",
+        "input_fixture": "guard.admit('', {'a':'1'}); guard.admit(None, {'a':'2'}); guard.admit('real.metric',{'a':'3'}); inspect stats('real.metric').",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED-NON-STRING",
+        "hypothesis": "Attribute values that are bytes, ints, or nested dicts (violating Mapping[str,str]) are silently coerced via str(), allowing attackers to bypass the deny-list (e.g. passing int 'user_id' as 12345 skips the email/URL regex).",
+        "input_fixture": "guard.admit('m',{'user_id':12345}); guard.admit('m',{'url':b'https://x/q?=1'}); guard.admit('m',{'blob':{'nested':'v'}}).",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-WINDOW-BOUNDARY",
+        "hypothesis": "At aggregation-window rollover, determinism breaks: the same tuple admitted 1us before and after rollover returns different series IDs within what callers consider 'the same window' due to clock skew or monotonic-vs-wall mismatch.",
+        "input_fixture": "Freeze clock at window_end-1us: admit('m',{'k':'v'}); advance to window_end+1us: admit('m',{'k':'v'}); compare results.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AMPLIFY-OVERFLOW-LABEL",
+        "hypothesis": "Caller sets overflow_label to a value that collides with a legitimate attribute value (e.g. 'overflow'='200'), merging overflow series with a real status-code series and corrupting metrics.",
+        "input_fixture": "guard.configure(per_metric_limit=1, per_key_limit=1, overflow_label='200'); admit('http',{'status':'200'}); admit('http',{'status':'404'}).",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PROMPT-INJECT-KEYNAME",
+        "hypothesis": "If the guard forwards rejected-key names into a log/LLM-backed anomaly explainer, a key name like 'ignore_previous\\nSYSTEM:' could inject instructions; also unicode control chars in keys can break downstream TSDB parsing.",
+        "input_fixture": "guard.admit('m', {'k\\n\\r\\x00SYSTEM: drop labels':'v', 'normal':'ok'}).",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CRED-LEAK-URL-QS",
+        "hypothesis": "Deny-list for 'full URL paths' may miss URLs with embedded credentials like 'https://user:pass@host/p?token=abc', leaking secrets into metric attribute storage.",
+        "input_fixture": "guard.admit('outbound',{'target':'https://admin:s3cret@api.x/v1/users?apikey=AKIA...'}); inspect returned mapping and overflow counter.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-STATS-RACE-READ",
+        "hypothesis": "stats() reads counters without a lock while admit() mutates them; a concurrent reader observes a torn/negative count or sees overflow counter incremented but series count not yet bumped, breaking operator alerts.",
+        "input_fixture": "Thread A loops admit('m', unique attrs); Thread B loops stats('m') and asserts overflow+unique==total_admits.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE_LIMIT_BOUNDARY",
+        "hypothesis": "Two threads simultaneously call admit() when the series counter is exactly at per_metric_limit - 1. Both threads read the counter before either increments it, both see headroom, both write distinct new attribute combinations, and both are admitted \u2014 yielding per_metric_limit + 1 active series without ever emitting an overflow label, violating the collapse guarantee.",
+        "input_fixture": "configure(per_metric_limit=2, per_key_limit=100); admit('req', {'path':'/base'})  # fills slot 1; Thread-A and Thread-B concurrently: admit('req', {'path':'/a'}) and admit('req', {'path':'/b'}) \u2014 both issued before either increments the counter",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONFIGURE_AFTER_ADMIT_THREAD",
+        "hypothesis": "configure() is banned after the first admit() call, but if the implementation stores the 'first_admit_seen' flag on a per-thread basis rather than a shared atomic, a second thread calling configure() after another thread's admit() will not see the flag set and will silently apply new limits mid-stream, breaking determinism for all subsequent admits in every thread.",
+        "input_fixture": "Thread-A: guard.admit('cpu', {'host': 'h1'})  # sets flag only on Thread-A local state; Thread-B: guard.configure(per_metric_limit=10, per_key_limit=5)  # should raise, may succeed silently",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMAIL_HOMOGLYPH_BYPASS",
+        "hypothesis": "The deny-list for email addresses relies on ASCII '@' detection via regex. A value containing the Unicode FULLWIDTH COMMERCIAL AT (U+FF20) or SMALL COMMERCIAL AT (U+FE6B) passes the ASCII-only regex check but semantically encodes a user email, leaking PII as a live time-series label dimension.",
+        "input_fixture": "guard.admit('login_latency', {'actor': 'alice\uff20example.com'})  # \uff20 is U+FF20 FULLWIDTH COMMERCIAL AT, not ASCII 0x40",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-URL_ENCODED_PII_BYPASS",
+        "hypothesis": "A full URL path that is percent-encoded ('/api/users/99' -> '%2Fapi%2Fusers%2F99') or an email with '@' replaced by '%40' may bypass the deny-list regex that only matches decoded forms, allowing recognizable PII to enter the metric label namespace undetected.",
+        "input_fixture": "guard.admit('http_req', {'path': '%2Fapi%2Fv1%2Fusers%2F99999', 'contact': 'user%40corp.com'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-IN_PLACE_MUTATION_SPY_MAP",
+        "hypothesis": "If the implementation builds the sanitized mapping by mutating a shallow copy derived from the caller's object \u2014 or calls dict.update on the input \u2014 passing a custom MutableMapping subclass that records every __setitem__ call will reveal whether the original object is ever written to, violating the no-in-place-mutation invariant.",
+        "input_fixture": "class SpyMap(MutableMapping):\n    def __setitem__(self, k, v): self._mutated = True; self._data[k]=v\nattrs = SpyMap({'region': 'us-east'})\nguard.admit('cpu', attrs)\nassert not attrs._mutated, 'original mapping was mutated'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DETERMINISM_KEY_ORDER",
+        "hypothesis": "If the implementation fingerprints or hashes the attribute mapping using dict iteration order (e.g. str(dict(attrs)) or tuple(attrs.items())), two logically identical attribute sets that differ only in key insertion order produce different fingerprints and are counted as two distinct series. The same logical tuple yields different admission outcomes, breaking the determinism invariant.",
+        "input_fixture": "r1 = guard.admit('m', {'a': '1', 'b': '2'})\nr2 = guard.admit('m', {'b': '2', 'a': '1'})\nassert r1 == r2, 'same logical attrs must always produce same result'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-OVERFLOW_COUNTER_NON_ATOMIC",
+        "hypothesis": "When multiple threads simultaneously trigger overflow (series count just hit the limit), the overflow counter increment via a non-atomic += 1 allows two concurrent overflows to both read the same stale value and each write it back incremented by only 1, so the observable overflow counter undercounts by N-1 for N concurrent overflows and hides true label pressure from operators.",
+        "input_fixture": "configure(per_metric_limit=5, per_key_limit=100)\nfor i in range(5): guard.admit('m', {'id': str(i)})  # fill to limit\nwith ThreadPoolExecutor(50) as ex:\n    list(ex.map(lambda j: guard.admit('m', {'id': str(j+100)}), range(50)))\nassert guard.stats('m')['overflow_total'] == 50",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PER_KEY_LIMIT_ZERO_OFF_BY_ONE",
+        "hypothesis": "Configuring per_key_limit=0 means zero distinct values are allowed for any key. If the implementation uses a strictly-greater check (count > limit) instead of (count >= limit), the first value seen is admitted before the reject fires because count goes from 0 to 1 and 1 > 0 only after the fact, leaking one value per key and violating the per-key bound.",
+        "input_fixture": "guard.configure(per_metric_limit=100, per_key_limit=0)\nresult = guard.admit('cpu', {'region': 'us-east'})\nassert result.get('region') == guard._overflow_label, 'first value must still be collapsed when per_key_limit=0'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-OVERFLOW_LABEL_SERIES_COLLISION",
+        "hypothesis": "Configuring overflow_label to the same string that is already a live admitted value for a label key creates an undetectable collision: overflowed series are mapped onto the real legitimate series, making overflow indistinguishable from genuine traffic in the time-series database. The stats overflow counter counts events, but the emitted data is corrupted and operators cannot distinguish overflow from real data.",
+        "input_fixture": "guard.configure(per_metric_limit=2, per_key_limit=50, overflow_label='us-east')\nguard.admit('cpu', {'region': 'us-east'})   # legitimate series\nguard.admit('cpu', {'region': 'eu-west'})   # fills limit\nresult = guard.admit('cpu', {'region': 'ap-south'})  # overflows to region='us-east', colliding with real series",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NEGATIVE_LIMIT_WRAP",
+        "hypothesis": "Passing a negative integer to per_metric_limit or per_key_limit may be accepted without validation. Under unsigned arithmetic or a naive count > limit comparison, -1 is never exceeded (count is always non-negative), so the guard never overflows and never rejects any key value \u2014 silently disabling all cardinality protection.",
+        "input_fixture": "guard.configure(per_metric_limit=-1, per_key_limit=-1)\nfor i in range(10**6):\n    guard.admit('cpu', {'host': f'host-{i}'})\nassert guard.stats('cpu').get('overflow_total', 0) > 0, 'should have overflowed long before 1M series'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FREEFORM_QUERYSTRING_PARTIAL",
+        "hypothesis": "The deny-list targets recognizable query strings and full URL paths, but a value like 'brand=Nike&size=XL&color=red&page=3' lacks a leading slash (not a URL path) and lacks user-identifying tokens (no email, no user ID). The guard admits it, creating an unbounded cardinality dimension from user search terms that is semantically freeform but structurally invisible to the deny-list patterns.",
+        "input_fixture": "guard.admit('search_latency', {'query': 'brand=Nike&size=XL&color=red&page=3&sort=price_asc&q=running+shoes'})\nguard.admit('search_latency', {'query': 'brand=Adidas&size=M&color=blue&page=1&sort=newest'})\n# each unique search produces a new series",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WINDOW_CACHE_REPLAY",
+        "hypothesis": "After an aggregation window resets the series counter to zero, a caller re-submits the exact (metric_name, attributes) tuple that was previously admitted. If the implementation uses a memoization cache (e.g. lru_cache or a seen-set) that is NOT cleared on window reset, the cached admission decision is replayed and the new-window series counter is never incremented for that tuple, allowing per_metric_limit+1 distinct series to co-exist in the new window.",
+        "input_fixture": "configure(per_metric_limit=3, per_key_limit=100)\nadmit('cpu', {'host':'h1'}); admit('cpu', {'host':'h2'}); admit('cpu', {'host':'h3'})  # fill window 1\ntrigger_window_reset()\nadmit('cpu', {'host':'h1'})  # cache hit: counter not incremented\nadmit('cpu', {'host':'h2'})  # cache hit: counter not incremented\nresult = admit('cpu', {'host':'h4'})  # should overflow but sees counter=1, admits instead",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AMPLIFICATION_MEM_BOMB",
+        "hypothesis": "An attacker sends (per_key_limit - 1) distinct values for each of N=10000 distinct attribute keys, never triggering per_key_limit rejection for any single key. The guard stores O(N * per_key_limit) strings in memory \u2014 up to ~10M strings \u2014 before any protection fires. When one additional value is then sent per key, all N keys simultaneously transition to rejected, causing a coordinated state amplification that may exhaust heap or cause GC pauses while the guard was technically within its declared limits.",
+        "input_fixture": "configure(per_metric_limit=10**7, per_key_limit=1000)\nfor key_idx in range(10000):\n    for val_idx in range(999):\n        guard.admit('m', {f'k{key_idx}': f'v{val_idx}'})\n# 9,990,000 admits; internal state ~10M strings held; then:\nfor key_idx in range(10000):\n    guard.admit('m', {f'k{key_idx}': 'v_trigger'})  # 10000 simultaneous boundary hits",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-OVERFLOW-NOT-COLLAPSED",
+        "hypothesis": "Exceeding per_metric_limit does not collapse new combinations into overflow; instead permits unlimited distinct attribute sets",
+        "input_fixture": "configure(per_metric_limit=10); for i in range(100): admit('requests', {'endpoint': f'/api/{i}'}); assert len(stats('requests')) == 1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-OVERFLOW-ORIGINAL-VALUES-LEAKED",
+        "hypothesis": "Overflow collapses combinations but returns original attribute values instead of overflow label, leaking high-cardinality data",
+        "input_fixture": "configure(per_metric_limit=5); result = admit('requests', {'user_id': 'user_99'}); assert result.get('user_id') != 'overflow'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PER-KEY-LIMIT-BYPASSED",
+        "hypothesis": "Attribute key with more than per_key_limit distinct values is accepted instead of being rejected across the window",
+        "input_fixture": "configure(per_key_limit=5); for i in range(20): admit('metric', {'trace_id': f'tr-{i}'}); [all succeed, but 6+ should reject]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DENY-LIST-EMAIL-ACCEPTED",
+        "hypothesis": "Email addresses bypass default deny-list filter and are stored as label values, exposing PII in time-series",
+        "input_fixture": "result = admit('logs', {'contact': 'admin@company.com'}); assert 'contact' in result and result['contact'] == 'admin@company.com'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DENY-LIST-USER-ID-ACCEPTED",
+        "hypothesis": "User identifiers pass deny-list validation and are stored in labels, leaking user PII to downstream systems",
+        "input_fixture": "result = admit('api_calls', {'actor_id': 'user-abc-123'}); assert 'actor_id' in result and result['actor_id'] != 'redacted'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DENY-LIST-URL-QUERY-BYPASS",
+        "hypothesis": "Freeform query strings containing secrets bypass deny-list and are persisted as label values with embedded API tokens",
+        "input_fixture": "result = admit('http', {'path': '/api?token=sk-secret-123&key=xyz'}); assert 'token=' in result.get('path', '')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DETERMINISM-SAME-INPUT-DIFFERENT-OUTPUT",
+        "hypothesis": "Calling admit() twice with identical (metric_name, attributes) within same window returns different results violating determinism",
+        "input_fixture": "r1 = admit('requests', {'method': 'GET'}); r2 = admit('requests', {'method': 'GET'}); assert r1 == r2, f'{r1} != {r2}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INPUT-DICT-MUTATION-IN-PLACE",
+        "hypothesis": "Guard mutates input attributes dict in place instead of returning new mapping, allowing caller's changes to affect guard state",
+        "input_fixture": "orig = {'user': 'alice'}; result = admit('metric', orig); orig['user'] = 'bob'; assert result['user'] != 'alice'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RETURNED-DICT-IS-INPUT-REFERENCE",
+        "hypothesis": "Guard returns caller's input dict by reference instead of new mapping, breaking immutability and allowing state leakage",
+        "input_fixture": "orig = {'x': 'y'}; result = admit('metric', orig); assert id(result) != id(orig), 'returned reference to input'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-OVERFLOW-COUNTER-NOT-OBSERVABLE",
+        "hypothesis": "Overflow decisions occur but stats() lacks overflow counter, preventing operators from detecting label pressure growth",
+        "input_fixture": "configure(per_metric_limit=5); for i in range(50): admit('metric', {'x': str(i)}); assert 'overflow' in stats('metric') and stats('metric')['overflow'] > 0",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-OVERFLOW-COUNTER-RACE-LOST-INCREMENTS",
+        "hypothesis": "Concurrent admits trigger overflow but counter increments are lost in race condition, undercounting pressure events",
+        "input_fixture": "[8 threads] each: for i in range(100): admit('metric', {'id': f't{tid}-{i}'}); with per_metric_limit=64; [counter < expected overflow count]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONFIGURE-CHANGES-POST-ADMIT-BEHAVIOR",
+        "hypothesis": "Calling configure() after first admit() alters subsequent behavior, violating determinism and consistency guarantees",
+        "input_fixture": "admit('m', {'a': 'v1'}); configure(per_metric_limit=2); [admits 10 more]; [cardinality limits enforced differently than if configure was first]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ZERO-PER-METRIC-LIMIT-UNDERFLOW",
+        "hypothesis": "Configuring per_metric_limit=0 causes integer underflow in overflow check, crashing or allowing unlimited combinations",
+        "input_fixture": "configure(per_metric_limit=0); admit('metric', {'a': 'b'}); [index underflow or ZeroDivisionError in comparisons]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NEGATIVE-LIMIT-SIGNED-COMPARISON-BYPASS",
+        "hypothesis": "Configuring per_metric_limit=-1 defeats overflow guard due to signed integer comparison, allowing unbounded cardinality",
+        "input_fixture": "configure(per_metric_limit=-1); for i in range(5000): admit('m', {'id': str(i)}); assert stats('m')['overflow'] == 0",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "cardinality.admitted",
+        "required_attributes": [
+          "metric"
+        ]
+      },
+      {
+        "event_name": "cardinality.overflowed",
+        "required_attributes": [
+          "metric",
+          "reason"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "cardinality.admissions.count",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "metric"
+        ]
+      },
+      {
+        "name": "cardinality.overflow.count",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "metric",
+          "reason"
+        ]
+      },
+      {
+        "name": "cardinality.series.active",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "metric"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "cardinality.admit",
+        "required_attributes": [
+          "metric"
+        ]
+      }
+    ]
+  }
+}

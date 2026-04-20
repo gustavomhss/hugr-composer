@@ -1,0 +1,12 @@
+{
+  "name": "OptimisticConcurrency",
+  "namespace": "data",
+  "maturity": "incubating",
+  "files": [
+    {"path": "data/OptimisticConcurrency/OptimisticConcurrency.py", "kind": "impl"},
+    {"path": "data/OptimisticConcurrency/OptimisticConcurrency.protocol.py", "kind": "protocol"},
+    {"path": "data/OptimisticConcurrency/OptimisticConcurrency.md", "kind": "spec_md"},
+    {"path": "data/OptimisticConcurrency/OptimisticConcurrency.contract.json", "kind": "contract_json"},
+    {"path": "data/OptimisticConcurrency/test_OptimisticConcurrency.py", "kind": "test"}
+  ]
+}

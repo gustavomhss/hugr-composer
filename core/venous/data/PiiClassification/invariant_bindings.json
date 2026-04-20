@@ -1,0 +1,9 @@
+{
+  "invariant_bindings": [
+    {"invariant_id": "PIC_INV_01", "invariant_text": "Every persisted field MUST carry a PiiClass annotation; fields without one SHALL fail schema registration at import time.", "confirms_test": "test_inv_registration_required_confirms", "prevents_test": "test_inv_registration_required_prevents", "under_failure_test": "test_inv_registration_required_under_failure"},
+    {"invariant_id": "PIC_INV_02", "invariant_text": "Serializers and log formatters MUST route through mask() before emission; writing a raw object to a sink is FORBIDDEN.", "confirms_test": "test_inv_mask_only_confirms", "prevents_test": "test_inv_mask_only_prevents", "under_failure_test": "test_inv_mask_only_under_failure"},
+    {"invariant_id": "PIC_INV_03", "invariant_text": "PHI and PCI fields MUST NEVER be emitted to unauthenticated audiences, even masked, unless the field is explicitly PUBLIC.", "confirms_test": "test_inv_phi_no_leak_confirms", "prevents_test": "test_inv_phi_no_leak_prevents", "under_failure_test": "test_inv_phi_no_leak_under_failure"},
+    {"invariant_id": "PIC_INV_04", "invariant_text": "mask() output for an audience MUST be deterministic so diff tests can assert non-leakage.", "confirms_test": "test_inv_mask_deterministic_confirms", "prevents_test": "test_inv_mask_deterministic_prevents", "under_failure_test": "test_inv_mask_deterministic_under_failure"},
+    {"invariant_id": "PIC_INV_05", "invariant_text": "Reclassifying a field down the sensitivity ladder (PHI to PII to PUBLIC) MUST require an audit log entry with approver id.", "confirms_test": "test_inv_reclassify_approver_confirms", "prevents_test": "test_inv_reclassify_approver_prevents", "under_failure_test": "test_inv_reclassify_approver_under_failure"}
+  ]
+}

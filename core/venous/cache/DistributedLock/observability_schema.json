@@ -1,0 +1,19 @@
+{
+  "logs": [
+    {"event_name": "lock.acquired", "required_attributes": ["resource_id", "owner_id", "lease_s"]},
+    {"event_name": "lock.contended", "required_attributes": ["resource_id", "caller_id"]},
+    {"event_name": "lock.released", "required_attributes": ["resource_id", "owner_id"]},
+    {"event_name": "lock.fence.rejected", "required_attributes": ["resource_id", "caller_id", "holder_id"]},
+    {"event_name": "lock.lease.expired", "required_attributes": ["resource_id", "owner_id"]}
+  ],
+  "metrics": [
+    {"name": "lock.acquire.attempts", "metric_type": "counter", "unit": "1", "cardinality_bound": 100, "label_keys": ["outcome"]},
+    {"name": "lock.hold.duration", "metric_type": "histogram", "unit": "s", "cardinality_bound": 100, "label_keys": ["resource_id"]},
+    {"name": "lock.fence.rejections", "metric_type": "counter", "unit": "1", "cardinality_bound": 20, "label_keys": []},
+    {"name": "lock.active", "metric_type": "gauge", "unit": "1", "cardinality_bound": 100, "label_keys": ["resource_id"]}
+  ],
+  "spans": [
+    {"operation_name": "lock.try_lock", "required_attributes": ["resource_id", "owner_id"]},
+    {"operation_name": "lock.unlock", "required_attributes": ["resource_id", "owner_id"]}
+  ]
+}

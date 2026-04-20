@@ -1,0 +1,20 @@
+{
+  "name": "MemoryPubSubBackend",
+  "namespace": "api",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "In-process fan-out pub/sub backend: publish() broadcasts a payload to every live subscriber queue on the named topic, subscribe() yields payloads from a private asyncio.Queue that is torn down on generator exit — suitable as a single-worker default before swapping in Redis/NATS.",
+  "api_signature": "class MemoryPubSubBackend: async def publish(topic: str, payload: Any) -> None; async def subscribe(topic: str) -> AsyncIterator[Any]",
+  "invariants": [
+    "MEMORY_PUB_SUB_BACKEND_INV_01: publish(topic, payload) MUST enqueue payload on EVERY subscriber queue currently registered for topic; no subscriber may be silently skipped.",
+    "MEMORY_PUB_SUB_BACKEND_INV_02: A payload published BEFORE a new subscriber calls subscribe() MUST NOT be delivered to that subscriber; the backend has no replay buffer.",
+    "MEMORY_PUB_SUB_BACKEND_INV_03: When the subscribe() generator exits (GeneratorExit, close, break) its queue MUST be removed from the topic's subscriber list so publish() no longer writes to it.",
+    "MEMORY_PUB_SUB_BACKEND_INV_04: Events delivered to a single subscriber MUST preserve publish order; the per-subscriber asyncio.Queue is FIFO."
+  ],
+  "status": "promoted",
+  "enrichment": {
+    "invariants_mined": 4,
+    "ambiguous": false,
+    "source": "human.triage.venous_batch_1"
+  }
+}

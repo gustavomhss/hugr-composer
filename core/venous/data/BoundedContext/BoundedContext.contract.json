@@ -1,0 +1,31 @@
+{
+  "name": "BoundedContext",
+  "namespace": "data",
+  "purpose": "Declares the explicit linguistic and model boundary within which one ubiquitous language and one set of invariants apply.",
+  "api_signature": "from typing import Protocol, Mapping\n\nclass BoundedContext(Protocol):\n    @property\n    def name(self) -> str: ...\n    @property\n    def language(self) -> Mapping[str, str]: ...\n    def owns(self, aggregate_type: type) -> bool: ...\n    def translator_to(self, other: 'BoundedContext') -> object: ...",
+  "invariants": [
+    "Every Aggregate type MUST be owned by exactly one BoundedContext; shared ownership across contexts is FORBIDDEN.",
+    "Cross-context calls MUST pass through an AntiCorruptionLayer or a published-language schema; raw object sharing is NEVER permitted.",
+    "The ubiquitous language of a context SHALL be locally consistent: one term CANNOT carry two meanings inside the same BoundedContext.",
+    "A BoundedContext ALWAYS exposes its integration points through a ContextMap relationship (Customer-Supplier, Conformist, Partnership, Open Host)."
+  ],
+  "extension_contract": "New domains are introduced by subclassing BoundedContext and registering translator adapters for each upstream or downstream neighbor; redefining an existing context's language in place is FORBIDDEN \u2014 the extension MUST declare a new context.",
+  "consumption_example": "def route(cmd, ctx: BoundedContext):\n    if not ctx.owns(type(cmd.aggregate)):\n        raise RuntimeError('wrong context')\n    return ctx.handle(cmd)",
+  "sources": [
+    {
+      "source": "Evans 'Domain-Driven Design' (2003)",
+      "locator": "Chapter 14, Bounded Context, pp. 335-346"
+    },
+    {
+      "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+      "locator": "Chapter 2, Domains, Subdomains, Bounded Contexts, pp. 43-80"
+    }
+  ],
+  "why_essential": "Without an explicit shared primitive, model terms bleed across services, the same word means different things, and integration bugs recur because nobody owns the translation.",
+  "alternatives_considered": [
+    "One canonical enterprise model: impossible to keep consistent at scale and collapses under concurrent change.",
+    "Per-service ad hoc boundaries: no shared vocabulary for integration policy.",
+    "Database-schema-as-boundary: couples physical storage to logical context."
+  ],
+  "maturity": "battle_tested"
+}

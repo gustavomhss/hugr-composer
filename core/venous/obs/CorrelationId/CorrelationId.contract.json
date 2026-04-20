@@ -1,0 +1,36 @@
+{
+  "name": "CorrelationId",
+  "namespace": "obs",
+  "purpose": "Opaque string that travels with a request across services and log lines so a reader can stitch together the work done for one user action.",
+  "api_signature": "from typing import NewType, Protocol\n\nCorrelationId = NewType('CorrelationId', str)\n\nclass CorrelationIdProvider(Protocol):\n    def current(self) -> CorrelationId: ...\n    def generate(self) -> CorrelationId: ...\n",
+  "invariants": [
+    "MUST be populated for every inbound request before the first log line is emitted.",
+    "NEVER regenerates a present upstream id (propagates 'traceparent'/'X-Request-Id' when valid).",
+    "Generated ids MUST use a cryptographically-random 16+ byte encoding; sequential counters SHALL NOT be used.",
+    "MUST appear in every emitted log, metric exemplar, and outbound HTTP request header.",
+    "CANNOT be mutated mid-request; a new id SHALL mean a new logical request."
+  ],
+  "extension_contract": "A middleware/plug/interceptor reads the inbound header, or generates via the provider, then binds the id to the RequestContext and the logger MDC; structured-log formatters subscribe via a filter or hook to inject it automatically.",
+  "consumption_example": "def extract(headers: dict[str, str]) -> CorrelationId:\n    raw = headers.get('x-request-id') or headers.get('traceparent', '')\n    return CorrelationId(raw) if raw else CorrelationId('gen-xyz')\n\nlog_ctx: dict[str, str] = {'corr': extract({'x-request-id': 'abc'})}\n",
+  "sources": [
+    {
+      "source": "ASP.NET Core 8.0 — HttpContext.TraceIdentifier",
+      "locator": "learn.microsoft.com/dotnet/api/microsoft.aspnetcore.http.httpcontext.traceidentifier"
+    },
+    {
+      "source": "Ruby on Rails 7 — CurrentAttributes request_id example",
+      "locator": "api.rubyonrails.org/classes/ActiveSupport/CurrentAttributes.html — 'attribute :request_id, default: -> { SecureRandom.uuid }'"
+    },
+    {
+      "source": "Plug 1.x — Plug.RequestId",
+      "locator": "hexdocs.pm/plug/Plug.RequestId.html — 'x-request-id' header handling"
+    }
+  ],
+  "why_essential": "Distributed debugging CANNOT work if each tool picks its own id format and header name; a single contract lets logs, metrics, and traces be joined without a specialist's knowledge.",
+  "alternatives_considered": [
+    "Only OpenTelemetry trace-id — omits requests outside the tracer",
+    "Per-service random ids — breaks cross-hop correlation",
+    "Autoincrementing request counter — leaks traffic volume, collides across nodes"
+  ],
+  "maturity": "battle_tested"
+}

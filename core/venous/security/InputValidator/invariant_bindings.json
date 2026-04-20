@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "IV_INV_01",
+      "invariant_text": "parse() MUST reject payloads with unknown fields unless the schema explicitly opts into extras; silent field drop is FORBIDDEN.",
+      "confirms_test": "test_inv_unknown_fields_confirms",
+      "prevents_test": "test_inv_unknown_fields_prevents",
+      "under_failure_test": "test_inv_unknown_fields_under_failure"
+    },
+    {
+      "invariant_id": "IV_INV_02",
+      "invariant_text": "Length, range, and pattern bounds MUST be enforced before any business rule touches the value; unbounded strings CANNOT be accepted.",
+      "confirms_test": "test_inv_bounds_enforced_confirms",
+      "prevents_test": "test_inv_bounds_enforced_prevents",
+      "under_failure_test": "test_inv_bounds_enforced_under_failure"
+    },
+    {
+      "invariant_id": "IV_INV_03",
+      "invariant_text": "Type coercion MUST be narrowing (string->int only when digits-only); widening coercion (int->string for structured ids) SHALL require explicit opt-in.",
+      "confirms_test": "test_inv_narrowing_coercion_confirms",
+      "prevents_test": "test_inv_narrowing_coercion_prevents",
+      "under_failure_test": "test_inv_narrowing_coercion_under_failure"
+    },
+    {
+      "invariant_id": "IV_INV_04",
+      "invariant_text": "parse() MUST raise a typed validation error containing the offending field path; error payloads MUST NEVER include attacker-controlled content verbatim in structured logs.",
+      "confirms_test": "test_inv_field_path_error_confirms",
+      "prevents_test": "test_inv_field_path_error_prevents",
+      "under_failure_test": "test_inv_field_path_error_under_failure"
+    },
+    {
+      "invariant_id": "IV_INV_05",
+      "invariant_text": "Recursion depth and collection size MUST be bounded; payloads exceeding the configured limits SHALL be rejected before parsing.",
+      "confirms_test": "test_inv_bounded_depth_size_confirms",
+      "prevents_test": "test_inv_bounded_depth_size_prevents",
+      "under_failure_test": "test_inv_bounded_depth_size_under_failure"
+    }
+  ]
+}

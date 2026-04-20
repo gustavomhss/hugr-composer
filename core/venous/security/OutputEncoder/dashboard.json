@@ -1,0 +1,17 @@
+{
+  "title": "OutputEncoder — XSS prevention rate, rejection pressure, sink mix",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "encode ops/s",
+     "targets": [{"expr": "sum(rate(output_encoder_operations_total[5m]))"}]},
+    {"id": 2, "type": "timeseries", "title": "rejection rate by reason",
+     "targets": [{"expr": "sum by (reason_code) (rate(output_encoder_rejections_total[5m]))"}]},
+    {"id": 3, "type": "timeseries", "title": "output length p50/p95 by sink (B)",
+     "targets": [
+       {"expr": "histogram_quantile(0.50, sum by (le, sink) (rate(output_encoder_output_length_bucket[5m])))"},
+       {"expr": "histogram_quantile(0.95, sum by (le, sink) (rate(output_encoder_output_length_bucket[5m])))"}
+     ]},
+    {"id": 4, "type": "piechart", "title": "sink mix",
+     "targets": [{"expr": "sum by (sink) (rate(output_encoder_operations_total[1h]))"}]}
+  ]
+}

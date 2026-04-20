@@ -1,0 +1,9 @@
+{
+  "invariant_bindings": [
+    {"invariant_id": "DSR_INV_01", "invariant_text": "Every request MUST have a statutory due_at computed from received_at; the clock NEVER pauses for internal delays.", "confirms_test": "test_inv_due_at_statutory_confirms", "prevents_test": "test_inv_due_at_statutory_prevents", "under_failure_test": "test_inv_due_at_statutory_under_failure"},
+    {"invariant_id": "DSR_INV_02", "invariant_text": "Every registered store holding subject data MUST attach an artifact before close; a request CANNOT close with missing stores.", "confirms_test": "test_inv_store_artifacts_confirms", "prevents_test": "test_inv_store_artifacts_prevents", "under_failure_test": "test_inv_store_artifacts_under_failure"},
+    {"invariant_id": "DSR_INV_03", "invariant_text": "Erasure requests MUST invoke the ErasureCascade; a close with kind='erasure' and no cascade artifact SHALL be rejected.", "confirms_test": "test_inv_erasure_cascade_confirms", "prevents_test": "test_inv_erasure_cascade_prevents", "under_failure_test": "test_inv_erasure_cascade_under_failure"},
+    {"invariant_id": "DSR_INV_04", "invariant_text": "Open, artifact, and close actions MUST each emit a TamperEvidentAuditLog entry for regulator replay.", "confirms_test": "test_inv_audit_on_action_confirms", "prevents_test": "test_inv_audit_on_action_prevents", "under_failure_test": "test_inv_audit_on_action_under_failure"},
+    {"invariant_id": "DSR_INV_05", "invariant_text": "Access and portability exports MUST be delivered via a time-bound, signed URL; exports NEVER live beyond the delivery window.", "confirms_test": "test_inv_signed_export_confirms", "prevents_test": "test_inv_signed_export_prevents", "under_failure_test": "test_inv_signed_export_under_failure"}
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "CORR_INV_01",
+      "invariant_text": "The request_id MUST be a lowercase hex or ULID string of at least 16 characters and SHALL be stable for the entire request lifecycle.",
+      "confirms_test": "test_inv_request_id_stable_confirms",
+      "prevents_test": "test_inv_request_id_stable_prevents",
+      "under_failure_test": "test_inv_request_id_stable_under_failure"
+    },
+    {
+      "invariant_id": "CORR_INV_02",
+      "invariant_text": "Baggage values MUST be ASCII and each individual value CANNOT exceed 8192 bytes per W3C Baggage specification.",
+      "confirms_test": "test_inv_baggage_limits_confirms",
+      "prevents_test": "test_inv_baggage_limits_prevents",
+      "under_failure_test": "test_inv_baggage_limits_under_failure"
+    },
+    {
+      "invariant_id": "CORR_INV_03",
+      "invariant_text": "Activating a context MUST restore the prior context on exit even if an exception is raised.",
+      "confirms_test": "test_inv_activate_restores_confirms",
+      "prevents_test": "test_inv_activate_restores_prevents",
+      "under_failure_test": "test_inv_activate_restores_under_failure"
+    },
+    {
+      "invariant_id": "CORR_INV_04",
+      "invariant_text": "When extracting from headers, an invalid traceparent value SHALL cause a new trace id to be generated and NEVER falls back to an empty trace context.",
+      "confirms_test": "test_inv_invalid_traceparent_confirms",
+      "prevents_test": "test_inv_invalid_traceparent_prevents",
+      "under_failure_test": "test_inv_invalid_traceparent_under_failure"
+    },
+    {
+      "invariant_id": "CORR_INV_05",
+      "invariant_text": "Baggage keys reserved for authentication (password, authorization, cookie) are FORBIDDEN and SHALL be stripped on ingest.",
+      "confirms_test": "test_inv_forbidden_keys_stripped_confirms",
+      "prevents_test": "test_inv_forbidden_keys_stripped_prevents",
+      "under_failure_test": "test_inv_forbidden_keys_stripped_under_failure"
+    },
+    {
+      "invariant_id": "CORR_INV_06",
+      "invariant_text": "CorrelationContext NEVER leaks across event loops; asynchronous task spawns copy-on-capture the current context via contextvars.",
+      "confirms_test": "test_inv_contextvars_isolation_confirms",
+      "prevents_test": "test_inv_contextvars_isolation_prevents",
+      "under_failure_test": "test_inv_contextvars_isolation_under_failure"
+    }
+  ]
+}

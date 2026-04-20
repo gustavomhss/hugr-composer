@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "DE_INV_01",
+      "invariant_text": "A DomainEvent MUST be immutable after construction; mutation or retroactive edit of event_id, aggregate_id, occurred_at, version, or payload is FORBIDDEN.",
+      "confirms_test": "test_inv_immutable_confirms",
+      "prevents_test": "test_inv_immutable_prevents",
+      "under_failure_test": "test_inv_immutable_under_failure"
+    },
+    {
+      "invariant_id": "DE_INV_02",
+      "invariant_text": "event_id MUST be a globally unique UUID v7 so idempotent consumers CAN dedupe reliably and no two distinct facts SHALL share the same identifier.",
+      "confirms_test": "test_inv_event_id_unique_confirms",
+      "prevents_test": "test_inv_event_id_unique_prevents",
+      "under_failure_test": "test_inv_event_id_unique_under_failure"
+    },
+    {
+      "invariant_id": "DE_INV_03",
+      "invariant_text": "The event type NEVER carries commands or intents; event_type MUST record a past-tense fact, imperative verbs are FORBIDDEN as the terminal segment.",
+      "confirms_test": "test_inv_fact_only_confirms",
+      "prevents_test": "test_inv_fact_only_prevents",
+      "under_failure_test": "test_inv_fact_only_under_failure"
+    },
+    {
+      "invariant_id": "DE_INV_04",
+      "invariant_text": "version SHALL increment strictly by one per aggregate stream and serves as the ordering key; gaps, retroactive inserts, and duplicate versions are FORBIDDEN.",
+      "confirms_test": "test_inv_version_monotonic_confirms",
+      "prevents_test": "test_inv_version_monotonic_prevents",
+      "under_failure_test": "test_inv_version_monotonic_under_failure"
+    },
+    {
+      "invariant_id": "DE_INV_05",
+      "invariant_text": "Schema evolution within an event_type MUST be additive; schema_version bumps CANNOT remove or rename fields, a new event_type is required instead.",
+      "confirms_test": "test_inv_schema_additive_confirms",
+      "prevents_test": "test_inv_schema_additive_prevents",
+      "under_failure_test": "test_inv_schema_additive_under_failure"
+    }
+  ]
+}

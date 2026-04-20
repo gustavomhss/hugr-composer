@@ -1,0 +1,36 @@
+{
+  "name": "TotpVerifier",
+  "namespace": "auth",
+  "purpose": "Generate and verify six-digit time-based one-time passwords per RFC 6238 with constant-time comparison, clock-skew tolerance, and replay prevention.",
+  "api_signature": "from typing import Protocol\n\nclass TotpVerifier(Protocol):\n    def provision_uri(self, account: str, issuer: str, secret: bytes) -> str: ...\n    def verify(self, secret: bytes, code: str, last_used_step: int | None) -> int: ...",
+  "invariants": [
+    "Shared secrets MUST be \u2265160 bits drawn from a CSPRNG and MUST NEVER be transmitted outside the enrollment channel.",
+    "verify() MUST compare codes in constant time and NEVER short-circuit on prefix match.",
+    "Accepted skew MUST be bounded to \u00b11 step (\u00b130s); larger windows SHALL be rejected by configuration.",
+    "A successfully used step number MUST be recorded and the same step CANNOT be accepted again for the same secret.",
+    "Codes SHALL be six decimal digits derived from HMAC-SHA1 truncation per RFC 4226; alternative digit counts MUST be explicitly opted in."
+  ],
+  "extension_contract": "Alternative HOTP/TOTP schemes (SHA-256, 8-digit, custom step) register as verifier adapters implementing the Protocol and declaring their digest and period. The registry rejects adapters that skip replay-step persistence.",
+  "consumption_example": "def confirm_mfa(totp: TotpVerifier, user, submitted_code: str) -> None:\n    next_step = totp.verify(secret=user.totp_secret, code=submitted_code, last_used_step=user.last_totp_step)\n    user.last_totp_step = next_step\n    repo.save(user)",
+  "sources": [
+    {
+      "source": "RFC 6238",
+      "locator": "Sections 4 and 5 TOTP algorithm and security considerations"
+    },
+    {
+      "source": "NIST SP 800-63B",
+      "locator": "Section 5.1.4 Single-Factor OTP"
+    },
+    {
+      "source": "OWASP ASVS 4.0.3",
+      "locator": "V2.8 One Time Verifier Requirements"
+    }
+  ],
+  "why_essential": "Every service that keeps TOTP reimplements the replay-step check and skew window; centralizing the verifier eliminates off-by-one-step bypasses and the classic 'accept any code in the last 10 minutes' bug.",
+  "alternatives_considered": [
+    "SMS OTP only \u2014 phishable and deprecated for high-assurance in SP 800-63B.",
+    "Email magic link \u2014 couples MFA to mailbox security and adds latency.",
+    "Per-service TOTP library call \u2014 no shared replay protection."
+  ],
+  "maturity": "battle_tested"
+}

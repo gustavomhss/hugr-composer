@@ -1,0 +1,14 @@
+{
+  "logs": [
+    {"event_name": "access.read.recorded", "required_attributes": ["actor", "record_id", "data_class", "purpose_of_use"]}
+  ],
+  "metrics": [
+    {"name": "access.reads", "metric_type": "counter", "unit": "1", "cardinality_bound": 500, "label_keys": ["data_class", "purpose_of_use"]},
+    {"name": "access.unique_actors", "metric_type": "gauge", "unit": "1", "cardinality_bound": 100, "label_keys": []},
+    {"name": "access.retention.dropped", "metric_type": "counter", "unit": "1", "cardinality_bound": 10, "label_keys": []}
+  ],
+  "spans": [
+    {"operation_name": "access.record_read", "required_attributes": ["actor", "data_class"]},
+    {"operation_name": "access.query", "required_attributes": []}
+  ]
+}

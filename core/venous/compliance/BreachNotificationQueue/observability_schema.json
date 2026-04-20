@@ -1,0 +1,19 @@
+{
+  "logs": [
+    {"event_name": "breach.opened", "required_attributes": ["incident_id", "severity"]},
+    {"event_name": "breach.confirmed", "required_attributes": ["incident_id"]},
+    {"event_name": "breach.notified", "required_attributes": ["incident_id", "authority"]},
+    {"event_name": "breach.closed", "required_attributes": ["incident_id", "outcome"]}
+  ],
+  "metrics": [
+    {"name": "breach.opens", "metric_type": "counter", "unit": "1", "cardinality_bound": 200, "label_keys": ["severity"]},
+    {"name": "breach.sla.breached", "metric_type": "counter", "unit": "1", "cardinality_bound": 20, "label_keys": []},
+    {"name": "breach.time_to_notify", "metric_type": "histogram", "unit": "s", "cardinality_bound": 50, "label_keys": []}
+  ],
+  "spans": [
+    {"operation_name": "breach.open", "required_attributes": ["severity"]},
+    {"operation_name": "breach.confirm", "required_attributes": ["incident_id"]},
+    {"operation_name": "breach.notify", "required_attributes": ["incident_id", "authority"]},
+    {"operation_name": "breach.close", "required_attributes": ["incident_id"]}
+  ]
+}

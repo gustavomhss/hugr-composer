@@ -1,0 +1,9 @@
+{
+  "title": "KeyValueBucket — Writes, CAS Rejections",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "Writes (5m)", "targets": [{"expr": "sum(rate(kv_bucket_writes_total[5m]))"}]},
+    {"id": 2, "type": "timeseries", "title": "CAS Rejection rate", "targets": [{"expr": "sum(rate(kv_bucket_cas_rejections[5m]))"}]},
+    {"id": 3, "type": "gauge", "title": "Current revision", "targets": [{"expr": "kv_bucket_revision"}]}
+  ]
+}

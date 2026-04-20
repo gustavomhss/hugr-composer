@@ -1,0 +1,72 @@
+{
+  "logs": [
+    {
+      "event_name": "inbox.transaction.opened",
+      "required_attributes": ["txn_id"]
+    },
+    {
+      "event_name": "inbox.transaction.committed",
+      "required_attributes": ["txn_id", "staged_count"]
+    },
+    {
+      "event_name": "inbox.transaction.rolled.back",
+      "required_attributes": ["txn_id", "reason"]
+    },
+    {
+      "event_name": "inbox.message.first.delivery",
+      "required_attributes": ["message_id", "consumer"]
+    },
+    {
+      "event_name": "inbox.message.duplicate.skipped",
+      "required_attributes": ["message_id", "consumer"]
+    },
+    {
+      "event_name": "inbox.purge.completed",
+      "required_attributes": ["cutoff_iso", "evicted_count"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "inbox.deliveries",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["result", "consumer"]
+    },
+    {
+      "name": "inbox.effect.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": ["consumer", "result"]
+    },
+    {
+      "name": "inbox.store.size",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": ["consumer"]
+    },
+    {
+      "name": "inbox.purge.evicted",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": []
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "inbox.handle",
+      "required_attributes": ["message.id", "consumer", "first_delivery"]
+    },
+    {
+      "operation_name": "inbox.commit",
+      "required_attributes": ["txn.id", "staged.count"]
+    },
+    {
+      "operation_name": "inbox.purge",
+      "required_attributes": ["cutoff.iso", "evicted.count"]
+    }
+  ]
+}

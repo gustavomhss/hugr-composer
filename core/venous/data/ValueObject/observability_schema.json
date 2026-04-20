@@ -1,0 +1,53 @@
+{
+  "logs": [
+    {
+      "event_name": "valueobject.constructed",
+      "required_attributes": ["class_name", "field_count"]
+    },
+    {
+      "event_name": "valueobject.validation.failed",
+      "required_attributes": ["class_name", "invariant_id", "reason"]
+    },
+    {
+      "event_name": "valueobject.with_changes",
+      "required_attributes": ["class_name", "fields_changed"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "valueobject.constructed.total",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 200,
+      "label_keys": ["class_name"]
+    },
+    {
+      "name": "valueobject.with_changes.total",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 200,
+      "label_keys": ["class_name"]
+    },
+    {
+      "name": "valueobject.validation.failures",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 400,
+      "label_keys": ["class_name", "invariant_id"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "valueobject.construct",
+      "required_attributes": ["vo.class_name"]
+    },
+    {
+      "operation_name": "valueobject.with_changes",
+      "required_attributes": ["vo.class_name", "vo.fields_changed"]
+    },
+    {
+      "operation_name": "valueobject.coerce",
+      "required_attributes": ["vo.class_name", "vo.direction"]
+    }
+  ]
+}

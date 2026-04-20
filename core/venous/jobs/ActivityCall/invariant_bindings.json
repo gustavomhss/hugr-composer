@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "AC_INV_01",
+      "invariant_text": "Execution semantics are at-least-once, so activity code MUST be idempotent under retry.",
+      "confirms_test": "test_inv_at_least_once_confirms",
+      "prevents_test": "test_inv_at_least_once_prevents",
+      "under_failure_test": "test_inv_at_least_once_under_failure"
+    },
+    {
+      "invariant_id": "AC_INV_02",
+      "invariant_text": "start_to_close_s MUST be set and be a positive integer; a missing value SHALL raise a configuration error.",
+      "confirms_test": "test_inv_start_to_close_required_confirms",
+      "prevents_test": "test_inv_start_to_close_required_prevents",
+      "under_failure_test": "test_inv_start_to_close_required_under_failure"
+    },
+    {
+      "invariant_id": "AC_INV_03",
+      "invariant_text": "Long running activities ALWAYS heartbeat within heartbeat_s; a missed heartbeat CANNOT be treated as success.",
+      "confirms_test": "test_inv_heartbeat_missed_confirms",
+      "prevents_test": "test_inv_heartbeat_missed_prevents",
+      "under_failure_test": "test_inv_heartbeat_missed_under_failure"
+    },
+    {
+      "invariant_id": "AC_INV_04",
+      "invariant_text": "A failure whose attempt count reaches RetryPolicy.maximum_attempts MUST surface to the workflow as a terminal error.",
+      "confirms_test": "test_inv_max_attempts_terminal_confirms",
+      "prevents_test": "test_inv_max_attempts_terminal_prevents",
+      "under_failure_test": "test_inv_max_attempts_terminal_under_failure"
+    },
+    {
+      "invariant_id": "AC_INV_05",
+      "invariant_text": "Heartbeat details NEVER persist across a successful completion; they scope only to the in flight attempt and its retries.",
+      "confirms_test": "test_inv_heartbeat_scope_confirms",
+      "prevents_test": "test_inv_heartbeat_scope_prevents",
+      "under_failure_test": "test_inv_heartbeat_scope_under_failure"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "SchemaComparator",
+  "namespace": "extras",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Diffs two OpenAPI 3.x schemas and classifies every change as breaking, compatible, or additive. Designed to run in CI as a change-gate: a non-empty `breaking` list MUST fail the pipeline. Pure-function, no I/O.",
+  "api_signature": "class SchemaComparator: compare(...)",
+  "invariants": [
+    "SCHEMA_COMPARATOR_INV_01: Classification result MUST be deterministic for any given (baseline, current) input \u2014 no hidden state, no ordering-dependent output.",
+    "SCHEMA_COMPARATOR_INV_02: If `breaking` is non-empty, `classification` MUST be 'breaking'; an additive change can NEVER mask a breaking one.",
+    "SCHEMA_COMPARATOR_INV_03: `compare(x, x)` for any schema x MUST return empty breaking/compatible/additive lists (reflexive: identity is a no-op)."
+  ],
+  "status": "promoted"
+}

@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "MEMORY_PUB_SUB_BACKEND_INV_01",
+      "invariant_text": "publish(topic, payload) MUST enqueue payload on EVERY subscriber queue currently registered for topic; no subscriber may be silently skipped.",
+      "confirms_test": "test_inv_publish_confirms",
+      "prevents_test": "test_inv_publish_prevents",
+      "under_failure_test": "test_inv_publish_under_failure"
+    }
+  ]
+}

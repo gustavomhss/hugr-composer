@@ -1,0 +1,31 @@
+{
+  "name": "ContextMap",
+  "namespace": "api",
+  "purpose": "Catalogs every BoundedContext and the integration relationship (Partnership, Customer-Supplier, Conformist, Open Host) between each pair.",
+  "api_signature": "from typing import Protocol, Iterable, Tuple\n\nclass ContextMap(Protocol):\n    def contexts(self) -> Iterable[str]: ...\n    def relationship(self, upstream: str, downstream: str) -> str: ...\n    def add_relationship(self, upstream: str, downstream: str, kind: str) -> None: ...\n    def integrations(self) -> Iterable[Tuple[str, str, str]]: ...",
+  "invariants": [
+    "Every pairwise integration between contexts MUST be classified by one of the canonical relationship kinds; ad-hoc or blank relationships are FORBIDDEN.",
+    "The graph of contexts SHALL be acyclic for Customer-Supplier relationships; a cycle CANNOT be introduced without promotion to Partnership.",
+    "A BoundedContext CANNOT participate in an integration absent from the ContextMap; shadow integrations MUST be surfaced.",
+    "Relationship changes ALWAYS require an explicit mutation through add_relationship so history is auditable."
+  ],
+  "extension_contract": "New integration kinds extend ContextMap by registering a relationship-kind plugin with translation and governance semantics; existing canonical kinds SHALL NOT be redefined by downstream consumers.",
+  "consumption_example": "def needs_acl(m: ContextMap, upstream: str, downstream: str) -> bool:\n    kind = m.relationship(upstream, downstream)\n    return kind in {'Conformist', 'Anticorruption Layer', 'Customer-Supplier'}",
+  "sources": [
+    {
+      "source": "Evans 'Domain-Driven Design' (2003)",
+      "locator": "Chapter 14, Context Map, pp. 344-366"
+    },
+    {
+      "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+      "locator": "Chapter 3, Context Maps, pp. 83-134"
+    }
+  ],
+  "why_essential": "Without a shared primitive, integration policy is tribal knowledge; ownership of translations is ambiguous and producers change contracts without notifying downstream contexts.",
+  "alternatives_considered": [
+    "Architecture diagrams in Confluence: rot quickly and are not programmatically enforceable.",
+    "Service catalog with no relationship kind: records existence, not governance.",
+    "ADRs only: chronicle decisions but do not expose live topology."
+  ],
+  "maturity": "battle_tested"
+}

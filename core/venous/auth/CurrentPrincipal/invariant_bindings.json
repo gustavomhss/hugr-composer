@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "PRINCIPAL_INV_01",
+      "invariant_text": "MUST be immutable once bound to a RequestContext; a later middleware CANNOT mutate subject_id.",
+      "confirms_test": "test_inv_immutable_confirms",
+      "prevents_test": "test_inv_immutable_prevents",
+      "under_failure_test": "test_inv_immutable_under_failure"
+    },
+    {
+      "invariant_id": "PRINCIPAL_INV_02",
+      "invariant_text": "NEVER represents a successful auth state with is_anonymous=True; these two fields SHALL be mutually exclusive.",
+      "confirms_test": "test_inv_anonymity_parity_confirms",
+      "prevents_test": "test_inv_anonymity_parity_prevents",
+      "under_failure_test": "test_inv_anonymity_parity_under_failure"
+    },
+    {
+      "invariant_id": "PRINCIPAL_INV_03",
+      "invariant_text": "roles MUST be a frozen set; consumers CANNOT add a role at call time to bypass authorization.",
+      "confirms_test": "test_inv_roles_frozen_confirms",
+      "prevents_test": "test_inv_roles_frozen_prevents",
+      "under_failure_test": "test_inv_roles_frozen_under_failure"
+    },
+    {
+      "invariant_id": "PRINCIPAL_INV_04",
+      "invariant_text": "subject_id MUST be stable across requests for the same identity; rotation NEVER happens silently.",
+      "confirms_test": "test_inv_subject_stable_confirms",
+      "prevents_test": "test_inv_subject_stable_prevents",
+      "under_failure_test": "test_inv_subject_stable_under_failure"
+    },
+    {
+      "invariant_id": "PRINCIPAL_INV_05",
+      "invariant_text": "Serialization for logs MUST omit raw claims by default; sensitive claim values SHALL be redacted.",
+      "confirms_test": "test_inv_log_redaction_confirms",
+      "prevents_test": "test_inv_log_redaction_prevents",
+      "under_failure_test": "test_inv_log_redaction_under_failure"
+    }
+  ]
+}

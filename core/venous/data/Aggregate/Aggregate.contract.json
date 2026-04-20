@@ -1,0 +1,32 @@
+{
+  "name": "Aggregate",
+  "namespace": "data",
+  "purpose": "Defines a consistency boundary around a cluster of entities and value objects governed by a single root responsible for invariants.",
+  "api_signature": "from typing import Protocol, TypeVar, Generic, Iterable\n\nID = TypeVar('ID')\n\nclass Aggregate(Protocol, Generic[ID]):\n    @property\n    def id(self) -> ID: ...\n    @property\n    def version(self) -> int: ...\n    def pull_events(self) -> Iterable[object]: ...",
+  "invariants": [
+    "Only the aggregate root MUST be referenced from outside the aggregate; external references to internal children are FORBIDDEN.",
+    "A single transaction MUST modify at most one aggregate instance; cross-aggregate changes SHALL be coordinated via domain events.",
+    "All invariants defined by the root MUST hold at the end of every public method; intermediate illegal states CANNOT be exposed.",
+    "The aggregate version NEVER decreases and MUST increment on every state-changing operation for optimistic concurrency.",
+    "External collaborators SHALL reference other aggregates by identifier only, NEVER by object reference."
+  ],
+  "extension_contract": "New aggregate types extend Aggregate by subclassing the abstract root and binding repository, mapper, and event publisher via compose; invariant-enforcing methods extend by adding domain-specific commands that continue to pull events through pull_events.",
+  "consumption_example": "def handle(cmd, repo):\n    aggr: Aggregate = repo.get(cmd.id)\n    aggr.apply(cmd)\n    repo.save(aggr)\n    return list(aggr.pull_events())",
+  "sources": [
+    {
+      "source": "Evans 'Domain-Driven Design' (2003)",
+      "locator": "Chapter 6, Aggregates, pp. 125-140"
+    },
+    {
+      "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+      "locator": "Chapter 10, Aggregates, pp. 347-396"
+    }
+  ],
+  "why_essential": "Without one shared definition, teams disagree on what constitutes a transactional boundary, and eventually consistent updates across aggregates get treated as strongly consistent, producing silent corruption.",
+  "alternatives_considered": [
+    "Transaction-per-operation anemic domain: loses invariant enforcement and pushes rules into services.",
+    "Whole-graph aggregates: contention hot-spots and oversized transactions.",
+    "Entity-only modeling without roots: ambiguous ownership of invariants."
+  ],
+  "maturity": "battle_tested"
+}

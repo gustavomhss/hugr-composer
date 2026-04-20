@@ -1,0 +1,33 @@
+{
+  "name": "UnitOfWork",
+  "namespace": "data",
+  "purpose": "Tracks object changes during a business transaction and flushes them to storage as one atomic commit or rollback.",
+  "api_signature": "from typing import Protocol, Any\n\nclass UnitOfWork(Protocol):\n    def register_new(self, obj: Any) -> None: ...\n    def register_dirty(self, obj: Any) -> None: ...\n    def register_removed(self, obj: Any) -> None: ...\n    def commit(self) -> None: ...\n    def rollback(self) -> None: ...\n    def __enter__(self) -> 'UnitOfWork': ...\n    def __exit__(self, exc_type, exc, tb) -> bool: ...",
+  "invariants": [
+    "A successful commit MUST apply every registered new, dirty, and removed object in a single database transaction.",
+    "On any exception before commit, the implementation MUST rollback and discard all tracked changes.",
+    "The same object instance SHALL NEVER be registered in more than one of (new, dirty, removed) within one unit.",
+    "A UnitOfWork instance CANNOT be reused after commit or rollback; a fresh unit MUST be opened for the next transaction.",
+    "Repositories operating inside a unit MUST enlist their mutations with that unit rather than writing directly to the database.",
+    "The unit ALWAYS exposes its lifecycle via context-manager semantics so leaks on exception paths are impossible."
+  ],
+  "extension_contract": "Downstream tools extend UnitOfWork by subclassing the abstract implementation or by registering a new flush phase hook (before_commit, on_commit, after_commit) via a register callable; the existing order of inserts, updates, deletes MUST remain intact.",
+  "consumption_example": "def transfer(uow: UnitOfWork, src_id: int, dst_id: int, amount: int) -> None:\n    with uow:\n        src = accounts.get(src_id)\n        dst = accounts.get(dst_id)\n        src.debit(amount)\n        dst.credit(amount)\n        uow.register_dirty(src)\n        uow.register_dirty(dst)\n        uow.commit()",
+  "sources": [
+    {
+      "source": "Fowler 'Patterns of Enterprise Application Architecture' (2002)",
+      "locator": "Chapter 11, Unit of Work pattern, pp. 184-194"
+    },
+    {
+      "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+      "locator": "Chapter 12, Repositories, Unit of Work collaboration, pp. 416-419"
+    }
+  ],
+  "why_essential": "Without one shared primitive, each tool invents its own commit boundary and transactions leak across features, producing partial writes and lost updates when two tools share a request.",
+  "alternatives_considered": [
+    "Auto-commit per repository call: trades atomicity for simplicity and breaks multi-aggregate invariants.",
+    "Session-per-request middleware only: implicit boundaries hide rollback semantics from the caller.",
+    "Manual BEGIN/COMMIT in each tool: duplicates logic and diverges on error handling."
+  ],
+  "maturity": "battle_tested"
+}

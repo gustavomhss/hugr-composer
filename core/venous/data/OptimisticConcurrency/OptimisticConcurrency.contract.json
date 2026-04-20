@@ -1,0 +1,25 @@
+{
+  "name": "OptimisticConcurrency",
+  "namespace": "data",
+  "purpose": "Compare-and-swap write pattern; write fails cleanly when the stored version changed since the reader last saw it.",
+  "api_signature": "from typing import Protocol, TypeVar, runtime_checkable\n\nV = TypeVar('V')\n\n@runtime_checkable\nclass OptimisticConcurrency(Protocol[V]):\n    def read(self, key: str) -> tuple[V | None, int]: ...\n    def compare_and_swap(self, key: str, old_version: int, new_value: V) -> int: ...\n",
+  "invariants": [
+    {"id": "OC_INV_01", "rule": "compare_and_swap atomically checks old_version and writes OR raises -- no partial update."},
+    {"id": "OC_INV_02", "rule": "Writer MUST retry on conflict ONLY via the retry primitive (no hidden retry here)."},
+    {"id": "OC_INV_03", "rule": "Version is monotonic and gap-free per key (next = prev + 1)."},
+    {"id": "OC_INV_04", "rule": "Readers never observe a torn write (read returns value atomic with its version)."},
+    {"id": "OC_INV_05", "rule": "read(k) of an unknown key returns (None, 0) -- canonical empty, never raises."}
+  ],
+  "extension_contract": "Adopters MAY substitute persistent backends (Postgres UPDATE...WHERE version=$1, Redis WATCH/MULTI/EXEC, DynamoDB conditional writes) as long as OC_INV_01..05 are preserved. Version is integer in the Protocol; non-integer backends wrap in an adapter.",
+  "consumption_example": "store = InMemoryOptimisticConcurrency[dict]()\nvalue, version = store.read('user:42')\nstore.compare_and_swap('user:42', version, {'name': 'Ada'})\n",
+  "sources": [
+    {"source": "SQLAlchemy ORM versioning", "locator": "https://docs.sqlalchemy.org/en/20/orm/versioning.html"}
+  ],
+  "why_essential": "Without a CAS primitive, concurrent writers either use pessimistic locks (throughput cliff) or last-writer-wins (silent data loss); CAS is the only pattern that fails loudly and cheaply.",
+  "alternatives_considered": [
+    "Pessimistic row locking: serializes writers even when they would not conflict.",
+    "Last-writer-wins: silently loses updates.",
+    "Append-only event store: correct but too heavy for settings/profiles."
+  ],
+  "maturity": "incubating"
+}

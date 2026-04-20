@@ -1,0 +1,618 @@
+{
+  "name": "DataSubjectRequest",
+  "namespace": "compliance",
+  "maturity": "emerging",
+  "builder_agent_id": 8,
+  "catalog_entry_sha256": "36a65300c5a361036dac5fcc1cfa9f9ecf4927196a72c3271444b89903cc2ee4",
+  "files": [
+    {
+      "path": "compliance/DataSubjectRequest/DataSubjectRequest.contract.json",
+      "sha256": "b890122f02f42937272833ed9d158251d81f244bbd445b5c668e2728dfacdb22",
+      "size_bytes": 2873,
+      "kind": "contract_json"
+    },
+    {
+      "path": "compliance/DataSubjectRequest/DataSubjectRequest.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "compliance/DataSubjectRequest/DataSubjectRequest.md",
+      "sha256": "e18f2c96c63478e22dda68e5d6f6b562cce365b5fffed6b005b392d20bce085b",
+      "size_bytes": 2512,
+      "kind": "spec_md"
+    },
+    {
+      "path": "compliance/DataSubjectRequest/DataSubjectRequest.py",
+      "sha256": "6b5cfa6c6d537dba9fa02d8d0b0016fb2b6ad4c6b75f98cf90a58fca7577f9b0",
+      "size_bytes": 8276,
+      "kind": "impl"
+    },
+    {
+      "path": "compliance/DataSubjectRequest/behavioral_DataSubjectRequest.py",
+      "sha256": "e0801342734aa991c2366a10b5aa21b914b031ba2c111773087ba592cee2f75d",
+      "size_bytes": 1552,
+      "kind": "behavioral"
+    },
+    {
+      "path": "compliance/DataSubjectRequest/chaos_DataSubjectRequest.py",
+      "sha256": "4ca2a1ffd96065d8f23e1e2065c4f464b62ea62df93c616faa03cfc8a3514a79",
+      "size_bytes": 1686,
+      "kind": "chaos"
+    },
+    {
+      "path": "compliance/DataSubjectRequest/dashboard.json",
+      "sha256": "853d54fbbfc61692e7298125770e2b627870e2e12646cdd28920898c4a86a742",
+      "size_bytes": 192,
+      "kind": "dashboard"
+    },
+    {
+      "path": "compliance/DataSubjectRequest/invariant_bindings.json",
+      "sha256": "627dadd412ef0c464a8361beb26af3b51b86a1d7f8344770493dd59008f300bb",
+      "size_bytes": 1762,
+      "kind": "test"
+    },
+    {
+      "path": "compliance/DataSubjectRequest/metamorphic_DataSubjectRequest.py",
+      "sha256": "834ef05d30b11cc97bad976c74cc6c161c2c0b3f54a40186df8f095e3cdece6e",
+      "size_bytes": 2085,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "compliance/DataSubjectRequest/observability_DataSubjectRequest.py",
+      "sha256": "9bd13436330e9840c7f2d9c20005d6d7df387e1892fac3bc1fd772eec3d372e4",
+      "size_bytes": 1365,
+      "kind": "observability"
+    },
+    {
+      "path": "compliance/DataSubjectRequest/observability_schema.json",
+      "sha256": "d0c0d8e78d2efe633861d1d28b8453dafc1178bd62f28ca955117843eb6e8cee",
+      "size_bytes": 854,
+      "kind": "observability"
+    },
+    {
+      "path": "compliance/DataSubjectRequest/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "compliance/DataSubjectRequest/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "compliance/DataSubjectRequest/test_DataSubjectRequest.py",
+      "sha256": "e55673961d03f19a35b41429f7911006b0e5ac2cc10f94a84e0ebb68ecc5f804",
+      "size_bytes": 4981,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "DSR_INV_01",
+      "invariant_text": "Every request MUST have a statutory due_at computed from received_at; the clock NEVER pauses for internal delays.",
+      "confirms_test": "test_inv_due_at_statutory_confirms",
+      "prevents_test": "test_inv_due_at_statutory_prevents",
+      "under_failure_test": "test_inv_due_at_statutory_under_failure"
+    },
+    {
+      "invariant_id": "DSR_INV_02",
+      "invariant_text": "Every registered store holding subject data MUST attach an artifact before close; a request CANNOT close with missing stores.",
+      "confirms_test": "test_inv_store_artifacts_confirms",
+      "prevents_test": "test_inv_store_artifacts_prevents",
+      "under_failure_test": "test_inv_store_artifacts_under_failure"
+    },
+    {
+      "invariant_id": "DSR_INV_03",
+      "invariant_text": "Erasure requests MUST invoke the ErasureCascade; a close with kind='erasure' and no cascade artifact SHALL be rejected.",
+      "confirms_test": "test_inv_erasure_cascade_confirms",
+      "prevents_test": "test_inv_erasure_cascade_prevents",
+      "under_failure_test": "test_inv_erasure_cascade_under_failure"
+    },
+    {
+      "invariant_id": "DSR_INV_04",
+      "invariant_text": "Open, artifact, and close actions MUST each emit a TamperEvidentAuditLog entry for regulator replay.",
+      "confirms_test": "test_inv_audit_on_action_confirms",
+      "prevents_test": "test_inv_audit_on_action_prevents",
+      "under_failure_test": "test_inv_audit_on_action_under_failure"
+    },
+    {
+      "invariant_id": "DSR_INV_05",
+      "invariant_text": "Access and portability exports MUST be delivered via a time-bound, signed URL; exports NEVER live beyond the delivery window.",
+      "confirms_test": "test_inv_signed_export_confirms",
+      "prevents_test": "test_inv_signed_export_prevents",
+      "under_failure_test": "test_inv_signed_export_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 497,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 993,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 996,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 67523,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "43 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1091,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 71461,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-FUTURE",
+        "hypothesis": "Caller passes received_at far in the future (or with a non-UTC tz) so due_at is computed beyond statutory window, effectively pausing the SLA clock via clock manipulation at the boundary.",
+        "input_fixture": "open('sub1','erasure', datetime(2099,1,1,tzinfo=timezone.utc)) then due_at(rid)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NAIVE-DATETIME",
+        "hypothesis": "received_at is a naive datetime in a local tz; due_at arithmetic silently treats it as UTC, shifting the deadline by hours and violating statutory due_at.",
+        "input_fixture": "open('sub','access', datetime(2026,4,19,23,30))  # no tzinfo",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOSE-MISSING-STORE",
+        "hypothesis": "A store registered in the registry but offline during artifact phase is skipped; close() succeeds with missing artifact, breaking completeness invariant.",
+        "input_fixture": "register stores [A,B,C]; attach only A,B; call close(rid,'done')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ERASURE-NO-CASCADE",
+        "hypothesis": "Erasure request is closed after attaching only access-style artifacts without ErasureCascade manifest; close must reject but may accept if check is by count not by type.",
+        "input_fixture": "open(..,'erasure',..); attach_artifact(rid,'users',b'manifest'); close(rid,'done')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CASCADE-FORGED-MANIFEST",
+        "hypothesis": "attach_artifact accepts arbitrary bytes labeled store='erasure_cascade'; a forged empty/zero manifest passes the cascade check, bypassing real erasure.",
+        "input_fixture": "attach_artifact(rid,'erasure_cascade', b''); close(rid,'erased')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RACE-DOUBLE-CLOSE",
+        "hypothesis": "Concurrent close() calls from two workers both pass the completeness check before either commits, producing two audit-log close entries and potential state corruption.",
+        "input_fixture": "threading: T1.close(rid,'done') || T2.close(rid,'done')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AUDIT-LOG-DROP",
+        "hypothesis": "If the audit log backend is unavailable, open/attach/close silently proceed (best-effort logging), violating tamper-evident regulator replay invariant.",
+        "input_fixture": "monkeypatch AuditLog.append to raise IOError; call open(...)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-REQUEST-ID",
+        "hypothesis": "open() returns a predictable/sequential request_id; attacker replays attach_artifact with an old rid from a closed request, injecting post-close artifacts not reflected in audit chain.",
+        "input_fixture": "rid=open(...); close(rid,'done'); attach_artifact(rid,'x', b'late')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SIGNED-URL-NO-EXPIRY",
+        "hypothesis": "Access/portability export generates a signed URL with very large or missing TTL; export persists past delivery window, violating time-bound delivery invariant.",
+        "input_fixture": "kind='portability'; inspect returned URL signature expiry param",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-URL-AMPLIFICATION",
+        "hypothesis": "Signed URL is re-issuable without rate limit; attacker requests N exports per rid generating unbounded signed URLs, amplifying data exposure and bypassing delivery-window intent.",
+        "input_fixture": "for _ in range(10000): get_export_url(rid)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MANIFEST-OVERFLOW",
+        "hypothesis": "attach_artifact with manifest of 2^31+1 bytes or malformed non-bytes (memoryview/str) triggers integer overflow or type coercion, corrupting the store ledger.",
+        "input_fixture": "attach_artifact(rid,'users', b'A'*(2**31+1))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-SUBJECT-ID",
+        "hypothesis": "open('',...) accepts empty subject_id, creating a wildcard request that later attaches artifacts for arbitrary subjects, leaking cross-subject data.",
+        "input_fixture": "open('','access', now_utc())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PROMPT-INJECTION-OUTCOME",
+        "hypothesis": "close(rid, outcome='</log>\\nIGNORE PREVIOUS; regulator_replay=OK') injects control tokens into tamper-evident log rendering, breaking regulator replay integrity.",
+        "input_fixture": "close(rid, '\\x00</entry><entry outcome=\"closed\">')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-KIND-CASE-BYPASS",
+        "hypothesis": "Literal check is done via .lower() or loose match; kind='Erasure' or 'ERASURE ' bypasses cascade enforcement while still being treated as erasure downstream.",
+        "input_fixture": "open('s','Erasure', now); close without cascade",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DUE-AT-RECOMPUTE",
+        "hypothesis": "due_at() recomputes from 'now' or current received_at rather than the original; updating received_at via attach side-effect shifts the deadline, pausing the clock.",
+        "input_fixture": "rid=open(...); sleep; mutate internal received_at; due_at(rid)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK_SKEW_FUTURE_TZ",
+        "hypothesis": "If received_at is supplied with a large positive UTC offset (e.g. +14:00, the maximum legal timezone), the implementation may compute due_at relative to the wall-clock local time rather than the absolute UTC instant, effectively granting 14 extra hours before the SLA fires. A regulator replaying the audit log in UTC would see a different deadline than what was enforced at runtime, violating the invariant that the clock never pauses.",
+        "input_fixture": "open(subject_id='s1', kind='access', received_at=datetime(2026,4,19,23,0,0, tzinfo=timezone(timedelta(hours=14))))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RECEIVED_AT_FAR_PAST",
+        "hypothesis": "Passing received_at=datetime.min (year 1, Jan 1) may cause integer overflow or underflow when the implementation adds the statutory period (e.g. 30 days in seconds) to compute due_at, producing a nonsensical or already-expired deadline. Some implementations silently clamp to epoch, others raise, others return a garbage timestamp \u2014 all break the SLA clock guarantee.",
+        "input_fixture": "open(subject_id='s2', kind='erasure', received_at=datetime(1, 1, 1, 0, 0, 0))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-STORE_REGISTERED_AFTER_CLOSE",
+        "hypothesis": "If store registration is dynamic and a new store is registered concurrently while close() is executing its store-completeness check, the check may pass with N stores but the freshly registered store (N+1) is never asked for an artifact. The request closes with a missing store, violating the invariant that every registered store must have an artifact before close.",
+        "input_fixture": "Thread-A: close(request_id='r1', outcome='fulfilled') [store check passes with {store_a, store_b}]; Thread-B (race): registry.register('store_c') before Thread-A writes 'closed' status",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY_MANIFEST_BYTES",
+        "hypothesis": "Passing manifest=b'' (zero-length bytes) to attach_artifact may be accepted by the implementation as a valid artifact (truthy check on bytes object passes in some runtimes only when len>0, but object identity check passes always), allowing close() to consider the store covered while no actual data manifest exists. This silently satisfies the completeness check without meaningful content.",
+        "input_fixture": "attach_artifact(request_id='r1', store='users_db', manifest=b'')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ERASURE_CLOSE_NO_CASCADE",
+        "hypothesis": "An erasure request is closed with artifacts from all registered data stores but the ErasureCascade artifact is either never attached or attached under a store name that the cascade-check predicate does not recognise (e.g. 'erasure_cascade_v1' vs expected 'ErasureCascade'). The store-completeness check passes because all *registered* stores have artifacts, but the special cascade invariant is silently skipped, allowing an erasure close without cascade evidence.",
+        "input_fixture": "open(kind='erasure'); attach_artifact(store='users_db', manifest=b'...'); attach_artifact(store='erasure_cascade_v1', manifest=b'proof'); close(outcome='erased') \u2014 cascade predicate checks for exact key 'ErasureCascade'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-KIND_MUTATION_ACCESS_TO_ERASURE",
+        "hypothesis": "If the kind field is stored in a mutable cell (dict, dataclass without frozen=True) and the caller can mutate the object reference after open() returns the request_id, the implementation may check kind at open-time for validation but re-read the live object at close-time. Mutating kind from 'access' to 'erasure' between open and close would bypass the erasure-cascade requirement because no cascade was triggered during open.",
+        "input_fixture": "req = dsr.open('s3','access', now); internal_store[req]['kind'] = 'erasure'; dsr.close(req, 'fulfilled')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AUDIT_LOG_EXCEPTION_BYPASS",
+        "hypothesis": "If the implementation emits the audit log entry *after* the state mutation (write-then-log pattern), an exception thrown by the audit log sink (e.g. full disk, network timeout to log service) would leave the state mutated but the log absent. A regulator replay would be missing the open/attach/close event, violating tamper-evident completeness. The invariant requires the log entry to exist for every action; a partial failure path can silently drop it.",
+        "input_fixture": "Mock audit_log.emit() to raise IOError on the third call; call open(), attach_artifact(), close() \u2014 third emission (close) fails silently, request is closed but no audit record exists for close",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY_CLOSED_REQUEST",
+        "hypothesis": "After a request reaches 'closed' state, calling attach_artifact() or close() again with the same request_id should be rejected. If the implementation only checks for existence of the request_id (not its state), a replay attacker can attach a forged artifact to a closed request and trigger a second close(), inserting fraudulent entries into the audit log and potentially altering what a regulator sees during replay.",
+        "input_fixture": "open(); attach_artifact(store='s', manifest=b'real'); close(outcome='ok'); attach_artifact(request_id=same_id, store='s', manifest=b'forged'); close(request_id=same_id, outcome='overridden')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SIGNED_URL_NO_EXPIRY",
+        "hypothesis": "If the implementation generates a signed URL for an access/portability artifact but does not set an expiry (or sets expiry=None, timedelta(0), or a far-future date like year 9999), the URL lives indefinitely beyond the intended delivery window. A data breach of the URL months later would expose subject data with no time-bound protection, violating the invariant that exports never live beyond the delivery window.",
+        "input_fixture": "attach_artifact(request_id='r1', store='export_bucket', manifest=b'{\"signed_url\": \"https://storage/export?token=abc&expires=99991231\"}'); close(outcome='delivered') \u2014 implementation does not validate expiry bound on the signed URL inside the manifest",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-URL_DELIVERY_RACE_WINDOW",
+        "hypothesis": "The signed URL is generated at attach_artifact() time. If the delivery window is, say, 72 hours, and the implementation re-serves the same pre-generated URL when the subject downloads their export on day 3 (after the window), the URL may still be cryptographically valid because the signing key has not rotated. The window invariant is declared but never enforced at access time \u2014 the implementation trusts the expiry embedded in the token but does not verify it server-side on download.",
+        "input_fixture": "attach_artifact() at T=0 with 72h window; subject fetches the URL at T=73h; server accepts because token signature is valid and server clock check is skipped",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SUBJECT_ID_SQL_INJECTION",
+        "hypothesis": "subject_id is passed directly into a SQL query to find all stores holding data about the subject. A crafted subject_id containing SQL metacharacters (e.g. \"'; DROP TABLE dsr_requests; --\") may truncate the store lookup result, making the implementation believe zero stores are registered, allowing close() to pass the completeness check with no artifacts attached.",
+        "input_fixture": "open(subject_id=\"' OR '1'='1\", kind='access', received_at=now()) \u2014 store lookup returns ALL subjects' stores or an empty set depending on the injection, both violating completeness",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DUE_AT_INTERNAL_DELAY_PAUSE",
+        "hypothesis": "If due_at() reads from a stored timestamp that is updated each time an internal retry or queue delay occurs (e.g. the implementation persists 'effective_due_at = now() + SLA_PERIOD' at the time of first processing rather than at received_at), then an internal backlog that delays processing by hours will effectively extend the deadline. The invariant states the clock never pauses for internal delays, but a lazy-evaluation implementation violates this silently.",
+        "input_fixture": "open(subject_id='s4', kind='portability', received_at=datetime(2026,4,19,9,0,0)); delay processing for 8 hours via queue backpressure; assert due_at(request_id) == received_at + STATUTORY_PERIOD (not now+STATUTORY_PERIOD)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONCURRENT_CLOSE_DOUBLE_EMIT",
+        "hypothesis": "Two concurrent calls to close() with the same request_id may both pass the state guard if the guard is a non-atomic read-check-write (TOCTOU). Both calls complete, emitting two 'close' audit log entries with different outcomes. A regulator replaying the log sees contradictory final states, breaking tamper-evident determinism. Additionally, if the second close emits a different outcome string, it is effectively a forged audit record.",
+        "input_fixture": "Thread-A: close(request_id='r1', outcome='fulfilled'); Thread-B (race, <1ms later): close(request_id='r1', outcome='rejected') \u2014 both pass status check before either commits",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK_SKEW_DUE_DATE_BYPASS",
+        "hypothesis": "System clock advanced after open() allows a request to exceed SLA deadline undetected; statutory 30-day clock never enforced if time moves forward.",
+        "input_fixture": "open(subject_id='s1', kind='access', received_at=datetime(2026,4,19)); [system time set to 2026-06-20]; close('R1') accepted; due_at() returns past date",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RACE_CONDITION_CLOSE_BEFORE_ALL_STORES",
+        "hypothesis": "Concurrent close() and attach_artifact() allow close to succeed before all stores have registered artifacts; validation check-then-act is not atomic.",
+        "input_fixture": "[Thread-A: close('R1')]; [Thread-B: attach_artifact('R1','db2',manifest)]; both complete; missing store not detected in close outcome",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ERASURE_MISSING_CASCADE_ARTIFACT",
+        "hypothesis": "Erasure request closes without any cascade artifact; close() does not verify artifact type or invoke ErasureCascade for kind='erasure'.",
+        "input_fixture": "open('R2', kind='erasure', subject='s2'); close('R2', outcome='success'); no attach_artifact call made; ErasureCascade.invoke() never called",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-AUDIT_LOG_SILENT_FAILURE",
+        "hypothesis": "TamperEvidentAuditLog emission fails silently when database is unavailable; close() returns success without entry, breaking regulator replay guarantee.",
+        "input_fixture": "open('R3'); attach_artifact('R3','db',b'data'); [audit_log service unavailable]; close('R3','success'); returns success without audit log",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY_SUBJECT_ID_ISOLATION_BYPASS",
+        "hypothesis": "Empty or None subject_id passes validation; multiple unrelated requests aggregate under same subject, violating data isolation.",
+        "input_fixture": "open(subject_id='', kind='access', received_at=now())\u2192'R4'; open(subject_id='', kind='erasure', received_at=now())\u2192'R5'; both operate on empty subject",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DATETIME_YEAR_9999_OVERFLOW",
+        "hypothesis": "Far-future received_at datetime causes arithmetic overflow in due_at computation; deadline wraps to epoch or becomes invalid.",
+        "input_fixture": "open('R6', kind='access', received_at=datetime(year=9999,month=12,day=31)); due_at('R6') overflows or returns datetime(1970,1,1)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SIGNED_URL_REPLAY_ATTACK",
+        "hypothesis": "Signed URL from one subject's access request is replayed for a different subject; signature does not bind request_id or subject identity.",
+        "input_fixture": "open('R7','access',subject='alice'); url1=get_export('R7'); open('R8','access',subject='bob'); fetch_export(url1) with R8 succeeds; bob receives alice data",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOSE_WITHOUT_STORE_REGISTRATION",
+        "hypothesis": "Request closes despite only partial store artifact attachments; no enforcement that all registered stores holding subject data provide artifacts.",
+        "input_fixture": "register_stores=['db','cache','warehouse']; open('R9'); attach_artifact('R9','db',m); close('R9','success'); cache and warehouse never required",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TOCTOU_ARTIFACT_ATTACHMENT",
+        "hypothesis": "Check-time-use-time gap: close() reads artifact count as zero, then attach_artifact() adds artifact after check; close() persists with stale count.",
+        "input_fixture": "[T1: close('R10') reads artifact_count]; [T2: attach_artifact('R10','s1',m)]; [T1: writes close with count=0]; store artifact silently lost",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-FAKE_ERASURE_CASCADE_ARTIFACT",
+        "hypothesis": "Erasure request attaches non-cascade artifact (e.g., regular export data) labeled as cascade; validator does not inspect artifact content before closing.",
+        "input_fixture": "open('R11', kind='erasure'); attach_artifact('R11','erasure_cascade',b'SELECT * FROM users'); close('R11'); ErasureCascade not invoked, data persists",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EXPIRED_EXPORT_URL_STILL_VALID",
+        "hypothesis": "Export signed URL expires but is still honored by consumer; delivery window SLA violated when url accessed 31 days after open for 30-day window.",
+        "input_fixture": "open('R12','access',received_at=2026-04-19); url=get_export_url('R12'); [advance 31 days]; fetch(url) returns data; exceeds delivery window",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT_OPEN_CONFLICTING_DEADLINES",
+        "hypothesis": "Two concurrent open() calls for same subject with different received_at create inconsistent due dates; auditor observes conflicting statutory deadlines.",
+        "input_fixture": "[T1: open('u1','access',received_at=2026-04-19)\u2192'R13a'; T1: due_at('R13a')=2026-05-19]; [T2: open('u1','access',received_at=2026-04-20)\u2192'R13b'; T2: due_at('R13b')=2026-05-20]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-AUDIT_ENTRY_EXCEPTION_SWALLOWED",
+        "hypothesis": "Artifact attachment succeeds but audit logging exception is caught silently; close() does not detect missing audit entry before completing.",
+        "input_fixture": "open('R14'); attach_artifact('R14','db',m) [TamperEvidentAuditLog.emit() raises, caught by handler]; close('R14') succeeds without audit validation",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CREDENTIAL_LEAK_IN_AUDIT_LOG",
+        "hypothesis": "Manifest containing secrets stored unencrypted in TamperEvidentAuditLog; regulator audit access exposes API keys and passwords.",
+        "input_fixture": "attach_artifact('R15','api',manifest=b'api_key=sk-1234567890'); audit_log.query('R15') returns manifest; credentials leaked to auditor",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-STORE_PATH_TRAVERSAL_INJECTION",
+        "hypothesis": "Store parameter with path traversal sequences writes artifact outside audit scope; 'store=../backup' or 'store=../../tmp' exfiltrates data.",
+        "input_fixture": "attach_artifact('R16', store='../../../etc/exports', manifest=b'pii_data'); file written outside controlled directory; audit trail incomplete",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "dsr.opened",
+        "required_attributes": [
+          "request_id",
+          "kind"
+        ]
+      },
+      {
+        "event_name": "dsr.closed",
+        "required_attributes": [
+          "request_id",
+          "outcome"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "dsr.open.count",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "kind"
+        ]
+      },
+      {
+        "name": "dsr.close.count",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "outcome"
+        ]
+      },
+      {
+        "name": "dsr.time_to_close",
+        "metric_type": "histogram",
+        "unit": "s",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "kind"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "dsr.open",
+        "required_attributes": [
+          "subject_id",
+          "kind"
+        ]
+      },
+      {
+        "operation_name": "dsr.attach_artifact",
+        "required_attributes": [
+          "request_id",
+          "store"
+        ]
+      },
+      {
+        "operation_name": "dsr.close",
+        "required_attributes": [
+          "request_id",
+          "outcome"
+        ]
+      }
+    ]
+  }
+}

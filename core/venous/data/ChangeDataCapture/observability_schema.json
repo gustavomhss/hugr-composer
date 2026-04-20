@@ -1,0 +1,64 @@
+{
+  "logs": [
+    {
+      "event_name": "cdc.tx.committed",
+      "required_attributes": ["txid", "events", "last_pos"]
+    },
+    {
+      "event_name": "cdc.tx.rolled.back",
+      "required_attributes": ["txid", "reason"]
+    },
+    {
+      "event_name": "cdc.schema.evolved",
+      "required_attributes": ["table", "old_version", "new_version"]
+    },
+    {
+      "event_name": "cdc.checkpoint.advanced",
+      "required_attributes": ["group", "from_pos", "to_pos"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "cdc.events.published",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["table", "op"]
+    },
+    {
+      "name": "cdc.tx.commit.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 30,
+      "label_keys": ["table", "result"]
+    },
+    {
+      "name": "cdc.last.position",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["table"]
+    },
+    {
+      "name": "cdc.consumer.lag",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["group", "table"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "cdc.tx.commit",
+      "required_attributes": ["tx.id", "tx.events", "tx.last_pos"]
+    },
+    {
+      "operation_name": "cdc.subscribe",
+      "required_attributes": ["table", "from.pos", "events"]
+    },
+    {
+      "operation_name": "cdc.schema.evolve",
+      "required_attributes": ["table", "new.version"]
+    }
+  ]
+}

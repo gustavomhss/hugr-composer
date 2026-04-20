@@ -1,0 +1,75 @@
+{
+  "logs": [
+    {
+      "event_name": "signature_verifier.sign.completed",
+      "required_attributes": ["algorithm", "key_id", "msg_type", "duration_ms"]
+    },
+    {
+      "event_name": "signature_verifier.verify.completed",
+      "required_attributes": ["algorithm", "key_id", "msg_type", "outcome", "duration_ms"]
+    },
+    {
+      "event_name": "signature_verifier.verify.rejected",
+      "required_attributes": ["algorithm", "key_id", "reason"]
+    },
+    {
+      "event_name": "signature_verifier.replay.detected",
+      "required_attributes": ["algorithm", "key_id", "severity"]
+    },
+    {
+      "event_name": "signature_verifier.key.registered",
+      "required_attributes": ["algorithm", "key_id"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "signature_verifier.operations",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 30,
+      "label_keys": ["operation", "algorithm", "outcome"]
+    },
+    {
+      "name": "signature_verifier.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": ["operation", "algorithm"]
+    },
+    {
+      "name": "signature_verifier.verify.rejections",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["algorithm", "reason"]
+    },
+    {
+      "name": "signature_verifier.replay.detections",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": ["algorithm"]
+    },
+    {
+      "name": "signature_verifier.keys.registered",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["algorithm"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "signature_verifier.sign",
+      "required_attributes": ["algorithm", "key_id", "msg_type"]
+    },
+    {
+      "operation_name": "signature_verifier.verify",
+      "required_attributes": ["algorithm", "key_id", "msg_type", "outcome"]
+    },
+    {
+      "operation_name": "signature_verifier.key.resolve",
+      "required_attributes": ["algorithm", "decision"]
+    }
+  ]
+}

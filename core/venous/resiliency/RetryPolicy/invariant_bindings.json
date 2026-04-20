@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "RETRY_INV_01",
+      "invariant_text": "A call MUST NEVER be retried unless it is marked idempotent or the policy has requires_idempotency set to False by an explicit operator decision.",
+      "confirms_test": "test_inv_idempotency_required_confirms",
+      "prevents_test": "test_inv_idempotency_required_prevents",
+      "under_failure_test": "test_inv_idempotency_required_under_failure"
+    },
+    {
+      "invariant_id": "RETRY_INV_02",
+      "invariant_text": "The total retry attempts MUST NEVER exceed budget_ratio of successful traffic in the trailing window.",
+      "confirms_test": "test_inv_retry_budget_confirms",
+      "prevents_test": "test_inv_retry_budget_prevents",
+      "under_failure_test": "test_inv_retry_budget_under_failure"
+    },
+    {
+      "invariant_id": "RETRY_INV_03",
+      "invariant_text": "Backoff intervals SHALL include jitter in the range [0, jitter * base_interval] to prevent synchronized retry storms.",
+      "confirms_test": "test_inv_jitter_bounded_confirms",
+      "prevents_test": "test_inv_jitter_bounded_prevents",
+      "under_failure_test": "test_inv_jitter_bounded_under_failure"
+    },
+    {
+      "invariant_id": "RETRY_INV_04",
+      "invariant_text": "Retries CANNOT be issued when the governing TimeoutBudget.remaining_ms is less than or equal to zero.",
+      "confirms_test": "test_inv_deadline_confirms",
+      "prevents_test": "test_inv_deadline_prevents",
+      "under_failure_test": "test_inv_deadline_under_failure"
+    },
+    {
+      "invariant_id": "RETRY_INV_05",
+      "invariant_text": "A retry policy SHALL classify errors as retryable, non-retryable, or fatal and NEVER retry a non-retryable or fatal error.",
+      "confirms_test": "test_inv_classification_confirms",
+      "prevents_test": "test_inv_classification_prevents",
+      "under_failure_test": "test_inv_classification_under_failure"
+    }
+  ]
+}

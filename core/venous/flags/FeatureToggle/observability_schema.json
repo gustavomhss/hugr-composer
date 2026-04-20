@@ -1,0 +1,49 @@
+{
+  "logs": [
+    {
+      "event_name": "toggle.evaluated",
+      "required_attributes": ["key", "decision", "tenant_id", "environment"]
+    },
+    {
+      "event_name": "toggle.registered",
+      "required_attributes": ["key"]
+    },
+    {
+      "event_name": "toggle.deprecated",
+      "required_attributes": ["key", "phase"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "toggle.evaluations",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 500,
+      "label_keys": ["key", "decision"]
+    },
+    {
+      "name": "toggle.failures",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 100,
+      "label_keys": ["key", "reason"]
+    },
+    {
+      "name": "toggle.registry.size",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": []
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "toggle.is_active",
+      "required_attributes": ["key"]
+    },
+    {
+      "operation_name": "toggle.register",
+      "required_attributes": ["key"]
+    }
+  ]
+}

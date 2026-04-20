@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "CSP_INV_01",
+      "invariant_text": "default-src MUST be set; a policy without default-src CANNOT be rendered.",
+      "confirms_test": "test_inv_default_src_required_confirms",
+      "prevents_test": "test_inv_default_src_required_prevents",
+      "under_failure_test": "test_inv_default_src_required_under_failure"
+    },
+    {
+      "invariant_id": "CSP_INV_02",
+      "invariant_text": "script-src MUST NEVER include 'unsafe-inline' together with a nonce; the two are mutually exclusive per CSP3.",
+      "confirms_test": "test_inv_unsafe_inline_nonce_conflict_confirms",
+      "prevents_test": "test_inv_unsafe_inline_nonce_conflict_prevents",
+      "under_failure_test": "test_inv_unsafe_inline_nonce_conflict_under_failure"
+    },
+    {
+      "invariant_id": "CSP_INV_03",
+      "invariant_text": "Nonces MUST be >=128 bits from a CSPRNG and MUST be unique per response; reuse SHALL invalidate the guarantee.",
+      "confirms_test": "test_inv_nonce_entropy_unique_confirms",
+      "prevents_test": "test_inv_nonce_entropy_unique_prevents",
+      "under_failure_test": "test_inv_nonce_entropy_unique_under_failure"
+    },
+    {
+      "invariant_id": "CSP_INV_04",
+      "invariant_text": "object-src MUST be set to 'none' unless the caller explicitly opts in with a reason string.",
+      "confirms_test": "test_inv_object_src_none_confirms",
+      "prevents_test": "test_inv_object_src_none_prevents",
+      "under_failure_test": "test_inv_object_src_none_under_failure"
+    },
+    {
+      "invariant_id": "CSP_INV_05",
+      "invariant_text": "base-uri and frame-ancestors MUST be set to a closed list; wildcard values are FORBIDDEN in production profiles.",
+      "confirms_test": "test_inv_closed_list_no_wildcard_confirms",
+      "prevents_test": "test_inv_closed_list_no_wildcard_prevents",
+      "under_failure_test": "test_inv_closed_list_no_wildcard_under_failure"
+    },
+    {
+      "invariant_id": "CSP_INV_06",
+      "invariant_text": "report-only and enforce modes MUST be separate header names and MUST NEVER both block and merely report the same directive.",
+      "confirms_test": "test_inv_enforce_vs_report_only_confirms",
+      "prevents_test": "test_inv_enforce_vs_report_only_prevents",
+      "under_failure_test": "test_inv_enforce_vs_report_only_under_failure"
+    }
+  ]
+}

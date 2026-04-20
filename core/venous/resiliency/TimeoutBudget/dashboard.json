@@ -1,0 +1,30 @@
+{
+  "title": "TimeoutBudget — Remaining, Refusals, Dispatch Distribution",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Budget Refusals (5m)",
+      "targets": [{"expr": "sum(rate(timeout_budget_refusals_total[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Effective for_call p50/p95/p99 (ms)",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(timeout_budget_for_call_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(timeout_budget_for_call_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(timeout_budget_for_call_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Remaining Budget by Hop",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(timeout_budget_remaining_bucket[5m]))"}
+      ]
+    }
+  ]
+}

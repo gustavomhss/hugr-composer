@@ -1,0 +1,68 @@
+{
+  "logs": [
+    {
+      "event_name": "router.pipeline.registered",
+      "required_attributes": ["pipeline", "middleware_count"]
+    },
+    {
+      "event_name": "router.route.attached",
+      "required_attributes": ["pipeline", "route"]
+    },
+    {
+      "event_name": "router.sealed",
+      "required_attributes": ["pipeline_count", "route_count"]
+    },
+    {
+      "event_name": "router.request.dispatched",
+      "required_attributes": ["pipeline", "route", "duration_ns", "halted"]
+    },
+    {
+      "event_name": "router.attach.after.seal.refused",
+      "required_attributes": ["pipeline", "route", "warning"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "router.pipelines.registered",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["pipeline"]
+    },
+    {
+      "name": "router.requests.dispatched",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 200,
+      "label_keys": ["pipeline", "halted"]
+    },
+    {
+      "name": "router.request.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 200,
+      "label_keys": ["pipeline"]
+    },
+    {
+      "name": "router.middleware.depth",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["pipeline"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "router.pipeline.dispatch",
+      "required_attributes": ["router.pipeline", "router.route", "router.halted"]
+    },
+    {
+      "operation_name": "router.pipeline.register",
+      "required_attributes": ["router.pipeline", "router.middleware_count"]
+    },
+    {
+      "operation_name": "router.middleware.step",
+      "required_attributes": ["router.pipeline", "router.middleware_index"]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "ShardedCounter",
+  "namespace": "data",
+  "purpose": "Hot-key-safe monotonic per-key counter distributed across N fixed shards; value() sums across shards.",
+  "api_signature": "from typing import Protocol, runtime_checkable\n\nclass PolicyToken:\n    def __init__(self, reason: str) -> None: ...\n\n@runtime_checkable\nclass ShardedCounter(Protocol):\n    def increment(self, key: str, delta: int = 1) -> None: ...\n    def value(self, key: str) -> int: ...\n    def reset(self, key: str, token: PolicyToken) -> None: ...\n",
+  "invariants": [
+    {"id": "SC_INV_01", "rule": "Counter MUST NEVER decrement (delta MUST be > 0)."},
+    {"id": "SC_INV_02", "rule": "Read-after-write in the same session reflects at least the preceding increment (session causality, not global consistency)."},
+    {"id": "SC_INV_03", "rule": "value(key) is the SUM of all shard values -- never a single shard."},
+    {"id": "SC_INV_04", "rule": "Shard count is fixed at construction; changing it requires a migration primitive."},
+    {"id": "SC_INV_05", "rule": "Concurrent increments on the same key hit DIFFERENT shards (hashed modulo shard_count on thread/async-task id)."}
+  ],
+  "extension_contract": "Adopters pick shard_count at construction. Hash for routing is sealed. Redis INCRBY-per-shard and Postgres row-per-shard adapters fit the same Protocol.",
+  "consumption_example": "counter = InMemoryShardedCounter(shard_count=16)\ncounter.increment('post:42', 3)\nassert counter.value('post:42') == 3\n",
+  "sources": [
+    {"source": "Google Cloud Datastore best practices", "locator": "https://cloud.google.com/datastore/docs/best-practices#sharding_counters"}
+  ],
+  "why_essential": "Without sharding, every concurrent writer on a hot key serializes through one row and the counter becomes a throughput cliff under load.",
+  "alternatives_considered": [
+    "Single-row counter: serializes writers on the hot key.",
+    "HyperLogLog: solves cardinality, not sum.",
+    "Event-sourced counter: correct but expensive to read."
+  ],
+  "maturity": "incubating"
+}

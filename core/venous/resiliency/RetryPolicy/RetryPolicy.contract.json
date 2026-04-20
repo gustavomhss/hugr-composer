@@ -1,0 +1,36 @@
+{
+  "name": "RetryPolicy",
+  "namespace": "resiliency",
+  "purpose": "Describe under which conditions a failed call may be retried, bounded by max attempts, backoff with jitter, a retry budget and an idempotency requirement.",
+  "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Callable, Awaitable, TypeVar\n\nT = TypeVar('T')\n\nclass RetryPolicy(Protocol):\n    max_attempts: int\n    initial_interval_ms: int\n    multiplier: float\n    max_interval_ms: int\n    jitter: float\n    budget_ratio: float\n    requires_idempotency: bool\n    def should_retry(self, attempt: int, exc: BaseException) -> bool: ...\n    def next_delay_ms(self, attempt: int) -> int: ...\n    async def execute(self, fn: Callable[[], Awaitable[T]]) -> T: ...\n",
+  "invariants": [
+    "A call MUST NEVER be retried unless it is marked idempotent or the policy has requires_idempotency set to False by an explicit operator decision.",
+    "The total retry attempts across a service MUST NEVER exceed budget_ratio of successful traffic in the trailing window.",
+    "Backoff intervals SHALL include jitter in the range [0, jitter * base_interval] to prevent synchronized retry storms.",
+    "Retries CANNOT be issued when the governing TimeoutBudget.remaining_ms is less than or equal to zero.",
+    "A retry policy SHALL classify errors as retryable, non-retryable, or fatal and NEVER retry a non-retryable error."
+  ],
+  "extension_contract": "Adopters subclass or register a RetryClassifier that maps exceptions to retryable or fatal, and bind a BackoffStrategy provider (exponential, exponential_with_jitter, decorrelated_jitter). The retry budget enforcer is sealed and reads from a shared metric source.",
+  "consumption_example": "policy = RetryPolicy  # resolved from registry\nasync def post_charge() -> Receipt:\n    return await policy.execute(lambda: _charge('idempotency-key-42'))\n",
+  "sources": [
+    {
+      "source": "Google SRE Workbook (Beyer et al., O'Reilly, 2018)",
+      "locator": "Chapter 22 'Addressing Cascading Failures', section 'Retries' introducing retry amplification and budgets"
+    },
+    {
+      "source": "AWS Architecture Blog, 'Exponential Backoff and Jitter' (Marc Brooker, 2015)",
+      "locator": "section 'Full Jitter' and 'Decorrelated Jitter' formulas"
+    },
+    {
+      "source": "Envoy proxy documentation, retry policy",
+      "locator": "api-v3/config/route/v3/route_components.proto RetryPolicy fields retry_on, num_retries, retry_budget"
+    }
+  ],
+  "why_essential": "Ad-hoc retry loops scattered in call sites collide with timeouts and each other, multiplying failing traffic by factors of N per layer; a shared, budget-aware policy is the only place to cap that amplification.",
+  "alternatives_considered": [
+    "Transport-level retry only (HTTP client default): lacks knowledge of idempotency and budget.",
+    "Caller-written try/except loops: reinvent classification and NEVER coordinate across callers.",
+    "Fire-and-forget retries via queue: shifts the problem and CANNOT enforce deadlines."
+  ],
+  "maturity": "battle_tested"
+}

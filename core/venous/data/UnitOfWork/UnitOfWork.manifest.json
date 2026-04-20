@@ -1,0 +1,733 @@
+{
+  "name": "UnitOfWork",
+  "namespace": "data",
+  "maturity": "battle_tested",
+  "builder_agent_id": 4,
+  "catalog_entry_sha256": "8854c7b3bc80782055d4364ae582fee111565e9712e61aa35cf882c1c8917622",
+  "files": [
+    {
+      "path": "data/UnitOfWork/UnitOfWork.cfg",
+      "sha256": "4e4e6d09682dd6bda1ecd402f5bf88e935cac9bd28e9db05995851d1122527e6",
+      "size_bytes": 121,
+      "kind": "test"
+    },
+    {
+      "path": "data/UnitOfWork/UnitOfWork.contract.json",
+      "sha256": "ed549a46f40dfd194e67b93ab8a9e793c8963e4d02be0e167f1a0bf7b90d824c",
+      "size_bytes": 2882,
+      "kind": "contract_json"
+    },
+    {
+      "path": "data/UnitOfWork/UnitOfWork.manifest.json",
+      "sha256": "809696a45cbc4dd330ca57c589d0ebcb50f10112f44b60b71fb53eb95e90b422",
+      "size_bytes": 42527,
+      "kind": "manifest"
+    },
+    {
+      "path": "data/UnitOfWork/UnitOfWork.md",
+      "sha256": "955e077572ffc6eb121721c16e07acdad86918224ff1e3ff787ac1ab1338ad1e",
+      "size_bytes": 5591,
+      "kind": "spec_md"
+    },
+    {
+      "path": "data/UnitOfWork/UnitOfWork.py",
+      "sha256": "a837801fd403c7c91034928691e7b9efd7f313dc689828da4c911eef635715fd",
+      "size_bytes": 10420,
+      "kind": "impl"
+    },
+    {
+      "path": "data/UnitOfWork/UnitOfWork.tla",
+      "sha256": "db0574e3e4c5188bf9743589b52d97af7f2aa772f2eb817a6f339dcd77646a28",
+      "size_bytes": 1873,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "data/UnitOfWork/behavioral_UnitOfWork.py",
+      "sha256": "7c96bc9871b4ee48b0f212cb5103472a5892bf8de3b3dcaf2ce418f6dc552d12",
+      "size_bytes": 2487,
+      "kind": "behavioral"
+    },
+    {
+      "path": "data/UnitOfWork/chaos_UnitOfWork.py",
+      "sha256": "73f938536c7f17d2cf0431bb23b280b9a5e2c2d442c5c2d5d19f466cd276760e",
+      "size_bytes": 3104,
+      "kind": "chaos"
+    },
+    {
+      "path": "data/UnitOfWork/concurrent_UnitOfWork.py",
+      "sha256": "21e033181eb9140a8a2194dcc556e0135b6a26a211e5e13bb755202b48f61e14",
+      "size_bytes": 3172,
+      "kind": "concurrent"
+    },
+    {
+      "path": "data/UnitOfWork/dashboard.json",
+      "sha256": "b447e7f6823fa9e128980c66361d5b5497933ed1546370fa649bbb3b1ec6fa0c",
+      "size_bytes": 818,
+      "kind": "dashboard"
+    },
+    {
+      "path": "data/UnitOfWork/invariant_bindings.json",
+      "sha256": "2df6bf213d241a32f3d42088dd007a5b0bc4c233f82dcd45e9d2465ab79a1323",
+      "size_bytes": 1939,
+      "kind": "test"
+    },
+    {
+      "path": "data/UnitOfWork/metamorphic_UnitOfWork.py",
+      "sha256": "91d0b1ed32c2ab386e249a36b8c0cfafbd974dde158fe6887a82032d5485b1fa",
+      "size_bytes": 2357,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "data/UnitOfWork/observability_UnitOfWork.py",
+      "sha256": "68ced108eef71ea45ea4b0051d9f3bfa331425f70d2b55ac1b6a345fd206dc93",
+      "size_bytes": 1821,
+      "kind": "observability"
+    },
+    {
+      "path": "data/UnitOfWork/observability_schema.json",
+      "sha256": "b443a1e3708709dfe5d0aa3b72b73b7b03941b7e01c0d73c39819fba8fac2a4a",
+      "size_bytes": 1094,
+      "kind": "observability"
+    },
+    {
+      "path": "data/UnitOfWork/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "data/UnitOfWork/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "data/UnitOfWork/state_machine_UnitOfWork.py",
+      "sha256": "39b5924df5f430fbb9e433e1c798da63d1f887668acabbe462b9bb560883770c",
+      "size_bytes": 2456,
+      "kind": "state_machine"
+    },
+    {
+      "path": "data/UnitOfWork/test_UnitOfWork.py",
+      "sha256": "75dc91ded2d95416d47fdf12c95196f84eedcb1a29b703af2109563a1b4a598e",
+      "size_bytes": 6409,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "UOW_INV_01",
+      "invariant_text": "A successful commit MUST apply every registered new, dirty, and removed object in a single atomic transaction; on any exception the unit MUST rollback.",
+      "confirms_test": "test_inv_atomic_commit_confirms",
+      "prevents_test": "test_inv_atomic_commit_prevents",
+      "under_failure_test": "test_inv_atomic_commit_under_failure"
+    },
+    {
+      "invariant_id": "UOW_INV_02",
+      "invariant_text": "The same object instance SHALL NEVER be registered in more than one of new, dirty, or removed within one unit.",
+      "confirms_test": "test_inv_single_bucket_confirms",
+      "prevents_test": "test_inv_single_bucket_prevents",
+      "under_failure_test": "test_inv_single_bucket_under_failure"
+    },
+    {
+      "invariant_id": "UOW_INV_03",
+      "invariant_text": "A UnitOfWork instance CANNOT be reused after commit or rollback; a fresh unit MUST be opened for the next transaction.",
+      "confirms_test": "test_inv_no_reuse_confirms",
+      "prevents_test": "test_inv_no_reuse_prevents",
+      "under_failure_test": "test_inv_no_reuse_under_failure"
+    },
+    {
+      "invariant_id": "UOW_INV_04",
+      "invariant_text": "Context-manager semantics ALWAYS drive lifecycle so leaks on exception paths are impossible; on exception the unit MUST rollback.",
+      "confirms_test": "test_inv_ctxmgr_rollback_confirms",
+      "prevents_test": "test_inv_ctxmgr_rollback_prevents",
+      "under_failure_test": "test_inv_ctxmgr_rollback_under_failure"
+    },
+    {
+      "invariant_id": "UOW_INV_05",
+      "invariant_text": "Repositories operating inside a unit MUST enlist their mutations with that unit; direct writes bypassing the unit are FORBIDDEN.",
+      "confirms_test": "test_inv_enlist_confirms",
+      "prevents_test": "test_inv_enlist_prevents",
+      "under_failure_test": "test_inv_enlist_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 480,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1401,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 1421,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 3760,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1283,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 1095,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 65513,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "38 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1004,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1061,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 64012,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 141673,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PARTIAL-COMMIT-RACE",
+        "hypothesis": "During commit, if the DB connection drops after flushing new objects but before dirty updates, the unit may persist only some changes instead of rolling back, violating atomicity across the registered sets.",
+        "input_fixture": "register_new(A); register_dirty(B); register_removed(C); kill TCP connection to Postgres mid-commit after INSERT but before UPDATE; observe DB state shows A inserted without B updated.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DOUBLE-REGISTER-NEW-DIRTY",
+        "hypothesis": "Registering the same instance as new then dirty will silently keep both entries and emit both INSERT and UPDATE, or the later call overwrites without warning, breaking the mutual-exclusion invariant.",
+        "input_fixture": "obj = Entity(id=1); uow.register_new(obj); uow.register_dirty(obj); uow.commit()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REUSE-AFTER-COMMIT",
+        "hypothesis": "After commit() returns, calling register_new and commit again will succeed and flush to DB instead of raising, allowing a stale unit to be recycled and leak state across transactions.",
+        "input_fixture": "uow.register_new(A); uow.commit(); uow.register_new(B); uow.commit()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EXIT-SWALLOWS-EXCEPTION",
+        "hypothesis": "__exit__ returns True unconditionally, swallowing user exceptions while also rolling back, which hides bugs and violates context-manager contract that only True suppresses.",
+        "input_fixture": "with uow: raise ValueError('boom'); assert-not-reached",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPO-DIRECT-WRITE-BYPASS",
+        "hypothesis": "A repository can call session.add() or execute raw SQL inside a uow block without enlisting, so rollback() leaves orphan rows because the write was autocommitted on a separate connection.",
+        "input_fixture": "with uow: repo.execute('INSERT INTO t VALUES(1)'); raise Exception; # row persists",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REGISTER-NONE",
+        "hypothesis": "Passing None or a primitive to register_dirty is accepted and crashes deep inside commit() with AttributeError instead of fast-failing at registration, corrupting the unit state.",
+        "input_fixture": "uow.register_dirty(None); uow.register_new(42); uow.commit()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-COMMIT-EXCEPTION-NO-ROLLBACK",
+        "hypothesis": "If commit() itself raises (e.g., constraint violation on the 3rd INSERT), the implementation leaves prior statements committed because each statement auto-commits rather than running in a single transaction.",
+        "input_fixture": "register_new(valid1); register_new(valid2); register_new(duplicate_pk); commit() -> IntegrityError; valid1/valid2 still in DB.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CONCURRENT-REGISTER",
+        "hypothesis": "Two threads sharing the same UoW call register_new concurrently; the internal set/list is not thread-safe, losing registrations and producing incomplete commits.",
+        "input_fixture": "Thread1: for i in range(1000): uow.register_new(Obj(i)); Thread2: same with 1000..2000; uow.commit(); count < 2000",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REMOVE-THEN-REUSE",
+        "hypothesis": "After register_removed(obj) and commit, the app still holds the reference and passes it to a new uow.register_dirty, producing an UPDATE on a deleted row (phantom write) due to missing tombstone tracking.",
+        "input_fixture": "uow1.register_removed(obj); uow1.commit(); uow2.register_dirty(obj); uow2.commit()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NESTED-CONTEXT-LEAK",
+        "hypothesis": "Nested `with uow:` blocks on the same instance cause the inner __exit__ to commit/rollback while the outer still expects an open transaction, leaking a half-closed connection.",
+        "input_fixture": "with uow: with uow: uow.register_new(A); # inner exit commits; outer exit commits again -> error or double-apply",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ROLLBACK-KEEPS-IDENTITY-MAP",
+        "hypothesis": "After rollback(), the identity map/tracked sets are not cleared, so a subsequent (forbidden) commit or GC inspection still reveals the would-be-discarded objects, violating discard semantics.",
+        "input_fixture": "uow.register_new(A); uow.rollback(); assert A not in uow._new  # fails",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-VERSION",
+        "hypothesis": "Optimistic concurrency uses wall-clock timestamps; if NTP skew moves the clock backward between register_dirty and commit, the version check passes incorrectly and stale writes overwrite newer data.",
+        "input_fixture": "register_dirty(obj v=ts1); system clock jumps back 5s; commit compares ts < now -> accepts stale update",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-COMMIT-NOOP",
+        "hypothesis": "commit() with zero registrations silently no-ops but still marks the unit as closed; subsequent code assuming an open transaction for reads gets auto-commit semantics and sees inconsistent snapshots.",
+        "input_fixture": "uow = UnitOfWork(); uow.commit(); uow.register_new(A)  # should raise but may succeed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PARTIAL-FLUSH-ATOMICITY",
+        "hypothesis": "If the storage layer raises an exception after flushing the 'new' objects but before flushing 'dirty' or 'removed' objects during commit(), the implementation may leave the database in a partially-committed state, violating the single-atomic-transaction invariant. This is likely if flush is implemented as three sequential loops rather than inside one BEGIN/COMMIT block.",
+        "input_fixture": "uow = ConcreteUnitOfWork(db); uow.register_new(obj_a); uow.register_dirty(obj_b); uow.register_removed(obj_c); # monkey-patch db.execute to raise after first INSERT; uow.commit()  # expect full rollback, but obj_a row may persist",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DUAL-SET-NEW-DIRTY",
+        "hypothesis": "Registering the same object instance first via register_new() and then via register_dirty() should be rejected, but an implementation using independent sets or lists for each bucket will silently allow the object to appear in both, causing it to be flushed twice (INSERT then UPDATE) and potentially corrupting identity-map semantics or creating a duplicate-key violation.",
+        "input_fixture": "uow = ConcreteUnitOfWork(db); obj = MyEntity(id=1); uow.register_new(obj); uow.register_dirty(obj); uow.commit()  # expect IdentityConflictError, actual: double flush",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DUAL-SET-NEW-REMOVED",
+        "hypothesis": "Registering an object as 'new' then immediately as 'removed' within the same unit should either cancel out (no-op) or raise; an implementation that blindly adds to both buckets will attempt INSERT followed by DELETE in one transaction, which is wasteful but worse may silently succeed, hiding a logical bug where the caller created and destroyed an entity without any observable effect.",
+        "input_fixture": "uow = ConcreteUnitOfWork(db); obj = MyEntity(id=42); uow.register_new(obj); uow.register_removed(obj); uow.commit()  # invariant violation: obj in two buckets",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REUSE-AFTER-COMMIT",
+        "hypothesis": "Calling register_new() on a committed UnitOfWork instance should immediately raise an error indicating the unit is closed. Implementations that track state with a simple boolean or forget to check it will silently accept new registrations, and a subsequent commit() or context-manager exit will flush those objects \u2014 violating the 'fresh unit required' invariant.",
+        "input_fixture": "uow = ConcreteUnitOfWork(db); uow.register_new(obj_a); uow.commit(); uow.register_new(obj_b)  # expect UnitOfWorkClosedError; uow.commit()  # obj_b silently persisted without a fresh unit",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REUSE-AFTER-ROLLBACK",
+        "hypothesis": "Calling commit() after rollback() on the same instance should raise rather than silently succeed. An implementation that resets internal buckets during rollback but forgets to mark the unit as closed will allow the caller to register new objects and commit them \u2014 effectively reusing a unit across two logical transactions.",
+        "input_fixture": "uow = ConcreteUnitOfWork(db); uow.register_new(obj_a); uow.rollback(); uow.register_new(obj_b); uow.commit()  # expect UnitOfWorkClosedError on second register_new, got silent success",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DOUBLE-COMMIT",
+        "hypothesis": "Calling commit() twice on the same UnitOfWork should fail on the second call. If the implementation does not check a 'committed' flag, the second commit() runs with whatever state is left in the internal buckets (possibly empty sets), silently succeeding and leaving the caller with the illusion that a second transaction occurred when none did, corrupting audit or event-outbox semantics.",
+        "input_fixture": "uow = ConcreteUnitOfWork(db); uow.register_new(obj); uow.commit(); uow.commit()  # second commit must raise, not silently no-op",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE-DUAL-REGISTER-THREAD",
+        "hypothesis": "Two threads simultaneously calling register_new(obj) and register_dirty(obj) with the same object reference may both pass an identity check that read the buckets before either write completed, resulting in the object appearing in both buckets \u2014 violating the dual-registration invariant through a classic TOCTOU race on unsynchronized set operations.",
+        "input_fixture": "import threading; uow = ConcreteUnitOfWork(db); obj = MyEntity(id=7); t1 = threading.Thread(target=uow.register_new, args=(obj,)); t2 = threading.Thread(target=uow.register_dirty, args=(obj,)); t1.start(); t2.start(); t1.join(); t2.join()  # inspect internal buckets for obj presence in both",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EXCEPTION-IN-EXIT-SWALLOWS-ERROR",
+        "hypothesis": "If __exit__ calls rollback() and rollback() itself raises (e.g., the database connection is already closed), the __exit__ implementation may let that secondary exception propagate, masking the original exception that triggered __exit__. Alternatively, if __exit__ catches all exceptions to guarantee cleanup, it might accidentally return True and suppress the caller's exception, silently hiding the error.",
+        "input_fixture": "class BrokenDB: def rollback(self): raise RuntimeError('connection lost'); uow = ConcreteUnitOfWork(BrokenDB()); try:\n    with uow:\n        uow.register_new(obj)\n        raise ValueError('business error')\nexcept Exception as e:\n    assert type(e) is ValueError, f'Original error masked by: {e}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONE-OBJECT-REGISTRATION",
+        "hypothesis": "Passing None as the object to register_new(), register_dirty(), or register_removed() should raise TypeError or ValueError immediately. An implementation that uses id(obj) as the identity key will compute id(None) == id(None) correctly, but may allow None into its bucket, and then crash with an AttributeError during flush when it tries to serialize None as a domain entity, with no clean rollback triggered.",
+        "input_fixture": "uow = ConcreteUnitOfWork(db); uow.register_new(None)  # should raise immediately; uow.commit()  # if not raised: flush crashes mid-way with AttributeError, partial state risk",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPO-DIRECT-WRITE-BYPASS",
+        "hypothesis": "A Repository that holds a reference to the raw db session rather than the UnitOfWork may call db.execute(INSERT) directly during its save() method, bypassing enlistment entirely. The UoW will commit an empty transaction (or a different set of objects), while the repository's write happened outside the unit \u2014 violating the repositories-must-enlist invariant and breaking atomicity if the UoW later rolls back.",
+        "input_fixture": "class BypassRepo:\n    def __init__(self, db): self.db = db\n    def save(self, obj): self.db.execute('INSERT ...', obj)  # direct write, not uow.register_new\nwith ConcreteUnitOfWork(db) as uow:\n    repo = BypassRepo(db)\n    repo.save(obj)  # written outside unit\n    raise RuntimeError()  # UoW rolls back \u2014 but obj already persisted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LARGE-BATCH-SPLIT-TRANSACTION",
+        "hypothesis": "Registering an extremely large number of objects (e.g., 100,000) may cause the implementation to batch INSERTs into multiple database round-trips for memory or parameter-limit reasons. If each batch is committed individually rather than held in one transaction, a failure midway through the batch leaves the database with only the first N objects persisted \u2014 violating atomicity for large flushes.",
+        "input_fixture": "uow = ConcreteUnitOfWork(db); objs = [MyEntity(id=i) for i in range(100_000)]; [uow.register_new(o) for o in objs]; # patch db to fail on 50001st execute; uow.commit()  # expect full rollback of all 100k, check db has 0 rows",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY-COMMIT-NO-TX",
+        "hypothesis": "Committing a UnitOfWork with no registered objects should still open and close a database transaction (BEGIN/COMMIT) to satisfy any session-level side effects (e.g., advisory locks, sequence bumps, event outbox). An implementation that short-circuits commit() with an early return when buckets are empty skips BEGIN/COMMIT entirely, which may leave session-level state inconsistent and violates the invariant that every commit is one complete transaction.",
+        "input_fixture": "uow = ConcreteUnitOfWork(db); db.execute('SELECT pg_advisory_xact_lock(1)'); uow.commit()  # empty unit \u2014 lock must be released inside a real COMMIT, not silently skipped",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EXCEPTION-IN-ENTER-LEAVES-RESOURCE",
+        "hypothesis": "If __enter__ acquires a database connection or begins a transaction and then raises before returning self (e.g., due to a connection pool timeout), __exit__ will NOT be called by Python. If the implementation acquires resources before the potential raise point, those resources leak \u2014 violating the context-manager no-leak invariant even though the user wrote a correct 'with' statement.",
+        "input_fixture": "class FlakyDB:\n    call_count = 0\n    def begin(self):\n        FlakyDB.call_count += 1\n        if FlakyDB.call_count == 1: raise TimeoutError('pool exhausted')\ntry:\n    with ConcreteUnitOfWork(FlakyDB()) as uow:\n        pass\nexcept TimeoutError:\n    pass  # verify no open transactions or unreleased connections remain",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PARTIAL_COMMIT_FAIL",
+        "hypothesis": "If an exception occurs during commit's iteration over tracked objects, only partial state is flushed to database while transaction remains half-applied, violating atomic commit invariant.",
+        "input_fixture": "register_new(obj1); register_new(obj2); simulate RuntimeError in commit loop after obj1 inserted; obj2 never reaches database",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RESOURCE_EXHAUSTION",
+        "hypothesis": "Registering millions of objects exhausts memory or database connection limits, causing commit to fail partially, violate atomicity, or leave undefined state.",
+        "input_fixture": "for i in range(1000000): register_new(LargeObject()); commit()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SNAPSHOT_MUTATE_RACE",
+        "hypothesis": "Object mutated after register_dirty() but before commit(), causing snapshot-vs-reference mismatch where tracked state differs from in-memory state, breaking atomicity.",
+        "input_fixture": "user=User(name='Alice'); register_dirty(user); user.name='Bob'; commit() # which value persists?",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EXITHANDLER_SUPPRESS",
+        "hypothesis": "__exit__ returning True suppresses exception, leaving caller unaware transaction failed while believing state is valid, violating exception-safety invariant.",
+        "input_fixture": "with unit: raise ValueError() # if __exit__ returns True, exception hidden from caller",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ROLLBACK_EXCEPTION",
+        "hypothesis": "If rollback() itself throws exception, unit is left in undefined state with no guarantee of cleanup, violating exception-safety and rollback atomicity.",
+        "input_fixture": "try: raise ValueError(); except: unit.rollback() # rollback() also raises, state unknown",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DOUBLE_NEW_DIRTY",
+        "hypothesis": "Same object registered in both new and dirty categories violates mutual-exclusivity invariant, causing duplicate mutations or undefined commit order.",
+        "input_fixture": "register_new(user); register_dirty(user); commit() # insert and update same object?",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DOUBLE_REGISTER_NEW",
+        "hypothesis": "Calling register_new twice with same object creates duplicate tracking entries, causing two inserts for same primary key on commit.",
+        "input_fixture": "register_new(user); register_new(user); commit() # two inserts, primary key conflict",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REMOVE_UNTRACKED",
+        "hypothesis": "Registering an object as removed without prior new or dirty registration creates orphaned delete, violating invariant that objects remain in single category.",
+        "input_fixture": "orphan=User(id=999); register_removed(orphan); commit() # delete row never inserted?",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT_REGISTER_COMMIT",
+        "hypothesis": "Race between register_new() and commit() threads without locking allows mutation of tracked list during iteration, skipping or duplicating objects.",
+        "input_fixture": "thread1: register_new(obj1); thread2: commit() iterating; thread1 appends obj2 mid-iteration",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REUSE_POSTCOMMIT",
+        "hypothesis": "After commit() succeeds, registering new objects and committing again reuses same unit instance, violating single-transaction-per-unit lifecycle invariant.",
+        "input_fixture": "commit(); register_new(obj2); commit() # unit should not be reusable after first commit",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DIRECT_REPO_BYPASS",
+        "hypothesis": "Repository writes directly to database instead of enlisting mutations with unit, causing external side effects that bypass unit's transaction isolation.",
+        "input_fixture": "register_dirty(user); external_repo.raw_update(user) # bypasses unit tracking entirely",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NESTED_CONTEXT_LEAK",
+        "hypothesis": "Nested context managers may interfere with rollback/cleanup semantics, allowing one unit's exception to leak into or suppress the other's cleanup path.",
+        "input_fixture": "with unit1: with unit2: raise ValueError() # which __exit__ is called? both? order?",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "uow.opened",
+        "required_attributes": [
+          "unit_id"
+        ]
+      },
+      {
+        "event_name": "uow.committed",
+        "required_attributes": [
+          "unit_id",
+          "new_count",
+          "dirty_count",
+          "removed_count"
+        ]
+      },
+      {
+        "event_name": "uow.rolled.back",
+        "required_attributes": [
+          "unit_id",
+          "reason"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "uow.commits",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": [
+          "result"
+        ]
+      },
+      {
+        "name": "uow.bucket.size",
+        "metric_type": "histogram",
+        "unit": "1",
+        "cardinality_bound": 30,
+        "label_keys": [
+          "bucket"
+        ]
+      },
+      {
+        "name": "uow.flush.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "result"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "uow.commit",
+        "required_attributes": [
+          "unit.id",
+          "new.count",
+          "dirty.count",
+          "removed.count"
+        ]
+      },
+      {
+        "operation_name": "uow.rollback",
+        "required_attributes": [
+          "unit.id"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol matches catalog api_signature verbatim (register_new/dirty/removed, commit, rollback, __enter__/__exit__). Minor: __exit__ typed as Literal[False] vs catalog's bool \u2014 compatible narrowing."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All 5 invariants enforced with cited IDs; context-manager, hooks (before/on/after_commit) per extension contract, EnlistingRepository for UOW-INV-05, introspection snapshots. No async variant but spec doesn't require one."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Dedicated UnitOfWorkInvariantError subclass; messages cite invariant IDs (UOW-INV-02/03/05) with actionable wording. Commit failure path rolls back then re-raises original (unwrapped) per spec."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Pluggable flush_fn, three hook phases, Protocol-typed surface, EnlistingRepository as reference pattern. Snapshots exposed as tuples. Flush runs outside lock preventing deadlock."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe bucket mutations, atomic-or-rollback, no import-time I/O, lazy no-op default flush. Missing: metrics emission (uow.commits/bucket.size/flush.duration mentioned in spec are not wired), but spec frames those as SRE self-observability rather than primitive responsibility."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace data.UnitOfWork, Protocol decorated @runtime_checkable, invariants map 1:1 to catalog, extension_contract (hooks + subclass) honored, consumption_example compiles against this API. __all__ exported cleanly."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "Terms 'aggregate', 'enlist', and 'flush' are used without definition \u2014 a junior reading 'EnlistingRepository enlists mutations' gets zero traction.",
+          "The API surface section says 'the catalog api_signature is the authority' but never shows the actual method signatures inline \u2014 the reader must find an external JSON file.",
+          "'The default flush_fn is a no-op' leaves a junior unsure what to actually wire in non-test code; the usage example only shows InMemoryUnitOfWork, not a production wiring."
+        ],
+        "rewrite_suggestion": "Add a one-paragraph glossary box at the top defining aggregate, flush, and enlist. Inline the four method signatures (register_new, register_dirty, register_removed, commit) directly in the API Surface section with type hints. Add a second usage example showing a real ORM flush wiring next to the in-memory one."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "The api_signature is deliberately kept in an external contract.json with no inline summary \u2014 evaluating whether the surface is correct requires a file lookup.",
+          "The lifecycle state machine (open \u2192 committed | rolled_back, and what each transition allows/forbids) is described in prose across three sections rather than as an explicit diagram or table, making invariant UOW_INV_03 hard to verify at a glance.",
+          "Hook ordering for register_before_commit / register_on_commit / register_after_commit relative to each other and relative to bucket flush is underspecified \u2014 'run outside that order' is ambiguous when hooks themselves raise."
+        ],
+        "rewrite_suggestion": "Add a state-transition table (states \u00d7 allowed operations \u00d7 resulting state). Inline a condensed api_signature table. Specify hook execution order explicitly: before_commit \u2192 bucket flush (new\u2192dirty\u2192removed) \u2192 on_commit \u2192 after_commit, with a sentence on what happens when a hook raises at each phase."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "The mitigation for secret leakage via registered objects is 'don't do it' \u2014 there is no guidance on detection (e.g., pre-registration hooks that reject objects carrying sensitive fields).",
+          "No mention of audit-log requirements: commits that touch sensitive aggregates (e.g., financial accounts) likely need an immutable audit trail, but the doc is silent on where/whether that fits.",
+          "EnlistingRepository.direct_write raising is stated as a contract but there is no guidance on how code review or static analysis should enforce it \u2014 'reviewers MUST flag' is a manual gate with no tooling anchor."
+        ],
+        "rewrite_suggestion": "Add a 'Enforcement' subsection under Security listing: (1) a lint rule or base-class assertion that detects direct-write bypass, (2) a note that pre-registration validators can be wired to reject objects with flagged field names, (3) guidance that audit events belong in an on_commit hook, not inside the flush itself."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Three metrics are named but no alert thresholds or SLO budgets are suggested \u2014 an SRE cannot build a runbook from metric names alone.",
+          "Timeout behavior during flush is unspecified: if the ORM session hangs, does the UnitOfWork surface a TimeoutError, leave the context manager dangling, or trigger rollback? The on-call engineer needs to know.",
+          "No runbook pointer, no escalation path, and no mention of how to distinguish a flaky backend from a bug in the flush_fn wiring \u2014 the rolled_back metric symptom is described but not the diagnostic steps."
+        ],
+        "rewrite_suggestion": "Add an 'Alerts & Runbook' subsection with: (1) example alert expressions (rolled_back rate > X%, flush.duration p99 > Yms), (2) a flush-timeout note stating that callers are responsible for wiring a DB-level statement timeout and that UnitOfWork will propagate whatever exception the flush_fn raises, (3) a link or placeholder for the service runbook."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The 'Provenance' section (Fowler 2002, Vernon 2013) adds academic citation overhead with zero business value for a PM audience.",
+          "Invariants are presented as a technical table with IDs (UOW_INV_01\u202605); there is no one-sentence business translation \u2014 e.g., 'if the payment debit succeeds but the credit fails, neither change is saved.'",
+          "Alternatives considered lists three rejected patterns by technical name without a business-impact sentence \u2014 a PM cannot use this to explain why this primitive was chosen over a simpler approach in a roadmap review."
+        ],
+        "rewrite_suggestion": "Prepend the invariant table with a two-sentence business summary ('This primitive guarantees that a bank transfer either fully succeeds or leaves both accounts unchanged \u2014 no partial states reach the database'). Reframe each rejected alternative with a one-clause business consequence. Move Provenance to an appendix or drop it from PM-facing docs entirely."
+      }
+    ]
+  }
+}

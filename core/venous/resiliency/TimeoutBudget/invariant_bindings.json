@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "TB_INV_01",
+      "invariant_text": "Every outbound call MUST use min(local_timeout, TimeoutBudget.remaining_ms()) and NEVER the local timeout alone.",
+      "confirms_test": "test_inv_for_call_min_confirms",
+      "prevents_test": "test_inv_for_call_min_prevents",
+      "under_failure_test": "test_inv_for_call_min_under_failure"
+    },
+    {
+      "invariant_id": "TB_INV_02",
+      "invariant_text": "The deadline MUST be measured on a monotonic clock and SHALL NOT move backward on wall-clock jumps.",
+      "confirms_test": "test_inv_monotonic_clock_confirms",
+      "prevents_test": "test_inv_monotonic_clock_prevents",
+      "under_failure_test": "test_inv_monotonic_clock_under_failure"
+    },
+    {
+      "invariant_id": "TB_INV_03",
+      "invariant_text": "A call issued when remaining_ms is not positive SHALL be refused before any socket I/O begins.",
+      "confirms_test": "test_inv_expired_refuses_confirms",
+      "prevents_test": "test_inv_expired_refuses_prevents",
+      "under_failure_test": "test_inv_expired_refuses_under_failure"
+    },
+    {
+      "invariant_id": "TB_INV_04",
+      "invariant_text": "The budget CANNOT be extended inside the request scope; a derived child budget MUST NEVER exceed the parent's deadline. FORBIDDEN to renew without a new request boundary.",
+      "confirms_test": "test_inv_no_extension_confirms",
+      "prevents_test": "test_inv_no_extension_prevents",
+      "under_failure_test": "test_inv_no_extension_under_failure"
+    },
+    {
+      "invariant_id": "TB_INV_05",
+      "invariant_text": "The budget SHALL be propagated across task boundaries via the CURRENT_BUDGET context variable and NEVER via thread-local state.",
+      "confirms_test": "test_inv_contextvar_propagation_confirms",
+      "prevents_test": "test_inv_contextvar_propagation_prevents",
+      "under_failure_test": "test_inv_contextvar_propagation_under_failure"
+    }
+  ]
+}

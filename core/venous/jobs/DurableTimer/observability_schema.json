@@ -1,0 +1,24 @@
+{
+  "logs": [
+    {"event_name": "timer.scheduled",
+     "required_attributes": ["workflow_id", "timer_id", "delay_s"]},
+    {"event_name": "timer.fired",
+     "required_attributes": ["workflow_id", "timer_id", "event_seq"]},
+    {"event_name": "timer.canceled",
+     "required_attributes": ["workflow_id", "timer_id"]}
+  ],
+  "metrics": [
+    {"name": "timer.scheduled", "metric_type": "counter", "unit": "1",
+     "cardinality_bound": 500, "label_keys": ["workflow_id"]},
+    {"name": "timer.fired", "metric_type": "counter", "unit": "1",
+     "cardinality_bound": 500, "label_keys": ["workflow_id"]},
+    {"name": "timer.delay", "metric_type": "histogram", "unit": "s",
+     "cardinality_bound": 200, "label_keys": ["workflow_id"]}
+  ],
+  "spans": [
+    {"operation_name": "timer.start",
+     "required_attributes": ["workflow.id", "timer.id", "timer.delay_s"]},
+    {"operation_name": "timer.cancel",
+     "required_attributes": ["workflow.id", "timer.id"]}
+  ]
+}

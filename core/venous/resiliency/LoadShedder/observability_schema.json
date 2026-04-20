@@ -1,0 +1,45 @@
+{
+  "logs": [
+    {
+      "event_name": "load_shedder.admitted",
+      "required_attributes": ["priority", "cutoff", "queue_depth", "cpu_load"]
+    },
+    {
+      "event_name": "load_shedder.rejected",
+      "required_attributes": ["priority", "cutoff", "retry_after_seconds", "reason"]
+    },
+    {
+      "event_name": "load_shedder.cutoff.changed",
+      "required_attributes": ["previous_cutoff", "current_cutoff", "pressure"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "load_shedder.current_cutoff",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 4,
+      "label_keys": ["cutoff"]
+    },
+    {
+      "name": "load_shedder.admissions",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 8,
+      "label_keys": ["priority", "result"]
+    },
+    {
+      "name": "load_shedder.shed_rate",
+      "metric_type": "histogram",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["priority"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "load_shedder.admit",
+      "required_attributes": ["priority", "cutoff", "admitted", "queue_depth", "cpu_load"]
+    }
+  ]
+}

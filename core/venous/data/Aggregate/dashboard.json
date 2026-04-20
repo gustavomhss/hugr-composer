@@ -1,0 +1,34 @@
+{
+  "title": "Aggregate — Commands, Version Progression, Concurrency Conflicts",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Commands / 5m (success)",
+      "targets": [{"expr": "sum(rate(aggregate_commands_total{result=\"ok\"}[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Invariant Violations / 5m",
+      "targets": [{"expr": "sum(rate(aggregate_commands_total{result=\"invariant_violated\"}[5m]))"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Concurrency Conflicts",
+      "targets": [{"expr": "sum(rate(aggregate_concurrency_conflicts_total[5m])) by (aggregate_type)"}]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Pending Events p50/p95/p99",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(aggregate_pending_events_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(aggregate_pending_events_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(aggregate_pending_events_bucket[5m]))"}
+      ]
+    }
+  ]
+}

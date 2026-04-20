@@ -1,0 +1,36 @@
+{
+  "name": "Repository",
+  "namespace": "data",
+  "purpose": "Mediates between the domain model and data mapping layer using a collection-like interface to access aggregate roots.",
+  "api_signature": "from typing import Protocol, Generic, TypeVar, Optional, Iterable\n\nT = TypeVar('T')\n\nclass Repository(Protocol, Generic[T]):\n    def get(self, id: object) -> Optional[T]: ...\n    def add(self, entity: T) -> None: ...\n    def remove(self, entity: T) -> None: ...\n    def find(self, spec: object) -> Iterable[T]: ...",
+  "invariants": [
+    "A Repository MUST only expose aggregate roots, NEVER internal child entities of another aggregate.",
+    "Query methods MUST accept a Specification object or a named finder and SHALL NOT leak SQL, ORM, or storage syntax to callers.",
+    "A single logical aggregate type MUST have exactly one Repository; duplicate repositories for the same root are FORBIDDEN.",
+    "Mutations (add, remove) MUST enlist with the active UnitOfWork and NEVER issue direct writes bypassing it.",
+    "The Repository CANNOT return stale in-memory copies when an IdentityMap is present; it MUST consult the map first."
+  ],
+  "extension_contract": "Domain tools extend Repository by subclassing the abstract base per aggregate root, or by registering a new Specification translator via a decorator; the collection-contract (get/add/remove/find) SHALL remain invariant under extension.",
+  "consumption_example": "def close_dormant_accounts(repo: Repository, policy) -> int:\n    closed = 0\n    for account in repo.find(policy.dormancy_spec):\n        account.close()\n        closed += 1\n    return closed",
+  "sources": [
+    {
+      "source": "Evans 'Domain-Driven Design' (2003)",
+      "locator": "Chapter 6, Repositories, pp. 147-154"
+    },
+    {
+      "source": "Fowler 'Patterns of Enterprise Application Architecture' (2002)",
+      "locator": "Chapter 18, Repository pattern, pp. 322-327"
+    },
+    {
+      "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+      "locator": "Chapter 12, Repositories, pp. 397-446"
+    }
+  ],
+  "why_essential": "Without a shared contract, each tool reinvents query surfaces; domain logic ends up coupled to ORM internals and test doubles diverge in behavior across tools.",
+  "alternatives_considered": [
+    "Active Record per entity: couples persistence with domain behavior; breaks aggregate boundaries at scale.",
+    "Raw DAO returning rows: leaks storage shape into the domain layer.",
+    "Query objects without a collection facade: loses the get/add/remove symmetry Evans requires."
+  ],
+  "maturity": "battle_tested"
+}

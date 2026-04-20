@@ -1,0 +1,25 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "SCHEMA_COMPARATOR_INV_01",
+      "invariant_text": "Classification result MUST be deterministic for any given (baseline, current) input \u2014 no hidden state, no ordering-dependent output.",
+      "confirms_test": "test_inv_deterministic_confirms",
+      "prevents_test": "test_inv_deterministic_prevents",
+      "under_failure_test": "test_inv_deterministic_under_failure"
+    },
+    {
+      "invariant_id": "SCHEMA_COMPARATOR_INV_02",
+      "invariant_text": "If `breaking` is non-empty, `classification` MUST be 'breaking'; an additive change can NEVER mask a breaking one.",
+      "confirms_test": "test_inv_breaking_wins_confirms",
+      "prevents_test": "test_inv_breaking_wins_prevents",
+      "under_failure_test": "test_inv_breaking_wins_under_failure"
+    },
+    {
+      "invariant_id": "SCHEMA_COMPARATOR_INV_03",
+      "invariant_text": "`compare(x, x)` for any schema x MUST return empty breaking/compatible/additive lists (reflexive: identity is a no-op).",
+      "confirms_test": "test_inv_identity_is_noop_confirms",
+      "prevents_test": "test_inv_identity_is_noop_prevents",
+      "under_failure_test": "test_inv_identity_is_noop_under_failure"
+    }
+  ]
+}

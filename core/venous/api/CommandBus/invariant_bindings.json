@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "COMMAND_BUS_INV_03",
+      "invariant_text": "register(name, handler) MUST overwrite any prior handler bound to the same name; last-writer-wins is explicit and intentional.",
+      "confirms_test": "test_inv_register_confirms",
+      "prevents_test": "test_inv_register_prevents",
+      "under_failure_test": "test_inv_register_under_failure"
+    }
+  ]
+}

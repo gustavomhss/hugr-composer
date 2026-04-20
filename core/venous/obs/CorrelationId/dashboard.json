@@ -1,0 +1,12 @@
+{
+  "title": "CorrelationId — Generation, Propagation, Rejections",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "timeseries", "title": "IDs Generated/s",
+     "targets": [{"expr": "sum(rate(correlation_id_generated_count_total[5m]))"}]},
+    {"id": 2, "type": "timeseries", "title": "Upstream Propagation by Header",
+     "targets": [{"expr": "sum by (source_header) (rate(correlation_id_propagated_count_total[5m]))"}]},
+    {"id": 3, "type": "timeseries", "title": "Malformed Inbound Rejections by Reason",
+     "targets": [{"expr": "sum by (reason) (rate(correlation_id_rejected_count_total[5m]))"}]}
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "LIFE_INV_01",
+      "invariant_text": "READY MUST fire exactly once, after STARTING and all startup callbacks have completed successfully.",
+      "confirms_test": "test_inv_ready_once_confirms",
+      "prevents_test": "test_inv_ready_once_prevents",
+      "under_failure_test": "test_inv_ready_once_under_failure"
+    },
+    {
+      "invariant_id": "LIFE_INV_02",
+      "invariant_text": "STOPPING hooks MUST run in reverse registration order (LIFO) so later-initialized resources drain first.",
+      "confirms_test": "test_inv_stopping_lifo_confirms",
+      "prevents_test": "test_inv_stopping_lifo_prevents",
+      "under_failure_test": "test_inv_stopping_lifo_under_failure"
+    },
+    {
+      "invariant_id": "LIFE_INV_03",
+      "invariant_text": "A failing STARTING hook MUST prevent READY from firing; the app SHALL transition to STOPPED with non-zero exit.",
+      "confirms_test": "test_inv_failing_start_blocks_ready_confirms",
+      "prevents_test": "test_inv_failing_start_blocks_ready_prevents",
+      "under_failure_test": "test_inv_failing_start_blocks_ready_under_failure"
+    },
+    {
+      "invariant_id": "LIFE_INV_04",
+      "invariant_text": "Hooks MUST NOT block indefinitely; each hook SHALL obey a configured timeout and be cancelled otherwise.",
+      "confirms_test": "test_inv_timeout_enforced_confirms",
+      "prevents_test": "test_inv_timeout_enforced_prevents",
+      "under_failure_test": "test_inv_timeout_enforced_under_failure"
+    },
+    {
+      "invariant_id": "LIFE_INV_05",
+      "invariant_text": "No hook CAN re-enter its own phase; recursive registration of the same callback in the same phase SHALL raise.",
+      "confirms_test": "test_inv_no_reentry_confirms",
+      "prevents_test": "test_inv_no_reentry_prevents",
+      "under_failure_test": "test_inv_no_reentry_under_failure"
+    }
+  ]
+}

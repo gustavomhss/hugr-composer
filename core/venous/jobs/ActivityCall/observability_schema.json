@@ -1,0 +1,28 @@
+{
+  "logs": [
+    {"event_name": "activity.attempt.started",
+     "required_attributes": ["activity_name", "task_queue", "attempt_no"]},
+    {"event_name": "activity.attempt.succeeded",
+     "required_attributes": ["activity_name", "attempt_no", "duration_ms"]},
+    {"event_name": "activity.attempt.failed",
+     "required_attributes": ["activity_name", "attempt_no", "reason"]},
+    {"event_name": "activity.heartbeat.missed",
+     "required_attributes": ["activity_name", "attempt_no"]},
+    {"event_name": "activity.exhausted",
+     "required_attributes": ["activity_name", "maximum_attempts"]}
+  ],
+  "metrics": [
+    {"name": "activity.attempts", "metric_type": "counter", "unit": "1",
+     "cardinality_bound": 500, "label_keys": ["activity_name", "outcome"]},
+    {"name": "activity.attempt.duration", "metric_type": "histogram", "unit": "ms",
+     "cardinality_bound": 500, "label_keys": ["activity_name", "outcome"]},
+    {"name": "activity.heartbeat.missed", "metric_type": "counter", "unit": "1",
+     "cardinality_bound": 200, "label_keys": ["activity_name"]}
+  ],
+  "spans": [
+    {"operation_name": "activity.execute",
+     "required_attributes": ["activity.name", "activity.task_queue"]},
+    {"operation_name": "activity.attempt",
+     "required_attributes": ["activity.name", "attempt.no"]}
+  ]
+}

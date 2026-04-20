@@ -1,0 +1,777 @@
+{
+  "name": "ContentSecurityPolicy",
+  "namespace": "security",
+  "maturity": "battle_tested",
+  "builder_agent_id": 7,
+  "catalog_entry_sha256": "cd36ccc04f9a977db4e5676a46feea0baaa64fdc953201742218e3f22a4e5de9",
+  "files": [
+    {
+      "path": "security/ContentSecurityPolicy/ContentSecurityPolicy.contract.json",
+      "sha256": "fc79d1215fab495a5d79336108a24a6c5de1967eb885860a25f506ea9b8e5a99",
+      "size_bytes": 2603,
+      "kind": "contract_json"
+    },
+    {
+      "path": "security/ContentSecurityPolicy/ContentSecurityPolicy.manifest.json",
+      "sha256": "9954e3342d6f0b0190f8c1d54374d72b0431b96763bc96e71ae77548def6e272",
+      "size_bytes": 54571,
+      "kind": "manifest"
+    },
+    {
+      "path": "security/ContentSecurityPolicy/ContentSecurityPolicy.md",
+      "sha256": "d0e81938f98b0991b947a80fefb81c120b4dc9de55d96409412beba1816a3057",
+      "size_bytes": 8461,
+      "kind": "spec_md"
+    },
+    {
+      "path": "security/ContentSecurityPolicy/ContentSecurityPolicy.py",
+      "sha256": "6e61f5a8fb3cd8efcef26ffa23fded2882418b8d295fdd6266e06bb02bedd778",
+      "size_bytes": 30141,
+      "kind": "impl"
+    },
+    {
+      "path": "security/ContentSecurityPolicy/behavioral_ContentSecurityPolicy.py",
+      "sha256": "5f4562ccab1e0f8b42428dfeb039aca7c8d252077fd116015e082ba13ec02168",
+      "size_bytes": 5523,
+      "kind": "behavioral"
+    },
+    {
+      "path": "security/ContentSecurityPolicy/chaos_ContentSecurityPolicy.py",
+      "sha256": "26fd9f5d336a0f9ebf2228c160c6fd06896468f8be844883d60de049c655d9d9",
+      "size_bytes": 8483,
+      "kind": "chaos"
+    },
+    {
+      "path": "security/ContentSecurityPolicy/dashboard.json",
+      "sha256": "5fca55e5da731c6b737f1822ee65c173e1f3fb8f6612935937ca3a14518ae92f",
+      "size_bytes": 1275,
+      "kind": "dashboard"
+    },
+    {
+      "path": "security/ContentSecurityPolicy/invariant_bindings.json",
+      "sha256": "15bb176edf63c31217a74a857dcb5e8eebce901f288793296ef0346f125e94ac",
+      "size_bytes": 2361,
+      "kind": "test"
+    },
+    {
+      "path": "security/ContentSecurityPolicy/metamorphic_ContentSecurityPolicy.py",
+      "sha256": "4568aeb135599a244831a24df2fade476520a31e523565713e664c7af3c34a37",
+      "size_bytes": 5023,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "security/ContentSecurityPolicy/observability_ContentSecurityPolicy.py",
+      "sha256": "8de7f0fd3a842dbc24d60f2b303896b200ef70add137a55b9943942e58002706",
+      "size_bytes": 4259,
+      "kind": "observability"
+    },
+    {
+      "path": "security/ContentSecurityPolicy/observability_schema.json",
+      "sha256": "7f20db1a280d64bc66f30a9a658bf08efcdbb2ec3d7b512347da76c2701705ff",
+      "size_bytes": 2090,
+      "kind": "observability"
+    },
+    {
+      "path": "security/ContentSecurityPolicy/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "security/ContentSecurityPolicy/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "security/ContentSecurityPolicy/test_ContentSecurityPolicy.py",
+      "sha256": "6eb19e6b4a8ef704ff277d5312841a5c2911a8b3a6845cfc2cec924c060ee185",
+      "size_bytes": 10197,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "CSP_INV_01",
+      "invariant_text": "default-src MUST be set; a policy without default-src CANNOT be rendered.",
+      "confirms_test": "test_inv_default_src_required_confirms",
+      "prevents_test": "test_inv_default_src_required_prevents",
+      "under_failure_test": "test_inv_default_src_required_under_failure"
+    },
+    {
+      "invariant_id": "CSP_INV_02",
+      "invariant_text": "script-src MUST NEVER include 'unsafe-inline' together with a nonce; the two are mutually exclusive per CSP3.",
+      "confirms_test": "test_inv_unsafe_inline_nonce_conflict_confirms",
+      "prevents_test": "test_inv_unsafe_inline_nonce_conflict_prevents",
+      "under_failure_test": "test_inv_unsafe_inline_nonce_conflict_under_failure"
+    },
+    {
+      "invariant_id": "CSP_INV_03",
+      "invariant_text": "Nonces MUST be >=128 bits from a CSPRNG and MUST be unique per response; reuse SHALL invalidate the guarantee.",
+      "confirms_test": "test_inv_nonce_entropy_unique_confirms",
+      "prevents_test": "test_inv_nonce_entropy_unique_prevents",
+      "under_failure_test": "test_inv_nonce_entropy_unique_under_failure"
+    },
+    {
+      "invariant_id": "CSP_INV_04",
+      "invariant_text": "object-src MUST be set to 'none' unless the caller explicitly opts in with a reason string.",
+      "confirms_test": "test_inv_object_src_none_confirms",
+      "prevents_test": "test_inv_object_src_none_prevents",
+      "under_failure_test": "test_inv_object_src_none_under_failure"
+    },
+    {
+      "invariant_id": "CSP_INV_05",
+      "invariant_text": "base-uri and frame-ancestors MUST be set to a closed list; wildcard values are FORBIDDEN in production profiles.",
+      "confirms_test": "test_inv_closed_list_no_wildcard_confirms",
+      "prevents_test": "test_inv_closed_list_no_wildcard_prevents",
+      "under_failure_test": "test_inv_closed_list_no_wildcard_under_failure"
+    },
+    {
+      "invariant_id": "CSP_INV_06",
+      "invariant_text": "report-only and enforce modes MUST be separate header names and MUST NEVER both block and merely report the same directive.",
+      "confirms_test": "test_inv_enforce_vs_report_only_confirms",
+      "prevents_test": "test_inv_enforce_vs_report_only_prevents",
+      "under_failure_test": "test_inv_enforce_vs_report_only_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 553,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 1 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 863,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 898,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 67945,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "39 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 861,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 913,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 67226,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 139543,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MISSING-DEFAULT-SRC",
+        "hypothesis": "Calling render_header() on a freshly constructed policy with only script-src set should raise, but the implementation may emit a header string that silently omits default-src, violating the mandatory baseline invariant for fallback directive coverage.",
+        "input_fixture": "csp = ContentSecurityPolicy(); csp = csp.with_directive(Directive('script-src', (\"'self'\",))); csp.render_header()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNSAFE-INLINE-NONCE",
+        "hypothesis": "Adding both a nonce and an 'unsafe-inline' source to script-src should be rejected per CSP3 semantics, but naive set-union composition will serialize both tokens, letting browsers that ignore nonces fall back to unsafe-inline and bypass XSS protection.",
+        "input_fixture": "csp.with_directive(Directive('script-src', (\"'unsafe-inline'\",))).with_nonce('A'*22).render_header()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SHORT-NONCE",
+        "hypothesis": "A 64-bit (or shorter) nonce should be refused because <128 bits is guessable, yet with_nonce may accept any non-empty string and silently weaken the script allowance guarantee.",
+        "input_fixture": "csp.with_nonce('abcd1234')  # 8 bytes / 64 bits",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NONCE-REUSE",
+        "hypothesis": "Rendering two headers for two distinct responses using the same ContentSecurityPolicy instance will reuse the same nonce, breaking the per-response uniqueness guarantee and enabling replay of captured inline script payloads.",
+        "input_fixture": "p = csp.with_nonce(secrets.token_urlsafe(16)); h1=p.render_header(); h2=p.render_header(); assert h1!=h2",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-OBJECT-SRC-DEFAULT",
+        "hypothesis": "Constructing a policy without touching object-src should yield object-src 'none' by default, but the implementation may omit object-src entirely, allowing Flash/PDF plugin injection vectors without the caller supplying an opt-in reason.",
+        "input_fixture": "csp.with_directive(Directive('default-src',(\"'self'\",))).render_header()  # expect object-src 'none'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-BASE-URI-WILDCARD",
+        "hypothesis": "Passing '*' as a base-uri source in a production profile should be rejected, but the Directive dataclass has no validation and render_header will emit base-uri *, enabling <base href> hijack to relocate relative script URLs.",
+        "input_fixture": "csp.with_directive(Directive('base-uri', ('*',))).render_header()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FRAME-ANCESTORS-WILDCARD",
+        "hypothesis": "frame-ancestors '*' defeats clickjacking protection and must be forbidden, but a permissive serializer will gladly concatenate the wildcard, silently disabling the closed-list guarantee.",
+        "input_fixture": "csp.with_directive(Directive('frame-ancestors', ('*','https://evil.test'))).render_header()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPORT-ENFORCE-COLLISION",
+        "hypothesis": "The same directive registered in both enforce and report-only modes must not co-exist, but a composed policy may emit Content-Security-Policy and Content-Security-Policy-Report-Only headers that both cover script-src, causing ambiguous browser behavior and log spam masking real attacks.",
+        "input_fixture": "csp.enforce('script-src',(\"'self'\",)).report_only('script-src',(\"'self'\",)).render_header()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HEADER-NAME-INJECTION",
+        "hypothesis": "render_header returns (name,value); if name is built from user-controlled mode input, a CRLF-laden mode string will inject a second header (e.g. Set-Cookie), producing HTTP response splitting.",
+        "input_fixture": "csp.set_mode('enforce\\r\\nSet-Cookie: sid=ATTACKER').render_header()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DIRECTIVE-CRLF",
+        "hypothesis": "Directive sources are tuples of str with no validation; a source containing ';' or CRLF will terminate the current directive early and inject arbitrary directives (e.g. ; script-src *), fully overriding the policy.",
+        "input_fixture": "Directive('connect-src', ('https://api.example.com; script-src *',))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DIRECTIVE-CASE-DUP",
+        "hypothesis": "CSP directive names are case-insensitive; passing 'Script-Src' and 'script-src' will bypass mutual-exclusion checks between unsafe-inline and nonce because the validator keys on exact case.",
+        "input_fixture": "csp.with_directive(Directive('Script-Src',(\"'unsafe-inline'\",))).with_directive(Directive('script-src',(\"'nonce-XYZ'\",))).render_header()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-SOURCES",
+        "hypothesis": "Directive('default-src', ()) satisfies the 'default-src is set' invariant structurally but renders as 'default-src' with no value, which browsers treat as a parse error and drop the entire policy, effectively disabling CSP.",
+        "input_fixture": "csp.with_directive(Directive('default-src', ())).render_header()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NONCE-NONCSPRNG",
+        "hypothesis": "with_nonce accepts any string; passing a predictable counter-based or time-seeded value (length\u226522 so it looks 128-bit) will pass a naive length check while remaining guessable, defeating the CSPRNG requirement.",
+        "input_fixture": "csp.with_nonce(f\"{int(time.time()):022d}\")",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-OBJECT-SRC-OPTIN-NOREASON",
+        "hypothesis": "Opt-in for relaxed object-src requires a reason string; calling allow_objects(reason='') or None should fail, but an empty-string bypass will disable the plugin-injection safeguard without audit trail.",
+        "input_fixture": "csp.allow_objects(reason='')  # or reason=None",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FROZEN-MUTATION-RACE",
+        "hypothesis": "Although Directive is frozen, ContentSecurityPolicy may internally share a mutable sources list across with_* calls; concurrent with_nonce in two threads will race and cause one response to emit the other's nonce, breaking uniqueness.",
+        "input_fixture": "threads calling p.with_nonce(secrets.token_urlsafe(16)).render_header() concurrently on shared base p",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DEFAULT_SRC_RENDER_WITHOUT_SET",
+        "hypothesis": "A caller who never calls with_directive(Directive('default-src', ...)) and then calls render_header() may receive a partially-formed or silently-invalid header string instead of a hard exception, violating the invariant that a policy without default-src CANNOT be rendered. The implementation might fall through to string concatenation without a guard.",
+        "input_fixture": "csp = EmptyCSP(); header_name, header_value = csp.render_header()  # no with_directive('default-src') ever called",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DEFAULT_SRC_OVERWRITE_TO_EMPTY",
+        "hypothesis": "Calling with_directive(Directive('default-src', ())) with an empty sources tuple after an earlier valid default-src directive may silently replace the directive with an empty one, producing a header that either omits default-src or emits 'default-src ;' \u2014 both invalid \u2014 without raising, because the guard checks for key presence, not source emptiness.",
+        "input_fixture": "csp = csp.with_directive(Directive('default-src', (\"'self'\",))); csp = csp.with_directive(Directive('default-src', ())); csp.render_header()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-UNSAFE_INLINE_THEN_NONCE",
+        "hypothesis": "Adding 'unsafe-inline' to script-src first and then calling with_nonce() should be rejected because the combination violates CSP3 mutual exclusivity. If the implementation only checks at render time and uses a simple string-contains on the final header rather than on the directive set, it may miss the case where unsafe-inline was inserted before the nonce.",
+        "input_fixture": "csp = csp.with_directive(Directive('script-src', (\"'self'\", \"'unsafe-inline'\")));  csp = csp.with_nonce('AAAAAAAAAAAAAAAAAAAAAA=='); name, value = csp.render_header()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONCE_THEN_UNSAFE_INLINE",
+        "hypothesis": "Calling with_nonce() first and then appending a script-src directive that includes 'unsafe-inline' should also be rejected. An implementation that only validates at with_nonce() time (not at render time) would miss this ordering, allowing a nonce+unsafe-inline combination to be serialized into the final header undetected.",
+        "input_fixture": "csp = csp.with_nonce('AAAAAAAAAAAAAAAAAAAAAA=='); csp = csp.with_directive(Directive('script-src', (\"'self'\", \"'unsafe-inline'\")));  name, value = csp.render_header()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-UNSAFE_INLINE_CASE_BYPASS",
+        "hypothesis": "Supplying the unsafe-inline keyword with non-canonical casing such as \"'Unsafe-Inline'\" or \"'UNSAFE-INLINE'\" may bypass a case-sensitive string equality check in the mutual-exclusivity guard, allowing a policy containing a mixed-case unsafe-inline variant alongside a nonce to render successfully, violating CSP3 which treats keyword tokens case-insensitively.",
+        "input_fixture": "csp = csp.with_directive(Directive('script-src', (\"'self'\", \"'Unsafe-Inline'\")));  csp = csp.with_nonce('BBBBBBBBBBBBBBBBBBBBBB=='); name, value = csp.render_header()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONCE_REUSE_ACROSS_RESPONSES",
+        "hypothesis": "If the CSP object is built once and stored (e.g., cached at app startup) and render_header() is called on the same instance for every HTTP response, the nonce embedded in the header is identical for every response, invalidating the per-response uniqueness guarantee. The implementation must generate a fresh nonce on each render_header() call, not at with_nonce() time.",
+        "input_fixture": "csp = build_csp().with_nonce(generate_nonce()); v1 = csp.render_header()[1]; v2 = csp.render_header()[1]; assert v1 == v2  # both responses share the nonce",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONCE_ENTROPY_UNDERFLOW",
+        "hypothesis": "Passing a nonce string shorter than 22 base64 characters (which encodes fewer than 128 bits) should be rejected, but if the implementation performs no length or entropy validation on the nonce argument to with_nonce(), a caller can inject a predictable 8-byte nonce such as 'AAAAAAAA' and have it accepted and serialized into the CSP header, violating the \u2265128-bit CSPRNG requirement.",
+        "input_fixture": "csp = csp.with_nonce('dGVzdA==')  # 'test' base64, only 32 bits; csp.render_header()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-OBJECT_SRC_SILENT_OMIT",
+        "hypothesis": "Calling render_header() on a policy that has default-src but no explicit object-src directive and no explicit opt-in reason string should raise or at minimum refuse to render in a production profile. If the implementation simply omits object-src from the serialized header without enforcing its presence, a browser will inherit default-src for object elements, potentially allowing plugin content from 'self' or other origins.",
+        "input_fixture": "csp = csp.with_directive(Directive('default-src', (\"'self'\",))).with_nonce('AAAAAAAAAAAAAAAAAAAAAA=='); name, value = csp.render_header()  # no object-src added, no opt-in reason provided",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-BASE_URI_WILDCARD_STAR",
+        "hypothesis": "Setting base-uri to a bare wildcard '*' in a production profile must be rejected. If the implementation only checks frame-ancestors and not base-uri for wildcard values, or if the wildcard check is a simple equality test that misses '*' embedded in a tuple alongside other sources, the forbidden wildcard slips into the rendered header undetected.",
+        "input_fixture": "csp = csp.with_directive(Directive('base-uri', ('*',))); name, value = csp.render_header()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FRAME_ANCESTORS_SUBDOMAIN_WILDCARD",
+        "hypothesis": "A subdomain wildcard such as 'https://*.example.com' is not a bare '*' but still represents an open, uncontrolled set of origins for frame-ancestors. An implementation that only rejects the literal '*' string will accept 'https://*.attacker.com' as a valid frame-ancestors source, violating the 'closed list' requirement for production profiles.",
+        "input_fixture": "csp = csp.with_directive(Directive('frame-ancestors', ('https://*.example.com',))); name, value = csp.render_header()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPORT_ONLY_ENFORCE_SAME_DIRECTIVE",
+        "hypothesis": "Configuring the same directive (e.g. script-src) in both report-only mode and enforce mode on a single ContentSecurityPolicy object should be forbidden; they must be emitted as separate headers. If the implementation exposes a mode flag and renders either Content-Security-Policy or Content-Security-Policy-Report-Only based on a boolean, a caller who toggles the flag between two render_header() calls on the same instance could observe the same policy emitted under both header names, violating the separation invariant.",
+        "input_fixture": "csp_enforce = csp.with_directive(Directive('script-src', (\"'self'\",))).set_mode('enforce'); csp_report = csp_enforce.set_mode('report-only'); h1 = csp_enforce.render_header(); h2 = csp_report.render_header()  # both carry identical directive; invariant says they MUST NOT both block and report the same directive",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-HEADER_INJECTION_VIA_NEWLINE_IN_SOURCE",
+        "hypothesis": "A source value containing a CRLF sequence such as \"'self'\\r\\nX-Injected: evil\" passed to with_directive() should be rejected. If the implementation performs no sanitization of source strings before serializing them into the HTTP header value, an attacker who controls a source origin string (e.g., from a config file or database) can inject arbitrary HTTP headers, breaking header integrity and potentially poisoning downstream caches or bypassing the policy entirely.",
+        "input_fixture": "csp = csp.with_directive(Directive('default-src', (\"'self'\",))); csp = csp.with_directive(Directive('script-src', (\"https://cdn.example.com\\r\\nX-Injected: evil\",))); name, value = csp.render_header()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONCE_SEMICOLON_DIRECTIVE_ESCAPE",
+        "hypothesis": "A nonce value containing a semicolon or unescaped quote such as \"abc;script-src *\" passed to with_nonce() could break the CSP directive serialization grammar, allowing an attacker to inject an additional permissive directive into the header. The implementation must validate that nonce strings contain only base64url characters before embedding them as 'nonce-<value>' tokens.",
+        "input_fixture": "csp = csp.with_directive(Directive('default-src', (\"'none'\",))); csp = csp.with_nonce(\"validbase64==;script-src *\"); name, value = csp.render_header()  # check if value contains 'script-src *'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DEFAULT-SRC-MISSING",
+        "hypothesis": "Rendering a CSP without default-src should fail validation, but missing default-src constraint check allows render() to succeed, returning an invalid header.",
+        "input_fixture": "csp = ContentSecurityPolicy(); csp.render_header() \u2014 no default-src ever added",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNSAFE-INLINE-NONCE-COEXIST",
+        "hypothesis": "Adding both 'unsafe-inline' to script-src and a nonce should be rejected as mutually exclusive per CSP3, but weak validation allows both in rendered header.",
+        "input_fixture": "csp.with_directive(Directive('script-src', ('\\'unsafe-inline\\','))).with_nonce('abc123def456...') \u2192 render_header() includes both",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NONCE-SUBMINIMAL-BITS",
+        "hypothesis": "Nonce validation only checks string length, not actual bit entropy. Passing a 16-byte ASCII string (128 bits of *representation* but not cryptographic bits) bypasses entropy requirement.",
+        "input_fixture": "csp.with_nonce('aaaaaaaaaaaaaaaa') \u2014 128 ASCII chars = 128 bits representation, fails true CSPRNG check",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NONCE-REUSE-ACROSS-RESPONSES",
+        "hypothesis": "Two concurrent requests generate identical nonce via weak RNG seed collision. Both responses carry same nonce, violating per-response uniqueness and enabling XSS replay.",
+        "input_fixture": "Thread A: csp1.with_nonce(gen_nonce()).render() \u2192 'nonce-ABC123'; Thread B: csp2.with_nonce(gen_nonce()).render() \u2192 'nonce-ABC123' (seed not advanced)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-OBJECT-SRC-UNSET-DEFAULT",
+        "hypothesis": "Policy is rendered without explicitly calling with_directive for object-src. Implementation defaults to allowing all origins instead of 'none', exposing Flash/plugin XSS.",
+        "input_fixture": "csp.with_directive(Directive('default-src', ('\\'self\\','))).render_header() \u2014 no object-src directive ever added",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-BASE-URI-WILDCARD-PROD",
+        "hypothesis": "Adding base-uri with wildcard '*' should be rejected in production profile, but check only triggers on report-only mode, allowing '*' in enforce mode.",
+        "input_fixture": "csp.with_directive(Directive('base-uri', ('*',))).render_header() in enforce mode (not report-only)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-FRAME-ANCESTORS-ASTERISK",
+        "hypothesis": "frame-ancestors directive accepts '*' at parse time due to missing allowlist validation, permitting any origin to frame the application in XFO bypass.",
+        "input_fixture": "csp.with_directive(Directive('frame-ancestors', ('*',))).render_header() \u2192 'frame-ancestors *' in output",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REPORT-ENFORCE-DUAL-HEADER",
+        "hypothesis": "Policy state supports both report-only and enforce mode simultaneously for the same directive. Browser receives both Content-Security-Policy and Content-Security-Policy-Report-Only headers for script-src, creating undefined behavior.",
+        "input_fixture": "Internal state = {mode: ['report', 'enforce'], script-src: {...}} \u2192 render_header() returns duplicate headers instead of choosing one",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-NONCE-ACCEPTED",
+        "hypothesis": "Nonce validation skips empty-string check. with_nonce('') passes because len('') == 0 is not explicitly rejected before CSPRNG validation.",
+        "input_fixture": "csp.with_nonce('').render_header() \u2192 'nonce-' in script-src, or crashes on header formatting",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NONCE-HEADER-INJECTION",
+        "hypothesis": "Nonce value containing CSP metacharacters (';', ',') is not escaped before serialization. Malicious nonce breaks header parsing and injects new directives.",
+        "input_fixture": "csp.with_nonce('abc; img-src *').render_header() \u2192 'Content-Security-Policy: script-src \\'nonce-abc; img-src *\\'...' \u2014 semicolon splits directives",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DEFAULT-SRC-OVERWRITE-RACE",
+        "hypothesis": "Two threads call with_directive(Directive('default-src', sources)) concurrently. Last-write-wins silently overwrites, and render() uses whichever value was set last, creating non-determinism.",
+        "input_fixture": "Thread A: csp.with_directive(Directive('default-src', ('\\'none\\','))); Thread B: csp.with_directive(Directive('default-src', ('*',))) \u2192 render_header() nondeterministic",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "csp.policy.rendered",
+        "required_attributes": [
+          "route",
+          "mode",
+          "directive_count",
+          "has_nonce",
+          "duration_ms"
+        ]
+      },
+      {
+        "event_name": "csp.policy.rejected",
+        "required_attributes": [
+          "route",
+          "mode",
+          "invariant_id",
+          "reason_code"
+        ]
+      },
+      {
+        "event_name": "csp.nonce.generated",
+        "required_attributes": [
+          "route",
+          "bytes",
+          "duration_ms"
+        ]
+      },
+      {
+        "event_name": "csp.nonce.reused",
+        "required_attributes": [
+          "route",
+          "severity"
+        ]
+      },
+      {
+        "event_name": "csp.report.received",
+        "required_attributes": [
+          "route",
+          "violated_directive",
+          "blocked_uri_host",
+          "effective_directive"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "csp.policies.rendered",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "mode",
+          "outcome"
+        ]
+      },
+      {
+        "name": "csp.render.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "mode"
+        ]
+      },
+      {
+        "name": "csp.nonces.generated",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": []
+      },
+      {
+        "name": "csp.nonces.reused",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": []
+      },
+      {
+        "name": "csp.violations.reported",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "effective_directive"
+        ]
+      },
+      {
+        "name": "csp.policy.rejections",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 30,
+        "label_keys": [
+          "invariant_id"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "csp.render_header",
+        "required_attributes": [
+          "mode",
+          "directive_count",
+          "has_nonce",
+          "outcome"
+        ]
+      },
+      {
+        "operation_name": "csp.with_nonce",
+        "required_attributes": [
+          "nonce_bytes",
+          "outcome"
+        ]
+      },
+      {
+        "operation_name": "csp.apply_decorator",
+        "required_attributes": [
+          "decorator_name",
+          "outcome"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol surface (with_directive, with_nonce, render_header) matches catalog exactly; Directive dataclass is frozen with (name, sources: tuple[str,...]). Extras (render_dual, decorators) are additive and spec-documented."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All six invariants enforced with dedicated checks and error types. strict_default, nonce registry, dual render, decorator widening refusal, header-injection char rejection, no-source directives all covered."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Three-tier exception hierarchy under ContentSecurityPolicyError; every message cites CSP_INV_* ID and explains remediation. Nonce values deliberately withheld from messages. Separator-injection rejected explicitly."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Immutable frozen dataclass, functional with_* returns new instances, deterministic directive order, PolicyDecorator + apply_decorator compose cleanly and refuse widening. Protocol + runtime_checkable supports substitution."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe registry, CSPRNG nonces, context manager lifecycle, to_dict for OTel, stdlib-only, side-effect-free import. Process-global default registry is a mild foot-gun but documented with request-scoped guidance."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace security, Protocol signature matches api_signature verbatim, invariants 1:1, extension_contract honored (apply_decorator refuses widening/unsafe-inline), consumption_example runs as written. Minor: unused Iterable import retained but harmless."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "Terms like 'frozen dataclass', 'Protocol', and 'CSPRNG' appear without definition or analogy \u2014 a junior hits a wall before reaching the usage example",
+          "'The catalog api_signature is authoritative; see ContentSecurityPolicy.contract.json' \u2014 no path or link; juniors won't know where to look",
+          "The nonce concept is used in the Usage block before it is ever explained in plain language; the Key Terms entry assumes the reader already understands why inline scripts need authorizing"
+        ],
+        "rewrite_suggestion": "Add a one-paragraph 'Before you start' box: what a nonce is (a one-time password for an inline script), why frozen dataclass means 'treat it like a constant', and a direct file path to contract.json. Move the Usage example directly under 'What it does' so a junior can copy-paste before reading the invariants."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "render_dual() is listed in the API surface but absent from the invariant table and the CSP_INV_06 discussion \u2014 unclear whether dual-render can ever produce a CSP_INV_06 violation or whether it is exempt",
+          "The nonce_request() context manager is shown but its __exit__ semantics (does it call nonce_registry.forget()? does it raise on reuse?) are not specified, which matters for error-boundary design",
+          "ContentSecurityPolicy.contract.json is called authoritative but never located; a principal wiring this into a framework needs to know whether the contract is a JSON Schema, an OpenAPI fragment, or something else"
+        ],
+        "rewrite_suggestion": "Add a 'Contract file location and format' callout (one sentence + path). Expand the render_dual() entry to note which invariants apply to dual-mode output and whether each header is checked independently. Document nonce_request() __exit__ behavior \u2014 specifically: does it auto-forget, auto-raise, or silently drop?"
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "CSP_INV_02 states 'unsafe-inline MUST NEVER appear with a nonce' yet the Security considerations section mentions allow_unsafe_inline_script=True as a valid override \u2014 an auditor cannot determine whether the invariant is truly inviolable or is a soft guard",
+          "CSP_INV_05 applies only to 'production profiles' but the doc never defines what constitutes a non-production profile or who has authority to declare one \u2014 creates an audit gap",
+          "The invariant\u2192test mapping defers to invariant_bindings.json without embedding even a summary table; an auditor must chase a file to confirm coverage, breaking the self-contained review chain"
+        ],
+        "rewrite_suggestion": "Resolve the CSP_INV_02 / allow_unsafe_inline_script tension explicitly: either the invariant fires regardless (flag is still a CspRenderError with extra logging) or document the exact carve-out in the invariant row. Define 'production profile' with a concrete signal (e.g., ENV=production env var). Inline the invariant\u2192test mapping table so the doc is self-contained for audits."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "csp_policy_rejections_total and csp_nonces_reused_total are referenced in alerts but the doc never says where they are emitted \u2014 Prometheus client? StatsD? A log line? \u2014 making it impossible to wire dashboards without reading source",
+          "The runbook advises scoping the nonce registry per request for async frameworks but gives no code example or configuration API for swapping the registry \u2014 an SRE on-call cannot act on this during an incident",
+          "Alert thresholds are set at > 0 with no SLO context, no P-severity classification, and no escalation path \u2014 insufficient for building a real alerting rule"
+        ],
+        "rewrite_suggestion": "Add a 'Metrics' subsection listing each counter with its label set, emission mechanism (e.g., prometheus_client.Counter at csp_policy_rejections_total{invariant_id, route}), and the import path. Provide a three-line code snippet for swapping the process-global registry with a request-scoped one. Add severity (P2/P3) and on-call escalation owner next to each alert rule."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "No user-facing risk or compliance statement \u2014 a PM cannot explain to stakeholders why this is a priority without knowing the consequence of shipping without it (XSS data theft? GDPR fines? PCI scope?)",
+          "The 'When to use' section says 'every HTTP response serving HTML or JSON rendered into a page' \u2014 'JSON rendered into a page' is a developer concept; PMs need 'every page users see in a browser'",
+          "No stability or versioning signal \u2014 PMs managing roadmaps need to know if the API surface is stable, in beta, or subject to breaking changes"
+        ],
+        "rewrite_suggestion": "Add a two-sentence 'Why it matters' box before the Purpose section: 'Without a CSP header, a single injected script can steal session tokens or exfiltrate form data. Regulators including PCI-DSS and GDPR treat missing security headers as a misconfiguration finding.' Replace the JSON-rendered-into-a-page clause with plain language. Add a one-line stability badge (e.g., 'Stable \u2014 no breaking changes planned in v2')."
+      }
+    ]
+  }
+}

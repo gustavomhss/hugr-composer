@@ -1,0 +1,15 @@
+{
+  "logs": [
+    {"event_name": "teal.entry.appended", "required_attributes": ["seq", "action", "outcome"]},
+    {"event_name": "teal.verify.failed", "required_attributes": ["seq", "reason"]}
+  ],
+  "metrics": [
+    {"name": "teal.entries.appended", "metric_type": "counter", "unit": "1", "cardinality_bound": 50, "label_keys": ["action", "outcome"]},
+    {"name": "teal.verify.failures", "metric_type": "counter", "unit": "1", "cardinality_bound": 10, "label_keys": ["reason"]},
+    {"name": "teal.chain.size", "metric_type": "gauge", "unit": "1", "cardinality_bound": 5, "label_keys": []}
+  ],
+  "spans": [
+    {"operation_name": "teal.append", "required_attributes": ["actor", "action"]},
+    {"operation_name": "teal.verify_chain", "required_attributes": ["start_seq", "end_seq"]}
+  ]
+}

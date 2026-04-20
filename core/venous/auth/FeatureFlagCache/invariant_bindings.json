@@ -1,0 +1,25 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "FEATURE_FLAG_CACHE_INV_01",
+      "invariant_text": "`get(k)` on an expired entry MUST return None AND remove the stale entry from the store (read-through eviction).",
+      "confirms_test": "test_inv_ttl_eviction_confirms",
+      "prevents_test": "test_inv_ttl_eviction_prevents",
+      "under_failure_test": "test_inv_ttl_eviction_under_failure"
+    },
+    {
+      "invariant_id": "FEATURE_FLAG_CACHE_INV_02",
+      "invariant_text": "The store size MUST never exceed MAX_CACHE_SIZE after any `set`; eviction order is strict LRU (least recently accessed key first).",
+      "confirms_test": "test_inv_lru_capacity_confirms",
+      "prevents_test": "test_inv_lru_capacity_prevents",
+      "under_failure_test": "test_inv_lru_capacity_under_failure"
+    },
+    {
+      "invariant_id": "FEATURE_FLAG_CACHE_INV_03",
+      "invariant_text": "After `set(k, v)`, a subsequent `get(k)` within the TTL window MUST return the stored `v` (write-then-read consistency).",
+      "confirms_test": "test_inv_write_then_read_confirms",
+      "prevents_test": "test_inv_write_then_read_prevents",
+      "under_failure_test": "test_inv_write_then_read_under_failure"
+    }
+  ]
+}

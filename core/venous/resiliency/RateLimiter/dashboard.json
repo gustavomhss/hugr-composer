@@ -1,0 +1,28 @@
+{
+  "title": "RateLimiter — Admissions, Waits, Tokens",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Rejections (5m)",
+      "targets": [{"expr": "sum(rate(ratelimiter_admissions_total{outcome=\"rejected\"}[5m])) by (limiter)"}]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Admissions (5m)",
+      "targets": [{"expr": "sum(rate(ratelimiter_admissions_total{outcome=\"admitted\"}[5m])) by (limiter)"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Wait Duration p50/p95/p99 (ms)",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(ratelimiter_wait_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(ratelimiter_wait_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(ratelimiter_wait_duration_bucket[5m]))"}
+      ]
+    }
+  ]
+}

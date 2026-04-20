@@ -1,0 +1,49 @@
+{
+  "logs": [
+    {
+      "event_name": "auth.principal.resolved",
+      "required_attributes": ["subject_id", "tenant_id", "roles", "is_anonymous", "claims"]
+    },
+    {
+      "event_name": "auth.principal.anonymous",
+      "required_attributes": ["subject_id", "is_anonymous"]
+    },
+    {
+      "event_name": "auth.principal.denied",
+      "required_attributes": ["subject_id", "required_role"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "auth.principal.resolved",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["is_anonymous", "tenant_id"]
+    },
+    {
+      "name": "auth.principal.role_checks",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 100,
+      "label_keys": ["outcome"]
+    },
+    {
+      "name": "auth.principal.claim_count",
+      "metric_type": "histogram",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["tenant_id"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "auth.principal.resolve",
+      "required_attributes": ["auth.subject_id", "auth.is_anonymous"]
+    },
+    {
+      "operation_name": "auth.principal.authorize",
+      "required_attributes": ["auth.subject_id", "auth.required_role", "auth.outcome"]
+    }
+  ]
+}

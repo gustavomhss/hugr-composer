@@ -1,0 +1,53 @@
+{
+  "logs": [
+    {
+      "event_name": "lifecycle.hook.registered",
+      "required_attributes": ["phase", "hook_id"]
+    },
+    {
+      "event_name": "lifecycle.phase.entered",
+      "required_attributes": ["phase"]
+    },
+    {
+      "event_name": "lifecycle.hook.timed_out",
+      "required_attributes": ["phase", "hook_id", "timeout_s"]
+    },
+    {
+      "event_name": "lifecycle.hook.failed",
+      "required_attributes": ["phase", "hook_id", "exception_type"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "lifecycle.hooks.registered",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["phase"]
+    },
+    {
+      "name": "lifecycle.hook.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 100,
+      "label_keys": ["phase", "outcome"]
+    },
+    {
+      "name": "lifecycle.phase.completed",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 8,
+      "label_keys": ["phase", "outcome"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "lifecycle.phase.run",
+      "required_attributes": ["phase"]
+    },
+    {
+      "operation_name": "lifecycle.hook.invoke",
+      "required_attributes": ["phase", "hook_id"]
+    }
+  ]
+}

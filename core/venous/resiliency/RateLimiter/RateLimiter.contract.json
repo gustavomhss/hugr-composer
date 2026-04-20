@@ -1,0 +1,36 @@
+{
+  "name": "RateLimiter",
+  "namespace": "resiliency",
+  "purpose": "Enforce a maximum rate of admitted operations over a rolling window, with optional waiting semantics, applied per caller, tenant or resource.",
+  "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nAlgorithm = Literal['token_bucket', 'leaky_bucket', 'sliding_window']\n\nclass RateLimiter(Protocol):\n    algorithm: Algorithm\n    rate_per_second: float\n    burst: int\n    async def acquire(self, key: str, cost: int = 1, wait_ms: int = 0) -> bool: ...\n    def try_acquire(self, key: str, cost: int = 1) -> bool: ...\n    def current_rate(self, key: str) -> float: ...\n",
+  "invariants": [
+    "The long-run admitted rate per key MUST NEVER exceed rate_per_second over any window longer than burst / rate_per_second seconds.",
+    "A caller SHALL NEVER block for longer than wait_ms; after that the limiter MUST reject with a typed RateLimited error.",
+    "State for a key CANNOT be shared across unrelated services; key scoping is FORBIDDEN from being implicit.",
+    "A rejection MUST include retry-after information computed from the current depletion of the bucket.",
+    "The limiter SHALL distinguish cost > 1 so large operations consume proportional tokens and NEVER equal cost 1."
+  ],
+  "extension_contract": "Adopters register an AlgorithmProvider (token_bucket, leaky_bucket, sliding_window_log) and bind a KeyExtractor middleware that produces the partition key from request context (tenant, api_key, route_pattern). Counter storage is pluggable via a CounterAdapter (in-memory, Redis, distributed log).",
+  "consumption_example": "limiter = RateLimiter\nif not await limiter.acquire(key=tenant_id, cost=1, wait_ms=50):\n    raise TooManyRequests(tenant_id)\n",
+  "sources": [
+    {
+      "source": "Nygard, Release It! 2nd edition (2018), Pragmatic Bookshelf",
+      "locator": "Chapter 5 'Stability Patterns', section 'Governor' and 'Shed Load', pages 137-143"
+    },
+    {
+      "source": "Google SRE Workbook (Beyer et al., O'Reilly, 2018)",
+      "locator": "Chapter 21 'Managing Load', section 'Handling Overload' discussing per-client quotas"
+    },
+    {
+      "source": "Envoy proxy documentation, local and global rate limiting",
+      "locator": "api-v3/extensions/filters/http/local_ratelimit/v3 and ratelimit/v3 fields token_bucket, descriptors"
+    }
+  ],
+  "why_essential": "Rate limits enforced only at the edge leave internal fan-out unbounded; a primitive that is composable per tenant and per resource is the only way to stop one noisy tenant from harming all others.",
+  "alternatives_considered": [
+    "Edge-only rate limiting: ignores internal fan-out amplification per request.",
+    "Quotas enforced by billing after the fact: NEVER prevents real-time damage.",
+    "Connection count limits: a proxy for rate that CANNOT distinguish cheap from expensive calls."
+  ],
+  "maturity": "battle_tested"
+}

@@ -1,0 +1,28 @@
+{
+  "title": "HealthProbe — Liveness, Readiness, Dependencies",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Readiness Checks DOWN (5m)",
+      "targets": [{"expr": "sum(rate(healthprobe_checks_total{kind=\"readiness\",status=\"down\"}[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Check Duration p50/p95/p99 (ms)",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(healthprobe_check_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(healthprobe_check_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(healthprobe_check_duration_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "UP->DOWN Transitions (rate/s)",
+      "targets": [{"expr": "sum(rate(healthprobe_transitions_total{from=\"up\",to=\"down\"}[5m]))"}]
+    }
+  ]
+}

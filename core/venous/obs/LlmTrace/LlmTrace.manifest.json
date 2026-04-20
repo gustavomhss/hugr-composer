@@ -1,0 +1,646 @@
+{
+  "name": "LlmTrace",
+  "namespace": "obs",
+  "maturity": "emerging",
+  "builder_agent_id": 10,
+  "catalog_entry_sha256": "b70ac1492a4fd07e8da37105f8c4501f8d74c35b91039cdfa97e4b3126d17115",
+  "files": [
+    {
+      "path": "obs/LlmTrace/LlmTrace.contract.json",
+      "sha256": "cfa94f54c5879f1209c17e4da03ccf5dc1a0c639a211b0895419263c7280a710",
+      "size_bytes": 2725,
+      "kind": "contract_json"
+    },
+    {
+      "path": "obs/LlmTrace/LlmTrace.manifest.json",
+      "sha256": "3d2629f2dadb87000852436bb4ded578a067dc3d63e00e476cade349a7b9b30e",
+      "size_bytes": 33248,
+      "kind": "manifest"
+    },
+    {
+      "path": "obs/LlmTrace/LlmTrace.md",
+      "sha256": "2b8f1764627089e7313ec32d9a49bd0f208e6a84675c1ab887c8fa962b0f4a84",
+      "size_bytes": 5761,
+      "kind": "spec_md"
+    },
+    {
+      "path": "obs/LlmTrace/LlmTrace.py",
+      "sha256": "f9b3d8d82f5bb7a26968333fee37d372e1dba06a210aeb4a99f4878151e90915",
+      "size_bytes": 15887,
+      "kind": "impl"
+    },
+    {
+      "path": "obs/LlmTrace/behavioral_LlmTrace.py",
+      "sha256": "b106f477c5dc5121f2a0138b4bc57a1f0ad4e88c6e1018621f9f31f58a53c094",
+      "size_bytes": 4018,
+      "kind": "behavioral"
+    },
+    {
+      "path": "obs/LlmTrace/chaos_LlmTrace.py",
+      "sha256": "f2af47c90c00efdcf72d529bf051b339b323e85930fdc7341859d2145e492a90",
+      "size_bytes": 3433,
+      "kind": "chaos"
+    },
+    {
+      "path": "obs/LlmTrace/dashboard.json",
+      "sha256": "4c63a0642fca7ee92a70b2caa4c5714044934de695c63f8e669c4725c7b924f1",
+      "size_bytes": 1363,
+      "kind": "dashboard"
+    },
+    {
+      "path": "obs/LlmTrace/invariant_bindings.json",
+      "sha256": "cec99ed8d587b661df8d3da3e6ff14466e129255c9b90eaefa21e3095adc6e78",
+      "size_bytes": 1987,
+      "kind": "test"
+    },
+    {
+      "path": "obs/LlmTrace/metamorphic_LlmTrace.py",
+      "sha256": "9efafec6e6f1a480cd888c0b498a89305fc9e81700ad6d0cc3453d985554268c",
+      "size_bytes": 2923,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "obs/LlmTrace/observability_LlmTrace.py",
+      "sha256": "e8909e07f9f96d8e016076510a20880871ccac03f1500a73453dc360474c98b8",
+      "size_bytes": 2140,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/LlmTrace/observability_schema.json",
+      "sha256": "3525b30903667838a6546a011def16d03b3bdaac771b81f077d9f6f8982350a8",
+      "size_bytes": 1717,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/LlmTrace/persona_reviews.json",
+      "sha256": "c9fe7d42431294642478e068bf2f41d773eb30cae0eb53bafa086850b579ebe3",
+      "size_bytes": 680,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "obs/LlmTrace/proposed_invariants.json",
+      "sha256": "deca263f566cfb7b54d97a4e1c88395b0601ff5465181db8711b497c08c61bce",
+      "size_bytes": 20,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "obs/LlmTrace/test_LlmTrace.py",
+      "sha256": "3dfb5e68664a3c75679af6981ade6d434070b51710d8608fc51747d616915bef",
+      "size_bytes": 7146,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "LLMTRACE_INV_01",
+      "invariant_text": "Every model call SHALL open exactly one LlmTrace span; unspanned calls are FORBIDDEN.",
+      "confirms_test": "test_inv_one_span_per_call_confirms",
+      "prevents_test": "test_inv_one_span_per_call_prevents",
+      "under_failure_test": "test_inv_one_span_per_call_under_failure"
+    },
+    {
+      "invariant_id": "LLMTRACE_INV_02",
+      "invariant_text": "Span attribute names MUST match the OpenTelemetry GenAI semantic conventions (gen_ai.system, gen_ai.request.model, gen_ai.usage.input_tokens, gen_ai.usage.output_tokens).",
+      "confirms_test": "test_inv_semconv_attrs_confirms",
+      "prevents_test": "test_inv_semconv_attrs_prevents",
+      "under_failure_test": "test_inv_semconv_attrs_under_failure"
+    },
+    {
+      "invariant_id": "LLMTRACE_INV_03",
+      "invariant_text": "Spans MUST record prompt_fingerprint so the trace can be correlated with the PromptTemplate version that generated it.",
+      "confirms_test": "test_inv_prompt_fingerprint_confirms",
+      "prevents_test": "test_inv_prompt_fingerprint_prevents",
+      "under_failure_test": "test_inv_prompt_fingerprint_under_failure"
+    },
+    {
+      "invariant_id": "LLMTRACE_INV_04",
+      "invariant_text": "On provider error the span MUST call record_error before exiting; swallowing the error without recording is FORBIDDEN.",
+      "confirms_test": "test_inv_record_error_confirms",
+      "prevents_test": "test_inv_record_error_prevents",
+      "under_failure_test": "test_inv_record_error_under_failure"
+    },
+    {
+      "invariant_id": "LLMTRACE_INV_05",
+      "invariant_text": "Child tool-call spans MUST nest under the model-call span so the causal chain is reconstructable end-to-end.",
+      "confirms_test": "test_inv_nested_children_confirms",
+      "prevents_test": "test_inv_nested_children_prevents",
+      "under_failure_test": "test_inv_nested_children_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 704,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 1 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1069,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 996,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 102852,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "43 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1190,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 107194,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NO-SPAN-DIRECT-CALL",
+        "hypothesis": "A developer bypasses LlmTrace.start() and calls the provider SDK directly (e.g., openai.ChatCompletion.create) inside a helper. No span is opened, violating the 'every model call SHALL open exactly one span' invariant with zero detection.",
+        "input_fixture": "import openai; openai.ChatCompletion.create(model='gpt-4', messages=[{'role':'user','content':'hi'}])  # no trace.start() wrapper",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DOUBLE-SPAN-RETRY",
+        "hypothesis": "On transient 429, a retry wrapper calls start() twice for what is logically one model call, producing two sibling spans with identical prompt_fingerprint and duplicated token usage \u2014 violating 'exactly one span per call'.",
+        "input_fixture": "with trace.start('chat','gpt-4','fp1') as s1: raise RateLimitError(); # retry wrapper: with trace.start('chat','gpt-4','fp1') as s2: s2.set_usage(10,20)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ATTR-NAME-DRIFT",
+        "hypothesis": "Implementation emits legacy attribute names like 'llm.token.prompt' or 'ai.model.name' instead of OTel GenAI conventions (gen_ai.usage.input_tokens, gen_ai.request.model), breaking downstream collectors that filter on the spec.",
+        "input_fixture": "span.attributes == {'llm.prompt_tokens': 100, 'model': 'gpt-4'}  # expected gen_ai.usage.input_tokens, gen_ai.request.model",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FINGERPRINT-EMPTY",
+        "hypothesis": "Caller passes prompt_fingerprint='' or None; span is created and exported without the fingerprint attribute, breaking correlation to PromptTemplate version. No validation rejects empty strings.",
+        "input_fixture": "with trace.start('chat','gpt-4', '') as s: s.set_usage(5,5)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ERROR-SWALLOW",
+        "hypothesis": "Context manager __exit__ catches provider exceptions and returns True, suppressing the error without calling record_error. Span exits with status OK despite failure.",
+        "input_fixture": "with trace.start('chat','gpt-4','fp') as s:\n    raise ProviderTimeout('upstream 504')  # __exit__ swallows, no record_error invoked",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ASYNC-CONTEXT-LEAK",
+        "hypothesis": "In asyncio with multiple concurrent tasks, contextvar-based current-span propagation leaks: tool-call span in task B nests under task A's model span instead of B's, corrupting the causal tree.",
+        "input_fixture": "async def t(fp): \n  async with trace.start('chat','gpt-4',fp) as s: await asyncio.sleep(0.01); tool_call_span()\nawait asyncio.gather(t('A'), t('B'), t('C'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TOKEN-INT-OVERFLOW",
+        "hypothesis": "set_usage(input_tokens=2**63, output_tokens=2**63) overflows int64 encoding in OTLP exporter; backend receives negative values or truncates, corrupting usage metrics.",
+        "input_fixture": "s.set_usage(9223372036854775808, 9223372036854775808)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NEGATIVE-TOKENS",
+        "hypothesis": "Provider returns usage={'prompt_tokens': -1} on streaming edge case; set_usage accepts negatives, storing gen_ai.usage.input_tokens=-1 which violates OTel convention (non-negative).",
+        "input_fixture": "s.set_usage(-1, 0)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PROMPT-INJECTION-IN-FP",
+        "hypothesis": "prompt_fingerprint is user-controlled plaintext rather than a hash. Attacker injects '\\n\\ngen_ai.system=evil\\n' hoping naive exporter concatenates attributes, poisoning trace fields.",
+        "input_fixture": "trace.start('chat','gpt-4','sha256:abc\\ngen_ai.system=attacker-controlled\\x00')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PROMPT-LEAK-IN-MESSAGE",
+        "hypothesis": "record_error(code='auth', message=<full prompt body + API key echoed by provider>) stores PII/secrets in span.events as exception.message, leaking to any trace viewer.",
+        "input_fixture": "s.record_error('401', 'Invalid key sk-live-REDACTED... for prompt: <full user PII>')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CHILD-AFTER-EXIT",
+        "hypothesis": "A tool-call span is opened AFTER the parent model span's context manager exits (delayed async callback). Child attaches to root or orphan parent, breaking the nesting invariant.",
+        "input_fixture": "with trace.start('chat','gpt-4','fp') as s: fut = schedule_tool_call()\nawait fut  # tool span created here, parent already closed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-DURATION",
+        "hypothesis": "Span start uses wall clock (time.time); if NTP steps backward mid-span, end_time < start_time produces negative duration, rejected by collector and dropping the span entirely \u2014 unspanned call from observer's view.",
+        "input_fixture": "with trace.start(...) as s: simulate_clock_step_back(5.0); ...",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DOUBLE-RECORD-ERROR",
+        "hypothesis": "Calling record_error twice (first for rate-limit, then for fallback failure) appends two exception events but only last set_status wins; first error message lost, violating record-error fidelity.",
+        "input_fixture": "s.record_error('429','rate'); s.record_error('500','fallback fail')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED-MODEL-HANDLE",
+        "hypothesis": "model_handle is dict/None/object instead of str; start() does not validate, and gen_ai.request.model becomes the repr string like '<Model object at 0x...>', making model-level aggregation impossible.",
+        "input_fixture": "trace.start('chat', {'name':'gpt-4'}, 'fp')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-FINGERPRINT",
+        "hypothesis": "Same prompt_fingerprint reused across thousands of calls (cached prompt) causes trace-storage dedup/sampling to drop later spans, making some model calls unobservable.",
+        "input_fixture": "for _ in range(10000): with trace.start('chat','gpt-4','fp-CONST') as s: s.set_usage(1,1)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE_DOUBLE_SPAN",
+        "hypothesis": "Two threads that each wrap the same model-call path with LlmTrace.start() concurrently will both succeed in opening a span, violating the 'exactly one span per model call' invariant. If the implementation stores current-span state in a thread-local that is accidentally shared (e.g., set via a global default tracer), the second thread's start() overwrites the first's context, leaving one call unspanned and the other double-counted.",
+        "input_fixture": "import threading\ntracer = LlmTraceImpl()\ndef worker():\n    with tracer.start('chat', 'gpt-4o', 'fp-abc') as span:\n        span.set_usage(100, 50)\nt1 = threading.Thread(target=worker)\nt2 = threading.Thread(target=worker)\nt1.start(); t2.start()\nt1.join(); t2.join()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NEG_TOKEN_OVERFLOW",
+        "hypothesis": "Passing negative integers or values exceeding int32 max to set_usage() will either silently store out-of-range attribute values or wrap around to negative numbers. OTel exporters typically encode gen_ai.usage.input_tokens as a non-negative int64; a negative value violates the semantic convention schema and may corrupt downstream billing aggregations without raising any error visible to the caller.",
+        "input_fixture": "with tracer.start('embed', 'text-embedding-3-small', 'fp-xyz') as span:\n    span.set_usage(-1, 2**63)  # negative input_tokens, overflowing output_tokens",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY_FINGERPRINT",
+        "hypothesis": "Calling start() with an empty string for prompt_fingerprint produces a span that carries gen_ai.prompt_fingerprint='' \u2014 which passes attribute-name validation but makes every such span indistinguishable in the backend. Any downstream query correlating traces to PromptTemplate versions will silently merge all empty-fingerprint spans, destroying version-level observability. The invariant says fingerprint MUST be recorded; it does not say non-empty, creating a loophole.",
+        "input_fixture": "with tracer.start('completion', 'claude-sonnet-4-6', '') as span:\n    span.set_usage(200, 80)\n    span.set_finish_reason('stop')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SWALLOW_KEYBOARDINTERRUPT",
+        "hypothesis": "A KeyboardInterrupt (or SystemExit) raised inside the context manager body is not a provider error but may bypass the __exit__ path that calls record_error if the implementation only catches Exception and not BaseException. The span will close without record_error being called, violating the 'on provider error span MUST call record_error before exiting' invariant for the broader class of non-Exception throwables that can still indicate abnormal termination.",
+        "input_fixture": "import signal, os\ndef model_call_with_interrupt():\n    with tracer.start('chat', 'gpt-4o', 'fp-001') as span:\n        os.kill(os.getpid(), signal.SIGINT)  # raises KeyboardInterrupt inside the with-block\n        span.set_usage(50, 20)\nmodel_call_with_interrupt()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PROMPT_INJECT_FINGERPRINT",
+        "hypothesis": "Supplying a prompt_fingerprint that contains OTel attribute injection syntax (e.g., 'fp-ok\\ngen_ai.system=attacker') could cause a naive line-based or string-concatenation exporter to emit a second gen_ai.system attribute controlled by the adversary. This corrupts trace metadata and may allow exfiltration of model identity or override billing attribution to a different system.",
+        "input_fixture": "malicious_fp = 'fp-real\\ngen_ai.system=attacker-controlled-system\\ngen_ai.request.model=free-tier'\nwith tracer.start('chat', 'claude-opus-4-7', malicious_fp) as span:\n    span.set_usage(300, 150)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WRONG_ATTR_TYPE_STRING_TOKENS",
+        "hypothesis": "Passing token counts as strings instead of integers (e.g., set_usage('900', '400')) will set gen_ai.usage.input_tokens to a string attribute. OTel backends that enforce typed schemas will either silently drop the attribute or raise a schema validation error; either outcome means token counts are NOT correctly recorded under the required attribute names, violating the semantic conventions invariant without any runtime exception visible to the model-call code.",
+        "input_fixture": "with tracer.start('chat', 'gpt-4o-mini', 'fp-type-attack') as span:\n    span.set_usage('nine_hundred', 'four_hundred')  # strings instead of ints",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ORPHAN_TOOL_SPAN",
+        "hypothesis": "A tool-call span created after the parent model-call context manager has already exited will have no valid parent span in the active context. The child span will be emitted as a root span (orphan) rather than nested under the model span, breaking the causal chain reconstructability invariant. This is easily triggered when tool dispatch is asynchronous and the await happens after __exit__ completes.",
+        "input_fixture": "import asyncio\nasync def run():\n    with tracer.start('chat', 'claude-sonnet-4-6', 'fp-async') as model_span:\n        model_span.set_usage(100, 60)\n    # model span is now CLOSED\n    await asyncio.sleep(0)  # yield; tool callback fires after span closed\n    with tracer.start('tool_call', 'web_search', 'fp-tool') as tool_span:\n        tool_span.set_finish_reason('tool_use')  # orphan \u2014 no parent\nasyncio.run(run())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY_FINGERPRINT_COLLISION",
+        "hypothesis": "Replaying the same prompt_fingerprint across two distinct model invocations (e.g., retrying with a different model after a provider error) will produce two spans that share the same fingerprint. Downstream correlation queries will treat both as the same PromptTemplate invocation, making it impossible to distinguish the original call from the retry. This undermines the auditability guarantee that fingerprint provides.",
+        "input_fixture": "fp = 'fp-stable-hash-abc123'\nwith tracer.start('chat', 'gpt-4o', fp) as s1:\n    s1.record_error('rate_limit', '429 Too Many Requests')\n# retry with fallback model \u2014 same fingerprint reused\nwith tracer.start('chat', 'claude-haiku-4-5', fp) as s2:\n    s2.set_usage(200, 90)\n    s2.set_finish_reason('stop')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK_SKEW_NEG_DURATION",
+        "hypothesis": "If the host clock is adjusted backward (NTP step correction or VM clock sync) between span start and span end, the span duration will be computed as negative. If the implementation uses wall-clock time rather than a monotonic clock for span timestamps, the resulting span will have end_time < start_time. OTel collectors may drop or reject spans with negative durations, silently unspanning the model call in the backend.",
+        "input_fixture": "import time, unittest.mock as mock\nreal_time = time.time\ncall_count = 0\ndef skewed_time():\n    global call_count\n    call_count += 1\n    return real_time() if call_count == 1 else real_time() - 3600  # 1h backward jump\nwith mock.patch('time.time', side_effect=skewed_time):\n    with tracer.start('chat', 'gpt-4o', 'fp-clock') as span:\n        span.set_usage(50, 30)\n        span.set_finish_reason('stop')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ENTER_RAISES_UNSPANNED",
+        "hypothesis": "If the __enter__ method of the context manager returned by start() raises an exception (e.g., due to a bad tracer configuration, invalid model_handle, or OTel exporter connection failure), the 'with' block body never executes and no span is opened. The model call will proceed outside any span, directly violating the invariant that every model call MUST open exactly one span.",
+        "input_fixture": "class BrokenTracer(LlmTraceImpl):\n    def start(self, op, model, fp):\n        ctx = super().start(op, model, fp)\n        class FailingCM:\n            def __enter__(self): raise ConnectionError('OTLP endpoint unreachable')\n            def __exit__(self, *a): pass\n        return FailingCM()\ntracer = BrokenTracer()\ntry:\n    with tracer.start('chat', 'gpt-4o', 'fp-broken') as span:\n        span.set_usage(100, 50)  # never reached; call proceeds unspanned\nexcept ConnectionError:\n    pass  # model call continues without any span",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CRED_LEAK_MODEL_HANDLE",
+        "hypothesis": "A caller passes an API-key-bearing URL as model_handle (e.g., 'https://api.openai.com/v1/chat?api_key=sk-live-...') to encode deployment endpoint metadata. The value is stored verbatim as the gen_ai.request.model attribute and exported to the OTel collector, potentially landing in log aggregators, dashboards, or third-party APM tools \u2014 leaking live credentials through the observability pipeline.",
+        "input_fixture": "secret_endpoint = 'openai:gpt-4o?api_key=sk-live-SECRETKEY1234567890abcdef'\nwith tracer.start('chat', secret_endpoint, 'fp-cred-leak') as span:\n    span.set_usage(80, 40)\n    span.set_finish_reason('stop')\n# gen_ai.request.model is now 'openai:gpt-4o?api_key=sk-live-SECRETKEY...' in traces",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DOUBLE_RECORD_ERROR_CORRUPT",
+        "hypothesis": "Calling record_error twice on the same span (e.g., once by the library error handler and once by the caller's except block) will emit two error events on a single span. OTel backends that expect at most one error event per span may corrupt the trace, miscount error rates, or exhibit undefined behavior. The invariant says record_error MUST be called on error but does not guard against double-calling, making this a silent data integrity failure.",
+        "input_fixture": "with tracer.start('chat', 'gpt-4o', 'fp-double-err') as span:\n    try:\n        raise RuntimeError('provider timeout')\n    except RuntimeError as e:\n        span.record_error('timeout', str(e))   # first call\n        span.record_error('timeout', str(e))   # second call \u2014 duplicate event emitted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AMPLIFY_HUGE_FINGERPRINT",
+        "hypothesis": "Passing a prompt_fingerprint that is megabytes long (e.g., the raw prompt text instead of a hash) will cause the span attribute to exceed OTel's per-attribute size limits. Exporters will either silently truncate the value (breaking correlation because the truncated fingerprint no longer matches the PromptTemplate hash) or reject the entire span (creating an unspanned call). Either outcome violates the fingerprint recording invariant without an explicit error to the caller.",
+        "input_fixture": "huge_fp = 'A' * 5_000_000  # 5 MB fingerprint instead of a short hash\nwith tracer.start('chat', 'claude-sonnet-4-6', huge_fp) as span:\n    span.set_usage(1000, 500)\n    span.set_finish_reason('stop')\n# span silently truncated or dropped; fingerprint correlation broken",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNSPANNED-CALL",
+        "hypothesis": "Model invocation proceeds without opening any LlmTrace span, violating invariant that every call must emit exactly one span.",
+        "input_fixture": "Call model.generate() directly without wrapping in llm_trace.start() context manager; no span initialization.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DOUBLE-SPAN-OPEN",
+        "hypothesis": "Single model call opens two nested LlmTrace spans, creating duplicate span hierarchy and double-counting of token attributes.",
+        "input_fixture": "with llm_trace.start('chat', 'gpt-4', 'abc'): with llm_trace.start('chat', 'gpt-4', 'abc'): model.generate(); nested opens.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SPAN-REUSE-SAME-FP",
+        "hypothesis": "Same operation and fingerprint called twice reuses first span object instead of opening new span, conflating two distinct calls.",
+        "input_fixture": "Call 1: with llm_trace.start('chat', 'gpt-4', 'fp1'): gen1=model.generate(); Call 2: with llm_trace.start('chat', 'gpt-4', 'fp1'): gen2=model.generate(); span reused.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-OPERATION",
+        "hypothesis": "start() called with empty operation string; span type unidentifiable rendering trace reconstruction impossible.",
+        "input_fixture": "llm_trace.start(operation='', model_handle='gpt-4', prompt_fingerprint='abc123'); empty operation breaks filtering.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ATTR-NAME-TYPO",
+        "hypothesis": "Span attribute stored with typo in OTel convention (gen_ai.requst.model vs gen_ai.request.model), breaking schema validation.",
+        "input_fixture": "Span internally writes attribute gen_ai.requst.model='gpt-4' instead of gen_ai.request.model='gpt-4'; downstream validator rejects.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CASE-SENSITIVE-ATTR",
+        "hypothesis": "Span records OTel attribute with wrong case (gen_ai.System vs gen_ai.system), failing exact-match validators in collectors.",
+        "input_fixture": "Span sets attribute gen_ai.System='openai' instead of gen_ai.system='openai'; case mismatch breaks OTel schema enforcement.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TOKEN-INTEGER-OVERFLOW",
+        "hypothesis": "set_usage called with token counts at INT_MAX causing integer overflow in downstream metric aggregations and comparisons.",
+        "input_fixture": "span.set_usage(input_tokens=2147483647, output_tokens=2147483647); 32-bit signed overflow in backend summation.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NEGATIVE-TOKEN-COUNT",
+        "hypothesis": "set_usage invoked with negative token counts, semantically invalid and breaking metrics that assume non-negative values.",
+        "input_fixture": "span.set_usage(input_tokens=-10, output_tokens=-5); negative counts stored without semantic validation.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-BLANK-MODEL-HANDLE",
+        "hypothesis": "start() called with empty model_handle string; downstream cannot identify which model produced the span.",
+        "input_fixture": "llm_trace.start(operation='chat', model_handle='', prompt_fingerprint='abc123'); attribute gen_ai.request.model='' invalid.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MISSING-FINGERPRINT",
+        "hypothesis": "LlmTrace span opened with empty/missing prompt_fingerprint, rendering trace uncorrelated with PromptTemplate version.",
+        "input_fixture": "llm_trace.start(operation='chat', model_handle='gpt-4', prompt_fingerprint=''); empty fingerprint breaks version linkage.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MALFORMED-FINGERPRINT",
+        "hypothesis": "Non-hex or invalid prompt_fingerprint recorded (newlines, control chars, SQL injection payload) confuses trace parsing downstream.",
+        "input_fixture": "prompt_fingerprint=\"abc\\n'; DROP TABLE spans; --\" passed to start(); special chars bypass escaping in trace DB.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ERROR-SWALLOWED",
+        "hypothesis": "Provider error occurs during model call but record_error never invoked before span context exits; error state lost.",
+        "input_fixture": "try: model.generate() except APIError as e: pass; span.__exit__ runs without span.record_error(code, msg) call.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ERROR-RACE-CONDITION",
+        "hypothesis": "Asynchronous error callback fires after span.__exit__ already returned; race between error detection window and record_error.",
+        "input_fixture": "Span context manager exits while async error handler pending; record_error cannot be called outside active span context.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ORPHAN-TOOL-SPAN",
+        "hypothesis": "Child tool-call span opened without active parent model-call span context; causal chain untraceably broken.",
+        "input_fixture": "tool_span = llm_trace.start('tool_call', 'tool-x', 'fp2') executed outside any model span context; no parent thread-local set.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-SPAN-RACE",
+        "hypothesis": "Two threads open model spans concurrently; context manager confusion causes wrong parent assignment in tool span nesting.",
+        "input_fixture": "Thread1: start('chat', 'gpt-4', 'fp1'); Thread2: start('chat', 'gpt-4', 'fp2'); Thread2 tool_span inherits Thread1 parent.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "llmtrace.span.started",
+        "required_attributes": [
+          "operation",
+          "model_handle",
+          "prompt_fingerprint"
+        ]
+      },
+      {
+        "event_name": "llmtrace.span.ended",
+        "required_attributes": [
+          "operation",
+          "status_code",
+          "duration_ns"
+        ]
+      },
+      {
+        "event_name": "llmtrace.provider.error",
+        "required_attributes": [
+          "error_code",
+          "model_handle"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "llmtrace.spans.created",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "operation",
+          "model"
+        ]
+      },
+      {
+        "name": "llmtrace.tokens.input",
+        "metric_type": "histogram",
+        "unit": "tokens",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "model"
+        ]
+      },
+      {
+        "name": "llmtrace.tokens.output",
+        "metric_type": "histogram",
+        "unit": "tokens",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "model"
+        ]
+      },
+      {
+        "name": "llmtrace.cache.hit_ratio",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "model"
+        ]
+      },
+      {
+        "name": "llmtrace.provider.errors",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "error_code",
+          "model"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "llmtrace.span.create",
+        "required_attributes": [
+          "gen_ai.operation.name",
+          "gen_ai.request.model",
+          "gen_ai.prompt.fingerprint"
+        ]
+      },
+      {
+        "operation_name": "llmtrace.span.end",
+        "required_attributes": [
+          "gen_ai.response.finish_reasons"
+        ]
+      },
+      {
+        "operation_name": "llmtrace.tool.call",
+        "required_attributes": [
+          "gen_ai.operation.name"
+        ]
+      }
+    ]
+  }
+}

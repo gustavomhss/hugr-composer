@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.321194+00:00",
+  "source_tool": "api_design/add_api_deprecation.py",
+  "origin_candidate": {
+    "docstring": "Metadata for a single deprecated endpoint.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 315,
+    "line_start": 239,
+    "name": "DeprecationEntry",
+    "origin": "string_template",
+    "shape_hash": "104ea28e8278d813",
+    "size_bytes": 2480,
+    "size_lines": 77,
+    "tool": "api_design/add_api_deprecation.py",
+    "method_count": 5,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 49600
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

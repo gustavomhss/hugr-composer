@@ -1,0 +1,13 @@
+{
+  "logs": [
+    {"event_name": "semattr.key.validated", "required_attributes": ["key"]},
+    {"event_name": "semattr.key.deprecated", "required_attributes": ["deprecated", "current"]}
+  ],
+  "metrics": [
+    {"name": "semattr.validations.count", "metric_type": "counter", "unit": "1", "cardinality_bound": 50, "label_keys": ["result"]},
+    {"name": "semattr.deprecated.warnings", "metric_type": "counter", "unit": "1", "cardinality_bound": 30, "label_keys": ["key"]}
+  ],
+  "spans": [
+    {"operation_name": "semattr.validate", "required_attributes": ["key"]}
+  ]
+}

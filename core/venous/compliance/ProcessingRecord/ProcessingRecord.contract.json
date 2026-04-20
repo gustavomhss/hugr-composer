@@ -1,0 +1,25 @@
+{
+  "name": "ProcessingRecord",
+  "namespace": "compliance",
+  "purpose": "Machine-readable record of processing activities that a controller must maintain, generated from code rather than a separate document.",
+  "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass ProcessingRecord:\n    activity: str\n    controller: str\n    purposes: tuple[str, ...]\n    data_classes: tuple[str, ...]\n    recipients: tuple[str, ...]\n    retention_ref: str\n    legal_basis: str\n    transfers_outside_eea: tuple[str, ...] = ()\n\nclass ProcessingRegistry(Protocol):\n    def register(self, record: ProcessingRecord) -> None: ...\n    def export_ropa(self) -> bytes: ...",
+  "invariants": [
+    "Every code path that reads or writes PII MUST be annotated with a registered ProcessingRecord.activity; unregistered activities SHALL fail at startup.",
+    "Each record MUST reference a retention_ref that resolves to a bound RetentionPolicy; dangling refs CANNOT register.",
+    "legal_basis MUST be one of GDPR Article 6(1)(a-f); free-text values SHALL raise.",
+    "transfers_outside_eea entries MUST be ISO-3166 country codes; other formats are FORBIDDEN.",
+    "export_ropa() output MUST be byte-for-byte reproducible given the same registry so auditors can hash and diff releases."
+  ],
+  "extension_contract": "Frameworks register activities via a decorator on handler functions that emits the ProcessingRecord at import time. Custom export adapters (e.g. OneTrust CSV, JSON-LD DPF) are added by implementing a RopaExporter and binding it to the registry.",
+  "consumption_example": "record = ProcessingRecord(\n    activity='user.signup',\n    controller='AcmeCorp GmbH',\n    purposes=('account_creation',),\n    data_classes=('pii_email', 'pii_name'),\n    recipients=('internal',),\n    retention_ref='retention:user_account',\n    legal_basis='GDPR Art 6(1)(b) contract',\n)\nregistry.register(record)",
+  "sources": [
+    {"source": "EU GDPR Regulation 2016/679 Articles 5, 6, 7, 15, 17, 30, 32", "locator": "Article 30 Records of processing activities"}
+  ],
+  "why_essential": "ROPA maintained as a spreadsheet drifts from the code within a sprint; a registry built from decorators keeps the record synchronized to what the system actually does.",
+  "alternatives_considered": [
+    "Externally-maintained spreadsheet \u2014 drifts from reality by definition.",
+    "Privacy team interviews every release \u2014 lossy, expensive, not reproducible.",
+    "Data-flow scanners only \u2014 detect flows but cannot assert purpose or legal basis."
+  ],
+  "maturity": "emerging"
+}

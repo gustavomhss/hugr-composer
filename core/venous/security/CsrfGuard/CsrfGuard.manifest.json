@@ -1,0 +1,724 @@
+{
+  "name": "CsrfGuard",
+  "namespace": "security",
+  "maturity": "battle_tested",
+  "builder_agent_id": 7,
+  "catalog_entry_sha256": "c43ed7ffad20f70b61f6599f830d64d0b7fe92cc84ebcde62abac292f9408c93",
+  "files": [
+    {
+      "path": "security/CsrfGuard/CsrfGuard.contract.json",
+      "sha256": "8f64b6f92600bd68ad208dde3db3ebc016fc9cc579568ebfcfa9712cc8600fe2",
+      "size_bytes": 2307,
+      "kind": "contract_json"
+    },
+    {
+      "path": "security/CsrfGuard/CsrfGuard.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "security/CsrfGuard/CsrfGuard.md",
+      "sha256": "7372d30da229d7786f062ef01a66005f6d479adf389dd7fad8c72b133652b93f",
+      "size_bytes": 3927,
+      "kind": "spec_md"
+    },
+    {
+      "path": "security/CsrfGuard/CsrfGuard.py",
+      "sha256": "9d03f0ad5555d0355f93c5733a52380f8749e9f3dbc40137f733bd04702ccea4",
+      "size_bytes": 4905,
+      "kind": "impl"
+    },
+    {
+      "path": "security/CsrfGuard/behavioral_CsrfGuard.py",
+      "sha256": "ba905e487ffd7daf5c2003f6a95d0509eaccad0ac80e58e020bb17a1abd6f6f6",
+      "size_bytes": 2410,
+      "kind": "behavioral"
+    },
+    {
+      "path": "security/CsrfGuard/chaos_CsrfGuard.py",
+      "sha256": "64ba4257b5741fd5fe3111ce22ecb917237364cc92531ab4552edb4f58e0a3d2",
+      "size_bytes": 2345,
+      "kind": "chaos"
+    },
+    {
+      "path": "security/CsrfGuard/dashboard.json",
+      "sha256": "1abe86139b514d40937142f1e5d7d946f9bcc5f2259b40cd0176c06592e44314",
+      "size_bytes": 565,
+      "kind": "dashboard"
+    },
+    {
+      "path": "security/CsrfGuard/invariant_bindings.json",
+      "sha256": "8233dff458471cd4a7070548385ece6b3f6a1c82dc2aba466b4faf5fa4b59ab2",
+      "size_bytes": 1856,
+      "kind": "test"
+    },
+    {
+      "path": "security/CsrfGuard/metamorphic_CsrfGuard.py",
+      "sha256": "6148bb5ba8f2213233149195d922c6ac2fcea65c0bf3dd5ef06f2b49860450b2",
+      "size_bytes": 2378,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "security/CsrfGuard/observability_CsrfGuard.py",
+      "sha256": "a5f2a49f4fc143e20f29c675b55fdb2906d7ac852834f3ea9bbac8596a8a52f7",
+      "size_bytes": 1778,
+      "kind": "observability"
+    },
+    {
+      "path": "security/CsrfGuard/observability_schema.json",
+      "sha256": "469892b63e900837eae853ef08763b4e30253bd2b0638935bf48166a88e310bf",
+      "size_bytes": 1186,
+      "kind": "observability"
+    },
+    {
+      "path": "security/CsrfGuard/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "security/CsrfGuard/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "security/CsrfGuard/test_CsrfGuard.py",
+      "sha256": "c5ff75ff669fecaf4ee90b1be74a4dd3336c1b686f79758f80127380797af0f6",
+      "size_bytes": 6044,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "CSRF_INV_01",
+      "invariant_text": "Tokens MUST be bound to the session id and MUST NEVER be accepted for a different session.",
+      "confirms_test": "test_inv_session_binding_confirms",
+      "prevents_test": "test_inv_session_binding_prevents",
+      "under_failure_test": "test_inv_session_binding_under_failure"
+    },
+    {
+      "invariant_id": "CSRF_INV_02",
+      "invariant_text": "verify() MUST compare tokens in constant time and MUST raise on mismatch with no information about the expected value.",
+      "confirms_test": "test_inv_constant_time_confirms",
+      "prevents_test": "test_inv_constant_time_prevents",
+      "under_failure_test": "test_inv_constant_time_under_failure"
+    },
+    {
+      "invariant_id": "CSRF_INV_03",
+      "invariant_text": "Safe methods (GET, HEAD, OPTIONS) MUST NEVER mutate state; the guard SHALL only be enforced for unsafe methods.",
+      "confirms_test": "test_inv_safe_methods_confirms",
+      "prevents_test": "test_inv_safe_methods_prevents",
+      "under_failure_test": "test_inv_safe_methods_under_failure"
+    },
+    {
+      "invariant_id": "CSRF_INV_04",
+      "invariant_text": "Cross-origin requests lacking both a valid token and a same-site cookie CANNOT be processed; no-token MUST fail closed.",
+      "confirms_test": "test_inv_fail_closed_confirms",
+      "prevents_test": "test_inv_fail_closed_prevents",
+      "under_failure_test": "test_inv_fail_closed_under_failure"
+    },
+    {
+      "invariant_id": "CSRF_INV_05",
+      "invariant_text": "Tokens MUST be rotated on session rotation and on explicit logout; stale tokens SHALL be rejected.",
+      "confirms_test": "test_inv_rotation_confirms",
+      "prevents_test": "test_inv_rotation_prevents",
+      "under_failure_test": "test_inv_rotation_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 544,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1027,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1133,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 65487,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "40 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1095,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1101,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 73611,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 144343,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CROSS-SESSION-REPLAY",
+        "hypothesis": "Token issued for session A is submitted with session B. If verify() compares token strings without binding to session_id, the token authenticates across sessions, breaking session-token binding.",
+        "input_fixture": "t = guard.issue('sessA'); guard.verify('sessB', t)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TIMING-SIDECHANNEL",
+        "hypothesis": "verify() uses '==' rather than hmac.compare_digest. Attacker measures response time across 10000 trials varying leading bytes to recover the token byte-by-byte, violating constant-time comparison invariant.",
+        "input_fixture": "for prefix in range(256): t0=time.perf_counter(); guard.verify('s', bytes([prefix])+'0'*31); measure",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ERROR-LEAK",
+        "hypothesis": "On mismatch the exception message includes the expected token, its length, or a diff hint. Logging/stack trace then exposes the secret to any observer with log access.",
+        "input_fixture": "try: guard.verify('s','wrong')\nexcept Exception as e: assert 'expected' not in str(e) and len(str(e))<80",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-TOKEN",
+        "hypothesis": "Passing an empty string or None as submitted_token may short-circuit comparison (e.g., both sides empty before issue) and be accepted, bypassing CSRF entirely for a never-issued session.",
+        "input_fixture": "guard.verify('fresh_session', '')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SAFE-METHOD-MUTATION",
+        "hypothesis": "Middleware wiring enforces CsrfGuard on every request. A GET with a forged token ends up triggering verify() side effects (token rotation, counter increment) mutating state on a safe method.",
+        "input_fixture": "GET /resource with X-CSRF-Token:'x'; assert state unchanged",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-STALE-AFTER-LOGOUT",
+        "hypothesis": "After explicit logout, previously issued token is still accepted because tokens are stored per-session-id string rather than per-session-instance, violating rotation-on-logout.",
+        "input_fixture": "t=guard.issue('s'); logout('s'); login('s'); guard.verify('s', t)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CROSS-ORIGIN-NO-TOKEN",
+        "hypothesis": "Request from evil.com without CSRF header but with ambient cookies is processed because guard only checks header presence, not origin/same-site fallback, allowing classic CSRF.",
+        "input_fixture": "POST /transfer Origin:evil.com Cookie:session=abc (no X-CSRF-Token)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED-TYPE",
+        "hypothesis": "verify() assumes str. Passing bytes, int, or dict causes uncaught TypeError leaking stack, OR worse, causes comparison to silently succeed via __eq__ coercion.",
+        "input_fixture": "guard.verify('s', {'__eq__': lambda self,o: True})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNICODE-NORMALIZATION",
+        "hypothesis": "If issue() returns NFC string but verify() NFKC-normalizes input, homoglyph tokens compare equal. Attacker submits visually-identical but byte-different token and bypasses comparison.",
+        "input_fixture": "t=guard.issue('s'); guard.verify('s', unicodedata.normalize('NFKD', t))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ISSUE-RACE",
+        "hypothesis": "Concurrent issue() calls for the same session_id under threading cause last-writer-wins in non-thread-safe dict; an in-flight verify() uses the now-overwritten token and fails legitimately, OR two tokens coexist and old one leaks.",
+        "input_fixture": "Thread A: t1=issue('s'); Thread B: t2=issue('s'); verify('s',t1) must raise but may pass",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TOKEN-AMPLIFICATION-DOS",
+        "hypothesis": "issue() has no rate limit and stores tokens per session forever. Attacker calls issue('victim') 10M times, exhausting memory and evicting legitimate tokens, causing DoS and forced re-auth.",
+        "input_fixture": "for _ in range(10_000_000): guard.issue('victim')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SESSION-ID-INJECTION",
+        "hypothesis": "session_id containing delimiter chars (':', '\\0', newline) collides with another session's storage key, letting attacker predict/forge another user's token slot.",
+        "input_fixture": "guard.issue('user:admin\\x00'); guard.verify('user', stolen_token)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-AFTER-ROTATION",
+        "hypothesis": "After session rotation (privilege escalation login), old token remains valid because rotation only updates session_id mapping not token store; replay of pre-auth token now acts with post-auth privileges.",
+        "input_fixture": "t=issue('anon-sid'); rotate_session('anon-sid'->'auth-sid'); verify('auth-sid', t)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CROSS_SESSION_TOKEN_SWAP",
+        "hypothesis": "A token issued for session_id 'A' is accepted by verify() when called with session_id 'B' if the implementation stores tokens in a flat dict keyed only by token value rather than (session_id, token) composite key, allowing an attacker who obtains any valid token to forge requests on behalf of another session.",
+        "input_fixture": "token_a = guard.issue('session-A'); guard.verify('session-B', token_a)  # must raise, but may pass if lookup is token-keyed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TIMING_ORACLE_EARLY_EXIT",
+        "hypothesis": "If verify() uses Python's '==' operator or hmac.compare_digest on non-equal-length strings, CPython short-circuits on length mismatch before byte comparison, creating a measurable timing difference that leaks expected token length. An attacker can binary-search token length in ~32 requests then brute-force prefix bytes.",
+        "input_fixture": "import time; timings = []; probes = ['x'*n for n in range(1,128)]; [timings.append((n, time.perf_counter_ns())) or guard.verify.__wrapped__('sid', 'x'*n) for n in range(1,128)]  # measure delta to find expected length bucket",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ERROR_MSG_LEAKS_EXPECTED",
+        "hypothesis": "verify() raises an exception whose message or attached attributes include the expected token value (e.g., 'expected abc123, got xyz'), violating the invariant that no information about the expected value is disclosed. This is a classic mistake when developers use assert statements or f-string exception messages.",
+        "input_fixture": "try:\n    guard.verify('sid-1', 'WRONG')\nexcept Exception as e:\n    assert str(e).find(guard._store['sid-1']) == -1  # store the expected token in e.args",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-GET_SIDE_EFFECT_STATE_MUTATION",
+        "hypothesis": "issue() called during a GET request handler registers a new token and writes it to persistent storage (e.g., a database row or Redis key), constituting state mutation triggered by a safe method. The invariant forbids the guard itself from mutating state on safe methods, but the spec is silent on whether issue() is callable from GET handlers.",
+        "input_fixture": "# Simulate a GET /profile handler that pre-issues a CSRF token for the next form\nreq_method = 'GET'; token = guard.issue('sess-get-test')  # issue() must NOT write durable state here\nassert len(guard._store) == 0  # expect no persistent side-effect from GET context",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-STALE_TOKEN_AFTER_LOGOUT",
+        "hypothesis": "After a session is explicitly logged out and a new session issued, verify() still accepts the pre-logout token for the original session_id if the guard fails to invalidate the old token entry. An attacker who sniffs the token (e.g., from browser history) can replay it post-logout.",
+        "input_fixture": "token_before = guard.issue('sess-logout-test')\nguard.rotate('sess-logout-test')  # or guard.logout('sess-logout-test')\ntry:\n    guard.verify('sess-logout-test', token_before)\n    raise AssertionError('stale token accepted after logout')\nexcept CsrfError:\n    pass",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-STALE_TOKEN_AFTER_SESSION_ROTATION",
+        "hypothesis": "When session_id is rotated (old ID mapped to new ID), verify() still accepts a token that was issued under the old session_id if the rotation logic copies the token store entry to the new ID without deleting the old entry, enabling replay of pre-rotation tokens.",
+        "input_fixture": "old_token = guard.issue('sess-old-123')\nguard.rotate_session('sess-old-123', 'sess-new-456')  # simulate session fixation countermeasure\ntry:\n    guard.verify('sess-old-123', old_token)  # must raise \u2014 old session dead\n    raise AssertionError('old session still valid post-rotation')\nexcept CsrfError:\n    pass",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY_TOKEN_BYPASS",
+        "hypothesis": "Submitting an empty string as submitted_token causes verify() to pass if the implementation calls hmac.compare_digest('', '') when session has no stored token yet (i.e., issue() was never called for that session_id), because comparing two empty strings is trivially equal. This lets unauthenticated cross-origin POST requests slip through.",
+        "input_fixture": "# Never call issue() for this session\nguard.verify('fresh-session-no-token', '')  # must raise, not silently pass",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TYPE_CONFUSION_NONE_TOKEN",
+        "hypothesis": "Passing None as submitted_token causes verify() to either raise a TypeError (leaking internal implementation detail) or coerce None to the string 'None' which may accidentally match a stored token value of 'None' if the token generation has a bug. Either path violates the invariant: TypeError is not CsrfError and reveals internals; accidental match bypasses protection.",
+        "input_fixture": "guard.verify('sess-type-test', None)  # must raise CsrfError (or defined exception), NOT TypeError/AttributeError",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CROSS_ORIGIN_TOKEN_ONLY_NO_SAMESITE",
+        "hypothesis": "A cross-origin POST that supplies a valid CSRF token but the session cookie lacks SameSite=Strict/Lax attribute (or is absent) MUST be rejected. If the guard only checks the token and not the cookie's SameSite property, it accepts the request, violating the defense-in-depth requirement that BOTH a valid token AND a same-site cookie are required.",
+        "input_fixture": "token = guard.issue('sess-cors-test')\nrequest = MockRequest(method='POST', headers={'X-CSRF-Token': token, 'Origin': 'https://evil.com'}, cookies={'session': 'sess-cors-test', 'SameSite': None})\nguard.enforce(request)  # must raise \u2014 samesite cookie missing even though token valid",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONCURRENT_RACE_DOUBLE_ISSUE",
+        "hypothesis": "Two concurrent threads call issue() for the same session_id simultaneously. Due to a TOCTOU race on the token store, both threads write different tokens, and the last-write-wins. The first thread's token is now invalid but was already delivered to the client. verify() will reject valid user requests, causing denial-of-service for legitimate sessions under concurrent load.",
+        "input_fixture": "import threading\ntokens = []\ndef race(): tokens.append(guard.issue('sess-race-shared'))\nt1, t2 = threading.Thread(target=race), threading.Thread(target=race)\nt1.start(); t2.start(); t1.join(); t2.join()\nguard.verify('sess-race-shared', tokens[0])  # one of these MUST succeed, both failing = DoS",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PREDICTABLE_PRNG_SEED",
+        "hypothesis": "If issue() seeds the PRNG from a low-entropy source (e.g., time.time() truncated to milliseconds, or os.urandom() substituted with random.random() in test mode via monkeypatching), an attacker who knows the approximate server time can enumerate the token space in O(1000) guesses, breaking the unpredictability guarantee implicit in CSRF token security.",
+        "input_fixture": "import time; t0 = int(time.time()*1000)\n# Attacker enumerates tokens seeded from t0\u00b1500ms window\ncandidates = [generate_with_seed(t0 + delta) for delta in range(-500, 501)]\ntoken = guard.issue('sess-prng-test')\nassert token not in candidates, 'token predictable from time-seeded PRNG'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-UNICODE_NORMALIZATION_BYPASS",
+        "hypothesis": "If the token comparison normalizes Unicode before compare_digest (e.g., via .casefold() or unicodedata.normalize('NFC', ...)), a submitted token that is visually identical but byte-different from the stored token (e.g., using fullwidth ASCII or composed vs decomposed characters) may pass verification, allowing a bypass when the attacker can inject Unicode into the submission path.",
+        "input_fixture": "token = guard.issue('sess-unicode-test')  # e.g., returns 'abc123'\naltered = token.replace('a', '\\uff41')  # fullwidth 'a' U+FF41\ntry:\n    guard.verify('sess-unicode-test', altered)\n    raise AssertionError('unicode-normalized token accepted \u2014 bypass!')\nexcept CsrfError:\n    pass",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY_ACROSS_REQUESTS",
+        "hypothesis": "CSRF tokens that are not single-use can be replayed: an attacker who intercepts a legitimate token (e.g., via MITM on HTTP or a Referer header leak) can replay it in a forged request indefinitely until the session ends. If the spec does not mandate single-use tokens, but the implementation also makes no attempt to rotate after each use, a leaked token grants permanent request-forgery capability for the session lifetime.",
+        "input_fixture": "token = guard.issue('sess-replay-test')\nguard.verify('sess-replay-test', token)  # first use \u2014 legitimate\nguard.verify('sess-replay-test', token)  # second use \u2014 must raise if single-use semantics required",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INTEGER_OVERFLOW_TOKEN_LENGTH",
+        "hypothesis": "If the token generation uses a fixed-width integer internally (e.g., a 32-bit counter XOR'd with a secret) and the counter overflows, two different sessions at counter positions 0 and 2^32 would receive identical tokens. An attacker at counter 2^32 gets a token that also validates for the session at counter 0, breaking the session-binding invariant.",
+        "input_fixture": "# Simulate overflow: issue tokens until counter wraps\nfor i in range(2**32 + 1):\n    guard.issue(f'sess-{i}')\ntoken_wrap = guard.issue('sess-overflow')\nassert token_wrap != guard._store.get('sess-0'), 'counter overflow produces duplicate token'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-HEAD_METHOD_STATE_MUTATION_VIA_SIDE_CHAN",
+        "hypothesis": "A HEAD request to an endpoint that internally calls issue() to pre-generate a CSRF token for embedding in the subsequent GET response inadvertently writes a new token to the session store. This violates the invariant that safe methods (HEAD) MUST NEVER mutate state, even though the mutation is a preparatory token write rather than a business-logic write.",
+        "input_fixture": "initial_store_size = len(guard._store)\n# Simulate HEAD /form-page pre-issuing a token\nguard.issue('sess-head-test')  # called from HEAD handler\nassert len(guard._store) == initial_store_size, 'HEAD handler must not mutate token store'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SESSION_FIXATION_CROSS_SESSION",
+        "hypothesis": "Token issued for session_id=alice is accepted when verifying against session_id=bob",
+        "input_fixture": "issue('alice') \u2192 token; verify('bob', token) does not raise; accepts cross-session token",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TIMING_SIDE_CHANNEL_LEAK",
+        "hypothesis": "verify() implementation leaks token byte-by-byte via timing side-channel in comparison",
+        "input_fixture": "submit tokens with increasing valid prefixes (a*, ab*, abc*); measure microsecond response times; timing correlation reveals expected token",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ERROR_MESSAGE_DISCRIMINATION",
+        "hypothesis": "Exception messages from verify() distinguish valid-format-wrong-token from invalid-format payloads",
+        "input_fixture": "verify(sid, '<32-char-hex>') raises 'signature mismatch'; verify(sid, 'garbage') raises 'invalid format'; attacker infers token length/encoding",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-GET_DELETE_UNPROTECTED",
+        "hypothesis": "Guard permits GET request with CSRF token parameter to trigger state mutation (user deletion, data wipe)",
+        "input_fixture": "GET /api/account/delete?csrf_token=valid_token HTTP/1.1; database is modified; user account deleted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HEAD_STATE_MUTATION_BYPASS",
+        "hypothesis": "HEAD request to unsafe endpoint bypasses CSRF guard and executes state-changing logic",
+        "input_fixture": "HEAD /api/transfer?amount=1000&recipient=attacker HTTP/1.1; no CSRF token provided; balance decremented",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-OPTIONS_PREFLIGHT_EXPLOIT",
+        "hypothesis": "OPTIONS request without CSRF token triggers state mutation through main endpoint handler",
+        "input_fixture": "OPTIONS /api/users with crafted payload in body; user record deleted despite no explicit CSRF enforcement for OPTIONS",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CORS_NO_TOKEN_COOKIE_UNSET",
+        "hypothesis": "Cross-origin POST succeeds when SameSite cookie attribute is absent AND CSRF token is missing",
+        "input_fixture": "POST from evil.com (Origin: evil.com); Set-Cookie: session=abc123; no SameSite attribute; no CSRF token in body/header; state mutation proceeds",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TOKEN_SURVIVES_SESSION_ROTATION",
+        "hypothesis": "Token issued before session rotation remains valid for the new session_id",
+        "input_fixture": "token_old = issue('sess_v1'); rotate_session('sess_v1', 'sess_v2'); verify('sess_v2', token_old) does not raise",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-LOGOUT_TOKEN_PERSISTENCE",
+        "hypothesis": "Token issued pre-logout is accepted after logout and re-authentication into any session",
+        "input_fixture": "token = issue(sid); logout(sid); re_authenticate() \u2192 new_sid; verify(new_sid, token) succeeds; attacker gains access",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NULL_SESSION_UNIVERSAL_TOKEN",
+        "hypothesis": "Issuing token with session_id=None or empty string creates universal token accepted for any session",
+        "input_fixture": "token = issue(''); verify('user_123_session', token) succeeds; token works across all sessions",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RACE_CONDITION_VERIFY_AFTER_LOGOUT",
+        "hypothesis": "Race between logout() and verify() in concurrent threads allows stale token acceptance",
+        "input_fixture": "Thread-A: verify(sid, token); Thread-B: logout(sid) concurrently; Thread-A verify() succeeds before invalidation takes effect; session hijacked",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-WEAK_RNG_PREDICTABLE_TOKENS",
+        "hypothesis": "Token generation uses insufficient entropy; attacker predicts next token from observed sequence",
+        "input_fixture": "Observe 10 issued tokens; fit to PRNG state; compute next 100 tokens offline; verify() accepts precomputed tokens for active sessions",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "csrf_guard.token.issued",
+        "required_attributes": [
+          "session_id_hash",
+          "duration_ms"
+        ]
+      },
+      {
+        "event_name": "csrf_guard.token.verified",
+        "required_attributes": [
+          "session_id_hash",
+          "outcome",
+          "duration_ms"
+        ]
+      },
+      {
+        "event_name": "csrf_guard.verification.rejected",
+        "required_attributes": [
+          "session_id_hash",
+          "reason"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "csrf_guard.operations",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 12,
+        "label_keys": [
+          "operation",
+          "outcome"
+        ]
+      },
+      {
+        "name": "csrf_guard.verify.duration",
+        "metric_type": "histogram",
+        "unit": "us",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "outcome"
+        ]
+      },
+      {
+        "name": "csrf_guard.rejections",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": [
+          "reason"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "csrf_guard.issue",
+        "required_attributes": [
+          "session.id_hash"
+        ]
+      },
+      {
+        "operation_name": "csrf_guard.verify",
+        "required_attributes": [
+          "session.id_hash",
+          "outcome"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Implements the Protocol signatures exactly (issue/verify) with matching types; HMAC-SHA256 over session_id||nonce matches the documented token format; constant-time compare via hmac.compare_digest."
+      },
+      {
+        "axis": "completeness",
+        "score": 8,
+        "rationale": "Covers INV-01/02/03 directly (session binding, constant-time, is_safe_method). INV-04 (cross-origin/Origin-Referer) and INV-05 (rotation/epoch) are delegated to caller with only doc-level treatment; no epoch field or rotation hook in-primitive, but spec explicitly externalizes these."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Single CsrfGuardError subclass of ValueError; messages cite invariant IDs without leaking expected MAC; framing/hex/length errors distinguished; chained via `from exc` where relevant."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "runtime_checkable Protocol, frozen dataclass parts, immutable guard after construction, stateless across requests, clean __all__, no hidden globals \u2014 easy to wrap in adapters (double-submit, header-only)."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "CSPRNG nonce, \u226532-byte secret check, constant-time compare, defensive copy of secret, thread-safe by immutability. Minor gaps: no explicit wipe of secret, no metrics hook, no token length cap before hex decode (DoS on huge input is bounded but not rejected early)."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace/name/API match catalog JSON; invariants enumerated with IDs mirroring spec; extension contract honored via Protocol; sources (OWASP ASVS V4.2, Top 10 A01) reflected in provenance."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "No import or instantiation example \u2014 unclear how to create an HmacCsrfGuard or what constructor arguments it takes.",
+          "issue() is never shown; the usage snippet only demonstrates verify(), leaving half the workflow invisible.",
+          "TokenIntrospector is mentioned as an alternative with zero context \u2014 a junior will not know what it is or how it relates."
+        ],
+        "rewrite_suggestion": "Extend the Usage section with a two-step snippet: `guard = HmacCsrfGuard(secret=os.environ['CSRF_SECRET'])` \u2192 `token = guard.issue(session_id=session.id)` \u2192 render token into the form \u2192 on submit call `guard.verify(session_id=..., submitted_token=...)`. Drop the TokenIntrospector reference or add a one-sentence definition."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "'Protocol' (capital P) is never defined \u2014 ambiguous whether it is typing.Protocol, an ABC, or a custom interface in contract.json.",
+          "The extension registry is mentioned ('registry refuses to bind\u2026') but no registration API or registry lookup path is shown.",
+          "Stateless HMAC design implies a shared secret across replicas, but secret storage and distribution strategy are not addressed."
+        ],
+        "rewrite_suggestion": "Add a 'Protocol definition' subsection that either inlines the abstract method signatures from contract.json or links directly to the file with a stable anchor. Add a 'Deployment note' covering shared-secret distribution (env var, KMS, Vault) and the two-phase rotation pattern for zero-downtime rollout."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "invariant_bindings.json is cited but not included \u2014 the test coverage claims cannot be verified without fetching a separate file.",
+          "CSRF_INV_04 conflates 'valid token' and 'same-site cookie' without specifying whether SameSite is a required defense-in-depth layer or merely advisory.",
+          "Malformed token and missing token are not distinguished \u2014 it is unclear whether both follow the same fail-closed path or have different error codes."
+        ],
+        "rewrite_suggestion": "Inline the invariant\u2192test mapping as a table column (test file + test name) rather than externalising it. Add a row to the Invariants table for SameSite enforcement status. Add a note under Security considerations confirming that absent, malformed, and session-mismatched tokens all raise CsrfGuardError with the same opaque message."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "'Swap atomically' gives no guidance on in-flight requests during rotation \u2014 no grace period, dual-secret overlap, or drain window described.",
+          "The metrics section lists one reason label value (mac_mismatch) but does not enumerate others (e.g., missing_token, session_mismatch, malformed_token), making alert routing incomplete.",
+          "No observability for issue() \u2014 a spike in issuance with flat verify() volume is a canary for session hijack; there is no metric name or recommended alert for it."
+        ],
+        "rewrite_suggestion": "Add a 'Secret rotation runbook' with three steps: (1) deploy new HmacCsrfGuard alongside old, (2) allow one token TTL window for in-flight tokens to expire, (3) remove old guard. Enumerate all reason label values for csrf_guard.rejections and add csrf_guard.issuances as a recommended counter metric."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "No user-facing impact is described \u2014 a PM cannot answer 'what does the user see when CSRF protection fires?' from this doc.",
+          "The Alternatives section uses unexplained attack terms ('subdomain takeover', 'Origin header') without translating them to business risk.",
+          "Compatibility scope is absent \u2014 no indication of whether this applies to SPAs, mobile clients, server-rendered apps, or all three."
+        ],
+        "rewrite_suggestion": "Add a 'User and client experience' paragraph: 'A blocked request returns HTTP 403; the UI should display a generic error and prompt the user to reload. No session data is exposed.' Rewrite the Alternatives section to lead with the business risk in plain language (e.g., 'cookie-only protection can be bypassed if any subdomain is ever compromised'). Add a 'Supported client types' bullet list."
+      }
+    ]
+  }
+}

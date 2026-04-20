@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "VACT_INV_01",
+      "invariant_text": "Only one invocation of a given ActorId runs at a time; concurrent calls MUST queue in arrival order.",
+      "confirms_test": "test_inv_single_writer_confirms",
+      "prevents_test": "test_inv_single_writer_prevents",
+      "under_failure_test": "test_inv_single_writer_under_failure"
+    },
+    {
+      "invariant_id": "VACT_INV_02",
+      "invariant_text": "Actor state NEVER escapes the actor instance; callers ALWAYS read it through invoke, never via direct store access.",
+      "confirms_test": "test_inv_state_encapsulated_confirms",
+      "prevents_test": "test_inv_state_encapsulated_prevents",
+      "under_failure_test": "test_inv_state_encapsulated_under_failure"
+    },
+    {
+      "invariant_id": "VACT_INV_03",
+      "invariant_text": "Reminders MUST survive actor deactivation and restart; they SHALL fire after the configured period regardless of host.",
+      "confirms_test": "test_inv_reminders_persist_confirms",
+      "prevents_test": "test_inv_reminders_persist_prevents",
+      "under_failure_test": "test_inv_reminders_persist_under_failure"
+    },
+    {
+      "invariant_id": "VACT_INV_04",
+      "invariant_text": "Timers within an actor CANNOT outlive deactivation; reminders are the durable option for scheduling after restart.",
+      "confirms_test": "test_inv_timers_die_on_deactivation_confirms",
+      "prevents_test": "test_inv_timers_die_on_deactivation_prevents",
+      "under_failure_test": "test_inv_timers_die_on_deactivation_under_failure"
+    },
+    {
+      "invariant_id": "VACT_INV_05",
+      "invariant_text": "Caller code MUST NOT depend on the physical host of an actor because placement can migrate on failover.",
+      "confirms_test": "test_inv_host_transparent_confirms",
+      "prevents_test": "test_inv_host_transparent_prevents",
+      "under_failure_test": "test_inv_host_transparent_under_failure"
+    }
+  ]
+}

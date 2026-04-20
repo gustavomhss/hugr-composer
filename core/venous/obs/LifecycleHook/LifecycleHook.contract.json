@@ -1,0 +1,36 @@
+{
+  "name": "LifecycleHook",
+  "namespace": "obs",
+  "purpose": "Named callback fired at a defined application phase (starting, ready, stopping) so tools can initialize resources and shut down cleanly.",
+  "api_signature": "from enum import Enum\nfrom typing import Awaitable, Callable\n\nclass LifecyclePhase(str, Enum):\n    STARTING = 'starting'\n    READY = 'ready'\n    STOPPING = 'stopping'\n    STOPPED = 'stopped'\n\nLifecycleCallback = Callable[[], Awaitable[None]]\n\nclass LifecycleHook:\n    def __init__(self, phase: LifecyclePhase, cb: LifecycleCallback) -> None:\n        self.phase = phase\n        self.cb = cb\n",
+  "invariants": [
+    "READY MUST fire exactly once, after STARTING and all startup callbacks have completed successfully.",
+    "STOPPING hooks MUST run in reverse registration order (LIFO) so later-initialized resources drain first.",
+    "A failing STARTING hook MUST prevent READY from firing; the app SHALL transition to STOPPED with non-zero exit.",
+    "Hooks MUST NOT block indefinitely; each hook SHALL obey a configured timeout and be cancelled otherwise.",
+    "No hook CAN re-enter its own phase; recursive registration of the same callback in the same phase SHALL raise."
+  ],
+  "extension_contract": "Downstream tools instantiate LifecycleHook and register via a decorator/register()/@Observes-style binder on the application's lifecycle registry; alternative sources (Spring ApplicationReadyEvent, Quarkus StartupEvent, ASP.NET IHostApplicationLifetime) plug in through adapters that map native events onto LifecyclePhase.",
+  "consumption_example": "async def warm_cache() -> None:\n    return None\n\nhook = LifecycleHook(LifecyclePhase.READY, warm_cache)\nassert hook.phase == LifecyclePhase.READY\n",
+  "sources": [
+    {
+      "source": "Spring Boot 3.x Reference \u2014 Application Events and Listeners",
+      "locator": "docs.spring.io/spring-boot/reference/features/spring-application.html \u2014 ApplicationStartingEvent, ApplicationReadyEvent, ApplicationFailedEvent"
+    },
+    {
+      "source": "Quarkus 3.x Lifecycle Guide",
+      "locator": "quarkus.io/guides/lifecycle \u2014 io.quarkus.runtime.StartupEvent, ShutdownEvent, @Observes"
+    },
+    {
+      "source": "ASP.NET Core 8.0 \u2014 IHostApplicationLifetime",
+      "locator": "learn.microsoft.com/dotnet/api/microsoft.extensions.hosting.ihostapplicationlifetime \u2014 ApplicationStarted, ApplicationStopping, ApplicationStopped"
+    }
+  ],
+  "why_essential": "Graceful startup and shutdown sequencing (warm caches, drain connections, flush buffers) CANNOT be invented per tool; a shared hook vocabulary lets orchestrators trust the app's readiness and shutdown signals.",
+  "alternatives_considered": [
+    "atexit-style hooks only \u2014 no STARTING phase, no async support",
+    "Per-tool startup scripts \u2014 ordering is ad-hoc, failures invisible",
+    "Single giant startup function \u2014 monolithic, blocks parallel init"
+  ],
+  "maturity": "battle_tested"
+}

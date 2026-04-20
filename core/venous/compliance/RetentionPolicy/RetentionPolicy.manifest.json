@@ -1,0 +1,722 @@
+{
+  "name": "RetentionPolicy",
+  "namespace": "compliance",
+  "maturity": "battle_tested",
+  "builder_agent_id": 8,
+  "catalog_entry_sha256": "20908161abf6d7521b67b30faa0fb1d27f0ba23ad1f93be232209000ef5c911f",
+  "files": [
+    {
+      "path": "compliance/RetentionPolicy/RetentionPolicy.contract.json",
+      "sha256": "a026fbebffab6ddf01b456539b4671a0d248d86296b7f9ce519716f93c3cfca0",
+      "size_bytes": 2862,
+      "kind": "contract_json"
+    },
+    {
+      "path": "compliance/RetentionPolicy/RetentionPolicy.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "compliance/RetentionPolicy/RetentionPolicy.md",
+      "sha256": "09b98238922f9ad27303b77f8892b46f1d4a053c472d874d0d2679c04e885fa9",
+      "size_bytes": 3493,
+      "kind": "spec_md"
+    },
+    {
+      "path": "compliance/RetentionPolicy/RetentionPolicy.py",
+      "sha256": "89d3d20ed530b4c1f567968b931824c03eef2f6e9d3361527763d7aa040811c0",
+      "size_bytes": 7551,
+      "kind": "impl"
+    },
+    {
+      "path": "compliance/RetentionPolicy/behavioral_RetentionPolicy.py",
+      "sha256": "4b81a62d0b5aafb72e0a0b17efa60c2ccc6371583969013ff9a5640f0332a74f",
+      "size_bytes": 2610,
+      "kind": "behavioral"
+    },
+    {
+      "path": "compliance/RetentionPolicy/chaos_RetentionPolicy.py",
+      "sha256": "cd50e3468498a7bc3f3161281366b4b40edd3924482a3877116b6fb397a3afc8",
+      "size_bytes": 2373,
+      "kind": "chaos"
+    },
+    {
+      "path": "compliance/RetentionPolicy/dashboard.json",
+      "sha256": "a6283a4d2c400de548d3261b24e9ae8defb1a9c7ed33edbdc5170d71a8c5efc5",
+      "size_bytes": 330,
+      "kind": "dashboard"
+    },
+    {
+      "path": "compliance/RetentionPolicy/invariant_bindings.json",
+      "sha256": "521bd3ab91cf42ef885afdd3604ddde17922b0edb5a06cd9a7950628e9483f8b",
+      "size_bytes": 1908,
+      "kind": "test"
+    },
+    {
+      "path": "compliance/RetentionPolicy/metamorphic_RetentionPolicy.py",
+      "sha256": "1e1f2698e415892ac313aaa85ea9a9eaf94cc0c973d5056923596637f0ad7e89",
+      "size_bytes": 2629,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "compliance/RetentionPolicy/observability_RetentionPolicy.py",
+      "sha256": "a63fb0a4a569f952e54fb628d095cef4a77b86d1f50b0f5eda238183e37ed593",
+      "size_bytes": 1646,
+      "kind": "observability"
+    },
+    {
+      "path": "compliance/RetentionPolicy/observability_schema.json",
+      "sha256": "302f41aaaa1a85fe68473bb57ec31e4d935e27c0d9b5426b18a04b71587e4737",
+      "size_bytes": 857,
+      "kind": "observability"
+    },
+    {
+      "path": "compliance/RetentionPolicy/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "compliance/RetentionPolicy/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "compliance/RetentionPolicy/test_RetentionPolicy.py",
+      "sha256": "ed2d78c743b6492a61a66d8e6577601bcbbbbc958d9dec58493349241990538f",
+      "size_bytes": 5567,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "RP_INV_01",
+      "invariant_text": "Every persisted record MUST be tagged with a data_class that maps to a registered RetentionPolicy; writes of untagged data SHALL be rejected.",
+      "confirms_test": "test_inv_write_tagged_confirms",
+      "prevents_test": "test_inv_write_tagged_prevents",
+      "under_failure_test": "test_inv_write_tagged_under_failure"
+    },
+    {
+      "invariant_id": "RP_INV_02",
+      "invariant_text": "max_age MUST be finite and > 0; an open-ended keep-forever policy CANNOT be registered without an explicit legal_basis override.",
+      "confirms_test": "test_inv_max_age_positive_confirms",
+      "prevents_test": "test_inv_max_age_positive_prevents",
+      "under_failure_test": "test_inv_max_age_positive_under_failure"
+    },
+    {
+      "invariant_id": "RP_INV_03",
+      "invariant_text": "deletion_mode MUST be one of 'hard', 'crypto_shred', or 'anonymize'; other values SHALL raise on bind.",
+      "confirms_test": "test_inv_deletion_mode_confirms",
+      "prevents_test": "test_inv_deletion_mode_prevents",
+      "under_failure_test": "test_inv_deletion_mode_under_failure"
+    },
+    {
+      "invariant_id": "RP_INV_04",
+      "invariant_text": "The sweep job MUST be idempotent and SHALL not delete records under an active LegalHold.",
+      "confirms_test": "test_inv_sweep_idempotent_confirms",
+      "prevents_test": "test_inv_sweep_idempotent_prevents",
+      "under_failure_test": "test_inv_sweep_idempotent_under_failure"
+    },
+    {
+      "invariant_id": "RP_INV_05",
+      "invariant_text": "Every purge action MUST emit an entry to the TamperEvidentAuditLog with the policy id and record count.",
+      "confirms_test": "test_inv_audit_on_purge_confirms",
+      "prevents_test": "test_inv_audit_on_purge_prevents",
+      "under_failure_test": "test_inv_audit_on_purge_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 944,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1397,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1046,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 71993,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "41 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1066,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1065,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 57450,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 135376,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNTAGGED-WRITE-BYPASS",
+        "hypothesis": "Calling enforce_on_write with data_class=None or empty string bypasses the registered-policy check because truthiness guards may short-circuit before the registry lookup, allowing untagged records to persist.",
+        "input_fixture": "enforcer.enforce_on_write(data_class='', record_id='r1'); enforcer.enforce_on_write(data_class=None, record_id='r2')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MAXAGE-ZERO-NEGATIVE",
+        "hypothesis": "bind() accepts timedelta(0) or negative timedelta because validation likely checks only for None, causing immediate purge of all records on first sweep and violating the >0 constraint.",
+        "input_fixture": "bind(RetentionPolicy('pii', timedelta(0), 'gdpr', 'hard')); bind(RetentionPolicy('pii', timedelta(days=-1), 'gdpr', 'hard'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MAXAGE-INFINITY",
+        "hypothesis": "timedelta.max or float('inf') converted via timedelta creates an effectively infinite retention without triggering the explicit legal_basis override path for keep-forever policies.",
+        "input_fixture": "bind(RetentionPolicy('logs', timedelta.max, '', 'hard'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DELETION-MODE-CASE",
+        "hypothesis": "deletion_mode validation uses exact string match; passing 'HARD' or 'Hard' or ' hard ' bypasses the allowlist on bind but downstream code lowercases it, causing inconsistent enforcement or silent acceptance of invalid modes.",
+        "input_fixture": "bind(RetentionPolicy('x', timedelta(days=1), 'gdpr', 'HARD')); bind(RetentionPolicy('x', timedelta(days=1), 'gdpr', 'shred'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SWEEP-RACE-DOUBLE",
+        "hypothesis": "Two concurrent sweep() invocations race on the same expired record set without a lock, causing double-deletion counts in the audit log and violating idempotency.",
+        "input_fixture": "Thread(target=enforcer.sweep).start(); Thread(target=enforcer.sweep).start(); assert audit_log.entries count is consistent",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-LEGAL-HOLD-TOCTOU",
+        "hypothesis": "sweep() checks LegalHold status then deletes in two steps; placing a hold between the check and the delete still results in purge \u2014 a classic TOCTOU violation.",
+        "input_fixture": "Start sweep, during iteration call legal_hold.apply(record_id); observe record still deleted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AUDIT-LOG-SKIP-ON-ZERO",
+        "hypothesis": "When sweep finds zero expired records, the implementation skips audit emission as an optimization, violating the invariant that every purge action emits an entry even if count=0.",
+        "input_fixture": "enforcer.sweep() on empty-expired set; assert len(audit_log.entries) >= 1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-BACKWARDS",
+        "hypothesis": "System clock rollback (NTP correction or manual set) makes recently-purged records appear 'not yet expired', and next sweep with forward clock double-purges \u2014 breaking idempotency across reboots.",
+        "input_fixture": "sweep(); freeze_time(now - 1 day); write record; freeze_time(now + 1 day); sweep()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DATA-CLASS-INJECTION",
+        "hypothesis": "data_class string is concatenated into an SQL or log query unsafely; passing \"pii'; DROP TABLE records;--\" causes injection during enforce_on_write or sweep lookup.",
+        "input_fixture": "enforce_on_write(data_class=\"pii'; DROP TABLE records;--\", record_id='r1')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REBIND-OVERWRITE",
+        "hypothesis": "Calling bind() twice with same data_class silently overwrites the prior policy, letting an attacker shrink max_age to timedelta(seconds=1) and trigger mass purge on next sweep without audit trail of the policy change.",
+        "input_fixture": "bind(RetentionPolicy('pii', timedelta(days=365), 'gdpr', 'hard')); bind(RetentionPolicy('pii', timedelta(seconds=1), 'gdpr', 'hard')); sweep()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AUDIT-LOG-AMPLIFICATION",
+        "hypothesis": "A sweep over N million expired records emits N individual audit entries instead of one aggregate, causing log amplification that exhausts the TamperEvidentAuditLog's append throughput and drops entries.",
+        "input_fixture": "Populate 10M expired records; call sweep(); measure audit_log entry count vs expected",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CRYPTO-SHRED-KEY-REUSE",
+        "hypothesis": "deletion_mode='crypto_shred' deletes the key but other policies share the same KEK; shredding one data_class renders unrelated records unreadable, violating scoped deletion semantics.",
+        "input_fixture": "bind two policies sharing KEK; sweep class A with crypto_shred; attempt read on class B records",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FROZEN-DATACLASS-MUTATION",
+        "hypothesis": "@dataclass(frozen=True) prevents attribute assignment but object.__setattr__ or __dict__ manipulation can mutate max_age post-bind, bypassing validation and the registry's immutability expectation.",
+        "input_fixture": "p = RetentionPolicy(...); bind(p); object.__setattr__(p, 'max_age', timedelta(seconds=0))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-SWEEP-AUDIT",
+        "hypothesis": "Replaying a captured sweep() RPC with the same nonce re-emits the audit entry but performs no delete, polluting the tamper-evident log with phantom purges and masking real activity.",
+        "input_fixture": "Capture sweep RPC; replay 1000x; inspect audit log for duplicate entries with identical policy_id/count",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE-BIND-WRITE",
+        "hypothesis": "A concurrent thread calls enforce_on_write immediately after bind() acquires the policy dict lock but before the new policy is committed to the store. The write sees the policy as 'registered' mid-transaction and passes validation, but if bind() rolls back the write slot is now orphaned with no policy. This breaks Invariant-1 under TOCTOU: the check-then-act gap in bind+enforce_on_write is not atomic.",
+        "input_fixture": "Thread-A: enforcer.bind(RetentionPolicy('PII', timedelta(days=365), 'GDPR-6.1b', 'hard'))  [holds lock, not yet flushed]\nThread-B: enforcer.enforce_on_write('PII', 'rec-0001')  [reads partial state, passes]\nThread-A: raises IntegrityError, bind rolls back\nResult: rec-0001 stored with data_class='PII' but no registered policy",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TIMEDELTA-MAX-OVERFLOW",
+        "hypothesis": "timedelta(days=999999999) is the Python max; adding it to datetime.utcnow() raises OverflowError inside sweep() age comparison. If the enforcer catches bare Exception and treats it as 'record not expired', no record under this policy is ever purged \u2014 effectively creating a silent keep-forever policy without a legal_basis override, defeating Invariant-2.",
+        "input_fixture": "policy = RetentionPolicy(\n  data_class='ARCHIVE',\n  max_age=timedelta(days=999999999),\n  legal_basis='',\n  deletion_mode='hard'\n)\nenforcer.bind(policy)  # should this be allowed?\nenforcer.sweep()       # OverflowError on expiry_at = created_at + max_age",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ZERO-TIMEDELTA-BYPASS",
+        "hypothesis": "timedelta(0) is falsy in Python (bool(timedelta(0)) == False). A guard written as `if not policy.max_age` passes the check, but timedelta(0) means records expire the instant they are written. Depending on sweep scheduling, records may never be readable after first write, causing data loss without legal justification. Conversely, if the guard only checks `max_age > timedelta(0)`, timedelta(microseconds=1) slips through as 'positive' while being operationally zero.",
+        "input_fixture": "RetentionPolicy('SESSION', timedelta(0), 'GDPR-6.1a', 'hard')  # bool-falsy bypass\nRetentionPolicy('SESSION', timedelta(microseconds=1), 'GDPR-6.1a', 'hard')  # microsecond boundary",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DELETION-MODE-SUBCLASS-BYPASS",
+        "hypothesis": "deletion_mode validation likely uses `value in {'hard','crypto_shred','anonymize'}`. A custom str subclass that overrides __eq__ and __hash__ can return True for any comparison, smuggling an arbitrary deletion mode (e.g., 'noop' or 'log_only') past the guard. The enforcer stores the object reference and later dispatches on it, executing the wrong deletion branch silently.",
+        "input_fixture": "class EvilMode(str):\n    def __eq__(self, other): return True\n    def __hash__(self): return hash('hard')\n\npolicy = RetentionPolicy('PII', timedelta(days=30), 'GDPR', EvilMode('noop'))\nenforcer.bind(policy)   # passes set-membership check\nenforcer.sweep()        # dispatches 'noop' \u2014 no actual deletion",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LEGAL-HOLD-TOCTOU-SWEEP",
+        "hypothesis": "sweep() loads a batch of expired records, checks LegalHold status, then issues DELETE. If a LegalHold is created for a record between the status-check and the DELETE statement, the record is deleted despite an active hold. Since frozen dataclass does not control the external LegalHold store, and sweep() likely uses a non-serializable isolation level, this is a classic TOCTOU on Invariant-4.",
+        "input_fixture": "# Timeline (ms):\n# t=0  sweep() SELECT * WHERE expired_at < NOW() -> returns [rec-42]\n# t=1  sweep() SELECT legalhold WHERE record_id='rec-42' -> NULL (no hold)\n# t=2  compliance officer: legal_hold_store.create('rec-42', reason='litigation')\n# t=3  sweep() DELETE WHERE record_id='rec-42'  # hold check already passed\n# Result: rec-42 deleted despite active LegalHold",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SWEEP-NON-IDEMPOTENT-DOUBLE-COUNT",
+        "hypothesis": "If sweep() is called concurrently by two scheduler instances (e.g., k8s cron job with overlapping pods), both may SELECT the same expired records, both emit audit log entries, and both attempt DELETE. The second DELETE finds 0 rows but the audit log already recorded a count > 0 from the first run. The log is therefore inconsistent (phantom deletion event), and downstream compliance dashboards double-count purge volume \u2014 a silent audit integrity violation.",
+        "input_fixture": "import threading\nresults = []\ndef run(): results.append(enforcer.sweep())\nt1, t2 = threading.Thread(target=run), threading.Thread(target=run)\nt1.start(); t2.start(); t1.join(); t2.join()\n# Both see count > 0, but actual deletions = results[0] (first wins)\n# Audit log has 2 entries, total > actual",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AUDIT-LOG-SKIP-ON-EXCEPTION",
+        "hypothesis": "If the DELETE succeeds but TamperEvidentAuditLog.append() raises (network partition, disk full, schema mismatch), and the enforcer does not wrap both operations in a distributed transaction, records are permanently purged without an audit entry. Invariant-5 is broken silently \u2014 no error is surfaced to the caller of sweep() if the log write is best-effort.",
+        "input_fixture": "# Patch audit log to fail after DELETE commits:\noriginal_append = audit_log.append\ndef failing_append(*a, **kw): raise IOError('disk full')\naudit_log.append = failing_append\n\ncount = enforcer.sweep()  # returns N (delete succeeded)\n# audit log has NO entry for this sweep run\n# assert len(audit_log.entries_for(policy_id)) == 0  # TRUE \u2014 invariant violated",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY-DATA-CLASS-TAG-BYPASS",
+        "hypothesis": "enforce_on_write checks that data_class maps to a registered policy. An empty string '' or whitespace-only string '   ' is technically a string. If the enforcer does `if data_class not in registry` and '' was never registered, the write is rejected \u2014 correct. But if a caller normalizes data_class with strip() before tagging, two different callers may produce '' vs '   ' for the same record type, causing one to be rejected and the other to be accepted if '' happens to be registered as a catch-all during testing.",
+        "input_fixture": "enforcer.bind(RetentionPolicy('', timedelta(days=1), 'test', 'hard'))  # empty-string policy\nenforcer.enforce_on_write('', 'rec-x')   # passes \u2014 empty-string is 'registered'\nenforcer.enforce_on_write('   ', 'rec-y')  # raises \u2014 not registered\n# rec-x accepted with data_class='' \u2014 functionally unclassified",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK-SKEW-NTP-BACKWARD",
+        "hypothesis": "sweep() computes expiry as created_at + max_age and compares to datetime.utcnow(). If the system clock jumps backward (NTP correction, VM resume from snapshot), records whose expiry_at is in the 'future' relative to the new clock are skipped. Records that should have been deleted are silently reprieved. Worse, if clock skews forward, records younger than max_age may be deleted prematurely, violating user expectations and potentially GDPR obligations around minimum retention.",
+        "input_fixture": "# Simulate backward clock skew:\nimport unittest.mock, datetime\nwith unittest.mock.patch('datetime.datetime') as mock_dt:\n    mock_dt.utcnow.return_value = datetime.datetime(2026, 1, 1)  # far past\n    count = enforcer.sweep()\n# count == 0 even though records are truly expired by wall clock\n# Records linger past their max_age \u2014 data retained longer than legally permitted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LEGAL-BASIS-INJECTION",
+        "hypothesis": "legal_basis is a free-form string stored in the TamperEvidentAuditLog. If the audit log backend interpolates legal_basis into a SQL query or log format string without parameterization, a crafted legal_basis such as \"GDPR'; DROP TABLE audit_log; --\" can corrupt or destroy the audit trail, making it impossible to prove compliance. This is a SQL-injection / log-injection attack against the audit integrity guarantee in Invariant-5.",
+        "input_fixture": "malicious_policy = RetentionPolicy(\n  data_class='CONTRACT',\n  max_age=timedelta(days=365),\n  legal_basis=\"GDPR-6.1b'; DROP TABLE retention_audit_log; --\",\n  deletion_mode='hard'\n)\nenforcer.bind(malicious_policy)\nenforcer.sweep()  # audit log backend executes unparameterized INSERT \u2014 table dropped",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-POLICY-REBIND-RETROACTIVE",
+        "hypothesis": "RetentionPolicy is a frozen dataclass, but bind() is called again with the same data_class and a shorter max_age. If the enforcer overwrites the registry entry, the next sweep() uses the new shorter max_age and deletes records that were legally promised a longer retention window. There is no version-lock or 'policy in use' guard. This allows retroactive reduction of retention periods for already-written records, violating write-time policy binding guarantees.",
+        "input_fixture": "p1 = RetentionPolicy('MEDICAL', timedelta(days=3650), 'HIPAA', 'hard')\nenforcer.bind(p1)\nenforcer.enforce_on_write('MEDICAL', 'patient-001')  # written under 10-year policy\n\np2 = RetentionPolicy('MEDICAL', timedelta(days=30), 'internal', 'hard')\nenforcer.bind(p2)   # overwrites \u2014 no guard\nenforcer.sweep()    # patient-001 deleted after 30 days instead of 10 years",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DELETION-MODE-NONE-TYPE",
+        "hypothesis": "If deletion_mode is passed as None (Python None, not the string 'none'), a naive `value in {'hard','crypto_shred','anonymize'}` check raises no error because None in a set returns False, not an exception. If the bind() implementation only warns or logs instead of raising, the policy is stored with deletion_mode=None. During sweep(), dispatch on deletion_mode hits an unexpected branch (None != any string), falls through to a default no-op, and records are never deleted \u2014 silent retention violation.",
+        "input_fixture": "policy = RetentionPolicy('GDPR_PII', timedelta(days=90), 'GDPR-17', None)\nenforcer.bind(policy)   # should raise; may only warn\nenforcer.sweep()         # dispatch: if mode == 'hard': ... elif mode == 'crypto_shred': ... else: pass\n# records silently retained forever",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNTAGGED_WRITE",
+        "hypothesis": "Write operation succeeds for record without data_class tag, violating invariant that all records must be tagged.",
+        "input_fixture": "enforcer.enforce_on_write(data_class=None, record_id='rec_123'); persist({'user_id': 1, 'email': 'test@example.com'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNREGISTERED_CLASS",
+        "hypothesis": "Write succeeds for data_class that has no registered RetentionPolicy, bypassing classification requirement.",
+        "input_fixture": "enforcer.enforce_on_write(data_class='UnregisteredModel', record_id='rec_456'); persist_record(data)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY_CLASS_STRING",
+        "hypothesis": "Empty string as data_class bypasses validation and gets treated as valid classification.",
+        "input_fixture": "enforcer.enforce_on_write(data_class='', record_id='rec_789'); persist_record(data)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MAX_AGE_ZERO",
+        "hypothesis": "Bind RetentionPolicy with max_age=timedelta(0) succeeds, violating constraint that max_age must be > 0.",
+        "input_fixture": "policy = RetentionPolicy(data_class='Events', max_age=timedelta(0), legal_basis='gdpr', deletion_mode='hard'); enforcer.bind(policy)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NEGATIVE_MAX_AGE",
+        "hypothesis": "Bind with negative timedelta interpreted as delete immediately on write, breaking retention semantics.",
+        "input_fixture": "policy = RetentionPolicy(data_class='Logs', max_age=timedelta(days=-7), legal_basis='ccpa', deletion_mode='hard'); enforcer.bind(policy)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-FOREVER_POLICY_VAGUE_BASIS",
+        "hypothesis": "Register policy with extremely large max_age and vague legal_basis, circumventing keep-forever restriction.",
+        "input_fixture": "policy = RetentionPolicy(data_class='CoreData', max_age=timedelta(days=999999), legal_basis='business', deletion_mode='hard'); enforcer.bind(policy)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INVALID_DELETION_MODE",
+        "hypothesis": "Bind policy with deletion_mode value outside enum without validation raising, accepting 'no_delete'.",
+        "input_fixture": "policy = RetentionPolicy(data_class='UserData', max_age=timedelta(days=30), legal_basis='gdpr', deletion_mode='no_delete'); enforcer.bind(policy)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HOLD_BYPASS_SWEEP",
+        "hypothesis": "Sweep job deletes record with active LegalHold because hold_until field not checked before expiration query.",
+        "input_fixture": "hold = LegalHold(record_id='rec_111', hold_until=datetime.now() + timedelta(days=30)); hold.save(); enforcer.sweep()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SWEEP_RACE_DOUBLE_DELETE",
+        "hypothesis": "Two concurrent sweep calls execute simultaneously, both deleting same batch; second call breaks idempotency.",
+        "input_fixture": "Thread-1: enforcer.sweep(); Thread-2: enforcer.sweep() [overlapping against identical expired record set]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MISSING_AUDIT_ENTRY",
+        "hypothesis": "Purge of 1000 records completes without emitting entry to TamperEvidentAuditLog, leaving zero audit trail.",
+        "input_fixture": "enforcer.sweep(); assert TamperEvidentAuditLog.filter(policy_id=policy.id).count() > 0 [fails]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK_SKEW_BYPASS",
+        "hypothesis": "System clock jumps backward after purge, making deleted records appear unexpired on next audit query.",
+        "input_fixture": "Record created 2026-04-01. Sweep runs on 2026-05-01, deletes. Clock resets to 2026-04-25. Query finds record.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CRED_LEAK_ANON_MODE",
+        "hypothesis": "Anonymize mode hashes email but leaves unencrypted API tokens in metadata columns, leaking secrets.",
+        "input_fixture": "Record: {email: 'admin@bank.com', api_token: 'sk_live_xyz123'}. After anonymize: email\u2192hash, token unchanged.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-POLICY_REBIND_MID_SWEEP",
+        "hypothesis": "Policy rebind changes deletion mode mid-sweep; audit log inconsistency between actual deletion and logged mode.",
+        "input_fixture": "Sweep hard-deletes 300 records. Mid-loop: bind(anonymize_policy). Audit log shows 500 anonymized but 300 were hard-deleted.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NULL_LEGAL_BASIS",
+        "hypothesis": "Bind policy with legal_basis=None bypasses legal accountability requirement; no basis recorded.",
+        "input_fixture": "policy = RetentionPolicy(data_class='PII', max_age=timedelta(days=90), legal_basis=None, deletion_mode='hard'); enforcer.bind(policy)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-WRITE_BEFORE_BIND",
+        "hypothesis": "Write data_class='Sensitive' before binding policy; enforce_on_write succeeds because lookup returns None instead of raising.",
+        "input_fixture": "enforcer.enforce_on_write(data_class='Sensitive', record_id='rec_001'); persist(data); later: enforcer.bind(sensitive_policy)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "retention.policy.bound",
+        "required_attributes": [
+          "data_class",
+          "max_age_seconds"
+        ]
+      },
+      {
+        "event_name": "retention.sweep.completed",
+        "required_attributes": [
+          "data_class",
+          "purged"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "retention.records.purged",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 100,
+        "label_keys": [
+          "data_class",
+          "deletion_mode"
+        ]
+      },
+      {
+        "name": "retention.records.held",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 100,
+        "label_keys": [
+          "data_class"
+        ]
+      },
+      {
+        "name": "retention.sweep.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 50,
+        "label_keys": []
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "retention.enforce_on_write",
+        "required_attributes": [
+          "data_class",
+          "record_id"
+        ]
+      },
+      {
+        "operation_name": "retention.sweep",
+        "required_attributes": [
+          "purged"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Dataclass signature and Protocol match catalog verbatim (data_class, max_age, legal_basis, deletion_mode; bind/enforce_on_write/sweep). Frozen dataclass preserves immutability. Minor: catalog says 'policy id' in audit but impl uses data_class as id \u2014 acceptable since data_class is the binding key."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All 5 invariants enforced: RP_INV_01 (write gate + registration), RP_INV_02 (max_age>0, legal_basis non-empty), RP_INV_03 (enum + bind type check), RP_INV_04 (idempotent sweep + hold check), RP_INV_05 (audit emission per data_class). Reference InMemory impl plus Protocols for AuditSink/HoldCheck."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Single typed exception (RetentionPolicyError subclassing ValueError). Every raise cites the invariant ID (RP_INV_01..03) and includes offending value via !r. Messages are actionable and unambiguous."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "AuditSink and HoldCheck are runtime_checkable Protocols injected via constructor; `now` clock injected for deterministic tests. No hard dependency on concrete audit/hold impls \u2014 avoids circular imports. Frozen dataclass is hashable/shareable."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Deterministic clock injection, UTC-aware timestamps, idempotent sweep, audit-on-purge, legal-hold precedence. Thread-safety claim relies on CPython GIL + single-writer sweeper (documented). No lock around _records mutation \u2014 acceptable given documented single-writer assumption but borderline."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace-appropriate module docstring with regulation anchors, invariant IDs, __all__ export list, Protocol matches catalog API signature exactly, ALLOWED_DELETION_MODES is a Final frozenset matching the three literals. Consumption example in spec is runnable against the impl."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'crypto_shred assumes an external KeyRotationSchedule retires the data key' \u2014 no example of what that wiring looks like or where to find KeyRotationSchedule",
+          "LegalHold appears in invariants and security notes but is absent from the API surface and the usage example \u2014 unclear how to create or check one",
+          "DeletionAdapter is mentioned in the extension contract with no interface definition or stub \u2014 leaves the extension path completely opaque"
+        ],
+        "rewrite_suggestion": "Add a short LegalHold usage snippet alongside the existing example. Show a minimal DeletionAdapter stub. Replace 'CPython's atomic list operations' with plain language ('thread-safe under the standard Python interpreter')."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "Thread safety relies on CPython's GIL ('atomic list operations') \u2014 no note on portability to PyPy or free-threaded CPython 3.13+; this is a ticking landmine",
+          "Sweep/write race is under-specified: 'single-writer sweeper assumed' is buried after the thread-safety claim, making the actual isolation model ambiguous",
+          "Extension hook for custom deletion_mode values is referenced as 'governance-reviewed' but no interface, registry, or code path is shown \u2014 unimplementable as written"
+        ],
+        "rewrite_suggestion": "Explicitly document the GIL dependency as a constraint and the consequence of violating the single-sweeper assumption. Define the extension hook interface (even as a Protocol stub). Move the single-sweeper caveat into the thread-safety section, not after it."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "The critical caveat that crypto_shred does NOT delete bytes is buried in a bullet \u2014 it must be a prominent WARNING block; a misconfigured system silently fails the PCI-DSS control it claims to implement",
+          "TamperEvidentAuditLog is named but never described \u2014 no hash chaining, append-only store, or external notarization detail; auditors cannot assess whether it satisfies SI-12 evidence requirements",
+          "Quarantine behavior for unclassified data is undefined \u2014 'rejected at write' is implied but not stated; no mention of whether the rejection itself is logged"
+        ],
+        "rewrite_suggestion": "Promote the crypto_shred byte-persistence caveat to a top-level WARNING. Add a one-paragraph description of TamperEvidentAuditLog's tamper-evidence mechanism. Clarify that unclassified writes raise RetentionPolicyError AND emit a quarantine audit entry."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "No sweep performance characteristics \u2014 expected latency or record-count ceiling at which InMemoryRetentionEnforcer degrades is completely absent",
+          "Concurrent sweeper behavior is unspecified beyond 'single-writer assumed' \u2014 no guidance on what double-sweep does (idempotent? duplicate audit entries? data corruption?)",
+          "No observability surface \u2014 no metrics, no structured log fields, no hook to alert on sweep failure or zero-purge anomaly; blind in production"
+        ],
+        "rewrite_suggestion": "Add a 'Operational notes' section: sweep time complexity, recommended cron interval, idempotency proof under double-invocation, and at minimum two observable outputs (purge_count metric, sweep_error log field)."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "Regulation anchors cite article numbers without plain-language impact ('Art 5(1)(e)') \u2014 a PM cannot explain to legal or sales what compliance benefit the primitive actually delivers",
+          "Alternatives section uses jargon ('TTL indexes', 'SOC 2 evidence') without framing the business risk of those alternatives \u2014 the 'why we built this' argument is lost",
+          "'Governance-reviewed' extension process implies an approval workflow but gives no timeline or owner \u2014 blocks product planning for teams that need a custom deletion_mode"
+        ],
+        "rewrite_suggestion": "Open with a two-sentence business value statement ('ships GDPR/PCI compliance as a code invariant; eliminates quarterly runbook audits'). Translate regulation anchors to plain outcomes. Define who owns governance review and the expected SLA."
+      }
+    ]
+  }
+}

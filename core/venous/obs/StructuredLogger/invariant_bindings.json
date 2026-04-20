@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "LOG_INV_01",
+      "invariant_text": "Every emitted record MUST be a single line of valid UTF-8 JSON with keys 'ts', 'level', 'event', plus the caller-provided fields.",
+      "confirms_test": "test_inv_json_single_line_confirms",
+      "prevents_test": "test_inv_json_single_line_prevents",
+      "under_failure_test": "test_inv_json_single_line_under_failure"
+    },
+    {
+      "invariant_id": "LOG_INV_02",
+      "invariant_text": "Log level SHALL be one of DEBUG, INFO, WARN, ERROR; TRACE and FATAL are FORBIDDEN to prevent drift from OTel log severity ranges.",
+      "confirms_test": "test_inv_level_taxonomy_confirms",
+      "prevents_test": "test_inv_level_taxonomy_prevents",
+      "under_failure_test": "test_inv_level_taxonomy_under_failure"
+    },
+    {
+      "invariant_id": "LOG_INV_03",
+      "invariant_text": "When a span is active in the current context, the record MUST automatically include 'trace_id' and 'span_id' in hex form.",
+      "confirms_test": "test_inv_span_attachment_confirms",
+      "prevents_test": "test_inv_span_attachment_prevents",
+      "under_failure_test": "test_inv_span_attachment_under_failure"
+    },
+    {
+      "invariant_id": "LOG_INV_04",
+      "invariant_text": "Printf-style formatting with %s or f-strings inside the event message is FORBIDDEN; values ALWAYS travel as typed fields.",
+      "confirms_test": "test_inv_no_formatting_confirms",
+      "prevents_test": "test_inv_no_formatting_prevents",
+      "under_failure_test": "test_inv_no_formatting_under_failure"
+    },
+    {
+      "invariant_id": "LOG_INV_05",
+      "invariant_text": "Secrets matching registered redaction patterns (authorization headers, bearer tokens, card PANs) MUST be replaced with '[REDACTED]' before serialization.",
+      "confirms_test": "test_inv_redaction_confirms",
+      "prevents_test": "test_inv_redaction_prevents",
+      "under_failure_test": "test_inv_redaction_under_failure"
+    },
+    {
+      "invariant_id": "LOG_INV_06",
+      "invariant_text": "Binding a field NEVER mutates the parent logger; bind returns a new immutable logger instance.",
+      "confirms_test": "test_inv_bind_immutable_confirms",
+      "prevents_test": "test_inv_bind_immutable_prevents",
+      "under_failure_test": "test_inv_bind_immutable_under_failure"
+    }
+  ]
+}

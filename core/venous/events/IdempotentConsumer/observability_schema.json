@@ -1,0 +1,49 @@
+{
+  "logs": [
+    {
+      "event_name": "consumer.received",
+      "required_attributes": ["consumer_name", "key"]
+    },
+    {
+      "event_name": "consumer.effect.applied",
+      "required_attributes": ["consumer_name", "key", "outputs_count"]
+    },
+    {
+      "event_name": "consumer.duplicate.skipped",
+      "required_attributes": ["consumer_name", "key"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "consumer.deliveries",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["result"]
+    },
+    {
+      "name": "consumer.effect.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": ["result"]
+    },
+    {
+      "name": "consumer.cache.size",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": ["consumer"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "consumer.handle",
+      "required_attributes": ["consumer.name", "message.key", "result"]
+    },
+    {
+      "operation_name": "consumer.on_duplicate",
+      "required_attributes": ["consumer.name", "message.key"]
+    }
+  ]
+}

@@ -1,0 +1,727 @@
+{
+  "name": "EncryptionPolicy",
+  "namespace": "policy",
+  "maturity": "battle_tested",
+  "builder_agent_id": 8,
+  "catalog_entry_sha256": "18ef791f0fbbf7ed33e062f116d33134eea69127915de43f6eb738d13a16fb01",
+  "files": [
+    {
+      "path": "policy/EncryptionPolicy/EncryptionPolicy.contract.json",
+      "sha256": "aca09eba0a4761ae77d42896f81a22f061fb368a19adf36c64423987965bd41c",
+      "size_bytes": 3038,
+      "kind": "contract_json"
+    },
+    {
+      "path": "policy/EncryptionPolicy/EncryptionPolicy.manifest.json",
+      "sha256": "35646b48124cc61a35585e52020ede0bc874c0f0cf3759270237b2b9982277fe",
+      "size_bytes": 41211,
+      "kind": "manifest"
+    },
+    {
+      "path": "policy/EncryptionPolicy/EncryptionPolicy.md",
+      "sha256": "15ccfaf55c8051dd979f0d4a453c6e400b628931d3f2571dbe157821140c3ec4",
+      "size_bytes": 2632,
+      "kind": "spec_md"
+    },
+    {
+      "path": "policy/EncryptionPolicy/EncryptionPolicy.py",
+      "sha256": "d495d090b8fcfc5b479266455dd943210b693e5c1ecaee3300184fe1e0fcf5b6",
+      "size_bytes": 5423,
+      "kind": "impl"
+    },
+    {
+      "path": "policy/EncryptionPolicy/behavioral_EncryptionPolicy.py",
+      "sha256": "6dd48de6258498f61f5a8be23062f9f47445b5259806adffa05fb2eb6cbaae40",
+      "size_bytes": 1656,
+      "kind": "behavioral"
+    },
+    {
+      "path": "policy/EncryptionPolicy/chaos_EncryptionPolicy.py",
+      "sha256": "8b71133c8a61b2f8b0c1b6224ccabefe316cc89510f239daf35e6b632f04baed",
+      "size_bytes": 1758,
+      "kind": "chaos"
+    },
+    {
+      "path": "policy/EncryptionPolicy/dashboard.json",
+      "sha256": "376aba0f729eee5c86e43bdd384cb407c73cb9e376b6e7135788cff15adb1460",
+      "size_bytes": 169,
+      "kind": "dashboard"
+    },
+    {
+      "path": "policy/EncryptionPolicy/invariant_bindings.json",
+      "sha256": "3bb9f4a59e7a756a324cf0019756af905e717d8799889df46f58f8a1ed5f6c86",
+      "size_bytes": 1636,
+      "kind": "test"
+    },
+    {
+      "path": "policy/EncryptionPolicy/metamorphic_EncryptionPolicy.py",
+      "sha256": "e93f81e7fc6f926f76bd3d5256b62f06c8f91c1fb1be826d3500c131a167d9a7",
+      "size_bytes": 1405,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "policy/EncryptionPolicy/observability_EncryptionPolicy.py",
+      "sha256": "dc28c28ad2c2d701ca1e88037236c9d31beae453b533100c827a715552439083",
+      "size_bytes": 1488,
+      "kind": "observability"
+    },
+    {
+      "path": "policy/EncryptionPolicy/observability_schema.json",
+      "sha256": "ae0e363b08a312be29f34d2a565fd7633c9a0c5af5a717b221fa319caeda5fc8",
+      "size_bytes": 788,
+      "kind": "observability"
+    },
+    {
+      "path": "policy/EncryptionPolicy/persona_reviews.json",
+      "sha256": "27c42175503d1ae0ae0caf2476c356ec4ead33b5f32e488a3c7eecb64d008dbb",
+      "size_bytes": 515,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "policy/EncryptionPolicy/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "policy/EncryptionPolicy/test_EncryptionPolicy.py",
+      "sha256": "6625b85f3e8c3e0c9776a917022fed91644967587d3b3547dd9ca4821f8f58d4",
+      "size_bytes": 3570,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "EP_INV_01",
+      "invariant_text": "Every data_class that stores PII, PHI, or PCI MUST have an EncryptionPolicy bound; writes without resolve() succeeding SHALL fail.",
+      "confirms_test": "test_inv_bound_required_confirms",
+      "prevents_test": "test_inv_bound_required_prevents",
+      "under_failure_test": "test_inv_bound_required_under_failure"
+    },
+    {
+      "invariant_id": "EP_INV_02",
+      "invariant_text": "at_rest_cipher MUST be one of the approved set (AES-256-GCM, ChaCha20-Poly1305); unapproved ciphers SHALL raise on bind.",
+      "confirms_test": "test_inv_cipher_enum_confirms",
+      "prevents_test": "test_inv_cipher_enum_prevents",
+      "under_failure_test": "test_inv_cipher_enum_under_failure"
+    },
+    {
+      "invariant_id": "EP_INV_03",
+      "invariant_text": "in_transit_min_tls MUST be TLS1.2 or higher; binding TLS1.0 or TLS1.1 is FORBIDDEN.",
+      "confirms_test": "test_inv_tls_min_confirms",
+      "prevents_test": "test_inv_tls_min_prevents",
+      "under_failure_test": "test_inv_tls_min_under_failure"
+    },
+    {
+      "invariant_id": "EP_INV_04",
+      "invariant_text": "key_provider MUST reference an external KMS; raw key material in configuration files is NEVER permitted.",
+      "confirms_test": "test_inv_kms_scheme_confirms",
+      "prevents_test": "test_inv_kms_scheme_prevents",
+      "under_failure_test": "test_inv_kms_scheme_under_failure"
+    },
+    {
+      "invariant_id": "EP_INV_05",
+      "invariant_text": "rotation MUST be <= 365 days for PCI data_classes; a longer cadence CANNOT be bound.",
+      "confirms_test": "test_inv_pci_rotation_confirms",
+      "prevents_test": "test_inv_pci_rotation_prevents",
+      "under_failure_test": "test_inv_pci_rotation_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 363,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1005,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 981,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 135362,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "42 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1153,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 985,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 68862,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 209068,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNBOUND-WRITE-PII",
+        "hypothesis": "Writing records for a data_class that stores PII without first calling bind() should fail, but if resolve() is tolerant or defaults to a permissive policy, the write will silently succeed and leak plaintext PII to storage.",
+        "input_fixture": "registry = EncryptionRegistry(); registry.write(data_class='customer_email', payload={'email':'a@b.com'})  # no bind() beforehand",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CIPHER-CASE-BYPASS",
+        "hypothesis": "The approved cipher allowlist likely uses exact string match. Submitting 'aes-256-gcm' (lowercase) or 'AES_256_GCM' should bypass validation if normalization is missing, letting an attacker later swap to a weaker implementation labeled as approved.",
+        "input_fixture": "EncryptionPolicy(data_class='pci_card', at_rest_cipher='aes-256-gcm', in_transit_min_tls='TLS1.2', key_provider='kms://x', rotation=timedelta(days=30))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNAPPROVED-CIPHER-DES",
+        "hypothesis": "Binding a policy with a clearly broken cipher like DES or RC4 should raise, but if the allowlist check is missing or uses substring matching ('AES' in name), DES-AES-WRAP could slip through.",
+        "input_fixture": "EncryptionPolicy(data_class='phi_notes', at_rest_cipher='DES-AES-WRAP', in_transit_min_tls='TLS1.2', key_provider='kms://x', rotation=timedelta(days=90))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TLS10-DOWNGRADE",
+        "hypothesis": "Binding TLS1.0 must be forbidden, but string comparison 'TLS1.2' >= 'TLS1.0' works lexicographically yet fails for 'TLS1.10' vs 'TLS1.2' (lex '1.10' < '1.2'). A naive string compare lets TLS1.0 pass or blocks future TLS1.10.",
+        "input_fixture": "EncryptionPolicy(data_class='pii_name', at_rest_cipher='AES-256-GCM', in_transit_min_tls='TLS1.0', key_provider='kms://x', rotation=timedelta(days=30))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TLS-MALFORMED-TYPE",
+        "hypothesis": "Passing a non-string TLS value (int, None, bytes) may crash the validator or bypass the check entirely if comparison swallows TypeError.",
+        "input_fixture": "EncryptionPolicy(data_class='pii', at_rest_cipher='AES-256-GCM', in_transit_min_tls=None, key_provider='kms://x', rotation=timedelta(days=30))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RAW-KEY-IN-PROVIDER",
+        "hypothesis": "key_provider validation may only check for 'kms://' prefix. Embedding raw key material in the query string (kms://vault?key=BASE64MATERIAL) passes the check while leaking the key into config files and logs.",
+        "input_fixture": "EncryptionPolicy(data_class='pci', at_rest_cipher='AES-256-GCM', in_transit_min_tls='TLS1.2', key_provider='kms://local?key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', rotation=timedelta(days=30))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FILE-SCHEME-KEY",
+        "hypothesis": "If key_provider scheme allowlist is not enforced, file:// or env:// URIs referencing local key material pass as 'external KMS' while actually reading raw keys from disk or environment.",
+        "input_fixture": "EncryptionPolicy(data_class='phi', at_rest_cipher='AES-256-GCM', in_transit_min_tls='TLS1.2', key_provider='file:///etc/secrets/masterkey.bin', rotation=timedelta(days=30))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ROTATION-OVERFLOW",
+        "hypothesis": "rotation bound check (<=365 days) may compare timedelta directly, but timedelta(days=365, microseconds=-1) or timedelta(days=364, hours=23, minutes=59, seconds=59, microseconds=999999) at the boundary, or timedelta.max, could overflow or bypass the comparison.",
+        "input_fixture": "EncryptionPolicy(data_class='pci_tx', at_rest_cipher='AES-256-GCM', in_transit_min_tls='TLS1.2', key_provider='kms://x', rotation=timedelta.max)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NEGATIVE-ROTATION",
+        "hypothesis": "A negative timedelta for rotation is technically <=365 days and would pass a naive upper-bound check, effectively disabling rotation while appearing compliant.",
+        "input_fixture": "EncryptionPolicy(data_class='pci', at_rest_cipher='AES-256-GCM', in_transit_min_tls='TLS1.2', key_provider='kms://x', rotation=timedelta(days=-1))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DATACLASS-CASE-COLLISION",
+        "hypothesis": "data_class 'PII_Email' bound to a strong policy, then resolve('pii_email') returns KeyError and the caller falls back to an unbound write \u2014 bypassing encryption via case-sensitivity mismatch.",
+        "input_fixture": "registry.bind(EncryptionPolicy(data_class='PII_Email',...)); registry.resolve('pii_email')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REBIND-RACE",
+        "hypothesis": "Concurrent bind() calls for the same data_class with differing ciphers may interleave so resolve() returns a half-constructed or older weak policy, violating the single-source-of-truth guarantee for in-flight writes.",
+        "input_fixture": "Thread A: bind(policy_strong, data_class='pci'); Thread B: bind(policy_weak_but_rejected, data_class='pci'); Thread C: resolve('pci') in tight loop",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PCI-CLASSIFICATION-EVASION",
+        "hypothesis": "The 365-day rotation cap is enforced only when data_class matches a known PCI token list. Naming a card-data class 'cardholder_info' instead of 'pci_cards' evades the cap and permits a 5-year rotation.",
+        "input_fixture": "EncryptionPolicy(data_class='cardholder_info', at_rest_cipher='AES-256-GCM', in_transit_min_tls='TLS1.2', key_provider='kms://x', rotation=timedelta(days=1825))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-DATACLASS",
+        "hypothesis": "Empty string or whitespace data_class in bind() may register a 'default' policy that resolve('') returns, or collide with unbound lookups to satisfy resolve() trivially for any class.",
+        "input_fixture": "registry.bind(EncryptionPolicy(data_class='', at_rest_cipher='AES-256-GCM', in_transit_min_tls='TLS1.2', key_provider='kms://x', rotation=timedelta(days=1)))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REQUIRE-TLS-HOST-CONFUSION",
+        "hypothesis": "require_tls('https://api.example.com@evil.com') may parse endpoint naively and enforce TLS on the wrong host, letting plaintext traffic flow to the real target via userinfo host confusion.",
+        "input_fixture": "registry.require_tls('https://legit.example.com@attacker.tld/path')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FROZEN-MUTATION-VIA-OBJECT-SETATTR",
+        "hypothesis": "Although @dataclass(frozen=True), object.__setattr__(policy, 'at_rest_cipher', 'RC4') bypasses the freeze and mutates a bound policy post-validation, downgrading the cipher in the registry.",
+        "input_fixture": "p = EncryptionPolicy(...AES...); registry.bind(p); object.__setattr__(p, 'at_rest_cipher', 'RC4')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CIPHER-CASE-BYPASS",
+        "hypothesis": "If cipher validation uses exact string comparison without normalisation, submitting 'aes-256-gcm' (all lowercase) or 'AES-256-gcm' (mixed case) may silently bypass the approved-cipher invariant and bind a policy that the runtime later treats as approved, while the enforcement check rejects the canonical form and allows the variant through.",
+        "input_fixture": "EncryptionPolicy(data_class='pii_profile', at_rest_cipher='aes-256-gcm', in_transit_min_tls='TLS1.2', key_provider='arn:aws:kms:us-east-1:123:key/abc', rotation=timedelta(days=90))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CIPHER-HOMOGLYPH",
+        "hypothesis": "Unicode homoglyphs embedded in the cipher string (e.g. Cyrillic '\u0421' replacing Latin 'C' in 'ChaCha20-Poly1305') will not match any approved set entry yet may not raise on bind if the validator does a byte-level startswith check or a fuzzy match; the policy is stored with an effectively unapproved cipher while appearing visually legitimate.",
+        "input_fixture": "EncryptionPolicy(data_class='phi_record', at_rest_cipher='ChaCha20-Poly1305'.replace('C','\u0421'), in_transit_min_tls='TLS1.2', key_provider='arn:aws:kms:eu-west-1:456:key/def', rotation=timedelta(days=90))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TLS-LEXICOGRAPHIC-BYPASS",
+        "hypothesis": "If TLS version comparison uses lexicographic string ordering rather than parsed numeric tuples, 'TLS1.10' sorts after 'TLS1.2' alphabetically ('1' < '2') but '10' > '2' numerically, so a validator that rejects <1.2 via string compare may accept 'TLS1.10' even though no such version exists, effectively allowing an unknown/unvalidated protocol label to bind.",
+        "input_fixture": "EncryptionPolicy(data_class='pci_card', at_rest_cipher='AES-256-GCM', in_transit_min_tls='TLS1.10', key_provider='arn:aws:kms:us-east-1:123:key/abc', rotation=timedelta(days=90))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TLS-FORBIDDEN-EXACT-BOUNDARY",
+        "hypothesis": "The invariant forbids TLS1.0 and TLS1.1 but the approved-floor check may be implemented as 'version >= TLS1.2'. If the version string 'TLS1.1' is allowed through a regex that only checks for TLS1.0 as the sole forbidden value, TLS1.1 would slip through undetected. Conversely, 'TLS 1.2' (with a space) may not match either the allow-list or the deny-list.",
+        "input_fixture": "for v in ['TLS1.1', 'TLS 1.2', 'TLSv1.1', 'ssl3']: EncryptionPolicy(data_class='pii_profile', at_rest_cipher='AES-256-GCM', in_transit_min_tls=v, key_provider='arn:aws:kms:us-east-1:123:key/abc', rotation=timedelta(days=90))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-KMS-INLINE-KEY-MATERIAL",
+        "hypothesis": "A key_provider URI that begins with 'kms://' may satisfy a prefix check but embed raw key material as a query parameter, e.g. 'kms://local?key=c2VjcmV0a2V5MTIz'. If validation only checks the scheme prefix and not the full URI structure or rejects query strings containing entropy, raw key material is smuggled inside a syntactically valid KMS URI.",
+        "input_fixture": "EncryptionPolicy(data_class='pci_card', at_rest_cipher='AES-256-GCM', in_transit_min_tls='TLS1.2', key_provider='kms://internal?key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', rotation=timedelta(days=90))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-KMS-BASE64-DISGUISE",
+        "hypothesis": "A key_provider value that is purely a base64-encoded 32-byte string (e.g. 'c2VjcmV0a2V5YWJjZGVmZ2hpamtsbW5vcA==') contains no URI scheme and no domain, meaning it is raw key material, yet a validator checking only for the absence of known bad patterns (like 'BEGIN PRIVATE KEY') rather than the presence of a valid KMS URI would accept it silently.",
+        "input_fixture": "EncryptionPolicy(data_class='phi_record', at_rest_cipher='ChaCha20-Poly1305', in_transit_min_tls='TLS1.3', key_provider='c2VjcmV0a2V5YWJjZGVmZ2hpamtsbW5vcA==', rotation=timedelta(days=180))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PCI-ROTATION-BOUNDARY-OVERFLOW",
+        "hypothesis": "timedelta(days=365, seconds=1) represents 365 days plus one second, which is strictly greater than 365 days. If the rotation invariant is enforced with 'rotation <= timedelta(days=365)' but the comparison is accidentally 'rotation.days <= 365' (ignoring the seconds component), then 365d+1s would incorrectly pass the check for PCI data_classes.",
+        "input_fixture": "EncryptionPolicy(data_class='pci_card', at_rest_cipher='AES-256-GCM', in_transit_min_tls='TLS1.2', key_provider='arn:aws:kms:us-east-1:123:key/abc', rotation=timedelta(days=365, seconds=1))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PCI-ROTATION-NEGATIVE-TIMEDELTA",
+        "hypothesis": "timedelta can be constructed with negative total duration (e.g. timedelta(days=-1)), which would compare as less than timedelta(days=365) and thus pass a '<= 365 days' guard, yet represents a nonsensical or zero-equivalent rotation cadence that violates the spirit of the invariant and may cause downstream schedulers to never rotate or to schedule in the past.",
+        "input_fixture": "EncryptionPolicy(data_class='pci_card', at_rest_cipher='AES-256-GCM', in_transit_min_tls='TLS1.2', key_provider='arn:aws:kms:us-east-1:123:key/abc', rotation=timedelta(days=-1))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DATACLASS-EMPTY-STRING-BYPASS",
+        "hypothesis": "If data_class is an empty string, resolve('') would look up the empty key in the registry. If the registry raises KeyError for unknown classes and the caller treats KeyError as 'no policy needed', writes with data_class='' will silently bypass the mandatory-policy invariant, effectively allowing unclassified data to be stored without encryption.",
+        "input_fixture": "registry = EncryptionRegistry(); registry.bind(EncryptionPolicy(data_class='', at_rest_cipher='AES-256-GCM', in_transit_min_tls='TLS1.2', key_provider='arn:aws:kms:us-east-1:123:key/abc', rotation=timedelta(days=90))); result = registry.resolve('')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DATACLASS-WHITESPACE-ESCAPE",
+        "hypothesis": "Storing data under the key ' pci_card' (leading space) or 'pci_card ' (trailing space) will not match a resolve('pci_card') lookup. If the caller passes user-supplied data_class strings to resolve() without stripping whitespace, the registry raises (or returns nothing) and the write proceeds unguarded, bypassing the mandatory-policy check for PCI data.",
+        "input_fixture": "registry = EncryptionRegistry(); registry.bind(policy_for('pci_card')); registry.resolve(' pci_card')  # leading space \u2014 KeyError expected but must be enforcement failure",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REBIND-POLICY-DOWNGRADE",
+        "hypothesis": "If bind() allows re-binding an already-registered data_class without raising, an adversary (or misconfigured agent) can call bind() a second time with a weaker EncryptionPolicy (e.g. a longer rotation or an unapproved cipher that somehow passed validation) overwriting the previously compliant policy, violating the integrity of all subsequent resolve() calls without any error surfacing.",
+        "input_fixture": "registry.bind(EncryptionPolicy('pci_card','AES-256-GCM','TLS1.2','arn:aws:kms:...',timedelta(days=90))); registry.bind(EncryptionPolicy('pci_card','AES-256-GCM','TLS1.2','arn:aws:kms:...',timedelta(days=400)))  # second bind with over-limit rotation",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE-BIND-RESOLVE-TOCTOU",
+        "hypothesis": "In a concurrent environment, a thread can call resolve() in the window between a policy being unbound/replaced and the new policy being fully committed. If the registry uses a non-atomic swap (e.g. delete then insert), a concurrent resolve() on the same data_class during that window raises or returns None, and if the caller's write-gate interprets a missing policy as 'not a regulated class', the write proceeds without encryption.",
+        "input_fixture": "import threading; t1 = threading.Thread(target=lambda: registry.bind(new_policy)); t2 = threading.Thread(target=lambda: registry.resolve('pci_card')); t1.start(); t2.start()  # race window between unbind and rebind",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REQUIRE-TLS-PROMPT-INJECTION",
+        "hypothesis": "require_tls(endpoint) takes a string endpoint. If the endpoint value comes from an untrusted source (e.g. a config file or API payload) and contains a newline followed by a legitimate-looking log entry (e.g. 'https://api.example.com\\nINFO: TLS verified for https://attacker.com'), a naive logging implementation may record a false TLS-OK audit event for the injected URL, creating a forged compliance trail.",
+        "input_fixture": "registry.require_tls('https://api.example.com\\nINFO tls_verified endpoint=https://evil.example.com status=ok')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CIPHER-EXTRA-PARAMS-INJECTION",
+        "hypothesis": "Submitting 'AES-256-GCM; DROP TABLE policies;--' as at_rest_cipher may pass a simple 'in approved_set' check if the set contains 'AES-256-GCM' and the validator only checks startswith rather than exact equality, while the appended SQL fragment could corrupt a persistence backend that stores policy metadata without parameterised queries.",
+        "input_fixture": "EncryptionPolicy(data_class='pii_profile', at_rest_cipher='AES-256-GCM; DROP TABLE policies;--', in_transit_min_tls='TLS1.2', key_provider='arn:aws:kms:us-east-1:123:key/abc', rotation=timedelta(days=90))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ROTATION-ZERO-TIMEDELTA",
+        "hypothesis": "timedelta(0) satisfies 'rotation <= timedelta(days=365)' and also 'rotation > timedelta(0)' is False, meaning zero-duration rotation could bind without error. Downstream schedulers receiving a zero rotation cadence may interpret it as 'rotate immediately on every operation' (denial-of-service amplification against KMS) or as 'never schedule' depending on implementation, neither of which is a valid cadence.",
+        "input_fixture": "EncryptionPolicy(data_class='pci_card', at_rest_cipher='AES-256-GCM', in_transit_min_tls='TLS1.2', key_provider='arn:aws:kms:us-east-1:123:key/abc', rotation=timedelta(0))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PCI_CASE_BYPASS",
+        "hypothesis": "PCI detection is case-sensitive (startswith('pci') line 103), so data_class 'PCI_DATA' bypasses rotation cap and allows binding with 366+ day rotation",
+        "input_fixture": "registry = InMemoryEncryptionRegistry(); registry.bind(EncryptionPolicy('PCI_DATA', 'AES-256-GCM', 'TLS1.2', 'aws-kms://key', timedelta(days=366)))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CIPHER_LOWERCASE_BYPASS",
+        "hypothesis": "Cipher validation is exact string match against frozenset (line 63), so lowercase 'aes-256-gcm' not in APPROVED_CIPHERS and should be rejected, but if type coercion occurs it could pass",
+        "input_fixture": "EncryptionPolicy('user_data', 'aes-256-gcm', 'TLS1.2', 'aws-kms://key', timedelta(days=30))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TLS_UNKNOWN_LEGACY",
+        "hypothesis": "TLS version check is membership test (line 68), so 'TLS1.0' is not in {TLS1.2, TLS1.3} and should raise, but if validation is missing it could accept legacy protocols",
+        "input_fixture": "EncryptionPolicy('secure_data', 'AES-256-GCM', 'TLS1.0', 'aws-kms://key', timedelta(days=30))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-KEYURI_UPPERCASE_SCHEME",
+        "hypothesis": "KMS scheme check uses case-sensitive startswith() (line 73), so 'AWS-KMS://key' (uppercase scheme) fails to match 'aws-kms://' prefix and bypasses key provider validation",
+        "input_fixture": "EncryptionPolicy('user_data', 'AES-256-GCM', 'TLS1.2', 'AWS-KMS://key-12345', timedelta(days=30))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ROTATION_NEGATIVE_DAYS",
+        "hypothesis": "Rotation validation checks rotation > 0 (line 78), but negative timedelta values could represent time travel; test if timedelta(days=-1) is properly rejected as <= 0",
+        "input_fixture": "EncryptionPolicy('user_data', 'AES-256-GCM', 'TLS1.2', 'aws-kms://key', timedelta(days=-1))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNICODE_WHITESPACE_DATACLASS",
+        "hypothesis": "data_class validation uses str.strip() (line 61) which may not remove all Unicode whitespace characters like U+00A0 (non-breaking space), allowing empty-like strings to pass",
+        "input_fixture": "EncryptionPolicy('\\u00a0user_data\\u00a0', 'AES-256-GCM', 'TLS1.2', 'aws-kms://key', timedelta(days=30))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RACE_CONCURRENT_PCI_BIND",
+        "hypothesis": "PCI rotation cap check (line 103-104) occurs before lock acquisition (line 109), creating TOCTOU window where concurrent threads could both pass validation and one overwrites with long rotation",
+        "input_fixture": "Thread A: registry.bind(EncryptionPolicy('pci_data', 'AES-256-GCM', 'TLS1.2', 'aws-kms://a', timedelta(days=100))); Thread B (concurrent): registry.bind(EncryptionPolicy('pci_data', 'AES-256-GCM', 'TLS1.2', 'aws-kms://b', timedelta(days=366)))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY_KEYURI_SCHEME",
+        "hypothesis": "KMS scheme validation uses startswith() on key_provider (line 73), empty string startswith() returns False for any prefix; test if '' (empty) bypasses external KMS requirement",
+        "input_fixture": "EncryptionPolicy('user_data', 'AES-256-GCM', 'TLS1.2', '', timedelta(days=30))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TLS_VERSION_TYPO",
+        "hypothesis": "TLS validation is exact membership check (line 68), typo versions like 'TLS1.20' or 'TLS2.0' are not in approved set and should fail, but unsanitized input could bypass if validation logic is incomplete",
+        "input_fixture": "EncryptionPolicy('secure_data', 'AES-256-GCM', 'TLS1.20', 'aws-kms://key', timedelta(days=30))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PAN_WORD_BOUNDARY",
+        "hypothesis": "PCI detection checks 'pan' in data_class.lower() (line 103) without word boundary, so 'EXPANSION_DATA' contains 'pan' when lowercased and incorrectly triggers PCI cap for non-PCI data",
+        "input_fixture": "registry.bind(EncryptionPolicy('expansion_data', 'AES-256-GCM', 'TLS1.2', 'aws-kms://key', timedelta(days=400)))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ROTATION_ZERO_DAYS",
+        "hypothesis": "Rotation check is rotation > timedelta(0) (line 78), boundary case of exactly 0 days should fail, but if comparison uses >= instead of >, zero might be accepted for very short key lifespans",
+        "input_fixture": "EncryptionPolicy('user_data', 'AES-256-GCM', 'TLS1.2', 'aws-kms://key', timedelta(days=0))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CIPHER_UNICODE_HOMOGLYPH",
+        "hypothesis": "Cipher validation is string membership check (line 63) without normalization, Unicode homoglyphs like Cyrillic '\u0410' (U+0410) could impersonate Latin 'A', bypassing frozenset check via visual spoofing",
+        "input_fixture": "EncryptionPolicy('user_data', '\u0410\u0415S-256-GCM', 'TLS1.2', 'aws-kms://key', timedelta(days=30))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "encryption.policy.bound",
+        "required_attributes": [
+          "data_class",
+          "cipher"
+        ]
+      },
+      {
+        "event_name": "encryption.resolve.failed",
+        "required_attributes": [
+          "data_class"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "encryption.bindings",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "cipher"
+        ]
+      },
+      {
+        "name": "encryption.resolve",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 500,
+        "label_keys": [
+          "data_class"
+        ]
+      },
+      {
+        "name": "encryption.tls.endpoints",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 100,
+        "label_keys": []
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "encryption.bind",
+        "required_attributes": [
+          "data_class"
+        ]
+      },
+      {
+        "operation_name": "encryption.resolve",
+        "required_attributes": [
+          "data_class"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "API matches catalog exactly: frozen dataclass with all 5 fields, Protocol with bind/resolve/require_tls. Invariant IDs EP_INV_01..05 map 1:1 to spec."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All 5 invariants enforced (EP_INV_05 at bind-time for PCI as spec allows), in-memory registry with TLS endpoint tracking, approved sets exposed. Minor: PCI detection via prefix/substring is heuristic but documented."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Dedicated EncryptionPolicyError subclass of ValueError; every raise cites invariant ID, expected set, and offending value. Actionable and greppable."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 9,
+        "rationale": "Thread-safe via Lock on all mutable state, frozen dataclass is hashable, lazy-free, no I/O, __all__ defined, defensive isinstance checks. tls_endpoints returns frozenset snapshot."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "runtime_checkable Protocol enables adapter substitution; resolve() is the documented hook for storage adapters; constants exported for governance extension."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace/purpose/invariants/extension_contract all honored. Regulation anchors (PCI 3.5/4.2, HIPAA 164.312, NIST SC-8/SC-13) cited in module docstring and mapped to invariants."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "`data_class` is never defined \u2014 is 'cardholder_pan' a built-in constant or a free-form string I invent?",
+          "The usage example shows `bind()` but never shows `resolve()` \u2014 unclear when or why to call each.",
+          "No try/except example; `EncryptionPolicyError` is mentioned but its message shape and when it fires are not shown."
+        ],
+        "rewrite_suggestion": "Extend the Usage block: add a `resolve('cardholder_pan')` call after bind, wrap both in try/except EncryptionPolicyError, and add a one-liner clarifying that data_class is any string label you define for a category of sensitive data."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "Thread-safety of InMemoryEncryptionRegistry is unspecified \u2014 safe to call bind/resolve from concurrent workers?",
+          "Rebind semantics are absent \u2014 does a second bind() for the same data_class raise, override, or no-op?",
+          "'Governance-reviewed registration' for new ciphers has no pointer to the actual process or interface."
+        ],
+        "rewrite_suggestion": "Add a 'Concurrency & mutability' note to InMemoryEncryptionRegistry: document whether it is lock-guarded, whether bind is idempotent, and replace the vague 'governance-reviewed' phrase with a concrete reference (e.g., a registry.register_cipher() API or a link to the governance doc)."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "The 'prefix check' that rejects raw key bytes is described in prose but the exact rejection predicate is not specified \u2014 auditors need the allowlist, not a hint.",
+          "No audit-trail contract: does bind/resolve/require_tls emit a structured log entry? What fields? Where?",
+          "KeyRotationSchedule failure handling is absent \u2014 a missed rotation that fails silently would violate PCI Req 3.5 but nothing in the doc prevents it."
+        ],
+        "rewrite_suggestion": "Add an 'Audit & observability' subsection listing: (1) the exact allowed key_provider URI prefixes, (2) the structured log event emitted on bind/rotate/violation (field names + types), and (3) the contract for KeyRotationSchedule on KMS error (retry policy, alert, hard-fail)."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "No documented failure mode when KMS is unreachable during resolve() \u2014 does it hard-fail the write, return stale policy, or circuit-break?",
+          "KeyRotationSchedule lifecycle is a black box \u2014 who starts and stops it, and how is it deployed alongside the registry?",
+          "Zero observability contract: no metrics names, no log events for rotation completion or policy violation, making alerting impossible to design."
+        ],
+        "rewrite_suggestion": "Add an 'Operations' section covering: (1) resolve() behaviour under KMS outage (recommended: fail-closed with a clear error), (2) how KeyRotationSchedule is instantiated and wired to a scheduler/cron, and (3) a table of emitted metrics/log events (e.g., encryption.rotation.success, encryption.policy.violation) with suggested alert thresholds."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "No business-impact statement \u2014 what specific risk or incident does EncryptionPolicy prevent? Hard to justify prioritisation without it.",
+          "Acronyms (KMS, TLS, PCI) are not expanded on first use, creating a comprehension barrier for non-technical stakeholders in design reviews.",
+          "The enforcement boundary is buried: 'the registry rejects writes' appears only in the intro paragraph, making it easy to miss that this is active enforcement, not just documentation."
+        ],
+        "rewrite_suggestion": "Open with a two-sentence executive summary: 'EncryptionPolicy actively blocks any attempt to store or transmit sensitive data (e.g., card numbers, PHI) without an approved cipher and key management setup. This closes the gap that causes PCI and HIPAA audit findings.' Then expand each acronym in parentheses on first use."
+      }
+    ]
+  }
+}

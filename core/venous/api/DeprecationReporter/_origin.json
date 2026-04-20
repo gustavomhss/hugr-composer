@@ -1,0 +1,20 @@
+{
+  "tool": "api_design/add_api_deprecation.py",
+  "candidate": {
+    "docstring": "In-memory tracker for deprecated endpoint call counts.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 568,
+    "line_start": 517,
+    "name": "DeprecationReporter",
+    "origin": "string_template",
+    "shape_hash": "06163e92ca7bf1dc",
+    "size_bytes": 1695,
+    "size_lines": 52,
+    "tool": "api_design/add_api_deprecation.py",
+    "method_count": 5,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 33900
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "logs": [
+    {
+      "event_name": "inputguardrail.chain.applied",
+      "required_attributes": ["guard_count", "final_action", "input_hash"]
+    },
+    {
+      "event_name": "inputguardrail.decision.emitted",
+      "required_attributes": ["guard_name", "action", "reason"]
+    },
+    {
+      "event_name": "inputguardrail.decision.blocked",
+      "required_attributes": ["guard_name", "reason", "input_hash"]
+    },
+    {
+      "event_name": "inputguardrail.chain.sealed",
+      "required_attributes": ["audit_depth"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "inputguardrail.decisions.total",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 200,
+      "label_keys": ["guard_name", "action"]
+    },
+    {
+      "name": "inputguardrail.blocks.total",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 100,
+      "label_keys": ["guard_name"]
+    },
+    {
+      "name": "inputguardrail.redactions.total",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 100,
+      "label_keys": ["guard_name"]
+    },
+    {
+      "name": "inputguardrail.apply.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": ["guard_count"]
+    },
+    {
+      "name": "inputguardrail.audit.depth",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": []
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "inputguardrail.chain.apply",
+      "required_attributes": ["guard_count", "final_action"]
+    },
+    {
+      "operation_name": "inputguardrail.guard.evaluate",
+      "required_attributes": ["guard_name", "action"]
+    },
+    {
+      "operation_name": "inputguardrail.decision.record",
+      "required_attributes": ["guard_name"]
+    }
+  ]
+}

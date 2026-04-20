@@ -1,0 +1,36 @@
+{
+  "name": "DiContainer",
+  "namespace": "data",
+  "purpose": "Registry that resolves a typed request for a dependency into a constructed instance obeying the declared lifetime scope.",
+  "api_signature": "from typing import Callable, Protocol, Type, TypeVar\n\nT = TypeVar('T')\n\nclass DiContainer(Protocol):\n    def register(self, iface: Type[T], impl: Type[T] | Callable[..., T], *, scope: str) -> None: ...\n    def resolve(self, iface: Type[T]) -> T: ...\n    def create_scope(self) -> 'DiContainer': ...\n",
+  "invariants": [
+    "MUST resolve a dependency graph without re-entering a partially-constructed node (cycle detection SHALL raise).",
+    "NEVER returns an instance whose declared scope outlives the resolving scope (scoped CANNOT leak into singleton).",
+    "ALWAYS disposes instances it owns when the owning scope ends; callers MUST NOT dispose externally-created instances.",
+    "MUST NOT silently replace a prior registration for the same key; re-registration SHALL be explicit.",
+    "register() MUST accept the interface type as the resolution key; keyed registrations MUST use an extra discriminator."
+  ],
+  "extension_contract": "Downstream code registers services via register() or a provider decorator; to plug a non-default container, implement the Protocol and bind an adapter that forwards resolve()/register()/create_scope() without changing lifetime semantics.",
+  "consumption_example": "def build_container(c: DiContainer) -> None:\n    c.register(UserRepo, SqlUserRepo, scope='singleton')\n    c.register(RequestClock, SystemClock, scope='scoped')\n\ndef handle(container: DiContainer) -> None:\n    with container.create_scope() as scope:\n        repo = scope.resolve(UserRepo)\n        repo.save(...)\n",
+  "sources": [
+    {
+      "source": "ASP.NET Core 8.0 Fundamentals \u2014 Dependency Injection",
+      "locator": "learn.microsoft.com/aspnet/core/fundamentals/dependency-injection section 'Service registration methods' (IServiceCollection, IServiceProvider)"
+    },
+    {
+      "source": "Spring Framework Reference \u2014 Core Container",
+      "locator": "docs.spring.io/spring-framework/reference/core/beans/factory-scopes.html \u2014 BeanFactory/ApplicationContext scopes"
+    },
+    {
+      "source": "Quarkus 3.x Guide \u2014 Contexts and Dependency Injection",
+      "locator": "quarkus.io/guides/cdi \u2014 jakarta.inject.Inject, ArC container"
+    }
+  ],
+  "why_essential": "Without a shared container contract, every tool grows its own construction code; cross-tool substitution (fakes in tests, adapters in prod) CANNOT work and lifetime bugs become per-feature surprises.",
+  "alternatives_considered": [
+    "Hand-wired constructors per entry point \u2014 loses uniform test substitution",
+    "Service-locator singleton \u2014 hides dependencies and defeats unit tests",
+    "Module import side-effects \u2014 couples wiring to import order"
+  ],
+  "maturity": "battle_tested"
+}

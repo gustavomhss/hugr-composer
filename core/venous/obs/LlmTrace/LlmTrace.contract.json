@@ -1,0 +1,31 @@
+{
+  "name": "LlmTrace",
+  "namespace": "obs",
+  "purpose": "Emit structured spans for each model call with attributes aligned to OpenTelemetry GenAI semantic conventions so token counts, model identity, and prompt/response linkage land in traces consistently.",
+  "api_signature": "from __future__ import annotations\nfrom typing import Protocol, ContextManager\n\nclass LlmTrace(Protocol):\n    def start(self, operation: str, model_handle: str, prompt_fingerprint: str) -> ContextManager[\"LlmSpan\"]: ...\n\nclass LlmSpan(Protocol):\n    def set_usage(self, input_tokens: int, output_tokens: int) -> None: ...\n    def set_finish_reason(self, reason: str) -> None: ...\n    def record_error(self, code: str, message: str) -> None: ...\n",
+  "invariants": [
+    "Every model call SHALL open exactly one LlmTrace span; unspanned calls are FORBIDDEN.",
+    "Span attribute names MUST match the OpenTelemetry GenAI semantic conventions (gen_ai.system, gen_ai.request.model, gen_ai.usage.input_tokens, gen_ai.usage.output_tokens).",
+    "Spans MUST record prompt_fingerprint so the trace can be correlated with the PromptTemplate version that generated it.",
+    "On provider error the span MUST call record_error before exiting; swallowing the error without recording is FORBIDDEN.",
+    "Child tool-call spans MUST nest under the model-call span so the causal chain is reconstructable end-to-end."
+  ],
+  "extension_contract": "The trace core is a thin adapter over an OpenTelemetry tracer; projects add exporters (OTLP, Langfuse, vendor-specific) by registering them against the OTel provider without modifying call-site code.",
+  "consumption_example": "def call_model(tracer: LlmTrace, fp: str):\n    with tracer.start(\"completion\", \"planner-v2\", fp) as span:\n        span.set_usage(1200, 340)\n        span.set_finish_reason(\"stop\")\n",
+  "sources": [
+    {
+      "source": "OpenTelemetry Semantic Conventions for Generative AI (1.27+)",
+      "locator": "gen_ai.* attribute namespace: system, request.model, usage.input_tokens, usage.output_tokens, response.finish_reasons"
+    },
+    {
+      "source": "Langfuse 2.x architecture and tracing model",
+      "locator": "Trace / Observation / Generation hierarchy with prompt_version linkage"
+    }
+  ],
+  "why_essential": "Without standardized spans, cost, latency, and quality questions cannot be answered with one query; aligning on OTel GenAI conventions makes every vendor-neutral dashboard work out of the box.",
+  "alternatives_considered": [
+    "Plain log lines per call \u2014 no span hierarchy, no vendor-neutral attribute names.",
+    "Vendor-specific SDK tracing only \u2014 locks observability to one provider's schema."
+  ],
+  "maturity": "emerging"
+}

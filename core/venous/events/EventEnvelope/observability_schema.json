@@ -1,0 +1,49 @@
+{
+  "logs": [
+    {
+      "event_name": "event.envelope.constructed",
+      "required_attributes": ["source", "id", "type"]
+    },
+    {
+      "event_name": "event.envelope.rejected",
+      "required_attributes": ["reason", "invariant_id"]
+    },
+    {
+      "event_name": "event.envelope.duplicate",
+      "required_attributes": ["source", "id"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "event.envelope.constructed.total",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 100,
+      "label_keys": ["type"]
+    },
+    {
+      "name": "event.envelope.rejected.total",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["invariant_id"]
+    },
+    {
+      "name": "event.envelope.dedup.decision",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": ["outcome"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "event.envelope.validate",
+      "required_attributes": ["envelope.source", "envelope.type"]
+    },
+    {
+      "operation_name": "event.envelope.dedup.lookup",
+      "required_attributes": ["dedup.key.source", "dedup.key.id"]
+    }
+  ]
+}

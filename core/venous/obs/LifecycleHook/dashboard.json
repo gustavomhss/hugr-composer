@@ -1,0 +1,26 @@
+{
+  "title": "LifecycleHook — Boot and Shutdown",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Hooks Registered by Phase",
+      "targets": [{"expr": "sum by (phase) (lifecycle_hooks_registered_total)"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Hook Duration p95 (ms)",
+      "targets": [
+        {"expr": "histogram_quantile(0.95, rate(lifecycle_hook_duration_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Phase Completions (by outcome)",
+      "targets": [{"expr": "sum by (outcome) (rate(lifecycle_phase_completed_total[5m]))"}]
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "TXB_INV_01",
+      "invariant_text": "Commit MUST apply every queued operation atomically or apply none of them, with no partial visible state.",
+      "confirms_test": "test_inv_atomic_commit_confirms",
+      "prevents_test": "test_inv_atomic_commit_prevents",
+      "under_failure_test": "test_inv_atomic_commit_under_failure"
+    },
+    {
+      "invariant_id": "TXB_INV_02",
+      "invariant_text": "A conflicting etag on any queued operation MUST abort the entire batch and surface a conflict error.",
+      "confirms_test": "test_inv_etag_conflict_aborts_confirms",
+      "prevents_test": "test_inv_etag_conflict_aborts_prevents",
+      "under_failure_test": "test_inv_etag_conflict_aborts_under_failure"
+    },
+    {
+      "invariant_id": "TXB_INV_03",
+      "invariant_text": "After commit returns successfully the batch MUST NOT be reusable; reusing it SHALL raise a state error.",
+      "confirms_test": "test_inv_no_reuse_confirms",
+      "prevents_test": "test_inv_no_reuse_prevents",
+      "under_failure_test": "test_inv_no_reuse_under_failure"
+    },
+    {
+      "invariant_id": "TXB_INV_04",
+      "invariant_text": "Operations inside one batch ALWAYS target the same state store instance to preserve the atomicity boundary.",
+      "confirms_test": "test_inv_single_store_boundary_confirms",
+      "prevents_test": "test_inv_single_store_boundary_prevents",
+      "under_failure_test": "test_inv_single_store_boundary_under_failure"
+    },
+    {
+      "invariant_id": "TXB_INV_05",
+      "invariant_text": "Read operations are FORBIDDEN inside the batch because the contract covers only writes and deletes.",
+      "confirms_test": "test_inv_no_reads_in_batch_confirms",
+      "prevents_test": "test_inv_no_reads_in_batch_prevents",
+      "under_failure_test": "test_inv_no_reads_in_batch_under_failure"
+    }
+  ]
+}

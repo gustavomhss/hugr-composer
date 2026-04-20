@@ -1,0 +1,17 @@
+{
+  "logs": [
+    {"event_name": "legal_hold.opened", "required_attributes": ["hold_id", "opened_by"]},
+    {"event_name": "legal_hold.released", "required_attributes": ["hold_id", "released_by"]},
+    {"event_name": "legal_hold.covers.hit", "required_attributes": ["hold_id", "record_id"]}
+  ],
+  "metrics": [
+    {"name": "legal_hold.active", "metric_type": "gauge", "unit": "1", "cardinality_bound": 100, "label_keys": []},
+    {"name": "legal_hold.opens", "metric_type": "counter", "unit": "1", "cardinality_bound": 50, "label_keys": []},
+    {"name": "legal_hold.releases", "metric_type": "counter", "unit": "1", "cardinality_bound": 50, "label_keys": ["override"]}
+  ],
+  "spans": [
+    {"operation_name": "legal_hold.open", "required_attributes": ["hold_id"]},
+    {"operation_name": "legal_hold.release", "required_attributes": ["hold_id", "released_by"]},
+    {"operation_name": "legal_hold.covers", "required_attributes": ["record_id"]}
+  ]
+}

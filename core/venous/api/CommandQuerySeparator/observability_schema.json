@@ -1,0 +1,64 @@
+{
+  "logs": [
+    {
+      "event_name": "cqs.command.dispatched",
+      "required_attributes": ["command_type", "status", "event_offset"]
+    },
+    {
+      "event_name": "cqs.query.answered",
+      "required_attributes": ["query_type", "duration_ns"]
+    },
+    {
+      "event_name": "cqs.handler.registered",
+      "required_attributes": ["role", "type_name"]
+    },
+    {
+      "event_name": "cqs.readmodel.direct.write.refused",
+      "required_attributes": ["read_model", "warning"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "cqs.commands.dispatched",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["command_type", "status"]
+    },
+    {
+      "name": "cqs.queries.answered",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["query_type"]
+    },
+    {
+      "name": "cqs.command.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 200,
+      "label_keys": ["command_type"]
+    },
+    {
+      "name": "cqs.query.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 200,
+      "label_keys": ["query_type"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "cqs.command.dispatch",
+      "required_attributes": ["cqs.command_type", "cqs.status"]
+    },
+    {
+      "operation_name": "cqs.query.answer",
+      "required_attributes": ["cqs.query_type"]
+    },
+    {
+      "operation_name": "cqs.handler.register",
+      "required_attributes": ["cqs.role", "cqs.type_name"]
+    }
+  ]
+}

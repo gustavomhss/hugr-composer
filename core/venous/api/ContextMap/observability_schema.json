@@ -1,0 +1,71 @@
+{
+  "logs": [
+    {
+      "event_name": "contextmap.relationship.added",
+      "required_attributes": ["upstream", "downstream", "kind", "version"]
+    },
+    {
+      "event_name": "contextmap.relationship.rejected",
+      "required_attributes": ["upstream", "downstream", "kind", "invariant_id"]
+    },
+    {
+      "event_name": "contextmap.relationship.looked_up",
+      "required_attributes": ["upstream", "downstream", "kind"]
+    },
+    {
+      "event_name": "contextmap.shadow.integration.refused",
+      "required_attributes": ["upstream", "downstream", "invariant_id"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "contextmap.relationships.added",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 64,
+      "label_keys": ["kind"]
+    },
+    {
+      "name": "contextmap.relationships.rejected",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 16,
+      "label_keys": ["invariant_id"]
+    },
+    {
+      "name": "contextmap.edges.total",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 1,
+      "label_keys": []
+    },
+    {
+      "name": "contextmap.mutation.version",
+      "metric_type": "updown_counter",
+      "unit": "1",
+      "cardinality_bound": 1,
+      "label_keys": []
+    },
+    {
+      "name": "contextmap.cycle.detection.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 200,
+      "label_keys": ["kind"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "contextmap.relationship.add",
+      "required_attributes": ["contextmap.upstream", "contextmap.downstream", "contextmap.kind"]
+    },
+    {
+      "operation_name": "contextmap.relationship.lookup",
+      "required_attributes": ["contextmap.upstream", "contextmap.downstream"]
+    },
+    {
+      "operation_name": "contextmap.cycle.detect",
+      "required_attributes": ["contextmap.kind"]
+    }
+  ]
+}

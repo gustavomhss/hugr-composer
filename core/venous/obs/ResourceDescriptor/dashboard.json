@@ -1,0 +1,7 @@
+{
+  "title": "ResourceDescriptor",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "Events", "targets": [{"expr": "rate(resourcedescriptor_events_total[5m])"}]}
+  ]
+}

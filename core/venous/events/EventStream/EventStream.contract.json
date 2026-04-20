@@ -1,0 +1,31 @@
+{
+  "name": "EventStream",
+  "namespace": "events",
+  "purpose": "An ordered, append-only log of events partitioned by key and replayable from any offset by any number of consumers.",
+  "api_signature": "from typing import Protocol, Any, Iterator\n\nclass EventStream(Protocol):\n    def append(self, partition_key: str, event: Any) -> int: ...\n    def read_from(self, partition_key: str, offset: int) -> Iterator[Any]: ...\n    def tail(self, partition_key: str) -> int: ...\n    def truncate_before(self, offset: int) -> None: ...",
+  "invariants": [
+    "Events MUST be strictly ordered within a partition; cross-partition ordering is NEVER guaranteed.",
+    "Appended events CANNOT be mutated or deleted out of retention windows; immutability SHALL be enforced.",
+    "Consumers MUST be able to start from any valid offset and replay; destructive consumption is FORBIDDEN.",
+    "truncate_before ALWAYS obeys the configured retention policy; arbitrary backdated truncation is FORBIDDEN."
+  ],
+  "extension_contract": "New transports extend EventStream by implementing the Protocol as an adapter over the underlying log and registering it with the stream registry; processing topologies compose via pluggable stages that MUST NOT break per-partition order.",
+  "consumption_example": "def replay(stream: EventStream, key: str, start: int, fn):\n    end = stream.tail(key)\n    for event in stream.read_from(key, start):\n        fn(event)\n    return end",
+  "sources": [
+    {
+      "source": "Kleppmann 'Designing Data-Intensive Applications' (2017)",
+      "locator": "Chapter 11, Partitioned Logs and stream processing, pp. 444-454"
+    },
+    {
+      "source": "Richardson 'Microservices Patterns' (2018)",
+      "locator": "Chapter 3, Messaging and event logs, pp. 85-95"
+    }
+  ],
+  "why_essential": "Without a shared primitive, some tools emit point-in-time messages and others emit logs, making replay, debugging, and derived-view rebuilds impossible to compose.",
+  "alternatives_considered": [
+    "Transient queues: cannot replay, so downstream rebuilds require ad-hoc backfill.",
+    "Database tables as queues: awkward partition semantics and poor consumer scaling.",
+    "File-based archives: lose online read semantics and partition keys."
+  ],
+  "maturity": "battle_tested"
+}

@@ -1,0 +1,593 @@
+{
+  "name": "ProcessingRecord",
+  "namespace": "compliance",
+  "maturity": "emerging",
+  "builder_agent_id": 8,
+  "catalog_entry_sha256": "3d81874634569204d0358eb791ea29ef7014aee37a39ec63ffc565c2a725cc39",
+  "files": [
+    {
+      "path": "compliance/ProcessingRecord/ProcessingRecord.contract.json",
+      "sha256": "80046c0ee7c52897c1d1cf2d1e93abc204d72c436b3a71a81a6b3feca3248585",
+      "size_bytes": 2638,
+      "kind": "contract_json"
+    },
+    {
+      "path": "compliance/ProcessingRecord/ProcessingRecord.manifest.json",
+      "sha256": "e88bb0c97e145b505ae1109fa376e4ae6bf124f99ab1bb4ebe00adcec56299ea",
+      "size_bytes": 36576,
+      "kind": "manifest"
+    },
+    {
+      "path": "compliance/ProcessingRecord/ProcessingRecord.md",
+      "sha256": "ec3798394f53a1e6477fb3384ad9adeba362384f18aab085fdbabe1a8b479bc8",
+      "size_bytes": 1228,
+      "kind": "spec_md"
+    },
+    {
+      "path": "compliance/ProcessingRecord/ProcessingRecord.py",
+      "sha256": "62ebf766bba2fa45d056ecae8b1af61f59a5190aa8d0050da2e0d629e3e3e610",
+      "size_bytes": 4827,
+      "kind": "impl"
+    },
+    {
+      "path": "compliance/ProcessingRecord/behavioral_ProcessingRecord.py",
+      "sha256": "5cc7f8a63f71311b56cc75c28572c583e10bd8a52979806ec5ed8a3469a1dcfc",
+      "size_bytes": 2421,
+      "kind": "behavioral"
+    },
+    {
+      "path": "compliance/ProcessingRecord/chaos_ProcessingRecord.py",
+      "sha256": "1ab99817cb7cc1a37b9067983c291aa37aa508977c2f8fce6be27ad23bb0b9a2",
+      "size_bytes": 1631,
+      "kind": "chaos"
+    },
+    {
+      "path": "compliance/ProcessingRecord/dashboard.json",
+      "sha256": "eb78511c4cd4fa7fd09591684d813349722ba054b0813f472139a8035c223daf",
+      "size_bytes": 155,
+      "kind": "dashboard"
+    },
+    {
+      "path": "compliance/ProcessingRecord/invariant_bindings.json",
+      "sha256": "c829d913969f3598178316c21345f21d65360a3b32e52b629873cfb431ebccc6",
+      "size_bytes": 1726,
+      "kind": "test"
+    },
+    {
+      "path": "compliance/ProcessingRecord/metamorphic_ProcessingRecord.py",
+      "sha256": "487d98b18a8c0f2f1c9b220cf535f79093faecf3a782abb663c87dde29cf0569",
+      "size_bytes": 1516,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "compliance/ProcessingRecord/observability_ProcessingRecord.py",
+      "sha256": "f6daae2384384e8f8c52d05d25372e4e245668fae25cfee8c6535cf09b45c629",
+      "size_bytes": 1457,
+      "kind": "observability"
+    },
+    {
+      "path": "compliance/ProcessingRecord/observability_schema.json",
+      "sha256": "9c7ad6841e1f79d09bb88ae5fe0905f14162da65bc0e8857d5050c5c30a890ce",
+      "size_bytes": 595,
+      "kind": "observability"
+    },
+    {
+      "path": "compliance/ProcessingRecord/persona_reviews.json",
+      "sha256": "27c42175503d1ae0ae0caf2476c356ec4ead33b5f32e488a3c7eecb64d008dbb",
+      "size_bytes": 515,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "compliance/ProcessingRecord/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "compliance/ProcessingRecord/test_ProcessingRecord.py",
+      "sha256": "ff098dbeb616787dc03f87a8f215153c3a1d25392f7f4f108257d3fcae2e1e60",
+      "size_bytes": 3997,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "PR_INV_01",
+      "invariant_text": "Every code path that reads or writes PII MUST be annotated with a registered ProcessingRecord.activity; unregistered activities SHALL fail at startup.",
+      "confirms_test": "test_inv_activity_registered_confirms",
+      "prevents_test": "test_inv_activity_registered_prevents",
+      "under_failure_test": "test_inv_activity_registered_under_failure"
+    },
+    {
+      "invariant_id": "PR_INV_02",
+      "invariant_text": "Each record MUST reference a retention_ref that resolves to a bound RetentionPolicy; dangling refs CANNOT register.",
+      "confirms_test": "test_inv_retention_ref_confirms",
+      "prevents_test": "test_inv_retention_ref_prevents",
+      "under_failure_test": "test_inv_retention_ref_under_failure"
+    },
+    {
+      "invariant_id": "PR_INV_03",
+      "invariant_text": "legal_basis MUST be one of GDPR Article 6(1)(a-f); free-text values SHALL raise.",
+      "confirms_test": "test_inv_legal_basis_confirms",
+      "prevents_test": "test_inv_legal_basis_prevents",
+      "under_failure_test": "test_inv_legal_basis_under_failure"
+    },
+    {
+      "invariant_id": "PR_INV_04",
+      "invariant_text": "transfers_outside_eea entries MUST be ISO-3166 country codes; other formats are FORBIDDEN.",
+      "confirms_test": "test_inv_iso_countries_confirms",
+      "prevents_test": "test_inv_iso_countries_prevents",
+      "under_failure_test": "test_inv_iso_countries_under_failure"
+    },
+    {
+      "invariant_id": "PR_INV_05",
+      "invariant_text": "export_ropa() output MUST be byte-for-byte reproducible given the same registry so auditors can hash and diff releases.",
+      "confirms_test": "test_inv_ropa_reproducible_confirms",
+      "prevents_test": "test_inv_ropa_reproducible_prevents",
+      "under_failure_test": "test_inv_ropa_reproducible_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 356,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 947,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 948,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 96405,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "43 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1024,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 99978,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNICODE-ACTIVITY-HOMOGLYPH",
+        "hypothesis": "Registering two activities whose names differ only by Unicode homoglyphs (Latin 'a' vs Cyrillic '\u0430') bypasses the unregistered-activity startup check because string equality passes at one site and fails at another, letting PII reads run under a shadow record.",
+        "input_fixture": "registry.register(ProcessingRecord(activity='payroll', ...)); code path annotated with activity='p\u0430yroll' (Cyrillic \u0430). App boots; PII read succeeds with wrong record.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RETENTION-TOCTOU",
+        "hypothesis": "Race between RetentionPolicy unbind and ProcessingRecord.register: policy exists at resolve-time, is deleted by another thread before the record is committed. Registry ends up holding a dangling retention_ref that the invariant says cannot exist.",
+        "input_fixture": "Thread A: registry.register(record with retention_ref='R1'); Thread B: policies.unbind('R1') interleaved between resolve and commit.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-LEGAL-BASIS-CASE",
+        "hypothesis": "legal_basis validator accepts canonical '6(1)(a)' but also silently accepts '6(1)(A)' or ' 6(1)(a) ' with whitespace/case variants, smuggling free-text through what should be a strict enum.",
+        "input_fixture": "ProcessingRecord(..., legal_basis=' 6(1)(A)\\t'); expected raise, actual accept.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TRANSFER-CODE-EEA-SELF",
+        "hypothesis": "transfers_outside_eea accepts valid ISO-3166 codes that are themselves inside EEA (e.g. 'DE','FR'), trivially satisfying the format check while violating the semantic intent (record claims transfer outside EEA when there isn't one).",
+        "input_fixture": "ProcessingRecord(..., transfers_outside_eea=('DE','FR'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TRANSFER-ALPHA3-SMUGGLE",
+        "hypothesis": "Validator checks length==2 or regex [A-Z]{2} but accepts 'UK' (not ISO-3166, reserved) or alpha-3 'GBR'; non-canonical codes slip past.",
+        "input_fixture": "transfers_outside_eea=('UK','GBR','EU')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ROPA-DICT-ORDER",
+        "hypothesis": "export_ropa() serializes internal dict/set of registered records in insertion or hash order; two processes registering the same records in different order produce different bytes, breaking reproducibility.",
+        "input_fixture": "Process 1: register(A); register(B); export. Process 2: register(B); register(A); export. Diff bytes.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ROPA-TIMESTAMP-LEAK",
+        "hypothesis": "export_ropa() embeds a generation timestamp or PYTHONHASHSEED-derived id in output, making identical registries hash to different digests across runs.",
+        "input_fixture": "Same registry exported at t=0 and t=60s; sha256 differs.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ROPA-FLOAT-LOCALE",
+        "hypothesis": "export_ropa() renders text using locale-dependent formatting (decimal separator, date format) or non-UTF-8 encoding; byte output varies by LC_ALL.",
+        "input_fixture": "LC_ALL=de_DE.UTF-8 export vs LC_ALL=C export",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TUPLE-DUPLICATES",
+        "hypothesis": "purposes/data_classes accept duplicates and ordering differences ('billing','BILLING',' billing ') producing multiple logically-equivalent records that collide at activity level and yield non-deterministic ROPA output.",
+        "input_fixture": "register two records same activity, purposes=('a','b') vs ('b','a',' a ')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-PURPOSES",
+        "hypothesis": "Dataclass permits empty tuples for purposes/data_classes/recipients; GDPR Art.30 requires these fields to be non-empty, so an empty-purpose record registers and ROPA is technically invalid though passes schema.",
+        "input_fixture": "ProcessingRecord(activity='x', controller='c', purposes=(), data_classes=(), recipients=(), retention_ref='R', legal_basis='6(1)(a)')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-STARTUP-DYNAMIC-IMPORT",
+        "hypothesis": "Startup check scans statically-imported modules for activity annotations. A module imported lazily via importlib after boot contains a PII read with unregistered activity, bypassing the fail-at-startup guarantee.",
+        "input_fixture": "importlib.import_module('plugins.billing_late') at request-time; contains @pii(activity='late_path') never seen at startup.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REGISTER-REPLAY-MUTATION",
+        "hypothesis": "register() stores the frozen dataclass by reference but also captures shared mutable tuples by identity; passing the same tuple object, then mutating an aliased list used to build it, corrupts prior records and shifts ROPA bytes on re-export.",
+        "input_fixture": "lst=['a','b']; r=ProcessingRecord(..., purposes=tuple(lst)); registry.register(r); lst.append('c'); re-register via helper that reuses lst.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CONTROLLER-INJECTION",
+        "hypothesis": "controller field accepts arbitrary strings including newline+CSV-injection payload ('=cmd|/C calc'); export_ropa() produced as CSV bytes allows formula injection into auditor spreadsheets.",
+        "input_fixture": "controller='=HYPERLINK(\"http://x\",\"click\")\\nActivity2'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-LEGAL-BASIS-UNICODE-DIGIT",
+        "hypothesis": "legal_basis validator uses str.isdigit or regex \\d which matches Unicode digits (Arabic-Indic '\u0666'); '\u0666(1)(a)' passes enum check despite not being ASCII '6(1)(a)'.",
+        "input_fixture": "legal_basis='\u0666(1)(a)'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LAZY_MODULE_STARTUP_BYPASS",
+        "hypothesis": "If a PII-reading code path lives inside a lazily-imported module (imported only on first HTTP request, not at startup), the startup enforcement check never sees that code path and the invariant 'unregistered activities SHALL fail at startup' is trivially bypassed. Any module loaded via importlib.import_module inside a request handler, or behind a conditional import guarded by a feature flag, is invisible to a static-annotation scanner that runs at process startup.",
+        "input_fixture": "# main.py \u2014 passes startup check cleanly\nfrom compliance import ProcessingRegistry\nregistry = ProcessingRegistry()\n# No annotation on this handler\n@app.get('/admin/users')\ndef get_users():\n    import analytics_plugin  # loaded on first request, reads PII\n    return analytics_plugin.list_users(db)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TOCTOU-RETENTION-REF",
+        "hypothesis": "register() validates that retention_ref resolves to a bound RetentionPolicy at registration time, but if the RetentionPolicy store allows unbinding or deletion after registration (e.g., calling policy_store.remove('ret-90d')), the dangling-ref invariant is bypassed post-registration. The record persists in the registry with a ref that no longer resolves, violating the invariant at export or audit time without failing at registration.",
+        "input_fixture": "policy_store.bind('ret-90d', RetentionPolicy(days=90))\nrec = ProcessingRecord(activity='user.read', controller='Acme', purposes=('analytics',), data_classes=('email',), recipients=(), retention_ref='ret-90d', legal_basis='6(1)(f)')\nregistry.register(rec)  # succeeds\npolicy_store.remove('ret-90d')  # now dangling\nrota_bytes = registry.export_ropa()  # exports a record with dangling ref",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LEGAL-BASIS-HOMOGLYPH",
+        "hypothesis": "legal_basis validation likely compares against an allowlist of ASCII strings like '6(1)(a)'. A Unicode homoglyph substitution \u2014 replacing Latin characters with visually identical Cyrillic or Greek codepoints \u2014 may pass a naive string equality or regex check if the validator normalizes to NFC but not NFKC, or skips unicode normalization entirely. The stored value looks correct to humans in logs/exports but is not one of the six permitted bases.",
+        "input_fixture": "# Cyrillic '\u0430' (U+0430) instead of Latin 'a' (U+0061)\nhomoglyph_basis = '6(1)(\u0430)'  # visually: 6(1)(a)\nrec = ProcessingRecord(\n    activity='payment.charge', controller='Acme',\n    purposes=('billing',), data_classes=('card_number',),\n    recipients=(), retention_ref='ret-7y',\n    legal_basis=homoglyph_basis\n)\nregistry.register(rec)  # hypothesis: does NOT raise",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ISO3166-UK-NOT-GB",
+        "hypothesis": "'UK' is the common abbreviation for the United Kingdom but is NOT a valid ISO-3166-1 alpha-2 code; the correct code is 'GB'. A validator that checks len==2 and isalpha() but does not consult the actual ISO-3166 country list will accept 'UK', 'EU', 'XX', and other plausible-looking non-codes, silently producing a compliance record that claims transfers to a code that resolves to nothing under GDPR adequacy decisions.",
+        "input_fixture": "for bad_code in ['UK', 'EU', 'EEA', 'XX', 'US-NY', 'GBR', 'gb', '  GB', 'G\\x00B']:\n    try:\n        rec = ProcessingRecord(\n            activity='user.export', controller='Acme',\n            purposes=('portability',), data_classes=('profile',),\n            recipients=('third_party',), retention_ref='ret-30d',\n            legal_basis='6(1)(a)',\n            transfers_outside_eea=(bad_code,)\n        )\n        registry.register(rec)\n        print(f'ACCEPTED bad code: {bad_code!r}')\n    except Exception as e:\n        print(f'Rejected {bad_code!r}: {e}')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EXPORT-NONDETERMINISM-SET-ORDER",
+        "hypothesis": "export_ropa() must be byte-for-byte reproducible. If the registry stores records in a plain Python set or inserts into a dict and then iterates it during serialization without an explicit sort key, record ordering will vary between Python interpreter runs (hash randomization is on by default since Python 3.3). Two audit snapshots of the same logical registry will differ in byte content and their SHA-256 hashes will diverge, breaking the auditor diff workflow.",
+        "input_fixture": "import subprocess, hashlib\n# Run export in two fresh interpreter processes with same registry state\nscript = '''\nfrom compliance import ProcessingRegistry, ProcessingRecord\nr = ProcessingRegistry()\nfor i in range(20):\n    r.register(ProcessingRecord(activity=f'act.{i}', controller='Acme', purposes=(f'p{i}',), data_classes=(f'd{i}',), recipients=(), retention_ref='ret-1y', legal_basis='6(1)(b)'))\nprint(hashlib.sha256(r.export_ropa()).hexdigest())\n'''\nhashes = {subprocess.check_output(['python3', '-c', script]).strip() for _ in range(5)}\nprint(f'Unique hashes across 5 runs: {len(hashes)}')  # hypothesis: > 1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONCURRENT-REGISTER-EXPORT-RACE",
+        "hypothesis": "If ProcessingRegistry has no internal locking, a thread calling register() concurrently with a thread calling export_ropa() may observe a partially-written registry state. Two concurrent export_ropa() calls on the same registry instance may produce different byte sequences \u2014 violating reproducibility \u2014 or a register() may corrupt the internal collection mid-iteration during export, causing a RuntimeError or silently dropping records from the output.",
+        "input_fixture": "import threading, hashlib\nresults = []\ndef export_loop():\n    for _ in range(100):\n        results.append(hashlib.sha256(registry.export_ropa()).hexdigest())\ndef register_loop():\n    for i in range(100):\n        registry.register(ProcessingRecord(activity=f'concurrent.{i}', controller='Acme', purposes=('p',), data_classes=('d',), recipients=(), retention_ref='ret-1y', legal_basis='6(1)(b)'))\nt1 = threading.Thread(target=export_loop)\nt2 = threading.Thread(target=register_loop)\nt1.start(); t2.start(); t1.join(); t2.join()\nprint(f'Distinct hashes: {len(set(results))}')  # hypothesis: > 1 or RuntimeError",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY-REQUIRED-TUPLES",
+        "hypothesis": "The dataclass accepts empty tuples for purposes and data_classes because they are typed as tuple[str, ...] with no minimum-length constraint. A ProcessingRecord with purposes=() and data_classes=() is semantically meaningless \u2014 it declares a processing activity without stating what personal data is processed or why \u2014 yet the frozen dataclass will accept it and register() will store it, producing a ROPA entry that an auditor cannot meaningfully validate.",
+        "input_fixture": "rec = ProcessingRecord(\n    activity='user.profile.read',\n    controller='Acme Corp',\n    purposes=(),          # empty \u2014 no stated purpose\n    data_classes=(),      # empty \u2014 no stated data class\n    recipients=(),\n    retention_ref='ret-90d',\n    legal_basis='6(1)(f)'\n)\nregistry.register(rec)  # hypothesis: succeeds without raising\nropa = registry.export_ropa()  # produces ROPA with vacuous record",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NULL-BYTE-ACTIVITY-MATCH",
+        "hypothesis": "Injecting a null byte into the activity string (e.g., 'user.read\\x00.admin') may cause the annotation scanner to match 'user.read' in the registered activity (if it uses a null-terminated C string comparison under the hood or truncates at null), while the actual code path is annotated with the full string including the null byte suffix. The scanner sees a match; the audit sees the full string; the two do not refer to the same logical activity.",
+        "input_fixture": "rec_clean = ProcessingRecord(activity='user.read', controller='Acme', purposes=('analytics',), data_classes=('email',), recipients=(), retention_ref='ret-90d', legal_basis='6(1)(f)')\nrec_null = ProcessingRecord(activity='user.read\\x00.admin', controller='Acme', purposes=('admin_access',), data_classes=('password_hash',), recipients=(), retention_ref='ret-90d', legal_basis='6(1)(f)')\nregistry.register(rec_clean)\nregistry.register(rec_null)  # hypothesis: both register; scanner matches both against 'user.read'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LEGAL-BASIS-TRAILING-WHITESPACE",
+        "hypothesis": "A legal_basis value of '6(1)(a) ' (trailing space) or ' 6(1)(a)' (leading space) is not one of the six GDPR Article 6(1) bases but may slip past a validator that strips whitespace before comparison. Conversely, a validator that does NOT strip whitespace will correctly reject it \u2014 but then a developer who copy-pastes from a YAML config file with trailing newlines will be unable to register a valid record, causing false failures. Either path is a defect.",
+        "input_fixture": "for variant in ['6(1)(a) ', ' 6(1)(a)', '6(1)(a)\\n', '6(1)(A)', '6(1)(a)(i)', 'Article 6(1)(a)', 'consent', 'legitimate_interests']:\n    try:\n        rec = ProcessingRecord(activity=f'act.{variant[:5]}', controller='Acme', purposes=('p',), data_classes=('d',), recipients=(), retention_ref='ret-1y', legal_basis=variant)\n        registry.register(rec)\n        print(f'ACCEPTED: {variant!r}')\n    except Exception as e:\n        print(f'Rejected {variant!r}')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DUPLICATE-ACTIVITY-CONFLICTING-BASIS",
+        "hypothesis": "If register() does not detect duplicate activity names, a caller can register the same activity twice with different legal_basis values (e.g., first '6(1)(b)' then '6(1)(a)'). The registry holds two records for 'user.read', making the ROPA ambiguous and auditor diff non-idempotent \u2014 replaying the same registration sequence twice yields a registry with 4 records, not 2, and export_ropa() output changes with each replay, breaking reproducibility.",
+        "input_fixture": "for legal_basis in ['6(1)(a)', '6(1)(b)', '6(1)(f)']:\n    rec = ProcessingRecord(\n        activity='user.read',  # same activity each time\n        controller='Acme',\n        purposes=('analytics',), data_classes=('email',),\n        recipients=(), retention_ref='ret-90d',\n        legal_basis=legal_basis\n    )\n    registry.register(rec)\n\nropa1 = registry.export_ropa()\nfor legal_basis in ['6(1)(a)', '6(1)(b)', '6(1)(f)']:\n    rec = ProcessingRecord(activity='user.read', controller='Acme', purposes=('analytics',), data_classes=('email',), recipients=(), retention_ref='ret-90d', legal_basis=legal_basis)\n    registry.register(rec)\nropa2 = registry.export_ropa()\nprint(f'Reproducible: {ropa1 == ropa2}')  # hypothesis: False",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FROZEN-DATACLASS-BYPASS-MUTATION",
+        "hypothesis": "ProcessingRecord is frozen=True which prevents direct attribute assignment, but object.__setattr__() or __dict__ manipulation can bypass the freeze on CPython. An attacker who obtains a reference to a registered record can mutate its legal_basis to an invalid value after registration, so the in-registry object no longer satisfies the legal_basis invariant without triggering any validation.",
+        "input_fixture": "rec = ProcessingRecord(activity='payment.charge', controller='Acme', purposes=('billing',), data_classes=('card_number',), recipients=(), retention_ref='ret-7y', legal_basis='6(1)(b)')\nregistry.register(rec)\n# Bypass frozen=True\nobject.__setattr__(rec, 'legal_basis', 'free_text_anything')\nprint(rec.legal_basis)  # hypothesis: 'free_text_anything'\nropa = registry.export_ropa()  # exports record with invalid legal_basis",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EXPORT-CLOCK-SKEW-TIMESTAMP",
+        "hypothesis": "If export_ropa() embeds a generation timestamp (common in compliance documents), two calls to export_ropa() one second apart will differ byte-for-byte even when the registry is identical. This trivially breaks the auditor-hash-and-diff workflow described in the reproducibility invariant. The defect is silent: each export is internally self-consistent but no two exports hash the same.",
+        "input_fixture": "import time, hashlib\nrec = ProcessingRecord(activity='user.read', controller='Acme', purposes=('analytics',), data_classes=('email',), recipients=(), retention_ref='ret-90d', legal_basis='6(1)(f)')\nregistry.register(rec)\nexport1 = registry.export_ropa()\ntime.sleep(1.1)\nexport2 = registry.export_ropa()\nprint(f'Byte-identical: {export1 == export2}')  # hypothesis: False due to embedded timestamp",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AMPLIFICATION-EXPORT-LARGE-REGISTRY",
+        "hypothesis": "export_ropa() builds and serializes the full registry into memory. An attacker who can call register() many times (e.g., via a public API endpoint that wraps a registry) can inflate the registry to millions of records, causing export_ropa() to allocate O(N) memory and spend O(N) CPU. A single export call on a 10M-record registry could exhaust heap and crash the compliance audit process.",
+        "input_fixture": "import sys\nfor i in range(10_000_000):\n    registry.register(ProcessingRecord(\n        activity=f'act.{i}',\n        controller='Acme',\n        purposes=(f'purpose_{i}',),\n        data_classes=(f'data_{i}',),\n        recipients=(),\n        retention_ref='ret-1y',\n        legal_basis='6(1)(b)'\n    ))\nprint('Registered 10M records, calling export_ropa...')\nropa = registry.export_ropa()  # hypothesis: OOM or hangs",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RETENTION-REF-INJECTION-PATH-TRAVERSAL",
+        "hypothesis": "If retention_ref is used as a filesystem path or dictionary key to look up a RetentionPolicy file, a crafted value like '../../../etc/passwd' or 'ret-90d%00' may resolve to an unexpected resource. The registration check may succeed (the path exists or the key matches a pattern) while the actual resolved policy is unintended, creating a dangling-ref bypass where a record appears bound but references wrong policy semantics.",
+        "input_fixture": "for evil_ref in ['../../../etc/passwd', 'ret-90d%00', 'ret-90d\\n', 'ret-90d; DROP TABLE policies;--', '__proto__', 'constructor']:\n    try:\n        rec = ProcessingRecord(\n            activity='user.read', controller='Acme',\n            purposes=('analytics',), data_classes=('email',),\n            recipients=(), retention_ref=evil_ref,\n            legal_basis='6(1)(f)'\n        )\n        registry.register(rec)\n        print(f'REGISTERED with evil ref: {evil_ref!r}')\n    except Exception as e:\n        print(f'Rejected {evil_ref!r}: {type(e).__name__}')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNREGISTERED-PII-ACTIVITY",
+        "hypothesis": "Code path attempts to read PII with activity not registered in ProcessingRegistry; startup validation may be bypassable if lazy-loaded, allowing untracked data access.",
+        "input_fixture": "registry.register(ProcessingRecord(..., activity='export_user_data', ...)); code_path_reads_pii_via_activity('email_lookup'); # email_lookup unregistered",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DANGLING-RETENTION-REFERENCE",
+        "hypothesis": "Register ProcessingRecord with retention_ref pointing to non-existent RetentionPolicy; if validation is deferred or cached, dangling ref may persist and prevent audit trail reconstruction.",
+        "input_fixture": "registry.register(ProcessingRecord(..., retention_ref='policy_deleted_last_week', ...))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INVALID-LEGAL-BASIS-FREETEXT",
+        "hypothesis": "Pass free-text legal_basis like 'legitimate_interest_xyz' or 'custom_basis' instead of strict GDPR 6(1)(a-f) enum; parser may accept substring match or case-insensitive logic.",
+        "input_fixture": "registry.register(ProcessingRecord(..., legal_basis='legitimate_interest_for_marketing', ...))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-COUNTRY-CODE-LONG-NAME",
+        "hypothesis": "Inject full country names ('United States', 'United Kingdom') instead of ISO-3166 alpha-2 codes; normalization logic may accept them if not strictly validated.",
+        "input_fixture": "registry.register(ProcessingRecord(..., transfers_outside_eea=('United States', 'Canada'), ...))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-COUNTRY-CODE-INVALID-NUMERIC",
+        "hypothesis": "Use numeric ISO-3166-1 numeric codes (840 for USA) or lowercase alpha-3 codes (usa) instead of uppercase alpha-2; validation may have incomplete coverage.",
+        "input_fixture": "registry.register(ProcessingRecord(..., transfers_outside_eea=('840', 'usa', 'gb'), ...))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ROPA-EXPORT-NONDETERMINISM",
+        "hypothesis": "Call export_ropa() twice without mutations; if UUID, timestamp, dict iteration order, or json.dumps(sort_keys=False) used, hashes differ and auditors cannot reproduce compliance snapshot.",
+        "input_fixture": "hash1 = hashlib.sha256(registry.export_ropa()).digest(); time.sleep(0.1); hash2 = hashlib.sha256(registry.export_ropa()).digest(); assert hash1 == hash2",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-REGISTRY-RACE",
+        "hypothesis": "Two threads simultaneously register overlapping activities; race condition may corrupt registry state, duplicate entries, or allow unregistered activity to slip through deduplication.",
+        "input_fixture": "threads=[Thread(target=registry.register, args=(rec1,)), Thread(target=registry.register, args=(rec1,))]; [t.start() for t in threads]; [t.join() for t in threads]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-ACTIVITY-STRING",
+        "hypothesis": "Register ProcessingRecord with activity='' (empty string); validation may skip empty strings, later allowing any unregistered activity to match empty key.",
+        "input_fixture": "registry.register(ProcessingRecord(activity='', controller='...', purposes=(...), ...))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PURPOSES-TUPLE-EMPTY",
+        "hypothesis": "Register with purposes=() or empty tuple; no explicit purpose may weaken GDPR purpose-limitation principle and confuse auditors analyzing export_ropa().",
+        "input_fixture": "registry.register(ProcessingRecord(..., purposes=(), ...))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TYPE-CONFUSION-PURPOSES",
+        "hypothesis": "Pass purposes as list, dict, or string instead of tuple; if type validation uses duck typing or reflection, malformed input may bypass checks and corrupt export_ropa() structure.",
+        "input_fixture": "registry.register(ProcessingRecord(..., purposes=['marketing', 'analytics'], ...))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-LEGAL-BASIS-CASE-MISMATCH",
+        "hypothesis": "GDPR enums strict (e.g., 'a', 'b', 'c', 'd', 'e', 'f') but input uses mixed case ('A', 'B') or full names ('consent', 'contract'); case-insensitive parse may incorrectly accept.",
+        "input_fixture": "registry.register(ProcessingRecord(..., legal_basis='Consent', ...))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RETENTION-REF-NONE-NULL",
+        "hypothesis": "Pass retention_ref=None or null; validation may skip None-checks, leaving record unresolvable but appearing valid until export audit queries missing policies.",
+        "input_fixture": "registry.register(ProcessingRecord(..., retention_ref=None, ...))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-COUNTRY-CODE-INJECTION",
+        "hypothesis": "Inject special characters in country codes ('US;DROP TABLE policies', 'ZZ\\x00US') if export_ropa() serializes naively; may corrupt ROPA CSV/JSON or escape validation.",
+        "input_fixture": "registry.register(ProcessingRecord(..., transfers_outside_eea=('US;DROP', 'ZZ\\x00'), ...))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REPLAY-DUPLICATE-REGISTRATION",
+        "hypothesis": "Register identical ProcessingRecord twice; if no idempotency check, export_ropa() may list activity twice, inflating auditor's view of scope and allowing denial of prior amendment.",
+        "input_fixture": "record = ProcessingRecord(...); registry.register(record); registry.register(record); export = registry.export_ropa(); assert export.count(record.activity) == 1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK-SKEW-EXPORT-TIMESTAMP",
+        "hypothesis": "If export_ropa() embeds registration timestamp or includes system time, adjust system clock between calls; non-deterministic export reveals timing leaks and breaks reproducibility guarantee.",
+        "input_fixture": "export1=registry.export_ropa(); system_clock_adjusted_forward_1_second(); export2=registry.export_ropa(); assert export1==export2",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "ropa.activity.registered",
+        "required_attributes": [
+          "activity",
+          "controller"
+        ]
+      },
+      {
+        "event_name": "ropa.exported",
+        "required_attributes": [
+          "bytes"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "ropa.activities",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 500,
+        "label_keys": []
+      },
+      {
+        "name": "ropa.exports",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": []
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "ropa.register",
+        "required_attributes": [
+          "activity"
+        ]
+      },
+      {
+        "operation_name": "ropa.export",
+        "required_attributes": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "name": "CommandQuerySeparator",
+  "namespace": "api",
+  "purpose": "Partitions the API into write commands that mutate state and read queries that observe it so each side can scale and evolve independently.",
+  "api_signature": "from typing import Protocol, Any\n\nclass CommandQuerySeparator(Protocol):\n    def dispatch_command(self, command: Any) -> Any: ...\n    def answer_query(self, query: Any) -> Any: ...\n    def register_command_handler(self, command_type: type, handler) -> None: ...\n    def register_query_handler(self, query_type: type, handler) -> None: ...",
+  "invariants": [
+    "A command handler MUST NEVER return query results synthesized from the write model; it SHALL return only acknowledgement and identifiers.",
+    "A query handler CANNOT mutate state, invoke commands, or block on external side-effects.",
+    "Each command type MUST have at most one registered handler; duplicate handler registration is FORBIDDEN.",
+    "Read models ALWAYS receive updates through the same event stream as the write model; separate in-band write paths for reads are FORBIDDEN."
+  ],
+  "extension_contract": "New operations extend CommandQuerySeparator by registering a command or query handler via a decorator and binding its schema to the API layer; cross-cutting policies (authz, logging) plug in through middleware that MUST respect the command/query split.",
+  "consumption_example": "def place(api: CommandQuerySeparator, cmd):\n    ack = api.dispatch_command(cmd)\n    view = api.answer_query({'order_id': cmd.order_id})\n    return ack, view",
+  "sources": [
+    {
+      "source": "Richardson 'Microservices Patterns' (2018)",
+      "locator": "Chapter 7, CQRS (Command Query Responsibility Segregation), pp. 253-296"
+    },
+    {
+      "source": "Fowler 'Patterns of Enterprise Application Architecture' (2002)",
+      "locator": "Meyer's Command-Query Separation principle referenced, Chapter 9, pp. 147-149"
+    },
+    {
+      "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+      "locator": "Chapter 4, Architecture, CQRS section, pp. 147-160"
+    }
+  ],
+  "why_essential": "Without an enforced split, read-optimized shapes smear into write aggregates, denormalization leaks into the domain, and every team invents its own convention for 'which calls mutate'.",
+  "alternatives_considered": [
+    "Single unified model: breaks at scale when read and write workloads diverge.",
+    "Conventional CRUD over ORM: entangles query projections with write invariants.",
+    "GraphQL resolvers without CQS: hides the mutation surface and complicates authorization."
+  ],
+  "maturity": "battle_tested"
+}

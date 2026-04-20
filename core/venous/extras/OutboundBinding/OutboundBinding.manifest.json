@@ -1,0 +1,775 @@
+{
+  "name": "OutboundBinding",
+  "namespace": "extras",
+  "maturity": "battle_tested",
+  "builder_agent_id": 3,
+  "catalog_entry_sha256": "1ffe97334ffac1422537592f78b0de22deda06e8b2b19968badf59cdb950bd1f",
+  "files": [
+    {
+      "path": "extras/OutboundBinding/OutboundBinding.contract.json",
+      "sha256": "bea8e6f83db2d05c572d8ceaa5cd4ac9a717552100aaf48866c80a159a41bbb9",
+      "size_bytes": 2439,
+      "kind": "contract_json"
+    },
+    {
+      "path": "extras/OutboundBinding/OutboundBinding.manifest.json",
+      "sha256": "33c1842afa93335461c0fac353fc7cb3ec212960448e1660c2e03255a8d9c6b9",
+      "size_bytes": 44027,
+      "kind": "manifest"
+    },
+    {
+      "path": "extras/OutboundBinding/OutboundBinding.md",
+      "sha256": "2777dc416998525418dbdd05bdde0e0f0cc4bb6af549abb8dc02c98ac4899b63",
+      "size_bytes": 4980,
+      "kind": "spec_md"
+    },
+    {
+      "path": "extras/OutboundBinding/OutboundBinding.py",
+      "sha256": "610068d1c63a64772b6c25bc2373b9e8fe7cf85b93cfbeb0500d1c10c5b64e65",
+      "size_bytes": 8272,
+      "kind": "impl"
+    },
+    {
+      "path": "extras/OutboundBinding/behavioral_OutboundBinding.py",
+      "sha256": "36ea5d99fcc9efbfd181e15e28348f3f1c2e91aecd98a44e9c9d9a6711da9aba",
+      "size_bytes": 3637,
+      "kind": "behavioral"
+    },
+    {
+      "path": "extras/OutboundBinding/chaos_OutboundBinding.py",
+      "sha256": "3c92acd3977923d27deb879bb48f3beabfe909b3566de7e8446a949b36de0e54",
+      "size_bytes": 3991,
+      "kind": "chaos"
+    },
+    {
+      "path": "extras/OutboundBinding/dashboard.json",
+      "sha256": "227b00307fc6719306333111c0da31ff7fccc43817efa4aa16c570762e614f6c",
+      "size_bytes": 804,
+      "kind": "dashboard"
+    },
+    {
+      "path": "extras/OutboundBinding/invariant_bindings.json",
+      "sha256": "76976c0e1569ad5507ae506dcfc8d241aa8a49b570161567a7883f9b7dcb1534",
+      "size_bytes": 1948,
+      "kind": "test"
+    },
+    {
+      "path": "extras/OutboundBinding/metamorphic_OutboundBinding.py",
+      "sha256": "e6232f2ed69b48ccd534f205606e833b2a2669969e15847771bd6e2d071191b9",
+      "size_bytes": 2606,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "extras/OutboundBinding/observability_OutboundBinding.py",
+      "sha256": "40d65381ee963a2c490f9600a95bfa72547820100f59e55025717308a22e50b9",
+      "size_bytes": 1293,
+      "kind": "observability"
+    },
+    {
+      "path": "extras/OutboundBinding/observability_schema.json",
+      "sha256": "42f068e80833ad24289bd34a36ee1f65638f7fc8742c76841f72c7e201430ff7",
+      "size_bytes": 1369,
+      "kind": "observability"
+    },
+    {
+      "path": "extras/OutboundBinding/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "extras/OutboundBinding/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "extras/OutboundBinding/test_OutboundBinding.py",
+      "sha256": "4a3a0d5633bb76e953890d633b0715f28bf56f0b9303cecb30a7b9fb307e4f18",
+      "size_bytes": 6673,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "OBND_INV_01",
+      "invariant_text": "The operation field MUST be one of the operations declared by the binding component; unknown values SHALL be rejected.",
+      "confirms_test": "test_inv_operation_allowlist_confirms",
+      "prevents_test": "test_inv_operation_allowlist_prevents",
+      "under_failure_test": "test_inv_operation_allowlist_under_failure"
+    },
+    {
+      "invariant_id": "OBND_INV_02",
+      "invariant_text": "binding_name ALWAYS refers to a component already registered in the runtime; an unresolved name CANNOT invoke anything.",
+      "confirms_test": "test_inv_binding_name_resolves_confirms",
+      "prevents_test": "test_inv_binding_name_resolves_prevents",
+      "under_failure_test": "test_inv_binding_name_resolves_under_failure"
+    },
+    {
+      "invariant_id": "OBND_INV_03",
+      "invariant_text": "Metadata keys NEVER include secrets in plaintext because binding metadata can be logged by observability layers.",
+      "confirms_test": "test_inv_no_plaintext_secrets_confirms",
+      "prevents_test": "test_inv_no_plaintext_secrets_prevents",
+      "under_failure_test": "test_inv_no_plaintext_secrets_under_failure"
+    },
+    {
+      "invariant_id": "OBND_INV_04",
+      "invariant_text": "Binary payloads MUST round trip unchanged; the adapter CANNOT mutate data bytes implicitly.",
+      "confirms_test": "test_inv_bytes_roundtrip_confirms",
+      "prevents_test": "test_inv_bytes_roundtrip_prevents",
+      "under_failure_test": "test_inv_bytes_roundtrip_under_failure"
+    },
+    {
+      "invariant_id": "OBND_INV_05",
+      "invariant_text": "Invocation timeouts SHALL be honored by the adapter or explicitly surfaced as a deadline error.",
+      "confirms_test": "test_inv_timeout_honored_confirms",
+      "prevents_test": "test_inv_timeout_honored_prevents",
+      "under_failure_test": "test_inv_timeout_honored_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 545,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1335,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1286,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 74225,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "45 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1448,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1504,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 51704,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 132502,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNKNOWN-OP-BYPASS",
+        "hypothesis": "Submit BindingInvocation with operation='../admin' or an operation string not declared in the component manifest; adapter forwards to vendor SDK instead of rejecting, because validation uses substring match or case-insensitive compare against declared ops.",
+        "input_fixture": "BindingInvocation(binding_name='s3-logs', operation='PutObject\\x00Delete', data=b'', metadata={})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNREGISTERED-NAME-TOCTOU",
+        "hypothesis": "Race between registry lookup and invoke: deregister component after name resolves but before adapter dispatches; invoke proceeds against a stale in-memory handle, violating the 'registered component' invariant.",
+        "input_fixture": "Thread A: invoke(binding_name='kv1',...); Thread B: registry.remove('kv1') between resolve and dispatch",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-METADATA-SECRET-PLAINTEXT",
+        "hypothesis": "Callers pass metadata={'Authorization':'Bearer sk_live_...','x-api-key':'...'}; adapter merges into request and observability layer logs full metadata dict, leaking credentials to logs/traces.",
+        "input_fixture": "BindingInvocation(binding_name='http1', operation='post', data=b'{}', metadata={'Authorization':'Bearer sk_live_ABC','x-api-key':'secret123'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PAYLOAD-UTF8-RECODE",
+        "hypothesis": "Adapter implicitly decodes bytes to str and re-encodes (e.g., for JSON logging or normalization), mangling non-UTF8 bytes like b'\\xff\\xfe\\x00\\x01'; round-trip fails for binary blobs.",
+        "input_fixture": "BindingInvocation(binding_name='blob', operation='put', data=b'\\xff\\xfe\\x00\\x01\\x80\\x81', metadata={})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TIMEOUT-IGNORED",
+        "hypothesis": "metadata={'timeout':'0.001'} but vendor SDK uses its own default (30s); adapter neither enforces deadline nor surfaces DeadlineError, silently blocking caller past the declared timeout.",
+        "input_fixture": "await binding.invoke(BindingInvocation('slow-http','get',b'',{'timeout_ms':'1'})) against endpoint sleeping 10s",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-OPERATION-CASE-CONFUSION",
+        "hypothesis": "Declared ops ['Get','Put']; attacker sends operation='GET' or 'get '. Adapter normalizes case/whitespace and accepts, bypassing allow-list when vendor SDK treats them as distinct (e.g., S3 signed method).",
+        "input_fixture": "BindingInvocation('s3','get ',b'',{})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-BINDING-NAME",
+        "hypothesis": "binding_name='' or None-equivalent resolves via dict.get default to first/random registered component; caller invokes unintended binding.",
+        "input_fixture": "BindingInvocation(binding_name='', operation='any', data=b'', metadata={})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-METADATA-TYPE-CONFUSION",
+        "hypothesis": "metadata typed as dict[str,str] but caller passes dict[str,bytes] or nested dict via pydantic loose coercion; adapter str()s them, producing 'b\\'\\\\x00secret\\'' logged verbatim and mis-signed requests.",
+        "input_fixture": "BindingInvocation('x','op',b'',{'key': bytes([0,1,2])}) # type: ignore",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AMPLIFICATION-LARGE-PAYLOAD",
+        "hypothesis": "Caller submits data=b'\\x00'*(2**31); adapter has no size guard, buffers into memory twice (copy for signing + copy for transport), OOMs process. Timeout invariant silently violated because OOM preempts deadline timer.",
+        "input_fixture": "BindingInvocation('http','post', b'\\x00'*2_147_483_648, {})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-IDENTICAL-INVOCATION",
+        "hypothesis": "Two concurrent identical invocations with same metadata (incl. idempotency-key) are dispatched twice because adapter lacks dedup; vendor receives duplicate writes. No invariant protects but operation allow-list assumed to imply safe semantics.",
+        "input_fixture": "asyncio.gather(*[binding.invoke(inv) for _ in range(50)])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PROMPT-INJECTION-METADATA",
+        "hypothesis": "metadata value contains newline + fake log line: 'v1\\n2026-04-18 INFO user=admin authenticated'; observability layer logs metadata unescaped, forging audit entries.",
+        "input_fixture": "BindingInvocation('x','op',b'',{'trace':'ok\\n2026-04-18 ERROR secret=sk_live_INJECTED'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNICODE-BINDING-NAME",
+        "hypothesis": "binding_name='kv\\u0130' (Turkish dotted I) normalizes via casefold to 'kvi' matching a different registered component; caller invokes wrong binding.",
+        "input_fixture": "BindingInvocation(binding_name='KV\\u0130', operation='get', data=b'', metadata={})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-DEADLINE",
+        "hypothesis": "Adapter computes deadline as time.time()+timeout but vendor SDK uses monotonic; if wall clock jumps backward (NTP), deadline never fires and invocation hangs, violating timeout invariant.",
+        "input_fixture": "Invoke with timeout=5s, simulate NTP step -60s mid-call",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PAYLOAD-COMPRESSION-MUTATION",
+        "hypothesis": "Adapter auto-gzips data when len>threshold and sets Content-Encoding in metadata; receiver that does not decode sees mutated bytes. Round-trip invariant broken implicitly.",
+        "input_fixture": "BindingInvocation('http','post', b'A'*10000, {})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE_DEREGISTER_INFLIGHT",
+        "hypothesis": "If a binding is deregistered from the runtime registry between the name-resolution check and the actual network dispatch, the adapter may complete the invocation against a now-invalid (or attacker-substituted) component, violating the invariant that an unresolved name cannot invoke anything. A TOCTOU window exists whenever name lookup and invocation are not atomic.",
+        "input_fixture": "Thread-1: invoke(BindingInvocation('smtp-relay', 'send', b'payload', {})) \u2014 Thread-2: concurrently deregister 'smtp-relay' from runtime registry immediately after name resolution passes but before socket is opened.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-UNKNOWN_OP_CASE_FOLD",
+        "hypothesis": "The operation allowlist comparison may use a case-insensitive equality or Unicode case-fold, allowing 'SEND' to pass when only 'send' is declared, or '\u017fend' (long-s) to fold to 'send' under full Unicode case-folding, bypassing the declared operation whitelist entirely.",
+        "input_fixture": "BindingInvocation(binding_name='email', operation='SEND', data=b'', metadata={}) and separately BindingInvocation(binding_name='email', operation='\u017fend', data=b'', metadata={})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-OP_NULL_BYTE_TRUNCATION",
+        "hypothesis": "If the adapter passes the operation string to a C-extension or native SDK via ctypes/cffi, a null byte in the middle of the string causes truncation, so 'list\\x00; DROP TABLE bindings' is seen as 'list' by the allowlist check (Python str) but as 'list' by the native layer \u2014 the injection suffix is silently dropped, making an undeclared composite operation appear valid.",
+        "input_fixture": "BindingInvocation(binding_name='db-binding', operation='list\\x00DROP', data=b'', metadata={})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-OP_EMPTY_STRING_BOUNDARY",
+        "hypothesis": "An empty string for operation ('') may not be in the declared operations set yet could be accepted if the validation check is implemented as 'if operation not in allowed_ops' and allowed_ops accidentally contains '' due to a config parsing split error, or if the check is skipped entirely when the string is falsy in Python.",
+        "input_fixture": "BindingInvocation(binding_name='storage', operation='', data=b'hello', metadata={})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-BINDING_UNICODE_HOMOGLYPH",
+        "hypothesis": "If the binding registry key comparison uses str equality without Unicode normalization, a binding_name using visually identical but distinct Unicode codepoints (e.g., Cyrillic '\u0430' U+0430 vs Latin 'a' U+0061) could resolve to a different registered component than intended, allowing an attacker-controlled binding_name to route invocations to a malicious registered component under a homoglyph name.",
+        "input_fixture": "Register legitimate binding named 'kafka' (Latin). Register attacker binding named 'k\u0430fk\u0430' (Cyrillic \u0430). Invoke BindingInvocation(binding_name='k\u0430fk\u0430', operation='publish', data=b'secret', metadata={}).",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SECRET_IN_METADATA_VALUE",
+        "hypothesis": "Metadata invariant prohibits secrets in plaintext in metadata, but this is a semantic constraint with no enforcement point in the dataclass itself. A caller can pass metadata={'Authorization': 'Bearer eyJhbGc...', 'api_key': 'sk-prod-12345'} and the adapter will forward them to the component and potentially log them verbatim in observability layers, since the dataclass is frozen but not value-validated.",
+        "input_fixture": "BindingInvocation(binding_name='http-outbound', operation='post', data=b'{\"amount\":100}', metadata={'Authorization': 'Bearer sk-live-AbCdEf123456', 'X-Api-Key': 'supersecret'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SECRET_ENCODED_IN_KEY_NAME",
+        "hypothesis": "The invariant says metadata keys must not include secrets in plaintext. An attacker could encode a secret inside the key name itself using a reversible encoding (base64, hex) to evade naive key-name scanners that only check for known patterns like 'password', 'token', 'secret', while the key name 'c2stbGl2ZS1BYkNk' (base64 of 'sk-live-AbCd') is forwarded and logged verbatim.",
+        "input_fixture": "BindingInvocation(binding_name='audit-log', operation='write', data=b'event', metadata={'c2stbGl2ZS1BYkNkRWYxMjM0NTY=': '1'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PAYLOAD_UTF8_ROUNDTRIP_MUTATION",
+        "hypothesis": "If the adapter internally decodes data bytes as UTF-8 (e.g., for logging, compression, or header generation) and then re-encodes, invalid UTF-8 byte sequences such as b'\\xff\\xfe\\x00\\x01' will be replaced with the Unicode replacement character (U+FFFD, b'\\xef\\xbf\\xbd'), silently mutating the binary payload before it reaches the component, violating the round-trip guarantee.",
+        "input_fixture": "BindingInvocation(binding_name='blob-store', operation='upload', data=b'\\xff\\xfe\\x00\\x01\\x80\\x81\\x82\\x83', metadata={}) \u2014 assert response_data == b'\\xff\\xfe\\x00\\x01\\x80\\x81\\x82\\x83'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PAYLOAD_GZIP_IMPLICIT_COMPRESSION",
+        "hypothesis": "Some adapters auto-compress large payloads when they exceed a threshold (e.g., >4KB) and rely on the receiving component to decompress. If the component does not decompress, or if compression is applied asymmetrically (only on send, not tracked on receive), the returned bytes will be compressed while the caller expects raw bytes, silently mutating the data in transit and breaking the round-trip invariant.",
+        "input_fixture": "data = b'A' * 8192; BindingInvocation(binding_name='queue', operation='publish', data=data, metadata={}) \u2014 assert returned_bytes == data (not gzip-compressed bytes)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TIMEOUT_ZERO_OR_NEGATIVE",
+        "hypothesis": "Passing a zero or negative timeout value (via a hypothetical timeout metadata key or SDK-level config) may be interpreted as 'no timeout' (infinite wait) rather than 'immediate deadline exceeded', allowing a slow component to block the caller indefinitely. This violates the invariant that timeouts SHALL be honored.",
+        "input_fixture": "BindingInvocation(binding_name='slow-service', operation='query', data=b'', metadata={'timeout_ms': '0'}) \u2014 slow-service takes 30 seconds; assert DeadlineError is raised, not an infinite block.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TIMEOUT_METADATA_OVERRIDE",
+        "hypothesis": "If the adapter reads timeout configuration from metadata keys at runtime (e.g., 'x-timeout-ms'), a caller can override the administrator-configured timeout to a very large value, effectively disabling the timeout enforcement. This allows a single invocation to hold a goroutine/thread indefinitely, enabling resource exhaustion on the adapter side.",
+        "input_fixture": "BindingInvocation(binding_name='ext-api', operation='call', data=b'', metadata={'x-timeout-ms': '999999999', 'dapr-timeout': '9999s'}) \u2014 verify adapter does NOT honor caller-supplied timeout over the registered component timeout.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY_STALE_METADATA_TOKEN",
+        "hypothesis": "An invocation captured at time T with metadata containing a short-lived auth token or idempotency key can be replayed at time T+N after the token should have expired. If the adapter does not validate token freshness (e.g., checking an 'x-timestamp' metadata field against clock), the replay succeeds, allowing duplicate financial transactions or duplicate side-effecting operations.",
+        "input_fixture": "Capture: BindingInvocation('payment-gateway', 'charge', b'{\"amount\":1000}', {'x-idempotency-key': 'abc123', 'x-timestamp': '2026-04-18T10:00:00Z'}). Replay same invocation at 2026-04-18T10:05:00Z \u2014 assert adapter returns error, not duplicate charge.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LOG_INJECTION_NEWLINE_IN_METADATA",
+        "hypothesis": "Metadata values containing newline characters (\\n, \\r\\n) can inject fake log lines into structured logs, causing an attacker-controlled string to appear as a legitimate log entry. For example, a metadata value of 'value\\nINFO binding=smtp operation=send status=ok credential=leaked' could forge an audit log line, directly leaking fabricated credential data through the observability layer.",
+        "input_fixture": "BindingInvocation('smtp', 'send', b'', {'subject': 'hello\\nINFO binding=smtp operation=send metadata.api_key=FORGED_SECRET status=success'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-OP_WHITESPACE_TRIM_BYPASS",
+        "hypothesis": "If the declared operations set contains 'send' and the allowlist validation trims whitespace before comparison, then ' send' or 'send\\t' would pass the check, but the underlying SDK may receive the untrimmed value and interpret it differently or route to a different handler, creating a discrepancy between what was validated and what was executed.",
+        "input_fixture": "BindingInvocation(binding_name='email', operation=' send', data=b'', metadata={}) and BindingInvocation(binding_name='email', operation='send\\t', data=b'', metadata={}) \u2014 both should be REJECTED since ' send' is not in declared ops.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AMPLIFICATION_METADATA_CALLBACK",
+        "hypothesis": "If returned metadata from a component invocation is fed back as input metadata to a chained invocation without sanitization, a malicious component can return metadata containing a 'callback-binding' or 'next-operation' key that triggers the adapter to make additional outbound invocations, creating an amplification loop or SSRF-style chain where one external call fans out into many unbounded calls.",
+        "input_fixture": "Component returns: (b'ok', {'x-invoke-next-binding': 'internal-db', 'x-invoke-next-op': 'delete', 'x-invoke-next-data': 'dXNlcnM='}) \u2014 assert adapter does NOT recursively invoke 'internal-db'/'delete' based on response metadata.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNKNOWN_OPERATION",
+        "hypothesis": "Invoking with operation name not in binding's declared operations list bypasses validation if operation lookup uses loose matching instead of exact equality.",
+        "input_fixture": "BindingInvocation(binding_name='stripe', operation='refund_v2', data=b'txn_data', metadata={}); stripe binding only declares 'refund'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-OPERATION_EMPTY_STRING",
+        "hypothesis": "Empty operation string may bypass validation if edge case handling treats empty string as 'use default operation' rather than invalid input.",
+        "input_fixture": "BindingInvocation(binding_name='http', operation='', data=b'payload', metadata={})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-OPERATION_CASE_MISMATCH",
+        "hypothesis": "Operation field comparison might be case-insensitive, allowing 'CHARGE' to match declared 'charge', breaking deterministic routing validation.",
+        "input_fixture": "BindingInvocation(binding_name='payment', operation='CHARGE', data=b'amount_cents', metadata={}); declared op is lowercase 'charge'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-OPERATION_OVERFLOW_MEMORY",
+        "hypothesis": "Operation field with extremely long string (megabyte-scale) causes integer overflow in bounds checking or exhausts memory during validation.",
+        "input_fixture": "BindingInvocation(binding_name='sqs', operation='x' * 2_097_152, data=b'msg', metadata={})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNREGISTERED_BINDING_RESOLVE",
+        "hypothesis": "Invoking binding_name that was never registered or lacks validation check reaches unintended handler or creates phantom resource invocation.",
+        "input_fixture": "BindingInvocation(binding_name='nonexistent_stripe_v3', operation='charge', data=b'card_token', metadata={})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-BINDING_RACE_DEREGISTER",
+        "hypothesis": "Binding deregistered between TOCTOU check and actual invocation; race condition allows use-after-free of stale binding reference.",
+        "input_fixture": "Thread1: invoke(binding_name='temp_api'); Thread2: deregister('temp_api'); adapter dereferences deleted binding in Thread1's handler",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-BINDING_EMPTY_NAME",
+        "hypothesis": "Empty binding_name string bypasses resolution check if treated as sentinel or default binding, routing to wrong resource.",
+        "input_fixture": "BindingInvocation(binding_name='', operation='invoke', data=b'request', metadata={})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-API_KEY_PLAINTEXT_LEAK",
+        "hypothesis": "API key placed in metadata dict; observability layer logs metadata verbatim, exposing secret in plaintext audit trails and monitoring dashboards.",
+        "input_fixture": "BindingInvocation(binding_name='aws', operation='s3_put', data=b'object', metadata={'x-api-key': 'sk_live_abc123xyz_confidential'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-BEARER_TOKEN_METADATA",
+        "hypothesis": "Authorization bearer token stored in metadata as plaintext; accessible to unprivileged operators via log indexing or span export systems.",
+        "input_fixture": "BindingInvocation(binding_name='github', operation='merge_pr', data=b'pr_id', metadata={'authorization': 'Bearer ghp_xxxx_long_token'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-METADATA_SECRET_AMPLIFICATION",
+        "hypothesis": "Metadata keys crafted to trigger verbose logging; amplified through observability pipeline, exfiltrating embedded secret or token values.",
+        "input_fixture": "BindingInvocation(..., metadata={'_log_level': 'debug', 'trace_id': 'ghp_secret_token_xyz', 'user_secret': 'db_password_123'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-BINARY_UTF8_NORMALIZATION",
+        "hypothesis": "Binary payload assumed UTF-8 and implicitly re-encoded; invalid UTF-8 sequences get replaced, mutating payload on round-trip invocation.",
+        "input_fixture": "data=b'\\xff\\xfe\\x00\\x41'; adapter decodes as UTF-8, sanitizes invalid bytes, returns corrupted b'\\x3f\\x00\\x41'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-BINARY_NULL_TRUNCATION",
+        "hypothesis": "Binary payload containing null bytes gets truncated at first null if treated as C string, violating round-trip guarantee mid-stream.",
+        "input_fixture": "data=b'prefix\\x00suffix'; adapter truncates at null boundary, returns b'prefix' instead of original",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PAYLOAD_AUTO_COMPRESSION",
+        "hypothesis": "Large binary payload auto-compressed by adapter without explicit metadata flag; decompression omitted on reverse path, corrupting round-trip.",
+        "input_fixture": "data=b'x' * 100_000; adapter gzip-compresses to 500 bytes, returns compressed data without content-encoding metadata, next call fails",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TIMEOUT_NEVER_ENFORCED",
+        "hypothesis": "Invocation timeout parameter ignored; adapter hangs indefinitely on slow external service, never surfacing deadline error or cancellation.",
+        "input_fixture": "BindingInvocation(...) with timeout=5s; external API unresponsive; adapter blocks caller without deadline exception",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK_SKEW_DEADLINE_BYPASS",
+        "hypothesis": "Timeout calculated from local system clock; backward clock skew allows deadline to be recalculated or extended, bypassing timeout constraint.",
+        "input_fixture": "timeout=1s; system clock shifts -30s during invocation; adapter recalculates deadline incorrectly, permits execution beyond timeout",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DEADLINE_ERROR_SUPPRESSED",
+        "hypothesis": "Invocation exceeds timeout but adapter suppresses deadline exceeded error, returning success response instead of explicit timeout signal.",
+        "input_fixture": "BindingInvocation(..., timeout=100ms); external call takes 5s; adapter returns success=true instead of DeadlineExceededError",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "binding.invoke.started",
+        "required_attributes": [
+          "binding_name",
+          "operation"
+        ]
+      },
+      {
+        "event_name": "binding.invoke.completed",
+        "required_attributes": [
+          "binding_name",
+          "operation",
+          "duration_ms",
+          "outcome"
+        ]
+      },
+      {
+        "event_name": "binding.invoke.deadline_exceeded",
+        "required_attributes": [
+          "binding_name",
+          "operation",
+          "timeout_s"
+        ]
+      },
+      {
+        "event_name": "binding.metadata.rejected",
+        "required_attributes": [
+          "binding_name",
+          "reason"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "binding.invoke.calls",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 500,
+        "label_keys": [
+          "binding_name",
+          "operation",
+          "outcome"
+        ]
+      },
+      {
+        "name": "binding.invoke.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 500,
+        "label_keys": [
+          "binding_name",
+          "operation"
+        ]
+      },
+      {
+        "name": "binding.invoke.payload_size",
+        "metric_type": "histogram",
+        "unit": "By",
+        "cardinality_bound": 100,
+        "label_keys": [
+          "binding_name"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "binding.invoke",
+        "required_attributes": [
+          "binding.name",
+          "binding.operation"
+        ]
+      },
+      {
+        "operation_name": "binding.validate",
+        "required_attributes": [
+          "binding.name"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Faithfully mirrors catalog Protocol (BindingInvocation, invoke signature, tuple[bytes, Mapping]). Minor: catalog says dict[str,str] but Mapping is a compatible widening."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All 5 invariants enforced with dedicated checks: operation set (01), registry lookup (02), secret heuristics for values and key names (03), bytes-like validation + round-trip (04), deadline via asyncio.wait_for (05)."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Dedicated taxonomy (OutboundBindingError, BindingDeadlineExceededError); every raise cites the invariant ID, the offending field, and allowed alternatives. Deadline error chains via `from e`."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Protocol + runtime_checkable, frozen dataclasses, pure validators reusable outside the runtime, ExecuteFn typed alias, __all__ curated. Decorators for retry/circuit-breaking compose cleanly around invoke."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Zero import-time I/O, lazy imports unnecessary, frozen registry, defensive copies of data/metadata, timeout honored, counter for invocations. Missing: outcome labels for metrics hook and structured logging, but spec only mandates SRE characteristics descriptively."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace extras.OutboundBinding matched; api_signature preserved; invariants quoted verbatim in docstring and enforced; extension contract respected (BindingComponent pluggable). Metadata typed as Mapping[str,str] rather than dict is a minor deviation."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "BindingComponent and Protocol are used before being defined \u2014 a newcomer won't know these are code constructs vs. prose concepts",
+          "OutboundBinding.contract.json is referenced twice but its location in the repo is never given, making it hard to find",
+          "Extension contract assumes familiarity with async decorators (retry, circuit breaking) without a pointer to examples"
+        ],
+        "rewrite_suggestion": "Add a 'Key terms' box at the top: BindingComponent = one registered adapter (e.g. sendgrid), Protocol = the shared Python interface they all implement. Anchor every file reference to its repo path (e.g. skills/SKILL-001-fastapi-production/OutboundBinding.contract.json). Replace the extension prose with a minimal second code snippet showing how to register a new component."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "Registry frozen at construction \u2014 no guidance on whether hot-reload or late registration is intentionally out-of-scope or just not yet supported",
+          "Concurrency note 'may be serialized or parallelized depending on the underlying execute' gives no ordering or backpressure guarantees the caller can rely on",
+          "PrimitiveSpec schema is deferred to an external doc section rather than inlined; cross-doc navigation breaks flow during design review"
+        ],
+        "rewrite_suggestion": "Add a 'Design boundaries' subsection: explicitly state the registry is immutable post-construction and that dynamic registration is out-of-scope for v1. Replace the vague concurrency sentence with a concrete statement about ordering (e.g. 'no ordering guarantee; each execute call is independent'). Inline the PrimitiveSpec field table or at minimum its required fields."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "OBND-INV-03's 'heuristic secret filter' is unauditable without the exact pattern list \u2014 the word 'heuristic' signals it can be bypassed",
+          "Transport security requirements for the adapter executing outbound calls (TLS enforcement, cert validation) are not mentioned",
+          "The 'auth context' mechanism for passing credentials is referenced but never defined \u2014 auditor cannot trace the credential flow"
+        ],
+        "rewrite_suggestion": "Replace 'heuristic secret filter' with an enumerated blocklist table (key substrings checked, regex patterns matched) or link to the exact code line in validate_metadata_secrets. Add a one-sentence transport security requirement ('adapter MUST use TLS 1.2+ for all outbound calls; plaintext is forbidden'). Define auth context with a pointer to the interface or at minimum a usage example showing how credentials flow without touching metadata."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Metric names and labels are listed but no alert thresholds or SLO targets are given \u2014 oncall cannot set meaningful pages",
+          "Timeout behavior says 'SHALL be honored or surfaced as deadline error' but doesn't explain how to configure per-binding or per-call timeouts",
+          "No error taxonomy or runbook pointer for distinguishing transient upstream failures from caller misconfiguration (rejected vs deadline_exceeded)"
+        ],
+        "rewrite_suggestion": "Add an 'Alerting guidance' subsection with example threshold recommendations (e.g. 'page if p99 > 2 s sustained for 5 min', 'page if rejected rate > 1 % over 10 min'). Document timeout configuration at the BindingComponent level with a code snippet. Add a 'Common failure modes' table: outcome value \u2192 likely cause \u2192 first action."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "'Declarative adapter' and 'operation taxonomy' are engineering abstractions with no business-impact framing \u2014 the value proposition is buried",
+          "No concrete list of supported vendors out of the box vs. what requires custom implementation, making scope estimation hard",
+          "No migration story: teams already calling SendGrid directly have no guidance on incremental adoption or rollout risk"
+        ],
+        "rewrite_suggestion": "Open with a one-sentence value statement: 'OutboundBinding lets you swap email or storage vendors without changing application code, cutting vendor-migration risk.' Add a 'Supported integrations' table listing reference implementations (SendGrid, S3, SMTP, Twilio) vs. 'bring your own.' Add a 'Adopting incrementally' paragraph: wrap one integration first, run in parallel, cut over, then expand \u2014 with an estimate of the per-integration effort."
+      }
+    ]
+  }
+}

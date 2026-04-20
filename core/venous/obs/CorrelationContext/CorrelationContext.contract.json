@@ -1,0 +1,37 @@
+{
+  "name": "CorrelationContext",
+  "namespace": "obs",
+  "purpose": "Propagate a stable request identifier and optional baggage across threads, async tasks, and network hops so every downstream record can be joined back to the originating request.",
+  "api_signature": "from contextlib import AbstractContextManager\nfrom typing import Protocol, Mapping\n\nclass CorrelationContext(Protocol):\n    @property\n    def request_id(self) -> str: ...\n    @property\n    def trace_id(self) -> str | None: ...\n    def baggage(self) -> Mapping[str, str]: ...\n    def activate(self) -> AbstractContextManager[None]: ...\n    @classmethod\n    def current(cls) -> 'CorrelationContext': ...\n    @classmethod\n    def from_headers(cls, headers: Mapping[str, str]) -> 'CorrelationContext': ...\n    def to_headers(self) -> Mapping[str, str]: ...\n",
+  "invariants": [
+    "The request_id MUST be a lowercase hex or ULID string of at least 16 characters and SHALL be stable for the entire request lifecycle.",
+    "Baggage values MUST be ASCII and each individual value CANNOT exceed 8192 bytes per W3C Baggage specification.",
+    "Activating a context MUST restore the prior context on exit even if an exception is raised.",
+    "When extracting from headers, an invalid traceparent value SHALL cause a new trace id to be generated and NEVER falls back to an empty trace context.",
+    "Baggage keys reserved for authentication (password, authorization, cookie) are FORBIDDEN and SHALL be stripped on ingest.",
+    "CorrelationContext NEVER leaks across event loops; asynchronous task spawns copy-on-capture the current context via contextvars."
+  ],
+  "extension_contract": "Downstream tools register a middleware that extracts the context from inbound transport headers (HTTP, gRPC, SQS message attributes) and compose a propagator adapter that re-injects the context into outbound calls; baggage keys are extended by registering a namespaced key prefix through the bind method.",
+  "consumption_example": "async def enqueue_job(ctx: CorrelationContext, payload: dict, queue) -> None:\n    headers = dict(ctx.to_headers())\n    headers['x-request-id'] = ctx.request_id\n    await queue.send(body=payload, attributes=headers)\n    current = CorrelationContext.current()\n    assert current.request_id == ctx.request_id\n",
+  "sources": [
+    {
+      "source": "W3C Baggage Recommendation",
+      "locator": "https://www.w3.org/TR/baggage/ sections 3.2 (member format) and 3.3 (value length)"
+    },
+    {
+      "source": "OpenTelemetry Specification 1.32 \u2014 Context and Propagation",
+      "locator": "specification/context/context.md and specification/context/api-propagators.md"
+    },
+    {
+      "source": "Majors, Fong-Jones, Miranda \u2014 Observability Engineering (2022)",
+      "locator": "Chapter 4 'How Observability and Monitoring Come Together' pp. 48-52 on request-scoped context"
+    }
+  ],
+  "why_essential": "Without a single correlation primitive, each layer invents its own header (X-Request-Id, X-Trace-Id, X-Correlation) and async boundaries drop context silently, making end-to-end reconstruction impossible.",
+  "alternatives_considered": [
+    "Thread-local storage \u2014 rejected because it does not survive async/await task switches in Python asyncio.",
+    "Manually threading the context through every function signature \u2014 rejected because it does not survive framework callbacks and middleware.",
+    "Attaching context only to the root span \u2014 rejected because logs emitted outside the span (startup, shutdown, background tasks) lose correlation."
+  ],
+  "maturity": "battle_tested"
+}

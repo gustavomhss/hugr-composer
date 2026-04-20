@@ -1,0 +1,725 @@
+{
+  "name": "OutputEncoder",
+  "namespace": "security",
+  "maturity": "battle_tested",
+  "builder_agent_id": 7,
+  "catalog_entry_sha256": "f39f2f33509fa78bd860affad469ef72e2cb52078ea8925cd8156f351d2f3b00",
+  "files": [
+    {
+      "path": "security/OutputEncoder/OutputEncoder.contract.json",
+      "sha256": "864f9adc31571a1431ee545f322680b07582c21c06ad5fecad44615c55bed416",
+      "size_bytes": 2590,
+      "kind": "contract_json"
+    },
+    {
+      "path": "security/OutputEncoder/OutputEncoder.manifest.json",
+      "sha256": "5d5885b793655c04c336d017c8b2869edab9a68b076c5dea0f7528ecca8e03dc",
+      "size_bytes": 47561,
+      "kind": "manifest"
+    },
+    {
+      "path": "security/OutputEncoder/OutputEncoder.md",
+      "sha256": "7a7f272279de16d92a8b208c4566554f5a8267f9b0cb1e647539557c45e1515e",
+      "size_bytes": 4908,
+      "kind": "spec_md"
+    },
+    {
+      "path": "security/OutputEncoder/OutputEncoder.py",
+      "sha256": "ffee31a5421f75bd048ff09bb0def6c9e0b13f7f1d12215b92688b425b58134d",
+      "size_bytes": 11128,
+      "kind": "impl"
+    },
+    {
+      "path": "security/OutputEncoder/behavioral_OutputEncoder.py",
+      "sha256": "be929a31fb00224618e08d9bf2af397b0879dcbd5945cad768d58dfc0a403d40",
+      "size_bytes": 3500,
+      "kind": "behavioral"
+    },
+    {
+      "path": "security/OutputEncoder/chaos_OutputEncoder.py",
+      "sha256": "ec445a8f4a63b8ff57f106acd95fe7e2feaa5a11af4f54873d3e53daf4fe7dbe",
+      "size_bytes": 3739,
+      "kind": "chaos"
+    },
+    {
+      "path": "security/OutputEncoder/dashboard.json",
+      "sha256": "f36e02970500aea9c7f977dd813ca228e5e13315ea3ccfca04f7d2ceb78ae4e8",
+      "size_bytes": 907,
+      "kind": "dashboard"
+    },
+    {
+      "path": "security/OutputEncoder/invariant_bindings.json",
+      "sha256": "716ecee334db51ce285cb950c10b32b54ae696be6b337ef78fc68f7ed692d952",
+      "size_bytes": 1896,
+      "kind": "test"
+    },
+    {
+      "path": "security/OutputEncoder/metamorphic_OutputEncoder.py",
+      "sha256": "5a2b81ca914b2d58aa3f14478106ee97a8e4c86df41f425e0a9afb5d597edcef",
+      "size_bytes": 3563,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "security/OutputEncoder/observability_OutputEncoder.py",
+      "sha256": "3591bdb3e69c0e57fa2b39f6a6e77a860d2c3796100110661163b13080aae3ce",
+      "size_bytes": 2456,
+      "kind": "observability"
+    },
+    {
+      "path": "security/OutputEncoder/observability_schema.json",
+      "sha256": "279f3648d3ab5e68b0db3002a31473d016e399f01c1eac1ee5b074c73ddf8cdd",
+      "size_bytes": 1182,
+      "kind": "observability"
+    },
+    {
+      "path": "security/OutputEncoder/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "security/OutputEncoder/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "security/OutputEncoder/test_OutputEncoder.py",
+      "sha256": "f9f1c5d34145726ff03b868f98d2ff67c5092e43cd86c2b5f28bd64b8856193c",
+      "size_bytes": 6978,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "OE_INV_01",
+      "invariant_text": "encode() MUST produce output that cannot break out of the named sink; an HTML_ATTRIBUTE encoded value MUST NEVER enable script execution.",
+      "confirms_test": "test_inv_sink_containment_confirms",
+      "prevents_test": "test_inv_sink_containment_prevents",
+      "under_failure_test": "test_inv_sink_containment_under_failure"
+    },
+    {
+      "invariant_id": "OE_INV_02",
+      "invariant_text": "The caller MUST declare the sink; the encoder SHALL NEVER infer the sink from context.",
+      "confirms_test": "test_inv_explicit_sink_confirms",
+      "prevents_test": "test_inv_explicit_sink_prevents",
+      "under_failure_test": "test_inv_explicit_sink_under_failure"
+    },
+    {
+      "invariant_id": "OE_INV_03",
+      "invariant_text": "Encoders MUST be applied at emission; pre-encoded storage is FORBIDDEN so values are NEVER double-encoded.",
+      "confirms_test": "test_inv_no_double_encode_confirms",
+      "prevents_test": "test_inv_no_double_encode_prevents",
+      "under_failure_test": "test_inv_no_double_encode_under_failure"
+    },
+    {
+      "invariant_id": "OE_INV_04",
+      "invariant_text": "CSS_VALUE encoding MUST reject expression()-style sequences and MUST hex-escape control characters.",
+      "confirms_test": "test_inv_css_hardening_confirms",
+      "prevents_test": "test_inv_css_hardening_prevents",
+      "under_failure_test": "test_inv_css_hardening_under_failure"
+    },
+    {
+      "invariant_id": "OE_INV_05",
+      "invariant_text": "URL_QUERY encoding MUST percent-encode per RFC 3986; space MUST become %20 and `+` MUST NEVER substitute for space on this path.",
+      "confirms_test": "test_inv_url_rfc3986_confirms",
+      "prevents_test": "test_inv_url_rfc3986_prevents",
+      "under_failure_test": "test_inv_url_rfc3986_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 795,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1309,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1590,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 85093,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "40 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1262,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1087,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 68893,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 160458,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HTML-ATTR-UNQUOTED",
+        "hypothesis": "If the attribute is unquoted in the sink template, encoding only quotes and angle brackets allows an attacker to inject space-separated attributes like onmouseover=alert(1), breaking out of the attribute sink and enabling script execution.",
+        "input_fixture": "encode('x onmouseover=alert(1) autofocus', Sink.HTML_ATTRIBUTE) inserted as <img src=[VAL]>",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-JS-STRING-CLOSE-SCRIPT",
+        "hypothesis": "JS_STRING encoder that only escapes quotes and backslashes fails to escape </script>, allowing an attacker supplying '</script><svg onload=alert(1)>' to close the surrounding script tag and execute arbitrary HTML/JS.",
+        "input_fixture": "encode(\"</script><svg onload=alert(1)>\", Sink.JS_STRING) inside <script>var x='[VAL]';</script>",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CSS-EXPRESSION-UNICODE",
+        "hypothesis": "CSS_VALUE rejection of expression() likely uses a literal substring match; an attacker using CSS unicode escapes like 'expr\\65 ssion(alert(1))' or mixed case 'ExPrEsSiOn(1)' would bypass the filter while still being interpreted by legacy IE as expression().",
+        "input_fixture": "encode('expr\\\\65 ssion(alert(1))', Sink.CSS_VALUE)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CSS-CONTROL-CHAR-RAW",
+        "hypothesis": "CSS_VALUE encoder fails to hex-escape control bytes such as NUL (\\x00), VT (\\x0b), or FF (\\x0c), allowing injected control chars to terminate CSS tokens and inject new declarations like 'red\\x00;background:url(javascript:alert(1))'.",
+        "input_fixture": "encode('red\\x00;background:url(x)', Sink.CSS_VALUE)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-URL-QUERY-SPACE-PLUS",
+        "hypothesis": "If URL_QUERY encodes space as '+' instead of %20 when used inside a path component, or fails to percent-encode reserved chars like '&' and '=', attacker input 'a=1&admin=true' injects extra query parameters, enabling HTTP parameter pollution.",
+        "input_fixture": "encode('a=1&admin=true', Sink.URL_QUERY)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DOUBLE-ENCODE-STORAGE",
+        "hypothesis": "If callers can store pre-encoded values and re-encode on render (the forbidden pattern), '&amp;lt;script&amp;gt;' renders visually as '<script>' in a downstream sink that decodes once \u2014 or conversely corrupts legitimate input like 'Tom & Jerry'.",
+        "input_fixture": "encode(encode('<script>', Sink.HTML_TEXT), Sink.HTML_TEXT)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NON-STRING-TYPE",
+        "hypothesis": "Passing non-str types (bytes, int, None, objects with __str__ returning raw HTML) may bypass the encoder via implicit conversion or TypeError leaking a stack trace, violating the contract that all values are encoded.",
+        "input_fixture": "encode(b'<script>alert(1)</script>', Sink.HTML_TEXT); encode(None, Sink.HTML_ATTRIBUTE)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SINK-INFERENCE-DEFAULT",
+        "hypothesis": "If the encoder accepts sink=None or an unknown string and falls back to a 'safe default' (e.g., HTML_TEXT), callers targeting JS_STRING get HTML entity encoding which renders 'alert\\u0026#x27;1\\u0026#x27;' broken and may not actually prevent breakout in JS context.",
+        "input_fixture": "encode('\"</script>', None); encode('x','unknown_sink')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNICODE-SURROGATE",
+        "hypothesis": "Lone UTF-16 surrogates (e.g., '\\uD800') or overlong UTF-8 sequences may crash the encoder, or survive unescaped into a JS_STRING where a paired surrogate completes a '</script>' sequence across concatenation boundaries.",
+        "input_fixture": "encode('\\uD834', Sink.JS_STRING) concatenated with '\\uDD1E</script>'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-URL-PATH-DOTDOT",
+        "hypothesis": "URL_PATH encoder may percent-encode only reserved characters but leave '.' and '/' alone, letting '../../../etc/passwd' traverse when inserted into a path template, violating the sink-safety invariant.",
+        "input_fixture": "encode('../../../etc/passwd', Sink.URL_PATH)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HTML-ATTR-BACKTICK",
+        "hypothesis": "IE treats backtick (`) as an attribute delimiter; if HTML_ATTRIBUTE encoder escapes only single/double quotes, a value like '`onerror=alert(1)` x' can break out of the attribute on legacy browsers and execute script.",
+        "input_fixture": "encode('`onerror=alert(1)` x', Sink.HTML_ATTRIBUTE)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AMPLIFICATION-HUGE-INPUT",
+        "hypothesis": "A 100MB input of '<' characters forces O(n) allocation of 5x-expanded '&lt;' string, plus per-char regex scan; encoder lacks input size cap and becomes a memory/CPU amplification DoS vector.",
+        "input_fixture": "encode('<' * 100_000_000, Sink.HTML_TEXT)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-HTML_ATTR_UNQUOTED_BREAK",
+        "hypothesis": "If the encoded value is placed into an unquoted HTML attribute (e.g., <div data-x=ENCODED>), the encoder may only escape double-quotes and angle brackets, but leave spaces and backticks unescaped. An attacker can inject a space followed by an event handler to break out of the attribute and achieve script execution even though the encoder claimed to protect HTML_ATTRIBUTE sinks.",
+        "input_fixture": "encoder.encode('safe value onmouseover=alert(1) x=', Sink.HTML_ATTRIBUTE)  # expect: spaces and = must be encoded; result must not allow attribute injection even in unquoted context",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-HTML_ATTR_BACKTICK_IE",
+        "hypothesis": "Internet Explorer treats backtick as an attribute delimiter in certain legacy parsing modes. If the HTML_ATTRIBUTE encoder does not escape the backtick character (`) an attacker can craft input such as: `onmouseover=alert(1)` that would break out of an attribute in IE-compatible parsers, enabling script execution despite the encoder's guarantee.",
+        "input_fixture": "encoder.encode('`onmouseover=alert(1) foo`', Sink.HTML_ATTRIBUTE)  # backtick must be encoded; result must not contain a raw backtick",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-JS_STRING_LINE_TERMINATOR",
+        "hypothesis": "ECMAScript treats U+2028 (LINE SEPARATOR) and U+2029 (PARAGRAPH SEPARATOR) as line terminators that terminate a string literal, causing a syntax error or injecting arbitrary JS. A JS_STRING encoder that only escapes ASCII control characters (\\n, \\r) but not these Unicode line terminators will allow escape from a JS string context, violating the sink-containment invariant.",
+        "input_fixture": "encoder.encode('hello\\u2028alert(1)//','Sink.JS_STRING')  # U+2028 must become \\u2028 in output, not a raw Unicode codepoint",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CSS_EXPR_CASE_BYPASS",
+        "hypothesis": "CSS parsers are case-insensitive; an encoder that rejects expression() via a literal string match would miss case variants such as EXPRESSION(), Expression(), eXpReSsIoN(). Injecting the mixed-case variant should be accepted by the encoder but evaluated as an expression by IE-era CSS engines, violating the CSS_VALUE encoding invariant that forbids expression()-style sequences.",
+        "input_fixture": "encoder.encode('eXpReSsIoN(alert(document.domain))', Sink.CSS_VALUE)  # must raise or sanitize regardless of case",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CSS_EXPR_BACKSLASH_CONTINUATION",
+        "hypothesis": "CSS allows backslash-escaped characters inside identifiers; the sequence expr\\65ssion() parses to expression() in a CSS engine because \\65 is the hex escape for 'e'. An encoder that only does a substring match for expression() and does not normalize CSS escape sequences before checking will pass this payload, enabling CSS expression injection.",
+        "input_fixture": "encoder.encode('expr\\\\65ssion(alert(1))', Sink.CSS_VALUE)  # must reject because after CSS normalization this is expression()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CSS_CTRL_CHAR_NO_HEX_ESCAPE",
+        "hypothesis": "The invariant requires CSS_VALUE encoding to hex-escape control characters (U+0000-U+001F, U+007F). If the implementation only checks for the ASCII printable range and misses high-byte C1 controls (U+0080-U+009F), those control characters pass through raw, potentially causing parser confusion in CSS engines or breaking out of a value context via BOM or NEL (U+0085).",
+        "input_fixture": "encoder.encode('\\x85\\x9f\\x00\\x1f', Sink.CSS_VALUE)  # all four codepoints must appear as \\00085 \\0009f \\000000 \\00001f in output",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-URL_PATH_SPACE_PLUS",
+        "hypothesis": "The invariant is explicit: space MUST become %20 in a URL path, and + is only allowed in form-encoded bodies. An encoder implementation that delegates to urllib.parse.quote_plus or urlencode (both of which produce +) for the URL_PATH sink would produce a technically different URL than intended \u2014 %2B encodes a literal plus while + encodes space only in query strings \u2014 causing broken routing or path confusion.",
+        "input_fixture": "encoder.encode('hello world/segment', Sink.URL_PATH)  # space must produce 'hello%20world/segment', NOT 'hello+world/segment'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-URL_QUERY_UNRESERVED_OVER_ENCODE",
+        "hypothesis": "RFC 3986 defines the unreserved set as ALPHA / DIGIT / '-' / '.' / '_' / '~'. An encoder that over-encodes tilde (~) converts it to %7E, which is semantically equivalent but violates the RFC 3986 unreserved-set guarantee. Conversely, an encoder that fails to encode '!' (reserved in RFC 3986) allows potential parameter injection in query strings. Both cases violate INV-5.",
+        "input_fixture": "result = encoder.encode('~test!value', Sink.URL_QUERY); assert result == '~test%21value'  # ~ must NOT be encoded; ! MUST be encoded",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SINK_INFERENCE_FROM_VALUE",
+        "hypothesis": "The invariant mandates that the sink MUST be declared by the caller and the encoder SHALL NEVER infer sink from the value. If an implementation inspects the value for patterns like http://, <, or quotes and silently switches encoding strategy, passing the same value to different sinks would produce output inconsistent with the declared sink \u2014 the encoder is inferring context. This is a correctness and security boundary violation.",
+        "input_fixture": "v='<script>alert(1)</script>'; r1=encoder.encode(v, Sink.URL_QUERY); r2=encoder.encode(v, Sink.JS_STRING); assert '%3C' in r1 and '\\\\u003c' in r2  # each result must use only its declared sink's rules, not adapt based on value content",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DOUBLE_ENCODE_IDEMPOTENT_MISUSE",
+        "hypothesis": "The invariant forbids pre-encoded storage \u2014 encode() applied twice must not be treated as a no-op (idempotent). If a caller accidentally stores an encoded value and encodes it again at output time, the primitive MUST produce double-encoded output (e.g., &amp;amp;) rather than silently normalising it. An implementation that decodes before re-encoding or detects &amp; and skips re-encoding breaks the invariant by rewarding improper storage patterns and masking double-encode bugs.",
+        "input_fixture": "first_pass = encoder.encode('<b>Hello</b>', Sink.HTML_TEXT)  # => '&lt;b&gt;Hello&lt;/b&gt;'\nsecond_pass = encoder.encode(first_pass, Sink.HTML_TEXT)  # MUST => '&amp;lt;b&amp;gt;Hello&amp;lt;/b&amp;gt;', NOT the same as first_pass",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-JS_STRING_NULL_BYTE_TRUNCATION",
+        "hypothesis": "Some JavaScript engines or server-side JSON parsers treat a raw null byte (U+0000) inside a JS string as a string terminator or illegal character. A JS_STRING encoder must escape \\0 as \\u0000 or \\x00. If the encoder passes null bytes through unchanged, attacker-controlled input containing a null byte would silently truncate the injected value in some runtimes or confuse parsers, bypassing downstream validation that inspects the full string.",
+        "input_fixture": "encoder.encode('safe\\x00'); assert '\\\\u0000' in result or '\\\\x00' in result  # raw null byte must never appear in JS_STRING output",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-HTML_TEXT_LARGE_INPUT_AMPLIFICATION",
+        "hypothesis": "An encoder that replaces each dangerous character with a multi-character entity reference (e.g., < becomes &lt;, a 4x expansion) could amplify attacker-controlled input by a factor of 6 or more per character. Sending a string of 10 million < characters should produce ~40 MB of output. If the encoder buffers the entire output in memory without streaming, this constitutes a memory amplification DoS for callers processing large untrusted inputs, with no size cap or streaming defence.",
+        "input_fixture": "big_input = '<' * 10_000_000\nresult = encoder.encode(big_input, Sink.HTML_TEXT)  # must not allocate >200 MB or raise MemoryError; should either stream, reject, or cap input size",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-URL_PATH_NULL_BYTE_INJECT",
+        "hypothesis": "A null byte (%00 or raw \\x00) in a URL path can cause path truncation in C-based HTTP servers and file-system calls (e.g., '/etc/passwd\\x00.jpg' resolves to '/etc/passwd'). The URL_PATH encoder must percent-encode null bytes as %00. If the encoder omits null bytes from its encoding set (treating them as unreserved or simply passing them through), an attacker can craft a path that is interpreted differently by the encoder's caller versus the downstream HTTP server or OS.",
+        "input_fixture": "encoder.encode('/files/report\\x00.pdf', Sink.URL_PATH)  # must produce '/files/report%00.pdf', never pass raw \\x00",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HTML-ATTR-QUOTE-BREAKOUT",
+        "hypothesis": "Double quotes within attribute value not escaped, allowing attribute closure and injection of new attributes",
+        "input_fixture": "encode('value\" onmouseover=\"alert(1)', Sink.HTML_ATTRIBUTE) inserted into <div attr='ENCODED'>",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HTML-TEXT-SCRIPT-TAG",
+        "hypothesis": "Angle brackets in HTML_TEXT not escaped, permitting <script> tag injection",
+        "input_fixture": "encode('<svg onload=alert(1)>', Sink.HTML_TEXT) inserted into <p>ENCODED</p>",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-JS-STRING-QUOTE-ESCAPE",
+        "hypothesis": "Single quotes in JS_STRING not escaped, allowing string termination and code injection",
+        "input_fixture": "encode(\"'; while(1) alert(1); //\", Sink.JS_STRING) inserted into var x = 'ENCODED'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-JS-TEMPLATE-LITERAL-INJECT",
+        "hypothesis": "Backticks in JS_STRING allow escaping to template literal context for arbitrary expression evaluation",
+        "input_fixture": "encode('${alert(1)}', Sink.JS_STRING) inserted into const s = `ENCODED`",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CSS-EXPRESSION-EVAL",
+        "hypothesis": "expression() keyword in CSS_VALUE not filtered, enabling IE-era code execution",
+        "input_fixture": "encode('red; expression(alert(1))', Sink.CSS_VALUE) inserted into style=\"color: ENCODED\"",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CSS-CONTROL-CHAR-NEWLINE",
+        "hypothesis": "Newline control character in CSS_VALUE not hex-escaped, allowing style attribute injection",
+        "input_fixture": "encode('red\\a onclick=alert(1)', Sink.CSS_VALUE) inserted into style=\"color: ENCODED\"",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-URL-QUERY-SPACE-RFC3986",
+        "hypothesis": "Space in URL_QUERY encoded as '+' instead of '%20', causing RFC 3986 non-compliance when decoded in path context",
+        "input_fixture": "encode('search term', Sink.URL_QUERY) used in URL path vs form body with mismatched decoder",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-URL-UNRESERVED-OVER-ENCODE",
+        "hypothesis": "RFC 3986 unreserved characters (A-Z a-z 0-9 - _ . ~) over-encoded, breaking URL equivalence checks",
+        "input_fixture": "encode('user-name.v1_new', Sink.URL_QUERY); normalized_url != original when decoded",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SINK-INFERENCE-MISSING",
+        "hypothesis": "Caller omits sink parameter; encoder infers HTML_TEXT by default instead of requiring explicit declaration",
+        "input_fixture": "encode('value') without Sink parameter; implicitly assumed sink instead of error",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DOUBLE-ENCODING-STORAGE",
+        "hypothesis": "Pre-encoded value stored in database then encoded again during retrieval, causing &lt; to become &amp;lt;",
+        "input_fixture": "v1 = encode('&', Sink.HTML_TEXT); store(v1); v2 = encode(stored_v1, Sink.HTML_TEXT); v1 != v2",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-URL-PATH-SLASH-ENCODE",
+        "hypothesis": "Forward slashes in URL_PATH not escaped to %2F, allowing directory traversal bypass via encoded path components",
+        "input_fixture": "encode('../etc/passwd', Sink.URL_PATH) inserted into /api/ENCODED/action",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HTML-ATTR-NEWLINE-INJECT",
+        "hypothesis": "Newline character in HTML_ATTRIBUTE not escaped, allowing injection of new HTML attribute line",
+        "input_fixture": "encode('val1\\nonmouseover=alert(1)', Sink.HTML_ATTRIBUTE) inserted into <div data='ENCODED'>",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NULL-BYTE-TRUNCATION",
+        "hypothesis": "Null byte in input causes string truncation or buffer overflow in underlying encoder implementation",
+        "input_fixture": "encode('payload\\x00dangerous', Sink.HTML_TEXT); encoded result length inconsistent",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RACE-CONCURRENT-ENCODE",
+        "hypothesis": "Concurrent encode() calls to same sink with different values cause interleaved output or state mutation",
+        "input_fixture": "Thread1: encode('aaa...', Sink.HTML_TEXT); Thread2: encode('bbb...', Sink.HTML_TEXT) in parallel",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CSS-FALLBACK-EXPRESSION",
+        "hypothesis": "Variation of expression() such as 'Expression()' or wrapped in comment bypasses filter in CSS_VALUE",
+        "input_fixture": "encode('/* */ Expression( alert(1) ) /* */', Sink.CSS_VALUE)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "output_encoder.encode.completed",
+        "required_attributes": [
+          "sink",
+          "input_length",
+          "output_length"
+        ]
+      },
+      {
+        "event_name": "output_encoder.rejected",
+        "required_attributes": [
+          "sink",
+          "reason_code"
+        ]
+      },
+      {
+        "event_name": "output_encoder.double_encode.blocked",
+        "required_attributes": [
+          "sink"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "output_encoder.operations",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 24,
+        "label_keys": [
+          "sink",
+          "outcome"
+        ]
+      },
+      {
+        "name": "output_encoder.output_length",
+        "metric_type": "histogram",
+        "unit": "By",
+        "cardinality_bound": 30,
+        "label_keys": [
+          "sink"
+        ]
+      },
+      {
+        "name": "output_encoder.rejections",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 30,
+        "label_keys": [
+          "sink",
+          "reason_code"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "output_encoder.encode",
+        "required_attributes": [
+          "sink",
+          "outcome"
+        ]
+      },
+      {
+        "operation_name": "output_encoder.guard.check",
+        "required_attributes": [
+          "sink",
+          "is_fragment"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol surface matches catalog byte-for-byte (Sink enum values, encode signature). DefaultOutputEncoder satisfies it structurally. Minor: catalog says `+` MAY appear in form-encoded bodies \u2014 impl forbids on this path, which the spec correctly scopes."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All six sinks implemented with sink-specific rules. SingleEncodeGuard + EncodedFragment enforce OE_INV_03. CSS rejects expression/url/@import/javascript:/behavior/style-close. JS escapes broadly. URL splits path vs query correctly. No missing sink from the enum."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "OutputEncoderError subclasses ValueError, cites OE_INV_* id, and explicitly withholds the raw payload (also in EncodedFragment.__repr__) \u2014 directly addresses the security-log exfiltration concern. Distinguishes OE_INV_01/02/03 in messages."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Stateless, thread-safe, pure functions. runtime_checkable Protocol enables structural substitution. SingleEncodeGuard composes over any OutputEncoder. Module-level dispatch table is immutable Mapping. No hidden globals; import is side-effect-free."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "O(n), stdlib-only, no I/O, deterministic. Thread-safety asserted and true. Slight concern: HTML attribute strip preserves \\t\\n\\r which can still aid breakouts in unquoted attrs \u2014 but `=`/`/`/backtick escaping mitigates. No metrics hook in code despite spec mentioning rejections counter \u2014 acceptable as it's an integration concern."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Sink enum values match the catalog string literals exactly. Protocol method signature matches. Invariants OE_INV_01..05 enforced and traceable. Extension contract honored via dispatch table + Protocol. Naming/namespace consistent with `security.OutputEncoder`."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'sink' is used extensively before being defined \u2014 the term appears 17 times before any plain-language definition (e.g. 'the named destination where the encoded string lands in the output')",
+          "API surface says 'see OutputEncoder.contract.json' but no parameters, return types, or exceptions are shown inline \u2014 a junior must find and parse a JSON file to write a single call",
+          "The 'DO NOT USE for JSON' guidance is correct but confusing without context: juniors may not know json.dumps is already safe or why encoding JSON would be wrong"
+        ],
+        "rewrite_suggestion": "Add a one-sentence glossary entry for 'sink' immediately after the first use. Inline the function signature \u2014 `encode(value: str, sink: Sink) -> str` raises `OutputEncoderError` \u2014 so a developer can write code without opening contract.json. Replace the JSON note with: 'json.dumps already escapes special characters; adding a second encoder would corrupt the output.'"
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "Extension contract says 'register a pure Callable[[str], str]' but does not specify how thread-safety is guaranteed for the dispatch table once it is extended at runtime \u2014 is it frozen after import or can plugins register lazily?",
+          "SingleEncodeGuard double-encoding detection is described but the EncodedFragment type is never defined \u2014 no fields, no __str__ behavior, no interop with template engines that call str() on values",
+          "No error handling contract: what does OutputEncoderError carry (message? invariant_id? original sink?), and what is the caller's expected recovery pattern?"
+        ],
+        "rewrite_suggestion": "Add a paragraph specifying that the dispatch table is frozen at module import time (or explicitly say it supports runtime extension and document the locking strategy). Define EncodedFragment as a newtype wrapping str with __str__ passthrough. Document OutputEncoderError fields: `invariant_id: str`, `sink: Sink`, `reason_code: str`; payload intentionally absent."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "Invariants cover six sinks but do not specify behavior for non-string or None inputs \u2014 an auditor cannot confirm whether type coercion could silently bypass encoding (e.g. encode(None, Sink.HTML_TEXT) returning 'None')",
+          "URL_PATH sink is listed in the plain-language intro but has no dedicated invariant \u2014 only URL_QUERY is covered by OE_INV_05 \u2014 leaving ambiguity about path-traversal sequences like '../' and null bytes",
+          "The JS_STRING over-escaping rationale ('quoting styles we do not know about') is correct but the invariant does not enumerate which Unicode categories are preserved unescaped \u2014 auditors need a precise character set, not prose"
+        ],
+        "rewrite_suggestion": "Add an OE_INV_00 that requires input to be `str`; any other type raises OutputEncoderError before dispatch. Add OE_INV_06 for URL_PATH covering traversal sequences and null bytes. Append a table to the JS_STRING invariant listing the exact preserved set `[A-Za-z0-9,._]` with Unicode code-point ranges for all others."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "The `rejections{sink,reason_code}` counter is named but its namespace, label cardinality, and emit mechanism are not specified \u2014 an SRE cannot write an alert without knowing whether this is a Prometheus counter, a structured log field, or a StatsD gauge",
+          "No memory profile is given \u2014 for a service encoding large HTML payloads at high QPS, it is unclear whether the encoder allocates a new string per call or reuses a buffer; this affects heap sizing and GC tuning",
+          "No guidance on the error path at scale: if CSS_VALUE rejection rate spikes, does the encoder raise synchronously (caller must catch), or is there a fallback return value? The on-call runbook cannot be written without this."
+        ],
+        "rewrite_suggestion": "Specify the metric system: 'Schema emits a Prometheus counter `output_encoder_rejections_total{sink, reason_code}` via the standard `/metrics` endpoint.' State that encoding always allocates a new str (no shared buffer) so memory scales linearly with payload size. Confirm that CSS_VALUE rejection raises OutputEncoderError synchronously \u2014 callers must catch and return a 400 or substitute a safe default."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "No adoption effort estimate \u2014 a PM cannot schedule migration work without knowing whether retrofitting an existing template layer takes hours or weeks; the docs do not distinguish between greenfield use and retrofitting",
+          "The 'Alternatives considered' section argues against alternatives but does not reference any incident or CVE that motivates the switch \u2014 PMs need a concrete risk story to justify prioritization to stakeholders",
+          "Compliance alignment is referenced only as 'OWASP ASVS V5.3' with no mapping to SOC 2, PCI-DSS, or GDPR controls \u2014 procurement and legal reviewers will ask for this and the docs provide no starting point"
+        ],
+        "rewrite_suggestion": "Add an 'Adoption' section: 'Greenfield: one import and one encode() call per emission point. Retrofit: audit template files for unencoded interpolations (typically a one-sprint effort for a 50-template service).' Add one sentence citing a real-world XSS class (e.g. stored XSS via unescaped attribute injection) as the threat being mitigated. Note that OWASP ASVS V5.3 satisfies the injection-prevention controls required by PCI-DSS 6.2.4."
+      }
+    ]
+  }
+}

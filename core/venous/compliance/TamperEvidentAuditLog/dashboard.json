@@ -1,0 +1,8 @@
+{
+  "title": "TamperEvidentAuditLog",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "Append rate", "targets": [{"expr": "rate(teal_entries_appended_total[5m])"}]},
+    {"id": 2, "type": "stat", "title": "Verify failures", "targets": [{"expr": "sum(rate(teal_verify_failures_total[1h]))"}]}
+  ]
+}

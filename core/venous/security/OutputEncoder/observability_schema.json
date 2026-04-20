@@ -1,0 +1,49 @@
+{
+  "logs": [
+    {
+      "event_name": "output_encoder.encode.completed",
+      "required_attributes": ["sink", "input_length", "output_length"]
+    },
+    {
+      "event_name": "output_encoder.rejected",
+      "required_attributes": ["sink", "reason_code"]
+    },
+    {
+      "event_name": "output_encoder.double_encode.blocked",
+      "required_attributes": ["sink"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "output_encoder.operations",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 24,
+      "label_keys": ["sink", "outcome"]
+    },
+    {
+      "name": "output_encoder.output_length",
+      "metric_type": "histogram",
+      "unit": "By",
+      "cardinality_bound": 30,
+      "label_keys": ["sink"]
+    },
+    {
+      "name": "output_encoder.rejections",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 30,
+      "label_keys": ["sink", "reason_code"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "output_encoder.encode",
+      "required_attributes": ["sink", "outcome"]
+    },
+    {
+      "operation_name": "output_encoder.guard.check",
+      "required_attributes": ["sink", "is_fragment"]
+    }
+  ]
+}

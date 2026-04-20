@@ -1,0 +1,34 @@
+{
+  "title": "CommandQuerySeparator — Commands, Queries, Read-Model Lag",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Commands Dispatched (5m)",
+      "targets": [{"expr": "sum(rate(cqs_commands_dispatched_total[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Command Duration p50/p95/p99 (ms)",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(cqs_command_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(cqs_command_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(cqs_command_duration_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Queries Answered (rate/s)",
+      "targets": [{"expr": "sum(rate(cqs_queries_answered_total[5m]))"}]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Rejected Commands by Status",
+      "targets": [{"expr": "sum by (status) (rate(cqs_commands_dispatched_total{status=\"rejected\"}[5m]))"}]
+    }
+  ]
+}

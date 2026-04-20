@@ -1,0 +1,14 @@
+{
+  "name": "ExcelExporter",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Creates openpyxl workbooks with chunked streaming write for large result sets. Enforces a hard `max_rows` cap. Lazy-imports openpyxl so the primitive can live in a codebase that may not depend on it at runtime.",
+  "api_signature": "class ExcelExporter: create_workbook(...), add_sheet(...), stream_rows(...), to_bytes(...)",
+  "invariants": [
+    "EXCEL_EXPORTER_INV_01: Total rows written across all `add_sheet`/`write_rows` calls MUST NEVER exceed `max_rows`; exceeding the cap raises ValueError BEFORE any partial data is written past the limit.",
+    "EXCEL_EXPORTER_INV_02: `create_workbook()` MUST raise ImportError with an actionable message ('pip install openpyxl') when openpyxl is unavailable \u2014 never silently returns a broken stub.",
+    "EXCEL_EXPORTER_INV_03: Rows MUST be written in batches of `chunk_size`; given n rows, at most ceil(n / chunk_size) flush points occur (bounded memory footprint)."
+  ],
+  "status": "promoted"
+}

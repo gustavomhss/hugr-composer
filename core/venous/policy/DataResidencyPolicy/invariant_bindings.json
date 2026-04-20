@@ -1,0 +1,9 @@
+{
+  "invariant_bindings": [
+    {"invariant_id": "DRP_INV_01", "invariant_text": "allowed_regions MUST be ISO-3166 codes; arbitrary strings SHALL raise on bind.", "confirms_test": "test_inv_iso_regions_confirms", "prevents_test": "test_inv_iso_regions_prevents", "under_failure_test": "test_inv_iso_regions_under_failure"},
+    {"invariant_id": "DRP_INV_02", "invariant_text": "A write to a non-allowed region MUST fail loudly; silent replication outside the policy is FORBIDDEN.", "confirms_test": "test_inv_write_gate_confirms", "prevents_test": "test_inv_write_gate_prevents", "under_failure_test": "test_inv_write_gate_under_failure"},
+    {"invariant_id": "DRP_INV_03", "invariant_text": "A cross-border transfer outside the EEA CANNOT proceed without a valid transfer_mechanism reference on the bound policy.", "confirms_test": "test_inv_cross_border_confirms", "prevents_test": "test_inv_cross_border_prevents", "under_failure_test": "test_inv_cross_border_under_failure"},
+    {"invariant_id": "DRP_INV_04", "invariant_text": "check_write MUST be called before any persistence primitive stores the record; policies enforced only at read time NEVER satisfy residency.", "confirms_test": "test_inv_write_time_enforcement_confirms", "prevents_test": "test_inv_write_time_enforcement_prevents", "under_failure_test": "test_inv_write_time_enforcement_under_failure"},
+    {"invariant_id": "DRP_INV_05", "invariant_text": "Policy changes MUST emit a TamperEvidentAuditLog entry so region scope changes are reviewable.", "confirms_test": "test_inv_policy_audit_confirms", "prevents_test": "test_inv_policy_audit_prevents", "under_failure_test": "test_inv_policy_audit_under_failure"}
+  ]
+}

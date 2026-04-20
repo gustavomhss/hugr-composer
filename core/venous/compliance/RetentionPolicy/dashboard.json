@@ -1,0 +1,8 @@
+{
+  "title": "RetentionPolicy",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "Records purged", "targets": [{"expr": "sum(rate(retention_records_purged_total[1h]))"}]},
+    {"id": 2, "type": "stat", "title": "Records held", "targets": [{"expr": "sum(rate(retention_records_held_total[1h]))"}]}
+  ]
+}

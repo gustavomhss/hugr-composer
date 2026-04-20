@@ -1,0 +1,31 @@
+{
+  "name": "IdempotentConsumer",
+  "namespace": "events",
+  "purpose": "Applies a message's effect at most once per logical key while tolerating at-least-once delivery from the transport.",
+  "api_signature": "from typing import Protocol, Any\n\nclass IdempotentConsumer(Protocol):\n    def key_for(self, message: Any) -> str: ...\n    def handle(self, message: Any) -> None: ...\n    def on_duplicate(self, message: Any) -> None: ...",
+  "invariants": [
+    "Two messages with the same idempotency key MUST produce the same observable system state; divergence is FORBIDDEN.",
+    "handle CANNOT perform non-compensatable side-effects without first consulting an InboxDeduplicator or equivalent.",
+    "on_duplicate MUST NEVER raise as a primary error path; duplicates are an expected steady-state condition.",
+    "The consumer SHALL publish its own outputs through a TransactionalOutbox so downstream systems can dedupe similarly."
+  ],
+  "extension_contract": "New consumer types extend IdempotentConsumer by subclassing, overriding key_for and handle, and registering the consumer with the bus via register; pre- and post-processing plug in via middleware while the idempotency contract SHALL remain intact.",
+  "consumption_example": "def wire(bus, consumer: IdempotentConsumer):\n    @bus.subscribe('orders.placed')\n    def _on(msg):\n        consumer.handle(msg)",
+  "sources": [
+    {
+      "source": "Richardson 'Microservices Patterns' (2018)",
+      "locator": "Chapter 3, Idempotent Consumer, pp. 101-104"
+    },
+    {
+      "source": "Kleppmann 'Designing Data-Intensive Applications' (2017)",
+      "locator": "Chapter 11, Fault-tolerance of stream processing, pp. 476-479"
+    }
+  ],
+  "why_essential": "Without a shared contract, every consumer reimplements idempotency differently, and the one that gets it wrong quietly double-charges, double-emails, or double-ships.",
+  "alternatives_considered": [
+    "Exactly-once transport: not achievable end-to-end; only 'effectively-once' under specific conditions.",
+    "Manual ad-hoc dedupe per tool: inconsistent and fragile.",
+    "Pure upsert operations: ignores effectful consumers (email, payment, webhook)."
+  ],
+  "maturity": "battle_tested"
+}

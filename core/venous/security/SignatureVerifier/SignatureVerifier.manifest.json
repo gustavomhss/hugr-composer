@@ -1,0 +1,776 @@
+{
+  "name": "SignatureVerifier",
+  "namespace": "security",
+  "maturity": "battle_tested",
+  "builder_agent_id": 7,
+  "catalog_entry_sha256": "4f9c8c234b32fb5924616e424be2c0c5201ebbda6e5b5a18aaf06fc6b21b973b",
+  "files": [
+    {
+      "path": "security/SignatureVerifier/SignatureVerifier.contract.json",
+      "sha256": "9ddc5c374db213feaaf0be28afdfa76a8d6386e68bc52806b92b5c6f0564ed60",
+      "size_bytes": 2396,
+      "kind": "contract_json"
+    },
+    {
+      "path": "security/SignatureVerifier/SignatureVerifier.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "security/SignatureVerifier/SignatureVerifier.md",
+      "sha256": "cb73f50294690173c9e5ff7f7963f7f6456c81e1478665691dafeeac1fcf393d",
+      "size_bytes": 8003,
+      "kind": "spec_md"
+    },
+    {
+      "path": "security/SignatureVerifier/SignatureVerifier.py",
+      "sha256": "656354572bbf3812b478dbf8f4ad14f60608e0eaa888166e026210c04be1391f",
+      "size_bytes": 22768,
+      "kind": "impl"
+    },
+    {
+      "path": "security/SignatureVerifier/behavioral_SignatureVerifier.py",
+      "sha256": "bfcc9a2ef3905eebf514128d3bb1c85d11b5d9b171c5dd7f695c7f5fc55edcd5",
+      "size_bytes": 6657,
+      "kind": "behavioral"
+    },
+    {
+      "path": "security/SignatureVerifier/chaos_SignatureVerifier.py",
+      "sha256": "9d7b028eb8f46a9c859e1dcd7bd82357cdbd86ca06d9a99ba859b5af2b739da8",
+      "size_bytes": 7673,
+      "kind": "chaos"
+    },
+    {
+      "path": "security/SignatureVerifier/dashboard.json",
+      "sha256": "603deefdbac0b0d50758dd90f805a5e70befe010e91a1069ac97152e26773c48",
+      "size_bytes": 1164,
+      "kind": "dashboard"
+    },
+    {
+      "path": "security/SignatureVerifier/invariant_bindings.json",
+      "sha256": "b9998052cdb84874b6931c39ddaf86e0364a92bbbed4cae1eb664ee1eeed043d",
+      "size_bytes": 2044,
+      "kind": "test"
+    },
+    {
+      "path": "security/SignatureVerifier/metamorphic_SignatureVerifier.py",
+      "sha256": "c5ba434ce71510ca14ffa080182477f184004c1c949f488d4e6c0ccc38421c39",
+      "size_bytes": 4713,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "security/SignatureVerifier/observability_SignatureVerifier.py",
+      "sha256": "80ba202314706b43ecb44571787fefa3e6a38cdb6429361fea10d0d80295855a",
+      "size_bytes": 3665,
+      "kind": "observability"
+    },
+    {
+      "path": "security/SignatureVerifier/observability_schema.json",
+      "sha256": "6cc364762ed88a91df2a1a886152c7f58650b24cde6e06bb4b7fa571b4909450",
+      "size_bytes": 2103,
+      "kind": "observability"
+    },
+    {
+      "path": "security/SignatureVerifier/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "security/SignatureVerifier/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "security/SignatureVerifier/test_SignatureVerifier.py",
+      "sha256": "dce0f460076978ce91c1f6099e7e768cdb186dd567712f09e29aabe30f5e706f",
+      "size_bytes": 11798,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "SIG_INV_01",
+      "invariant_text": "verify() MUST raise on signature mismatch and MUST NEVER return a boolean indicating partial verification.",
+      "confirms_test": "test_inv_raise_on_mismatch_confirms",
+      "prevents_test": "test_inv_raise_on_mismatch_prevents",
+      "under_failure_test": "test_inv_raise_on_mismatch_under_failure"
+    },
+    {
+      "invariant_id": "SIG_INV_02",
+      "invariant_text": "Accepted algorithms MUST be declared per key_id; algorithm confusion (substituting HS256 for RS256) CANNOT occur.",
+      "confirms_test": "test_inv_algorithm_binding_confirms",
+      "prevents_test": "test_inv_algorithm_binding_prevents",
+      "under_failure_test": "test_inv_algorithm_binding_under_failure"
+    },
+    {
+      "invariant_id": "SIG_INV_03",
+      "invariant_text": "sign() MUST use deterministic signing (RFC 6979 for ECDSA) or a CSPRNG nonce; ECDSA nonce reuse SHALL be treated as key compromise.",
+      "confirms_test": "test_inv_deterministic_or_csprng_nonce_confirms",
+      "prevents_test": "test_inv_deterministic_or_csprng_nonce_prevents",
+      "under_failure_test": "test_inv_deterministic_or_csprng_nonce_under_failure"
+    },
+    {
+      "invariant_id": "SIG_INV_04",
+      "invariant_text": "Public keys used for verify MUST be fetched from a pinned trust anchor and MUST NEVER be learned from the same message being verified.",
+      "confirms_test": "test_inv_pinned_trust_anchor_confirms",
+      "prevents_test": "test_inv_pinned_trust_anchor_prevents",
+      "under_failure_test": "test_inv_pinned_trust_anchor_under_failure"
+    },
+    {
+      "invariant_id": "SIG_INV_05",
+      "invariant_text": "verify() MUST be constant-time with respect to the signature bytes; timing leaks on tag comparison are FORBIDDEN.",
+      "confirms_test": "test_inv_constant_time_compare_confirms",
+      "prevents_test": "test_inv_constant_time_compare_prevents",
+      "under_failure_test": "test_inv_constant_time_compare_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 840,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1375,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1240,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 91404,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "40 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 895,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 945,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 64925,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 162065,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ALG-CONFUSION-HS-RS",
+        "hypothesis": "Caller supplies a token whose header advertises HS256 while the key_id is registered as RS256; verifier may dispatch on header alg and use the RSA public key as an HMAC secret, accepting a forged signature.",
+        "input_fixture": "verify(message=b'{\"alg\":\"HS256\",\"kid\":\"k1\"}.payload', signature=HMAC_SHA256(rsa_pub_pem, message), key_id='k1') where k1 is registered RS256",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-VERIFY-RETURNS-BOOL",
+        "hypothesis": "verify() under malformed signature length returns False/None instead of raising, allowing callers using `if verify(...)` patterns to misinterpret a partial-failure path as success when wrapped in try/except.",
+        "input_fixture": "verify(b'msg', signature=b'', key_id='k1') \u2014 expect raise; observe return value is None",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ECDSA-NONCE-REUSE",
+        "hypothesis": "Two sign() calls on distinct messages with same key_id produce signatures sharing the same r component, allowing private key recovery via standard ECDSA nonce-reuse algebra.",
+        "input_fixture": "s1=sign(b'A','ec1'); s2=sign(b'B','ec1'); assert r(s1)!=r(s2)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TIMING-SIDECHANNEL",
+        "hypothesis": "verify() compares signature bytes with == or short-circuits on first mismatched byte, leaking position of first wrong byte via wall-clock timing differences across 10k trials.",
+        "input_fixture": "Loop 10000x verify(msg, sig_with_byte_i_flipped, 'k1') and measure ns; expect monotonic timing curve over byte index i",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMBEDDED-PUBKEY-TRUST",
+        "hypothesis": "Message contains an embedded x5c/jwk header; verifier uses that key to verify rather than the pinned anchor for key_id, accepting attacker-chosen keypair.",
+        "input_fixture": "verify(message=cbor({'header':{'jwk':attacker_pub},'body':'x'}), signature=attacker_sig, key_id='k1')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-MESSAGE",
+        "hypothesis": "sign(b'', key_id) succeeds and verify(b'', sig, key_id) accepts, enabling replay of the empty-message signature as a valid token in higher-layer protocols that did not domain-separate.",
+        "input_fixture": "sig=sign(b'',  'k1'); verify(b'', sig, 'k1')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNKNOWN-KEYID",
+        "hypothesis": "verify() with key_id='../../etc/passwd' or unregistered id falls back to a default key or path-traverses the keystore lookup, returning success or leaking filesystem info in the exception message.",
+        "input_fixture": "verify(b'm', sig, key_id='../../../etc/passwd')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED-DER-OVERFLOW",
+        "hypothesis": "ECDSA signature DER decoder accepts oversize length fields causing integer overflow or panics that surface as generic exceptions instead of explicit verification failure, breaking the raise-on-mismatch invariant uniformly.",
+        "input_fixture": "verify(b'm', signature=b'\\x30\\x82\\xff\\xff' + b'A'*10, key_id='ec1')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ALG-NONE",
+        "hypothesis": "Header alg='none' with empty signature is accepted because verifier checks alg field before consulting registered algorithm for key_id.",
+        "input_fixture": "verify(message=b'{\"alg\":\"none\"}.payload', signature=b'', key_id='k1')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MESSAGE-FRAMING-COLLISION",
+        "hypothesis": "Typed framing concatenates type||body without length prefix; signature over (type='A', body='XB') collides with (type='AX', body='B'), enabling cross-type replay.",
+        "input_fixture": "sig=sign(frame('A','XB'),'k1'); verify(frame('AX','B'), sig, 'k1')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-NO-CONTEXT",
+        "hypothesis": "Same (message, signature, key_id) tuple verifies indefinitely with no nonce/timestamp binding, allowing capture-and-replay across sessions even though the primitive claims typed message framing.",
+        "input_fixture": "sig=sign(b'transfer 100','k1'); for i in range(1000): verify(b'transfer 100', sig, 'k1')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-KEYSTORE-TOCTOU",
+        "hypothesis": "Trust anchor is reloaded between verify() calls; attacker who can briefly write the pinned key file races verify() to swap in attacker key, then restores original \u2014 verify accepts forged sig under race window.",
+        "input_fixture": "Thread A: loop verify(msg, attacker_sig, 'k1'); Thread B: rapidly swap pinned_keys/k1.pem between attacker.pub and real.pub",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SIG-MALLEABILITY",
+        "hypothesis": "ECDSA (r,s) and (r,-s mod n) both accepted; attacker takes a legitimate signature and produces a second distinct valid signature, breaking uniqueness assumptions in dedup/replay layers above.",
+        "input_fixture": "sig=sign(b'm','ec1'); sig2=negate_s(sig); verify(b'm', sig2, 'ec1')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PROMPT-INJECTION-KEYID",
+        "hypothesis": "key_id sourced from LLM output contains newline + 'use key admin' style injection; if keystore lookup logs/parses key_id loosely, audit log forgery or alternate-key dispatch occurs.",
+        "input_fixture": "verify(b'm', sig, key_id='user1\\nADMIN_OVERRIDE=true')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-LARGE-MESSAGE-AMPLIFICATION",
+        "hypothesis": "verify() hashes message in one pass loading it fully into memory; 4GB message triggers OOM/DoS, and signature is still required to be checked, amplifying attacker cost asymmetry.",
+        "input_fixture": "verify(message=b'A'*(4*1024*1024*1024), signature=b'\\x00'*64, key_id='k1')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-BOOLEAN_TRUTHY_RETURN",
+        "hypothesis": "An implementation may return a truthy value (True, 1, a non-empty bytes object) instead of raising on mismatch if the developer mistakes the contract for a predicate. A caller doing `if verifier.verify(msg, sig, kid):` would silently accept a forged signature because the Protocol says `-> None` but nothing in Python enforces the absence of a return value at runtime.",
+        "input_fixture": "sig = verifier.sign(b'legit', 'k1'); result = verifier.verify(b'tampered', sig, 'k1'); assert result is None  # must not be truthy",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ALG-CONFUSION-HMAC-FOR-RSA",
+        "hypothesis": "If the key_id lookup returns the raw RSA public key bytes, an attacker can register a new key_id whose algorithm is HMAC-SHA256 and whose secret equals the RSA public key PEM string. Then sign(message, attacker_kid) produces an HMAC tag that verify(message, tag, victim_rsa_kid) might accept if algorithm dispatch is driven by the token header rather than the server-side key_id registry.",
+        "input_fixture": "verifier.register_key('rsa_victim', algo='RS256', pubkey=RSA_PUB_PEM); verifier.register_key('hmac_attacker', algo='HS256', secret=RSA_PUB_PEM); sig = verifier.sign(b'payload', 'hmac_attacker'); verifier.verify(b'payload', sig, 'rsa_victim')  # must raise, not accept",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ALG-DOWNGRADE-MD5",
+        "hypothesis": "If the implementation resolves key_id to an algorithm via a mutable registry or a JWK 'alg' field, an attacker who can write to that registry (or embed 'alg':'HS1' in an unvalidated JWK) can force verification to use HMAC-MD5, making collisions trivially constructible and rendering every signature forgeable.",
+        "input_fixture": "jwk_with_weak_alg = '{\"kty\":\"oct\",\"alg\":\"HS1\",\"k\":\"AAEC\"}'; verifier.import_jwk(jwk_with_weak_alg, key_id='victim'); sig = hmac_md5(b'msg'); verifier.verify(b'msg', sig, 'victim')  # must reject unsupported alg",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ECDSA-NONCE-REUSE-K-EXTRACT",
+        "hypothesis": "If the signing path for ECDSA uses a random nonce from os.urandom but the PRNG is seeded deterministically in a test/mock environment (or the nonce is derived from a truncated counter), two distinct messages will share the same k. Given two (r,s1,msg1) and (r,s2,msg2) pairs with identical r, the private key d can be recovered algebraically: d = (s1*h2 - s2*h1) / (s2 - s1) mod n.",
+        "input_fixture": "import random; random.seed(42)  # mock CSPRNG; sig1 = verifier.sign(b'message_one', 'ecdsa_k1'); sig2 = verifier.sign(b'message_two', 'ecdsa_k1'); r1 = decode_sig(sig1).r; r2 = decode_sig(sig2).r; assert r1 != r2, 'nonce reuse detected \u2014 private key recoverable'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PUBKEY-LEARNED-FROM-MESSAGE",
+        "hypothesis": "If the message is a JWT or CBOR structure containing a 'jwk' or 'x5c' header and the verifier calls a library function that extracts the embedded key before checking the pin, an attacker can craft a message with a self-signed key embedded in the header and the verifier will validate the signature against the attacker's own key, bypassing the trust anchor entirely.",
+        "input_fixture": "attacker_priv, attacker_pub = generate_keypair(); crafted_msg = jwt_encode({'data':'admin'}, attacker_priv, headers={'jwk': attacker_pub.to_jwk()}); sig = extract_sig(crafted_msg); verifier.verify(crafted_msg_body, sig, 'server_kid')  # must reject \u2014 key came from message, not trust anchor",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TIMING-ORACLE-HMAC-PREFIX",
+        "hypothesis": "If the verify path uses a Python `==` or `str.__eq__` comparison on the expected vs. received tag rather than hmac.compare_digest, a timing oracle exists: a correct prefix exits the loop later than a fully incorrect tag. An attacker can recover the correct HMAC byte-by-byte in O(256*n) verification calls instead of O(2^(8n)).",
+        "input_fixture": "import time; baseline = []; for prefix_byte in range(256): probe = bytes([prefix_byte]) + bytes(31); t0=time.perf_counter_ns(); try: verifier.verify(b'target', probe, 'hmac_k1'); except: pass; baseline.append(time.perf_counter_ns()-t0); assert max(baseline)-min(baseline) < TIMING_THRESHOLD_NS, 'timing leak detected'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY-MESSAGE-BYPASS",
+        "hypothesis": "Empty input b'' may short-circuit the signing or hashing path in some implementations (early return if not message, digest of b'' is a known constant). If verify(b'', sig_of_empty, kid) raises but verify(b'', ANY_SIG, kid) does not because the length check happens before the comparison, any signature passes for empty messages.",
+        "input_fixture": "valid_sig = verifier.sign(b'', 'k1'); forged_sig = bytes(len(valid_sig)); verifier.verify(b'', forged_sig, 'k1')  # must raise \u2014 forged sig for empty message must not pass",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-KEY-ID-CROSS-CONTAMINATION",
+        "hypothesis": "If key material is cached in a dictionary keyed only by key_id and two different algorithm registrations share storage paths (e.g. both write to cache['current_key']), a race or sequencing attack can cause verify(msg, sig, 'kid_A') to use the key registered under 'kid_B', accepting a signature made with B's key on behalf of A's identity.",
+        "input_fixture": "verifier.register_key('team_A', algo='EdDSA', pubkey=PUBKEY_A); verifier.register_key('team_B', algo='RS256', pubkey=PUBKEY_B); sig_b = verifier.sign(msg, 'team_B'); verifier.verify(msg, sig_b, 'team_A')  # must raise \u2014 cross-key-id acceptance is forbidden",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-OVERSIZED-SIG-INTEGER-OVERFLOW",
+        "hypothesis": "Passing a pathologically large signature (e.g. 2^32 bytes, or a specially crafted DER blob with a length field near MAXINT) may trigger an integer overflow or unbounded allocation in the ASN.1 decoder used by the underlying crypto library, causing an exception that is mis-caught as 'signature invalid' and thus silently accepted, or causing a memory fault that bypasses the invariant check altogether.",
+        "input_fixture": "giant_sig = b'\\x30\\x84\\xff\\xff\\xff\\xff' + b'\\x00' * (2**20); try: verifier.verify(b'msg', giant_sig, 'rsa_k1'); assert False, 'must raise SignatureMismatch, not silently pass'; except SignatureMismatch: pass; except OverflowError as e: raise AssertionError('overflow escaped to caller') from e",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY-NO-FRESHNESS",
+        "hypothesis": "If verify() has no nonce or timestamp binding, a signature captured from a legitimate prior interaction can be replayed verbatim for the same (message, key_id) pair indefinitely. Although this does not break the cryptographic correctness invariant per se, combined with a mutable message context (session token embedded in message) it allows privilege replay attacks the primitive's 'typed message framing' is supposed to prevent.",
+        "input_fixture": "sig = verifier.sign(b'{\"action\":\"delete\",\"ts\":1000}', 'k1'); time.sleep(3600); verifier.verify(b'{\"action\":\"delete\",\"ts\":1000}', sig, 'k1')  # implementation must enforce freshness window or document clearly that it does not",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NULL-BYTE-MESSAGE-FRAMING",
+        "hypothesis": "Typed message framing is supposed to prevent cross-context forgery. If the frame delimiter is a null byte and the message content is allowed to contain null bytes, an attacker can craft a message where injected null bytes make the concatenated frame parse identically to a legitimately signed frame of a different type (e.g. b'user\\x00admin' vs b'user' + null + b'admin' resolving to same bytes).",
+        "input_fixture": "msg_legit = b'type:user\\x00body:hello'; sig = verifier.sign(msg_legit, 'k1'); msg_forged = b'type:user\\x00body:hello'  # attacker constructs forged_msg that equals msg_legit byte-for-byte via null injection; verifier.verify(msg_forged, sig, 'k1')  # this passes \u2014 demonstrates framing collision",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONCURRENT-NONCE-RACE",
+        "hypothesis": "In a multi-threaded environment, if the RFC 6979 deterministic nonce generation state (or the CSPRNG buffer) is stored as shared mutable state without a lock, two concurrent sign() calls on different threads for different messages but the same key_id may read the same nonce state, producing signatures with identical r values and thus enabling private key recovery.",
+        "input_fixture": "import threading; results = []; threads = [threading.Thread(target=lambda: results.append(verifier.sign(bytes([i]*32), 'ecdsa_k1'))) for i in range(50)]; [t.start() for t in threads]; [t.join() for t in threads]; r_values = [decode_sig(s).r for s in results]; assert len(r_values) == len(set(r_values)), 'duplicate r detected \u2014 nonce collision under concurrency'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TRUST-ANCHOR-CACHE-POISON",
+        "hypothesis": "If the trust anchor is fetched via HTTP (even HTTPS) and the response is cached without pinning the certificate or the key fingerprint, a MITM or a compromised CDN can serve a different public key in the cache warm period. A subsequent verify() call fetches from cache and validates against the attacker-controlled key, completely bypassing the pinned-anchor invariant.",
+        "input_fixture": "# Simulate cache poisoning: monkeypatch requests.get for key_id 'server' to return attacker_jwks; attacker_priv, attacker_pub = generate_keypair(); inject_into_dns_cache('keys.example.com', attacker_pub_jwks); sig = sign_with(attacker_priv, b'payload'); verifier.verify(b'payload', sig, 'server')  # must raise \u2014 attacker key is not the pinned anchor",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ALGO_CONFUSION_OMIT",
+        "hypothesis": "Omitting algorithm declaration allows verify() to accept HS256-signed message for RS256 key, bypassing algorithm binding",
+        "input_fixture": "register_key(key_id='rsa_key', algo='RS256'); hs256_sig=create_hs256_sig(msg); verify(msg, hs256_sig, 'rsa_key')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TIMING_LEAK_FIRST_BYTE",
+        "hypothesis": "Early exit on first signature byte mismatch creates measurable timing difference vs full-buffer constant-time comparison",
+        "input_fixture": "valid_sig=sign(msg, key_id); invalid_sig_byte0=(valid_sig[0]^0xFF).to_bytes(1,'big')+valid_sig[1:]; measure_time(verify(msg, invalid_sig_byte0, key_id))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NONCE_REUSE_ECDSA",
+        "hypothesis": "Calling sign() twice with identical message and key_id returns identical signature, revealing ECDSA nonce reuse and enabling key recovery",
+        "input_fixture": "sig1=sign(msg, 'ec_key'); sig2=sign(msg, 'ec_key'); assert sig1==sig2, 'nonce reuse detected'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-KEY_FETCH_JWKHEADER",
+        "hypothesis": "verify() extracts public key from message JWK header instead of pinned trust anchor, allowing attacker-supplied key for signature validation",
+        "input_fixture": "msg_with_jwk={'jwk': attacker_pubkey, 'payload': data}; sig=sign_as_attacker(msg_with_jwk); verify(msg_with_jwk, sig, key_id)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-VERIFY_RETURNS_BOOL",
+        "hypothesis": "verify() returns False instead of raising exception on signature mismatch, allowing caller to silently ignore failures",
+        "input_fixture": "invalid_sig=b'\\x00'*64; result=verify(msg, invalid_sig, key_id); isinstance(result, bool) and result==False",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY_SIGNATURE_BYPASS",
+        "hypothesis": "Empty signature bytes accepted without raising, treated as trivially valid due to zero-length buffer comparison",
+        "input_fixture": "verify(msg, b'', key_id)  # silently succeeds or returns False instead of raising",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ALGO_OVERRIDE_PARAM",
+        "hypothesis": "verify() allows caller to override declared algorithm via optional parameter, enabling runtime algorithm substitution attack",
+        "input_fixture": "register_key('rsa_key', algo='RS256'); hs256_sig=create_hs256_sig(msg); verify(msg, hs256_sig, 'rsa_key', algorithm='HS256')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CROSS_KEY_ACCEPT",
+        "hypothesis": "Signature created with key_a is accepted when verified with key_b due to missing cryptographic key binding validation",
+        "input_fixture": "register_key('key_a'); register_key('key_b'); sig_a=sign(msg, 'key_a'); verify(msg, sig_a, 'key_b')  # succeeds",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NONCE_RACE_CONCURRENT",
+        "hypothesis": "Concurrent sign() calls with same message produce identical signatures due to CSPRNG state race, enabling nonce reuse key recovery",
+        "input_fixture": "futures=[executor.submit(sign, msg, key_id) for _ in range(20)]; sigs=[f.result() for f in futures]; len(set(sigs))<20",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TIMING_LENGTH_EARLY_EXIT",
+        "hypothesis": "Signature length validation causes early exit, measurable timing difference between correct vs incorrect length inputs",
+        "input_fixture": "t1=measure_time(verify(msg, b'short', key_id)); t2=measure_time(verify(msg, b'x'*256, key_id)); abs(t1-t2)>noise_threshold",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REPLAY_NO_PROTECTION",
+        "hypothesis": "Same (message, signature, key_id) tuple accepted on multiple verify() calls with no nonce, timestamp, or state-based replay prevention",
+        "input_fixture": "sig=sign(msg, key_id); verify(msg, sig, key_id); verify(msg, sig, key_id)  # both succeed, no rejection",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SIGLEN_INTEGER_OVERFLOW",
+        "hypothesis": "Signature with negative or 2^32-wrap length causes buffer read underflow or comparison logic integer wrap",
+        "input_fixture": "sig=craft_signature_with_len(0xFFFFFFFF); verify(msg, sig, key_id)  # crash or false accept",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "signature_verifier.sign.completed",
+        "required_attributes": [
+          "algorithm",
+          "key_id",
+          "msg_type",
+          "duration_ms"
+        ]
+      },
+      {
+        "event_name": "signature_verifier.verify.completed",
+        "required_attributes": [
+          "algorithm",
+          "key_id",
+          "msg_type",
+          "outcome",
+          "duration_ms"
+        ]
+      },
+      {
+        "event_name": "signature_verifier.verify.rejected",
+        "required_attributes": [
+          "algorithm",
+          "key_id",
+          "reason"
+        ]
+      },
+      {
+        "event_name": "signature_verifier.replay.detected",
+        "required_attributes": [
+          "algorithm",
+          "key_id",
+          "severity"
+        ]
+      },
+      {
+        "event_name": "signature_verifier.key.registered",
+        "required_attributes": [
+          "algorithm",
+          "key_id"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "signature_verifier.operations",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 30,
+        "label_keys": [
+          "operation",
+          "algorithm",
+          "outcome"
+        ]
+      },
+      {
+        "name": "signature_verifier.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "operation",
+          "algorithm"
+        ]
+      },
+      {
+        "name": "signature_verifier.verify.rejections",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "algorithm",
+          "reason"
+        ]
+      },
+      {
+        "name": "signature_verifier.replay.detections",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": [
+          "algorithm"
+        ]
+      },
+      {
+        "name": "signature_verifier.keys.registered",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "algorithm"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "signature_verifier.sign",
+        "required_attributes": [
+          "algorithm",
+          "key_id",
+          "msg_type"
+        ]
+      },
+      {
+        "operation_name": "signature_verifier.verify",
+        "required_attributes": [
+          "algorithm",
+          "key_id",
+          "msg_type",
+          "outcome"
+        ]
+      },
+      {
+        "operation_name": "signature_verifier.key.resolve",
+        "required_attributes": [
+          "algorithm",
+          "decision"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol shape matches catalog byte-for-byte; sign/verify signatures exact; verify raises (no bool); key-id selection honored; typed framing added as internal defense without breaking surface."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All 5 invariants enforced: raise-only verify, per-kid alg binding with rebind refusal, RFC6979 ECDSA + Ed25519 determinism + CSPRNG HMAC, pinned TrustAnchor, compare_digest. Forbidden-list covers alg:none/SHA1/PKCS1v1.5. Replay cache + keygen helpers included."
+      },
+      {
+        "axis": "error_quality",
+        "score": 8,
+        "rationale": "Single SignatureVerifierError class collapses oracle surface; messages carry SIG-INV IDs without echoing kid/key/sig bytes. Minor: unknown-kid vs bad-sig share class but distinct message text \u2014 acceptable per spec, could be even more uniform."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Clean Protocol, adapter factory registry, TrustAnchor separable, optional ReplayCache, typed variants for domain separation, lazy imports keep module importable without cryptography SDK. Extension contract explicit via _ADAPTER_FACTORIES."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Constant-time compare, deterministic ECDSA via backend, immutable kid binding, bounded replay cache, lazy SDK imports. Caveat: ReplayCache uses list membership (O(n)) and is not thread-safe \u2014 spec discloses this, acceptable but borderline for high-QPS."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 10,
+        "rationale": "Namespace security.SignatureVerifier; Protocol identical to api_signature; extension_contract honored with forbidden-list refusal; maturity-appropriate hardening; invariants 1:1 mapped to SIG-INV-01..05."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'Typed framing' and 'domain tag' are introduced without a concrete example showing what the actual bytes look like \u2014 the |domain|key_id|msg_type|message| notation is abstract until you see real data.",
+          "'Pinned trust anchor' is never explained as a concept before it is used as a requirement \u2014 a junior reader doesn't know what makes an anchor 'pinned' vs any other key store.",
+          "The wire format table (raw R || S, etc.) appears with no guidance on when the caller actually needs to inspect these bytes, making it feel like a trap for someone who isn't sure."
+        ],
+        "rewrite_suggestion": "Add a two-sentence box before 'Key terms': 'A trust anchor is a local store of known public keys your app controls. Pinned means the verifier reads keys only from this store \u2014 never from the incoming message itself.' Then add a concrete bytes-level example to the framing definition."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "The extension contract references `_ADAPTER_FACTORIES` and `_SignerAdapter` with leading underscores, signaling private internals, yet these are the prescribed extension points \u2014 the public API boundary is unclear.",
+          "`invariant_bindings.json` is called authoritative but is not reproduced or linked, making it impossible to audit test coverage from this document alone.",
+          "Thread safety says the trust anchor is 'guarded by the GIL for lookups' \u2014 this is CPython-specific and silently breaks under free-threaded Python 3.13+ or PyPy; the safety claim needs a scope qualifier."
+        ],
+        "rewrite_suggestion": "Rename extension surface to public names (e.g., `SignerAdapterProtocol`) or explicitly mark the private/public boundary. Embed the invariant-to-test mapping table inline. Add a note: 'GIL-based safety applies to CPython \u22643.12; use an explicit lock for free-threaded runtimes.'"
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "SIG_INV_05 scopes constant-time to 'signature bytes' but is silent on framing comparison and error-path timing \u2014 a wrong key_id could fail at a different code path than a wrong signature, creating a timing oracle.",
+          "ReplayCache is described as 'bounded size' with no stated bound, eviction policy (LRU vs FIFO), or behavior when full \u2014 a full cache with FIFO eviction silently re-enables replays of the oldest nonces.",
+          "Forbidden algorithm list is declared at registration time, but there is no stated behavior if a caller passes an algorithm string with different casing or Unicode normalization (e.g., 'ed25519' vs 'Ed25519')."
+        ],
+        "rewrite_suggestion": "Add to Invariants: SIG_INV_06 \u2014 error paths for wrong kid, wrong algorithm, and wrong signature MUST take indistinguishable time. Specify ReplayCache bound (e.g., 'default 1024 per kid, LRU eviction, configurable'). State algorithm matching is case-insensitive and ASCII-normalized."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Metric names `signature_verifier.replay.detections` and `signature_verifier.verify.rejections` are listed without specifying the emission mechanism (StatsD, Prometheus, OpenTelemetry, manual) or the label/tag schema \u2014 alerting rules can't be written from this.",
+          "No documented behavior when the TrustAnchor has no registered keys or is misconfigured at startup \u2014 an SRE needs to know whether the service fails fast or silently degrades.",
+          "Key rotation says 'old kids keep verifying while callers drain' but provides no deregistration API, no way to enumerate active kids, and no guidance on detecting drain completion \u2014 rotation runbooks can't be written."
+        ],
+        "rewrite_suggestion": "Add an 'Observability' subsection specifying metric type (counter), labels (`alg`, `kid`, `result`), and emission backend. Document `TrustAnchor.deregister(kid)` or state it doesn't exist. Add a startup health-check: 'raises `ConfigurationError` if no keys are registered.'"
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "'JWT-alternative token format' is listed as a USE case, then the very next bullet says 'DO NOT USE for JWT parsing/validation' \u2014 these read as contradictory without the intermediary concept of a 'token-format layer' being explained first.",
+          "Typed framing is presented as a technical mechanism but its business value \u2014 a signed webhook payload cannot be replayed as a signed transfer authorization \u2014 is never stated plainly, making it hard to communicate to customers.",
+          "No compliance or certification context (FIPS 140-2/3, PCI-DSS, SOC 2 cryptographic controls) is mentioned, which PMs routinely need when selling to enterprise or regulated customers."
+        ],
+        "rewrite_suggestion": "Reorder: open 'When to use' with the business risk each scenario solves ('webhook signing prevents vendor impersonation'). Add a one-liner resolving the JWT contradiction: 'Use to sign token payloads; pair with a claims layer for full JWT replacement.' Add a sidebar: 'Compliance: Ed25519 and ECDSA-P256 are NIST-approved; HMAC-SHA256 qualifies under FIPS 140-2.'"
+      }
+    ]
+  }
+}

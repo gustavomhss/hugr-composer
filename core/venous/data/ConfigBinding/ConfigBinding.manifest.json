@@ -1,0 +1,650 @@
+{
+  "name": "ConfigBinding",
+  "namespace": "data",
+  "maturity": "battle_tested",
+  "builder_agent_id": 1,
+  "catalog_entry_sha256": "511c32e0df672efde4907c57de6555b633f06eb1ca47e36b5303c0f399e06879",
+  "files": [
+    {
+      "path": "data/ConfigBinding/ConfigBinding.contract.json",
+      "sha256": "8ff7c2e67e597762d4519904984387a13c6db3b238e9e4d08d1086f7b95c2c2a",
+      "size_bytes": 2527,
+      "kind": "contract_json"
+    },
+    {
+      "path": "data/ConfigBinding/ConfigBinding.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "data/ConfigBinding/ConfigBinding.md",
+      "sha256": "5ce9bb73b06ca501ef53e79091372ce724c4c8cc49f516cbd5de472c516813c4",
+      "size_bytes": 7272,
+      "kind": "spec_md"
+    },
+    {
+      "path": "data/ConfigBinding/ConfigBinding.py",
+      "sha256": "98179d307728efb729fe39b1de9fdb7d945d55901a5a1bb114492659eb3d88cb",
+      "size_bytes": 16886,
+      "kind": "impl"
+    },
+    {
+      "path": "data/ConfigBinding/behavioral_ConfigBinding.py",
+      "sha256": "22addc02e950c74c9466a05ad412001216937ea1279cd0359d1a7944d26a4f01",
+      "size_bytes": 3344,
+      "kind": "behavioral"
+    },
+    {
+      "path": "data/ConfigBinding/chaos_ConfigBinding.py",
+      "sha256": "e2cc0c0d12a29a53775db58fe4b58298cf4d400e500c7b6ec16fc6a7f1b08bca",
+      "size_bytes": 3014,
+      "kind": "chaos"
+    },
+    {
+      "path": "data/ConfigBinding/dashboard.json",
+      "sha256": "17ed316889fbbf6621966da03ae79544fcfbb5972846a6845d28bc9347cc03a3",
+      "size_bytes": 1017,
+      "kind": "dashboard"
+    },
+    {
+      "path": "data/ConfigBinding/invariant_bindings.json",
+      "sha256": "e525cb8d94f326f8e22c8c9f0c80dc55fc5b1d038cf1c9854429bcfb88cb54c2",
+      "size_bytes": 1912,
+      "kind": "test"
+    },
+    {
+      "path": "data/ConfigBinding/metamorphic_ConfigBinding.py",
+      "sha256": "9d1ce6b34844d8c6963589fc330f8c3a0dacc03dbd097e18444bf0dd014abf9a",
+      "size_bytes": 2923,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "data/ConfigBinding/observability_ConfigBinding.py",
+      "sha256": "334eef36e4f2a1e07973a41b15ed065bd6abad00e5d191ddb4f35e8ba437b29b",
+      "size_bytes": 1864,
+      "kind": "observability"
+    },
+    {
+      "path": "data/ConfigBinding/observability_schema.json",
+      "sha256": "06eeea11ffa40d22c44b40fecb2f95126d6b52b308c952605c107a4548f0343a",
+      "size_bytes": 1366,
+      "kind": "observability"
+    },
+    {
+      "path": "data/ConfigBinding/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "data/ConfigBinding/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "data/ConfigBinding/test_ConfigBinding.py",
+      "sha256": "f42d6317ea4b1bdf2fcd4eb629cf9e11700a8639879161c89fb2abc2ad3d5c3b",
+      "size_bytes": 7454,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "CONFIG_INV_01",
+      "invariant_text": "bind() MUST fail loudly if required keys are missing or typed coercion fails; it NEVER returns a partially-filled record.",
+      "confirms_test": "test_inv_fail_loud_confirms",
+      "prevents_test": "test_inv_fail_loud_prevents",
+      "under_failure_test": "test_inv_fail_loud_under_failure"
+    },
+    {
+      "invariant_id": "CONFIG_INV_02",
+      "invariant_text": "Bound records MUST be frozen/immutable; runtime code CANNOT mutate a bound option to affect another consumer.",
+      "confirms_test": "test_inv_frozen_confirms",
+      "prevents_test": "test_inv_frozen_prevents",
+      "under_failure_test": "test_inv_frozen_under_failure"
+    },
+    {
+      "invariant_id": "CONFIG_INV_03",
+      "invariant_text": "reload() MUST produce a new record without aliasing the previous one; references already handed out SHALL NOT silently mutate.",
+      "confirms_test": "test_inv_reload_no_alias_confirms",
+      "prevents_test": "test_inv_reload_no_alias_prevents",
+      "under_failure_test": "test_inv_reload_no_alias_under_failure"
+    },
+    {
+      "invariant_id": "CONFIG_INV_04",
+      "invariant_text": "Unknown keys under the prefix MUST be reported as errors by default (strict binding) and NEVER silently dropped.",
+      "confirms_test": "test_inv_strict_unknown_confirms",
+      "prevents_test": "test_inv_strict_unknown_prevents",
+      "under_failure_test": "test_inv_strict_unknown_under_failure"
+    },
+    {
+      "invariant_id": "CONFIG_INV_05",
+      "invariant_text": "Precedence order (env > file > defaults) MUST be fixed and documented; a later source CANNOT override a value an operator pinned.",
+      "confirms_test": "test_inv_precedence_confirms",
+      "prevents_test": "test_inv_precedence_prevents",
+      "under_failure_test": "test_inv_precedence_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 628,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 2 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1118,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1152,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 73788,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "29 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1218,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1226,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 73660,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 153227,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PARTIAL-RECORD-ON-COERCE-FAIL",
+        "hypothesis": "When a later field fails type coercion, bind() may have already populated earlier fields into a mutable builder and return it (or leak a partial via exception chaining attrs), violating the all-or-nothing invariant.",
+        "input_fixture": "schema=Record(port:int, host:str, tls:bool); config={port:'8080',host:'x',tls:'not-a-bool'}; call bind('svc', schema) and inspect exception.__context__ or any returned object",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FROZEN-NESTED-MUTATION",
+        "hypothesis": "Top-level record is frozen but nested dict/list fields are shared references; mutating record.tags.append('x') in consumer A will mutate consumer B's view, breaking immutability.",
+        "input_fixture": "schema with field tags:list[str] and meta:dict[str,str]; bind twice as a,b; a.tags.append('pwn'); assert 'pwn' not in b.tags",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RELOAD-ALIAS-INPLACE",
+        "hypothesis": "reload() mutates the existing record in place (e.g., object.__setattr__ bypass) so references captured before reload silently observe new values, violating snapshot semantics.",
+        "input_fixture": "r1=bind('svc',S); change underlying file; reload(); assert r1.port == old_port (must not change)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNKNOWN-KEY-SILENT-DROP",
+        "hypothesis": "Strict-mode check only inspects declared schema fields; keys with typos like 'svc.hsot' under the prefix are silently ignored instead of raising.",
+        "input_fixture": "config={svc.host:'a', svc.hsot:'b', svc.prot:9}; bind('svc', Schema(host,port)) \u2014 expect error listing hsot, prot",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PRECEDENCE-ENV-OVERRIDE-PIN",
+        "hypothesis": "Operator pins a value in file with a !pin marker but an env var with same key still overrides; documented precedence says env>file but pin should be terminal.",
+        "input_fixture": "file: svc.port: !pin 8080; env: SVC_PORT=9999; bind returns 9999 instead of 8080",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PREFIX-COLLISION-EMPTY",
+        "hypothesis": "bind('', schema) with empty prefix binds entire config, bypassing namespace isolation and pulling secrets from other namespaces into this record.",
+        "input_fixture": "prefix=''; schema has field 'db_password' matching another namespace's key; bind returns foreign secret",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RELOAD-RACE-TORN-READ",
+        "hypothesis": "Concurrent reload() while a worker thread iterates record fields yields a torn read: some fields from v1, others from v2, because record is swapped field-by-field rather than atomically.",
+        "input_fixture": "Thread A: while True: snapshot=(r.a,r.b,r.c); Thread B: spam reload() with new values; assert tuple is always coherent with a single version",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INT-COERCE-OVERFLOW",
+        "hypothesis": "Coercion of '99999999999999999999999999' to int:32 silently truncates or wraps instead of raising; bind returns a bogus value rather than failing loudly.",
+        "input_fixture": "schema field max_conns:int32; env SVC_MAX_CONNS=99999999999999999999; expect ValidationError",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-BOOL-COERCE-AMBIGUOUS",
+        "hypothesis": "String 'FALSE ' with trailing space or 'no'/'0'/'off' coerces inconsistently across sources (env says False, file parses as truthy string), producing divergent record values per reload.",
+        "input_fixture": "env SVC_TLS='FALSE '; file svc.tls:'off'; bind twice from different sources, observe mismatch",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PROMPT-INJECTION-VIA-VALUE",
+        "hypothesis": "A string value containing ${OTHER_KEY} or Jinja-like tokens gets interpolated at bind time, leaking cross-namespace secrets into this record or causing SSRF via rendered URL.",
+        "input_fixture": "config svc.endpoint='${db.password}@host'; bind and inspect resolved value",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CREDENTIAL-LEAK-IN-ERROR",
+        "hypothesis": "When coercion fails on a secret field, the raised exception embeds the raw secret value in its message/repr, leaking credentials to logs.",
+        "input_fixture": "schema api_key:SecretStr with regex '^sk-'; set SVC_API_KEY='sk-LEAKED-123' but mark type as int; trigger error, grep traceback",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-STALE-DEFAULTS",
+        "hypothesis": "After reload() if file is deleted, bind falls back to defaults without error, so an operator-pinned file value replayed from a stale cache can be silently replaced by defaults.",
+        "input_fixture": "bind with file present; delete file; reload(); expect explicit error, not silent default fallback",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AMPLIFICATION-DEEP-SCHEMA",
+        "hypothesis": "A schema with deeply nested recursive types causes bind() to do O(2^n) validation work on a 1KB config, enabling startup DoS.",
+        "input_fixture": "recursive schema Tree(children:list[Tree]); config with 30-level nesting; measure bind() wall time",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-TTL-FIELD",
+        "hypothesis": "A duration field parsed relative to system clock at bind time vs reload time yields different absolute deadlines; downstream consumers comparing to now() get inconsistent TTLs across records.",
+        "input_fixture": "field expires_at:duration='1h'; bind at t0; jump clock +2h; reload(); compare resolved expires_at values",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED-TYPE-SCHEMA-ARG",
+        "hypothesis": "Passing schema=dict or schema=None or a non-dataclass/Protocol as Type[T] is accepted and returns an untyped dict, bypassing validation entirely.",
+        "input_fixture": "bind('svc', dict); bind('svc', None); bind('svc', lambda: 0) \u2014 expect TypeError at API boundary",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PARTIAL_FILL_OPTIONAL_DEFAULT",
+        "hypothesis": "If the schema mixes required fields with fields that carry Python default values (e.g. Optional[str] = None), bind() may return a record where the required field is silently omitted rather than raising \u2014 because the dataclass/Pydantic constructor accepts the partial kwargs without complaint when defaults satisfy the validator.",
+        "input_fixture": "class DBConfig(BaseModel):\n    host: str          # required, no default\n    port: int = 5432   # has default\n\n# Config source contains ONLY 'data.db.port=9999', 'data.db.host' is absent\nbinding.bind(prefix='data.db', schema=DBConfig)\n# Expect: ValidationError. Risk: returns DBConfig(host=???, port=9999) or DBConfig(host='', port=9999)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DICT_MUTATION_BYPASS_FREEZE",
+        "hypothesis": "A 'frozen' Pydantic v1 model or dataclass with frozen=True blocks direct attribute assignment but NOT __dict__ or __fields__['x'].default mutation. An attacker-controlled piece of runtime code can write bound_record.__dict__['secret_key'] = 'injected', silently corrupting the value seen by other consumers sharing the same object reference.",
+        "input_fixture": "cfg = binding.bind('data.auth', AuthConfig)\n# Attempt bypass:\ncfg.__dict__['secret_key'] = 'PWNED'\nprint(cfg.secret_key)   # expect original; risk: 'PWNED'\n# Also try: object.__setattr__(cfg, 'secret_key', 'PWNED')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RELOAD_ALIAS_SAME_OBJECT",
+        "hypothesis": "If reload() reuses the same Python object (e.g. updates fields in-place on the cached record rather than constructing a fresh instance), then a consumer that cached the reference before reload() will silently see the new values \u2014 violating the 'references already handed out SHALL NOT silently mutate' guarantee.",
+        "input_fixture": "cfg_before = binding.bind('data.app', AppConfig)\nid_before = id(cfg_before)\nbinding.reload()\ncfg_after = binding.bind('data.app', AppConfig)\nassert id_before != id(cfg_after), 'must be distinct objects'\nassert cfg_before.timeout == ORIGINAL_VALUE, 'stale ref must not mutate'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-UNKNOWN_KEY_SILENT_DROP",
+        "hypothesis": "Pydantic v2 by default ignores extra fields unless model_config = ConfigDict(extra='forbid'). If the ConfigBinding implementation builds the schema via model_validate() without enforcing extra='forbid', an operator typo like 'data.db.hostt=bad' is silently dropped, masking misconfiguration.",
+        "input_fixture": "# Config file contains:\n# data.db.host = localhost\n# data.db.portt = 9999   <- typo, unknown key\nbinding.bind('data.db', DBConfig)\n# Expect: raises UnknownKeyError or ValidationError listing 'portt'\n# Risk: returns DBConfig(host='localhost', port=5432) with typo swallowed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ENV_OVERRIDE_PINNED_FILE",
+        "hypothesis": "If the precedence rule is env > file > defaults, an operator who 'pinned' a value in a file config (e.g. via a sealed ConfigMap) expects it to be authoritative. But if an env var with the same key is accidentally present in the process environment from a previous deployment, it silently overrides the pinned file value, violating operator intent.",
+        "input_fixture": "# file: data.db.max_connections = 10  (operator-pinned)\nos.environ['DATA_DB_MAX_CONNECTIONS'] = '9999'  # stale env from previous deploy\ncfg = binding.bind('data.db', DBConfig)\nassert cfg.max_connections == 10, 'file pin must win; risk: 9999 from env'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-COERCE_STRING_TRUE_BOOL",
+        "hypothesis": "When a schema declares a field as bool and the raw config value is the string 'True', 'yes', '1', or 'on', some validators silently coerce it instead of raising. Worse, the string '0' is truthy in Python, so bool('0') == True while the operator intended False. This is a typed coercion failure that should be caught loudly.",
+        "input_fixture": "class FeatureFlags(BaseModel):\n    enable_debug: bool\n\n# Config source: data.flags.enable_debug = '0'  (operator intent: False)\ncfg = binding.bind('data.flags', FeatureFlags)\nassert cfg.enable_debug == False, 'string 0 must not coerce to True'\n# Also test: 'yes', 'on', 'TRUE', '1' for consistent semantics",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NESTED_MUTABLE_CONTAINER",
+        "hypothesis": "A frozen record with a list or dict field is frozen at the top level, but the container itself remains mutable. Code that receives the bound record can call cfg.allowed_hosts.append('evil.com') without triggering any immutability guard, silently poisoning the config for all consumers who share the same list object.",
+        "input_fixture": "class CORSConfig(BaseModel):\n    allowed_hosts: list[str] = ['safe.com']\n    model_config = ConfigDict(frozen=True)\n\ncfg = binding.bind('data.cors', CORSConfig)\ncfg.allowed_hosts.append('evil.com')  # must raise or be a deep-frozen tuple\nprint(cfg.allowed_hosts)  # risk: ['safe.com', 'evil.com']",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE_RELOAD_CONCURRENT_BIND",
+        "hypothesis": "If reload() tears down the internal config store and rebuilds it non-atomically, a concurrent bind() call arriving mid-rebuild may observe a partially populated namespace \u2014 returning a record where some keys come from the old source and some from the new source, creating a hybrid config that was never valid at any single point in time.",
+        "input_fixture": "import threading\nerrors = []\ndef reader():\n    for _ in range(1000):\n        try:\n            cfg = binding.bind('data.db', DBConfig)\n            assert cfg.host and cfg.port  # must be coherent\n        except Exception as e:\n            errors.append(e)\nt = threading.Thread(target=reader); t.start()\nfor _ in range(50): binding.reload()\nt.join()\nassert not errors, f'race produced: {errors}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INT_OVERFLOW_NUMERIC_FIELD",
+        "hypothesis": "A config value larger than sys.maxsize (e.g. a port number set to 99999999999999999999 from an env var) may overflow silently on systems using C-backed integer parsing, or may pass Pydantic validation as a valid int but violate downstream constraints. bind() should fail loudly when the value is out of the field's semantic range.",
+        "input_fixture": "os.environ['DATA_DB_PORT'] = '99999999999999999999'\ncfg = binding.bind('data.db', DBConfig)  # DBConfig.port: int\n# Expect: ValidationError (value out of range for TCP port)\n# Risk 1: silent overflow to negative number\n# Risk 2: passes validation, crashes at socket.connect() instead of startup",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY_PREFIX_NAMESPACE_ESCAPE",
+        "hypothesis": "Calling bind() with an empty string prefix ('') or a prefix that is just whitespace should either raise immediately or scope to an explicitly defined top-level namespace. If the implementation strips the prefix and falls back to the entire config tree, it may expose secrets from other namespaces (e.g. 'data.payments.stripe_key') to a consumer that only requested 'data.app'.",
+        "input_fixture": "cfg = binding.bind('', AppConfig)         # empty prefix\ncfg2 = binding.bind('   ', AppConfig)     # whitespace prefix\n# Expect: ValueError('prefix must be non-empty')\n# Risk: binds entire config tree, leaking cross-namespace secrets into AppConfig fields",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CREDENTIAL_LEAK_IN_ERROR_MSG",
+        "hypothesis": "When bind() fails because a secret field (e.g. database_password, api_key) fails type coercion, the ValidationError message constructed by Pydantic or the binding layer may include the raw value in the error string. This leaks credentials into logs, Sentry, or stderr at startup \u2014 a security invariant violation even if the loud-failure invariant is satisfied.",
+        "input_fixture": "os.environ['DATA_DB_DATABASE_PASSWORD'] = 'super$ecret123'\nos.environ['DATA_DB_PORT'] = 'not-a-number'  # force coercion failure\ntry:\n    binding.bind('data.db', DBConfig)\nexcept Exception as e:\n    assert 'super$ecret123' not in str(e), 'secret leaked in error message'\n    assert 'super$ecret123' not in repr(e)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RELOAD_STALE_ENV_SNAPSHOT",
+        "hypothesis": "If the ConfigBinding implementation snapshots os.environ at startup (e.g. stores a dict copy), reload() may re-read the file but NOT re-read the live environment. An operator who updates an env var at runtime (via a sidecar or secrets manager) and calls reload() expects the new value; instead they get the stale snapshot, silently serving the old credential.",
+        "input_fixture": "os.environ['DATA_DB_HOST'] = 'original-host'\nbinding_instance = ConfigBinding(sources=[EnvSource(), FileSource('cfg.yaml')])\ncfg_v1 = binding_instance.bind('data.db', DBConfig)\nos.environ['DATA_DB_HOST'] = 'rotated-host'  # simulate secret rotation\nbinding_instance.reload()\ncfg_v2 = binding_instance.bind('data.db', DBConfig)\nassert cfg_v2.host == 'rotated-host', 'reload must re-read live env'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PREFIX_COLLISION_NAMESPACE_BLEED",
+        "hypothesis": "If prefix matching is implemented as a simple string startswith() without a trailing-dot anchor, then binding prefix 'data.app' would also match keys under 'data.app_v2' or 'data.appended'. An unknown key from a sibling namespace bleeds into the bound record \u2014 violating the unknown-key strict-binding invariant and potentially overriding a field with an adversarial value.",
+        "input_fixture": "# Config file:\n# data.app.timeout = 30\n# data.app_v2.timeout = 9999   <- sibling namespace, should NOT match\n# data.appended.secret = leaked\ncfg = binding.bind('data.app', AppConfig)\nassert cfg.timeout == 30, 'sibling namespace must not bleed in'\n# Also expect error if data.app_v2 keys are treated as unknown under data.app",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DEFAULT_PRECEDENCE_INVERSION_RELOAD",
+        "hypothesis": "After the first bind(), if reload() re-reads sources in a different order than initial load (e.g. iterates a dict whose insertion order changed due to source registration), the precedence order env > file > defaults may invert silently. A file value that was correctly overridden by an env var on startup may win after reload, causing a configuration regression mid-flight.",
+        "input_fixture": "os.environ['DATA_APP_LOG_LEVEL'] = 'ERROR'  # env should always win\n# file: data.app.log_level = DEBUG\ncfg_v1 = binding.bind('data.app', AppConfig)\nassert cfg_v1.log_level == 'ERROR'\nbinding.reload()\ncfg_v2 = binding.bind('data.app', AppConfig)\nassert cfg_v2.log_level == 'ERROR', 'precedence must be stable across reload'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "config.bind.started",
+        "required_attributes": [
+          "prefix",
+          "schema"
+        ]
+      },
+      {
+        "event_name": "config.bind.succeeded",
+        "required_attributes": [
+          "prefix",
+          "schema",
+          "provider_count"
+        ]
+      },
+      {
+        "event_name": "config.bind.failed",
+        "required_attributes": [
+          "prefix",
+          "schema",
+          "invariant_id",
+          "reason"
+        ]
+      },
+      {
+        "event_name": "config.reload.completed",
+        "required_attributes": [
+          "rebound_count"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "config.binds.total",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "prefix",
+          "result"
+        ]
+      },
+      {
+        "name": "config.bind.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 100,
+        "label_keys": [
+          "prefix"
+        ]
+      },
+      {
+        "name": "config.reload.total",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 5,
+        "label_keys": [
+          "result"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "config.bind",
+        "required_attributes": [
+          "config.prefix",
+          "config.schema"
+        ]
+      },
+      {
+        "operation_name": "config.reload",
+        "required_attributes": [
+          "config.rebound_count"
+        ]
+      },
+      {
+        "operation_name": "config.provider.read",
+        "required_attributes": [
+          "config.provider.name"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol mirrors catalog api_signature exactly; all five invariants implemented and cited inline. Precedence env>file>defaults wired via pinned flag in from_env_and_file."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "bind, reload, three providers (env/file/vault), coercion for str/int/float/bool, strict unknown-key detection, defaults/default_factory handling, forward-ref resolution, observability hooks (providers, current)."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Single typed ConfigBindingError with CONFIG-INV-NN prefix in every message; unknown keys report source providers; missing keys listed; coercion failures chain via `from exc`. Greppable and actionable."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "ConfigProvider Protocol is minimal and runtime_checkable; providers injected as Iterable; pinned flag gives precedence control; SecretsProviderLike decouples vault. Extension contract honored."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe via lock; frozen records; reload rebinds atomically per entry; lazy file I/O; no hot-path cost. Minor: reload isn't atomic across all prefixes (partial failure leaves mixed state), and EnvProvider snapshots os.environ at construction \u2014 documented but a subtle footgun."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Protocol signature matches verbatim; namespace/purpose respected; invariants enumerated with stable IDs; maturity reflected by strictness and test hooks. __all__ exports the documented surface."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "Protocol and generic type T are used without explanation \u2014 a junior may not know Python Protocols or type variables, making the API surface hard to follow.",
+          "'Namespaced slice' and 'pinned' appear before they are defined; the first time a junior hits them there is no anchor.",
+          "ConfigBinding.contract.json is referenced as the 'sole authority' but its location relative to the project root is never shown, leaving the reader unsure where to look."
+        ],
+        "rewrite_suggestion": "Add a 'How it works in four steps' paragraph before the API surface (1 write a dataclass, 2 call from_env_and_file, 3 call bind, 4 use the frozen object). Define 'prefix' and 'pinned' inline the first time each appears. Show a matching .env snippet alongside the boot() example so the env-var naming convention (DB__URL) is immediately obvious."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "It is unclear whether bind() is memoized: calling bind('db', DbOpts) twice \u2014 does it re-parse all providers or return the cached record? The lock mention implies a registry but the caching contract is not stated.",
+          "reload() 'atomically replaces the registry entry' but the lock scope is not described \u2014 specifically whether an in-flight bind() call that started before reload() will read old or new values.",
+          "The extension contract tells custom providers to 'preserve the five invariants' but provides no conformance test fixture or harness to verify this, leaving implementers to infer coverage from the production test suite."
+        ],
+        "rewrite_suggestion": "Add a 'Memoization and registry' subsection: state whether bind() caches and under what invalidation condition. Clarify lock granularity for reload() (e.g. 'a reader that entered bind() before reload() completes will see the pre-reload record'). Ship a provider_conformance.py fixture with the five invariant checks so custom providers can self-certify."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "ConfigBindingError is raised on missing or malformed values, but there is no statement on whether the erroneous value itself is included in the error message \u2014 a malformed secret could be leaked to logs.",
+          "DotEnvProvider exists for 'local development' but no file-permission requirement is stated; a world-readable .env in a container image is a common misconfiguration vector.",
+          "When multiple providers are composed there is no audit trail showing which provider won each key, making it impossible to confirm post-incident that the vault value (not a compromised .env) was actually used."
+        ],
+        "rewrite_suggestion": "Add a 'Secret hygiene' paragraph: state that ConfigBindingError redacts values and logs only key names; recommend .env permissions of 0600 and exclusion from container image layers; document a DEBUG-level provider-resolution log line per key (e.g. 'DB__URL resolved from vault [pinned]') to give operators an audit trail without exposing values."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "reload() is documented but the operator interface to trigger it (SIGHUP, admin HTTP endpoint, manual call) is not \u2014 SRE cannot operationalize reload without knowing how to invoke it.",
+          "The critical 'supervisors should NOT auto-restart' guidance is buried in a prose paragraph; it will be missed during an incident skim.",
+          "The metrics section names config_binds_total and config_reload_total but does not list their label dimensions (result, prefix, schema), making alert queries ambiguous and dashboards hard to build."
+        ],
+        "rewrite_suggestion": "Add a 'Triggering a reload' section listing the supported operator interfaces with an example command. Promote the no-auto-restart rule to a bold WARNING callout at the top of the Operational characteristics section. Add a metric schema table with columns metric, labels, and example value so SRE can wire alerts without guessing label names."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The Purpose line ('Bind a namespaced slice of the runtime configuration to a typed record, validated at startup') is too technical for a PM to relay to stakeholders or include in a roadmap entry.",
+          "There is no user-impact statement \u2014 the docs do not quantify or describe what goes wrong without this primitive (e.g. silent misconfiguration reaching production traffic).",
+          "The 'Alternatives considered and rejected' section reads as an engineering critique; a PM needs a two-sentence business justification, not a technical teardown of os.environ."
+        ],
+        "rewrite_suggestion": "Prepend a one-sentence business value line: 'Catches misconfiguration at deploy time instead of in live traffic, reducing the blast radius of bad config pushes.' Rewrite the Purpose as 'Give every service a single validated place to read its settings.' Add a one-line risk statement to Alternatives: 'Without this, a typo in a connection string can go undetected until the first request hits the broken code path.'"
+      }
+    ]
+  }
+}

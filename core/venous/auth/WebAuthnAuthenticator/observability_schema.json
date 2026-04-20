@@ -1,0 +1,64 @@
+{
+  "logs": [
+    {
+      "event_name": "webauthn.registration.started",
+      "required_attributes": ["user_id_hash", "rp_id"]
+    },
+    {
+      "event_name": "webauthn.registration.completed",
+      "required_attributes": ["user_id_hash", "credential_id_hash", "aaguid", "user_verified"]
+    },
+    {
+      "event_name": "webauthn.assertion.completed",
+      "required_attributes": ["credential_id_hash", "new_sign_count", "stored_sign_count"]
+    },
+    {
+      "event_name": "webauthn.assertion.rejected",
+      "required_attributes": ["reason", "credential_id_hash"]
+    },
+    {
+      "event_name": "webauthn.challenge.replay.blocked",
+      "required_attributes": ["rp_id"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "webauthn.registrations",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["result", "aaguid_class"]
+    },
+    {
+      "name": "webauthn.assertions",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["result"]
+    },
+    {
+      "name": "webauthn.assertion.latency",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": ["result"]
+    },
+    {
+      "name": "webauthn.counter.regressions",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": ["rp_id"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "webauthn.finish.registration",
+      "required_attributes": ["rp.id", "credential.id.hash", "user.id.hash"]
+    },
+    {
+      "operation_name": "webauthn.finish.assertion",
+      "required_attributes": ["rp.id", "credential.id.hash", "sign.count.new", "sign.count.stored"]
+    }
+  ]
+}

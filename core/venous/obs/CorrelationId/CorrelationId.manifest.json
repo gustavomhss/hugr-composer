@@ -1,0 +1,717 @@
+{
+  "name": "CorrelationId",
+  "namespace": "obs",
+  "maturity": "battle_tested",
+  "builder_agent_id": 1,
+  "catalog_entry_sha256": "cc46cb552680506e103c40bc382c4ef5c2628844361a7be91a67a18dc33fee2a",
+  "files": [
+    {
+      "path": "obs/CorrelationId/CorrelationId.contract.json",
+      "sha256": "66735eae4a92bbb31200ecd7909357c65d475209fcd9fa78fa5279a46b50f4ac",
+      "size_bytes": 2589,
+      "kind": "contract_json"
+    },
+    {
+      "path": "obs/CorrelationId/CorrelationId.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "obs/CorrelationId/CorrelationId.md",
+      "sha256": "3ceb94be54021ee7c49bbfd02a4ff6472a99161956f91e534489d88b309f9da5",
+      "size_bytes": 3370,
+      "kind": "spec_md"
+    },
+    {
+      "path": "obs/CorrelationId/CorrelationId.py",
+      "sha256": "6885da7afc01d3be22d9b64faeee675d47098fab68ce93794b4942c61785fc5c",
+      "size_bytes": 7113,
+      "kind": "impl"
+    },
+    {
+      "path": "obs/CorrelationId/behavioral_CorrelationId.py",
+      "sha256": "1da6602b66d3b905d81a1fedbc611fd75501a679de88300b89ab8a18351e26f8",
+      "size_bytes": 2165,
+      "kind": "behavioral"
+    },
+    {
+      "path": "obs/CorrelationId/chaos_CorrelationId.py",
+      "sha256": "4dba1191a0285282237bbcb9f2f39d8fb8d122bbcc1438400cdffdf9730e4405",
+      "size_bytes": 2416,
+      "kind": "chaos"
+    },
+    {
+      "path": "obs/CorrelationId/dashboard.json",
+      "sha256": "2a536d08291ed14e2d6e882dc5e3fdce8cd490b62d9237bd9696c0f7749b6bc6",
+      "size_bytes": 627,
+      "kind": "dashboard"
+    },
+    {
+      "path": "obs/CorrelationId/invariant_bindings.json",
+      "sha256": "4a4001d60731bff6492e7c537a54bd88b6ca55b43f9b206a93d197b7914821ca",
+      "size_bytes": 1858,
+      "kind": "test"
+    },
+    {
+      "path": "obs/CorrelationId/metamorphic_CorrelationId.py",
+      "sha256": "4bf78b721ce0c1b8d73bf7a6277f8a657218617a3aa6012d16fad636d6e5e005",
+      "size_bytes": 1496,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "obs/CorrelationId/observability_CorrelationId.py",
+      "sha256": "5bb211aa974bc19f31ce5eea4d7b3e3e071c947b3cc3622774707d8c0d0f9335",
+      "size_bytes": 1610,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/CorrelationId/observability_schema.json",
+      "sha256": "eb5c39eebca6348be67a8bea14c91c66e0d92377358a065841084b86a6add718",
+      "size_bytes": 921,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/CorrelationId/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "obs/CorrelationId/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "obs/CorrelationId/test_CorrelationId.py",
+      "sha256": "4bfeb5f315a65586338d735d80fc13e49c552727b9db50fc7756dba01ac2765c",
+      "size_bytes": 5343,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "CORRID_INV_01",
+      "invariant_text": "MUST be populated for every inbound request before the first log line is emitted.",
+      "confirms_test": "test_inv_populated_before_first_log_confirms",
+      "prevents_test": "test_inv_populated_before_first_log_prevents",
+      "under_failure_test": "test_inv_populated_before_first_log_under_failure"
+    },
+    {
+      "invariant_id": "CORRID_INV_02",
+      "invariant_text": "NEVER regenerates a present upstream id (propagates 'traceparent'/'X-Request-Id' when valid).",
+      "confirms_test": "test_inv_propagates_upstream_confirms",
+      "prevents_test": "test_inv_propagates_upstream_prevents",
+      "under_failure_test": "test_inv_propagates_upstream_under_failure"
+    },
+    {
+      "invariant_id": "CORRID_INV_03",
+      "invariant_text": "Generated ids MUST use a cryptographically-random 16+ byte encoding; sequential counters SHALL NOT be used.",
+      "confirms_test": "test_inv_csprng_generated_confirms",
+      "prevents_test": "test_inv_csprng_generated_prevents",
+      "under_failure_test": "test_inv_csprng_generated_under_failure"
+    },
+    {
+      "invariant_id": "CORRID_INV_04",
+      "invariant_text": "MUST appear in every emitted log, metric exemplar, and outbound HTTP request header.",
+      "confirms_test": "test_inv_appears_in_outbound_confirms",
+      "prevents_test": "test_inv_appears_in_outbound_prevents",
+      "under_failure_test": "test_inv_appears_in_outbound_under_failure"
+    },
+    {
+      "invariant_id": "CORRID_INV_05",
+      "invariant_text": "CANNOT be mutated mid-request; a new id SHALL mean a new logical request.",
+      "confirms_test": "test_inv_immutable_confirms",
+      "prevents_test": "test_inv_immutable_prevents",
+      "under_failure_test": "test_inv_immutable_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 673,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 944,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 847,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 95774,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "40 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1194,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1232,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 68216,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 169207,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MISSING-BEFORE-FIRST-LOG",
+        "hypothesis": "Middleware ordering places logging middleware before correlation middleware, so the first access log line for an inbound request is emitted with an empty or null correlation id, violating the populate-before-first-log invariant.",
+        "input_fixture": "GET /healthz with no X-Request-Id header; ASGI app where LoggingMiddleware is registered before CorrelationIdMiddleware",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TRACEPARENT-MALFORMED-ACCEPTED",
+        "hypothesis": "A malformed traceparent like '00-INVALID-0000000000000000-01' is naively propagated as the correlation id instead of being rejected, causing downstream log aggregators to bucket unrelated requests under a poisoned id.",
+        "input_fixture": "GET /api with header 'traceparent: 00-ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ-0000000000000000-01'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UPSTREAM-ID-OVERWRITTEN",
+        "hypothesis": "When both traceparent and X-Request-Id are present with different but valid values, the provider regenerates a fresh id anyway, breaking cross-service stitching because the caller's id is dropped.",
+        "input_fixture": "GET /api with headers 'X-Request-Id: 5f4a...deadbeef' AND 'traceparent: 00-<valid32hex>-<valid16hex>-01'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SEQUENTIAL-COUNTER-FALLBACK",
+        "hypothesis": "Under entropy exhaustion or a mocked os.urandom failure, generate() silently falls back to an incrementing counter or time-based id, producing guessable correlation ids usable for log-injection and request-impersonation.",
+        "input_fixture": "monkeypatch os.urandom to raise OSError; call provider.generate() 1000x and observe monotonically increasing hex suffixes",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SHORT-ENTROPY-BOUNDARY",
+        "hypothesis": "generate() uses secrets.token_hex(8) (8 bytes = 64 bits) rather than 16+ bytes, failing the entropy invariant and making birthday collisions realistic above ~4B requests.",
+        "input_fixture": "inspect generate() output length; assert len(bytes.fromhex(id)) >= 16",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CONTEXTVAR-RACE-ASYNCIO",
+        "hypothesis": "Under asyncio with a shared ContextVar not copied per task, two concurrent inbound requests interleave such that request B's log lines are emitted under request A's correlation id, silently mutating the id mid-request from the logger's perspective.",
+        "input_fixture": "asyncio.gather of 100 requests hitting an endpoint that awaits asyncio.sleep(0) between two log calls; diff captured ids per request",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MISSING-ON-OUTBOUND-HTTP",
+        "hypothesis": "Outbound httpx/requests client is constructed without the correlation propagation hook, so downstream services receive requests with no X-Request-Id/traceparent, breaking the appears-in-every-outbound-header invariant.",
+        "input_fixture": "endpoint handler does httpx.AsyncClient().get('http://downstream/x'); inspect captured downstream request headers",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-METRIC-EXEMPLAR-OMITTED",
+        "hypothesis": "Prometheus histogram observations are recorded without an exemplar carrying the correlation id, so latency spikes cannot be tied back to a specific request trace.",
+        "input_fixture": "trigger a slow endpoint; scrape /metrics in OpenMetrics format and grep for '# {trace_id='",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CRLF-LOG-INJECTION",
+        "hypothesis": "An attacker-supplied X-Request-Id containing CRLF and fake log fields is propagated verbatim into structured logs, forging log lines attributed to other services.",
+        "input_fixture": "GET /api with header 'X-Request-Id: abc123\\r\\n2026-04-19 ERROR admin_deleted_user=true request_id=attacker'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-OVERSIZED-ID-AMPLIFICATION",
+        "hypothesis": "A 10MB X-Request-Id header is accepted and echoed into every log line and every outbound request header, creating an amplification vector that explodes log storage and downstream bandwidth.",
+        "input_fixture": "GET /api with header 'X-Request-Id: ' + 'A'*10_000_000",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-STRING-TREATED-PRESENT",
+        "hypothesis": "An empty-string X-Request-Id header is treated as 'present' and propagated without regeneration, resulting in logs with correlation_id='' that merge unrelated requests into one bucket.",
+        "input_fixture": "GET /api with header 'X-Request-Id: ' (empty value)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-CLIENT-PINNED-ID",
+        "hypothesis": "A malicious client replays the same X-Request-Id across thousands of distinct requests; because the provider never de-duplicates, all requests collapse to one id, defeating the 'new id = new logical request' invariant for any observer.",
+        "input_fixture": "1000 concurrent POST /transfer with header 'X-Request-Id: 00000000000000000000000000000001'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-THREADLOCAL-LEAK-WORKER-REUSE",
+        "hypothesis": "Under gunicorn sync workers, the threadlocal holding current() is not reset between requests, so request N+1 starts with request N's id still set, emitting its first log line under the wrong id before middleware overwrites it.",
+        "input_fixture": "2 sequential requests on same worker thread; assert log line timestamps for request 2 with correlation_id of request 1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-TIME-BASED-ID",
+        "hypothesis": "If generate() mixes a clock timestamp into the id for readability, NTP step-back causes duplicate ids across two requests separated by the skew, silently mutating the id space.",
+        "input_fixture": "monkeypatch time.time_ns to return decreasing values across two generate() calls; assert uniqueness",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NON-STRING-TYPE-COERCION",
+        "hypothesis": "Passing an int or bytes as upstream X-Request-Id via an internal RPC adapter bypasses NewType runtime checks (NewType is erased) and is str()-coerced to 'b\\'...\\''  or '12345', propagating a malformed id.",
+        "input_fixture": "internal call provider.set_current(12345); then emit a log",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE_FIRST_LOG",
+        "hypothesis": "If the middleware that sets the CorrelationId runs concurrently with a framework startup hook or exception handler that logs before the middleware chain executes, the first log line for that request will be emitted without a populated id, violating the 'populated before first log line' invariant.",
+        "input_fixture": "Start a FastAPI app with a @app.on_event('startup') or exception_handler that calls logger.info() synchronously; then send an HTTP request so that the exception_handler fires before the CorrelationId middleware populates contextvars. Observe whether log records carry the id.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY_UPSTREAM_HDR",
+        "hypothesis": "An empty string ('') or all-whitespace value for X-Request-Id or traceparent is treated as 'present and valid', so the provider propagates it instead of generating a fresh cryptographically-random id. The CorrelationId then becomes an empty or blank string, which breaks both propagation correctness and the minimum-entropy requirement.",
+        "input_fixture": "curl -H 'X-Request-Id: ' http://service/endpoint  # empty value\ncurl -H 'X-Request-Id:    ' http://service/endpoint  # whitespace only\ncurl -H 'traceparent: ' http://service/endpoint",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-OVERSIZED_UPSTREAM_HDR",
+        "hypothesis": "An upstream header value of 8 KB or more (valid ASCII, no control chars) may be accepted as 'present', propagated verbatim into every downstream header and log line, causing log truncation, header-size limit rejections by downstream HTTP/1.1 proxies, or silent truncation that produces two different effective ids for the same logical request.",
+        "input_fixture": "import requests\nrequests.get('http://service/endpoint', headers={'X-Request-Id': 'A' * 8192})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CRLF_INJECTION",
+        "hypothesis": "If the upstream X-Request-Id contains CRLF characters (\\r\\n), and the provider propagates it verbatim into outbound HTTP headers without sanitisation, the injected CRLF splits the header block, potentially smuggling a second forged header (e.g. X-Admin: true) into downstream requests.",
+        "input_fixture": "curl -H $'X-Request-Id: legit-id\\r\\nX-Admin: true' http://service/endpoint",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LOG_INJECTION_NEWLINE",
+        "hypothesis": "A correlation id containing a newline followed by a JSON key (e.g., '\\n{\"level\":\"ERROR\",\"msg\":\"auth bypass\"}') can inject a synthetic log record into structured log streams when the logger concatenates the id into the output without escaping, violating log integrity and potentially triggering downstream SIEM alerts.",
+        "input_fixture": "import requests\nrequests.get('http://service/endpoint', headers={'X-Request-Id': 'real-id\\n{\"level\":\"CRITICAL\",\"msg\":\"fake\",\"user\":\"admin\"}'})\n# inspect emitted JSON log lines for synthetic record",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ASYNC_CTX_LEAK",
+        "hypothesis": "In an async Python framework (asyncio + contextvars), if the CorrelationId is stored in a ContextVar and a background task (asyncio.create_task) is spawned mid-request, the child task inherits the parent's context snapshot. If the parent's id is subsequently replaced (e.g., by a retry or redirect), the background task retains the old id and logs under the wrong correlation, silently breaking trace stitching.",
+        "input_fixture": "async def handler(request):\n    cid = provider.current()  # set by middleware\n    asyncio.create_task(background_job())  # inherits context\n    # simulate retry: provider._var.set(provider.generate())\n    return Response()\n\nasync def background_job():\n    await asyncio.sleep(0.1)\n    logger.info('bg work', extra={'cid': provider.current()})  # stale id?",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-THREADPOOL_CTX_ESCAPE",
+        "hypothesis": "When FastAPI offloads a sync route to a threadpool via run_in_executor, the executor thread does NOT inherit the caller's contextvars copy unless explicitly propagated. The sync function then calls provider.current() and receives either None (if no default is set) or a stale id from a previous request that ran on the same thread, leaking one request's id into another request's logs.",
+        "input_fixture": "@app.get('/sync')\ndef sync_route():\n    # runs in threadpool\n    cid = provider.current()  # likely wrong or None\n    logger.info('processing', extra={'cid': cid})\n    return {'cid': cid}\n\n# Fire 50 concurrent requests and compare returned cids vs nginx access log ids",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY_SAME_ID",
+        "hypothesis": "If a client replays an old (even expired) X-Request-Id value in a new request, the provider propagates it unchanged. Two completely separate logical requests now share the same CorrelationId. Downstream log aggregation will stitch them together as one, hiding the second request's independent audit trail and potentially allowing a malicious actor to blend malicious activity into a known-good trace.",
+        "input_fixture": "# capture a known-good id from a previous request\nold_id = '01HZ9VKJX3...'  # previously observed\nrequests.post('http://service/transfer', headers={'X-Request-Id': old_id}, json={'amount': 9999})\n# verify both old and new log lines share the same cid in the aggregator",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WEAK_RNG_SEED",
+        "hypothesis": "If generate() ultimately relies on random.uuid4() backed by the OS PRNG but the service is running inside a freshly forked process or container snapshot (fork-safety issue), the PRNG state may be identical across forks, producing the same sequence of ids in each forked worker. Sequential or duplicated ids violate the cryptographic-randomness invariant and enable enumeration of active requests.",
+        "input_fixture": "import os, uuid\nos.fork()  # both parent and child call uuid.uuid4() immediately\n# compare outputs across 1000 forks from the same snapshot image\n# or: uvicorn --workers 4 with pre-fork model; log first 10 ids from each worker",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-METRICS_EXEMPLAR_OMISSION",
+        "hypothesis": "Prometheus exemplars are attached to histogram observations via a separate code path from the logging middleware. If a background thread or Celery worker processes work triggered by the request but outside the original ContextVar scope, the metric increment (e.g., processing_duration_seconds.observe()) will carry no exemplar or a stale/wrong exemplar, silently breaking the invariant that every metric exemplar carries the CorrelationId.",
+        "input_fixture": "@app.post('/async-job')\nasync def start_job(request):\n    cid = provider.current()\n    celery_task.delay(payload)  # new execution context\n    return {'queued': True}\n\n# Inside celery task:\ndef celery_task(payload):\n    histogram.observe(1.0, exemplar={'TraceId': provider.current()})  # None or wrong",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NULL_BYTE_HEADER",
+        "hypothesis": "An upstream X-Request-Id containing a null byte (\\x00) may pass header validation in permissive HTTP parsers (e.g., h11 in some versions) and be propagated as-is. The CorrelationId will then contain a null byte, which truncates the value when written to C-based log sinks (syslog, journald), splitting it into two records with different effective ids.",
+        "input_fixture": "import socket\nraw = b'GET / HTTP/1.1\\r\\nHost: service\\r\\nX-Request-Id: abc\\x00def\\r\\n\\r\\n'\ns = socket.create_connection(('service', 80))\ns.sendall(raw)\n# compare id seen by app vs id seen in journald/syslog",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-MUTATION_VIA_MIDDLEWARE_ORDER",
+        "hypothesis": "If two middlewares both write to the same ContextVar that backs CorrelationId (e.g., a tracing middleware and an auth middleware both call provider._var.set()), the second middleware silently overwrites the first's id mid-request. Log lines emitted between the two middleware writes will carry the first id; subsequent lines carry the second id, creating two different ids within one logical request and violating the immutability invariant.",
+        "input_fixture": "app.add_middleware(TracingMiddleware)   # sets cid = generate()\napp.add_middleware(AuthMiddleware)       # also calls provider._var.set(new_id)\n# emit a log in TracingMiddleware, then in AuthMiddleware, then in route handler\n# compare the three cid values in the log output",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-OUTBOUND_CLIENT_BYPASS",
+        "hypothesis": "Outbound HTTP calls made through an httpx.AsyncClient or requests.Session that is instantiated once at module level (not per-request) will not automatically attach the current CorrelationId to their headers. If the developer forgets to wire an event hook or transport, downstream services receive requests with no correlation header, silently breaking end-to-end trace stitching without any error.",
+        "input_fixture": "# module-level client, no event hooks\nclient = httpx.AsyncClient()  \n\n@app.get('/proxy')\nasync def proxy():\n    # CorrelationId is set in contextvars but client doesn't read it\n    resp = await client.get('http://downstream/api')\n    return resp.json()\n\n# Check downstream service logs: no X-Request-Id header received",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NO_UPSTREAM_PROPAGATE",
+        "hypothesis": "Valid traceparent header is ignored; current() regenerates instead of propagating upstream ID, breaking distributed tracing chains across services",
+        "input_fixture": "Inbound request with traceparent: 4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01 header; call current() and compare output to input",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY_STRING_UPSTREAM",
+        "hypothesis": "Empty X-Request-Id header is treated as valid upstream value and propagated, resulting in first log lines with blank correlation ID field",
+        "input_fixture": "Request with X-Request-Id: \"\"; call current() before emitting log; inspect log output for empty correlation_id",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ID_UNINITIALIZED_AT_LOG",
+        "hypothesis": "Log statement emitted before middleware or ID.current() invocation completes; first request log line lacks correlation ID field entirely",
+        "input_fixture": "Request handler executes logger.info('start') before CorrelationId middleware runs; first log missing correlation_id key",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT_GENERATE_COLLISION",
+        "hypothesis": "Two threads race through generate() without internal synchronization, both receive identical 16+ byte ID from unseeded/unseeded entropy source",
+        "input_fixture": "Spawn 2 goroutines/threads executing provider.generate() simultaneously; capture both return values and verify equality",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SEQUENTIAL_COUNTER_PATTERN",
+        "hypothesis": "generate() returns predictable hexadecimal sequence (0x0001, 0x0002, 0x0003...) instead of random bytes, enabling ID prediction and spoofing",
+        "input_fixture": "Call generate() in loop 20 times; analyze outputs for linear increment pattern or monotonic ordering",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INSUFFICIENT_ENTROPY_LENGTH",
+        "hypothesis": "Generated ID is 8 bytes (64 bits) instead of required 16 bytes minimum, reducing effective entropy below birthday-problem safety threshold",
+        "input_fixture": "Call generate(); measure byte length of returned CorrelationId string; verify len(id) < 16",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MISSING_FROM_METRIC_EXEMPLAR",
+        "hypothesis": "Metric exemplar emitted with request_duration value but lacks correlation_id field; metrics backend cannot join to logs for request",
+        "input_fixture": "Emit histogram with exemplar={value: 125.3, timestamp_ms: 1234567890}; inspect for absence of correlation_id or trace_id field",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MISSING_FROM_OUTBOUND_HEADER",
+        "hypothesis": "Outbound HTTP request lacks X-Request-Id and traceparent headers despite current() returning valid in-memory ID; downstream cannot trace",
+        "input_fixture": "current() returns 'req-abc123xyz'; execute http.Client.Get('/downstream'); inspect outbound request headers for X-Request-Id",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MID_REQUEST_MUTATION",
+        "hypothesis": "ID value reassigned or overwritten mid-request lifecycle; log lines A and B from same request have different correlation_id values",
+        "input_fixture": "Request: logger.info('step1'); provider.set(NewType('CorrelationId', 'different-id')); logger.info('step2'); both logs present but IDs differ",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK_SKEW_REPLAY_COLLISION",
+        "hypothesis": "Identical upstream X-Request-Id received in Request-A at t=1000 and Request-B at t=500 (clock skew); both propagate as separate requests but share ID",
+        "input_fixture": "Send Request with X-Request-Id: 'traced-1' at timestamp 1000ms; send second request with same X-Request-Id at timestamp 500ms; observe dual log lines with shared ID",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HEADER_INJECTION_CRLF",
+        "hypothesis": "Upstream X-Request-Id contains CRLF bytes; injected verbatim into outbound HTTP header, breaking header parsing or enabling smuggling",
+        "input_fixture": "X-Request-Id: 'valid-part\\r\\nX-Injected-Header: malicious'; header sent downstream without sanitization or newline removal",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SHARED_MUTABLE_CONTEXT",
+        "hypothesis": "CorrelationIdProvider stores mutable state in shared context map; concurrent Request-A and Request-B read/modify same object, IDs cross-contaminate",
+        "input_fixture": "Thread-1: current() within context-A returns id='req-1'; Thread-2: current() in context-B but context is shared, observes id='req-1' instead of new id",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "correlation_id.generated",
+        "required_attributes": [
+          "request_id"
+        ]
+      },
+      {
+        "event_name": "correlation_id.propagated",
+        "required_attributes": [
+          "request_id",
+          "source_header"
+        ]
+      },
+      {
+        "event_name": "correlation_id.rejected",
+        "required_attributes": [
+          "reason"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "correlation_id.generated.count",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": []
+      },
+      {
+        "name": "correlation_id.propagated.count",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "source_header"
+        ]
+      },
+      {
+        "name": "correlation_id.rejected.count",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "reason"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "correlation_id.extract",
+        "required_attributes": [
+          "had_upstream"
+        ]
+      },
+      {
+        "operation_name": "correlation_id.inject",
+        "required_attributes": [
+          "request_id"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Implementation matches the catalog api_signature (CorrelationId NewType, CorrelationIdProvider Protocol with current/generate) byte-for-byte. Invariants CORRID-INV-01..05 are enforced in code (extract always returns valid id, upstream propagation without regeneration, secrets.token_hex(16), inject writes x-request-id, NewType frozen string)."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "Covers full lifecycle: generate, parse, extract (with traceparent + 3 header priority), inject, to_str, plus reference StatelessCorrelationIdProvider. Handles W3C traceparent trace-id extraction, header normalization, non-Mapping rejection, and exposes constants. No obvious gap for the stated purpose."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Dedicated CorrelationIdError subclass of ValueError; messages cite the specific invariant ID (CORRID-INV-01/02/04/05) and include offending value/type. Defense-in-depth in to_str re-validates. Clear, greppable, actionable."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Pure functions, no global state, NewType keeps type-safety without runtime cost, Protocol is runtime_checkable, inject returns a new dict (never mutates input). Mapping-typed inputs accept any dict-like. Trivial to wire into middleware, queue consumers, or outbound clients."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 9,
+        "rationale": "CSPRNG via secrets, strict input validation blocks CRLF/header-injection, bounded length (16..64), case-normalized, lazy no external deps, thread/async safe (stateless). Compiled regex at module load. __all__ defined. Minor: no built-in metrics emission hooks (spec mentions counters), but primitive layer correctly leaves that to adapters."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace/name align; NewType and Protocol signatures match exactly; all five invariants reflected with matching CORRID-INV-0x tags; extension_contract (extract/inject middleware pattern) is directly supported; alternatives and sources consistent with docstrings. maturity=battle_tested is plausible given hardening."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'opaque string' is used without explaining it means 'treat as a black box, don't parse the contents'",
+          "CSPRNG acronym never expanded \u2014 a junior might not know this means cryptographically-secure random, which matters for understanding why sequential counters are forbidden",
+          "'MDC' (Mapped Diagnostic Context) in the extension contract is logging-framework jargon with no definition or link"
+        ],
+        "rewrite_suggestion": "In 'What it does', replace 'opaque string' with 'an unguessable random string you treat as a black box'. Expand CSPRNG to 'cryptographically-secure random number generator (CSPRNG)' on first use. Replace 'logger MDC' with 'the logger's per-request key-value store (called MDC in Logback/Log4j, structlog context in Python)'."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "CORRID_INV_02 lists both 'traceparent' and 'X-Request-Id' as propagation sources but does not define precedence when both headers are present simultaneously",
+          "The extension contract says structured-log formatters 'subscribe via a filter or hook' but gives no interface signature \u2014 it's unclear what the hook receives or how thread-local/contextvars binding is achieved",
+          "'NewType[str]' implies the frozen guarantee is enforced by the type system, but Python NewType is purely a type-checker hint with no runtime immutability \u2014 the doc should either note this limitation or point to a frozen dataclass alternative"
+        ],
+        "rewrite_suggestion": "Add a precedence table under CORRID_INV_02: traceparent > X-Request-Id > generated. Add a one-liner interface for the log hook: `def log_filter(record: LogRecord) -> None: record.correlation_id = current_cid()`. Add a note that NewType enforces the contract at type-check time only; document the contextvars pattern used for binding."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "The doc confirms hex validation on inbound headers but does not state whether the validated id is also sanitized before being embedded in structured-log fields that feed SIEM pipelines (secondary log-injection vector)",
+          "No statement on whether correlation ids appearing in error responses returned to end-users are intentional \u2014 an attacker could use the echoed id to confirm which backend path was hit",
+          "Retention and access-control policy for logs indexed by correlation id is absent \u2014 ids enable full request reconstruction, which has privacy implications if logs are not access-controlled"
+        ],
+        "rewrite_suggestion": "Add a 'Log safety' note: 'Validated hex ids are safe to embed in JSON-structured logs; do not interpolate into freeform strings.' Add a 'User-facing exposure' callout: 'Error responses MAY echo the id to aid support; document this as an intentional disclosure in your threat model.' Add a 'Data-retention' line pointing to the org's log-retention policy."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "'correlation_id.rejected.count{reason}' is listed but no threshold or alert rule is suggested \u2014 an SRE has no baseline for what rejection rate signals misconfiguration vs. attack",
+          "The doc does not specify which context-propagation mechanism is used in async/queue consumers (Python contextvars? header forwarding?), which matters for tracing broken chains in event-driven architectures",
+          "No example log query is provided \u2014 SREs need to know the exact field name to grep in their log aggregator (e.g., 'request_id' vs. 'correlation_id') to trust this during an incident"
+        ],
+        "rewrite_suggestion": "Add an 'Alerting' subsection: 'Alert if rejected.count rate exceeds 1% of total \u2014 likely indicates a misconfigured upstream gateway.' Add a 'Queue consumers' note: 'Pass the id as a message attribute and re-extract at consumer ingress using the same extract() call.' Add a 'Log query example' block: `loki: {app=\"payments\"} | json | request_id=\"<cid>\"`."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The opening analogy ('debugging a payment failure across 12 services') is excellent but the doc never quantifies the business outcome \u2014 no MTTR reduction figure, support-ticket deflection estimate, or incident-resolution time comparison",
+          "The invariants table uses technical IDs (CORRID_INV_01\u201305) and terms like 'CSPRNG' and 'NewType' with no plain-language summary \u2014 a PM presenting this to stakeholders cannot extract a one-line compliance statement",
+          "There is no adoption or rollout section \u2014 PMs need to know whether enabling this is a one-day middleware change or a multi-team coordination effort with a flag rollout"
+        ],
+        "rewrite_suggestion": "Add a 'Business impact' callout box: 'Teams adopting correlation ids typically cut cross-service incident MTTR by 40\u201360% by replacing manual log archaeology with a single query.' Add a plain-language invariants summary: 'Every request gets a unique id before the first log line; it travels to every downstream service; it never changes mid-request.' Add a two-sentence rollout summary: 'Add one middleware line per service entry point. Existing services without the header receive a freshly generated id automatically \u2014 no flag needed.'"
+      }
+    ]
+  }
+}

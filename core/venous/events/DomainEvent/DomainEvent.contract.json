@@ -1,0 +1,35 @@
+{
+  "name": "DomainEvent",
+  "namespace": "events",
+  "purpose": "Records an immutable fact about something meaningful that happened in the domain and can be published to downstream consumers.",
+  "api_signature": "from typing import Protocol, Mapping, Any\n\nclass DomainEvent(Protocol):\n    @property\n    def event_id(self) -> str: ...\n    @property\n    def aggregate_id(self) -> str: ...\n    @property\n    def occurred_at(self) -> str: ...\n    @property\n    def version(self) -> int: ...\n    @property\n    def payload(self) -> Mapping[str, Any]: ...",
+  "invariants": [
+    "A DomainEvent MUST be immutable after publication; mutation or retroactive edit is FORBIDDEN.",
+    "event_id MUST be globally unique and stable so idempotent consumers can dedupe reliably.",
+    "The event NEVER carries commands or intents; it only states that something already happened.",
+    "version SHALL increment per aggregate and serve as the ordering key within one aggregate stream."
+  ],
+  "extension_contract": "New event types extend DomainEvent by subclassing a frozen event base and registering the schema with the event registry via a register call; schema evolution adds fields through additive versions, CANNOT remove or rename fields without a new event type.",
+  "consumption_example": "def publish(bus, evt: DomainEvent):\n    bus.publish(evt.aggregate_id, {\n        'id': evt.event_id,\n        'v': evt.version,\n        'at': evt.occurred_at,\n        'body': dict(evt.payload),\n    })",
+  "sources": [
+    {
+      "source": "Evans 'Domain-Driven Design' (2003)",
+      "locator": "Chapter 8, Domain Events (later-adopted glossary, reinforced in reprints)"
+    },
+    {
+      "source": "Vernon 'Implementing Domain-Driven Design' (2013)",
+      "locator": "Chapter 8, Domain Events, pp. 281-320"
+    },
+    {
+      "source": "Richardson 'Microservices Patterns' (2018)",
+      "locator": "Chapter 5, Event-driven architecture, event structure, pp. 162-170"
+    }
+  ],
+  "why_essential": "Without a shared primitive, each tool invents its own payload shape and identifier strategy, breaking cross-service replay, deduplication, and audit traceability.",
+  "alternatives_considered": [
+    "Integration-only messages: miss the domain semantics and couple to transport.",
+    "Bare payload dicts: no stable identity, ordering, or schema contract.",
+    "CRUD notifications: leak storage shape and lose intent."
+  ],
+  "maturity": "battle_tested"
+}

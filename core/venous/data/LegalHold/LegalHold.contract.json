@@ -1,0 +1,26 @@
+{
+  "name": "LegalHold",
+  "namespace": "data",
+  "purpose": "Suspends retention-driven deletion and erasure cascades for records covered by a litigation or regulatory hold until the hold is released.",
+  "api_signature": "from dataclasses import dataclass\nfrom datetime import datetime\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass LegalHold:\n    hold_id: str\n    scope_query: str\n    opened_at: datetime\n    opened_by: str\n\nclass LegalHoldRegistry(Protocol):\n    def open(self, hold: LegalHold) -> None: ...\n    def release(self, hold_id: str, released_by: str) -> None: ...\n    def covers(self, record_id: str) -> bool: ...",
+  "invariants": [
+    "RetentionPolicy.sweep and DataSubjectRequest erasure MUST call covers(record_id) before deletion; deletion of held records is FORBIDDEN.",
+    "Opening and releasing a hold MUST each emit a TamperEvidentAuditLog entry with actor and scope.",
+    "A hold CANNOT be silently released; release requires a distinct released_by actor from opened_by or an explicit override flag.",
+    "Held records MUST remain readable to authorized investigators; indexes SHALL NOT drop held rows.",
+    "scope_query MUST be stable against schema evolution; unresolved fields SHALL raise on open rather than silently miss records."
+  ],
+  "extension_contract": "Storage adapters implement a HoldCheck hook that intercepts delete operations. Target applications extend the registry with custom scope resolvers (e.g. tenant_id = X) by subclassing the scope query evaluator and registering it.",
+  "consumption_example": "from datetime import datetime, timezone\n\nhold = LegalHold(\n    hold_id='case-2024-1138',\n    scope_query=\"tenant_id = 'acme' AND created_at >= '2023-01-01'\",\n    opened_at=datetime.now(timezone.utc),\n    opened_by='counsel@acme.com',\n)\nregistry.open(hold)\nassert registry.covers('user:42') in (True, False)",
+  "sources": [
+    {"source": "AICPA SOC 2 Trust Services Criteria (2017, 2022 revision)", "locator": "CC2.3 \u2014 internal communication about obligations; evidence preservation"},
+    {"source": "NIST SP 800-53 revision 5", "locator": "AU-11 Audit Record Retention \u2014 preservation for investigations"}
+  ],
+  "why_essential": "Without an explicit hold primitive, the retention sweeper destroys evidence under active litigation and the erasure endpoint fulfills an RTBF request that should have been paused; one flag cannot carry that logic.",
+  "alternatives_considered": [
+    "A boolean column 'do_not_delete' \u2014 no scope, no audit, no release protocol.",
+    "Disabling the purge job globally \u2014 over-broad, violates retention for unrelated data.",
+    "Email-based legal notice to ops \u2014 not enforceable in code."
+  ],
+  "maturity": "battle_tested"
+}

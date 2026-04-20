@@ -1,0 +1,16 @@
+{
+  "title": "OutboundBinding — Invocations, Latency, Errors",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "Invocations (5m)",
+     "targets": [{"expr": "sum(rate(binding_invoke_calls_total[5m]))"}]},
+    {"id": 2, "type": "timeseries", "title": "Invoke Duration p50/p95/p99 (ms)",
+     "targets": [
+       {"expr": "histogram_quantile(0.50, rate(binding_invoke_duration_bucket[5m]))"},
+       {"expr": "histogram_quantile(0.95, rate(binding_invoke_duration_bucket[5m]))"},
+       {"expr": "histogram_quantile(0.99, rate(binding_invoke_duration_bucket[5m]))"}
+     ]},
+    {"id": 3, "type": "timeseries", "title": "Deadline Exceeded / sec",
+     "targets": [{"expr": "sum by (binding_name) (rate(binding_invoke_calls_total{outcome=\"deadline_exceeded\"}[5m]))"}]}
+  ]
+}

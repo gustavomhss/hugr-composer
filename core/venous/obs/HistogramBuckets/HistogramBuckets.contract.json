@@ -1,0 +1,37 @@
+{
+  "name": "HistogramBuckets",
+  "namespace": "obs",
+  "purpose": "Define explicit latency and size bucket boundaries for histogram instruments so quantile estimation is accurate and comparable across services.",
+  "api_signature": "from dataclasses import dataclass\nfrom typing import Sequence\n\n@dataclass(frozen=True)\nclass HistogramBuckets:\n    name: str\n    unit: str\n    boundaries: Sequence[float]\n\n    @classmethod\n    def latency_ms_default(cls) -> 'HistogramBuckets': ...\n    @classmethod\n    def payload_bytes_default(cls) -> 'HistogramBuckets': ...\n",
+  "invariants": [
+    "Boundaries MUST be strictly increasing, finite, non-negative, and SHALL include at least five buckets below the target p99.",
+    "Once assigned to an instrument, boundaries are immutable; changing them at runtime is FORBIDDEN because it invalidates historical quantile comparisons.",
+    "Latency boundaries MUST be expressed in milliseconds with unit 'ms' and NEVER mixed with seconds on the same instrument.",
+    "The lowest boundary MUST be smaller than the realistic floor of the measured distribution so the first bucket is not saturated.",
+    "Bucket count SHALL NOT exceed 20 per instrument to bound per-series storage cost.",
+    "Default bucket sets for HTTP latency and payload size MUST be derived from the OpenTelemetry HTTP semconv recommendation and CANNOT be silently overridden at instrument creation."
+  ],
+  "extension_contract": "Tools extend the defaults by registering a named bucket preset (e.g. 'db.query.latency', 'llm.completion.latency') through a HistogramProvider adapter; callers bind a preset to an instrument at creation time, and the preset carries version metadata so dashboards can detect a boundary change.",
+  "consumption_example": "def checkout_latency(meter: MetricMeter) -> None:\n    preset = HistogramBuckets.latency_ms_default()\n    instrument = meter.histogram(preset.name, unit=preset.unit, description='checkout latency', boundaries=preset.boundaries)\n    instrument.record(34.5, {'checkout.step': 'payment'})\n    assert preset.unit == 'ms'\n",
+  "sources": [
+    {
+      "source": "Prometheus Documentation \u2014 Histograms and Summaries (prometheus.io/docs/practices)",
+      "locator": "https://prometheus.io/docs/practices/histograms/ 'Errors of quantile estimation' and default bucket guidance"
+    },
+    {
+      "source": "OpenTelemetry Semantic Conventions 1.27 \u2014 HTTP Metrics",
+      "locator": "semconv/http/http-metrics.md 'http.server.request.duration' recommended buckets"
+    },
+    {
+      "source": "Google SRE Book \u2014 Monitoring Distributed Systems",
+      "locator": "Chapter 6 section 'Four Golden Signals' on latency bucket selection"
+    }
+  ],
+  "why_essential": "Heterogeneous bucket boundaries make p99 numbers across services non-comparable; sharing a bucket primitive is how every dashboard stops lying about tail latency.",
+  "alternatives_considered": [
+    "Exponential histogram (HDR style) \u2014 rejected as of 2026 because backend support is still uneven; retained as an emerging opt-in.",
+    "Summary quantiles computed client-side \u2014 rejected because they cannot be aggregated across instances without error.",
+    "Per-service ad-hoc buckets \u2014 rejected because cross-service comparison is a required SRE operation."
+  ],
+  "maturity": "battle_tested"
+}

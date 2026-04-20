@@ -1,0 +1,25 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "BATCH_CORE_INV_01",
+      "invariant_text": "The returned `list[BatchItemResult]` MUST be the same length as the input `items` list and aligned by index (result[i] corresponds to items[i]).",
+      "confirms_test": "test_inv_result_alignment_confirms",
+      "prevents_test": "test_inv_result_alignment_prevents",
+      "under_failure_test": "test_inv_result_alignment_under_failure"
+    },
+    {
+      "invariant_id": "BATCH_CORE_INV_02",
+      "invariant_text": "In `all_or_nothing` mode, the FIRST item with status_code >= 400 MUST stop subsequent processing; all remaining items receive a 409 rollback placeholder.",
+      "confirms_test": "test_inv_all_or_nothing_rollback_confirms",
+      "prevents_test": "test_inv_all_or_nothing_rollback_prevents",
+      "under_failure_test": "test_inv_all_or_nothing_rollback_under_failure"
+    },
+    {
+      "invariant_id": "BATCH_CORE_INV_03",
+      "invariant_text": "In parallel strategy, concurrency MUST be bounded by `max_parallel` \u2014 the semaphore acquires at most that many permits simultaneously.",
+      "confirms_test": "test_inv_parallelism_bounded_confirms",
+      "prevents_test": "test_inv_parallelism_bounded_prevents",
+      "under_failure_test": "test_inv_parallelism_bounded_under_failure"
+    }
+  ]
+}

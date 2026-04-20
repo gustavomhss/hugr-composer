@@ -1,0 +1,49 @@
+{
+  "logs": [
+    {
+      "event_name": "acf.begin",
+      "required_attributes": ["state_hash", "nonce_hash", "scope_count"]
+    },
+    {
+      "event_name": "acf.exchange.success",
+      "required_attributes": ["state_hash", "code_hash", "token_response"]
+    },
+    {
+      "event_name": "acf.exchange.rejected",
+      "required_attributes": ["reason", "state_hash"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "acf.begin.count",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": ["client_id"]
+    },
+    {
+      "name": "acf.exchange.count",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["result"]
+    },
+    {
+      "name": "acf.exchange.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": ["result"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "acf.begin",
+      "required_attributes": ["client.id", "scope.count"]
+    },
+    {
+      "operation_name": "acf.exchange",
+      "required_attributes": ["client.id", "result"]
+    }
+  ]
+}

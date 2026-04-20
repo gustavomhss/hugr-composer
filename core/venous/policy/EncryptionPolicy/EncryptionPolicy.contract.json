@@ -1,0 +1,27 @@
+{
+  "name": "EncryptionPolicy",
+  "namespace": "policy",
+  "purpose": "Declares cipher, key provider, and rotation cadence for a data class at rest and in transit, and rejects storage without a bound policy.",
+  "api_signature": "from dataclasses import dataclass\nfrom datetime import timedelta\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass EncryptionPolicy:\n    data_class: str\n    at_rest_cipher: str  # e.g. 'AES-256-GCM'\n    in_transit_min_tls: str  # e.g. 'TLS1.2'\n    key_provider: str  # kms uri\n    rotation: timedelta\n\nclass EncryptionRegistry(Protocol):\n    def bind(self, policy: EncryptionPolicy) -> None: ...\n    def resolve(self, data_class: str) -> EncryptionPolicy: ...\n    def require_tls(self, endpoint: str) -> None: ...",
+  "invariants": [
+    "Every data_class that stores PII, PHI, or PCI MUST have an EncryptionPolicy bound; writes without resolve() succeeding SHALL fail.",
+    "at_rest_cipher MUST be one of the approved set (AES-256-GCM, ChaCha20-Poly1305); unapproved ciphers SHALL raise on bind.",
+    "in_transit_min_tls MUST be TLS1.2 or higher; binding TLS1.0 or TLS1.1 is FORBIDDEN.",
+    "key_provider MUST reference an external KMS; raw key material in configuration files is NEVER permitted.",
+    "rotation MUST be \u2264 365 days for PCI data_classes; a longer cadence CANNOT be bound."
+  ],
+  "extension_contract": "Storage adapters register themselves and call resolve(data_class) on every write; TLS-terminating entrypoints register via require_tls(endpoint) middleware. New ciphers are added by extending the approved set through a governance-reviewed registration decorator.",
+  "consumption_example": "from datetime import timedelta\n\npolicy = EncryptionPolicy(\n    data_class='cardholder_pan',\n    at_rest_cipher='AES-256-GCM',\n    in_transit_min_tls='TLS1.2',\n    key_provider='aws-kms://alias/pci-pan',\n    rotation=timedelta(days=365),\n)\nregistry.bind(policy)\nresolved = registry.resolve('cardholder_pan')",
+  "sources": [
+    {"source": "PCI-DSS v4.0", "locator": "Requirement 3.5 Protect stored cryptographic keys; 4.2 Strong cryptography in transit"},
+    {"source": "HIPAA Security Rule 45 CFR \u00a7\u00a7 164.308-164.312", "locator": "\u00a7 164.312(a)(2)(iv) Encryption and decryption; \u00a7 164.312(e)(2)(ii) Transmission encryption"},
+    {"source": "NIST SP 800-53 revision 5", "locator": "SC-13 Cryptographic Protection; SC-8 Transmission Confidentiality"}
+  ],
+  "why_essential": "Per-service encryption choices drift into weak ciphers and hard-coded keys; a single registry makes cipher approval, KMS usage, and rotation cadence enforceable rather than conventional.",
+  "alternatives_considered": [
+    "Trust cloud defaults for disk encryption \u2014 does not cover field-level encryption or key ownership.",
+    "TLS enforced only at the load balancer \u2014 internal hops bypass the rule and leak on VPC peering.",
+    "Ad-hoc env var keys \u2014 no rotation, no KMS audit trail, violates PCI 3.5."
+  ],
+  "maturity": "battle_tested"
+}

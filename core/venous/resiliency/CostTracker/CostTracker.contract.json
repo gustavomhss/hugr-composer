@@ -1,0 +1,14 @@
+{
+  "name": "CostTracker",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Aggregates per-request cost estimates from a pluggable list of estimators (db/s3/api/...). Swallows and logs estimator exceptions so an instrumented cost path NEVER fails the underlying request. Retains a bounded history for post-hoc analysis.",
+  "api_signature": "class CostTracker: register(...), estimate_request(...), get_history(...), get_by_endpoint(...), get_summary(...)",
+  "invariants": [
+    "COST_TRACKER_INV_01: An exception raised by an estimator MUST NOT propagate out of `estimate_request()` \u2014 cost observation is always fail-open.",
+    "COST_TRACKER_INV_02: `_history` length MUST NEVER exceed `_max_history`; the oldest entry is evicted FIFO when the bound is hit.",
+    "COST_TRACKER_INV_03: `total_cost_usd` on the returned estimate MUST equal `db_cost_usd + s3_cost_usd + api_cost_usd` (conservation)."
+  ],
+  "status": "promoted"
+}

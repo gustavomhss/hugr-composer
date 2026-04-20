@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "LS_INV_01",
+      "invariant_text": "SINGLETON instances MUST be shared process-wide and created at most once per container.",
+      "confirms_test": "test_inv_singleton_identity_confirms",
+      "prevents_test": "test_inv_singleton_identity_prevents",
+      "under_failure_test": "test_inv_singleton_identity_under_failure"
+    },
+    {
+      "invariant_id": "LS_INV_02",
+      "invariant_text": "SCOPED instances MUST be created at most once per scope and disposed when the scope ends.",
+      "confirms_test": "test_inv_scoped_lifecycle_confirms",
+      "prevents_test": "test_inv_scoped_lifecycle_prevents",
+      "under_failure_test": "test_inv_scoped_lifecycle_under_failure"
+    },
+    {
+      "invariant_id": "LS_INV_03",
+      "invariant_text": "TRANSIENT instances MUST be created per resolution call and NEVER reused across call sites.",
+      "confirms_test": "test_inv_transient_fresh_confirms",
+      "prevents_test": "test_inv_transient_fresh_prevents",
+      "under_failure_test": "test_inv_transient_fresh_under_failure"
+    },
+    {
+      "invariant_id": "LS_INV_04",
+      "invariant_text": "A SINGLETON MUST NEVER depend on a SCOPED or TRANSIENT disposable that requires a live request scope.",
+      "confirms_test": "test_inv_leak_rejection_confirms",
+      "prevents_test": "test_inv_leak_rejection_prevents",
+      "under_failure_test": "test_inv_leak_rejection_under_failure"
+    },
+    {
+      "invariant_id": "LS_INV_05",
+      "invariant_text": "The value set MUST be closed: any new lifetime requires an explicit enum addition, NEVER a string literal.",
+      "confirms_test": "test_inv_closed_vocabulary_confirms",
+      "prevents_test": "test_inv_closed_vocabulary_prevents",
+      "under_failure_test": "test_inv_closed_vocabulary_under_failure"
+    }
+  ]
+}

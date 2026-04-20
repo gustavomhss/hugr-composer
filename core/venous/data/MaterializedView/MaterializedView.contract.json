@@ -1,0 +1,31 @@
+{
+  "name": "MaterializedView",
+  "namespace": "data",
+  "purpose": "Maintains a pre-computed query result kept up to date by an incremental feed so read queries never recompute from base tables.",
+  "api_signature": "from typing import Protocol, Any, Iterable\n\nclass MaterializedView(Protocol):\n    @property\n    def name(self) -> str: ...\n    def apply(self, event: Any) -> None: ...\n    def rebuild(self, source: Iterable[Any]) -> None: ...\n    def query(self, criteria: object) -> Iterable[Any]: ...",
+  "invariants": [
+    "apply MUST be deterministic: given the same event stream in the same order, the view state SHALL converge to the same contents.",
+    "The view CANNOT be the system of record; rebuild MUST be able to regenerate state purely from the source feed.",
+    "Reads against the view MUST tolerate bounded staleness and NEVER claim linearizability with the base data.",
+    "Schema evolution SHALL trigger a rebuild path; silent backfill with stale rows is FORBIDDEN."
+  ],
+  "extension_contract": "New projections extend MaterializedView by subclassing the Protocol and registering event-handler functions via a decorator per aggregate type; storage backends plug in through an adapter interface so the same projection can target OLTP, OLAP, or a search index.",
+  "consumption_example": "def on_event(ev, view: MaterializedView):\n    view.apply(ev)\n    # periodic, gated full rebuild is callable when schema evolves\n    return view.query({'ready_to_serve': True})",
+  "sources": [
+    {
+      "source": "Kleppmann 'Designing Data-Intensive Applications' (2017)",
+      "locator": "Chapter 11, Stream Processing, materialized views, pp. 461-466"
+    },
+    {
+      "source": "Richardson 'Microservices Patterns' (2018)",
+      "locator": "Chapter 7, CQRS and materialized views, pp. 253-278"
+    }
+  ],
+  "why_essential": "Without a shared primitive, each tool builds its own cache-or-view with divergent invalidation rules and nobody can tell which rows are stale when a customer disputes a balance.",
+  "alternatives_considered": [
+    "On-demand recomputation: unbounded latency for hot reads.",
+    "Hand-rolled caches with TTL: stale forever on missed invalidations.",
+    "OLAP cube refresh nightly: too coarse for operational reads."
+  ],
+  "maturity": "battle_tested"
+}

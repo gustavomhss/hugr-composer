@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "IDEMPOTENCY_STORE_INV_01",
+      "invariant_text": "get(key) MUST return the exact object passed to the most recent put(key, result); for an unknown key it MUST return None without raising.",
+      "confirms_test": "test_inv_get_confirms",
+      "prevents_test": "test_inv_get_prevents",
+      "under_failure_test": "test_inv_get_under_failure"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "name": "AuditEvent",
+  "namespace": "compliance",
+  "purpose": "Emit a tamper-evident, append-only record of a security-relevant action with actor, subject, action verb, outcome, and a cryptographic chain link.",
+  "api_signature": "from dataclasses import dataclass\nfrom datetime import datetime\nfrom typing import Mapping, Protocol\n\n@dataclass(frozen=True)\nclass AuditEvent:\n    event_id: str\n    occurred_at: datetime\n    actor_id: str\n    actor_type: str\n    action: str\n    resource_type: str\n    resource_id: str\n    outcome: str\n    attributes: Mapping[str, str]\n    prev_hash: str\n    event_hash: str\n\nclass AuditEventSink(Protocol):\n    def emit(self, event: AuditEvent) -> None: ...\n    def verify_chain(self, from_event_id: str | None = None) -> bool: ...\n",
+  "invariants": [
+    "event_hash MUST be computed as SHA-256 over the canonical serialization of all non-hash fields concatenated with prev_hash; a mismatched hash SHALL invalidate the chain.",
+    "Once emitted, an AuditEvent is append-only and CANNOT be updated, deleted, or logically superseded.",
+    "outcome MUST be one of 'success', 'failure', 'denied'; any other value is FORBIDDEN to keep reporting queryable.",
+    "actor_id MUST be set even for system-initiated actions; 'system' is a reserved literal and NEVER empty.",
+    "occurred_at MUST be an absolute UTC timestamp with at least millisecond precision; naive timestamps are FORBIDDEN.",
+    "action verbs MUST come from a controlled vocabulary (CREATE / READ / UPDATE / DELETE / GRANT / REVOKE / EXPORT) and ALWAYS use that controlled set for cross-system joins."
+  ],
+  "extension_contract": "Domains extend the vocabulary by registering a namespaced action prefix (e.g. 'payment.refund') through an AuditVocabulary provider; sinks are added by implementing AuditEventSink and composing them into a FanOutSink so WORM storage, SIEM, and warm-query stores each receive the same stream.",
+  "consumption_example": "def record_user_export(sink, actor: str, user_id: str, prev_hash: str) -> AuditEvent:\n    from hashlib import sha256\n    from datetime import datetime, timezone\n    event_id = 'evt_01J9ZX'\n    canonical = f'{event_id}|{actor}|user|EXPORT|{user_id}|success|{prev_hash}'\n    evt = AuditEvent(\n        event_id=event_id,\n        occurred_at=datetime.now(timezone.utc),\n        actor_id=actor,\n        actor_type='human',\n        action='EXPORT',\n        resource_type='user',\n        resource_id=user_id,\n        outcome='success',\n        attributes={'reason': 'dsar'},\n        prev_hash=prev_hash,\n        event_hash=sha256(canonical.encode()).hexdigest(),\n    )\n    sink.emit(evt)\n    return evt\n",
+  "sources": [
+    {
+      "source": "NIST Special Publication 800-92 \u2014 Guide to Computer Security Log Management",
+      "locator": "Section 3.2 'Infrastructure for Log Management' and 3.3 'Log Analysis'"
+    },
+    {
+      "source": "Majors, Fong-Jones, Miranda \u2014 Observability Engineering (2022)",
+      "locator": "Chapter 14 'Observability and the Software Supply Chain' pp. 173-178 on audit records"
+    },
+    {
+      "source": "OpenTelemetry Semantic Conventions 1.27 \u2014 General",
+      "locator": "semconv/general/attributes.md 'enduser.id', 'enduser.role' for actor identity keys"
+    }
+  ],
+  "why_essential": "Regulated domains (SOC2, HIPAA, PCI-DSS) require a verifiable audit trail that per-tool loggers cannot produce; the hash chain is what distinguishes audit from logging and it must be enforced centrally.",
+  "alternatives_considered": [
+    "Reusing StructuredLogger for audit \u2014 rejected because logs are mutable at the pipeline level and lack a tamper-evident chain.",
+    "Database row CRUD history \u2014 rejected because it captures state deltas, not actor intent or denied actions.",
+    "External SIEM-only ingestion \u2014 rejected because the SIEM becomes the source of truth and proof-of-intent is delegated offsite."
+  ],
+  "maturity": "battle_tested"
+}

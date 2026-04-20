@@ -1,0 +1,27 @@
+{
+  "name": "OutboundBinding",
+  "namespace": "extras",
+  "purpose": "Declarative adapter that lets the application invoke an external resource through a named operation and metadata without embedding the vendor SDK.",
+  "api_signature": "from typing import Protocol\nfrom dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass BindingInvocation:\n    binding_name: str\n    operation: str\n    data: bytes\n    metadata: dict[str, str]\n\nclass OutboundBinding(Protocol):\n    async def invoke(self, request: BindingInvocation) -> tuple[bytes, dict[str, str]]: ...",
+  "invariants": [
+    "The operation field MUST be one of the operations declared by the binding component; unknown values SHALL be rejected.",
+    "binding_name ALWAYS refers to a component already registered in the runtime; an unresolved name CANNOT invoke anything.",
+    "Metadata keys NEVER include secrets in plaintext because binding metadata can be logged by observability layers.",
+    "Binary payloads MUST round trip unchanged; the adapter CANNOT mutate data bytes implicitly.",
+    "Invocation timeouts SHALL be honored by the adapter or explicitly surfaced as a deadline error."
+  ],
+  "extension_contract": "Add a new external system by implementing the OutboundBinding adapter (HTTP, S3, SMTP, SendGrid) and declaring it as a component with supported operations; applications extend by composing decorators around invoke for retry or circuit breaking.",
+  "consumption_example": "async def email(binding: OutboundBinding, to: str, body: bytes) -> None:\n    inv = BindingInvocation(\n        binding_name='sendgrid',\n        operation='create',\n        data=body,\n        metadata={'emailTo': to},\n    )\n    await binding.invoke(inv)",
+  "sources": [
+    {
+      "source": "Dapr 1.14 Bindings building block overview",
+      "locator": "docs.dapr.io/developing-applications/building-blocks/bindings/bindings-overview/ Output bindings, operation field, metadata sections"
+    }
+  ],
+  "why_essential": "Keeping every external integration behind one declarative adapter protects the skill from SDK churn and makes capabilities addressable by name; tools reference bindings instead of vendor packages.",
+  "alternatives_considered": [
+    "Direct vendor SDK calls inside each tool which couples deployments and credentials management",
+    "HTTP only facade which loses operation taxonomy and typed metadata"
+  ],
+  "maturity": "battle_tested"
+}

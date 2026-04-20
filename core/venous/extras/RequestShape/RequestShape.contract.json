@@ -1,0 +1,36 @@
+{
+  "name": "RequestShape",
+  "namespace": "extras",
+  "purpose": "Capture a request's resiliency context (priority class, deadline, idempotency key, retry-count-so-far) in a single immutable record propagated across boundaries.",
+  "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nPriority = Literal['critical', 'normal', 'sheddable_plus', 'sheddable']\n\nclass RequestShape(Protocol):\n    request_id: str\n    priority: Priority\n    deadline_ns: int\n    idempotency_key: str | None\n    attempt: int\n    origin: str\n    def to_headers(self) -> dict[str, str]: ...\n    @classmethod\n    def from_headers(cls, headers: dict[str, str]) -> 'RequestShape': ...\n",
+  "invariants": [
+    "Fields on a RequestShape instance MUST be immutable after construction; in-place mutation is FORBIDDEN.",
+    "A request without an explicit priority SHALL default to normal and NEVER silently to critical.",
+    "The attempt counter MUST monotonically increase; a decrement CANNOT occur and breaks retry accounting.",
+    "to_headers and from_headers SHALL be mutual inverses on the defined fields, round-tripping without loss.",
+    "An idempotency_key once set MUST NEVER be altered across retries of the same logical request."
+  ],
+  "extension_contract": "Adopters register a HeaderAdapter per transport (HTTP, gRPC metadata, queue message attributes) and a PriorityPolicy hook that derives priority from authenticated principal, route, or tenant tier; the wire format is versioned so unknown fields are preserved and not dropped.",
+  "consumption_example": "shape = RequestShape.from_headers(incoming.headers)\noutgoing.headers.update(shape.to_headers())\nif shape.attempt > 3:\n    raise TooManyAttempts(shape.request_id)\n",
+  "sources": [
+    {
+      "source": "Google SRE Workbook (Beyer et al., O'Reilly, 2018)",
+      "locator": "Chapter 21 'Managing Load', subsection 'Criticality' and 'Client-side throttling'"
+    },
+    {
+      "source": "Envoy proxy documentation, HTTP connection manager",
+      "locator": "api-v3/config/core/v3/base.proto RequestMethod, and x-envoy-expected-rq-timeout-ms header semantics"
+    },
+    {
+      "source": "Nygard, Release It! 2nd edition (2018), Pragmatic Bookshelf",
+      "locator": "Chapter 8 'Processes on Machines', section on request-context propagation"
+    }
+  ],
+  "why_essential": "Resiliency decisions depend on metadata that is easy to lose across hops; a single immutable record that survives transport boundaries turns scattered headers into a contract every primitive can rely on.",
+  "alternatives_considered": [
+    "Ad-hoc headers per client: diverge in naming and CANNOT be validated end to end.",
+    "Thread-local storage only: breaks across async boundaries and worker processes.",
+    "Rebuild context per layer: wastes CPU and NEVER preserves idempotency keys reliably."
+  ],
+  "maturity": "emerging"
+}

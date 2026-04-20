@@ -1,0 +1,26 @@
+{
+  "name": "DataLoader",
+  "namespace": "api",
+  "purpose": "Batch and dedupe per-request loads from N-per-resolver patterns into one bulk fetch per key-type per tick.",
+  "api_signature": "from __future__ import annotations\nfrom collections.abc import Awaitable, Callable\nfrom typing import Hashable, Protocol, TypeVar, runtime_checkable\n\nK = TypeVar('K', bound=Hashable)\nV = TypeVar('V')\n\n@runtime_checkable\nclass DataLoader(Protocol[K, V]):\n    async def load(self, key: K) -> V: ...\n    async def load_many(self, keys: list[K]) -> list[V]: ...\n    def prime(self, key: K, value: V) -> None: ...\n    def clear(self, key: K) -> None: ...\n",
+  "invariants": [
+    {"id": "DATALOADER_INV_01", "rule": "Within one tick, identical keys resolve to the SAME result instance (identity-preserving cache)."},
+    {"id": "DATALOADER_INV_02", "rule": "Batch fn receives keys in caller-insertion order; returned values correspond positionally."},
+    {"id": "DATALOADER_INV_03", "rule": "If batch fn raises, ALL waiting loaders for that tick receive that exception."},
+    {"id": "DATALOADER_INV_04", "rule": "clear(k) removes cache entry and does NOT cancel an in-flight batch containing k."},
+    {"id": "DATALOADER_INV_05", "rule": "Max-batch-size cap honored; overflow splits into the next batch."}
+  ],
+  "extension_contract": "Adopters pass a batch_fn(keys) -> Awaitable[list[values]] and an optional max_batch_size. Subclasses MAY override _schedule_dispatch for non-event-loop schedulers but MUST preserve invariants 01-05. The cache map itself is sealed; policy changes use prime() / clear().",
+  "consumption_example": "loader = InMemoryDataLoader(batch_users, max_batch_size=500)\nu1, u2 = await asyncio.gather(loader.load(42), loader.load(7))\n",
+  "sources": [
+    {"source": "syrusakbary/aiodataloader", "locator": "https://github.com/syrusakbary/aiodataloader (MIT)"},
+    {"source": "graphql/dataloader (Facebook original)", "locator": "https://github.com/graphql/dataloader"}
+  ],
+  "why_essential": "Without DataLoader every GraphQL resolver or nested serializer reinvents N+1 avoidance manually; the ad-hoc variants diverge on cache key, batching, and error propagation and leak across requests.",
+  "alternatives_considered": [
+    "Manual bulk-fetch at the top of each resolver — unmaintainable beyond 5+ resolvers sharing a key.",
+    "Request-level memoization decorator — dedupes but does not batch; leaves N+1 fan-out untouched.",
+    "Global cache (Redis/LRU) — different problem; does not batch and risks per-tenant leakage."
+  ],
+  "maturity": "incubating"
+}

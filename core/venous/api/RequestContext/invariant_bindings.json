@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "RC_INV_01",
+      "invariant_text": "MUST be constructed once per inbound request and disposed when the response is sent.",
+      "confirms_test": "test_inv_lifecycle_confirms",
+      "prevents_test": "test_inv_lifecycle_prevents",
+      "under_failure_test": "test_inv_lifecycle_under_failure"
+    },
+    {
+      "invariant_id": "RC_INV_02",
+      "invariant_text": "NEVER leaks across request boundaries; a background task CANNOT reuse a parent context as live state.",
+      "confirms_test": "test_inv_no_leak_confirms",
+      "prevents_test": "test_inv_no_leak_prevents",
+      "under_failure_test": "test_inv_no_leak_under_failure"
+    },
+    {
+      "invariant_id": "RC_INV_03",
+      "invariant_text": "put() MUST be idempotent for the same (key, value); overwriting an existing key SHALL be explicit.",
+      "confirms_test": "test_inv_put_idempotent_confirms",
+      "prevents_test": "test_inv_put_idempotent_prevents",
+      "under_failure_test": "test_inv_put_idempotent_under_failure"
+    },
+    {
+      "invariant_id": "RC_INV_04",
+      "invariant_text": "halt() MUST cause subsequent middleware/interceptors to skip, but SHALL NOT abort already-queued response bytes.",
+      "confirms_test": "test_inv_halt_skips_confirms",
+      "prevents_test": "test_inv_halt_skips_prevents",
+      "under_failure_test": "test_inv_halt_skips_under_failure"
+    },
+    {
+      "invariant_id": "RC_INV_05",
+      "invariant_text": "request_id MUST be populated before the first user code runs; a missing id SHALL be replaced with a generated UUID.",
+      "confirms_test": "test_inv_request_id_confirms",
+      "prevents_test": "test_inv_request_id_prevents",
+      "under_failure_test": "test_inv_request_id_under_failure"
+    }
+  ]
+}

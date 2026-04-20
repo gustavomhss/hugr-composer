@@ -1,0 +1,49 @@
+{
+  "logs": [
+    {
+      "event_name": "totp.verify.accepted",
+      "required_attributes": ["subject_id", "step", "algorithm"]
+    },
+    {
+      "event_name": "totp.verify.rejected",
+      "required_attributes": ["subject_id", "reason"]
+    },
+    {
+      "event_name": "totp.replay.detected",
+      "required_attributes": ["subject_id", "attempted_step"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "totp.verify.total",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": ["result"]
+    },
+    {
+      "name": "totp.replay.rejections",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 5,
+      "label_keys": ["result"]
+    },
+    {
+      "name": "totp.verify.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": ["result"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "totp.verify",
+      "required_attributes": ["subject.id", "result", "algorithm"]
+    },
+    {
+      "operation_name": "totp.provision_uri",
+      "required_attributes": ["issuer"]
+    }
+  ]
+}

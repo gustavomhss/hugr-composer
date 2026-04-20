@@ -1,0 +1,27 @@
+{
+  "name": "PiiClassification",
+  "namespace": "data",
+  "purpose": "Schema-level annotation that tags every field as one of PII, PHI, PCI, or public, gating serialization and logging through a central mask.",
+  "api_signature": "from enum import Enum\nfrom typing import Protocol, Any, Mapping\n\nclass PiiClass(str, Enum):\n    PUBLIC = 'public'\n    INTERNAL = 'internal'\n    PII = 'pii'\n    PHI = 'phi'\n    PCI = 'pci'\n\nclass PiiClassification(Protocol):\n    def classify(self, model: type, field: str) -> PiiClass: ...\n    def mask(self, obj: Any, audience: str) -> Mapping[str, Any]: ...\n    def audit_leak(self, obj: Any, sink: str) -> None: ...",
+  "invariants": [
+    "Every persisted field MUST carry a PiiClass annotation; fields without one SHALL fail schema registration at import time.",
+    "Serializers and log formatters MUST route through mask() before emission; writing a raw object to a sink is FORBIDDEN.",
+    "PHI and PCI fields MUST NEVER be emitted to unauthenticated audiences, even masked, unless the field is explicitly PUBLIC.",
+    "mask() output for an audience MUST be deterministic so diff tests can assert non-leakage.",
+    "Reclassifying a field down the sensitivity ladder (PHI \u2192 PII \u2192 PUBLIC) MUST require an audit log entry with approver id."
+  ],
+  "extension_contract": "Frameworks register a schema walker that extracts the annotation and plug an AudienceResolver adapter mapping request contexts to audiences. Custom PiiClass values are added by subclassing the enum and registering a mask policy for each new class.",
+  "consumption_example": "from dataclasses import dataclass\nfrom typing import Annotated\n\n@dataclass\nclass Patient:\n    id: str\n    ssn: str\n    dob: str\n\ndef serialize(classifier: PiiClassification, p: Patient, audience: str) -> dict:\n    return dict(classifier.mask(p, audience=audience))",
+  "sources": [
+    {"source": "HIPAA Security Rule 45 CFR \u00a7\u00a7 164.308-164.312", "locator": "\u00a7 164.514(b) de-identification safe-harbor field list"},
+    {"source": "PCI-DSS v4.0", "locator": "Requirement 3.4 \u2014 render PAN unreadable (masking, truncation, hashing)"},
+    {"source": "NIST SP 800-53 revision 5", "locator": "MP-3 Media Marking; MP-4 Media Storage"}
+  ],
+  "why_essential": "Without a schema-level classifier, every endpoint re-invents masking and one forgotten field leaks an SSN to a log; one central primitive makes leakage a type error, not a code-review catch.",
+  "alternatives_considered": [
+    "Regex scrubbers on log output \u2014 lossy, high false-negative rate, cannot tell PHI from PII.",
+    "Per-endpoint DTO mapping by hand \u2014 drifts when schema evolves, provides no provable coverage.",
+    "Storing raw then redacting at export \u2014 still leaks to logs, backups, and replication."
+  ],
+  "maturity": "emerging"
+}

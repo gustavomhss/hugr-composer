@@ -1,0 +1,56 @@
+{
+  "logs": [
+    {
+      "event_name": "retry.attempt",
+      "required_attributes": ["policy_id", "attempt", "outcome"]
+    },
+    {
+      "event_name": "retry.refused",
+      "required_attributes": ["policy_id", "reason", "invariant_id"]
+    },
+    {
+      "event_name": "retry.budget.exhausted",
+      "required_attributes": ["policy_id", "successes", "retries"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "retry.attempts",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 30,
+      "label_keys": ["outcome"]
+    },
+    {
+      "name": "retry.delay.ms",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": ["attempt"]
+    },
+    {
+      "name": "retry.budget.retries_to_successes",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": ["policy_id"]
+    },
+    {
+      "name": "retry.refusals",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["reason"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "retry.execute",
+      "required_attributes": ["policy.id", "attempts", "outcome"]
+    },
+    {
+      "operation_name": "retry.attempt",
+      "required_attributes": ["attempt.number", "error.class"]
+    }
+  ]
+}

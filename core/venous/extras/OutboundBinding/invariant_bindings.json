@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "OBND_INV_01",
+      "invariant_text": "The operation field MUST be one of the operations declared by the binding component; unknown values SHALL be rejected.",
+      "confirms_test": "test_inv_operation_allowlist_confirms",
+      "prevents_test": "test_inv_operation_allowlist_prevents",
+      "under_failure_test": "test_inv_operation_allowlist_under_failure"
+    },
+    {
+      "invariant_id": "OBND_INV_02",
+      "invariant_text": "binding_name ALWAYS refers to a component already registered in the runtime; an unresolved name CANNOT invoke anything.",
+      "confirms_test": "test_inv_binding_name_resolves_confirms",
+      "prevents_test": "test_inv_binding_name_resolves_prevents",
+      "under_failure_test": "test_inv_binding_name_resolves_under_failure"
+    },
+    {
+      "invariant_id": "OBND_INV_03",
+      "invariant_text": "Metadata keys NEVER include secrets in plaintext because binding metadata can be logged by observability layers.",
+      "confirms_test": "test_inv_no_plaintext_secrets_confirms",
+      "prevents_test": "test_inv_no_plaintext_secrets_prevents",
+      "under_failure_test": "test_inv_no_plaintext_secrets_under_failure"
+    },
+    {
+      "invariant_id": "OBND_INV_04",
+      "invariant_text": "Binary payloads MUST round trip unchanged; the adapter CANNOT mutate data bytes implicitly.",
+      "confirms_test": "test_inv_bytes_roundtrip_confirms",
+      "prevents_test": "test_inv_bytes_roundtrip_prevents",
+      "under_failure_test": "test_inv_bytes_roundtrip_under_failure"
+    },
+    {
+      "invariant_id": "OBND_INV_05",
+      "invariant_text": "Invocation timeouts SHALL be honored by the adapter or explicitly surfaced as a deadline error.",
+      "confirms_test": "test_inv_timeout_honored_confirms",
+      "prevents_test": "test_inv_timeout_honored_prevents",
+      "under_failure_test": "test_inv_timeout_honored_under_failure"
+    }
+  ]
+}

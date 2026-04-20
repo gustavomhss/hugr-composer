@@ -1,0 +1,792 @@
+{
+  "name": "HistogramBuckets",
+  "namespace": "obs",
+  "maturity": "battle_tested",
+  "builder_agent_id": 9,
+  "catalog_entry_sha256": "0fa2cb3beb7a3c4009d1babee91f58bcb6ce9b43d7bab3a91be2288b0411210d",
+  "files": [
+    {
+      "path": "obs/HistogramBuckets/HistogramBuckets.contract.json",
+      "sha256": "d9529471f4ee7e99369d60ba47d39057c3a83d0b58f8cf5a8685b1f70165d3c4",
+      "size_bytes": 3360,
+      "kind": "contract_json"
+    },
+    {
+      "path": "obs/HistogramBuckets/HistogramBuckets.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "obs/HistogramBuckets/HistogramBuckets.md",
+      "sha256": "ea78e065925fb5ce8acb90c30bd4d9a30c5b6b599ac2bcf7fe8ecf2a4e2bcf81",
+      "size_bytes": 4204,
+      "kind": "spec_md"
+    },
+    {
+      "path": "obs/HistogramBuckets/HistogramBuckets.py",
+      "sha256": "a7d5c7807681fc59e60561a1b0fc6564fc515f48adf62fd5b373daa6ea235467",
+      "size_bytes": 6169,
+      "kind": "impl"
+    },
+    {
+      "path": "obs/HistogramBuckets/behavioral_HistogramBuckets.py",
+      "sha256": "39aad83b19757e07982370f9c1ccd1ecf3e783e20a2bd3b8f36dbc20b6c9867f",
+      "size_bytes": 1297,
+      "kind": "behavioral"
+    },
+    {
+      "path": "obs/HistogramBuckets/chaos_HistogramBuckets.py",
+      "sha256": "af13e55675cfb46de2a3c9aabb867dd5d3714f2ac10de83fcebe9f01a2afec66",
+      "size_bytes": 1279,
+      "kind": "chaos"
+    },
+    {
+      "path": "obs/HistogramBuckets/conftest.py",
+      "sha256": "7c56f31974b08ec9142aebbd7c9995aae21ceef4211149bc0c595a4c4855ac4c",
+      "size_bytes": 528,
+      "kind": "test"
+    },
+    {
+      "path": "obs/HistogramBuckets/dashboard.json",
+      "sha256": "28c20157d05740d2a5051578d5204fcb37d3f8f457af8fc65a7e2b91d9506450",
+      "size_bytes": 230,
+      "kind": "dashboard"
+    },
+    {
+      "path": "obs/HistogramBuckets/invariant_bindings.json",
+      "sha256": "2e97afdae56984c468e97ba57ace8e09650f919da815b24e25236580fe10cb92",
+      "size_bytes": 2460,
+      "kind": "test"
+    },
+    {
+      "path": "obs/HistogramBuckets/metamorphic_HistogramBuckets.py",
+      "sha256": "c69f9ff8c19b9ca369cd7e5d15b147f6e95c72dd5d0e1f9e01075e6cc410e2d9",
+      "size_bytes": 1351,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "obs/HistogramBuckets/observability_HistogramBuckets.py",
+      "sha256": "0338895a08697ce1b237db8ae9dbf3c87f3e9a8936055df6f43b968b913149b1",
+      "size_bytes": 1235,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/HistogramBuckets/observability_schema.json",
+      "sha256": "ffc9f3485856db9c5131ef9060194a9426c8794cadebc33dd5d63d48667ef35a",
+      "size_bytes": 594,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/HistogramBuckets/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "obs/HistogramBuckets/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "obs/HistogramBuckets/test_HistogramBuckets.py",
+      "sha256": "c2ae23d32b4414a38e5cb84abc76a964acf769e4ed36d19921048dd410b6fae1",
+      "size_bytes": 4720,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "HB_INV_01",
+      "invariant_text": "Boundaries MUST be strictly increasing, finite, non-negative, and SHALL include at least five buckets below the target p99.",
+      "confirms_test": "test_inv_boundaries_well_formed_confirms",
+      "prevents_test": "test_inv_boundaries_well_formed_prevents",
+      "under_failure_test": "test_inv_boundaries_well_formed_under_failure"
+    },
+    {
+      "invariant_id": "HB_INV_02",
+      "invariant_text": "Once assigned to an instrument, boundaries are immutable; changing them at runtime is FORBIDDEN because it invalidates historical quantile comparisons.",
+      "confirms_test": "test_inv_immutable_boundaries_confirms",
+      "prevents_test": "test_inv_immutable_boundaries_prevents",
+      "under_failure_test": "test_inv_immutable_boundaries_under_failure"
+    },
+    {
+      "invariant_id": "HB_INV_03",
+      "invariant_text": "Latency boundaries MUST be expressed in milliseconds with unit 'ms' and NEVER mixed with seconds on the same instrument.",
+      "confirms_test": "test_inv_latency_unit_confirms",
+      "prevents_test": "test_inv_latency_unit_prevents",
+      "under_failure_test": "test_inv_latency_unit_under_failure"
+    },
+    {
+      "invariant_id": "HB_INV_04",
+      "invariant_text": "The lowest boundary MUST be smaller than the realistic floor of the measured distribution so the first bucket is not saturated.",
+      "confirms_test": "test_inv_low_boundary_below_floor_confirms",
+      "prevents_test": "test_inv_low_boundary_below_floor_prevents",
+      "under_failure_test": "test_inv_low_boundary_below_floor_under_failure"
+    },
+    {
+      "invariant_id": "HB_INV_05",
+      "invariant_text": "Bucket count SHALL NOT exceed 20 per instrument to bound per-series storage cost.",
+      "confirms_test": "test_inv_bucket_count_cap_confirms",
+      "prevents_test": "test_inv_bucket_count_cap_prevents",
+      "under_failure_test": "test_inv_bucket_count_cap_under_failure"
+    },
+    {
+      "invariant_id": "HB_INV_06",
+      "invariant_text": "Default bucket sets for HTTP latency and payload size MUST be derived from the OpenTelemetry HTTP semconv recommendation and CANNOT be silently overridden at instrument creation.",
+      "confirms_test": "test_inv_default_presets_confirms",
+      "prevents_test": "test_inv_default_presets_prevents",
+      "under_failure_test": "test_inv_default_presets_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 536,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 2643,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 2237,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 118075,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "50 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 767,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 832,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 96813,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 222397,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NON-MONOTONIC-BOUNDARIES",
+        "hypothesis": "Passing boundaries=[10, 50, 25, 100, 250] should be rejected as strictly-increasing invariant violation, but frozen dataclass has no __post_init__ validator so it silently accepts unsorted sequences, corrupting quantile bucketing downstream.",
+        "input_fixture": "HistogramBuckets(name='http.server.duration', unit='ms', boundaries=[10, 50, 25, 100, 250, 500, 1000])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NAN-INF-BOUNDARY",
+        "hypothesis": "Boundaries containing float('nan') or float('inf') should be rejected as non-finite, but without a validator the dataclass accepts them; NaN breaks comparison ordering and +inf collapses the overflow bucket, silently poisoning p99 calculations.",
+        "input_fixture": "HistogramBuckets(name='lat', unit='ms', boundaries=[1.0, 5.0, float('nan'), float('inf'), 100.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NEGATIVE-BOUNDARY",
+        "hypothesis": "Negative boundaries like -1.0 violate non-negativity but are accepted; the first bucket becomes (-inf, -1] which never matches any observation, wasting a bucket slot and distorting the <5-below-p99 guarantee.",
+        "input_fixture": "HistogramBuckets(name='payload', unit='bytes', boundaries=[-1.0, 0.0, 128, 1024, 8192])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FEWER-THAN-FIVE-BELOW-P99",
+        "hypothesis": "Providing only 3 boundaries below a realistic p99 target (e.g., p99=500ms) violates the '>=5 buckets below p99' requirement, but there is no p99 parameter in the API so the invariant is unenforceable by construction \u2014 a design-level attack.",
+        "input_fixture": "HistogramBuckets(name='api.latency', unit='ms', boundaries=[100, 250, 400, 600, 1000]) with documented p99_target=500ms",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MUTABLE-LIST-ALIASING",
+        "hypothesis": "Although the dataclass is frozen, Sequence[float] permits a list which is stored by reference; external code holding the original list can mutate boundaries post-assignment, violating the runtime-immutability invariant despite frozen=True.",
+        "input_fixture": "b=[10,50,100,250,500]; h=HistogramBuckets('x','ms',b); b.append(9999); b[0]=-5",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNIT-SECONDS-MIXED",
+        "hypothesis": "Setting unit='s' with boundaries that look like milliseconds (e.g., [5,10,25,50,100,250,500]) is accepted because there is no cross-check between unit string and magnitude; two instruments on same service use different units, breaking cross-service quantile comparison.",
+        "input_fixture": "HistogramBuckets(name='http.server.duration', unit='s', boundaries=[5,10,25,50,100,250,500])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNIT-FREEFORM-INJECTION",
+        "hypothesis": "The unit field is an unconstrained str; values like 'ms ', 'MS', 'milliseconds', '' or even a prompt-injection payload 'ms\\n[SYSTEM] ignore previous' pass through and poison downstream metric exporters that concatenate unit into OTLP labels.",
+        "input_fixture": "HistogramBuckets(name='x', unit='ms\\n<script>alert(1)</script>', boundaries=[1,2,3,4,5,6])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-BOUNDARIES",
+        "hypothesis": "An empty boundaries sequence [] is accepted by the dataclass with no min-length check; the instrument has zero buckets, all observations land in the +inf overflow, and every quantile estimate becomes undefined.",
+        "input_fixture": "HistogramBuckets(name='lat', unit='ms', boundaries=[])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-BUCKET-COUNT-OVERFLOW",
+        "hypothesis": "Supplying 21+ boundaries exceeds the documented max of 20 per instrument but there is no guard; for a 1000-series service this amplifies storage cost by >5x (integer multiplication of series \u00d7 buckets \u00d7 labels), a classic amplification attack on the TSDB.",
+        "input_fixture": "HistogramBuckets(name='lat', unit='ms', boundaries=list(range(1, 102))) -- 101 boundaries",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DUPLICATE-BOUNDARIES",
+        "hypothesis": "Boundaries [10,10,10,50,100,250,500] are weakly-increasing not strictly, but without validation duplicates create zero-width buckets that always receive zero observations and crash Prometheus client libraries on le-label ingestion.",
+        "input_fixture": "HistogramBuckets(name='x', unit='ms', boundaries=[10, 10, 10, 50, 100, 250, 500])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FLOOR-SATURATED",
+        "hypothesis": "Setting lowest boundary=1000ms when realistic floor is ~1ms saturates the first bucket with 99% of traffic, violating 'lowest boundary smaller than realistic floor'; no API parameter exposes floor so the invariant cannot be checked.",
+        "input_fixture": "HistogramBuckets(name='http.dur', unit='ms', boundaries=[1000, 2000, 3000, 4000, 5000, 10000])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DEFAULT-OVERRIDE-SILENT",
+        "hypothesis": "latency_ms_default() returns an instance whose boundaries list can be overridden via dataclasses.replace() or by constructing HistogramBuckets(name='http.server.duration', unit='ms', boundaries=[...custom...]); there is no registry enforcing semconv-derived values, silently breaking cross-service comparability.",
+        "input_fixture": "import dataclasses; d=HistogramBuckets.latency_ms_default(); custom=dataclasses.replace(d, boundaries=[1,2,3,4,5,6])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INT-FLOAT-TYPE-CONFUSION",
+        "hypothesis": "Sequence[float] is not runtime-enforced; passing Decimal('0.1'), numpy.float32, or str '10' may be accepted, causing type confusion where Decimal+float arithmetic raises or numpy dtype leaks into OTLP serialization.",
+        "input_fixture": "from decimal import Decimal; HistogramBuckets('x','ms',[Decimal('1'), Decimal('5'), '10', 50, 100, 250])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RUNTIME-REASSIGN-VIA-OBJECT-SETATTR",
+        "hypothesis": "frozen=True raises on normal attribute set, but object.__setattr__(h,'boundaries',[...]) bypasses the freeze and replaces boundaries after the instrument is emitting, invalidating all prior histogram samples and breaking quantile backfill.",
+        "input_fixture": "h=HistogramBuckets.latency_ms_default(); object.__setattr__(h,'boundaries',[1,2,3,4,5])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NAME-COLLISION-CROSS-UNIT",
+        "hypothesis": "Two HistogramBuckets with identical name='http.server.duration' but different units (one 'ms', one 's') are both valid instances \u2014 replay the ms one into a pipeline expecting seconds and p99=250 is read as 250s (4 minutes), triggering false SLO breach alerts.",
+        "input_fixture": "a=HistogramBuckets('http.server.duration','ms',[1,5,10,50,100,250,500]); b=HistogramBuckets('http.server.duration','s',[0.001,0.005,0.01,0.05,0.1,0.25,0.5])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HUGE-FLOAT-BOUNDARY",
+        "hypothesis": "Boundary values near sys.float_info.max (e.g., 1e308) are finite but nonsensical; arithmetic in exporters (bucket widths, cumulative sums) overflows to +inf, silently corrupting the last-but-one bucket and its quantile.",
+        "input_fixture": "HistogramBuckets('x','ms',[1.0, 10.0, 100.0, 1000.0, 1e308, 1.7976931348623157e308])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NAN-IN-BOUNDARIES",
+        "hypothesis": "Passing float('nan') as a boundary element exploits the fact that NaN comparisons always return False in Python (nan > x is False, nan < x is False). A naive strictly-increasing check using `all(a < b for a, b in zip(...)`) will pass because `nan < nan` is False but the iteration may skip or short-circuit, allowing NaN to sneak through and corrupting every quantile estimate that touches that bucket.",
+        "input_fixture": "HistogramBuckets(name='req_latency', unit='ms', boundaries=[1.0, 5.0, float('nan'), 50.0, 100.0, 250.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-POS-INF-BOUNDARY",
+        "hypothesis": "float('+inf') satisfies the strictly-increasing check trivially (every finite number is less than +inf) and passes a naive non-negative check, yet it violates the 'finite' requirement. Histograms that include +inf as an explicit upper-edge boundary double-count with the implicit +inf catch-all bucket present in every OpenTelemetry histogram, producing inflated observation counts in the last bucket.",
+        "input_fixture": "HistogramBuckets(name='req_latency', unit='ms', boundaries=[1.0, 5.0, 25.0, 100.0, float('inf')])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NEG-ZERO-FIRST-BUCKET",
+        "hypothesis": "Python considers -0.0 == 0.0, so a check `all(b >= 0 for b in boundaries)` passes. However -0.0 < 0.0 is also False, meaning a check like `boundaries[0] >= 0` is satisfied. If the instrument records observations starting at 0.001ms, the boundary -0.0 is semantically equivalent to 0.0 and may saturate the first bucket depending on implementation of half-open interval semantics, violating the intent of the non-negative requirement.",
+        "input_fixture": "HistogramBuckets(name='req_latency', unit='ms', boundaries=[-0.0, 1.0, 5.0, 25.0, 100.0, 500.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-MUTABLE-LIST-POST-ASSIGN",
+        "hypothesis": "The @dataclass(frozen=True) decorator prevents reassigning the `boundaries` attribute reference but does NOT deep-freeze the underlying mutable container. If a plain list is passed, the caller retains a reference and can call `my_list.append(999)` or `my_list[0] = -1` after the object is constructed and assigned to an instrument, mutating the effective bucket boundaries at runtime without touching the dataclass field, invalidating historical quantile comparisons.",
+        "input_fixture": "bounds = [1.0, 5.0, 25.0, 100.0, 500.0]\nhb = HistogramBuckets(name='req_latency', unit='ms', boundaries=bounds)\ninstrument.assign(hb)\nbounds.insert(0, -999.0)  # mutates boundaries in-place post-assignment",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CUSTOM-SEQ-NONDETERMINISTIC",
+        "hypothesis": "A custom class implementing `collections.abc.Sequence` can return different values from `__getitem__` on successive calls. Because `frozen=True` stores the reference to this object without copying or converting to an immutable type, every future read of `hb.boundaries` may return different values. This is a replay-style attack: the object passes construction-time validation but serves different boundary vectors at runtime, breaking the immutability guarantee without triggering any Python-level exception.",
+        "input_fixture": "class ShiftingSeq(Sequence):\n    def __init__(self, base): self._b=list(base); self._calls=0\n    def __getitem__(self, i): self._calls+=1; return self._b[i] + self._calls * 0.1\n    def __len__(self): return len(self._b)\nhb = HistogramBuckets('req_latency', 'ms', ShiftingSeq([1,5,25,100,500]))\nassert hb.boundaries[0] != hb.boundaries[0]  # reads diverge",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SUBCLASS-BOUNDARIES-OVERRIDE",
+        "hypothesis": "A subclass of HistogramBuckets can override the `boundaries` property with a regular Python property descriptor. Because frozen=True only blocks __setattr__ on the class itself, the subclass property getter runs unchecked and can return freshly computed, mutable, or externally-sourced boundaries each time it is accessed. Any validator that inspects boundaries at construction time will see valid data while runtime reads see different data.",
+        "input_fixture": "class TrojanBuckets(HistogramBuckets):\n    @property\n    def boundaries(self):\n        import time; t=time.time(); return [t%10, t%10+1, t%10+5, t%10+20, t%10+100]\nhb = TrojanBuckets.__new__(TrojanBuckets)\nobject.__setattr__(hb, 'name', 'req_latency')\nobject.__setattr__(hb, 'unit', 'ms')\ninstrument.assign(hb)  # boundaries changes every call",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-UNIT-MS-SUB-MILLISECOND-SCALE",
+        "hypothesis": "An operator sets unit='ms' (satisfying the unit label check) but supplies boundaries in seconds-scale floats: [0.001, 0.005, 0.010, 0.025, 0.050, 0.100]. A validator only checking the string 'ms' passes this. At runtime, latency measured in real milliseconds (e.g., 50ms \u2192 recorded as 50.0) will fall entirely into the last bucket while sub-1ms fast paths produce near-zero values correctly placed. This silently mixes the conceptual unit, making every percentile estimate meaningless and violating the prohibition on mixing ms and seconds on the same instrument.",
+        "input_fixture": "HistogramBuckets(name='http_duration', unit='ms', boundaries=[0.001, 0.005, 0.010, 0.025, 0.050, 0.100, 0.250, 0.500, 1.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CROSS-INSTRUMENT-UNIT-AGGREGATION",
+        "hypothesis": "Two microservices each construct a HistogramBuckets for the same metric name 'http.server.duration'. Service A uses unit='ms' with OTel default boundaries; Service B calls HistogramBuckets(name='http.server.duration', unit='s', boundaries=[0.005,0.010,...]) with seconds. When the collector aggregates both streams under the same metric name, the mixed-unit boundaries produce nonsensical quantile estimates. The invariant prohibiting unit mixing is a cross-instrument constraint that single-object validation cannot enforce.",
+        "input_fixture": "svc_a = HistogramBuckets('http.server.duration', 'ms', [5,10,25,50,75,100,250,500,750,1000])\nsvc_b = HistogramBuckets('http.server.duration', 's', [0.005,0.010,0.025,0.050,0.075,0.100,0.250,0.500,0.750,1.0])\ncollector.register(svc_a)\ncollector.register(svc_b)  # no cross-instrument unit check raised",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LOWEST-BOUNDARY-AT-REALISTIC-FLOOR",
+        "hypothesis": "If the p1 latency of the service is 0.5ms and the developer sets boundaries=[0.5, 1.0, 5.0, 25.0, 100.0, 500.0], the lowest boundary exactly equals the realistic floor. All sub-0.5ms observations (which do not exist) land in no preceding bucket; all >=0.5ms observations start from bucket 1. The first bucket [0, 0.5) captures nothing useful. Under a latency spike, the 0.5ms boundary provides no discrimination for the lower tail, and the first bucket saturates when the distribution shifts left, violating the invariant that the lowest boundary MUST be strictly below the realistic floor.",
+        "input_fixture": "# Measured p1=0.5ms, p99=250ms\nHistogramBuckets(name='db_query', unit='ms', boundaries=[0.5, 1.0, 5.0, 25.0, 100.0, 250.0, 500.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ZERO-LOWER-BOUND-HIGH-FLOOR",
+        "hypothesis": "Setting 0.0 as the lowest boundary appears safe (non-negative, finite) but when the realistic floor of the distribution is 200ms (e.g., a batch job minimum processing time), the entire range [0, 200ms) is dead space. Zero observations land there. During sustained load all measurements saturate bucket boundaries above 200ms, the first 200ms range is permanently empty, and percentile interpolation is distorted because the histogram reports a false first bucket with count=0 over a 200ms span.",
+        "input_fixture": "# Batch processor: min=200ms, p99=2000ms\nHistogramBuckets(name='batch_proc', unit='ms', boundaries=[0.0, 250.0, 500.0, 750.0, 1000.0, 2000.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-21-BUCKET-OFF-BY-ONE",
+        "hypothesis": "An implementation that enforces `len(boundaries) > 20` (strict greater-than) rather than `>= 20` (greater-than-or-equal) will permit exactly 21 boundaries while rejecting 22+. Conversely, using `> 19` when the intent is `> 20` permits the 20-boundary case but may reject the 20-boundary edge. This off-by-one ambiguity means a developer can craft a 21-boundary histogram that passes construction and accrues per-series storage cost beyond the stated limit.",
+        "input_fixture": "HistogramBuckets(\n    name='payload_size', unit='bytes',\n    boundaries=[1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384,32768,65536,131072,262144,524288,1048576]\n)  # 21 boundaries",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY-BOUNDARIES-SEQUENCE",
+        "hypothesis": "Passing an empty tuple or list as boundaries produces a HistogramBuckets object where all observations fall into the implicit +inf catch-all bucket. An empty sequence is trivially strictly-increasing (vacuous truth), trivially finite and non-negative (no elements to violate), and may pass validation. Yet it violates the 'at least five buckets below p99' sub-requirement and renders every quantile estimate useless \u2014 the histogram collapses to a counter.",
+        "input_fixture": "HistogramBuckets(name='req_latency', unit='ms', boundaries=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FOUR-BUCKETS-BELOW-P99",
+        "hypothesis": "A developer provides boundaries=[1.0, 5.0, 25.0, 100.0, 1000.0] where the service p99 is 900ms. Only four boundaries fall below p99 (1, 5, 25, 100), satisfying bucket-count<=20 and strictly-increasing checks, but violating the 'at least five buckets below the target p99' sub-invariant. Because p99 is not encoded in the HistogramBuckets dataclass itself, no static check can enforce this without knowing the external p99 target, creating a systemic validation gap.",
+        "input_fixture": "# Service p99 known to be ~900ms\nHistogramBuckets(name='rpc_latency', unit='ms', boundaries=[1.0, 5.0, 25.0, 100.0, 1000.0])  # only 4 buckets below p99=900",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DIRECT-INIT-OTEL-OVERRIDE",
+        "hypothesis": "The invariant states defaults CANNOT be silently overridden at instrument creation. However, since HistogramBuckets is a plain dataclass, nothing prevents calling the constructor directly with a non-OTel boundary set for the canonical metric name 'http.server.duration'. A developer bypasses latency_ms_default() entirely, supplies custom boundaries, and the instrument is created without any guard checking that OTel semconv boundaries are used for OTel metric names. Silent divergence from the standard makes cross-service percentile comparisons invalid.",
+        "input_fixture": "# Bypasses latency_ms_default() entirely\nHistogramBuckets(\n    name='http.server.duration',\n    unit='ms',\n    boundaries=[10.0, 50.0, 200.0, 500.0, 2000.0]  # not OTel semconv\n)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PAYLOAD-DEFAULT-KEYWORD-OVERRIDE",
+        "hypothesis": "payload_bytes_default() is supposed to derive boundaries from OTel HTTP semconv for size. An attacker (or confused developer) calls HistogramBuckets(name=payload_bytes_default().name, unit='bytes', boundaries=[1,100,1000]) reusing the canonical metric name from the factory but with custom boundaries. Since the dataclass constructor has no name-to-boundaries registry enforcement, the result is an instrument with a legitimate OTel metric name but non-standard boundaries, silently poisoning size quantile dashboards across the fleet.",
+        "input_fixture": "canonical_name = HistogramBuckets.payload_bytes_default().name\nHistogramBuckets(name=canonical_name, unit='bytes', boundaries=[1, 100, 1000, 10000, 100000])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY-BOUNDARY-REASSIGN",
+        "hypothesis": "If the 'once assigned to an instrument' enforcement is done via a registry dict mapping instrument_id to a boundaries snapshot, an attacker can register a histogram instrument, record observations, then deregister and re-register the same instrument name with different boundaries. The registry sees a fresh assignment (no prior entry) and accepts the new boundaries. Historical data in the TSDB still uses the old boundaries; new data uses new ones. This is a replay-style attack that circumvents immutability by exploiting the deregister/re-register lifecycle gap.",
+        "input_fixture": "registry.register('http_latency', HistogramBuckets.latency_ms_default())\n# record 10000 observations...\nregistry.deregister('http_latency')\nregistry.register('http_latency', HistogramBuckets(name='http_latency', unit='ms', boundaries=[1,2,3,4,5]))  # new boundaries accepted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NEGATIVE_BOUNDARY",
+        "hypothesis": "Negative values bypass non-negative constraint validation, creating invalid histogram state that corrupts quantile calculations",
+        "input_fixture": "HistogramBuckets(name='latency', unit='ms', boundaries=[-5.0, 0.0, 1.0, 10.0, 100.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNORDERED_BOUNDARIES",
+        "hypothesis": "Non-monotonic boundaries accepted at construction, causing bucket assignment logic to fail and quantiles to invert",
+        "input_fixture": "HistogramBuckets(name='latency', unit='ms', boundaries=[1.0, 100.0, 10.0, 500.0, 50.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DUPLICATE_BOUNDARY_VALUES",
+        "hypothesis": "Duplicate boundaries create zero-width buckets and break strictly-increasing invariant, violating quantile estimation contract",
+        "input_fixture": "HistogramBuckets(name='latency', unit='ms', boundaries=[1.0, 10.0, 10.0, 100.0, 500.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INFINITY_FLOAT_VALUE",
+        "hypothesis": "Floating point infinity passes validation and breaks serialization, comparison, and histogram aggregation operations",
+        "input_fixture": "HistogramBuckets(name='latency', unit='ms', boundaries=[1.0, 10.0, 100.0, 1000.0, float('inf')])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NAN_IN_BOUNDARIES",
+        "hypothesis": "NaN value silently accepted, causing all bucket comparisons to return False and data loss in histogram aggregation",
+        "input_fixture": "HistogramBuckets(name='latency', unit='ms', boundaries=[1.0, 10.0, float('nan'), 100.0, 500.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNIT_SECONDS_INSTEAD_MS",
+        "hypothesis": "Latency histogram created with seconds unit instead of ms, silently conflicting with ms-based comparisons and invalidating p99 estimates across service mesh",
+        "input_fixture": "HistogramBuckets(name='http_latency', unit='s', boundaries=[0.001, 0.01, 0.1, 1.0, 10.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-BUCKET_COUNT_EXCEEDS_LIMIT",
+        "hypothesis": "Creating histogram with 25 boundaries exceeds 20-bucket limit, enabling cardinality explosion and per-series storage exhaustion",
+        "input_fixture": "HistogramBuckets(name='size', unit='bytes', boundaries=[float(2**(i)) for i in range(25)])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INSUFFICIENT_P99_GRANULARITY",
+        "hypothesis": "Only three boundaries defined instead of minimum five below p99, making quantile estimation mathematically impossible and unreliable",
+        "input_fixture": "HistogramBuckets(name='latency', unit='ms', boundaries=[10.0, 100.0, 1000.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY_BOUNDARY_SEQUENCE",
+        "hypothesis": "Empty boundaries list passes validation, creating degenerate histogram with zero buckets that breaks all observability downstream",
+        "input_fixture": "HistogramBuckets(name='latency', unit='ms', boundaries=[])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-FLOOR_BUCKET_SATURATED",
+        "hypothesis": "Setting lowest boundary to 500ms for HTTP latency (typical floor 5-50ms) causes 99%+ of requests in first bucket, destroying distribution shape",
+        "input_fixture": "HistogramBuckets(name='http_latency', unit='ms', boundaries=[500.0, 1000.0, 5000.0, 10000.0, 30000.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-IMMUTABILITY_PICKLE_BYPASS",
+        "hypothesis": "Frozen dataclass bypassed via pickle round-trip and __setattr__ manipulation, allowing boundaries mutation post-assignment to same instrument",
+        "input_fixture": "hb = HistogramBuckets(name='x', unit='ms', boundaries=[1.0, 10.0, 100.0, 1000.0, 10000.0]); object.__setattr__(hb, 'boundaries', [999.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DEFAULT_OVERRIDE_BEFORE_BIND",
+        "hypothesis": "latency_ms_default() returns frozen instance but boundaries mutated before instrument binding via __dict__ access, bypassing semconv guarantee",
+        "input_fixture": "hb = HistogramBuckets.latency_ms_default(); object.__setattr__(hb, 'boundaries', [1.0, 2.0]); instrument.bind(hb)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EXTREME_FLOAT_OVERFLOW",
+        "hypothesis": "Boundary set to Float64 max exponent (1.79e308) causes precision loss in bucket comparisons and breaks monotonicity checks",
+        "input_fixture": "HistogramBuckets(name='size', unit='bytes', boundaries=[1.0, 10.0, 100.0, 1e100, 1.7e308])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-STRING_BOUNDARIES_COERCION",
+        "hypothesis": "String boundaries '1.0', '10.0' accepted if type checking bypassed, causing string comparison instead of numeric and incorrect bucket assignment",
+        "input_fixture": "HistogramBuckets(name='latency', unit='ms', boundaries=['1.0', '10.0', '100.0', '1000.0', '10000.0'])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNIT_INJECTION_MALICIOUS",
+        "hypothesis": "Unit field set to SQL injection payload 'ms; DROP--' or prompt injection string, escaping into logging/dashboards and breaking queries",
+        "input_fixture": "HistogramBuckets(name='latency', unit=\"ms'; DROP TABLE instruments--\", boundaries=[1.0, 10.0, 100.0, 1000.0, 10000.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NAME_FIELD_NULL_BYTE",
+        "hypothesis": "Name field containing null byte 'latency\\x00overflow' bypasses string validation and truncates in C-based integrations",
+        "input_fixture": "HistogramBuckets(name='latency\\x00<script>', unit='ms', boundaries=[1.0, 10.0, 100.0, 1000.0, 10000.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RACE_CONCURRENT_FREEZE",
+        "hypothesis": "Two threads simultaneously assigning same HistogramBuckets instance to different instruments race during finalization, violating immutability for one",
+        "input_fixture": "hb = HistogramBuckets(name='latency', unit='ms', boundaries=[1.0, 10.0, 100.0, 1000.0, 10000.0]); thread1.bind(hb); thread2.bind(hb); # concurrent __setattr__",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SINGLE_BUCKET_BOUNDARY",
+        "hypothesis": "Only one boundary provided instead of minimum five below p99, mathematically incapable of estimating any meaningful quantile distribution",
+        "input_fixture": "HistogramBuckets(name='latency', unit='ms', boundaries=[100.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "histogrambuckets.built",
+        "required_attributes": [
+          "name",
+          "unit",
+          "bucket_count"
+        ]
+      },
+      {
+        "event_name": "histogrambuckets.rejected",
+        "required_attributes": [
+          "reason"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "histogrambuckets.built.count",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "unit"
+        ]
+      },
+      {
+        "name": "histogrambuckets.rejections",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "reason"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "histogrambuckets.build",
+        "required_attributes": [
+          "name"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Dataclass shape, field names, unit, and both classmethods match the catalog api_signature verbatim; frozen=True enforces immutability. Minor: boundaries stored as tuple rather than Sequence[float] annotation suggests, but tuple satisfies Sequence and aligns with HB-INV-02."
+      },
+      {
+        "axis": "completeness",
+        "score": 8,
+        "rationale": "All six invariants addressed in code (HB-INV-01 strict-increasing/finite/non-neg/\u22655-below-p99, -02 frozen, -03 unit whitelist, -05 \u226420, -06 semconv presets). HB-INV-04 (lowest < measurement floor) is only implicitly covered via target_p99 check \u2014 no explicit floor parameter. Self-observability counters from spec (`histogrambuckets.built.count`, `.rejections`) are not emitted."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Dedicated HistogramBucketsInvariantError subclass of ValueError; every raise names the invariant ID (HB-INV-01/03/05) and the offending value. bool-vs-int trap explicitly handled. Missing: rejection reason is not surfaced as a structured field/metric for the spec's `rejections{reason}` counter."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Pure, no I/O at import, no global state, frozen instances are hashable and thread-safe, validators exposed as standalone pure functions reusable by a HistogramProvider adapter. __all__ is explicit. Extension contract (named presets via adapter) is cleanly enabled by the public constructor."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Immutable, O(n) one-shot validation, lazy-friendly (stdlib only), UCUM-unit whitelist prevents silent seconds/ms mixing, tuple storage prevents aliasing. Gaps: no self-observability emission, no explicit measurement-floor parameter for HB-INV-04, docstring claim about rejecting 's'-on-latency is enforced by 'callers' rather than the primitive itself."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace, purpose, api_signature, invariants, and both default presets match the JSON catalog. SEMCONV_HTTP_LATENCY_BOUNDARIES values align with OTel 1.27 recommendation. Preset names (`http.server.request.duration`, `http.server.request.size`) follow semconv. Minor: catalog `maturity: battle_tested` not surfaced as module metadata."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'UCUM unit', 'OTel semconv', and 'quantile estimation' are used without any definition \u2014 a junior will leave the doc to google all three before writing a single line.",
+          "HB_INV_01's '\u22655 below p99' clause is opaque: p99 of what, measured how, and why exactly 5?",
+          "The extension contract mentions 'HistogramProvider adapter' but never shows how to register a custom preset \u2014 the only code example covers the read-only happy path."
+        ],
+        "rewrite_suggestion": "Add a one-sentence inline glossary: 'UCUM = standard unit notation (ms = milliseconds); OTel semconv = OpenTelemetry's standard metric naming rules; quantile/p99 = the value below which 99% of measurements fall.' Replace '\u22655 below p99' with a concrete example: 'at least 5 bucket edges must fall below your service's p99 \u2014 e.g. for a 200 ms p99, include edges at 5, 10, 25, 50, 100 ms.' Add a five-line code snippet showing custom preset registration."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "'HistogramProvider adapter' is named in the extension contract but has no type signature, Protocol definition, or interface spec \u2014 impossible to implement correctly without reverse-engineering existing usage.",
+          "The contract.json file is referenced ('reproduced verbatim') with no path, making catalog-fidelity CI checks impossible to wire up.",
+          "Version metadata on presets is described in one sentence but the schema is unspecified \u2014 unclear whether it is semver, a content hash, or a monotonic integer, which matters for dashboard diffing tooling."
+        ],
+        "rewrite_suggestion": "Add a Protocol stub for HistogramProvider with typed methods. Provide the repo-relative path to contract.json (e.g. 'specs/HistogramBuckets.contract.json'). Expand version metadata: 'Each preset carries version: str (semver, bumped on any boundary change) and boundaries_hash: str (hex SHA-256 of sorted boundaries) so dashboards can detect bin-edge drift across releases.'"
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "The `name` field injection warning is present but no allowed character set or enforcement mechanism is specified \u2014 an auditor cannot confirm whether a regex or allowlist is enforced at parse time.",
+          "No explicit rejection of NaN and \u00b1Inf boundary values \u2014 both would silently corrupt histogram shapes in ways analogous to the bool/numeric issue already documented.",
+          "The bool-subclass-of-int rejection lives in the error model section; a security auditor scanning only 'Security considerations' will miss it entirely."
+        ],
+        "rewrite_suggestion": "In Security considerations add: 'name is validated against [a-z][a-z0-9._-]{0,127}; values outside this set raise HistogramBucketsInvariantError(\"HB_INV_NAME\").' Move or cross-reference the bool/numeric note into this section. Add explicit coverage: 'NaN, +Inf, and -Inf are rejected with HB_INV_01 to prevent silent shape corruption.'"
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "The self-observability metrics are named but there is no example PromQL/OTel query or alert rule showing how to detect a bad boundary registration in production.",
+          "The bucket count cap (\u226420) and default counts (12 HTTP, 6 payload) are stated but there is no cardinality guidance when hundreds of services share the same preset name.",
+          "'Release regressions never hide behind inconsistent slicing' is stated as product impact but the mechanism is implicit \u2014 an SRE onboarding mid-incident needs one sentence connecting immutability to consistent time-series bin edges."
+        ],
+        "rewrite_suggestion": "Add an Alerting subsection with a sample expression: 'rate(histogrambuckets.rejections_total{reason!=\"\"}[5m]) > 0 \u2192 misconfigured service registering invalid preset.' Add: 'Because bin edges are immutable, the p99 bucket at t=0 and t=24h always represents the same latency slice \u2014 cross-release comparison is exact, not approximate.' Note: 'preset_name is a low-cardinality label; no fan-out risk when services share a preset.'"
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The plain-language opening is strong, but 'quantile estimation', 'bin edges', and 'UCUM' appear in the body sections without translation, losing a non-technical reader mid-document.",
+          "The alternatives table rejects options with engineering rationale ('backend support uneven') but omits the business consequence \u2014 a PM cannot explain the tradeoff to stakeholders without knowing what 'uneven support' costs users.",
+          "No mention of who owns the preset registry or how a new team requests a custom preset \u2014 blocks PM planning for onboarding new services or domains."
+        ],
+        "rewrite_suggestion": "Replace jargon in body sections with plain analogues: 'bin edges = the cut-points that define each bucket, like price tiers on a pricing page.' For each rejected alternative append a one-phrase business impact: 'Exponential histogram \u2014 ~40% of target backends (self-hosted Prometheus, Grafana Cloud free tier) did not support it as of 2026, so dashboards would break for those customers.' Add an Ownership line: 'The Observability Platform team owns the preset registry; request new presets by filing [link to runbook].'"
+      }
+    ]
+  }
+}

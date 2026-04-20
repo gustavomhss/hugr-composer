@@ -1,0 +1,53 @@
+{
+  "logs": [
+    {
+      "event_name": "rpc.interceptor.entered",
+      "required_attributes": ["method", "interceptor"]
+    },
+    {
+      "event_name": "rpc.interceptor.short_circuited",
+      "required_attributes": ["method", "interceptor", "reason"]
+    },
+    {
+      "event_name": "rpc.interceptor.cancelled",
+      "required_attributes": ["method", "interceptor"]
+    },
+    {
+      "event_name": "rpc.metadata.rejected",
+      "required_attributes": ["method", "reason", "key"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "rpc.interceptor.calls",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 200,
+      "label_keys": ["method", "outcome"]
+    },
+    {
+      "name": "rpc.interceptor.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 400,
+      "label_keys": ["method", "outcome"]
+    },
+    {
+      "name": "rpc.interceptor.short_circuits",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["interceptor"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "rpc.interceptor.intercept",
+      "required_attributes": ["rpc.method", "interceptor.name"]
+    },
+    {
+      "operation_name": "rpc.interceptor.chain",
+      "required_attributes": ["rpc.method", "chain.depth"]
+    }
+  ]
+}

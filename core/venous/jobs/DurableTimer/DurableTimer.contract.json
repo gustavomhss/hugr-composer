@@ -1,0 +1,31 @@
+{
+  "name": "DurableTimer",
+  "namespace": "jobs",
+  "purpose": "Workflow scoped sleep that persists across worker outages and fires after a logical delay so long delays do not hold process resources.",
+  "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass DurableTimer:\n    workflow_id: str\n    timer_id: str\n    delay_s: float\n\nclass TimerService(Protocol):\n    async def start(self, timer: DurableTimer) -> None: ...\n    async def cancel(self, workflow_id: str, timer_id: str) -> None: ...",
+  "invariants": [
+    "A fired timer MUST be recorded as an event so workflow replay reconstructs the same fire point.",
+    "Wall clock sleep calls inside a workflow are FORBIDDEN because they break determinism and do not survive outages.",
+    "A canceled timer SHALL NEVER fire; cancellation ALWAYS reaches the workflow before a fired event is recorded.",
+    "delay_s MUST be non negative; a negative delay CANNOT be scheduled and raises an argument error.",
+    "A single worker NEVER caps the number of concurrent durable timers at the process level because timers persist server side."
+  ],
+  "extension_contract": "Add scheduling backends by implementing TimerService as an adapter over the orchestrator, and compose cross cutting policies (quota, fairness) by wrapping start with middleware registered on the worker.",
+  "consumption_example": "async def park_until(svc: TimerService, wf_id: str, seconds: float) -> None:\n    timer = DurableTimer(workflow_id=wf_id, timer_id=f'wait-{seconds}', delay_s=seconds)\n    await svc.start(timer)",
+  "sources": [
+    {
+      "source": "Temporal 1.24 Python timers guide",
+      "locator": "docs.temporal.io/develop/python/timers Durability and Replay safety paragraphs"
+    },
+    {
+      "source": "Temporal 1.24 Workflows concept page",
+      "locator": "docs.temporal.io/workflows Durability and Event History section"
+    }
+  ],
+  "why_essential": "Long waits without holding a thread, and deterministic replay of delays, are orchestrator level primitives; each tool rolling its own asyncio sleep loses persistence and replay correctness.",
+  "alternatives_considered": [
+    "asyncio.sleep inside workflow code which disappears on process restart",
+    "External cron style schedulers which cannot correlate to a workflow run id"
+  ],
+  "maturity": "battle_tested"
+}

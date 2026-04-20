@@ -1,0 +1,9 @@
+{
+  "title": "StreamSubject — Routing & Fanout",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "Publications (5m)", "targets": [{"expr": "sum(rate(subject_publications_total[5m]))"}]},
+    {"id": 2, "type": "timeseries", "title": "Fanout size p95", "targets": [{"expr": "histogram_quantile(0.95, rate(subject_fanout_size_bucket[5m]))"}]},
+    {"id": 3, "type": "gauge", "title": "Active subscriptions", "targets": [{"expr": "subject_subscriptions_active"}]}
+  ]
+}

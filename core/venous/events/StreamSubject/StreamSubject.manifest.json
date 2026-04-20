@@ -1,0 +1,733 @@
+{
+  "name": "StreamSubject",
+  "namespace": "events",
+  "maturity": "battle_tested",
+  "builder_agent_id": 2,
+  "catalog_entry_sha256": "b7785fd42576571ac75180b09b4dc238b00f55070c03bd824bc6c526410a4eaf",
+  "files": [
+    {
+      "path": "events/StreamSubject/StreamSubject.cfg",
+      "sha256": "428b2ab2c9107bda3860d5e4fda5380dd6d784fc9a0a9a535e44775c811beca3",
+      "size_bytes": 73,
+      "kind": "test"
+    },
+    {
+      "path": "events/StreamSubject/StreamSubject.contract.json",
+      "sha256": "d3bf55d2b6e2a58f9fb2fddd515873e6a47a2f2882bbfe34acf39df4b9f0d462",
+      "size_bytes": 2586,
+      "kind": "contract_json"
+    },
+    {
+      "path": "events/StreamSubject/StreamSubject.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "events/StreamSubject/StreamSubject.md",
+      "sha256": "0f526197c6148132087f1554089539ec9b687ea10c1e49443e7e0b436534b00c",
+      "size_bytes": 3341,
+      "kind": "spec_md"
+    },
+    {
+      "path": "events/StreamSubject/StreamSubject.py",
+      "sha256": "58189e96f39fc48b6c76c1a3b372f09b58971ba235828183d24b32f4856a7d92",
+      "size_bytes": 7719,
+      "kind": "impl"
+    },
+    {
+      "path": "events/StreamSubject/StreamSubject.tla",
+      "sha256": "3ae96a0df8715aa14b188f4e93e7b71040108777ced57336037b15986d3f30f9",
+      "size_bytes": 2284,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "events/StreamSubject/behavioral_StreamSubject.py",
+      "sha256": "f838b3f0ba503653ee41b82c92fcba93cb09fc8d8396da0a545361452f591c6b",
+      "size_bytes": 1768,
+      "kind": "behavioral"
+    },
+    {
+      "path": "events/StreamSubject/chaos_StreamSubject.py",
+      "sha256": "cb43d44a7652543a0cc7573fa41a5f02d69798616fce40c0b8870b42f858735c",
+      "size_bytes": 1744,
+      "kind": "chaos"
+    },
+    {
+      "path": "events/StreamSubject/concurrent_StreamSubject.py",
+      "sha256": "570a5920a56a9ebf130f4dbd0b6b28aee9e52006a7925fed6a9409ac626b2b23",
+      "size_bytes": 1892,
+      "kind": "concurrent"
+    },
+    {
+      "path": "events/StreamSubject/dashboard.json",
+      "sha256": "a404594f254de11a57d2e689917baf9fcdaa165fea4e606a4bf118a34a4a46e4",
+      "size_bytes": 496,
+      "kind": "dashboard"
+    },
+    {
+      "path": "events/StreamSubject/invariant_bindings.json",
+      "sha256": "7629d977ecfe18df16d9cafab60ff2820ed590dd0db13bf969195e03a8ac4822",
+      "size_bytes": 1858,
+      "kind": "test"
+    },
+    {
+      "path": "events/StreamSubject/metamorphic_StreamSubject.py",
+      "sha256": "8e95800673c6d2f0d1cabe655fb83a9d818ab6ddfbdeda392bd5a470361be80a",
+      "size_bytes": 1406,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "events/StreamSubject/observability_StreamSubject.py",
+      "sha256": "cc5eee04db38ad46bb655fc4cad43f7991416a64fcfe9bfded985a90ddeb66a6",
+      "size_bytes": 1428,
+      "kind": "observability"
+    },
+    {
+      "path": "events/StreamSubject/observability_schema.json",
+      "sha256": "53a503555ece57bee6af1db2f3fb3292a7f760332b91cf6e4b33bbc228c4950e",
+      "size_bytes": 973,
+      "kind": "observability"
+    },
+    {
+      "path": "events/StreamSubject/persona_reviews.json",
+      "sha256": "27c42175503d1ae0ae0caf2476c356ec4ead33b5f32e488a3c7eecb64d008dbb",
+      "size_bytes": 515,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "events/StreamSubject/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "events/StreamSubject/state_machine_StreamSubject.py",
+      "sha256": "ed7f45bf445c54af4de25d23eb189944d3916e9d751f7215603de3f193c23143",
+      "size_bytes": 1488,
+      "kind": "state_machine"
+    },
+    {
+      "path": "events/StreamSubject/test_StreamSubject.py",
+      "sha256": "2eab664d70d66fe39e2e7d83a1b8dd2b9d66ee856771a0e2f4a3f4e7714ac58d",
+      "size_bytes": 4370,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "SS_INV_01",
+      "invariant_text": "Subject names MUST NOT contain null, whitespace, '.', '*' or '>' inside a token because these are the reserved separators.",
+      "confirms_test": "test_inv_token_chars_confirms",
+      "prevents_test": "test_inv_token_chars_prevents",
+      "under_failure_test": "test_inv_token_chars_under_failure"
+    },
+    {
+      "invariant_id": "SS_INV_02",
+      "invariant_text": "The '>' wildcard SHALL appear only as the final token of a pattern and match one or more remaining tokens.",
+      "confirms_test": "test_inv_greedy_terminal_confirms",
+      "prevents_test": "test_inv_greedy_terminal_prevents",
+      "under_failure_test": "test_inv_greedy_terminal_under_failure"
+    },
+    {
+      "invariant_id": "SS_INV_03",
+      "invariant_text": "The '*' wildcard MUST match exactly one token, never zero and never multiple.",
+      "confirms_test": "test_inv_star_exactly_one_confirms",
+      "prevents_test": "test_inv_star_exactly_one_prevents",
+      "under_failure_test": "test_inv_star_exactly_one_under_failure"
+    },
+    {
+      "invariant_id": "SS_INV_04",
+      "invariant_text": "Names starting with '$' are FORBIDDEN for user subjects because that prefix is reserved for system use.",
+      "confirms_test": "test_inv_system_prefix_confirms",
+      "prevents_test": "test_inv_system_prefix_prevents",
+      "under_failure_test": "test_inv_system_prefix_under_failure"
+    },
+    {
+      "invariant_id": "SS_INV_05",
+      "invariant_text": "Publishers ALWAYS send to a fully specified subject; wildcards CANNOT appear in a publish call.",
+      "confirms_test": "test_inv_no_wildcard_publish_confirms",
+      "prevents_test": "test_inv_no_wildcard_publish_prevents",
+      "under_failure_test": "test_inv_no_wildcard_publish_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 1079,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 1 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1723,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 2644,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 3812,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 2220,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 2184,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 83168,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "38 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1080,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1084,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 59855,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 159949,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-GT-MATCHES-ZERO",
+        "hypothesis": "The '>' wildcard should match one or more tokens, but matches() returns True when '>' has zero remaining tokens (i == len(name_tokens)), violating the one-or-more requirement.",
+        "input_fixture": "StreamSubject('a.b').matches('a.b.>') returns True but should be False",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-GT-NOT-FINAL",
+        "hypothesis": "The matches() function does not enforce that '>' appears only as final token. A pattern like 'a.>.c' is silently accepted and short-circuits at '>', ignoring trailing tokens entirely.",
+        "input_fixture": "StreamSubject('a.x.y.z').matches('a.>.c') returns True, ignoring the illegal trailing '.c'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-STAR-MATCHES-EMPTY",
+        "hypothesis": "'*' is supposed to match exactly one non-empty token, but split('.') produces empty strings for consecutive dots, so '*' will match an empty token, violating the one-token-never-zero rule.",
+        "input_fixture": "StreamSubject('a..b').matches('a.*.b') returns True even though middle token is empty",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NAME-CONTAINS-DOT",
+        "hypothesis": "Constructor accepts names with embedded dots, violating the reserved-separator invariant. No validation is performed in __init__, so a name like 'a..b' or 'foo.bar' is accepted as a single StreamSubject.",
+        "input_fixture": "StreamSubject(name='order.created.v1') treated as single subject but split yields multiple tokens",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NAME-WHITESPACE",
+        "hypothesis": "Constructor accepts whitespace, tab, and newline characters within names without validation, breaking the reserved-character invariant and enabling subject spoofing where 'order ' visually equals 'order'.",
+        "input_fixture": "StreamSubject(name='order\\ncreated') and StreamSubject(name=' order') both accepted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NAME-NULL-BYTE",
+        "hypothesis": "No validation rejects the null byte (\\x00) in names, violating the reserved-character invariant and potentially enabling C-string truncation attacks in downstream consumers.",
+        "input_fixture": "StreamSubject(name='order\\x00admin') is constructed without error",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DOLLAR-PREFIX",
+        "hypothesis": "The '$' prefix is reserved for system subjects but the constructor performs zero validation, allowing user code to forge system subjects like '$SYS.account' and impersonate internal events.",
+        "input_fixture": "StreamSubject(name='$SYS.ACCOUNT.CONNECT') constructs successfully",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NAME-WILDCARD-CHARS",
+        "hypothesis": "Constructor accepts '*' or '>' as part of a name token, allowing a publisher to construct StreamSubject('a.>') or StreamSubject('*.b'), violating the publisher-no-wildcards invariant at the type boundary.",
+        "input_fixture": "StreamSubject(name='orders.>') is accepted and would publish to a wildcard",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-NAME",
+        "hypothesis": "StreamSubject(name='') is accepted; split('.') yields ['']; matching against '*' would match an empty token, and '>' would match zero tokens, breaking multiple invariants simultaneously.",
+        "input_fixture": "StreamSubject(name='').matches('*') returns True",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TRAILING-DOT",
+        "hypothesis": "A trailing dot in name like 'orders.' splits to ['orders',''] producing a phantom empty token that '*' matches, allowing pattern 'orders.*' to spuriously match a malformed subject.",
+        "input_fixture": "StreamSubject(name='orders.').matches('orders.*') returns True",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PATTERN-LITERAL-DOLLAR",
+        "hypothesis": "A consumer pattern starting with '>' alone matches every subject, including reserved '$SYS.*' system subjects, allowing privilege escalation by user consumers subscribing to system streams.",
+        "input_fixture": "StreamSubject(name='$SYS.ACCOUNT.X').matches('>') returns True",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PATTERN-INJECTION-TYPE",
+        "hypothesis": "matches() performs no type validation on pattern argument; passing a non-string (None, int, bytes) raises AttributeError instead of a controlled validation error, leaking implementation details and crashing consumer dispatch loops.",
+        "input_fixture": "StreamSubject(name='a.b').matches(None) raises AttributeError",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AMPLIFICATION-DEEP",
+        "hypothesis": "matches() has no bound on token count; an attacker-controlled subject of 1M dot-separated tokens forces split() and an O(n) loop per consumer, enabling CPU amplification DoS across all subscribers.",
+        "input_fixture": "StreamSubject(name='a.'*1_000_000 + 'b').matches('>')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FROZEN-MUTATION",
+        "hypothesis": "Despite frozen=True, the underlying str is interned and equality is structural; an attacker can construct two StreamSubjects with visually identical names using Unicode homoglyphs (e.g., Cyrillic '\u043e' vs Latin 'o') to bypass ACL checks keyed on subject equality.",
+        "input_fixture": "StreamSubject(name='\\u043erder.created') vs StreamSubject(name='order.created')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-GT_MATCHES_ZERO_REMAINING",
+        "hypothesis": "The '>' wildcard is supposed to match ONE OR MORE remaining tokens, but the condition `i <= len(name_tokens)` is an off-by-one: when `i == len(name_tokens)` there are exactly zero tokens left to consume, yet the expression evaluates True. Concretely, StreamSubject(name='a').matches('a.>') returns True even though no tokens follow 'a', violating the 'one or more' guarantee of the '>' invariant.",
+        "input_fixture": "StreamSubject(name='a').matches('a.>') \u2192 True  # WRONG: should be False, zero tokens after 'a'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-GT_MID_PATTERN_EARLY_EXIT",
+        "hypothesis": "The '>' token is supposed to appear ONLY as the final token, but the implementation never enforces position. A pattern like 'a.>.b' would hit the '>' branch at i=1, evaluate `1 <= len(name_tokens)`, and return True immediately without inspecting the remaining 'b' token. This lets an attacker craft patterns that skip required suffix segments and match subjects they should not.",
+        "input_fixture": "StreamSubject(name='a.x.y').matches('a.>.b') \u2192 True  # WRONG: '>' is not last token, and 'b' suffix is ignored",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NO_CTOR_VALIDATION_WILDCARD_IN_TOKEN",
+        "hypothesis": "The frozen dataclass performs zero validation on the 'name' field, so nothing prevents constructing StreamSubject(name='foo.*bar') or StreamSubject(name='foo.a>b'). A token embedding '*' or '>' mid-token violates the reserved-separator invariant. When this name is later used as a filter pattern it will be split on '.' and the embedded wildcard character will silently influence matching in unpredictable ways.",
+        "input_fixture": "s = StreamSubject(name='foo.*bar'); s.matches('foo.*bar') \u2192 True  # name constructed with embedded wildcard, no rejection",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-STAR_MATCHES_EMPTY_TOKEN",
+        "hypothesis": "The '*' wildcard must match exactly one token and never zero. But 'exactly one' implies a non-empty token. When a name contains a double-dot ('a..b'), split('.') yields an empty string '' as the middle token. The '*' branch only checks tok != '*', not that the matched name token is non-empty, so '*' silently matches the zero-length token, effectively matching zero meaningful characters and violating the 'never zero' half of the invariant.",
+        "input_fixture": "StreamSubject(name='a..b').matches('a.*.b') \u2192 True  # '*' matched empty string token at position 1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DOLLAR_PREFIX_NO_GUARD",
+        "hypothesis": "The invariant forbids user subjects whose names start with '$' because that prefix is reserved for system subjects. The frozen dataclass performs no such check, allowing StreamSubject(name='$SYS.services.status') to be constructed silently. An agent publishing to or subscribing with this subject can hijack system-reserved routing channels without any error being raised.",
+        "input_fixture": "s = StreamSubject(name='$SYS.services.status'); assert s.name.startswith('$')  # constructed without error",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PUBLISH_WILDCARD_IN_NAME",
+        "hypothesis": "Publishers must always send to a fully specified subject; wildcards must not appear in a publish-side name. However, nothing in the API prevents constructing StreamSubject(name='orders.*.created') and calling matches() on it (using the wildcard-bearing subject as if it were a legitimate publish target). Because the dataclass accepts any string, a buggy publisher could silently route through a wildcard name and the code would accept it.",
+        "input_fixture": "pub = StreamSubject(name='orders.*.created'); pub.matches('orders.*.created') \u2192 True  # wildcard name accepted as publisher subject",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NULL_BYTE_TOKEN_BYPASS",
+        "hypothesis": "The reserved-character list explicitly includes the null character. The dataclass does not strip or reject null bytes, so StreamSubject(name='foo\\x00bar') is constructed cleanly. Downstream systems (logging, serialization, C-extension NATS clients) that treat '\\x00' as a string terminator would truncate the subject to 'foo', silently changing the routing key while the Python layer believes the full name was transmitted.",
+        "input_fixture": "s = StreamSubject(name='foo\\x00bar.baz'); assert s.name == 'foo\\x00bar.baz'  # null byte stored with no rejection",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WHITESPACE_IN_TOKEN",
+        "hypothesis": "Whitespace is explicitly listed as a reserved/forbidden character inside a token. The dataclass applies no strip or validation, so StreamSubject(name='user events.created') can be constructed. When this name is later compared against a pattern in matches(), the whitespace-bearing token must match a literal whitespace pattern token, creating an invisible differentiation that is trivially misconfigured by operators and violates the invariant.",
+        "input_fixture": "s = StreamSubject(name='user events.created'); s.matches('user events.created') \u2192 True  # whitespace in token accepted silently",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TRAILING_DOT_GHOST_EMPTY_TOKEN",
+        "hypothesis": "A name with a trailing dot ('foo.bar.') produces a trailing empty string token when split on '.'. The '*' wildcard at that position will match the empty string, making StreamSubject(name='foo.bar.').matches('foo.bar.*') return True. This lets a malformed subject slip through consumer filters that were only intended to match well-formed three-token names, potentially routing garbage into consumer handlers.",
+        "input_fixture": "StreamSubject(name='foo.bar.').matches('foo.bar.*') \u2192 True  # trailing empty token matched by '*'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY_NAME_GT_MATCHES",
+        "hypothesis": "StreamSubject(name='') is constructable. Calling split('.') on '' returns [''], a list of length 1 containing one empty-string token. A pattern of '>' then hits `i=0, tok='>'` and evaluates `0 <= 1` \u2192 True, so the empty subject matches the catch-all wildcard. Worse, a pattern of '*' also matches because len(['']) == len(['*']) == 1 and the '*' branch does not reject an empty token. An empty subject should be invalid but instead silently routes through every wildcard consumer.",
+        "input_fixture": "StreamSubject(name='').matches('>') \u2192 True; StreamSubject(name='').matches('*') \u2192 True  # empty name accepted and matches catch-all",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AMPLIFICATION-DEEP-NESTING",
+        "hypothesis": "The matches() method splits both name and pattern on '.' and then iterates token-by-token. An attacker or misconfigured publisher can construct a subject with 100 000 dot-separated tokens (e.g. 'a.' * 100000 + 'b'). Each call to matches() allocates two lists of 100 000 strings and iterates the full length. A single broker process calling matches() across N active subscriptions would exhibit O(depth \u00d7 subscriptions) CPU and memory growth, enabling a denial-of-service amplification attack with no built-in depth limit.",
+        "input_fixture": "deep = 'a.' * 100000 + 'b'; s = StreamSubject(name=deep); s.matches(deep)  # 200 000 token allocations, no depth cap",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-UNICODE-DOT-LOOKALIKE-BYPASS",
+        "hypothesis": "The implementation splits on the ASCII period '\\u002E' only. Unicode contains visually identical characters such as the one-dot leader '\\u2024' and the fullwidth full stop '\\uFF0E'. A subject like StreamSubject(name='foo\\u2024bar') stores a single unsplit token containing what looks like a dot. Pattern matching against 'foo.bar' fails (correctly), but a mis-configured subscription using the same Unicode dot as a literal separator would bypass the routing check entirely, violating the reserved-separator invariant which only lists the ASCII period.",
+        "input_fixture": "s = StreamSubject(name='foo\\u2024bar'); s.matches('foo.bar') \u2192 False  # Unicode lookalike bypasses ASCII-only split, token not separated",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NO_VALIDATION_RESERVED_CHARS",
+        "hypothesis": "StreamSubject constructor does not validate input; name can contain null bytes, whitespace, or reserved separators inside tokens, violating the reserved character invariant",
+        "input_fixture": "StreamSubject(name='foo\\x00bar'); StreamSubject(name='foo bar.baz'); StreamSubject(name='foo\\nbar')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-WILDCARD_IN_SUBJECT_NAME",
+        "hypothesis": "StreamSubject constructor accepts '*' and '>' characters in subject names, violating the publisher contract that subjects must be fully specified without wildcards",
+        "input_fixture": "StreamSubject(name='foo.*.bar'); StreamSubject(name='user.>.event')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SYSTEM_PREFIX_NOT_ENFORCED",
+        "hypothesis": "StreamSubject does not enforce the $ prefix reservation; user code can create system subjects, breaking isolation contract",
+        "input_fixture": "StreamSubject(name='$internal.metrics'); StreamSubject(name='$__reserved__')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY_TOKENS_FROM_DOUBLE_DOT",
+        "hypothesis": "Double dots or leading/trailing dots create empty string tokens; empty tokens violate the non-empty character rule and produce unexpected match behavior",
+        "input_fixture": "StreamSubject(name='foo..bar').matches('foo.*.bar'); StreamSubject(name='.foo.bar'); StreamSubject(name='foo.bar.')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-GREATER_BOUNDARY_CONDITION_BUG",
+        "hypothesis": "Pattern 'a.>' against name 'a' returns True when '>' should match one or more remaining tokens; condition uses <= instead of < allowing zero remaining tokens",
+        "input_fixture": "StreamSubject(name='a').matches('a.>') evaluates to True; should require at least one token after 'a'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-GREATER_IN_MIDDLE_EARLY_RETURN",
+        "hypothesis": "Pattern with '>' in middle position returns immediately without validating remaining pattern tokens, e.g., 'a.>.b' ignores the final 'b' token requirement",
+        "input_fixture": "StreamSubject(name='a.x.y').matches('a.>.b') returns True; should fail because final token is 'b', not checked",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ASTERISK_ZERO_TOKENS_BOUNDARY",
+        "hypothesis": "Pattern '*' against empty name '' should fail (asterisk requires exactly one token) but may incorrectly succeed due to boundary condition in loop",
+        "input_fixture": "StreamSubject(name='').matches('*') or StreamSubject(name='').matches('a.*')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY_STRING_SUBJECT",
+        "hypothesis": "Empty string subject names are not rejected; creates degenerate token list and undefined match behavior for patterns like '' or '>'",
+        "input_fixture": "StreamSubject(name=''); then call .matches('') or .matches('*') or .matches('>')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NULL_IN_PATTERN_MATCHING",
+        "hypothesis": "Pattern strings containing null bytes are not sanitized before split, producing malformed token lists that may bypass match validation",
+        "input_fixture": "StreamSubject(name='a.b').matches('a\\x00b.c') or StreamSubject(name='a').matches('a.\\x00>')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-WHITESPACE_PATTERN_INJECTION",
+        "hypothesis": "Subject names with embedded whitespace are accepted; patterns with spaces create tokens that never match literals, causing silent false negatives",
+        "input_fixture": "StreamSubject(name='user create.event').matches('user create.*') vs StreamSubject(name='user create.event').matches('user.create.*')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PATTERN_GREATER_STANDALONE",
+        "hypothesis": "Pattern consisting of sole '>' token matches any non-empty subject; violates the invariant that '>' should only appear as final token with preceding context",
+        "input_fixture": "StreamSubject(name='a.b.c').matches('>') or StreamSubject(name='x').matches('>')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RACE_CONDITION_FROZEN_DATACLASS",
+        "hypothesis": "Although StreamSubject is frozen, if mutable name string is stored and later mutated externally (e.g., via ctypes), matches() behavior becomes non-deterministic across calls",
+        "input_fixture": "Create StreamSubject, externally mutate internal string, call matches() twice and compare results",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "subject.subscribe",
+        "required_attributes": [
+          "pattern",
+          "subscriber_id"
+        ]
+      },
+      {
+        "event_name": "subject.publish",
+        "required_attributes": [
+          "subject",
+          "matches"
+        ]
+      },
+      {
+        "event_name": "subject.unsubscribe",
+        "required_attributes": [
+          "pattern",
+          "subscriber_id"
+        ]
+      },
+      {
+        "event_name": "subject.rejected",
+        "required_attributes": [
+          "reason",
+          "invariant_id"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "subject.publications.total",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 100,
+        "label_keys": [
+          "outcome"
+        ]
+      },
+      {
+        "name": "subject.fanout.size",
+        "metric_type": "histogram",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": []
+      },
+      {
+        "name": "subject.subscriptions.active",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 100,
+        "label_keys": []
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "subject.match",
+        "required_attributes": [
+          "subject",
+          "pattern"
+        ]
+      },
+      {
+        "operation_name": "subject.publish",
+        "required_attributes": [
+          "subject"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Implementation matches all five declared invariants; matches() follows SS_INV_02 'one or more remaining' via `i < len(name_tokens)`, SS_INV_03 via strict length equality when no '>', SS_INV_04/05 enforced at construction."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "Exposes StreamSubject, SubjectRegistry, dedicated error, both validators, and all constants. Covers publish/subscribe/unsubscribe/deliveries and all 5 SS_INV_* rules. No obvious gap versus spec."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "StreamSubjectError subclasses ValueError; every raise cites the specific SS_INV_* ID, includes offending token/name via repr, and distinguishes wildcard-in-publish vs reserved-char vs system-prefix cases."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Frozen dataclass value type, pure free-function validators reusable outside the class, registry is an optional stateful companion not required by the primitive, clean __all__, zero import-time I/O."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe registry via Lock, immutable subject, lazy state. Minor concerns: _delivered list grows unbounded (no cap/rotation), publish re-validates pattern via matches() inside the lock on every fan-out (redundant since subscribe already validated), no metrics hooks despite spec mentioning self-observability."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 8,
+        "rationale": "Protocol shape (frozen dataclass, name:str, matches(pattern)->bool) matches catalog. Semantic tightening vs catalog api_signature: catalog sketch uses `i <= len(name_tokens)` for '>' (permits zero trailing), impl uses `i < len(name_tokens)` to honor SS_INV_02's 'one or more' \u2014 aligns with invariant text but diverges from the sketch."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'fan-out', 'broker subjects', 'consumer routing predicates' are used before being defined \u2014 the plain-language intro doesn't resolve them.",
+          "EventEnvelope is referenced in 'When NOT to use' with no link or explanation of what it is.",
+          "The TLA+/TLC sentence in 'Formal model' reads as jargon noise \u2014 a junior dev won't know whether to care or skip it."
+        ],
+        "rewrite_suggestion": "Lead 'When to use' with a one-sentence analogy ('think of it like a file path that filters which listeners receive a message'), hyperlink EventEnvelope, and move the TLA+ sentence to an 'Advanced / formal verification' collapsible section."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "'implementing a naming convention validator that wraps the constructor' \u2014 no interface signature or ABC shown; extension contract is hand-wavy.",
+          "StreamSubject.contract.json is referenced but not excerpted; it's unclear whether it's a JSON Schema, AsyncAPI fragment, or something proprietary.",
+          "No mention of serialization: can a StreamSubject round-trip through JSON/msgpack cleanly, and does the frozen dataclass expose __str__/__repr__ for wire use?"
+        ],
+        "rewrite_suggestion": "Add a 3-line ABC stub for the naming-convention validator, note the contract.json schema dialect (JSON Schema draft-07?), and add a one-liner on str() output format for wire serialization."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "Enforcement locus is ambiguous: is the '$' prefix check and char-class validation done client-side only, or also enforced at the broker? A rogue client bypassing the SDK breaks the guarantee.",
+          "No mention of subject-enumeration risk: a subscriber with pattern '>' can observe all subjects; doc is silent on whether that requires elevated ACLs.",
+          "No rejection audit log \u2014 rejected subjects (null bytes, $ prefix) silently fail or raise? No guidance on whether to alert on rejection spikes."
+        ],
+        "rewrite_suggestion": "Add a 'Trust boundary' row to the Security section stating where validation is authoritative (client + broker dual enforcement or client-only), note that '>' subscriptions require ACL review, and specify whether ValidationError is raised or logged on rejection."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Metric paths ('subject.publications.total', 'subject.fanout.size') look like NATS stat paths, not Prometheus metric names \u2014 unclear how to scrape or alert on them.",
+          "SubjectRegistry has no documented max-size or eviction policy; unbounded growth under subscription churn is a memory-leak risk with no operational mitigation stated.",
+          "p99 < 1\u00b5s claim has no benchmark methodology attached \u2014 hardware, token length, registry size \u2014 making it impossible to validate in a specific deployment."
+        ],
+        "rewrite_suggestion": "Add a Prometheus metric name table mapping each stat to its exported name and type, add a 'Registry limits' note (max subscriptions, eviction behavior), and link or describe the benchmark harness behind the p99 claim."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "No business motivation: the doc never says what product problem this solves or why centralising subject routing matters for multi-tenant isolation at the product level.",
+          "Alternatives section is purely technical; a PM needs to understand the user-facing tradeoff ('regex routing would let teams define richer rules but doubles routing latency and removes auditability').",
+          "No adoption guidance: how much effort to integrate for a team already using plain-string topics? One-line swap or migration sprint?"
+        ],
+        "rewrite_suggestion": "Prepend a 'Why this exists' paragraph ('before StreamSubject, every service team duplicated fan-out logic with inconsistent tenant isolation'), reframe the alternatives section with a user-facing cost sentence, and add an estimated integration size (e.g., 'drop-in for new streams; existing plain-string topics migrate with a one-line constructor wrap')."
+      }
+    ]
+  }
+}

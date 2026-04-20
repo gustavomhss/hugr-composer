@@ -1,0 +1,12 @@
+{
+  "name": "HeterogeneousWorkerPool",
+  "namespace": "resiliency",
+  "maturity": "incubating",
+  "files": [
+    {"path": "resiliency/HeterogeneousWorkerPool/HeterogeneousWorkerPool.py", "kind": "impl"},
+    {"path": "resiliency/HeterogeneousWorkerPool/HeterogeneousWorkerPool.protocol.py", "kind": "protocol"},
+    {"path": "resiliency/HeterogeneousWorkerPool/HeterogeneousWorkerPool.md", "kind": "spec_md"},
+    {"path": "resiliency/HeterogeneousWorkerPool/HeterogeneousWorkerPool.contract.json", "kind": "contract_json"},
+    {"path": "resiliency/HeterogeneousWorkerPool/test_HeterogeneousWorkerPool.py", "kind": "test"}
+  ]
+}

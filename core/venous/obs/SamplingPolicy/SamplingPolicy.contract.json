@@ -1,0 +1,37 @@
+{
+  "name": "SamplingPolicy",
+  "namespace": "obs",
+  "purpose": "Decide whether a given trace or span is retained, combining head-based (at span start) and tail-based (post hoc) rules and honoring the parent sampling decision.",
+  "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol, Mapping, Sequence\n\n@dataclass(frozen=True)\nclass SamplingDecision:\n    sampled: bool\n    attributes: Mapping[str, str]\n    trace_state: str | None\n\nclass SamplingPolicy(Protocol):\n    def should_sample(\n        self,\n        *,\n        parent_context: object | None,\n        trace_id: str,\n        name: str,\n        kind: str,\n        attributes: Mapping[str, object],\n        links: Sequence[object],\n    ) -> SamplingDecision: ...\n    def description(self) -> str: ...\n",
+  "invariants": [
+    "When a parent span carries the sampled flag, child spans MUST inherit that decision unless the policy explicitly declares itself parent-overriding.",
+    "The sampling decision SHALL be deterministic for the same trace_id so that siblings agree without coordination.",
+    "Probabilistic sampling MUST use the trace_id hash modulo a rate, NEVER a per-span random draw, to keep entire traces intact.",
+    "Policies CANNOT raise; a failing policy SHALL fall back to the default deny and emit an internal counter increment.",
+    "Tail-based sampling decisions MUST NOT retroactively modify already-exported spans; they ALWAYS run before export buffering flushes.",
+    "description() returns a stable, human-readable string that NEVER includes secret keys or cardinality-exploding values."
+  ],
+  "extension_contract": "Downstream tools compose a new policy by implementing the SamplingPolicy protocol and register it with the TracerProvider; composite policies chain via the compose adapter (latency-threshold OR error-seen OR head-probability) and trace-state propagation is preserved by returning the caller's trace_state unmodified when undecided.",
+  "consumption_example": "def build_sampler(head_ratio: float, keep_errors: bool) -> SamplingPolicy:\n    class Combined:\n        def should_sample(self, *, parent_context, trace_id, name, kind, attributes, links):\n            if keep_errors and attributes.get('error') is True:\n                return SamplingDecision(True, {'sampler.reason': 'error'}, None)\n            keep = int(trace_id[-8:], 16) / 0xFFFFFFFF < head_ratio\n            return SamplingDecision(keep, {'sampler.reason': 'head'}, None)\n        def description(self) -> str:\n            return f'combined(head={head_ratio}, errors={keep_errors})'\n    policy: SamplingPolicy = Combined()\n    return policy\n",
+  "sources": [
+    {
+      "source": "OpenTelemetry Specification 1.32 \u2014 Sampling",
+      "locator": "specification/trace/sdk.md section 'Sampler' and 'ParentBased' / 'TraceIdRatioBased' builtins"
+    },
+    {
+      "source": "Majors, Fong-Jones, Miranda \u2014 Observability Engineering (2022)",
+      "locator": "Chapter 17 'Cheap and Accurate Enough: Sampling' pp. 207-220"
+    },
+    {
+      "source": "Google SRE Book \u2014 Monitoring Distributed Systems",
+      "locator": "Chapter 6 section 'Sampling' on trace-driven debugging"
+    }
+  ],
+  "why_essential": "Ingest cost scales with trace volume; without a coherent policy primitive, tools each invent their own drop rules and break the property that a trace is retained or dropped as a whole.",
+  "alternatives_considered": [
+    "100% sampling \u2014 rejected because storage and egress costs grow linearly with traffic without a bounded slope.",
+    "Random per-span sampling \u2014 rejected because it shatters traces into partial subtrees that cannot be reconstructed.",
+    "Client-side header-only sampling \u2014 rejected because error-only and latency-only decisions require span-time or post-hoc evaluation."
+  ],
+  "maturity": "battle_tested"
+}

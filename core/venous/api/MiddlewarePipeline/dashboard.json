@@ -1,0 +1,40 @@
+{
+  "title": "MiddlewarePipeline — Requests, Latency, Short-Circuits, Errors",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Requests per second (5m)",
+      "targets": [{"expr": "sum(rate(mwp_requests_total[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Request Duration p50/p95/p99 (ms)",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(mwp_request_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(mwp_request_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(mwp_request_duration_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Short-circuits by middleware",
+      "targets": [{"expr": "sum by (middleware_name) (rate(mwp_middleware_invocations_total{outcome=\"short_circuit\"}[5m]))"}]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Filtered errors (resolved vs unresolved)",
+      "targets": [{"expr": "sum by (resolved) (rate(mwp_errors_filtered_total[5m]))"}]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "5xx rate (INV-05 tripwire)",
+      "targets": [{"expr": "sum(rate(mwp_requests_total{status=~\"5..\"}[5m]))"}]
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "EVENTBUS_INV_01",
+      "invariant_text": "publish() MUST deliver to every matching subscriber synchronously OR through a declared executor; delivery order per subscriber SHALL be the subscription order.",
+      "confirms_test": "test_inv_delivery_order_confirms",
+      "prevents_test": "test_inv_delivery_order_prevents",
+      "under_failure_test": "test_inv_delivery_order_under_failure"
+    },
+    {
+      "invariant_id": "EVENTBUS_INV_02",
+      "invariant_text": "A subscriber that raises MUST NOT abort delivery to other subscribers; the error SHALL be reported to the observability sink.",
+      "confirms_test": "test_inv_error_isolation_confirms",
+      "prevents_test": "test_inv_error_isolation_prevents",
+      "under_failure_test": "test_inv_error_isolation_under_failure"
+    },
+    {
+      "invariant_id": "EVENTBUS_INV_03",
+      "invariant_text": "The returned unsubscribe callable MUST be idempotent; calling it twice CANNOT remove a different subscription.",
+      "confirms_test": "test_inv_unsubscribe_idempotent_confirms",
+      "prevents_test": "test_inv_unsubscribe_idempotent_prevents",
+      "under_failure_test": "test_inv_unsubscribe_idempotent_under_failure"
+    },
+    {
+      "invariant_id": "EVENTBUS_INV_04",
+      "invariant_text": "Event names MUST follow a dotted namespace (e.g. 'sql.active_record'); wildcards SHALL use a documented pattern syntax.",
+      "confirms_test": "test_inv_naming_grammar_confirms",
+      "prevents_test": "test_inv_naming_grammar_prevents",
+      "under_failure_test": "test_inv_naming_grammar_under_failure"
+    },
+    {
+      "invariant_id": "EVENTBUS_INV_05",
+      "invariant_text": "Payloads MUST be treated as immutable by subscribers; mutating a payload to signal another subscriber is FORBIDDEN.",
+      "confirms_test": "test_inv_payload_immutable_confirms",
+      "prevents_test": "test_inv_payload_immutable_prevents",
+      "under_failure_test": "test_inv_payload_immutable_under_failure"
+    }
+  ]
+}

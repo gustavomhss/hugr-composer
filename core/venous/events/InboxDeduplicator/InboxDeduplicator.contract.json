@@ -1,0 +1,31 @@
+{
+  "name": "InboxDeduplicator",
+  "namespace": "events",
+  "purpose": "Records processed message identifiers in the consumer's database so redelivered messages are detected and skipped exactly once.",
+  "api_signature": "from typing import Protocol\n\nclass InboxDeduplicator(Protocol):\n    def seen(self, message_id: str, consumer: str) -> bool: ...\n    def record(self, message_id: str, consumer: str) -> None: ...\n    def purge_older_than(self, iso_timestamp: str) -> int: ...",
+  "invariants": [
+    "record MUST be written in the same transaction as the consumer's side-effect; writing after the side-effect is FORBIDDEN.",
+    "Given the same (message_id, consumer), seen MUST be deterministic; the consumer CANNOT double-apply the effect.",
+    "Retention policy SHALL cover at least the broker's maximum redelivery window; premature purging is NEVER allowed.",
+    "The deduplicator NEVER silently reclassifies unseen messages as duplicates; a missing record ALWAYS means first delivery."
+  ],
+  "extension_contract": "Storage backends extend InboxDeduplicator by implementing the Protocol and binding the table or key space via a register call on the inbox factory; eviction policies plug in through a hook while preserving the redelivery window guarantee.",
+  "consumption_example": "def handle(msg, inbox: InboxDeduplicator, uow, apply_effect):\n    with uow:\n        if inbox.seen(msg.id, 'orders_consumer'):\n            return\n        apply_effect(msg)\n        inbox.record(msg.id, 'orders_consumer')\n        uow.commit()",
+  "sources": [
+    {
+      "source": "Richardson 'Microservices Patterns' (2018)",
+      "locator": "Chapter 3, Idempotent Consumer pattern, pp. 101-104"
+    },
+    {
+      "source": "Kleppmann 'Designing Data-Intensive Applications' (2017)",
+      "locator": "Chapter 11, Exactly-once processing via idempotent writes, pp. 476-479"
+    }
+  ],
+  "why_essential": "Without a shared primitive, each consumer invents its own dedupe and frequently drops the 'write in same txn' rule, resulting in duplicate side-effects on replays.",
+  "alternatives_considered": [
+    "Broker-only dedupe: broker windows are short; late redelivery slips through.",
+    "Consumer-side idempotent operations only: works for upserts but not for effects like sending email.",
+    "Monotonic offset tracking: loses per-message granularity and cannot recover from poisonous messages."
+  ],
+  "maturity": "battle_tested"
+}

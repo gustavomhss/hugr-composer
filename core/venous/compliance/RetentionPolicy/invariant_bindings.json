@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "RP_INV_01",
+      "invariant_text": "Every persisted record MUST be tagged with a data_class that maps to a registered RetentionPolicy; writes of untagged data SHALL be rejected.",
+      "confirms_test": "test_inv_write_tagged_confirms",
+      "prevents_test": "test_inv_write_tagged_prevents",
+      "under_failure_test": "test_inv_write_tagged_under_failure"
+    },
+    {
+      "invariant_id": "RP_INV_02",
+      "invariant_text": "max_age MUST be finite and > 0; an open-ended keep-forever policy CANNOT be registered without an explicit legal_basis override.",
+      "confirms_test": "test_inv_max_age_positive_confirms",
+      "prevents_test": "test_inv_max_age_positive_prevents",
+      "under_failure_test": "test_inv_max_age_positive_under_failure"
+    },
+    {
+      "invariant_id": "RP_INV_03",
+      "invariant_text": "deletion_mode MUST be one of 'hard', 'crypto_shred', or 'anonymize'; other values SHALL raise on bind.",
+      "confirms_test": "test_inv_deletion_mode_confirms",
+      "prevents_test": "test_inv_deletion_mode_prevents",
+      "under_failure_test": "test_inv_deletion_mode_under_failure"
+    },
+    {
+      "invariant_id": "RP_INV_04",
+      "invariant_text": "The sweep job MUST be idempotent and SHALL not delete records under an active LegalHold.",
+      "confirms_test": "test_inv_sweep_idempotent_confirms",
+      "prevents_test": "test_inv_sweep_idempotent_prevents",
+      "under_failure_test": "test_inv_sweep_idempotent_under_failure"
+    },
+    {
+      "invariant_id": "RP_INV_05",
+      "invariant_text": "Every purge action MUST emit an entry to the TamperEvidentAuditLog with the policy id and record count.",
+      "confirms_test": "test_inv_audit_on_purge_confirms",
+      "prevents_test": "test_inv_audit_on_purge_prevents",
+      "under_failure_test": "test_inv_audit_on_purge_under_failure"
+    }
+  ]
+}

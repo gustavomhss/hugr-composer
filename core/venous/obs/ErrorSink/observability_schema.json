@@ -1,0 +1,16 @@
+{
+  "logs": [
+    {"event_name": "errorsink.event.captured", "required_attributes": ["fingerprint", "level"]},
+    {"event_name": "errorsink.event.dropped", "required_attributes": ["reason", "fingerprint"]},
+    {"event_name": "errorsink.pii.redacted", "required_attributes": ["field_count"]}
+  ],
+  "metrics": [
+    {"name": "errorsink.events.captured", "metric_type": "counter", "unit": "1", "cardinality_bound": 200, "label_keys": ["level"]},
+    {"name": "errorsink.events.dropped", "metric_type": "counter", "unit": "1", "cardinality_bound": 50, "label_keys": ["reason"]},
+    {"name": "errorsink.queue.depth", "metric_type": "gauge", "unit": "1", "cardinality_bound": 10, "label_keys": []}
+  ],
+  "spans": [
+    {"operation_name": "errorsink.capture", "required_attributes": ["fingerprint"]},
+    {"operation_name": "errorsink.before_send", "required_attributes": []}
+  ]
+}

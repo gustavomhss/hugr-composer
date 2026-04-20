@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "TOTP_INV_01",
+      "invariant_text": "Shared secrets MUST be >=160 bits drawn from a CSPRNG; the verifier REJECTS secrets shorter than 20 bytes and NEVER transmits secret material outside the enrollment channel.",
+      "confirms_test": "test_inv_secret_entropy_confirms",
+      "prevents_test": "test_inv_secret_entropy_prevents",
+      "under_failure_test": "test_inv_secret_entropy_under_failure"
+    },
+    {
+      "invariant_id": "TOTP_INV_02",
+      "invariant_text": "verify() MUST compare codes in constant time via hmac.compare_digest and SHALL NEVER short-circuit on prefix match.",
+      "confirms_test": "test_inv_constant_time_confirms",
+      "prevents_test": "test_inv_constant_time_prevents",
+      "under_failure_test": "test_inv_constant_time_under_failure"
+    },
+    {
+      "invariant_id": "TOTP_INV_03",
+      "invariant_text": "Accepted clock skew MUST be bounded to +/-1 step (+/-30s); larger windows CANNOT be configured through the public surface.",
+      "confirms_test": "test_inv_skew_window_confirms",
+      "prevents_test": "test_inv_skew_window_prevents",
+      "under_failure_test": "test_inv_skew_window_under_failure"
+    },
+    {
+      "invariant_id": "TOTP_INV_04",
+      "invariant_text": "A successfully used step number MUST be recorded and the same step CANNOT be accepted again for the same secret; replay attempts SHALL be rejected.",
+      "confirms_test": "test_inv_replay_rejected_confirms",
+      "prevents_test": "test_inv_replay_rejected_prevents",
+      "under_failure_test": "test_inv_replay_rejected_under_failure"
+    },
+    {
+      "invariant_id": "TOTP_INV_05",
+      "invariant_text": "Codes SHALL be six decimal digits derived from HMAC-SHA1 per RFC 4226; alternative digit counts MUST be explicitly opted in via allow_nonstandard_digits=True.",
+      "confirms_test": "test_inv_six_digits_confirms",
+      "prevents_test": "test_inv_six_digits_prevents",
+      "under_failure_test": "test_inv_six_digits_under_failure"
+    }
+  ]
+}

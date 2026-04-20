@@ -1,0 +1,12 @@
+{
+  "title": "ErrorSink — Captures, Drops, Queue",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "timeseries", "title": "Events Captured/s by Level",
+     "targets": [{"expr": "sum by (level) (rate(errorsink_events_captured_total[5m]))"}]},
+    {"id": 2, "type": "timeseries", "title": "Drops/s by Reason",
+     "targets": [{"expr": "sum by (reason) (rate(errorsink_events_dropped_total[5m]))"}]},
+    {"id": 3, "type": "stat", "title": "Queue Depth",
+     "targets": [{"expr": "errorsink_queue_depth"}]}
+  ]
+}

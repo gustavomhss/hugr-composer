@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "METRIC_INV_01",
+      "invariant_text": "Counter instruments MUST only accept non-negative values; negative deltas SHALL raise and are FORBIDDEN to be silently clamped.",
+      "confirms_test": "test_inv_counter_nonneg_confirms",
+      "prevents_test": "test_inv_counter_nonneg_prevents",
+      "under_failure_test": "test_inv_counter_nonneg_under_failure"
+    },
+    {
+      "invariant_id": "METRIC_INV_02",
+      "invariant_text": "Histogram boundaries MUST be finite, strictly increasing, and immutable once the instrument is created.",
+      "confirms_test": "test_inv_boundaries_strict_confirms",
+      "prevents_test": "test_inv_boundaries_strict_prevents",
+      "under_failure_test": "test_inv_boundaries_strict_under_failure"
+    },
+    {
+      "invariant_id": "METRIC_INV_03",
+      "invariant_text": "Instrument names MUST match the regex '^[A-Za-z][A-Za-z0-9_./-]{0,62}$' per OTel specification and CANNOT collide with a differently-typed instrument of the same name.",
+      "confirms_test": "test_inv_name_discipline_confirms",
+      "prevents_test": "test_inv_name_discipline_prevents",
+      "under_failure_test": "test_inv_name_discipline_under_failure"
+    },
+    {
+      "invariant_id": "METRIC_INV_04",
+      "invariant_text": "Every instrument MUST carry a UCUM unit string (e.g. 'ms', 's', 'By') — an empty unit is FORBIDDEN.",
+      "confirms_test": "test_inv_unit_required_confirms",
+      "prevents_test": "test_inv_unit_required_prevents",
+      "under_failure_test": "test_inv_unit_required_under_failure"
+    },
+    {
+      "invariant_id": "METRIC_INV_05",
+      "invariant_text": "Observable gauge callbacks MUST be idempotent within a collection cycle and SHALL NEVER raise; exceptions are logged and the measurement is dropped.",
+      "confirms_test": "test_inv_gauge_safe_confirms",
+      "prevents_test": "test_inv_gauge_safe_prevents",
+      "under_failure_test": "test_inv_gauge_safe_under_failure"
+    },
+    {
+      "invariant_id": "METRIC_INV_06",
+      "invariant_text": "Attribute sets attached to measurements NEVER include unbounded-cardinality keys (user id, request id, full URL path).",
+      "confirms_test": "test_inv_cardinality_keys_confirms",
+      "prevents_test": "test_inv_cardinality_keys_prevents",
+      "under_failure_test": "test_inv_cardinality_keys_under_failure"
+    }
+  ]
+}

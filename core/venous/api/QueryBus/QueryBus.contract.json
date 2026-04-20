@@ -1,0 +1,17 @@
+{
+  "name": "QueryBus",
+  "namespace": "api",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Dispatch Queries to their registered async handlers.",
+  "api_signature": "class QueryBus: register(...), query(...)",
+  "invariants": [
+    "QUERY_BUS_INV_01: No handler registered for query: {?}"
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 1,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

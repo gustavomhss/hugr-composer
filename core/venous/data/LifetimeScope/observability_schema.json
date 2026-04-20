@@ -1,0 +1,60 @@
+{
+  "logs": [
+    {
+      "event_name": "lifetime.registered",
+      "required_attributes": ["key", "scope"]
+    },
+    {
+      "event_name": "lifetime.resolved",
+      "required_attributes": ["key", "scope", "cached"]
+    },
+    {
+      "event_name": "lifetime.scope.opened",
+      "required_attributes": ["scope_id", "depth"]
+    },
+    {
+      "event_name": "lifetime.scope.disposed",
+      "required_attributes": ["scope_id", "instance_count", "dispose_failures"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "lifetime.resolves",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 60,
+      "label_keys": ["scope", "cached"]
+    },
+    {
+      "name": "lifetime.scope.depth",
+      "metric_type": "histogram",
+      "unit": "1",
+      "cardinality_bound": 30,
+      "label_keys": []
+    },
+    {
+      "name": "lifetime.scope.instance_count",
+      "metric_type": "histogram",
+      "unit": "1",
+      "cardinality_bound": 40,
+      "label_keys": ["scope"]
+    },
+    {
+      "name": "lifetime.dispose.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": []
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "lifetime.resolve",
+      "required_attributes": ["lifetime.key", "lifetime.scope", "lifetime.cached"]
+    },
+    {
+      "operation_name": "lifetime.scope.dispose",
+      "required_attributes": ["lifetime.scope_id", "lifetime.instance_count"]
+    }
+  ]
+}

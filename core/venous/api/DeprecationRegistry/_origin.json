@@ -1,0 +1,20 @@
+{
+  "tool": "api_design/add_api_deprecation.py",
+  "candidate": {
+    "docstring": "Central registry of all deprecated API endpoints.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 378,
+    "line_start": 318,
+    "name": "DeprecationRegistry",
+    "origin": "string_template",
+    "shape_hash": "30d0f2c8cffed68f",
+    "size_bytes": 1952,
+    "size_lines": 61,
+    "tool": "api_design/add_api_deprecation.py",
+    "method_count": 4,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 31232
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "EE_INV_01",
+      "invariant_text": "Producers MUST make the tuple (source, id) unique per distinct occurrence so consumers can deduplicate.",
+      "confirms_test": "test_inv_dedup_identity_confirms",
+      "prevents_test": "test_inv_dedup_identity_prevents",
+      "under_failure_test": "test_inv_dedup_identity_under_failure"
+    },
+    {
+      "invariant_id": "EE_INV_02",
+      "invariant_text": "Resending the same logical event ALWAYS reuses the original id so retries do not appear as new occurrences.",
+      "confirms_test": "test_inv_retry_reuses_id_confirms",
+      "prevents_test": "test_inv_retry_reuses_id_prevents",
+      "under_failure_test": "test_inv_retry_reuses_id_under_failure"
+    },
+    {
+      "invariant_id": "EE_INV_03",
+      "invariant_text": "specversion MUST equal '1.0' for envelopes produced under this contract.",
+      "confirms_test": "test_inv_specversion_confirms",
+      "prevents_test": "test_inv_specversion_prevents",
+      "under_failure_test": "test_inv_specversion_under_failure"
+    },
+    {
+      "invariant_id": "EE_INV_04",
+      "invariant_text": "Extension attribute names MUST follow the CloudEvents naming rules and CANNOT collide with reserved core attribute names.",
+      "confirms_test": "test_inv_extension_name_confirms",
+      "prevents_test": "test_inv_extension_name_prevents",
+      "under_failure_test": "test_inv_extension_name_under_failure"
+    },
+    {
+      "invariant_id": "EE_INV_05",
+      "invariant_text": "time when present SHALL be an RFC 3339 timestamp in UTC with no timezone offset ambiguity.",
+      "confirms_test": "test_inv_time_format_confirms",
+      "prevents_test": "test_inv_time_format_prevents",
+      "under_failure_test": "test_inv_time_format_under_failure"
+    }
+  ]
+}

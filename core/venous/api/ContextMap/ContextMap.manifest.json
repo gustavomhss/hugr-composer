@@ -1,0 +1,782 @@
+{
+  "name": "ContextMap",
+  "namespace": "api",
+  "maturity": "battle_tested",
+  "builder_agent_id": 5,
+  "catalog_entry_sha256": "ffa4917faea36cd6064703dea3cf433b37a6d040fb4f86bf3ecd8a10e327b4fc",
+  "files": [
+    {
+      "path": "api/ContextMap/ContextMap.contract.json",
+      "sha256": "14cd27e8d6be2467c9f8fbc2a2a2b21b903f2c273d27f85d1d6d6fceed4598b7",
+      "size_bytes": 2393,
+      "kind": "contract_json"
+    },
+    {
+      "path": "api/ContextMap/ContextMap.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "api/ContextMap/ContextMap.md",
+      "sha256": "6d289169f22f6776c1323724e85c5524acbc1a7fb28d0a994163763f38109ee4",
+      "size_bytes": 9855,
+      "kind": "spec_md"
+    },
+    {
+      "path": "api/ContextMap/ContextMap.py",
+      "sha256": "5b752e9ee152da5527bacfba13e9e716d0d43175fbb84329361c8d391c2fb8df",
+      "size_bytes": 7144,
+      "kind": "impl"
+    },
+    {
+      "path": "api/ContextMap/behavioral_ContextMap.py",
+      "sha256": "f5af70b58797fa6e8e13547a1dbe80c49aae1468d7d6c1f56fc5696da9e18f0f",
+      "size_bytes": 3847,
+      "kind": "behavioral"
+    },
+    {
+      "path": "api/ContextMap/chaos_ContextMap.py",
+      "sha256": "b6cca8bbe4c0e7eb38f56aed6eece0376f2a50b2a0ac290b37a84cba6b2f5c3d",
+      "size_bytes": 4376,
+      "kind": "chaos"
+    },
+    {
+      "path": "api/ContextMap/dashboard.json",
+      "sha256": "4f0abfe0a608594a17c60fccff18413c813f4e73184c60ceec3a4cd58ab821d5",
+      "size_bytes": 912,
+      "kind": "dashboard"
+    },
+    {
+      "path": "api/ContextMap/invariant_bindings.json",
+      "sha256": "c5d57c2333d341a672d35410d3a5f6fb88fdb655fd9a31444bf6de26c148fc70",
+      "size_bytes": 1659,
+      "kind": "test"
+    },
+    {
+      "path": "api/ContextMap/metamorphic_ContextMap.py",
+      "sha256": "2fd099668c8026534f85e65c3b15d1fa58bb419c4f14511abdfe8050da7c206d",
+      "size_bytes": 3114,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "api/ContextMap/observability_ContextMap.py",
+      "sha256": "9786a62a42c2278398f91b97d317a6bc6390a8acbec7e2c26bb7cc5413b8c0ca",
+      "size_bytes": 2248,
+      "kind": "observability"
+    },
+    {
+      "path": "api/ContextMap/observability_schema.json",
+      "sha256": "27857bef3c560caac0b7adba25a54b2a06ab405fdcdb6e2ea337aee92919ad43",
+      "size_bytes": 1912,
+      "kind": "observability"
+    },
+    {
+      "path": "api/ContextMap/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "api/ContextMap/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "api/ContextMap/test_ContextMap.py",
+      "sha256": "23e0cef85ed43fb92e85f0803049f9b89a98e39a698a883b5b4df81f76686d66",
+      "size_bytes": 5909,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "CTXMAP_INV_01",
+      "invariant_text": "Every pairwise integration between contexts MUST be classified by one of the canonical relationship kinds; ad-hoc or blank relationships are FORBIDDEN.",
+      "confirms_test": "test_inv_canonical_kind_confirms",
+      "prevents_test": "test_inv_canonical_kind_prevents",
+      "under_failure_test": "test_inv_canonical_kind_under_failure"
+    },
+    {
+      "invariant_id": "CTXMAP_INV_02",
+      "invariant_text": "The graph of contexts SHALL be acyclic for Customer-Supplier relationships; a cycle CANNOT be introduced without promotion to Partnership.",
+      "confirms_test": "test_inv_directional_acyclic_confirms",
+      "prevents_test": "test_inv_directional_acyclic_prevents",
+      "under_failure_test": "test_inv_directional_acyclic_under_failure"
+    },
+    {
+      "invariant_id": "CTXMAP_INV_03",
+      "invariant_text": "A BoundedContext CANNOT participate in an integration absent from the ContextMap; shadow integrations MUST be surfaced.",
+      "confirms_test": "test_inv_no_shadow_integration_confirms",
+      "prevents_test": "test_inv_no_shadow_integration_prevents",
+      "under_failure_test": "test_inv_no_shadow_integration_under_failure"
+    },
+    {
+      "invariant_id": "CTXMAP_INV_04",
+      "invariant_text": "Relationship changes ALWAYS require an explicit mutation through add_relationship so history is auditable.",
+      "confirms_test": "test_inv_auditable_mutation_confirms",
+      "prevents_test": "test_inv_auditable_mutation_prevents",
+      "under_failure_test": "test_inv_auditable_mutation_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 290,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 781,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 768,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 72052,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "44 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 910,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 871,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 68391,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 144371,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-BLANK-KIND",
+        "hypothesis": "Calling add_relationship with kind='' or whitespace-only string bypasses canonical validation, inserting a blank relationship that violates the 'no ad-hoc/blank' invariant and pollutes integrations().",
+        "input_fixture": "cm.add_relationship('billing','ledger','')  # then cm.add_relationship('a','b','   ')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CASE-BYPASS",
+        "hypothesis": "Passing kind='partnership' (lowercase) or 'Open-Host' vs 'Open Host' bypasses canonical-kind check if comparison is case/format sensitive, allowing a non-canonical label indistinguishable from the real one downstream.",
+        "input_fixture": "cm.add_relationship('ctxA','ctxB','partnership'); cm.add_relationship('ctxA','ctxC','OPEN_HOST')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNICODE-HOMOGLYPH",
+        "hypothesis": "Using a Cyrillic '\u0420' (U+0420) in '\u0420artnership' or zero-width joiner inside 'Partnership' passes naive string equality but produces a non-canonical relationship label, defeating enumeration checks.",
+        "input_fixture": "cm.add_relationship('x','y','\u0420artnership')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CS-CYCLE",
+        "hypothesis": "Adding Customer-Supplier A->B, B->C, C->A in sequence without Partnership promotion should raise, but if cycle detection is pairwise only, the third edge completes a cycle undetected.",
+        "input_fixture": "cm.add_relationship('A','B','Customer-Supplier'); cm.add_relationship('B','C','Customer-Supplier'); cm.add_relationship('C','A','Customer-Supplier')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CS-SELF-LOOP",
+        "hypothesis": "add_relationship('A','A','Customer-Supplier') creates a trivial 1-node cycle; boundary check likely only guards upstream!=downstream for other kinds.",
+        "input_fixture": "cm.add_relationship('A','A','Customer-Supplier')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SHADOW-CTX",
+        "hypothesis": "Calling relationship('ghost','known') for a context never registered via contexts() returns a value or default instead of surfacing the shadow integration, violating the shadow-integration invariant.",
+        "input_fixture": "cm.relationship('ghost_ctx','billing')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ADD-AUTOREGISTER",
+        "hypothesis": "add_relationship silently auto-registers unknown contexts, letting a typo like 'billling' become a first-class BoundedContext \u2014 a shadow integration promoted to legitimate without review.",
+        "input_fixture": "cm.add_relationship('billling','ledger','Conformist')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DIRECT-MUTATE",
+        "hypothesis": "Mutating the internal integrations dict/list returned by integrations() (if not a copy) injects relationships without going through add_relationship, bypassing audit history.",
+        "input_fixture": "list(cm.integrations()).append(('a','b','Partnership'))  # or cm._integrations['a','b']='X'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-OVERRIDE",
+        "hypothesis": "Calling add_relationship twice with the same pair but different kinds silently overwrites without recording both events, erasing audit history of the previous kind.",
+        "input_fixture": "cm.add_relationship('A','B','Partnership'); cm.add_relationship('A','B','Conformist')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DIRECTION-SWAP",
+        "hypothesis": "relationship('A','B') and relationship('B','A') may both resolve to the same edge, so a Customer-Supplier A->B can be queried as B->A and treated as reverse supply, breaking directionality and enabling hidden cycles.",
+        "input_fixture": "cm.add_relationship('A','B','Customer-Supplier'); cm.relationship('B','A')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-CTXNAME",
+        "hypothesis": "add_relationship('', '', 'Partnership') with empty strings creates a phantom pair; if not validated, queries across the map can collide on empty-string keys.",
+        "input_fixture": "cm.add_relationship('','','Partnership')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NONSTR-KIND",
+        "hypothesis": "Passing kind=None or an int (e.g., 1) may bypass str equality checks if validation uses `in CANONICAL_KINDS` without type guard, yielding a non-string relationship stored verbatim.",
+        "input_fixture": "cm.add_relationship('A','B',None); cm.add_relationship('A','C',1)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CONCURRENT-CYCLE",
+        "hypothesis": "Two threads concurrently calling add_relationship for edges that, individually, don't form a cycle but together do \u2014 TOCTOU between cycle-check and insertion admits a CS cycle.",
+        "input_fixture": "Thread1: cm.add_relationship('A','B','Customer-Supplier'); Thread2 simultaneously: cm.add_relationship('B','A','Customer-Supplier')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ITER-MUTATE",
+        "hypothesis": "Iterating integrations() while calling add_relationship in the same thread raises RuntimeError or yields partial results, allowing a caller to observe a half-added relationship and act on inconsistent state.",
+        "input_fixture": "for i in cm.integrations(): cm.add_relationship(i[0],'newctx','Conformist')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-BLANK_KIND",
+        "hypothesis": "Passing an empty string as `kind` bypasses canonical-kind enforcement if the implementation only checks truthiness or membership against a set that includes ''. An empty relationship is semantically equivalent to no classification, violating the invariant that ad-hoc or blank relationships are FORBIDDEN.",
+        "input_fixture": "cm.add_relationship('Billing', 'Orders', '')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WHITESPACE_KIND",
+        "hypothesis": "A kind string containing only whitespace (e.g. '   ' or '\\t') may pass a naive non-empty check while carrying no semantic meaning. If strip() is not applied before validation, this constitutes a blank relationship that evades the FORBIDDEN-ad-hoc rule.",
+        "input_fixture": "cm.add_relationship('Payments', 'Shipping', '   \\t  ')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CASE_SENSITIVITY",
+        "hypothesis": "Kind validation may be case-sensitive, so 'customer-supplier', 'CUSTOMER_SUPPLIER', or 'Customer_Supplier' could slip through if the allowlist uses exact-match comparison. This lets callers register non-canonical aliases that look like canonical kinds but are not.",
+        "input_fixture": "cm.add_relationship('Auth', 'Users', 'customer-supplier')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-KIND_INJECTION",
+        "hypothesis": "A kind value containing delimiter characters (semicolons, newlines, SQL fragments) may be stored verbatim and later serialized into audit logs or persisted to a database, enabling log injection or SQL injection. The invariant that all mutations are auditable is undermined if the audit record itself is corrupted.",
+        "input_fixture": "cm.add_relationship('InventoryCtx', 'OrderCtx', 'Open Host\\nPartnership; DROP TABLE integrations;--')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CS_DIRECT_CYCLE",
+        "hypothesis": "Adding A\u2192B then B\u2192A both as Customer-Supplier creates an immediate two-node cycle. If cycle detection only walks paths of length \u22653, or only checks after a third edge, this two-node cycle may be silently accepted, violating the acyclicity invariant for Customer-Supplier.",
+        "input_fixture": "cm.add_relationship('Billing', 'Auth', 'Customer-Supplier'); cm.add_relationship('Auth', 'Billing', 'Customer-Supplier')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CS_LONG_CYCLE",
+        "hypothesis": "A longer Customer-Supplier cycle A\u2192B\u2192C\u2192D\u2192A may evade cycle detection if the implementation only checks direct neighbors or uses a non-recursive reachability check with a shallow depth limit. The cycle is introduced across four sequential add_relationship calls.",
+        "input_fixture": "cm.add_relationship('A','B','Customer-Supplier'); cm.add_relationship('B','C','Customer-Supplier'); cm.add_relationship('C','D','Customer-Supplier'); cm.add_relationship('D','A','Customer-Supplier')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CS_CYCLE_VIA_PROMOTION",
+        "hypothesis": "A cycle can be introduced by first establishing A\u2192B and B\u2192A as Partnership (allowed), then silently downgrading B\u2192A to Customer-Supplier via a second add_relationship call without checking whether the new kind creates a CS cycle. If add_relationship allows silent overwrite, promotion logic is bypassed.",
+        "input_fixture": "cm.add_relationship('X','Y','Partnership'); cm.add_relationship('Y','X','Partnership'); cm.add_relationship('Y','X','Customer-Supplier')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SELF_LOOP",
+        "hypothesis": "Calling add_relationship with upstream == downstream registers a self-referential edge. This context then 'integrates with itself', which is undefined in DDD and creates a trivial cycle in any directed-graph representation. The acyclicity and shadow-integration invariants are both at risk.",
+        "input_fixture": "cm.add_relationship('Payments', 'Payments', 'Customer-Supplier')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SHADOW_CONTEXT",
+        "hypothesis": "add_relationship may accept context names never registered via any registration mechanism, so relationship() and integrations() can return entries for contexts that do not appear in contexts(). This shadow integration violates the invariant that a BoundedContext cannot participate in an integration absent from the ContextMap.",
+        "input_fixture": "cm.add_relationship('GhostContext', 'Orders', 'Conformist')  # 'GhostContext' never registered",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY_CONTEXT_NAME",
+        "hypothesis": "An empty string '' as a context name may be accepted by add_relationship if only the kind is validated. Two calls with upstream='' create phantom contexts that appear in integrations() but are invisible as meaningful bounded contexts, constituting a shadow integration.",
+        "input_fixture": "cm.add_relationship('', 'Orders', 'Open Host'); cm.relationship('', 'Orders')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SILENT_OVERRIDE_AUDIT",
+        "hypothesis": "Calling add_relationship twice with the same (upstream, downstream) pair but different kinds silently overwrites the previous kind. If no error is raised and the history record only shows the latest kind, the original classification is lost without an explicit mutation log entry, violating the auditability invariant.",
+        "input_fixture": "cm.add_relationship('Auth','Billing','Partnership'); cm.add_relationship('Auth','Billing','Customer-Supplier')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE_CS_CYCLE",
+        "hypothesis": "Under concurrent access two threads each attempt to add the final edge of a Customer-Supplier cycle (T1: A\u2192B, T2: B\u2192A). If cycle detection reads the graph state before the other write is committed, both reads see a cycle-free graph and both writes succeed, introducing a cycle that neither thread detected.",
+        "input_fixture": "import threading; t1=threading.Thread(target=cm.add_relationship, args=('A','B','Customer-Supplier')); t2=threading.Thread(target=cm.add_relationship, args=('B','A','Customer-Supplier')); t1.start(); t2.start(); t1.join(); t2.join()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INTEGRATIONS_MUTATION_DURING_ITER",
+        "hypothesis": "If integrations() returns a live view (e.g. a dict.values() iterator) rather than a snapshot copy, calling add_relationship while iterating integrations() causes a RuntimeError or, worse, silently skips or duplicates entries. An auditor consuming integrations() may therefore see an inconsistent partial view.",
+        "input_fixture": "for u,d,k in cm.integrations(): cm.add_relationship(u+'_new', d, 'Conformist')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-UNICODE_HOMOGLYPH_KIND",
+        "hypothesis": "Using a Unicode homoglyph in a kind string (e.g., '\u0421ustomer-Supplier' where '\u0421' is Cyrillic U+0421 instead of Latin 'C') may bypass an ASCII-comparison allowlist while visually appearing valid to a human auditor. The stored kind is neither canonical nor rejected.",
+        "input_fixture": "cm.add_relationship('Shipping', 'Billing', '\\u0421ustomer-Supplier')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONE_KIND",
+        "hypothesis": "Passing None as kind may bypass a string membership check if the implementation uses a pattern like `if kind not in VALID_KINDS` without a prior isinstance guard. None not in a set of strings evaluates to True-missing, but if the check is reversed or absent, None is stored as the relationship kind, constituting an unclassified integration.",
+        "input_fixture": "cm.add_relationship('CRM', 'Support', None)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNCLASSIFIED-RELATIONSHIP",
+        "hypothesis": "Adding relationship with empty string kind violates canonical classification requirement",
+        "input_fixture": "ctx.add_relationship('OrderService', 'PaymentService', ''); result = ctx.relationship('OrderService', 'PaymentService'); assert result == '' (violates Invariant 1)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NULL-KIND-INJECTION",
+        "hypothesis": "Passing None for kind parameter bypasses type validation and leaves blank relationship",
+        "input_fixture": "ctx.add_relationship('AuthCtx', 'UserCtx', None); result = ctx.relationship('AuthCtx', 'UserCtx'); assert result is None (should reject non-string kind)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INVALID-RELATIONSHIP-TYPE",
+        "hypothesis": "Misspelled canonical kind like 'Partnerrship' is accepted without enum validation",
+        "input_fixture": "ctx.add_relationship('Svc1', 'Svc2', 'Partnerrship'); rel = ctx.relationship('Svc1', 'Svc2'); assert rel == 'Partnerrship' (should reject unknown kind)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NUMERIC-KIND-COERCION",
+        "hypothesis": "Numeric kind value 999 is silently coerced to string, bypassing kind enum validation",
+        "input_fixture": "ctx.add_relationship('A', 'B', 999); val = ctx.relationship('A', 'B'); assert isinstance(val, str) and val=='999' (should reject non-string)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SIMPLE-CYCLE-CUSTOMER-SUPPLIER",
+        "hypothesis": "Creating A->B Customer-Supplier then B->A Customer-Supplier forms forbidden cycle",
+        "input_fixture": "ctx.add_relationship('Order', 'Payment', 'Customer-Supplier'); ctx.add_relationship('Payment', 'Order', 'Customer-Supplier'); assert no cycle detection (violates Invariant 2)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-THREE-NODE-CYCLE-CUSTOMER-SUPPLIER",
+        "hypothesis": "Cycle A->B->C->A with all Customer-Supplier relationships violates acyclic invariant",
+        "input_fixture": "ctx.add_relationship('Auth', 'User', 'Customer-Supplier'); ctx.add_relationship('User', 'Billing', 'Customer-Supplier'); ctx.add_relationship('Billing', 'Auth', 'Customer-Supplier'); cycle exists",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PHANTOM-CONTEXT-REFERENCE",
+        "hypothesis": "Querying relationship with undefined context bypasses shadow integration detection",
+        "input_fixture": "ctx = ContextMap(); ctx.add_relationship('Known', 'Known', 'Partnership'); ctx.relationship('GhostCtx', 'Known'); no ContextNotFound error raised (violates Invariant 3)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SHADOW-INTEGRATION-UNMAPPED-UPSTREAM",
+        "hypothesis": "add_relationship accepts upstream context that is not in contexts list creating shadow integration",
+        "input_fixture": "ctx.add_relationship('UnknownService', 'KnownService', 'Open Host'); integrals = ctx.integrations(); assert 'UnknownService' in integrals but absent from contexts()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-BOUNDARY-EMPTY-CONTEXT-NAME",
+        "hypothesis": "Empty string context name is accepted and creates phantom entry bypassing invariant",
+        "input_fixture": "ctx.add_relationship('', 'Service', 'Partnership'); rel = ctx.relationship('', 'Service'); assert rel exists (should reject empty context names)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-IDEMPOTENCE-STATE-LEAKAGE",
+        "hypothesis": "Calling add_relationship twice with same args allows state divergence if not truly idempotent",
+        "input_fixture": "ctx.add_relationship('A', 'B', 'Partnership'); v1 = ctx.relationship('A', 'B'); ctx.add_relationship('A', 'B', 'Conformist'); v2 = ctx.relationship('A', 'B'); assert v1==v2 fails",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HISTORY-BYPASS-DIRECT-STATE",
+        "hypothesis": "Direct mutation of internal state circumvents add_relationship audit trail enforcement",
+        "input_fixture": "ctx._relationships['A']['B'] = 'Conformist'; result = ctx.relationship('A', 'B'); state changed without add_relationship call (violates auditability)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TYPE-CONFUSION-CONTEXT-LIST",
+        "hypothesis": "Passing list object for upstream instead of string bypasses parameter type checking",
+        "input_fixture": "ctx.add_relationship(['A', 'B'], 'C', 'Partnership'); rel = ctx.relationship(['A', 'B'], 'C'); no TypeError raised (should reject non-string)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SPECIAL-CHAR-SQL-INJECTION",
+        "hypothesis": "Context name with SQL metacharacters like single quote evades validation and storage checks",
+        "input_fixture": "ctx.add_relationship(\"A'; DROP TABLE contexts;--\", 'B', 'Partnership'); contexts = list(ctx.contexts()); dangerous string persisted unescaped",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-CYCLE-RACE",
+        "hypothesis": "Two threads race to create A->B and B->A Customer-Supplier; both succeed without cycle detection",
+        "input_fixture": "Thread1: ctx.add_relationship('X', 'Y', 'Customer-Supplier'); Thread2: ctx.add_relationship('Y', 'X', 'Customer-Supplier'); both return success concurrently (race condition)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REPLAY-MALFORMED-KIND",
+        "hypothesis": "Relationship kind containing null bytes or control characters bypasses string validation",
+        "input_fixture": "ctx.add_relationship('A', 'B', 'Partnership\\x00Bypass'); rel = ctx.relationship('A', 'B'); stored with embedded null byte (should reject)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "contextmap.relationship.added",
+        "required_attributes": [
+          "upstream",
+          "downstream",
+          "kind",
+          "version"
+        ]
+      },
+      {
+        "event_name": "contextmap.relationship.rejected",
+        "required_attributes": [
+          "upstream",
+          "downstream",
+          "kind",
+          "invariant_id"
+        ]
+      },
+      {
+        "event_name": "contextmap.relationship.looked_up",
+        "required_attributes": [
+          "upstream",
+          "downstream",
+          "kind"
+        ]
+      },
+      {
+        "event_name": "contextmap.shadow.integration.refused",
+        "required_attributes": [
+          "upstream",
+          "downstream",
+          "invariant_id"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "contextmap.relationships.added",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 64,
+        "label_keys": [
+          "kind"
+        ]
+      },
+      {
+        "name": "contextmap.relationships.rejected",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 16,
+        "label_keys": [
+          "invariant_id"
+        ]
+      },
+      {
+        "name": "contextmap.edges.total",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 1,
+        "label_keys": []
+      },
+      {
+        "name": "contextmap.mutation.version",
+        "metric_type": "updown_counter",
+        "unit": "1",
+        "cardinality_bound": 1,
+        "label_keys": []
+      },
+      {
+        "name": "contextmap.cycle.detection.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "kind"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "contextmap.relationship.add",
+        "required_attributes": [
+          "contextmap.upstream",
+          "contextmap.downstream",
+          "contextmap.kind"
+        ]
+      },
+      {
+        "operation_name": "contextmap.relationship.lookup",
+        "required_attributes": [
+          "contextmap.upstream",
+          "contextmap.downstream"
+        ]
+      },
+      {
+        "operation_name": "contextmap.cycle.detect",
+        "required_attributes": [
+          "contextmap.kind"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 10,
+        "rationale": "Protocol declaration matches catalog api_signature verbatim (contexts/relationship/add_relationship/integrations with identical types). Purpose, invariants, and extension contract faithfully encoded."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All four invariants enforced in code; canonical 8 kinds as frozenset; introspection (version, has_edge) supports audit. Minor: no persistence hook or event emission for observability metrics mentioned in spec, but those are operational concerns external to the primitive."
+      },
+      {
+        "axis": "error_quality",
+        "score": 10,
+        "rationale": "Dedicated ContextMapInvariantError subclass; every raise cites the exact invariant ID (CTXMAP-INV-0x) and explains the violation with offending value and remediation hint (e.g., 'promote to Partnership')."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "runtime_checkable Protocol enables duck-typed substitution; pure in-memory, no I/O at import; __all__ is explicit; read methods return sorted tuples for deterministic composition. Slight nit: Iterable return type hides tuple stability guarantee from type-checkers."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Input validation (length, control chars, whitespace, self-loop) is solid; cycle detection O(V+E) per insert is acceptable. Thread-safety explicitly documented as caller's responsibility \u2014 acceptable given spec. No metrics emission hooks, but spec frames those as external SLIs."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 10,
+        "rationale": "Namespace, purpose, api_signature, four invariants, extension contract, and canonical kinds all align exactly with PrimitiveSpec. Invariant IDs match spec's INV-01..04 mapping."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "Invariant IDs are spelled with hyphens in prose (CTXMAP-INV-03) but underscores in the table (CTXMAP_INV_01) \u2014 a junior will not know which string appears in the actual exception message.",
+          "'Promotion' is defined in the glossary but no API method is shown; it is unclear whether promotion is achieved by calling add_relationship with kind='Partnership' or via a separate promote() call.",
+          "The extension contract says 'register a relationship-kind plugin' with no code example \u2014 a junior cannot tell whether this is a decorator, a config key, or a subclass."
+        ],
+        "rewrite_suggestion": "Add a second Hello World block that (1) triggers an invariant violation and prints the exception, (2) shows promotion as a concrete add_relationship call. Move the extension contract example to an Advanced section so it doesn't confuse readers who only need the eight canonical kinds."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "Thread-safety section advises 'wrap add_relationship with a lock' but is silent on multi-process and distributed deployments \u2014 no mention of a persistence adapter interface or a reference implementation.",
+          "Extension contract describes a 'relationship-kind plugin' without an interface definition (no Protocol stub, no required methods), making it unimplementable from the docs alone.",
+          "The version counter is described as introspection-only; there is no changelog or diff API, making it hard to answer 'what changed between version 42 and 47?'"
+        ],
+        "rewrite_suggestion": "Add a Protocol stub (3\u20135 lines) for the extension contract, a concrete multi-process pattern (e.g., delegate to a Postgres-backed implementation), and a get_history(since_version) note or explicit statement that history must be implemented at the persistence layer."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "add_relationship has no authorization model \u2014 any caller can mutate the map; the doc does not state that authz is the caller's responsibility, leaving the boundary implicit.",
+          "'Wire it into request interceptors' for shadow-integration detection is vague: no pseudocode, no example middleware, no guidance on whether to raise, log, or block.",
+          "The audit trail depends on the in-memory version counter, which resets on restart; the doc says persistence layers 'SHOULD' treat it as append-only but does not state that in-memory use provides zero durability guarantees."
+        ],
+        "rewrite_suggestion": "Add a Threat Model subsection with three explicit statements: (1) add_relationship is unauthenticated by default \u2014 enforce authz at the call site; (2) the in-memory counter is ephemeral \u2014 a durable audit trail requires a persistent store; (3) provide a two-line interceptor pseudocode snippet for shadow-integration enforcement."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "The cycle-detection alert threshold is described as 'default: 5 ms' with no indication of where it is configured (env var, config file, constructor parameter).",
+          "No runbook entry for contextmap.shadow.integration.refused spikes \u2014 who owns remediation, and what is the expected response time before a blocked caller degrades production?",
+          "No availability story: the doc says 'DO NOT USE as a runtime service discovery mechanism' but does not say whether the map is expected to be loaded once at startup and cached, or queried per-request, which changes the blast radius of an outage."
+        ],
+        "rewrite_suggestion": "Add an Operations Runbook subsection: (1) how to configure the 5 ms threshold, (2) recommended remediation steps for shadow-integration spikes (identify caller \u2192 register edge or block), (3) explicit startup-cache guidance so SREs know this is a governance artifact loaded once, not a hot path."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The Provenance section cites 2003 and 2013 academic texts \u2014 irrelevant to a PM deciding adoption priority; it reads as justification for engineers, not stakeholders.",
+          "The Alternatives Considered section frames each alternative as a technical shortcoming rather than a business risk (e.g., 'Confluence diagrams rot' does not translate to 'shadow integrations caused 3 incidents last quarter').",
+          "No time-to-value signal: a PM cannot estimate the effort to onboard a 15-context system, because there is no example of how long initial cataloging takes or what the migration path from an existing diagram looks like."
+        ],
+        "rewrite_suggestion": "Replace Provenance with a Business Impact section: (1) which decisions ContextMap enables (safe API versioning, confident ACL placement, governance audit for compliance), (2) a rough adoption timeline (e.g., '~1 sprint to catalog a 10-context system'), (3) reframe Alternatives as business risks rather than technical gaps."
+      }
+    ]
+  }
+}

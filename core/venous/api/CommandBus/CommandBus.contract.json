@@ -1,0 +1,17 @@
+{
+  "name": "CommandBus",
+  "namespace": "api",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Dispatch Commands to their registered async handlers.",
+  "api_signature": "class CommandBus: register(...), dispatch(...)",
+  "invariants": [
+    "COMMAND_BUS_INV_01: No handler registered for command: {?}"
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 1,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

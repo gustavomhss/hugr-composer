@@ -1,0 +1,57 @@
+{
+  "logs": [
+    {
+      "event_name": "config.bind.started",
+      "required_attributes": ["prefix", "schema"]
+    },
+    {
+      "event_name": "config.bind.succeeded",
+      "required_attributes": ["prefix", "schema", "provider_count"]
+    },
+    {
+      "event_name": "config.bind.failed",
+      "required_attributes": ["prefix", "schema", "invariant_id", "reason"]
+    },
+    {
+      "event_name": "config.reload.completed",
+      "required_attributes": ["rebound_count"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "config.binds.total",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["prefix", "result"]
+    },
+    {
+      "name": "config.bind.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 100,
+      "label_keys": ["prefix"]
+    },
+    {
+      "name": "config.reload.total",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 5,
+      "label_keys": ["result"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "config.bind",
+      "required_attributes": ["config.prefix", "config.schema"]
+    },
+    {
+      "operation_name": "config.reload",
+      "required_attributes": ["config.rebound_count"]
+    },
+    {
+      "operation_name": "config.provider.read",
+      "required_attributes": ["config.provider.name"]
+    }
+  ]
+}

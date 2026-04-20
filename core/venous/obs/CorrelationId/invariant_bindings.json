@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "CORRID_INV_01",
+      "invariant_text": "MUST be populated for every inbound request before the first log line is emitted.",
+      "confirms_test": "test_inv_populated_before_first_log_confirms",
+      "prevents_test": "test_inv_populated_before_first_log_prevents",
+      "under_failure_test": "test_inv_populated_before_first_log_under_failure"
+    },
+    {
+      "invariant_id": "CORRID_INV_02",
+      "invariant_text": "NEVER regenerates a present upstream id (propagates 'traceparent'/'X-Request-Id' when valid).",
+      "confirms_test": "test_inv_propagates_upstream_confirms",
+      "prevents_test": "test_inv_propagates_upstream_prevents",
+      "under_failure_test": "test_inv_propagates_upstream_under_failure"
+    },
+    {
+      "invariant_id": "CORRID_INV_03",
+      "invariant_text": "Generated ids MUST use a cryptographically-random 16+ byte encoding; sequential counters SHALL NOT be used.",
+      "confirms_test": "test_inv_csprng_generated_confirms",
+      "prevents_test": "test_inv_csprng_generated_prevents",
+      "under_failure_test": "test_inv_csprng_generated_under_failure"
+    },
+    {
+      "invariant_id": "CORRID_INV_04",
+      "invariant_text": "MUST appear in every emitted log, metric exemplar, and outbound HTTP request header.",
+      "confirms_test": "test_inv_appears_in_outbound_confirms",
+      "prevents_test": "test_inv_appears_in_outbound_prevents",
+      "under_failure_test": "test_inv_appears_in_outbound_under_failure"
+    },
+    {
+      "invariant_id": "CORRID_INV_05",
+      "invariant_text": "CANNOT be mutated mid-request; a new id SHALL mean a new logical request.",
+      "confirms_test": "test_inv_immutable_confirms",
+      "prevents_test": "test_inv_immutable_prevents",
+      "under_failure_test": "test_inv_immutable_under_failure"
+    }
+  ]
+}

@@ -1,0 +1,773 @@
+{
+  "name": "TransactionalBatch",
+  "namespace": "data",
+  "maturity": "battle_tested",
+  "builder_agent_id": 3,
+  "catalog_entry_sha256": "63d54ec87ffb40f8c2e1392b7f404c202474a9845b55b1ff5d84b289ebb4775e",
+  "files": [
+    {
+      "path": "data/TransactionalBatch/TransactionalBatch.cfg",
+      "sha256": "577645805402067df1b094d9eda7adbc6c406a03d5e4e0cdcd70ff8dfe1d9262",
+      "size_bytes": 130,
+      "kind": "test"
+    },
+    {
+      "path": "data/TransactionalBatch/TransactionalBatch.contract.json",
+      "sha256": "8c42b9f169b07cf334dd6ca296c3d53d7a1c39e4345a55ee3aede77f124e881c",
+      "size_bytes": 2681,
+      "kind": "contract_json"
+    },
+    {
+      "path": "data/TransactionalBatch/TransactionalBatch.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "data/TransactionalBatch/TransactionalBatch.md",
+      "sha256": "0499e178d5087d44d5fc61d9a5577ad947500b3f8947ae8ba75e1f3bc81ebe1a",
+      "size_bytes": 4563,
+      "kind": "spec_md"
+    },
+    {
+      "path": "data/TransactionalBatch/TransactionalBatch.py",
+      "sha256": "67b419d88d995ed8b3e5880dbf50c7929479d8968d93336a84031a7320f3fc76",
+      "size_bytes": 8732,
+      "kind": "impl"
+    },
+    {
+      "path": "data/TransactionalBatch/TransactionalBatch.tla",
+      "sha256": "f5c49601539892e48ad95f0455396e86f9a03a9825f08a2e8048c46a4896f67e",
+      "size_bytes": 3465,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "data/TransactionalBatch/behavioral_TransactionalBatch.py",
+      "sha256": "5d3e030b547702b65d3319663f70384648f927b45b6fbe2a50399ce58966e211",
+      "size_bytes": 2599,
+      "kind": "behavioral"
+    },
+    {
+      "path": "data/TransactionalBatch/chaos_TransactionalBatch.py",
+      "sha256": "45572ecd1a7d1f13c7c9ba20c30fe7c2f298e319d18477031958b1af99896149",
+      "size_bytes": 2586,
+      "kind": "chaos"
+    },
+    {
+      "path": "data/TransactionalBatch/concurrent_TransactionalBatch.py",
+      "sha256": "c7adfa0f151ce2a961272b2543b90f73c3cdb5bfb5c24a61517293810747cf10",
+      "size_bytes": 3105,
+      "kind": "concurrent"
+    },
+    {
+      "path": "data/TransactionalBatch/dashboard.json",
+      "sha256": "44bcf4a144ee799a0797d0dd19a1e3cb782c1fe03596137c52ce692b16f4e94d",
+      "size_bytes": 574,
+      "kind": "dashboard"
+    },
+    {
+      "path": "data/TransactionalBatch/invariant_bindings.json",
+      "sha256": "b64120cd9f317fc0a95ec4c41fcdebd5dc0fa2db85c08834a45f3643246eae65",
+      "size_bytes": 1889,
+      "kind": "test"
+    },
+    {
+      "path": "data/TransactionalBatch/metamorphic_TransactionalBatch.py",
+      "sha256": "e9e03ca4592e15bbf0c4cef33e52d4af3e22a0b8e37bfd12556bf688e703b496",
+      "size_bytes": 1984,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "data/TransactionalBatch/observability_TransactionalBatch.py",
+      "sha256": "abc0fc57be6f0ac44421a176734ea4ad1f3edbdf6888bc4edc89418b73f293e2",
+      "size_bytes": 1335,
+      "kind": "observability"
+    },
+    {
+      "path": "data/TransactionalBatch/observability_schema.json",
+      "sha256": "3b7d3b44e1dad6cd13ec4d041eb1aaa9c14a25a9a983eadebe01e01c761a5457",
+      "size_bytes": 1070,
+      "kind": "observability"
+    },
+    {
+      "path": "data/TransactionalBatch/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "data/TransactionalBatch/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "data/TransactionalBatch/state_machine_TransactionalBatch.py",
+      "sha256": "6498d35427f3af62c1b8af14f423841903132ae99ae44b384a63bef236e29eb7",
+      "size_bytes": 2953,
+      "kind": "state_machine"
+    },
+    {
+      "path": "data/TransactionalBatch/test_TransactionalBatch.py",
+      "sha256": "55e8cd32a4d17f33608e592554246fb035d7ec69d5444de7f455f301ed8dfc12",
+      "size_bytes": 7677,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "TXB_INV_01",
+      "invariant_text": "Commit MUST apply every queued operation atomically or apply none of them, with no partial visible state.",
+      "confirms_test": "test_inv_atomic_commit_confirms",
+      "prevents_test": "test_inv_atomic_commit_prevents",
+      "under_failure_test": "test_inv_atomic_commit_under_failure"
+    },
+    {
+      "invariant_id": "TXB_INV_02",
+      "invariant_text": "A conflicting etag on any queued operation MUST abort the entire batch and surface a conflict error.",
+      "confirms_test": "test_inv_etag_conflict_aborts_confirms",
+      "prevents_test": "test_inv_etag_conflict_aborts_prevents",
+      "under_failure_test": "test_inv_etag_conflict_aborts_under_failure"
+    },
+    {
+      "invariant_id": "TXB_INV_03",
+      "invariant_text": "After commit returns successfully the batch MUST NOT be reusable; reusing it SHALL raise a state error.",
+      "confirms_test": "test_inv_no_reuse_confirms",
+      "prevents_test": "test_inv_no_reuse_prevents",
+      "under_failure_test": "test_inv_no_reuse_under_failure"
+    },
+    {
+      "invariant_id": "TXB_INV_04",
+      "invariant_text": "Operations inside one batch ALWAYS target the same state store instance to preserve the atomicity boundary.",
+      "confirms_test": "test_inv_single_store_boundary_confirms",
+      "prevents_test": "test_inv_single_store_boundary_prevents",
+      "under_failure_test": "test_inv_single_store_boundary_under_failure"
+    },
+    {
+      "invariant_id": "TXB_INV_05",
+      "invariant_text": "Read operations are FORBIDDEN inside the batch because the contract covers only writes and deletes.",
+      "confirms_test": "test_inv_no_reads_in_batch_confirms",
+      "prevents_test": "test_inv_no_reads_in_batch_prevents",
+      "under_failure_test": "test_inv_no_reads_in_batch_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 345,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 975,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 1415,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 3440,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1113,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 977,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 75090,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "42 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 934,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 927,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 73756,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 159564,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PARTIAL-VISIBILITY-MIDCOMMIT",
+        "hypothesis": "A reader querying the store mid-commit observes a subset of the queued upserts before the transaction finalizes, violating all-or-nothing atomicity when the underlying store lacks snapshot isolation.",
+        "input_fixture": "Batch with 50 upserts to keys k0..k49; concurrent reader thread polling get(k25) during commit() execution.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ETAG-RACE-TOCTOU",
+        "hypothesis": "Etag check happens before write apply; a concurrent writer mutates the key between check and apply, so the conflicting-etag invariant fails to abort and a stale write lands.",
+        "input_fixture": "batch.upsert('k1', b'v', etag='e1'); concurrent process updates k1 to etag e2 between validate phase and apply phase of commit().",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REUSE-AFTER-COMMIT",
+        "hypothesis": "After commit() returns, calling upsert() again silently appends to internal op list and a second commit() succeeds, violating single-use invariant.",
+        "input_fixture": "b=Batch(); b.upsert('k',b'v'); await b.commit(); b.upsert('k2',b'v2'); await b.commit()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CROSS-STORE-MIX",
+        "hypothesis": "Builder pattern returns self but does not bind to a specific store; ops added via two different store handles end up in one batch breaking the atomicity boundary.",
+        "input_fixture": "b=storeA.batch(); b.upsert('k1',b'v1'); storeB._inject(b,'k2',b'v2'); await b.commit()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-READ-SMUGGLE-VIA-ETAG",
+        "hypothesis": "Passing etag=None on delete leaks read semantics: implementation fetches current value to compute tombstone, effectively performing a read inside the batch contrary to the read-forbidden invariant.",
+        "input_fixture": "b.delete('k_unknown', etag=None); await b.commit() \u2014 observe internal get() call via instrumented store.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-COMMIT",
+        "hypothesis": "Commit on a batch with zero queued operations is treated as success but still bumps store transaction counter / advances WAL, creating ghost transactions and breaking idempotency assumptions.",
+        "input_fixture": "b=store.batch(); await b.commit()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DUPLICATE-KEY-ORDER",
+        "hypothesis": "Two ops on same key (upsert then delete) within one batch are applied in insertion order on some backends and reverse on others, leaving non-deterministic visible state after commit.",
+        "input_fixture": "b.upsert('k',b'v1'); b.delete('k'); b.upsert('k',b'v2'); await b.commit() \u2014 assert final state == v2",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HUGE-VALUE-OVERFLOW",
+        "hypothesis": "Value of size > backend max (e.g., 16MB) silently truncates or splits across operations, causing partial-write visibility and invariant violation at boundary.",
+        "input_fixture": "b.upsert('big', b'\\x00' * (32*1024*1024)); await b.commit()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-COMMIT-CONCURRENT-AWAIT",
+        "hypothesis": "Two concurrent awaits of commit() on the same batch instance race; both proceed past the not-committed check, double-applying ops and corrupting reuse-prevention.",
+        "input_fixture": "b=store.batch(); b.upsert('k',b'v'); await asyncio.gather(b.commit(), b.commit())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ETAG-TYPE-CONFUSION",
+        "hypothesis": "Passing etag as int, bytes, or empty string '' bypasses string equality check (e.g., '' == None coercion), causing conflict detection to silently pass.",
+        "input_fixture": "b.upsert('k', b'v', etag=''); store currently holds k with etag 'abc'; await b.commit() \u2014 expect conflict, observe success.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-KEY-INJECTION-NULLBYTE",
+        "hypothesis": "Key containing null byte or path separator escapes namespace and writes to a key in another store partition, breaking single-store boundary.",
+        "input_fixture": "b.upsert('tenantA/../tenantB/secret\\x00', b'pwn'); await b.commit()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PARTIAL-FAILURE-NO-ROLLBACK",
+        "hypothesis": "Network error after N of M ops applied leaves committed prefix without compensating rollback, violating atomicity when backend lacks 2PC.",
+        "input_fixture": "Batch of 10 upserts; inject socket close after op 5 ack via toxiproxy; verify keys k0..k4 absent post-error.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-ETAG",
+        "hypothesis": "Etag derived from server timestamp; clock skew between client validate and server apply causes false-negative conflict (matches stale etag from future).",
+        "input_fixture": "Skew client clock +60s; b.upsert('k',b'v',etag=client_now()); concurrent writer updates k 30s ago.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-COMMIT-IDEMPOTENCY",
+        "hypothesis": "Network retry of commit() RPC after timeout causes server to apply batch twice (no idempotency token), doubling deletes/upserts visible state.",
+        "input_fixture": "Patch transport to return TimeoutError on first commit() while server actually applied; client retries via b.commit().",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PARTIAL_COMMIT_CRASH",
+        "hypothesis": "If the underlying store crashes or raises an exception after applying the first N operations but before the remaining ones, the commit may return a partial visible state to concurrent readers before the rollback completes, violating the all-or-nothing atomicity guarantee. The window is especially wide when the store flushes each op eagerly rather than journaling them together.",
+        "input_fixture": "batch.upsert('k1', b'v1').upsert('k2', b'v2').upsert('k3', b'v3'); simulate store.write() raising OSError after k1 is persisted; assert store.get('k1') is None after the failed commit",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONCURRENT_COMMIT_RACE",
+        "hypothesis": "Two coroutines that hold a reference to the same batch object and call commit() concurrently may both pass the 'already committed' guard if the guard is a plain boolean flag checked before an await boundary. The second commit can then re-apply all ops on an already-mutated store, producing duplicated writes or double deletes and invalidating atomicity.",
+        "input_fixture": "batch.upsert('k1', b'v1'); await asyncio.gather(batch.commit(), batch.commit()); assert store contains k1 exactly once and batch is marked consumed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ETAG_PARTIAL_ABORT",
+        "hypothesis": "When the batch contains three ops where op1 and op3 have valid etags but op2 has a stale etag, an optimistic implementation that validates etags in iteration order might apply op1's write before discovering op2's conflict, leaving op1's side-effect visible even though the batch should have aborted entirely.",
+        "input_fixture": "batch.upsert('a', b'new', etag='e1').upsert('b', b'new', etag='stale-etag').delete('c', etag='e3'); pre-populate store with b having etag 'current'; await batch.commit(); assert store['a'] unchanged and ConflictError raised",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REUSE_AFTER_SUCCESS",
+        "hypothesis": "After a successful commit(), calling upsert() or delete() on the same batch object and then commit() again should raise a state error. If the implementation merely clears the op queue without setting a 'committed' sentinel, the second commit will silently succeed on an empty queue, giving the caller false confidence that ops added post-commit were applied.",
+        "input_fixture": "await batch.upsert('k', b'v1').commit(); batch.upsert('k', b'v2'); await batch.commit(); expect BatchAlreadyCommittedError on second commit",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REUSE_AFTER_ABORT",
+        "hypothesis": "The invariant says the batch must not be reusable after commit returns successfully. But an implementation may reset internal state on abort (etag conflict path) without marking the batch as permanently dead, allowing the caller to keep adding ops and commit again after a conflict, effectively bypassing etag protection.",
+        "input_fixture": "batch.upsert('k', b'v', etag='wrong'); try: await batch.commit() except ConflictError: pass; batch.upsert('k', b'v2'); await batch.commit(); assert BatchAlreadyDeadError raised on second commit",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CROSS_STORE_OP_INJECTION",
+        "hypothesis": "If the batch object accepts a store reference per-operation (e.g., via a wrapper that decorates upsert), an attacker can enqueue ops destined for store-B while the batch was created against store-A. A naive implementation that dispatches each op's store reference independently would break the single-transaction boundary, writing to two stores with no cross-store atomicity guarantee.",
+        "input_fixture": "batch_a = StoreA.new_batch(); wrapped_op = StoreB.op('k', b'v'); batch_a._ops.append(wrapped_op); await batch_a.commit(); assert StoreA is untouched and CrossStoreBoundaryError raised",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY_KEY_BOUNDARY",
+        "hypothesis": "Passing an empty string as the key to upsert() or delete() may bypass key-existence validation in the store adapter. Some backends treat '' as a valid root key while others raise a KeyError mid-commit, potentially after partial writes for other ops have already been flushed, breaking atomicity via an unexpected exception path.",
+        "input_fixture": "batch.upsert('', b'value').upsert('valid-key', b'data'); await batch.commit(); assert either both ops committed or neither, and no partial state",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-UPSERT_THEN_DELETE_SAME_KEY",
+        "hypothesis": "Enqueueing upsert('k', b'v') followed by delete('k') for the same key within one batch creates an ordering ambiguity. If the implementation sorts or deduplicates ops by key before committing, the final observable state may differ from the insertion order, silently reordering programmer intent and violating the atomicity semantic that the queue is applied as declared.",
+        "input_fixture": "batch.upsert('k', b'v1').delete('k'); await batch.commit(); assert store['k'] does not exist (delete wins as last op in queue)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DELETE_THEN_UPSERT_SAME_KEY",
+        "hypothesis": "Enqueueing delete('k') followed by upsert('k', b'new') in the same batch should result in k existing with value 'new' after commit. A deduplication pass that retains only the first op touching each key would silently drop the upsert, leaving the key deleted \u2014 a different observable outcome than what the op sequence declares.",
+        "input_fixture": "store.set('k', b'old'); batch.delete('k').upsert('k', b'new'); await batch.commit(); assert store['k'] == b'new'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-MAXSIZE_VALUE_OVERFLOW",
+        "hypothesis": "Passing a value of exactly MAX_BYTES+1 (e.g. 64 MB + 1 byte) to upsert() may trigger a size rejection in the store adapter mid-commit rather than at enqueue time. If the batch has already flushed earlier ops by the time the oversized write is attempted, the remaining commit is partial and the store is left in an inconsistent state.",
+        "input_fixture": "big = b'x' * (64 * 1024 * 1024 + 1); batch.upsert('k1', b'safe').upsert('k2', big); await batch.commit(); assert store['k1'] unchanged and ValueError or SizeError raised before any write",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONE_ETAG_VS_MISSING_KEY",
+        "hypothesis": "When etag=None is passed to delete() and the key does not exist in the store, implementations may silently succeed (treating None as 'no precondition'). However if one interpretation is 'key must exist with any etag' and another is 'unconditional delete', a silent no-op on a missing key masquerades as a successful delete. Concurrent readers see no error while the delete never happened, corrupting the caller's assumptions about post-commit state.",
+        "input_fixture": "batch.delete('nonexistent-key', etag=None); await batch.commit(); assert commit succeeds but verify post-condition: does the batch contract guarantee the key is absent or merely that no error was raised?",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PROMPT_INJECTION_IN_KEY",
+        "hypothesis": "If the store adapter serializes the batch as a structured command (e.g. JSON, SQL, or a DSL string) and the key is interpolated without sanitization, a crafted key such as \"k'); DROP TABLE state; --\" or a JSON-breaking string like 'k\",\"op\":\"delete\",\"key\":\"admin' may escape the intended op context and execute unintended operations, violating atomicity and store-boundary invariants.",
+        "input_fixture": "batch.upsert('legit-key\",\"op\":\"delete\",\"key\":\"secret', b'v'); await batch.commit(); assert store['secret'] is unchanged and only legit-key is written",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ETAG_CLOCK_SKEW_BYPASS",
+        "hypothesis": "If etags are generated as wall-clock timestamps and the system clock skews backward (NTP correction or leap-second rollback), a stale etag from the past may appear newer than the current stored etag numerically, causing the conflict check to pass when it should reject. An attacker with control over system time can replay old writes without triggering a ConflictError.",
+        "input_fixture": "store.set('k', b'v1', etag='1745000000.5'); freeze clock at 1744999999.0; batch.upsert('k', b'v2', etag='1744999999.0'); await batch.commit(); assert ConflictError raised because stored etag is newer",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-READ_OP_SMUGGLED_VIA_SUBCLASS",
+        "hypothesis": "The Protocol only forbids read operations at the API surface, but a subclass or monkey-patch that overrides commit() to perform a store.get() call before applying writes introduces a read within the transaction boundary. This read may observe uncommitted state from a concurrent transaction, violating snapshot isolation and the no-read invariant even though no public read method is called by the caller.",
+        "input_fixture": "class EvilBatch(TransactionalBatch): async def commit(self): val = await self._store.get('k'); self._ops.append(read_result=val); await super().commit(); assert this violates INV-NO-READ and the implementation should reject or detect internal reads",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AMPLIFICATION_LARGE_BATCH",
+        "hypothesis": "Enqueueing 100,000 upsert ops in a single batch and calling commit() may expose O(n^2) etag validation (checking each op's etag against a shared lock table), exhausting CPU or memory before commit completes. The batch may time out mid-apply, leaving partial state visible if the store does not roll back on timeout, and the caller receives no ConflictError \u2014 just a timeout.",
+        "input_fixture": "for i in range(100_000): batch.upsert(f'k{i}', b'v', etag=f'e{i}'); await asyncio.wait_for(batch.commit(), timeout=5.0); assert either all 100k ops committed or none, no partial state on TimeoutError",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PARTIAL_COMMIT_CRASH",
+        "hypothesis": "Process crash during commit after applying 2 of 5 upserts leaves partial state visible, violating all-or-none atomicity guarantee",
+        "input_fixture": "batch.upsert('k1',b'v1').upsert('k2',b'v2').upsert('k3',b'v3').upsert('k4',b'v4').upsert('k5',b'v5'); simulate crash mid-commit; observer reads store and finds only k1,k2",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT_COMMIT_RACE",
+        "hypothesis": "Two threads simultaneously call commit() on same batch, both succeed instead of second raising StateError, operations applied twice or race into inconsistency",
+        "input_fixture": "batch=TransactionalBatch(); batch.upsert('k',b'v'); Thread1.commit() && Thread2.commit() race; store key incremented twice or state undefined",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ETAG_BYPASS_NULL",
+        "hypothesis": "Null etag in upsert() bypasses conflict detection, commit succeeds despite server having different etag, no conflict error raised",
+        "input_fixture": "batch.upsert('k',b'v1',etag=None) where server has k with etag='server_v1'; commit() returns without error instead of aborting",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SELECTIVE_CONFLICT_CHECK",
+        "hypothesis": "Only first operation validated for etag; second op has conflicting etag but batch commits anyway, violating all-operations-must-abort guarantee",
+        "input_fixture": "batch.upsert('k1',b'v1',etag='match').upsert('k2',b'v2',etag='mismatch'); server k2 has different etag; batch commits successfully",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REUSE_AFTER_COMMIT_SILENT",
+        "hypothesis": "Calling upsert() after successful commit() silently enqueues instead of raising StateError, allowing batch reuse and duplicate write",
+        "input_fixture": "batch.upsert('k1',b'v1'); await batch.commit(); result=batch.upsert('k2',b'v2'); result is not exception but TransactionalBatch",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DOUBLE_COMMIT_IDEMPOTENT",
+        "hypothesis": "Calling commit() twice on same batch does not raise StateError on second invocation; operations idempotently reapplied",
+        "input_fixture": "batch.upsert('k',b'v'); await batch.commit(); await batch.commit() second call succeeds instead of raising StateError",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CROSS_STORE_BATCH_ROUTING",
+        "hypothesis": "Single batch somehow targets multiple store instances during commit, when one fails the other already committed, breaking atomicity boundary",
+        "input_fixture": "batch=store1.batch(); batch.upsert('k1',b'v1').delete('k2'); internal routing sends upsert to store1, delete to store2; store2 commit fails after store1 succeeds",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RACE_ETAG_VERSION_DRIFT",
+        "hypothesis": "Between queueing upsert with etag='v1' and commit(), server mutates key to etag='v2', but commit succeeds without detecting conflict drift",
+        "input_fixture": "batch.upsert('k',b'v',etag='v1'); [async: server mutates k to etag='v2']; await batch.commit() returns success without conflict error",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY_BATCH_COMMIT_UNDEFINED",
+        "hypothesis": "Calling commit() on empty batch with no queued operations produces undefined behavior: crash, silent success, or inconsistent state tracking",
+        "input_fixture": "batch=TransactionalBatch(); await batch.commit() without prior upsert/delete; observe crash or StateError not raised on next reuse attempt",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MALFORMED_KEY_WHITESPACE_ONLY",
+        "hypothesis": "Key with only whitespace passes validation but causes commit failure during write, leaving batch in broken unrecoverable state with opaque error",
+        "input_fixture": "batch.upsert('   ',b'val').delete('\\t\\n'); await batch.commit() partially fails or succeeds with invisible keys, atomicity unclear",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-VALUE_BYTEARRAY_MUTATION",
+        "hypothesis": "Mutable bytes passed to upsert get mutated after enqueue but before commit, commit applies modified value not original, breaking write semantics",
+        "input_fixture": "val=bytearray(b'original'); batch.upsert('k',val); val[0:3]=b'XXX'; await batch.commit(); store contains 'XXXiginal' not 'original'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-IMPLICIT_READ_ETAG_LEAK",
+        "hypothesis": "Conflict check requires reading key version from store to compare etag, leaking read operation beyond write-only contract, violating read-forbidden",
+        "input_fixture": "batch.upsert('secret_key',b'secret_value',etag='check'); during commit conflict validation, batch reads actual secret_key from store to compare etag",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REPLAY_COMMITTED_BATCH",
+        "hypothesis": "Attacker captures committed batch and replays it by resetting internal state flag, causing duplicate writes to apply without error",
+        "input_fixture": "batch1=batch.upsert('k',b'v1').commit(); [reset batch._committed=False]; re-submit batch1; store now has duplicate commit traces or v1 written twice",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "batch.commit.started",
+        "required_attributes": [
+          "batch_id",
+          "op_count"
+        ]
+      },
+      {
+        "event_name": "batch.commit.committed",
+        "required_attributes": [
+          "batch_id",
+          "op_count",
+          "duration_ms"
+        ]
+      },
+      {
+        "event_name": "batch.commit.aborted",
+        "required_attributes": [
+          "batch_id",
+          "op_count",
+          "reason"
+        ]
+      },
+      {
+        "event_name": "batch.op.appended",
+        "required_attributes": [
+          "batch_id",
+          "op",
+          "key"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "batch.commit.calls",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 100,
+        "label_keys": [
+          "outcome"
+        ]
+      },
+      {
+        "name": "batch.commit.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "outcome"
+        ]
+      },
+      {
+        "name": "batch.op.count",
+        "metric_type": "histogram",
+        "unit": "1",
+        "cardinality_bound": 100,
+        "label_keys": [
+          "outcome"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "batch.commit",
+        "required_attributes": [
+          "batch.id",
+          "batch.op_count"
+        ]
+      },
+      {
+        "operation_name": "batch.apply",
+        "required_attributes": [
+          "batch.id",
+          "store.name"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Matches catalog Protocol signatures exactly (upsert/delete returning self, async commit). Invariants TXB-INV-01..05 faithfully implemented; _Op dataclass mirrors spec. Minor: catalog _Op has no frozen/slots but implementation matches."
+      },
+      {
+        "axis": "completeness",
+        "score": 8,
+        "rationale": "All 5 invariants enforced: atomic validate-then-apply, etag conflict, state machine (OPEN/COMMITTED/ABORTED), single-store binding via constructor, no read methods. Op cap, key/value validation, inspection props included. Missing: no explicit same-store cross-check beyond constructor binding (TXB-INV-04 trivially held)."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Three-tier taxonomy (TransactionalBatchError/BatchStateError/EtagConflictError) with invariant IDs in messages. EtagConflictError carries key/expected/actual attributes for programmatic handling. Clear distinction between value errors and state errors."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "StateStore Protocol cleanly decouples batch from store; runtime_checkable enables adapter injection (Redis/Postgres/Kafka per extension contract). Fluent chaining returns self. Zero I/O at import. Async commit preserves protocol compat."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe via RLock held across validate+apply (correct atomicity). Snapshot-then-mutate pattern prevents partial state. ABORTED state set on any exception. Missing observability hooks mentioned in spec (batch.commit.calls/duration counters not wired) \u2014 reference impl defensible but gap vs spec."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Protocol name, namespace intent, signatures, invariant count, extension contract all align with catalog JSON. __all__ exposes documented surface. TXB-INV-05 enforced by absence as spec mandates. Minor: catalog _Op leaks as internal type in StateStore.apply_transaction signature (underscore-prefixed but part of adapter contract)."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'etag' is used repeatedly with no inline definition \u2014 a junior will not know it means 'version stamp'",
+          "References to external files (contract.json, invariant_bindings.json, .tla) with no explanation of what they contain or whether the junior needs them",
+          "'Optimistic concurrency control' is jargon introduced but never demystified"
+        ],
+        "rewrite_suggestion": "Add a 2-sentence glossary callout: 'An etag is a version stamp the store assigns each key; it increments on every write. Optimistic concurrency control means we assume no conflict and abort only if one is detected at commit time.' Expand the code example with a try/except block showing what to do when commit raises a conflict error."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "commit() is described as 'async for protocol compatibility' without explaining what the protocol is or why async is needed when the implementation dispatches synchronously",
+          "No discussion of whether deadlock is possible when two batches targeting overlapping keys commit concurrently",
+          "Extension contract does not specify whether adapter authors must provide their own locking or whether the runtime layer wraps them"
+        ],
+        "rewrite_suggestion": "Add a 'Concurrency model' note: the RLock is store-level and held only during commit, not during batch construction, so two concurrent commits serialize safely without deadlock risk. Clarify that adapter authors do NOT need to re-implement locking \u2014 the runtime holds the store lock before calling the adapter's native transaction API."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "No authorization model \u2014 the doc says nothing about who is allowed to construct or commit a batch against a given store instance",
+          "No key-space isolation guidance \u2014 an adversary constructing a batch with crafted key names could potentially overwrite keys outside their namespace",
+          "No audit-log specification \u2014 it is unclear whether commit events (including keys written and caller identity) are emitted to an audit trail"
+        ],
+        "rewrite_suggestion": "Add a 'Security controls' subsection covering: (1) callers must be authenticated before a StateStore instance is handed to them \u2014 the batch itself has no built-in authz; (2) stores SHOULD enforce key-prefix namespacing per tenant before accepting an operation; (3) implementations SHOULD emit a structured audit event on every commit containing operation count, outcome, and caller identity."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Metrics are listed but no alert thresholds or error budgets are given \u2014 the SRE does not know what conflict rate or p99 latency should trigger a page",
+          "No failure-mode table \u2014 it is unclear whether a store-unavailable error surfaces immediately or after a timeout, or whether partial infrastructure failure can leave the store lock permanently held",
+          "No runbook or escalation path is referenced"
+        ],
+        "rewrite_suggestion": "Add a 'Failure modes' table: store unavailable \u2192 commit raises StoreUnavailableError immediately (no retry inside the primitive); lock contention \u2192 RLock blocks the caller thread (set a timeout at the application layer). Add recommended alert thresholds: conflict_rate > 5 % over 5 min = warn; p99 commit duration > 200 ms over 5 min = page. Link to a runbook template."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "No business-impact framing \u2014 the doc never states what user-visible problem this solves (e.g., 'prevents accounts showing a debit without the matching credit')",
+          "The invariants table and TLA+ references are engineering internals that add noise without value for a PM",
+          "'Saga or Outbox pattern' in the when-NOT-to-use section are unexplained; a PM cannot act on this guidance"
+        ],
+        "rewrite_suggestion": "Open with a one-paragraph business value statement: 'Without this primitive, a crash mid-transfer can debit one account without crediting the other; TransactionalBatch prevents that class of data-consistency bug.' Collapse the invariants table into a single plain-English guarantee. Replace 'prefer a saga or the Outbox pattern' with 'contact the platform team \u2014 cross-service consistency requires a different solution.'"
+      }
+    ]
+  }
+}

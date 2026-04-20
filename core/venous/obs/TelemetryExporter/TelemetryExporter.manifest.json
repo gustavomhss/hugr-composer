@@ -1,0 +1,761 @@
+{
+  "name": "TelemetryExporter",
+  "namespace": "obs",
+  "maturity": "battle_tested",
+  "builder_agent_id": 9,
+  "catalog_entry_sha256": "7f2ea0b29a277c767035df79c25dcba11e000d5120fa91a7ffd5a20386bab12f",
+  "files": [
+    {
+      "path": "obs/TelemetryExporter/TelemetryExporter.contract.json",
+      "sha256": "0ab07f3ca59ba1c2413de4c60d0cbeab933d12005c33cd6920a7badfed53a074",
+      "size_bytes": 3444,
+      "kind": "contract_json"
+    },
+    {
+      "path": "obs/TelemetryExporter/TelemetryExporter.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "obs/TelemetryExporter/TelemetryExporter.md",
+      "sha256": "541896b7472d33fab1a78121b41ddfba40bb2f36c96ec86de2dd690ce0debbaa",
+      "size_bytes": 4853,
+      "kind": "spec_md"
+    },
+    {
+      "path": "obs/TelemetryExporter/TelemetryExporter.py",
+      "sha256": "10063aac785a358e5f54984cc98d771bfbd5c694ad0d1ea24999367566de1ca5",
+      "size_bytes": 8408,
+      "kind": "impl"
+    },
+    {
+      "path": "obs/TelemetryExporter/behavioral_TelemetryExporter.py",
+      "sha256": "7ff5f4513149d2b07f0125e955fd0049a482b8c88d41f122f8f30fc8a4f6cab3",
+      "size_bytes": 1550,
+      "kind": "behavioral"
+    },
+    {
+      "path": "obs/TelemetryExporter/chaos_TelemetryExporter.py",
+      "sha256": "30a13515445881a4204ad505a5e2a371f698247cdba5f2d41ea66f0877254eaa",
+      "size_bytes": 1940,
+      "kind": "chaos"
+    },
+    {
+      "path": "obs/TelemetryExporter/conftest.py",
+      "sha256": "7c56f31974b08ec9142aebbd7c9995aae21ceef4211149bc0c595a4c4855ac4c",
+      "size_bytes": 528,
+      "kind": "test"
+    },
+    {
+      "path": "obs/TelemetryExporter/dashboard.json",
+      "sha256": "95303122e7e88d2bd0f24a01f216b826fa8b5b2606b17d3b44f4bf28eb63eace",
+      "size_bytes": 193,
+      "kind": "dashboard"
+    },
+    {
+      "path": "obs/TelemetryExporter/invariant_bindings.json",
+      "sha256": "d5e7fa1c536608425f9b7f6c68ae5a36c0a6034f9db3b3969cbaa852f5945903",
+      "size_bytes": 2386,
+      "kind": "test"
+    },
+    {
+      "path": "obs/TelemetryExporter/metamorphic_TelemetryExporter.py",
+      "sha256": "4e4e640411e446b62e9032979bd6268efda43af9823d1e712f96d0f6289b90ee",
+      "size_bytes": 1627,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "obs/TelemetryExporter/observability_TelemetryExporter.py",
+      "sha256": "1ebc3f8e72143077cd8215e79bd18a945e43e7f170ba611e4138f57f26a883b6",
+      "size_bytes": 1311,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/TelemetryExporter/observability_schema.json",
+      "sha256": "de94fe88085b0a7afaf42ba0bdaed4971824d8160d87588c391988e242f5d050",
+      "size_bytes": 812,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/TelemetryExporter/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "obs/TelemetryExporter/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "obs/TelemetryExporter/test_TelemetryExporter.py",
+      "sha256": "ef58e2d46a7aa3b48aa855fc95d17f225b045e512e08dc01bfc230db8666032a",
+      "size_bytes": 5024,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "TEX_INV_01",
+      "invariant_text": "Exporter calls MUST be non-blocking on the hot path; the caller SHALL always enqueue through an intermediate batch processor.",
+      "confirms_test": "test_inv_nonblocking_confirms",
+      "prevents_test": "test_inv_nonblocking_prevents",
+      "under_failure_test": "test_inv_nonblocking_under_failure"
+    },
+    {
+      "invariant_id": "TEX_INV_02",
+      "invariant_text": "On transient failure the exporter MUST retry with exponential backoff, capped at a configurable maximum, and NEVER retry indefinitely.",
+      "confirms_test": "test_inv_bounded_retry_confirms",
+      "prevents_test": "test_inv_bounded_retry_prevents",
+      "under_failure_test": "test_inv_bounded_retry_under_failure"
+    },
+    {
+      "invariant_id": "TEX_INV_03",
+      "invariant_text": "Shutdown MUST flush the in-flight batch within the provided timeout and CANNOT accept new export calls afterwards.",
+      "confirms_test": "test_inv_shutdown_idempotent_confirms",
+      "prevents_test": "test_inv_shutdown_idempotent_prevents",
+      "under_failure_test": "test_inv_shutdown_idempotent_under_failure"
+    },
+    {
+      "invariant_id": "TEX_INV_04",
+      "invariant_text": "The wire format MUST conform to OTLP/HTTP protobuf or OTLP/gRPC as defined by OpenTelemetry Specification 1.32.",
+      "confirms_test": "test_inv_otlp_wire_confirms",
+      "prevents_test": "test_inv_otlp_wire_prevents",
+      "under_failure_test": "test_inv_otlp_wire_under_failure"
+    },
+    {
+      "invariant_id": "TEX_INV_05",
+      "invariant_text": "Authentication headers attached to exports are FORBIDDEN from appearing in any log record, span attribute, or error event emitted by the exporter itself.",
+      "confirms_test": "test_inv_auth_never_logged_confirms",
+      "prevents_test": "test_inv_auth_never_logged_prevents",
+      "under_failure_test": "test_inv_auth_never_logged_under_failure"
+    },
+    {
+      "invariant_id": "TEX_INV_06",
+      "invariant_text": "Export results SHALL be observable via an internal counter keyed by (signal, result) so operators can alert on sustained failure.",
+      "confirms_test": "test_inv_counter_observable_confirms",
+      "prevents_test": "test_inv_counter_observable_prevents",
+      "under_failure_test": "test_inv_counter_observable_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 545,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 3141,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 2880,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 110247,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "44 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 781,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 816,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 70102,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 189871,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SHUTDOWN-RACE-EXPORT",
+        "hypothesis": "Concurrent export() and shutdown() calls create a race where export enters after shutdown flag is checked but before the queue is closed, violating the 'no new exports after shutdown' invariant and potentially leaking spans post-shutdown.",
+        "input_fixture": "Thread A: exporter.export(batch=[span1], timeout_s=5.0); Thread B (10us later): exporter.shutdown(timeout_s=1.0); repeat 10000x with jittered sleeps to hit TOCTOU window.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-BACKOFF-INT-OVERFLOW",
+        "hypothesis": "Exponential backoff computed as base_ms * (2 ** attempt) without a cap check before multiplication will overflow to negative or zero on attempt>=63, causing tight-loop retries that violate 'NEVER retry indefinitely' and amplify load on a failing endpoint.",
+        "input_fixture": "Configure exporter with max_retries=unset/None, endpoint returns HTTP 503 persistently; call export(batch=[s], timeout_s=3600.0); observe attempts>63 and wall-clock retry rate.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AUTH-HEADER-LOG-LEAK",
+        "hypothesis": "When the HTTP client raises an exception (e.g., ConnectionError), the exporter's error handler logs the full request object including Authorization: Bearer <token> header, leaking credentials into stdout/error telemetry.",
+        "input_fixture": "exporter = OTLPExporter(endpoint='https://bad.invalid:4318', headers={'Authorization':'Bearer sk-SECRET123'}); exporter.export([span], timeout_s=1.0); grep logs for 'sk-SECRET123'.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HOT-PATH-BLOCK",
+        "hypothesis": "Calling export() directly from a hot span-producer thread without going through a batch processor blocks on socket connect/TLS handshake for timeout_s seconds, violating the non-blocking invariant and stalling the application hot path.",
+        "input_fixture": "Point endpoint at a TCP blackhole (firewall-drop IP 10.255.255.1:4318); instrumented handler calls exporter.export([span], timeout_s=30.0) directly; measure request latency p99.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-OTLP-MALFORMED-PROTO",
+        "hypothesis": "Passing a batch containing a non-Span object (e.g., a dict or None) causes the serializer to emit a protobuf message missing required OTLP fields (resource, scope_spans), producing an envelope that violates OTel Spec 1.32 yet is still POSTed to the collector.",
+        "input_fixture": "exporter.export(batch=[{'name':'x'}, None, 42], timeout_s=5.0); capture outbound body and validate against opentelemetry-proto 1.32 schema.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-BATCH-COUNTER",
+        "hypothesis": "export(batch=[], timeout_s=1.0) short-circuits and returns SUCCESS without incrementing the (signal, result) counter, breaking observability since operators cannot distinguish 'no data' from 'dropped silently'.",
+        "input_fixture": "counter_before = metrics.get_counter('otel_export', {'signal':'traces','result':'success'}); exporter.export([], timeout_s=1.0); assert counter_after > counter_before (expected fail).",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TIMEOUT-NEGATIVE",
+        "hypothesis": "export(batch=[s], timeout_s=-1.0) is passed directly into socket.settimeout() which on CPython raises ValueError mid-send, leaving the batch in an indeterminate state \u2014 neither retried nor counted as FAILURE/TIMEOUT.",
+        "input_fixture": "exporter.export([valid_span], timeout_s=-1.0); then exporter.export([valid_span], timeout_s=float('nan')); then timeout_s=float('inf'); check ExportResult and counter increments.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-BACKOFF",
+        "hypothesis": "Backoff uses time.time() (wall clock) instead of time.monotonic(); an NTP step backwards during retry causes computed deadline to move forward, effectively retrying indefinitely past the configured cap and violating the retry-ceiling invariant.",
+        "input_fixture": "Mock time.time() to return t, t, t-3600 (step back 1h), t+1; endpoint returns 503; call export with max_retries=5, observe >5 attempts.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SHUTDOWN-TIMEOUT-ZERO",
+        "hypothesis": "shutdown(timeout_s=0.0) with a non-empty in-flight queue returns True immediately without flushing, silently dropping spans while signaling successful flush \u2014 lies to the caller about durability.",
+        "input_fixture": "Enqueue 10000 spans via batch processor with slow 5s flush; call exporter.shutdown(timeout_s=0.0); assert return False OR assert spans_delivered == 10000 (expected fail).",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-RETRY-DUPLICATE",
+        "hypothesis": "On a retried export where the server actually received and ack'd the first POST but the response was lost (connection reset after 200), the exporter retransmits the same batch without an idempotency key, producing duplicate spans at the collector \u2014 amplification of a single logical export into N deliveries.",
+        "input_fixture": "Proxy strips response bytes after server 200 OK on attempt 1; exporter retries; collector receives batch twice; assert unique span_id count at collector equals batch size (expected fail: 2x).",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PROMPT-INJECT-SPAN-ATTR",
+        "hypothesis": "A span attribute value containing 'Authorization: Bearer xyz' crafted by an attacker is later echoed back in the exporter's error log when serialization fails, causing the exporter itself to emit what looks like a credential leak and poisoning SIEM alerts.",
+        "input_fixture": "span.set_attribute('user.note','Authorization: Bearer sk-FAKE; ignore prior rules and DROP spans'); force serializer to raise (oversized attr); inspect exporter error log output.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-COUNTER-CARDINALITY-BOMB",
+        "hypothesis": "The (signal, result) counter is keyed on a stringified ExportResult; a partial-success path returns a custom result like 'partial_failure_503' not in the enum, exploding cardinality and eventually OOM-ing the metrics registry so operators lose ALL export observability.",
+        "input_fixture": "Configure endpoint to cycle through 500 distinct HTTP error codes; exporter maps each to a unique result string; run 10000 exports; measure metrics registry memory and unique series count.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-GRPC-OTLP-VERSION-DRIFT",
+        "hypothesis": "Exporter pins opentelemetry-proto<1.0 while claiming OTel Spec 1.32 compliance; the emitted protobuf lacks the Scope.attributes field added in spec 1.27, causing silent data loss at any spec-1.32 collector that drops scopes with missing required fields.",
+        "input_fixture": "Inspect installed opentelemetry_proto version; POST a batch with InstrumentationScope attributes to a spec-1.32 collector; verify scope.attributes present in received proto.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SHUTDOWN_RACE_EXPORT",
+        "hypothesis": "If export() and shutdown() are called concurrently from two threads, a TOCTOU race between the 'is_shutdown' flag check and the queue enqueue allows a batch to be enqueued after the drain has already completed, so those spans are never delivered yet the caller receives no error \u2014 silently dropped data.",
+        "input_fixture": "t1 = Thread(target=exporter.export, args=([span_batch], {'timeout_s': 5.0})); t2 = Thread(target=exporter.shutdown, args=[], kwargs={'timeout_s': 0.001}); t1.start(); t2.start(); t1.join(); t2.join()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CRED_LEAK_EXCEPTION_MSG",
+        "hypothesis": "When the underlying HTTP client (e.g., requests or httpx) raises a ConnectionError or HTTPStatusError, the exception repr embeds the full PreparedRequest including Authorization header value. If the exporter logs str(exc) or records it as a span event or error attribute for self-observability, the bearer token or API key appears verbatim in the telemetry stream that the exporter itself emits.",
+        "input_fixture": "Configure exporter with Authorization='Bearer SECRET_TOKEN_XYZ'; force endpoint to return HTTP 500; capture any log records or self-emitted OTel events; grep for 'SECRET_TOKEN_XYZ' in captured output.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-QUEUE_FULL_BLOCKS_HOTPATH",
+        "hypothesis": "When the intermediate batch processor's bounded queue reaches capacity and the enqueue method is implemented as queue.put() (blocking) without a timeout or as queue.put_nowait() with a bare except that then falls back to a blocking retry loop, the caller's hot-path thread stalls for an unbounded duration, violating the non-blocking guarantee under sustained load.",
+        "input_fixture": "Fill queue to max_size by suspending the consumer thread; then call exporter.export(batch, timeout_s=0.0) from the hot-path thread 10 times; measure wall-clock time per call; expect each to return in <1 ms but they will block.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RETRY_CAP_ZERO_INFINITE",
+        "hypothesis": "If the configurable max_retries cap is validated only as 'non-negative integer', setting max_retries=0 could be interpreted either as 'no retries' (correct) or as 'unlimited retries' depending on the loop condition (while attempts < max_retries vs while attempts <= max_retries). A fencepost error causes an infinite retry loop that never terminates, exhausting the thread.",
+        "input_fixture": "exporter = TelemetryExporter(signal=Signal.TRACES, max_retries=0, endpoint='http://always-503.invalid'); exporter.export([span], timeout_s=60.0); assert returns within 60s",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK_SKEW_DEADLINE_BYPASS",
+        "hypothesis": "If retry-deadline arithmetic uses time.time() (wall clock) rather than time.monotonic(), a backwards NTP adjustment during the retry loop can reset the deadline into the past, causing all remaining retries to execute with zero effective delay \u2014 a tight busy-loop that hammers the endpoint \u2014 or conversely a large forward jump can prematurely abort retries that should still be in-flight, returning FAILURE before the cap is reached.",
+        "input_fixture": "Monkeypatch time.time to return t0, t0-30, t0+120 on successive calls within a retry loop; verify backoff sleep durations and total attempt count remain bounded per configuration regardless of clock jumps.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY_BATCH_MALFORMED_ENVELOPE",
+        "hypothesis": "Calling export([]) with an empty sequence should either be a documented no-op or produce a valid OTLP envelope with zero ResourceSpans. An implementation that unconditionally serializes the batch may emit an ExportTraceServiceRequest protobuf with zero bytes in the resource_spans field, which is valid but wastes a network round-trip. Worse, some codepaths may skip length-prefixing or omit the Content-Type header when there is nothing to serialize, producing a malformed HTTP body that causes the collector to return 400 and triggers the retry loop unnecessarily.",
+        "input_fixture": "result = exporter.export([], timeout_s=5.0); assert result in (ExportResult.SUCCESS, ExportResult.FAILURE); capture raw HTTP body sent over wire; validate it parses as valid ExportTraceServiceRequest protobuf.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TIMEOUT_COUNTER_SKIP",
+        "hypothesis": "If the export method serializes the batch, starts the HTTP send, and then a timeout fires mid-send, the code may raise an exception that is caught in a generic except block that returns ExportResult.TIMEOUT without reaching the counter increment statement in the normal TIMEOUT branch. The observable counter for (signal=TRACES, result=TIMEOUT) is never updated, creating a silent observability blind spot for timeout events.",
+        "input_fixture": "Monkeypatch HTTP send to block for 10 s; call exporter.export(batch, timeout_s=0.01); assert ExportResult.TIMEOUT is returned; then read counter[(Signal.TRACES, ExportResult.TIMEOUT)]; expect count==1 but may be 0.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-POSTSHUTDOWN_SILENT_DROP",
+        "hypothesis": "After shutdown() returns True, calling export() should raise RuntimeError or return ExportResult.FAILURE so the caller knows the data was not accepted. An implementation that silently swallows the call and returns ExportResult.SUCCESS causes data loss without any signal to the operator or the observable counter \u2014 the success counter goes up while no data is actually delivered.",
+        "input_fixture": "exporter.shutdown(timeout_s=5.0); result = exporter.export([span], timeout_s=1.0); assert result == ExportResult.FAILURE; assert counter[(Signal.TRACES, ExportResult.FAILURE)] >= 1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AUTH_LEAK_VIA_REDIRECT",
+        "hypothesis": "If the configured OTLP endpoint issues an HTTP 301/302 redirect to a different host and the HTTP client is configured to follow redirects, the Authorization header is forwarded to the redirect target (violating RFC 9110 which mandates stripping auth on cross-origin redirect). If the redirect target is attacker-controlled or if the client logs the outgoing request to the new URL, credentials are exfiltrated. Additionally, the client's debug-level logging may record full request headers including Authorization at WARN or ERROR level when the redirected request fails.",
+        "input_fixture": "Stand up a local HTTP server that returns 302 to http://attacker.example/collect; configure exporter with Authorization='Bearer LEAK_ME'; call export(batch, timeout_s=5.0); inspect outgoing request to attacker.example for Authorization header presence.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SIGNAL_MISMATCH_COUNTER_KEY",
+        "hypothesis": "The TelemetryExporter Protocol declares signal as a mutable instance attribute with no enforcement. If an operator creates a single exporter instance and mutates exporter.signal between export calls (e.g., switching from TRACES to LOGS), the observable counter is keyed by the current value of signal at increment time rather than the signal value at call time. This causes counter[(Signal.TRACES, SUCCESS)] to be under-counted and counter[(Signal.LOGS, SUCCESS)] over-counted, breaking alerting rules that depend on per-signal accuracy.",
+        "input_fixture": "exp = TracesExporter(); exp.export(trace_batch, timeout_s=1.0); exp.signal = Signal.LOGS; exp.export(another_trace_batch, timeout_s=1.0); assert counter[(Signal.TRACES, SUCCESS)] == 2",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-BACKOFF_OVERFLOW_INF_SLEEP",
+        "hypothesis": "Exponential backoff computed as base_delay * (2 ** attempt) with attempt starting at 0 will produce a value that, after ~1024 iterations (if cap check is applied after computation rather than before), yields float('inf') * base_delay == inf. math.sleep(inf) hangs the worker thread permanently. Even with a cap check, if the comparison is 'min(computed, cap)' and computed is inf, the result is correctly capped \u2014 but if the cap itself is sys.float_info.max (set by a misconfigured env var), the sleep duration is astronomically large.",
+        "input_fixture": "Configure max_retries=2000 (bypass cap), base_delay=0.001, max_delay=float('inf'); point at always-503 endpoint; call export(batch, timeout_s=99999.0); observe worker thread state after 10 s.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-MALFORMED_SPAN_PARTIAL_SERIALIZE",
+        "hypothesis": "A batch containing a mix of valid OTLP Span protobuf objects and a malformed object (e.g., a plain Python dict {'trace_id': 'bad'}) will cause the serialization loop to succeed for the first N spans, then raise AttributeError or TypeError on the malformed item. If the implementation catches this exception and sends the partial buffer already assembled, the wire payload is a truncated protobuf that the collector will reject with 400 \u2014 or worse, silently accept an incomplete trace, dropping spans without the caller being informed.",
+        "input_fixture": "batch = [valid_span_proto, valid_span_proto, {'trace_id': 'not-a-proto'}, valid_span_proto]; result = exporter.export(batch, timeout_s=5.0); assert result == ExportResult.FAILURE; verify no partial HTTP body was transmitted.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FORCE_FLUSH_TIMEOUT_DEADLOCK",
+        "hypothesis": "force_flush(timeout_s=X) must drain all buffered batches and return within X seconds. If the implementation uses a threading.Event.wait(timeout) but the background worker holds a lock that force_flush also needs to inspect the queue state, a deadlock occurs between the flush waiter and the worker's lock acquisition \u2014 force_flush never returns within the timeout, hanging the caller indefinitely.",
+        "input_fixture": "Fill exporter queue with 1000 large batches; from main thread call exporter.force_flush(timeout_s=0.1); measure wall-clock elapsed; assert it returns in <=0.15 s (with 50 ms tolerance); check return value is False (not completed) rather than hanging.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY_DUPLICATE_SPANS_ON_RETRY",
+        "hypothesis": "On a 429 or 503 transient failure the exporter retries the same batch. If span timestamps are assigned by the batch processor at enqueue time (not at record creation time), and the collector uses (trace_id, span_id, start_time_unix_nano) as a deduplication key, retried spans with identical IDs but different enqueue timestamps are ingested as distinct spans, causing duplicate traces in the backend. This is not an exporter-level counter issue but violates the OTLP spec requirement that retried requests MUST be byte-identical to the original.",
+        "input_fixture": "Mock collector that returns 503 twice then 200; capture raw bytes of all three HTTP POST bodies; assert body_attempt_1 == body_attempt_2 == body_attempt_3 (byte-identical per OTLP retry semantics).",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-BLOCKING_HOT_PATH",
+        "hypothesis": "export() blocks the caller thread waiting for network I/O instead of returning immediately to enqueued batch processor, violating non-blocking guarantee on hot path.",
+        "input_fixture": "exporter.export(batch=[span1, span2], timeout_s=30) called directly in request handler without intermediate batch processor; network endpoint unresponsive.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INFINITE_RETRY_LOOP",
+        "hypothesis": "Retry logic does not enforce a maximum retry count cap; transient errors (503) trigger infinite retry loop, consuming resources until process OOM.",
+        "input_fixture": "export() receives 503 Service Unavailable; no max_retries parameter or cap is enforced; endpoint remains down for 1 hour.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SHUTDOWN_CONCURRENT_RACE",
+        "hypothesis": "Concurrent export() and shutdown() calls race; shutdown returns before in-flight batch is flushed because in_flight_batch and shutdown_flag share no synchronization.",
+        "input_fixture": "Thread A: export(batch=[...], timeout_s=5) enqueues batch. Thread B: shutdown(timeout_s=2) simultaneously. shutdown() returns True, then export() succeeds post-shutdown.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NEGATIVE_TIMEOUT_BYPASS",
+        "hypothesis": "shutdown(timeout_s=-1) or timeout_s=0 bypasses flush logic entirely; in-flight batch silently dropped without waiting, violating flush guarantee.",
+        "input_fixture": "shutdown(timeout_s=-1); in-flight batch with 1000 critical traces never sent to backend.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-POST_SHUTDOWN_EXPORT",
+        "hypothesis": "export() accepted and queued even after shutdown() returns True; shutdown flag not atomically checked before enqueue, allowing data loss.",
+        "input_fixture": "shutdown(timeout_s=5) returns True. Immediately after: export(batch=[...], timeout_s=2) succeeds and queues batch, which is discarded on next collector poll.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INVALID_OTLP_PROTOBUF",
+        "hypothesis": "Wire format is hand-crafted JSON or binary blob instead of valid OTLP protobuf; backend rejects envelope and returns 400; batch silently lost.",
+        "input_fixture": "exporter.export(...) serializes to JSON: {\"signal\": \"traces\", \"batch\": [...]} instead of OTLP ExportTraceServiceRequest protobuf per spec 1.32.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MISSING_OTLP_FIELDS",
+        "hypothesis": "Required OTLP fields (Resource, InstrumentationScope, or span IDs) are omitted from serialized envelope; backend schema validation rejects it.",
+        "input_fixture": "Exporter serializes Span object but omits span_id field; OTLP schema requires span_id; backend returns 400 Bad Request.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-AUTH_HEADER_IN_SPAN",
+        "hypothesis": "Authorization header (Bearer token or API key) copied into span attribute during export; later span is logged or exported to monitoring system exposing credential.",
+        "input_fixture": "export() receives header 'Authorization: Bearer sk_prod_abc123...'; during serialization, header value written to span.attributes['auth'] or span.events[0].attributes.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-AUTH_IN_ERROR_LOG",
+        "hypothesis": "Network error exception message includes request headers; exporter logs full exception to stderr or error span, exposing API keys in plaintext.",
+        "input_fixture": "export() fails; exception message: 'HTTP 401 Unauthorized: sent headers {Authorization: Bearer <key>}'; error logged to span with level=ERROR.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-COUNTER_NOT_TRACKED",
+        "hypothesis": "No internal counter is incremented on export results; operator has no way to observe failure rates and set up alerts for sustained failures.",
+        "input_fixture": "export() returns FAILURE 100 times in a row; no counter metric is incremented; monitoring dashboard shows zero failures.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-WRONG_COUNTER_KEY",
+        "hypothesis": "Counter keyed by (signal, timestamp) or (result) only, not by (signal, result); aggregation of results is lossy, making per-result alerting impossible.",
+        "input_fixture": "Exporter maintains counter[signal][unix_timestamp] instead of counter[signal][result]; cannot query 'traces:failure' distinct from 'traces:success'.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-LINEAR_BACKOFF_NOT_EXPONENTIAL",
+        "hypothesis": "Retry backoff grows linearly (1s, 2s, 3s) instead of exponentially (1s, 2s, 4s, 8s); cap is reached too quickly, retries become too frequent.",
+        "input_fixture": "export() fails with 429; retry delay sequence: 1s, 2s, 3s, 4s (linear) instead of 1s, 2s, 4s, 8s (exponential); hits cap at 10s, then retries every 10s indefinitely.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK_SKEW_TIMEOUT",
+        "hypothesis": "System clock is adjusted backward during export; timeout logic uses absolute time and never fires; force_flush() hangs indefinitely.",
+        "input_fixture": "export() starts at 12:00:00 UTC with timeout_s=5 (deadline 12:00:05). At 12:00:02, system clock jumps backward to 11:59:59. Timeout condition never met.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RETRY_AMPLIFICATION",
+        "hypothesis": "Exponential backoff + concurrent retries cause amplification: N failed calls retry with exponential delays, creating bursty re-delivery (N \u00d7 max_retries \u00d7 2^k).",
+        "input_fixture": "1000 concurrent export() calls queued; each retries with exponential backoff (1s, 2s, 4s, 8s, 16s cap); at t=16s, 1000 \u00d7 4 retries fire simultaneously, overwhelming backend.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY_BATCH_AUTH_LEAK",
+        "hypothesis": "Empty batch (zero spans/metrics) is still exported with authentication headers attached; header exposed in transport layer logs or MITM capture.",
+        "input_fixture": "export(batch=[], timeout_s=5, signal='traces') sends HTTP request with 'Authorization: Bearer <key>' header; backend access log captures auth header.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-COUNTER_OVERFLOW",
+        "hypothesis": "Internal counter incremented on every export; reaches max int64, wraps to negative or zero, silently breaks alerting logic based on counter value.",
+        "input_fixture": "export() called 2^63 times over months; success_counter reaches max int64, overflows to min int64; alerting rules depending on counter threshold fail silently.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MALFORMED_SIGNAL_TYPE",
+        "hypothesis": "signal parameter accepts arbitrary string instead of Signal enum; export('invalid_signal', batch=[...]) succeeds but backend ignores batch, causing data loss.",
+        "input_fixture": "export(batch=[...], timeout_s=5) called with signal='TRACING' (typo); backend expects signal in ['traces','metrics','logs']; batch dropped without retry.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "exporter.batch.exported",
+        "required_attributes": [
+          "signal",
+          "result"
+        ]
+      },
+      {
+        "event_name": "exporter.retry.triggered",
+        "required_attributes": [
+          "attempt",
+          "signal"
+        ]
+      },
+      {
+        "event_name": "exporter.shutdown.called",
+        "required_attributes": [
+          "signal"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "exporter.export.count",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 30,
+        "label_keys": [
+          "signal",
+          "result"
+        ]
+      },
+      {
+        "name": "exporter.retry.count",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": [
+          "signal"
+        ]
+      },
+      {
+        "name": "exporter.batch.size",
+        "metric_type": "histogram",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "signal"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "exporter.export",
+        "required_attributes": [
+          "signal",
+          "batch.size"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol surface matches catalog verbatim (signal, export, force_flush, shutdown with exact signatures). Signal/ExportResult enums match. Invariants TEX-INV-01..06 are explicitly referenced in code. Minor: force_flush return expression `not self._shutdown or True` always evaluates True, which is semantically correct (trivially true per design) but awkwardly written."
+      },
+      {
+        "axis": "completeness",
+        "score": 8,
+        "rationale": "Covers all 6 invariants, retry with bounded backoff, redaction, counter observability, thread-safety via lock, shutdown gating. Missing: no actual OTLP wire serialization (acknowledged \u2014 TransportAdapter deferred), no force_flush timeout honoring (timeout arg ignored), no test file alongside the primitive in provided source."
+      },
+      {
+        "axis": "error_quality",
+        "score": 8,
+        "rationale": "Custom TelemetryExporterInvariantError with invariant ID in message ('TEX-INV-03: ...'). fail_rate validated at construction. However, ValueError base is debatable (InvariantError is arguably not a value error); no error on invalid max_retries (<0) or initial_backoff_s (<=0)."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Protocol is runtime_checkable so adapters can be duck-typed; RetrySchedule is frozen dataclass reusable across adapters; emit_log is a shared redaction seam; counter exposed via read-only Mapping property. Clean separation between Protocol and reference impl enables backend adapters per extension_contract."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe via lock on mutable state; bounded retry prevents runaway loops; shutdown is one-way. Concerns: force_flush ignores timeout_s, simulated-failure logic (modulo-3 on attempt_counter) is inappropriate for production and should be gated to tests; _retry_count not lock-guarded on write; no metrics export hook beyond in-memory counter."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace, purpose, api_signature, invariants, extension_contract all map 1:1. Constants (MAX_RETRY_BACKOFF_S=30s) match spec. AUTH_HEADER_NAMES covers the three spec-named headers plus sensible extras. Module __all__ exposes the full surface. Minor gap: OTLP wire format (INV-04) is asserted in docstring but not enforced by the reference impl."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "OTLP acronym is never expanded; a newcomer has no anchor to look it up in context.",
+          "The Extension contract mentions 'TelemetryExporter Protocol' (capital-P) without explaining Python structural subtyping.",
+          "The only code example shows shutdown/flush \u2014 there is no snippet for constructing an exporter or sending a single span."
+        ],
+        "rewrite_suggestion": "Add a 6-line end-to-end snippet above the flush example: instantiate an exporter, wrap it in a BatchSpanProcessor, add one span, then flush. Expand OTLP on first use: 'OTLP (OpenTelemetry Protocol)'."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "The TelemetryExporter Protocol is referenced but its method signatures (export, force_flush, shutdown) are never shown \u2014 the extension contract is prose, not a spec.",
+          "'Internal lock around batch state' contradicts the OTel SDK design where exporters are stateless; the lock belongs in BatchSpanProcessor \u2014 this will confuse implementers.",
+          "'Registers with the signal-specific provider' is hand-wavy; the actual composition call (e.g., TracerProvider(exporter=\u2026)) is omitted."
+        ],
+        "rewrite_suggestion": "Show the Protocol ABC with typed signatures. Clarify that the exporter itself is stateless and the lock lives in the BatchSpanProcessor wrapper. Replace 'registers with the signal-specific provider' with the concrete SDK composition call."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "'Tests assert redaction for case variants' is unverifiable \u2014 no test file path or test name is cited.",
+          "No TLS requirement is stated; plaintext OTLP/HTTP to a remote collector is a data-exfiltration risk that the doc neither prohibits nor flags.",
+          "Credentials embedded in the endpoint URL (http://user:pass@host) are not addressed \u2014 redaction logic may miss them."
+        ],
+        "rewrite_suggestion": "Cite the exact test file and test ID for the redaction assertion. Add an invariant: 'OTLP transport to non-localhost endpoints MUST use TLS.' Add credential-in-URL to the list of patterns the redaction step strips."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Only the retry cap (30 s) is documented; initial interval and multiplier are missing, making it impossible to model worst-case retry storm behavior.",
+          "BatchSpanProcessor overflow drops are not surfaced by any metric \u2014 an SRE cannot tell data is being silently dropped.",
+          "No example alert expression or failure-ratio threshold is provided for the SLIs listed."
+        ],
+        "rewrite_suggestion": "Add initial_backoff_s and backoff_multiplier alongside MAX_RETRY_BACKOFF_S. Add exporter.queue.drop.count as a fourth SLI. Include one reference PromQL alert: rate(exporter_export_count{result='failure'}[5m]) / rate(exporter_export_count[5m]) > 0.01."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "'Fan-out to multiple backends without code changes' is promised in the lead sentence but never explained anywhere in the doc body.",
+          "'Non-blocking' is an engineering term; the doc gives no latency budget a PM could put in a service SLA or customer commitment.",
+          "The Alternatives Considered section adds length without product-value framing \u2014 a PM cannot translate it into customer impact."
+        ],
+        "rewrite_suggestion": "Add one sentence explaining fan-out: 'Compose multiple exporters behind a single BatchSpanProcessor to send to Datadog and Grafana Cloud simultaneously.' Add an enqueue overhead figure (e.g., '<2 \u00b5s p99'). Move Alternatives to an appendix so the main doc stays scannable."
+      }
+    ]
+  }
+}

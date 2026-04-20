@@ -1,0 +1,769 @@
+{
+  "name": "PromptTemplate",
+  "namespace": "llm",
+  "maturity": "battle_tested",
+  "builder_agent_id": 10,
+  "catalog_entry_sha256": "6e5afe67b98eec796d9f4479af97f9f94f841cc3e7a9a1b11b6e8d11d0118825",
+  "files": [
+    {
+      "path": "llm/PromptTemplate/PromptTemplate.cfg",
+      "sha256": "5f5d61b605c1a1d74781e5e9d1aec0b580b66114ecaa369aa3568965a44c70f7",
+      "size_bytes": 147,
+      "kind": "test"
+    },
+    {
+      "path": "llm/PromptTemplate/PromptTemplate.contract.json",
+      "sha256": "0fd95fd22f92146bdbd672ff299c4985ceee187bc4be79f5569875638870dfcb",
+      "size_bytes": 2492,
+      "kind": "contract_json"
+    },
+    {
+      "path": "llm/PromptTemplate/PromptTemplate.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "llm/PromptTemplate/PromptTemplate.md",
+      "sha256": "8af0ada608b4eb17b11b5ed767c59939ad98788e7f6fbdfea7ece70e1dc90732",
+      "size_bytes": 5589,
+      "kind": "spec_md"
+    },
+    {
+      "path": "llm/PromptTemplate/PromptTemplate.py",
+      "sha256": "822ceb578f18ef705642c230a73b8317caeff10759a22d17fa71c9b98b85421f",
+      "size_bytes": 11367,
+      "kind": "impl"
+    },
+    {
+      "path": "llm/PromptTemplate/PromptTemplate.tla",
+      "sha256": "b33c015262db80c630803fa1978bc6c90b042b6088c960ad51c50b2bba6fdb53",
+      "size_bytes": 1799,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "llm/PromptTemplate/behavioral_PromptTemplate.py",
+      "sha256": "d66fe7d303659e07a52df0e6941c0b385d7e6737853043bf0aa54e8348e981c3",
+      "size_bytes": 3255,
+      "kind": "behavioral"
+    },
+    {
+      "path": "llm/PromptTemplate/chaos_PromptTemplate.py",
+      "sha256": "bedb471a1c1950b6cd115921f981d6e1b0d3a5067d828f862ef306e19372c5e3",
+      "size_bytes": 3321,
+      "kind": "chaos"
+    },
+    {
+      "path": "llm/PromptTemplate/concurrent_PromptTemplate.py",
+      "sha256": "6fda60a56f2ff40ccf4c4f3d9f76a88a8d070d89033d2316c74abbb897c3505e",
+      "size_bytes": 2851,
+      "kind": "concurrent"
+    },
+    {
+      "path": "llm/PromptTemplate/dashboard.json",
+      "sha256": "c3657535d0fb56b3b9ea4b05ed23932e715c65bbaa498e3bd5676d9ada36a02a",
+      "size_bytes": 627,
+      "kind": "dashboard"
+    },
+    {
+      "path": "llm/PromptTemplate/invariant_bindings.json",
+      "sha256": "04953766895dbaac69276f064a639b31eebeee637386f06b2f824b6b85b91d4c",
+      "size_bytes": 1912,
+      "kind": "test"
+    },
+    {
+      "path": "llm/PromptTemplate/metamorphic_PromptTemplate.py",
+      "sha256": "58dc6a21df028fd7dbb5f5633fd5dd9d412f47a8274ca1fc317350a6cc4900e1",
+      "size_bytes": 3477,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "llm/PromptTemplate/observability_PromptTemplate.py",
+      "sha256": "716b86f7ee3ab3a58985e42a292040e3646c2257b14389ee69d30eb2ab5ca499",
+      "size_bytes": 1854,
+      "kind": "observability"
+    },
+    {
+      "path": "llm/PromptTemplate/observability_schema.json",
+      "sha256": "39ca661311053bc1cd3c1eff37cbfe0776629e1a215e38a971641005d0beb0c5",
+      "size_bytes": 1257,
+      "kind": "observability"
+    },
+    {
+      "path": "llm/PromptTemplate/persona_reviews.json",
+      "sha256": "c9fe7d42431294642478e068bf2f41d773eb30cae0eb53bafa086850b579ebe3",
+      "size_bytes": 680,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "llm/PromptTemplate/proposed_invariants.json",
+      "sha256": "deca263f566cfb7b54d97a4e1c88395b0601ff5465181db8711b497c08c61bce",
+      "size_bytes": 20,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "llm/PromptTemplate/state_machine_PromptTemplate.py",
+      "sha256": "d8a9d8ef1033ac82edaf3c058f60ed4192ba2723efc026b3350c2072ac3d3f09",
+      "size_bytes": 2933,
+      "kind": "state_machine"
+    },
+    {
+      "path": "llm/PromptTemplate/test_PromptTemplate.py",
+      "sha256": "5b2ac6e8e998edb926d62fff3a9c8374c63a21b436d56784d44b35d6e46d3001",
+      "size_bytes": 7749,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "PROMPT_INV_01",
+      "invariant_text": "Rendered output MUST be byte-identical across two calls with the same (version, values) pair.",
+      "confirms_test": "test_inv_render_determinism_confirms",
+      "prevents_test": "test_inv_render_determinism_prevents",
+      "under_failure_test": "test_inv_render_determinism_under_failure"
+    },
+    {
+      "invariant_id": "PROMPT_INV_02",
+      "invariant_text": "A published version MUST NEVER be mutated; changes SHALL produce a new integer version.",
+      "confirms_test": "test_inv_immutable_confirms",
+      "prevents_test": "test_inv_immutable_prevents",
+      "under_failure_test": "test_inv_immutable_under_failure"
+    },
+    {
+      "invariant_id": "PROMPT_INV_03",
+      "invariant_text": "render() MUST raise when a declared variable is missing from values and MUST NEVER silently inject an empty string.",
+      "confirms_test": "test_inv_missing_variable_confirms",
+      "prevents_test": "test_inv_missing_variable_prevents",
+      "under_failure_test": "test_inv_missing_variable_under_failure"
+    },
+    {
+      "invariant_id": "PROMPT_INV_04",
+      "invariant_text": "fingerprint() MUST cover template text, target_model, and variable names; drift in any of them SHALL change the fingerprint.",
+      "confirms_test": "test_inv_fingerprint_covers_all_confirms",
+      "prevents_test": "test_inv_fingerprint_covers_all_prevents",
+      "under_failure_test": "test_inv_fingerprint_covers_all_under_failure"
+    },
+    {
+      "invariant_id": "PROMPT_INV_05",
+      "invariant_text": "Variable interpolation MUST use explicit delimiters and CANNOT treat unescaped user input as template syntax.",
+      "confirms_test": "test_inv_no_injection_confirms",
+      "prevents_test": "test_inv_no_injection_prevents",
+      "under_failure_test": "test_inv_no_injection_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 486,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1219,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 1412,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 3075,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1060,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 1069,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 58431,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "42 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1041,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1079,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 97243,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 166771,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MUTATE-PUBLISHED-VERSION",
+        "hypothesis": "After publishing version=3, reassign template_text on the same object and call render again; if the implementation stores text by reference and lacks freeze/deepcopy, the rendered output for v3 will change across two calls, violating immutability of a published version.",
+        "input_fixture": "t = PromptTemplate(name='greet', version=3, target_model='claude-opus-4-7', text='Hi {name}', variables=('name',)); r1 = t.render({'name':'A'}); t.__dict__['text'] = 'Yo {name}'; r2 = t.render({'name':'A'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-BYTE-NONDETERMINISM-DICTORDER",
+        "hypothesis": "Passing values as a dict whose iteration order differs between calls (e.g., CPython insertion order swapped) may cause non-deterministic rendering if render() iterates values.items() to substitute rather than walking the template AST, producing different byte output for same (version,values).",
+        "input_fixture": "t.render({'a':'1','b':'2'}) vs t.render({'b':'2','a':'1'}) on template 'X={a}{b}' where implementation does for k,v in values.items(): text=text.replace('{'+k+'}',v)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MISSING-VAR-SILENT-EMPTY",
+        "hypothesis": "When values omits a declared variable, a str.format_map with defaultdict(str) or .get(k,'') fallback will silently render '' instead of raising, violating the missing-variable contract.",
+        "input_fixture": "t = PromptTemplate(variables=('user','topic'), text='Hello {user} re: {topic}'); t.render({'user':'alice'})  # topic missing",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PROMPT-INJECTION-DELIM",
+        "hypothesis": "User-supplied value containing delimiter syntax like '{admin}' gets re-interpreted as a template variable on a second pass or via recursive str.format, enabling injection of non-declared variables or KeyError escalation.",
+        "input_fixture": "t = PromptTemplate(variables=('q',), text='User asked: {q}'); t.render({'q':'{admin_secret}'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FINGERPRINT-MODEL-DRIFT",
+        "hypothesis": "Changing target_model from 'claude-opus-4-7' to 'claude-sonnet-4-6' while keeping text and variables identical does not alter fingerprint() if the hash only covers template text, enabling silent model drift.",
+        "input_fixture": "t1=PT(text='x',vars=(),model='claude-opus-4-7'); t2=PT(text='x',vars=(),model='claude-sonnet-4-6'); assert t1.fingerprint()!=t2.fingerprint()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FINGERPRINT-VARNAME-COLLISION",
+        "hypothesis": "Two templates with identical text and model but different declared variable tuples (('a','b') vs ('b','a') or ('a',)) produce the same fingerprint because the implementation hashes sorted(set(vars)) or ignores var names entirely.",
+        "input_fixture": "t1=PT(text='{a}{b}',vars=('a','b')); t2=PT(text='{a}{b}',vars=('b','a')); compare fingerprints",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-VALUES-EMPTY-TEMPLATE",
+        "hypothesis": "Boundary: template with zero variables and empty values dict may crash with ZeroDivisionError in fingerprint entropy calc or return None from render instead of ''.",
+        "input_fixture": "t=PT(text='',variables=(),target_model='claude-opus-4-7'); t.render({})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNICODE-NORMALIZATION",
+        "hypothesis": "Values containing composed vs decomposed Unicode (\u00e9 U+00E9 vs e+U+0301) render to different byte sequences despite being 'the same' logical input, and fingerprint may NFC-normalize inconsistently between store and compare, breaking byte-identical guarantee across runs.",
+        "input_fixture": "t.render({'name':'caf\u00e9'}) then t.render({'name':'cafe\\u0301'}) with template 'Hi {name}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INT-OVERFLOW-VERSION",
+        "hypothesis": "version field declared as int may accept 2**63 or negative values; publishing version=-1 or version=2**64 may wrap in the backing store (SQLite INTEGER) and overwrite a real published version, violating immutability.",
+        "input_fixture": "publish(name='x',version=2**63); publish(name='x',version=-1)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RACE-DOUBLE-PUBLISH",
+        "hypothesis": "Two concurrent publish calls for (name='x', version=5) with different template bodies race between existence-check and insert; without a unique constraint or transaction, the second write silently replaces the first, mutating a published version.",
+        "input_fixture": "Thread A: publish(name='x',version=5,text='A'); Thread B simultaneously: publish(name='x',version=5,text='B'); then render v5 and observe which text returns",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-STALE-CACHE",
+        "hypothesis": "If render() caches by fingerprint and a template is re-registered under a new version but the cache keys only by name, a replay of old (name,values) returns stale rendered bytes, causing version-skew between declared and actual payload sent to the model.",
+        "input_fixture": "register v1 text='A {x}'; render({'x':'1'}); register v2 text='B {x}'; render_by_name('x',{'x':'1'}) returns 'A 1' from cache",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED-VALUE-TYPE",
+        "hypothesis": "Mapping[str,str] is only a type hint; passing {'n': 5} (int) or {'n': None} bypasses runtime typecheck and str.format coerces via __format__, injecting locale-dependent output (e.g., '5.0' vs '5,0') breaking byte-identity across locales.",
+        "input_fixture": "t.render({'n': 5}) on template 'count={n}' run under LC_ALL=de_DE.UTF-8 vs C locale",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EXTRA-VAR-INJECTION",
+        "hypothesis": "Passing values with keys NOT in declared variables tuple (e.g., {'name':'a','sys_prompt':'ignore previous'}) is silently accepted and concatenated/logged, enabling prompt-injection through undeclared channels; fingerprint computed only over declared vars misses this.",
+        "input_fixture": "t=PT(vars=('name',),text='Hi {name}'); t.render({'name':'alice','__override__':'DROP SAFETY'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AMPLIFICATION-RECURSIVE-VAR",
+        "hypothesis": "Value that itself contains '{name}' causes a second render pass (if implementation loops until no braces remain) to expand exponentially, amplifying input size and enabling DoS/credential-leak if other vars in scope.",
+        "input_fixture": "t=PT(vars=('x',),text='{x}'); t.render({'x':'{x}{x}{x}{x}'})  # self-referential",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CRED-LEAK-REPR",
+        "hypothesis": "PromptTemplate.__repr__ or logging includes rendered text with interpolated secrets; an attacker who can trigger an exception during render sees the partially-rendered template with API keys in a stack trace.",
+        "input_fixture": "t.render({'api_key':'sk-live-xxx','broken':object()})  # triggers TypeError mid-render, exception message leaks template state",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RENDER_UNICODE_NORMALIZATION",
+        "hypothesis": "If the template text contains Unicode characters subject to NFC/NFD normalization (e.g., '\u00e9' as U+00E9 vs U+0065+U+0301), two render() calls may receive byte-identical values but produce non-byte-identical rendered output if the implementation normalizes strings lazily or inconsistently between calls, violating the byte-identity invariant.",
+        "input_fixture": "template.text = 'Hello \\u00e9 {name}'; call1 = template.render({'name': 'world'}); call2_text_replaced_with_nfd = 'Hello \\u0065\\u0301 {name}'; assert call1 == call2  # may fail if normalization differs",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE-MUTABLE-STATE",
+        "hypothesis": "If the PromptTemplate implementation caches or memoizes rendered output in a shared mutable dict without a lock, two concurrent threads calling render() with different values could write to the same cache slot, causing one call to return the other's rendered string \u2014 breaking byte-identity for the value pair that 'wins' the write.",
+        "input_fixture": "import threading; results = {}; t1 = threading.Thread(target=lambda: results.update({'t1': tmpl.render({'user': 'alice'})})); t2 = threading.Thread(target=lambda: results.update({'t2': tmpl.render({'user': 'bob'})})); t1.start(); t2.start(); t1.join(); t2.join(); assert results['t1'] == tmpl.render({'user': 'alice'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-VERSION-INT-OVERFLOW",
+        "hypothesis": "If version is stored as a Python int but serialized/deserialized via a language or format that uses 32-bit integers (e.g., JSON, protobuf int32, SQLite INTEGER), a version number exceeding 2^31-1 wraps to a negative value or raises on deserialization, allowing a 'new' version to collide with or compare equal to a previously published version, enabling silent mutation.",
+        "input_fixture": "v_overflow = 2**31; tmpl_a = make_template(version=2**31-1); tmpl_b = make_template(version=2**31); serialized = json.dumps({'version': tmpl_b.version}); reloaded_version = json.loads(serialized)['version']; assert reloaded_version != tmpl_a.version  # may fail on overflow wrap",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-MUTATION-VIA-DATACLASS-REPLACE",
+        "hypothesis": "If PromptTemplate is implemented as a Python dataclass (or attrs class without frozen=True), calling dataclasses.replace() or directly assigning to a field mutates the instance in place without incrementing version, silently breaking the immutability invariant since the Protocol does not enforce frozen semantics.",
+        "input_fixture": "import dataclasses; tmpl = MyPromptTemplate(name='x', version=1, target_model='claude-sonnet-4-6', variables=('city',), text='Visit {city}'); tmpl.text = 'DROP TABLE {city}'; assert tmpl.version == 1  # mutation with no version bump",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-MISSING-VAR-SILENT-EMPTY",
+        "hypothesis": "If render() uses Python str.format_map() with a defaultdict(str) or a custom __missing__ that returns '' for unknown keys, a template declaring variables=('user', 'context') called with only {'user': 'alice'} will silently substitute '' for 'context' instead of raising, violating the must-raise-on-missing-variable invariant.",
+        "input_fixture": "from collections import defaultdict; tmpl = make_template(variables=('user', 'context'), text='Hello {user}, context: {context}'); result = tmpl.render(defaultdict(str, {'user': 'alice'})); assert result != 'Hello alice, context: '  # should have raised",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-MISSING-VAR-EXTRAS-ONLY",
+        "hypothesis": "render() receives a Mapping that contains keys beyond the declared variables but omits one declared variable; some implementations may validate only that all provided keys are declared (reverse check) rather than that all declared variables are present, causing silent missing-variable bypass.",
+        "input_fixture": "tmpl = make_template(variables=('name', 'city'), text='Hi {name} from {city}'); tmpl.render({'name': 'bob', 'country': 'BR'})  # 'city' missing, 'country' extra \u2014 should raise on 'city' absence",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FINGERPRINT-SKIPS-VARIABLES",
+        "hypothesis": "If fingerprint() is computed only over (template_text, target_model) and omits the variable names tuple, two templates that differ solely in declared variables (e.g., variables=('a',) vs variables=('b',)) will produce identical fingerprints, allowing silent schema drift to go undetected.",
+        "input_fixture": "t1 = make_template(text='static text', target_model='m', variables=('a',)); t2 = make_template(text='static text', target_model='m', variables=('b',)); assert t1.fingerprint() != t2.fingerprint()  # expect different; collision breaks invariant",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FINGERPRINT-SKIPS-TARGET-MODEL",
+        "hypothesis": "If fingerprint() hashes only template_text and variable names but omits target_model, swapping target_model from 'claude-haiku-4-5' to 'claude-opus-4-7' leaves the fingerprint unchanged, allowing a downstream consumer to send a prompt to the wrong model while believing it is running the pinned version.",
+        "input_fixture": "t1 = make_template(text='Summarize {doc}', target_model='claude-haiku-4-5-20251001', variables=('doc',)); t2 = make_template(text='Summarize {doc}', target_model='claude-opus-4-7', variables=('doc',)); assert t1.fingerprint() != t2.fingerprint()  # model drift must change fingerprint",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PROMPT-INJECTION-FORMAT-SYNTAX",
+        "hypothesis": "If render() uses Python str.format() or str.format_map() for interpolation, a user-supplied value containing '{other_var}' or '{0}' is treated as nested template syntax, executing a second round of interpolation. This allows an attacker to inject arbitrary variable references or positional placeholders into the rendered output, violating the must-not-treat-user-input-as-syntax invariant.",
+        "input_fixture": "tmpl = make_template(variables=('user_input',), text='Echo: {user_input}'); evil = '{target_model.__class__.__mro__[1].__subclasses__()}'; result = tmpl.render({'user_input': evil}); # str.format() would attempt to resolve the nested expression",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PROMPT-INJECTION-JINJA2-SSTI",
+        "hypothesis": "If the implementation delegates to Jinja2 or a similar templating engine, a malicious value such as '{{7*7}}' or '{%import os%}{{os.listdir(\"/\")}}' will be evaluated by the engine rather than treated as a literal string, causing server-side template injection and arbitrary code execution \u2014 a catastrophic violation of the no-user-input-as-syntax invariant.",
+        "input_fixture": "tmpl = make_template(variables=('q',), text='Answer: {{ q }}', engine='jinja2'); result = tmpl.render({'q': '{{ 7*7 }}'}); assert '49' not in result  # 49 appearing means injection succeeded",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FINGERPRINT-HASH-COLLISION",
+        "hypothesis": "If fingerprint() uses a non-cryptographic hash (e.g., Python's built-in hash(), CRC32, or MurmurHash) without a seed or with a fixed seed, an adversary can craft two distinct (text, target_model, variables) tuples that produce the same hash value, allowing a mutated template version to masquerade as the original and pass fingerprint verification in replay or caching scenarios.",
+        "input_fixture": "# Find two inputs with same CRC32: import binascii; t1_fp = binascii.crc32(b'Hello {name}claude-sonnet-4-6name'); t2_fp = binascii.crc32(b'<crafted_collision_bytes>'); assert t1_fp == t2_fp  # collision breaks replay protection",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RENDER-AMPLIFICATION-HUGE-VALUE",
+        "hypothesis": "render() accepts a Mapping[str, str] but does not enforce a maximum byte length on values. Supplying a value that is a 1 GB string causes the rendered output to allocate 1+ GB of memory synchronously, enabling a denial-of-service amplification attack from a small (~100 byte) template that has a single variable.",
+        "input_fixture": "tmpl = make_template(variables=('data',), text='Process: {data}'); huge = 'A' * (1024**3); result = tmpl.render({'data': huge})  # OOM or extreme latency; no size guard in Protocol",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RENDER-CLOCK-SKEW-NONDETERMINISM",
+        "hypothesis": "If render() or an internal helper inserts timestamps, UUIDs, or random salts (e.g., for audit logging or tracing) into the rendered string, two calls with identical (version, values) will produce byte-non-identical outputs, breaking the byte-identity invariant. This is plausible if the implementation adds a 'rendered_at' field to a structured output or logs to a shared buffer that bleeds into the return value.",
+        "input_fixture": "import time; r1 = tmpl.render({'q': 'test'}); time.sleep(0.001); r2 = tmpl.render({'q': 'test'}); assert r1 == r2  # fails if render() embeds time.time() or uuid4() in output",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RACE-CONCURRENT-RENDER",
+        "hypothesis": "Two concurrent render() calls on shared PromptTemplate with different values produce non-identical output if internal state (regex cache, template buffer) lacks synchronization.",
+        "input_fixture": "t = PromptTemplate(name='p', version=1, target_model='m', variables=('x',)); Thread1: t.render({'x': 'A'}); Thread2: t.render({'x': 'B'}); both expect deterministic, byte-identical results.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-VERSION-INT-OVERFLOW",
+        "hypothesis": "Integer version field overflows after 255/32767 increments, wrapping to 0 or negative, causing new versions to collide with original published versions.",
+        "input_fixture": "Mutate same template 256 times sequentially, each generating new version number. On 257th mutation, version wraps to 0, colliding with original; two distinct versions become indistinguishable.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MISSING-VAR-SILENT-EMPTY",
+        "hypothesis": "render() called with declared variable absent from values mapping silently injects empty string or None instead of raising exception.",
+        "input_fixture": "PromptTemplate(name='p', version=1, target_model='gpt-4', variables=('user_id', 'action')).render({'user_id': '123'}); action missing; returns without raising.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-FINGERPRINT-HASH-COLLISION",
+        "hypothesis": "fingerprint() uses weak hashing (concatenation or XOR without delimiters). Two templates with permuted components (text, model, variable order) yield identical fingerprint.",
+        "input_fixture": "Template A: text='hello', model='gpt4', variables=['x','y']; Template B: text='he', model='llo', variables=['gpt4x','y']; naive concatenation produces same hash.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DELIMITER-INJECTION-ESCAPE",
+        "hypothesis": "Variable value containing template delimiters (e.g., '${var}' or '{{nested}}') is re-interpolated if delimiters lack escaping, breaking variable isolation.",
+        "input_fixture": "PromptTemplate(variables=['user_input']).render({'user_input': '${admin_prompt}'}); if delimiters unescaped, admin_prompt substituted, violating explicit-delimiter invariant.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNICODE-NORMALIZATION-DIVERGENCE",
+        "hypothesis": "render() called twice with identical semantic values in different Unicode forms (NFC vs NFD). Byte-level output diverges despite same (version, values) pair.",
+        "input_fixture": "value='caf\u00e9' (NFC, U+00E9); value='caf\u00e9' (NFD, e + U+0301). Two identical-semantics render() calls produce different byte sequences, violating byte-identity.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CREDENTIAL-LEAK-FINGERPRINT-LOG",
+        "hypothesis": "If target_model contains credentials (API endpoint with key), fingerprint() returns plaintext string; credential leaked via logs, caches, or debug output.",
+        "input_fixture": "PromptTemplate(target_model='https://api.example.com?apikey=sk-1234567890abcdef').fingerprint(); returns string containing API key; logged unencrypted.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-AMPLIFICATION-UNBOUNDED-VALUES",
+        "hypothesis": "render() does not validate or bound variable value sizes. Attacker provides 1GB string, causing memory exhaustion or DoS during interpolation.",
+        "input_fixture": "PromptTemplate(variables=['payload']).render({'payload': bytes(1024*1024*1024)}); render() allocates unbounded memory, OOM, or timeout.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MAPPING-INPUT-MUTATION",
+        "hypothesis": "render(values) mutates input Mapping dict to cache defaults or inject missing vars. Caller's state corrupted; subsequent operations behave unexpectedly.",
+        "input_fixture": "values={'x':'A'}; t.render(values); values mutated to {'x':'A','y':'','z':None}; next render(values) or external code sees polluted state.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-FINGERPRINT-EXCLUDES-VERSION",
+        "hypothesis": "fingerprint() computes hash of text and model only, omitting version field. Publishing version 2 with identical template produces same fingerprint as version 1.",
+        "input_fixture": "v1=PromptTemplate(version=1,text='a',model='m'); v2=PromptTemplate(version=2,text='a',model='m'); fingerprint(v1)==fingerprint(v2), violating drift coverage.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CACHE-COLLISION-HASH-MISMATCH",
+        "hypothesis": "render() caches output by hash(version, values). Hash collision or weak hash allows second render with different values to return first render's cached result.",
+        "input_fixture": "render({'x':'A'}) cached as X; render({'x':'B'}) has hash collision, returns cached X instead of computing B, yielding identical bytes from different inputs.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-FLOATING-POINT-VERSION-LOSS",
+        "hypothesis": "Version field uses float arithmetic or is stored as float before int truncation. Precision loss causes distinct increments to round to same integer version.",
+        "input_fixture": "version incremented via 1.0, 1.0001, 1.0002... but stored as int(version). Truncation causes collision; versions 1 and 2 become indistinguishable.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-VARIABLE-NAME-CASE-SENSITIVITY",
+        "hypothesis": "render() treats variable names case-insensitively, but fingerprint() and invariants assume case-sensitive equality. Two versions with 'User' vs 'user' appear identical.",
+        "input_fixture": "PromptTemplate(variables=['User']).render({'user':'value'}) succeeds; PromptTemplate(variables=['user']) has same fingerprint. Published version 1 mutated to version 2 undetected.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NEWLINE-NORMALIZATION-DRIFT",
+        "hypothesis": "Render output includes newlines normalized differently (CRLF vs LF vs CR) across calls, causing byte divergence despite identical (version, values).",
+        "input_fixture": "render() on Windows returns text with CRLF; same call on Unix returns LF. Bytes differ, violating byte-identity despite identical semantics.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "prompt.registered",
+        "required_attributes": [
+          "prompt.name",
+          "prompt.version",
+          "prompt.fingerprint"
+        ]
+      },
+      {
+        "event_name": "prompt.rendered",
+        "required_attributes": [
+          "prompt.name",
+          "prompt.version",
+          "prompt.fingerprint"
+        ]
+      },
+      {
+        "event_name": "prompt.render.missing_variable",
+        "required_attributes": [
+          "prompt.name",
+          "prompt.version",
+          "missing_variables"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "prompt.registry.size",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 1000,
+        "label_keys": [
+          "name"
+        ]
+      },
+      {
+        "name": "prompt.render.latency",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 500,
+        "label_keys": [
+          "name",
+          "version"
+        ]
+      },
+      {
+        "name": "prompt.render.errors",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "name",
+          "error_kind"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "prompt.render",
+        "required_attributes": [
+          "prompt.name",
+          "prompt.version",
+          "prompt.fingerprint"
+        ]
+      },
+      {
+        "operation_name": "prompt.register",
+        "required_attributes": [
+          "prompt.name",
+          "prompt.version"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 10,
+        "rationale": "Protocol surface matches catalog api_signature verbatim (name, version, target_model, variables, render, fingerprint). FrozenPromptTemplate satisfies runtime_checkable Protocol via properties."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All 5 invariants enforced with explicit IDs. Registry enforces PROMPT-INV-02 globally. Covers declared/template variable set equality, size limits, type checks, extra-key rejection. Minor: no async surface but spec explicitly rejects it."
+      },
+      {
+        "axis": "error_quality",
+        "score": 10,
+        "rationale": "Single PromptTemplateInvariantError subclass of ValueError; every raise cites the invariant ID and explains the forbidden behavior with actionable remediation ('Publish a new version instead')."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Pure Protocol + immutable impl + threadsafe registry. Render is pure, no I/O at import, lazy. Values treated as literal data enables safe composition with PromptInjectionFilter. Registry is instance-based (not module global), composable into DI."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 9,
+        "rationale": "threading.Lock on registry, byte-size caps on template (1MB) and values (200KB), __setattr__ lock for immutability, idempotent re-register of identical fingerprint. Fingerprint uses sha256 with unit-separator canonicalization resisting delimiter collisions."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 10,
+        "rationale": "Protocol mirrors api_signature exactly; invariants map 1:1 with IDs PROMPT-INV-01..05; extension_contract honored via PromptRegistry.register rejecting conflicting (name, version); zero I/O at import as required."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "`PromptInjectionFilter` is referenced in 'When NOT to use' with no link, definition, or example \u2014 a junior will not know where to find it or what it does",
+          "Invariant IDs (PROMPT_INV_01\u201305) are listed as a bare table with no plain-English 'why this matters' annotation, making them feel like compliance checkboxes rather than design intent",
+          "'Protocol surface is v1; additive methods may be added' uses semver-contract jargon without explaining what that means for a caller who just wants to use render()"
+        ],
+        "rewrite_suggestion": "Add a 'Quick start in 3 steps' box (construct \u2192 register \u2192 render) before the invariants table. Annotate each invariant with one plain sentence explaining the user-visible consequence of breaking it. Replace 'Protocol surface is v1' with 'The four attributes name/version/target_model/variables will never be renamed or removed; new helpers may be added in future releases.'"
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "`PromptTemplate.contract.json` is declared the 'sole authority' for the API surface but is never linked or excerpted \u2014 forces the reader to search the repo before trusting any claim in the docs",
+          "`invariant_bindings.json` is cited as the authoritative test-to-invariant map but its location is not given, making it impossible to verify coverage without repo familiarity",
+          "Registry scope is unspecified: the docs imply in-process state but never confirm whether the registry survives restart, is shared across workers, or requires re-registration on each boot \u2014 a critical detail for horizontal-scaling decisions"
+        ],
+        "rewrite_suggestion": "Inline the contract.json path and a one-table summary of its API surface. Add file path for invariant_bindings.json. Add a 'Registry lifecycle' note: 'The registry is process-local and ephemeral; callers must re-register templates on each process start (e.g., in application startup).' This removes three open questions a principal engineer would otherwise have to resolve by reading source."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "No mention of whether render() output is ever logged or stored \u2014 rendered payloads may contain PII inserted via variable values, and the audit trail question (who sees what, for how long) is entirely unaddressed",
+          "Oversize limits (200 KB per value, 1 MB template) are stated without threat-model rationale \u2014 an auditor cannot distinguish a principled limit from an arbitrary constant without knowing what attack vector it closes",
+          "The exception raised on security violations (missing_variable, oversize, extra_variable) is not specified by type \u2014 auditors cannot verify that callers are forbidden from silently catching and ignoring security-relevant errors"
+        ],
+        "rewrite_suggestion": "Add an 'Audit trail' subsection: state explicitly whether renders are logged, what fields are captured (fingerprint, template name/version, but NOT rendered text to avoid PII), and retention period. Document the exception hierarchy (e.g., `PromptRenderError(ValueError)`) so auditors can grep call sites for bare `except Exception` swallowing. Add a one-sentence rationale for each size limit (e.g., '200 KB per value caps provider context exhaustion while accommodating realistic document-extraction payloads')."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "No alert thresholds are provided \u2014 'p95 < 1 ms' is an expectation, not an SLO; an SRE cannot write a paging rule from an expectation alone",
+          "Registry persistence is unspecified: SRE needs a recovery procedure for the case where the process restarts and all registered templates are lost (warm-up ordering, dependency on deploy pipeline)",
+          "'Render once, reuse the string' is flagged as an anti-pattern but no metric or tooling is given to detect it in production (e.g., a call-rate counter per (name, version) that would spike if callers render in a hot loop)"
+        ],
+        "rewrite_suggestion": "Add a runbook stub with concrete thresholds: 'p95 > 5 ms \u2192 warning; p95 > 50 ms \u2192 page; render error rate > 0.1 % \u2192 page.' Add a 'Registry warm-up' note describing re-registration order on restart and whether a readiness probe should gate traffic until the registry is populated. Add a `prompt.render.call_rate` gauge recommendation so hot-loop renders surface as a spike in calls-per-second per template."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "No governance model \u2014 the docs do not say who is authorized to publish a version, whether there is an approval or review step, or what prevents ad-hoc prompt proliferation beyond the registry-size metric",
+          "No version retention policy \u2014 PMs need to know how many past versions are kept, whether deprecated versions can be deleted, and what the storage or cost implication of accumulating versions is",
+          "The Provenance section cites internal filenames (AGENT_8_LLM_ERA.json, docs/research/outputs/...) that are meaningless outside the research pipeline and add noise without conveying business context"
+        ],
+        "rewrite_suggestion": "Add a 'Governance' paragraph: 'Prompt versions are owned by the team that owns the consuming feature. Publishing a new version requires a PR review. Versions are retained indefinitely by default; a version may be archived (removed from the registry) only after confirming no active traffic references it via the registry-size metric.' Replace internal agent citations with 'Informed by Langfuse 2.x prompt management and W&B Weave 0.50+ versioned prompt objects.'"
+      }
+    ]
+  }
+}

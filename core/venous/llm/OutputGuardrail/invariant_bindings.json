@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "GUARD_INV_01",
+      "invariant_text": "evaluate() MUST reject output that fails schema validation when schema_ref is provided; malformed JSON CANNOT be returned as pass.",
+      "confirms_test": "test_inv_schema_rejects_malformed_confirms",
+      "prevents_test": "test_inv_schema_rejects_malformed_prevents",
+      "under_failure_test": "test_inv_schema_rejects_malformed_under_failure"
+    },
+    {
+      "invariant_id": "GUARD_INV_02",
+      "invariant_text": "A BLOCK verdict MUST prevent the output from being returned to the caller or passed to any downstream tool.",
+      "confirms_test": "test_inv_block_prevents_delivery_confirms",
+      "prevents_test": "test_inv_block_prevents_delivery_prevents",
+      "under_failure_test": "test_inv_block_prevents_delivery_under_failure"
+    },
+    {
+      "invariant_id": "GUARD_INV_03",
+      "invariant_text": "REWRITE verdicts MUST provide a non-None string replacement; replacement of None under rewrite SHALL be a contract violation.",
+      "confirms_test": "test_inv_rewrite_needs_replacement_confirms",
+      "prevents_test": "test_inv_rewrite_needs_replacement_prevents",
+      "under_failure_test": "test_inv_rewrite_needs_replacement_under_failure"
+    },
+    {
+      "invariant_id": "GUARD_INV_04",
+      "invariant_text": "Output guardrails MUST NEVER execute tool calls embedded in the output before passing safety checks.",
+      "confirms_test": "test_inv_no_tool_exec_before_check_confirms",
+      "prevents_test": "test_inv_no_tool_exec_before_check_prevents",
+      "under_failure_test": "test_inv_no_tool_exec_before_check_under_failure"
+    },
+    {
+      "invariant_id": "GUARD_INV_05",
+      "invariant_text": "Every verdict SHALL be recorded with the guardrail name so post-hoc analysis can attribute the decision.",
+      "confirms_test": "test_inv_verdict_records_name_confirms",
+      "prevents_test": "test_inv_verdict_records_name_prevents",
+      "under_failure_test": "test_inv_verdict_records_name_under_failure"
+    }
+  ]
+}

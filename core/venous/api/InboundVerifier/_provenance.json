@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.384233+00:00",
+  "source_tool": "realtime/add_webhook_receiver.py",
+  "origin_candidate": {
+    "docstring": "Abstract base class for provider-specific webhook verifiers.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 484,
+    "line_start": 459,
+    "name": "InboundVerifier",
+    "origin": "string_template",
+    "shape_hash": "5b8c2a03a3d95b45",
+    "size_bytes": 902,
+    "size_lines": 26,
+    "tool": "realtime/add_webhook_receiver.py",
+    "method_count": 1,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 3608
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

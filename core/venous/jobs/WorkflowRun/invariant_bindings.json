@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "WFR_INV_01",
+      "invariant_text": "Workflow code MUST be deterministic so replay from the event history reconstructs the same decisions.",
+      "confirms_test": "test_inv_deterministic_replay_confirms",
+      "prevents_test": "test_inv_deterministic_replay_prevents",
+      "under_failure_test": "test_inv_deterministic_replay_under_failure"
+    },
+    {
+      "invariant_id": "WFR_INV_02",
+      "invariant_text": "Non-deterministic calls (random, wall-clock, direct network IO) are FORBIDDEN inside a workflow function.",
+      "confirms_test": "test_inv_no_nondeterministic_calls_confirms",
+      "prevents_test": "test_inv_no_nondeterministic_calls_prevents",
+      "under_failure_test": "test_inv_no_nondeterministic_calls_under_failure"
+    },
+    {
+      "invariant_id": "WFR_INV_03",
+      "invariant_text": "A completed or canceled WorkflowRun CANNOT be resumed under the same run_id; reruns ALWAYS allocate a new run_id.",
+      "confirms_test": "test_inv_no_resume_closed_confirms",
+      "prevents_test": "test_inv_no_resume_closed_prevents",
+      "under_failure_test": "test_inv_no_resume_closed_under_failure"
+    },
+    {
+      "invariant_id": "WFR_INV_04",
+      "invariant_text": "Every externally observable effect MUST flow through an activity, timer, signal or child workflow rather than direct side effects.",
+      "confirms_test": "test_inv_effects_through_activities_confirms",
+      "prevents_test": "test_inv_effects_through_activities_prevents",
+      "under_failure_test": "test_inv_effects_through_activities_under_failure"
+    },
+    {
+      "invariant_id": "WFR_INV_05",
+      "invariant_text": "Starting a workflow with an id that already has an open run SHALL either reject or reuse according to the configured id reuse policy.",
+      "confirms_test": "test_inv_id_reuse_policy_confirms",
+      "prevents_test": "test_inv_id_reuse_policy_prevents",
+      "under_failure_test": "test_inv_id_reuse_policy_under_failure"
+    }
+  ]
+}

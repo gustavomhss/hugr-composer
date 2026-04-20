@@ -1,0 +1,9 @@
+{
+  "invariant_bindings": [
+    {"invariant_id": "CP_INV_01", "invariant_text": "evaluate() MUST NEVER echo back an Origin that is not in the configured allowlist.", "confirms_test": "test_inv_allowlist_closed_confirms", "prevents_test": "test_inv_allowlist_closed_prevents", "under_failure_test": "test_inv_allowlist_closed_under_failure"},
+    {"invariant_id": "CP_INV_02", "invariant_text": "When allow_credentials is True, allow_origin CANNOT be '*' and MUST be a single exact origin.", "confirms_test": "test_inv_credentials_exact_confirms", "prevents_test": "test_inv_credentials_exact_prevents", "under_failure_test": "test_inv_credentials_exact_under_failure"},
+    {"invariant_id": "CP_INV_03", "invariant_text": "Vary: Origin MUST be emitted on any response that decides per-origin, or the policy SHALL reject evaluation.", "confirms_test": "test_inv_vary_origin_confirms", "prevents_test": "test_inv_vary_origin_prevents", "under_failure_test": "test_inv_vary_origin_under_failure"},
+    {"invariant_id": "CP_INV_04", "invariant_text": "Preflight caching (Access-Control-Max-Age) MUST be <=86400 seconds and MUST NEVER default to unbounded.", "confirms_test": "test_inv_max_age_cap_confirms", "prevents_test": "test_inv_max_age_cap_prevents", "under_failure_test": "test_inv_max_age_cap_under_failure"},
+    {"invariant_id": "CP_INV_05", "invariant_text": "Null origin ('null') MUST be rejected in credentialed mode because it collapses distinct sandboxed contexts.", "confirms_test": "test_inv_null_origin_confirms", "prevents_test": "test_inv_null_origin_prevents", "under_failure_test": "test_inv_null_origin_under_failure"}
+  ]
+}

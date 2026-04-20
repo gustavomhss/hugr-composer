@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "LSH_INV_01",
+      "invariant_text": "The shedder SHALL admit strictly by descending priority class and MUST NEVER admit a lower class while a higher class is being rejected.",
+      "confirms_test": "test_inv_priority_order_confirms",
+      "prevents_test": "test_inv_priority_order_prevents",
+      "under_failure_test": "test_inv_priority_order_under_failure"
+    },
+    {
+      "invariant_id": "LSH_INV_02",
+      "invariant_text": "A rejected request MUST be returned with an explicit overload signal (HTTP 503 or status UNAVAILABLE) and a retry-after hint.",
+      "confirms_test": "test_inv_overload_signal_confirms",
+      "prevents_test": "test_inv_overload_signal_prevents",
+      "under_failure_test": "test_inv_overload_signal_under_failure"
+    },
+    {
+      "invariant_id": "LSH_INV_03",
+      "invariant_text": "The cutoff priority CANNOT change more than once per control_interval_ms to prevent oscillation.",
+      "confirms_test": "test_inv_hysteresis_confirms",
+      "prevents_test": "test_inv_hysteresis_prevents",
+      "under_failure_test": "test_inv_hysteresis_under_failure"
+    },
+    {
+      "invariant_id": "LSH_INV_04",
+      "invariant_text": "A request that passed admission control SHALL NEVER be shed later in the pipeline.",
+      "confirms_test": "test_inv_no_shed_after_admit_confirms",
+      "prevents_test": "test_inv_no_shed_after_admit_prevents",
+      "under_failure_test": "test_inv_no_shed_after_admit_under_failure"
+    },
+    {
+      "invariant_id": "LSH_INV_05",
+      "invariant_text": "The shedder MUST publish the current cutoff as a metric so clients can cooperate with backoff.",
+      "confirms_test": "test_inv_publish_cutoff_confirms",
+      "prevents_test": "test_inv_publish_cutoff_prevents",
+      "under_failure_test": "test_inv_publish_cutoff_under_failure"
+    }
+  ]
+}

@@ -1,0 +1,838 @@
+{
+  "name": "TokenIntrospector",
+  "namespace": "auth",
+  "maturity": "battle_tested",
+  "builder_agent_id": 1,
+  "catalog_entry_sha256": "ad2dd3b85d9f8ee3048876df1ba3ec30856384171be4b94006382b90087b9b16",
+  "files": [
+    {
+      "path": "auth/TokenIntrospector/TokenIntrospector.cfg",
+      "sha256": "edcc82d95a6c8f62c92dd8ca5c8809a1d0cf3b8c178e6a65182863b22b32b228",
+      "size_bytes": 184,
+      "kind": "test"
+    },
+    {
+      "path": "auth/TokenIntrospector/TokenIntrospector.contract.json",
+      "sha256": "fd86b13205794e2ee32cc2648f5ed9864c5e7d9cc3ccf88d7b0d3f3090adbf18",
+      "size_bytes": 2903,
+      "kind": "contract_json"
+    },
+    {
+      "path": "auth/TokenIntrospector/TokenIntrospector.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "auth/TokenIntrospector/TokenIntrospector.md",
+      "sha256": "26e2a720a4c251305bca0b0db544baccd403ef112663f2a31378e5d770867ed9",
+      "size_bytes": 7163,
+      "kind": "spec_md"
+    },
+    {
+      "path": "auth/TokenIntrospector/TokenIntrospector.py",
+      "sha256": "edd69e37fa2d5438e06369306c2f0ae714774d2eeb647dc50113e8e17b86670b",
+      "size_bytes": 29888,
+      "kind": "impl"
+    },
+    {
+      "path": "auth/TokenIntrospector/TokenIntrospector.tla",
+      "sha256": "b482940edda9d11120d4ae8e519b54384b90c027206fec97e749af9d217d07b7",
+      "size_bytes": 2920,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "auth/TokenIntrospector/behavioral_TokenIntrospector.py",
+      "sha256": "5ba6bf82a2a6b37185e2b12e76c12cf345f261a9870fd6c1cd6301e7dd9e96d6",
+      "size_bytes": 3917,
+      "kind": "behavioral"
+    },
+    {
+      "path": "auth/TokenIntrospector/chaos_TokenIntrospector.py",
+      "sha256": "401e195fab4b18ab757de24593e3fdab44c407316f1ace7ffebc094257ba34bf",
+      "size_bytes": 4770,
+      "kind": "chaos"
+    },
+    {
+      "path": "auth/TokenIntrospector/concurrent_TokenIntrospector.py",
+      "sha256": "c538c689ee389da9c2ca14e2462ae8b1c55ef77880f6fce55aeada11a9600de0",
+      "size_bytes": 4301,
+      "kind": "concurrent"
+    },
+    {
+      "path": "auth/TokenIntrospector/dashboard.json",
+      "sha256": "f643a21d58185b24f77ea28ee1cbee45106cc5a89e7473d181e7a6cdfde95ebb",
+      "size_bytes": 1035,
+      "kind": "dashboard"
+    },
+    {
+      "path": "auth/TokenIntrospector/invariant_bindings.json",
+      "sha256": "6363fecc237f86e5b4752d726e55245d1a634c04ce8b86069ae99c9cf5f96c82",
+      "size_bytes": 2255,
+      "kind": "test"
+    },
+    {
+      "path": "auth/TokenIntrospector/metamorphic_TokenIntrospector.py",
+      "sha256": "8d5b02e3c4927e801a6383313b13a653e88f708ce97e54699ef2abe424e061f9",
+      "size_bytes": 4064,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "auth/TokenIntrospector/observability_TokenIntrospector.py",
+      "sha256": "84dbcb854e514a39db326700d5f662776eb22ee3d691eb7064f7097fe56ceeef",
+      "size_bytes": 2569,
+      "kind": "observability"
+    },
+    {
+      "path": "auth/TokenIntrospector/observability_schema.json",
+      "sha256": "dd917bcc232e2037a6075c3e52e02d15fbdb7968bfb6f7d4211c4a0f31c02395",
+      "size_bytes": 1375,
+      "kind": "observability"
+    },
+    {
+      "path": "auth/TokenIntrospector/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "auth/TokenIntrospector/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "auth/TokenIntrospector/state_machine_TokenIntrospector.py",
+      "sha256": "f9c58f00744ad3c902c1fc5649ed71d23112a2bbb660f077135bbf9c9595900d",
+      "size_bytes": 3268,
+      "kind": "state_machine"
+    },
+    {
+      "path": "auth/TokenIntrospector/test_TokenIntrospector.py",
+      "sha256": "36d38f7ac0c0f6dd52aec98611700484b65b6854c2bce5cf571e3cd6f48765a9",
+      "size_bytes": 12109,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "TI_INV_01",
+      "invariant_text": "JWT verification MUST reject the 'none' algorithm and MUST pin the accepted algorithm set per issuer.",
+      "confirms_test": "test_inv_pinned_algorithm_confirms",
+      "prevents_test": "test_inv_pinned_algorithm_prevents",
+      "under_failure_test": "test_inv_pinned_algorithm_under_failure"
+    },
+    {
+      "invariant_id": "TI_INV_02",
+      "invariant_text": "introspect() MUST reject tokens whose aud claim does not include required_audience and SHALL raise a typed error.",
+      "confirms_test": "test_inv_audience_enforcement_confirms",
+      "prevents_test": "test_inv_audience_enforcement_prevents",
+      "under_failure_test": "test_inv_audience_enforcement_under_failure"
+    },
+    {
+      "invariant_id": "TI_INV_03",
+      "invariant_text": "Expired tokens (now >= exp) and not-yet-valid tokens (now < nbf) MUST be rejected with no claim surface returned.",
+      "confirms_test": "test_inv_time_bounds_confirms",
+      "prevents_test": "test_inv_time_bounds_prevents",
+      "under_failure_test": "test_inv_time_bounds_under_failure"
+    },
+    {
+      "invariant_id": "TI_INV_04",
+      "invariant_text": "Signing keys MUST be fetched from the issuer's JWKS with bounded caching; stale keys beyond max-age CANNOT be trusted.",
+      "confirms_test": "test_inv_jwks_cache_confirms",
+      "prevents_test": "test_inv_jwks_cache_prevents",
+      "under_failure_test": "test_inv_jwks_cache_under_failure"
+    },
+    {
+      "invariant_id": "TI_INV_05",
+      "invariant_text": "Opaque tokens MUST be introspected against the authorization server per RFC 7662 and NEVER parsed locally.",
+      "confirms_test": "test_inv_opaque_rfc7662_confirms",
+      "prevents_test": "test_inv_opaque_rfc7662_prevents",
+      "under_failure_test": "test_inv_opaque_rfc7662_under_failure"
+    },
+    {
+      "invariant_id": "TI_INV_06",
+      "invariant_text": "Introspection results MUST NEVER be cached past the token's exp or past the documented TTL, whichever is lower.",
+      "confirms_test": "test_inv_cache_ttl_confirms",
+      "prevents_test": "test_inv_cache_ttl_prevents",
+      "under_failure_test": "test_inv_cache_ttl_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 388,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1152,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 1532,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 4176,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1206,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 1219,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 202336,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "48 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1165,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1226,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 105873,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 320898,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ALG-NONE-BYPASS",
+        "hypothesis": "Submit a JWT with header alg='none' and no signature segment. If the introspector falls back to header-declared alg or accepts unsigned tokens, it will return TokenClaims for an attacker-forged subject and bypass authentication entirely.",
+        "input_fixture": "token = base64url({'alg':'none','typ':'JWT'}) + '.' + base64url({'sub':'admin','aud':['api'],'iss':'https://issuer','exp':9999999999}) + '.'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ALG-CONFUSION-RS-HS",
+        "hypothesis": "Sign a JWT using HS256 with the issuer's RSA public key as the HMAC secret. If the verifier honors the header alg instead of the issuer-pinned algorithm set, signature verification will succeed and forged claims will be accepted.",
+        "input_fixture": "jwt.encode({'sub':'attacker','aud':['api'],'iss':'https://issuer','exp':<future>}, key=open('issuer_pub.pem').read(), algorithm='HS256')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AUD-SUBSTRING",
+        "hypothesis": "Pass required_audience='api' against a token whose aud claim is 'api.evil.com' or 'evil-api'. If audience matching uses substring/prefix instead of set membership, mismatched audiences will be accepted.",
+        "input_fixture": "introspect(token_with_aud=['api.evil.com'], required_audience='api')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AUD-MISSING-RETURNS-CLAIMS",
+        "hypothesis": "Token has aud=['other'] not matching required_audience. If introspect raises a generic ValueError or returns partial TokenClaims instead of the typed error, callers may leak claims or miscatch the exception.",
+        "input_fixture": "introspect(jwt(aud=['other-service']), required_audience='my-api')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EXP-BOUNDARY-EQ",
+        "hypothesis": "Token with exp == now (integer equality). Spec says reject when now \u2265 exp. If implementation uses now > exp, the exact-second boundary token is accepted, allowing a 1-second replay window.",
+        "input_fixture": "jwt(exp=int(time.time())) submitted at exactly that second",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NBF-CLOCK-SKEW",
+        "hypothesis": "Token with nbf set 60s in the future. If implementation applies an undocumented leeway/skew tolerance, the not-yet-valid token will be accepted before its nbf.",
+        "input_fixture": "jwt(nbf=int(time.time())+60, exp=int(time.time())+3600) introspected immediately",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EXP-INT-OVERFLOW",
+        "hypothesis": "Token with exp=2**63 or exp=-1 or exp as float NaN. Integer overflow or type coercion may bypass the now>=exp check, returning claims for an effectively immortal token.",
+        "input_fixture": "jwt(exp=9223372036854775808) and jwt(exp=float('nan'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-JWKS-STALE-AFTER-ROTATION",
+        "hypothesis": "Issuer rotates and revokes a compromised key. If JWKS cache max-age is unbounded or not honored, tokens signed by the revoked key continue to verify well past max-age.",
+        "input_fixture": "sign token with revoked kid; advance clock past max-age; call introspect repeatedly without forcing JWKS refresh",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-JWKS-KID-INJECTION",
+        "hypothesis": "JWT header kid contains a path traversal or URL ('../', 'http://attacker/jwks.json'). If the introspector dereferences kid to fetch keys, attacker controls the verifying key.",
+        "input_fixture": "jwt header={'alg':'RS256','kid':'http://attacker.example/keys.json'}",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-OPAQUE-LOCAL-PARSE",
+        "hypothesis": "Submit an opaque token shaped like a JWT (three base64 segments) but issued as opaque by the AS. If the introspector heuristically parses it locally instead of calling RFC 7662 endpoint, attacker-crafted segments yield accepted claims.",
+        "input_fixture": "token='eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ4In0.AAAA' registered as opaque at AS",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INTROSPECT-CACHE-PAST-EXP",
+        "hypothesis": "AS returns active=true with exp=now+10s. After token revocation or expiry, cached introspection result is reused beyond exp, accepting a revoked/expired token.",
+        "input_fixture": "call introspect(opaque); revoke at AS; sleep 11s; call introspect(opaque) again",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INTROSPECT-REPLAY",
+        "hypothesis": "Cache key is the raw token string with no binding to required_audience. Replaying the same token against a different required_audience returns cached claims that bypass aud check.",
+        "input_fixture": "introspect(t, 'svc-a') -> caches; introspect(t, 'svc-b') returns cached claims without re-validating aud",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED-TYPES",
+        "hypothesis": "Pass token=None, token=b'\\x00\\x01', or token='' . If type validation is missing, the function may crash with a non-typed exception or coerce to a default that returns claims.",
+        "input_fixture": "introspect(None, 'api'); introspect('', 'api'); introspect(b'\\x00', 'api')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-JWKS-AMPLIFICATION",
+        "hypothesis": "Submit thousands of tokens with distinct unknown kids. If JWKS is refetched per cache-miss without rate-limiting, attacker amplifies one HTTP request into a flood against the issuer's JWKS endpoint (DoS + cost).",
+        "input_fixture": "for i in range(10000): introspect(jwt(header={'kid': f'rand-{i}'}), 'api')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CRED-LEAK-IN-ERROR",
+        "hypothesis": "On verification failure, the typed error message embeds the full token or decoded claims for debugging. Logs/responses then leak bearer credentials and PII to downstream sinks.",
+        "input_fixture": "introspect('eyJhbGciOiJIUzI1NiJ9.<sensitive>.<sig>', 'api') with invalid sig; inspect raised exception .args/__str__",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ALG-NONE-BYPASS",
+        "hypothesis": "If the implementation delegates algorithm selection to a JWT library without an explicit allowlist, an attacker can forge a token with alg=none, strip the signature, and the library will accept it as valid. Many PyJWT/python-jose versions accepted alg=none by default before explicit opt-out was required. The invariant says 'none' MUST be rejected, but a missing algorithms= kwarg in decode() leaves the door open.",
+        "input_fixture": "token = base64url('{\"alg\":\"none\",\"typ\":\"JWT\"}') + '.' + base64url('{\"sub\":\"admin\",\"aud\":\"api\",\"iss\":\"https://auth.example.com\",\"exp\":9999999999,\"scopes\":[\"admin\"]}') + '.'; introspect(token, required_audience='api')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ALG-CONFUSION-RS256-HS256",
+        "hypothesis": "If the issuer's JWKS returns an RSA public key and the implementation does not pin the algorithm per issuer, an attacker can craft a token with alg=HS256 and sign it using the RSA public key bytes as the HMAC secret. Libraries that accept both RS256 and HS256 without issuer-pinning will verify this token successfully because the public key is... public.",
+        "input_fixture": "rsa_pub_pem = fetch_jwks('https://legit-issuer.example.com'); forged_header = b64url('{\"alg\":\"HS256\",\"kid\":\"legit-key-id\"}'); forged_payload = b64url('{\"sub\":\"attacker\",\"aud\":\"api\",\"iss\":\"https://legit-issuer.example.com\",\"exp\":9999999999}'); sig = hmac_sha256(rsa_pub_pem, forged_header+'.'+forged_payload); introspect(forged_header+'.'+forged_payload+'.'+sig, 'api')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AUD-STRING-VS-ARRAY",
+        "hypothesis": "RFC 7519 allows the aud claim to be either a single string or an array of strings. If the implementation only checks isinstance(aud, list) and does the required_audience lookup on a list, a token carrying aud as a plain string equal to required_audience may bypass the check when the code does 'required_audience in claims[\"aud\"]' \u2014 because 'in' on a string is a substring check, not a set-membership check. aud='xapi' would pass required_audience='api' check.",
+        "input_fixture": "token with payload: {\"sub\":\"u1\",\"aud\":\"xapi\",\"iss\":\"trusted\",\"exp\":9999999999}; introspect(token, required_audience='api')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AUD-ARRAY-EMPTY",
+        "hypothesis": "A token with aud=[] (empty array) should clearly fail audience validation. However, if the implementation checks 'if required_audience in claims.audience' on a frozenset built from an empty list, Python's 'in' returns False correctly \u2014 but if the code instead checks 'not claims.audience or required_audience in claims.audience' with a short-circuit that treats empty audience as a wildcard (a common defensive anti-pattern), the empty aud token would be accepted for any audience.",
+        "input_fixture": "token with payload: {\"sub\":\"u1\",\"aud\":[],\"iss\":\"trusted\",\"exp\":9999999999}; introspect(token, required_audience='any-service')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EXP-BOUNDARY-OFF-BY-ONE",
+        "hypothesis": "The invariant says 'now >= exp MUST be rejected'. If the implementation uses 'if now > exp' (strictly greater-than) instead of 'now >= exp', a token with exp == current Unix timestamp passes validation exactly at the boundary second. An attacker who can synchronize a request to the exact expiry second can use an expired token.",
+        "input_fixture": "import time; exp = int(time.time()); token with payload {\"sub\":\"u\",\"aud\":\"api\",\"exp\": exp, \"iss\":\"trusted\"}; called at exactly t=exp (use time.freeze or mock time.time to return exp exactly)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NBF-FUTURE-NO-REJECT",
+        "hypothesis": "If nbf is present in the future (nbf = now + 3600) the token is not yet valid and MUST be rejected per the invariant. If the implementation only validates exp and ignores nbf entirely (a common omission), a pre-issued token meant for future use can be replayed immediately. Additionally, if claims are returned before the nbf check runs, the claim surface leaks even on rejection.",
+        "input_fixture": "import time; nbf = int(time.time()) + 3600; exp = nbf + 7200; token with payload {\"sub\":\"u\",\"aud\":\"api\",\"iss\":\"trusted\",\"exp\":exp,\"nbf\":nbf}; introspect(token, 'api') should raise but may return claims",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EXP-MISSING-NO-REJECT",
+        "hypothesis": "If the exp claim is absent, the token has no expiry. The invariant mandates rejection of expired tokens but says nothing explicit about tokens without exp. An implementation that only validates exp when the field is present will silently accept tokens with no expiration \u2014 creating permanent credentials from a single compromise.",
+        "input_fixture": "token with payload: {\"sub\":\"permanent\",\"aud\":\"api\",\"iss\":\"trusted\",\"scopes\":[\"admin\"]} \u2014 no 'exp' field at all; introspect(token, 'api')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-JWKS-CACHE-STALE-KEY-TRUST",
+        "hypothesis": "If the JWKS cache does not respect the Cache-Control max-age from the JWKS endpoint response and instead uses a fixed TTL (e.g., 1 hour hardcoded), an attacker who compromises a signing key can keep using it after the issuer has rotated and published a new JWKS \u2014 because the implementation won't re-fetch until its fixed TTL expires. The invariant says stale keys beyond max-age CANNOT be trusted.",
+        "input_fixture": "1) Fetch JWKS with max-age=60 from issuer; 2) implementation caches for 3600s; 3) at t=61, issuer rotates and revokes old key; 4) attacker signs token with revoked key; 5) at t=120, introspect(attacker_token, 'api') \u2014 still hits stale cache and verifies successfully",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-JWKS-SSRF-KID-URL",
+        "hypothesis": "Some JWT libraries support a jku or x5u header field pointing to a remote JWKS URL, and some kid implementations allow URL-format key IDs. If the implementation fetches the JWKS URL from the token's own header (jku field) rather than from a pre-configured issuer-pinned URL, an attacker can set jku to an attacker-controlled server returning a self-signed key, achieving SSRF and full signature bypass simultaneously.",
+        "input_fixture": "forged_header = {\"alg\":\"RS256\",\"kid\":\"evil\",\"jku\":\"https://attacker.example.com/jwks.json\"}; attacker hosts jwks.json with their own public key; signs token with corresponding private key; introspect(token, 'api')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-OPAQUE-JWT-LOOKALIKE",
+        "hypothesis": "The implementation must detect opaque tokens and route them to RFC 7662 introspection rather than local parsing. If opaque-vs-JWT detection is based solely on 'does the string have two dots and look base64' (i.e., split('.') length == 3), an attacker can craft an opaque token that contains two dots \u2014 or alternatively a JWT with a corrupted payload \u2014 causing the implementation to attempt local parsing of what the issuer considers an opaque token, bypassing RFC 7662 revocation checks entirely.",
+        "input_fixture": "opaque_token = 'abc.def.ghi' (three base64-looking segments but not a valid JWT \u2014 server-side opaque); introspect(opaque_token, 'api'); implementation may decode header, see alg=RS256, and try to verify signature locally rather than calling /introspect endpoint",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INTROSPECT-CACHE-REPLAY-AFTER-REVOKE",
+        "hypothesis": "The invariant says introspection results must not be cached past the token's exp or documented TTL. However, if the cache key is the raw token string and the cache TTL is set to the full exp duration at cache-write time, a token that is revoked mid-lifetime at the authorization server will still be served from cache as active. The window between revocation and cache expiry is a replay window where a revoked credential appears valid.",
+        "input_fixture": "1) introspect(token_A, 'api') \u2192 cache result with TTL = token_A.exp - now = 3600s; 2) at t=60, auth server revokes token_A (user logout / breach response); 3) at t=120, introspect(token_A, 'api') \u2192 cache hit returns active=true; revocation bypassed for remaining ~3480s",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK-SKEW-AMPLIFICATION",
+        "hypothesis": "Many JWT libraries accept a leeway parameter (e.g., 60s) to tolerate clock skew between issuer and verifier. If the implementation exposes this leeway without bounding it, or if the leeway is configurable and defaults to a large value, an attacker can use a token that expired up to leeway-seconds ago. With a 300s leeway, tokens remain valid 5 minutes post-expiry \u2014 directly violating 'now >= exp MUST be rejected'.",
+        "input_fixture": "exp = int(time.time()) - 200; token with payload {\"sub\":\"u\",\"aud\":\"api\",\"iss\":\"trusted\",\"exp\":exp}; if implementation uses PyJWT with options={\"leeway\":300}, introspect(token,'api') succeeds despite token being 200s expired",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AUD-MULTI-ISSUER-CONFUSION",
+        "hypothesis": "If the same TokenIntrospector instance serves multiple issuers and does not bind the algorithm pin per-issuer at key-lookup time, an attacker from issuer-A (who is authorized only for audience-A) can submit a token to the introspect() endpoint with iss=issuer-B and aud=audience-B. If the implementation looks up keys by kid globally rather than (issuer, kid) tuple, a shared kid between two issuers allows cross-issuer signature validation.",
+        "input_fixture": "issuer_A and issuer_B both publish a key with kid='shared-001'; attacker controls issuer_A; crafts token: {\"iss\":\"issuer_B\",\"aud\":\"audience_B\",\"sub\":\"attacker\",\"exp\":9999999999} signed with issuer_A's private key for kid='shared-001'; introspect(token, 'audience_B')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLAIMS-LEAK-ON-EXPIRED-REJECTION",
+        "hypothesis": "The invariant says expired tokens must be rejected 'with no claim surface returned'. If the implementation decodes and returns a partial TokenClaims before raising the expiry exception \u2014 for instance in a try/except block that yields the dataclass then raises \u2014 or if structured logging emits claims fields on the error path, the subject, scopes, and audience of expired tokens are observable to callers or log scrapers. This is an information disclosure that violates the 'no claim surface' guarantee.",
+        "input_fixture": "exp = int(time.time()) - 1; token with payload {\"sub\":\"privileged-user\",\"aud\":\"api\",\"iss\":\"trusted\",\"exp\":exp,\"scopes\":[\"admin\",\"write:all\"]}; call introspect(token,'api'); inspect raised exception object for .claims attribute or structured log output for sub/scopes fields",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NONE-ALG-DIRECT",
+        "hypothesis": "Token with alg=none in JWT header bypasses FORBIDDEN_ALGORITHMS check and is accepted as valid.",
+        "input_fixture": "make_none_alg_token(issuer='https://auth.example.com', subject='attacker', audience='api.example.com', expires_at=1700000600) \u2192 introspect(token, 'api.example.com') should reject but accepts",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ALG-DOWNGRADE-UNPINNED",
+        "hypothesis": "JWT with RS256 algorithm is accepted when IssuerConfig only pins HS256, allowing attacker to forge signatures.",
+        "input_fixture": "make_hs256_jwt() modified to set header.alg='RS256' \u2192 introspect() bypasses algorithm pinning check at line 448",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MISSING-REQUIRED-AUDIENCE",
+        "hypothesis": "Token with aud=[\"other-service\"] is accepted when required_audience=\"api.example.com\", violating audience constraint.",
+        "input_fixture": "make_hs256_jwt(audience='other-service', ...) \u2192 introspect(token, 'api.example.com') should raise InvalidTokenError but returns claims",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-STRING-IN-AUD-LIST",
+        "hypothesis": "JWT with aud=[\"valid-api\", \"\"] parses without error; empty-string audience acceptance bypasses validation.",
+        "input_fixture": "make_hs256_jwt(audience=['api.example.com', '']) \u2192 introspect() accepts empty item and returns claims containing empty-string audience",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EXPIRED-AT-BOUNDARY-EQ",
+        "hypothesis": "Token with exp=now is accepted (now >= exp comparison should reject) due to off-by-one in _enforce_time_bounds.",
+        "input_fixture": "make_hs256_jwt(expires_at=1700000000) with clock() returning 1700000000 \u2192 introspect() should reject at line 483 but returns claims",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NOT-BEFORE-AT-BOUNDARY-EQ",
+        "hypothesis": "Token with nbf=now is accepted (now < nbf should reject) due to boundary error in _enforce_time_bounds.",
+        "input_fixture": "make_hs256_jwt(not_before=1700000100) with clock() returning 1700000100 \u2192 introspect() returns claims but should reject at line 493",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-JWKS-CACHE-STALE-BEYOND-MAX-AGE",
+        "hypothesis": "JWKS key cached at T0 is used at T0+301 seconds even though jwks_max_age_s=300, violating TI-INV-04 bounded caching.",
+        "input_fixture": "Cache JWKS at T=0, advance clock to T=301, use cached key in signature verification at line 543 \u2192 entry.fetched_at=0, now=301, delta=301 >= jwks_max_age_s but key still used",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-JWKS-EMPTY-RESPONSE-ACCEPTED",
+        "hypothesis": "JwksFetcher returns empty list; _resolve_jwks() at line 547-550 should reject but may cache empty keyset anyway.",
+        "input_fixture": "StaticJwksFetcher returns [] for issuer \u2192 introspect() signature verify at line 576 loops over empty keys, verification fails (correctly), but cache stores empty entry",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-OPAQUE-TWO-SEGMENT-CONFUSION",
+        "hypothesis": "Two-segment token 'part1.part2' is treated as opaque and sent to introspection endpoint instead of being rejected as malformed JWT.",
+        "input_fixture": "Token string 'aaa.bbb' (exactly 2 segments) \u2192 introspect() routes to _introspect_opaque() at line 381 instead of _introspect_jwt() at line 378, endpoint called",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INTROSPECTION-CACHE-PAST-EXP",
+        "hypothesis": "Opaque token cached at T0 with exp=T0+30 is returned from cache at T0+31, violating TI-INV-06 cache expiry enforcement.",
+        "input_fixture": "introspect opaque token at T=0 (response exp=30), advance clock to T=31, _lookup_introspection() returns cached claims at line 627 even though cached_until=30 <= now=31",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INTROSPECTION-CACHE-PAST-TTL-BOUNDARY",
+        "hypothesis": "Cached introspection result is returned exactly at cached_until boundary (now == cached_until) instead of being invalidated.",
+        "input_fixture": "Store at T=0 with cached_until=T=60, call _lookup_introspection() at T=60 \u2192 line 623 checks now >= cached_until (60 >= 60 is true) but entry still returned",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SIGNATURE-CORRUPTED-BYTES",
+        "hypothesis": "JWT signature bytes are flipped but verification still passes due to incomplete HMAC validation.",
+        "input_fixture": "make_hs256_jwt() \u2192 modify last 4 bytes of signature portion \u2192 introspect() at line 576 calls _hs_verify() which should fail but may accept corrupted bytes",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-KID-MISMATCH-SILENT-FALLBACK",
+        "hypothesis": "JWT has kid='k-nonexistent' but JWKS contains only 'k1'; fallback verification succeeds without kid matching.",
+        "input_fixture": "make_hs256_jwt(kid='k-nonexistent') \u2192 StaticJwksFetcher has only kid='k1' \u2192 _verify_signature() at line 573 filters candidates by kid, gets empty list, but loop at 575 still attempts verify",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK-SKEW-RACE-EXP-CHECK",
+        "hypothesis": "Token expires between introspection cache lookup and subsequent expiry validation due to clock advancing mid-check.",
+        "input_fixture": "Introspect opaque token at T=0 (exp=T=30) \u2192 cache lookup succeeds, clock advances to T=30.001 \u2192 line 528 re-checks now >= exp and should reject but returns cached claims",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INTROSPECTION-STORE-NEGATIVE-TTL",
+        "hypothesis": "Token with short exp combined with large introspection_ttl_s produces incorrect cached_until calculation, allowing stale cache.",
+        "input_fixture": "RFC 7662 response with exp=T+10, introspection_ttl_s=100, called at T+50 \u2192 line 634 sets cached_until=min(T+10, T+150)=T+10 but entry should not be stored (line 635 check)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ISSUER-CLAIM-EMPTY-STRING",
+        "hypothesis": "JWT with iss='' (empty string) bypasses issuer validation; empty issuer is accepted as valid.",
+        "input_fixture": "Manually craft JWT with iss='' \u2192 _enforce_alg_policy() at line 439-442 checks for empty issuer but may still proceed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MALFORMED-JSON-HEADER",
+        "hypothesis": "JWT header with invalid JSON (e.g., unquoted keys) causes parsing error that is caught but incorrectly surfaces claims.",
+        "input_fixture": "Manually craft JWT with header={a:1} (invalid JSON) \u2192 _parse_jwt() at line 189 raises exception, caught at line 192-195, but claims may still be returned",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-AUD-WRONG-TYPE-BYPASS",
+        "hypothesis": "JWT with aud=123 (number instead of string/list) bypasses type validation and is accepted.",
+        "input_fixture": "Manually craft JWT with aud=123 \u2192 _normalise_audience() at line 645-659 raises InvalidTokenError but catch in _introspect_jwt() may suppress it",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REVOCATION-RACE-CACHE-HIT",
+        "hypothesis": "Token is revoked but concurrent cache lookup returns claims before revocation set is checked.",
+        "input_fixture": "Thread 1: introspect opaque token at T=0 (cache miss) \u2192 calls endpoint. Thread 2: revoke same token. Thread 1 caches result. subsequent introspect() at T=1 returns cached claims despite revocation.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "token.introspected",
+        "required_attributes": [
+          "issuer",
+          "subject",
+          "audience_matched",
+          "result"
+        ]
+      },
+      {
+        "event_name": "token.rejected",
+        "required_attributes": [
+          "issuer",
+          "reason",
+          "invariant_id"
+        ]
+      },
+      {
+        "event_name": "token.revoked",
+        "required_attributes": [
+          "token_hash"
+        ]
+      },
+      {
+        "event_name": "jwks.fetched",
+        "required_attributes": [
+          "issuer",
+          "key_count",
+          "cache_age_s"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "token.introspect.total",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "result",
+          "path"
+        ]
+      },
+      {
+        "name": "token.cache.hit.ratio",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 5,
+        "label_keys": [
+          "cache"
+        ]
+      },
+      {
+        "name": "jwks.fetch.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "issuer",
+          "result"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "token.introspect",
+        "required_attributes": [
+          "token.path",
+          "issuer",
+          "audience.required"
+        ]
+      },
+      {
+        "operation_name": "jwks.fetch",
+        "required_attributes": [
+          "issuer",
+          "key.count"
+        ]
+      },
+      {
+        "operation_name": "rfc7662.introspect",
+        "required_attributes": [
+          "issuer",
+          "active"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Implements the catalog Protocol verbatim: TokenClaims dataclass matches exactly (subject/scopes/audience/issuer/expires_at as frozen), introspect(token, required_audience) signature matches, runtime_checkable Protocol exported. All six invariants cited in code and enforced."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "Covers JWT + opaque paths, JWKS caching with max-age, introspection TTL min(exp,ttl), revocation, aud/exp/nbf/iss checks, alg pinning, kid matching, scope normalisation (str/list), test helpers for HS256 and 'none' forgery, static adapters. Minor gap: no async variant, only HS* reference (acknowledged)."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Typed InvalidTokenError subclass of TokenIntrospectorInvariantError(ValueError). Every raise cites the specific TI-INV-NN, describes the violation, and avoids leaking claim surface on rejection. Construction-time errors distinguished from runtime token errors."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Adapters (JwksFetcher, IntrospectionEndpoint, Clock) are Protocols injected via constructor; caches are internal; lock released before adapter calls preventing deadlock; frozen dataclasses for claims/config; __all__ curated; zero import-time I/O."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe with explicit lock discipline, SHA-256 hashing of tokens for revocation (no bearer leakage), bounded caches, deterministic clock injection. Caches are unbounded-size dicts (no LRU cap) \u2014 under adversarial token volume memory could grow; acceptable for bounded TTL but worth noting."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace/name/purpose aligned; api_signature matches exactly; all 6 invariants present and enforced at code sites referencing TI-INV-NN; extension_contract honored (registry refuses 'none' at IssuerConfig construction); maturity=battle_tested justified by depth of checks and TLA+ spec referenced in spec."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'Opaque token' is used throughout but never defined \u2014 a junior does not know what distinguishes it from a JWT or why it matters.",
+          "Wiring five objects (CachingTokenIntrospector, IssuerConfig, SigningKey, StaticJwksFetcher, StaticIntrospectionEndpoint) before a single call is daunting with no minimal 'JWT-only' shortcut shown.",
+          "Acronym pile (JWKS, RFC 7662, DPoP-bound) appears without a one-line gloss, forcing external lookups before the example makes sense."
+        ],
+        "rewrite_suggestion": "Open with a collapsed 'Quickstart' block that shows the smallest possible working example (JWT-only, two objects). Below it, add a single sentence: 'Opaque tokens are short random strings issued by the auth server \u2014 unlike JWTs they carry no claims and must be verified remotely.' Then present the full five-object example as 'Full setup with opaque-token support'."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "The Extension Contract references a 'catalog Protocol' but shows no method signatures \u2014 the adapter interface a new implementation must satisfy is unspecified.",
+          "The error hierarchy is incomplete: only InvalidTokenError and TokenIntrospectorInvariantError are named; the full subclass tree and the condition that triggers each subclass are absent.",
+          "DPoP-bound tokens are listed as a supported adapter type in the Extension Contract but appear nowhere in the Invariants, Security Considerations, or test mapping \u2014 leaving their validation contract undefined."
+        ],
+        "rewrite_suggestion": "Add a 'Adapter interfaces' subsection with the three Protocol method signatures (introspect, fetch_jwks, call_introspection_endpoint). Expand the Invariants table with one DPoP row (TI_INV_07). Add an 'Error hierarchy' table mapping each concrete exception subclass to its trigger condition."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "JWKS URI scheme is unconstrained \u2014 the docs do not state whether HTTP JWKS URIs are rejected, leaving a downgrade path where key material is fetched over plaintext.",
+          "Fail-open vs fail-closed behavior on introspection-endpoint errors (network timeout, 5xx) is not specified \u2014 a misreading could lead an implementer to pass tokens through on error.",
+          "Timing-safe comparison is not mentioned for any equality check (e.g. revocation set lookup), leaving an implicit assumption that needs explicit confirmation."
+        ],
+        "rewrite_suggestion": "Add three bullets to Security Considerations: (1) 'JWKS URIs MUST use HTTPS; IssuerConfig construction MUST reject non-HTTPS URIs.' (2) 'Any network or HTTP error from the introspection endpoint MUST result in InvalidTokenError \u2014 this primitive NEVER fails open.' (3) 'Revocation-set membership is checked with a constant-time hash comparison.'"
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "No circuit-breaker or graceful-degradation policy is documented \u2014 an SRE does not know whether a JWKS fetch failure causes every request to fail or falls back to cached keys until max-age.",
+          "Metric names are listed but no alerting thresholds are suggested \u2014 the SRE must derive from scratch what p99 latency or rejection rate warrants a page.",
+          "Concurrency throughput under lock contention is unquantified \u2014 the lock model is described but there is no benchmark or saturation point to size deployment."
+        ],
+        "rewrite_suggestion": "Add a 'Failure modes' row to Operational Characteristics: 'JWKS unreachable: cached keys used until jwks_max_age_s, then all JWTs rejected (fail closed). Introspection endpoint unreachable: opaque tokens rejected immediately.' Append recommended alert thresholds (e.g., jwks.fetch.duration p99 > 500 ms \u2192 warning) and link to or inline the p99/throughput result from the load harness."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "No adoption-effort statement \u2014 a PM cannot estimate team cost without knowing whether adoption requires a new dependency import, a config value, or a platform migration.",
+          "No latency impact statement \u2014 adding a remote call (RFC 7662) to every request is a product-level tradeoff that the docs bury in the SRE section without a headline number.",
+          "The Invariants table and TLA+ references are unexplained jargon for this audience, diluting the clear 'What it does' and 'When to use' sections."
+        ],
+        "rewrite_suggestion": "Add a three-bullet 'Business value' box after the Purpose section: 'Consistent auth policy across all services \u2014 one place to update algorithm or audience rules. Auditable by design \u2014 tokens stored as SHA-256 hashes. Typical adoption: one config block per service.' Move the Invariants table to an appendix and replace it inline with: 'Guarantees: tokens are always checked for signature, audience, expiry, and revocation before claims are returned.'"
+      }
+    ]
+  }
+}

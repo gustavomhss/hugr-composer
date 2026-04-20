@@ -1,0 +1,13 @@
+{
+  "logs": [
+    {"event_name": "resource.initialized", "required_attributes": ["service.name", "deployment.environment.name"]},
+    {"event_name": "resource.merged", "required_attributes": ["overrides.count"]}
+  ],
+  "metrics": [
+    {"name": "resource.initializations", "metric_type": "counter", "unit": "1", "cardinality_bound": 20, "label_keys": ["environment"]},
+    {"name": "resource.rejections", "metric_type": "counter", "unit": "1", "cardinality_bound": 20, "label_keys": ["reason"]}
+  ],
+  "spans": [
+    {"operation_name": "resource.initialize", "required_attributes": ["service.name"]}
+  ]
+}

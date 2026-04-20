@@ -1,0 +1,49 @@
+{
+  "logs": [
+    {
+      "event_name": "uow.opened",
+      "required_attributes": ["unit_id"]
+    },
+    {
+      "event_name": "uow.committed",
+      "required_attributes": ["unit_id", "new_count", "dirty_count", "removed_count"]
+    },
+    {
+      "event_name": "uow.rolled.back",
+      "required_attributes": ["unit_id", "reason"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "uow.commits",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": ["result"]
+    },
+    {
+      "name": "uow.bucket.size",
+      "metric_type": "histogram",
+      "unit": "1",
+      "cardinality_bound": 30,
+      "label_keys": ["bucket"]
+    },
+    {
+      "name": "uow.flush.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": ["result"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "uow.commit",
+      "required_attributes": ["unit.id", "new.count", "dirty.count", "removed.count"]
+    },
+    {
+      "operation_name": "uow.rollback",
+      "required_attributes": ["unit.id"]
+    }
+  ]
+}

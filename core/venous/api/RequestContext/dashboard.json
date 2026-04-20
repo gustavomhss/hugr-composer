@@ -1,0 +1,26 @@
+{
+  "title": "RequestContext — Request Lifecycle, Halts, Assigns",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Requests Started (5m)",
+      "targets": [{"expr": "sum(rate(api_request_started_total[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Halt Rate by Reason",
+      "targets": [
+        {"expr": "sum by (reason) (rate(api_request_halted_total[5m]))"}
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Assigns per Request (p95)",
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(api_request_assign_count_bucket[5m])))"}]
+    }
+  ]
+}

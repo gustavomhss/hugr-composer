@@ -1,0 +1,12 @@
+{
+  "title": "MetricMeter — Instruments, Values, Cardinality",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "Active Instruments",
+     "targets": [{"expr": "meter_instruments_count"}]},
+    {"id": 2, "type": "timeseries", "title": "Rejected Values (rate/s)",
+     "targets": [{"expr": "rate(meter_values_rejected_total[5m])"}]},
+    {"id": 3, "type": "timeseries", "title": "Gauge Callback Duration p95",
+     "targets": [{"expr": "histogram_quantile(0.95, rate(meter_gauge_callback_duration_bucket[5m]))"}]}
+  ]
+}

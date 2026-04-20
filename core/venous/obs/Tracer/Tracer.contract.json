@@ -1,0 +1,37 @@
+{
+  "name": "Tracer",
+  "namespace": "obs",
+  "purpose": "Create spans that represent a unit of work, attach attributes and events, link related spans, and propagate context across process and network boundaries.",
+  "api_signature": "from contextlib import AbstractContextManager\nfrom typing import Protocol, Mapping, Sequence\n\nclass Span(Protocol):\n    def set_attribute(self, key: str, value: str | int | float | bool) -> None: ...\n    def add_event(self, name: str, attributes: Mapping[str, object] | None = None) -> None: ...\n    def record_exception(self, exc: BaseException) -> None: ...\n    def set_status(self, code: str, description: str | None = None) -> None: ...\n\nclass Tracer(Protocol):\n    def start_as_current_span(\n        self,\n        name: str,\n        *,\n        kind: str = 'INTERNAL',\n        attributes: Mapping[str, object] | None = None,\n        links: Sequence[object] = (),\n    ) -> AbstractContextManager[Span]: ...\n    def inject(self, carrier: dict[str, str]) -> None: ...\n    def extract(self, carrier: Mapping[str, str]) -> object: ...\n",
+  "invariants": [
+    "Every span MUST have a non-empty name, a start timestamp, and an end timestamp in that causal order.",
+    "A span CANNOT be ended twice; a second end call SHALL be a no-op with a recorded internal warning.",
+    "The tracer MUST honor W3C Trace Context headers (traceparent, tracestate) on both inject and extract without mutation of unknown tracestate vendor entries.",
+    "Recording an exception MUST set the span status code to ERROR unless the caller explicitly overrides with OK.",
+    "Attribute values MUST be one of: string, bool, int, float, or a homogeneous sequence of those types; nested structures are FORBIDDEN.",
+    "The tracer SHALL NEVER block the caller waiting for exporter acknowledgement; export is asynchronous."
+  ],
+  "extension_contract": "A downstream tool extends tracing by registering a SpanProcessor adapter against the TracerProvider; custom attribute semantics are added via a semantic-convention plugin that maps domain keys to OTel attribute names, and context propagation formats are added by registering a TextMapPropagator implementation.",
+  "consumption_example": "def charge_card(tracer: Tracer, amount_cents: int, customer_id: str) -> str:\n    with tracer.start_as_current_span(\n        'payment.charge',\n        kind='CLIENT',\n        attributes={'payment.amount_cents': amount_cents, 'enduser.id': customer_id},\n    ) as span:\n        try:\n            receipt_id = _call_gateway(amount_cents)\n        except Exception as exc:\n            span.record_exception(exc)\n            raise\n        span.set_attribute('payment.receipt_id', receipt_id)\n        return receipt_id\n",
+  "sources": [
+    {
+      "source": "OpenTelemetry Specification 1.32 \u2014 Trace API",
+      "locator": "specification/trace/api.md sections 'Tracer', 'Span', 'SpanKind', 'Span.End'"
+    },
+    {
+      "source": "W3C Trace Context Recommendation Level 1",
+      "locator": "https://www.w3.org/TR/trace-context/ section 3 (traceparent) and section 4 (tracestate)"
+    },
+    {
+      "source": "Majors, Fong-Jones, Miranda \u2014 Observability Engineering (2022)",
+      "locator": "Chapter 6 'Stitching Events into Traces' pp. 73-84"
+    }
+  ],
+  "why_essential": "Without a shared tracer contract, each tool emits incompatible span shapes and context headers, breaking cross-service causality and forcing bespoke propagation glue at every network hop.",
+  "alternatives_considered": [
+    "Per-framework tracer (FastAPI-specific decorator) \u2014 rejected because propagation breaks at the first out-of-framework hop (worker, CLI, cron).",
+    "OpenTracing API \u2014 rejected as archived in 2022; its successor OpenTelemetry is the active standard.",
+    "Log-only correlation with request_id \u2014 rejected because it loses parent/child causality and span timing."
+  ],
+  "maturity": "battle_tested"
+}

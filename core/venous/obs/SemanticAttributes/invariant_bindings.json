@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "SEM_INV_01",
+      "invariant_text": "Attribute keys MUST match the lowercase dotted notation specified by OpenTelemetry Semantic Conventions 1.27 and SHALL NEVER be aliased to custom names.",
+      "confirms_test": "test_inv_key_format_confirms",
+      "prevents_test": "test_inv_key_format_prevents",
+      "under_failure_test": "test_inv_key_format_under_failure"
+    },
+    {
+      "invariant_id": "SEM_INV_02",
+      "invariant_text": "Required keys for a given domain (http.request.method for HTTP server spans, db.system for DB spans) MUST be populated before a span ends.",
+      "confirms_test": "test_inv_required_keys_confirms",
+      "prevents_test": "test_inv_required_keys_prevents",
+      "under_failure_test": "test_inv_required_keys_under_failure"
+    },
+    {
+      "invariant_id": "SEM_INV_03",
+      "invariant_text": "Values for enum attributes (db.system, messaging.system) MUST come from the SemConv registry and CANNOT be free-form strings.",
+      "confirms_test": "test_inv_enum_values_confirms",
+      "prevents_test": "test_inv_enum_values_prevents",
+      "under_failure_test": "test_inv_enum_values_under_failure"
+    },
+    {
+      "invariant_id": "SEM_INV_04",
+      "invariant_text": "Deprecated keys SHALL be aliased to the current key with a one-time warning, NEVER silently dropped.",
+      "confirms_test": "test_inv_deprecated_aliased_confirms",
+      "prevents_test": "test_inv_deprecated_aliased_prevents",
+      "under_failure_test": "test_inv_deprecated_aliased_under_failure"
+    },
+    {
+      "invariant_id": "SEM_INV_05",
+      "invariant_text": "The full SQL statement under db.statement MUST be redacted when the deployment environment is production; literal parameter values are FORBIDDEN.",
+      "confirms_test": "test_inv_sql_redaction_confirms",
+      "prevents_test": "test_inv_sql_redaction_prevents",
+      "under_failure_test": "test_inv_sql_redaction_under_failure"
+    },
+    {
+      "invariant_id": "SEM_INV_06",
+      "invariant_text": "SemanticAttributes class keys are immutable class attributes and NEVER reassigned at runtime.",
+      "confirms_test": "test_inv_class_immutable_confirms",
+      "prevents_test": "test_inv_class_immutable_prevents",
+      "under_failure_test": "test_inv_class_immutable_under_failure"
+    }
+  ]
+}

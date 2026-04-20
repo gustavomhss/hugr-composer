@@ -1,0 +1,49 @@
+{
+  "logs": [
+    {
+      "event_name": "value_transform.coercion.failed",
+      "required_attributes": ["transform_name", "field", "expected", "received_type"]
+    },
+    {
+      "event_name": "value_transform.validation.failed",
+      "required_attributes": ["transform_name", "field", "message"]
+    },
+    {
+      "event_name": "value_transform.metatype.mismatch",
+      "required_attributes": ["transform_name", "declared_metatype", "expected_metatype"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "value_transform.calls",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["transform", "kind", "result"]
+    },
+    {
+      "name": "value_transform.duration",
+      "metric_type": "histogram",
+      "unit": "us",
+      "cardinality_bound": 200,
+      "label_keys": ["transform", "kind"]
+    },
+    {
+      "name": "value_transform.errors",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 30,
+      "label_keys": ["transform", "error_class"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "value_transform.apply",
+      "required_attributes": ["transform.name", "argument.kind"]
+    },
+    {
+      "operation_name": "value_transform.compose",
+      "required_attributes": ["compose.length"]
+    }
+  ]
+}

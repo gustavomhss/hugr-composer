@@ -1,0 +1,41 @@
+{
+  "logs": [
+    {
+      "event_name": "input_validator.parse.accepted",
+      "required_attributes": ["schema_name", "duration_ms"]
+    },
+    {
+      "event_name": "input_validator.parse.rejected",
+      "required_attributes": ["schema_name", "field_path", "reason"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "input_validator.parse.calls",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["schema_name", "outcome"]
+    },
+    {
+      "name": "input_validator.parse.duration",
+      "metric_type": "histogram",
+      "unit": "us",
+      "cardinality_bound": 50,
+      "label_keys": ["schema_name", "outcome"]
+    },
+    {
+      "name": "input_validator.rejections",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 40,
+      "label_keys": ["reason"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "input_validator.parse",
+      "required_attributes": ["schema_name", "outcome"]
+    }
+  ]
+}

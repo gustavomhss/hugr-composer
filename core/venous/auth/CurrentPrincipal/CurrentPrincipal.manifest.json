@@ -1,0 +1,720 @@
+{
+  "name": "CurrentPrincipal",
+  "namespace": "auth",
+  "maturity": "battle_tested",
+  "builder_agent_id": 1,
+  "catalog_entry_sha256": "024f8722d0a21bf8d6d489ede4b3240256897a2c7099a212ad1fb612e591b029",
+  "files": [
+    {
+      "path": "auth/CurrentPrincipal/CurrentPrincipal.contract.json",
+      "sha256": "f94134fdc640ce34964698d97db0000ef7985555eccbaec7aa2ceaa992f1b64c",
+      "size_bytes": 2711,
+      "kind": "contract_json"
+    },
+    {
+      "path": "auth/CurrentPrincipal/CurrentPrincipal.manifest.json",
+      "sha256": "e7441aefab4140b6fbaaba4da8e6f2595fd6c69e00adcc0ac1c8010c62dab20f",
+      "size_bytes": 48095,
+      "kind": "manifest"
+    },
+    {
+      "path": "auth/CurrentPrincipal/CurrentPrincipal.md",
+      "sha256": "e2c7f82dfb2a4ab4c107fc03796204b5772fdd83205f4313c1d4d4e272d018ad",
+      "size_bytes": 6916,
+      "kind": "spec_md"
+    },
+    {
+      "path": "auth/CurrentPrincipal/CurrentPrincipal.py",
+      "sha256": "ee288736bc3325865be7a8327a7aecb8d851a3b0a978d04ea0131115d5ccf179",
+      "size_bytes": 15096,
+      "kind": "impl"
+    },
+    {
+      "path": "auth/CurrentPrincipal/behavioral_CurrentPrincipal.py",
+      "sha256": "98c65f1daeead5c216932ad8df9be195c1e92e174d2f2a390ac82f046c08b7b8",
+      "size_bytes": 4762,
+      "kind": "behavioral"
+    },
+    {
+      "path": "auth/CurrentPrincipal/chaos_CurrentPrincipal.py",
+      "sha256": "7e9f9a17a1411400adf0e93c91411fa519f670f83ab804ea654fee3e00a3b5a5",
+      "size_bytes": 4239,
+      "kind": "chaos"
+    },
+    {
+      "path": "auth/CurrentPrincipal/dashboard.json",
+      "sha256": "6536767457f041c8768285a90e857c753dcd76292d12026bb0d6166723c22886",
+      "size_bytes": 785,
+      "kind": "dashboard"
+    },
+    {
+      "path": "auth/CurrentPrincipal/invariant_bindings.json",
+      "sha256": "bc490d807a43696243a53ad2908cda307cc9a0a91c2482d69d09747f874f6d27",
+      "size_bytes": 1851,
+      "kind": "test"
+    },
+    {
+      "path": "auth/CurrentPrincipal/metamorphic_CurrentPrincipal.py",
+      "sha256": "4809dd948605671baea4b07d08cc2a17228b71a7daaa433b44ce20796cce615f",
+      "size_bytes": 2495,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "auth/CurrentPrincipal/observability_CurrentPrincipal.py",
+      "sha256": "18698eeb1364c881815fc29af57e955d5c96bfc80d4ce57a1f180da0ac9f204d",
+      "size_bytes": 2388,
+      "kind": "observability"
+    },
+    {
+      "path": "auth/CurrentPrincipal/observability_schema.json",
+      "sha256": "6706087ec8aa1ec49ea8f8f88f84ba4372f95a42edcfbd8a34f013420c6e951d",
+      "size_bytes": 1265,
+      "kind": "observability"
+    },
+    {
+      "path": "auth/CurrentPrincipal/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "auth/CurrentPrincipal/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "auth/CurrentPrincipal/test_CurrentPrincipal.py",
+      "sha256": "914de0cdfccf0bf601bbd5e57775ad17b2bc6dcf6b9588d8a5d7cf27aea0f5d6",
+      "size_bytes": 9556,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "PRINCIPAL_INV_01",
+      "invariant_text": "MUST be immutable once bound to a RequestContext; a later middleware CANNOT mutate subject_id.",
+      "confirms_test": "test_inv_immutable_confirms",
+      "prevents_test": "test_inv_immutable_prevents",
+      "under_failure_test": "test_inv_immutable_under_failure"
+    },
+    {
+      "invariant_id": "PRINCIPAL_INV_02",
+      "invariant_text": "NEVER represents a successful auth state with is_anonymous=True; these two fields SHALL be mutually exclusive.",
+      "confirms_test": "test_inv_anonymity_parity_confirms",
+      "prevents_test": "test_inv_anonymity_parity_prevents",
+      "under_failure_test": "test_inv_anonymity_parity_under_failure"
+    },
+    {
+      "invariant_id": "PRINCIPAL_INV_03",
+      "invariant_text": "roles MUST be a frozen set; consumers CANNOT add a role at call time to bypass authorization.",
+      "confirms_test": "test_inv_roles_frozen_confirms",
+      "prevents_test": "test_inv_roles_frozen_prevents",
+      "under_failure_test": "test_inv_roles_frozen_under_failure"
+    },
+    {
+      "invariant_id": "PRINCIPAL_INV_04",
+      "invariant_text": "subject_id MUST be stable across requests for the same identity; rotation NEVER happens silently.",
+      "confirms_test": "test_inv_subject_stable_confirms",
+      "prevents_test": "test_inv_subject_stable_prevents",
+      "under_failure_test": "test_inv_subject_stable_under_failure"
+    },
+    {
+      "invariant_id": "PRINCIPAL_INV_05",
+      "invariant_text": "Serialization for logs MUST omit raw claims by default; sensitive claim values SHALL be redacted.",
+      "confirms_test": "test_inv_log_redaction_confirms",
+      "prevents_test": "test_inv_log_redaction_prevents",
+      "under_failure_test": "test_inv_log_redaction_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 437,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 871,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 871,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 80521,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "39 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 784,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 817,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 62797,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 147377,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MUTATE-SUBJECT-VIA-OBJECT-SETATTR",
+        "hypothesis": "Frozen dataclass blocks normal assignment but object.__setattr__(principal,'subject_id','attacker') bypasses __setattr__ guard, mutating the bound identity mid-request and breaking immutability invariant.",
+        "input_fixture": "p=CurrentPrincipal(subject_id='alice',tenant_id='t1',roles=frozenset({'user'}),claims={},is_anonymous=False); object.__setattr__(p,'subject_id','root')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ANON-WITH-ROLES",
+        "hypothesis": "Construct CurrentPrincipal(subject_id='',tenant_id=None,roles=frozenset({'admin'}),claims={},is_anonymous=True). If constructor lacks validation, an anonymous principal carries admin roles, violating mutual exclusivity between is_anonymous and authenticated state.",
+        "input_fixture": "CurrentPrincipal(subject_id='',tenant_id=None,roles=frozenset({'admin'}),claims={'scope':'*'},is_anonymous=True)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ROLES-PASSED-AS-SET",
+        "hypothesis": "Type hint says FrozenSet[str] but Python does not enforce it at runtime. Passing a regular mutable set lets a downstream handler call roles.add('admin') at authorization time, escalating privileges.",
+        "input_fixture": "mutable={'user'}; p=CurrentPrincipal('alice','t1',mutable,{},False); mutable.add('admin')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLAIMS-MUTABLE-MAPPING",
+        "hypothesis": "claims: Mapping[str,str] accepts a dict; caller retains reference and mutates claims['role']='admin' after binding, effectively rewriting identity attributes post-bind.",
+        "input_fixture": "d={'sub':'alice'}; p=CurrentPrincipal('alice','t1',frozenset(),d,False); d['role']='admin'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPR-LEAKS-CLAIMS",
+        "hypothesis": "Default @dataclass __repr__ prints all fields including claims verbatim. Logging principal via f'{principal}' leaks raw PII/JWT claim values, violating redaction requirement.",
+        "input_fixture": "logger.info(f'auth={CurrentPrincipal(\"alice\",\"t1\",frozenset(),{\"ssn\":\"123-45-6789\",\"token\":\"eyJ...\"},False)}')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-JSON-DUMPS-BYPASS",
+        "hypothesis": "Redaction applies to __repr__/__str__ but json.dumps(asdict(principal)) or pickle serialization emits raw claims, bypassing the log redaction path entirely.",
+        "input_fixture": "import json,dataclasses; json.dumps(dataclasses.asdict(principal_with_pii))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TENANT-NONE-WITH-SUBJECT",
+        "hypothesis": "tenant_id=None combined with non-empty subject_id and is_anonymous=False may be interpreted by downstream tenant filters as 'global/superuser', allowing cross-tenant data access by a forged principal.",
+        "input_fixture": "CurrentPrincipal(subject_id='alice',tenant_id=None,roles=frozenset({'reader'}),claims={},is_anonymous=False)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SUBJECT-ROTATION-RACE",
+        "hypothesis": "Under concurrent middleware, a token-refresh middleware rebinds RequestContext.principal to a new CurrentPrincipal with a different subject_id mid-request, silently rotating identity without the consumer observing change.",
+        "input_fixture": "thread A: ctx.bind(principal_alice); thread B during handler: ctx.bind(principal_bob); handler reads ctx.principal.subject_id",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNICODE-SUBJECT-CONFUSABLE",
+        "hypothesis": "subject_id accepts Unicode; '\u0430lice' (Cyrillic \u0430) vs 'alice' (Latin) compare unequal but render identically in logs/UI, enabling impersonation and breaking stable identity guarantees.",
+        "input_fixture": "CurrentPrincipal(subject_id='\\u0430lice',tenant_id='t1',roles=frozenset({'admin'}),claims={},is_anonymous=False)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-SUBJECT-AUTHENTICATED",
+        "hypothesis": "subject_id='' with is_anonymous=False passes dataclass construction (no validator). Empty-string subject may match '' in DB lookups or ACL wildcards, granting unauthorized access while appearing authenticated.",
+        "input_fixture": "CurrentPrincipal(subject_id='',tenant_id='t1',roles=frozenset({'admin'}),claims={},is_anonymous=False)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HASH-COLLISION-CACHE",
+        "hypothesis": "Frozen dataclass __hash__ uses all fields incl. Mapping which is unhashable \u2014 raises TypeError when used as dict key in auth cache, causing cache bypass and repeated auth checks degrading to fail-open defaults.",
+        "input_fixture": "cache={}; cache[CurrentPrincipal('a','t',frozenset(),{'k':'v'},False)]=True",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PICKLE-REPLAY",
+        "hypothesis": "Principal serialized via pickle/JSON to cache with long TTL; after role revocation server-side, pickled principal replays with stale roles={'admin'}, bypassing current authorization state.",
+        "input_fixture": "pickle.loads(cached_blob_from_yesterday) -> principal with revoked admin role",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLAIM-KEY-INJECTION",
+        "hypothesis": "claims Mapping[str,str] \u2014 an attacker-controlled JWT puts claim key 'roles' with value 'admin,super'. If downstream merges claims into roles set via string split, privileges escalate despite frozen roles field.",
+        "input_fixture": "CurrentPrincipal('alice','t1',frozenset({'user'}),{'roles':'admin\\nsuper','x-forwarded-role':'root'},False)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DEEPCOPY-MUTATION",
+        "hypothesis": "copy.deepcopy(principal) yields a new frozen instance but copies the claims dict as mutable; attacker mutates the copy's claims and substitutes it back via context rebind, evading immutability.",
+        "input_fixture": "import copy; p2=copy.deepcopy(p); p2.claims['sub']='root'; ctx.principal=p2",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FROZEN-SETATTR-BYPASS",
+        "hypothesis": "Python's frozen=True dataclass blocks normal attribute assignment but object.__setattr__ circumvents the guard entirely. A middleware receiving the CurrentPrincipal instance can call object.__setattr__(principal, 'subject_id', 'attacker') after binding, violating the immutability invariant without raising any exception at the dataclass level.",
+        "input_fixture": "p = CurrentPrincipal(subject_id='user-1', tenant_id='t1', roles=frozenset(['reader']), claims={}, is_anonymous=False)\nobject.__setattr__(p, 'subject_id', 'admin-99')\nassert p.subject_id == 'admin-99'  # succeeds \u2014 invariant broken",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ANON-WITH-NONEMPTY-SUBJECT",
+        "hypothesis": "The dataclass constructor applies no cross-field validation. An attacker (or buggy factory) can instantiate CurrentPrincipal with is_anonymous=True and a non-empty subject_id simultaneously. The mutual-exclusion invariant is violated at construction time with no exception raised, producing an object that carries an identity AND claims anonymity, potentially bypassing auth checks that branch on is_anonymous.",
+        "input_fixture": "p = CurrentPrincipal(subject_id='user-1', tenant_id=None, roles=frozenset(), claims={}, is_anonymous=True)\nassert p.is_anonymous and p.subject_id == 'user-1'  # both True \u2014 invariant broken",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ROLES-MUTABLE-PROXY-SET",
+        "hypothesis": "If the factory wraps roles in a frozenset() call but the type-hint is only FrozenSet[str], a caller can pass a custom class that subclasses frozenset and overrides __contains__ to always return True, or passes a MutableSet whose add() is never blocked. Authorization middleware that calls 'role in principal.roles' is deceived without any mutation of the underlying frozenset instance.",
+        "input_fixture": "class AlwaysAdmin(frozenset):\n    def __contains__(self, item): return True\np = CurrentPrincipal(subject_id='u', tenant_id=None, roles=AlwaysAdmin(), claims={}, is_anonymous=False)\nassert 'superadmin' in p.roles  # True \u2014 privilege escalation without modifying frozenset",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLAIMS-MUTABLE-MAPPING-INJECT",
+        "hypothesis": "The claims field is typed Mapping[str, str], which is read-only by interface but not by runtime enforcement. Passing a plain dict satisfies the type hint. Any downstream middleware holding a reference to that dict can later call claims['email'] = 'spoofed@evil.com'. Because CurrentPrincipal stores a reference rather than a frozen copy, the mutation is visible to all subsequent consumers of the same request context.",
+        "input_fixture": "raw = {'email': 'user@example.com', 'sub': 'user-1'}\np = CurrentPrincipal(subject_id='user-1', tenant_id=None, roles=frozenset(), claims=raw, is_anonymous=False)\nraw['email'] = 'admin@example.com'  # mutates in place\nassert p.claims['email'] == 'admin@example.com'  # invariant broken",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPR-CLAIM-LEAK",
+        "hypothesis": "Python dataclasses auto-generate __repr__ that includes every field. Logging frameworks commonly call repr() or str() on objects when formatting log lines. A logger configured with logging.debug('%s', principal) will emit all raw claim values including tokens, emails, SSNs or OAuth scopes \u2014 violating the redaction invariant without any explicit serialization call being made by the developer.",
+        "input_fixture": "import logging\np = CurrentPrincipal(subject_id='u', tenant_id=None, roles=frozenset(), claims={'ssn': '078-05-1120', 'credit_card': '4111111111111111'}, is_anonymous=False)\nlogging.debug('principal: %s', p)  # emits: ...claims={'ssn': '078-05-1120', 'credit_card': '4111111111111111'}...",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ASYNC-CTX-RACE-SWAP",
+        "hypothesis": "In async Python frameworks (FastAPI, Starlette) using contextvars, if RequestContext stores CurrentPrincipal in a ContextVar and a middleware awaits before binding, a concurrent coroutine running in the same thread can see the uninitialized or previous-request ContextVar value. Under high concurrency, principal A's identity is served to request B's handler \u2014 violating both the immutability and subject_id stability invariants across logical requests.",
+        "input_fixture": "# Pseudocode: two concurrent requests hitting the same event loop tick\nasync def middleware(request, call_next):\n    token = await slow_jwt_verify(request)  # yields here\n    ctx_principal.set(build_principal(token))  # attacker's coroutine already read stale ctx_principal\n    return await call_next(request)\n# Request B reads ctx_principal BEFORE Request A's set() completes",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LOG-INJECTION-NEWLINE-CLAIM",
+        "hypothesis": "If a claim value contains newline characters (\\n or \\r\\n) and the log serializer does not sanitize before writing, an attacker who controls their own JWT claims can inject fake log lines. Even with field-level redaction, the logging of subject_id or tenant_id may echo attacker-controlled newline payloads, enabling log forgery that makes audit trails show fictitious privileged actions.",
+        "input_fixture": "p = CurrentPrincipal(\n  subject_id='legit-user\\nERROR 2026-04-19 ADMIN_LOGIN user=root ip=10.0.0.1',\n  tenant_id=None, roles=frozenset(), claims={}, is_anonymous=False\n)\nprint(f'[INFO] request by {p.subject_id}')  # injects fake ERROR line into logs",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY-SUBJECT-AUTH-BYPASS",
+        "hypothesis": "No constructor validation prevents subject_id from being an empty string or whitespace-only string while is_anonymous=False. Authorization rules that check 'if principal.subject_id' will treat empty string as falsy, branching into anonymous/guest paths even though is_anonymous=False. This creates a split-brain: the system treats the request as authenticated (is_anonymous=False) for some guards and unauthenticated (empty subject_id) for others.",
+        "input_fixture": "p = CurrentPrincipal(subject_id='', tenant_id='t1', roles=frozenset(['admin']), claims={}, is_anonymous=False)\nassert p.is_anonymous == False  # thinks it's authenticated\nassert not p.subject_id          # evaluates falsy \u2014 route guard treats as anonymous",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PICKLE-DESERIAL-CLAIM-EXPOSE",
+        "hypothesis": "If CurrentPrincipal instances are ever cached in a session store or distributed cache using pickle (directly or via a caching decorator), deserialization restores the full object including raw claims \u2014 bypassing any serialization-time redaction logic. A compromised cache read path leaks sensitive claim values that were never intended to leave the process boundary, and an attacker controlling cache entries can inject arbitrary claims.",
+        "input_fixture": "import pickle\np = CurrentPrincipal(subject_id='u', tenant_id=None, roles=frozenset(), claims={'token': 'eyJhbGc...'}, is_anonymous=False)\nblob = pickle.dumps(p)  # cache.set('session:u', blob)\nrestored = pickle.loads(blob)\nassert restored.claims['token'] == 'eyJhbGc...'  # raw token fully exposed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SUBJECT-ID-SILENT-ROTATION-JWT",
+        "hypothesis": "If the identity provider rotates the internal user primary key (e.g. UUID v4 \u2192 v7 migration, or account merge) but the JWT library re-issues tokens with the new sub claim transparently, the same human user will produce a different subject_id across requests. Because CurrentPrincipal stores whatever sub the JWT contains with no cross-request registry check, authorization policies that grant access based on a previously-recorded subject_id silently deny (or grant) access to the same user, violating the stability invariant.",
+        "input_fixture": "# Request 1 \u2014 before IdP migration\nassert build_principal(jwt_old).subject_id == 'uuid-v4-abc123'\n# Request 2 \u2014 after silent IdP migration, same user, new token\nassert build_principal(jwt_new).subject_id == 'uuid-v7-def456'\n# ACL stored 'uuid-v4-abc123' \u2014 user is now silently locked out",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ROLES-COPY-REFERENCE-ESCAPE",
+        "hypothesis": "If the factory that constructs CurrentPrincipal receives a mutable set and calls frozenset(roles) correctly, but then also stores a reference to the original mutable set elsewhere (e.g. in a debug attribute or audit log buffer), a consumer who retrieves that secondary reference can modify the underlying collection. If any auth check ever reads from the original mutable set instead of principal.roles due to a reference aliasing bug, privilege escalation is possible.",
+        "input_fixture": "mutable_roles = {'reader'}\nprincipal = CurrentPrincipal(subject_id='u', tenant_id=None, roles=frozenset(mutable_roles), claims={}, is_anonymous=False)\n# Factory also stored: request_debug_info['roles_ref'] = mutable_roles\nmutable_roles.add('admin')  # escapes frozenset guard via aliased reference\n# if any consumer checks request_debug_info['roles_ref'] instead of principal.roles: admin access granted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ANON-ROLES-NONEMPTY-INCONSIST",
+        "hypothesis": "The mutual-exclusivity invariant only mentions is_anonymous vs successful auth, but does not address the case where is_anonymous=True and roles is non-empty. An attacker or misconfigured middleware can construct a principal with is_anonymous=True and roles=frozenset(['admin']). Authorization code that checks roles before checking is_anonymous will grant admin access to what the system considers an anonymous user, creating an exploitable inconsistency.",
+        "input_fixture": "p = CurrentPrincipal(subject_id='', tenant_id=None, roles=frozenset(['admin', 'superuser']), claims={}, is_anonymous=True)\nassert p.is_anonymous  # anonymous\nassert 'admin' in p.roles  # but has admin role \u2014 auth bypass if roles checked first",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLAIMS-JSON-SERIALIZATION-FULL-DUMP",
+        "hypothesis": "If the CurrentPrincipal is serialized to JSON (e.g. via dataclasses.asdict + json.dumps, or a Pydantic .model_dump()) for distributed tracing, event publishing, or an audit webhook, the full claims dict is included verbatim. The redaction invariant only mentions logs \u2014 a developer who serializes the principal for a non-log sink (message queue, HTTP callback, OpenTelemetry span attribute) has no enforced redaction, leaking raw sensitive claims to external systems.",
+        "input_fixture": "import dataclasses, json\np = CurrentPrincipal(subject_id='u', tenant_id='t', roles=frozenset(['reader']), claims={'authorization': 'Bearer eyJ...', 'x-api-key': 'sk-live-secret'}, is_anonymous=False)\npayload = json.dumps(dataclasses.asdict(p))  # sent to audit webhook\n# payload contains: '\"claims\": {\"authorization\": \"Bearer eyJ...\", \"x-api-key\": \"sk-live-secret\"}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-FROZEN_SETATTR_BYPASS",
+        "hypothesis": "object.__setattr__ bypasses dataclass(frozen=True) immutability protection, allowing subject_id modification after instantiation.",
+        "input_fixture": "p = CurrentPrincipal(subject_id='user123', tenant_id='t1', roles=frozenset(), claims={}, is_anonymous=False); object.__setattr__(p, 'subject_id', 'attacker'); assert p.subject_id == 'attacker'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ANON_AND_AUTHENTICATED",
+        "hypothesis": "Constructor does not validate mutual exclusivity; is_anonymous=True can coexist with non-empty subject_id in a single instance.",
+        "input_fixture": "p = CurrentPrincipal(subject_id='user123', tenant_id='t1', roles=frozenset(), claims={}, is_anonymous=True); assert p.subject_id and p.is_anonymous",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MUTABLE_ROLES_INJECTION",
+        "hypothesis": "Constructor with weak type checking accepts mutable set() instead of frozenset; external mutation of original set affects principal.roles.",
+        "input_fixture": "roles_ref = {'read'}; p = CurrentPrincipal(subject_id='u1', tenant_id='t1', roles=roles_ref, claims={}, is_anonymous=False); roles_ref.add('admin'); 'admin' in p.roles",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SUBJECT_ID_RACE",
+        "hypothesis": "Concurrent middleware access without synchronization; thread A reads subject_id='user1' while thread B mutates to 'user2', creating split-view inconsistency.",
+        "input_fixture": "p = CurrentPrincipal(..., subject_id='user1', ...); [Thread A reads p.subject_id; Thread B: object.__setattr__(p, 'subject_id', 'user2'); Thread A reads again with different value]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLAIMS_REPR_LEAK",
+        "hypothesis": "repr() or __str__ outputs unredacted claims dict containing API keys, tokens, and passwords visible in logs.",
+        "input_fixture": "p = CurrentPrincipal(subject_id='u1', tenant_id='t1', roles=frozenset(), claims={'api_key': 'sk-secret123', 'password': 'hunter2'}, is_anonymous=False); log.error(f'{p}') # claims leaked",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SUBCLASS-FROZEN-FALSE",
+        "hypothesis": "Subclass override with @dataclass(frozen=False) invalidates parent's immutability contract; instances are mutable.",
+        "input_fixture": "@dataclass(frozen=False) class MutablePrincipal(CurrentPrincipal): pass; p = MutablePrincipal(..., subject_id='u1'); p.subject_id = 'hacked'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-SUBJECT-ID-BOUNDARY",
+        "hypothesis": "Empty string subject_id passes validation but breaks authorization checks assuming non-empty identity; admin role incorrectly granted.",
+        "input_fixture": "p = CurrentPrincipal(subject_id='', tenant_id='t1', roles=frozenset(['admin']), claims={}, is_anonymous=False); if p.subject_id: check_authz() # bypassed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ROTATION-SILENT",
+        "hypothesis": "Identity provider returns different subject_id for same logical user in sequential requests; silent rotation goes undetected, authorization state diverges.",
+        "input_fixture": "Req1: subject_id='user_abc'; Req2: same credentials \u2192 subject_id='user_xyz'; no alert; session treats as different identities",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLAIMS-ASDICT-LEAK",
+        "hypothesis": "dataclasses.asdict() returns dict with all fields including plaintext claims; JSON logging of __dict__ exposes secrets.",
+        "input_fixture": "import dataclasses; p = CurrentPrincipal(..., claims={'jwt': 'eyJ0eXAi...full_token...', 'secret': 'x'}); json.dumps(dataclasses.asdict(p))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ROLES-DEEPCOPY-MUTATE",
+        "hypothesis": "deepcopy() returns shallow copy of roles reference; subsequent role additions to mutable copy bypass authorization if shared state.",
+        "input_fixture": "import copy; p = CurrentPrincipal(..., roles=frozenset(['user'])); p2 = copy.deepcopy(p); if roles_mutable(p2.roles): p2.roles.add('admin') # authz bypass",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-POST-INIT-SKIP",
+        "hypothesis": "__post_init__ has no validation; dataclass construction bypasses is_anonymous exclusivity check, allowing both True and non-empty subject_id.",
+        "input_fixture": "p = CurrentPrincipal.__new__(CurrentPrincipal); p.__init__(subject_id='u1', tenant_id=None, roles=frozenset(), claims={}, is_anonymous=True) # validation skipped",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TENANT-IDENTITY-COLLISION",
+        "hypothesis": "Same subject_id with different tenant_id (None vs 't1') treated as identical in equality/hash; multi-tenant isolation fails, cross-tenant access granted.",
+        "input_fixture": "p1=CurrentPrincipal('u1', None, frozenset(['read']), {}, False); p2=CurrentPrincipal('u1', 't1', frozenset(['admin']), {}, False); cache[p1]=perms; use p2 as key \u2192 same perms",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "auth.principal.resolved",
+        "required_attributes": [
+          "subject_id",
+          "tenant_id",
+          "roles",
+          "is_anonymous",
+          "claims"
+        ]
+      },
+      {
+        "event_name": "auth.principal.anonymous",
+        "required_attributes": [
+          "subject_id",
+          "is_anonymous"
+        ]
+      },
+      {
+        "event_name": "auth.principal.denied",
+        "required_attributes": [
+          "subject_id",
+          "required_role"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "auth.principal.resolved",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "is_anonymous",
+          "tenant_id"
+        ]
+      },
+      {
+        "name": "auth.principal.role_checks",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 100,
+        "label_keys": [
+          "outcome"
+        ]
+      },
+      {
+        "name": "auth.principal.claim_count",
+        "metric_type": "histogram",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "tenant_id"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "auth.principal.resolve",
+        "required_attributes": [
+          "auth.subject_id",
+          "auth.is_anonymous"
+        ]
+      },
+      {
+        "operation_name": "auth.principal.authorize",
+        "required_attributes": [
+          "auth.subject_id",
+          "auth.required_role",
+          "auth.outcome"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Matches catalog api_signature exactly (frozen dataclass, same fields/types). Adds slots and MappingProxy without breaking shape. Invariants enforced as cited."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All catalog methods present (has_role/any/all, claim, require_role, for_log), plus factories, Protocol, reference provider, and __all__. Covers anonymous parity, roles validation, claims immutability."
+      },
+      {
+        "axis": "error_quality",
+        "score": 10,
+        "rationale": "Dedicated PrincipalInvariantError(ValueError); every message cites the PRINCIPAL-INV ID and offending value/type. require_role raises PermissionError with the role as message."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Frozen+slots+frozenset+MappingProxy makes it safely shareable across threads/async. Protocol enables provider swap. Hash/eq contract preserved despite MappingProxy. Pure, zero-I/O at import."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 9,
+        "rationale": "Defensive copies, control/bidi-char rejection blocks log injection, redaction by default, repr never leaks claim values, lazy/no external deps. Minor: no explicit metrics hooks but spec defers those to dashboards."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace/name/purpose honored; api_signature is a strict superset (adds is_anonymous default, helper methods declared in spec). Invariant IDs renamed with hyphens vs catalog underscores but mapping is unambiguous."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "Protocol PrincipalProvider is introduced without explaining what a Protocol is in Python \u2014 a junior may not know this is a structural interface, not a class to inherit from.",
+          "MappingProxyType and 'defensively copied' are mentioned only in Security Considerations; the API surface shows `Mapping[str, str]` with no hint that mutation attempts will silently fail vs raise.",
+          "The invariants table uses policy-speak ('silent rotation is FORBIDDEN', 'C0 control chars') without a concrete example of what violating these looks like or what error fires."
+        ],
+        "rewrite_suggestion": "Add a minimal end-to-end snippet \u2014 middleware calls `authenticated(...)`, FastAPI dependency injects `request.state.principal`, handler calls `p.require_role('admin')` \u2014 before the API surface table. Annotate each step in plain language. Move invariant violations to a collapsible 'what happens if you break this' box."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "PrincipalProvider.resolve() error contract is unspecified: should it raise, return anonymous(), or let the exception propagate? Middleware authors need this to be normative.",
+          "The extension contract says 'MUST NOT construct a CurrentPrincipal outside the provider' but the Usage example does exactly that (direct `authenticated()` call) \u2014 the carve-out for tests/factory helpers is implied, not stated.",
+          "No documentation on what happens to the bound principal when the same worker handles concurrent requests (e.g., are two principals scoped per-request via contextvars, or is binding caller-managed?)."
+        ],
+        "rewrite_suggestion": "Add a normative 'Error contract' subsection under Extension Contract: enumerate the three possible outcomes of resolve() and which is required. Clarify that `authenticated()`/`anonymous()` are permitted outside a provider in tests and specify the scoping mechanism (contextvars vs framework DI)."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "Claim key validation is absent: subject_id and tenant_id sanitize control chars, but claim keys are untouched \u2014 a crafted key like `role\\n` could forge structure in structured loggers that trust key names.",
+          "Token revocation model is undocumented \u2014 the principal is frozen at decode time, but there is no mention of whether a mid-request revocation is observable or explicitly out of scope.",
+          "PRINCIPAL_INV_02 says anonymous and authenticated are mutually exclusive, but the validation rule for 'non-anonymous with empty subject_id' is described in prose, not in the invariants table \u2014 an auditor scanning only the table will miss it."
+        ],
+        "rewrite_suggestion": "Add PRINCIPAL_INV_06 explicitly: 'claim keys MUST pass the same sanitization as subject_id.' Document revocation stance in one sentence ('out of scope; callers who need revocation must re-resolve per request'). Move the anonymous/empty-subject_id rule into the invariants table as a second row for INV_02."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Metric cardinality is undocumented: `auth.principal.role_checks` is labeled per-outcome but role names are not mentioned as a label \u2014 an SRE wiring up dashboards needs to know if role name is a dimension or if that risks cardinality explosion.",
+          "The 3\u03c3 alert on anonymous rate has no guidance on the minimum observation window or whether short cold-start spikes (deploys, canary warmup) should be suppressed \u2014 missing this causes noisy on-call.",
+          "Zero I/O at import/resolve is stated but not bounded: 'pure table-lookup' does not specify worst-case latency under a large claim map or high-cardinality role set, which matters for p99 SLO budgets."
+        ],
+        "rewrite_suggestion": "Add an Observability table: metric name, labels (including which labels are bounded vs unbounded), expected p99 value, and alert suppression windows. State the O(n) bound for resolve() where n = number of principals registered in StaticPrincipalProvider."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The plain-language intro buries the business value: 'audit trails agree' and 'no call-site can escalate' are the outcomes stakeholders care about, but they appear at the end of a compound sentence after implementation detail.",
+          "Provenance (ASP.NET Core, Rails, NestJS) reads as technical trivia for a PM \u2014 it is not framed in terms of 'industry-proven pattern' or risk reduction, which is the value a PM would extract.",
+          "The Alternatives Considered section lists three rejections with implementation rationale but no consequence framing \u2014 a PM cannot explain to stakeholders *why this matters* without understanding the avoided risk in plain terms."
+        ],
+        "rewrite_suggestion": "Open with a three-bullet executive summary: (1) one identity record per request \u2014 no auth bugs from duplicate parsing; (2) role mutation is impossible at runtime \u2014 no privilege escalation class of bugs; (3) PII never reaches logs by default \u2014 compliance by construction. Move provenance and alternatives to an appendix labeled 'Design rationale.'"
+      }
+    ]
+  }
+}

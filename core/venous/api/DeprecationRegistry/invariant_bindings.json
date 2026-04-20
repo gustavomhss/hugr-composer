@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "DEPRECATION_REGISTRY_INV_02",
+      "invariant_text": "register() MUST replace any previous entry bound to the same (method, path) composite key; duplicate registration is last-writer-wins and never silently ignored.",
+      "confirms_test": "test_inv_register_confirms",
+      "prevents_test": "test_inv_register_prevents",
+      "under_failure_test": "test_inv_register_under_failure"
+    }
+  ]
+}

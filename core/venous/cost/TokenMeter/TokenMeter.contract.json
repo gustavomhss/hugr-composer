@@ -1,0 +1,31 @@
+{
+  "name": "TokenMeter",
+  "namespace": "cost",
+  "purpose": "Record prompt tokens, completion tokens, cache-read tokens, and provider-reported cost for every model call, attributing each unit of consumption to a tenant, user, and feature label.",
+  "api_signature": "from __future__ import annotations\nfrom typing import Protocol\n\nclass TokenUsage(Protocol):\n    prompt_tokens: int\n    completion_tokens: int\n    cache_read_tokens: int\n    cache_write_tokens: int\n    cost_usd: float\n\nclass TokenMeter(Protocol):\n    def record(self, model_handle: str, usage: TokenUsage, labels: dict[str, str]) -> None: ...\n    def sum(self, labels: dict[str, str], window_seconds: int) -> TokenUsage: ...\n",
+  "invariants": [
+    "record() MUST be called exactly once per completed model call; double-counting is FORBIDDEN.",
+    "cost_usd SHALL be computed from provider-reported counts via the ModelRegistry's pricing, NEVER estimated from string length.",
+    "labels MUST include a tenant identifier; an unlabelled record CANNOT be accepted.",
+    "cache_read_tokens MUST be reported separately from prompt_tokens so cache hit ratios are auditable.",
+    "sum() queries SHALL respect tenant isolation and MUST NEVER aggregate across tenant boundaries without explicit cross-tenant scope."
+  ],
+  "extension_contract": "Backends (Prometheus, a ledger table, a provider gateway webhook) implement a sink adapter that register with the meter; the meter fans out record() events to every registered sink without requiring call-site changes.",
+  "consumption_example": "def after_call(meter: TokenMeter, usage: TokenUsage, tenant: str, feature: str) -> None:\n    meter.record(\"planner-v2\", usage, {\"tenant\": tenant, \"feature\": feature})\n",
+  "sources": [
+    {
+      "source": "Portkey gateway architecture (portkey-ai 1.x)",
+      "locator": "Usage + cost observability: per-request token and cost fields surfaced via gateway headers"
+    },
+    {
+      "source": "OpenTelemetry Semantic Conventions for Generative AI (1.27+)",
+      "locator": "gen_ai.usage.input_tokens / gen_ai.usage.output_tokens attribute definitions"
+    }
+  ],
+  "why_essential": "Model cost is the highest variable expense in LLM products and the only defense against runaway multi-tenant abuse; per-feature attribution must be captured at one chokepoint.",
+  "alternatives_considered": [
+    "Reading invoices monthly \u2014 too slow to catch abuse or runaway loops.",
+    "Per-feature log lines parsed later \u2014 lossy and not tenant-attributable in real time."
+  ],
+  "maturity": "battle_tested"
+}

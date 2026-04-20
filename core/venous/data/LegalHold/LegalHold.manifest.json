@@ -1,0 +1,764 @@
+{
+  "name": "LegalHold",
+  "namespace": "data",
+  "maturity": "battle_tested",
+  "builder_agent_id": 8,
+  "catalog_entry_sha256": "5dbb1f402a1bc838cd8fbd2c4efacdc7810af10a799d70f775312729ea1ed6a3",
+  "files": [
+    {
+      "path": "data/LegalHold/LegalHold.cfg",
+      "sha256": "f33335ac705e97d84f7ebee83ffd9028ab639920695f3c8dcee63d4a9c3d9fdd",
+      "size_bytes": 109,
+      "kind": "test"
+    },
+    {
+      "path": "data/LegalHold/LegalHold.contract.json",
+      "sha256": "0a0945268edd8e9906d3ac0b50350a35f46216be3ad4ed77418187158bbadf40",
+      "size_bytes": 2772,
+      "kind": "contract_json"
+    },
+    {
+      "path": "data/LegalHold/LegalHold.manifest.json",
+      "sha256": "c04f971892abc193885a15d3d521b50bc5db0f209f6194ddad6c1f0ce48b4e36",
+      "size_bytes": 42792,
+      "kind": "manifest"
+    },
+    {
+      "path": "data/LegalHold/LegalHold.md",
+      "sha256": "93f387b6ee6ba936aca928d73c3f284daed52675d4ee4db1a849a383eea8a291",
+      "size_bytes": 1616,
+      "kind": "spec_md"
+    },
+    {
+      "path": "data/LegalHold/LegalHold.py",
+      "sha256": "3c71fbe0395f7b2f2ea8a277ca564bcb863dc124c7e72a9589c2fdd50dcf7757",
+      "size_bytes": 6900,
+      "kind": "impl"
+    },
+    {
+      "path": "data/LegalHold/LegalHold.tla",
+      "sha256": "486cc69b3ff94e1fe6545fd70dd0fb81c1a6e8acd8a95633c8cd2276632e63c1",
+      "size_bytes": 1829,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "data/LegalHold/behavioral_LegalHold.py",
+      "sha256": "e9ed0a8255c194c87b92ef694fed9990b505205738f9e3cdd54dcf6b7a24935b",
+      "size_bytes": 1936,
+      "kind": "behavioral"
+    },
+    {
+      "path": "data/LegalHold/chaos_LegalHold.py",
+      "sha256": "233b76e9517689498f2227605cca077c69e85508b2dafe1d9b4ccf8fe4509a82",
+      "size_bytes": 1325,
+      "kind": "chaos"
+    },
+    {
+      "path": "data/LegalHold/concurrent_LegalHold.py",
+      "sha256": "93dc35ae572ad180e1fe9eaf8c97313234678d6dd8474ad74c7b0e6f24662109",
+      "size_bytes": 1254,
+      "kind": "concurrent"
+    },
+    {
+      "path": "data/LegalHold/dashboard.json",
+      "sha256": "dc7f2b6f4d5f2d059fec41b97c5df7012bc9ce0a896612faf2661a50d0c11de1",
+      "size_bytes": 152,
+      "kind": "dashboard"
+    },
+    {
+      "path": "data/LegalHold/invariant_bindings.json",
+      "sha256": "ea7c1e2a3701bdb5824e3bc6cf2f254d1e5557a410a466b303dc6aeae5f24145",
+      "size_bytes": 1765,
+      "kind": "test"
+    },
+    {
+      "path": "data/LegalHold/metamorphic_LegalHold.py",
+      "sha256": "10791577bdf04451d031bb42a401331c54b82420936e51c700c7a244390ce430",
+      "size_bytes": 1826,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "data/LegalHold/observability_LegalHold.py",
+      "sha256": "fb3183c12f278ae1b187294f9433a254a08fd589399accaef7652ddfed3d6a1d",
+      "size_bytes": 1433,
+      "kind": "observability"
+    },
+    {
+      "path": "data/LegalHold/observability_schema.json",
+      "sha256": "e389d37f73f3dfaabbc233ce9a6edb91e2520bb38aeab5559d53e000620b1dab",
+      "size_bytes": 953,
+      "kind": "observability"
+    },
+    {
+      "path": "data/LegalHold/persona_reviews.json",
+      "sha256": "27c42175503d1ae0ae0caf2476c356ec4ead33b5f32e488a3c7eecb64d008dbb",
+      "size_bytes": 515,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "data/LegalHold/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "data/LegalHold/state_machine_LegalHold.py",
+      "sha256": "4f0df314c0c0b050365fb7340c9cea1f5a6acbab42b648ec7af1bcfad390b927",
+      "size_bytes": 1427,
+      "kind": "state_machine"
+    },
+    {
+      "path": "data/LegalHold/test_LegalHold.py",
+      "sha256": "2edc238b4170632f8ac5a2deb809ff0be7f5ecf319d96245989cb05914c426c0",
+      "size_bytes": 4515,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "LH_INV_01",
+      "invariant_text": "RetentionPolicy.sweep and DataSubjectRequest erasure MUST call covers(record_id) before deletion; deletion of held records is FORBIDDEN.",
+      "confirms_test": "test_inv_covers_gates_delete_confirms",
+      "prevents_test": "test_inv_covers_gates_delete_prevents",
+      "under_failure_test": "test_inv_covers_gates_delete_under_failure"
+    },
+    {
+      "invariant_id": "LH_INV_02",
+      "invariant_text": "Opening and releasing a hold MUST each emit a TamperEvidentAuditLog entry with actor and scope.",
+      "confirms_test": "test_inv_audit_on_lifecycle_confirms",
+      "prevents_test": "test_inv_audit_on_lifecycle_prevents",
+      "under_failure_test": "test_inv_audit_on_lifecycle_under_failure"
+    },
+    {
+      "invariant_id": "LH_INV_03",
+      "invariant_text": "A hold CANNOT be silently released; release requires a distinct released_by actor from opened_by or an explicit override flag.",
+      "confirms_test": "test_inv_distinct_releaser_confirms",
+      "prevents_test": "test_inv_distinct_releaser_prevents",
+      "under_failure_test": "test_inv_distinct_releaser_under_failure"
+    },
+    {
+      "invariant_id": "LH_INV_04",
+      "invariant_text": "Held records MUST remain readable to authorized investigators; indexes SHALL NOT drop held rows.",
+      "confirms_test": "test_inv_readable_held_confirms",
+      "prevents_test": "test_inv_readable_held_prevents",
+      "under_failure_test": "test_inv_readable_held_under_failure"
+    },
+    {
+      "invariant_id": "LH_INV_05",
+      "invariant_text": "scope_query MUST be stable against schema evolution; unresolved fields SHALL raise on open rather than silently miss records.",
+      "confirms_test": "test_inv_scope_valid_confirms",
+      "prevents_test": "test_inv_scope_valid_prevents",
+      "under_failure_test": "test_inv_scope_valid_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 380,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 987,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 1337,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 1710,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 992,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 1042,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 97448,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "42 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 908,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 902,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 52984,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 159301,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RACE-SWEEP-OPEN",
+        "hypothesis": "RetentionPolicy.sweep reads covers(record_id) before LegalHold.open commits; a record deleted in the window between hold creation and registry visibility escapes the hold due to TOCTOU between sweep iteration and hold publication.",
+        "input_fixture": "Thread A: registry.open(LegalHold('H1','tenant=acme',now,'alice')); Thread B concurrently: sweep() iterating records where covers() returns False because open() hasn't flushed yet.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DSR-ERASURE-BYPASS",
+        "hypothesis": "DataSubjectRequest (GDPR Art.17) erasure path invokes a bulk DELETE SQL that never calls covers() per-row, relying on a scope subtraction query that misses held records whose scope_query uses a JOIN the erasure planner doesn't evaluate.",
+        "input_fixture": "hold.scope_query='matters.case_id=42 AND users.tenant=acme'; DSR erasure for user_id=u1 bulk deletes from users table without joining matters.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AUDIT-MISSING-RELEASE",
+        "hypothesis": "release() wrapped in try/except that swallows audit-log write failures (e.g. log backend down) will release the hold in the registry while emitting no TamperEvidentAuditLog entry, violating dual-write atomicity.",
+        "input_fixture": "Mock audit log to raise IOError; call registry.release('H1','bob'); observe registry state shows released but no audit entry.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SELF-RELEASE-WHITESPACE",
+        "hypothesis": "The distinct-actor check compares opened_by and released_by with == but without normalization; 'alice' vs 'alice ' (trailing space) or 'Alice' bypass the separation-of-duties rule allowing silent self-release.",
+        "input_fixture": "open(LegalHold('H1','...',now,'alice')); release('H1',' alice')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-OVERRIDE-DEFAULT-TRUE",
+        "hypothesis": "The override flag defaults to True or is a kwarg whose absence evaluates truthy via config; attacker passes override=1 satisfying any truthy check and self-releases without a distinct actor.",
+        "input_fixture": "registry.release(hold_id='H1', released_by='alice', override=1)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INDEX-PRUNE-HELD",
+        "hypothesis": "A search index rebuild job filters out soft-deleted rows using deleted_at IS NULL but doesn't union held rows; held records tombstoned by a racing sweep become invisible to investigators even though the row still exists.",
+        "input_fixture": "Run index rebuild after sweep attempts deletion on held row; query index for record_id \u2014 returns empty.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SCHEMA-DRIFT-SILENT",
+        "hypothesis": "scope_query references column 'users.ssn' later renamed to 'users.tax_id' via migration; open() validates at insert time but existing holds silently match zero rows after migration rather than raising.",
+        "input_fixture": "Pre-migration: open hold with scope_query='users.ssn LIKE \"123%\"'; run migration renaming ssn\u2192tax_id; call covers(record) \u2014 returns False for all.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SQL-INJECTION-SCOPE",
+        "hypothesis": "scope_query is concatenated into the covers() SQL; attacker opens a hold with scope_query=\"1=1); DROP TABLE holds;--\" causing injection on every covers() evaluation.",
+        "input_fixture": "LegalHold(hold_id='H1', scope_query=\"1=1); DELETE FROM legal_holds WHERE 1=1;--\", opened_at=now, opened_by='mallory')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-OPENED-AT",
+        "hypothesis": "opened_at is client-supplied and trusted; attacker sets opened_at far in the future so a time-windowed sweep that only considers holds with opened_at <= now() skips the hold entirely.",
+        "input_fixture": "LegalHold('H1','*',datetime(2099,1,1),'alice'); sweep filters holds WHERE opened_at<=now().",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-RELEASE",
+        "hypothesis": "release() is idempotent by hold_id but does not check hold state; an attacker replays an old signed release RPC after the hold is re-opened with the same id, releasing the new hold using the prior authorization.",
+        "input_fixture": "Capture release('H1','bob') call; operator re-opens 'H1'; replay captured message.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-SCOPE",
+        "hypothesis": "scope_query='' or whitespace passes open() validation but compiles to SQL 'WHERE ' or 'WHERE TRUE' depending on the planner; covers() returns False universally, leaving no records protected.",
+        "input_fixture": "LegalHold('H1','',now,'alice')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AMPLIFICATION-COVERS",
+        "hypothesis": "covers(record_id) executes scope_query per record with no memoization; attacker opens 10k holds each with an expensive scope_query, causing sweep of N records to O(N*10k) DB load \u2014 regulatory DoS that forces ops to disable hold checking.",
+        "input_fixture": "Open 10000 holds with scope_query using cross-joins; trigger nightly sweep over 1M records.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AUDIT-LOG-ACTOR-SPOOF",
+        "hypothesis": "TamperEvidentAuditLog entry reads actor from a thread-local set by upstream middleware; a background worker invoking release() without middleware records actor='system' masking the true releaser.",
+        "input_fixture": "Enqueue release task; worker thread has no request context; audit entry shows opened_by='alice' released_by='system'.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HOLDID-COLLISION",
+        "hypothesis": "hold_id is client-chosen str with no uniqueness check; opening a second LegalHold with an existing hold_id silently overwrites the prior row, effectively releasing the original hold without an audit release event.",
+        "input_fixture": "open(LegalHold('H1','scope_a',...,'alice')); open(LegalHold('H1','scope_b',...,'mallory'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TOCTOU-COVERS-RACE",
+        "hypothesis": "If covers(record_id) is evaluated at sweep-scheduling time but the actual DELETE executes milliseconds later, a concurrent release() can drop the hold in that window, causing covers() to return False on re-evaluation inside the transaction and allowing deletion of a once-held record. The invariant says covers() MUST be called before deletion but does not mandate it be held inside the same serializable transaction.",
+        "input_fixture": "Thread-1: sweep calls covers('rec-99') \u2192 True, queues delete. Thread-2: release('hold-A', released_by='admin') commits. Thread-1: DELETE rec-99 executes \u2014 record is now gone even though it was covered when checked.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DSR-BYPASS-COVERS",
+        "hypothesis": "DataSubjectRequest.erasure() may use a separate code path (e.g., a bulk GDPR job) that never imports LegalHoldRegistry and therefore never calls covers(). If the DeletionPolicy sweep path is guarded but the DSR path is not, held records are silently erased, violating the invariant that both paths must gate on covers().",
+        "input_fixture": "gdpr_erasure_job.py: run_bulk_delete(user_id='u-42') executes DELETE FROM records WHERE user_id='u-42' with no covers() call. Record 'rec-99' is on hold 'hold-B' but is deleted.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AUDIT-LOG-EXCEPTION-SWALLOW",
+        "hypothesis": "If the TamperEvidentAuditLog.write() call is placed after open()/release() commits to the primary store, and audit log write fails (network partition, disk full, dead queue), the hold change persists without any audit entry. The invariant that every open/release MUST emit an audit log entry is silently violated under partial failure.",
+        "input_fixture": "mock_audit_log.write = lambda *a: raise IOError('disk full'). registry.open(hold) succeeds (DB commit) but emits no audit log. No exception propagates to caller.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AUDIT-ACTOR-BLANK",
+        "hypothesis": "If opened_by or released_by is an empty string or whitespace-only value, the audit log entry is emitted but carries no meaningful actor, defeating the non-repudiation purpose of the audit requirement. The schema only specifies str type with no minimum-length or non-blank constraint.",
+        "input_fixture": "hold = LegalHold(hold_id='H1', scope_query='*', opened_at=datetime.utcnow(), opened_by='   '). registry.open(hold) \u2014 audit log records actor='   ', making attribution impossible.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SAME-ACTOR-SELF-RELEASE",
+        "hypothesis": "The invariant prohibits silent release when released_by equals opened_by without an explicit override flag. If the registry compares strings case-insensitively or normalizes Unicode (e.g., 'Admin' vs 'admin', or homoglyph '\u0391dmin' with Cyrillic \u0410), the same actor can bypass the same-actor check by using a visually identical but byte-distinct string.",
+        "input_fixture": "hold.opened_by = 'admin'. registry.release(hold_id='H1', released_by='\\u0391dmin') \u2014 Cyrillic \u0410 passes != check, hold is released by effectively the same actor with no override flag.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-OVERRIDE-FLAG-INJECTION",
+        "hypothesis": "If the override flag is passed as a query parameter or HTTP header in an API wrapper around release(), prompt injection or parameter smuggling (e.g., a crafted released_by value containing '&override=true') could flip the override flag without the caller explicitly setting it, allowing same-actor release without authorization.",
+        "input_fixture": "HTTP POST /holds/H1/release body: {released_by: 'admin&override=true'}. If the API parser splits on '&' before validation, override=true is treated as a separate parameter and the same-actor check is bypassed.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INDEX-CASCADE-DROP-HELD",
+        "hypothesis": "A schema migration tool (e.g., Alembic auto-generate) may issue DROP INDEX or REINDEX CONCURRENTLY that temporarily excludes held rows from a partial index predicate ('WHERE deleted_at IS NULL'). If a held record has been soft-deleted by a bug before the hold was opened, the reindex silently excludes it from investigator queries, violating the readability invariant.",
+        "input_fixture": "record 'rec-55' has deleted_at='2026-01-01' (soft-deleted before hold). hold opens covering rec-55. REINDEX index_active_records (WHERE deleted_at IS NULL) \u2014 rec-55 is absent. Investigator SELECT finds nothing.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SCOPE-QUERY-SCHEMA-DRIFT",
+        "hypothesis": "If scope_query references a column that is later renamed via a non-breaking migration (e.g., user_id \u2192 account_id), the query stored in the dataclass at open-time remains syntactically valid SQL but matches zero records after migration. The invariant says unresolved fields SHALL raise on open, but post-open schema drift causes silent miss rather than a raise, breaking scope stability.",
+        "input_fixture": "hold.scope_query = 'SELECT id FROM records WHERE user_id = 42'. Alembic renames user_id \u2192 account_id. covers('rec-42') now executes the old query, gets 0 rows, returns False \u2014 rec-42 is no longer protected.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SCOPE-QUERY-SQL-INJECTION",
+        "hypothesis": "scope_query is a raw string stored in a frozen dataclass with no parameterization or AST validation at open time. An attacker with hold-creation rights can embed a tautology (e.g., '1=1') to cover all records, effectively freezing the entire dataset. Alternatively, embedding a subquery with UNION can exfiltrate schema metadata through the audit log scope field.",
+        "input_fixture": "hold = LegalHold(hold_id='H-EVIL', scope_query=\"SELECT id FROM records WHERE 1=1 UNION SELECT table_name FROM information_schema.tables--\", opened_at=..., opened_by='attacker'). registry.open(hold) \u2014 audit log persists the injection payload; covers() returns True for all records.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY-OPEN-DUPLICATE",
+        "hypothesis": "If open() is not idempotent or does not deduplicate on hold_id, replaying the same LegalHold dataclass (same hold_id, different opened_at clock value) creates duplicate audit log entries and potentially double-registers scope coverage. An adversary could use this to pollute the audit log or cause covers() to behave unexpectedly if coverage is unioned across all open holds including phantom duplicates.",
+        "input_fixture": "for i in range(100): registry.open(LegalHold('H1', 'SELECT id FROM records WHERE dept=5', datetime.utcnow(), 'auditor')). 100 audit log entries emitted for a single logical hold; hold store has 100 rows for H1.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK-SKEW-OPENED-AT",
+        "hypothesis": "opened_at is supplied by the caller as a datetime field with no server-side timestamp enforcement. A caller can supply a future or past timestamp (e.g., opened_at=datetime(2099,1,1)) making the audit log forensically misleading. If coverage windows are time-gated (e.g., hold only active after opened_at), a future timestamp delays protection, allowing deletion in the interim.",
+        "input_fixture": "hold = LegalHold('H2', '...', opened_at=datetime(2099,1,1,0,0,0), opened_by='counsel'). registry.open(hold). covers('rec-10') returns False today because opened_at is in the future. RetentionPolicy.sweep deletes rec-10.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AMPLIFICATION-COVERS-N-PLUS-ONE",
+        "hypothesis": "If covers(record_id) executes scope_query once per record_id call with no caching, and RetentionPolicy.sweep iterates over millions of records calling covers() per row, the hold registry becomes a query amplification vector that can DDoS the primary database \u2014 and under load, the registry may time out and fail-open (returning False), allowing deletion of held records.",
+        "input_fixture": "sweep iterates 5,000,000 records: for rec in all_records: if not registry.covers(rec.id): delete(rec). Each covers() fires a full scope_query. DB connection pool exhausted at record 50,000; covers() raises TimeoutError \u2192 caller catches and treats as False \u2192 deletion proceeds.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RELEASE-MISSING-SCOPE-AUDIT",
+        "hypothesis": "The release() method only receives hold_id and released_by \u2014 not the scope at release time. If the audit log entry for release omits the scope_query (because the implementation only logs what it receives), the audit trail for a release event is incomplete. An investigator cannot determine which records were de-protected without joining to the open event, which may have been pruned in a log rotation.",
+        "input_fixture": "registry.release('H1', 'admin'). Audit log entry: {event:'release', hold_id:'H1', released_by:'admin', timestamp:...} \u2014 no scope_query field. scope_query was 'SELECT id FROM records WHERE matter_id=99' but is not recoverable from the release entry alone after open-event log rotation.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RACE-COVER-DELETE",
+        "hypothesis": "Concurrent thread opens hold while deletion checks covers(); both race to completion before audit log written, deletion succeeds on held record.",
+        "input_fixture": "Thread A: retention_sweep() calls covers(record_123) returns true \u2192 starts deletion. Thread B: open(hold) completes before deletion committed. Result: record deleted while held.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-SCOPE-QUERY",
+        "hypothesis": "Passing empty string as scope_query silently matches no records; hold covers nothing but validation doesn't raise, making hold ineffective.",
+        "input_fixture": "open(LegalHold(hold_id='h1', scope_query='', opened_at=now(), opened_by='user1'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNRESOLVED-FIELD-SCOPE",
+        "hypothesis": "scope_query references non-existent database field; validator accepts it and matches zero records instead of raising during open().",
+        "input_fixture": "open(LegalHold(..., scope_query='SELECT * WHERE nonexistent_column = 5'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-AUDIT-LOG-LOSS-OPEN",
+        "hypothesis": "TamperEvidentAuditLog write fails mid-transaction; open() returns success but audit entry never persisted, violating audit requirement.",
+        "input_fixture": "open(hold) where audit_log.write() throws exception; exception swallowed, hold marked open without audit trail.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ASYNC-RELEASE-AUDIT-LOSS",
+        "hypothesis": "release() flushes audit log asynchronously; process crash before flush completes releases hold without audit entry in durable log.",
+        "input_fixture": "release(hold_id='h1', released_by='user2'); audit_log.flush() deferred; process OOMKilled before persistence.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SAME-ACTOR-OVERRIDE-BYPASS",
+        "hypothesis": "release() allows same-actor release when override=true; if attacker controls override parameter, actor distinctness check is bypassable.",
+        "input_fixture": "release(hold_id='h1', released_by='user1', override=true) where opened_by='user1'; distinct_actor requirement skipped.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INT-OVERFLOW-SCOPE-COUNT",
+        "hypothesis": "scope_query matches 2^31+ records; count overflow wraps negative, scope tracking broken, deletion proceeds on records assumed outside hold.",
+        "input_fixture": "open(LegalHold(..., scope_query='SELECT * FROM users')) on table with INT_MAX+ matching rows; scope_record_count integer wraps.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CRED-LEAK-AUDIT-LOG",
+        "hypothesis": "scope_query contains embedded database password or API token; unencrypted in TamperEvidentAuditLog, leaked to log readers.",
+        "input_fixture": "open(LegalHold(..., scope_query='SELECT * FROM db WHERE api_key=sk_live_secret123'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REPLAY-RELEASE-IDEMPOTENT",
+        "hypothesis": "Attacker replays earlier release() call; missing idempotency check causes hold re-release and deletion cascades to trigger twice.",
+        "input_fixture": "Capture network packet: release(hold_id='h1', released_by='user2'). Replay same packet; second release() re-enables deletion.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INDEX-OPTIMIZATION-DROP",
+        "hypothesis": "Retention maintenance drops idx_held_records to optimize; deletion query no longer filters held rows, allowing deletion of protected records.",
+        "input_fixture": "Maintenance process: DROP INDEX idx_held_records; next retention_sweep() table scan deletes records that should be filtered.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NULL-RECORD-COVERS-CHECK",
+        "hypothesis": "covers(record_id=None) not type-validated; may return arbitrary result, bypassing deletion safeguard if result is true.",
+        "input_fixture": "retention_sweep calls covers(None) instead of valid record_id; implementation lacks null check, returns unpredictable boolean.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SCHEMA-EVOLUTION-SILENT-MISS",
+        "hypothesis": "scope_query references field 'customer_region'; schema migration drops column; scope_query silently matches zero records, hold becomes ineffective.",
+        "input_fixture": "hold opened with scope_query='SELECT * WHERE customer_region=EU'. Later: ALTER TABLE DROP COLUMN customer_region. Query matches nothing.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-ACTOR-AUDIT-FIELD",
+        "hypothesis": "opened_by accepts empty string; audit log stores empty actor field, making it impossible to determine who opened the hold.",
+        "input_fixture": "open(LegalHold(..., opened_by='')) passes validation; TamperEvidentAuditLog contains empty actor.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SQL-INJECT-ACTOR-FIELD",
+        "hypothesis": "opened_by contains SQL injection payload; if audit log uses string interpolation, attacker injects code into persistent audit trail.",
+        "input_fixture": "open(LegalHold(..., opened_by=\"admin'; DELETE FROM audit_log; --\")) unescaped in audit insert query.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK-SKEW-EXPIRY-CHECK",
+        "hypothesis": "opened_at set to far future; if retention sweep checks expiry against system clock, hold appears expired early, allowing premature deletion.",
+        "input_fixture": "open(LegalHold(..., opened_at=now()+timedelta(days=365))). System clock later skewed backward; hold marked expired.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "legal_hold.opened",
+        "required_attributes": [
+          "hold_id",
+          "opened_by"
+        ]
+      },
+      {
+        "event_name": "legal_hold.released",
+        "required_attributes": [
+          "hold_id",
+          "released_by"
+        ]
+      },
+      {
+        "event_name": "legal_hold.covers.hit",
+        "required_attributes": [
+          "hold_id",
+          "record_id"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "legal_hold.active",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 100,
+        "label_keys": []
+      },
+      {
+        "name": "legal_hold.opens",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": []
+      },
+      {
+        "name": "legal_hold.releases",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "override"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "legal_hold.open",
+        "required_attributes": [
+          "hold_id"
+        ]
+      },
+      {
+        "operation_name": "legal_hold.release",
+        "required_attributes": [
+          "hold_id",
+          "released_by"
+        ]
+      },
+      {
+        "operation_name": "legal_hold.covers",
+        "required_attributes": [
+          "record_id"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "API matches catalog signature exactly: LegalHold dataclass fields, Protocol methods open/release/covers. Adds override kwarg to release (backward-compatible, spec allows it per LH_INV_03)."
+      },
+      {
+        "axis": "completeness",
+        "score": 8,
+        "rationale": "All 5 invariants addressed: covers() gate (LH_INV_01), audit on open/release (LH_INV_02), distinct-actor guard (LH_INV_03), no delete surface so reads preserved (LH_INV_04), field-token validation at open (LH_INV_05). Consumption example works."
+      },
+      {
+        "axis": "error_quality",
+        "score": 8,
+        "rationale": "Single typed LegalHoldError subclass of ValueError; messages cite invariant IDs (LH_INV_02, LH_INV_03, LH_INV_05) making violations traceable. Distinguishes unknown hold, duplicate open, double release, same-actor release."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Protocol-based AuditSink and LegalHoldRegistry enable swap-in; audit_sink optional; known_fields injectable; matcher is pluggable by design (doc'd extension contract). Thread-safe via lock enables concurrent integration."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "threading.Lock for concurrency, frozen dataclass, tz-aware datetime enforcement, regex tokenizer is permissive but intentional for reference impl. Reopening after release silently replaces \u2014 acceptable but undocumented. No structured logging beyond audit sink."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Matches namespace semantics (data), exposes catalog Protocol verbatim, __all__ surfaces the 5 public names, docstring cites SOC2 CC2.3 + NIST AU-11 locators, invariant IDs map 1:1 to spec table."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'retention sweeper' and 'DSR erasure coordinator' are undefined \u2014 I don't know what calls covers() or how to wire this into my service.",
+          "No usage example: I can't tell how to instantiate a concrete LegalHoldRegistry or what storage backend backs it.",
+          "'scope_query' field tokens validated at open \u2014 what syntax is valid? A single bad example would eliminate all guesswork."
+        ],
+        "rewrite_suggestion": "Add a 5-line usage snippet showing open() \u2192 delete-path guard \u2192 release(), define 'DSR' and 'retention sweeper' inline on first use, and show one valid scope_query string."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "covers() is on every delete hot path \u2014 no concurrency or latency contract (lock-free? mutex? p99 SLA?) makes capacity planning impossible.",
+          "HoldCheck hook intercepts delete operations \u2014 the interface and invocation point are unspecified, so adapter authors have no contract to implement against.",
+          "'explicit override' for same-actor release is mentioned but not defined \u2014 unclear whether it's a flag, a second auth token, or an out-of-band approval."
+        ],
+        "rewrite_suggestion": "Add a 'Performance & concurrency' callout (thread-safe, expected p99 < Xms at Y active holds), a HoldCheck interface snippet, and a concrete override mechanism description."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "LH_INV_02 says 'emit audit rows' but omits destination, schema, and access control \u2014 auditors cannot verify the chain of custody without knowing where rows land.",
+          "scope_query token validation is mentioned but the threat model is absent \u2014 no statement on whether injection (SQL, path traversal) is mitigated at parse time.",
+          "Error behavior of covers() itself is undefined \u2014 a registry failure that silently returns False would violate LH_INV_01 without any invariant detecting it."
+        ],
+        "rewrite_suggestion": "Add an 'Audit log schema' table (who, what, when, destination), a 'Failure mode' row to the error model (covers() exception \u2192 fail-closed, not False), and a note that scope_query is parsed to an AST before evaluation."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "covers() sits on every delete critical path but has no availability contract \u2014 fail-open vs. fail-closed on registry outage determines blast radius and must be explicit.",
+          "No observability surface: no mention of metrics (active holds count, covers() call rate, false-negative risk) or alerting thresholds.",
+          "No storage/HA requirements stated \u2014 on-call engineers can't size or replicate the backend without knowing its durability expectations."
+        ],
+        "rewrite_suggestion": "Add a 'Reliability' section: fail-closed behaviour on outage, recommended metrics (holds_active, covers_latency_ms, covers_errors_total), and minimum storage durability tier."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "'DSR erasure coordinator' is undefined jargon \u2014 a non-technical stakeholder (legal, compliance) won't know this is about GDPR right-to-erasure requests.",
+          "No lifecycle or notification workflow: who is alerted when a hold is opened or released, and is there a dashboard for legal team visibility?",
+          "Regulation anchors list SOC 2 and NIST but don't explain what compliance gap this closes \u2014 the business justification for implementing the primitive is implicit."
+        ],
+        "rewrite_suggestion": "Replace 'DSR erasure coordinator' with 'GDPR erasure requests', add a one-paragraph 'Business context' explaining the litigation hold workflow end-to-end, and note that open/release events are visible in the audit log."
+      }
+    ]
+  }
+}

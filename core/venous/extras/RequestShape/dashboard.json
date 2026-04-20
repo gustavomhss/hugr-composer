@@ -1,0 +1,28 @@
+{
+  "title": "RequestShape — Priority, Retries, Rejects",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Shapes Constructed (5m)",
+      "targets": [{"expr": "sum(rate(request_shape_constructed_total[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Attempts Histogram p50/p95/p99",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(request_shape_attempt_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(request_shape_attempt_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(request_shape_attempt_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Rejects by Invariant ID (rate/s)",
+      "targets": [{"expr": "sum by (invariant_id) (rate(request_shape_reject_total[5m]))"}]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "name": "LifetimeScope",
+  "namespace": "data",
+  "purpose": "Typed enumeration that fixes how long a resolved instance lives: the whole process, one request, or one injection point.",
+  "api_signature": "from enum import Enum\n\nclass LifetimeScope(str, Enum):\n    SINGLETON = 'singleton'\n    SCOPED = 'scoped'\n    TRANSIENT = 'transient'\n",
+  "invariants": [
+    "SINGLETON instances MUST be shared process-wide and created at most once per container.",
+    "SCOPED instances MUST be created at most once per scope and disposed when the scope ends.",
+    "TRANSIENT instances MUST be created per resolution call and NEVER reused across call sites.",
+    "A SINGLETON MUST NEVER depend on a SCOPED or TRANSIENT disposable that requires a live request scope.",
+    "The value set MUST be closed: any new lifetime requires an explicit enum addition, NEVER a string literal."
+  ],
+  "extension_contract": "Alternative frameworks map their native lifetimes (Spring 'request', Nest.js 'REQUEST', ASP.NET 'Scoped', Quarkus '@RequestScoped') onto this enum via an adapter that translates register() calls; new lifetimes require extending the enum, not bypassing it.",
+  "consumption_example": "def register_scoped(c: DiContainer, iface: type, impl: type) -> None:\n    scope = LifetimeScope.SCOPED\n    c.register(iface, impl, scope=scope.value)\n\nassert LifetimeScope.SINGLETON.value == 'singleton'\n",
+  "sources": [
+    {
+      "source": "ASP.NET Core 8.0 Fundamentals \u2014 Service lifetimes",
+      "locator": "learn.microsoft.com/aspnet/core/fundamentals/dependency-injection#service-lifetimes (AddSingleton, AddScoped, AddTransient)"
+    },
+    {
+      "source": "Spring Framework Reference \u2014 Bean Scopes",
+      "locator": "docs.spring.io/spring-framework/reference/core/beans/factory-scopes.html (singleton, prototype, request)"
+    },
+    {
+      "source": "Nest.js 10 Documentation \u2014 Injection scopes",
+      "locator": "docs.nestjs.com/fundamentals/injection-scopes \u2014 Scope.DEFAULT, Scope.REQUEST, Scope.TRANSIENT"
+    },
+    {
+      "source": "Quarkus 3.x CDI Guide",
+      "locator": "quarkus.io/guides/cdi \u2014 @ApplicationScoped, @RequestScoped, @Dependent, @Singleton"
+    }
+  ],
+  "why_essential": "Mixing lifetimes is the #1 source of latent bugs: a shared singleton holding a scoped dependency crashes only under load. One vocabulary SHALL be enforceable at registration time rather than debugged in production.",
+  "alternatives_considered": [
+    "Free-form string scope names \u2014 no compile-time check, drift across tools",
+    "Boolean 'shared/not shared' \u2014 collapses SCOPED and SINGLETON distinction",
+    "Framework-specific annotations only \u2014 breaks cross-framework portability"
+  ],
+  "maturity": "battle_tested"
+}

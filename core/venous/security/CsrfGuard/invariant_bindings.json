@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "CSRF_INV_01",
+      "invariant_text": "Tokens MUST be bound to the session id and MUST NEVER be accepted for a different session.",
+      "confirms_test": "test_inv_session_binding_confirms",
+      "prevents_test": "test_inv_session_binding_prevents",
+      "under_failure_test": "test_inv_session_binding_under_failure"
+    },
+    {
+      "invariant_id": "CSRF_INV_02",
+      "invariant_text": "verify() MUST compare tokens in constant time and MUST raise on mismatch with no information about the expected value.",
+      "confirms_test": "test_inv_constant_time_confirms",
+      "prevents_test": "test_inv_constant_time_prevents",
+      "under_failure_test": "test_inv_constant_time_under_failure"
+    },
+    {
+      "invariant_id": "CSRF_INV_03",
+      "invariant_text": "Safe methods (GET, HEAD, OPTIONS) MUST NEVER mutate state; the guard SHALL only be enforced for unsafe methods.",
+      "confirms_test": "test_inv_safe_methods_confirms",
+      "prevents_test": "test_inv_safe_methods_prevents",
+      "under_failure_test": "test_inv_safe_methods_under_failure"
+    },
+    {
+      "invariant_id": "CSRF_INV_04",
+      "invariant_text": "Cross-origin requests lacking both a valid token and a same-site cookie CANNOT be processed; no-token MUST fail closed.",
+      "confirms_test": "test_inv_fail_closed_confirms",
+      "prevents_test": "test_inv_fail_closed_prevents",
+      "under_failure_test": "test_inv_fail_closed_under_failure"
+    },
+    {
+      "invariant_id": "CSRF_INV_05",
+      "invariant_text": "Tokens MUST be rotated on session rotation and on explicit logout; stale tokens SHALL be rejected.",
+      "confirms_test": "test_inv_rotation_confirms",
+      "prevents_test": "test_inv_rotation_prevents",
+      "under_failure_test": "test_inv_rotation_under_failure"
+    }
+  ]
+}

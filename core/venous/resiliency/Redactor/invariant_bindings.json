@@ -1,0 +1,25 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "REDACTOR_INV_01",
+      "invariant_text": "`__call__` MUST return the SAME event_dict object it received (in-place mutation) so downstream structlog processors see the redacted payload.",
+      "confirms_test": "test_inv_in_place_mutation_confirms",
+      "prevents_test": "test_inv_in_place_mutation_prevents",
+      "under_failure_test": "test_inv_in_place_mutation_under_failure"
+    },
+    {
+      "invariant_id": "REDACTOR_INV_02",
+      "invariant_text": "Non-string values (ints, lists, objects) MUST pass through UNCHANGED \u2014 the redactor only rewrites string values.",
+      "confirms_test": "test_inv_non_string_passthrough_confirms",
+      "prevents_test": "test_inv_non_string_passthrough_prevents",
+      "under_failure_test": "test_inv_non_string_passthrough_under_failure"
+    },
+    {
+      "invariant_id": "REDACTOR_INV_03",
+      "invariant_text": "No matter what malformed input arrives, `__call__` MUST NOT raise; a logging processor that throws breaks the entire logging pipeline.",
+      "confirms_test": "test_inv_never_raises_confirms",
+      "prevents_test": "test_inv_never_raises_prevents",
+      "under_failure_test": "test_inv_never_raises_under_failure"
+    }
+  ]
+}

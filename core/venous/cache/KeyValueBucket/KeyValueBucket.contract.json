@@ -1,0 +1,27 @@
+{
+  "name": "KeyValueBucket",
+  "namespace": "cache",
+  "purpose": "Named bucket of key value entries with optimistic create and update and a watch channel for change notifications derived from an underlying stream.",
+  "api_signature": "from typing import Protocol, AsyncIterator\nfrom dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass KvEntry:\n    key: str\n    value: bytes\n    revision: int\n\nclass KeyValueBucket(Protocol):\n    async def create(self, key: str, value: bytes) -> KvEntry: ...\n    async def update(self, key: str, value: bytes, revision: int) -> KvEntry: ...\n    async def get(self, key: str) -> KvEntry | None: ...\n    async def delete(self, key: str, revision: int | None = None) -> None: ...\n    def watch(self, key: str) -> AsyncIterator[KvEntry]: ...",
+  "invariants": [
+    "create MUST fail when the key already exists; it NEVER overwrites a present value.",
+    "update MUST fail when the supplied revision does not match the stored revision (compare and swap semantics).",
+    "Every successful write ALWAYS increases the entry revision monotonically.",
+    "Watch channels SHALL emit changes in revision order for a given key and CANNOT skip a revision without a gap signal.",
+    "Deleting a key NEVER frees its historical revisions if history retention is configured greater than one."
+  ],
+  "extension_contract": "Backends implement KeyValueBucket as an adapter over JetStream, etcd or equivalent compare and swap store and register per bucket name; watchers extend via a decorator that composes filters on key prefix or revision range.",
+  "consumption_example": "async def ensure_feature(kv: KeyValueBucket, name: str) -> bytes:\n    existing = await kv.get(name)\n    if existing is not None:\n        return existing.value\n    entry = await kv.create(name, b'off')\n    return entry.value",
+  "sources": [
+    {
+      "source": "NATS 2.10 JetStream overview",
+      "locator": "docs.nats.io/nats-concepts/jetstream Key Value Store section: create, update, watch, revisions"
+    }
+  ],
+  "why_essential": "Feature flags, session tokens and config blobs need compare and swap plus change notifications; a shared bucket contract prevents every tool from rebuilding optimistic update on top of a raw cache.",
+  "alternatives_considered": [
+    "Plain string cache with TTL only which lacks compare and swap and change notification",
+    "Full relational row with triggers which is far heavier than the access pattern needs"
+  ],
+  "maturity": "emerging"
+}

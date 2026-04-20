@@ -1,0 +1,36 @@
+{
+  "title": "RetryPolicy — Attempts, Refusals, Budget",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Retry attempts (5m)",
+      "targets": [{"expr": "sum(rate(retry_attempts_total[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Refusals (5m)",
+      "targets": [{"expr": "sum(rate(retry_refusals_total[5m])) by (reason)"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Retry delay p50/p95/p99 (ms)",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(retry_delay_ms_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(retry_delay_ms_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(retry_delay_ms_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Retry-to-success ratio",
+      "targets": [
+        {"expr": "retry_budget_retries_to_successes"}
+      ]
+    }
+  ]
+}

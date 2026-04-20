@@ -1,0 +1,82 @@
+{
+  "logs": [
+    {
+      "event_name": "csp.policy.rendered",
+      "required_attributes": ["route", "mode", "directive_count", "has_nonce", "duration_ms"]
+    },
+    {
+      "event_name": "csp.policy.rejected",
+      "required_attributes": ["route", "mode", "invariant_id", "reason_code"]
+    },
+    {
+      "event_name": "csp.nonce.generated",
+      "required_attributes": ["route", "bytes", "duration_ms"]
+    },
+    {
+      "event_name": "csp.nonce.reused",
+      "required_attributes": ["route", "severity"]
+    },
+    {
+      "event_name": "csp.report.received",
+      "required_attributes": ["route", "violated_directive", "blocked_uri_host", "effective_directive"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "csp.policies.rendered",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["mode", "outcome"]
+    },
+    {
+      "name": "csp.render.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 20,
+      "label_keys": ["mode"]
+    },
+    {
+      "name": "csp.nonces.generated",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": []
+    },
+    {
+      "name": "csp.nonces.reused",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": []
+    },
+    {
+      "name": "csp.violations.reported",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 200,
+      "label_keys": ["effective_directive"]
+    },
+    {
+      "name": "csp.policy.rejections",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 30,
+      "label_keys": ["invariant_id"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "csp.render_header",
+      "required_attributes": ["mode", "directive_count", "has_nonce", "outcome"]
+    },
+    {
+      "operation_name": "csp.with_nonce",
+      "required_attributes": ["nonce_bytes", "outcome"]
+    },
+    {
+      "operation_name": "csp.apply_decorator",
+      "required_attributes": ["decorator_name", "outcome"]
+    }
+  ]
+}

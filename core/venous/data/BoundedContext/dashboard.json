@@ -1,0 +1,26 @@
+{
+  "title": "BoundedContext — Ownership, Language, Integrations",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Aggregates owned (by context)",
+      "targets": [{"expr": "sum by (context_name) (bounded_context_aggregates_owned)"}]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Ownership conflicts (5m)",
+      "targets": [{"expr": "sum(rate(bounded_context_ownership_conflicts_total{result=\"rejected\"}[5m]))"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Integrations by kind",
+      "targets": [
+        {"expr": "sum by (kind) (bounded_context_integrations_total)"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "logs": [
+    {"event_name": "sampler.decision.recorded", "required_attributes": ["reason", "sampled"]},
+    {"event_name": "sampler.fallback.triggered", "required_attributes": ["reason"]}
+  ],
+  "metrics": [
+    {"name": "sampler.decisions.count", "metric_type": "counter", "unit": "1", "cardinality_bound": 20, "label_keys": ["reason", "sampled"]},
+    {"name": "sampler.fallback.count", "metric_type": "counter", "unit": "1", "cardinality_bound": 10, "label_keys": ["reason"]},
+    {"name": "sampler.head.ratio", "metric_type": "gauge", "unit": "1", "cardinality_bound": 10, "label_keys": []}
+  ],
+  "spans": [
+    {"operation_name": "sampler.decide", "required_attributes": ["sampler.reason"]}
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "logs": [
+    {
+      "event_name": "llmtrace.span.started",
+      "required_attributes": ["operation", "model_handle", "prompt_fingerprint"]
+    },
+    {
+      "event_name": "llmtrace.span.ended",
+      "required_attributes": ["operation", "status_code", "duration_ns"]
+    },
+    {
+      "event_name": "llmtrace.provider.error",
+      "required_attributes": ["error_code", "model_handle"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "llmtrace.spans.created",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["operation", "model"]
+    },
+    {
+      "name": "llmtrace.tokens.input",
+      "metric_type": "histogram",
+      "unit": "tokens",
+      "cardinality_bound": 200,
+      "label_keys": ["model"]
+    },
+    {
+      "name": "llmtrace.tokens.output",
+      "metric_type": "histogram",
+      "unit": "tokens",
+      "cardinality_bound": 200,
+      "label_keys": ["model"]
+    },
+    {
+      "name": "llmtrace.cache.hit_ratio",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["model"]
+    },
+    {
+      "name": "llmtrace.provider.errors",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["error_code", "model"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "llmtrace.span.create",
+      "required_attributes": ["gen_ai.operation.name", "gen_ai.request.model", "gen_ai.prompt.fingerprint"]
+    },
+    {
+      "operation_name": "llmtrace.span.end",
+      "required_attributes": ["gen_ai.response.finish_reasons"]
+    },
+    {
+      "operation_name": "llmtrace.tool.call",
+      "required_attributes": ["gen_ai.operation.name"]
+    }
+  ]
+}

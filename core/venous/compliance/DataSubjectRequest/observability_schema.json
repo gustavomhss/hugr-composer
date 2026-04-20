@@ -1,0 +1,16 @@
+{
+  "logs": [
+    {"event_name": "dsr.opened", "required_attributes": ["request_id", "kind"]},
+    {"event_name": "dsr.closed", "required_attributes": ["request_id", "outcome"]}
+  ],
+  "metrics": [
+    {"name": "dsr.open.count", "metric_type": "counter", "unit": "1", "cardinality_bound": 20, "label_keys": ["kind"]},
+    {"name": "dsr.close.count", "metric_type": "counter", "unit": "1", "cardinality_bound": 20, "label_keys": ["outcome"]},
+    {"name": "dsr.time_to_close", "metric_type": "histogram", "unit": "s", "cardinality_bound": 50, "label_keys": ["kind"]}
+  ],
+  "spans": [
+    {"operation_name": "dsr.open", "required_attributes": ["subject_id", "kind"]},
+    {"operation_name": "dsr.attach_artifact", "required_attributes": ["request_id", "store"]},
+    {"operation_name": "dsr.close", "required_attributes": ["request_id", "outcome"]}
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "SAGA_INV_01",
+      "invariant_text": "Every forward step MUST declare a compensating action, or the saga CANNOT include it.",
+      "confirms_test": "test_inv_compensator_required_confirms",
+      "prevents_test": "test_inv_compensator_required_prevents",
+      "under_failure_test": "test_inv_compensator_required_under_failure"
+    },
+    {
+      "invariant_id": "SAGA_INV_02",
+      "invariant_text": "Compensation order SHALL be the reverse of the completed forward steps; out-of-order compensation is FORBIDDEN.",
+      "confirms_test": "test_inv_reverse_compensation_confirms",
+      "prevents_test": "test_inv_reverse_compensation_prevents",
+      "under_failure_test": "test_inv_reverse_compensation_under_failure"
+    },
+    {
+      "invariant_id": "SAGA_INV_03",
+      "invariant_text": "The orchestrator's state transitions MUST be persisted atomically with the command it emits so crashes NEVER leave dangling sagas.",
+      "confirms_test": "test_inv_atomic_journal_confirms",
+      "prevents_test": "test_inv_atomic_journal_prevents",
+      "under_failure_test": "test_inv_atomic_journal_under_failure"
+    },
+    {
+      "invariant_id": "SAGA_INV_04",
+      "invariant_text": "A saga NEVER assumes strong consistency across services; all coordination SHALL be via asynchronous messages.",
+      "confirms_test": "test_inv_async_coordination_confirms",
+      "prevents_test": "test_inv_async_coordination_prevents",
+      "under_failure_test": "test_inv_async_coordination_under_failure"
+    }
+  ]
+}

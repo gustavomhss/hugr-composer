@@ -1,0 +1,68 @@
+{
+  "logs": [
+    {
+      "event_name": "mwp.request.started",
+      "required_attributes": ["method", "path", "chain_length"]
+    },
+    {
+      "event_name": "mwp.request.completed",
+      "required_attributes": ["status", "duration_ns", "halted_by"]
+    },
+    {
+      "event_name": "mwp.middleware.short_circuited",
+      "required_attributes": ["name", "status"]
+    },
+    {
+      "event_name": "mwp.error.filtered",
+      "required_attributes": ["exception_type", "resolved"]
+    },
+    {
+      "event_name": "mwp.registration.refused",
+      "required_attributes": ["operation", "reason"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "mwp.requests.total",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["method", "status"]
+    },
+    {
+      "name": "mwp.request.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 200,
+      "label_keys": ["method"]
+    },
+    {
+      "name": "mwp.middleware.invocations",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 100,
+      "label_keys": ["middleware_name", "outcome"]
+    },
+    {
+      "name": "mwp.errors.filtered",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["exception_type", "resolved"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "mwp.request.run",
+      "required_attributes": ["mwp.method", "mwp.path", "mwp.status"]
+    },
+    {
+      "operation_name": "mwp.middleware.invoke",
+      "required_attributes": ["mwp.name", "mwp.awaited_next"]
+    },
+    {
+      "operation_name": "mwp.error.filter",
+      "required_attributes": ["mwp.exception_type", "mwp.resolved"]
+    }
+  ]
+}

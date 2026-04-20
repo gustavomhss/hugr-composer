@@ -1,0 +1,14 @@
+{
+  "name": "GracefulShutdown",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Coordinates process shutdown across three phases \u2014 drain (stop accepting new work), wait-for-in-flight (bounded by timeout), and cleanup (run registered callbacks) \u2014 so a service can exit cleanly on SIGTERM/SIGINT without dropping in-flight work.",
+  "api_signature": "class GracefulShutdown: register(...), is_draining(...), increment_in_flight(...), decrement_in_flight(...), add_cleanup(...), wait_complete(...)",
+  "invariants": [
+    "GRACEFUL_SHUTDOWN_INV_01: Once `register()` observes a shutdown signal, `is_draining()` MUST return True for the rest of the process lifetime (monotonic, never resets).",
+    "GRACEFUL_SHUTDOWN_INV_02: `wait_complete()` MUST NOT return before `drain_seconds` elapses AND (in-flight count drops to zero OR `timeout_seconds` elapses), whichever comes first.",
+    "GRACEFUL_SHUTDOWN_INV_03: `decrement_in_flight()` MUST NOT let the in-flight counter go negative \u2014 unbalanced decrements are clamped to zero, not the caller's problem."
+  ],
+  "status": "promoted"
+}

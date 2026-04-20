@@ -1,0 +1,32 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "ESS_INV_01",
+      "invariant_text": "append MUST fail with a concurrency error when expected_version does not match the aggregate's current tail; last-writer-wins is FORBIDDEN.",
+      "confirms_test": "test_inv_optimistic_concurrency_confirms",
+      "prevents_test": "test_inv_optimistic_concurrency_prevents",
+      "under_failure_test": "test_inv_optimistic_concurrency_under_failure"
+    },
+    {
+      "invariant_id": "ESS_INV_02",
+      "invariant_text": "Events already written CANNOT be mutated; corrections SHALL be expressed as new, compensating events.",
+      "confirms_test": "test_inv_event_immutability_confirms",
+      "prevents_test": "test_inv_event_immutability_prevents",
+      "under_failure_test": "test_inv_event_immutability_under_failure"
+    },
+    {
+      "invariant_id": "ESS_INV_03",
+      "invariant_text": "Snapshots MUST be reproducible from the event log; the store NEVER treats a snapshot as the source of truth.",
+      "confirms_test": "test_inv_snapshot_derivable_confirms",
+      "prevents_test": "test_inv_snapshot_derivable_prevents",
+      "under_failure_test": "test_inv_snapshot_derivable_under_failure"
+    },
+    {
+      "invariant_id": "ESS_INV_04",
+      "invariant_text": "Replays from zero ALWAYS produce the same logical state given the same event sequence; non-determinism is FORBIDDEN.",
+      "confirms_test": "test_inv_replay_determinism_confirms",
+      "prevents_test": "test_inv_replay_determinism_prevents",
+      "under_failure_test": "test_inv_replay_determinism_under_failure"
+    }
+  ]
+}

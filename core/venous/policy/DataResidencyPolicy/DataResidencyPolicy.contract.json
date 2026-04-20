@@ -1,0 +1,26 @@
+{
+  "name": "DataResidencyPolicy",
+  "namespace": "policy",
+  "purpose": "Binds a data class to a set of permitted storage and processing regions, refusing writes or cross-border transfers outside the allow-list.",
+  "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass DataResidencyPolicy:\n    data_class: str\n    allowed_regions: tuple[str, ...]\n    transfer_mechanism: str  # e.g. 'SCC_2021/914', 'adequacy_decision', 'intra_group_BCR'\n\nclass ResidencyEnforcer(Protocol):\n    def bind(self, policy: DataResidencyPolicy) -> None: ...\n    def check_write(self, data_class: str, region: str) -> None: ...\n    def check_transfer(self, data_class: str, source: str, destination: str) -> None: ...",
+  "invariants": [
+    "allowed_regions MUST be ISO-3166 codes; arbitrary strings SHALL raise on bind.",
+    "A write to a non-allowed region MUST fail loudly; silent replication outside the policy is FORBIDDEN.",
+    "A cross-border transfer outside the EEA CANNOT proceed without a valid transfer_mechanism reference on the bound policy.",
+    "check_write MUST be called before any persistence primitive stores the record; policies enforced only at read time NEVER satisfy residency.",
+    "Policy changes MUST emit a TamperEvidentAuditLog entry so region scope changes are reviewable."
+  ],
+  "extension_contract": "Storage adapters call check_write before persisting; replication and backup jobs call check_transfer for each destination. Custom transfer_mechanism values are added by registering a TransferMechanism adapter that validates the legal artifact (SCC signed, adequacy decision id).",
+  "consumption_example": "policy = DataResidencyPolicy(\n    data_class='eu_user_profile',\n    allowed_regions=('DE', 'IE', 'FR'),\n    transfer_mechanism='SCC_2021/914',\n)\nenforcer.bind(policy)\nenforcer.check_write('eu_user_profile', region='DE')",
+  "sources": [
+    {"source": "EU GDPR Regulation 2016/679 Articles 5, 6, 7, 15, 17, 30, 32", "locator": "Articles 44-50 (Chapter V) transfers of personal data to third countries"},
+    {"source": "PCI-DSS v4.0", "locator": "Requirement 12.8 \u2014 third-party service providers and cross-border processing"}
+  ],
+  "why_essential": "Residency implemented as a single config flag misses replicas, backups, and analytics copies; a per-class primitive forces every write-path and transfer-path to prove eligibility against the same registry.",
+  "alternatives_considered": [
+    "Deploy per-region and hope traffic stays put \u2014 ignores analytics, backups, and support read-paths.",
+    "Network-level geo fencing \u2014 breaks on VPN and does not cover application-layer logical copies.",
+    "Contractual clauses alone \u2014 enforceable against vendors but not against one's own replication jobs."
+  ],
+  "maturity": "emerging"
+}
