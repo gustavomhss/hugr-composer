@@ -542,6 +542,14 @@ TenantSession = Annotated[AsyncSession, Depends(get_session_with_tenant)]
 # ---------------------------------------------------------------------------
 
 
+MCP_TOOL = {
+    "name": "fastapi_generate_db_module",
+    "description": "Scaffold the full database module (models, session, migrations, optional RLS) for a new project.",
+    "tags": ["database", "generator", "scaffold"],
+    "entry": "generate_db_module",
+}
+
+
 def generate_db_module(
     output_dir: str,
     db_url: str = "postgresql+asyncpg://user:pass@localhost:5432/db",

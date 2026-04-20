@@ -1,15 +1,26 @@
-"""Auto-discover and register MCP tools from adapt/ and generators/.
+"""Auto-discover and register MCP tools from adapt/, generators/, and related dirs.
 
 Convention: any Python module containing a top-level ``MCP_TOOL`` dict
 gets registered as an MCP tool.  The dict must have:
 
-  - name: str       -- MCP tool name (e.g. "fastapi_add_websocket_chat")
-  - description: str -- one-line summary
-  - tags: list[str]  -- category tags
-  - entry: str       -- function name in the module (default: module filename stem)
+  - name: str           -- MCP tool name (e.g. "fastapi_add_websocket_chat")
+  - description: str    -- one-line summary
+  - tags: list[str]     -- category tags
+  - entry: str          -- function name in the module (default: module filename stem)
+  - annotations: dict   -- (optional) FastMCP annotations (readOnlyHint, etc.)
 
-Generators use a separate discovery path since their MCP metadata
-is defined differently (they are imported directly in mcp/generators.py).
+Two registration paths exist:
+
+- ``discover_and_register`` scans ``adapt/**/*.py`` and also calls
+  ``register_generators_from_metadata``. Adapt tools are wrapped to
+  translate ``(project_dir, dry_run)`` into ``ToolInput``.
+- ``register_generators_from_metadata`` scans ``generators/**/*.py`` and
+  a whitelist of sibling module dirs (``benchmark/``, ``modules/**/tools/``,
+  ``core/tools/``). Entry functions are passed directly to
+  ``mcp_app.tool()`` — FastMCP introspects their signatures natively.
+
+Replaces the prior 691-line hand-coded generator registry. See
+CONTRACT.md §B1.5.
 """
 from __future__ import annotations
 
@@ -23,15 +34,14 @@ SKILL_ROOT = Path(__file__).resolve().parent.parent
 
 def discover_and_register(mcp_app) -> int:
     """Scan adapt/ subdirectories for modules with MCP_TOOL metadata
-    and register them.  Also imports and registers generators from
-    mcp/generators.py.
+    and register them.  Also registers generator tools via
+    ``register_generators_from_metadata``.
 
     Returns:
         Number of tools registered.
     """
     count = 0
 
-    # --- Auto-discover adapt tools ---
     adapt_dirs = [
         SKILL_ROOT / "adapt" / "extend",
         SKILL_ROOT / "adapt" / "verify",
@@ -46,8 +56,6 @@ def discover_and_register(mcp_app) -> int:
         for py_file in sorted(base_dir.rglob("*.py")):
             if py_file.name.startswith("__"):
                 continue
-            # Skip test files, but NOT test_coverage_gaps.py which is a
-            # real tool (its test file is test_test_coverage_gaps.py)
             if py_file.name.startswith("test_") and py_file.name != "test_coverage_gaps.py":
                 continue
 
@@ -76,12 +84,150 @@ def discover_and_register(mcp_app) -> int:
             count += 1
             logger.debug("registered adapt tool: %s", mcp_meta["name"])
 
-    # --- Register generators (custom parameter signatures) ---
     from mcp_tools.generators import register_generators
 
     count += register_generators(mcp_app)
+    count += register_discovery_tools(mcp_app)
 
     logger.info("registered %d MCP tools total", count)
+    return count
+
+
+def register_discovery_tools(mcp_app) -> int:
+    """Register Phase 2 discoverability tools (CONTRACT §B2.1, §B2.2).
+
+    Exposes `find_primitive(concern, query, limit)` as a first-class MCP
+    tool so the Maestro can query the primitive catalog at composition
+    time. Pure retrieval — no LLM call inside the tool.
+    """
+    from engine.discovery import find_primitive as _find
+    from engine.discovery import suggest_composition as _suggest
+
+    def find_primitive(concern: str = "", query: str = "", limit: int = 10) -> list[dict]:
+        """Search the primitive catalog by concern and free-text query.
+
+        Args:
+            concern: registry concern tag (e.g. ``auth``, ``resiliency``,
+                ``events``, ``observability``). Empty string searches across
+                all concerns.
+            query: natural-language fragment matched via BM25 over primitive
+                name + purpose + compose-with + body. Example:
+                ``"dedupe webhook deliveries"``.
+            limit: maximum hits to return (1-10, capped at 10).
+
+        Returns:
+            List of ``{name, namespace, concern, purpose, score}`` dicts
+            ranked by BM25 relevance descending.
+        """
+        return _find(concern=concern, query=query, limit=limit)
+
+    mcp_app.tool(
+        name="fastapi_find_primitive",
+        tags={"discovery", "catalog", "retrieval"},
+    )(find_primitive)
+
+    def suggest_composition(intent: str, limit: int = 5) -> list[dict]:
+        """Rank compose-with recipes against a free-text intent.
+
+        Args:
+            intent: natural-language description of what to build — e.g.
+                ``"webhook receiver with dedupe and audit"``.
+            limit: maximum compositions to return (1-5, capped at 5).
+
+        Returns:
+            Ranked list of ``{primitives, rationale, score, source, name}``
+            dicts. Pure retrieval — no LLM call inside the tool.
+        """
+        return _suggest(intent=intent, limit=limit)
+
+    mcp_app.tool(
+        name="fastapi_suggest_composition",
+        tags={"discovery", "composition", "retrieval"},
+    )(suggest_composition)
+    return 2
+
+
+# Generator-side discovery base dirs.  Order is stable (alphabetical by
+# module path inside each base).  Each base dir is scanned recursively.
+_GENERATOR_BASE_DIRS: tuple[str, ...] = (
+    "benchmark",
+    "core/tools",
+    "generators",
+    "modules/database/tools",
+    "modules/security/tools",
+)
+
+
+def register_generators_from_metadata(mcp_app) -> int:
+    """Scan generator-tier modules for ``MCP_TOOL`` metadata and register
+    each entry function directly on the FastMCP app.
+
+    FastMCP introspects ``inspect.signature(entry_fn)`` to build the tool
+    parameter schema — no hand-coded wrappers.
+
+    Returns:
+        Number of generator tools registered.
+    """
+    count = 0
+    seen: set[str] = set()
+
+    for base in _GENERATOR_BASE_DIRS:
+        base_dir = SKILL_ROOT / base
+        if not base_dir.exists():
+            continue
+        for py_file in sorted(base_dir.rglob("*.py")):
+            if py_file.name.startswith("__"):
+                continue
+            # Skip files that look like pytest tests UNLESS they contain
+            # MCP_TOOL metadata (a quick substring check avoids importing
+            # pytest-only modules for side effects).
+            if py_file.name.startswith("test_"):
+                try:
+                    if "MCP_TOOL" not in py_file.read_text():
+                        continue
+                except OSError:
+                    continue
+
+            module_path = _file_to_module(py_file)
+            try:
+                mod = importlib.import_module(module_path)
+            except Exception as exc:
+                logger.debug("skip %s: %s", module_path, exc)
+                continue
+
+            mcp_meta = getattr(mod, "MCP_TOOL", None)
+            if mcp_meta is None:
+                continue
+
+            name = mcp_meta["name"]
+            if name in seen:
+                logger.warning("duplicate MCP_TOOL name %s in %s", name, module_path)
+                continue
+
+            entry_name = mcp_meta.get("entry")
+            if not entry_name:
+                logger.warning("MCP_TOOL in %s missing 'entry'", module_path)
+                continue
+            entry_fn = getattr(mod, entry_name, None)
+            if not callable(entry_fn):
+                logger.warning(
+                    "MCP_TOOL in %s has entry=%r but function not found",
+                    module_path,
+                    entry_name,
+                )
+                continue
+
+            tags = set(mcp_meta.get("tags", []))
+            annotations = mcp_meta.get("annotations")
+            kwargs: dict = {"name": name, "tags": tags}
+            if annotations:
+                kwargs["annotations"] = annotations
+
+            mcp_app.tool(**kwargs)(entry_fn)
+            seen.add(name)
+            count += 1
+            logger.debug("registered generator tool: %s", name)
+
     return count
 
 
@@ -97,8 +243,6 @@ def _register_adapt_tool(mcp_app, meta: dict, entry_fn) -> None:
     desc = meta.get("description", entry_fn.__doc__ or "")
     tags = set(meta.get("tags", []))
 
-    # Build the wrapper with a closure over the real entry_fn.
-    # We need a factory to capture the variables correctly in a loop.
     def _make_wrapper(_entry_fn, _desc):
         def tool_wrapper(project_dir: str, dry_run: bool = False) -> dict:
             result = _entry_fn(ToolInput(project_dir=project_dir, dry_run=dry_run))
