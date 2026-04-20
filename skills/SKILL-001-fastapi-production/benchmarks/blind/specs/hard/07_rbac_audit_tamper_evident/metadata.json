@@ -1,0 +1,24 @@
+{
+  "tier": "hard",
+  "authored_at": "2026-04-20",
+  "author": "Gustavo Schneiter",
+  "difficulty_axes": [
+    "security",
+    "multi_invariant",
+    "failure_injection",
+    "observability"
+  ],
+  "required_primitives": [
+    "RequestGuard",
+    "CurrentPrincipal",
+    "AuditEvent",
+    "TamperEvidentAuditLog"
+  ],
+  "predicted_naked_score": 40,
+  "predicted_kit_score": 82,
+  "boot_command": "python -m uvicorn app.main:app --port {PORT} --host 127.0.0.1",
+  "health_probe": "/health",
+  "timeout_s": 60,
+  "boot_health_timeout_s": 20,
+  "notes": "Naked typically: mixes 401/403, no hash chain, no admin gate on audit endpoints."
+}

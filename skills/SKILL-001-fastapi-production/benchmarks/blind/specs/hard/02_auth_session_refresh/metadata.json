@@ -1,0 +1,24 @@
+{
+  "tier": "hard",
+  "authored_at": "2026-04-20",
+  "author": "Gustavo Schneiter",
+  "difficulty_axes": [
+    "security",
+    "concurrency",
+    "multi_invariant",
+    "failure_injection"
+  ],
+  "required_primitives": [
+    "SessionStore",
+    "CurrentPrincipal",
+    "RequestGuard",
+    "AuditEvent"
+  ],
+  "predicted_naked_score": 40,
+  "predicted_kit_score": 80,
+  "boot_command": "python -m uvicorn app.main:app --port {PORT} --host 127.0.0.1",
+  "health_probe": "/health",
+  "timeout_s": 90,
+  "boot_health_timeout_s": 25,
+  "notes": "Trips naked on: (a) no rotation tracking → old token keeps working, (b) no family invalidation → replay undetected, (c) race on refresh under concurrency."
+}

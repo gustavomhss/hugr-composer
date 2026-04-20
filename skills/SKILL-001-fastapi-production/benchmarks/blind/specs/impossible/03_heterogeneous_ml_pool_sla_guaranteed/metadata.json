@@ -1,0 +1,26 @@
+{
+  "tier": "impossible",
+  "authored_at": "2026-04-20",
+  "author": "Gustavo Schneiter",
+  "difficulty_axes": [
+    "concurrency",
+    "failure_injection",
+    "multi_invariant",
+    "large_n_scaling",
+    "observability"
+  ],
+  "required_primitives": [
+    "HeterogeneousWorkerPool",
+    "SessionCache",
+    "Bulkhead",
+    "CircuitBreaker",
+    "TimeoutBudget"
+  ],
+  "predicted_naked_score": 15,
+  "predicted_kit_score": 55,
+  "boot_command": "python -m uvicorn app.main:app --port {PORT} --host 127.0.0.1",
+  "health_probe": "/health",
+  "timeout_s": 120,
+  "boot_health_timeout_s": 25,
+  "notes": "Naked: routes everything to cpu; no SLA enforcement; breaks under load."
+}

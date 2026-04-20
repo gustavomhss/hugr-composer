@@ -1,0 +1,25 @@
+{
+  "tier": "hard",
+  "authored_at": "2026-04-20",
+  "author": "Gustavo Schneiter",
+  "difficulty_axes": [
+    "failure_injection",
+    "multi_invariant",
+    "concurrency",
+    "exactly_once"
+  ],
+  "required_primitives": [
+    "SagaOrchestrator",
+    "UnitOfWork",
+    "WorkflowRun",
+    "IdempotentConsumer",
+    "AuditEvent"
+  ],
+  "predicted_naked_score": 40,
+  "predicted_kit_score": 82,
+  "boot_command": "python -m uvicorn app.main:app --port {PORT} --host 127.0.0.1",
+  "health_probe": "/health",
+  "timeout_s": 90,
+  "boot_health_timeout_s": 25,
+  "notes": "Naked typically: (a) partial compensation only, (b) leftover reservations under failure, (c) 500 on failure path."
+}

@@ -1,0 +1,25 @@
+{
+  "tier": "hard",
+  "authored_at": "2026-04-20",
+  "author": "Gustavo Schneiter",
+  "difficulty_axes": [
+    "exactly_once",
+    "concurrency",
+    "failure_injection",
+    "multi_invariant"
+  ],
+  "required_primitives": [
+    "IdempotencyStore",
+    "IdempotentConsumer",
+    "CircuitBreaker",
+    "RetryPolicy",
+    "OutboundBinding"
+  ],
+  "predicted_naked_score": 40,
+  "predicted_kit_score": 78,
+  "boot_command": "python -m uvicorn app.main:app --port {PORT} --host 127.0.0.1",
+  "health_probe": "/health",
+  "timeout_s": 90,
+  "boot_health_timeout_s": 20,
+  "notes": "Naked: no idempotency store; retries re-charge; stub count > charges count."
+}

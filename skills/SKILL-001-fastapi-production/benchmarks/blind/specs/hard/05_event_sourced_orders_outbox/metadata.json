@@ -1,0 +1,25 @@
+{
+  "tier": "hard",
+  "authored_at": "2026-04-20",
+  "author": "Gustavo Schneiter",
+  "difficulty_axes": [
+    "exactly_once",
+    "concurrency",
+    "multi_invariant",
+    "causal_order"
+  ],
+  "required_primitives": [
+    "EventSourcedStore",
+    "TransactionalOutbox",
+    "UnitOfWork",
+    "DomainEvent",
+    "IdempotentConsumer"
+  ],
+  "predicted_naked_score": 35,
+  "predicted_kit_score": 75,
+  "boot_command": "python -m uvicorn app.main:app --port {PORT} --host 127.0.0.1",
+  "health_probe": "/health",
+  "timeout_s": 90,
+  "boot_health_timeout_s": 25,
+  "notes": "Naked typically: (a) stores state not events, (b) no outbox or outbox not atomic with state (dual write), (c) confirms twice."
+}

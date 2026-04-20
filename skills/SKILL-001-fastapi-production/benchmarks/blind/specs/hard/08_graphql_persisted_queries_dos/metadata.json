@@ -1,0 +1,24 @@
+{
+  "tier": "hard",
+  "authored_at": "2026-04-20",
+  "author": "Gustavo Schneiter",
+  "difficulty_axes": [
+    "security",
+    "type_safety",
+    "multi_invariant",
+    "large_n_scaling"
+  ],
+  "required_primitives": [
+    "PersistedQueryRegistry",
+    "InputValidator",
+    "SignatureVerifier",
+    "CardinalityGuard"
+  ],
+  "predicted_naked_score": 35,
+  "predicted_kit_score": 78,
+  "boot_command": "python -m uvicorn app.main:app --port {PORT} --host 127.0.0.1",
+  "health_probe": "/health",
+  "timeout_s": 90,
+  "boot_health_timeout_s": 20,
+  "notes": "Naked: (a) accepts raw queries, (b) no depth limit enforcement, (c) non-deterministic query_id."
+}
