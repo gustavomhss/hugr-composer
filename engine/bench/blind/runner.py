@@ -288,6 +288,11 @@ def main(argv: list[str] | None = None) -> int:
                         help="after each attempt, re-boot per-turn snapshots + "
                              "run Layer-A smoke to emit process_rewards.jsonl "
                              "(triples runtime; opt-in for PRM training)")
+    parser.add_argument("--condition", choices=("naked", "kit"), default=None,
+                        help="run ONLY this condition (default: both). Useful "
+                             "when the other condition already has preserved "
+                             "results under a previous run_id and re-running "
+                             "would waste API credits.")
     args = parser.parse_args(argv)
 
     specs = discover_specs(SPECS_ROOT)
@@ -310,6 +315,8 @@ def main(argv: list[str] | None = None) -> int:
             "naked": ClaudeCliAdapter(naked_cfg, name="naked"),
             "kit":   ClaudeCliAdapter(kit_cfg, name="kit"),
         }
+    if args.condition is not None:
+        adapters = {args.condition: adapters[args.condition]}
 
     manifest = run_all(
         specs, adapters, seeds=args.seeds,
