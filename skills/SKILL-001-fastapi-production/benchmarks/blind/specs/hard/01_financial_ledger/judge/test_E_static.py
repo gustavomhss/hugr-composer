@@ -51,10 +51,15 @@ def test_E_static__no_float_type_annotations_for_money() -> None:
         for node in ast.walk(tree):
             # Function arg + return annotations
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                money_arg = False
                 for arg in node.args.args + node.args.kwonlyargs:
                     if arg.annotation and _is_money_name(arg.arg):
                         _flag(f"{py.name}::{node.name}({arg.arg})", ast.unparse(arg.annotation))
-                if node.returns and _is_money_name(node.name):
+                        money_arg = True
+                # Return annotation is money-tainted if the function name OR
+                # any parameter is money-named (e.g. `def balance() -> float`
+                # or `def charge(amount: int) -> float`).
+                if node.returns and (_is_money_name(node.name) or money_arg):
                     _flag(f"{py.name}::{node.name}() -> ", ast.unparse(node.returns))
             # Module/class variable annotations: `_balances: dict[str, float]`
             elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):

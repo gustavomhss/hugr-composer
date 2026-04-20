@@ -131,6 +131,15 @@ class ClaudeCliConfig:
     timeout_s: int = 900
 
 
+class AdapterConfigError(RuntimeError):
+    """Raised on adapter init when config is inconsistent.
+
+    Example: KitAdapter is asked to run but its mcp_config_path does not
+    exist — we refuse to silently run as naked (that would corrupt the
+    benchmark's two-arm design).
+    """
+
+
 class ClaudeCliAdapter:
     """Drives `claude -p` (print mode) with optional MCP config.
 
@@ -142,6 +151,33 @@ class ClaudeCliAdapter:
     def __init__(self, config: ClaudeCliConfig, *, name: str) -> None:
         self.config = config
         self.name = name
+        # Fail-fast validation — a KitAdapter that silently runs with no
+        # MCP config corrupts the benchmark. The only legitimate way to
+        # run without MCP is naked (mcp_config_path is None by design).
+        if self.name == "kit" and self.config.mcp_config_path is None:
+            raise AdapterConfigError(
+                "KitAdapter constructed with mcp_config_path=None — refuse to "
+                "silently degrade to naked. Pass the path to the kit's "
+                "claude_code.mcp.json (examples/claude_code.mcp.json) or rename "
+                "this adapter to 'naked'."
+            )
+        if self.config.mcp_config_path is not None:
+            p = Path(self.config.mcp_config_path)
+            if not p.is_file():
+                raise AdapterConfigError(
+                    f"mcp_config_path does not exist: {p}. Refuse to start — "
+                    f"a run with a missing MCP config would be naked-in-disguise."
+                )
+            # Validate JSON parseability + presence of at least one server.
+            try:
+                cfg = json.loads(p.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError) as exc:
+                raise AdapterConfigError(f"mcp_config_path not valid JSON: {p} ({exc})") from exc
+            if not cfg.get("mcpServers"):
+                raise AdapterConfigError(
+                    f"mcp_config_path at {p} has no mcpServers entries — "
+                    f"running as kit would be indistinguishable from naked."
+                )
 
     def emit(self, spec, workdir: Path, *, seed: int) -> EmissionResult:  # noqa: ANN001
         """Stream Claude CLI stdout line-by-line and snapshot per tool-use turn.

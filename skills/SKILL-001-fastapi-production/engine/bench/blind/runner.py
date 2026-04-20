@@ -118,9 +118,51 @@ def _write_metrics(
     return metrics
 
 
+def _discover_completed(run_root: Path) -> set[tuple[str, str, int, int]]:
+    """Scan run_root for attempt directories with a non-empty metrics.json.
+
+    Returns the set of (spec_id, condition, seed, attempt) tuples
+    representing attempts that do NOT need re-running.
+    """
+    done: set[tuple[str, str, int, int]] = set()
+    for mf in run_root.rglob("metrics.json"):
+        try:
+            data = json.loads(mf.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        ident = data.get("identity") or {}
+        outcome = data.get("outcome") or {}
+        # Treat a timed-out/errored emit as still needing a retry; only
+        # boot=success or a deterministic failure (emit success but judge
+        # ran) counts as "don't redo".
+        if outcome.get("emit_status") != "success":
+            continue
+        key = (
+            ident.get("spec_id"),
+            ident.get("condition"),
+            int(ident.get("seed", 0)),
+            int(ident.get("attempt", 0)),
+        )
+        if all(k is not None for k in key):
+            done.add(key)
+    return done
+
+
+def _read_metrics_for(run_root: Path, spec: Spec, condition: str, attempt: int) -> dict | None:
+    safe = spec.spec_id.replace("/", "__")
+    mf = run_root / safe / condition / f"attempt_{attempt:02d}" / "metrics.json"
+    if not mf.exists():
+        return None
+    try:
+        return json.loads(mf.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
 def run_attempt(
     spec: Spec, adapter: MaestroAdapter, *,
     run_id: str, condition: str, attempt: int, seed: int,
+    compute_process_rewards: bool = False,
 ) -> dict:
     adir = _attempt_dir(run_id, spec, condition, attempt)
     adir.mkdir(parents=True, exist_ok=True)
@@ -137,6 +179,13 @@ def run_attempt(
     # Snapshot the final emission for deterministic replay + fine-tuning harvest.
     if workdir.exists():
         snapshot_workdir(workdir, adir / "file_snapshots", label="final")
+    # Optional: per-turn re-judging → process_rewards.jsonl
+    if compute_process_rewards and emission.emit_status == "success":
+        try:
+            from engine.bench.blind.process_rewards import compute as _compute_pr
+            _compute_pr(spec, adir)
+        except Exception as exc:  # noqa: BLE001
+            (adir / "process_rewards_error.txt").write_text(f"{exc}\n")
     return _write_metrics(
         adir, spec=spec, condition=condition, attempt=attempt, seed=seed,
         emission=emission, judge=judge,
@@ -146,10 +195,25 @@ def run_attempt(
 def run_all(
     specs: list[Spec], adapters: dict[str, MaestroAdapter], *,
     seeds: list[int], run_id: str | None = None, attempts_per_seed: int = 1,
+    resume: bool = False, compute_process_rewards: bool = False,
 ) -> dict:
+    """Orchestrate spec × condition × seed → emit + judge + persist.
+
+    `resume=True` scans `results/<run_id>/` for existing metrics.json
+    files and skips any (spec, condition, seed, attempt) already completed
+    (non-empty metrics.json). This is idempotent — re-running a crashed
+    session reuses everything computed so far and finishes the remainder.
+    """
     run_id = run_id or datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_root = RESULTS_ROOT / run_id
     run_root.mkdir(parents=True, exist_ok=True)
+
+    completed: set[tuple[str, str, int, int]] = set()
+    if resume:
+        completed = _discover_completed(run_root)
+        if completed:
+            print(f"  [resume] skipping {len(completed)} already-completed attempt(s)")
+
     all_metrics: list[dict] = []
     # Attempt index is per-(spec, condition, seed) so DPO pairing across
     # conditions works on matching (spec, seed, attempt_within_seed).
@@ -157,10 +221,23 @@ def run_all(
         for seed in seeds:
             for attempt_within in range(1, attempts_per_seed + 1):
                 for condition, adapter in adapters.items():
+                    key = (spec.spec_id, condition, seed, attempt_within)
+                    if key in completed:
+                        reused = _read_metrics_for(run_root, spec, condition, attempt_within)
+                        if reused is not None:
+                            all_metrics.append(reused)
+                            outcome = reused["outcome"]
+                            print(
+                                f"  [resume] {spec.spec_id:45} {condition:6} "
+                                f"seed={seed:<10} attempt={attempt_within}  "
+                                f"score={outcome['final_score']:6.2f}  (cached)"
+                            )
+                            continue
                     m = run_attempt(
                         spec, adapter, run_id=run_id,
                         condition=condition, attempt=attempt_within,
                         seed=seed,
+                        compute_process_rewards=compute_process_rewards,
                     )
                     all_metrics.append(m)
                     outcome = m["outcome"]
@@ -200,6 +277,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--attempts", type=int, default=1,
                         help="attempts per (spec × condition × seed)")
     parser.add_argument("--run-id", default=None)
+    parser.add_argument("--resume", action="store_true",
+                        help="skip (spec, condition, seed, attempt) combos that "
+                             "already have a successful metrics.json in the run dir")
+    parser.add_argument("--compute-process-rewards", action="store_true",
+                        help="after each attempt, re-boot per-turn snapshots + "
+                             "run Layer-A smoke to emit process_rewards.jsonl "
+                             "(triples runtime; opt-in for PRM training)")
     args = parser.parse_args(argv)
 
     specs = discover_specs(SPECS_ROOT)
@@ -226,6 +310,8 @@ def main(argv: list[str] | None = None) -> int:
     manifest = run_all(
         specs, adapters, seeds=args.seeds,
         run_id=args.run_id, attempts_per_seed=args.attempts,
+        resume=args.resume,
+        compute_process_rewards=args.compute_process_rewards,
     )
     print(f"\nrun_id={manifest['run_id']}  attempts={manifest['attempts_total']}")
     return 0

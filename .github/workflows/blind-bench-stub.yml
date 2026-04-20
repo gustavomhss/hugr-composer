@@ -1,0 +1,74 @@
+name: Blind Benchmark — stub + unit
+
+# Runs the harness unit tests AND a full stub end-to-end run on every push
+# + PR. Cheap (< 60s) — no Claude API calls. A real live naked-vs-kit run
+# is wired separately under `benchmark-nightly.yml` and only fires on
+# schedule / dispatch so API costs are controlled.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'skills/SKILL-001-fastapi-production/engine/bench/blind/**'
+      - 'skills/SKILL-001-fastapi-production/benchmarks/blind/**'
+      - 'skills/SKILL-001-fastapi-production/engine/tests/test_blind_harness.py'
+      - '.github/workflows/blind-bench-stub.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'skills/SKILL-001-fastapi-production/engine/bench/blind/**'
+      - 'skills/SKILL-001-fastapi-production/benchmarks/blind/**'
+      - 'skills/SKILL-001-fastapi-production/engine/tests/test_blind_harness.py'
+      - '.github/workflows/blind-bench-stub.yml'
+
+defaults:
+  run:
+    working-directory: skills/SKILL-001-fastapi-production
+
+jobs:
+  stub-run:
+    name: harness unit tests + stub e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install deps
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --quiet -r requirements-mcp.txt
+          .venv/bin/pip install --quiet pytest pytest-asyncio pytest-json-report \
+                                        httpx hypothesis
+      - name: Unit tests (harness modules)
+        run: PYTHONPATH=. .venv/bin/python -m pytest engine/tests/test_blind_harness.py -q --tb=short
+
+      - name: Contract — B3.7 blind harness present
+        run: PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check --item B3.7
+
+      - name: Stub e2e run (naked vs kit fixture on hard/01)
+        run: |
+          PYTHONPATH=. .venv/bin/python -m engine.bench.blind.runner \
+              --stub --seeds 7919
+
+      - name: Verify dashboard + pairs emitted
+        run: |
+          PYTHONPATH=. .venv/bin/python - <<'PY'
+          import json, pathlib, sys
+          root = pathlib.Path("benchmarks/blind/results")
+          runs = sorted(d for d in root.iterdir() if d.is_dir())
+          assert runs, "no run_id produced"
+          last = runs[-1]
+          for f in ("aggregate.json", "pairs.jsonl", "MANIFEST.json", "dashboard.html"):
+              p = last / f
+              assert p.exists() and p.stat().st_size > 0, f"missing or empty: {p}"
+          agg = json.loads((last / "aggregate.json").read_text())
+          h = agg["hypothesis_test"]
+          # Stub MUST demonstrate discrimination — kit beats naked on hard tier.
+          hard = agg["by_tier"]["hard"]
+          margin = hard["kit"]["mean"] - hard["naked"]["mean"]
+          assert margin >= 10.0, f"stub margin too small: {margin}"
+          print(f"stub margin = {margin:.2f} pts (hypothesis H1 supported={h['H1_supported']})")
+          PY
