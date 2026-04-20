@@ -88,9 +88,41 @@ def discover_and_register(mcp_app) -> int:
 
     count += register_generators(mcp_app)
     count += register_discovery_tools(mcp_app)
+    count += register_tier1_tools(mcp_app)
 
     logger.info("registered %d MCP tools total", count)
     return count
+
+
+def register_tier1_tools(mcp_app) -> int:
+    """Register the 6 tier-1 meta tools (Phase 6 dual-index design).
+
+    Always-loaded; primacy position. See `mcp_tools/tier1.py` +
+    `/docs/research/DUAL_INDEX_DESIGN.md` §4.1.
+    """
+    from mcp_tools.tier1 import (
+        fastapi_meta_search_home,
+        fastapi_meta_search_search,
+        fastapi_meta_search_describe,
+        fastapi_meta_generate_scaffold,
+        fastapi_meta_check_audit,
+        fastapi_meta_verify_verify,
+        MCP_TOOL_HOME, MCP_TOOL_SEARCH, MCP_TOOL_DESCRIBE,
+        MCP_TOOL_SCAFFOLD, MCP_TOOL_AUDIT, MCP_TOOL_VERIFY,
+    )
+    for fn, meta in (
+        (fastapi_meta_search_home,     MCP_TOOL_HOME),
+        (fastapi_meta_search_search,   MCP_TOOL_SEARCH),
+        (fastapi_meta_search_describe, MCP_TOOL_DESCRIBE),
+        (fastapi_meta_generate_scaffold, MCP_TOOL_SCAFFOLD),
+        (fastapi_meta_check_audit,     MCP_TOOL_AUDIT),
+        (fastapi_meta_verify_verify,   MCP_TOOL_VERIFY),
+    ):
+        mcp_app.tool(
+            name=meta["name"],
+            tags=set(meta.get("tags", [])),
+        )(fn)
+    return 6
 
 
 def register_discovery_tools(mcp_app) -> int:

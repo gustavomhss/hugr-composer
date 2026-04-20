@@ -179,3 +179,104 @@ def test_manifest_error_raised_on_duplicate_mcp_name(tmp_path: Path, monkeypatch
     finally:
         import shutil
         shutil.rmtree(fake_root, ignore_errors=True)
+
+
+# ---------------------------------------------------------------------------
+# Tier-1 meta tools (mcp_tools/tier1.py)
+# ---------------------------------------------------------------------------
+
+def test_tier1_home_returns_landscape_envelope() -> None:
+    from mcp_tools.tier1 import fastapi_meta_search_home
+    r = fastapi_meta_search_home()
+    assert r["ok"] is True
+    assert r["elapsed_ms"] >= 0
+    assert len(r["result"]["landscape"]) == 10  # 10 domains
+    assert r["result"]["counts"]["tools"] >= 150
+    assert r["next_steps"], "home must provide breadcrumbs"
+
+
+def test_tier1_search_finds_tamper_evident_chain() -> None:
+    from mcp_tools.tier1 import fastapi_meta_search_search
+    r = fastapi_meta_search_search("tamper evident audit chain", k=5)
+    assert r["ok"] is True
+    hits = r["result"]["hits"]
+    assert hits, "expected at least one hit"
+    names = [h["name"] for h in hits]
+    assert "TamperEvidentAuditLog" in names or "AuditEvent" in names, names
+
+
+def test_tier1_search_respects_domain_filter() -> None:
+    from mcp_tools.tier1 import fastapi_meta_search_search
+    r = fastapi_meta_search_search("rate limit", domain="resiliency", k=5)
+    assert r["ok"] is True
+    for h in r["result"]["hits"]:
+        assert h["domain"] == "resiliency", h
+
+
+def test_tier1_search_empty_query_returns_ok_false() -> None:
+    from mcp_tools.tier1 import fastapi_meta_search_search
+    r = fastapi_meta_search_search("", k=5)
+    assert r["ok"] is False
+    assert r["result"]["hits"] == []
+
+
+def test_tier1_describe_primitive() -> None:
+    from mcp_tools.tier1 import fastapi_meta_search_describe
+    r = fastapi_meta_search_describe("CausalReorderBuffer")
+    assert r["ok"] is True
+    assert r["result"]["kind"] == "primitive"
+    assert r["result"]["name"] == "CausalReorderBuffer"
+
+
+def test_tier1_describe_unknown_returns_ok_false_with_hint() -> None:
+    from mcp_tools.tier1 import fastapi_meta_search_describe
+    r = fastapi_meta_search_describe("does-not-exist-xyz")
+    assert r["ok"] is False
+    assert any("search" in step.lower() for step in r["next_steps"])
+
+
+def test_tier1_envelope_shape_uniform() -> None:
+    """Every tier-1 return must conform to the same envelope."""
+    from mcp_tools.tier1 import (
+        fastapi_meta_search_home, fastapi_meta_search_search,
+        fastapi_meta_search_describe,
+    )
+    required_keys = {"ok", "what_happened", "result", "next_steps", "elapsed_ms"}
+    for fn_call in (
+        lambda: fastapi_meta_search_home(),
+        lambda: fastapi_meta_search_search("anything", k=3),
+        lambda: fastapi_meta_search_describe("SessionCache"),
+    ):
+        r = fn_call()
+        missing = required_keys - r.keys()
+        assert not missing, f"envelope missing {missing}"
+        assert isinstance(r["next_steps"], list)
+        assert len(r["next_steps"]) <= 5, "cap at 5 breadcrumbs"
+
+
+def test_tier1_home_breadcrumbs_reference_other_tier1_tools() -> None:
+    """The whole point of next_steps is to form a workflow graph."""
+    from mcp_tools.tier1 import fastapi_meta_search_home
+    r = fastapi_meta_search_home()
+    joined = " ".join(r["next_steps"])
+    assert "fastapi_meta_search_search" in joined
+    assert "fastapi_meta_generate_scaffold" in joined
+
+
+def test_tier1_registered_as_mcp_tools() -> None:
+    """discover_and_register must expose exactly 6 fastapi_meta_* tools."""
+    import asyncio
+    from mcp_tools.server import mcp as _mcp
+    from mcp_tools.discovery import discover_and_register
+    discover_and_register(_mcp)
+    names = {t.name for t in asyncio.run(_mcp.list_tools())}
+    expected = {
+        "fastapi_meta_search_home",
+        "fastapi_meta_search_search",
+        "fastapi_meta_search_describe",
+        "fastapi_meta_generate_scaffold",
+        "fastapi_meta_check_audit",
+        "fastapi_meta_verify_verify",
+    }
+    missing = expected - names
+    assert not missing, f"tier-1 tools not registered: {missing}"
