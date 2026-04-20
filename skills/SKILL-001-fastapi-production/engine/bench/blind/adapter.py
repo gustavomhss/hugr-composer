@@ -201,7 +201,8 @@ class ClaudeCliAdapter:
         tool_path = workdir.parent / "tool_calls.jsonl"
         snapshots_dir = workdir.parent / "file_snapshots"
 
-        prompt = _build_prompt(spec, workdir)
+        has_kit = self.config.mcp_config_path is not None
+        prompt = _build_prompt(spec, workdir, has_kit_mcp=has_kit)
 
         cmd = [
             "claude", "-p", prompt,
@@ -406,8 +407,56 @@ def _kill_process_group(proc: subprocess.Popen) -> None:
             pass
 
 
-def _build_prompt(spec, workdir: Path) -> str:  # noqa: ANN001
-    """Canonical prompt. DO NOT change without bumping PROTOCOL.md version."""
+def _build_prompt(spec, workdir: Path, *, has_kit_mcp: bool) -> str:  # noqa: ANN001
+    """Canonical prompt — same TASK both arms, kit arm additionally announces
+    available MCP tools so the agent can discover them.
+
+    Two-arm prompt discipline (PROTOCOL §2): the BRIEF text is byte-identical
+    across conditions (identical `brief_sha256`). The only prompt difference
+    is a kit-only paragraph telling the agent which MCP tools are available.
+    Without this paragraph, empirically the kit agent ignores the MCP
+    surface entirely (first live run on hard/01 showed 0 kit tool calls).
+
+    Changing the prompt structure bumps PROTOCOL.md version — past runs
+    are preserved verbatim and never re-scored under new wording.
+    """
+    kit_block = ""
+    if has_kit_mcp:
+        kit_block = """
+---
+
+KIT AVAILABLE — HuGR SkillKit SKILL-001 MCP tools are connected to this session.
+You may (and should, when appropriate) use them to accelerate the solution:
+
+  • fastapi_find_primitive(query, concern?)      — BM25 search over 122
+    framework-free production primitives under `core.venous.*`. Returns
+    top-K hits with purpose + compose-with siblings. Use to discover
+    whether a Lego block already exists for a capability you need
+    (idempotency store, audit chain, sharded counter, causal reorder, …).
+
+  • fastapi_suggest_composition(intent)          — recipe index over 290
+    hand-authored compose-with pairings. Returns ranked primitive
+    combinations for natural-language intents like "webhook with
+    dedup + audit" or "lock-free read with serializable write".
+
+  • fastapi_add_<capability>(...) (≈100 slice tools) — emit code that
+    composes the kit's primitives into the project (auth, rbac, rate
+    limiting, webhooks, event sourcing, etc.). These tools write files
+    into the current working directory.
+
+  • fastapi_generate_project(...)                — macro scaffold for an
+    empty tree. Use ONCE at the start if you want a full baseline.
+
+Primitive import pattern: emit code that uses
+    `from core.venous.<namespace>.<Name> import <Name>`
+and copy the primitive source alongside your package (the kit's
+`scaffold_venous` tool does this for you). A reference-docs site is
+reachable from each primitive page on the docs.hugr.dev deployment.
+
+Prefer kit tools over hand-rolling when the spec's invariants map to
+an existing primitive — they are 10-tier gated (compile / types /
+concurrency / chaos / observability) upstream.
+"""
     return f"""You are a senior backend engineer. Produce a working FastAPI project that implements the requirements in the brief below. Write all files to the current working directory ({workdir}). The evaluator will boot your project with the boot command declared in the brief's metadata and run a sealed test suite you will NOT see.
 
 Emit:
@@ -417,7 +466,7 @@ Emit:
   - An executable entry point such that `{spec.boot_command}` starts a server listening on PORT that responds to GET {spec.health_probe} with 200.
 
 Do not write tests — the evaluator has its own sealed test suite. Focus on production-grade code that meets every acceptance-criterion bullet.
-
+{kit_block}
 ---
 
 BRIEF (brief_sha256={spec.brief_sha256}):

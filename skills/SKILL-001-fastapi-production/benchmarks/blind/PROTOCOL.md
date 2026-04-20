@@ -51,8 +51,20 @@ declared openly in the commit message and a new protocol version cut.
 
 | Arm | Base | MCP tools available | Prompt |
 |---|---|---|---|
-| **naked** | Claude Opus/Sonnet via CLI subagent | none (no `--mcp-config`) | identical brief only |
-| **kit**   | Same model / temperature | SKILL-001 MCP (180 tools) | identical brief only |
+| **naked** | Claude Opus/Sonnet via CLI subagent | none (no `--mcp-config`) | base brief |
+| **kit**   | Same model / temperature | SKILL-001 MCP (180 tools) | base brief + kit-tools announcement paragraph |
+
+> **Prompt-parity exception (v1.1, 2026-04-20).** The first live run on
+> `hard/01` surfaced that an MCP surface being AVAILABLE is not the same
+> as being USED — Claude ignored the kit entirely and scored identically
+> to naked (38.46 vs 38.46, zero margin). The kit arm's prompt therefore
+> includes an explicit paragraph listing the MCP tool families
+> (`fastapi_find_primitive`, `fastapi_suggest_composition`,
+> `fastapi_add_*`, `fastapi_generate_project`) so the agent knows they
+> exist. The BRIEF text is byte-identical across arms — the announcement
+> is a prompt-scaffolding delta, not a task-information delta. A
+> reviewer can confirm via the `brief_sha256` field, which matches
+> across conditions.
 
 Constants held across arms:
 - Model + temperature + max-tokens
