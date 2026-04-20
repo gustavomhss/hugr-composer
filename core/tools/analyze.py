@@ -14,6 +14,14 @@ FP fixes applied (v2):
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_analyze_project_v2',
+    'description': '[Legacy v2] AST-based analysis of 8 core patterns. Use fastapi_analyze for the 35-check v3 audit.',
+    'tags': ['legacy', 'verify'],
+    'entry': 'mcp_fastapi_analyze_project_v2',
+    'annotations': {'readOnlyHint': True},
+}
+
 import ast
 import os
 import re
@@ -786,3 +794,9 @@ def analyze_project(
     result.score = _calculate_score(result)
 
     return result
+
+
+def mcp_fastapi_analyze_project_v2(project_path: str) -> dict:
+    """MCP entry: [Legacy v2] AST-based analysis of 8 core patterns."""
+    result = analyze_project(project_path)
+    return result.model_dump(mode="json")

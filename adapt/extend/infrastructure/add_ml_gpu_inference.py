@@ -319,7 +319,7 @@ def _write_device_module(dest: Path) -> None:
                     A ``torch.device`` instance.
                 \"\"\"
                 try:
-                    import torch  # noqa: PLC0415 (lazy import — intentional)
+                    import torch  # noqa: PLC0415,F401 (lazy import — intentional)
                     if settings.GPU_ENABLED and torch.cuda.is_available():
                         device_id = settings.GPU_DEVICE_ID
                         device = torch.device(f"cuda:{device_id}")
@@ -337,7 +337,7 @@ def _write_device_module(dest: Path) -> None:
                     logger.warning("torch not installed; inference will use CPU stub")
                     return _CpuDevice()
                 try:
-                    import torch  # noqa: PLC0415
+                    import torch  # noqa: PLC0415,F401
                     return torch.device("cpu")
                 except ImportError:
                     return _CpuDevice()
@@ -353,7 +353,7 @@ def _write_device_module(dest: Path) -> None:
                     ``utilisation_pct`` keys when CUDA is active, else ``{}``.
                 \"\"\"
                 try:
-                    import torch  # noqa: PLC0415
+                    import torch  # noqa: PLC0415,F401
                     device = self.get_device()
                     if not hasattr(device, "type") or device.type != "cuda":
                         return {}
@@ -451,7 +451,7 @@ def _write_memory_guard(dest: Path) -> None:
                 try:
                     if not hasattr(device, "type") or device.type != "cuda":
                         return
-                    import torch  # noqa: PLC0415
+                    import torch  # noqa: PLC0415,F401
                     reserved = torch.cuda.memory_reserved(device)
                     if reserved == 0:
                         return
@@ -542,7 +542,7 @@ def _write_inference_module(dest: Path) -> None:
             def _move_model(self) -> None:
                 \"\"\"Move the model to the active device (idempotent).\"\"\"
                 try:
-                    import torch  # noqa: PLC0415
+                    import torch  # noqa: PLC0415,F401
                     device = self._get_device()
                     if hasattr(device, "type"):
                         self.model = self.model.to(device)
@@ -585,7 +585,7 @@ def _write_inference_module(dest: Path) -> None:
                     and device.type == "cuda"
                 )
                 try:
-                    import torch  # noqa: PLC0415
+                    import torch  # noqa: PLC0415,F401
                     if use_amp:
                         with torch.cuda.amp.autocast():
                             return self.model(inputs)
@@ -641,7 +641,7 @@ def _write_gpu_status_route(dest: Path) -> None:
                 Dict with at minimum ``available`` (bool) and ``device`` (str).
             \"\"\"
             try:
-                import torch  # noqa: PLC0415
+                import torch  # noqa: PLC0415,F401
                 device = _device_manager.get_device()
                 is_cuda = hasattr(device, "type") and device.type == "cuda"
                 payload: dict[str, Any] = {
