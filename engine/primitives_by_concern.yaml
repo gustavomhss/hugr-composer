@@ -1,0 +1,1109 @@
+version: 1
+primitives:
+- name: BatchCore
+  namespace: api
+  concern: api
+  purpose: Async batch executor with per-item timeout, bounded parallelism, and two isolation modes (all-or-nothing / best-effort). Guarantees result order aligns
+    with input order regardless of completion order.
+  compose_with:
+  - Bulkhead
+  - IdempotencyStore
+  - RequestShape
+  - TimeoutBudget
+- name: CommandBus
+  namespace: api
+  concern: api
+  purpose: Dispatch Commands to their registered async handlers.
+  compose_with:
+  - AuditEvent
+  - CommandQuerySeparator
+  - IdempotencyStore
+  - RequestGuard
+- name: CommandQuerySeparator
+  namespace: api
+  concern: api
+  purpose: Partitions the API into write commands that mutate state and read queries that observe it so each side evolves independently.
+  compose_with:
+  - RouterPipeline
+  - MiddlewarePipeline
+  - RequestContext
+  - ValueTransform
+- name: ContextMap
+  namespace: api
+  concern: api
+  purpose: Catalogs every BoundedContext and the integration relationship so upstream/downstream teams agree on a single translation contract.
+  compose_with:
+  - BoundedContext
+  - AntiCorruptionLayer
+  - OutboundBinding
+  - DomainEvent
+- name: DataLoader
+  namespace: api
+  concern: api
+  purpose: Batches and dedupes per-request loads from N-per-resolver patterns into one bulk fetch per key-type per tick; identity-preserving within the tick.
+  compose_with:
+  - RouterPipeline
+  - RequestContext
+  - TimeoutBudget
+- name: DeprecationEntry
+  namespace: api
+  concern: api
+  purpose: 'Value object carrying the metadata required to emit RFC 8594 Sunset / Deprecation headers for a single endpoint: path, method, sunset date, replacement
+    URL, and a derived warn-window flag.'
+  compose_with:
+  - DeprecationRegistry
+  - DeprecationReporter
+  - SchemaComparator
+  - StructuredLogger
+- name: DeprecationRegistry
+  namespace: api
+  concern: api
+  purpose: Index DeprecationEntry objects by their (METHOD, path) composite key so request middleware can cheaply decide whether to stamp RFC 8594 Sunset headers
+    on a response and so operators can list all deprecations sorted by sunset date.
+  compose_with:
+  - DeprecationEntry
+  - DeprecationReporter
+  - FeatureToggle
+  - MetricMeter
+- name: DeprecationReporter
+  namespace: api
+  concern: api
+  purpose: 'In-memory call-count tracker for deprecated endpoints: record a hit per request, emit a usage report sorted by call volume so operators can tell which
+    deprecated endpoints still have live traffic before they sunset.'
+  compose_with:
+  - AuditEvent
+  - DeprecationEntry
+  - DeprecationRegistry
+  - HealthProbe
+- name: IdempotencyStore
+  namespace: api
+  concern: api
+  purpose: 'Thread-safe in-memory key-to-result cache used to deduplicate retried requests: get/put/seen so a handler can short-circuit and return the previous result
+    when the same idempotency key is presented twice.'
+  compose_with:
+  - BatchCore
+  - CardinalityGuard
+  - CommandBus
+  - IdempotentConsumer
+- name: InboundVerifier
+  namespace: api
+  concern: api
+  purpose: "Abstract extension point for provider-specific inbound webhook verification (Stripe, GitHub, Slack, internal HMAC, ...): each concrete verifier turns\
+    \ raw (body, headers) into a trusted VerifiedEvent or raises HTTPException \u2014 never returns N"
+  compose_with:
+  - AuditEvent
+  - CircuitBreaker
+  - IdempotencyStore
+  - MiddlewarePipeline
+- name: MemoryPubSubBackend
+  namespace: api
+  concern: api
+  purpose: "In-process fan-out pub/sub backend: publish() broadcasts a payload to every live subscriber queue on the named topic, subscribe() yields payloads from\
+    \ a private asyncio.Queue that is torn down on generator exit \u2014 suitable as a single-worker"
+  compose_with:
+  - CardinalityGuard
+  - EventBus
+  - EventEnvelope
+  - LifecycleHook
+- name: MiddlewarePipeline
+  namespace: api
+  concern: api
+  purpose: Ordered chain of components that each transform the RequestContext and decide whether to call the next stage or short-circuit the response.
+  compose_with:
+  - RouterPipeline
+  - RequestContext
+  - RequestGuard
+  - CorrelationContext
+- name: PersistedQueryRegistry
+  namespace: api
+  concern: api
+  purpose: SHA-256 keyed allow-list of pre-registered queries; clients send 64-char ids and unregistered ids are rejected with tamper detection on read.
+  compose_with:
+  - InputValidator
+  - AuditEvent
+  - RequestGuard
+- name: QueryBus
+  namespace: api
+  concern: api
+  purpose: Dispatch Queries to their registered async handlers.
+  compose_with:
+  - CommandQuerySeparator
+  - CurrentPrincipal
+  - KeyValueBucket
+  - MaterializedView
+- name: RequestContext
+  namespace: api
+  concern: api
+  purpose: Per-request bag that carries identity, headers, correlation id, and free-form assigns through the handler chain.
+  compose_with:
+  - MiddlewarePipeline
+  - CurrentPrincipal
+  - CorrelationContext
+  - RequestShape
+- name: RouterPipeline
+  namespace: api
+  concern: api
+  purpose: Named bundle of middleware that a route joins with `pipe_through` so groups share edge policy without re-declaring it.
+  compose_with:
+  - MiddlewarePipeline
+  - CommandQuerySeparator
+  - RequestGuard
+  - CorsPolicy
+- name: ValueTransform
+  namespace: api
+  concern: api
+  purpose: Strongly-typed parse/validate step that converts a raw inbound argument into the domain type or rejects the request with a precise error.
+  compose_with:
+  - InputValidator
+  - RequestContext
+  - MiddlewarePipeline
+  - ValueObject
+- name: AuthorizationCodeFlow
+  namespace: auth
+  concern: auth
+  purpose: Execute the OAuth 2.0 authorization-code grant with PKCE, enforcing state, nonce, redirect URI pinning, and single-use code exchange.
+  compose_with:
+  - SessionStore
+  - TokenIntrospector
+  - CurrentPrincipal
+  - SecretsVault
+- name: CurrentPrincipal
+  namespace: auth
+  concern: auth
+  purpose: Read-only view of the authenticated identity for the active request, including subject id, tenant, roles, and auth method.
+  compose_with:
+  - RequestGuard
+  - SessionStore
+  - TokenIntrospector
+  - RequestContext
+- name: FeatureFlagCache
+  namespace: auth
+  concern: auth
+  purpose: Bounded in-process async LRU cache with per-entry TTL for feature-flag payloads. Thread-safe via an asyncio.Lock. Evicts on capacity (LRU) and on read
+    (expired-TTL). Stable under concurrent access.
+  compose_with:
+  - AuditEvent
+  - CircuitBreaker
+  - ConfigBinding
+  - EventBus
+- name: RequestGuard
+  namespace: auth
+  concern: auth
+  purpose: 'Enforce declarative, composable authorization: one decision point per route, audited centrally, with explicit allow/deny and no silent defaults.'
+  compose_with:
+  - CurrentPrincipal
+  - AuditEvent
+  - MiddlewarePipeline
+  - FeatureToggle
+- name: SessionStore
+  namespace: auth
+  concern: auth
+  purpose: Issue, rotate, and revoke server-side session records keyed by high-entropy identifiers, with fixation protection and absolute/idle timeouts.
+  compose_with:
+  - CurrentPrincipal
+  - CsrfGuard
+  - AuthorizationCodeFlow
+  - AuditEvent
+- name: TokenIntrospector
+  namespace: auth
+  concern: auth
+  purpose: Validate access tokens by signature, issuer, audience, expiry, and not-before claims, with optional revocation check via RFC 7662.
+  compose_with:
+  - SignatureVerifier
+  - CurrentPrincipal
+  - SecretsVault
+  - RequestGuard
+- name: TotpVerifier
+  namespace: auth
+  concern: auth
+  purpose: Generate and verify six-digit time-based one-time passwords per RFC 6238 with constant-time comparison and replay tracking per counter.
+  compose_with:
+  - PasswordHasher
+  - AuthorizationCodeFlow
+  - AuditEvent
+  - SecretsVault
+- name: WebAuthnAuthenticator
+  namespace: auth
+  concern: auth
+  purpose: Register and assert passkey credentials per the Web Authentication API, binding credentials to an RP id with origin and counter checks.
+  compose_with:
+  - AuthorizationCodeFlow
+  - SessionStore
+  - SecretsVault
+  - AuditEvent
+- name: DistributedLock
+  namespace: cache
+  concern: cache
+  purpose: Give workers a single contract for rare, sequential, cross-process work such as leader-only cron, serialized migrations, and exclusive file IO.
+  compose_with:
+  - KeyValueBucket
+  - CircuitBreaker
+  - TimeoutBudget
+  - WorkflowRun
+- name: KeyValueBucket
+  namespace: cache
+  concern: cache
+  purpose: Provide one small contract over optimistic concurrency (create/update/delete with revision) plus a capped read-through cache.
+  compose_with:
+  - DistributedLock
+  - IdentityMap
+  - CircuitBreaker
+  - MetricMeter
+- name: SessionCache
+  namespace: cache
+  concern: cache
+  purpose: Stateless-tier, node-agnostic read-through cache keyed by session token for per-caller state with TTL and explicit miss/error separation.
+  compose_with:
+  - KeyValueBucket
+  - RequestContext
+  - FeatureToggle
+- name: AuditEvent
+  namespace: compliance
+  concern: compliance
+  purpose: Emit a tamper-evident, append-only record of a security-relevant action with actor, subject, action verb, and outcome.
+  compose_with:
+  - TamperEvidentAuditLog
+  - CurrentPrincipal
+  - CorrelationContext
+  - AccessLog
+- name: BreachNotificationQueue
+  namespace: compliance
+  concern: compliance
+  purpose: Track suspected and confirmed personal-data incidents with the GDPR Article 33 72-hour clock and enforced closure evidence.
+  compose_with:
+  - AuditEvent
+  - DataSubjectRequest
+  - TamperEvidentAuditLog
+  - PiiClassification
+- name: ConsentLedger
+  namespace: compliance
+  concern: compliance
+  purpose: Record, revoke, and prove consent grants with a per-purpose, per-subject, timestamped ledger that satisfies GDPR accountability.
+  compose_with:
+  - DataSubjectRequest
+  - ProcessingRecord
+  - AuditEvent
+  - TamperEvidentAuditLog
+- name: DataSubjectRequest
+  namespace: compliance
+  concern: compliance
+  purpose: Coordinate the GDPR access/portability/erasure/rectification lifecycle with a 30-day clock and per-store artifact manifest.
+  compose_with:
+  - ConsentLedger
+  - RetentionPolicy
+  - LegalHold
+  - PiiClassification
+- name: ProcessingRecord
+  namespace: compliance
+  concern: compliance
+  purpose: Generate GDPR Article 30 Records of Processing Activities from handler decorators so the ROPA stays byte-for-byte diffable across releases.
+  compose_with:
+  - ConsentLedger
+  - DataResidencyPolicy
+  - RetentionPolicy
+  - PiiClassification
+- name: RetentionPolicy
+  namespace: compliance
+  concern: compliance
+  purpose: 'Implement GDPR storage limitation and PCI retention controls in code: each data class declares a TTL and a post-TTL action.'
+  compose_with:
+  - DataSubjectRequest
+  - LegalHold
+  - PiiClassification
+  - ProcessingRecord
+- name: TamperEvidentAuditLog
+  namespace: compliance
+  concern: compliance
+  purpose: Provide one signed, chain-verified evidence stream so SOC 2 non-repudiation and HIPAA audit-control requirements are answered with cryptography.
+  compose_with:
+  - AuditEvent
+  - SignatureVerifier
+  - SecretsVault
+  - AccessLog
+- name: Aggregate
+  namespace: data
+  concern: data.modelling
+  purpose: Define a consistency boundary around a cluster of entities and value objects governed by a single root that enforces invariants.
+  compose_with:
+  - Repository
+  - UnitOfWork
+  - ValueObject
+  - DomainEvent
+- name: AntiCorruptionLayer
+  namespace: data
+  concern: data.modelling
+  purpose: Translate between a local model and a foreign or legacy model so upstream semantics cannot leak into the downstream domain.
+  compose_with:
+  - BoundedContext
+  - ContextMap
+  - OutboundBinding
+  - ValueObject
+- name: BoundedContext
+  namespace: data
+  concern: data.modelling
+  purpose: Declare the explicit linguistic and model boundary within which one ubiquitous language and one set of invariants apply.
+  compose_with:
+  - ContextMap
+  - AntiCorruptionLayer
+  - Aggregate
+  - DomainEvent
+- name: Specification
+  namespace: data
+  concern: data.modelling
+  purpose: Encapsulate a predicate over a domain object so selection, validation, and criteria share one executable definition.
+  compose_with:
+  - Repository
+  - Aggregate
+  - ValueObject
+  - DataMapper
+- name: ValueObject
+  namespace: data
+  concern: data.modelling
+  purpose: Represent a descriptive concept whose identity is defined by its attributes and which is immutable once constructed.
+  compose_with:
+  - Aggregate
+  - Specification
+  - DataMapper
+  - InputValidator
+- name: ChangeDataCapture
+  namespace: data
+  concern: data.persistence
+  purpose: Publish an ordered stream of row-level changes from a source database so downstream systems can consume mutations without double-writing.
+  compose_with:
+  - EventStream
+  - TransactionalOutbox
+  - MaterializedView
+  - IdempotentConsumer
+- name: DataMapper
+  namespace: data
+  concern: data.persistence
+  purpose: Move state between in-memory domain objects and rows in storage while keeping both ignorant of each other's shape.
+  compose_with:
+  - Repository
+  - UnitOfWork
+  - IdentityMap
+  - ValueObject
+- name: IdentityMap
+  namespace: data
+  concern: data.persistence
+  purpose: Cache loaded domain objects by identity inside one session so the same row is never represented twice and in-memory mutations are visible.
+  compose_with:
+  - Repository
+  - UnitOfWork
+  - DataMapper
+  - Aggregate
+- name: MaterializedView
+  namespace: data
+  concern: data.persistence
+  purpose: Maintain a pre-computed query result kept up to date by an incremental feed so read queries never recompute the whole source.
+  compose_with:
+  - ChangeDataCapture
+  - EventStream
+  - IdempotentConsumer
+  - Specification
+- name: OptimisticConcurrency
+  namespace: data
+  concern: data.persistence
+  purpose: Compare-and-swap write pattern; write fails cleanly when the stored version changed since the reader last saw it, with no hidden retry.
+  compose_with:
+  - RetryPolicy
+  - UnitOfWork
+  - AuditEvent
+- name: Repository
+  namespace: data
+  concern: data.persistence
+  purpose: Mediate between the domain model and the data-mapping layer with a collection-like interface scoped to one aggregate root.
+  compose_with:
+  - UnitOfWork
+  - IdentityMap
+  - Specification
+  - Aggregate
+- name: ShardedCounter
+  namespace: data
+  concern: data.persistence
+  purpose: Hot-key-safe monotonic per-key counter distributed across N fixed shards; value() sums across shards; reset requires a policy token.
+  compose_with:
+  - MetricMeter
+  - DistributedLock
+  - CorrelationContext
+- name: TransactionalBatch
+  namespace: data
+  concern: data.persistence
+  purpose: Offer cross-key atomicity against one state store without application-level two-phase commit or compensating transactions.
+  compose_with:
+  - UnitOfWork
+  - KeyValueBucket
+  - TransactionalOutbox
+  - IdempotentConsumer
+- name: UnitOfWork
+  namespace: data
+  concern: data.persistence
+  purpose: Track object changes during a business transaction and flush them to storage as one atomic commit or rollback.
+  compose_with:
+  - Repository
+  - IdentityMap
+  - TransactionalOutbox
+  - LifetimeScope
+- name: ConfigBinding
+  namespace: data
+  concern: data.schema
+  purpose: Bind a namespaced slice of runtime configuration to a typed record, validated at startup so misconfiguration fails fast, not at request time.
+  compose_with:
+  - DiContainer
+  - SecretsVault
+  - LifetimeScope
+  - FeatureToggle
+- name: DiContainer
+  namespace: data
+  concern: data.schema
+  purpose: Registry that resolves a typed request for a dependency into a constructed instance obeying the declared lifetime scope.
+  compose_with:
+  - LifetimeScope
+  - ConfigBinding
+  - Repository
+  - UnitOfWork
+- name: LegalHold
+  namespace: data
+  concern: data.schema
+  purpose: Suspend retention-driven deletion and erasure cascades for records covered by a litigation or regulatory hold.
+  compose_with:
+  - RetentionPolicy
+  - DataSubjectRequest
+  - AuditEvent
+  - TamperEvidentAuditLog
+- name: LifetimeScope
+  namespace: data
+  concern: data.schema
+  purpose: 'Typed enumeration that fixes how long a resolved instance lives: the whole process, one request, or one operation.'
+  compose_with:
+  - DiContainer
+  - ConfigBinding
+  - UnitOfWork
+  - RequestContext
+- name: PiiClassification
+  namespace: data
+  concern: data.schema
+  purpose: Tag every persisted field with a sensitivity class so serialization goes through one central mask that redacts above the audience's cap.
+  compose_with:
+  - RetentionPolicy
+  - DataSubjectRequest
+  - DataResidencyPolicy
+  - OutputEncoder
+- name: CausalReorderBuffer
+  namespace: events
+  concern: events
+  purpose: Buffer incoming events per (aggregate_id, sequence), drain in strict causal order, and emit a single gap event when a predecessor times out.
+  compose_with:
+  - IdempotentConsumer
+  - DeadLetterRoute
+  - EventBus
+- name: DeadLetterRoute
+  namespace: events
+  concern: events
+  purpose: Named destination where undeliverable or repeatedly failed messages are routed after the redelivery budget is exhausted.
+  compose_with:
+  - IdempotentConsumer
+  - RetryPolicy
+  - TopicBus
+  - AuditEvent
+- name: DomainEvent
+  namespace: events
+  concern: events
+  purpose: Record an immutable fact about something meaningful that happened in the domain and publish it to domain subscribers.
+  compose_with:
+  - EventEnvelope
+  - TransactionalOutbox
+  - Aggregate
+  - TopicBus
+- name: EventEnvelope
+  namespace: events
+  concern: events
+  purpose: Frozen, validated dataclass that captures the CloudEvents 1.0.2 canonical shape and makes routing/version/time first-class.
+  compose_with:
+  - DomainEvent
+  - TopicBus
+  - StreamSubject
+  - IdempotentConsumer
+- name: EventSourcedStore
+  namespace: events
+  concern: events
+  purpose: Persist aggregate state as an ordered sequence of domain events and reconstruct current state by folding over the log.
+  compose_with:
+  - DomainEvent
+  - EventStream
+  - Aggregate
+  - MaterializedView
+- name: EventStream
+  namespace: events
+  concern: events
+  purpose: Ordered, append-only log of events partitioned by key and replayable from any offset by any number of independent consumers.
+  compose_with:
+  - TopicBus
+  - EventEnvelope
+  - IdempotentConsumer
+  - ChangeDataCapture
+- name: IdempotentConsumer
+  namespace: events
+  concern: events
+  purpose: Apply a message's effect at most once per logical key while tolerating at-least-once delivery from the transport.
+  compose_with:
+  - InboxDeduplicator
+  - TransactionalOutbox
+  - DeadLetterRoute
+  - SignatureVerifier
+- name: InboxDeduplicator
+  namespace: events
+  concern: events
+  purpose: Record processed message identifiers in the consumer's database so redelivered messages are detected by a local primary-key conflict.
+  compose_with:
+  - IdempotentConsumer
+  - TransactionalOutbox
+  - UnitOfWork
+  - EventStream
+- name: SagaOrchestrator
+  namespace: events
+  concern: events
+  purpose: Coordinate a multi-step business transaction across services by driving each step and triggering compensations on partial failure.
+  compose_with:
+  - WorkflowRun
+  - TransactionalOutbox
+  - DomainEvent
+  - IdempotentConsumer
+- name: StreamSubject
+  namespace: events
+  concern: events
+  purpose: Shared type for hierarchical subject names and pattern matching so routing, filtering, and authorization share one vocabulary.
+  compose_with:
+  - EventEnvelope
+  - TopicBus
+  - EventStream
+  - RequestGuard
+- name: TopicBus
+  namespace: events
+  concern: events
+  purpose: Publish and subscribe facade over a broker topic that delivers CloudEvents at least once to named subscribers.
+  compose_with:
+  - EventEnvelope
+  - StreamSubject
+  - IdempotentConsumer
+  - DeadLetterRoute
+- name: TransactionalOutbox
+  namespace: events
+  concern: events
+  purpose: Store outgoing messages in the same local transaction as the state change so a relay can publish them at-least-once without dual writes.
+  compose_with:
+  - UnitOfWork
+  - IdempotentConsumer
+  - DomainEvent
+  - EventStream
+- name: OutboundBinding
+  namespace: extras
+  concern: extras
+  purpose: Keep every external integration behind one declarative adapter that exposes a typed-operation surface and hides SDK quirks.
+  compose_with:
+  - AntiCorruptionLayer
+  - CircuitBreaker
+  - RetryPolicy
+  - SecretsVault
+- name: RequestShape
+  namespace: extras
+  concern: extras
+  purpose: "Capture a request's resiliency context \u2014 priority class, deadline, idempotency key, retry-count \u2014 so downstream primitives react the same way."
+  compose_with:
+  - TimeoutBudget
+  - LoadShedder
+  - IdempotentConsumer
+  - RetryPolicy
+- name: RpcInterceptor
+  namespace: extras
+  concern: extras
+  purpose: Define the single middleware seam for remote calls, specifying what an interceptor may do and in what order interceptors compose.
+  compose_with:
+  - OutboundBinding
+  - MiddlewarePipeline
+  - CorrelationContext
+  - Tracer
+- name: SchemaComparator
+  namespace: extras
+  concern: extras
+  purpose: 'Diffs two OpenAPI 3.x schemas and classifies every change as breaking, compatible, or additive. Designed to run in CI as a change-gate: a non-empty `breaking`
+    list MUST fail the pipeline. Pure-function, no I/O.'
+  compose_with:
+  - AuditEvent
+  - DeprecationEntry
+  - DeprecationRegistry
+  - FeatureToggle
+- name: VirtualActor
+  namespace: extras
+  concern: extras
+  purpose: Serialize writes per entity without hand-rolling locks; give entities a durable reminder surface for time-based behavior.
+  compose_with:
+  - WorkflowRun
+  - DistributedLock
+  - IdempotentConsumer
+  - DurableTimer
+- name: FeatureToggle
+  namespace: flags
+  concern: flags
+  purpose: Named boolean or variant predicate, evaluated against the current context, that controls whether a code path runs.
+  compose_with:
+  - RequestGuard
+  - ConfigBinding
+  - CurrentPrincipal
+  - AuditEvent
+- name: ActivityCall
+  namespace: jobs
+  concern: jobs
+  purpose: Pin the activity contract so every tool uses the same timeouts, retry policy, heartbeat rules, and typed inputs/outputs.
+  compose_with:
+  - WorkflowRun
+  - RetryPolicy
+  - TimeoutBudget
+  - IdempotentConsumer
+- name: DurableTimer
+  namespace: jobs
+  concern: jobs
+  purpose: Expose a replay-safe sleep API so workflows can wait for minutes, hours, or days without holding a thread or losing state on restart.
+  compose_with:
+  - WorkflowRun
+  - VirtualActor
+  - SagaOrchestrator
+  - ActivityCall
+- name: WorkflowRun
+  namespace: jobs
+  concern: jobs
+  purpose: Give the application a single contract for long-running orchestrations that survive process restart, rebalancing, and deploy.
+  compose_with:
+  - ActivityCall
+  - DurableTimer
+  - SagaOrchestrator
+  - VirtualActor
+- name: InputGuardrail
+  namespace: llm
+  concern: llm
+  purpose: Intercept user input before it reaches a model and reject, redact, or transform it against deterministic policy.
+  compose_with:
+  - PromptInjectionFilter
+  - PromptTemplate
+  - OutputGuardrail
+  - InputValidator
+- name: OutputGuardrail
+  namespace: llm
+  concern: llm
+  purpose: Inspect model output after generation and reject, rewrite, or annotate it against schema, policy, and safety predicates.
+  compose_with:
+  - InputGuardrail
+  - PromptInjectionFilter
+  - PromptTemplate
+  - LlmTrace
+- name: PromptInjectionFilter
+  namespace: llm
+  concern: llm
+  purpose: 'Make indirect prompt injection a single well-defined failure surface: one primitive evaluates untrusted context and quarantines suspicious input.'
+  compose_with:
+  - InputGuardrail
+  - OutputGuardrail
+  - PromptTemplate
+  - LlmTrace
+- name: PromptTemplate
+  namespace: llm
+  concern: llm
+  purpose: Declare a named, versioned, parameterized prompt whose text, variables, and target model are pinned and reviewable.
+  compose_with:
+  - InputGuardrail
+  - OutputGuardrail
+  - LlmTrace
+  - PromptInjectionFilter
+- name: AccessLog
+  namespace: obs
+  concern: observability
+  purpose: Record every successful READ of a classified record separately from the security audit log so accounting-of-disclosures stays tractable.
+  compose_with:
+  - AuditEvent
+  - TamperEvidentAuditLog
+  - PiiClassification
+  - CurrentPrincipal
+- name: CardinalityGuard
+  namespace: obs
+  concern: observability
+  purpose: Bound the unique attribute-value combinations attached to a metric or log stream to prevent label explosion.
+  compose_with:
+  - MetricMeter
+  - HistogramBuckets
+  - SemanticAttributes
+  - StructuredLogger
+- name: CorrelationContext
+  namespace: obs
+  concern: observability
+  purpose: Propagate a stable request identifier and optional baggage across threads, async tasks, and network boundaries.
+  compose_with:
+  - CorrelationId
+  - StructuredLogger
+  - Tracer
+  - MiddlewarePipeline
+- name: CorrelationId
+  namespace: obs
+  concern: observability
+  purpose: Opaque string that travels with a request across services and log lines so a reader can stitch together the full call chain.
+  compose_with:
+  - CorrelationContext
+  - StructuredLogger
+  - Tracer
+  - RpcInterceptor
+- name: ErrorSink
+  namespace: obs
+  concern: observability
+  purpose: Capture uncaught exceptions with fingerprint grouping, attach current trace and correlation context, and forward to a sink for triage.
+  compose_with:
+  - StructuredLogger
+  - Tracer
+  - CorrelationContext
+  - HealthProbe
+- name: EventBus
+  namespace: obs
+  concern: observability
+  purpose: In-process publish/subscribe point for named framework and application events with structured payloads.
+  compose_with:
+  - LifecycleHook
+  - StructuredLogger
+  - EventEnvelope
+  - MetricMeter
+- name: HealthProbe
+  namespace: obs
+  concern: observability
+  purpose: Expose a typed liveness / readiness signal that reflects the real state of the process and its dependencies.
+  compose_with:
+  - LifecycleHook
+  - CircuitBreaker
+  - MetricMeter
+  - ResourceDescriptor
+- name: HistogramBuckets
+  namespace: obs
+  concern: observability
+  purpose: Define explicit latency and size bucket boundaries for histogram instruments so quantile estimation is stable across versions.
+  compose_with:
+  - MetricMeter
+  - CardinalityGuard
+  - SemanticAttributes
+  - SamplingPolicy
+- name: LifecycleHook
+  namespace: obs
+  concern: observability
+  purpose: Named callback fired at a defined application phase (starting, ready, stopping) so tools can initialize and drain in order.
+  compose_with:
+  - HealthProbe
+  - EventBus
+  - DiContainer
+  - ResourceDescriptor
+- name: LlmTrace
+  namespace: obs
+  concern: observability
+  purpose: Emit structured spans for each model call with attributes aligned to OpenTelemetry GenAI semantic conventions.
+  compose_with:
+  - Tracer
+  - SemanticAttributes
+  - PromptTemplate
+  - SamplingPolicy
+- name: MetricMeter
+  namespace: obs
+  concern: observability
+  purpose: "Record numeric measurements through four instrument shapes \u2014 counter, up-down counter, histogram, async gauge \u2014 with explicit label schemas."
+  compose_with:
+  - HistogramBuckets
+  - CardinalityGuard
+  - SemanticAttributes
+  - TelemetryExporter
+- name: ResourceDescriptor
+  namespace: obs
+  concern: observability
+  purpose: "Describe the entity producing telemetry \u2014 service, version, deployment environment, instance id \u2014 and attach it to every emitted signal."
+  compose_with:
+  - TelemetryExporter
+  - SemanticAttributes
+  - HealthProbe
+  - LifecycleHook
+- name: SamplingPolicy
+  namespace: obs
+  concern: observability
+  purpose: Decide whether a given trace or span is retained, combining head-based and tail-based rules for a predictable observability bill.
+  compose_with:
+  - Tracer
+  - HistogramBuckets
+  - TelemetryExporter
+  - LlmTrace
+- name: SemanticAttributes
+  namespace: obs
+  concern: observability
+  purpose: Expose OpenTelemetry semantic-convention attribute keys as typed constants and enforce that primitives emit only conventional keys.
+  compose_with:
+  - Tracer
+  - MetricMeter
+  - StructuredLogger
+  - CardinalityGuard
+- name: StructuredLogger
+  namespace: obs
+  concern: observability
+  purpose: Emit machine-parseable key/value log records with a fixed level taxonomy and attached trace/span ids.
+  compose_with:
+  - CorrelationContext
+  - Tracer
+  - SemanticAttributes
+  - CardinalityGuard
+- name: TelemetryExporter
+  namespace: obs
+  concern: observability
+  purpose: Serialize batched spans, metrics, or log records into an OTLP-compatible envelope and deliver them to a collector with backoff.
+  compose_with:
+  - Tracer
+  - MetricMeter
+  - ResourceDescriptor
+  - CircuitBreaker
+- name: Tracer
+  namespace: obs
+  concern: observability
+  purpose: Create spans that represent a unit of work, attach attributes and events, link related spans, and propagate context across boundaries.
+  compose_with:
+  - SemanticAttributes
+  - SamplingPolicy
+  - CorrelationContext
+  - TelemetryExporter
+- name: CorsPolicy
+  namespace: policy
+  concern: policy
+  purpose: Deny-by-default evaluator for cross-origin browser requests that only echoes an allowlisted Origin and filters requested headers.
+  compose_with:
+  - RouterPipeline
+  - RequestGuard
+  - ContentSecurityPolicy
+  - CsrfGuard
+- name: DataResidencyPolicy
+  namespace: policy
+  concern: policy
+  purpose: Bind a data_class to a set of allowed storage regions plus a transfer mechanism, rejecting writes to non-allowed regions.
+  compose_with:
+  - PiiClassification
+  - EncryptionPolicy
+  - ProcessingRecord
+  - RetentionPolicy
+- name: EncryptionPolicy
+  namespace: policy
+  concern: policy
+  purpose: Declare cipher, KMS key provider, and rotation cadence per data_class and reject writes of sensitive data before a policy is bound.
+  compose_with:
+  - KeyRotationSchedule
+  - DataResidencyPolicy
+  - PiiClassification
+  - SecretsVault
+- name: KeyRotationSchedule
+  namespace: policy
+  concern: policy
+  purpose: Rotate data-encryption keys on a fixed cadence with an overlap window so prior versions still decrypt existing records.
+  compose_with:
+  - EncryptionPolicy
+  - SecretsVault
+  - CryptoEnvelope
+  - SignatureVerifier
+- name: Bulkhead
+  namespace: resiliency
+  concern: resiliency
+  purpose: Partition concurrency so saturation inside one dependency cannot exhaust resources shared with other dependencies.
+  compose_with:
+  - CircuitBreaker
+  - TimeoutBudget
+  - LoadShedder
+  - RequestShape
+- name: CircuitBreaker
+  namespace: resiliency
+  concern: resiliency
+  purpose: Short-circuit calls to a failing dependency by transitioning between closed, open, and half-open on rolling failure signals.
+  compose_with:
+  - RetryPolicy
+  - TimeoutBudget
+  - Bulkhead
+  - HealthProbe
+- name: CostTracker
+  namespace: resiliency
+  concern: resiliency
+  purpose: Aggregates per-request cost estimates from a pluggable list of estimators (db/s3/api/...). Swallows and logs estimator exceptions so an instrumented cost
+    path NEVER fails the underlying request. Retains a bounded history for post-hoc analys
+  compose_with:
+  - LlmTrace
+  - LoadShedder
+  - MetricMeter
+  - PromptTemplate
+- name: ExcelExporter
+  namespace: resiliency
+  concern: resiliency
+  purpose: Creates openpyxl workbooks with chunked streaming write for large result sets. Enforces a hard `max_rows` cap. Lazy-imports openpyxl so the primitive can
+    live in a codebase that may not depend on it at runtime.
+  compose_with:
+  - LoadShedder
+  - MetricMeter
+  - OutputEncoder
+  - PiiClassification
+- name: GracefulShutdown
+  namespace: resiliency
+  concern: resiliency
+  purpose: "Coordinates process shutdown across three phases \u2014 drain (stop accepting new work), wait-for-in-flight (bounded by timeout), and cleanup (run registered\
+    \ callbacks) \u2014 so a service can exit cleanly on SIGTERM/SIGINT without dropping in-flight"
+  compose_with:
+  - ActivityCall
+  - ErrorSink
+  - HealthProbe
+  - LifecycleHook
+- name: HeterogeneousWorkerPool
+  namespace: resiliency
+  concern: resiliency
+  purpose: Route inference tasks across mixed CPU+GPU workers using observed queue-depth and rolling-latency health, with capability gating and session-stickiness.
+  compose_with:
+  - Bulkhead
+  - CircuitBreaker
+  - MetricMeter
+- name: LoadShedder
+  namespace: resiliency
+  concern: resiliency
+  purpose: Drop or reject low-priority work when the server enters an overload regime so high-priority traffic survives.
+  compose_with:
+  - RateLimiter
+  - Bulkhead
+  - RequestShape
+  - TimeoutBudget
+- name: ModelRegistry
+  namespace: resiliency
+  concern: resiliency
+  purpose: Dict-based singleton registry for lazily-loaded model instances (ML, embeddings, rule-engines). Each name:version maps to a zero-arg loader callable; the
+    object is constructed on first `get()` and cached.
+  compose_with:
+  - CardinalityGuard
+  - FeatureToggle
+  - KeyValueBucket
+  - LifecycleHook
+- name: RateLimiter
+  namespace: resiliency
+  concern: resiliency
+  purpose: Enforce a maximum rate of admitted operations over a rolling window with optional waiting and per-tenant fairness.
+  compose_with:
+  - LoadShedder
+  - RequestShape
+  - Bulkhead
+  - AuditEvent
+- name: Redactor
+  namespace: resiliency
+  concern: resiliency
+  purpose: Structlog processor that redacts PII-shaped substrings (emails, CC numbers, tokens, etc.) from every string value in an event dict, in-place. Called on
+    the logging hot path; MUST be O(1) in event-dict size for non-string values and never ra
+  compose_with:
+  - AccessLog
+  - AuditEvent
+  - ErrorSink
+  - PiiClassification
+- name: RetryBudget
+  namespace: resiliency
+  concern: resiliency
+  purpose: 'Sliding-window retry budget: caps the ratio of retries to total requests over a rolling time window so a failing downstream cannot be DDoS''d by the caller''s
+    own retry loop. Enforces only after a warm-up threshold (`min_requests`) to avoid f'
+  compose_with:
+  - CircuitBreaker
+  - HealthProbe
+  - MetricMeter
+  - RequestShape
+- name: RetryPolicy
+  namespace: resiliency
+  concern: resiliency
+  purpose: Describe under which conditions a failed call may be retried, bounded by max attempts, backoff with jitter, and budget.
+  compose_with:
+  - CircuitBreaker
+  - TimeoutBudget
+  - IdempotentConsumer
+  - RequestShape
+- name: TimeoutBudget
+  namespace: resiliency
+  concern: resiliency
+  purpose: Attach a monotonic deadline to an inbound request and propagate the remaining budget to every downstream call.
+  compose_with:
+  - RequestShape
+  - CircuitBreaker
+  - RetryPolicy
+  - MiddlewarePipeline
+- name: TracingBuffer
+  namespace: resiliency
+  concern: resiliency
+  purpose: Thread-safe in-memory ring buffer of the last N request traces. Supports newest-first iteration, lookup by request id, and p99 slow-path query. Designed
+    for in-process diagnostic UIs, NOT durable storage.
+  compose_with:
+  - CardinalityGuard
+  - CorrelationContext
+  - ErrorSink
+  - MetricMeter
+- name: ContentSecurityPolicy
+  namespace: security
+  concern: security
+  purpose: Compose, serialize, and enforce a Content Security Policy header that constrains script, style, frame, and connect sources.
+  compose_with:
+  - CorsPolicy
+  - CsrfGuard
+  - OutputEncoder
+  - RouterPipeline
+- name: CryptoEnvelope
+  namespace: security
+  concern: security
+  purpose: Encrypt and decrypt payloads with authenticated encryption, key-id-tagged ciphertext, and deterministic nonce discipline.
+  compose_with:
+  - KeyRotationSchedule
+  - SecretsVault
+  - SignatureVerifier
+  - EncryptionPolicy
+- name: CsrfGuard
+  namespace: security
+  concern: security
+  purpose: Bind state-changing HTTP requests to the authenticated session through per-session tokens validated on the server side.
+  compose_with:
+  - SessionStore
+  - CorsPolicy
+  - RequestGuard
+  - ContentSecurityPolicy
+- name: InputValidator
+  namespace: security
+  concern: security
+  purpose: Parse and constrain inbound payloads against a declared schema with typed coercion, length/range caps, and rejection reasons.
+  compose_with:
+  - ValueTransform
+  - OutputEncoder
+  - ValueObject
+  - RequestGuard
+- name: OutputEncoder
+  namespace: security
+  concern: security
+  purpose: Encode untrusted values for a named sink using sink-specific escaping rules per OWASP ASVS V5.3 and CheatSheet guidance.
+  compose_with:
+  - InputValidator
+  - ContentSecurityPolicy
+  - PiiClassification
+  - ValueTransform
+- name: PasswordHasher
+  namespace: security
+  concern: security
+  purpose: Derive a verifier from a user-supplied secret using a memory-hard KDF with per-credential salt and tunable cost parameters.
+  compose_with:
+  - SecretsVault
+  - AuditEvent
+  - TotpVerifier
+  - AuthorizationCodeFlow
+- name: SecretsVault
+  namespace: security
+  concern: security
+  purpose: Fetch, cache, rotate, and audit application secrets through a named-secret interface backed by an external provider.
+  compose_with:
+  - KeyRotationSchedule
+  - CryptoEnvelope
+  - SignatureVerifier
+  - AuditEvent
+- name: SignatureVerifier
+  namespace: security
+  concern: security
+  purpose: Verify HMAC / Ed25519 / ECDSA signatures with domain separation, pinned trust anchors, and constant-time comparison.
+  compose_with:
+  - CryptoEnvelope
+  - SecretsVault
+  - IdempotentConsumer
+  - AuditEvent
