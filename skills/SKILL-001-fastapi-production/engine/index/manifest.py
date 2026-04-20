@@ -51,11 +51,14 @@ VENOUS_ROOT = SKILL_ROOT / "core" / "venous"
 
 # Where MCP_TOOL declarations live. Order drives discovery; later entries
 # DO NOT override earlier ones (ManifestError is raised on duplicate names).
+# NOTE: `mcp_tools/` is deliberately NOT scanned. The tier-1 meta tools
+# under `mcp_tools/tier1.py` operate ON the manifest and must NOT appear
+# IN it (they would be circular entries pointing at themselves). Their
+# registration goes through `register_tier1_tools` instead of discovery.
 TOOL_SCAN_ROOTS: tuple[tuple[str, Path], ...] = (
     ("adapt",      SKILL_ROOT / "adapt"),
     ("generators", SKILL_ROOT / "generators"),
     ("modules",    SKILL_ROOT / "modules"),
-    ("mcp_tools",  SKILL_ROOT / "mcp_tools"),
     ("benchmark",  SKILL_ROOT / "benchmark"),
 )
 
