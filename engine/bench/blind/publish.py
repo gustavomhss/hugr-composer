@@ -58,6 +58,15 @@ def aggregate_and_write(run_root: Path, manifest: dict) -> dict:
     (run_root / "sft.jsonl").write_text(
         "\n".join(json.dumps(r) for r in sft) + ("\n" if sft else "")
     )
+    # Build the HTML dashboard alongside the JSON aggregates so a reviewer
+    # can open one file and see the pre-registered hypothesis outcome.
+    try:
+        from engine.bench.blind.dashboard import render_html
+        (run_root / "dashboard.html").write_text(
+            render_html(aggregate, run_root.name), encoding="utf-8",
+        )
+    except Exception:  # noqa: BLE001
+        pass
     return aggregate
 
 

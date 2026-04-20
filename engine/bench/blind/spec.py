@@ -36,7 +36,8 @@ class Spec:
     boot_command: str               # e.g. "uvicorn app.main:app --port {PORT}"
     judge_dir: Path                 # contains sealed test files
     health_probe: str               # e.g. "/health"
-    timeout_s: int
+    timeout_s: int                  # pytest timeout
+    boot_health_timeout_s: int = 45 # max wait for health probe 200
 
     @property
     def difficulty_axes(self) -> list[str]:
@@ -120,6 +121,7 @@ def load_spec(spec_dir: Path) -> Spec:
         judge_dir=judge_dir,
         health_probe=meta["health_probe"],
         timeout_s=int(meta["timeout_s"]),
+        boot_health_timeout_s=int(meta.get("boot_health_timeout_s", 45)),
     )
 
 

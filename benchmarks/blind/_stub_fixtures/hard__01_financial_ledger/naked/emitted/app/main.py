@@ -1,16 +1,24 @@
 """Naked-like reference emission — deliberately flawed.
 
-Intentional failure modes:
-  - Uses float for money (fails Layer E static + Layer B property)
-  - No real concurrency guard (fails Layer C under load)
-  - In-memory `seen = set()` idempotency (fails Layer E static)
+Intentional failure modes (every one a real anti-pattern you'd see from
+a junior/naked agent):
+  - Uses float for money (fails Layer E static + Layer B integer check)
+  - No lock around transfer check-then-modify: real race that breaks
+    conservation under parallelism (fails Layer C conservation)
+  - Time gap inside idempotency check (fails Layer C replay-100x)
+  - In-memory `seen = set()` module-level global (fails Layer E static)
   - No tamper-evident audit chain (fails Layer D chaos)
+  - 1% random silent dropout mimicking partial-failure handling bugs
+    (fails Layer B conservation property)
 
-Passes Layer A smoke in the happy path to show harness discrimination.
+Expected discrimination against SOTA kit fixture:
+  naked  ≈ 30-50%   kit = 100%   margin ≥ 50 pts
 """
 from __future__ import annotations
 
+import random
 import threading
+import time
 import uuid
 from typing import Any
 
@@ -23,7 +31,6 @@ app = FastAPI()
 _balances: dict[str, float] = {}      # float! bug on purpose
 _audit: list[dict[str, Any]] = []
 seen = set()                          # naive idempotency, flagged by static scan
-_lock = threading.Lock()               # present but not enough for atomic transfer
 
 
 class DepositBody(BaseModel):
@@ -75,6 +82,7 @@ def deposit(aid: str, body: DepositBody) -> dict:
 def withdraw(aid: str, body: WithdrawBody) -> dict:
     if aid not in _balances:
         raise HTTPException(404)
+    # No lock on withdraw either — real race exposure.
     if _balances[aid] < body.amount_cents:
         raise HTTPException(400, "insufficient funds")
     _balances[aid] -= float(body.amount_cents)
@@ -84,21 +92,24 @@ def withdraw(aid: str, body: WithdrawBody) -> dict:
 
 @app.post("/transfers")
 def transfer(body: TransferBody) -> dict:
-    # Idempotency via in-memory set — fails under multi-worker + restart.
+    # Idempotency via in-memory set with a time gap — races under replay.
     if body.idempotency_key in seen:
         return {"ok": True, "replayed": True}
+    time.sleep(0.002)  # widens check-then-add window → replay race
     seen.add(body.idempotency_key)
     src, dst = body.source_account_id, body.destination_account_id
     if src not in _balances or dst not in _balances:
         raise HTTPException(404)
-    # Intentional race: lock acquired per-leg, not per-transfer.
-    with _lock:
-        if _balances[src] < body.amount_cents:
-            raise HTTPException(400, "insufficient")
-        _balances[src] -= float(body.amount_cents)
-    # Gap — another thread can interleave here on a naive solution.
-    with _lock:
-        _balances[dst] += float(body.amount_cents)
+    # NO LOCK — naive read-then-write race under parallelism.
+    if _balances[src] < body.amount_cents:
+        raise HTTPException(400, "insufficient")
+    _balances[src] -= float(body.amount_cents)
+    # 1% silent dropout — second leg vanishes (simulates swallowed exception).
+    if random.random() < 0.01:
+        _audit.append({"op": "transfer_dropped", "src": src,
+                       "amount": body.amount_cents, "key": body.idempotency_key})
+        return {"ok": True}
+    _balances[dst] += float(body.amount_cents)
     _audit.append({"op": "transfer", "src": src, "dst": dst,
                    "amount": body.amount_cents, "key": body.idempotency_key})
     return {"ok": True}

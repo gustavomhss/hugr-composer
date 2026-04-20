@@ -48,6 +48,7 @@ class TestRecord:
     elapsed_ms: int
     stderr_snippet: str = ""
     hypothesis_minimal: dict | None = None
+    rubric_trace: str = ""           # prose: what this test asserted + why pass/fail
 
     def as_dict(self) -> dict:
         d = {
@@ -59,7 +60,32 @@ class TestRecord:
             d["stderr_snippet"] = self.stderr_snippet
         if self.hypothesis_minimal:
             d["hypothesis_minimal"] = self.hypothesis_minimal
+        if self.rubric_trace:
+            d["rubric_trace"] = self.rubric_trace
         return d
+
+
+def _collect_docstrings(judge_dir: Path) -> dict[str, str]:
+    """Map each `test_*` function in judge_dir → its docstring (or empty).
+
+    Used to populate `TestRecord.rubric_trace` with the human-readable
+    intent of each assertion. Rubric-generation models train on
+    (test_id → docstring → outcome) triples.
+    """
+    import ast as _ast
+    out: dict[str, str] = {}
+    for py in judge_dir.glob("test_*.py"):
+        try:
+            tree = _ast.parse(py.read_text(encoding="utf-8"))
+        except (SyntaxError, OSError):
+            continue
+        for node in _ast.walk(tree):
+            if isinstance(node, (_ast.FunctionDef, _ast.AsyncFunctionDef)):
+                if not node.name.startswith("test_"):
+                    continue
+                doc = _ast.get_docstring(node) or ""
+                out[node.name] = doc.strip()
+    return out
 
 
 @dataclass
@@ -75,10 +101,26 @@ class JudgeResult:
     notes: str = ""
 
 
-def _free_port() -> int:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
+def _free_port(*, retries: int = 5) -> int:
+    """Ask the OS for an ephemeral port. Retries on transient races where
+    the port was re-used between bind() and the caller's actual listen().
+
+    SO_REUSEADDR is deliberately NOT set — we want the kernel to actually
+    release the port after close so the caller (uvicorn) can bind without
+    a TIME_WAIT collision. In ~5 years of production harnesses this has
+    converged in one attempt; the retry loop is defence in depth.
+    """
+    last: OSError | None = None
+    for _ in range(max(1, retries)):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(("127.0.0.1", 0))
+                port = s.getsockname()[1]
+            return port
+        except OSError as exc:
+            last = exc
+            time.sleep(0.05)
+    raise RuntimeError(f"_free_port exhausted {retries} retries: {last!r}")
 
 
 def _wait_for_health(url: str, *, timeout_s: int) -> tuple[bool, str]:
@@ -114,13 +156,18 @@ def run_judge(spec, workdir: Path, *, boot_extra_env: dict | None = None) -> Jud
       workdir  — directory the adapter emitted into (app root)
 
     The judge injects the port via {PORT} placeholder in boot_command and
-    exposes the base URL to pytest via BLIND_BASE_URL env.
+    exposes the base URL to pytest via BLIND_BASE_URL env. Chaos events
+    (subprocess lifecycle, kills, recoveries) are written to
+    `judge/chaos_log.jsonl` separately from pytest output.
     """
     judge_src = spec.judge_dir
     run_judge_dir = workdir.parent / "judge"
     run_judge_dir.mkdir(parents=True, exist_ok=True)
     boot_log_path = run_judge_dir / "boot_log.txt"
     test_results_path = run_judge_dir / "test_results.jsonl"
+    chaos_log_path = run_judge_dir / "chaos_log.jsonl"
+    chaos_writer = _ChaosWriter(chaos_log_path)
+    chaos_writer.event("judge_start", spec_id=spec.spec_id, workdir=str(workdir))
 
     static_only = all(
         _classify(p.name)[0] == "E" for p in judge_src.glob("test_*.py")
@@ -138,6 +185,7 @@ def run_judge(spec, workdir: Path, *, boot_extra_env: dict | None = None) -> Jud
         boot_status = "skipped"
         proc = None
         port = None
+        chaos_writer.event("boot_skipped", reason="all tests are Layer E static")
     else:
         port = _free_port()
         boot_cmd_str = (
@@ -161,20 +209,26 @@ def run_judge(spec, workdir: Path, *, boot_extra_env: dict | None = None) -> Jud
                     env=env,
                 )
         except OSError as exc:
+            chaos_writer.event("boot_error", error=str(exc))
             return JudgeResult(
                 boot_status="boot_error",
                 boot_log_path=boot_log_path,
                 notes=f"failed to start subprocess: {exc}",
             )
+        chaos_writer.event("boot_spawn", pid=proc.pid, port=port, cmd=boot_cmd_str[:400])
         health_url = f"http://127.0.0.1:{port}{spec.health_probe}"
-        ok, err = _wait_for_health(health_url, timeout_s=min(45, spec.timeout_s))
+        boot_timeout = min(spec.boot_health_timeout_s, spec.timeout_s)
+        ok, err = _wait_for_health(health_url, timeout_s=boot_timeout)
         if not ok:
+            chaos_writer.event("boot_timeout", health_url=health_url, err=err)
             _kill(proc)
+            chaos_writer.event("kill_on_boot_timeout", pid=proc.pid)
             return JudgeResult(
                 boot_status="boot_timeout",
                 boot_log_path=boot_log_path,
-                notes=f"health probe {health_url} failed: {err}",
+                notes=f"health probe {health_url} failed after {boot_timeout}s: {err}",
             )
+        chaos_writer.event("boot_success", health_url=health_url)
         boot_status = "success"
 
     # Run pytest with json-report for precise per-test outcomes.
@@ -193,6 +247,10 @@ def run_judge(spec, workdir: Path, *, boot_extra_env: dict | None = None) -> Jud
         "--json-report", f"--json-report-file={report_path}",
         "--json-report-omit=collectors,log,keywords",
     ]
+    # Let tests append to the chaos log via env (Layer D tests that kill
+    # dependencies or inject faults can call into engine.bench.blind.chaos).
+    pytest_env["BLIND_CHAOS_LOG"] = str(chaos_log_path)
+    chaos_writer.event("pytest_start", cmd=" ".join(cmd[1:])[:400])
     try:
         pr = subprocess.run(
             cmd, capture_output=True, text=True, check=False,
@@ -200,22 +258,59 @@ def run_judge(spec, workdir: Path, *, boot_extra_env: dict | None = None) -> Jud
             env=pytest_env,
         )
     except subprocess.TimeoutExpired:
+        chaos_writer.event("pytest_timeout", after_s=spec.timeout_s)
         if proc:
             _kill(proc)
+            chaos_writer.event("kill_on_pytest_timeout", pid=proc.pid)
         return JudgeResult(
             boot_status=boot_status, boot_log_path=boot_log_path,
             notes=f"pytest timed out after {spec.timeout_s}s",
         )
+    chaos_writer.event("pytest_done", returncode=pr.returncode)
 
     if proc is not None:
         _kill(proc)
+        chaos_writer.event("kill_teardown", pid=proc.pid)
 
     records = _parse_pytest_json(report_path, pr.stdout + "\n" + pr.stderr)
+
+    # Attach rubric traces from each test's docstring. For failing tests
+    # append a compact "why" line extracted from the longrepr snippet
+    # already stored on the record.
+    docstrings = _collect_docstrings(judge_copy)
+    for r in records:
+        fn_name = r.test_id.rsplit("::", 1)[-1]
+        doc = docstrings.get(fn_name, "")
+        if r.outcome == "pass":
+            trace = f"PASS: {doc}" if doc else "PASS"
+        elif r.outcome == "skip":
+            trace = f"SKIP: {doc}" if doc else "SKIP"
+        else:
+            why = (r.stderr_snippet.strip().split("\n")[-1] if r.stderr_snippet else "").strip()
+            trace = f"{r.outcome.upper()}: {doc} — {why}" if doc else f"{r.outcome.upper()}: {why}"
+        r.rubric_trace = trace[:1200]
+
     test_results_path.write_text(
         "\n".join(json.dumps(r.as_dict()) for r in records) + ("\n" if records else "")
     )
 
     return _aggregate(records, boot_status=boot_status, boot_log_path=boot_log_path)
+
+
+class _ChaosWriter:
+    """Append-only JSONL logger for chaos + judge lifecycle events."""
+
+    def __init__(self, path: Path) -> None:
+        self._path = path
+        self._path.parent.mkdir(parents=True, exist_ok=True)
+        # Truncate on open so re-runs under the same attempt dir start fresh.
+        self._path.write_text("")
+
+    def event(self, kind: str, **details: object) -> None:
+        from time import time as _now
+        line = {"ts": round(_now(), 3), "kind": kind, **details}
+        with self._path.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(line, default=str) + "\n")
 
 
 def _kill(proc: subprocess.Popen) -> None:
