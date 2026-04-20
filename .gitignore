@@ -1,2 +1,54 @@
+# Python
 __pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+
+# Virtualenv
+.venv/
+venv/
+env/
+
+# Claude / agent state
 .claude/
+
+# Machine-generated artefacts from engine/extraction/ (regenerate via pipeline)
+# CONTRACT.md §B0.8 — these are NOT code; do not commit.
+skills/SKILL-001-fastapi-production/engine/extraction/tools_latent_primitives.json
+skills/SKILL-001-fastapi-production/engine/extraction/primitive_candidates_ranked.json
+skills/SKILL-001-fastapi-production/engine/extraction/dedupe_report.json
+skills/SKILL-001-fastapi-production/engine/extraction/ambiguous_primitives.json
+
+# Per-primitive T0 compile reports (regenerate via engine.extraction.gate_t0)
+skills/SKILL-001-fastapi-production/core/venous/**/_t0_report.json
+skills/SKILL-001-fastapi-production/core/venous/**/_evidence/
+
+# Benchmark raw subagent output — each spec × run is regenerable. Only
+# `benchmarks/latest_score.json` is authoritative and committed.
+skills/SKILL-001-fastapi-production/benchmarks/_runs/
+skills/SKILL-001-fastapi-production/benchmarks/v0_score.json
+skills/SKILL-001-fastapi-production/benchmarks/results/
+
+# TLA+ verifier binaries + state caches — large, platform-dependent.
+skills/SKILL-001-fastapi-production/.tla/
+skills/SKILL-001-fastapi-production/states/
+
+# Session-state scratchpads (compaction aids; regenerated per session)
+SESSION_STATE.md
+
+# Build / dist
+build/
+dist/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
