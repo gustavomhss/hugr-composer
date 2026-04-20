@@ -1,0 +1,21 @@
+rules:
+  - id: used_float_for_money
+    description: "Any call to float() in transfer/balance logic is a failure."
+    severity: fail
+    scope: "glob:**/*.py"
+    pattern_any_of:
+      - {kind: "ast_call_name", name: "float"}
+
+  - id: missing_decimal_import
+    description: "Warn if Decimal is not imported anywhere (softer signal than ast)."
+    severity: warn
+    scope: "glob:**/*.py"
+    pattern_any_of:
+      - {kind: "source_regex", regex: "^from decimal import"}
+
+  - id: in_memory_seen_global
+    description: "Top-level `seen = set()` pattern loses dedup state across workers."
+    severity: fail
+    scope: "glob:**/*.py"
+    pattern_any_of:
+      - {kind: "source_regex", regex: "^seen\\s*=\\s*set\\(\\)"}

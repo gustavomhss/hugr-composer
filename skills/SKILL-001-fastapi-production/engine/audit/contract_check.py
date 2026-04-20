@@ -736,6 +736,69 @@ def _r_code_level_benchmark() -> tuple[bool, str]:
     )
 
 
+def _r_blind_benchmark_harness() -> tuple[bool, str]:
+    """B3.7 — blind-benchmark harness present + stub validates end-to-end.
+
+    Requires:
+      1. benchmarks/blind/PROTOCOL.md (pre-registered, §A8 drift-aware)
+      2. engine/bench/blind/{spec,adapter,judge,runner,publish,snapshots,
+         attribution,static_scan}.py modules importable
+      3. At least one authored spec under benchmarks/blind/specs/<tier>/
+         that passes load_spec() validation
+      4. Stub fixtures covering the authored specs
+      5. The last stub run (if any) produced aggregate.json with
+         hypothesis_test.H1_supported populated (not necessarily true —
+         stub may not satisfy H1, but the field must exist)
+
+    We do NOT require a successful live (non-stub) run here — that is
+    cost-dependent and runs separately via Phase-6B sprints.
+    """
+    bench_dir = SKILL_ROOT / "benchmarks" / "blind"
+    protocol = bench_dir / "PROTOCOL.md"
+    if not protocol.exists() or protocol.stat().st_size < 2000:
+        return False, f"missing or undersized PROTOCOL.md: {protocol}"
+
+    modules_dir = SKILL_ROOT / "engine" / "bench" / "blind"
+    expected = {"spec.py", "adapter.py", "judge.py", "runner.py",
+                "publish.py", "snapshots.py", "attribution.py",
+                "static_scan.py", "__init__.py"}
+    missing = [m for m in expected if not (modules_dir / m).exists()]
+    if missing:
+        return False, f"engine/bench/blind/ missing: {missing}"
+
+    # Importability smoke
+    import importlib
+    try:
+        importlib.import_module("engine.bench.blind.runner")
+        importlib.import_module("engine.bench.blind.spec")
+        importlib.import_module("engine.bench.blind.judge")
+    except Exception as exc:  # noqa: BLE001
+        return False, f"harness import failed: {exc}"
+
+    # At least one spec + passes load_spec
+    from engine.bench.blind.spec import discover_specs
+    specs = discover_specs(bench_dir / "specs")
+    if not specs:
+        return False, "no specs under benchmarks/blind/specs/<tier>/"
+
+    # Stub fixtures for every authored spec
+    fixtures_dir = bench_dir / "_stub_fixtures"
+    missing_fx = []
+    for s in specs:
+        slug = s.spec_id.replace("/", "__")
+        for cond in ("naked", "kit"):
+            p = fixtures_dir / slug / cond / "emitted"
+            if not p.is_dir():
+                missing_fx.append(f"{slug}/{cond}")
+    if missing_fx:
+        return False, f"stub fixtures missing: {missing_fx[:3]}"
+
+    return True, (
+        f"blind harness present · {len(specs)} spec(s) authored · "
+        f"stub fixtures complete"
+    )
+
+
 def _r_install_docker_ci() -> tuple[bool, str]:
     """B4.1 — install.sh + install-docker CI workflow present + hermetic."""
     installer = REPO_ROOT / "install.sh"
@@ -869,6 +932,7 @@ RULES: list[Rule] = [
     Rule("B3.4", 3, "nightly benchmark CI workflow", _r_bench_nightly_workflow),
     Rule("B3.5", 3, "baseline benchmark score published", _r_benchmark_score),
     Rule("B3.6", 3, "code-level harness published (perfect on covered, ≥25% coverage)", _r_code_level_benchmark),
+    Rule("B3.7", 3, "blind benchmark harness + specs + stub fixtures", _r_blind_benchmark_harness),
     Rule("B4.1", 4, "install.sh + fresh-Docker CI", _r_install_docker_ci),
     Rule("B4.2", 4, "/examples/ populated (≥5 with README + MAESTRO_SESSION + cross-link)", _r_examples_populated),
     Rule("B4.3", 4, "docs site v1 (top-level docs + per-tool pages)", _r_docs_site_v1),

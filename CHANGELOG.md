@@ -9,9 +9,64 @@ so a reader can tell — in one glance — whether to upgrade.
 
 ---
 
-## [Unreleased]
+## [Unreleased] — v0.3.0-dev
 
-_No unreleased changes._
+Phase 6 — **blind benchmark harness** (third-party-credibility-first).
+In development; not yet versioned as a minor release because live
+runs (naked vs kit on real Claude CLI subagent) have not executed.
+
+### Ships (harness + pre-registration)
+
+- **PROTOCOL.md** — pre-registered 2026-04-20. Declares H1/H2, trajectory
+  schema, contamination guards, two-arm condition design (naked vs kit),
+  and fine-tuning-grade artefact emission (DPO pairs, SFT records,
+  process-reward rows).
+- **Harness modules** under `engine/bench/blind/`:
+  `spec.py` (loader + validator), `adapter.py` (StubAdapter + streaming
+  ClaudeCliAdapter with per-turn snapshots + tool_use/tool_result capture
+  + precise latency_ms), `judge.py` (multi-layer pytest runner w/
+  json-report), `snapshots.py` (tar.zst workdir archive), `attribution.py`
+  (primitive-import scan), `static_scan.py` (YAML-rules AST detector),
+  `runner.py` (orchestrator), `publish.py` (aggregator + DPO pairs +
+  SFT records + anti-pairs).
+- **Seed spec** `hard/01_financial_ledger` with 13-test sealed judge
+  across layers A/B/C/D/E (acceptance smoke, property-based conservation,
+  asyncio concurrency stress, tamper-evidence, AST static scan).
+- **Stub fixtures** (`_stub_fixtures/`) — deliberately-flawed "naked"
+  emission + SOTA "kit" emission. End-to-end plumbing validated:
+    naked → 69.23%   kit → 100.00%   margin 30.77pts → DPO pair emitted.
+- **21 unit tests** (`engine/tests/test_blind_harness.py`) covering
+  spec loader, judge aggregator, pytest-json parser, publish aggregator,
+  attribution, static scan, and snapshot creation. All green.
+- **Contract rule B3.7** — blind harness + authored specs + stub
+  fixtures + importability smoke. 30/30 → **31/31 ALL GREEN**.
+
+### Known open (does not ship in v0.3.0 — tracked as v0.3.1+)
+
+Each of the following is an honest gap the current code calls out
+explicitly in PROTOCOL.md, comments, or `_stub_fixtures/README.md`:
+
+- **Live runs not yet executed.** ClaudeCliAdapter is wired for real
+  (streaming, per-turn snapshots) but v0.3.0 only proved the harness
+  plumbing with stubs. First live naked-vs-kit run will produce the
+  first real aggregate.json under `results/<run_id>/`.
+- **Spec count = 1.** Protocol targets 2 calibration + 10 hard +
+  3 impossible; currently 1 hard. Extending the surface is the
+  authoring sprint that precedes the first full run.
+- **Process-reward per-turn re-judging.** Snapshots per turn work;
+  computing a reward per snapshot requires re-running a cheap Layer-A
+  smoke per snapshot. Deferred — current `pairs.jsonl` / `sft.jsonl`
+  remain fine-tuning-grade at the run level.
+- **Rubric trace generation.** Per-test "why it passed/failed" prose
+  beyond the stderr snippet we already capture — added in v0.3.1.
+- **Chaos log file.** Layer-D currently runs via pytest fixtures
+  inside the judge; a separate `chaos_log.jsonl` is listed in PROTOCOL
+  §5 as v0.3.1.
+- **CI wiring.** Harness stub run + unit tests will move into
+  `.github/workflows/blind-bench-stub.yml` in v0.3.1 (cheap; runs on
+  every push).
+
+These are not silent TODOs — they are declared gaps.
 
 ---
 

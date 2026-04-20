@@ -32,6 +32,12 @@ skills/SKILL-001-fastapi-production/benchmarks/_runs/
 skills/SKILL-001-fastapi-production/benchmarks/v0_score.json
 skills/SKILL-001-fastapi-production/benchmarks/results/
 
+# Blind-benchmark per-run artefacts — fully regenerable from specs +
+# adapters. PROTOCOL.md declares `results/` as additive + disposable for
+# contamination-guard purposes. Commit only the harness + specs + stub
+# fixtures; never the run outputs.
+skills/SKILL-001-fastapi-production/benchmarks/blind/results/
+
 # TLA+ verifier binaries + state caches — large, platform-dependent.
 skills/SKILL-001-fastapi-production/.tla/
 skills/SKILL-001-fastapi-production/states/

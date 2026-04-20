@@ -1,0 +1,28 @@
+{
+  "tier": "hard",
+  "authored_at": "2026-04-20",
+  "author": "Gustavo Schneiter",
+  "difficulty_axes": [
+    "concurrency",
+    "exactly_once",
+    "multi_invariant",
+    "type_safety",
+    "property_based"
+  ],
+  "required_primitives": [
+    "UnitOfWork",
+    "OptimisticConcurrency",
+    "IdempotentConsumer",
+    "IdempotencyStore",
+    "TamperEvidentAuditLog",
+    "AuditEvent",
+    "TransactionalOutbox",
+    "Repository"
+  ],
+  "predicted_naked_score": 28,
+  "predicted_kit_score": 72,
+  "boot_command": "python -m uvicorn app.main:app --port {PORT} --host 127.0.0.1",
+  "health_probe": "/health",
+  "timeout_s": 90,
+  "notes": "Trips naked on: (a) using float for money → off-by-one-cent drift under property tests, (b) using naive ORM writes → race on concurrent transfers, (c) missing or in-memory idempotency store → duplicate side effects on retry, (d) missing audit chain → verify endpoint either absent or trivially returns ok."
+}
