@@ -3,3 +3,6 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Phase 2 docs site — regenerated deterministically by `python -m engine.docs.build`
+docs_site/
