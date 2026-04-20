@@ -1,0 +1,109 @@
+{
+  "_meta": {
+    "purpose": "Ground-truth intents for CONTRACT §B2.2 quality gate. Each entry: a natural-language intent a Maestro would surface, plus the EXPECTED set of primitives to appear in the #1 composition. Gate: top-1 match ≥ 70%, P@3 ≥ 90%.",
+    "match_rule": "top-1 PASS iff the returned composition's primitive set ⊇ expected_primitives (order-insensitive).",
+    "version": 1
+  },
+  "intents": [
+    {
+      "id": "i01",
+      "intent": "webhook receiver with signature verification deduplication and audit trail",
+      "expected_primitives": ["SignatureVerifier", "IdempotentConsumer"]
+    },
+    {
+      "id": "i02",
+      "intent": "encrypt then sign outbound payloads with rotated keys",
+      "expected_primitives": ["CryptoEnvelope", "SignatureVerifier"]
+    },
+    {
+      "id": "i03",
+      "intent": "circuit breaker bounded retry with timeout budget",
+      "expected_primitives": ["CircuitBreaker", "RetryPolicy", "TimeoutBudget"]
+    },
+    {
+      "id": "i04",
+      "intent": "rate limiter with load shedding under pressure",
+      "expected_primitives": ["RateLimiter", "LoadShedder"]
+    },
+    {
+      "id": "i05",
+      "intent": "saga orchestration with durable timers and compensations",
+      "expected_primitives": ["SagaOrchestrator"]
+    },
+    {
+      "id": "i06",
+      "intent": "transactional outbox with change data capture",
+      "expected_primitives": ["TransactionalOutbox"]
+    },
+    {
+      "id": "i07",
+      "intent": "tamper evident audit log with hash chain",
+      "expected_primitives": ["TamperEvidentAuditLog"]
+    },
+    {
+      "id": "i08",
+      "intent": "totp multi factor authentication replay protection",
+      "expected_primitives": ["TotpVerifier"]
+    },
+    {
+      "id": "i09",
+      "intent": "oauth authorization code flow with session store",
+      "expected_primitives": ["AuthorizationCodeFlow"]
+    },
+    {
+      "id": "i10",
+      "intent": "dead letter routing for poison messages with retry budget",
+      "expected_primitives": ["DeadLetterRoute"]
+    },
+    {
+      "id": "i11",
+      "intent": "event sourced aggregate with snapshot",
+      "expected_primitives": ["EventSourcedStore"]
+    },
+    {
+      "id": "i12",
+      "intent": "idempotent consumer with inbox dedup",
+      "expected_primitives": ["IdempotentConsumer", "InboxDeduplicator"]
+    },
+    {
+      "id": "i13",
+      "intent": "structured json logging with correlation ids and tracing",
+      "expected_primitives": ["StructuredLogger", "CorrelationContext"]
+    },
+    {
+      "id": "i14",
+      "intent": "feature toggle with config binding and policy",
+      "expected_primitives": ["FeatureToggle"]
+    },
+    {
+      "id": "i15",
+      "intent": "distributed lock for leader election across workers",
+      "expected_primitives": ["DistributedLock"]
+    },
+    {
+      "id": "i16",
+      "intent": "csrf guard with session store cookies",
+      "expected_primitives": ["CsrfGuard", "SessionStore"]
+    },
+    {
+      "id": "i17",
+      "intent": "cors policy with allowed origins",
+      "expected_primitives": ["CorsPolicy"]
+    },
+    {
+      "id": "i18",
+      "intent": "bulkhead isolation with timeout and circuit breaker",
+      "expected_primitives": ["Bulkhead", "TimeoutBudget"]
+    },
+    {
+      "id": "i19",
+      "intent": "lifecycle hook graceful shutdown with load shedder",
+      "expected_primitives": ["LifecycleHook"]
+    },
+    {
+      "id": "i20",
+      "intent": "repository with unit of work transactional batch",
+      "expected_primitives": ["Repository", "UnitOfWork"]
+    }
+  ]
+}
