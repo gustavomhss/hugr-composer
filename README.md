@@ -17,13 +17,14 @@ scaffold (skill) + slice generators (tools) + reusable building blocks
 ## Current status
 
 ```
-Phase:       4 (productize) — v0.1.0
+Phase:       5 (code-level benchmark) — v0.2.0
 Skills:      1   (SKILL-001-fastapi-production)
 Tools:     183   (MCP-registered: 180 adapt + 2 discovery + 1 audit)
 Primitives: 122  (production, catalog-derived with 10-tier gate)
 Staged:    430+  (core/venous/_extracted/, pre-audited pool)
-Benchmark: 100.00 (plan_level_v3_best_of_ensemble, 20 specs)
-Contract:  28/28 green
+Benchmark: 100.00 plan · 100.00 code-level (20/20 specs × 100%)
+Contract:  30/30 green
+Examples:   20   (full spec coverage; /examples/01-20)
 ```
 
 Numbers machine-verified via

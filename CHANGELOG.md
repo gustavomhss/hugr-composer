@@ -15,6 +15,79 @@ _No unreleased changes._
 
 ---
 
+## [0.2.0] — 2026-04-20
+
+Close-v0.1.0 sprint + Phase 5 code-level benchmark harness. The
+honest limitation admitted in the v0.1.0 notes ("benchmark is
+plan-level, not code-level") is now closed.
+
+### Ships
+
+- **Code-level benchmark harness (B3.6)** — new MCP-adjacent pipeline
+  (`engine/bench/code_level.py`) that runs pytest against executable
+  targets declared in `benchmarks/spec_code_level_map.json` and
+  publishes `benchmarks/code_level_score.json`. Coverage and score
+  are reported separately (never conflated).
+- **20 examples** (5 → 20) — every benchmark spec now has a tier-
+  appropriate, self-contained, stdlib-only example that asserts the
+  spec's acceptance criteria via pytest. Previously 5/20 covered,
+  now 20/20.
+
+### Benchmark
+
+| Methodology                          | Score   | Coverage     |
+| ------------------------------------ | ------- | ------------ |
+| `plan_level_v3_best_of_ensemble`     | 100.00  | 20/20 specs  |
+| `code_level_pytest_direct`           | 100.00  | 20/20 specs  |
+
+Two methodologies, two different failure modes — never conflated.
+A regression in either fails `engine.audit.contract_check` on the
+commit that introduces it.
+
+### Contract
+
+- 29/29 → **30/30** ALL GREEN. New rule: **B3.6** code-level harness
+  published + perfect on covered specs + ≥25% coverage floor.
+- Four tightenings landed in the close sprint (still v0.1.0-labelled):
+  - **B1.1** now rejects half-extracted dirs under production
+    namespaces (caught 12 orphan candidate dirs from pre-Phase-1;
+    all deleted).
+  - **B1.2** now enforces ≥3 Compose-with bullets per primitive
+    (§A5). Presence alone no longer passes.
+  - **B1.7** (new) — FastAPI adapter coverage: ≥15 adapters, every
+    adapter has a test, every adapter maps to a registered
+    primitive (direct prefix or family-tag table).
+  - **B3.5** now enforces a live non-regression floor via
+    `benchmarks/baseline_floor.json` (currently 90.0), on top of
+    the schema hard floor of 30.
+
+### Polish
+
+- `SKILL.md` — full rewrite for ground-truth. Prior version still
+  claimed "Phase 0" and "gap: slice tools do not import primitives".
+- `.github/workflows/skill-001-ci.yml` — stale MCP discovery floor
+  (`>= 105` → `>= 170`), legacy `run_finhealth.py` reference
+  replaced with the Phase-3 schema check, CI test fixtures
+  centralized in a single `env:` block.
+- Archived pre-Phase-3 benchmark surfaces (`benchmark/test_*.py`,
+  `benchmarks/run_finhealth.py`, `benchmarks/HARDCORE_BENCHMARK.md`);
+  `benchmark/analyzer.py` retained for the live `fastapi_analyze`
+  MCP tool with a new `benchmark/README.md` disambiguating the two
+  directories.
+- `install.sh` — fixed ANSI escape rendering + updated tool count
+  from 100 to 180 in the success banner.
+
+### Upgrade notes
+
+- Any in-flight PR touching `core/venous/<ns>/<Name>/` must include
+  the `<Name>.md` in the same commit (B1.1 strict).
+- New FastAPI adapters must ship with `test_<Name>Adapter.py` (B1.7).
+- When adding a benchmark spec, also add its entry to
+  `benchmarks/spec_code_level_map.json` with either a
+  `code_level_target` path or an honest `pending_reason`.
+
+---
+
 ## [0.1.0] — 2026-04-20
 
 First public release. All five phases 0-4 green per `CONTRACT.md`.
