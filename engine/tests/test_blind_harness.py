@@ -289,6 +289,105 @@ def test_snapshot_creates_archive(tmp_path: Path) -> None:
     assert archive.stat().st_size > 0
 
 
+# ---------------------------------------------------------------------------
+# adapter.py
+# ---------------------------------------------------------------------------
+
+def test_adapter_kit_without_mcp_config_raises() -> None:
+    from engine.bench.blind.adapter import (
+        AdapterConfigError, ClaudeCliAdapter, ClaudeCliConfig,
+    )
+    with pytest.raises(AdapterConfigError, match="silently degrade"):
+        ClaudeCliAdapter(ClaudeCliConfig(mcp_config_path=None), name="kit")
+
+
+def test_adapter_kit_with_missing_mcp_config_raises(tmp_path: Path) -> None:
+    from engine.bench.blind.adapter import (
+        AdapterConfigError, ClaudeCliAdapter, ClaudeCliConfig,
+    )
+    missing = tmp_path / "nope.json"
+    with pytest.raises(AdapterConfigError, match="does not exist"):
+        ClaudeCliAdapter(ClaudeCliConfig(mcp_config_path=missing), name="kit")
+
+
+def test_adapter_kit_with_empty_mcp_servers_raises(tmp_path: Path) -> None:
+    from engine.bench.blind.adapter import (
+        AdapterConfigError, ClaudeCliAdapter, ClaudeCliConfig,
+    )
+    f = tmp_path / "cfg.json"
+    f.write_text(json.dumps({"mcpServers": {}}))
+    with pytest.raises(AdapterConfigError, match="no mcpServers"):
+        ClaudeCliAdapter(ClaudeCliConfig(mcp_config_path=f), name="kit")
+
+
+def test_adapter_naked_with_no_mcp_config_ok() -> None:
+    from engine.bench.blind.adapter import ClaudeCliAdapter, ClaudeCliConfig
+    # Naked MUST accept no MCP — that's the point.
+    a = ClaudeCliAdapter(ClaudeCliConfig(mcp_config_path=None), name="naked")
+    assert a.name == "naked"
+
+
+def test_adapter_compact_result_handles_list_and_str() -> None:
+    from engine.bench.blind.adapter import _compact_result
+    assert _compact_result("hello") == "hello"
+    assert _compact_result([{"type": "text", "text": "abc"}]) == "abc"
+    assert _compact_result(None) == ""
+    assert _compact_result({"arbitrary": "dict"}).startswith('{"arbitrary"')
+
+
+# ---------------------------------------------------------------------------
+# runner.py
+# ---------------------------------------------------------------------------
+
+def test_runner_discover_completed_returns_success_only(tmp_path: Path) -> None:
+    from engine.bench.blind.runner import _discover_completed
+    # Craft two attempts: one success, one error (should NOT count as completed).
+    for status, ident in (
+        ("success", ("hard/01_x", "naked", 7919, 1)),
+        ("error",   ("hard/01_x", "kit",   7919, 1)),
+    ):
+        a = tmp_path / ident[0].replace("/", "__") / ident[1] / f"attempt_{ident[3]:02d}"
+        a.mkdir(parents=True)
+        (a / "metrics.json").write_text(json.dumps({
+            "identity": {
+                "spec_id": ident[0], "condition": ident[1],
+                "seed": ident[2], "attempt": ident[3],
+            },
+            "outcome": {"emit_status": status},
+        }))
+    done = _discover_completed(tmp_path)
+    assert ("hard/01_x", "naked", 7919, 1) in done
+    assert ("hard/01_x", "kit", 7919, 1) not in done
+
+
+def test_runner_run_attempt_with_stub_produces_metrics(tmp_path: Path, monkeypatch) -> None:
+    """End-to-end stub: run_attempt against StubAdapter writes metrics.json,
+    brief.md, and the emitted directory into the canonical layout.
+    """
+    from engine.bench.blind.adapter import StubAdapter
+    from engine.bench.blind.runner import run_attempt, RESULTS_ROOT
+    from engine.bench.blind.spec import load_spec
+
+    bench_root = Path(__file__).resolve().parents[2] / "benchmarks" / "blind"
+    fixture_root = bench_root / "_stub_fixtures"
+    spec = load_spec(bench_root / "specs" / "hard" / "01_financial_ledger")
+
+    # Redirect RESULTS_ROOT to tmp to avoid polluting the repo
+    import engine.bench.blind.runner as runner_mod
+    monkeypatch.setattr(runner_mod, "RESULTS_ROOT", tmp_path)
+
+    adapter = StubAdapter(fixture_root, name="kit")
+    m = run_attempt(spec, adapter, run_id="test_run",
+                    condition="kit", attempt=1, seed=7919)
+    assert m["outcome"]["emit_status"] == "success"
+    assert m["outcome"]["final_score"] == 100.0
+
+    adir = tmp_path / "test_run" / "hard__01_financial_ledger" / "kit" / "attempt_01"
+    assert (adir / "metrics.json").exists()
+    assert (adir / "brief.md").exists()
+    assert (adir / "emitted" / "app" / "main.py").exists()
+
+
 def test_snapshot_skips_pycache(tmp_path: Path) -> None:
     workdir = tmp_path / "emitted"
     (workdir / "__pycache__").mkdir(parents=True)
