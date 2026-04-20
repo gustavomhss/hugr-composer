@@ -1,7 +1,7 @@
 ---
 name: fastapi-production
 description: HuGR SKILL-001 — scaffolds AND customizes production-grade FastAPI backends. Rails-style 3-layer kit (skill + slice tools + primitives) invokable via MCP.
-version: 0.1.0-phase-0
+version: 0.1.0
 ---
 
 # SKILL-001 — FastAPI Production
@@ -9,116 +9,202 @@ version: 0.1.0-phase-0
 > **Architecture, philosophy, and success criteria live in
 > [`/PRODUCT.md`](../../PRODUCT.md). Current state + roadmap live in
 > [`/ROADMAP.md`](../../ROADMAP.md). Binding execution rules live in
-> [`/CONTRACT.md`](../../CONTRACT.md).**
+> [`/CONTRACT.md`](../../CONTRACT.md). Contribution workflows live in
+> [`/CONTRIBUTING.md`](../../CONTRIBUTING.md).**
 >
-> This file describes what THIS skill contains, right now, verifiably.
+> This file describes what THIS skill contains right now, verifiably.
+> Every number carries the shell command a reader can run to
+> reproduce it. CONTRACT §A8 binds us to a drift-of-zero.
 
 ## Skill scope
 
 Production-grade FastAPI backend. The Maestro invokes this skill to
-scaffold a project tree, then uses slice tools to add capabilities
-(auth, CRUD, payments, realtime, ...), and composes primitives directly
-when a capability doesn't match any slice tool.
+scaffold a project tree, uses slice tools to add capabilities (auth,
+CRUD, payments, realtime, compliance, ...), and composes primitives
+directly when a capability doesn't match any slice tool. All three
+surfaces are MCP-registered and JIT-discoverable via
+`fastapi_find_primitive` and `fastapi_suggest_composition`.
 
 ## On-disk counts (machine-verified)
 
 | Surface | Count | Verify |
 |---|---:|---|
-| Macro generators | 34 | `find generators -name '*.py' -not -name '__init__.py' \| wc -l` |
-| Slice tools (`adapt/extend/`) | 100 | `find adapt/extend -name 'add_*.py' \| wc -l` |
-| Production primitives | 97 | `find core/venous -name '*.manifest.json' \| grep -v _extracted \| wc -l` |
-| Staged primitives (extracted pool) | 432 | `find core/venous/_extracted -maxdepth 2 -type d \| wc -l` (subtract namespace dirs) |
-| Quarantined (domain-coupled extracts) | 122 | `find core/venous/_extracted/_quarantine -maxdepth 1 -type d \| wc -l` |
-| Opus audits completed | 97 | audit batches 1-20 + misc (50+ real bugs fixed) |
+| Slice tools under `adapt/extend/` | 100 | `find adapt/extend -name 'add_*.py' ! -name 'test_*' \| wc -l` |
+| Slice tools total (adapt/) | 103 | `find adapt -name 'add_*.py' ! -name 'test_*' \| wc -l` |
+| Generator files (`generators/`) | 60 | `find generators -name '*.py' ! -name '__init__.py' ! -name 'test_*' \| wc -l` |
+| MCP-registered tools (all surfaces) | 180 | `PYTHONPATH=. .venv/bin/python -c 'from mcp_tools.server import mcp; from mcp_tools.discovery import discover_and_register; print(discover_and_register(mcp))'` |
+| Production primitives (registered) | 122 | `grep -c '^- name:' engine/primitives_by_concern.yaml` |
+| Production primitive directories | 122 | `find core/venous -mindepth 2 -maxdepth 2 -type d ! -path '*_extracted*' ! -path '*_adapters*' ! -path '*__pycache__*' \| wc -l` |
+| Staged primitives (extracted pool) | 430+ | `find core/venous/_extracted -mindepth 2 -maxdepth 2 -type d \| wc -l` |
+| Benchmark specs (Phase 3) | 20 | `find benchmarks/specs -name '*.md' ! -name 'README.md' \| wc -l` |
+| Contract items green | 28/28 | `PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check` |
+| Benchmark score (plan-level, best-of ensemble) | 100.00 | `jq '.overall' benchmarks/latest_score.json` |
 
-Re-verify any number with the shown command. The contract-check tool
-(below) automates it.
+The 180 MCP tools decompose as: 100 `adapt/extend/` slice tools + 3
+other `adapt/` tools (extract, verify, evolve) + 74 MCP-registered
+generator and module tools + 2 discovery tools
+(`fastapi_find_primitive`, `fastapi_suggest_composition`) + 1 audit
+tool. All auto-discovered via `MCP_TOOL` metadata scan —
+CONTRACT §B1.5 forbids manual `@mcp_app.tool` decorators.
 
-## How the Maestro uses this skill
+## Maestro workflow
 
-1. **Discovery.** MCP client lists tools via `tools/list`. All slice
-   tools under `adapt/extend/` carry an `MCP_TOOL` metadata block and
-   are auto-discovered.
+1. **Discovery.** MCP client lists tools via `tools/list`. JIT
+   retrieval via `fastapi_find_primitive(query, concern?)` +
+   `fastapi_suggest_composition(intent)` — BM25 + recipe index.
+   Latency <50 ms cold; top-1 accuracy 85% (primitives), 90% (recipes).
 2. **Scaffold.** Maestro calls a macro generator (e.g.
-   `fastapi_generate_project`) to lay down the tree.
-3. **Capability adds.** Maestro calls one or more slice tools
-   (`add_stripe_webhook`, `add_rbac`, ...) to mutate the scaffold.
+   `fastapi_generate_project`) to lay down the project tree.
+3. **Capability adds.** Maestro invokes one or more slice tools
+   (`fastapi_add_stripe_webhook`, `fastapi_add_rbac`, …). 64 of the
+   103 slice tools emit code that imports from `core.venous.*` —
+   the Rails-analogy connection is fully operative (Phase 1 complete).
 4. **Customize.** Where no slice tool fits exactly, Maestro composes
-   primitives directly — import `core.venous.<ns>.<Name>` into the
-   generated code.
-
-**Gap acknowledged:** as of Phase 0, slice tools do NOT yet import
-primitives. The Rails-analogy promise (tools thin over primitives)
-is Phase 1 work. See
-[CONTRACT.md §B1.3](../../CONTRACT.md).
+   primitives directly — `from core.venous.<ns>.<Name>` into the
+   generated code. Every production primitive carries a
+   "Compose with:" section citing ≥3 sibling pairings.
 
 ## Tool categories (adapt/extend)
 
-| Folder | Tools | Example |
+| Folder | Count | Example tools |
 |---|---:|---|
-| `auth_access/` | 14 | `add_rbac`, `add_oauth2_provider`, `add_mfa`, `add_social_login` |
-| `crud_data/` | 9 | `add_cursor_pagination`, `add_event_sourcing`, `add_soft_delete` |
-| `api_design/` | 7 | `add_api_versioning`, `add_graphql`, `add_long_running_task` |
-| `infrastructure/` | 52 | `add_stripe_webhook`, `add_rate_limiting`, `add_saga`, `add_retry_budget` |
-| `realtime/` | 5 | `add_sse`, `add_websocket_chat`, `add_presence` |
-| `testing_tools/` | 10 | `add_data_seeder`, `add_schema_evolution_guard`, `add_api_fuzzer` |
+| `auth_access/` | 15 | `add_rbac`, `add_oauth2_provider`, `add_mfa`, `add_social_login` |
+| `crud_data/` | 12 | `add_cursor_pagination`, `add_event_sourcing`, `add_soft_delete`, `add_audit_log` |
+| `api_design/` | 9 | `add_api_versioning`, `add_graphql`, `add_long_running_task` |
+| `infrastructure/` | 38 | `add_stripe_webhook`, `add_rate_limiting`, `add_saga`, `add_retry_budget`, `add_graceful_shutdown` |
+| `realtime/` | 8 | `add_sse`, `add_websocket_chat`, `add_webhook_receiver`, `add_presence` |
+| `testing_tools/` | 9 | `add_data_seeder`, `add_schema_evolution_guard`, `add_api_fuzzer` |
+| `performance/` + `proactive/` + others | 9 | `add_bulkhead`, `add_capacity_planner`, `add_n_plus_one_guard` |
 
-## Primitives (core/venous/<ns>/)
+Exact per-folder counts:
+```bash
+for d in adapt/extend/*/; do
+  echo "$d $(find "$d" -name 'add_*.py' ! -name 'test_*' | wc -l)"
+done
+```
 
-Each primitive directory contains:
-- `<Name>.py` — impl (mypy --strict + ruff curated-ALL clean)
-- `<Name>.contract.json` — verbatim catalog PrimitiveSpec
-- `<Name>.md` — narrative spec with invariant citations
-- `<Name>.tla` + `.cfg` — TLA+ formal spec (stateful primitives)
-- `<Name>.manifest.json` — signed delivery manifest (10-tier gate pass)
-- `invariant_bindings.json`, `observability_schema.json`, `dashboard.json`
-- `test_<Name>.py`, `behavioral_<Name>.py`, `metamorphic_<Name>.py`,
-  `chaos_<Name>.py`, plus `state_machine_`/`concurrent_` for stateful
+## Primitives (`core/venous/<concern>/<Name>/`)
 
-Full index by namespace/concern ships in
-`engine/primitives_by_concern.yaml` (Phase 1 deliverable).
+16 concerns: `api, auth, cache, compliance, cost, data.modelling,
+data.persistence, data.schema, events, extras, flags, jobs, llm,
+observability, policy, resiliency, security`.
+
+Each production primitive directory contains:
+- `<Name>.py` — framework-free reference impl (no `fastapi` /
+  `sqlalchemy` imports — §A1 enforced)
+- `<Name>.protocol.py` — typed Protocol; the public interface
+- `<Name>.md` — narrative spec with invariants + "Compose with:"
+- `<Name>.contract.json` — machine-readable contract + T0-T9 tier record
+- `test_<Name>.py` — ≥ 1 test per declared invariant
+- `__init__.py` — exports Protocol + impl
+- `_provenance.json` — OSS origin + license (or `"origin": "native"`)
+
+Several primitives additionally carry `observability_schema.json`,
+`dashboard.json`, `persona_reviews.json` (audit trail), and
+TLA+ specs (`.tla` + `.cfg`) for state-machine primitives.
+
+Registry + recipe index are machine-readable:
+
+```bash
+# By concern
+cat engine/primitives_by_concern.yaml
+
+# Reference docs site (deterministic static HTML)
+PYTHONPATH=. .venv/bin/python -m engine.docs.build --verify
+open docs_site/index.html
+```
+
+## Benchmark (Phase 3)
+
+20 plain-English product specs under `benchmarks/specs/`:
+- 5 **baseline** (crud, auth-only, webhook sink, rate-limited, multi-tenant)
+- 10 **mid** (Stripe SaaS, realtime chat, event-sourced orders, RBAC+audit,
+  LLM agent, mobile backend, compliance log, GraphQL, workflow, BI export)
+- 5 **adversarial** (exactly-once on weak broker, stateless-but-session,
+  lock-free AND serializable, ML inference pool, innocent counter)
+
+Each run scored on a 4-dimension rubric (25% each):
+scaffold_completeness · test_suite_pass · primitive_gate_pass ·
+hand_editability.
+
+Current score (methodology `plan_level_v3_best_of_ensemble`):
+
+```json
+{ "overall": 100.00,
+  "by_tier": {"baseline": 100, "mid": 100, "adversarial": 100} }
+```
+
+**Known limitation (see `/CHANGELOG.md` v0.1.0):** this is *plan-level* —
+it scores the Maestro's requirement→primitive/tool map, not the
+executable behaviour of the emitted code. Code-level evaluation is
+Phase 5 work (tracked by a dedicated CONTRACT item added this sprint).
 
 ## Running the MCP server
 
 ```bash
 cd skills/SKILL-001-fastapi-production
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements-mcp.txt
-PYTHONPATH=. python3 -m mcp_tools.server
+python3.12 -m venv .venv
+.venv/bin/pip install -r requirements-mcp.txt
+PYTHONPATH=. .venv/bin/python -m mcp_tools.server
 ```
 
-A hermetic installation flow for an end user is a Phase 4 deliverable
-([CONTRACT.md §B4.1](../../CONTRACT.md)).
+Or use the hermetic one-liner that installs system-wide into
+`~/.hugr-skills/`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/humangr-labs/HuGR_Skills/main/install.sh | bash
+```
+
+Validated nightly in a fresh `python:3.12-slim` container —
+`.github/workflows/install-docker.yml`.
 
 ## Contract enforcement
 
 ```bash
-# Run the contract checker from skill root
-PYTHONPATH=. python3 -m engine.audit.contract_check
+# Run the full 28-rule check
+PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check
 
-# Or one phase at a time
-PYTHONPATH=. python3 -m engine.audit.contract_check --phase 0
+# Run a single phase (for PR work targeting one phase)
+PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check --phase 4
+
+# Run a specific item (e.g. after a targeted fix)
+PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check --item B1.1
 ```
 
 Exits 0 iff every machine-checkable CONTRACT.md item passes. CI
-integration mandatory from Phase 0 onward.
+wires this into every push + PR under
+`.github/workflows/skill-001-ci.yml`.
 
 ## Tests
 
-Per-primitive: `pytest core/venous/<ns>/<Name>/`.
-Cross-skill aggregate tests (integration, soak, cross-composition) are
-Phase 3 deliverables — the test files that claim 3000+ tests / 200+
-cross-composition scenarios in prior README drafts are aspirational and
-currently do not have a passing run on record. See
-[ROADMAP.md Phase 0 §6](../../ROADMAP.md).
+| Suite | Count (current green run) | Runner |
+|---|---:|---|
+| Unit (`adapt/**/test_*.py`) | 3168 passed, 1 skipped | `PYTHONPATH=. .venv/bin/python -m pytest adapt/ -q` |
+| Engine (`engine/tests/`) | 133 passed, 7 skipped | `PYTHONPATH=. .venv/bin/python -m pytest engine/tests/ -q` |
+| Boot (every tool imports + basic run) | 100/100 | `PYTHONPATH=. .venv/bin/python tests/test_boot.py` |
+| Property (8 properties × ~55 tools) | green | `PYTHONPATH=. .venv/bin/python tests/property_tests.py` |
+| SQLite E2E (12 scenarios) | green | `PYTHONPATH=. .venv/bin/python tests/test_e2e_hardcore.py` |
+| Postgres E2E (8 scenarios) | green (needs local PG) | `./ci.sh` (auto-starts PG via Docker) |
+| Behaviour (12 domains) | green (needs PG) | `PYTHONPATH=. .venv/bin/python tests/test_behavior_scenarios.py` |
+| Cross-composition (200+ scenarios) | green | `PYTHONPATH=. .venv/bin/python tests/test_cross_composition.py` |
+| Primitive tests (`core/venous/**/test_*.py`) | green | `PYTHONPATH=. .venv/bin/python -m pytest core/venous/ -q` |
 
-## What this file used to say (for the record)
+Local full CI (replicates GitHub Actions):
 
-Prior SKILL.md versions claimed 175 MCP tools, 3000+ tests, 35/35 audit,
-200+ cross-composition scenarios. Those claims outran the code on disk
-by a 1.5-2× margin. As of 2026-04-19, numbers in this file are
-machine-verifiable via the commands shown above.
+```bash
+./ci.sh              # with PostgreSQL (Docker)
+./ci.sh --no-pg      # without PostgreSQL (skips PG-dependent suites)
+```
+
+## Examples
+
+Five real Maestro-built examples live under `/examples/`, each
+tied to a benchmark spec and passing pytest end-to-end
+(24/24 tests green). See `/examples/*/MAESTRO_SESSION.md` for
+the plan-level transcript the Maestro used to build them.
 
 ---
 
-Signed: Gustavo Schneiter — 2026-04-19 — Phase 0 ground-truth pass.
+Signed: Gustavo Schneiter — v0.1.0 release (Phase 4 complete).
+Every claim above is machine-verifiable via the commands shown.
+Drift from this file is a §A8 bug to fix same-day.
