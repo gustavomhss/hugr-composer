@@ -1,0 +1,17 @@
+{
+  "name": "SMTPProvider",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Pure-stdlib SMTP adapter \u2014 no third-party dependency.",
+  "api_signature": "class SMTPProvider: send(...)",
+  "invariants": [
+    "SMTP_PROVIDER_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

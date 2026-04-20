@@ -1,0 +1,17 @@
+{
+  "name": "CanaryRegistry",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Central registry of all deployed canary tokens.",
+  "api_signature": "class CanaryRegistry: register(...), get(...), all_tokens(...)",
+  "invariants": [
+    "CANARY_REGISTRY_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

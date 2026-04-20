@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:05.556621+00:00",
+  "source_tool": "infrastructure/add_outbox_pattern.py",
+  "origin_candidate": {
+    "docstring": "Transactional outbox event row.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 299,
+    "line_start": 239,
+    "name": "OutboxEvent",
+    "origin": "string_template",
+    "shape_hash": "08ae4629167ce41a",
+    "size_bytes": 2331,
+    "size_lines": 61,
+    "tool": "infrastructure/add_outbox_pattern.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 9324
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

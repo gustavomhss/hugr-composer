@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.589615+00:00",
+  "source_tool": "infrastructure/add_stripe_checkout.py",
+  "origin_candidate": {
+    "docstring": "Insert a ``pending`` Payment row for a new Checkout Session.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 969,
+    "line_start": 945,
+    "name": "create_pending_payment",
+    "origin": "string_template",
+    "shape_hash": "d3a40729c9c60da4",
+    "size_bytes": 733,
+    "size_lines": 25,
+    "tool": "infrastructure/add_stripe_checkout.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1466
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

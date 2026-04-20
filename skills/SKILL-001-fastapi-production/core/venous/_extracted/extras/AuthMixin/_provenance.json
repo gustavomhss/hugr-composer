@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.498710+00:00",
+  "source_tool": "testing_tools/add_load_profile.py",
+  "origin_candidate": {
+    "docstring": "Mixin providing JWT authentication for Locust HttpUser subclasses.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 326,
+    "line_start": 252,
+    "name": "AuthMixin",
+    "origin": "string_template",
+    "shape_hash": "b52b7eb58fe574af",
+    "size_bytes": 2525,
+    "size_lines": 75,
+    "tool": "testing_tools/add_load_profile.py",
+    "method_count": 4,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 40400
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

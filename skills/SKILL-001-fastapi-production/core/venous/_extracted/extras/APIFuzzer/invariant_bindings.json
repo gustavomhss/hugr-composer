@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "API_FUZZER_INV_01",
+      "invariant_text": "REPLACE_ME \u2014 describe the invariant.",
+      "confirms_test": "test_inv_set_schema_confirms",
+      "prevents_test": "test_inv_set_schema_prevents",
+      "under_failure_test": "test_inv_set_schema_under_failure"
+    }
+  ]
+}

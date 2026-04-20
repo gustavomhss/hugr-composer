@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_api_replay_debugger.py",
+  "candidate": {
+    "docstring": "Middleware that records every request/response to the ring buffer.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 685,
+    "line_start": 606,
+    "name": "RecorderMiddleware",
+    "origin": "string_template",
+    "shape_hash": "6484923311f74ff3",
+    "size_bytes": 3107,
+    "size_lines": 80,
+    "tool": "infrastructure/add_api_replay_debugger.py",
+    "method_count": 3,
+    "complexity": 5,
+    "disqualified": false,
+    "primitive_score": 186420
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.438021+00:00",
+  "source_tool": "infrastructure/add_cache_layer.py",
+  "origin_candidate": {
+    "docstring": "Build a namespaced cache key.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 526,
+    "line_start": 494,
+    "name": "build_key",
+    "origin": "string_template",
+    "shape_hash": "99a7720c80fcbfe4",
+    "size_bytes": 999,
+    "size_lines": 33,
+    "tool": "infrastructure/add_cache_layer.py",
+    "method_count": 0,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 5994
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

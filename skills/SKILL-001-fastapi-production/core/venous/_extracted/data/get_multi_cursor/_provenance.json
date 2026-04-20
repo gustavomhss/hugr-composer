@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.166099+00:00",
+  "source_tool": "crud_data/add_cursor_pagination.py",
+  "origin_candidate": {
+    "docstring": "Cursor-paginated list.  Stable under concurrent inserts/deletes.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 561,
+    "line_start": 538,
+    "name": "get_multi_cursor",
+    "origin": "string_template",
+    "shape_hash": "d94a5fd63c25a229",
+    "size_bytes": 1018,
+    "size_lines": 24,
+    "tool": "crud_data/add_cursor_pagination.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 4072
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

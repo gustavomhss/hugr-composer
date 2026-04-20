@@ -1,0 +1,17 @@
+{
+  "name": "APIFuzzer",
+  "namespace": "extras",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Reads OpenAPI schema and generates adversarial inputs per field type.",
+  "api_signature": "class APIFuzzer: set_schema(...), endpoint_list(...), generate_payloads(...)",
+  "invariants": [
+    "API_FUZZER_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

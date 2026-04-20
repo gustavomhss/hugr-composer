@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.898390+00:00",
+  "source_tool": "realtime/add_webhook_receiver.py",
+  "origin_candidate": {
+    "docstring": "Persist a duplicate event record for audit visibility.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 984,
+    "line_start": 955,
+    "name": "upsert_duplicate",
+    "origin": "string_template",
+    "shape_hash": "b2a97c02b3d96ad7",
+    "size_bytes": 811,
+    "size_lines": 30,
+    "tool": "realtime/add_webhook_receiver.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1622
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

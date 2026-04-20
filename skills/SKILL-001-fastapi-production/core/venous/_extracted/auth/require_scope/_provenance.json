@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.724026+00:00",
+  "source_tool": "auth_access/add_api_key_auth.py",
+  "origin_candidate": {
+    "docstring": "Return a FastAPI dependency that enforces a required scope.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 842,
+    "line_start": 813,
+    "name": "require_scope",
+    "origin": "string_template",
+    "shape_hash": "33244d4e8a3894d8",
+    "size_bytes": 981,
+    "size_lines": 30,
+    "tool": "auth_access/add_api_key_auth.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1962
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

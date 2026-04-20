@@ -1,0 +1,20 @@
+{
+  "tool": "api_design/add_api_versioning.py",
+  "candidate": {
+    "docstring": "Holds all known API versions.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 330,
+    "line_start": 287,
+    "name": "VersionRegistry",
+    "origin": "string_template",
+    "shape_hash": "00c8e59685226f45",
+    "size_bytes": 1190,
+    "size_lines": 44,
+    "tool": "api_design/add_api_versioning.py",
+    "method_count": 5,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 23800
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.032487+00:00",
+  "source_tool": "auth_access/add_feature_flags.py",
+  "origin_candidate": {
+    "docstring": "Bounded in-process LRU cache with TTL for feature-flag payloads.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 502,
+    "line_start": 414,
+    "name": "FeatureFlagCache",
+    "origin": "string_template",
+    "shape_hash": "5631fa6b57980dcb",
+    "size_bytes": 3063,
+    "size_lines": 89,
+    "tool": "auth_access/add_feature_flags.py",
+    "method_count": 7,
+    "complexity": 13,
+    "disqualified": false,
+    "primitive_score": 1114932
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

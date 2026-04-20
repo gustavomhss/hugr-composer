@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_cedar_policies.py",
+  "candidate": {
+    "docstring": "File-based Cedar policy engine.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 357,
+    "line_start": 278,
+    "name": "CedarEngine",
+    "origin": "string_template",
+    "shape_hash": "90d79b88541ff1a3",
+    "size_bytes": 2942,
+    "size_lines": 80,
+    "tool": "auth_access/add_cedar_policies.py",
+    "method_count": 3,
+    "complexity": 5,
+    "disqualified": false,
+    "primitive_score": 176520
+  }
+}

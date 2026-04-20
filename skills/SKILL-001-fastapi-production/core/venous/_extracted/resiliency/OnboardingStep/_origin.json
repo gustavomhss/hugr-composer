@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_tenant_onboarding.py",
+  "candidate": {
+    "docstring": "Protocol that every onboarding step must satisfy.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 409,
+    "line_start": 395,
+    "name": "OnboardingStep",
+    "origin": "string_template",
+    "shape_hash": "2ebc05d128162dae",
+    "size_bytes": 429,
+    "size_lines": 15,
+    "tool": "infrastructure/add_tenant_onboarding.py",
+    "method_count": 3,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 5148
+  }
+}

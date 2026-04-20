@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:05.654236+00:00",
+  "source_tool": "infrastructure/add_stripe_refund_flow.py",
+  "origin_candidate": {
+    "docstring": "A Stripe refund record.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 586,
+    "line_start": 535,
+    "name": "Refund",
+    "origin": "string_template",
+    "shape_hash": "dcbd1c20202fd545",
+    "size_bytes": 1786,
+    "size_lines": 52,
+    "tool": "infrastructure/add_stripe_refund_flow.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 7144
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

@@ -1,0 +1,17 @@
+{
+  "name": "WebSocketManager",
+  "namespace": "api",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Redis-backed WebSocket fan-out manager for chat rooms.",
+  "api_signature": "class WebSocketManager: connect(...), disconnect(...), broadcast(...), subscribe_loop(...)",
+  "invariants": [
+    "WEB_SOCKET_MANAGER_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

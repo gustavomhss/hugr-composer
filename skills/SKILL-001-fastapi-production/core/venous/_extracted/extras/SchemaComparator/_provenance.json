@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.752918+00:00",
+  "source_tool": "testing_tools/add_schema_evolution_guard.py",
+  "origin_candidate": {
+    "docstring": "Diff two OpenAPI 3.x JSON schemas and classify the changes.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 614,
+    "line_start": 452,
+    "name": "SchemaComparator",
+    "origin": "string_template",
+    "shape_hash": "794f5d09f65567a8",
+    "size_bytes": 6205,
+    "size_lines": 163,
+    "tool": "testing_tools/add_schema_evolution_guard.py",
+    "method_count": 5,
+    "complexity": 14,
+    "disqualified": false,
+    "primitive_score": 1737400
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.543822+00:00",
+  "source_tool": "infrastructure/add_temporal_workflow.py",
+  "origin_candidate": {
+    "docstring": "Void or refund a payment charge on workflow failure.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 698,
+    "line_start": 673,
+    "name": "compensate_payment",
+    "origin": "string_template",
+    "shape_hash": "4336bcaa53c9d2c5",
+    "size_bytes": 823,
+    "size_lines": 26,
+    "tool": "infrastructure/add_temporal_workflow.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1646
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

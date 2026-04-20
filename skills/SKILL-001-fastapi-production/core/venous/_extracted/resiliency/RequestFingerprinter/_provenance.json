@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:05.735227+00:00",
+  "source_tool": "infrastructure/add_request_fingerprint.py",
+  "origin_candidate": {
+    "docstring": "Compute a deterministic SHA-256 fingerprint for an HTTP request.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 277,
+    "line_start": 221,
+    "name": "RequestFingerprinter",
+    "origin": "string_template",
+    "shape_hash": "889e4d6b5a5a7b4a",
+    "size_bytes": 1915,
+    "size_lines": 57,
+    "tool": "infrastructure/add_request_fingerprint.py",
+    "method_count": 2,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 61280
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

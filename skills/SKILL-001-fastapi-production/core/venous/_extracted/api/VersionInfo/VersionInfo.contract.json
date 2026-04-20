@@ -1,0 +1,17 @@
+{
+  "name": "VersionInfo",
+  "namespace": "api",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Immutable descriptor for a single API version.",
+  "api_signature": "class VersionInfo: sunset_header(...)",
+  "invariants": [
+    "VERSION_INFO_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

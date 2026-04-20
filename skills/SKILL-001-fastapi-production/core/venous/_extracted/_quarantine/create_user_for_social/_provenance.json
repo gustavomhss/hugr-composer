@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.533918+00:00",
+  "source_tool": "auth_access/add_social_login.py",
+  "origin_candidate": {
+    "docstring": "Create a minimal user row for a social-only account.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 1106,
+    "line_start": 1080,
+    "name": "create_user_for_social",
+    "origin": "string_template",
+    "shape_hash": "c899401b3c7ec548",
+    "size_bytes": 794,
+    "size_lines": 27,
+    "tool": "auth_access/add_social_login.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1588
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

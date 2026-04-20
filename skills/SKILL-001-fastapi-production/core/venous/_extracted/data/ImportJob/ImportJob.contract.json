@@ -1,0 +1,17 @@
+{
+  "name": "ImportJob",
+  "namespace": "data",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Tracks the lifecycle of an async data import operation.",
+  "api_signature": "",
+  "invariants": [
+    "IMPORT_JOB_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

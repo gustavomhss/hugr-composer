@@ -1,0 +1,20 @@
+{
+  "tool": "realtime/add_sse.py",
+  "candidate": {
+    "docstring": "Publish an SSE event to *channel*.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 663,
+    "line_start": 617,
+    "name": "publish_event",
+    "origin": "string_template",
+    "shape_hash": "b98fa92c31274ad7",
+    "size_bytes": 1658,
+    "size_lines": 47,
+    "tool": "realtime/add_sse.py",
+    "method_count": 0,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 9948
+  }
+}

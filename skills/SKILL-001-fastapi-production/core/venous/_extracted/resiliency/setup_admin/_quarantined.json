@@ -1,0 +1,6 @@
+{
+  "reason": "domain_coupled",
+  "forbidden_modules": [
+    "starlette.middleware.sessions"
+  ]
+}

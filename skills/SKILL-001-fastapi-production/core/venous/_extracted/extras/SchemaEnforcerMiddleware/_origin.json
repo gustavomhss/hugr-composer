@@ -1,0 +1,20 @@
+{
+  "tool": "testing_tools/add_schema_enforcer.py",
+  "candidate": {
+    "docstring": "ASGI middleware that enforces OpenAPI schema compliance.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 402,
+    "line_start": 355,
+    "name": "SchemaEnforcerMiddleware",
+    "origin": "string_template",
+    "shape_hash": "4137c4216bc8a978",
+    "size_bytes": 1720,
+    "size_lines": 48,
+    "tool": "testing_tools/add_schema_enforcer.py",
+    "method_count": 2,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 27520
+  }
+}

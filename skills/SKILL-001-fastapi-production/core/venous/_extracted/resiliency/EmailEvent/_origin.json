@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_transactional_email.py",
+  "candidate": {
+    "docstring": "Audit record for a single email delivery event.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 732,
+    "line_start": 722,
+    "name": "EmailEvent",
+    "origin": "string_template",
+    "shape_hash": "8b8abf55ca03ce95",
+    "size_bytes": 517,
+    "size_lines": 11,
+    "tool": "infrastructure/add_transactional_email.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 2068
+  }
+}

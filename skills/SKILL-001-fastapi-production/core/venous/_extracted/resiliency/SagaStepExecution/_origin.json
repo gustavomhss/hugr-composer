@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_saga.py",
+  "candidate": {
+    "docstring": "Durable state for one step within a saga.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 338,
+    "line_start": 297,
+    "name": "SagaStepExecution",
+    "origin": "string_template",
+    "shape_hash": "cd2c078a19ab0e43",
+    "size_bytes": 1776,
+    "size_lines": 42,
+    "tool": "infrastructure/add_saga.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 7104
+  }
+}

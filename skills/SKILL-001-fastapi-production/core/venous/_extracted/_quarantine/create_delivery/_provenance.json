@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.679527+00:00",
+  "source_tool": "realtime/add_webhook_sender.py",
+  "origin_candidate": {
+    "docstring": "Create a new delivery row for a webhook endpoint.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 961,
+    "line_start": 933,
+    "name": "create_delivery",
+    "origin": "string_template",
+    "shape_hash": "c3cda4281df584f0",
+    "size_bytes": 788,
+    "size_lines": 29,
+    "tool": "realtime/add_webhook_sender.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1576
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

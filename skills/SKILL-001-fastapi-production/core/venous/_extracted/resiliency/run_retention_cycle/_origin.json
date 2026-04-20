@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_compliance_engine.py",
+  "candidate": {
+    "docstring": "Execute one retention purge cycle across compliance_events.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 1083,
+    "line_start": 1059,
+    "name": "run_retention_cycle",
+    "origin": "string_template",
+    "shape_hash": "e2dc49d88784f888",
+    "size_bytes": 935,
+    "size_lines": 25,
+    "tool": "infrastructure/add_compliance_engine.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1870
+  }
+}

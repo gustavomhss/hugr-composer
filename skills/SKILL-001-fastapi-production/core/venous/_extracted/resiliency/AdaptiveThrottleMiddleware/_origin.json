@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_adaptive_throttle.py",
+  "candidate": {
+    "docstring": "ASGI middleware enforcing adaptive throttle rules.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 454,
+    "line_start": 402,
+    "name": "AdaptiveThrottleMiddleware",
+    "origin": "string_template",
+    "shape_hash": "518ba1c4b9001eb5",
+    "size_bytes": 1784,
+    "size_lines": 53,
+    "tool": "infrastructure/add_adaptive_throttle.py",
+    "method_count": 1,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 21408
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.317174+00:00",
+  "source_tool": "infrastructure/add_request_tracing_ui.py",
+  "origin_candidate": {
+    "docstring": "Capture total latency and per-span timing for every request.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 433,
+    "line_start": 384,
+    "name": "TracingMiddleware",
+    "origin": "string_template",
+    "shape_hash": "ad1e9470ed84bf5a",
+    "size_bytes": 1815,
+    "size_lines": 50,
+    "tool": "infrastructure/add_request_tracing_ui.py",
+    "method_count": 1,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 29040
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_cache_layer.py",
+  "candidate": {
+    "docstring": "Delete all cached entries for a resource, then fan-out via pub/sub.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 606,
+    "line_start": 584,
+    "name": "invalidate_resource",
+    "origin": "string_template",
+    "shape_hash": "84b82c05bb5ebfd6",
+    "size_bytes": 754,
+    "size_lines": 23,
+    "tool": "infrastructure/add_cache_layer.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 3016
+  }
+}

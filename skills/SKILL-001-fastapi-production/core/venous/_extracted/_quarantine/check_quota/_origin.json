@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_file_upload.py",
+  "candidate": {
+    "docstring": "Raise HTTP 413 if confirmed storage + incoming_bytes exceeds quota.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 859,
+    "line_start": 826,
+    "name": "check_quota",
+    "origin": "string_template",
+    "shape_hash": "0b669d4ad720d973",
+    "size_bytes": 1233,
+    "size_lines": 34,
+    "tool": "crud_data/add_file_upload.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 2466
+  }
+}

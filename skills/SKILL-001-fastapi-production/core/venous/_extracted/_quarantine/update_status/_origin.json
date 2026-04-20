@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_stripe_subscription.py",
+  "candidate": {
+    "docstring": "Update status and billing period fields (idempotent).",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 946,
+    "line_start": 925,
+    "name": "update_status",
+    "origin": "string_template",
+    "shape_hash": "a36c41cfb43ded02",
+    "size_bytes": 798,
+    "size_lines": 22,
+    "tool": "infrastructure/add_stripe_subscription.py",
+    "method_count": 0,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 6384
+  }
+}

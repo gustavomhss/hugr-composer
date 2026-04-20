@@ -1,0 +1,20 @@
+{
+  "tool": "testing_tools/add_api_fuzzer.py",
+  "candidate": {
+    "docstring": "Reads OpenAPI schema and generates adversarial inputs per field type.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 258,
+    "line_start": 196,
+    "name": "APIFuzzer",
+    "origin": "string_template",
+    "shape_hash": "64fc658d6659f3b3",
+    "size_bytes": 2393,
+    "size_lines": 63,
+    "tool": "testing_tools/add_api_fuzzer.py",
+    "method_count": 4,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 153152
+  }
+}

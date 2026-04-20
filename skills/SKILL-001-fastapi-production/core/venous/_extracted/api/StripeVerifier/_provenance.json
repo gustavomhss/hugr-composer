@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.503869+00:00",
+  "source_tool": "realtime/add_webhook_receiver.py",
+  "origin_candidate": {
+    "docstring": "Verify Stripe webhook payloads using the ``Stripe-Signature`` header.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 572,
+    "line_start": 533,
+    "name": "StripeVerifier",
+    "origin": "string_template",
+    "shape_hash": "7c9113518a69b21f",
+    "size_bytes": 1757,
+    "size_lines": 40,
+    "tool": "realtime/add_webhook_receiver.py",
+    "method_count": 1,
+    "complexity": 5,
+    "disqualified": false,
+    "primitive_score": 35140
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

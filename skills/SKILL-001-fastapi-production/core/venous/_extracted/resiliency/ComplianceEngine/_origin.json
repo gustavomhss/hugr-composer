@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_compliance_engine.py",
+  "candidate": {
+    "docstring": "Central registry for PII fields and compliance operations.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 471,
+    "line_start": 414,
+    "name": "ComplianceEngine",
+    "origin": "string_template",
+    "shape_hash": "37f29b975b021146",
+    "size_bytes": 1934,
+    "size_lines": 58,
+    "tool": "infrastructure/add_compliance_engine.py",
+    "method_count": 5,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 77360
+  }
+}

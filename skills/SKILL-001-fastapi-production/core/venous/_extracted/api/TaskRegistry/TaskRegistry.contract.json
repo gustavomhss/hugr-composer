@@ -1,0 +1,19 @@
+{
+  "name": "TaskRegistry",
+  "namespace": "api",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Thread-safe registry mapping task_type strings to async handlers.",
+  "api_signature": "class TaskRegistry: register(...), get(...), registered_types(...)",
+  "invariants": [
+    "TASK_REGISTRY_INV_01: Unknown task type: '{?}'. Registered: {?}",
+    "TASK_REGISTRY_INV_02: Task type '{?}' is already registered.",
+    "TASK_REGISTRY_INV_03: Task handler '{?}' must be an async function."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 3,
+    "ambiguous": false,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

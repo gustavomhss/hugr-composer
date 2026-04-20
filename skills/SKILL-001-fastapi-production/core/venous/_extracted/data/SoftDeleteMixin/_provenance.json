@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.974926+00:00",
+  "source_tool": "crud_data/add_soft_delete.py",
+  "origin_candidate": {
+    "docstring": "Mix-in adding is_deleted, deleted_at, and deleted_by columns.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 312,
+    "line_start": 282,
+    "name": "SoftDeleteMixin",
+    "origin": "string_template",
+    "shape_hash": "38eaa3ff0960ed3b",
+    "size_bytes": 1051,
+    "size_lines": 31,
+    "tool": "crud_data/add_soft_delete.py",
+    "method_count": 3,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 12612
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

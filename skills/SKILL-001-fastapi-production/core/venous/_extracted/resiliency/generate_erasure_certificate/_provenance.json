@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.740599+00:00",
+  "source_tool": "infrastructure/add_compliance_engine.py",
+  "origin_candidate": {
+    "docstring": "Build a GDPR Art. 17 erasure certificate dict.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 568,
+    "line_start": 548,
+    "name": "generate_erasure_certificate",
+    "origin": "string_template",
+    "shape_hash": "9970d1d9e654143b",
+    "size_bytes": 776,
+    "size_lines": 21,
+    "tool": "infrastructure/add_compliance_engine.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1552
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

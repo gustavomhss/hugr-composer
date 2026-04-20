@@ -1,0 +1,17 @@
+{
+  "name": "S3Client",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Thin wrapper around ``boto3.client('s3')`` with lazy import.",
+  "api_signature": "class S3Client: generate_key(...), presigned_upload_url(...), presigned_download_url(...), delete_object(...), guess_content_type(...)",
+  "invariants": [
+    "S3_CLIENT_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "WITH_RETRY_BUDGET_INV_01",
+      "invariant_text": "Retry budget exhausted for {?} ({?} >= {?})",
+      "confirms_test": "test_with_retry_budget_inv_01_confirms",
+      "prevents_test": "test_with_retry_budget_inv_01_prevents",
+      "under_failure_test": "test_with_retry_budget_inv_01_under_failure"
+    }
+  ]
+}

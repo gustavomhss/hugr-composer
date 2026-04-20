@@ -1,0 +1,17 @@
+{
+  "name": "RequestReplayer",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Re-execute a recorded request against the live ASGI app and diff.",
+  "api_signature": "class RequestReplayer: replay(...)",
+  "invariants": [
+    "REQUEST_REPLAYER_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

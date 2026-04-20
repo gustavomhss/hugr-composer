@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_bola_guard.py",
+  "candidate": {
+    "docstring": "FastAPI dependency that verifies object-level ownership.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 318,
+    "line_start": 241,
+    "name": "OwnershipVerifier",
+    "origin": "string_template",
+    "shape_hash": "1e23f4f90fb7c0f6",
+    "size_bytes": 2778,
+    "size_lines": 78,
+    "tool": "auth_access/add_bola_guard.py",
+    "method_count": 3,
+    "complexity": 6,
+    "disqualified": false,
+    "primitive_score": 200016
+  }
+}

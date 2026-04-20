@@ -1,0 +1,17 @@
+{
+  "name": "LocalStorageBackend",
+  "namespace": "data",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Filesystem fallback storage for development and testing.",
+  "api_signature": "class LocalStorageBackend: save(...), presigned_url(...), delete(...)",
+  "invariants": [
+    "LOCAL_STORAGE_BACKEND_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

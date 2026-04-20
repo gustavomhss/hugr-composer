@@ -1,0 +1,17 @@
+{
+  "name": "APNsProvider",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Send push notifications via APNs (Apple Push Notification service).",
+  "api_signature": "class APNsProvider: send(...)",
+  "invariants": [
+    "AP_NS_PROVIDER_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

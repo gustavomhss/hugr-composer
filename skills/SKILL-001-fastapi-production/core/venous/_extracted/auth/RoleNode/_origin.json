@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_rbac.py",
+  "candidate": {
+    "docstring": "Lightweight role representation for in-memory DAG traversal.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 451,
+    "line_start": 440,
+    "name": "RoleNode",
+    "origin": "string_template",
+    "shape_hash": "a0a9b262ca4b318d",
+    "size_bytes": 412,
+    "size_lines": 12,
+    "tool": "auth_access/add_rbac.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1648
+  }
+}

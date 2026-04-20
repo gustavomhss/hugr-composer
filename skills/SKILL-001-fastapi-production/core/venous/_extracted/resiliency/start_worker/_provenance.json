@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:07.285394+00:00",
+  "source_tool": "infrastructure/add_temporal_workflow.py",
+  "origin_candidate": {
+    "docstring": "Create and start the Temporal worker (module-level singleton).",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 507,
+    "line_start": 490,
+    "name": "start_worker",
+    "origin": "string_template",
+    "shape_hash": "077d4b814e194fba",
+    "size_bytes": 623,
+    "size_lines": 18,
+    "tool": "infrastructure/add_temporal_workflow.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1246
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

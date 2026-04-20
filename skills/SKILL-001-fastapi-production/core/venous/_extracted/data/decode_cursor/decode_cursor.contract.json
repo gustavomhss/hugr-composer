@@ -1,0 +1,19 @@
+{
+  "name": "decode_cursor",
+  "namespace": "data",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "decode_cursor: primitive extracted from the HuGR EXTEND tool corpus. Docstring absent from source; human review MUST replace this line with a concrete purpose statement.",
+  "api_signature": "",
+  "invariants": [
+    "DECODE_CURSOR_INV_01: Cursor exceeds maximum size ({?} bytes)",
+    "DECODE_CURSOR_INV_02: Invalid cursor structure: missing 'f' or 'v' keys",
+    "DECODE_CURSOR_INV_03: Malformed cursor: {?}"
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 3,
+    "ambiguous": false,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.417910+00:00",
+  "source_tool": "infrastructure/add_cors_config.py",
+  "origin_candidate": {
+    "docstring": "ASGI wrapper that installs CORSMiddleware from env-var settings.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 269,
+    "line_start": 237,
+    "name": "CORSConfigMiddleware",
+    "origin": "string_template",
+    "shape_hash": "1224b0f97271b3b2",
+    "size_bytes": 1266,
+    "size_lines": 33,
+    "tool": "infrastructure/add_cors_config.py",
+    "method_count": 2,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 10128
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

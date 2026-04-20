@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:05.321487+00:00",
+  "source_tool": "infrastructure/add_ml_gpu_inference.py",
+  "origin_candidate": {
+    "docstring": "Check GPU memory utilisation before allowing inference.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 471,
+    "line_start": 409,
+    "name": "MemoryGuard",
+    "origin": "string_template",
+    "shape_hash": "14e8f256d40431a1",
+    "size_bytes": 2218,
+    "size_lines": 63,
+    "tool": "infrastructure/add_ml_gpu_inference.py",
+    "method_count": 3,
+    "complexity": 6,
+    "disqualified": false,
+    "primitive_score": 159696
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

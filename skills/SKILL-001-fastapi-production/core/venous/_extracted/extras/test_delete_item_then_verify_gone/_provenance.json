@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.025563+00:00",
+  "source_tool": "testing_tools/add_e2e_test_suite.py",
+  "origin_candidate": {
+    "docstring": "DELETE /api/v1/items/{id} removes the item; subsequent GET returns 404.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 497,
+    "line_start": 473,
+    "name": "test_delete_item_then_verify_gone",
+    "origin": "string_template",
+    "shape_hash": "f75d566bc7537189",
+    "size_bytes": 889,
+    "size_lines": 25,
+    "tool": "testing_tools/add_e2e_test_suite.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1778
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

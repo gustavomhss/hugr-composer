@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_data_export.py",
+  "candidate": {
+    "docstring": "ARQ job entrypoint. Streams rows to storage, emails presigned URL.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 950,
+    "line_start": 903,
+    "name": "run_export",
+    "origin": "string_template",
+    "shape_hash": "ac81e9fda15884a9",
+    "size_bytes": 1920,
+    "size_lines": 48,
+    "tool": "crud_data/add_data_export.py",
+    "method_count": 0,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 11520
+  }
+}

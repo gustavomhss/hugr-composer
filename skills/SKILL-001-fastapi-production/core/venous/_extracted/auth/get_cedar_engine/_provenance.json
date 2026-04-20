@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.633593+00:00",
+  "source_tool": "auth_access/add_cedar_policies.py",
+  "origin_candidate": {
+    "docstring": "Return the process-wide CedarEngine singleton.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 376,
+    "line_start": 360,
+    "name": "get_cedar_engine",
+    "origin": "string_template",
+    "shape_hash": "11218c7e4a3f79da",
+    "size_bytes": 631,
+    "size_lines": 17,
+    "tool": "auth_access/add_cedar_policies.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1262
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "InternalVerifier",
+  "namespace": "api",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Verify internal (sister-service) webhook payloads.",
+  "api_signature": "class InternalVerifier: verify(...)",
+  "invariants": [
+    "INTERNAL_VERIFIER_INV_01: X-Signature timestamp out of tolerance",
+    "INTERNAL_VERIFIER_INV_02: Internal signature mismatch",
+    "INTERNAL_VERIFIER_INV_03: Missing X-Signature header",
+    "INTERNAL_VERIFIER_INV_04: Missing X-Event-Id header",
+    "INTERNAL_VERIFIER_INV_05: Invalid X-Signature timestamp",
+    "INTERNAL_VERIFIER_INV_06: Invalid JSON body"
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 6,
+    "ambiguous": false,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

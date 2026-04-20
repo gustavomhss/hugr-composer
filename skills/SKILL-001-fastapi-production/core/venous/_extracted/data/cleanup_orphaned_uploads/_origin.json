@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_file_upload.py",
+  "candidate": {
+    "docstring": "Delete storage objects and DB rows for all uploads stuck in 'pending' past TTL.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 1080,
+    "line_start": 1032,
+    "name": "cleanup_orphaned_uploads",
+    "origin": "string_template",
+    "shape_hash": "180822309a33da06",
+    "size_bytes": 1805,
+    "size_lines": 49,
+    "tool": "crud_data/add_file_upload.py",
+    "method_count": 0,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 14440
+  }
+}

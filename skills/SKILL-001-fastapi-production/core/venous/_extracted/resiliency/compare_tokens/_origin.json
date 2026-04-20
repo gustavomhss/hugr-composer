@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_response_armor.py",
+  "candidate": {
+    "docstring": "Compare two string tokens in constant time.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 344,
+    "line_start": 324,
+    "name": "compare_tokens",
+    "origin": "string_template",
+    "shape_hash": "1abedb00e41f1d72",
+    "size_bytes": 675,
+    "size_lines": 21,
+    "tool": "infrastructure/add_response_armor.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1350
+  }
+}

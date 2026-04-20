@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:07.220247+00:00",
+  "source_tool": "infrastructure/add_canary_tokens.py",
+  "origin_candidate": {
+    "docstring": "Attempt to insert decoy user records into the users table.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 683,
+    "line_start": 650,
+    "name": "seed_decoy_records",
+    "origin": "string_template",
+    "shape_hash": "6837f49018ce68b3",
+    "size_bytes": 1376,
+    "size_lines": 34,
+    "tool": "infrastructure/add_canary_tokens.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 5504
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

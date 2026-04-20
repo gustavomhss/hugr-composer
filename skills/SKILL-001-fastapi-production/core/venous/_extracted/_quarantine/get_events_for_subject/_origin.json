@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_compliance_engine.py",
+  "candidate": {
+    "docstring": "Return compliance events related to a specific data subject.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 773,
+    "line_start": 751,
+    "name": "get_events_for_subject",
+    "origin": "string_template",
+    "shape_hash": "d8322a058cd4833c",
+    "size_bytes": 684,
+    "size_lines": 23,
+    "tool": "infrastructure/add_compliance_engine.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1368
+  }
+}

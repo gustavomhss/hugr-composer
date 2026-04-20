@@ -1,0 +1,12 @@
+{
+  "name": "ImportProcessor",
+  "namespace": "data",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Extracted primitive (auto-generated stub). Human MUST replace with a concrete purpose statement before promotion.",
+  "api_signature": "class ImportProcessor: parse_csv(...), parse_excel(...), validate_rows(...), process_batch(...)",
+  "invariants": [
+    "IMPORT_PROCESSOR_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "NotificationService",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Extracted primitive (auto-generated stub). Human MUST replace with a concrete purpose statement before promotion.",
+  "api_signature": "class NotificationService: send(...), list_unread(...), mark_read(...), mark_all_read(...), count_unread(...)",
+  "invariants": [
+    "NOTIFICATION_SERVICE_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged"
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.124601+00:00",
+  "source_tool": "infrastructure/add_tenant_onboarding.py",
+  "origin_candidate": {
+    "docstring": "Seed initial data for the new tenant.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 473,
+    "line_start": 455,
+    "name": "SeedDataStep",
+    "origin": "string_template",
+    "shape_hash": "c902217f6dfe0063",
+    "size_bytes": 712,
+    "size_lines": 19,
+    "tool": "infrastructure/add_tenant_onboarding.py",
+    "method_count": 2,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 5696
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

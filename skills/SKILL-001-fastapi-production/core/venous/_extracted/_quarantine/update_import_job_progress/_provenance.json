@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.373675+00:00",
+  "source_tool": "crud_data/add_data_import.py",
+  "origin_candidate": {
+    "docstring": "Update progress counters on an active ImportJob.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 780,
+    "line_start": 756,
+    "name": "update_import_job_progress",
+    "origin": "string_template",
+    "shape_hash": "71821e22540a5f13",
+    "size_bytes": 775,
+    "size_lines": 25,
+    "tool": "crud_data/add_data_import.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1550
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

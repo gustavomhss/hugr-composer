@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.770557+00:00",
+  "source_tool": "infrastructure/add_circuit_breaker.py",
+  "origin_candidate": {
+    "docstring": "Return a dict describing the current circuit state.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 439,
+    "line_start": 416,
+    "name": "get_circuit_info",
+    "origin": "string_template",
+    "shape_hash": "33d7d6636bb34d84",
+    "size_bytes": 836,
+    "size_lines": 24,
+    "tool": "infrastructure/add_circuit_breaker.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 3344
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

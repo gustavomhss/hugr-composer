@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.868842+00:00",
+  "source_tool": "infrastructure/add_api_replay_debugger.py",
+  "origin_candidate": {
+    "docstring": "Initialise the global recorder.  Call once at app startup.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 407,
+    "line_start": 384,
+    "name": "init_recorder",
+    "origin": "string_template",
+    "shape_hash": "9129303931c2ccff",
+    "size_bytes": 753,
+    "size_lines": 24,
+    "tool": "infrastructure/add_api_replay_debugger.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1506
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

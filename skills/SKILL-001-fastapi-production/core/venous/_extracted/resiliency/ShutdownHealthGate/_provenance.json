@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.169885+00:00",
+  "source_tool": "infrastructure/add_graceful_shutdown.py",
+  "origin_candidate": {
+    "docstring": "Health check gate that returns 503 during shutdown drain phase.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 428,
+    "line_start": 403,
+    "name": "ShutdownHealthGate",
+    "origin": "string_template",
+    "shape_hash": "21310c7b1c2671e4",
+    "size_bytes": 952,
+    "size_lines": 26,
+    "tool": "infrastructure/add_graceful_shutdown.py",
+    "method_count": 2,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 7616
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

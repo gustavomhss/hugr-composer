@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:07.256944+00:00",
+  "source_tool": "infrastructure/add_dlp_shield.py",
+  "origin_candidate": {
+    "docstring": "Mark a route function with a DLP sensitivity level.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 464,
+    "line_start": 426,
+    "name": "sensitive",
+    "origin": "string_template",
+    "shape_hash": "c13f7df378786472",
+    "size_bytes": 1268,
+    "size_lines": 39,
+    "tool": "infrastructure/add_dlp_shield.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 2536
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

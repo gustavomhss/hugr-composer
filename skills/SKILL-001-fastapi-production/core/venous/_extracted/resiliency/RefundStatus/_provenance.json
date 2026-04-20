@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:05.662146+00:00",
+  "source_tool": "infrastructure/add_stripe_refund_flow.py",
+  "origin_candidate": {
+    "docstring": "Lifecycle status of a Stripe refund.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 616,
+    "line_start": 605,
+    "name": "RefundStatus",
+    "origin": "string_template",
+    "shape_hash": "d7b04e9972614c3b",
+    "size_bytes": 339,
+    "size_lines": 12,
+    "tool": "infrastructure/add_stripe_refund_flow.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1356
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

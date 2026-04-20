@@ -1,0 +1,17 @@
+{
+  "name": "DeviceManager",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Detect and expose the active inference device.",
+  "api_signature": "class DeviceManager: get_device(...), memory_stats(...)",
+  "invariants": [
+    "DEVICE_MANAGER_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

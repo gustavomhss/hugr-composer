@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.882945+00:00",
+  "source_tool": "infrastructure/add_opentelemetry.py",
+  "origin_candidate": {
+    "docstring": "Bootstrap TracerProvider, MeterProvider, and LoggerProvider.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 355,
+    "line_start": 339,
+    "name": "init_telemetry",
+    "origin": "string_template",
+    "shape_hash": "4a27cdfc52ea117d",
+    "size_bytes": 628,
+    "size_lines": 17,
+    "tool": "infrastructure/add_opentelemetry.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1256
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

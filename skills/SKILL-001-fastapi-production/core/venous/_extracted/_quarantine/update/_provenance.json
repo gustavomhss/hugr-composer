@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.747364+00:00",
+  "source_tool": "auth_access/add_feature_toggles_api.py",
+  "origin_candidate": {
+    "docstring": "Apply a partial update to a FeatureToggle.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 522,
+    "line_start": 502,
+    "name": "update",
+    "origin": "string_template",
+    "shape_hash": "e3d2f7221e94defb",
+    "size_bytes": 592,
+    "size_lines": 21,
+    "tool": "auth_access/add_feature_toggles_api.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1184
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

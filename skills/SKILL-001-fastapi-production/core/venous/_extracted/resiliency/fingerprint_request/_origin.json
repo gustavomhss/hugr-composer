@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_adaptive_throttle.py",
+  "candidate": {
+    "docstring": "Build a behavioral fingerprint from header order and timing.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 289,
+    "line_start": 274,
+    "name": "fingerprint_request",
+    "origin": "string_template",
+    "shape_hash": "dd96d70c3024eee7",
+    "size_bytes": 627,
+    "size_lines": 16,
+    "tool": "infrastructure/add_adaptive_throttle.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1254
+  }
+}

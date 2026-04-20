@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_outbox_pattern.py",
+  "candidate": {
+    "docstring": "Writes outbox events inside the caller's active transaction.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 407,
+    "line_start": 351,
+    "name": "OutboxService",
+    "origin": "string_template",
+    "shape_hash": "500fb91de245dfb1",
+    "size_bytes": 1917,
+    "size_lines": 57,
+    "tool": "infrastructure/add_outbox_pattern.py",
+    "method_count": 2,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 30672
+  }
+}

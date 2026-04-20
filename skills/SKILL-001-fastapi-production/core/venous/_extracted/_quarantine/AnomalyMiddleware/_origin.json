@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_anomaly_detector.py",
+  "candidate": {
+    "docstring": "Observe every request/response and trigger alerts on anomaly.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 585,
+    "line_start": 549,
+    "name": "AnomalyMiddleware",
+    "origin": "string_template",
+    "shape_hash": "40a4f1cbc50af694",
+    "size_bytes": 1240,
+    "size_lines": 37,
+    "tool": "infrastructure/add_anomaly_detector.py",
+    "method_count": 2,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 29760
+  }
+}

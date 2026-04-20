@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_dependency_health_map.py",
+  "candidate": {
+    "docstring": "Performs async health checks for known dependency types.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 415,
+    "line_start": 311,
+    "name": "DependencyChecker",
+    "origin": "string_template",
+    "shape_hash": "ed0ce62c901f5821",
+    "size_bytes": 4216,
+    "size_lines": 105,
+    "tool": "infrastructure/add_dependency_health_map.py",
+    "method_count": 6,
+    "complexity": 8,
+    "disqualified": false,
+    "primitive_score": 809472
+  }
+}

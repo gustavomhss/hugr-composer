@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_opentelemetry.py",
+  "candidate": {
+    "docstring": "Return a tracer from the global TracerProvider.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 433,
+    "line_start": 416,
+    "name": "get_tracer",
+    "origin": "string_template",
+    "shape_hash": "db0a9fc0749ccfa5",
+    "size_bytes": 597,
+    "size_lines": 18,
+    "tool": "infrastructure/add_opentelemetry.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1194
+  }
+}

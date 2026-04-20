@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_dpop_tokens.py",
+  "candidate": {
+    "docstring": "Export a public key as a JWK dict (EC P-256).",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 608,
+    "line_start": 588,
+    "name": "jwk_from_public_key",
+    "origin": "string_template",
+    "shape_hash": "1a4503c2d135034c",
+    "size_bytes": 777,
+    "size_lines": 21,
+    "tool": "auth_access/add_dpop_tokens.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1554
+  }
+}

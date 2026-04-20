@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.215438+00:00",
+  "source_tool": "auth_access/add_sms_otp.py",
+  "origin_candidate": {
+    "docstring": "SMS one-time password code record.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 364,
+    "line_start": 338,
+    "name": "OtpCode",
+    "origin": "string_template",
+    "shape_hash": "28c4fee032129e19",
+    "size_bytes": 1110,
+    "size_lines": 27,
+    "tool": "auth_access/add_sms_otp.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 4440
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

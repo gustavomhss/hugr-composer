@@ -1,0 +1,20 @@
+{
+  "tool": "api_design/add_api_versioning.py",
+  "candidate": {
+    "docstring": "Resolve API version from URL path and annotate the request/response.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 457,
+    "line_start": 404,
+    "name": "VersionResolverMiddleware",
+    "origin": "string_template",
+    "shape_hash": "372a857321a3c99d",
+    "size_bytes": 1875,
+    "size_lines": 54,
+    "tool": "api_design/add_api_versioning.py",
+    "method_count": 2,
+    "complexity": 5,
+    "disqualified": false,
+    "primitive_score": 75000
+  }
+}

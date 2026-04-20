@@ -1,0 +1,20 @@
+{
+  "tool": "testing_tools/add_api_fuzzer.py",
+  "candidate": {
+    "docstring": "Return adversarial string values (empty, huge, SQL, XSS, unicode).",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 322,
+    "line_start": 313,
+    "name": "string_values",
+    "origin": "string_template",
+    "shape_hash": "5ed3731a12d3f4a7",
+    "size_bytes": 637,
+    "size_lines": 10,
+    "tool": "testing_tools/add_api_fuzzer.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1274
+  }
+}

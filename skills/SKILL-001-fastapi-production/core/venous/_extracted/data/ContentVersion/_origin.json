@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_data_versioning.py",
+  "candidate": {
+    "docstring": "Stores a versioned snapshot of any content item.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 700,
+    "line_start": 656,
+    "name": "ContentVersion",
+    "origin": "string_template",
+    "shape_hash": "871a2b91c644e273",
+    "size_bytes": 1801,
+    "size_lines": 45,
+    "tool": "crud_data/add_data_versioning.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 7204
+  }
+}

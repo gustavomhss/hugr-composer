@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "TEMPORAL_CLIENT_FACTORY_INV_01",
+      "invariant_text": "REPLACE_ME \u2014 describe the invariant.",
+      "confirms_test": "test_inv_connect_confirms",
+      "prevents_test": "test_inv_connect_prevents",
+      "under_failure_test": "test_inv_connect_under_failure"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "FingerprintStore",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Persistent fingerprint store backed by Redis with memory fallback.",
+  "api_signature": "class FingerprintStore: is_duplicate(...)",
+  "invariants": [
+    "FINGERPRINT_STORE_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

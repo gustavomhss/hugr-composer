@@ -1,0 +1,17 @@
+{
+  "name": "ScopeCheckResult",
+  "namespace": "auth",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Result of a single scope evaluation.",
+  "api_signature": "",
+  "invariants": [
+    "SCOPE_CHECK_RESULT_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

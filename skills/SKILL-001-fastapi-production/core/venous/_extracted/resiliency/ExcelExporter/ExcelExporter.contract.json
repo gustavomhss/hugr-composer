@@ -1,0 +1,18 @@
+{
+  "name": "ExcelExporter",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Creates Excel workbooks with optional streaming for large datasets.",
+  "api_signature": "class ExcelExporter: create_workbook(...), add_sheet(...), stream_rows(...), to_bytes(...)",
+  "invariants": [
+    "EXCEL_EXPORTER_INV_01: openpyxl is required: pip install openpyxl",
+    "EXCEL_EXPORTER_INV_02: Export exceeds EXCEL_MAX_ROWS={?}. Add filters to reduce the dataset."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 2,
+    "ambiguous": false,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

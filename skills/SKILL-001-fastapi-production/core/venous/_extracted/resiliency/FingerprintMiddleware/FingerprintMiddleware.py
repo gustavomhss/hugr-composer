@@ -1,0 +1,74 @@
+from __future__ import annotations
+from collections.abc import Callable
+from fastapi import Request
+from fastapi import Response
+from starlette.middleware.base import BaseHTTPMiddleware
+
+
+class FingerprintMiddleware(BaseHTTPMiddleware):
+    """Deduplicate requests by SHA-256 fingerprint of user+method+path+body.
+
+    On first request: process normally, cache the response in memory.
+    On duplicate (within TTL): return cached response immediately with
+    ``Idempotent-Replayed: true`` header.
+
+    Args:
+        app: ASGI application.
+        enabled_methods: HTTP methods to fingerprint (default: POST, PUT, PATCH).
+    """
+
+    def __init__(self, app: Callable, enabled_methods: set[str] | None=None) -> None:
+        super().__init__(app)
+        self._methods = enabled_methods or _DEFAULT_METHODS
+        self._response_cache: dict[str, tuple[int, str, str]] = {}
+
+    def _replay_cached(self, fp: str) -> Response | None:
+        """Return a cached Response with Idempotent-Replayed header, or None.
+
+        Args:
+            fp: SHA-256 fingerprint key.
+        """
+        cached = self._response_cache.get(fp)
+        if cached:
+            status_code, content, media_type = cached
+            return Response(content=content, status_code=status_code, media_type=media_type, headers={'Idempotent-Replayed': 'true'})
+        return Response(content='', status_code=200, headers={'Idempotent-Replayed': 'true'})
+
+    async def _capture_and_cache(self, fp: str, response: Response) -> Response:
+        """Read response body, cache it, and return a new Response.
+
+        Args:
+            fp: Fingerprint key for cache storage.
+            response: Upstream response with body_iterator.
+        """
+        chunks: list[bytes] = []
+        async for chunk in response.body_iterator:
+            chunks.append(chunk if isinstance(chunk, bytes) else chunk.encode())
+        resp_body = b''.join(chunks).decode(errors='replace')
+        self._response_cache[fp] = (response.status_code, resp_body, response.media_type or 'application/json')
+        if len(self._response_cache) > 5000:
+            for k in list(self._response_cache.keys())[:1000]:
+                del self._response_cache[k]
+        return Response(content=resp_body.encode(), status_code=response.status_code, headers=dict(response.headers), media_type=response.media_type)
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        """Check fingerprint; replay cached response on duplicate."""
+        if request.method.upper() not in self._methods:
+            return await call_next(request)
+        store = get_store()
+        if store is None:
+            return await call_next(request)
+        try:
+            body = await request.body()
+        except Exception:
+            body = b''
+        user_id = str(request.state.user.id) if hasattr(request.state, 'user') else None
+        fp = _FINGERPRINTER.compute(user_id=user_id, method=request.method, path=str(request.url), body=body)
+        if await store.is_duplicate(fp):
+            return self._replay_cached(fp)
+        response = await call_next(request)
+        try:
+            return await self._capture_and_cache(fp, response)
+        except Exception:
+            logger.debug('FingerprintMiddleware: body capture failed', exc_info=True)
+            return response

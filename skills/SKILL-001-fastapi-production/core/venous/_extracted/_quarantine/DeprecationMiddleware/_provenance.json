@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.328552+00:00",
+  "source_tool": "api_design/add_api_deprecation.py",
+  "origin_candidate": {
+    "docstring": "Add RFC 8594 Sunset/Deprecation headers to deprecated endpoint responses.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 489,
+    "line_start": 462,
+    "name": "DeprecationMiddleware",
+    "origin": "string_template",
+    "shape_hash": "b1ccfb236f296577",
+    "size_bytes": 1048,
+    "size_lines": 28,
+    "tool": "api_design/add_api_deprecation.py",
+    "method_count": 1,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 8384
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

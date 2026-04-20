@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.461086+00:00",
+  "source_tool": "testing_tools/add_load_profile.py",
+  "origin_candidate": {
+    "docstring": "Mixed read/write scenario (25% of simulated traffic).",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 727,
+    "line_start": 692,
+    "name": "ActiveUserScenario",
+    "origin": "string_template",
+    "shape_hash": "7f7df4ade216e6bc",
+    "size_bytes": 1054,
+    "size_lines": 36,
+    "tool": "testing_tools/add_load_profile.py",
+    "method_count": 3,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 12648
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

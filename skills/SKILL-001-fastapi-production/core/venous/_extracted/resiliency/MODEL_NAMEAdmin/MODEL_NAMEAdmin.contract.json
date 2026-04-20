@@ -1,0 +1,17 @@
+{
+  "name": "MODEL_NAMEAdmin",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Admin view for the MODEL_NAME model.",
+  "api_signature": "",
+  "invariants": [
+    "MODEL_NAME_ADMIN_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

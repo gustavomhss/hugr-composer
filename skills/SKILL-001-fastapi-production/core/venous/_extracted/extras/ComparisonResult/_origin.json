@@ -1,0 +1,20 @@
+{
+  "tool": "testing_tools/add_schema_evolution_guard.py",
+  "candidate": {
+    "docstring": "Result of comparing two OpenAPI schemas.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 449,
+    "line_start": 429,
+    "name": "ComparisonResult",
+    "origin": "string_template",
+    "shape_hash": "804dfc570b08bd50",
+    "size_bytes": 772,
+    "size_lines": 21,
+    "tool": "testing_tools/add_schema_evolution_guard.py",
+    "method_count": 1,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 3088
+  }
+}

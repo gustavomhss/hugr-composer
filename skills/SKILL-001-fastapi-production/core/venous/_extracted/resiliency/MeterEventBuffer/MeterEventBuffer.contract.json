@@ -1,0 +1,17 @@
+{
+  "name": "MeterEventBuffer",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Thread-safe in-memory buffer for meter events pending Stripe sync.",
+  "api_signature": "class MeterEventBuffer: add(...), drain(...), size(...)",
+  "invariants": [
+    "METER_EVENT_BUFFER_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.105262+00:00",
+  "source_tool": "crud_data/add_data_export.py",
+  "origin_candidate": {
+    "docstring": "Stream CSV bytes. Yields UTF-8 header row first, then data chunks.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 342,
+    "line_start": 317,
+    "name": "export_csv",
+    "origin": "string_template",
+    "shape_hash": "f006430bfc6e1fdd",
+    "size_bytes": 821,
+    "size_lines": 26,
+    "tool": "crud_data/add_data_export.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 3284
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

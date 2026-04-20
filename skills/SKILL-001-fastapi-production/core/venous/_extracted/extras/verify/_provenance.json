@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.115293+00:00",
+  "source_tool": "testing_tools/add_sbom_guardian.py",
+  "origin_candidate": {
+    "docstring": "Run full lockfile verification pipeline.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 489,
+    "line_start": 457,
+    "name": "verify",
+    "origin": "string_template",
+    "shape_hash": "005e455d18eb403f",
+    "size_bytes": 1103,
+    "size_lines": 33,
+    "tool": "testing_tools/add_sbom_guardian.py",
+    "method_count": 0,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 6618
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

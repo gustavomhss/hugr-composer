@@ -1,0 +1,20 @@
+{
+  "tool": "realtime/add_webhook_sender.py",
+  "candidate": {
+    "docstring": "Extends the public schema with the signing secret.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 1193,
+    "line_start": 1183,
+    "name": "WebhookEndpointCreated",
+    "origin": "string_template",
+    "shape_hash": "a64b75d4907c6e4d",
+    "size_bytes": 363,
+    "size_lines": 11,
+    "tool": "realtime/add_webhook_sender.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1452
+  }
+}

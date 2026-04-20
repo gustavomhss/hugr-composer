@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_transactional_email.py",
+  "candidate": {
+    "docstring": "Send transactional emails via SendGrid.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 599,
+    "line_start": 554,
+    "name": "SendgridProvider",
+    "origin": "string_template",
+    "shape_hash": "6cbeb09d852707b5",
+    "size_bytes": 1550,
+    "size_lines": 46,
+    "tool": "infrastructure/add_transactional_email.py",
+    "method_count": 1,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 12400
+  }
+}

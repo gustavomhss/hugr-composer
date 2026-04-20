@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:07.268368+00:00",
+  "source_tool": "infrastructure/add_sqladmin.py",
+  "origin_candidate": {
+    "docstring": "Mount the SQLAdmin panel on *app*.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 653,
+    "line_start": 607,
+    "name": "setup_admin",
+    "origin": "string_template",
+    "shape_hash": "34d6c280afac16e2",
+    "size_bytes": 1630,
+    "size_lines": 47,
+    "tool": "infrastructure/add_sqladmin.py",
+    "method_count": 0,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 9780
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

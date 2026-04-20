@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.932645+00:00",
+  "source_tool": "infrastructure/add_push_notifications_native.py",
+  "origin_candidate": {
+    "docstring": "Stores a user's platform-specific push notification token.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 700,
+    "line_start": 687,
+    "name": "DeviceToken",
+    "origin": "string_template",
+    "shape_hash": "98a059eff5588274",
+    "size_bytes": 615,
+    "size_lines": 14,
+    "tool": "infrastructure/add_push_notifications_native.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 2460
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

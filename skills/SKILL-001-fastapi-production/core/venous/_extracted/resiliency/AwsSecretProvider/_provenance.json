@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.301949+00:00",
+  "source_tool": "infrastructure/add_secret_rotation.py",
+  "origin_candidate": {
+    "docstring": "AWS Secrets Manager provider (lazy boto3 import).",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 494,
+    "line_start": 444,
+    "name": "AwsSecretProvider",
+    "origin": "string_template",
+    "shape_hash": "90d5d2d308e82214",
+    "size_bytes": 1724,
+    "size_lines": 51,
+    "tool": "infrastructure/add_secret_rotation.py",
+    "method_count": 4,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 82752
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

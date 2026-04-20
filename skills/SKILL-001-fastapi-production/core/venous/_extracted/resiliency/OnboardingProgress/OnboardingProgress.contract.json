@@ -1,0 +1,17 @@
+{
+  "name": "OnboardingProgress",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Tracks the progress of a single onboarding run.",
+  "api_signature": "class OnboardingProgress: to_dict(...)",
+  "invariants": [
+    "ONBOARDING_PROGRESS_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:07.326107+00:00",
+  "source_tool": "infrastructure/add_stripe_subscription.py",
+  "origin_candidate": {
+    "docstring": "Update status and billing period fields (idempotent).",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 946,
+    "line_start": 925,
+    "name": "update_status",
+    "origin": "string_template",
+    "shape_hash": "a36c41cfb43ded02",
+    "size_bytes": 798,
+    "size_lines": 22,
+    "tool": "infrastructure/add_stripe_subscription.py",
+    "method_count": 0,
+    "complexity": 4,
+    "disqualified": false,
+    "primitive_score": 6384
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

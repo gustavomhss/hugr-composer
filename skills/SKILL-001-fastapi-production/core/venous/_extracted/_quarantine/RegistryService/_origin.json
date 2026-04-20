@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_ml_model_registry.py",
+  "candidate": {
+    "docstring": "Facade for ML model registry operations.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 917,
+    "line_start": 787,
+    "name": "RegistryService",
+    "origin": "string_template",
+    "shape_hash": "ac19f124c57fd26d",
+    "size_bytes": 4260,
+    "size_lines": 131,
+    "tool": "infrastructure/add_ml_model_registry.py",
+    "method_count": 7,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 119280
+  }
+}

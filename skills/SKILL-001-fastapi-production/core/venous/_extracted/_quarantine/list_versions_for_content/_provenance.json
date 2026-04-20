@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.223352+00:00",
+  "source_tool": "crud_data/add_data_versioning.py",
+  "origin_candidate": {
+    "docstring": "List versions for a content item, optionally filtered by status.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 849,
+    "line_start": 824,
+    "name": "list_versions_for_content",
+    "origin": "string_template",
+    "shape_hash": "dc8e2c717ab5419d",
+    "size_bytes": 874,
+    "size_lines": 26,
+    "tool": "crud_data/add_data_versioning.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1748
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

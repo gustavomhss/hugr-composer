@@ -1,0 +1,20 @@
+{
+  "tool": "realtime/add_webhook_sender.py",
+  "candidate": {
+    "docstring": "Individual delivery attempt for an outbound webhook event.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 555,
+    "line_start": 520,
+    "name": "WebhookDelivery",
+    "origin": "string_template",
+    "shape_hash": "6bbcfff8668b60af",
+    "size_bytes": 1879,
+    "size_lines": 36,
+    "tool": "realtime/add_webhook_sender.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 7516
+  }
+}

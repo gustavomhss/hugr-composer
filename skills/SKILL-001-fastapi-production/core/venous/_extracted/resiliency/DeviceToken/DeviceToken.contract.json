@@ -1,0 +1,17 @@
+{
+  "name": "DeviceToken",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Stores a user's platform-specific push notification token.",
+  "api_signature": "",
+  "invariants": [
+    "DEVICE_TOKEN_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "GitHubVerifier",
+  "namespace": "api",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Verify GitHub webhook payloads using ``X-Hub-Signature-256``.",
+  "api_signature": "class GitHubVerifier: verify(...)",
+  "invariants": [
+    "GIT_HUB_VERIFIER_INV_01: Missing X-Hub-Signature-256 header",
+    "GIT_HUB_VERIFIER_INV_02: GitHub signature mismatch",
+    "GIT_HUB_VERIFIER_INV_03: Missing X-GitHub-Delivery header",
+    "GIT_HUB_VERIFIER_INV_04: Invalid JSON body"
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 4,
+    "ambiguous": false,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

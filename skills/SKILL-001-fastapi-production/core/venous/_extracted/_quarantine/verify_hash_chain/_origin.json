@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_audit_log.py",
+  "candidate": {
+    "docstring": "Re-compute SHA-256 hashes and verify chain continuity.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 778,
+    "line_start": 747,
+    "name": "verify_hash_chain",
+    "origin": "string_template",
+    "shape_hash": "9646ddb8c7ec807c",
+    "size_bytes": 1031,
+    "size_lines": 32,
+    "tool": "crud_data/add_audit_log.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 4124
+  }
+}

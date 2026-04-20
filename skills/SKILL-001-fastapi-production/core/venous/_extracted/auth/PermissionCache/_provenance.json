@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.259580+00:00",
+  "source_tool": "auth_access/add_rbac.py",
+  "origin_candidate": {
+    "docstring": "Thread-safe async LRU permission cache.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 762,
+    "line_start": 668,
+    "name": "PermissionCache",
+    "origin": "string_template",
+    "shape_hash": "59a6c22430248120",
+    "size_bytes": 3414,
+    "size_lines": 95,
+    "tool": "auth_access/add_rbac.py",
+    "method_count": 6,
+    "complexity": 13,
+    "disqualified": false,
+    "primitive_score": 1065168
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

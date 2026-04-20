@@ -1,0 +1,18 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "REPORT_ENGINE_INV_01",
+      "invariant_text": "jinja2 is required: pip install jinja2",
+      "confirms_test": "test_report_engine_inv_01_confirms",
+      "prevents_test": "test_report_engine_inv_01_prevents",
+      "under_failure_test": "test_report_engine_inv_01_under_failure"
+    },
+    {
+      "invariant_id": "REPORT_ENGINE_INV_02",
+      "invariant_text": "weasyprint is required: pip install weasyprint",
+      "confirms_test": "test_report_engine_inv_02_confirms",
+      "prevents_test": "test_report_engine_inv_02_prevents",
+      "under_failure_test": "test_report_engine_inv_02_under_failure"
+    }
+  ]
+}

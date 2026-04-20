@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.516261+00:00",
+  "source_tool": "auth_access/add_social_login.py",
+  "origin_candidate": {
+    "docstring": "Insert a new SocialAccount row and flush.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 1053,
+    "line_start": 1026,
+    "name": "create_social_account",
+    "origin": "string_template",
+    "shape_hash": "4e20d481a52020bd",
+    "size_bytes": 822,
+    "size_lines": 28,
+    "tool": "auth_access/add_social_login.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1644
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.600734+00:00",
+  "source_tool": "realtime/add_websocket_chat.py",
+  "origin_candidate": {
+    "docstring": "Redis-backed WebSocket fan-out manager for chat rooms.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 898,
+    "line_start": 771,
+    "name": "WebSocketManager",
+    "origin": "string_template",
+    "shape_hash": "97e46544d2d642e2",
+    "size_bytes": 4330,
+    "size_lines": 128,
+    "tool": "realtime/add_websocket_chat.py",
+    "method_count": 5,
+    "complexity": 13,
+    "disqualified": false,
+    "primitive_score": 1125800
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

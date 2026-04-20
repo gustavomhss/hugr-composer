@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.448014+00:00",
+  "source_tool": "infrastructure/add_canary_tokens.py",
+  "origin_candidate": {
+    "docstring": "Build a sanitised request context dict for the alert payload.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 425,
+    "line_start": 395,
+    "name": "build_request_context",
+    "origin": "string_template",
+    "shape_hash": "0fb8c78ce3e11ba8",
+    "size_bytes": 846,
+    "size_lines": 31,
+    "tool": "infrastructure/add_canary_tokens.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1692
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

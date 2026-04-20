@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.243013+00:00",
+  "source_tool": "infrastructure/add_anomaly_detector.py",
+  "origin_candidate": {
+    "docstring": "Statistical anomaly detector for HTTP request metrics.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 378,
+    "line_start": 291,
+    "name": "AnomalyDetector",
+    "origin": "string_template",
+    "shape_hash": "94d0ff598c9b343a",
+    "size_bytes": 3249,
+    "size_lines": 88,
+    "tool": "infrastructure/add_anomaly_detector.py",
+    "method_count": 3,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 116964
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

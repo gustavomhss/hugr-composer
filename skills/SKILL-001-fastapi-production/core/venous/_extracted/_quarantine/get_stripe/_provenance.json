@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.855640+00:00",
+  "source_tool": "infrastructure/add_stripe_checkout.py",
+  "origin_candidate": {
+    "docstring": "Return the configured ``stripe`` SDK module.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 666,
+    "line_start": 647,
+    "name": "get_stripe",
+    "origin": "string_template",
+    "shape_hash": "a16e272a77b44787",
+    "size_bytes": 761,
+    "size_lines": 20,
+    "tool": "infrastructure/add_stripe_checkout.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1522
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_health_deep.py",
+  "candidate": {
+    "docstring": "Check process RSS against a configured threshold.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 712,
+    "line_start": 668,
+    "name": "memory_check",
+    "origin": "string_template",
+    "shape_hash": "25d5f10fd5594e02",
+    "size_bytes": 1466,
+    "size_lines": 45,
+    "tool": "infrastructure/add_health_deep.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 2932
+  }
+}

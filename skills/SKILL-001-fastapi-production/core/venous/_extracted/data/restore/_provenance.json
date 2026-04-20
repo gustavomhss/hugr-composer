@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.313257+00:00",
+  "source_tool": "crud_data/add_soft_delete.py",
+  "origin_candidate": {
+    "docstring": "Restore a soft-deleted row. Atomically clears all three deletion columns.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 544,
+    "line_start": 520,
+    "name": "restore",
+    "origin": "string_template",
+    "shape_hash": "c16210973a477c54",
+    "size_bytes": 792,
+    "size_lines": 25,
+    "tool": "crud_data/add_soft_delete.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1584
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

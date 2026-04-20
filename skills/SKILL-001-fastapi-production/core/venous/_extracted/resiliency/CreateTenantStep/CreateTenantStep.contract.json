@@ -1,0 +1,17 @@
+{
+  "name": "CreateTenantStep",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Create the tenant record in the database.",
+  "api_signature": "class CreateTenantStep: execute(...), compensate(...)",
+  "invariants": [
+    "CREATE_TENANT_STEP_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

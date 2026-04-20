@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_data_export.py",
+  "candidate": {
+    "docstring": "Stream Parquet via pyarrow. Collects all rows (pyarrow lacks native streaming write).",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 424,
+    "line_start": 400,
+    "name": "export_parquet",
+    "origin": "string_template",
+    "shape_hash": "247c4dfa94cbe6b2",
+    "size_bytes": 882,
+    "size_lines": 25,
+    "tool": "crud_data/add_data_export.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 3528
+  }
+}

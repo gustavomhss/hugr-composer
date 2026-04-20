@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:05.947511+00:00",
+  "source_tool": "infrastructure/add_retry_budget.py",
+  "origin_candidate": {
+    "docstring": "Sliding-window retry budget tracker.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 354,
+    "line_start": 235,
+    "name": "RetryBudget",
+    "origin": "string_template",
+    "shape_hash": "f9196cb55d5d9b57",
+    "size_bytes": 4112,
+    "size_lines": 120,
+    "tool": "infrastructure/add_retry_budget.py",
+    "method_count": 7,
+    "complexity": 9,
+    "disqualified": false,
+    "primitive_score": 1036224
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

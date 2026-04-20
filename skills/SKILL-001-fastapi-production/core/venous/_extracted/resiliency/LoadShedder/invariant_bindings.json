@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "LOAD_SHEDDER_INV_01",
+      "invariant_text": "REPLACE_ME \u2014 describe the invariant.",
+      "confirms_test": "test_inv_record_latency_confirms",
+      "prevents_test": "test_inv_record_latency_prevents",
+      "under_failure_test": "test_inv_record_latency_under_failure"
+    }
+  ]
+}

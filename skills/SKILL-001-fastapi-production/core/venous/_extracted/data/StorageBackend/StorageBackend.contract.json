@@ -1,0 +1,17 @@
+{
+  "name": "StorageBackend",
+  "namespace": "data",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Abstract storage backend.  Both implementations share this interface.",
+  "api_signature": "class StorageBackend: save(...), get_url(...), delete(...)",
+  "invariants": [
+    "STORAGE_BACKEND_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

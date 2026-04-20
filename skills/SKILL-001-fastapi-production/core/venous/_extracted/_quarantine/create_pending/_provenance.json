@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.065642+00:00",
+  "source_tool": "crud_data/add_file_upload.py",
+  "origin_candidate": {
+    "docstring": "Insert a pending FileMetadata row before the upload completes.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 1146,
+    "line_start": 1105,
+    "name": "create_pending",
+    "origin": "string_template",
+    "shape_hash": "7d8a448ee33f8507",
+    "size_bytes": 1325,
+    "size_lines": 42,
+    "tool": "crud_data/add_file_upload.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 2650
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

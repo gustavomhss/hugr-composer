@@ -1,0 +1,17 @@
+{
+  "name": "FeatureFlagAudit",
+  "namespace": "auth",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Immutable audit record for every flag create/update/delete.",
+  "api_signature": "",
+  "invariants": [
+    "FEATURE_FLAG_AUDIT_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

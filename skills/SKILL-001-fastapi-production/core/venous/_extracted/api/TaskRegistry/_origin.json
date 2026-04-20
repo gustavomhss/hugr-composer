@@ -1,0 +1,20 @@
+{
+  "tool": "api_design/add_long_running_task.py",
+  "candidate": {
+    "docstring": "Thread-safe registry mapping task_type strings to async handlers.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 656,
+    "line_start": 585,
+    "name": "TaskRegistry",
+    "origin": "string_template",
+    "shape_hash": "8d9f4ab92dbcfb78",
+    "size_bytes": 2360,
+    "size_lines": 72,
+    "tool": "api_design/add_long_running_task.py",
+    "method_count": 4,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 113280
+  }
+}

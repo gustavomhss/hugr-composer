@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_data_import.py",
+  "candidate": {
+    "docstring": "Tracks the lifecycle of an async data import operation.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 626,
+    "line_start": 588,
+    "name": "ImportJob",
+    "origin": "string_template",
+    "shape_hash": "91216d3082c54bb2",
+    "size_bytes": 1731,
+    "size_lines": 39,
+    "tool": "crud_data/add_data_import.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 6924
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_s3_storage.py",
+  "candidate": {
+    "docstring": "Typed snapshot of S3/MinIO settings for a single request context.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 668,
+    "line_start": 631,
+    "name": "StorageConfig",
+    "origin": "string_template",
+    "shape_hash": "f759dddaf2c96bcf",
+    "size_bytes": 1447,
+    "size_lines": 38,
+    "tool": "infrastructure/add_s3_storage.py",
+    "method_count": 1,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 5788
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "AnomalyDetector",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Statistical anomaly detector for HTTP request metrics.",
+  "api_signature": "class AnomalyDetector: observe(...), status(...)",
+  "invariants": [
+    "ANOMALY_DETECTOR_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

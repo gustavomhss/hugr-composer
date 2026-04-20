@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.081292+00:00",
+  "source_tool": "infrastructure/add_input_sanitization.py",
+  "origin_candidate": {
+    "docstring": "Middleware that sanitizes JSON request body string fields.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 425,
+    "line_start": 353,
+    "name": "SanitizeMiddleware",
+    "origin": "string_template",
+    "shape_hash": "6c39ac72a0764c5c",
+    "size_bytes": 2471,
+    "size_lines": 73,
+    "tool": "infrastructure/add_input_sanitization.py",
+    "method_count": 3,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 88956
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

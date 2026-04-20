@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.534102+00:00",
+  "source_tool": "infrastructure/add_canary_tokens.py",
+  "origin_candidate": {
+    "docstring": "A registered canary token.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 233,
+    "line_start": 213,
+    "name": "CanaryToken",
+    "origin": "string_template",
+    "shape_hash": "383e90f6d282d79b",
+    "size_bytes": 683,
+    "size_lines": 21,
+    "tool": "infrastructure/add_canary_tokens.py",
+    "method_count": 1,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 2732
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

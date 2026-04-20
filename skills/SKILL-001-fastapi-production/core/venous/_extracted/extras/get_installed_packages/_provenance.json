@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.938801+00:00",
+  "source_tool": "testing_tools/add_sbom_guardian.py",
+  "origin_candidate": {
+    "docstring": "Return list of installed packages via pip inspect.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 223,
+    "line_start": 206,
+    "name": "get_installed_packages",
+    "origin": "string_template",
+    "shape_hash": "5bb05a501bfacbaf",
+    "size_bytes": 612,
+    "size_lines": 18,
+    "tool": "testing_tools/add_sbom_guardian.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 1224
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

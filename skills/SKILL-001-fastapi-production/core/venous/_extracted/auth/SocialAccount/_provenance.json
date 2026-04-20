@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.324392+00:00",
+  "source_tool": "auth_access/add_social_login.py",
+  "origin_candidate": {
+    "docstring": "Linked social provider account for a user.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 398,
+    "line_start": 355,
+    "name": "SocialAccount",
+    "origin": "string_template",
+    "shape_hash": "179b31794221650d",
+    "size_bytes": 1662,
+    "size_lines": 44,
+    "tool": "auth_access/add_social_login.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 6648
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

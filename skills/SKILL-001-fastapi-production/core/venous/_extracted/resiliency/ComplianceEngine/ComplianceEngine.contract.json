@@ -1,0 +1,17 @@
+{
+  "name": "ComplianceEngine",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Central registry for PII fields and compliance operations.",
+  "api_signature": "class ComplianceEngine: register_pii_field(...), is_pii_column(...), detect_pii_columns(...), anonymise_dict(...)",
+  "invariants": [
+    "COMPLIANCE_ENGINE_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "OAuthProvider",
+  "namespace": "auth",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Abstract interface for an OAuth2 provider.",
+  "api_signature": "class OAuthProvider: authorization_url(...), exchange_code(...), fetch_user(...)",
+  "invariants": [
+    "O_AUTH_PROVIDER_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

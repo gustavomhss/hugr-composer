@@ -1,0 +1,18 @@
+{
+  "name": "format_event",
+  "namespace": "api",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "format_event: primitive extracted from the HuGR EXTEND tool corpus. Docstring absent from source; human review MUST replace this line with a concrete purpose statement.",
+  "api_signature": "",
+  "invariants": [
+    "FORMAT_EVENT_INV_01: event_id must be non-empty",
+    "FORMAT_EVENT_INV_02: event_name must be non-empty"
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 2,
+    "ambiguous": false,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

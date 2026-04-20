@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.925386+00:00",
+  "source_tool": "testing_tools/add_sbom_guardian.py",
+  "origin_candidate": {
+    "docstring": "Generate CycloneDX 1.4 JSON SBOM and write to output_path.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 290,
+    "line_start": 259,
+    "name": "generate_sbom",
+    "origin": "string_template",
+    "shape_hash": "d62e702797e4f96e",
+    "size_bytes": 1124,
+    "size_lines": 32,
+    "tool": "testing_tools/add_sbom_guardian.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 2248
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

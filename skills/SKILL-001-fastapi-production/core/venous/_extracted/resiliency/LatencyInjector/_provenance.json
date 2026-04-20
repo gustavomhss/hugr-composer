@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:05.215720+00:00",
+  "source_tool": "infrastructure/add_chaos_testing.py",
+  "origin_candidate": {
+    "docstring": "Inject artificial latency into requests.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 371,
+    "line_start": 352,
+    "name": "LatencyInjector",
+    "origin": "string_template",
+    "shape_hash": "826a01ed4603c489",
+    "size_bytes": 621,
+    "size_lines": 20,
+    "tool": "infrastructure/add_chaos_testing.py",
+    "method_count": 2,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 4968
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

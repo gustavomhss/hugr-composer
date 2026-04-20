@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.958494+00:00",
+  "source_tool": "infrastructure/add_email_templates.py",
+  "origin_candidate": {
+    "docstring": "Abstract provider interface.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 1156,
+    "line_start": 1144,
+    "name": "EmailProvider",
+    "origin": "string_template",
+    "shape_hash": "14c1953c23aa0bcc",
+    "size_bytes": 506,
+    "size_lines": 13,
+    "tool": "infrastructure/add_email_templates.py",
+    "method_count": 1,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 2024
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

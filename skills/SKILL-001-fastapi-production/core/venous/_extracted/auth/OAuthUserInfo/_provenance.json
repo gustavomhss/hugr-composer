@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.182187+00:00",
+  "source_tool": "auth_access/add_oauth2_provider.py",
+  "origin_candidate": {
+    "docstring": "Normalized user information returned by a provider.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 355,
+    "line_start": 342,
+    "name": "OAuthUserInfo",
+    "origin": "string_template",
+    "shape_hash": "10646bd4251640c9",
+    "size_bytes": 447,
+    "size_lines": 14,
+    "tool": "auth_access/add_oauth2_provider.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1788
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

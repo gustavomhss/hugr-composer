@@ -1,0 +1,18 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "EFFECTIVE_PERMISSIONS_INV_01",
+      "invariant_text": "unknown role: {?}",
+      "confirms_test": "test_effective_permissions_inv_01_confirms",
+      "prevents_test": "test_effective_permissions_inv_01_prevents",
+      "under_failure_test": "test_effective_permissions_inv_01_under_failure"
+    },
+    {
+      "invariant_id": "EFFECTIVE_PERMISSIONS_INV_02",
+      "invariant_text": "cycle detected at role {?}",
+      "confirms_test": "test_effective_permissions_inv_02_confirms",
+      "prevents_test": "test_effective_permissions_inv_02_prevents",
+      "under_failure_test": "test_effective_permissions_inv_02_under_failure"
+    }
+  ]
+}

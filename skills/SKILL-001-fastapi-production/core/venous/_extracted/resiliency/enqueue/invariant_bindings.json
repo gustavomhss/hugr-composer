@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "ENQUEUE_INV_01",
+      "invariant_text": "arq refused to enqueue task={?} (queue full or duplicate job id)",
+      "confirms_test": "test_enqueue_inv_01_confirms",
+      "prevents_test": "test_enqueue_inv_01_prevents",
+      "under_failure_test": "test_enqueue_inv_01_under_failure"
+    }
+  ]
+}

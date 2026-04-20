@@ -1,0 +1,17 @@
+{
+  "name": "InputSanitizer",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "HTML/XSS sanitization with optional bleach support.",
+  "api_signature": "class InputSanitizer: sanitize_html(...), strip_tags(...), escape_sql_chars(...)",
+  "invariants": [
+    "INPUT_SANITIZER_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

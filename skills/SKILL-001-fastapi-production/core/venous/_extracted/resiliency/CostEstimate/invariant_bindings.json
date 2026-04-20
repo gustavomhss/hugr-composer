@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "COST_ESTIMATE_INV_01",
+      "invariant_text": "REPLACE_ME \u2014 describe the invariant.",
+      "confirms_test": "test_inv_as_header_value_confirms",
+      "prevents_test": "test_inv_as_header_value_prevents",
+      "under_failure_test": "test_inv_as_header_value_under_failure"
+    }
+  ]
+}

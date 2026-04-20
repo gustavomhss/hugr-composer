@@ -1,0 +1,17 @@
+{
+  "name": "ShutdownHealthGate",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Health check gate that returns 503 during shutdown drain phase.",
+  "api_signature": "class ShutdownHealthGate: check(...), is_healthy(...)",
+  "invariants": [
+    "SHUTDOWN_HEALTH_GATE_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

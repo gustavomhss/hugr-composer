@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.794693+00:00",
+  "source_tool": "infrastructure/add_tenant_onboarding.py",
+  "origin_candidate": {
+    "docstring": "Create the admin user for the new tenant.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 452,
+    "line_start": 431,
+    "name": "CreateAdminUserStep",
+    "origin": "string_template",
+    "shape_hash": "25eb4acf21ca0731",
+    "size_bytes": 881,
+    "size_lines": 22,
+    "tool": "infrastructure/add_tenant_onboarding.py",
+    "method_count": 2,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 7048
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

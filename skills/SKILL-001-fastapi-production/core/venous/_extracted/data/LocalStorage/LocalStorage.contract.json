@@ -1,0 +1,17 @@
+{
+  "name": "LocalStorage",
+  "namespace": "data",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Local filesystem storage with atomic temp-file rename (no partial writes).",
+  "api_signature": "class LocalStorage: save(...), get_url(...), delete(...)",
+  "invariants": [
+    "LOCAL_STORAGE_INV_01: Path traversal attempt rejected: {?}"
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 1,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

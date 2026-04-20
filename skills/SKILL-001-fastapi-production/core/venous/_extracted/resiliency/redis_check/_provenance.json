@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:07.126148+00:00",
+  "source_tool": "infrastructure/add_health_deep.py",
+  "origin_candidate": {
+    "docstring": "Ping Redis and collect memory + client stats.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 580,
+    "line_start": 539,
+    "name": "redis_check",
+    "origin": "string_template",
+    "shape_hash": "c90d4e2782f9a7d2",
+    "size_bytes": 1555,
+    "size_lines": 42,
+    "tool": "infrastructure/add_health_deep.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 6220
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_opentelemetry.py",
+  "candidate": {
+    "docstring": "ASGI middleware that creates an OTEL span for each HTTP request.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 513,
+    "line_start": 455,
+    "name": "OTELMiddleware",
+    "origin": "string_template",
+    "shape_hash": "225f208f415ea073",
+    "size_bytes": 1977,
+    "size_lines": 59,
+    "tool": "infrastructure/add_opentelemetry.py",
+    "method_count": 2,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 31632
+  }
+}

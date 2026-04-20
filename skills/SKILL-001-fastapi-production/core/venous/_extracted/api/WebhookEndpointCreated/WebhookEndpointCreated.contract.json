@@ -1,0 +1,17 @@
+{
+  "name": "WebhookEndpointCreated",
+  "namespace": "api",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Extends the public schema with the signing secret.",
+  "api_signature": "",
+  "invariants": [
+    "WEBHOOK_ENDPOINT_CREATED_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

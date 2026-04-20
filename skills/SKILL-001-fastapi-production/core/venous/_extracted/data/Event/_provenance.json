@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:02.836083+00:00",
+  "source_tool": "crud_data/add_event_sourcing.py",
+  "origin_candidate": {
+    "docstring": "Append-only event row in the event store.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 743,
+    "line_start": 709,
+    "name": "Event",
+    "origin": "string_template",
+    "shape_hash": "bfce37fa50aa2203",
+    "size_bytes": 1227,
+    "size_lines": 35,
+    "tool": "crud_data/add_event_sourcing.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 4908
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

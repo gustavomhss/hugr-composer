@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_outbox_pattern.py",
+  "candidate": {
+    "docstring": "Dead-letter queue for events that exhausted all retry attempts.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 325,
+    "line_start": 302,
+    "name": "OutboxDlq",
+    "origin": "string_template",
+    "shape_hash": "17d90ea102d8c85e",
+    "size_bytes": 980,
+    "size_lines": 24,
+    "tool": "infrastructure/add_outbox_pattern.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 3920
+  }
+}

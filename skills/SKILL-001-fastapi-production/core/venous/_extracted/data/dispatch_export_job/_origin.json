@@ -1,0 +1,20 @@
+{
+  "tool": "crud_data/add_data_export.py",
+  "candidate": {
+    "docstring": "Enqueue a background export job. Returns a new job_id UUID.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 512,
+    "line_start": 481,
+    "name": "dispatch_export_job",
+    "origin": "string_template",
+    "shape_hash": "7c08164638def432",
+    "size_bytes": 899,
+    "size_lines": 32,
+    "tool": "crud_data/add_data_export.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1798
+  }
+}

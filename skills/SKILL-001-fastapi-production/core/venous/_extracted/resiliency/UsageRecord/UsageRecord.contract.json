@@ -1,0 +1,17 @@
+{
+  "name": "UsageRecord",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Persistent per-request usage record for billing reconciliation.",
+  "api_signature": "",
+  "invariants": [
+    "USAGE_RECORD_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

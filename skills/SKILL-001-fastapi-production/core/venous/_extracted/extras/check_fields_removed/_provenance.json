@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:03.818681+00:00",
+  "source_tool": "testing_tools/add_schema_evolution_guard.py",
+  "origin_candidate": {
+    "docstring": "Detect fields present in baseline but absent in current schema.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 239,
+    "line_start": 218,
+    "name": "check_fields_removed",
+    "origin": "string_template",
+    "shape_hash": "04cd10496bbeb7e8",
+    "size_bytes": 731,
+    "size_lines": 22,
+    "tool": "testing_tools/add_schema_evolution_guard.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 2924
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

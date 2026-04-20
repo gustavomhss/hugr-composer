@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "SEND_WELCOME_EMAIL_STEP_INV_01",
+      "invariant_text": "REPLACE_ME \u2014 describe the invariant.",
+      "confirms_test": "test_inv_execute_confirms",
+      "prevents_test": "test_inv_execute_prevents",
+      "under_failure_test": "test_inv_execute_under_failure"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_response_armor.py",
+  "candidate": {
+    "docstring": "ASGI middleware applying all five response hardening layers.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 477,
+    "line_start": 416,
+    "name": "ResponseArmorMiddleware",
+    "origin": "string_template",
+    "shape_hash": "d111869ac9541e9a",
+    "size_bytes": 2189,
+    "size_lines": 62,
+    "tool": "infrastructure/add_response_armor.py",
+    "method_count": 4,
+    "complexity": 5,
+    "disqualified": false,
+    "primitive_score": 175120
+  }
+}

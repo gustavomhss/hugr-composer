@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_tenant_onboarding.py",
+  "candidate": {
+    "docstring": "Tracks the progress of a single onboarding run.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 276,
+    "line_start": 248,
+    "name": "OnboardingProgress",
+    "origin": "string_template",
+    "shape_hash": "b12ced620612dc81",
+    "size_bytes": 1113,
+    "size_lines": 29,
+    "tool": "infrastructure/add_tenant_onboarding.py",
+    "method_count": 2,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 8904
+  }
+}

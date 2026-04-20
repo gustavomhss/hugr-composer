@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_opentelemetry.py",
+  "candidate": {
+    "docstring": "Record an HTTP request in the metrics counters.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 604,
+    "line_start": 584,
+    "name": "record_request",
+    "origin": "string_template",
+    "shape_hash": "002b0bb4c1b67964",
+    "size_bytes": 647,
+    "size_lines": 21,
+    "tool": "infrastructure/add_opentelemetry.py",
+    "method_count": 0,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 2588
+  }
+}

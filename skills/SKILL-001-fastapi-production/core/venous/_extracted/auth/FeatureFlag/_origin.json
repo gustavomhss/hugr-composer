@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_feature_flags.py",
+  "candidate": {
+    "docstring": "Feature flag configuration row.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 341,
+    "line_start": 266,
+    "name": "FeatureFlag",
+    "origin": "string_template",
+    "shape_hash": "b56cfd4e95f0d137",
+    "size_bytes": 2831,
+    "size_lines": 76,
+    "tool": "auth_access/add_feature_flags.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 11324
+  }
+}

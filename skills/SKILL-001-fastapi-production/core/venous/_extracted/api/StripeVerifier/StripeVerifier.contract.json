@@ -1,0 +1,21 @@
+{
+  "name": "StripeVerifier",
+  "namespace": "api",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Verify Stripe webhook payloads using the ``Stripe-Signature`` header.",
+  "api_signature": "class StripeVerifier: verify(...)",
+  "invariants": [
+    "STRIPE_VERIFIER_INV_01: Missing Stripe-Signature header",
+    "STRIPE_VERIFIER_INV_02: Stripe signature timestamp out of tolerance",
+    "STRIPE_VERIFIER_INV_03: Stripe signature mismatch",
+    "STRIPE_VERIFIER_INV_04: Invalid Stripe signature timestamp",
+    "STRIPE_VERIFIER_INV_05: Invalid JSON body"
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 5,
+    "ambiguous": false,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

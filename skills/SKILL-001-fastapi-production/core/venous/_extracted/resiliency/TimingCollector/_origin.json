@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_request_tracing_ui.py",
+  "candidate": {
+    "docstring": "Collects named spans (middleware, db, external) for one request.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 353,
+    "line_start": 303,
+    "name": "TimingCollector",
+    "origin": "string_template",
+    "shape_hash": "d14bf11ea68e457e",
+    "size_bytes": 1587,
+    "size_lines": 51,
+    "tool": "infrastructure/add_request_tracing_ui.py",
+    "method_count": 5,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 31740
+  }
+}

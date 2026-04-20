@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.362232+00:00",
+  "source_tool": "infrastructure/add_temporal_workflow.py",
+  "origin_candidate": {
+    "docstring": "Creates a Temporal worker bound to a task queue.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 487,
+    "line_start": 440,
+    "name": "WorkerFactory",
+    "origin": "string_template",
+    "shape_hash": "64a1da75eeb371f5",
+    "size_bytes": 1569,
+    "size_lines": 48,
+    "tool": "infrastructure/add_temporal_workflow.py",
+    "method_count": 2,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 12552
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

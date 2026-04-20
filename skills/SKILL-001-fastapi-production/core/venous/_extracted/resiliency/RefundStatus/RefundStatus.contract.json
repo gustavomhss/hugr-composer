@@ -1,0 +1,17 @@
+{
+  "name": "RefundStatus",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Lifecycle status of a Stripe refund.",
+  "api_signature": "",
+  "invariants": [
+    "REFUND_STATUS_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

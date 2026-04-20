@@ -1,0 +1,17 @@
+{
+  "name": "SchemaComparator",
+  "namespace": "extras",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Diff two OpenAPI 3.x JSON schemas and classify the changes.",
+  "api_signature": "class SchemaComparator: compare(...)",
+  "invariants": [
+    "SCHEMA_COMPARATOR_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

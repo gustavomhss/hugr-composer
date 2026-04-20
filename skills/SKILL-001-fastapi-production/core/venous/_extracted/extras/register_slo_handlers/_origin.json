@@ -1,0 +1,20 @@
+{
+  "tool": "testing_tools/add_load_profile.py",
+  "candidate": {
+    "docstring": "Register SLO assertion event handlers with Locust.",
+    "is_async": false,
+    "kind": "function",
+    "line_end": 497,
+    "line_start": 450,
+    "name": "register_slo_handlers",
+    "origin": "string_template",
+    "shape_hash": "a3d078b86f0de8a6",
+    "size_bytes": 1804,
+    "size_lines": 48,
+    "tool": "testing_tools/add_load_profile.py",
+    "method_count": 0,
+    "complexity": 7,
+    "disqualified": false,
+    "primitive_score": 25256
+  }
+}

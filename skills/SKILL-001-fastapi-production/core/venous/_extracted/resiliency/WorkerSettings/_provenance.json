@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.370778+00:00",
+  "source_tool": "infrastructure/add_arq_worker.py",
+  "origin_candidate": {
+    "docstring": "arq worker configuration.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 383,
+    "line_start": 361,
+    "name": "WorkerSettings",
+    "origin": "string_template",
+    "shape_hash": "a5ef9eb5f3ff1b0c",
+    "size_bytes": 983,
+    "size_lines": 23,
+    "tool": "infrastructure/add_arq_worker.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 3932
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

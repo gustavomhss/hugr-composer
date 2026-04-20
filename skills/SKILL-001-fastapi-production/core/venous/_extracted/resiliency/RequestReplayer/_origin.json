@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_api_replay_debugger.py",
+  "candidate": {
+    "docstring": "Re-execute a recorded request against the live ASGI app and diff.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 532,
+    "line_start": 473,
+    "name": "RequestReplayer",
+    "origin": "string_template",
+    "shape_hash": "d5dcf004f0e34710",
+    "size_bytes": 2096,
+    "size_lines": 60,
+    "tool": "infrastructure/add_api_replay_debugger.py",
+    "method_count": 2,
+    "complexity": 2,
+    "disqualified": false,
+    "primitive_score": 33536
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:05.366142+00:00",
+  "source_tool": "infrastructure/add_api_monetization.py",
+  "origin_candidate": {
+    "docstring": "ASGI middleware: records API usage events and enforces quotas.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 411,
+    "line_start": 357,
+    "name": "MeteringMiddleware",
+    "origin": "string_template",
+    "shape_hash": "593818c93f99dc95",
+    "size_bytes": 1891,
+    "size_lines": 55,
+    "tool": "infrastructure/add_api_monetization.py",
+    "method_count": 2,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 45384
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

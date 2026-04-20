@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_tenant_onboarding.py",
+  "candidate": {
+    "docstring": "Send welcome email to the new tenant's admin user.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 514,
+    "line_start": 497,
+    "name": "SendWelcomeEmailStep",
+    "origin": "string_template",
+    "shape_hash": "66eef0e88503e84a",
+    "size_bytes": 756,
+    "size_lines": 18,
+    "tool": "infrastructure/add_tenant_onboarding.py",
+    "method_count": 2,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 6048
+  }
+}

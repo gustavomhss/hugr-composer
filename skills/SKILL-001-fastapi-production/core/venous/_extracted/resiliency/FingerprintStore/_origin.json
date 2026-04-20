@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_request_fingerprint.py",
+  "candidate": {
+    "docstring": "Persistent fingerprint store backed by Redis with memory fallback.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 377,
+    "line_start": 342,
+    "name": "FingerprintStore",
+    "origin": "string_template",
+    "shape_hash": "885e7ba65ba84f04",
+    "size_bytes": 1360,
+    "size_lines": 36,
+    "tool": "infrastructure/add_request_fingerprint.py",
+    "method_count": 2,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 32640
+  }
+}

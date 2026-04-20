@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "LOCAL_STORAGE_INV_01",
+      "invariant_text": "Path traversal attempt rejected: {?}",
+      "confirms_test": "test_local_storage_inv_01_confirms",
+      "prevents_test": "test_local_storage_inv_01_prevents",
+      "under_failure_test": "test_local_storage_inv_01_under_failure"
+    }
+  ]
+}

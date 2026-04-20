@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.517765+00:00",
+  "source_tool": "infrastructure/add_canary_tokens.py",
+  "origin_candidate": {
+    "docstring": "Central registry of all deployed canary tokens.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 290,
+    "line_start": 236,
+    "name": "CanaryRegistry",
+    "origin": "string_template",
+    "shape_hash": "b866dc8acbb8600f",
+    "size_bytes": 1526,
+    "size_lines": 55,
+    "tool": "infrastructure/add_canary_tokens.py",
+    "method_count": 3,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 18312
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

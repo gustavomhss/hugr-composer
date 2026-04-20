@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.149492+00:00",
+  "source_tool": "infrastructure/add_push_notifications_native.py",
+  "origin_candidate": {
+    "docstring": "Send push notifications via APNs (Apple Push Notification service).",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 670,
+    "line_start": 621,
+    "name": "APNsProvider",
+    "origin": "string_template",
+    "shape_hash": "5ade3d549e6bcab7",
+    "size_bytes": 1803,
+    "size_lines": 50,
+    "tool": "infrastructure/add_push_notifications_native.py",
+    "method_count": 1,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 21636
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

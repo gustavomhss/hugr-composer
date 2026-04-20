@@ -1,0 +1,17 @@
+{
+  "name": "ComparisonResult",
+  "namespace": "extras",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Result of comparing two OpenAPI schemas.",
+  "api_signature": "class ComparisonResult: is_breaking(...)",
+  "invariants": [
+    "COMPARISON_RESULT_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

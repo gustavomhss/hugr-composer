@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.261511+00:00",
+  "source_tool": "infrastructure/add_anomaly_detector.py",
+  "origin_candidate": {
+    "docstring": "Observe every request/response and trigger alerts on anomaly.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 585,
+    "line_start": 549,
+    "name": "AnomalyMiddleware",
+    "origin": "string_template",
+    "shape_hash": "40a4f1cbc50af694",
+    "size_bytes": 1240,
+    "size_lines": 37,
+    "tool": "infrastructure/add_anomaly_detector.py",
+    "method_count": 2,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 29760
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

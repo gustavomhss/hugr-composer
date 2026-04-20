@@ -1,0 +1,20 @@
+{
+  "tool": "testing_tools/add_data_seeder.py",
+  "candidate": {
+    "docstring": "Seed the database with realistic test data in FK-safe order.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 296,
+    "line_start": 225,
+    "name": "DataSeeder",
+    "origin": "string_template",
+    "shape_hash": "d06d97f0fa16fa93",
+    "size_bytes": 2293,
+    "size_lines": 72,
+    "tool": "testing_tools/add_data_seeder.py",
+    "method_count": 4,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 110064
+  }
+}

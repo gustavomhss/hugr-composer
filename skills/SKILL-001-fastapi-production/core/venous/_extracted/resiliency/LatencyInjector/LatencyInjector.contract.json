@@ -1,0 +1,17 @@
+{
+  "name": "LatencyInjector",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Inject artificial latency into requests.",
+  "api_signature": "class LatencyInjector: inject(...)",
+  "invariants": [
+    "LATENCY_INJECTOR_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

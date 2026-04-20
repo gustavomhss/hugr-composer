@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.633178+00:00",
+  "source_tool": "infrastructure/add_health_deep.py",
+  "origin_candidate": {
+    "docstring": "Check available disk space against a configured threshold.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 644,
+    "line_start": 604,
+    "name": "disk_check",
+    "origin": "string_template",
+    "shape_hash": "340819d646b6e6a0",
+    "size_bytes": 1483,
+    "size_lines": 41,
+    "tool": "infrastructure/add_health_deep.py",
+    "method_count": 0,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 2966
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

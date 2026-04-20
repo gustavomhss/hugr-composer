@@ -1,0 +1,17 @@
+{
+  "name": "WorkerFactory",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Creates a Temporal worker bound to a task queue.",
+  "api_signature": "class WorkerFactory: create(...)",
+  "invariants": [
+    "WORKER_FACTORY_INV_01: REPLACE_ME \u2014 describe the primary correctness invariant."
+  ],
+  "status": "staged",
+  "enrichment": {
+    "invariants_mined": 0,
+    "ambiguous": true,
+    "source": "engine.extraction.auto_enrich"
+  }
+}

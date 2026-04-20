@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:04.594031+00:00",
+  "source_tool": "infrastructure/add_compliance_engine.py",
+  "origin_candidate": {
+    "docstring": "Append-only audit record for compliance actions.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 628,
+    "line_start": 597,
+    "name": "ComplianceEvent",
+    "origin": "string_template",
+    "shape_hash": "256e1bcd1661ef40",
+    "size_bytes": 1268,
+    "size_lines": 32,
+    "tool": "infrastructure/add_compliance_engine.py",
+    "method_count": 1,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 5072
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

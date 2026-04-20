@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_email_templates.py",
+  "candidate": {
+    "docstring": "Return (rows, total_count) for a user's email deliveries.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 1498,
+    "line_start": 1477,
+    "name": "list_user_deliveries",
+    "origin": "string_template",
+    "shape_hash": "b9151c9863e6c1dd",
+    "size_bytes": 731,
+    "size_lines": 22,
+    "tool": "infrastructure/add_email_templates.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1462
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_notifications.py",
+  "candidate": {
+    "docstring": "Facade for notification lifecycle operations.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 531,
+    "line_start": 482,
+    "name": "NotificationService",
+    "origin": "string_template",
+    "shape_hash": "17653203f371c0a8",
+    "size_bytes": 1902,
+    "size_lines": 50,
+    "tool": "infrastructure/add_notifications.py",
+    "method_count": 6,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 45648
+  }
+}

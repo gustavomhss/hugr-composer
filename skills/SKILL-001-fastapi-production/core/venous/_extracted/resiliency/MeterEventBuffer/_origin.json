@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_api_monetization.py",
+  "candidate": {
+    "docstring": "Thread-safe in-memory buffer for meter events pending Stripe sync.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 323,
+    "line_start": 300,
+    "name": "MeterEventBuffer",
+    "origin": "string_template",
+    "shape_hash": "d0308bab1527a359",
+    "size_bytes": 888,
+    "size_lines": 24,
+    "tool": "infrastructure/add_api_monetization.py",
+    "method_count": 4,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 14208
+  }
+}

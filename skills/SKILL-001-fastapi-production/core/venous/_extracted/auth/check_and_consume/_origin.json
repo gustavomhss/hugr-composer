@@ -1,0 +1,20 @@
+{
+  "tool": "auth_access/add_mfa.py",
+  "candidate": {
+    "docstring": "Increment the attempt counter for *user_id* and check the limit.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 642,
+    "line_start": 619,
+    "name": "check_and_consume",
+    "origin": "string_template",
+    "shape_hash": "69a342b0ae073186",
+    "size_bytes": 956,
+    "size_lines": 24,
+    "tool": "auth_access/add_mfa.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1912
+  }
+}

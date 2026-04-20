@@ -1,0 +1,20 @@
+{
+  "tool": "infrastructure/add_arq_worker.py",
+  "candidate": {
+    "docstring": "Return the most recent jobs triggered by *user_id*.",
+    "is_async": true,
+    "kind": "function",
+    "line_end": 1019,
+    "line_start": 997,
+    "name": "list_user_jobs",
+    "origin": "string_template",
+    "shape_hash": "f78b2f12718c561d",
+    "size_bytes": 627,
+    "size_lines": 23,
+    "tool": "infrastructure/add_arq_worker.py",
+    "method_count": 0,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 1254
+  }
+}

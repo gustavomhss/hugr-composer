@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:06.343003+00:00",
+  "source_tool": "infrastructure/add_api_monetization.py",
+  "origin_candidate": {
+    "docstring": "Persistent per-request usage record for billing reconciliation.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 707,
+    "line_start": 681,
+    "name": "UsageRecord",
+    "origin": "string_template",
+    "shape_hash": "b160b037baa4ceac",
+    "size_bytes": 1149,
+    "size_lines": 27,
+    "tool": "infrastructure/add_api_monetization.py",
+    "method_count": 1,
+    "complexity": 0,
+    "disqualified": false,
+    "primitive_score": 4596
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}
