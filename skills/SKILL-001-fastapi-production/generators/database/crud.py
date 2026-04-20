@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_crud',
+    'description': 'Generate CRUD layer (create/read/update/delete/list) with pagination and optional owner filtering.',
+    'tags': ['database', 'generator'],
+    'entry': 'generate_crud',
+}
+
 import textwrap
 from pathlib import Path
 
@@ -88,10 +95,6 @@ def generate_crud(
 
         from __future__ import annotations
 
-        import uuid
-
-        from sqlalchemy.ext.asyncio import AsyncSession
-
         from app.crud.base import CRUDBase
         from app.models.{lower} import {cls}
 
@@ -109,10 +112,13 @@ def generate_crud(
 
     # Insert any extra imports right before "from app.crud.base import CRUDBase"
     extra_imports: list[str] = []
+    if with_soft_delete:
+        extra_imports.append("import uuid")
+        extra_imports.append("from datetime import datetime, timezone")
+    if unique_field or with_soft_delete:
+        extra_imports.append("from sqlalchemy.ext.asyncio import AsyncSession")
     if unique_field:
         extra_imports.append("from sqlalchemy import select")
-    if with_soft_delete:
-        extra_imports.append("from datetime import datetime, timezone")
 
     if extra_imports:
         extras_block = "\n".join(extra_imports) + "\n"

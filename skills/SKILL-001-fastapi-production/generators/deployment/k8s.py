@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_k8s',
+    'description': 'Generate K8s manifests: Deployment, Service, HPA, PDB, ConfigMap, Secret.',
+    'tags': ['deployment', 'generator'],
+    'entry': 'generate_k8s_manifests',
+}
+
 import textwrap
 from pathlib import Path
 

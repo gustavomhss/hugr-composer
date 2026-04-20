@@ -10,6 +10,13 @@ can handle:
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_user_routes',
+    'description': 'Generate complete User management routes: signup, /me, /me/password, and superuser CRUD.',
+    'tags': ['auth', 'endpoints', 'generator'],
+    'entry': 'generate_user_routes',
+}
+
 import textwrap
 from pathlib import Path
 

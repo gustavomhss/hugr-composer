@@ -51,6 +51,13 @@ Google SRE Workbook, Chapter 5 -- "Alerting on SLOs"
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_alerting',
+    'description': 'Generate PrometheusRule alerts (5 rules) and Grafana dashboard (4 panels).',
+    'tags': ['generator', 'observability'],
+    'entry': 'generate_alerting',
+}
+
 import json
 import textwrap
 from pathlib import Path

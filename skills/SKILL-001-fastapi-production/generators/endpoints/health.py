@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_health',
+    'description': 'Generate 3-level health checks: /healthz (liveness), /readyz (readiness), /startupz (startup).',
+    'tags': ['endpoints', 'generator'],
+    'entry': 'generate_health_checks',
+}
+
 import textwrap
 from pathlib import Path
 

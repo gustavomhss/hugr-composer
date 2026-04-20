@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_precommit',
+    'description': 'Generate .pre-commit-config.yaml with Ruff linting/formatting and pre-commit hooks.',
+    'tags': ['generator', 'infra'],
+    'entry': 'generate_precommit',
+}
+
 import textwrap
 from pathlib import Path
 

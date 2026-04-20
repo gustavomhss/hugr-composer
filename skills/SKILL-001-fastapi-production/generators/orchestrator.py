@@ -21,6 +21,14 @@ Usage:
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_project',
+    'description': 'Generate a complete production-ready FastAPI project.',
+    'tags': ['generator', 'orchestrator'],
+    'entry': 'generate_project',
+    'annotations': {'readOnlyHint': False, 'destructiveHint': False},
+}
+
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
@@ -661,6 +669,27 @@ def generate_project(
             owner_models=owner_models,
             with_auth=with_auth,
         ))
+
+    # ---------------------------------------------------------------
+    # Phase 12: scaffold_venous smoke — prove the copy-in pipe works
+    # for the reference primitive (see ADR 0002 + CONTRACT §B1.0).
+    # Tools refactored under §B1.3 call ensure_primitives themselves;
+    # this single call here keeps the orchestrator honest by shipping
+    # at least one primitive on every fresh project.
+    # ---------------------------------------------------------------
+    try:
+        from generators.scaffold_venous import ensure_primitives
+
+        manifest = ensure_primitives(
+            str(out),
+            names=["core.venous.resiliency.GracefulShutdown"],
+        )
+        if manifest.copied:
+            phases["scaffold_venous"] = {"files": len(manifest.copied), "status": "done"}
+        else:
+            phases["scaffold_venous"] = {"files": 0, "status": "already_present"}
+    except Exception as exc:  # noqa: BLE001 — smoke step must not break project gen
+        phases["scaffold_venous"] = {"files": 0, "status": f"skipped ({exc})"}
 
     return {
         "files_created": all_files,

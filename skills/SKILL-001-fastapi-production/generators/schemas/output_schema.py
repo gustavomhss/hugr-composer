@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_schemas',
+    'description': 'Generate input (Create/Update), output (Public), and list ({data, count}) schemas for a model.',
+    'tags': ['generator', 'schemas'],
+    'entry': 'generate_schemas',
+}
+
 import textwrap
 from pathlib import Path
 
@@ -234,3 +241,26 @@ def _ensure_in_import(source: str, module: str, symbol: str) -> str:
         return source[: match.start()] + new_line + source[match.end():]
     # No existing ``from module`` line — inject a fresh one
     return _inject_import(source, f"from {module} import {symbol}")
+
+
+def generate_schemas(output_dir: str, name: str, fields: dict[str, str]) -> dict:
+    """MCP entry: generate input + output + list-response schemas for a model.
+
+    Input schemas use strict=True with max_length on all strings and min/max
+    on numbers. Output schemas use from_attributes=True and never expose
+    hashed_password.
+    """
+    from generators.schemas.input_schema import generate_input_schema
+    from generators.schemas.output_schema import generate_output_schema as _gos
+    from generators.schemas.list_response import generate_list_response
+
+    results: dict = {"files_created": [], "notes": []}
+    for gen in [
+        lambda: generate_input_schema(output_dir, name, fields),
+        lambda: _gos(output_dir, name, fields),
+        lambda: generate_list_response(output_dir, name),
+    ]:
+        r = gen()
+        results["files_created"].extend(r["files_created"])
+        results["notes"].extend(r.get("notes", []))
+    return results

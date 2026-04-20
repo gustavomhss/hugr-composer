@@ -18,6 +18,14 @@ Usage::
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_add_websocket',
+    'description': 'Add a WebSocket endpoint with connection manager, rooms, heartbeat, and optional JWT auth.',
+    'tags': ['adapt'],
+    'entry': 'add_websocket',
+    'annotations': {'readOnlyHint': False},
+}
+
 import textwrap
 from pathlib import Path
 

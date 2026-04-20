@@ -91,8 +91,6 @@ def generate_auth_schemas(output_dir: str) -> dict:
                 _validate_password = field_validator("password")(password_strength_validator)
         """
 
-        from pydantic import field_validator
-
         # Top-10 most common passwords — reject these outright.
         # Expand this list from HIBP or SecLists as needed.
         COMMON_PASSWORDS = {

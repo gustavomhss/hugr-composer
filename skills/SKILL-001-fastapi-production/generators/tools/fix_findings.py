@@ -7,6 +7,14 @@ what was fixed, what needs manual intervention, and the before/after score.
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_fix_findings',
+    'description': 'Auto-fix production readiness findings in an existing project.',
+    'tags': ['operate', 'refactor'],
+    'entry': 'fix_findings',
+    'annotations': {'readOnlyHint': False},
+}
+
 import re
 from pathlib import Path
 

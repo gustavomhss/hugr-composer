@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_crud_routes',
+    'description': 'Generate complete CRUD routes for a model with auth and owner-based access control.',
+    'tags': ['endpoints', 'generator'],
+    'entry': 'generate_crud_routes',
+}
+
 import textwrap
 from pathlib import Path
 
@@ -101,7 +108,7 @@ def generate_crud_routes(
         deps_imports: list[str] = []
         if not superuser_only:
             deps_imports.append("CurrentUser")
-        if superuser_only or has_owner:
+        if superuser_only:
             deps_imports.append("CurrentSuperuser")
         import_lines.append(
             f"from app.api.deps import {', '.join(deps_imports)}"

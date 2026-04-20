@@ -36,8 +36,7 @@ def generate_auth_deps(
         from fastapi import Depends, HTTPException, status
         from fastapi.security import OAuth2PasswordBearer
 
-        from app.core.config import settings
-        from app.core.jwt import ALGORITHM, decode_token
+        from app.core.jwt import decode_token
         from app.core.session import SessionDep
         from app.crud.user import get as get_user
         from app.models.user import User

@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_session',
+    'description': 'Generate async session factory with commit/rollback/close and SessionDep dependency.',
+    'tags': ['database', 'generator'],
+    'entry': 'generate_session',
+}
+
 import textwrap
 from pathlib import Path
 

@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_ci',
+    'description': 'Generate GitHub Actions CI: lint (ruff+mypy), test (pytest+postgres), build (Docker), scan (Trivy).',
+    'tags': ['deployment', 'generator'],
+    'entry': 'generate_github_actions',
+}
+
 import textwrap
 from pathlib import Path
 

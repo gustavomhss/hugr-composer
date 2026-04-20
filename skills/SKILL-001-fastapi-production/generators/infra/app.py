@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_app',
+    'description': 'Generate main.py with asynccontextmanager lifespan, middleware registration, and router setup.',
+    'tags': ['generator', 'infra'],
+    'entry': 'generate_app',
+}
+
 import textwrap
 from pathlib import Path
 

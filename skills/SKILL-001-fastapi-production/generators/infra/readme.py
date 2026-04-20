@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_readme',
+    'description': 'Generate README.md with quick start, env reference, project structure, and deployment guide.',
+    'tags': ['generator', 'infra'],
+    'entry': 'generate_readme',
+}
+
 import textwrap
 from pathlib import Path
 

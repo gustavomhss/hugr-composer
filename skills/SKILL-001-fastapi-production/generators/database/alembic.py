@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_alembic',
+    'description': 'Generate complete Alembic migration setup (alembic.ini + env.py + script template).',
+    'tags': ['database', 'generator'],
+    'entry': 'generate_alembic',
+}
+
 import textwrap
 from pathlib import Path
 

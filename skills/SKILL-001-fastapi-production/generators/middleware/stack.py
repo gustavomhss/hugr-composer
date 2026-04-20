@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_middleware',
+    'description': 'Generate full middleware stack: CORS, security headers (7), correlation ID, request logging.',
+    'tags': ['generator', 'middleware'],
+    'entry': 'generate_middleware_stack',
+}
+
 import textwrap
 from pathlib import Path
 
