@@ -170,6 +170,14 @@ def _r_benchmark_no_stubs() -> tuple[bool, str]:
 
 
 def _r_registry_exists() -> tuple[bool, str]:
+    """B1.1 — registry synced with disk + no half-extracted dirs.
+
+    A "half-extracted" directory is a subdir under a production namespace
+    that lacks a matching ``<Name>.md`` (per the strict dir==name contract).
+    Historically these were candidate scaffolds abandoned mid-extraction;
+    leaving them under a production namespace created the *perception*
+    of a ready primitive that B1.1 silently skipped. Reject them outright.
+    """
     reg = SKILL_ROOT / "engine" / "primitives_by_concern.yaml"
     ok, msg = _exists(reg, min_bytes=500)
     if not ok:
@@ -177,36 +185,73 @@ def _r_registry_exists() -> tuple[bool, str]:
     import yaml as _yaml
     data = _yaml.safe_load(reg.read_text()) or {}
     registered = {p["name"] for p in (data.get("primitives") or [])}
+    venous = SKILL_ROOT / "core" / "venous"
+
     on_disk: set[str] = set()
-    for md in (SKILL_ROOT / "core" / "venous").rglob("*.md"):
-        if "_extracted" in md.parts or "_adapters" in md.parts:
+    all_leaf_dirs: set[Path] = set()
+    for d in venous.glob("*/*"):
+        if not d.is_dir():
             continue
-        if md.stem == md.parent.name:
-            on_disk.add(md.stem)
+        if any(part in d.parts for part in ("_extracted", "_adapters", "__pycache__")):
+            continue
+        all_leaf_dirs.add(d)
+        md = d / f"{d.name}.md"
+        if md.exists():
+            on_disk.add(d.name)
+
     missing = sorted(on_disk - registered)
     if missing:
         return False, f"{len(missing)} production primitives unregistered: {missing[:5]}"
     extra = sorted(registered - on_disk)
     if extra:
         return False, f"{len(extra)} registered primitives have no .md on disk: {extra[:5]}"
-    return True, f"registry synced: {len(registered)} entries match disk"
+    half_extracted = sorted(
+        str(d.relative_to(venous)) for d in all_leaf_dirs
+        if not (d / f"{d.name}.md").exists()
+    )
+    if half_extracted:
+        return False, (
+            f"{len(half_extracted)} half-extracted dirs under production namespaces "
+            f"(no matching .md) — move to _extracted/ or complete them: {half_extracted[:5]}"
+        )
+    return True, f"registry synced: {len(registered)} entries match disk (no half-extracted dirs)"
 
 
 def _r_compose_with_coverage() -> tuple[bool, str]:
+    """B1.2 — every production primitive has a ≥3-bullet Compose-with section.
+
+    CONTRACT §A5 requires ≥3 sibling pairings per primitive (so recipe
+    retrieval has something meaningful to return). This rule checks both:
+    section presence AND bullet count. Previously it only checked presence.
+    """
+    import yaml as _yaml
+    reg = _yaml.safe_load((SKILL_ROOT / "engine" / "primitives_by_concern.yaml").read_text())
     venous = SKILL_ROOT / "core" / "venous"
-    missing: list[str] = []
-    for manifest in venous.rglob("*.manifest.json"):
-        if "_extracted" in manifest.parts:
-            continue
-        md = manifest.parent / f"{manifest.parent.name}.md"
+
+    missing_section: list[str] = []
+    under_three: list[str] = []
+    for entry in reg.get("primitives", []):
+        md = venous / entry["namespace"] / entry["name"] / f"{entry['name']}.md"
         if not md.exists():
-            missing.append(str(manifest.parent.relative_to(venous)))
+            missing_section.append(f"{entry['namespace']}/{entry['name']}")
             continue
-        if "## Compose with:" not in md.read_text():
-            missing.append(str(manifest.parent.relative_to(venous)))
-    if missing:
-        return False, f"{len(missing)} primitives lack 'Compose with:' section: {missing[:3]}..."
-    return True, "100% of production primitives have Compose-with sections"
+        body = md.read_text()
+        m = re.search(r"## Compose with.*?(?=\n## |\Z)", body, re.DOTALL | re.IGNORECASE)
+        if not m:
+            missing_section.append(f"{entry['namespace']}/{entry['name']}")
+            continue
+        bullets = re.findall(r"^\s*-\s", m.group(), re.MULTILINE)
+        if len(bullets) < 3:
+            under_three.append(f"{entry['namespace']}/{entry['name']} ({len(bullets)})")
+
+    if missing_section:
+        return False, f"{len(missing_section)} primitives lack 'Compose with:' section: {missing_section[:3]}"
+    if under_three:
+        return False, (
+            f"{len(under_three)} primitives have <3 Compose-with bullets "
+            f"(§A5 requires ≥3): {under_three[:3]}"
+        )
+    return True, f"100% of {len(reg['primitives'])} primitives have ≥3 Compose-with bullets"
 
 
 def _r_tools_import_primitives() -> tuple[bool, str]:
@@ -229,18 +274,106 @@ def _r_no_manual_mcp_tool_decorator() -> tuple[bool, str]:
 
 
 def _r_benchmark_score() -> tuple[bool, str]:
+    """B3.5 — latest_score.json present + overall >= baseline_floor.json floor.
+
+    The static floor is held in ``benchmarks/baseline_floor.json``; raise it
+    in the same commit that raises the published score. A regression below
+    the floor is a B3.5 failure — this is how we prevent "silent 69-point
+    drop" scenarios where the hard floor (30) would still pass.
+    """
     scorefile = SKILL_ROOT / "benchmarks" / "latest_score.json"
+    floorfile = SKILL_ROOT / "benchmarks" / "baseline_floor.json"
     if not scorefile.exists():
         return False, "benchmarks/latest_score.json not published"
     try:
         data = json.loads(scorefile.read_text())
-        score = data.get("overall", data.get("overall_average", 0))
+        score = float(data.get("overall", data.get("overall_average", 0)))
         methodology = data.get("methodology", "unknown")
-    except (json.JSONDecodeError, AttributeError):
+    except (json.JSONDecodeError, AttributeError, TypeError, ValueError):
         return False, "benchmarks/latest_score.json malformed"
-    if score < 30:
-        return False, f"baseline score {score} < 30 minimum"
-    return True, f"baseline score {score} ({methodology})"
+
+    floor = 30.0  # hard schema floor
+    if floorfile.exists():
+        try:
+            floor = max(floor, float(json.loads(floorfile.read_text()).get("floor", 30.0)))
+        except (json.JSONDecodeError, TypeError, ValueError):
+            pass
+
+    if score < floor:
+        return False, (
+            f"benchmark score {score:.2f} < baseline floor {floor:.2f} "
+            f"(set in benchmarks/baseline_floor.json — raise in the same "
+            f"commit that raises latest_score.json)"
+        )
+    return True, f"baseline score {score:.2f} ≥ floor {floor:.2f} ({methodology})"
+
+
+def _r_adapter_coverage() -> tuple[bool, str]:
+    """B1.7 — every FastAPI adapter under _adapters/fastapi/ has a matching
+    test + maps to a registered primitive; floor of ≥15 adapters.
+
+    Adapters are the thin framework-specific shims that wire framework-free
+    primitives into FastAPI (ADR 0003). Without test coverage, a subtle
+    adapter bug breaks every generated app silently — so each adapter must
+    have a ``test_<Name>Adapter.py`` beside it, and every adapter must
+    reference a primitive that exists in the registry.
+    """
+    import yaml as _yaml
+    adapters_dir = SKILL_ROOT / "core" / "venous" / "_adapters" / "fastapi"
+    if not adapters_dir.exists():
+        return False, f"missing: {adapters_dir.relative_to(SKILL_ROOT)}"
+
+    reg = _yaml.safe_load((SKILL_ROOT / "engine" / "primitives_by_concern.yaml").read_text())
+    registered = {p["name"] for p in reg.get("primitives", [])}
+
+    adapters = [
+        f for f in adapters_dir.glob("*.py")
+        if not f.name.startswith(("_", "test_"))
+    ]
+    if len(adapters) < 15:
+        return False, f"only {len(adapters)} fastapi adapters (need ≥15)"
+
+    # Family-tag mapping: adapter filenames use a family prefix (e.g.
+    # "Workflow", "OAuth2") that the §A3 naming convention does NOT require
+    # to match a primitive name exactly. These families map to one or more
+    # registered primitives — maintained here so adding a new adapter that
+    # breaks the mapping fails B1.7 in CI.
+    family_map = {
+        "Workflow": {"WorkflowRun", "ActivityCall", "DurableTimer"},
+        "AuditLog": {"AuditEvent", "TamperEvidentAuditLog", "AccessLog"},
+        "OAuth2": {"AuthorizationCodeFlow", "TokenIntrospector", "SessionStore"},
+        "WebhookReceiver": {"SignatureVerifier", "IdempotentConsumer",
+                            "InboxDeduplicator"},
+        "Saga": {"SagaOrchestrator", "DomainEvent"},
+    }
+
+    missing_test: list[str] = []
+    unknown_primitive: list[str] = []
+    for a in adapters:
+        if not (adapters_dir / f"test_{a.name}").exists():
+            missing_test.append(a.stem)
+        stem = a.stem
+        # Convention: <PrimitiveOrFamily>Adapter.py
+        if not stem.endswith("Adapter"):
+            unknown_primitive.append(a.stem)
+            continue
+        prefix = stem[: -len("Adapter")]
+        if prefix in registered:
+            continue
+        if prefix in family_map and family_map[prefix] & registered:
+            continue
+        if any(rn in stem for rn in registered):
+            continue
+        unknown_primitive.append(a.stem)
+
+    if missing_test:
+        return False, f"{len(missing_test)} adapters lack a test_*.py: {missing_test[:3]}"
+    if unknown_primitive:
+        return False, (
+            f"{len(unknown_primitive)} adapters reference no registered primitive: "
+            f"{unknown_primitive[:3]}"
+        )
+    return True, f"{len(adapters)} fastapi adapters, 100% tested + map to registry"
 
 
 def _r_core_venous_distribution() -> tuple[bool, str]:
@@ -681,6 +814,7 @@ RULES: list[Rule] = [
     Rule("B1.3", 1, "≥15 tools import core.venous", _r_tools_import_primitives),
     Rule("B1.5", 1, "no hardcoded @mcp_app.tool decorators", _r_no_manual_mcp_tool_decorator),
     Rule("B1.6", 1, "no orphan generators (every generate_* is tool or internal)", _r_no_orphan_generators),
+    Rule("B1.7", 1, "fastapi adapter coverage (tested + maps to registry)", _r_adapter_coverage),
     Rule("B2.1", 2, "find_primitive MCP tool + BM25 quality gate", _r_find_primitive_discovery),
     Rule("B2.2", 2, "suggest_composition MCP tool + recipe quality gate", _r_suggest_composition),
     Rule("B2.3", 2, "reference docs site idempotent build", _r_docs_site),
