@@ -425,37 +425,53 @@ def _build_prompt(spec, workdir: Path, *, has_kit_mcp: bool) -> str:  # noqa: AN
         kit_block = """
 ---
 
-KIT AVAILABLE — HuGR SkillKit SKILL-001 MCP tools are connected to this session.
-You may (and should, when appropriate) use them to accelerate the solution:
+KIT AVAILABLE — HuGR SkillKit SKILL-001 MCP tools are connected to this
+session. You MUST use this workflow when a spec invariant maps to an
+existing primitive (don't hand-roll primitives we already ship):
 
-  • fastapi_find_primitive(query, concern?)      — BM25 search over 122
-    framework-free production primitives under `core.venous.*`. Returns
-    top-K hits with purpose + compose-with siblings. Use to discover
-    whether a Lego block already exists for a capability you need
-    (idempotency store, audit chain, sharded counter, causal reorder, …).
+  1. DISCOVER. Call `mcp__fastapi-production__fastapi_find_primitive`
+     for each capability you need (idempotency store, audit chain,
+     sharded counter, causal reorder buffer, session cache, …).
+     Also try `mcp__fastapi-production__fastapi_suggest_composition`
+     with natural-language intents like "webhook with dedup + audit"
+     or "lock-free reader serializable writer".
 
-  • fastapi_suggest_composition(intent)          — recipe index over 290
-    hand-authored compose-with pairings. Returns ranked primitive
-    combinations for natural-language intents like "webhook with
-    dedup + audit" or "lock-free read with serializable write".
+  2. SCAFFOLD. Once you've identified the primitives you need, call
+     `mcp__fastapi-production__scaffold_venous` (or the appropriate
+     `fastapi_add_<capability>` slice tool) to COPY the primitive
+     source into your emitted package AND emit the import-ready
+     wiring. This is the critical step — find_primitive alone only
+     TELLS you the primitive exists; scaffold_venous/add_* actually
+     WRITES the code.
 
-  • fastapi_add_<capability>(...) (≈100 slice tools) — emit code that
-    composes the kit's primitives into the project (auth, rbac, rate
-    limiting, webhooks, event sourcing, etc.). These tools write files
-    into the current working directory.
+  3. IMPORT. In your handlers, use
+        `from core.venous.<namespace>.<Name> import <Name>`
+     exactly as the scaffold tool's output indicates. Do NOT
+     re-implement the primitive's body.
 
-  • fastapi_generate_project(...)                — macro scaffold for an
-    empty tree. Use ONCE at the start if you want a full baseline.
+  4. COMPOSE. Wire the primitives together in routes per the
+     spec's acceptance criteria.
 
-Primitive import pattern: emit code that uses
-    `from core.venous.<namespace>.<Name> import <Name>`
-and copy the primitive source alongside your package (the kit's
-`scaffold_venous` tool does this for you). A reference-docs site is
-reachable from each primitive page on the docs.hugr.dev deployment.
+Spec invariants that map to kit primitives (partial list — query the
+MCP tools for the full set):
+  - Exact-once / idempotency → `IdempotentConsumer`, `IdempotencyStore`
+  - Tamper-evident audit     → `TamperEvidentAuditLog`, `AuditEvent`
+  - Transactional outbox     → `TransactionalOutbox`
+  - Unit of work             → `UnitOfWork`
+  - Optimistic concurrency   → `OptimisticConcurrency`
+  - Rate limiting + priority → `RateLimiter`, `Bulkhead`, `LoadShedder`
+  - Session cache (TTL)      → `SessionCache`
+  - Sharded hot counter      → `ShardedCounter`
+  - Causal reorder buffer    → `CausalReorderBuffer`
+  - Heterogeneous worker pool→ `HeterogeneousWorkerPool`
 
-Prefer kit tools over hand-rolling when the spec's invariants map to
-an existing primitive — they are 10-tier gated (compile / types /
-concurrency / chaos / observability) upstream.
+Every primitive above is 10-tier gated upstream (compile / types /
+concurrency / chaos / observability). Hand-rolling your own version
+means the judge will catch the edge cases we've already closed.
+
+REMEMBER: the judge scores you on actual behavior of the emitted app,
+not on whether you called our MCP tools. If a spec's invariant doesn't
+map to a kit primitive, write the code directly.
 """
     return f"""You are a senior backend engineer. Produce a working FastAPI project that implements the requirements in the brief below. Write all files to the current working directory ({workdir}). The evaluator will boot your project with the boot command declared in the brief's metadata and run a sealed test suite you will NOT see.
 
