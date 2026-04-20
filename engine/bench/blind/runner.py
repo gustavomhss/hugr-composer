@@ -30,7 +30,11 @@ SKILL_ROOT = Path(__file__).resolve().parents[3]
 REPO_ROOT = SKILL_ROOT.parents[1]
 SPECS_ROOT = SKILL_ROOT / "benchmarks" / "blind" / "specs"
 RESULTS_ROOT = SKILL_ROOT / "benchmarks" / "blind" / "results"
-MCP_CONFIG = REPO_ROOT / "examples" / "claude_code.mcp.json"
+# Dedicated MCP config for blind-bench kit arm. Absolute paths required
+# (Claude CLI won't resolve relatives). `examples/claude_code.mcp.json`
+# at the repo root is a TEMPLATE with `/Users/YOU/` placeholders — never
+# loaded by the harness.
+MCP_CONFIG = SKILL_ROOT / "benchmarks" / "blind" / "mcp_kit.json"
 
 DEFAULT_SEEDS = [7919, 15485863, 2038074743]
 
