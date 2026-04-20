@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "HB_INV_01",
+      "invariant_text": "Boundaries MUST be strictly increasing, finite, non-negative, and SHALL include at least five buckets below the target p99.",
+      "confirms_test": "test_inv_boundaries_well_formed_confirms",
+      "prevents_test": "test_inv_boundaries_well_formed_prevents",
+      "under_failure_test": "test_inv_boundaries_well_formed_under_failure"
+    },
+    {
+      "invariant_id": "HB_INV_02",
+      "invariant_text": "Once assigned to an instrument, boundaries are immutable; changing them at runtime is FORBIDDEN because it invalidates historical quantile comparisons.",
+      "confirms_test": "test_inv_immutable_boundaries_confirms",
+      "prevents_test": "test_inv_immutable_boundaries_prevents",
+      "under_failure_test": "test_inv_immutable_boundaries_under_failure"
+    },
+    {
+      "invariant_id": "HB_INV_03",
+      "invariant_text": "Latency boundaries MUST be expressed in milliseconds with unit 'ms' and NEVER mixed with seconds on the same instrument.",
+      "confirms_test": "test_inv_latency_unit_confirms",
+      "prevents_test": "test_inv_latency_unit_prevents",
+      "under_failure_test": "test_inv_latency_unit_under_failure"
+    },
+    {
+      "invariant_id": "HB_INV_04",
+      "invariant_text": "The lowest boundary MUST be smaller than the realistic floor of the measured distribution so the first bucket is not saturated.",
+      "confirms_test": "test_inv_low_boundary_below_floor_confirms",
+      "prevents_test": "test_inv_low_boundary_below_floor_prevents",
+      "under_failure_test": "test_inv_low_boundary_below_floor_under_failure"
+    },
+    {
+      "invariant_id": "HB_INV_05",
+      "invariant_text": "Bucket count SHALL NOT exceed 20 per instrument to bound per-series storage cost.",
+      "confirms_test": "test_inv_bucket_count_cap_confirms",
+      "prevents_test": "test_inv_bucket_count_cap_prevents",
+      "under_failure_test": "test_inv_bucket_count_cap_under_failure"
+    },
+    {
+      "invariant_id": "HB_INV_06",
+      "invariant_text": "Default bucket sets for HTTP latency and payload size MUST be derived from the OpenTelemetry HTTP semconv recommendation and CANNOT be silently overridden at instrument creation.",
+      "confirms_test": "test_inv_default_presets_confirms",
+      "prevents_test": "test_inv_default_presets_prevents",
+      "under_failure_test": "test_inv_default_presets_under_failure"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "AGG_INV_01",
+      "invariant_text": "Only the aggregate root MUST be referenced from outside the aggregate; external references to internal children are FORBIDDEN.",
+      "confirms_test": "test_inv_root_only_access_confirms",
+      "prevents_test": "test_inv_root_only_access_prevents",
+      "under_failure_test": "test_inv_root_only_access_under_failure"
+    },
+    {
+      "invariant_id": "AGG_INV_02",
+      "invariant_text": "A single transaction MUST modify at most one aggregate instance; cross-aggregate changes SHALL be coordinated via domain events.",
+      "confirms_test": "test_inv_single_aggregate_tx_confirms",
+      "prevents_test": "test_inv_single_aggregate_tx_prevents",
+      "under_failure_test": "test_inv_single_aggregate_tx_under_failure"
+    },
+    {
+      "invariant_id": "AGG_INV_03",
+      "invariant_text": "All invariants defined by the root MUST hold at the end of every public method; intermediate illegal states CANNOT be exposed.",
+      "confirms_test": "test_inv_root_invariants_confirms",
+      "prevents_test": "test_inv_root_invariants_prevents",
+      "under_failure_test": "test_inv_root_invariants_under_failure"
+    },
+    {
+      "invariant_id": "AGG_INV_04",
+      "invariant_text": "The aggregate version NEVER decreases and MUST increment on every state-changing operation for optimistic concurrency.",
+      "confirms_test": "test_inv_version_monotonic_confirms",
+      "prevents_test": "test_inv_version_monotonic_prevents",
+      "under_failure_test": "test_inv_version_monotonic_under_failure"
+    },
+    {
+      "invariant_id": "AGG_INV_05",
+      "invariant_text": "External collaborators SHALL reference other aggregates by identifier only, NEVER by object reference.",
+      "confirms_test": "test_inv_id_only_reference_confirms",
+      "prevents_test": "test_inv_id_only_reference_prevents",
+      "under_failure_test": "test_inv_id_only_reference_under_failure"
+    }
+  ]
+}

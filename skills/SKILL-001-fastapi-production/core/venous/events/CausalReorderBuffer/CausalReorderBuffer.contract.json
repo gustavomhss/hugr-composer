@@ -1,0 +1,26 @@
+{
+  "name": "CausalReorderBuffer",
+  "namespace": "events",
+  "purpose": "Buffer incoming events per (aggregate_id, sequence), drain in causal order, emit a single gap event when a predecessor times out.",
+  "api_signature": "from __future__ import annotations\nfrom collections.abc import Iterator, Mapping\nfrom typing import Any, Protocol, runtime_checkable\n\n@runtime_checkable\nclass CausalReorderBuffer(Protocol):\n    def offer(self, aggregate_id: str, sequence: int, event: Mapping[str, Any], deadline_ms: int) -> None: ...\n    def next_ready(self, aggregate_id: str) -> Iterator[Mapping[str, Any]]: ...\n    def timed_out(self, now_ms: int) -> list[tuple[str, int]]: ...\n",
+  "invariants": [
+    {"id": "CRB_INV_01", "rule": "Events per aggregate_id drain in strictly monotonic sequence order."},
+    {"id": "CRB_INV_02", "rule": "An out-of-order event is held until its predecessor arrives OR its deadline_ms elapses."},
+    {"id": "CRB_INV_03", "rule": "On deadline expiry, timed_out() emits (aggregate_id, missing_sequence) exactly once."},
+    {"id": "CRB_INV_04", "rule": "After a gap is emitted, events at sequences > missing ARE drained (dropped predecessor cannot block forever)."},
+    {"id": "CRB_INV_05", "rule": "Duplicate offer(agg, seq, ...) is idempotent; the second call is dropped silently."}
+  ],
+  "extension_contract": "Adopters MAY override _AggregateState to persist pending events for crash recovery; the five invariants MUST be preserved. Sequence type is monotonic int; a different type (e.g. Lamport tuples) is a different primitive.",
+  "consumption_example": "buf = InMemoryCausalReorderBuffer()\nbuf.offer('acct-42', 1, {'kind': 'credit'}, deadline_ms=5000)\nbuf.offer('acct-42', 0, {'kind': 'opened'}, deadline_ms=5000)\nfor ev in buf.next_ready('acct-42'):\n    apply(ev)\nfor agg, missing in buf.timed_out(now_ms=9999):\n    alert(agg, missing)\n",
+  "sources": [
+    {"source": "Apache Flink out-of-order watermarker", "locator": "https://nightlies.apache.org/flink/flink-docs-stable/docs/concepts/time/"},
+    {"source": "Kafka Streams out-of-order handling", "locator": "https://kafka.apache.org/documentation/streams/developer-guide/dsl-api.html"}
+  ],
+  "why_essential": "Without a per-aggregate reorder buffer, every consumer reinvents out-of-order handling and diverges on gap semantics; a single dropped message either stalls the aggregate forever or corrupts state silently.",
+  "alternatives_considered": [
+    "Strict blocking on head — a dropped predecessor stalls the aggregate forever; unacceptable for availability.",
+    "Silently drop out-of-order events — loses recent state and is invisible to SRE.",
+    "Client-side sort per consumer — duplicates logic and diverges on deadline semantics."
+  ],
+  "maturity": "incubating"
+}

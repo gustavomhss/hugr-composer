@@ -1,0 +1,25 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "RETRY_BUDGET_INV_01",
+      "invariant_text": "`can_retry()` MUST return True when total requests in the window is below `min_requests` (warm-up bypass).",
+      "confirms_test": "test_inv_warmup_bypass_confirms",
+      "prevents_test": "test_inv_warmup_bypass_prevents",
+      "under_failure_test": "test_inv_warmup_bypass_under_failure"
+    },
+    {
+      "invariant_id": "RETRY_BUDGET_INV_02",
+      "invariant_text": "After warm-up, `can_retry()` MUST return False iff `len(_retries) / len(_requests) > ratio` over the current window.",
+      "confirms_test": "test_inv_ratio_enforcement_confirms",
+      "prevents_test": "test_inv_ratio_enforcement_prevents",
+      "under_failure_test": "test_inv_ratio_enforcement_under_failure"
+    },
+    {
+      "invariant_id": "RETRY_BUDGET_INV_03",
+      "invariant_text": "Samples older than `window_s` MUST be evicted on every record/check, so the decision is always based on the CURRENT rolling window.",
+      "confirms_test": "test_inv_window_eviction_confirms",
+      "prevents_test": "test_inv_window_eviction_prevents",
+      "under_failure_test": "test_inv_window_eviction_under_failure"
+    }
+  ]
+}

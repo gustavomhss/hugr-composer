@@ -1,0 +1,32 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "ACL_INV_01",
+      "invariant_text": "Foreign types MUST NEVER cross the boundary of the local BoundedContext; all inbound payloads SHALL be translated through to_local before entering domain logic.",
+      "confirms_test": "test_inv_no_foreign_leak_confirms",
+      "prevents_test": "test_inv_no_foreign_leak_prevents",
+      "under_failure_test": "test_inv_no_foreign_leak_under_failure"
+    },
+    {
+      "invariant_id": "ACL_INV_02",
+      "invariant_text": "guard MUST reject inbound payloads that violate local invariants and raise before the payload reaches any local aggregate.",
+      "confirms_test": "test_inv_guard_rejects_invalid_confirms",
+      "prevents_test": "test_inv_guard_rejects_invalid_prevents",
+      "under_failure_test": "test_inv_guard_rejects_invalid_under_failure"
+    },
+    {
+      "invariant_id": "ACL_INV_03",
+      "invariant_text": "Translation SHALL be stateless with respect to the local domain; the ACL CANNOT read or mutate local repositories during translation.",
+      "confirms_test": "test_inv_stateless_translation_confirms",
+      "prevents_test": "test_inv_stateless_translation_prevents",
+      "under_failure_test": "test_inv_stateless_translation_under_failure"
+    },
+    {
+      "invariant_id": "ACL_INV_04",
+      "invariant_text": "Versioning of the foreign contract MUST be explicit; unversioned ACLs are FORBIDDEN.",
+      "confirms_test": "test_inv_explicit_version_confirms",
+      "prevents_test": "test_inv_explicit_version_prevents",
+      "under_failure_test": "test_inv_explicit_version_under_failure"
+    }
+  ]
+}

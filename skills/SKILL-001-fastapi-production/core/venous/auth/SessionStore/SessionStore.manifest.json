@@ -1,0 +1,814 @@
+{
+  "name": "SessionStore",
+  "namespace": "auth",
+  "maturity": "battle_tested",
+  "builder_agent_id": 5,
+  "catalog_entry_sha256": "f9e19d3f66809559f5271aa89271bcbf74723215272d0fd986d364f9c949c44c",
+  "files": [
+    {
+      "path": "auth/SessionStore/SessionStore.cfg",
+      "sha256": "ef6dbb962695d845f945decf71e839110e6cf39b1b676ac18a798a3d2515de54",
+      "size_bytes": 153,
+      "kind": "test"
+    },
+    {
+      "path": "auth/SessionStore/SessionStore.contract.json",
+      "sha256": "d1f9f8746d605944242f564d141b70ebf8e80a6a281aabe9f9a70c794439e3f7",
+      "size_bytes": 3113,
+      "kind": "contract_json"
+    },
+    {
+      "path": "auth/SessionStore/SessionStore.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "auth/SessionStore/SessionStore.md",
+      "sha256": "a5740d3bef12c3d3bc9b72319dc797b092ed9be48d933c6361172f4f4e6cde4c",
+      "size_bytes": 7633,
+      "kind": "spec_md"
+    },
+    {
+      "path": "auth/SessionStore/SessionStore.py",
+      "sha256": "616133ab9bf4c825aae4d3d7c1f85568fafcf37da8e2cc1901fa29e02a32f6af",
+      "size_bytes": 21255,
+      "kind": "impl"
+    },
+    {
+      "path": "auth/SessionStore/SessionStore.tla",
+      "sha256": "5189a43798b4ba0de4d9d67b7749d7f9717566e8b5dc6553f04bb727cf6f05cd",
+      "size_bytes": 3946,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "auth/SessionStore/behavioral_SessionStore.py",
+      "sha256": "e31beb81d76ae82d647dbf87cd568035c314dda7231cd8629040b063db7e4b6e",
+      "size_bytes": 3227,
+      "kind": "behavioral"
+    },
+    {
+      "path": "auth/SessionStore/chaos_SessionStore.py",
+      "sha256": "279cb403801842a0cbb50c60462e74daaf745b9bc3de02f7768e62a72fcdb66b",
+      "size_bytes": 4107,
+      "kind": "chaos"
+    },
+    {
+      "path": "auth/SessionStore/concurrent_SessionStore.py",
+      "sha256": "94d8dd1a237fe9878213c5b60389962218e8f1d7c92bc965a01972ebaa61c6c1",
+      "size_bytes": 3413,
+      "kind": "concurrent"
+    },
+    {
+      "path": "auth/SessionStore/dashboard.json",
+      "sha256": "2bb97483f16d5124b46c803082aab653d6a72123b84d26f0acb24e951f4684c7",
+      "size_bytes": 1025,
+      "kind": "dashboard"
+    },
+    {
+      "path": "auth/SessionStore/invariant_bindings.json",
+      "sha256": "5b3d73c7ebb7b74924325f564c3b6403a9ffa3d75699f8dd81b7841288187b44",
+      "size_bytes": 2226,
+      "kind": "test"
+    },
+    {
+      "path": "auth/SessionStore/metamorphic_SessionStore.py",
+      "sha256": "f4bb81b2907568e4de14fdf8e8694d9b3925dee3b78c9f6d4e5db1b4b3c11c19",
+      "size_bytes": 3277,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "auth/SessionStore/observability_SessionStore.py",
+      "sha256": "7362616b9e86bc2ebfeb8f0a4f4e902fe1093c194ca74320bbd453320ce5c851",
+      "size_bytes": 2701,
+      "kind": "observability"
+    },
+    {
+      "path": "auth/SessionStore/observability_schema.json",
+      "sha256": "86f65023926571fd44466d366b6f7ac5d87f14e329de06efa3a8fcfa4739bdd6",
+      "size_bytes": 1739,
+      "kind": "observability"
+    },
+    {
+      "path": "auth/SessionStore/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "auth/SessionStore/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "auth/SessionStore/state_machine_SessionStore.py",
+      "sha256": "2bcacba6c69a44277f1493c73cf1d2897440d5021a0ea243f09aeda87dc285eb",
+      "size_bytes": 4489,
+      "kind": "state_machine"
+    },
+    {
+      "path": "auth/SessionStore/test_SessionStore.py",
+      "sha256": "207da9ad0ebce13c5245c1d85911e90b98ed45033c2b72acd158f16976db6396",
+      "size_bytes": 11705,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "SESSION_INV_01",
+      "invariant_text": "Session ids MUST carry >=128 bits of CSPRNG entropy and MUST NEVER encode user-controlled input.",
+      "confirms_test": "test_inv_sid_entropy_confirms",
+      "prevents_test": "test_inv_sid_entropy_prevents",
+      "under_failure_test": "test_inv_sid_entropy_under_failure"
+    },
+    {
+      "invariant_id": "SESSION_INV_02",
+      "invariant_text": "On privilege elevation the session id MUST be rotated; the prior id CANNOT be reused.",
+      "confirms_test": "test_inv_rotate_fixation_confirms",
+      "prevents_test": "test_inv_rotate_fixation_prevents",
+      "under_failure_test": "test_inv_rotate_fixation_under_failure"
+    },
+    {
+      "invariant_id": "SESSION_INV_03",
+      "invariant_text": "Sessions MUST expire at min(idle, absolute); server-side revocation MUST win over client-held cookies.",
+      "confirms_test": "test_inv_expiry_min_confirms",
+      "prevents_test": "test_inv_expiry_min_prevents",
+      "under_failure_test": "test_inv_expiry_min_under_failure"
+    },
+    {
+      "invariant_id": "SESSION_INV_04",
+      "invariant_text": "Session cookies MUST be Secure + HttpOnly + SameSite in {Lax, Strict}; Domain SHALL NEVER be broader than the application host.",
+      "confirms_test": "test_inv_cookie_attrs_confirms",
+      "prevents_test": "test_inv_cookie_attrs_prevents",
+      "under_failure_test": "test_inv_cookie_attrs_under_failure"
+    },
+    {
+      "invariant_id": "SESSION_INV_05",
+      "invariant_text": "revoke_all_for_subject MUST terminate every live session for that subject atomically and MUST be invoked on password change.",
+      "confirms_test": "test_inv_revoke_all_confirms",
+      "prevents_test": "test_inv_revoke_all_prevents",
+      "under_failure_test": "test_inv_revoke_all_under_failure"
+    },
+    {
+      "invariant_id": "SESSION_INV_06",
+      "invariant_text": "load() MUST NEVER extend a session past absolute_expires_at even on sustained activity.",
+      "confirms_test": "test_inv_absolute_ceiling_confirms",
+      "prevents_test": "test_inv_absolute_ceiling_prevents",
+      "under_failure_test": "test_inv_absolute_ceiling_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 628,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1249,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 3398,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 4837,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1436,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 1340,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 116823,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "43 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1172,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1349,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 97345,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 230274,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-LOW_ENTROPY_PRNG",
+        "hypothesis": "If create() uses random.random() or time-seeded Mersenne Twister instead of secrets.token_bytes, generated ids may have <128 bits of effective entropy and be predictable from a few observed sessions, violating entropy invariant.",
+        "input_fixture": "Call create('alice') 1000 times; analyze ids for Mersenne Twister state recovery via 624 consecutive 32-bit outputs.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-USER_INPUT_IN_ID",
+        "hypothesis": "Implementation may concatenate subject into session id (e.g. f'{subject}-{rand}'), leaking subject and allowing crafted subject strings to collide or inject separators, violating the no-user-controlled-input rule.",
+        "input_fixture": "create(subject='admin\\x00../etc/passwd'); inspect returned Session.id for subject substring.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ROTATE_REUSE_OLD",
+        "hypothesis": "After rotate(old_id), load(old_id) may still return the session (soft rotation) allowing fixation: attacker who captured the pre-login id keeps valid access post-privilege-elevation.",
+        "input_fixture": "s1=create('u'); new=rotate(s1.id); assert load(s1.id) is None  # expected to fail",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ROTATE_RACE",
+        "hypothesis": "Concurrent rotate(id) calls from two threads may both succeed and yield two distinct valid successor ids, splitting the session and letting an attacker retain one branch.",
+        "input_fixture": "s=create('u'); Thread(target=rotate,args=(s.id,)) x2; count resulting live sessions \u2014 expect exactly 1.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ABSOLUTE_BYPASS_ON_LOAD",
+        "hypothesis": "load() may refresh idle_expires_at past absolute_expires_at when now > absolute, returning a live session and violating the hard ceiling.",
+        "input_fixture": "freeze_time to absolute_expires_at+1; load(s.id) \u2014 expect None, attack asserts it returns Session.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK_SKEW_NEGATIVE",
+        "hypothesis": "If created_at uses time.time() and a later load uses monotonic or system clock moves backward (NTP step), idle_expires_at comparison may wrap making session immortal.",
+        "input_fixture": "Mock time.time() to return created_at-10000 on load; expect still-expiring behavior, attack shows infinite life.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INTEGER_OVERFLOW_TIMEOUT",
+        "hypothesis": "Passing absolute_timeout=2**63 during create may overflow int64 when added to created_at, wrapping to negative and making every load() return None \u2014 or worse, wrap to huge positive making session effectively permanent.",
+        "input_fixture": "create('u', absolute_timeout=2**63-1); inspect absolute_expires_at sign.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REVOKE_ALL_NON_ATOMIC",
+        "hypothesis": "revoke_all_for_subject iterates and deletes one-by-one without a transaction; a session created mid-iteration survives password-change revocation, leaving a live attacker session.",
+        "input_fixture": "Thread A: revoke_all_for_subject('u'); Thread B: create('u') interleaved. Count live sessions after \u2014 expect 0.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REVOKE_LOSES_TO_CACHE",
+        "hypothesis": "revoke(id) removes from backing store but load() reads from an in-process LRU cache without invalidation, so client cookie keeps working until TTL \u2014 server-side revocation does NOT win.",
+        "input_fixture": "s=create('u'); load(s.id); revoke(s.id); load(s.id) \u2014 expect None, attack shows Session.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-LOAD_MALFORMED_TYPE",
+        "hypothesis": "load(None) or load(b'\\x00'*32) or load({'$gt':''}) may raise uncaught exception or \u2014 in a Mongo-backed store \u2014 return the first session via NoSQL injection.",
+        "input_fixture": "load({'$ne': None}); load(None); load('../' * 500)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TIMING_ORACLE_LOAD",
+        "hypothesis": "load() compares ids with == (short-circuit) rather than constant-time; attacker measures response time to recover valid id byte-by-byte, reducing effective entropy below 128 bits.",
+        "input_fixture": "Run 1e6 load() calls with ids differing at position 0,1,2... measure timing deltas > 50ns.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-COOKIE_DOMAIN_AMPLIFY",
+        "hypothesis": "Cookie serialization helper defaults Domain to eTLD+1 (e.g. .example.com) broader than app host app.example.com, letting sibling subdomains (evil.example.com) read the session cookie.",
+        "input_fixture": "Issue session for host app.example.com; inspect Set-Cookie header for Domain=.example.com.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SAMESITE_NONE_DOWNGRADE",
+        "hypothesis": "Under a 'cross_site_embed' config flag, library emits SameSite=None without Secure, or downgrades to no SameSite attribute in legacy-browser mode, enabling CSRF session riding.",
+        "input_fixture": "Configure store with legacy_compat=True; inspect Set-Cookie \u2014 expect SameSite=Lax, attack shows missing.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY_AFTER_REVOKE_ALL",
+        "hypothesis": "After revoke_all_for_subject('alice'), a captured pre-revocation session id is replayed and load() returns a freshly-issued session for a different user 'alice' created seconds later (subject-key collision).",
+        "input_fixture": "s1=create('alice'); revoke_all_for_subject('alice'); s2=create('alice'); load(s1.id) \u2014 expect None.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY_SUBJECT",
+        "hypothesis": "create('') or create(None) produces a session with empty subject; revoke_all_for_subject('') then nukes every anonymous/guest session across tenants \u2014 amplification DoS.",
+        "input_fixture": "for _ in 10000: create(''); revoke_all_for_subject('') \u2014 observe mass termination.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-LOG_CREDENTIAL_LEAK",
+        "hypothesis": "create() logs the generated session id at INFO level for 'audit', leaking the bearer token into log aggregation where any ops engineer can replay it.",
+        "input_fixture": "Capture logging output during create('u'); grep for session.id substring.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SESSION_ID_SUBJECT_ENCODE",
+        "hypothesis": "If the create() implementation naively concatenates subject into the session id (e.g. f'{subject}_{secrets.token_hex(8)}'), an attacker who controls their own subject string can predict or enumerate session ids for other subjects by observing the format, and the user-controlled prefix also reduces effective entropy below 128 bits.",
+        "input_fixture": "store.create(subject='admin'); inspect returned Session.id for substring match with 'admin'. Also call store.create(subject='A'*200) and verify id does not contain the subject string anywhere.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ROTATE_OLD_ID_REUSE",
+        "hypothesis": "After rotate() invalidates old_id and issues new_id, a race window may exist in which a concurrent load(old_id) still succeeds if the backing store uses eventual-consistency or a read replica. The old id should be immediately and durably revoked before rotate() returns.",
+        "input_fixture": "Thread-1: s = store.create('bob'); Thread-2: store.rotate(s.id) [blocks at network call]; Thread-1 simultaneously: store.load(s.id) \u2014 expect None but may get live Session if deletion is async.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ABSOLUTE_EXPIRY_EXTENSION_VIA_ROTATE",
+        "hypothesis": "rotate() may re-derive absolute_expires_at as now()+ABSOLUTE_TTL rather than preserving the original created_at-relative deadline. An attacker who triggers repeated rotations (e.g. via MFA re-challenges) can extend a session indefinitely, bypassing the absolute timeout.",
+        "input_fixture": "s0 = store.create('alice'); original_abs = s0.absolute_expires_at; for _ in range(100): s0 = store.rotate(s0.id); assert s0.absolute_expires_at == original_abs  # should not drift forward",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LOAD_EXTENDS_PAST_ABSOLUTE",
+        "hypothesis": "load() implementations that refresh idle_expires_at on every call may accidentally also advance absolute_expires_at if both timestamps are stored as offsets from 'now' rather than as fixed epoch values. Calling load() repeatedly near the absolute boundary would silently extend the session.",
+        "input_fixture": "s = store.create('carol'); freeze time to absolute_expires_at - 1; store.load(s.id); advance clock by 2 seconds; result = store.load(s.id); assert result is None  # must be expired, not refreshed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REVOKE_ALL_NON_ATOMIC_TOCTOU",
+        "hypothesis": "revoke_all_for_subject() may enumerate sessions and delete them one-by-one in a loop. A concurrent create() call for the same subject between the enumeration snapshot and the final delete can insert a new session that survives the revocation, leaving the subject with a live session after a password change.",
+        "input_fixture": "Thread-1: store.revoke_all_for_subject('dave') [patched to sleep 50ms between deletes]; Thread-2: store.create('dave') [fires during the sleep]; after Thread-1 finishes, store.load of Thread-2 session id should return None but may return a live Session.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ENTROPY_WEAK_PRNG_FALLBACK",
+        "hypothesis": "If the deployment environment exhausts /dev/urandom or the CSPRNG raises an exception (e.g. in a sandboxed container on first boot), a naive implementation may silently fall back to random.random() or uuid4() seeded from time.time(), dropping to ~32 bits of effective entropy and making session ids predictable.",
+        "input_fixture": "Mock os.urandom to raise BlockingIOError; call store.create('eve'); measure bit-entropy of 10000 generated ids via Shannon entropy \u2014 expect >= 128 bits; if fallback exists, entropy collapses to ~32 bits.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-IDLE_TIMEOUT_IGNORED_AFTER_REVOKE",
+        "hypothesis": "If revoke() marks the session deleted in a primary store but a caching layer (Redis, in-memory dict) still holds a non-expired copy, load() served from cache will return the revoked session, meaning server-side revocation does NOT win over the client-held cookie.",
+        "input_fixture": "s = store.create('frank'); store.revoke(s.id); result = store.load(s.id); assert result is None \u2014 if cache invalidation is missing, result will be the original live Session.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-COOKIE_DOMAIN_WILDCARD_INJECTION",
+        "hypothesis": "If the cookie Domain attribute is derived from a Host header or a configurable base_url string without strict validation, an attacker-controlled Host: .evil.example.com header could cause the server to issue a session cookie scoped to .evil.example.com, allowing subdomain session hijacking.",
+        "input_fixture": "HTTP request with header 'Host: .attacker.example.com'; observe Set-Cookie response header; Domain= attribute must NOT begin with a dot broader than the application's registered hostname.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SAMESITE_NONE_DOWNGRADE",
+        "hypothesis": "If the SameSite attribute is conditionally omitted or set to None when the request's User-Agent is detected as an older browser (SameSite=None compatibility shim), cross-site requests from an attacker-controlled origin can include the session cookie, enabling CSRF despite the declared SameSite=Lax/Strict invariant.",
+        "input_fixture": "Send request with User-Agent matching a UA blocklist (e.g. Chrome 51 or Safari 12); inspect Set-Cookie for SameSite attribute; if absent or 'None' without Secure, cross-origin iframe POST will include the cookie.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY_ROTATED_ID_AFTER_CLOCK_SKEW",
+        "hypothesis": "If expiry comparisons use wall-clock time and the server clock jumps backward (NTP correction or VM migration), a session that was absolute-expired and revoked may appear unexpired again. A replayed old session cookie could be accepted by load() because absolute_expires_at > now() after the clock rollback.",
+        "input_fixture": "s = store.create('grace'); advance mock clock to absolute_expires_at + 1; verify load returns None; roll clock BACK 10 seconds (simulating NTP correction); call store.load(s.id) again \u2014 must still return None; revocation must be durable, not clock-relative.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REVOKE_ALL_NOT_CALLED_ON_PW_CHANGE",
+        "hypothesis": "The invariant requires revoke_all_for_subject() to be invoked on password change, but if the SessionStore is a library primitive it cannot enforce its own invocation. A missing integration test means password-change flows may update credentials without calling revoke_all, leaving all prior sessions live for an attacker who stole them before the password change.",
+        "input_fixture": "Audit password-change handler code path: grep for revoke_all_for_subject in auth controller; simulate password change via API, then call store.load(old_session_id) \u2014 must return None; if integration is absent, old session survives.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SESSION_FIXATION_VIA_PRESEED",
+        "hypothesis": "If load() accepts a caller-supplied session_id without verifying that the id was generated by the store itself (e.g. no HMAC prefix, no registry lookup), an attacker can pre-seed a known id into the store via a crafted create() call using a predictable subject, then socially engineer the victim into authenticating with that id, achieving session fixation.",
+        "input_fixture": "attacker_session = store.create('anonymous'); send attacker_session.id to victim as a login link parameter; victim authenticates and the server calls rotate(attacker_session.id) \u2014 if rotate preserves the attacker-known id as a reachable alias or the store allows unauthenticated id injection, fixation succeeds.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INTEGER_OVERFLOW_EXPIRY_TIMESTAMPS",
+        "hypothesis": "If created_at, idle_expires_at, or absolute_expires_at are stored as 32-bit integers (Unix epoch), they will overflow in 2038. A session created with a TTL that causes absolute_expires_at to exceed 2^31-1 will wrap to a negative or near-zero timestamp, making the session appear already-expired on creation or immortal depending on comparison direction.",
+        "input_fixture": "store.create subject='henry' with absolute_timeout=datetime(2039,1,1); inspect Session.absolute_expires_at \u2014 if stored as int32, value wraps to negative; store.load should return None immediately but wrapping makes it appear expired already OR the comparison `now < absolute` fails in the wrong direction.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY_SUBJECT_COLLISION",
+        "hypothesis": "Calling create('') or create(None) when subject validation is absent may produce a session with an empty-string subject. revoke_all_for_subject('') would then delete sessions for ALL subjects whose subject field happens to match the empty default, or a None comparison may cause a wildcard match in certain ORM queries (e.g. WHERE subject = NULL being true for all NULLs), deleting every session in the store.",
+        "input_fixture": "store.create('ivan'); store.create('julia'); store.create(''); store.revoke_all_for_subject(''); verify store.load of ivan and julia sessions are NOT None \u2014 if ORM emits 'DELETE WHERE subject IS NULL' instead of 'WHERE subject = \\\"\\\"', all sessions may be wiped.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ENTROPY-WEAK-64BIT",
+        "hypothesis": "SessionStore uses system PRNG instead of CSPRNG, generating only 64-bit entropy; attacker brute-forces 2^64 session IDs in seconds.",
+        "input_fixture": "create('user1'); measure entropy of returned session_id; if entropy < 128 bits, attacker can enumerate all valid sessions",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SESSION-ID-USER-PREDICTABLE",
+        "hypothesis": "Session ID structure encodes user_id as plaintext prefix (e.g., base64(user_id || nonce)); user_id is public; attacker predicts subsequent nonces.",
+        "input_fixture": "observe session_ids from create('alice'), create('bob'); decode to reveal user names; guess nonce sequence; predict valid session_ids for other users",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NO-ROTATE-PRIVESC",
+        "hypothesis": "Privilege escalation event (login, MFA step-up) does not trigger rotate(); attacker uses pre-privilege session_id post-escalation.",
+        "input_fixture": "[Attacker] create('victim'); [Victim logs in]; [No rotate() called]; load(attacker_sid) succeeds with elevated privileges",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REUSE-ROTATED-ID",
+        "hypothesis": "rotate() returns session_id from a pool of previously-used IDs instead of generating fresh entropy; attacker reuses old ID after rotation.",
+        "input_fixture": "sid1 = create(); sid2 = rotate(sid1); sid3 = rotate(sid2); if sid3 in [sid1, sid2], attacker can fixate on recycled ID",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-IDLE-EXTENDS-ABSOLUTE",
+        "hypothesis": "load() refreshes absolute_expires_at on each access; repeated activity within idle_timeout extends session indefinitely past absolute deadline.",
+        "input_fixture": "s = create(idle_timeout=1h, absolute_timeout=1h); load(s.id) @ 0:30; load(s.id) @ 1:00; load(s.id) @ 1:30; absolute_expires_at keeps advancing",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REVOKE-IGNORED-BY-CLIENT",
+        "hypothesis": "Server-side revoke(sid) succeeds; client-held cookie still contains sid; attacker replays sid in next request; load(sid) succeeds.",
+        "input_fixture": "revoke(sid); [attacker retains sid from Set-Cookie header]; construct HTTP request with Cookie: sessionid=sid; load(sid) succeeds",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-COOKIE-SECURE-FALSE",
+        "hypothesis": "Set-Cookie header omits Secure flag; session_id transmitted over HTTP; network attacker on same LAN captures plaintext session_id.",
+        "input_fixture": "Set-Cookie: sessionid=XXXXX (no Secure flag); HTTP request over unencrypted channel; tcpdump reveals session_id in plaintext",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REVOKE-ALL-TOCTOU",
+        "hypothesis": "revoke_all_for_subject() checks live sessions then proceeds to delete; attacker's concurrent create() between check and delete survives revocation.",
+        "input_fixture": "[Thread A] revoke_all_for_subject('user1'); [Thread B interleaves] create('user1') before delete completes; new_sid remains valid",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK-ADJUSTMENT-BYPASS",
+        "hypothesis": "Expiry checks use system clock without monotonicity guards; attacker sets system clock backward; expired sessions become valid again.",
+        "input_fixture": "create(absolute_timeout=1h); await 65 minutes; load(sid) returns None; [system clock -90 minutes]; load(sid) succeeds",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-IDLE-TIMEOUT-ZERO",
+        "hypothesis": "SessionStore allows idle_timeout=0; session expires immediately but load() still returns valid Session object instead of None.",
+        "input_fixture": "create('user', idle_timeout=0, absolute_timeout=3600); immediate load(sid) succeeds; session should already be expired",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ABSOLUTE-EXPIRES-OVERFLOW",
+        "hypothesis": "absolute_expires_at stored as signed 64-bit int; value set to 2^63-100 causes overflow in age calculation; session never expires.",
+        "input_fixture": "create('user', absolute_timeout=2^63-100); absolute_expires_at overflows; comparison (absolute_expires_at - current_time) yields negative; session valid forever",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ENTROPY-127BIT-ACCEPTED",
+        "hypothesis": "SessionStore accepts 127-bit entropy (just below 128-bit requirement); birthday paradox collision occurs at 2^63.5 sessions instead of 2^64.",
+        "input_fixture": "SessionStore configured with 127-bit CSPRNG; generate 2^64 sessions concurrently; probabilistic session_id collision observed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REVOKE-ALL-EVENTUAL-CONSISTENCY",
+        "hypothesis": "revoke_all_for_subject() returns immediately after local cache clear but before replication; read-replica still returns revoked sessions.",
+        "input_fixture": "revoke_all_for_subject('user1'); [attacker reads from asynchronous replica immediately]; load(old_sid) succeeds on replica before sync completes",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "session.created",
+        "required_attributes": [
+          "session_id_hash",
+          "subject_hash",
+          "created_at"
+        ]
+      },
+      {
+        "event_name": "session.rotated",
+        "required_attributes": [
+          "old_id_hash",
+          "new_id_hash",
+          "subject_hash"
+        ]
+      },
+      {
+        "event_name": "session.revoked",
+        "required_attributes": [
+          "session_id_hash",
+          "reason"
+        ]
+      },
+      {
+        "event_name": "session.revoked.all",
+        "required_attributes": [
+          "subject_hash",
+          "count"
+        ]
+      },
+      {
+        "event_name": "session.expired",
+        "required_attributes": [
+          "session_id_hash",
+          "clock",
+          "reason"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "session.active",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": []
+      },
+      {
+        "name": "session.lifecycle",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "event"
+        ]
+      },
+      {
+        "name": "session.age",
+        "metric_type": "histogram",
+        "unit": "s",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "outcome"
+        ]
+      },
+      {
+        "name": "session.revoke.batch",
+        "metric_type": "histogram",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "trigger"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "session.create",
+        "required_attributes": [
+          "subject.hash"
+        ]
+      },
+      {
+        "operation_name": "session.rotate",
+        "required_attributes": [
+          "session.old_id_hash",
+          "session.new_id_hash"
+        ]
+      },
+      {
+        "operation_name": "session.revoke",
+        "required_attributes": [
+          "session.id_hash"
+        ]
+      },
+      {
+        "operation_name": "session.revoke.all",
+        "required_attributes": [
+          "subject.hash",
+          "count"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol surface matches api_signature verbatim (create/load/rotate/revoke/revoke_all_for_subject returning correct types). Session dataclass fields and types match. Frozen dataclass per spec. Invariant IDs in code use hyphen form (SESSION-INV-01) vs spec underscore (SESSION_INV_01) \u2014 minor cosmetic drift but same semantics."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All six invariants implemented: CSPRNG minting with entropy floor, rotation with tombstone, dual-clock min expiry with revocation precedence, cookie Secure/HttpOnly/SameSite/Domain validation, subject-wide revocation, absolute ceiling respected on sliding renew and rotate. Extension gate via register_adapter. Constant-time comparator included. Missing: no observability hooks emitted in-module (spec says wired by web layer, so acceptable)."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Single typed SessionInvariantError; every raise cites the specific SESSION-INV-0N id and explains the violation. Load returns None on invalid input rather than raising (correct for cookie path). Rotate raises on unknown/revoked/expired with distinct messages. Collision detection refuses rather than overwrites."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "runtime_checkable Protocol lets adapters bind structurally. Session value object is frozen/slots and reusable by redis/postgres adapters. clock and id_factory injection points enable deterministic tests. CookieConfig is framework-agnostic. register_adapter enforces capability contract. No hidden global state; zero I/O at import."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 9,
+        "rationale": "threading.RLock serialises mutations; rotate is wins-one atomic via lock + collision check; revoke_all is atomic under lock. Tombstone set prevents replay. Sliding renew capped at absolute ceiling. CSPRNG via secrets. Constant-time compare. No logging/metrics emission here (delegated), but memory growth of _revoked_ids is unbounded over time \u2014 no TTL/cleanup \u2014 a real concern for long-lived processes."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace auth, Protocol + Session dataclass match api_signature exactly. Invariant texts echo catalog wording. Extension contract enforced via register_adapter matching spec's forbidden-binding clause. Alternatives and maturity align with docs. Minor: invariant id formatting (hyphen vs underscore) diverges from spec table, but bindings doc referenced separately."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'privilege elevation' and 'session fixation' appear in the first paragraph with no plain-language gloss \u2014 a junior dev must already know these terms to understand the opening sentence.",
+          "The six-row invariant table appears before the code example; a reader who has never used the API has no anchor for what SESSION_INV_02 is protecting against.",
+          "'tombstoned' and 'CSPRNG' in the lifecycle and security sections are left unexplained, breaking reading flow for anyone without a security background."
+        ],
+        "rewrite_suggestion": "Move the Usage section directly after 'What it does'; inline a one-line definition for 'privilege elevation' (e.g., step-up auth such as MFA or role change) and 'session fixation' (attacker plants a known id before login) on first use; annotate the state machine with plain-English callouts and replace bare 'tombstoned' with 'permanently invalidated (tombstoned)'."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "The valid capability flag names for register_adapter() are never listed \u2014 an engineer writing a Redis adapter cannot know the accepted enum values without reading source.",
+          "The exact Protocol surface (abstract method signatures with types) that adapters must satisfy is absent; the extension contract section describes behavior in prose but provides no interface definition.",
+          "File paths for SessionStore.contract.json, invariant_bindings.json, and SessionStore.tla are not given; a reader wanting to verify TLA+ properties or API signatures has no path to start from."
+        ],
+        "rewrite_suggestion": "Add an 'Adapter Protocol' fenced code block showing the abstract class or Protocol with typed method signatures; list every valid capability string (e.g., SERVER_SIDE_REVOCATION, SUBJECT_WIDE_REVOCATION) as a Python literal or table; provide repo-relative paths for all referenced external files."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "The invariant\u2192test mapping says 'see invariant_bindings.json' but does not inline the three test names per invariant; an auditor verifying coverage must hunt an external file rather than reading the doc.",
+          "No threat model table maps attack classes (fixation, replay, cross-device revocation bypass, concurrent rotate race) to the invariant and test that blocks each \u2014 the connection must be inferred.",
+          "The concurrency guarantee ('wins-one-loser-many') is prose only; neither a test name nor a TLA+ property name (e.g., LiveRevokedDisjoint) is cited inline, leaving the guarantee unanchored."
+        ],
+        "rewrite_suggestion": "Inline an 18-row table (6 invariants \u00d7 3 test names each); add a 'Threat model' table with columns Attack | Invariant | Mitigating test; cite the matching TLA+ safety property name next to each concurrency claim so an auditor can trace from attack to formal proof in one step."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "No session cleanup or expiry sweep mechanism is described \u2014 it is unclear whether InMemorySessionStore purges expired entries lazily on load() or via a background thread, which directly affects memory growth under load.",
+          "observability_schema.json is referenced for metric schemas but label cardinality and units are not shown inline, forcing an on-call engineer to open a second file to write alert rules.",
+          "No memory bound or maximum-session-count configuration is mentioned; an SRE cannot determine when InMemorySessionStore becomes unsafe for production without benchmarking from scratch."
+        ],
+        "rewrite_suggestion": "Add an 'Operations runbook' subsection covering: expiry sweep strategy (lazy vs. background), memory cap config knob (if any), and two concrete PromQL examples for the alert thresholds already described in prose; inline the four key metric definitions (name, type, labels, unit) rather than deferring entirely to observability_schema.json."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "'maturity' is cited as a field in the contract schema but never defined in the doc \u2014 a PM cannot tell stakeholders whether this is alpha, beta, or GA without reading a JSON file.",
+          "No scale envelope or performance numbers (sessions per second, memory per session, recommended session ceiling) are given, making it impossible to size infrastructure or set delivery expectations.",
+          "TLA+ references, SESSION_INV_XX identifiers, invariant_bindings.json, and the provenance/agent section carry no business signal for a PM and obscure the 'When to use' decision the doc is trying to support."
+        ],
+        "rewrite_suggestion": "Open with a three-field summary card: maturity (e.g., 'GA \u2014 production-ready'), scale envelope (e.g., 'suitable for up to ~100k concurrent sessions on a single node'), and integration effort estimate; collapse all formal-verification, invariant-ID, and provenance content into an appendix; add a one-sentence business consequence to each 'When to use' and 'DO NOT USE' bullet."
+      }
+    ]
+  }
+}

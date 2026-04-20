@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "CONFIG_INV_01",
+      "invariant_text": "bind() MUST fail loudly if required keys are missing or typed coercion fails; it NEVER returns a partially-filled record.",
+      "confirms_test": "test_inv_fail_loud_confirms",
+      "prevents_test": "test_inv_fail_loud_prevents",
+      "under_failure_test": "test_inv_fail_loud_under_failure"
+    },
+    {
+      "invariant_id": "CONFIG_INV_02",
+      "invariant_text": "Bound records MUST be frozen/immutable; runtime code CANNOT mutate a bound option to affect another consumer.",
+      "confirms_test": "test_inv_frozen_confirms",
+      "prevents_test": "test_inv_frozen_prevents",
+      "under_failure_test": "test_inv_frozen_under_failure"
+    },
+    {
+      "invariant_id": "CONFIG_INV_03",
+      "invariant_text": "reload() MUST produce a new record without aliasing the previous one; references already handed out SHALL NOT silently mutate.",
+      "confirms_test": "test_inv_reload_no_alias_confirms",
+      "prevents_test": "test_inv_reload_no_alias_prevents",
+      "under_failure_test": "test_inv_reload_no_alias_under_failure"
+    },
+    {
+      "invariant_id": "CONFIG_INV_04",
+      "invariant_text": "Unknown keys under the prefix MUST be reported as errors by default (strict binding) and NEVER silently dropped.",
+      "confirms_test": "test_inv_strict_unknown_confirms",
+      "prevents_test": "test_inv_strict_unknown_prevents",
+      "under_failure_test": "test_inv_strict_unknown_under_failure"
+    },
+    {
+      "invariant_id": "CONFIG_INV_05",
+      "invariant_text": "Precedence order (env > file > defaults) MUST be fixed and documented; a later source CANNOT override a value an operator pinned.",
+      "confirms_test": "test_inv_precedence_confirms",
+      "prevents_test": "test_inv_precedence_prevents",
+      "under_failure_test": "test_inv_precedence_under_failure"
+    }
+  ]
+}

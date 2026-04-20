@@ -1,0 +1,22 @@
+{
+  "title": "ContentSecurityPolicy — render rate, rejection reasons, nonce health, violation reports",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "headers rendered / s",
+     "targets": [{"expr": "sum(rate(csp_policies_rendered_total[5m]))"}]},
+    {"id": 2, "type": "timeseries", "title": "render p50/p95/p99 (ms)",
+     "targets": [
+       {"expr": "histogram_quantile(0.50, rate(csp_render_duration_bucket[5m]))"},
+       {"expr": "histogram_quantile(0.95, rate(csp_render_duration_bucket[5m]))"},
+       {"expr": "histogram_quantile(0.99, rate(csp_render_duration_bucket[5m]))"}
+     ]},
+    {"id": 3, "type": "stat", "title": "policy rejections (alert > 0)",
+     "targets": [{"expr": "sum(increase(csp_policy_rejections_total[5m]))"}]},
+    {"id": 4, "type": "timeseries", "title": "rejections by invariant",
+     "targets": [{"expr": "sum by (invariant_id) (rate(csp_policy_rejections_total[5m]))"}]},
+    {"id": 5, "type": "stat", "title": "nonce reuse (alert > 0)",
+     "targets": [{"expr": "sum(increase(csp_nonces_reused_total[5m]))"}]},
+    {"id": 6, "type": "timeseries", "title": "violations reported by directive",
+     "targets": [{"expr": "sum by (effective_directive) (rate(csp_violations_reported_total[5m]))"}]}
+  ]
+}

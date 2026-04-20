@@ -1,0 +1,53 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "HEALTHPROBE_INV_01",
+      "invariant_text": "Liveness MUST only report DOWN when the process itself CANNOT make forward progress; a slow or failing dependency SHALL NEVER flip liveness DOWN.",
+      "confirms_test": "test_inv_liveness_process_only_confirms",
+      "prevents_test": "test_inv_liveness_process_only_prevents",
+      "under_failure_test": "test_inv_liveness_process_only_under_failure"
+    },
+    {
+      "invariant_id": "HEALTHPROBE_INV_02",
+      "invariant_text": "Readiness SHALL report DOWN when any required dependency reports DOWN; optional probes CANNOT force readiness false.",
+      "confirms_test": "test_inv_readiness_required_deps_confirms",
+      "prevents_test": "test_inv_readiness_required_deps_prevents",
+      "under_failure_test": "test_inv_readiness_required_deps_under_failure"
+    },
+    {
+      "invariant_id": "HEALTHPROBE_INV_03",
+      "invariant_text": "Both liveness() and readiness() MUST complete within a declared timeout; a hanging probe SHALL be treated as DOWN.",
+      "confirms_test": "test_inv_timeout_bounded_confirms",
+      "prevents_test": "test_inv_timeout_bounded_prevents",
+      "under_failure_test": "test_inv_timeout_bounded_under_failure"
+    },
+    {
+      "invariant_id": "HEALTHPROBE_INV_04",
+      "invariant_text": "A probe MUST NEVER throw; unexpected exceptions SHALL be caught and turned into DOWN with the exception class as a details entry.",
+      "confirms_test": "test_inv_no_throw_confirms",
+      "prevents_test": "test_inv_no_throw_prevents",
+      "under_failure_test": "test_inv_no_throw_under_failure"
+    },
+    {
+      "invariant_id": "HEALTHPROBE_INV_05",
+      "invariant_text": "Name MUST be unique within the registry; duplicate registrations SHALL be rejected.",
+      "confirms_test": "test_inv_unique_name_confirms",
+      "prevents_test": "test_inv_unique_name_prevents",
+      "under_failure_test": "test_inv_unique_name_under_failure"
+    },
+    {
+      "invariant_id": "HEALTHPROBE_INV_06",
+      "invariant_text": "Details MUST NOT leak secrets (connection strings, tokens, stack traces).",
+      "confirms_test": "test_inv_no_secret_leak_confirms",
+      "prevents_test": "test_inv_no_secret_leak_prevents",
+      "under_failure_test": "test_inv_no_secret_leak_under_failure"
+    },
+    {
+      "invariant_id": "HEALTHPROBE_INV_07",
+      "invariant_text": "Transitions from UP to DOWN SHALL be debounced by a configurable window to prevent routing-plane flapping.",
+      "confirms_test": "test_inv_debounce_confirms",
+      "prevents_test": "test_inv_debounce_prevents",
+      "under_failure_test": "test_inv_debounce_under_failure"
+    }
+  ]
+}

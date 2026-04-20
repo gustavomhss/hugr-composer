@@ -1,0 +1,12 @@
+{
+  "name": "ShardedCounter",
+  "namespace": "data",
+  "maturity": "incubating",
+  "files": [
+    {"path": "data/ShardedCounter/ShardedCounter.py", "kind": "impl"},
+    {"path": "data/ShardedCounter/ShardedCounter.protocol.py", "kind": "protocol"},
+    {"path": "data/ShardedCounter/ShardedCounter.md", "kind": "spec_md"},
+    {"path": "data/ShardedCounter/ShardedCounter.contract.json", "kind": "contract_json"},
+    {"path": "data/ShardedCounter/test_ShardedCounter.py", "kind": "test"}
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "InputValidator",
+  "namespace": "security",
+  "purpose": "Parse and constrain inbound payloads against a declared schema with typed coercion, length and range bounds, and rejection of unknown fields.",
+  "api_signature": "from typing import Protocol, TypeVar\n\nT = TypeVar(\"T\")\n\nclass InputValidator(Protocol):\n    def parse(self, raw: object, schema: type[T]) -> T: ...",
+  "invariants": [
+    "parse() MUST reject payloads with unknown fields unless the schema explicitly opts into extras; silent field drop is FORBIDDEN.",
+    "Length, range, and pattern bounds MUST be enforced before any business rule touches the value; unbounded strings CANNOT be accepted.",
+    "Type coercion MUST be narrowing (string\u2192int only when digits-only); widening coercion (int\u2192string for structured ids) SHALL require explicit opt-in.",
+    "parse() MUST raise a typed validation error containing the offending field path; error payloads MUST NEVER include attacker-controlled content verbatim in structured logs.",
+    "Recursion depth and collection size MUST be bounded; payloads exceeding the configured limits SHALL be rejected before parsing."
+  ],
+  "extension_contract": "Schema libraries register as validator adapters (pydantic, attrs+cattrs, msgspec) implementing the Protocol. The registry refuses to bind an adapter that defaults to extra='allow' or that lacks size/depth limits.",
+  "consumption_example": "def create_order(validator: InputValidator, raw_body: object, handler) -> object:\n    order = validator.parse(raw_body, schema=OrderCreate)\n    return handler(order)",
+  "sources": [
+    {
+      "source": "OWASP ASVS 4.0.3",
+      "locator": "V5.1 Input Validation Requirements"
+    },
+    {
+      "source": "OWASP Top 10 2021",
+      "locator": "A03:2021 Injection \u2014 input validation principles"
+    }
+  ],
+  "why_essential": "Handlers that parse dicts directly forget length limits and leak implementation types; a validator primitive forces schema-first ingress and centralizes the 'reject unknown fields' decision.",
+  "alternatives_considered": [
+    "Manual dict.get() per endpoint \u2014 inconsistent bounds and accepts extras silently.",
+    "Framework body-parsing with default permissive mode \u2014 admits unbounded nested structures.",
+    "Regex-only validation \u2014 cannot express structural constraints."
+  ],
+  "maturity": "battle_tested"
+}

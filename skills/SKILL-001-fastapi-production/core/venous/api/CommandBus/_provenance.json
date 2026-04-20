@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.277922+00:00",
+  "source_tool": "api_design/add_cqrs.py",
+  "origin_candidate": {
+    "docstring": "Dispatch Commands to their registered async handlers.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 377,
+    "line_start": 343,
+    "name": "CommandBus",
+    "origin": "string_template",
+    "shape_hash": "b8a623edc6f5a424",
+    "size_bytes": 1329,
+    "size_lines": 35,
+    "tool": "api_design/add_cqrs.py",
+    "method_count": 3,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 15948
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

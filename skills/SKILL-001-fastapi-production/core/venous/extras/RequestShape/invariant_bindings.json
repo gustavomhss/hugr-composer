@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "RSHP_INV_01",
+      "invariant_text": "Fields on a RequestShape instance MUST be immutable after construction; in-place mutation is FORBIDDEN.",
+      "confirms_test": "test_inv_immutable_fields_confirms",
+      "prevents_test": "test_inv_immutable_fields_prevents",
+      "under_failure_test": "test_inv_immutable_fields_under_failure"
+    },
+    {
+      "invariant_id": "RSHP_INV_02",
+      "invariant_text": "A request without an explicit priority SHALL default to normal and NEVER silently to critical.",
+      "confirms_test": "test_inv_priority_default_confirms",
+      "prevents_test": "test_inv_priority_default_prevents",
+      "under_failure_test": "test_inv_priority_default_under_failure"
+    },
+    {
+      "invariant_id": "RSHP_INV_03",
+      "invariant_text": "The attempt counter MUST monotonically increase; a decrement CANNOT occur and breaks retry accounting.",
+      "confirms_test": "test_inv_attempt_monotonic_confirms",
+      "prevents_test": "test_inv_attempt_monotonic_prevents",
+      "under_failure_test": "test_inv_attempt_monotonic_under_failure"
+    },
+    {
+      "invariant_id": "RSHP_INV_04",
+      "invariant_text": "to_headers and from_headers SHALL be mutual inverses on the defined fields, round-tripping without loss.",
+      "confirms_test": "test_inv_header_roundtrip_confirms",
+      "prevents_test": "test_inv_header_roundtrip_prevents",
+      "under_failure_test": "test_inv_header_roundtrip_under_failure"
+    },
+    {
+      "invariant_id": "RSHP_INV_05",
+      "invariant_text": "An idempotency_key once set MUST NEVER be altered across retries of the same logical request.",
+      "confirms_test": "test_inv_idempotency_key_stable_confirms",
+      "prevents_test": "test_inv_idempotency_key_stable_prevents",
+      "under_failure_test": "test_inv_idempotency_key_stable_under_failure"
+    }
+  ]
+}

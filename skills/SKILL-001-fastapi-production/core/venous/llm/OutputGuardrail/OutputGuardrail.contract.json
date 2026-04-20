@@ -1,0 +1,31 @@
+{
+  "name": "OutputGuardrail",
+  "namespace": "llm",
+  "purpose": "Inspect model output after generation and reject, rewrite, or annotate it against schema, policy, and safety rules before the caller or downstream tools receive it.",
+  "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nclass OutputVerdict(Protocol):\n    action: Literal[\"pass\", \"rewrite\", \"block\"]\n    reason: str\n    replacement: str | None\n\nclass OutputGuardrail(Protocol):\n    name: str\n    def evaluate(self, output: str, schema_ref: str | None) -> OutputVerdict: ...\n",
+  "invariants": [
+    "evaluate() MUST reject output that fails schema validation when schema_ref is provided; CANNOT pass malformed JSON as pass.",
+    "A BLOCK verdict MUST prevent the output from being returned to the caller or passed to any downstream tool.",
+    "REWRITE verdicts MUST provide a replacement; a replacement of None under rewrite SHALL be treated as a contract violation.",
+    "Output guardrails MUST NEVER execute tool calls embedded in the output before passing safety checks.",
+    "Every verdict SHALL be recorded with the guardrail name so post-hoc analysis can attribute the decision."
+  ],
+  "extension_contract": "Additional output checks register as adapters in an ordered chain; downstream libraries compose schema, policy, and safety checks by appending adapters that implement the OutputGuardrail protocol.",
+  "consumption_example": "def post_process(guards: list[OutputGuardrail], raw: str, schema: str) -> str:\n    current = raw\n    for g in guards:\n        v = g.evaluate(current, schema)\n        if v.action == \"block\":\n            raise ValueError(f\"{g.name}: {v.reason}\")\n        if v.action == \"rewrite\" and v.replacement is not None:\n            current = v.replacement\n    return current\n",
+  "sources": [
+    {
+      "source": "OWASP Top 10 for LLM Applications (2023)",
+      "locator": "LLM02: Insecure Output Handling \u2014 validate before downstream use"
+    },
+    {
+      "source": "OWASP Top 10 for LLM Applications (2023)",
+      "locator": "LLM09: Overreliance \u2014 programmatic verification of model output"
+    }
+  ],
+  "why_essential": "Treating model text as trusted is the second-leading class of LLM vulnerability; a shared output guard ensures every call path applies the same checks before tool execution or user display.",
+  "alternatives_considered": [
+    "Ad-hoc JSON parsing at each call site \u2014 silent failures and no shared policy.",
+    "Relying on function-calling schemas alone \u2014 does not catch policy or safety issues, only shape."
+  ],
+  "maturity": "emerging"
+}

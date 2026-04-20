@@ -1,0 +1,26 @@
+{
+  "name": "DataSubjectRequest",
+  "namespace": "compliance",
+  "purpose": "Coordinates the lifecycle of an access or erasure request across all stores that hold data about the subject, with a SLA clock.",
+  "api_signature": "from typing import Protocol, Literal\nfrom datetime import datetime\n\nDsrKind = Literal['access', 'portability', 'erasure', 'rectification']\n\nclass DataSubjectRequest(Protocol):\n    def open(self, subject_id: str, kind: DsrKind, received_at: datetime) -> str: ...\n    def attach_artifact(self, request_id: str, store: str, manifest: bytes) -> None: ...\n    def close(self, request_id: str, outcome: str) -> None: ...\n    def due_at(self, request_id: str) -> datetime: ...",
+  "invariants": [
+    "Every request MUST have a statutory due_at computed from received_at; the clock NEVER pauses for internal delays.",
+    "Every registered store holding subject data MUST attach an artifact before close; a request CANNOT close with missing stores.",
+    "Erasure requests MUST invoke the ErasureCascade; a close with kind='erasure' and no cascade artifact SHALL be rejected.",
+    "Open, artifact, and close actions MUST each emit a TamperEvidentAuditLog entry for regulator replay.",
+    "Access and portability exports MUST be delivered via a time-bound, signed URL; exports NEVER live beyond the delivery window."
+  ],
+  "extension_contract": "Each data store implements a StoreAdapter (with .collect(subject_id) and .erase(subject_id)) and registers itself. Kind-specific workflow steps are added as plugins that subscribe to the request lifecycle hook.",
+  "consumption_example": "from datetime import datetime, timezone\n\ndef handle_rtbf(dsr: DataSubjectRequest, subject_id: str) -> str:\n    rid = dsr.open(subject_id, 'erasure', datetime.now(timezone.utc))\n    for store in ('users', 'events', 'backups'):\n        dsr.attach_artifact(rid, store, b'erased')\n    dsr.close(rid, outcome='completed')\n    return rid",
+  "sources": [
+    {"source": "EU GDPR Regulation 2016/679 Articles 5, 6, 7, 15, 17, 30, 32", "locator": "Article 15 right of access; Article 17 right to erasure"},
+    {"source": "HIPAA Security Rule 45 CFR \u00a7\u00a7 164.308-164.312", "locator": "\u00a7 164.308(a)(4) access management \u2014 individual access obligations"}
+  ],
+  "why_essential": "An ad-hoc ticket per erasure guarantees missed stores and blown deadlines; a primitive forces a closed-loop manifest across every adapter before the request can be marked complete.",
+  "alternatives_considered": [
+    "Support-desk ticket workflow \u2014 no programmatic cascade, no SLA enforcement, no audit evidence.",
+    "Per-service DELETE endpoints without coordination \u2014 impossible to prove completeness to a regulator.",
+    "A generic job queue \u2014 lacks kind-specific statutory deadlines and artifact manifest."
+  ],
+  "maturity": "emerging"
+}

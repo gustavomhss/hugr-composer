@@ -1,0 +1,9 @@
+{
+  "invariant_bindings": [
+    {"invariant_id": "EP_INV_01", "invariant_text": "Every data_class that stores PII, PHI, or PCI MUST have an EncryptionPolicy bound; writes without resolve() succeeding SHALL fail.", "confirms_test": "test_inv_bound_required_confirms", "prevents_test": "test_inv_bound_required_prevents", "under_failure_test": "test_inv_bound_required_under_failure"},
+    {"invariant_id": "EP_INV_02", "invariant_text": "at_rest_cipher MUST be one of the approved set (AES-256-GCM, ChaCha20-Poly1305); unapproved ciphers SHALL raise on bind.", "confirms_test": "test_inv_cipher_enum_confirms", "prevents_test": "test_inv_cipher_enum_prevents", "under_failure_test": "test_inv_cipher_enum_under_failure"},
+    {"invariant_id": "EP_INV_03", "invariant_text": "in_transit_min_tls MUST be TLS1.2 or higher; binding TLS1.0 or TLS1.1 is FORBIDDEN.", "confirms_test": "test_inv_tls_min_confirms", "prevents_test": "test_inv_tls_min_prevents", "under_failure_test": "test_inv_tls_min_under_failure"},
+    {"invariant_id": "EP_INV_04", "invariant_text": "key_provider MUST reference an external KMS; raw key material in configuration files is NEVER permitted.", "confirms_test": "test_inv_kms_scheme_confirms", "prevents_test": "test_inv_kms_scheme_prevents", "under_failure_test": "test_inv_kms_scheme_under_failure"},
+    {"invariant_id": "EP_INV_05", "invariant_text": "rotation MUST be <= 365 days for PCI data_classes; a longer cadence CANNOT be bound.", "confirms_test": "test_inv_pci_rotation_confirms", "prevents_test": "test_inv_pci_rotation_prevents", "under_failure_test": "test_inv_pci_rotation_under_failure"}
+  ]
+}

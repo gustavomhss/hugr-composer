@@ -1,0 +1,49 @@
+{
+  "logs": [
+    {
+      "event_name": "bulkhead.submitted",
+      "required_attributes": ["partition", "request_id", "available_permits"]
+    },
+    {
+      "event_name": "bulkhead.rejected",
+      "required_attributes": ["partition", "request_id", "reason"]
+    },
+    {
+      "event_name": "bulkhead.completed",
+      "required_attributes": ["partition", "request_id", "duration_ms", "outcome"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "bulkhead.rejections",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 32,
+      "label_keys": ["partition", "reason"]
+    },
+    {
+      "name": "bulkhead.in_flight",
+      "metric_type": "updown_counter",
+      "unit": "1",
+      "cardinality_bound": 32,
+      "label_keys": ["partition"]
+    },
+    {
+      "name": "bulkhead.wait.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 64,
+      "label_keys": ["partition", "outcome"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "bulkhead.submit",
+      "required_attributes": ["bulkhead.partition", "bulkhead.capacity", "bulkhead.available"]
+    },
+    {
+      "operation_name": "bulkhead.acquire",
+      "required_attributes": ["bulkhead.partition", "bulkhead.wait_ms"]
+    }
+  ]
+}

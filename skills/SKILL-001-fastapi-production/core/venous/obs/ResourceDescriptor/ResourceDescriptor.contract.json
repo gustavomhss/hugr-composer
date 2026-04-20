@@ -1,0 +1,37 @@
+{
+  "name": "ResourceDescriptor",
+  "namespace": "obs",
+  "purpose": "Describe the entity producing telemetry \u2014 service, version, deployment environment, instance id \u2014 and attach that identity to every span, metric, and log record.",
+  "api_signature": "from dataclasses import dataclass\nfrom typing import Mapping\n\n@dataclass(frozen=True)\nclass ResourceDescriptor:\n    service_name: str\n    service_namespace: str | None\n    service_version: str\n    service_instance_id: str\n    deployment_environment: str\n    attributes: Mapping[str, str]\n\n    def merged_with(self, overrides: Mapping[str, str]) -> 'ResourceDescriptor': ...\n    def to_attributes(self) -> Mapping[str, str]: ...\n",
+  "invariants": [
+    "service.name MUST be non-empty; a missing service.name SHALL cause telemetry initialization to fail fast rather than emit 'unknown_service'.",
+    "service.instance.id MUST be unique per running process and SHALL be stable for the lifetime of that process.",
+    "deployment.environment.name MUST be one of a declared enum (development / staging / production / preview) and free-form values are FORBIDDEN.",
+    "The resource descriptor is immutable after construction; merged_with ALWAYS returns a new descriptor.",
+    "Attribute values injected through to_attributes MUST use the canonical semconv keys (service.name, not serviceName).",
+    "The descriptor NEVER contains secrets, credentials, or personally identifiable data."
+  ],
+  "extension_contract": "Platforms extend resource detection by registering a ResourceDetector plugin (Kubernetes, ECS, Lambda) that contributes additional semconv-compliant attributes; the merge adapter resolves conflicts by giving explicit configuration priority over auto-detected values.",
+  "consumption_example": "def build_resource() -> ResourceDescriptor:\n    desc = ResourceDescriptor(\n        service_name='checkout',\n        service_namespace='payments',\n        service_version='2026.04.3',\n        service_instance_id='pod-abc-123',\n        deployment_environment='production',\n        attributes={'cloud.provider': 'aws', 'cloud.region': 'us-east-1'},\n    )\n    return desc\n",
+  "sources": [
+    {
+      "source": "OpenTelemetry Semantic Conventions 1.27 \u2014 Resource",
+      "locator": "semconv/resource/README.md 'Service', 'Deployment', 'Cloud' sections"
+    },
+    {
+      "source": "OpenTelemetry Specification 1.32 \u2014 Resource SDK",
+      "locator": "specification/resource/sdk.md 'Resource' and 'ResourceDetector' contract"
+    },
+    {
+      "source": "Google SRE Book \u2014 Monitoring Distributed Systems",
+      "locator": "Chapter 6 section 'Targets' on per-instance identity"
+    }
+  ],
+  "why_essential": "Without a shared resource primitive, the same service reports under three different names across exporters, and dashboards cannot aggregate by environment; identity is the glue of every multi-service query.",
+  "alternatives_considered": [
+    "Attaching service.name at each span call site \u2014 rejected because it bloats instrumentation and drifts across modules.",
+    "Environment variables consumed ad hoc by each tool \u2014 rejected because typing, validation, and drift detection are missing.",
+    "Kubernetes downward API alone \u2014 rejected because non-Kubernetes environments (Lambda, ECS, bare metal) require distinct detectors."
+  ],
+  "maturity": "battle_tested"
+}

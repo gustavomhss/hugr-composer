@@ -1,0 +1,40 @@
+{
+  "title": "InboxDeduplicator — Deliveries, Duplicates, Store Size",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "First Deliveries (5m)",
+      "targets": [{"expr": "sum(rate(inbox_deliveries_total{result=\"first\"}[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Duplicates Skipped (5m)",
+      "targets": [{"expr": "sum(rate(inbox_deliveries_total{result=\"duplicate\"}[5m]))"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Effect Duration p50/p95/p99 (ms)",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(inbox_effect_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(inbox_effect_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(inbox_effect_duration_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Store Size by Consumer",
+      "targets": [{"expr": "sum by (consumer) (inbox_store_size)"}]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Purge Evicted (1h)",
+      "targets": [{"expr": "sum(increase(inbox_purge_evicted_total[1h]))"}]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+{"title": "ProcessingRecord", "schemaVersion": 38, "panels": [{"id": 1, "type": "stat", "title": "Activities", "targets": [{"expr": "ropa_activities"}]}]}

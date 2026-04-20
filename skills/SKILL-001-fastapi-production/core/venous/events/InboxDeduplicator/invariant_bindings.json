@@ -1,0 +1,32 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "INBOX_INV_01",
+      "invariant_text": "record MUST be written in the same transaction as the consumer's side-effect; writing after the side-effect is FORBIDDEN.",
+      "confirms_test": "test_inv_same_txn_record_confirms",
+      "prevents_test": "test_inv_same_txn_record_prevents",
+      "under_failure_test": "test_inv_same_txn_record_under_failure"
+    },
+    {
+      "invariant_id": "INBOX_INV_02",
+      "invariant_text": "Given the same (message_id, consumer), seen MUST be deterministic; the consumer CANNOT double-apply the effect.",
+      "confirms_test": "test_inv_deterministic_seen_confirms",
+      "prevents_test": "test_inv_deterministic_seen_prevents",
+      "under_failure_test": "test_inv_deterministic_seen_under_failure"
+    },
+    {
+      "invariant_id": "INBOX_INV_03",
+      "invariant_text": "Retention policy SHALL cover at least the broker's maximum redelivery window; premature purging is NEVER allowed.",
+      "confirms_test": "test_inv_retention_window_confirms",
+      "prevents_test": "test_inv_retention_window_prevents",
+      "under_failure_test": "test_inv_retention_window_under_failure"
+    },
+    {
+      "invariant_id": "INBOX_INV_04",
+      "invariant_text": "The deduplicator NEVER silently reclassifies unseen messages as duplicates; a missing record ALWAYS means first delivery.",
+      "confirms_test": "test_inv_missing_means_first_confirms",
+      "prevents_test": "test_inv_missing_means_first_prevents",
+      "under_failure_test": "test_inv_missing_means_first_under_failure"
+    }
+  ]
+}

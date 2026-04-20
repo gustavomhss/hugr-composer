@@ -1,0 +1,16 @@
+{
+  "logs": [
+    {"event_name": "logger.record.emitted", "required_attributes": ["level", "event"]},
+    {"event_name": "logger.validation.failed", "required_attributes": ["reason", "event"]},
+    {"event_name": "logger.redaction.applied", "required_attributes": ["field_count"]}
+  ],
+  "metrics": [
+    {"name": "logger.records.emitted", "metric_type": "counter", "unit": "1", "cardinality_bound": 20, "label_keys": ["level"]},
+    {"name": "logger.validation.rejections", "metric_type": "counter", "unit": "1", "cardinality_bound": 10, "label_keys": ["reason"]},
+    {"name": "logger.emit.duration", "metric_type": "histogram", "unit": "us", "cardinality_bound": 100, "label_keys": ["level"]}
+  ],
+  "spans": [
+    {"operation_name": "logger.emit", "required_attributes": ["level", "event"]},
+    {"operation_name": "logger.bind", "required_attributes": []}
+  ]
+}

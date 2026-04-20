@@ -1,0 +1,31 @@
+{
+  "name": "PromptTemplate",
+  "namespace": "llm",
+  "purpose": "Declare a named, versioned, parameterized prompt whose text, variables, and target model are pinned so two runs of the same version produce identical rendered payloads.",
+  "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Mapping\n\nclass PromptTemplate(Protocol):\n    name: str\n    version: int\n    target_model: str\n    variables: tuple[str, ...]\n    def render(self, values: Mapping[str, str]) -> str: ...\n    def fingerprint(self) -> str: ...\n",
+  "invariants": [
+    "Rendered output MUST be byte-identical across two calls with the same (version, values) pair.",
+    "A published version MUST NEVER be mutated; changes SHALL produce a new integer version.",
+    "render() MUST raise when a declared variable is missing from values and MUST NEVER silently inject an empty string.",
+    "fingerprint() MUST cover template text, target_model, and variable names so drift in any of them SHALL change the fingerprint.",
+    "Variable interpolation MUST use explicit delimiters and CANNOT treat unescaped user input as template syntax."
+  ],
+  "extension_contract": "Downstream code registers a new prompt by declaring a subclass or a decorator-annotated factory; the registry rejects a register() call that reuses (name, version) so that every published pair resolves to exactly one template object.",
+  "consumption_example": "from typing import Protocol\n\ndef run_extraction(tpl: PromptTemplate, payload: dict[str, str]) -> str:\n    rendered = tpl.render(payload)\n    fp = tpl.fingerprint()\n    return f\"model={tpl.target_model} fp={fp} text={rendered}\"\n",
+  "sources": [
+    {
+      "source": "Langfuse 2.x architecture and tracing model",
+      "locator": "Prompt Management section: versioned prompts, labels, compile()"
+    },
+    {
+      "source": "Weights & Biases Weave (weave-python 0.50+)",
+      "locator": "weave.Prompt / StringPrompt reference \u2014 versioned prompt objects"
+    }
+  ],
+  "why_essential": "Without a pinned, diffable prompt object, evaluations cannot be reproduced and production incidents cannot be traced back to the exact text that generated the bad output.",
+  "alternatives_considered": [
+    "Inline f-strings per call site \u2014 loses version identity and makes rollback impossible.",
+    "Loading prompts from plain files on disk \u2014 no fingerprint, no immutability guarantee, no named versions."
+  ],
+  "maturity": "battle_tested"
+}

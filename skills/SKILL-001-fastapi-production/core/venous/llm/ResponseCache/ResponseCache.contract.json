@@ -1,0 +1,31 @@
+{
+  "name": "ResponseCache",
+  "namespace": "llm",
+  "purpose": "Reuse a prior model response when a call resolves to the same cache key (exact prompt hash or semantic embedding match within a threshold), returning the cached payload.",
+  "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nclass CacheKey(Protocol):\n    mode: Literal[\"exact\", \"semantic\"]\n    value: str\n    namespace: str\n\nclass ResponseCache(Protocol):\n    def lookup(self, key: CacheKey, threshold: float | None = None) -> str | None: ...\n    def store(self, key: CacheKey, response: str, ttl_seconds: int) -> None: ...\n",
+  "invariants": [
+    "lookup() under mode=exact MUST hit only when the key value matches byte-for-byte; near-matches CANNOT be returned.",
+    "lookup() under mode=semantic MUST require a threshold argument and SHALL miss when similarity falls below it.",
+    "Cached payloads MUST NEVER be served across namespace boundaries; a tenant namespace is FORBIDDEN to share entries with another.",
+    "store() SHALL respect TTL; expired entries MUST be filtered out at lookup time, not only at write time.",
+    "Cache hits MUST be reported to TokenMeter with cache_read_tokens so cost accounting remains truthful."
+  ],
+  "extension_contract": "Backends (Redis, SQLite, Postgres) plug in as adapters implementing lookup/store; a decorator on call sites binds a ResponseCache instance to a function so memoization is declarative rather than manual.",
+  "consumption_example": "def cached_completion(cache: ResponseCache, prompt_hash: str, tenant: str) -> str | None:\n    key = type(\"K\", (), {\"mode\": \"exact\", \"value\": prompt_hash, \"namespace\": tenant})()\n    return cache.lookup(key)\n",
+  "sources": [
+    {
+      "source": "Helicone gateway architecture (helicone.ai)",
+      "locator": "Cache feature: keyed by request hash with bucketed TTL, reporting cache hits in usage"
+    },
+    {
+      "source": "Langfuse 2.x architecture and tracing model",
+      "locator": "Observation metadata: cache_hit flag propagated on generation events"
+    }
+  ],
+  "why_essential": "Repeated or near-repeated prompts dominate real-world LLM traffic; a shared cache primitive saves cost and latency while preserving tenancy and audit properties.",
+  "alternatives_considered": [
+    "No cache \u2014 pays full price for duplicate traffic in chat and batch workloads.",
+    "Per-feature Redis keys \u2014 re-implements tenancy, TTL, and hit accounting each time."
+  ],
+  "maturity": "emerging"
+}

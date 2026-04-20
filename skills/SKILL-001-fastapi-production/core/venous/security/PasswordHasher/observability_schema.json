@@ -1,0 +1,53 @@
+{
+  "logs": [
+    {
+      "event_name": "password_hasher.hash.completed",
+      "required_attributes": ["algorithm", "cost_profile", "duration_ms"]
+    },
+    {
+      "event_name": "password_hasher.verify.completed",
+      "required_attributes": ["algorithm", "outcome", "duration_ms"]
+    },
+    {
+      "event_name": "password_hasher.rehash.required",
+      "required_attributes": ["algorithm", "stored_cost", "floor_cost"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "password_hasher.operations",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["operation", "algorithm", "outcome"]
+    },
+    {
+      "name": "password_hasher.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": ["operation", "algorithm"]
+    },
+    {
+      "name": "password_hasher.rehash.pending",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": ["algorithm"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "password_hasher.hash",
+      "required_attributes": ["algorithm", "cost.profile"]
+    },
+    {
+      "operation_name": "password_hasher.verify",
+      "required_attributes": ["algorithm", "outcome"]
+    },
+    {
+      "operation_name": "password_hasher.needs_rehash",
+      "required_attributes": ["algorithm", "decision"]
+    }
+  ]
+}

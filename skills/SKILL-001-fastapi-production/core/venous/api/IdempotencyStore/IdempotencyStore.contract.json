@@ -1,0 +1,20 @@
+{
+  "name": "IdempotencyStore",
+  "namespace": "api",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Thread-safe in-memory key-to-result cache used to deduplicate retried requests: get/put/seen so a handler can short-circuit and return the previous result when the same idempotency key is presented twice.",
+  "api_signature": "class IdempotencyStore: def get(key: str) -> Any | None; def put(key: str, result: Any) -> None; def seen(key: str) -> bool",
+  "invariants": [
+    "IDEMPOTENCY_STORE_INV_01: get(key) MUST return the exact object passed to the most recent put(key, result); for an unknown key it MUST return None without raising.",
+    "IDEMPOTENCY_STORE_INV_02: seen(key) MUST return True iff put() has been called at least once for key, including the case where the stored result is None.",
+    "IDEMPOTENCY_STORE_INV_03: All public operations MUST be atomic under the internal threading.Lock; concurrent callers MUST NOT observe a half-written state.",
+    "IDEMPOTENCY_STORE_INV_04: put(key, result) MUST overwrite any prior value stored under key; the store is a single-slot cache per key, never append-only."
+  ],
+  "status": "promoted",
+  "enrichment": {
+    "invariants_mined": 4,
+    "ambiguous": false,
+    "source": "human.triage.venous_batch_1"
+  }
+}

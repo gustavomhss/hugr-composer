@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "DEPRECATION_REPORTER_INV_01",
+      "invariant_text": "record(path, method) MUST increment the counter for 'METHOD path' by exactly 1 per call; method casing MUST NOT produce divergent counters.",
+      "confirms_test": "test_inv_record_confirms",
+      "prevents_test": "test_inv_record_prevents",
+      "under_failure_test": "test_inv_record_under_failure"
+    }
+  ]
+}

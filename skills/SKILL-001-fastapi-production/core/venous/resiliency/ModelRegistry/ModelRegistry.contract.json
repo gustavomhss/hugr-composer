@@ -1,0 +1,14 @@
+{
+  "name": "ModelRegistry",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Dict-based singleton registry for lazily-loaded model instances (ML, embeddings, rule-engines). Each name:version maps to a zero-arg loader callable; the object is constructed on first `get()` and cached.",
+  "api_signature": "class ModelRegistry: register(...), get(...), list_models(...), update_stats(...)",
+  "invariants": [
+    "MODEL_REGISTRY_INV_01: `get(name, version)` MUST invoke the loader at most once per name:version pair across the registry's lifetime (memoisation).",
+    "MODEL_REGISTRY_INV_02: `get()` on an unregistered name:version MUST raise KeyError \u2014 fail-loud, no silent None return, no implicit registration.",
+    "MODEL_REGISTRY_INV_03: `register()` with `version` defaulting to 'latest' MUST be the logical identifier for unversioned callers; two distinct version strings under the same name MUST coexist as independent cache slots."
+  ],
+  "status": "promoted"
+}

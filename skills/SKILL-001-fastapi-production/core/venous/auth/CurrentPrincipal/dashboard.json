@@ -1,0 +1,27 @@
+{
+  "title": "CurrentPrincipal — Auth Resolution, Roles, Denials",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Principals Resolved (5m)",
+      "targets": [{"expr": "sum(rate(auth_principal_resolved_total[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Anonymous vs Authenticated",
+      "targets": [
+        {"expr": "sum(rate(auth_principal_resolved_total{is_anonymous=\"true\"}[5m]))"},
+        {"expr": "sum(rate(auth_principal_resolved_total{is_anonymous=\"false\"}[5m]))"}
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Role-Check Denials (rate/s)",
+      "targets": [{"expr": "sum(rate(auth_principal_role_checks_total{outcome=\"deny\"}[5m]))"}]
+    }
+  ]
+}

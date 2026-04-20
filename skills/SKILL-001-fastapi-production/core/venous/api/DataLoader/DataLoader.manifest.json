@@ -1,0 +1,12 @@
+{
+  "name": "DataLoader",
+  "namespace": "api",
+  "maturity": "incubating",
+  "files": [
+    {"path": "api/DataLoader/DataLoader.py", "kind": "impl"},
+    {"path": "api/DataLoader/DataLoader.protocol.py", "kind": "protocol"},
+    {"path": "api/DataLoader/DataLoader.md", "kind": "spec_md"},
+    {"path": "api/DataLoader/DataLoader.contract.json", "kind": "contract_json"},
+    {"path": "api/DataLoader/test_DataLoader.py", "kind": "test"}
+  ]
+}

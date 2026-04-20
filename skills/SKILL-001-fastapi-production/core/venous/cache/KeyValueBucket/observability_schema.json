@@ -1,0 +1,19 @@
+{
+  "logs": [
+    {"event_name": "kv.bucket.created", "required_attributes": ["key", "revision"]},
+    {"event_name": "kv.bucket.updated", "required_attributes": ["key", "revision", "prior_revision"]},
+    {"event_name": "kv.bucket.cas.rejected", "required_attributes": ["key", "expected", "got"]},
+    {"event_name": "kv.bucket.deleted", "required_attributes": ["key", "revision"]}
+  ],
+  "metrics": [
+    {"name": "kv.bucket.writes.total", "metric_type": "counter", "unit": "1", "cardinality_bound": 50, "label_keys": ["op"]},
+    {"name": "kv.bucket.cas.rejections", "metric_type": "counter", "unit": "1", "cardinality_bound": 10, "label_keys": []},
+    {"name": "kv.bucket.revision", "metric_type": "gauge", "unit": "1", "cardinality_bound": 1, "label_keys": []},
+    {"name": "kv.bucket.watch.emit", "metric_type": "counter", "unit": "1", "cardinality_bound": 10, "label_keys": []}
+  ],
+  "spans": [
+    {"operation_name": "kv.bucket.create", "required_attributes": ["kv.key"]},
+    {"operation_name": "kv.bucket.update", "required_attributes": ["kv.key", "kv.revision"]},
+    {"operation_name": "kv.bucket.delete", "required_attributes": ["kv.key"]}
+  ]
+}

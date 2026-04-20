@@ -1,0 +1,770 @@
+{
+  "name": "MaterializedView",
+  "namespace": "data",
+  "maturity": "battle_tested",
+  "builder_agent_id": 3,
+  "catalog_entry_sha256": "645f3ad7dcccbc460cfd1c6c343b9e1ab42ef18fea1a58254ea701c295041c47",
+  "files": [
+    {
+      "path": "data/MaterializedView/MaterializedView.cfg",
+      "sha256": "81ea88170e0f456de4819deff3d38739a0fe9ff37ff0d064ec26df51faa56686",
+      "size_bytes": 170,
+      "kind": "test"
+    },
+    {
+      "path": "data/MaterializedView/MaterializedView.contract.json",
+      "sha256": "1db57b5f535d2f22db6c2fada25872cb91b78467ef9e979d328a5dd291cc7d3a",
+      "size_bytes": 2310,
+      "kind": "contract_json"
+    },
+    {
+      "path": "data/MaterializedView/MaterializedView.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "data/MaterializedView/MaterializedView.md",
+      "sha256": "47ce7cc53fcb904b3e832477aeefa22889b477c56e29329457c839ac6bf852a2",
+      "size_bytes": 6477,
+      "kind": "spec_md"
+    },
+    {
+      "path": "data/MaterializedView/MaterializedView.py",
+      "sha256": "f028c41df7202a710354d6268744964fa142bca3ff44cffc98d96199e2bb423f",
+      "size_bytes": 14844,
+      "kind": "impl"
+    },
+    {
+      "path": "data/MaterializedView/MaterializedView.tla",
+      "sha256": "5007fcef173c49afacbfd7d26e3ebb373467a98db55c416fc45438b9d72d457d",
+      "size_bytes": 3148,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "data/MaterializedView/behavioral_MaterializedView.py",
+      "sha256": "f052ca8e2436e19b7d3633096fa36bef0952e2e696f350b90b4669eab4d26f57",
+      "size_bytes": 4779,
+      "kind": "behavioral"
+    },
+    {
+      "path": "data/MaterializedView/chaos_MaterializedView.py",
+      "sha256": "0a0250c53833f9f3c50fbc52d25a9569fa24b0d1752de9c311aacbf6efbb76ab",
+      "size_bytes": 4459,
+      "kind": "chaos"
+    },
+    {
+      "path": "data/MaterializedView/concurrent_MaterializedView.py",
+      "sha256": "2fc595065737d8fa486538c733b678ee45a0c0f906802cea94dd8ce011d36e6d",
+      "size_bytes": 5761,
+      "kind": "concurrent"
+    },
+    {
+      "path": "data/MaterializedView/dashboard.json",
+      "sha256": "9891912e1fd748183468631b9b1063103dd01936d6b7160584c572a6c3601193",
+      "size_bytes": 943,
+      "kind": "dashboard"
+    },
+    {
+      "path": "data/MaterializedView/invariant_bindings.json",
+      "sha256": "a3e0b3cf5dbae11a66aee0232715f9113a5ba57eb98f3d22aa977b3236b0cb1d",
+      "size_bytes": 1967,
+      "kind": "test"
+    },
+    {
+      "path": "data/MaterializedView/metamorphic_MaterializedView.py",
+      "sha256": "25bb50cac3448f5fe14fa8b7ccb2376c31d617640fd926e0a9155804d90d477c",
+      "size_bytes": 4112,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "data/MaterializedView/observability_MaterializedView.py",
+      "sha256": "2a2619871b6e48bb6fd008c8b974d779481d4ffd815ba0b3a1975d348819aa85",
+      "size_bytes": 2720,
+      "kind": "observability"
+    },
+    {
+      "path": "data/MaterializedView/observability_schema.json",
+      "sha256": "0a0db4229e2cbc791522ab40fa064b7e43b3955e9df22f170929a5b0d932a12e",
+      "size_bytes": 1571,
+      "kind": "observability"
+    },
+    {
+      "path": "data/MaterializedView/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "data/MaterializedView/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "data/MaterializedView/state_machine_MaterializedView.py",
+      "sha256": "da699e6564833d28e9537371e509004837d00d9aea12cea666f13ac9645ca27c",
+      "size_bytes": 4846,
+      "kind": "state_machine"
+    },
+    {
+      "path": "data/MaterializedView/test_MaterializedView.py",
+      "sha256": "efc96718446772bd8712ebc925f6cca20365966a9208129773d49d9d68878fff",
+      "size_bytes": 9815,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "MV_INV_01",
+      "invariant_text": "apply MUST be deterministic: given the same event stream in the same order, the view state SHALL converge to the same contents.",
+      "confirms_test": "test_inv_determinism_confirms",
+      "prevents_test": "test_inv_determinism_prevents",
+      "under_failure_test": "test_inv_determinism_under_failure"
+    },
+    {
+      "invariant_id": "MV_INV_02",
+      "invariant_text": "The view CANNOT be the system of record; rebuild MUST be able to regenerate state purely from the source feed.",
+      "confirms_test": "test_inv_rebuild_from_source_confirms",
+      "prevents_test": "test_inv_rebuild_from_source_prevents",
+      "under_failure_test": "test_inv_rebuild_from_source_under_failure"
+    },
+    {
+      "invariant_id": "MV_INV_03",
+      "invariant_text": "Reads against the view MUST tolerate bounded staleness and NEVER claim linearizability with the base data.",
+      "confirms_test": "test_inv_bounded_staleness_confirms",
+      "prevents_test": "test_inv_bounded_staleness_prevents",
+      "under_failure_test": "test_inv_bounded_staleness_under_failure"
+    },
+    {
+      "invariant_id": "MV_INV_04",
+      "invariant_text": "Schema evolution SHALL trigger a rebuild path; silent backfill with stale rows is FORBIDDEN.",
+      "confirms_test": "test_inv_schema_evolution_confirms",
+      "prevents_test": "test_inv_schema_evolution_prevents",
+      "under_failure_test": "test_inv_schema_evolution_under_failure"
+    },
+    {
+      "invariant_id": "MV_INV_05",
+      "invariant_text": "New projections extend MaterializedView by registering handlers per aggregate type; unknown event types MUST be rejected rather than silently dropped.",
+      "confirms_test": "test_inv_handler_registration_confirms",
+      "prevents_test": "test_inv_handler_registration_prevents",
+      "under_failure_test": "test_inv_handler_registration_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 381,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1228,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 1721,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 3644,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1087,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 1033,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 87930,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "39 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1139,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1026,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 78301,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 178062,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-OUT-OF-ORDER-EVENTS",
+        "hypothesis": "Feeding two interleaved event streams in different orders to two replicas should converge per invariant, but apply() likely uses last-write-wins on event arrival time rather than event timestamp, producing divergent final states across replicas given the same logical event set.",
+        "input_fixture": "replicaA.apply(e1@t=1); replicaA.apply(e2@t=2); replicaB.apply(e2@t=2); replicaB.apply(e1@t=1); assert replicaA.query({})==replicaB.query({})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DUPLICATE-REPLAY",
+        "hypothesis": "Replaying the same event twice (at-least-once delivery from feed) will double-count aggregates because apply() lacks idempotency keys, breaking convergence when the upstream feed redelivers after a crash.",
+        "input_fixture": "v.apply({id:'e1',op:'inc',n:5}); v.apply({id:'e1',op:'inc',n:5}); assert v.query({})==v_single.query({})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REBUILD-DRIFT",
+        "hypothesis": "After 1M apply() calls, calling rebuild(source) should reproduce identical state, but float accumulation order or hashmap iteration order will cause rebuild to yield different aggregates than the live view.",
+        "input_fixture": "for e in stream: v.apply(e); snap1=list(v.query({})); v.rebuild(stream); snap2=list(v.query({})); assert snap1==snap2",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-SOURCE-REBUILD",
+        "hypothesis": "rebuild(source=[]) on a populated view will leave stale rows behind because implementation appends rather than truncates, violating that source is the sole authority.",
+        "input_fixture": "v.apply(e1); v.apply(e2); v.rebuild(iter([])); assert list(v.query({}))==[]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-LINEARIZABILITY-CLAIM",
+        "hypothesis": "A read issued immediately after a base-table write returns the new row, falsely implying linearizability; clients will build on this assumption and break when feed lag spikes.",
+        "input_fixture": "base.insert(row); immediately v.query({id:row.id}) returns row with no staleness annotation",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SCHEMA-SILENT-BACKFILL",
+        "hypothesis": "Adding a new column to the source schema causes apply() to write NULLs for new events while leaving old rows untouched, instead of triggering a rebuild \u2014 old rows present stale/missing column silently.",
+        "input_fixture": "v.apply(eventV1); upgrade schema to V2; v.apply(eventV2); query returns mixed-shape rows without error",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CONCURRENT-APPLY-RACE",
+        "hypothesis": "Two threads calling apply() concurrently on shared aggregator state produce non-deterministic final counts due to read-modify-write race on a dict entry, violating determinism for the same logical event set.",
+        "input_fixture": "Thread(target=lambda:[v.apply({k:'x',inc:1}) for _ in range(10000)]) \u00d72; assert v.query({k:'x'})==20000",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INTEGER-OVERFLOW-COUNTER",
+        "hypothesis": "A SUM aggregate stored as int32 overflows after enough apply() calls and silently wraps to negative, producing query results inconsistent with rebuild on a 64-bit accumulator.",
+        "input_fixture": "for _ in range(2**31): v.apply({op:'add',n:1}); assert v.query({})['sum']==2**31",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-TOMBSTONE",
+        "hypothesis": "A delete event with a wall-clock timestamp from a skewed-back upstream node is filtered as 'too old', leaving a tombstoned row visible to query() \u2014 rebuild from source would correctly remove it, exposing live/rebuild divergence.",
+        "input_fixture": "v.apply({op:'put',id:1,ts:T}); v.apply({op:'del',id:1,ts:T-3600}); assert 1 not in v.query({})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED-EVENT-TYPE",
+        "hypothesis": "apply(event) accepts Any; passing a bytes/None/dict-with-missing-keys silently no-ops or raises mid-batch, leaving the view in a partially applied state that differs from rebuild over the same stream.",
+        "input_fixture": "v.apply(None); v.apply(b'\\x00'); v.apply({'op':'put'})  # missing id; then compare to rebuild(same)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNBOUNDED-STALENESS",
+        "hypothesis": "Feed consumer stalls (backpressure or partition pause) for hours, but query() returns rows with no max-staleness signal or error \u2014 violating 'bounded' staleness contract; clients see arbitrarily old data as fresh.",
+        "input_fixture": "pause feed 6h; v.query({}) returns rows; assert response carries staleness_seconds<=BOUND or raises StaleViewError",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REBUILD-DURING-APPLY",
+        "hypothesis": "Calling rebuild() while apply() is concurrently consuming the feed leads to interleaved writes: post-rebuild state contains events applied during the rebuild window plus rebuilt state, double-counting them.",
+        "input_fixture": "Thread1: while True: v.apply(next(feed)); Thread2: v.rebuild(snapshot); compare to deterministic replay",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-QUERY-CRITERIA-INJECTION",
+        "hypothesis": "criteria:object is forwarded to an underlying SQL/NoSQL engine without sanitization; a crafted criteria object exfiltrates rows outside the view's scope or amplifies into a full-scan DoS.",
+        "input_fixture": "v.query({'$where':'1=1; DROP TABLE x'}) or v.query(SQLAlchemyExpr that joins base tables)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE_CONCURRENT_APPLY",
+        "hypothesis": "If two threads call apply() concurrently with the same event sequence, internal mutable state (e.g., a dict or counter) can interleave writes, producing a non-deterministic final state that diverges from a single-threaded replay of the same stream, violating the determinism invariant.",
+        "input_fixture": "import threading\nview = MyMaterializedView()\nevents = [{'id': 1, 'val': 'a'}, {'id': 2, 'val': 'b'}]\nt1 = threading.Thread(target=lambda: [view.apply(e) for e in events])\nt2 = threading.Thread(target=lambda: [view.apply(e) for e in events])\nt1.start(); t2.start(); t1.join(); t2.join()\n# assert view.query({}) == expected_single_threaded_result",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DUPLICATE_EVENT_REPLAY",
+        "hypothesis": "Applying the same event twice (replay attack) without idempotency guards will double-count or duplicate rows in the view, so replaying the stream with one duplicated event produces a different state than replaying without the duplicate, breaking the determinism guarantee.",
+        "input_fixture": "view = MyMaterializedView()\nevent = {'id': 42, 'amount': 100}\nview.apply(event)\nview.apply(event)  # duplicate replay\nresult = list(view.query({}))\n# assert len(result) == 1 and result[0]['amount'] == 100  -- likely fails with 200 or 2 rows",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WALLCLOCK_NONDETERMINISM",
+        "hypothesis": "If the apply() implementation internally timestamps events using time.time() or datetime.now() to resolve ordering or to set 'last_updated' fields, two identical event streams processed at different wall-clock times will produce views with different metadata, violating state convergence determinism.",
+        "input_fixture": "import time\nview1 = MyMaterializedView()\nview2 = MyMaterializedView()\nevents = [{'id': 1, 'val': 'x'}]\nfor e in events: view1.apply(e)\ntime.sleep(2)\nfor e in events: view2.apply(e)\n# assert list(view1.query({})) == list(view2.query({}))  -- fails if internal timestamps differ",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-MUTABLE_EVENT_ALIASING",
+        "hypothesis": "If apply() stores a reference to the event dict rather than a deep copy, a caller who mutates the event object after calling apply() will silently corrupt the view's internal state, causing subsequent query() results to diverge from a fresh rebuild() over the unmodified source.",
+        "input_fixture": "view = MyMaterializedView()\nevent = {'id': 1, 'payload': {'value': 10}}\nview.apply(event)\nevent['payload']['value'] = 999  # mutate after apply\nresult = list(view.query({'id': 1}))\n# assert result[0]['payload']['value'] == 10  -- likely returns 999",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-GENERATOR_EXHAUSTION_REBUILD",
+        "hypothesis": "If the source passed to rebuild() is a single-use generator (not a replayable iterable), calling rebuild() a second time on the same generator yields an empty view, so the view cannot be regenerated purely from the source feed on repeated calls, breaking the rebuild invariant.",
+        "input_fixture": "def source_gen():\n    yield {'id': 1, 'val': 'a'}\n    yield {'id': 2, 'val': 'b'}\n\ngen = source_gen()  # single-use\nview = MyMaterializedView()\nview.rebuild(gen)\nassert len(list(view.query({}))) == 2\nview.rebuild(gen)  # second call on exhausted generator\nassert len(list(view.query({}))) == 2  # likely returns 0 -- view is now empty SOR",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-APPLY_AFTER_REBUILD_PHANTOM_STATE",
+        "hypothesis": "Calling apply() with an event that is NOT present in the canonical source feed, then calling rebuild() which re-ingests only the source, means the view before rebuild contains data that can never be regenerated from the source alone. This means the view temporarily acts as system of record for that phantom event, violating INV-2.",
+        "input_fixture": "source = [{'id': 1, 'val': 'canonical'}]\nphantom = {'id': 99, 'val': 'phantom_only_in_view'}\nview = MyMaterializedView()\nview.rebuild(iter(source))\nview.apply(phantom)\n# view now contains id=99 which source cannot reproduce\n# Next rebuild must eliminate id=99; if it does not, INV-2 is broken\nview.rebuild(iter(source))\nassert len([r for r in view.query({}) if r['id'] == 99]) == 0",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LINEARIZABILITY_CLAIM_IN_QUERY",
+        "hypothesis": "If query() internally calls a 'refresh' or 'sync' before returning results, the implementation implicitly claims linearizability with the base data. A test can detect this by timing the query during a mid-apply window: if query() blocks until apply() completes, it is providing linearizable reads, which the invariant explicitly forbids.",
+        "input_fixture": "import threading, time\nview = MyMaterializedView()\n\ndef slow_apply():\n    time.sleep(0.5)\n    view.apply({'id': 1, 'val': 'late'})\n\nt = threading.Thread(target=slow_apply)\nt.start()\nstart = time.time()\nresults = list(view.query({}))\nelapsed = time.time() - start\n# If elapsed >= 0.5, query blocked on apply \u2192 linearizable read \u2192 violates INV-3\nassert elapsed < 0.4, f'query blocked for {elapsed}s, implying linearizable guarantee'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-UNBOUNDED_STALENESS_NO_FENCE",
+        "hypothesis": "The invariant requires bounded staleness \u2014 not unlimited staleness. If apply() is never called and rebuild() was run days ago, query() should surface a staleness indicator or raise once the bound is exceeded. Without a staleness fence, query() silently returns arbitrarily old data with no signal, violating the 'bounded' part of the staleness contract.",
+        "input_fixture": "import time\nview = MyMaterializedView(staleness_bound_seconds=60)\nview.rebuild(iter([{'id': 1}]))\ntime.sleep(61)  # exceed bound without any apply()\ntry:\n    results = list(view.query({}))\n    assert False, 'Expected StalenessExceeded error or staleness metadata in results'\nexcept StalenessExceeded:\n    pass  # correct behavior\n# If no exception and no staleness metadata, the bound is not enforced",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SCHEMA_EVOLUTION_SILENT_BACKFILL",
+        "hypothesis": "When a new field is added to the event schema and apply() is called with the new-schema event, an implementation that silently merges the new field into existing rows (backfill) without triggering a full rebuild will produce a mixed-schema view. Old rows will have the field as None/default while only newer rows have real values, violating the prohibition on silent backfill with stale rows.",
+        "input_fixture": "view = MyMaterializedView()\n# Phase 1: ingest old-schema events\nfor e in [{'id': i, 'name': f'user_{i}'} for i in range(10)]:\n    view.apply(e)\n# Phase 2: schema evolves \u2014 new 'email' field added\nnew_event = {'id': 10, 'name': 'user_10', 'email': 'user10@example.com'}\nview.apply(new_event)\n# Query all rows \u2014 old rows should NOT have email=None silently; rebuild should have been required\nrows = list(view.query({}))\nold_rows = [r for r in rows if r.get('id', 0) < 10]\nassert all('email' not in r for r in old_rows), 'Silent backfill: old rows got email=None without rebuild'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SCHEMA_REMOVAL_STALE_COLUMNS",
+        "hypothesis": "When a field is removed from the event schema and rebuild() is NOT triggered, existing rows in the view still carry the dropped column. Subsequent query() calls return rows with the obsolete field populated, which is silent retention of stale schema data. The implementation should detect schema drift and mandate a rebuild rather than serving mixed-schema rows.",
+        "input_fixture": "view = MyMaterializedView()\nview.rebuild(iter([{'id': 1, 'name': 'alice', 'deprecated_score': 42}]))\n# Schema evolves: deprecated_score is removed\nnew_event = {'id': 2, 'name': 'bob'}  # no deprecated_score\nview.apply(new_event)\nrows = {r['id']: r for r in view.query({})}\n# If row id=1 still has deprecated_score=42 and no rebuild was triggered, invariant violated\nassert 'deprecated_score' not in rows[1], 'Stale column persists without rebuild after schema removal'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INTEGER_OVERFLOW_AGGREGATION",
+        "hypothesis": "If the view maintains running numeric aggregates (sums, counts) as fixed-width integers, applying a stream of large-value events can overflow the accumulator. The overflowed state will diverge from a fresh rebuild() that computes the aggregate correctly using arbitrary precision, breaking determinism between incremental and batch paths.",
+        "input_fixture": "import sys\nview = MyMaterializedView()\n# Feed events with values near int64 max to trigger overflow\nfor i in range(3):\n    view.apply({'id': i, 'amount': sys.maxsize // 2})\nincremental_total = list(view.query({'agg': 'sum_amount'}))[0]['sum_amount']\nview.rebuild(iter([{'id': i, 'amount': sys.maxsize // 2} for i in range(3)]))\nbatch_total = list(view.query({'agg': 'sum_amount'}))[0]['sum_amount']\nassert incremental_total == batch_total, f'Overflow: {incremental_total} != {batch_total}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONE_NULL_EVENT_CRASH_STATE",
+        "hypothesis": "Passing None or a zero-length/empty dict as an event to apply() may cause an unhandled exception mid-mutation, leaving the view's internal state partially updated. A subsequent rebuild() from the same source (which never contained the None event) may not match the corrupted incremental state, violating both determinism and the rebuild-as-SOR invariants.",
+        "input_fixture": "view = MyMaterializedView()\nview.apply({'id': 1, 'val': 'before'})\ntry:\n    view.apply(None)  # malformed / null event\nexcept Exception:\n    pass  # exception caught, but state may be corrupt\n# Now rebuild from clean source\nview.rebuild(iter([{'id': 1, 'val': 'before'}]))\nresult = list(view.query({}))\nassert result == [{'id': 1, 'val': 'before'}], f'State corrupted after None apply: {result}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-APPLY-RACE-DETERMINISM",
+        "hypothesis": "Concurrent apply() calls with same events in different thread orderings produce divergent final state, violating determinism guarantee",
+        "input_fixture": "Thread1: apply(Event(id=1, val=A)); Thread2: apply(Event(id=2, val=B)) concurrently. Repeat with reversed thread scheduling. Final query() results differ.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REBUILD-CONCURRENT-APPLY",
+        "hypothesis": "apply() invoked mid-rebuild() leaves view in hybrid state mixing pre-rebuild and post-rebuild data, blocking pure source regeneration",
+        "input_fixture": "Thread1: rebuild([source_event1, source_event2]); Thread2: apply(Event(id=3, val=X)) during rebuild. Query returns mix of rebuilding + applied event.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SCHEMA-EVOLUTION-SILENT-BACKFILL",
+        "hypothesis": "Base table schema changes (column type int\u2192string, column dropped) but view silently returns stale rows without triggering rebuild",
+        "input_fixture": "Schema v1: (id INT, price INT 100); Schema v2: (id INT, price STRING). View returns price=100 (stale int) instead of initiating rebuild.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK-SKEW-ORDER-INVERSION",
+        "hypothesis": "Events with decreasing logical timestamps applied in arrival order (not sort order) produce deterministically different final states per network timing",
+        "input_fixture": "apply(Event(ts=1000, account_id=A, amount=50)); apply(Event(ts=500, account_id=A, amount=-25)); final balance differs from reverse arrival order",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REBUILD-EMPTY-INCOMPLETE-CLEAR",
+        "hypothesis": "rebuild([]) with empty source fails to clear internal buffers/deduplication indexes; query() returns stale data despite empty source",
+        "input_fixture": "apply(Event(id=1)); apply(Event(id=2)); rebuild([]); query() still returns {id:1, id:2} or internal dedupe-map retains entries",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REPLAY-DUPLICATE-IDEMPOTENCY",
+        "hypothesis": "Replayed events applied twice generate duplicates in view state but rebuild from source deduplicates\u2014determinism violated by event context sensitivity",
+        "input_fixture": "apply(Event(id=1, tx_id=txA, amount=100)); apply(Event(id=1, tx_id=txA, amount=100)) [replay]; view[0]=100+100, but rebuild source has 100 once",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MEMORY-AMPLIFICATION-UNBOUNDED",
+        "hypothesis": "apply() buffers every event internally without compaction; rebuild() doesn't clear buffer\u2014memory grows unbounded independent of result set size",
+        "input_fixture": "Loop 1M: apply(event); internal buffer=1MB, view result=100 rows. rebuild(source) leaves buffer intact. Memory unbounded by logical view size.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-STALENESS-UNBOUNDED-NO-DECLARE",
+        "hypothesis": "query() API exposes no max_staleness parameter but rebuild is indefinitely delayed; view is unboundedly stale in violation of bounded-staleness contract",
+        "input_fixture": "Source table updated at t=0. No rebuild triggered. At t=3600s, query() returns t=0 data. No API field declares this staleness window is acceptable.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-LINEARIZABILITY-FALSE-CLAIM",
+        "hypothesis": "API design or query() behavior claims or implies linearizability (no staleness bound exposed) while actual read returns stale data post-write",
+        "input_fixture": "apply(Event); immediate query() returns stale state. API signature has no staleness_ms field, creating false linearizability expectation.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SCHEMA-TYPE-COERCION-SILENT",
+        "hypothesis": "Base column type changes (STRING '100' \u2192 INT 100); old view rows silently coerced or left as original type, creating stale-row violation",
+        "input_fixture": "v1: price STRING='100.50'; v2: price INT. View returns price='100.50' (string) instead of re-transforming to INT or triggering rebuild.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MALFORMED-EVENT-TYPE-COERCION",
+        "hypothesis": "apply() accepts non-Event types (string, int, None, dict) without validation; non-deterministic type coercion produces order-dependent final state",
+        "input_fixture": "apply('malformed'); apply(123); apply(None); view either crashes, ignores, or partially parses\u2014different outcomes on event replay.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REBUILD-PARTIAL-EXCEPTION-HYBRID",
+        "hypothesis": "rebuild(source) throws mid-iteration; view left in partial state mixing old rows + partial rebuild; not purely source-derived on subsequent queries",
+        "input_fixture": "rebuild([e1,e2,...e500,...e1000]) raises at e500. View={e1..e500 from rebuild, e501..e1000 from previous state}. Not derivable from source alone.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CRITERIA-INJECTION-AMPLIFY",
+        "hypothesis": "query(criteria) with recursive/cyclic criteria object amplifies result set exponentially or triggers infinite expansion via criteria recursion",
+        "input_fixture": "query({'filter': {'nested': {'nested': {...x100...}}}}) or query(criteria_with_self_ref) causes O(2^n) expansion or infinite iteration.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-EVENT-AMBIGUITY",
+        "hypothesis": "apply(Event()) with zero-valued or missing fields creates state ambiguity; rebuild(source_without_empty) diverges from apply path",
+        "input_fixture": "apply(Event(id=None, data=None)); query() includes this entry. rebuild([Event(id=1, data='x')]) excludes null-field entry. Determinism broken.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "view.applied",
+        "required_attributes": [
+          "view_name",
+          "event_type",
+          "seq"
+        ]
+      },
+      {
+        "event_name": "view.rebuilt",
+        "required_attributes": [
+          "view_name",
+          "source_event_count",
+          "schema_version"
+        ]
+      },
+      {
+        "event_name": "view.schema.evolved",
+        "required_attributes": [
+          "view_name",
+          "old_version",
+          "new_version"
+        ]
+      },
+      {
+        "event_name": "view.query.stale",
+        "required_attributes": [
+          "view_name",
+          "staleness_s"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "view.applied.events",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "view",
+          "event_type"
+        ]
+      },
+      {
+        "name": "view.staleness",
+        "metric_type": "gauge",
+        "unit": "s",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "view"
+        ]
+      },
+      {
+        "name": "view.rebuild.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "view",
+          "result"
+        ]
+      },
+      {
+        "name": "view.rows",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "view"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "view.apply",
+        "required_attributes": [
+          "view.name",
+          "event.type",
+          "event.seq"
+        ]
+      },
+      {
+        "operation_name": "view.rebuild",
+        "required_attributes": [
+          "view.name",
+          "source.count",
+          "schema.version"
+        ]
+      },
+      {
+        "operation_name": "view.query",
+        "required_attributes": [
+          "view.name",
+          "criteria.keys",
+          "staleness.s"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol matches api_signature verbatim; semantics faithful to Kleppmann/Richardson CQRS read model with rebuild, determinism, and staleness surfacing."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All 5 invariants enforced; apply/rebuild/query plus extension contract (on/register_handler), staleness introspection, schema evolution, and rows snapshot all present."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Dedicated MaterializedViewInvariantError with MV-INV-## citations in every message; rejects unknown types, bad shapes, schema drift, duplicate handlers."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Clean Protocol + decorator extension + subclass path for storage backends; RLock allows reentrancy; query returns iterable of dict copies so callers can't mutate internals."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe via RLock, idempotent under at-least-once, staleness gauges exposed, zero import I/O, lazy clock injection. No async variant and rebuild holds lock for entire replay \u2014 acceptable for reference impl."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 10,
+        "rationale": "Protocol signature identical to catalog; namespace/purpose/invariants/extension_contract all honored; __all__ exports the Protocol and reference impl cleanly."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "CDC, CQRS, and 'linearizable' are used without definition \u2014 a junior following the usage example won't know which of those footguns apply to them.",
+          "Thread-safety section mentions a `seq` field on events for deduplication, but the usage example never shows it \u2014 a junior will copy the example and silently skip deduplication.",
+          "The Protocol/ABC distinction is assumed knowledge; 'the catalog api_signature in MaterializedView.contract.json is the authority' sends them to a file with no guidance on what to do there."
+        ],
+        "rewrite_suggestion": "Add a one-paragraph 'Glossary' box after the plain-language description that defines CDC, CQRS, linearizable, and bounded staleness in one sentence each. Update the usage example to show an event with a `seq` field and add a comment '# seq is required \u2014 see Thread Safety'. Replace the contract.json reference with a direct inline copy of the four-method Protocol signature."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "Re-registration refusal for the same event type is stated as a rule but the failure mode is unspecified \u2014 raises? returns False? This matters for test harness design and handler hot-swap mitigations.",
+          "The storage-backend extension contract says 'override the rows dict with a durable adapter' but says nothing about transaction boundaries or atomicity guarantees during `rebuild` \u2014 a Redis adapter author has no contract to enforce.",
+          "MV_INV_05 says unknown event types 'MUST be rejected rather than silently dropped' but the Protocol signature for `apply` returns `None`, so rejection can only be via exception; the exception type and message contract are unspecified."
+        ],
+        "rewrite_suggestion": "Add a 'Failure modes' column to the invariants table specifying exception type per invariant. Add a 'Storage backend contract' subsection under Extension Contract that lists the three atomicity guarantees a backend must honour during rebuild. Clarify re-registration: 'raises `HandlerAlreadyRegisteredError`'."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "`rebuild()` is computationally expensive and has no access-control contract \u2014 an authenticated-but-low-privilege caller can trigger unbounded recomputation (denial-of-resource).",
+          "The docs say 'redact at the source, not at the projection' but give no guidance on what happens when a rebuild replays historical events that predate a redaction \u2014 the secret re-materialises.",
+          "No audit-log contract: the docs don't specify whether `rebuild()` and `apply()` emit structured events that can be shipped to a SIEM, leaving auditors to instrument ad-hoc."
+        ],
+        "rewrite_suggestion": "Add a 'Security hardening checklist' subsection with three items: (1) gate rebuild() behind an admin authz check at the call site; (2) document that redaction requires a source-log compaction followed by a full rebuild \u2014 point-in-time replays re-materialise secrets; (3) specify that apply/rebuild SHOULD emit structured audit events (at minimum: timestamp, actor, event_count, duration_ms)."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Four metric names are listed (view.applied.events, view.staleness, etc.) but the instrumentation format and namespace are unspecified \u2014 an SRE landing in a Prometheus shop will hunt for these under a different path.",
+          "No runbook pointer for production rebuild: staleness alert fires, on-call follows... what steps? The docs say rebuild() exists but not how to trigger it safely in a live system (drain readers? pause apply? swap atomic?).",
+          "`staleness_s()` returns `+inf` for a never-applied view, but the alert rule example uses `view_staleness > max_age` \u2014 `+inf > any_number` is true, so a freshly provisioned view pages immediately before it has a chance to warm up."
+        ],
+        "rewrite_suggestion": "Prefix the metric names with an OpenTelemetry-style namespace note (e.g. 'emitted as OTEL gauges/counters under the `matview.` prefix'). Add a 'Runbook skeleton' section with three steps: quiesce, rebuild, verify staleness drops. Add an alert annotation: 'suppress `view_staleness` alerts for N minutes after initial provisioning or after a manual rebuild to avoid cold-start false positives'."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The 'when to use' section is accurate but framed in infrastructure terms (linearizability, CDC) \u2014 a PM cannot translate this into a feature-team decision without an engineer in the room.",
+          "No adoption cost signal: the docs are silent on what it takes to stand up and maintain a MaterializedView (ops burden, rebuild frequency, storage overhead) \u2014 a PM cannot weigh it against simpler alternatives.",
+          "The alternatives-rejected section lists three options but the rejection rationale is one-line \u2014 a PM asked 'why not just cache it?' has no shareable answer."
+        ],
+        "rewrite_suggestion": "Add a 'Business context' box at the top: 'Use when your team owns a high-traffic read path (e.g. dashboard, search) where users notice latency above ~50 ms and the underlying data changes more than once per minute. Typical setup: 1\u20132 engineer-days; ongoing ops: monitor one staleness alert.' Expand the alternatives section with one business-language sentence per option explaining the user-visible failure mode."
+      }
+    ]
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "MetricMeter",
+  "namespace": "obs",
+  "purpose": "Record numeric measurements through four instrument shapes \u2014 counter, up-down counter, histogram, asynchronous gauge \u2014 under OpenTelemetry metric semantics.",
+  "api_signature": "from typing import Protocol, Mapping, Callable, Sequence\n\nclass Counter(Protocol):\n    def add(self, value: int | float, attributes: Mapping[str, str] | None = None) -> None: ...\n\nclass UpDownCounter(Protocol):\n    def add(self, value: int | float, attributes: Mapping[str, str] | None = None) -> None: ...\n\nclass Histogram(Protocol):\n    def record(self, value: int | float, attributes: Mapping[str, str] | None = None) -> None: ...\n\nclass MetricMeter(Protocol):\n    def counter(self, name: str, *, unit: str, description: str) -> Counter: ...\n    def up_down_counter(self, name: str, *, unit: str, description: str) -> UpDownCounter: ...\n    def histogram(self, name: str, *, unit: str, description: str, boundaries: Sequence[float] | None = None) -> Histogram: ...\n    def observable_gauge(self, name: str, callback: Callable[[], float], *, unit: str, description: str) -> None: ...\n",
+  "invariants": [
+    "Counter instruments MUST only accept non-negative values; negative deltas SHALL raise and are FORBIDDEN to be silently clamped.",
+    "Histogram boundaries MUST be finite, strictly increasing, and immutable once the instrument is created.",
+    "Instrument names MUST match the regex '^[A-Za-z][A-Za-z0-9_./-]{0,62}$' per OTel specification and CANNOT collide with a differently-typed instrument of the same name.",
+    "Every instrument MUST carry a UCUM unit string (e.g. 'ms', 's', 'By') \u2014 an empty unit is FORBIDDEN.",
+    "Observable gauge callbacks MUST be idempotent within a collection cycle and SHALL NEVER raise; exceptions are logged and the measurement is dropped.",
+    "Attribute sets attached to measurements NEVER include unbounded-cardinality keys (user id, request id, full URL path)."
+  ],
+  "extension_contract": "Downstream tools register a MetricReader adapter (pull-based Prometheus scrape or push-based OTLP exporter) and extend instrumentation by subclassing the meter provider to add a View that renames, filters, or re-aggregates instruments without mutating existing instrument contracts.",
+  "consumption_example": "def record_checkout(meter: MetricMeter, duration_ms: float, status: str) -> None:\n    latency = meter.histogram('http.server.duration', unit='ms', description='HTTP server latency')\n    errors = meter.counter('checkout.failures', unit='1', description='Failed checkouts')\n    latency.record(duration_ms, {'http.route': '/checkout', 'http.response.status_code': status})\n    if status.startswith('5'):\n        errors.add(1, {'http.route': '/checkout'})\n",
+  "sources": [
+    {
+      "source": "OpenTelemetry Specification 1.32 \u2014 Metrics API",
+      "locator": "specification/metrics/api.md sections 'Instruments', 'Counter', 'Histogram', 'Asynchronous Gauge'"
+    },
+    {
+      "source": "Prometheus Documentation \u2014 Histograms and Summaries (prometheus.io/docs/practices)",
+      "locator": "https://prometheus.io/docs/practices/histograms/ 'When to use which' and 'Errors of quantile estimation'"
+    },
+    {
+      "source": "OpenTelemetry Semantic Conventions 1.27 \u2014 Metric Naming",
+      "locator": "semconv/general/metrics.md 'Instrument naming' and 'Units (UCUM)'"
+    }
+  ],
+  "why_essential": "Centralizing instrument creation is the only way to keep units, names, and attribute sets aligned across services; ad-hoc per-tool meters silently fork names and aggregations, making dashboards non-portable.",
+  "alternatives_considered": [
+    "StatsD client per tool \u2014 rejected because it has no unit or description metadata and offers no histogram bucket control.",
+    "Prometheus client library directly \u2014 rejected because it binds code to pull-only collection and blocks push-based deployment models.",
+    "Pure log-derived metrics \u2014 rejected because aggregation at ingest is costly and loses millisecond-resolution histograms."
+  ],
+  "maturity": "battle_tested"
+}

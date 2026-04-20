@@ -1,0 +1,37 @@
+{
+  "title": "LifetimeScope — Scopes, Resolves, LIFO Disposal",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Resolves (5m)",
+      "targets": [{"expr": "sum(rate(lifetime_resolves_total[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Scope Depth (p50/p95)",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(lifetime_scope_depth_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(lifetime_scope_depth_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Instances per Scope (p95)",
+      "targets": [{"expr": "histogram_quantile(0.95, rate(lifetime_scope_instance_count_bucket[5m]))"}]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Dispose Duration p50/p95/p99 (ms)",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(lifetime_dispose_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(lifetime_dispose_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(lifetime_dispose_duration_bucket[5m]))"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "logs": [
+    {"event_name": "cardinality.admitted", "required_attributes": ["metric"]},
+    {"event_name": "cardinality.overflowed", "required_attributes": ["metric", "reason"]}
+  ],
+  "metrics": [
+    {"name": "cardinality.admissions.count", "metric_type": "counter", "unit": "1", "cardinality_bound": 200, "label_keys": ["metric"]},
+    {"name": "cardinality.overflow.count", "metric_type": "counter", "unit": "1", "cardinality_bound": 200, "label_keys": ["metric", "reason"]},
+    {"name": "cardinality.series.active", "metric_type": "gauge", "unit": "1", "cardinality_bound": 200, "label_keys": ["metric"]}
+  ],
+  "spans": [
+    {"operation_name": "cardinality.admit", "required_attributes": ["metric"]}
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "FT_INV_01",
+      "invariant_text": "is_active() MUST be pure given the same (key, ctx); side effects (I/O, random draws) SHALL NEVER leak into evaluation.",
+      "confirms_test": "test_inv_pure_evaluation_confirms",
+      "prevents_test": "test_inv_pure_evaluation_prevents",
+      "under_failure_test": "test_inv_pure_evaluation_under_failure"
+    },
+    {
+      "invariant_id": "FT_INV_02",
+      "invariant_text": "Evaluation MUST default to False (off) when the backing store is unreachable; CANNOT default to on.",
+      "confirms_test": "test_inv_off_by_default_confirms",
+      "prevents_test": "test_inv_off_by_default_prevents",
+      "under_failure_test": "test_inv_off_by_default_under_failure"
+    },
+    {
+      "invariant_id": "FT_INV_03",
+      "invariant_text": "A toggle key MUST be unique within the registry and SHALL follow a fixed naming convention.",
+      "confirms_test": "test_inv_key_uniqueness_confirms",
+      "prevents_test": "test_inv_key_uniqueness_prevents",
+      "under_failure_test": "test_inv_key_uniqueness_under_failure"
+    },
+    {
+      "invariant_id": "FT_INV_04",
+      "invariant_text": "The evaluation path MUST record an observability event (toggle key + decision) for every call; audit entries NEVER are dropped.",
+      "confirms_test": "test_inv_audit_recorded_confirms",
+      "prevents_test": "test_inv_audit_recorded_prevents",
+      "under_failure_test": "test_inv_audit_recorded_under_failure"
+    },
+    {
+      "invariant_id": "FT_INV_05",
+      "invariant_text": "Removing a toggle MUST be a two-step deprecation: mark stale, then delete; code references CANNOT disappear abruptly.",
+      "confirms_test": "test_inv_two_step_delete_confirms",
+      "prevents_test": "test_inv_two_step_delete_prevents",
+      "under_failure_test": "test_inv_two_step_delete_under_failure"
+    }
+  ]
+}

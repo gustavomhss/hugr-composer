@@ -1,0 +1,739 @@
+{
+  "name": "LifetimeScope",
+  "namespace": "data",
+  "maturity": "battle_tested",
+  "builder_agent_id": 1,
+  "catalog_entry_sha256": "9d667e40acb38dfdab80ced39a7c3dc60bcc89b63ff0e8e9e1ec2b72c082243f",
+  "files": [
+    {
+      "path": "data/LifetimeScope/LifetimeScope.cfg",
+      "sha256": "e2d80dd637e62a5d459316893936cbe832b2016c39444e78ccd1b2e8d57280cb",
+      "size_bytes": 242,
+      "kind": "test"
+    },
+    {
+      "path": "data/LifetimeScope/LifetimeScope.contract.json",
+      "sha256": "361d3d025c7799846944cfe0da5fee4e691254f7d27ca2b39cae697c796e270a",
+      "size_bytes": 2776,
+      "kind": "contract_json"
+    },
+    {
+      "path": "data/LifetimeScope/LifetimeScope.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "data/LifetimeScope/LifetimeScope.md",
+      "sha256": "98163d3923cd7f2b9c9f4ae2506eed1d8a9f0978f51a8ee57a98ebea590a7f3f",
+      "size_bytes": 10305,
+      "kind": "spec_md"
+    },
+    {
+      "path": "data/LifetimeScope/LifetimeScope.py",
+      "sha256": "021ea748051a531007476c4989aa611fc92e40544b825a74fa7930cff9a849ed",
+      "size_bytes": 16781,
+      "kind": "impl"
+    },
+    {
+      "path": "data/LifetimeScope/LifetimeScope.tla",
+      "sha256": "74e21919c7b7db22d517e1dca5e3e0337a832c61e6072d9fbdcb237d7c38553b",
+      "size_bytes": 3126,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "data/LifetimeScope/behavioral_LifetimeScope.py",
+      "sha256": "a8595106dad8153fea5fde5554083813bbaea0ab974e17ce0ad17b8125692136",
+      "size_bytes": 4107,
+      "kind": "behavioral"
+    },
+    {
+      "path": "data/LifetimeScope/chaos_LifetimeScope.py",
+      "sha256": "3da9c1b6091fe0af242cf46c4c872b7b77cef2493ec40fba774a117d4aa3ddb8",
+      "size_bytes": 3904,
+      "kind": "chaos"
+    },
+    {
+      "path": "data/LifetimeScope/concurrent_LifetimeScope.py",
+      "sha256": "44371dc04294b384bf701520ccd23b4ec1a7713ebe839c6ef055e463c7778f2b",
+      "size_bytes": 3176,
+      "kind": "concurrent"
+    },
+    {
+      "path": "data/LifetimeScope/dashboard.json",
+      "sha256": "cac8bed951228a1c69baf2963c739468468f59e49ed72bc73853ff037a1001f8",
+      "size_bytes": 1160,
+      "kind": "dashboard"
+    },
+    {
+      "path": "data/LifetimeScope/invariant_bindings.json",
+      "sha256": "1d9b2e06efcc1e5fb7cdeb4c85592befc0c53af4c08e7dc4d0482885c08e9f41",
+      "size_bytes": 1847,
+      "kind": "test"
+    },
+    {
+      "path": "data/LifetimeScope/metamorphic_LifetimeScope.py",
+      "sha256": "9c40f62b1f13a7612217991801a7329187c2f59cd1ef7bb5121dc769b883d414",
+      "size_bytes": 2730,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "data/LifetimeScope/observability_LifetimeScope.py",
+      "sha256": "ab7b9b9f92ebea469ac73b2baa15952e1494166ceb495521f5c3fd24e325bde0",
+      "size_bytes": 2004,
+      "kind": "observability"
+    },
+    {
+      "path": "data/LifetimeScope/observability_schema.json",
+      "sha256": "0dc6a3430c6c725a246748e686f93478e01b1fabb39c43da0080540324716290",
+      "size_bytes": 1463,
+      "kind": "observability"
+    },
+    {
+      "path": "data/LifetimeScope/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "data/LifetimeScope/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "data/LifetimeScope/state_machine_LifetimeScope.py",
+      "sha256": "86eb83a2b755a672af4f5a95511f4e97174005caa92b059badf01d9eb9b5e874",
+      "size_bytes": 3544,
+      "kind": "state_machine"
+    },
+    {
+      "path": "data/LifetimeScope/test_LifetimeScope.py",
+      "sha256": "e321737169114c549fbb56a12b1c371058fe3d275fb054803a41b448a298d096",
+      "size_bytes": 7926,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "LS_INV_01",
+      "invariant_text": "SINGLETON instances MUST be shared process-wide and created at most once per container.",
+      "confirms_test": "test_inv_singleton_identity_confirms",
+      "prevents_test": "test_inv_singleton_identity_prevents",
+      "under_failure_test": "test_inv_singleton_identity_under_failure"
+    },
+    {
+      "invariant_id": "LS_INV_02",
+      "invariant_text": "SCOPED instances MUST be created at most once per scope and disposed when the scope ends.",
+      "confirms_test": "test_inv_scoped_lifecycle_confirms",
+      "prevents_test": "test_inv_scoped_lifecycle_prevents",
+      "under_failure_test": "test_inv_scoped_lifecycle_under_failure"
+    },
+    {
+      "invariant_id": "LS_INV_03",
+      "invariant_text": "TRANSIENT instances MUST be created per resolution call and NEVER reused across call sites.",
+      "confirms_test": "test_inv_transient_fresh_confirms",
+      "prevents_test": "test_inv_transient_fresh_prevents",
+      "under_failure_test": "test_inv_transient_fresh_under_failure"
+    },
+    {
+      "invariant_id": "LS_INV_04",
+      "invariant_text": "A SINGLETON MUST NEVER depend on a SCOPED or TRANSIENT disposable that requires a live request scope.",
+      "confirms_test": "test_inv_leak_rejection_confirms",
+      "prevents_test": "test_inv_leak_rejection_prevents",
+      "under_failure_test": "test_inv_leak_rejection_under_failure"
+    },
+    {
+      "invariant_id": "LS_INV_05",
+      "invariant_text": "The value set MUST be closed: any new lifetime requires an explicit enum addition, NEVER a string literal.",
+      "confirms_test": "test_inv_closed_vocabulary_confirms",
+      "prevents_test": "test_inv_closed_vocabulary_prevents",
+      "under_failure_test": "test_inv_closed_vocabulary_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 1032,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 6 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1315,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 1629,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 4113,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1181,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 1416,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 111511,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "37 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1652,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1955,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 76039,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 202536,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SINGLETON-RACE-DOUBLE-INIT",
+        "hypothesis": "Concurrent first-resolution of a SINGLETON from two threads bypasses the at-most-once guarantee because the container's check-then-create lacks a lock, producing two distinct instances and violating process-wide sharing.",
+        "input_fixture": "Spawn 32 threads simultaneously calling container.resolve(LifetimeScope.SINGLETON, IFoo); assert id() of all returned objects is identical.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SCOPED-LEAK-AFTER-DISPOSE",
+        "hypothesis": "A SCOPED instance captured by a closure or background task continues to be used after scope.__exit__ runs, so disposal does not actually terminate the instance lifetime as the invariant promises.",
+        "input_fixture": "with container.scope() as s: obj = s.resolve(IFoo); asyncio.create_task(obj.do_work()); exit scope; await task \u2014 expect use-after-dispose.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TRANSIENT-CACHED-VIA-MEMO",
+        "hypothesis": "A TRANSIENT registered through a @lru_cache-decorated factory or a module-level memo is reused across resolution calls, silently behaving as SINGLETON.",
+        "input_fixture": "register(IFoo, factory=functools.lru_cache(lambda: Foo()), lifetime=TRANSIENT); a=resolve(); b=resolve(); assert a is not b \u2014 fails.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SINGLETON-CAPTURES-SCOPED-DEP",
+        "hypothesis": "A SINGLETON whose constructor takes a SCOPED DbSession captures the first scope's session forever, violating the captive-dependency rule and leaking a disposed session across requests.",
+        "input_fixture": "class A(SINGLETON): def __init__(self, s: DbSession[SCOPED]): ... ; resolve A inside scope1; use A inside scope2 \u2014 session disposed.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-STRING-LITERAL-COERCION",
+        "hypothesis": "Because LifetimeScope inherits from str, callers pass raw 'singleton' / 'SCOPED' / 'PerRequest' strings and the container accepts them via ==, opening the closed value set to arbitrary literals.",
+        "input_fixture": "container.register(IFoo, lifetime='singleton'); container.register(IBar, lifetime='per-request'); both succeed silently.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CASE-MISMATCH-ENUM-MISS",
+        "hypothesis": "LifetimeScope('Singleton') with capital S raises ValueError unhandled, or worse, a case-insensitive lookup elsewhere lets 'SINGLETON' (uppercase) match value 'singleton' inconsistently across call sites.",
+        "input_fixture": "LifetimeScope('Singleton'); LifetimeScope('SINGLETON'); LifetimeScope('singleton ') with trailing space.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SCOPED-NESTED-SCOPE-REUSE",
+        "hypothesis": "A SCOPED instance resolved in an outer scope is incorrectly returned again inside a nested child scope, conflating two distinct scopes and breaking once-per-scope guarantee.",
+        "input_fixture": "with container.scope() as outer: a=outer.resolve(IFoo); with outer.child_scope() as inner: b=inner.resolve(IFoo); assert a is not b \u2014 fails.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TRANSIENT-DISPOSAL-REPLAY",
+        "hypothesis": "TRANSIENT disposables are tracked by the scope's disposal list, causing the same instance reference to be returned (replayed) on the second resolve because the registry deduplicates by type+id.",
+        "input_fixture": "register(IDisposable, TRANSIENT); a=scope.resolve(); b=scope.resolve(); assert a is not b; then scope.dispose() \u2014 expect double-dispose error.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SINGLETON-FORK-DUPLICATION",
+        "hypothesis": "After os.fork() in a multiprocessing worker, each child inherits its own SINGLETON instance, so 'process-wide' is ambiguous and the invariant silently breaks across forked processes that share a logical container.",
+        "input_fixture": "resolve(SINGLETON) in parent; os.fork(); resolve(SINGLETON) in child; compare via shared queue \u2014 distinct instances.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ENUM-MONKEYPATCH-EXTENSION",
+        "hypothesis": "Because LifetimeScope is a plain str-Enum without _ignore_ or __init_subclass__ guard, a third-party plugin can extend it via aenum.extend_enum or assign LifetimeScope.POOLED='pooled', defeating the closed-set invariant.",
+        "input_fixture": "import aenum; aenum.extend_enum(LifetimeScope, 'POOLED', 'pooled'); container accepts POOLED without code change.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SINGLETON-FACTORY-EXCEPTION-RETRY",
+        "hypothesis": "If a SINGLETON factory raises on first call, the container's failure path leaves no sentinel, so the next resolve retries and may succeed \u2014 producing >1 construction attempts and breaking 'at most once'.",
+        "input_fixture": "factory raises ConnectionError once then succeeds; thread1 resolves (raises), thread2 resolves (succeeds), thread3 resolves \u2014 count constructor calls > 1.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SCOPED-CROSS-REQUEST-BLEED",
+        "hypothesis": "Scope identity is keyed on threading.current_thread(), so an async request hopping between event-loop threads via run_in_executor reuses the wrong scope and bleeds a SCOPED user-session into another request.",
+        "input_fixture": "FastAPI request A starts on thread T1, awaits run_in_executor (T2) and resolves IUserSession; concurrent request B on T2 sees A's session.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-JSON-SERIALIZED-LIFETIME-REPLAY",
+        "hypothesis": "LifetimeScope serializes to its str value and is accepted back via LifetimeScope(value) from untrusted JSON config, allowing a remote attacker to downgrade a SCOPED auth dependency to SINGLETON and leak credentials across users.",
+        "input_fixture": "POST /admin/registry {\"service\":\"AuthContext\",\"lifetime\":\"singleton\"}; container.register(AuthContext, LifetimeScope(payload['lifetime'])).",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SINGLETON_RACE_DOUBLE_INIT",
+        "hypothesis": "If two threads simultaneously resolve the same SINGLETON before the first creation completes, a non-thread-safe container will construct two instances and whichever thread wins the dict write 'wins', silently discarding the other. Both callers receive different objects, violating the at-most-once guarantee. This is a classic TOCTOU race on the lazy-init check.",
+        "input_fixture": "import threading\nresolved = []\ndef resolve(): resolved.append(container.resolve(MyService))\nt1, t2 = threading.Thread(target=resolve), threading.Thread(target=resolve)\nt1.start(); t2.start(); t1.join(); t2.join()\nassert resolved[0] is resolved[1], 'SINGLETON violated: two distinct instances'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SINGLETON_FORK_DIVERGE",
+        "hypothesis": "After os.fork(), the child process inherits the parent's singleton registry by copy-on-write. If the singleton holds a file descriptor, DB connection, or lock, both processes believe they own the single authoritative instance. Writes in the child corrupt the parent's state. The container cannot detect this because id() is identical in both address spaces at fork time.",
+        "input_fixture": "import os\ndb = container.resolve(DatabasePool)  # SINGLETON\npid = os.fork()\nif pid == 0:\n    db.execute('INSERT ...')  # child writes to inherited connection\n    os._exit(0)\nelse:\n    db.execute('SELECT ...')  # parent reads \u2014 connection state is corrupted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SCOPED_NODISPOSE_EXCEPTION",
+        "hypothesis": "If an exception is raised during a request handler and the scope context manager does not have a try/finally guard, __exit__ may not call dispose() on registered SCOPED instances, leaking DB connections, open files, or thread locks indefinitely. One bad request permanently reduces the resource pool.",
+        "input_fixture": "with request_scope() as scope:\n    svc = scope.resolve(UnitOfWork)  # SCOPED\n    raise RuntimeError('handler error')  # scope exits without explicit finally\n# UnitOfWork.dispose() never called; connection stays checked out",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SCOPED_REUSE_AFTER_DISPOSE",
+        "hypothesis": "If a caller retains a reference to a SCOPED instance beyond the scope boundary and invokes a method after disposal, the container invariant is violated: an already-disposed object is still active. Moreover, if a second scope is opened and resolve() is called again, the container may return the same disposed object if it mistakenly re-uses the previous scope cache entry.",
+        "input_fixture": "with request_scope() as scope:\n    repo = scope.resolve(UserRepository)\nrepo.find(1)  # scope is dead; object may be in a broken state\n# AND:\nwith request_scope() as scope2:\n    repo2 = scope2.resolve(UserRepository)\n    assert repo2 is not repo, 'Stale disposed instance returned'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TRANSIENT_MUTABLE_DEFAULT_SHARE",
+        "hypothesis": "A factory registered as TRANSIENT uses a Python mutable default argument (e.g. `def factory(state=[])`). Python caches the default object once at function definition time, so every TRANSIENT resolution receives the same list object. Mutations by one caller are visible to all others, silently converting TRANSIENT into a de-facto SINGLETON with shared mutable state.",
+        "input_fixture": "def make_buffer(data=[]):\n    data.append(0)\n    return Buffer(data)\ncontainer.register(Buffer, factory=make_buffer, lifetime=LifetimeScope.TRANSIENT)\nb1 = container.resolve(Buffer)\nb2 = container.resolve(Buffer)\nassert b1.data is not b2.data, 'TRANSIENT shares mutable default: invariant broken'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TRANSIENT_FACTORY_CACHE_WRAP",
+        "hypothesis": "A factory function decorated with @functools.lru_cache or @cache is registered as TRANSIENT. The cache causes identical argument signatures to return the cached instance on subsequent calls. The container correctly calls the factory each time but the factory itself returns the same object, violating the per-resolution-call uniqueness guarantee silently.",
+        "input_fixture": "from functools import lru_cache\n@lru_cache(maxsize=None)\ndef make_handler(tenant_id: str): return RequestHandler(tenant_id)\ncontainer.register(RequestHandler, factory=lambda: make_handler('acme'), lifetime=LifetimeScope.TRANSIENT)\nh1 = container.resolve(RequestHandler)\nh2 = container.resolve(RequestHandler)\nassert h1 is not h2, 'lru_cache collapses TRANSIENT to SINGLETON'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CAPTIVE_SCOPED_IN_SINGLETON",
+        "hypothesis": "A SINGLETON depends on a SCOPED service injected at construction time. The SINGLETON captures the first request's SCOPED instance for the lifetime of the process. Subsequent requests all operate on a stale, potentially disposed SCOPED object that belongs to a dead request scope. This is the classic 'captive dependency' anti-pattern.",
+        "input_fixture": "class ReportService:  # registered as SINGLETON\n    def __init__(self, uow: UnitOfWork):  # UnitOfWork is SCOPED\n        self.uow = uow  # captive reference\n\nwith request_scope() as s1:\n    rs = container.resolve(ReportService)  # uow from s1 captured\n\nwith request_scope() as s2:\n    rs2 = container.resolve(ReportService)  # same rs, same dead s1.uow\n    rs2.uow.commit()  # operates on disposed scope \u2014 data loss or error",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CAPTIVE_TRANSIENT_DISPOSABLE_SINGLETON",
+        "hypothesis": "A SINGLETON depends on a TRANSIENT that implements a Disposable interface (e.g. holds a thread lock or DB connection). The SINGLETON constructor receives one transient instance and holds it forever, but the container never calls dispose() on it because TRANSIENTs are assumed short-lived. The disposable leaks for the process lifetime.",
+        "input_fixture": "class AuditLogger:  # SINGLETON\n    def __init__(self, conn: Connection):  # Connection is TRANSIENT + Disposable\n        self.conn = conn  # held forever, never disposed\ncontainer.register(AuditLogger, lifetime=LifetimeScope.SINGLETON)\ncontainer.register(Connection, lifetime=LifetimeScope.TRANSIENT)\napp = container.resolve(AuditLogger)  # conn.dispose() never called",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOSED_SET_STR_EQUALITY_BYPASS",
+        "hypothesis": "Because LifetimeScope inherits from str, the expression `LifetimeScope.SINGLETON == 'singleton'` evaluates to True in Python. Container code that guards lifetime checks with `if lifetime == 'singleton':` instead of `if lifetime is LifetimeScope.SINGLETON:` or `isinstance` checks will silently accept raw string literals, bypassing the closed-set invariant. An attacker-controlled config file can inject 'singleton' as a string to manipulate lifetime without using the enum.",
+        "input_fixture": "# Attacker-supplied config YAML: lifetime: 'singleton'\nlifetime_raw = config['lifetime']  # plain str from YAML parse\nassert isinstance(lifetime_raw, LifetimeScope)  # FAILS \u2014 str, not LifetimeScope\n# But container check:\nif lifetime_raw == LifetimeScope.SINGLETON:  # TRUE due to str inheritance\n    register_as_singleton(service)  # silently accepted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOSED_SET_SUBCLASS_EXTENSION",
+        "hypothesis": "Python enums allow subclassing only if the parent defines no members. However, str-based enums can be combined with regular classes to forge fake enum-like objects that compare equal to valid members. An attacker subclasses str directly and passes an instance with value 'singleton' to a container that performs only `isinstance(x, str)` checks, effectively injecting an undeclared lifetime without modifying the enum definition.",
+        "input_fixture": "class FakeScope(str):\n    pass\n\nforged = FakeScope('singleton')\nassert forged == LifetimeScope.SINGLETON  # True \u2014 str equality\ncontainer.register(MyService, lifetime=forged)  # accepted if container checks str, not LifetimeScope\nassert isinstance(forged, LifetimeScope)  # False \u2014 invariant violated silently",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SCOPED_CROSS_THREAD_LEAK",
+        "hypothesis": "If a SCOPED instance is resolved in thread A and the same scope object is passed (e.g. via a thread-local override or context-var mistake) to thread B, thread B resolves the same instance. When thread A's request ends and disposes the scope, thread B continues operating on the disposed object. This violates the at-most-once-per-scope invariant under concurrent requests sharing a mistakenly shared scope reference.",
+        "input_fixture": "scope = ScopeFactory.create()  # intended for one request\ndef worker(s): return s.resolve(SessionManager)\nt1 = threading.Thread(target=worker, args=(scope,))\nt2 = threading.Thread(target=worker, args=(scope,))  # wrong: same scope\nt1.start(); t2.start(); t1.join()\nscope.dispose()  # disposes while t2 still running\nt2.join()  # t2 operates on disposed SessionManager",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TRANSIENT_AMPLIFICATION_OOM",
+        "hypothesis": "TRANSIENT instances are created per resolution call with no upper bound enforced by the container. A deeply nested object graph where every node is TRANSIENT causes O(n^depth) allocations per top-level resolve(). An attacker who can trigger recursive resolution (or a deep dependency tree) can exhaust heap memory, achieving a denial-of-service through amplification without any explicit loop.",
+        "input_fixture": "# Dependency chain: A->B->C->D->E, all TRANSIENT, each allocates 10MB\n# container.resolve(A) allocates 5 \u00d7 10MB = 50MB per call\nfor _ in range(1000):\n    container.resolve(A)  # 50GB total; process OOMs\n# No rate-limit or instance-count cap exists in the container",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SINGLETON-RACE-CREATE",
+        "hypothesis": "Two threads simultaneously resolve the same SINGLETON. Both observe it uninitialized, race past creation guard, instantiate two instances. Duplicate initialization side effects execute, container state diverges. First writer wins but both threads believe they control the singleton.",
+        "input_fixture": "container.register('Service', Factory, LifetimeScope.SINGLETON); Thread1: t1 = container.resolve('Service'); Thread2: t2 = container.resolve('Service'); [concurrent, no lock]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SCOPED-USE-AFTER-DISPOSE",
+        "hypothesis": "Code stores reference to SCOPED instance, scope ends and disposes it, but reference holder later invokes methods on disposed instance. Freed memory accessed or corrupted state mutations occur, violating disposal contract.",
+        "input_fixture": "scope = container.create_scope(); db = scope.resolve('DbContext', LifetimeScope.SCOPED); scope.dispose(); db.execute_query(); // DbContext is disposed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TRANSIENT-CONSUMER-CACHES",
+        "hypothesis": "Consumer code caches TRANSIENT instance in module-level dict. Subsequent calls return cached instance instead of creating new one per resolution call, violating per-call creation guarantee and enabling unintended reuse.",
+        "input_fixture": "_cache = {}; def get_conn(): if 'conn' not in _cache: _cache['conn'] = container.resolve('Connection', LifetimeScope.TRANSIENT); return _cache['conn']; get_conn(); get_conn(); // returns same instance",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SINGLETON-CAPTURES-SCOPED",
+        "hypothesis": "SINGLETON factory captures and caches SCOPED dependency at initialization time. When first request scope ends and SCOPED is disposed, SINGLETON still holds reference to disposed object. Later requests receive SINGLETON with dead reference.",
+        "input_fixture": "container.register('Config', lambda: Config(current_request_context()), LifetimeScope.SINGLETON); container.register('DbContext', DbFactory, LifetimeScope.SCOPED); scope1.dispose(); scope2.resolve('Config'); // Config references disposed DbContext",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-LIFETIME-STRING-TYPO",
+        "hypothesis": "Code path accepts string lifetime instead of LifetimeScope enum. Typo like 'singletone', 'request', or arbitrary string bypasses validation, defaults to unsafe behavior or undefined resolution strategy.",
+        "input_fixture": "lifetime = user_config.get('scope'); container.register('Service', Factory, lifetime); // lifetime could be 'singletone', 'SINGLETON', 'my_scope', etc.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SINGLETON-INIT-PARTIAL-CACHE",
+        "hypothesis": "SINGLETON initialization raises exception at step 5. Instance cached in half-initialized state. Next resolve returns cached failed instance instead of retrying, leaving container in permanently inconsistent state.",
+        "input_fixture": "Factory does steps 1-4 OK, step 5 fails. resolve() -> exception caught. resolve() -> returns step-5-failed instance from cache, never retries factory.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SCOPED-CONCURRENT-DISPOSE",
+        "hypothesis": "Two threads race to call scope.dispose(). Both pass 'is_disposed' check, proceed to call __del__ on instances concurrently. Concurrent mutations to disposal state and resource cleanup cause leaks or double-free.",
+        "input_fixture": "scope = container.create_scope(); scope.resolve('Resource', LifetimeScope.SCOPED); Thread1: scope.dispose(); Thread2: scope.dispose(); [concurrent, no lock]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SINGLETON-MUTABLE-UNSYNC-RACE",
+        "hypothesis": "SINGLETON holds mutable list. Two threads concurrently append without synchronization. Non-atomic read-modify-write operations cause lost updates, inconsistent internal state, possible index corruption.",
+        "input_fixture": "container.register('EventLog', EventLogFactory, LifetimeScope.SINGLETON); log = container.resolve('EventLog'); Thread1: log.events.append('E1'); Thread2: log.events.append('E2'); [concurrent non-atomic]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TRANSIENT-CLOSURE-CAPTURES",
+        "hypothesis": "Transient factory is closure over scope-local variable. Transient created in scope A captures scope A context. Later accidentally reused in scope B, incorrectly associating with scope A data, violating per-call independence.",
+        "input_fixture": "request_id = 100; factory = lambda: MyClass(request_id); container.register('MyClass', factory, LifetimeScope.TRANSIENT); request_id = 200; obj1 = resolve(); request_id = 300; obj2 = resolve(); // both capture request_id=100",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SCOPED-CHILD-PARENT-MISMATCH",
+        "hypothesis": "Child scope resolves SINGLETON initialized in parent scope context. SINGLETON captured parent state. Child scope now uses SINGLETON initialized for different context, violating scope isolation and context correctness.",
+        "input_fixture": "parent.current_user = User(1); singleton = parent.resolve('AuthService', LifetimeScope.SINGLETON); child = parent.create_child(); child.current_user = User(2); child.resolve('AuthService'); // same singleton, wrong user context",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SINGLETON-CYCLE-DEADLOCK",
+        "hypothesis": "Dependency cycle: A->B->C->A. SINGLETON initialization of A triggers B, B triggers C, C triggers A. Circular dependency causes infinite recursion or deadlock in initialization lock, container hangs.",
+        "input_fixture": "container.register('A', lambda: A(container.resolve('B')), LifetimeScope.SINGLETON); container.register('B', lambda: B(container.resolve('C')), LifetimeScope.SINGLETON); container.register('C', lambda: C(container.resolve('A')), LifetimeScope.SINGLETON); resolve('A');",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-LIFETIME-ENUM-SUBCLASS-BYPASS",
+        "hypothesis": "Code validates type against LifetimeScope but allows subclassing. Custom subclass overrides __eq__ or __str__, masquerades as enum value while being different object, bypassing closed value-set requirement.",
+        "input_fixture": "class FakeEnum(str, Enum): X='x'; def __eq__(s, o): return str(s)=='singleton'; fake = FakeEnum.X; if fake == LifetimeScope.SINGLETON: ... // matches via override, bypasses enum closure check",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "lifetime.registered",
+        "required_attributes": [
+          "key",
+          "scope"
+        ]
+      },
+      {
+        "event_name": "lifetime.resolved",
+        "required_attributes": [
+          "key",
+          "scope",
+          "cached"
+        ]
+      },
+      {
+        "event_name": "lifetime.scope.opened",
+        "required_attributes": [
+          "scope_id",
+          "depth"
+        ]
+      },
+      {
+        "event_name": "lifetime.scope.disposed",
+        "required_attributes": [
+          "scope_id",
+          "instance_count",
+          "dispose_failures"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "lifetime.resolves",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 60,
+        "label_keys": [
+          "scope",
+          "cached"
+        ]
+      },
+      {
+        "name": "lifetime.scope.depth",
+        "metric_type": "histogram",
+        "unit": "1",
+        "cardinality_bound": 30,
+        "label_keys": []
+      },
+      {
+        "name": "lifetime.scope.instance_count",
+        "metric_type": "histogram",
+        "unit": "1",
+        "cardinality_bound": 40,
+        "label_keys": [
+          "scope"
+        ]
+      },
+      {
+        "name": "lifetime.dispose.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 50,
+        "label_keys": []
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "lifetime.resolve",
+        "required_attributes": [
+          "lifetime.key",
+          "lifetime.scope",
+          "lifetime.cached"
+        ]
+      },
+      {
+        "operation_name": "lifetime.scope.dispose",
+        "required_attributes": [
+          "lifetime.scope_id",
+          "lifetime.instance_count"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Enum matches api_signature verbatim (str+Enum, three members, exact values). All 5 invariants implemented with explicit ID citations. coerce/is_closed_value enforce closed vocabulary. Adds ScopeManager beyond signature but spec explicitly sanctions it."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "Covers all 5 invariants, parent/child inheritance, LIFO disposal, leak detection, register_instance external ownership, typed resolve, snapshots, depth, context manager, dispose idempotency. Minor gap: no async lock; spec acknowledges this as caller responsibility."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Single typed exception LifetimeScopeInvariantError, every raise cites invariant ID and includes offending value/valid set. coerce chains via `from e`. One concern: dispose() swallows close() exceptions silently with no logging hook, though spec documents this as required drain behavior."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Shared registry with DiContainer-aligned semantics, factory callables, key-based registration, parent inheritance, context-manager protocol, typed resolve generic. is_closed_value gives adapters a safe boundary check. __all__ exported cleanly."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "RLocks on registration/singleton/scope, idempotent dispose, LIFO drain survives close() failure, disposed-state guards on resolve/open_scope. Missing: metrics emission described in spec is not implemented; no logging on swallowed close errors. Acceptable for reference primitive."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Enum name, base classes, members, and string values match catalog api_signature exactly. Maturity battle_tested justified by lock discipline + leak detection. Extension contract honored (enum is the only legal surface; coerce gates strings)."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "LIFO disposal is defined circularly ('last in, first out') with no worked example showing *why* order matters \u2014 e.g., closing a DB transaction before closing the connection pool",
+          "LifetimeScopeInvariantError and LS-INV-05 IDs appear without a 'what you see when you get this wrong' snippet; a junior hitting the error in a stack trace has no anchor back to the docs",
+          "The gap between the minimal example and 'DO NOT USE a string literal' has no negative example \u2014 showing `scope='singleton'` raising the error would cement the rule faster than prose"
+        ],
+        "rewrite_suggestion": "Add a two-cell 'right vs wrong' code block immediately after the minimal example: left cell uses the enum correctly, right cell passes a raw string and shows the raised LifetimeScopeInvariantError. Append one sentence to the LIFO glossary entry that names the concrete consequence ('if Session closed before Connection, the DB write is lost')."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "resolve_typed signature is listed in the API surface but never demonstrated \u2014 the type parameter's variance (covariant? invariant?) and what happens on type mismatch are unspecified",
+          "Lock contention at high concurrency is acknowledged but not quantified \u2014 a principal sizing thread pools or async workers has no guidance on whether singleton construction under the RLock is expected to be microseconds or milliseconds",
+          "The extension-contract section says 'adapters MUST preserve LS-INV-01..05' but gives no test harness or abstract base class to verify that; an adapter author has no machine-checkable contract"
+        ],
+        "rewrite_suggestion": "Add a one-paragraph 'Adapter validation' note pointing to a concrete abstract test class (or a link to invariant_bindings.json) that adapter authors can subclass. Add a two-line resolve_typed example showing the TypeVar signature and the TypeError it raises on mismatch. Note expected singleton-construction latency order-of-magnitude (e.g., 'factory runs once; subsequent resolves are a dict lookup')."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "'Restrict register() to bootstrap code' is a convention, not an enforcement mechanism \u2014 the docs don't state whether there is a runtime guard (e.g., a sealed flag after first resolve) or whether violation is detectable only via code review",
+          "dispose() swallows individual close() failures with no logging contract \u2014 an auditor cannot confirm that resource-leak telemetry exists; a silently-swallowed exception on a crypto context or DB connection is a potential audit finding",
+          "Factory callables are arbitrary but the security section does not address supply-chain risk: a malicious factory registered at bootstrap could exfiltrate secrets at resolve time; there is no mention of factory allow-listing or sandboxing"
+        ],
+        "rewrite_suggestion": "Add a 'Security controls' sub-section with three bullets: (1) whether a sealed/locked state exists post-bootstrap and how to verify it; (2) that dispose() MUST emit a structured log entry (key + error type) when close() raises, referencing whatever logging interface the module uses; (3) explicit guidance that factories should be statically known at composition-root time and that dynamic factory registration from untrusted input is out of scope."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Metrics are named but have no baseline or alert threshold guidance \u2014 'a rising p95 on lifetime.scope.instance_count points at a scope leaking' is actionable in principle, but 'rising from what?' is unanswered for a new service with no prior p95 history",
+          "Graceful shutdown sequence is absent \u2014 the docs say 'process exit releases singletons' but give no guidance on when to call dispose() relative to traffic drain, readiness-probe flip, or in-flight request draining",
+          "dispose() swallowing close() errors means SRE dashboards can show a clean dispose.duration histogram while resources are silently leaking \u2014 no mention of an error counter metric to surface this"
+        ],
+        "rewrite_suggestion": "Add a 'Shutdown checklist' (3-step ordered list): flip readiness probe \u2192 drain in-flight scopes \u2192 call root dispose(). Add a fourth metric entry: `lifetime.dispose.errors` (counter, `key` label) emitted whenever a close() raises. Annotate the instance_count histogram with a rule-of-thumb ceiling (e.g., 'alert if p95 > 2\u00d7 baseline for the service's concurrency level')."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The invariant table (LS_INV_01..05) has no translation to business impact \u2014 the executive summary mentions 'crashes only under load' but the invariants themselves don't map back to that outcome, making it hard for a PM to explain risk to stakeholders",
+          "The Provenance section references internal files (AGENT_1_FRAMEWORKS.json, invariant_bindings.json) with no plain-language description of what they are, making the section read as noise to anyone not on the engineering team",
+          "The 'Extension contract' section uses framework jargon (CDI, @RequestScoped, Quarkus) without a one-sentence plain-language implication such as 'adding a new lifetime value is a versioned API change that must be coordinated across all consuming services'"
+        ],
+        "rewrite_suggestion": "Append a 'Business impact' column to the invariant table with one plain sentence per row (e.g., LS_INV_04: 'prevents the DB session crash under sustained load described in the executive summary'). Replace the Provenance section with a single line: 'Design validated against ASP.NET, Spring, Nest.js, and Quarkus documentation.' Rewrite the Extension contract opening sentence as: 'Adding a new lifetime value is a breaking API change requiring a version bump and migration notice to all consuming teams.'"
+      }
+    ]
+  }
+}

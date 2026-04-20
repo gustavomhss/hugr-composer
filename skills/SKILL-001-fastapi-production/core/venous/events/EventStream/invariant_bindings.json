@@ -1,0 +1,32 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "ES_INV_01",
+      "invariant_text": "Events MUST be strictly ordered within a partition; cross-partition ordering is NEVER guaranteed.",
+      "confirms_test": "test_inv_per_partition_order_confirms",
+      "prevents_test": "test_inv_per_partition_order_prevents",
+      "under_failure_test": "test_inv_per_partition_order_under_failure"
+    },
+    {
+      "invariant_id": "ES_INV_02",
+      "invariant_text": "Appended events CANNOT be mutated or deleted out of retention windows; immutability SHALL be enforced.",
+      "confirms_test": "test_inv_immutability_confirms",
+      "prevents_test": "test_inv_immutability_prevents",
+      "under_failure_test": "test_inv_immutability_under_failure"
+    },
+    {
+      "invariant_id": "ES_INV_03",
+      "invariant_text": "Consumers MUST be able to start from any valid offset and replay; destructive consumption is FORBIDDEN.",
+      "confirms_test": "test_inv_replay_confirms",
+      "prevents_test": "test_inv_replay_prevents",
+      "under_failure_test": "test_inv_replay_under_failure"
+    },
+    {
+      "invariant_id": "ES_INV_04",
+      "invariant_text": "truncate_before ALWAYS obeys the configured retention policy; arbitrary backdated truncation is FORBIDDEN.",
+      "confirms_test": "test_inv_truncate_retention_confirms",
+      "prevents_test": "test_inv_truncate_retention_prevents",
+      "under_failure_test": "test_inv_truncate_retention_under_failure"
+    }
+  ]
+}

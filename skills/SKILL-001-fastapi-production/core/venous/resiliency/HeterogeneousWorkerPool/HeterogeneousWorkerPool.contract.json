@@ -1,0 +1,27 @@
+{
+  "name": "HeterogeneousWorkerPool",
+  "namespace": "resiliency",
+  "purpose": "Route inference tasks across mixed CPU+GPU workers with observed queue-depth + latency health, capability gating, and session-stickiness.",
+  "api_signature": "from __future__ import annotations\nimport asyncio\nfrom collections.abc import Awaitable, Callable\nfrom dataclasses import dataclass\nfrom typing import Generic, Literal, Protocol, TypeVar, runtime_checkable\n\nR = TypeVar('R')\nWorkerKind = Literal['cpu', 'gpu']\n\n@dataclass\nclass Task(Generic[R]):\n    payload: object\n    session_id: str | None = None\n\n@runtime_checkable\nclass HeterogeneousWorkerPool(Protocol[R]):\n    def register(self, worker_id: str, capabilities: frozenset[str], kind: WorkerKind, executor: Callable[[Task[object]], Awaitable[R]]) -> None: ...\n    def submit(self, task: Task[R], family: str) -> 'asyncio.Future[R]': ...\n    def on_result(self, worker_id: str, latency_ms: float, ok: bool) -> None: ...\n",
+  "invariants": [
+    {"id": "HWP_INV_01", "rule": "A task with family=F MUST land on a worker advertising F in its capabilities."},
+    {"id": "HWP_INV_02", "rule": "GPU workers preferred when any healthy GPU worker has queue_depth < pool median; fallback CPU otherwise."},
+    {"id": "HWP_INV_03", "rule": "A worker whose rolling p50 latency over the last 100 samples is >= 2.0x pool-wide rolling p50 is deprioritized (weight 0.1x) within 30 seconds."},
+    {"id": "HWP_INV_04", "rule": "Session-stickiness: same session_id routes to same worker while worker healthy; on unhealthy, fails over."},
+    {"id": "HWP_INV_05", "rule": "Burst of N tasks spreads such that no single worker's queue exceeds 1.5x pool median."},
+    {"id": "HWP_INV_06", "rule": "Once a worker's rolling p50 normalizes back within 1.5x pool p50, full weight is restored within 30 seconds."}
+  ],
+  "extension_contract": "Rolling-window (50 samples) and unhealthy window (30s) are internal defaults overridable by subclassing. Routing algorithm itself is sealed; a different algorithm is a different primitive. A distributed Ray ActorPool adapter fits the same Protocol.",
+  "consumption_example": "pool = InMemoryHeterogeneousWorkerPool()\npool.register('gpu-a', frozenset({'llm-7b'}), 'gpu', gpu_exec)\nfut = pool.submit(Task(payload={'prompt':'x'}), family='llm-7b')\nresult = await fut\n",
+  "sources": [
+    {"source": "Ray ActorPool", "locator": "https://docs.ray.io/en/latest/ray-core/actors/actor-utils.html"},
+    {"source": "Envoy EDS health-aware load balancing", "locator": "envoyproxy.io/docs"}
+  ],
+  "why_essential": "Without heterogeneous-aware routing, GPU workers sit idle on CPU-compatible tasks or overflow while CPU workers starve; static weights cannot track model warm-cache or worker health in real time.",
+  "alternatives_considered": [
+    "Round-robin: ignores per-worker health/queue; a slow GPU starves throughput.",
+    "Static weight table: cannot react to hot-loaded models or cache advantages.",
+    "Single-kind homogeneous pool: wastes GPU headroom when CPU tasks could absorb load."
+  ],
+  "maturity": "incubating"
+}

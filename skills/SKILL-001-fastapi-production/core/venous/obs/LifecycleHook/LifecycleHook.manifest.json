@@ -1,0 +1,724 @@
+{
+  "name": "LifecycleHook",
+  "namespace": "obs",
+  "maturity": "battle_tested",
+  "builder_agent_id": 1,
+  "catalog_entry_sha256": "bbb382a4b9079ab0df99997368ce13a6cfc914d9fc15c97615b9fd07e1748a00",
+  "files": [
+    {
+      "path": "obs/LifecycleHook/LifecycleHook.contract.json",
+      "sha256": "cef5d3078a71cce8f1951cddc71bfbebf9eccbce977af04b223e11a3f8b3a3ca",
+      "size_bytes": 2988,
+      "kind": "contract_json"
+    },
+    {
+      "path": "obs/LifecycleHook/LifecycleHook.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "obs/LifecycleHook/LifecycleHook.md",
+      "sha256": "77c0b4f3a2c0e88401b7efb3dd7f511ee147f98a7c8cff7ab903b07d54844b5e",
+      "size_bytes": 4453,
+      "kind": "spec_md"
+    },
+    {
+      "path": "obs/LifecycleHook/LifecycleHook.py",
+      "sha256": "d4b66233287c2fe64c1e16f0c6d864abea2330dbb93b2a1479430fc402726442",
+      "size_bytes": 7655,
+      "kind": "impl"
+    },
+    {
+      "path": "obs/LifecycleHook/behavioral_LifecycleHook.py",
+      "sha256": "c0d65ec3277148bdef12a587f9ccfaba37a18f86f58d851b3013b411b4bf499b",
+      "size_bytes": 4290,
+      "kind": "behavioral"
+    },
+    {
+      "path": "obs/LifecycleHook/chaos_LifecycleHook.py",
+      "sha256": "0a14dbf60095d859d10919a2703e6c44e3bee1b15529d2131c4618935134c2d1",
+      "size_bytes": 3086,
+      "kind": "chaos"
+    },
+    {
+      "path": "obs/LifecycleHook/dashboard.json",
+      "sha256": "18ae5d97ebcd23168437852d74226e49e2ea35d59a7912824c7059aaacfa8af1",
+      "size_bytes": 677,
+      "kind": "dashboard"
+    },
+    {
+      "path": "obs/LifecycleHook/invariant_bindings.json",
+      "sha256": "0322e0cf425d97bf73da26327098a7edff70df6916be10613d6551e2bccdb4d3",
+      "size_bytes": 1896,
+      "kind": "test"
+    },
+    {
+      "path": "obs/LifecycleHook/metamorphic_LifecycleHook.py",
+      "sha256": "ec499038d013da2c8c9531baac209323600906b1e9c4ca2fb1de40176b174492",
+      "size_bytes": 2905,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "obs/LifecycleHook/observability_LifecycleHook.py",
+      "sha256": "9d25b9fe45bf7184ec997d54385a220558c2751f6db33f9e7016216b5a70f868",
+      "size_bytes": 1706,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/LifecycleHook/observability_schema.json",
+      "sha256": "fa1ac8a53d6018e2fc15b67539f7f40d863d4ce18719f02d3a507ecc7c590fe0",
+      "size_bytes": 1255,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/LifecycleHook/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "obs/LifecycleHook/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "obs/LifecycleHook/test_LifecycleHook.py",
+      "sha256": "f098d460c501ede2f144dd48459c162d3c412ae297d9a17f308317c2ccaecde5",
+      "size_bytes": 8684,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "LIFE_INV_01",
+      "invariant_text": "READY MUST fire exactly once, after STARTING and all startup callbacks have completed successfully.",
+      "confirms_test": "test_inv_ready_once_confirms",
+      "prevents_test": "test_inv_ready_once_prevents",
+      "under_failure_test": "test_inv_ready_once_under_failure"
+    },
+    {
+      "invariant_id": "LIFE_INV_02",
+      "invariant_text": "STOPPING hooks MUST run in reverse registration order (LIFO) so later-initialized resources drain first.",
+      "confirms_test": "test_inv_stopping_lifo_confirms",
+      "prevents_test": "test_inv_stopping_lifo_prevents",
+      "under_failure_test": "test_inv_stopping_lifo_under_failure"
+    },
+    {
+      "invariant_id": "LIFE_INV_03",
+      "invariant_text": "A failing STARTING hook MUST prevent READY from firing; the app SHALL transition to STOPPED with non-zero exit.",
+      "confirms_test": "test_inv_failing_start_blocks_ready_confirms",
+      "prevents_test": "test_inv_failing_start_blocks_ready_prevents",
+      "under_failure_test": "test_inv_failing_start_blocks_ready_under_failure"
+    },
+    {
+      "invariant_id": "LIFE_INV_04",
+      "invariant_text": "Hooks MUST NOT block indefinitely; each hook SHALL obey a configured timeout and be cancelled otherwise.",
+      "confirms_test": "test_inv_timeout_enforced_confirms",
+      "prevents_test": "test_inv_timeout_enforced_prevents",
+      "under_failure_test": "test_inv_timeout_enforced_under_failure"
+    },
+    {
+      "invariant_id": "LIFE_INV_05",
+      "invariant_text": "No hook CAN re-enter its own phase; recursive registration of the same callback in the same phase SHALL raise.",
+      "confirms_test": "test_inv_no_reentry_confirms",
+      "prevents_test": "test_inv_no_reentry_prevents",
+      "under_failure_test": "test_inv_no_reentry_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 493,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 3 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 871,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 872,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 58694,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "39 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 941,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 837,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 53151,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 116188,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-READY-DOUBLE-FIRE",
+        "hypothesis": "If two startup drivers both signal completion (e.g. uvicorn lifespan + manual app.startup()), READY fires twice because the primitive tracks no idempotency flag, violating exactly-once semantics and causing duplicate resource init.",
+        "input_fixture": "hook=LifecycleHook(READY, cb); invoke dispatcher.fire(READY); dispatcher.fire(READY)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-READY-BEFORE-STARTING",
+        "hypothesis": "Race: concurrent tasks call fire(STARTING) and fire(READY) on asyncio loop; without a barrier, READY callback executes while STARTING callback is still awaiting a slow DB ping, breaking ordering invariant.",
+        "input_fixture": "asyncio.gather(dispatcher.fire(STARTING), dispatcher.fire(READY)) where STARTING cb sleeps 2s",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-STOPPING-FIFO-ORDER",
+        "hypothesis": "Registration uses list.append + iteration in insertion order; STOPPING will run FIFO, draining DB pool before the HTTP server that still holds connections, corrupting in-flight requests.",
+        "input_fixture": "register(STOPPING, close_db); register(STOPPING, close_http); fire(STOPPING) \u2192 expect close_http first",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-STARTING-FAIL-READY-LEAK",
+        "hypothesis": "A STARTING callback raises after partially completing; exception is caught/logged but READY still fires because the dispatcher does not propagate failures, violating the fail-fast invariant.",
+        "input_fixture": "register(STARTING, lambda: raise RuntimeError('db down')); fire(STARTING); assert READY not fired and exit code != 0",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TIMEOUT-HANG",
+        "hypothesis": "A STARTING hook awaits an un-cancellable subprocess (asyncio.shield or blocking socket.recv in thread); timeout fires but cb never returns, so app hangs forever instead of transitioning to STOPPED.",
+        "input_fixture": "register(STARTING, async lambda: await asyncio.shield(asyncio.sleep(9999))); timeout=1s",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REENTRANT-REGISTER",
+        "hypothesis": "Inside a STARTING callback, code calls register(STARTING, same_cb). The primitive has no re-entrancy guard and silently appends, causing infinite recursion or duplicate execution.",
+        "input_fixture": "async def cb(): dispatcher.register(LifecycleHook(STARTING, cb)); register(STARTING, cb); fire(STARTING)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SYNC-CALLBACK-TYPE",
+        "hypothesis": "Constructor accepts a plain sync function (not Awaitable); at fire time, await cb() raises TypeError mid-phase leaving app in half-started state with no STOPPED transition.",
+        "input_fixture": "LifecycleHook(STARTING, lambda: None)  # sync, returns None not Awaitable",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PHASE-STRING-INJECTION",
+        "hypothesis": "LifecyclePhase is str-Enum; passing raw string 'ready' (not enum member) bypasses type checks in dict keys, registering a ghost phase that never fires, orphaning cleanup callbacks.",
+        "input_fixture": "LifecycleHook('stopping', cb)  # string instead of LifecyclePhase.STOPPING",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-STOPPED-SKIPPED-ON-CRASH",
+        "hypothesis": "If the process receives SIGKILL or STARTING hook calls os._exit(1), STOPPED phase is never reached and STOPPING hooks never run, leaking file handles / temp dirs.",
+        "input_fixture": "register(STARTING, async lambda: os._exit(1)); fire(STARTING)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CANCEL-SUPPRESSED",
+        "hypothesis": "A hook catches asyncio.CancelledError (broad except Exception) and swallows it, so timeout cancellation is ignored and subsequent phases proceed on a zombie task, violating the cancel-on-timeout invariant.",
+        "input_fixture": "async def cb(): try: await asyncio.sleep(60) except: pass; register(STARTING, cb, timeout=0.1)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CONCURRENT-REGISTER-RACE",
+        "hypothesis": "Two threads/tasks call register(STOPPING, ...) simultaneously; list.append is not atomic under GIL release points during attribute lookup on custom list subclass, causing lost registration and skipped shutdown.",
+        "input_fixture": "asyncio.gather(*[register(STOPPING, cb_i) for i in range(1000)])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-READY-AFTER-STOP",
+        "hypothesis": "After fire(STOPPING), an operator calls fire(READY) again (e.g. health-check loop); primitive has no terminal-state machine so READY re-fires post-shutdown, re-initializing closed resources.",
+        "input_fixture": "fire(STARTING); fire(READY); fire(STOPPING); fire(READY)  # should raise, not execute",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-READY_DOUBLE_FIRE_CONCURRENT",
+        "hypothesis": "If two coroutines race to advance the lifecycle from STARTING to READY simultaneously (e.g. a test harness that calls run_phase('starting') twice in parallel), the READY phase may fire more than once because the guard that checks 'all startup callbacks completed' has a TOCTOU window before the phase flag is atomically set.",
+        "input_fixture": "asyncio.gather(lifecycle.run_phase(LifecyclePhase.STARTING), lifecycle.run_phase(LifecyclePhase.STARTING)); # observe READY callback invocation count",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-STOPPING_LIFO_CONCURRENT_DRAIN",
+        "hypothesis": "When multiple STOPPING hooks are awaited with asyncio.gather() instead of sequentially, their completion order becomes non-deterministic (determined by event loop scheduling), breaking the LIFO guarantee even if they were registered in a known order.",
+        "input_fixture": "hook_log=[]; lc.register(STOPPING, lambda: hook_log.append('A')); lc.register(STOPPING, lambda: hook_log.append('B')); lc.register(STOPPING, lambda: hook_log.append('C')); await asyncio.gather(*[h.cb() for h in lc.stopping_hooks]); assert hook_log == ['C','B','A']  # likely fails",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-STARTING_FAIL_READY_FIRES_ANYWAY",
+        "hypothesis": "If a STARTING hook raises an exception that is caught and logged internally but not re-raised (swallowed by a broad except clause), the lifecycle engine may consider startup 'done' and fire READY regardless, violating the invariant that a failing STARTING hook blocks READY.",
+        "input_fixture": "async def bad_hook(): raise RuntimeError('db init failed'); lc.register(STARTING, bad_hook); try: await lc.run(); except: pass; assert ready_fired == False  # may fail if exception is swallowed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TIMEOUT_BYPASS_SWALLOW_CANCEL",
+        "hypothesis": "A hook that catches asyncio.CancelledError and re-raises a different exception (or swallows it entirely) can block the timeout mechanism from working, causing the lifecycle to hang indefinitely rather than transitioning to STOPPED.",
+        "input_fixture": "async def immortal_hook():\n    try:\n        await asyncio.sleep(9999)\n    except asyncio.CancelledError:\n        await asyncio.sleep(9999)  # second infinite sleep after cancel\nlc.register(STARTING, immortal_hook, timeout=1.0); await lc.run()  # should timeout at 1s but may hang",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REENTRANT_SAME_PHASE_REGISTER",
+        "hypothesis": "A STARTING callback that calls lc.register(STARTING, some_cb) on the same lifecycle instance during its own execution should raise immediately, but if the reentrancy check uses the mutable hooks list as its sentinel rather than a separate flag, the newly registered hook may slip past detection and execute (or silently be ignored), violating the re-entrancy invariant.",
+        "input_fixture": "async def sneaky():\n    lc.register(LifecyclePhase.STARTING, sneaky)  # register self again mid-execution\nlc.register(LifecyclePhase.STARTING, sneaky); await lc.run()  # expect RuntimeError/RecursionError",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONZERO_EXIT_NOT_ENFORCED",
+        "hypothesis": "When a STARTING hook fails and the app must transition to STOPPED, if the process exit code is determined by the outermost exception handler and that handler uses sys.exit(0) or swallows the exception, the non-zero exit invariant is silently broken, giving CI systems a false green signal.",
+        "input_fixture": "async def failing_start(): raise RuntimeError('oops'); lc.register(STARTING, failing_start); exit_code = await lc.run_and_capture_exit(); assert exit_code != 0  # may be 0 if exception is caught at top level",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY_AFTER_STOPPED",
+        "hypothesis": "Calling run_phase(STARTING) again after the lifecycle has already reached STOPPED (either normally or due to failure) may replay all registered hooks and re-fire READY, violating the exactly-once guarantee. This is a replay attack on the state machine with no idempotency guard.",
+        "input_fixture": "await lc.run(); assert lc.phase == LifecyclePhase.STOPPED; await lc.run()  # second run \u2014 READY callback count should still be 1, not 2",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AMPLIFICATION_STOPPING_TIMEOUT_CASCADE",
+        "hypothesis": "Registering O(N) STOPPING hooks each with a full timeout budget causes the total shutdown wall-time to be O(N * timeout) if hooks are awaited sequentially with individual timeouts. With N=1000 and timeout=30s, shutdown takes 30000s. The invariant says each hook obeys a timeout, but says nothing about a global shutdown budget, creating an amplification vector.",
+        "input_fixture": "for i in range(1000): lc.register(STOPPING, lambda: asyncio.sleep(9999), timeout=30.0); t0=time.monotonic(); await lc.shutdown(); assert time.monotonic()-t0 < 60  # likely fails: 1000*30=30000s",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK_SKEW_MONOTONIC_VS_WALL",
+        "hypothesis": "If the timeout implementation uses time.time() (wall clock) instead of time.monotonic(), a system clock adjustment (NTP step, DST change, or container time sync) during a hook execution can cause the timeout to fire prematurely (negative remaining time) or never fire (large forward jump), breaking the timeout guarantee.",
+        "input_fixture": "# Simulate: patch time.time to jump forward 60s mid-hook execution\nwith mock.patch('time.time', side_effect=[start, start+0.001, start+9999]):\n    async def slow_hook(): await asyncio.sleep(5)\n    lc.register(STARTING, slow_hook, timeout=10.0)\n    await lc.run()  # may cancel too early or too late",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SYNC_CALLABLE_TYPE_CONFUSION",
+        "hypothesis": "Passing a plain synchronous function (not a coroutine function) as LifecycleCallback bypasses type enforcement at registration time. When the engine calls await hook.cb(), it will either raise TypeError immediately or (if the engine wraps it in asyncio.coroutine or run_in_executor) succeed silently with undefined ordering guarantees and no timeout enforcement.",
+        "input_fixture": "def sync_cb(): time.sleep(10)  # blocking, not async\nlc.register(LifecyclePhase.STARTING, sync_cb)  # should raise TypeError at registration\nawait lc.run()  # if no TypeError, blocks event loop for 10s with no cancellation path",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PARTIAL_STARTING_NO_ROLLBACK",
+        "hypothesis": "When three STARTING hooks are registered and the third fails, the first two have already run and may have allocated resources (opened DB connections, bound ports). The invariant says READY must not fire and app goes to STOPPED, but says nothing about compensating STOPPING hooks for already-completed STARTING hooks. Resources from hooks 1 and 2 will leak.",
+        "input_fixture": "resources=[]; lc.register(STARTING, lambda: resources.append('db_conn')); lc.register(STARTING, lambda: resources.append('cache_conn')); lc.register(STARTING, lambda: (_ for _ in ()).throw(RuntimeError('third fails'))); await lc.run(); assert len(resources)==0  # likely fails: resources=['db_conn','cache_conn'] and STOPPING never called for them",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REENTRANT_CROSS_PHASE_ESCALATION",
+        "hypothesis": "The re-entrancy invariant says a callback cannot re-register in its OWN phase. But a STARTING callback that registers a new hook in a DIFFERENT phase (e.g. STOPPING) during execution is not prohibited. If the engine iterates a shared hooks list while mutating it mid-iteration, this causes either a RuntimeError (dict changed size during iteration) or silently skips/double-executes hooks, corrupting LIFO order.",
+        "input_fixture": "async def starting_cb():\n    lc.register(LifecyclePhase.STOPPING, lambda: None)  # cross-phase mutation mid-execution\nlc.register(LifecyclePhase.STARTING, starting_cb); await lc.run()  # observe if STOPPING list is consistent",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RACE-READY-DOUBLE-FIRE",
+        "hypothesis": "Concurrent async tasks trigger READY phase simultaneously, firing both handlers in parallel instead of once",
+        "input_fixture": "Create hook for READY; asyncio.gather(trigger_ready(), trigger_ready()); verify cb fires twice",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-READY-BEFORE-STARTING-DONE",
+        "hypothesis": "READY callback fires before all STARTING callbacks complete, violating sequence dependency",
+        "input_fixture": "Register STARTING(await sleep(5s)); trigger starting(); immediately trigger ready(); measure if STARTING still running",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-STARTING-FAIL-READY-RACES",
+        "hypothesis": "STARTING callback raises exception but concurrent READY trigger fires anyway, race condition bypasses check",
+        "input_fixture": "Register STARTING(raise ValueError); asyncio.gather(trigger_starting(), trigger_ready()); READY fires despite failure",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-STOPPING-FIFO-NOT-LIFO",
+        "hypothesis": "STOPPING callbacks execute in forward registration order (A,B,C) instead of reverse LIFO (C,B,A), breaking cleanup sequence",
+        "input_fixture": "Register STOPPING(A), STOPPING(B), STOPPING(C); trigger_stopping(); capture order; verify A runs first not C",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TIMEOUT-ZERO-CANCELS-INSTANT",
+        "hypothesis": "Timeout set to 0ms immediately cancels hook even if callback completes in microseconds",
+        "input_fixture": "Set timeout=0; register callback with immediate return; asyncio task cancelled during execution",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TIMEOUT-NEGATIVE-OVERFLOW",
+        "hypothesis": "Negative timeout value causes integer underflow in deadline calculation, hook never times out",
+        "input_fixture": "Set timeout=-1000; register 10s sleep callback; await completes without cancellation",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TIMEOUT-INT64-MAX-WRAPS",
+        "hypothesis": "Timeout of 2^63-1 overflows when added to current time, wraps to negative, timeout disabled",
+        "input_fixture": "Set timeout=9223372036854775807; register 5s sleep; deadline wraps negative; callback never cancelled",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REENTRANT-STARTING-REGISTER",
+        "hypothesis": "Inside STARTING callback execution, registering another STARTING callback silently succeeds instead of raising",
+        "input_fixture": "Register STARTING(lambda: register(STARTING, cb2)); trigger_starting(); second callback registered and fires",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REENTRANT-STOPPING-REGISTER",
+        "hypothesis": "Inside STOPPING callback, registering another STOPPING callback violates reentrancy guard, executes out of order",
+        "input_fixture": "Register STOPPING(lambda: register(STOPPING, new_cb)); trigger_stopping(); new_cb runs breaking LIFO invariant",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SAME-CALLBACK-TWICE",
+        "hypothesis": "Registering identical callback twice in same phase executes twice, violating single-fire expectation",
+        "input_fixture": "def cb(): pass; register(STARTING,cb); register(STARTING,cb); trigger_starting(); counter shows cb called twice",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK-SKEW-TIMEOUT-NEGATIVE",
+        "hypothesis": "System clock moves backward during hook execution, timeout calculation inverts, disables timeout enforcement",
+        "input_fixture": "Mock monotonic_time to return 1000; in hook mock to 500; deadline=current+100 becomes negative; never times out",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-STOPPING-CONCURRENT-RACE",
+        "hypothesis": "STOPPING callbacks execute concurrently instead of sequentially LIFO, causing resource cleanup race conditions",
+        "input_fixture": "Register 3 STOPPING(sleep 100ms each); total duration <300ms instead of 300ms; callbacks ran parallel",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-READY-NO-STARTING-PREREQ",
+        "hypothesis": "READY fires without STARTING phase ever being triggered, breaking dependency chain assumption",
+        "input_fixture": "register READY callback; skip trigger_starting(); directly call trigger_ready(); READY fires",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PARTIAL-STARTING-FAILURE",
+        "hypothesis": "First STARTING callback succeeds, second throws exception, but READY still fires treating partial failure as success",
+        "input_fixture": "register STARTING(success); register STARTING(raise Error); trigger_starting(); READY fires anyway",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EXCEPTION-SILENT-CATCH",
+        "hypothesis": "Hook callback raises exception but it is silently caught and suppressed, phase succeeds despite error",
+        "input_fixture": "register STARTING(raise RuntimeError('critical')); trigger_starting(); exception not re-raised; app transitions to READY",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "lifecycle.hook.registered",
+        "required_attributes": [
+          "phase",
+          "hook_id"
+        ]
+      },
+      {
+        "event_name": "lifecycle.phase.entered",
+        "required_attributes": [
+          "phase"
+        ]
+      },
+      {
+        "event_name": "lifecycle.hook.timed_out",
+        "required_attributes": [
+          "phase",
+          "hook_id",
+          "timeout_s"
+        ]
+      },
+      {
+        "event_name": "lifecycle.hook.failed",
+        "required_attributes": [
+          "phase",
+          "hook_id",
+          "exception_type"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "lifecycle.hooks.registered",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "phase"
+        ]
+      },
+      {
+        "name": "lifecycle.hook.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 100,
+        "label_keys": [
+          "phase",
+          "outcome"
+        ]
+      },
+      {
+        "name": "lifecycle.phase.completed",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 8,
+        "label_keys": [
+          "phase",
+          "outcome"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "lifecycle.phase.run",
+        "required_attributes": [
+          "phase"
+        ]
+      },
+      {
+        "operation_name": "lifecycle.hook.invoke",
+        "required_attributes": [
+          "phase",
+          "hook_id"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Mirrors api_signature verbatim (LifecyclePhase enum values, LifecycleHook ctor, LifecycleCallback alias). Registry extends beyond signature but spec explicitly sanctions it."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All 5 invariants enforced: one-shot READY, LIFO stopping, starting-failure blocks ready, per-hook timeout via wait_for, duplicate-cb registration rejected. Observability probes present."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Dedicated LifecycleInvariantError subclass; every raise cites the LIFE-INV-## ID with actionable message. TimeoutError chained via `from e`."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Zero I/O at import, lazy imports unneeded (stdlib only), clean __all__, adapter-friendly phases, per-hook timeout override, single-loop contract documented."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Timeout enforcement, drain-past-failure on STOPPING/STOPPED, state guards against double-fire. Minor: BaseException catch in terminal phases swallows CancelledError silently without logging, which could hide diagnostics \u2014 acceptable given terminal-progress rule but worth a hook-level callback."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace obs, name LifecycleHook, phases match enum values, invariants map 1:1 to catalog list, maturity/sources reflected in spec doc, extension_contract honored via register()."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "The actual API surface is deferred to `LifecycleHook.contract.json` which isn't shown \u2014 the reader can't write code without it.",
+          "'LIFO' is used without explanation; a junior may not connect it to 'reverse registration order'.",
+          "LIFE_INV_05 says re-registering raises, but the docs never name the exception type, so callers don't know what to catch."
+        ],
+        "rewrite_suggestion": "Inline the `api_signature` from the contract JSON directly into the API surface section. Spell out LIFO as 'Last-In First-Out (reverse registration order)'. Add a one-line `# Raises: ValueError` annotation to the register() call in the usage example."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "Within-phase hook ordering (STARTING, READY) is unspecified \u2014 only STOPPING is guaranteed LIFO; readers must assume FIFO or inspect source.",
+          "'Single-threaded by design' is ambiguous when the registry exposes an async API; the docs don't clarify whether asyncio concurrency is excluded or only OS threads.",
+          "Observability probes (`ready_fired`, `starting_failed`, `stopped`) are listed without showing access semantics \u2014 property, awaitable, or event?"
+        ],
+        "rewrite_suggestion": "Add a one-sentence ordering guarantee for STARTING/READY (e.g. FIFO by registration order). Clarify 'single-threaded' as 'no concurrent phase transitions; asyncio coroutines run sequentially within a phase.' Show probe access in the usage example: `assert registry.ready_fired`."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "The requirement that the registry be populated 'only from trusted wiring code' has no enforcement mechanism described \u2014 no access control, no sealed registry pattern.",
+          "The timeout implementation mechanism isn't stated (asyncio.wait_for? threading.Timer?) \u2014 auditors need to verify the timeout can't be bypassed by a hook that swallows CancelledError.",
+          "'Phase payload' is referenced in the secrets warning but the payload schema is never defined, making the risk surface unclear."
+        ],
+        "rewrite_suggestion": "Add a 'Threat model' bullet: 'Registry accepts only callables; no serialization surface.' Specify timeout implementation: 'asyncio.wait_for wraps each coroutine; CancelledError is not caught by hook code.' Remove the payload warning or define what the payload is."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "STOPPING hook failures are described as 'continue' but there's no statement on whether failures are logged, emitted as metrics, or silently swallowed \u2014 on-call needs to know where to look.",
+          "The `default_timeout_s` override syntax appears in prose but not in the usage example, so an operator copy-pasting the snippet gets the default with no reminder to tune it.",
+          "There's no guidance on what exit code or exception the caller receives when `starting_failed=True` \u2014 critical for process manager (systemd/Docker) restart policy."
+        ],
+        "rewrite_suggestion": "Add to the usage example: `registry.register(LifecycleHook(LifecyclePhase.STOPPING, drain_db), timeout_s=5.0)`. State explicitly: 'STOPPING hook exceptions are logged at ERROR level and appended to `registry.stopping_errors`.' Clarify: 'run_starting() re-raises the hook exception; caller should sys.exit(1).'"
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The purpose sentence ('Named callback fired at a defined application phase') is technically accurate but doesn't convey user value \u2014 why does a PM or stakeholder care?",
+          "'LIFO', 'drain-other-resources policy', and 'FIFO' are unexplained acronyms that interrupt reading flow.",
+          "The Invariants table is detailed but has no plain-English summary of what guarantee it delivers to users ('the app never claims to be ready when startup failed')."
+        ],
+        "rewrite_suggestion": "Rewrite the Purpose as: 'Ensures every tool can safely prepare before traffic arrives and clean up before the process exits \u2014 so deployments and restarts don't lose data or serve stale state.' Replace 'LIFO' with 'reverse order (last registered, first to stop).' Add a one-sentence TL;DR above the invariants table."
+      }
+    ]
+  }
+}

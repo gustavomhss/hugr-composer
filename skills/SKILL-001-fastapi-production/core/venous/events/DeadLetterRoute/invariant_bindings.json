@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "DLR_INV_01",
+      "invariant_text": "A message delivered more than max_deliveries times MUST be routed to destination_topic and NEVER returned to the main topic.",
+      "confirms_test": "test_inv_route_to_destination_confirms",
+      "prevents_test": "test_inv_route_to_destination_prevents",
+      "under_failure_test": "test_inv_route_to_destination_under_failure"
+    },
+    {
+      "invariant_id": "DLR_INV_02",
+      "invariant_text": "The original EventEnvelope id and source ALWAYS survive routing so downstream audit can correlate.",
+      "confirms_test": "test_inv_identity_preserved_confirms",
+      "prevents_test": "test_inv_identity_preserved_prevents",
+      "under_failure_test": "test_inv_identity_preserved_under_failure"
+    },
+    {
+      "invariant_id": "DLR_INV_03",
+      "invariant_text": "max_deliveries MUST be a positive integer; zero or negative values SHALL raise a configuration error.",
+      "confirms_test": "test_inv_positive_budget_confirms",
+      "prevents_test": "test_inv_positive_budget_prevents",
+      "under_failure_test": "test_inv_positive_budget_under_failure"
+    },
+    {
+      "invariant_id": "DLR_INV_04",
+      "invariant_text": "Routing to the dead letter destination CANNOT itself dead letter recursively in the same route.",
+      "confirms_test": "test_inv_no_recursive_dlq_confirms",
+      "prevents_test": "test_inv_no_recursive_dlq_prevents",
+      "under_failure_test": "test_inv_no_recursive_dlq_under_failure"
+    },
+    {
+      "invariant_id": "DLR_INV_05",
+      "invariant_text": "The sink MUST record the terminal failure reason so operators can decide whether to replay.",
+      "confirms_test": "test_inv_reason_recorded_confirms",
+      "prevents_test": "test_inv_reason_recorded_prevents",
+      "under_failure_test": "test_inv_reason_recorded_under_failure"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "EventBus",
+  "namespace": "obs",
+  "purpose": "In-process publish/subscribe point for named framework and application events (e.g. sql.active_record, http.request) with structured payloads.",
+  "api_signature": "from typing import Any, Callable, Mapping, Protocol\n\nSubscriber = Callable[[str, Mapping[str, Any]], None]\n\nclass EventBus(Protocol):\n    def publish(self, name: str, payload: Mapping[str, Any]) -> None: ...\n    def subscribe(self, pattern: str, handler: Subscriber) -> Callable[[], None]: ...\n",
+  "invariants": [
+    "publish() MUST deliver to every matching subscriber synchronously OR through a declared executor; delivery order per subscriber SHALL be the subscription order.",
+    "A subscriber that raises MUST NOT abort delivery to other subscribers; the error SHALL be reported to the observability sink.",
+    "The returned unsubscribe callable MUST be idempotent; calling it twice CANNOT remove a different subscription.",
+    "Event names MUST follow a dotted namespace (e.g. 'sql.active_record'); wildcards SHALL use a documented pattern syntax.",
+    "Payloads MUST be treated as immutable by subscribers; mutating a payload to signal another subscriber is FORBIDDEN."
+  ],
+  "extension_contract": "Downstream tools publish named events via publish() and consumers subscribe via subscribe()/an @EventListener-style decorator; tracing/metrics plug in as a provider that subscribes to patterns (e.g. '*.active_record') without touching producers.",
+  "consumption_example": "def on_sql(name: str, payload: dict) -> None:\n    duration = payload.get('duration', 0)\n    _ = (name, duration)\n\nbus: EventBus\nunsub = bus.subscribe('sql.*', on_sql)\nbus.publish('sql.query', {'duration': 12})\nunsub()\n",
+  "sources": [
+    {
+      "source": "Ruby on Rails 7 \u2014 ActiveSupport::Notifications",
+      "locator": "guides.rubyonrails.org/active_support_instrumentation.html \u2014 subscribe/instrument, Event.duration/payload"
+    },
+    {
+      "source": "Spring Boot 3.x \u2014 Application Events and @EventListener",
+      "locator": "docs.spring.io/spring-boot/reference/features/spring-application.html \u2014 ApplicationReadyEvent, @EventListener"
+    }
+  ],
+  "why_essential": "Observability code (tracing, audit, metrics) MUST attach to framework internals without forking the framework; a bus turns 'I need to know when X happens' into a subscription instead of a patch.",
+  "alternatives_considered": [
+    "AOP/monkey-patching around framework methods \u2014 fragile and invisible",
+    "Dedicated callbacks per concern \u2014 combinatorial wiring",
+    "External broker for in-process events \u2014 overkill latency and ops burden"
+  ],
+  "maturity": "battle_tested"
+}

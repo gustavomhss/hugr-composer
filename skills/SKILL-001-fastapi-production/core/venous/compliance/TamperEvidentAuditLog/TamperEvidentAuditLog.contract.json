@@ -1,0 +1,28 @@
+{
+  "name": "TamperEvidentAuditLog",
+  "namespace": "compliance",
+  "purpose": "Append-only record of security-relevant events, hash-chained and signed so any retroactive mutation is detectable by verification.",
+  "api_signature": "from typing import Protocol, Mapping, Any\n\nclass TamperEvidentAuditLog(Protocol):\n    def append(self, actor: str, action: str, resource: str, outcome: str, attributes: Mapping[str, Any]) -> str: ...\n    def verify_chain(self, start_seq: int | None = None, end_seq: int | None = None) -> bool: ...\n    def get(self, seq: int) -> Mapping[str, Any]: ...\n    def export(self, since_seq: int) -> bytes: ...",
+  "invariants": [
+    "Entries MUST be append-only; the store SHALL reject UPDATE or DELETE on any prior sequence.",
+    "Each entry MUST contain the SHA-256 of the prior entry, forming a chain that CANNOT be mutated without detection.",
+    "Each entry MUST carry a signature from a key whose private half is NEVER held by the writing service.",
+    "Sequence numbers MUST be monotonically increasing with no gaps; verify_chain SHALL fail on gap or regression.",
+    "Actor, action, resource, outcome, and timestamp MUST be present on every entry; absence SHALL raise.",
+    "Clock source MUST be monotonic server-side; client-supplied timestamps SHALL be rejected."
+  ],
+  "extension_contract": "Downstream targets register a signer adapter (KMS/HSM) and a storage backend (object-lock S3, WORM volume, ledger DB) by implementing the TamperEvidentAuditLog Protocol. Additional attribute fields compose via an attribute-enrichment hook invoked before signing.",
+  "consumption_example": "def record_admin_reset(log: TamperEvidentAuditLog, admin_id: str, user_id: str) -> None:\n    seq = log.append(\n        actor=admin_id,\n        action='user.password_reset',\n        resource=f'user:{user_id}',\n        outcome='success',\n        attributes={'via': 'admin_console'},\n    )\n    assert log.verify_chain(end_seq=None) is True, 'audit chain broke'",
+  "sources": [
+    {"source": "AICPA SOC 2 Trust Services Criteria (2017, 2022 revision)", "locator": "CC7.2 \u2014 detection of security events and anomalies"},
+    {"source": "NIST SP 800-53 revision 5", "locator": "AU-9 Protection of Audit Information; AU-10 Non-repudiation"},
+    {"source": "HIPAA Security Rule 45 CFR \u00a7\u00a7 164.308-164.312", "locator": "\u00a7 164.312(b) Audit controls"}
+  ],
+  "why_essential": "Without a shared chain-verified log, each tool writes its own audit stream and regulators cannot prove evidence integrity; a centralized primitive forces one signed chain per tenant.",
+  "alternatives_considered": [
+    "Per-table shadow columns (updated_by, updated_at) \u2014 trivially tamperable by DBA and fails CC7.2 non-repudiation.",
+    "Database binlog replay \u2014 captures DML but not business actor/outcome and is not signed.",
+    "Application log aggregation to SIEM only \u2014 breaks on SIEM outage and has no chain verification."
+  ],
+  "maturity": "battle_tested"
+}

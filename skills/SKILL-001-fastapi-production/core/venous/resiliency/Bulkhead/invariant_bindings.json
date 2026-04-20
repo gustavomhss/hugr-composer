@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "BH_INV_01",
+      "invariant_text": "The number of in-flight calls per partition MUST NEVER exceed max_concurrent_calls.",
+      "confirms_test": "test_inv_capacity_ceiling_confirms",
+      "prevents_test": "test_inv_capacity_ceiling_prevents",
+      "under_failure_test": "test_inv_capacity_ceiling_under_failure"
+    },
+    {
+      "invariant_id": "BH_INV_02",
+      "invariant_text": "A caller that waits longer than max_wait_duration_ms for a permit SHALL receive BulkheadFull and NEVER be admitted.",
+      "confirms_test": "test_inv_wait_deadline_confirms",
+      "prevents_test": "test_inv_wait_deadline_prevents",
+      "under_failure_test": "test_inv_wait_deadline_under_failure"
+    },
+    {
+      "invariant_id": "BH_INV_03",
+      "invariant_text": "A rejection by Bulkhead MUST NOT be retried inside the same partition in the same request.",
+      "confirms_test": "test_inv_no_intra_request_retry_confirms",
+      "prevents_test": "test_inv_no_intra_request_retry_prevents",
+      "under_failure_test": "test_inv_no_intra_request_retry_under_failure"
+    },
+    {
+      "invariant_id": "BH_INV_04",
+      "invariant_text": "Permits CANNOT be shared across partitions; each partition holds an isolated counter.",
+      "confirms_test": "test_inv_partition_isolation_confirms",
+      "prevents_test": "test_inv_partition_isolation_prevents",
+      "under_failure_test": "test_inv_partition_isolation_under_failure"
+    },
+    {
+      "invariant_id": "BH_INV_05",
+      "invariant_text": "The bulkhead SHALL emit a rejection metric labelled with the partition name on every rejection.",
+      "confirms_test": "test_inv_rejection_metric_confirms",
+      "prevents_test": "test_inv_rejection_metric_prevents",
+      "under_failure_test": "test_inv_rejection_metric_under_failure"
+    }
+  ]
+}

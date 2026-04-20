@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "TRACER_INV_01",
+      "invariant_text": "Every span MUST have a non-empty name, a start timestamp, and an end timestamp in that causal order.",
+      "confirms_test": "test_inv_name_timestamps_confirms",
+      "prevents_test": "test_inv_name_timestamps_prevents",
+      "under_failure_test": "test_inv_name_timestamps_under_failure"
+    },
+    {
+      "invariant_id": "TRACER_INV_02",
+      "invariant_text": "A span CANNOT be ended twice; a second end call SHALL be a no-op with a recorded internal warning.",
+      "confirms_test": "test_inv_end_idempotent_confirms",
+      "prevents_test": "test_inv_end_idempotent_prevents",
+      "under_failure_test": "test_inv_end_idempotent_under_failure"
+    },
+    {
+      "invariant_id": "TRACER_INV_03",
+      "invariant_text": "The tracer MUST honor W3C Trace Context headers (traceparent, tracestate) on both inject and extract without mutation of unknown tracestate vendor entries.",
+      "confirms_test": "test_inv_w3c_context_confirms",
+      "prevents_test": "test_inv_w3c_context_prevents",
+      "under_failure_test": "test_inv_w3c_context_under_failure"
+    },
+    {
+      "invariant_id": "TRACER_INV_04",
+      "invariant_text": "Recording an exception MUST set the span status code to ERROR unless the caller explicitly overrides with OK.",
+      "confirms_test": "test_inv_exception_status_confirms",
+      "prevents_test": "test_inv_exception_status_prevents",
+      "under_failure_test": "test_inv_exception_status_under_failure"
+    },
+    {
+      "invariant_id": "TRACER_INV_05",
+      "invariant_text": "Attribute values MUST be one of: string, bool, int, float, or a homogeneous sequence of those types; nested structures are FORBIDDEN.",
+      "confirms_test": "test_inv_attribute_types_confirms",
+      "prevents_test": "test_inv_attribute_types_prevents",
+      "under_failure_test": "test_inv_attribute_types_under_failure"
+    },
+    {
+      "invariant_id": "TRACER_INV_06",
+      "invariant_text": "The tracer SHALL NEVER block the caller waiting for exporter acknowledgement; export is asynchronous.",
+      "confirms_test": "test_inv_async_export_confirms",
+      "prevents_test": "test_inv_async_export_prevents",
+      "under_failure_test": "test_inv_async_export_under_failure"
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "logs": [
+    {
+      "event_name": "idmap.opened",
+      "required_attributes": ["session_id"]
+    },
+    {
+      "event_name": "idmap.hit",
+      "required_attributes": ["session_id", "root_type"]
+    },
+    {
+      "event_name": "idmap.miss",
+      "required_attributes": ["session_id", "root_type"]
+    },
+    {
+      "event_name": "idmap.conflict",
+      "required_attributes": ["session_id", "root_type", "id"]
+    },
+    {
+      "event_name": "idmap.disposed",
+      "required_attributes": ["session_id", "entries_cleared"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "idmap.hits",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["root_type"]
+    },
+    {
+      "name": "idmap.misses",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["root_type"]
+    },
+    {
+      "name": "idmap.conflicts",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["root_type"]
+    },
+    {
+      "name": "idmap.size",
+      "metric_type": "histogram",
+      "unit": "1",
+      "cardinality_bound": 100,
+      "label_keys": ["result"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "idmap.get",
+      "required_attributes": ["session.id", "root.type", "hit"]
+    },
+    {
+      "operation_name": "idmap.add",
+      "required_attributes": ["session.id", "root.type", "outcome"]
+    },
+    {
+      "operation_name": "idmap.dispose",
+      "required_attributes": ["session.id", "entries.cleared"]
+    }
+  ]
+}

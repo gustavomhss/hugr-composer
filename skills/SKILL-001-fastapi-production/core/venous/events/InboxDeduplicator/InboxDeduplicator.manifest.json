@@ -1,0 +1,761 @@
+{
+  "name": "InboxDeduplicator",
+  "namespace": "events",
+  "maturity": "battle_tested",
+  "builder_agent_id": 3,
+  "catalog_entry_sha256": "117dd4bb10ffe2e48f4da1127c6ee1a6accd1f15cb654d383abb8e04eaba6e21",
+  "files": [
+    {
+      "path": "events/InboxDeduplicator/InboxDeduplicator.cfg",
+      "sha256": "d29fdf05bccf796f1abcd90d862837a5eed3a06fb3e87c5b07c622800b296ac5",
+      "size_bytes": 178,
+      "kind": "test"
+    },
+    {
+      "path": "events/InboxDeduplicator/InboxDeduplicator.contract.json",
+      "sha256": "eec17655934e8d79e26a6f6f8ee77b480a8089ebd4f8e0057f2ef5b4adea19e3",
+      "size_bytes": 2442,
+      "kind": "contract_json"
+    },
+    {
+      "path": "events/InboxDeduplicator/InboxDeduplicator.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "events/InboxDeduplicator/InboxDeduplicator.md",
+      "sha256": "07da8e9d401e0b140d89cbea0b0b1985930dca03e0dd06709c6d04bb88dca7cc",
+      "size_bytes": 8353,
+      "kind": "spec_md"
+    },
+    {
+      "path": "events/InboxDeduplicator/InboxDeduplicator.py",
+      "sha256": "9d0569c415c9ea54262de8e0ac3d3be65e92f25fd38962f0a8b2e62b293b5383",
+      "size_bytes": 18603,
+      "kind": "impl"
+    },
+    {
+      "path": "events/InboxDeduplicator/InboxDeduplicator.tla",
+      "sha256": "7de549ecf3b3b89b4277cda3b4bcb85f18bda77d50ec5dbf479d3cd4677c3a90",
+      "size_bytes": 3317,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "events/InboxDeduplicator/behavioral_InboxDeduplicator.py",
+      "sha256": "cc9b8eed86a1e5c610781f1a35d25f7ee80858ffaf8f6617478a546ab34aaf73",
+      "size_bytes": 5514,
+      "kind": "behavioral"
+    },
+    {
+      "path": "events/InboxDeduplicator/chaos_InboxDeduplicator.py",
+      "sha256": "554cd4d94a9263647438e8f006b5fc36e9bdac0b210124a3722e22d3fc929b05",
+      "size_bytes": 6812,
+      "kind": "chaos"
+    },
+    {
+      "path": "events/InboxDeduplicator/concurrent_InboxDeduplicator.py",
+      "sha256": "6e20714a2f4f9184183d9f18bc41314b8a42c7b3d74f0318acae122a20bd861b",
+      "size_bytes": 5558,
+      "kind": "concurrent"
+    },
+    {
+      "path": "events/InboxDeduplicator/dashboard.json",
+      "sha256": "b48d205ce9620b95b74d8d788160ff406ec4442feb3122a630587db1b2925061",
+      "size_bytes": 1194,
+      "kind": "dashboard"
+    },
+    {
+      "path": "events/InboxDeduplicator/invariant_bindings.json",
+      "sha256": "37b33d24bed700aed070612b6075a04580b0f891041f32e0dd33e80ff0ac8f3c",
+      "size_bytes": 1595,
+      "kind": "test"
+    },
+    {
+      "path": "events/InboxDeduplicator/metamorphic_InboxDeduplicator.py",
+      "sha256": "1feee3c3d43214aee4aa9143f976af2f7c2d7e6ca86ab3d0985365b67e04f07f",
+      "size_bytes": 5220,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "events/InboxDeduplicator/observability_InboxDeduplicator.py",
+      "sha256": "7ff3d041c2a18ecf177b0d6280a1abc87c8a85eb2c92b4b5460de9cb7bb1e57f",
+      "size_bytes": 3432,
+      "kind": "observability"
+    },
+    {
+      "path": "events/InboxDeduplicator/observability_schema.json",
+      "sha256": "65f8d79df1da72774bbd8b672e65fcc6107460dc1b1e2b95af192730a38741f5",
+      "size_bytes": 1772,
+      "kind": "observability"
+    },
+    {
+      "path": "events/InboxDeduplicator/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "events/InboxDeduplicator/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "events/InboxDeduplicator/state_machine_InboxDeduplicator.py",
+      "sha256": "d2a222a3bdc3883aa5acceb2b76cca04fe04c7742f81bff8da1cef5b4fa25387",
+      "size_bytes": 3684,
+      "kind": "state_machine"
+    },
+    {
+      "path": "events/InboxDeduplicator/test_InboxDeduplicator.py",
+      "sha256": "5149951d2637107929331da1aa6f18d97ec091a9767de39afc8b7e71edf2be51",
+      "size_bytes": 7148,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "INBOX_INV_01",
+      "invariant_text": "record MUST be written in the same transaction as the consumer's side-effect; writing after the side-effect is FORBIDDEN.",
+      "confirms_test": "test_inv_same_txn_record_confirms",
+      "prevents_test": "test_inv_same_txn_record_prevents",
+      "under_failure_test": "test_inv_same_txn_record_under_failure"
+    },
+    {
+      "invariant_id": "INBOX_INV_02",
+      "invariant_text": "Given the same (message_id, consumer), seen MUST be deterministic; the consumer CANNOT double-apply the effect.",
+      "confirms_test": "test_inv_deterministic_seen_confirms",
+      "prevents_test": "test_inv_deterministic_seen_prevents",
+      "under_failure_test": "test_inv_deterministic_seen_under_failure"
+    },
+    {
+      "invariant_id": "INBOX_INV_03",
+      "invariant_text": "Retention policy SHALL cover at least the broker's maximum redelivery window; premature purging is NEVER allowed.",
+      "confirms_test": "test_inv_retention_window_confirms",
+      "prevents_test": "test_inv_retention_window_prevents",
+      "under_failure_test": "test_inv_retention_window_under_failure"
+    },
+    {
+      "invariant_id": "INBOX_INV_04",
+      "invariant_text": "The deduplicator NEVER silently reclassifies unseen messages as duplicates; a missing record ALWAYS means first delivery.",
+      "confirms_test": "test_inv_missing_means_first_confirms",
+      "prevents_test": "test_inv_missing_means_first_prevents",
+      "under_failure_test": "test_inv_missing_means_first_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 3717,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 9715,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 12073,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 64877,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 14908,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 11486,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 98643,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "38 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 9979,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 11502,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 102927,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 345429,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RECORD-AFTER-SIDE-EFFECT",
+        "hypothesis": "Consumer calls record() in a separate transaction after performing the HTTP charge side-effect; if process crashes between charge and record commit, redelivery double-charges the customer because seen() returns False on retry.",
+        "input_fixture": "sequence: begin_tx(); charge_card(msg_x); commit_tx(); crash_before record(msg_x,'billing'); broker redelivers msg_x; seen('msg_x','billing')==False",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CASE-COLLISION",
+        "hypothesis": "Database collation is case-insensitive (utf8mb4_general_ci) so record('AbC','c1') and seen('abc','c1') return True even though broker treats IDs as case-sensitive opaque bytes, silently classifying an unseen message as duplicate.",
+        "input_fixture": "record('AbC123','consumer1'); then seen('abc123','consumer1') -> returns True",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PURGE-CLOCK-SKEW",
+        "hypothesis": "purge_older_than uses local server clock but broker redelivery window is measured from broker clock; a server with clock 2h ahead purges records still within the broker's 24h redelivery window, allowing duplicates.",
+        "input_fixture": "server_clock=T+2h; purge_older_than('2026-04-18T00:00:00Z'); broker redelivers msg recorded at T-23h; seen returns False",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RACE-CHECK-THEN-RECORD",
+        "hypothesis": "Two worker threads concurrently call seen() (both False) then record() for the same message_id; without unique constraint or SELECT FOR UPDATE, both proceed to apply side-effect, violating exactly-once.",
+        "input_fixture": "thread A: seen('m1','c1')->False; thread B: seen('m1','c1')->False; both apply effect; both record()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED-TIMESTAMP",
+        "hypothesis": "purge_older_than('not-a-date') silently parses to epoch 0 or current time (depending on lib), wiping the entire inbox table and reclassifying all future redeliveries as first-delivery.",
+        "input_fixture": "purge_older_than('tomorrow'); or purge_older_than(''); returns int>0 and table is empty",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-MESSAGE-ID",
+        "hypothesis": "record('','consumer1') succeeds and any future seen('','consumer2') across consumers may collide if PRIMARY KEY only on message_id (forgetting composite key with consumer), causing cross-consumer false duplicates.",
+        "input_fixture": "record('','c1'); seen('','c2') -> True instead of False",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INTEGER-OVERFLOW-PURGE",
+        "hypothesis": "purge_older_than returns int count of deleted rows; on a table with >2^31 rows the return overflows to negative or wraps, and callers gating retention monitoring on count>=0 silently drop alerts.",
+        "input_fixture": "populate 2_147_483_649 rows; purge_older_than('2099-01-01T00:00:00Z') returns -1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNICODE-NORMALIZATION",
+        "hypothesis": "Broker emits message_id with composed unicode (NFC) but consumer DB stores decomposed (NFD) due to ORM normalization; seen() returns False on redelivery because byte-equality fails, breaking determinism.",
+        "input_fixture": "record('caf\u00e9'/*NFC*/,'c1'); broker redelivers same id; ORM stores as 'cafe\\u0301'; seen('caf\u00e9','c1')->False",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TX-ISOLATION-READ-COMMITTED",
+        "hypothesis": "Under READ COMMITTED, seen() inside transaction T1 does not observe a concurrent uncommitted record() from T2 processing the same message_id, so both transactions commit and effect runs twice.",
+        "input_fixture": "T1: BEGIN; seen('m1','c1')->False; T2: BEGIN; seen('m1','c1')->False; T1 record+commit; T2 record errors or both succeed if no unique idx",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PURGE-OPEN-INTERVAL",
+        "hypothesis": "purge_older_than uses '<=' rather than '<', deleting the boundary record at exactly iso_timestamp; an in-flight redelivery with timestamp equal to cutoff is reclassified as first-delivery.",
+        "input_fixture": "record at T0; purge_older_than(T0) returns 1; broker redelivers; seen->False",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CONSUMER-INJECTION",
+        "hypothesis": "consumer parameter is concatenated into raw SQL (no parametrization); attacker controls consumer string via config and passes \"c1' OR '1'='1\" causing seen() to return True for any message_id, blocking legitimate first deliveries.",
+        "input_fixture": "seen('m1', \"c1' OR '1'='1\") -> True even when no record exists",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TIMEZONE-NAIVE",
+        "hypothesis": "purge_older_than accepts naive iso string '2026-04-18T00:00:00' interpreted as server local TZ (UTC-3) while records stored in UTC; cutoff effectively 3h later than caller intended, purging records still within redelivery window.",
+        "input_fixture": "purge_older_than('2026-04-18T00:00:00') on server in America/Sao_Paulo deletes records up to 2026-04-18T03:00:00Z",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-LENGTH-TRUNCATION",
+        "hypothesis": "DB column is VARCHAR(64) but broker emits 128-char message_ids; insertion truncates silently (MySQL non-strict mode), causing two distinct broker IDs sharing 64-char prefix to collide and second message reclassified as duplicate.",
+        "input_fixture": "record('A'*64+'X','c1'); seen('A'*64+'Y','c1') -> True",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE_TOCTOU_SEEN_RECORD",
+        "hypothesis": "Two concurrent consumers receive the same redelivered message. Both call seen() before either calls record(). Both receive False, both apply the side-effect, then both call record(). The second record() either silently overwrites the first or raises an integrity error too late to prevent double-application. This breaks the determinism invariant because the TOCTOU window between seen() and record() is never atomically closed.",
+        "input_fixture": "Thread-1: seen('msg-abc', 'consumer-A') -> False; Thread-2: seen('msg-abc', 'consumer-A') -> False; Thread-1: side_effect(); Thread-2: side_effect(); Thread-1: record('msg-abc', 'consumer-A'); Thread-2: record('msg-abc', 'consumer-A')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WRITE_AFTER_EFFECT_ORDERING",
+        "hypothesis": "An implementation that calls side_effect() before record() satisfies the API surface but violates the transaction ordering invariant. If the process crashes between the side_effect() completion and the record() write, the message is redelivered, seen() returns False, and the effect is applied a second time. The invariant explicitly forbids writing after the side-effect, yet nothing in the Protocol signature enforces call order.",
+        "input_fixture": "consumer.apply_payment(amount=100); inbox.record('pay-001', 'billing'); # process.kill() between these two lines => redelivery => seen('pay-001','billing') returns False => payment applied twice",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PARTIAL_TXN_ROLLBACK",
+        "hypothesis": "The consumer's side-effect and record() are issued inside one DB transaction. The side-effect INSERT succeeds but a subsequent constraint violation in the inbox table causes a rollback. The broker never receives an ack, redelivers, seen() returns False, and the side-effect fires again. Because record() shares a transaction with the effect, a failed record() MUST rollback the effect too \u2014 implementations that open separate savepoints or use different DB connections silently violate this.",
+        "input_fixture": "BEGIN; INSERT INTO orders VALUES (...); inbox.record('ord-999', 'order-svc'); -- inbox table has max-length constraint on consumer col, 'order-svc-with-very-long-suffix-exceeding-limit' triggers truncation error; ROLLBACK; -- effect also rolled back? Only if same connection.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK_SKEW_PREMATURE_PURGE",
+        "hypothesis": "The ISO timestamp passed to purge_older_than() is generated by the caller's wall clock. If the broker's maximum redelivery window is 7 days but the caller's clock is 3 days ahead of the broker (NTP drift in containerized environments), purge_older_than(now - 7d) will delete records that are only 4 real-days old from the broker's perspective. Messages within the broker's redelivery window will then pass seen() as False and be double-processed.",
+        "input_fixture": "broker_max_redelivery_window = 7 days; caller_clock_ahead_by = 3 days; purge_older_than((datetime.utcnow() - timedelta(days=7)).isoformat()) # deletes records only 4 broker-days old; broker redelivers msg recorded 5 days ago; seen() -> False",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TIMEZONE_NAIVE_COMPARISON",
+        "hypothesis": "purge_older_than() receives a timezone-aware ISO timestamp ('2026-04-12T00:00:00+05:30') but the stored created_at column is timezone-naive UTC. The comparison either raises a TypeError (silent no-op if caught) or coerces incorrectly, causing records within the retention window to be deleted because the offset is stripped. A UTC+5:30 timestamp that represents a time 5.5 hours earlier than its UTC equivalent will delete records that should be retained.",
+        "input_fixture": "purge_older_than('2026-04-12T00:00:00+05:30') # stored rows have naive UTC timestamps; 2026-04-12T00:00:00Z record is 5h30m newer than the cutoff but naive comparison treats them equal and deletes it",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY_STRING_MSG_ID_COLLISION",
+        "hypothesis": "An empty string message_id '' is a valid Python str. If the implementation stores message_id as a primary key component, all calls with message_id='' share the same row. Calling record('', 'svc-A') then seen('', 'svc-B') could return True due to a missing composite-key check, silently reclassifying an unseen message for svc-B as a duplicate and suppressing its first delivery.",
+        "input_fixture": "inbox.record('', 'svc-A'); inbox.seen('', 'svc-B') # MUST return False; if implementation queries WHERE message_id='' without checking consumer, returns True => INV-4 violated",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-UNICODE_NORMALIZATION_COLLISION",
+        "hypothesis": "Two distinct Unicode strings that are canonically different but normalize to the same NFC/NFKC form (e.g., 'caf\\u00e9' vs 'cafe\\u0301') may collide at the DB layer if the column uses a Unicode-normalizing collation. record('cafe\\u0301', 'svc') followed by seen('caf\\u00e9', 'svc') returns True, falsely flagging a message as a duplicate. Alternatively, two unique messages are stored as one row, and the second is silently dropped.",
+        "input_fixture": "inbox.record('caf\\u0301e', 'svc-payments'); inbox.seen('caf\\u00e9', 'svc-payments') # with NFKC collation these normalize identically; returns True => second message silently skipped",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FUTURE_TIMESTAMP_PURGE_ALL",
+        "hypothesis": "purge_older_than() with a far-future ISO timestamp (e.g. '9999-12-31T23:59:59Z') deletes every record in the inbox table regardless of redelivery window. If the implementation does not validate that the cutoff is not in the future relative to now, a single misconfigured cron call wipes the entire deduplication history, making all subsequent seen() calls return False for all previously processed messages during the broker's redelivery window.",
+        "input_fixture": "inbox.purge_older_than('9999-12-31T23:59:59Z') # returns large N; broker redelivers msg-001 within its 7-day window; seen('msg-001', 'billing') -> False => double charge",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-MALFORMED_ISO_SILENT_NOOP",
+        "hypothesis": "purge_older_than() receives a syntactically invalid ISO timestamp ('not-a-date', '', '2026-13-99'). If the implementation silently catches the parse error and returns 0 without raising, callers believing purge succeeded will not retry. Over time the inbox table grows unboundedly, and when disk fills, record() begins failing, breaking the transactional write invariant for all consumers.",
+        "input_fixture": "result = inbox.purge_older_than('2026-13-99T25:61:00'); assert result == 0 # no exception raised; caller logs 'purge OK, 0 rows'; table grows unbounded; disk full; record() raises IO error mid-transaction",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY_AFTER_PURGE_WITHIN_WINDOW",
+        "hypothesis": "An operator purges with a timestamp that is exactly at the boundary of the broker's redelivery window. Because the purge condition is typically 'created_at < cutoff' (strict less-than), records created AT the cutoff instant are retained. But if the implementation uses less-than-or-equal, the boundary record is deleted. The broker may redeliver that exact boundary message, seen() returns False, and the effect fires a second time. Off-by-one on boundary semantics violates the retention invariant.",
+        "input_fixture": "cutoff = '2026-04-12T00:00:00Z'; inbox.record('msg-boundary', 'svc', created_at='2026-04-12T00:00:00Z'); inbox.purge_older_than(cutoff); # if impl uses <=, deletes the boundary record; broker redelivers; seen() -> False",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONCURRENT_RECORD_UNIQUE_VIOLATION",
+        "hypothesis": "Two goroutines/threads simultaneously call record() with identical (message_id, consumer). The implementation checks for existence before insert (SELECT then INSERT). Both threads find no existing row and both attempt INSERT. One succeeds, the other raises a UniqueConstraintViolation. If the exception is caught and swallowed, the second thread's caller believes record() succeeded without being inside the consumer's transaction, meaning the effect may have already been applied in a separate transaction \u2014 violating the atomicity invariant.",
+        "input_fixture": "Thread-1: BEGIN; apply_effect(); record('dup-99','svc'); COMMIT; -- concurrent -- Thread-2: BEGIN; apply_effect(); record('dup-99','svc'); -- IntegrityError swallowed; COMMIT; -- both effects applied",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONSUMER_INJECTION_BYPASS",
+        "hypothesis": "If the consumer parameter is used raw in a query string (e.g., f\"WHERE consumer = '{consumer}'\"), a crafted consumer name like \"x' OR '1'='1\" causes the WHERE clause to always return True, making seen() return True for ANY (message_id, consumer) pair. This silently reclassifies every unseen message as a duplicate for any consumer, completely suppressing first delivery across all consumers.",
+        "input_fixture": "inbox.seen('any-msg-id', \"x' OR '1'='1\") # SQL injection forces WHERE to always match; returns True; all messages for all consumers skipped indefinitely",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LONG_MESSAGE_ID_TRUNCATION",
+        "hypothesis": "If the DB schema stores message_id in a VARCHAR(36) column (sized for UUIDs) and a broker emits message IDs longer than 36 chars (e.g., compound IDs like 'tenant:namespace:uuid'), the implementation may silently truncate at storage time. Two distinct IDs that share the same first 36 chars will map to the same row. record('tenant:ns:aaaa...001','svc') causes seen('tenant:ns:aaaa...002','svc') to return True, suppressing legitimate first deliveries.",
+        "input_fixture": "msg_id_1 = 'acme-corp:payments:' + 'a'*17 + '1'; msg_id_2 = 'acme-corp:payments:' + 'a'*17 + '2'; inbox.record(msg_id_1,'svc'); inbox.seen(msg_id_2,'svc') # both truncate to same 36-char prefix => True",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ASYNC_RECORD_AFTER_EFFECT",
+        "hypothesis": "record() written after consumer's side-effect completes. Crash between side-effect and record() leaves no dedup marker. Broker redelivery sees no record, applies effect again.",
+        "input_fixture": "Consumer processes message M1, applies side-effect (writes to DB), then calls record(M1, consumer_A). Server crashes before record() commits. Broker redelivers M1. Deduplicator.seen(M1, consumer_A) returns false.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT_SEEN_BEFORE_RECORD",
+        "hypothesis": "Two threads receive identical message concurrently. Both call seen() simultaneously, both return false. Both apply side-effect. Race on first record() write allows second to succeed, violating exactly-once semantics.",
+        "input_fixture": "Thread A and B simultaneously process msg_id=M1, consumer=C1. Both call seen(M1, C1) \u2192 both get false. Both execute side-effect. A calls record(M1, C1), then B calls record(M1, C1). Without atomic check-and-set, both succeed.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SYSTEM_CLOCK_SKEW_PURGE",
+        "hypothesis": "purge_older_than(T) deletes records where timestamp < T. System clock jumps backward after purge. Records just purged are within broker's redelivery window. Redelivery finds no record, seen() returns false.",
+        "input_fixture": "purge_older_than('2026-04-19T10:00:00Z') executes. Records with ts < T are deleted. System clock resets to 2026-04-19T09:55:00Z. Broker redelivers message from 2026-04-19T09:58:00Z (within window). Seen returns false; effect reapplied.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NULL_CONSUMER_SEMANTIC_MISMATCH",
+        "hypothesis": "record(msg_id, None) treated as NULL in database. Later seen(msg_id, actual_consumer) uses != NULL semantics in WHERE clause, missing the NULL record. Duplicate application occurs.",
+        "input_fixture": "record('msg_1', None) persists with consumer column = NULL. Later seen('msg_1', 'consumer_A') executes: WHERE message_id='msg_1' AND consumer='consumer_A', finds no row (NULL != 'consumer_A'). Returns false. Effect reapplied.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY_STRING_MESSAGE_COLLISION",
+        "hypothesis": "record('', consumer_A) and record('', consumer_B) both map to same dedup key if implementation treats empty string as wildcard or NULL fallback. Later seen('', consumer_C) incorrectly matches. False positive duplicate detection.",
+        "input_fixture": "record('', 'svc_1') stores. record('', 'svc_2') stores (same key in hash map or NULL collapsing in DB). seen('', 'svc_3') queries dedup table. Implementation finds empty-string record matching any consumer, returns true. Effect skipped incorrectly.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MALFORMED_PURGE_TIMESTAMP",
+        "hypothesis": "purge_older_than('2026-99-99') causes parsing error. Error handling is silent or degrades to unsafe default (e.g., DELETE * or DELETE none). Dedup table corrupted or incompletely purged. Subsequent operations return wrong values.",
+        "input_fixture": "Caller invokes purge_older_than('2026-99-99T25:61:61Z'). Parser fails. Implementation falls back to purge_older_than('1970-01-01') or skips silently. All records deleted or none deleted. Next seen() call may return false for recently-recorded messages.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EXTERNAL_DELETE_CACHE_STALE",
+        "hypothesis": "DBA or external script deletes dedup records directly from DB. In-process cache still holds old 'seen=true' values. seen() consults cache and returns true, but record is gone. On replay, application state inconsistent.",
+        "input_fixture": "record('msg_1', 'app_A') persists. Implementation caches result. External DELETE from dedup_messages WHERE id='msg_1'. Cache still says seen=true. Redelivery of msg_1: seen() returns true (cache), but record check fails (DB empty). Consumer skips effect, but DB state incomplete.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TYPE_COERCION_STRING_INT_COLLISION",
+        "hypothesis": "record(123, consumer) coerced to string '123'. Later seen('123', consumer) finds it. But semantically message_id=123 (numeric) collides with message_id='123' (string). Type confusion causes unintended dedup.",
+        "input_fixture": "Caller: record(123, 'api_gateway'). Implementation coerces to '123'. Later: seen('123', 'api_gateway') \u2192 true. But sender intended numeric ID 123 \u2260 string '123'. Two different messages treated as duplicate due to type coercion.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PURGE_WITHIN_REDELIVERY_WINDOW",
+        "hypothesis": "purge_older_than called with timestamp T while broker still has messages scheduled for redelivery in window [T, T+redelivery_window_max]. Purged records are redelivered by broker. seen() returns false; effect double-applied.",
+        "input_fixture": "Broker max redelivery = 7 days. purge_older_than('2026-04-12T00:00:00Z') executes, deleting records older than 2026-04-12. Broker is still scheduled to redeliver msg_X at 2026-04-13T06:00:00Z (within 7 days). Record gone. Redelivery: seen(msg_X) returns false.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DOUBLE_RECORD_NOT_IDEMPOTENT",
+        "hypothesis": "record(msg_id, consumer) called twice. Second call raises unique constraint violation, increments counter, or throws error instead of idempotent no-op. Transaction rolls back. Record state undefined. Retry logic may reapply effect.",
+        "input_fixture": "record('m1', 'svc') succeeds. Retry logic (e.g., after timeout) calls record('m1', 'svc') again. DB constraint throws error (UNIQUE_CONSTRAINT). Consumer crash handler retries record(), still fails. Effect never confirmed as deduplicated.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-WILDCARD_CONSUMER_PATTERN_MATCH",
+        "hypothesis": "If seen() implementation uses LIKE or pattern matching on consumer parameter, consumer='%' or consumer='.*' could match all records, incorrectly returning true for any message_id as duplicate.",
+        "input_fixture": "seen('any_msg_id', '%') executes with LIKE operator in SQL: WHERE message_id='any_msg_id' AND consumer LIKE '%'. Pattern matches all consumers. Returns true. Effect skipped incorrectly even though this consumer never recorded it.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RECORD_BEFORE_SIDE_EFFECT_CRASH",
+        "hypothesis": "record() committed to DB successfully, but side-effect crashes before completing. Recovery replays side-effect, but seen() now returns true. Effect should be idempotent, but invariant assumes record AFTER side-effect. Effect silently skipped on recovery.",
+        "input_fixture": "record('msg_1', 'worker') writes to dedup. Worker then calls side-effect handler which crashes mid-execution. Recovery system retries. Calls seen('msg_1', 'worker') \u2192 true. Effect not re-executed. Invariant expectation violated: record() was before, not after.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "inbox.transaction.opened",
+        "required_attributes": [
+          "txn_id"
+        ]
+      },
+      {
+        "event_name": "inbox.transaction.committed",
+        "required_attributes": [
+          "txn_id",
+          "staged_count"
+        ]
+      },
+      {
+        "event_name": "inbox.transaction.rolled.back",
+        "required_attributes": [
+          "txn_id",
+          "reason"
+        ]
+      },
+      {
+        "event_name": "inbox.message.first.delivery",
+        "required_attributes": [
+          "message_id",
+          "consumer"
+        ]
+      },
+      {
+        "event_name": "inbox.message.duplicate.skipped",
+        "required_attributes": [
+          "message_id",
+          "consumer"
+        ]
+      },
+      {
+        "event_name": "inbox.purge.completed",
+        "required_attributes": [
+          "cutoff_iso",
+          "evicted_count"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "inbox.deliveries",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "result",
+          "consumer"
+        ]
+      },
+      {
+        "name": "inbox.effect.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "consumer",
+          "result"
+        ]
+      },
+      {
+        "name": "inbox.store.size",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": [
+          "consumer"
+        ]
+      },
+      {
+        "name": "inbox.purge.evicted",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": []
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "inbox.handle",
+        "required_attributes": [
+          "message.id",
+          "consumer",
+          "first_delivery"
+        ]
+      },
+      {
+        "operation_name": "inbox.commit",
+        "required_attributes": [
+          "txn.id",
+          "staged.count"
+        ]
+      },
+      {
+        "operation_name": "inbox.purge",
+        "required_attributes": [
+          "cutoff.iso",
+          "evicted.count"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol matches catalog api_signature verbatim (seen/record/purge_older_than). All 4 invariants are explicitly enforced with cited IDs. Namespace 'events' is implicit (module-level) but Protocol class name matches."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "Covers all API methods, transaction bracketing via begin/handle, retention enforcement, identity validation, rollback semantics, store introspection, and ISO-8601 parsing with Z normalization. Purge logic, staged-row visibility in seen(), and concurrent re-check on commit are all handled."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Single InboxDeduplicatorInvariantError subclass of RuntimeError; every raise cites the specific INBOX-INV-NN with actionable context (values, durations, remediation hints). ISO parse errors chain via 'raise ... from exc'. No silent failures."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Protocol is runtime_checkable; implementation is pluggable via clock/min_retention injection. handle() composes with external UoW pattern as shown in spec. Zero I/O at import, lazy clock, no global state \u2014 composes cleanly with TransactionalOutbox."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "RLock-guarded store, UTC-normalized timestamps, deterministic commit order, conservative rollback on unclosed scope, explicit nested-txn rejection. In-memory only (documented), single-instance scope \u2014 distributed coordination is out-of-scope but acknowledged."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Protocol signature is verbatim. Invariants mapped 1:1 to INBOX-INV-01..04 with module docstring citations. __all__ exports the Protocol, impl, record, txn, and error type. Maturity 'battle_tested' posture reflected in defensive guards."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "Assumes familiarity with 'at-least-once' / 'exactly-once' broker semantics without a plain definition",
+          "Two API options (explicit begin/record vs handle helper) with no guidance on which to use first",
+          "Thread-safety note ('serialize around begin() externally') gives no concrete example of what 'externally' looks like"
+        ],
+        "rewrite_suggestion": "Add a one-paragraph glossary box defining 'at-least-once delivery' and 'exactly-once effect', mark Option B (handle helper) as the recommended starting point with a callout, and replace the abstract thread-safety note with a short code snippet using threading.Lock around the begin\u2192commit window."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "No schema guidance for durable backends \u2014 missing recommended composite unique index on (message_id, consumer) and expected lookup cost at scale",
+          "Horizontal-scaling semantics are implicit: unclear whether multiple consumer replicas share one durable inbox store or each maintain their own",
+          "No throughput or latency budget for the store layer (e.g., p99 seen() lookup target)"
+        ],
+        "rewrite_suggestion": "Add a 'Scaling' subsection clarifying that replicas share a single durable store, recommend a composite unique index on (message_id, consumer, recorded_at), and state an expected seen() lookup budget (e.g., O(1) index hit < 5 ms p99 at 10 k msg/s)."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "Mitigation for message_id forgery is vague ('authenticate the source') \u2014 no concrete mechanism such as HMAC, signed broker envelope, or transport-layer auth is specified",
+          "No access-control requirement for purge_older_than \u2014 a misconfigured or malicious caller bypassing the retention guard is not addressed",
+          "GDPR right-to-erasure tension with INBOX-INV-03 (records must be kept \u2265 min_retention) is unmentioned, creating a compliance gap for PII message_ids"
+        ],
+        "rewrite_suggestion": "Expand the security section with: (1) a concrete auth pattern (verify message_id originates from a broker-signed envelope before calling seen/record), (2) an explicit access-control requirement for purge_older_than (admin role or signed request only), and (3) a note on GDPR/right-to-erasure tension with the retention invariant and recommended mitigation (hash the message_id before storage)."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "No alert thresholds or SLO examples \u2014 'a sudden spike' and 'sustained rise' are undefined; missing p99 latency target and acceptable duplicate ratio",
+          "Purge schedule guidance says 'min_retention + safety_margin' without defining safety_margin or providing a concrete cron expression",
+          "No runbook or escalation path for unbounded inbox.store.size growth or for effect errors that exhaust the broker's retry budget"
+        ],
+        "rewrite_suggestion": "Add an 'Alert Runbook' table mapping each metric to an example threshold, likely cause, and remediation step. Include a concrete purge cron example (e.g., daily at 02:00 UTC, cutoff = now() \u2212 (min_retention + 1 day)) and define 'sustained rise' as '>5% error rate over a 10-min window'."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "Maturity level is referenced in the contract schema field list but never stated in the doc body \u2014 impossible to judge production-readiness or adoption risk",
+          "No customer-impact framing \u2014 the business consequence of missing this primitive (duplicate charges, duplicate emails) is only implied, never stated explicitly",
+          "No integration effort indicator \u2014 a PM cannot estimate sprint capacity without a rough complexity signal"
+        ],
+        "rewrite_suggestion": "Add a 'Business Impact' callout near the top: one sentence on the end-user failure mode if the primitive is absent (e.g., 'Without InboxDeduplicator, a redelivered payment event can charge a customer twice'), a maturity badge ('Production-ready'), and a rough integration effort note (e.g., '~1\u20132 engineer-days per new consumer')."
+      }
+    ]
+  }
+}

@@ -1,0 +1,771 @@
+{
+  "name": "ChangeDataCapture",
+  "namespace": "data",
+  "maturity": "battle_tested",
+  "builder_agent_id": 3,
+  "catalog_entry_sha256": "0cb9a7a4b1c9d8877621a2a27a6c12365d7a7f1283de651c48d353dde0413b06",
+  "files": [
+    {
+      "path": "data/ChangeDataCapture/ChangeDataCapture.cfg",
+      "sha256": "22cc68ff8945000b8fc02d878367dbf792442ce90abe3a4d4f9afe3fe51e8fa3",
+      "size_bytes": 171,
+      "kind": "test"
+    },
+    {
+      "path": "data/ChangeDataCapture/ChangeDataCapture.contract.json",
+      "sha256": "829cbae8ac140b8683e8b75b03b1ae8c8d815d86807ff79a6aeed54dbef4d086",
+      "size_bytes": 2406,
+      "kind": "contract_json"
+    },
+    {
+      "path": "data/ChangeDataCapture/ChangeDataCapture.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "data/ChangeDataCapture/ChangeDataCapture.md",
+      "sha256": "01d73c247cdd4cd564e969b69370b50e409d23fc6204d247c47988054898aefb",
+      "size_bytes": 7929,
+      "kind": "spec_md"
+    },
+    {
+      "path": "data/ChangeDataCapture/ChangeDataCapture.py",
+      "sha256": "6080b3c97ce97cd7282abc622ac7d534c8d695e975bfc9df985bb601d38d68bb",
+      "size_bytes": 20925,
+      "kind": "impl"
+    },
+    {
+      "path": "data/ChangeDataCapture/ChangeDataCapture.tla",
+      "sha256": "744c08f3df0888e71bf9e0610172aa49888d3f6aeebbc8db547747b129d2e6be",
+      "size_bytes": 3469,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "data/ChangeDataCapture/behavioral_ChangeDataCapture.py",
+      "sha256": "aded7327bad12e32a58f16ce3d8fa0c8bec5c4166cf2c40b37fab8efe8143f19",
+      "size_bytes": 4787,
+      "kind": "behavioral"
+    },
+    {
+      "path": "data/ChangeDataCapture/chaos_ChangeDataCapture.py",
+      "sha256": "578dd451645c5a6dd7803c97ec15c3b87b1565263689bfa02c3f39c6e5fac13c",
+      "size_bytes": 5296,
+      "kind": "chaos"
+    },
+    {
+      "path": "data/ChangeDataCapture/concurrent_ChangeDataCapture.py",
+      "sha256": "579fa0b93a8e2f3ad3d116189a43b961508b9fbafff6b1ae0efb0babec758108",
+      "size_bytes": 5334,
+      "kind": "concurrent"
+    },
+    {
+      "path": "data/ChangeDataCapture/dashboard.json",
+      "sha256": "af9163d0fde0b3ffa0f689ca443dc1759f0efa18369d90a6f4f3b29dac4b3a02",
+      "size_bytes": 996,
+      "kind": "dashboard"
+    },
+    {
+      "path": "data/ChangeDataCapture/invariant_bindings.json",
+      "sha256": "851717607f8829291eae8de9e5b0c8cb4339122b09c641b044f454a6ef0c0093",
+      "size_bytes": 1571,
+      "kind": "test"
+    },
+    {
+      "path": "data/ChangeDataCapture/metamorphic_ChangeDataCapture.py",
+      "sha256": "b60df5acb4fc9a62a8e0222ac9bb68f4710d0f0ea2c5f3b7a48a213d3eccc836",
+      "size_bytes": 4140,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "data/ChangeDataCapture/observability_ChangeDataCapture.py",
+      "sha256": "707f4d7cf6e0fb96e322813f12b9bc5e5c8aa719476945005c1adc1bb73c737f",
+      "size_bytes": 2604,
+      "kind": "observability"
+    },
+    {
+      "path": "data/ChangeDataCapture/observability_schema.json",
+      "sha256": "cc4169fd3fd851746c3ed226b6e496e9456fd2eb496bed15e815a9deb85eb460",
+      "size_bytes": 1535,
+      "kind": "observability"
+    },
+    {
+      "path": "data/ChangeDataCapture/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "data/ChangeDataCapture/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "data/ChangeDataCapture/state_machine_ChangeDataCapture.py",
+      "sha256": "38d87486ca216672b7bd90bb8447918ebb7f4adb5d565983b76e6c7f15a3dfb2",
+      "size_bytes": 4465,
+      "kind": "state_machine"
+    },
+    {
+      "path": "data/ChangeDataCapture/test_ChangeDataCapture.py",
+      "sha256": "f7f348fd1ec2f6fd26c8d23265a2efb25229eb0fd9c8043188f416c652c42654",
+      "size_bytes": 10213,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "CDC_INV_01",
+      "invariant_text": "Every committed row change in the source MUST appear in the stream exactly once in commit order; reordering across transactions is FORBIDDEN.",
+      "confirms_test": "test_inv_commit_order_confirms",
+      "prevents_test": "test_inv_commit_order_prevents",
+      "under_failure_test": "test_inv_commit_order_under_failure"
+    },
+    {
+      "invariant_id": "CDC_INV_02",
+      "invariant_text": "Consumers MUST be able to resume from a persisted checkpoint; the stream SHALL carry a monotonically increasing position.",
+      "confirms_test": "test_inv_monotonic_position_confirms",
+      "prevents_test": "test_inv_monotonic_position_prevents",
+      "under_failure_test": "test_inv_monotonic_position_under_failure"
+    },
+    {
+      "invariant_id": "CDC_INV_03",
+      "invariant_text": "CDC events NEVER include uncommitted changes; dirty reads are FORBIDDEN on the downstream side.",
+      "confirms_test": "test_inv_no_dirty_reads_confirms",
+      "prevents_test": "test_inv_no_dirty_reads_prevents",
+      "under_failure_test": "test_inv_no_dirty_reads_under_failure"
+    },
+    {
+      "invariant_id": "CDC_INV_04",
+      "invariant_text": "Schema changes at the source MUST surface as schema events so consumers CANNOT silently parse new columns with the old parser.",
+      "confirms_test": "test_inv_schema_events_confirms",
+      "prevents_test": "test_inv_schema_events_prevents",
+      "under_failure_test": "test_inv_schema_events_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 453,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 778,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 1486,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 2900,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 818,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 53232,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 96777,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "40 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 968,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 980,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 73963,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 232839,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TXN-REORDER-INTERLEAVE",
+        "hypothesis": "Two concurrent transactions T1 (LSN 100, commits at 200) and T2 (LSN 150, commits at 175) are emitted in LSN-of-change order rather than commit order, causing T2 to appear before T1's earlier rows and violating commit-order ordering across transactions.",
+        "input_fixture": "Open T1 INSERT users(id=1) at LSN 100; open T2 INSERT users(id=2) at LSN 150; COMMIT T2 at LSN 175; COMMIT T1 at LSN 200; subscribe('users', from_position=0) and assert order is [T1.id=1, T2.id=2].",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CHECKPOINT-OFF-BY-ONE",
+        "hypothesis": "checkpoint(p) is interpreted inclusively on write but exclusively on resume (or vice versa), so subscribe(table, from_position=p) either replays the checkpointed event (duplicate) or skips the next event (loss), breaking exactly-once on resume.",
+        "input_fixture": "Consume events e1@pos=10, e2@pos=11, e3@pos=12; call checkpoint(11); restart and call subscribe('t', from_position=11); assert next event is exactly e3 with no duplicate of e2 and no skip.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DIRTY-READ-ROLLBACK",
+        "hypothesis": "A long-running transaction's uncommitted INSERTs are streamed eagerly; if the transaction ROLLBACKs, the consumer has already seen phantom rows that never existed in the source, violating the no-dirty-reads invariant.",
+        "input_fixture": "BEGIN; INSERT orders(id=99, total=1000000); flush WAL; subscribe('orders', from_position=0) in another process and read up to 1s; ROLLBACK; assert id=99 was never yielded.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SCHEMA-SILENT-ADD-COLUMN",
+        "hypothesis": "ALTER TABLE ADD COLUMN executed between two row events emits no schema event, so the consumer parses the new row with the old schema and either drops the new column silently or misaligns positional fields.",
+        "input_fixture": "INSERT users(id=1,name='a'); ALTER TABLE users ADD COLUMN email TEXT; INSERT users(id=2,name='b',email='x@y'); subscribe('users', from_position=0); assert a schema event is interleaved before the second INSERT.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-POSITION-INT-OVERFLOW",
+        "hypothesis": "position is a 32-bit/64-bit signed integer; near INT64_MAX (or after WAL wraparound), the next position wraps to a smaller value, breaking the monotonically-increasing guarantee and confusing checkpoint comparisons.",
+        "input_fixture": "Seed source so next LSN = 2^63 - 1; perform 3 INSERTs; collect positions p1,p2,p3 and assert p1 < p2 < p3 and all > 0.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-TABLE-SUBSCRIBE",
+        "hypothesis": "subscribe() on a table with zero rows and from_position=None either raises, hangs forever without heartbeat, or returns a sentinel position that later fails checkpoint() validation.",
+        "input_fixture": "CREATE TABLE empty_t(id INT PRIMARY KEY); it = subscribe('empty_t', from_position=None); assert it is a valid iterator that yields heartbeats or blocks gracefully and that checkpoint(initial_position) succeeds.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED-FROM-POSITION",
+        "hypothesis": "from_position accepts object but no type validation; passing a dict, negative int, future LSN, or a position from a different table silently succeeds and either replays from 0, hangs, or yields events from the wrong table.",
+        "input_fixture": "subscribe('users', from_position={'evil': True}); subscribe('users', from_position=-1); subscribe('users', from_position=10**30); assert each raises a typed error rather than degrading silently.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DUPLICATE-ON-RECONNECT",
+        "hypothesis": "After a transient network drop between subscriber and CDC, the server resends the in-flight batch but the client had already yielded those events to the application without checkpointing, producing duplicates and breaking exactly-once.",
+        "input_fixture": "INSERT 1000 rows; subscribe and consume 500 without checkpoint; kill TCP socket; reconnect via subscribe(table, last_seen_position); assert no event from the first 500 is re-yielded OR exactly-once is documented as at-least-once.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-MULTI-NODE",
+        "hypothesis": "On a multi-primary or logical-replica source, position is derived from wall-clock timestamps; NTP skew between nodes causes a later commit on node B to receive a smaller position than an earlier commit on node A, violating monotonicity and reorder rules.",
+        "input_fixture": "Set node A clock to T+5s, node B to T; commit on A at A-wallclock=T+5, then commit on B at B-wallclock=T+1; subscribe and assert positions strictly increase in commit order.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SCHEMA-DROP-RENAME",
+        "hypothesis": "DROP COLUMN or RENAME COLUMN emits no schema event (only ADD is handled), so old parsers continue mapping the now-removed/renamed field to NULL or to the wrong column without warning.",
+        "input_fixture": "CREATE TABLE t(a INT, b INT); INSERT (1,2); ALTER TABLE t DROP COLUMN b; ALTER TABLE t RENAME COLUMN a TO c; INSERT (3); subscribe('t', from_position=0); assert two schema events appear before the final INSERT.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AMPLIFICATION-LARGE-TXN",
+        "hypothesis": "A single transaction that updates 10M rows is buffered in memory before commit-order release, OOM-killing the CDC process and losing all subsequent events, or releasing partial batches that violate atomicity of the transaction.",
+        "input_fixture": "BEGIN; UPDATE big_table SET v = v+1 WHERE TRUE; -- 10M rows; COMMIT; subscribe and assert either all 10M events appear contiguously in order OR backpressure kicks in without process death.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CHECKPOINT-REGRESSION",
+        "hypothesis": "checkpoint(p) accepts a position smaller than the previously persisted checkpoint, silently rewinding durable state; on next subscribe the consumer replays already-acknowledged events as duplicates.",
+        "input_fixture": "checkpoint(100); checkpoint(50); restart; subscribe('t', from_position=read_persisted_checkpoint()); assert call 2 either raised or was ignored and durable checkpoint remains 100.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SCHEMA-INJECTION-TABLE-NAME",
+        "hypothesis": "table parameter is interpolated into an internal SQL/replication query without quoting; a crafted name like 'users; DROP PUBLICATION cdc_pub--' executes attacker SQL on the source DB or escapes to a different table's stream.",
+        "input_fixture": "subscribe(\"users\\\"; SELECT pg_sleep(10)--\", from_position=0); schema(\"users'); DROP TABLE secrets;--\"); assert input is rejected or safely escaped and no unintended SQL executes.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CRED-LEAK-IN-SCHEMA",
+        "hypothesis": "schema(table) returns the raw connection metadata or DSN (including password) under a key like 'source_uri' or in error messages on auth failure, leaking source DB credentials to any consumer holding a CDC handle.",
+        "input_fixture": "s = schema('users'); assert no value in s (recursively) matches a password regex; force schema('nonexistent') and assert exception message contains no credential.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-XACT-REORDER-RACE",
+        "hypothesis": "Two transactions T1 and T2 commit in order T1\u2192T2 but the WAL reader races the commit-log scan; if T2's WAL record is flushed to the subscriber buffer before T1's LSN is acknowledged, the stream emits T2's row before T1's, violating commit-order invariant. This is reproducible when T1 holds a large TOAST value that delays WAL flush.",
+        "input_fixture": "Thread A: INSERT INTO orders(id,payload) VALUES(1, repeat('x',8192)) -- T1\nThread B: INSERT INTO orders(id,payload) VALUES(2, 'y') -- T2\nBoth commit within 1ms. subscribe('orders', from_position=0) -- observe event IDs in emitted stream",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-POS-INT-OVERFLOW",
+        "hypothesis": "If position is stored as a 32-bit signed integer internally (e.g., a sequence counter or LSN truncated to int32), running the stream past ~2.1 billion events causes the position to wrap to negative values or zero. A consumer calling checkpoint(overflowed_pos) and then resuming from that position would either get duplicate delivery of all events from 0 or skip forward incorrectly, breaking the exactly-once and monotonic guarantees.",
+        "input_fixture": "Simulate: for i in range(2**31 + 10): source_db.execute('INSERT INTO t(v) VALUES(?)', [i])\nevents = list(cdc.subscribe('t', from_position=0))\nassert events[-1].position > events[-2].position  # expect monotonic, may fail at wrap",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK-SKEW-LSN",
+        "hypothesis": "If the CDC implementation derives position from wall-clock timestamps (common in naive implementations) rather than true WAL LSNs, an NTP correction or leap-second rollback causes the position to decrease momentarily. A consumer that checkpointed at T=1000 and resumes sees from_position=1000 mapped to an earlier physical WAL slot, causing either missed events or violation of monotonic ordering.",
+        "input_fixture": "cdc = ClockBasedCDC(db)\ncdc.subscribe('t', from_position=time.time())\nsudo ntpdate -u pool.ntp.org  # force -500ms correction during streaming\nnext(iterator)  # observe returned position vs previous position",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DIRTY-READ-SAVEPOINT",
+        "hypothesis": "PostgreSQL SAVEPOINT + ROLLBACK TO SAVEPOINT within a long-running transaction can leave intermediate row versions visible in the replication stream before the outer transaction commits. A CDC implementation that reads pg_logical_slot_peek_changes without filtering by xid commit status may emit these savepoint-intermediate states as real events, violating the no-dirty-reads invariant.",
+        "input_fixture": "conn.execute('BEGIN')\nconn.execute(\"INSERT INTO accounts(id,balance) VALUES(99, 1000)\")\nconn.execute('SAVEPOINT sp1')\nconn.execute(\"UPDATE accounts SET balance=0 WHERE id=99\")\n# CDC subscribe iterator polled HERE before ROLLBACK TO SAVEPOINT\nconn.execute('ROLLBACK TO SAVEPOINT sp1')\nconn.execute('COMMIT')\n# assert: balance=0 event must NOT appear in stream",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-2PC-PARTIAL-COMMIT",
+        "hypothesis": "In a distributed two-phase-commit scenario (e.g., XA transactions), PREPARE TRANSACTION succeeds but COMMIT PREPARED is delayed or issued on a different connection. A CDC consumer polling between PREPARE and COMMIT may observe the row change in the WAL stream under some logical replication plugins that flush on PREPARE, then receive a rollback later, delivering a phantom committed event that never truly committed.",
+        "input_fixture": "conn.execute(\"BEGIN\")\nconn.execute(\"INSERT INTO ledger(txid, amount) VALUES('xa-1', 500)\")\nconn.execute(\"PREPARE TRANSACTION 'xa-1'\")\n# CDC polled here \u2014 does the insert appear?\ntime.sleep(5)\nconn.execute(\"ROLLBACK PREPARED 'xa-1'\")\n# assert: no ledger insert event in stream",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SCHEMA-SILENT-ADD-COL",
+        "hypothesis": "If ALTER TABLE ADD COLUMN has a DEFAULT value, PostgreSQL historically rewrites no rows on disk (pg 11+). The CDC implementation may see no DDL WAL record (or skip schema events for zero-row-rewrite DDLs), causing schema() to return the old column list while subsequent DML events carry the new column silently. A consumer calling schema() before the ALTER and not re-calling it will silently misparse new rows.",
+        "input_fixture": "cdc.subscribe('users', from_position=0)\nschema_before = cdc.schema('users')  # {'id': 'int', 'name': 'text'}\nsource_db.execute(\"ALTER TABLE users ADD COLUMN score INT DEFAULT 0\")\nsource_db.execute(\"INSERT INTO users(id,name) VALUES(42,'alice')\")\nevent = next(iterator)\nassert 'score' in event.columns  # may silently omit score\nassert schema_before != cdc.schema('users')  # schema event MUST have fired",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CHECKPOINT-REPLAY-DUPE",
+        "hypothesis": "If checkpoint() persists a position that is inclusive of the last event already processed (off-by-one), then a consumer that crashes and resumes from that checkpoint will receive the last event a second time. This breaks the exactly-once delivery invariant. The boundary is: does from_position mean 'start after this position' or 'start at this position'?",
+        "input_fixture": "events = []\nfor e in cdc.subscribe('t', from_position=0):\n    events.append(e)\n    cdc.checkpoint(e.position)  # checkpoint at current event\n    if len(events) == 5: break\n# simulate crash + resume\nresumed = list(cdc.subscribe('t', from_position=load_checkpoint()))\nassert resumed[0].position != events[-1].position  # last event must NOT repeat",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY-TABLE-SUBSCRIBE",
+        "hypothesis": "Calling subscribe() on a table that has never had any rows should return an iterator that blocks or returns immediately without error, and must not raise. The from_position=None or from_position=0 boundary case may dereference a null LSN pointer in C-extension logical replication plugins, causing a segfault or returning a corrupted initial position that breaks future monotonic guarantees.",
+        "input_fixture": "source_db.execute('CREATE TABLE empty_table(id INT)')\nit = cdc.subscribe('empty_table', from_position=None)\ntry:\n    nxt = next(it)  # should block or StopIteration, not crash\nexcept StopIteration:\n    pass\npos = cdc.checkpoint(0)  # checkpoint at genesis\nsource_db.execute('INSERT INTO empty_table VALUES(1)')\nevt = next(cdc.subscribe('empty_table', from_position=0))\nassert evt.position > 0",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONEXISTENT-TABLE-SCHEMA",
+        "hypothesis": "Calling schema() on a table name that does not exist (empty string, SQL-injection string, unicode homoglyph of a real table, or a dropped table) must raise a well-defined exception and must not return a stale cached schema. If schema() silently returns an empty dict {} for missing tables, a consumer could interpret this as 'no columns' rather than 'table does not exist', masking silent schema-event loss after a DROP TABLE.",
+        "input_fixture": "schema1 = cdc.schema('users')  # valid table\nsource_db.execute('DROP TABLE users')\nschema2 = cdc.schema('users')  # must raise or return sentinel, not stale dict\nassert schema2 != schema1  # stale cache violates schema-event invariant\ncdc.schema('')  # empty string \u2014 must raise ValueError, not crash\ncdc.schema('users; DROP TABLE accounts--')  # injection attempt",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONCURRENT-CHECKPOINT-RACE",
+        "hypothesis": "If two consumer threads call checkpoint() concurrently with different positions (one lagging, one ahead), a non-atomic write allows the lagging checkpoint to overwrite the advanced one. On crash-recovery, the consumer resumes from the older position and re-delivers already-processed events, breaking exactly-once. The attack requires no locks around the checkpoint file write.",
+        "input_fixture": "import threading\npositions = [100, 200, 150, 300, 50]\ndef spam_checkpoint(pos): cdc.checkpoint(pos)\nthreads = [threading.Thread(target=spam_checkpoint, args=(p,)) for p in positions]\n[t.start() for t in threads]\n[t.join() for t in threads]\nfinal_pos = load_checkpoint()\nassert final_pos == max(positions)  # only the highest position should persist",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RENAME-TABLE-NO-SCHEMA-EVENT",
+        "hypothesis": "ALTER TABLE RENAME TO is a metadata-only operation that may not generate a standard DDL change event in some logical replication plugins (e.g., pgoutput with publication FOR ALL TABLES). After the rename, subscribe() called with the old table name should either fail fast or emit a schema event. If it silently continues delivering rows under the old name (because the slot still tracks the relation OID), consumers never learn the table was renamed and parse events incorrectly.",
+        "input_fixture": "it = cdc.subscribe('products', from_position=0)\nsource_db.execute('ALTER TABLE products RENAME TO catalog_items')\nsource_db.execute(\"INSERT INTO catalog_items(id,name) VALUES(1,'x')\")\nevt = next(it)\n# assert: either SchemaChangeEvent fires first OR subscribe raises\nassert hasattr(evt, 'schema_change') or evt.table == 'catalog_items'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AMPLIFICATION-WIDE-TABLE",
+        "hypothesis": "Subscribing to a table with thousands of columns and millions of existing rows with from_position=0 (full-table replay) may cause unbounded memory growth if the iterator pre-buffers events. An adversary with write access to the source database can INSERT rows with 1600 columns each carrying 8KB values, causing the subscriber buffer to exhaust heap memory before yielding a single event to the caller.",
+        "input_fixture": "source_db.execute('CREATE TABLE wide(' + ','.join(f'c{i} TEXT' for i in range(1600)) + ')')\nfor _ in range(10000):\n    source_db.execute('INSERT INTO wide VALUES(' + ','.join([\"'\" + 'x'*8192 + \"'\"]*1600) + ')')\nimport resource\nresource.setrlimit(resource.RLIMIT_AS, (512*1024*1024, 512*1024*1024))\nit = cdc.subscribe('wide', from_position=0)  # must not OOM before first yield\nfirst = next(it)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DOUBLE-COMMIT-RACE",
+        "hypothesis": "Two concurrent threads call checkpoint() on same position; CDC emits duplicate events when resuming",
+        "input_fixture": "T1: subscribe(table='users', from_position=100) \u2192 [evt1, evt2]; checkpoint(100); T2: checkpoint(100) in parallel; subscribe(table='users', from_position=100) \u2192 [evt1, evt2, evt1, evt2]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-POSITION-INTEGER-OVERFLOW",
+        "hypothesis": "Position counter wraps after 2^63-1, causing jump backward or collision",
+        "input_fixture": "Emit 2^63 events, position becomes 9223372036854775807; next event wraps to -9223372036854775808 or 0; subscribe(from_position=9223372036854775807) misses final events",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CHECKPOINT-REGRESSION-CLOCK-SKEW",
+        "hypothesis": "System clock goes backward 1 hour; checkpoint(pos=X, timestamp=T) succeeds, then resume from persisted checkpoint retrieves old timestamp-based position",
+        "input_fixture": "subscribe(from_position=TS:2026-04-19T12:00:00Z) \u2192 [evt@2026-04-19T12:05]; checkpoint(TS:2026-04-19T12:05); system clock jumps to 2026-04-19T11:00; restart \u2192 checkpoint read returns TS:2026-04-19T11:00; subscribe(from_position=TS:2026-04-19T11:00) replays events",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNCOMMITTED-DIRTY-READ",
+        "hypothesis": "Long-running transaction T1 modifies rows but hasn't committed; CDC stream includes T1 changes; T1 rolls back; consumers see stale deleted rows",
+        "input_fixture": "BEGIN T1; UPDATE users SET status='inactive' WHERE id=5; [CDC subscribe \u2192 evt(id=5, status='inactive')]; ROLLBACK T1; Downstream consumer persists status='inactive' but source has status='active'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TRANSACTION-REORDER-RACE",
+        "hypothesis": "Two concurrent commits T1(INSERT id=1) and T2(INSERT id=2); T2 commits first but stream emits T1 first due to race in log flush",
+        "input_fixture": "T1 starts first; T2 starts after; T2 COMMIT succeeds at 2026-04-19T12:00:00.100Z; T1 COMMIT succeeds at 2026-04-19T12:00:00.101Z; subscribe returns [T2, T1] violating commit order",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-TABLE-EDGE-CASE",
+        "hypothesis": "Call subscribe on empty table from_position=0; returns cached stale data from previous different table or crashes silently",
+        "input_fixture": "CREATE TABLE empty_table (id INT); subscribe(table='empty_table', from_position=0) \u2192 Iterator should yield nothing but returns [evt_id=1, evt_id=2] from orphaned cache",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SCHEMA-ADD-SILENT",
+        "hypothesis": "New column added to source table; CDC never emits schema event; consumer parser silently ignores new column or crashes",
+        "input_fixture": "schema(table='orders') \u2192 {columns: [id, amount]}; ALTER TABLE orders ADD COLUMN discount DECIMAL(5,2); [No schema event emitted]; subscribe returns events with {id, amount} only, dropping discount",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CHECKPOINT-BEFORE-POSITION",
+        "hypothesis": "Resume from_position=50 but last checkpoint was at position=100; stream rolls back and replays events 50-100, duplicating previously-consumed mutations",
+        "input_fixture": "checkpoint(position=100); [restart]; subscribe(from_position=50) \u2192 [evt@51, evt@52, ..., evt@100, evt@101] \u2014 replays 50 already-consumed events",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SCHEMA-DROP-UNNOTICED",
+        "hypothesis": "Column removed from source; CDC emits change event without schema event; consumer parser fails on missing field, losing atomicity",
+        "input_fixture": "schema(table='users') \u2192 {id, name, deprecated_field}; ALTER TABLE users DROP COLUMN deprecated_field; INSERT (42, 'Alice'); CDC emits evt{id, name, deprecated_field=NULL} without event",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MULTIROW-TRANSACTION-SPLIT",
+        "hypothesis": "Single ACID transaction with 3 INSERTs becomes 3 separate CDC events; if consumer crashes between event 1 and 2, atomicity violated on recovery",
+        "input_fixture": "BEGIN; INSERT users VALUES(1); INSERT users VALUES(2); INSERT users VALUES(3); COMMIT; subscribe returns [evt_pos=X(id=1), evt_pos=X+1(id=2), evt_pos=X+2(id=3)]; consumer persists checkpoint(X); crash; resume sees partial transaction",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-POSITION-PERSISTENCE-RACE",
+        "hypothesis": "Checkpoint writes position=150 to disk but stream reader concurrently reads position=149; resume from 149 duplicates events 149-150",
+        "input_fixture": "checkpoint(150) [partial disk write]; [concurrent checkpoint file read during flush]; reader gets 149; subscribe(from_position=149) \u2192 replays events 149-150",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MALFORMED-POSITION-TYPE",
+        "hypothesis": "Pass string 'abc' instead of expected numeric position; type coercion fails silently or default to 0, causing full replay of historical events",
+        "input_fixture": "subscribe(table='users', from_position='abc') \u2192 No validation; coerces to position=0 or crashes; returns entire historical event stream",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ROLLBACK-AMPLIFICATION",
+        "hypothesis": "Transaction rolls back; CDC already emitted change event; transaction retried and succeeds; downstream sees identical mutation twice with different positions",
+        "input_fixture": "BEGIN T1; UPDATE users SET balance=100 WHERE id=5; [CDC emits evt_pos=200(id=5, balance=100)]; ROLLBACK; [retry]; UPDATE users SET balance=100 WHERE id=5; COMMIT; [CDC emits evt_pos=201(id=5, balance=100)] \u2014 exact duplicate",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK-SKEW-POSITION-INVERSION",
+        "hypothesis": "System clock moves backward 10 seconds; timestamp-based position at T2 becomes less than previously-emitted T1; stream position inverts, breaking monotonicity guarantee",
+        "input_fixture": "subscribe from TS:2026-04-19T12:00:00Z \u2192 [evt@T=12:00:05, evt@T=12:00:10]; clock jumps back to 2026-04-19T11:59:55; next CDC position=TS:2026-04-19T11:59:55 < TS:2026-04-19T12:00:10",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "cdc.tx.committed",
+        "required_attributes": [
+          "txid",
+          "events",
+          "last_pos"
+        ]
+      },
+      {
+        "event_name": "cdc.tx.rolled.back",
+        "required_attributes": [
+          "txid",
+          "reason"
+        ]
+      },
+      {
+        "event_name": "cdc.schema.evolved",
+        "required_attributes": [
+          "table",
+          "old_version",
+          "new_version"
+        ]
+      },
+      {
+        "event_name": "cdc.checkpoint.advanced",
+        "required_attributes": [
+          "group",
+          "from_pos",
+          "to_pos"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "cdc.events.published",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "table",
+          "op"
+        ]
+      },
+      {
+        "name": "cdc.tx.commit.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 30,
+        "label_keys": [
+          "table",
+          "result"
+        ]
+      },
+      {
+        "name": "cdc.last.position",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "table"
+        ]
+      },
+      {
+        "name": "cdc.consumer.lag",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "group",
+          "table"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "cdc.tx.commit",
+        "required_attributes": [
+          "tx.id",
+          "tx.events",
+          "tx.last_pos"
+        ]
+      },
+      {
+        "operation_name": "cdc.subscribe",
+        "required_attributes": [
+          "table",
+          "from.pos",
+          "events"
+        ]
+      },
+      {
+        "operation_name": "cdc.schema.evolve",
+        "required_attributes": [
+          "table",
+          "new.version"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol surface matches catalog api_signature verbatim; invariants CDC-INV-01..04 are cited and enforced in code paths (monotonic pos under lock, per-tx staging, schema versioning, monotonic checkpoint). Minor: `schema()` return typed as dict[str,object] vs catalog `dict` \u2014 compatible."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "Covers all four invariants with enforcement, plus transactional staging, schema evolution, per-group checkpoints, introspection, and a Connector extension point. Event shape validators present. Missing only persistence backend, but spec explicitly scopes that to subclassing."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "All violations raise ChangeDataCaptureInvariantError with explicit CDC-INV-NN citation, offending value/type, and remediation hint (e.g., 'use evolve_schema()', 'split into smaller transactions'). Consistent, actionable, greppable."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Protocol + runtime_checkable enables substitution; Connector accepts transforms; storage backends documented as subclass extension; checkpoint groups allow multiple independent consumers. Zero import-time I/O. Snapshot iterator decouples readers from writers."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe via RLock, bounded staging (_STAGED_LIMIT), terminal txid tracking prevents double-commit, rollback tolerates unknown txid for cleanup paths. In-memory only (documented); no metrics emission hooks wired though spec names them. Adequate for reference impl."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Protocol signature, namespace intent, invariants, extension contract, and consumption example all align with catalog JSON. __all__ exports the public surface. Invariant text in docstrings mirrors catalog wording."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'dual-write pattern' is used in the first sentence without a one-line definition \u2014 junior devs may not yet know why writing to DB then broker is broken, so the problem being solved stays abstract",
+          "The API surface shows a Python `Protocol` class but never explains that Protocol is a structural interface (like an abstract base class) \u2014 a junior may try to instantiate it directly",
+          "The usage example calls `cdc.checkpoint_of()` with no argument after explaining `checkpoint_group(group)` \u2014 the implicit default group is never named, so the example and the API description feel inconsistent"
+        ],
+        "rewrite_suggestion": "Add a two-sentence callout at the top of 'What it does' explaining the dual-write problem in concrete terms ('if you write to Postgres then write to Kafka and the second write crashes, downstream never sees the row'). Add a comment to the Protocol block: `# Protocol = structural interface; do not instantiate directly \u2014 use InMemoryChangeDataCapture`. In the usage example, make the group explicit: `cdc.checkpoint_of(group=\"default\")`."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "Thread safety claims 'serialises every mutation via a re-entrant lock' but says nothing about what happens when the storage backend is swapped to a distributed WAL (Kafka, Postgres replication slot) \u2014 the locking invariant doesn't port, yet the extension contract says 'plug in by subclassing'",
+          "The exactly-once guarantee is stated for the reference impl but the invariant table says 'MUST appear exactly once' as if it's a Protocol-level contract \u2014 it's actually a property of the commit model, and a naive subclass can violate it without the Protocol catching it",
+          "Schema evolution path (`evolve_schema`) is mentioned but the consumer-side contract for handling a `schema` event mid-stream (reload parser, replay, skip?) is left entirely to the consumer; the only guidance is the usage example's `continue` branch"
+        ],
+        "rewrite_suggestion": "Add a note to the Extension Contract section: 'Subclasses that replace `_log` with a distributed backend must re-establish their own ordering and exactly-once semantics; the Python lock does not migrate.' Annotate CDC_INV_01 in the invariant table with '(reference impl guarantee via lock; connector authors bear responsibility for distributed backends).' Add a two-bullet schema-event consumer contract: (1) consumer must reload parser before processing the next data event, (2) replay-from-checkpoint is safe because schema events are also replayed."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "Authentication and authorization for `subscribe()` are not mentioned \u2014 the doc acknowledges PII is published but gives no guidance on who is permitted to call subscribe or how access is gated",
+          "Encryption at rest and in transit are absent; for a primitive that explicitly calls out PII risk, the omission is a gap auditors will flag as 'not considered'",
+          "The checkpoint durability warning ('stores checkpoints in memory only') is framed as a reliability issue but not as a security issue \u2014 a consumer restart without durable checkpoints causes redelivery, which means PII events are reprocessed without a record that they already were"
+        ],
+        "rewrite_suggestion": "Add an 'Access Control' bullet to Security Considerations: 'Production deployments MUST gate `subscribe()` behind service-level auth (e.g., mTLS or signed tokens); the reference impl performs no access checks.' Add an 'Encryption' bullet: 'Event payloads MUST be encrypted in transit; if the storage backend is durable, at-rest encryption is required for any table classified above PUBLIC.' Reframe the checkpoint durability note to include the audit angle: 'An unacknowledged checkpoint means PII events will be reprocessed on restart; durable checkpoints are also an audit trail requirement.'"
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Four metrics are named but the export mechanism is not specified \u2014 SREs need to know whether these are Prometheus counters, StatsD, OTEL, or something else before they can wire up dashboards and alerts",
+          "The alert section lists three primary symptoms but provides no recovery actions \u2014 'sustained rise in cdc.consumer.lag' tells you something is wrong but not whether to restart the consumer, roll back a schema change, or page the upstream team",
+          "No SLO baseline or latency target is given for consumer lag \u2014 without a number ('lag should not exceed X ms at p99'), SREs cannot set a meaningful alert threshold"
+        ],
+        "rewrite_suggestion": "Add a 'Metrics export' line: 'The reference impl emits via [OTEL/Prometheus/StatsD \u2014 specify]; production deployments that swap backends MUST export the same four signal names.' Expand each alert symptom with a one-line response: e.g., 'sustained cdc.consumer.lag rise \u2192 check consumer health first; if healthy, check rejected-commit rate for upstream schema mismatch.' Add a 'Default SLO targets (reference impl)' table with p50/p99 lag and throughput baselines from the benchmark results, even if approximate."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The business value (no lost events, no duplicate processing, safe schema rollout) is implied but never stated as a benefit sentence \u2014 a PM writing a roadmap item or explaining ROI to stakeholders has to reverse-engineer it from the technical text",
+          "Sections on LSN/position model, TLA+ spec, and thread-safety internals add length without PM-relevant signal \u2014 the doc reads as one document serving all audiences rather than layered by role",
+          "The 'Alternatives considered and rejected' section is the most PM-friendly content in the doc but is buried near the bottom after several dense technical sections"
+        ],
+        "rewrite_suggestion": "Add a three-bullet 'Business value' block immediately after 'Purpose': (1) eliminates event loss from dual-write races, (2) enables safe rebuild of any downstream system from the source of record, (3) schema change events prevent silent data corruption in consumers. Move 'Alternatives considered and rejected' to just below 'When to use / when NOT to use' so decision context appears before the technical detail. Add a role-based reading guide at the top: 'PMs: read through Alternatives. Engineers: continue to API surface. SREs: jump to Operational characteristics.'"
+      }
+    ]
+  }
+}

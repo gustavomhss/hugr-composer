@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.376597+00:00",
+  "source_tool": "api_design/add_batch_endpoint.py",
+  "origin_candidate": {
+    "docstring": "Thread-safe in-memory idempotency store for batch requests.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 524,
+    "line_start": 499,
+    "name": "IdempotencyStore",
+    "origin": "string_template",
+    "shape_hash": "3dd9ed3b875b3ec7",
+    "size_bytes": 830,
+    "size_lines": 26,
+    "tool": "api_design/add_batch_endpoint.py",
+    "method_count": 4,
+    "complexity": 3,
+    "disqualified": false,
+    "primitive_score": 39840
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

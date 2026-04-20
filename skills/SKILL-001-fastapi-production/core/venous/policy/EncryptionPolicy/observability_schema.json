@@ -1,0 +1,15 @@
+{
+  "logs": [
+    {"event_name": "encryption.policy.bound", "required_attributes": ["data_class", "cipher"]},
+    {"event_name": "encryption.resolve.failed", "required_attributes": ["data_class"]}
+  ],
+  "metrics": [
+    {"name": "encryption.bindings", "metric_type": "counter", "unit": "1", "cardinality_bound": 200, "label_keys": ["cipher"]},
+    {"name": "encryption.resolve", "metric_type": "counter", "unit": "1", "cardinality_bound": 500, "label_keys": ["data_class"]},
+    {"name": "encryption.tls.endpoints", "metric_type": "gauge", "unit": "1", "cardinality_bound": 100, "label_keys": []}
+  ],
+  "spans": [
+    {"operation_name": "encryption.bind", "required_attributes": ["data_class"]},
+    {"operation_name": "encryption.resolve", "required_attributes": ["data_class"]}
+  ]
+}

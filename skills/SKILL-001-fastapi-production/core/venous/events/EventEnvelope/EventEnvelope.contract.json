@@ -1,0 +1,31 @@
+{
+  "name": "EventEnvelope",
+  "namespace": "events",
+  "purpose": "Canonical CloudEvents 1.0 shape that normalizes id, source, type, time and payload so downstream handlers parse the same structure regardless of transport.",
+  "api_signature": "from dataclasses import dataclass\nfrom typing import Any\n\n@dataclass(frozen=True)\nclass EventEnvelope:\n    id: str\n    source: str\n    type: str\n    specversion: str = '1.0'\n    datacontenttype: str | None = None\n    dataschema: str | None = None\n    subject: str | None = None\n    time: str | None = None\n    data: Any = None\n    extensions: dict[str, str] | None = None",
+  "invariants": [
+    "Producers MUST make the tuple (source, id) unique per distinct occurrence so consumers can deduplicate.",
+    "Resending the same logical event ALWAYS reuses the original id so retries do not appear as new occurrences.",
+    "specversion MUST equal '1.0' for envelopes produced under this contract.",
+    "Extension attribute names MUST follow the same naming rules as core attributes and CANNOT collide with reserved names.",
+    "time when present SHALL be an RFC 3339 timestamp in UTC with no timezone offset ambiguity."
+  ],
+  "extension_contract": "Add custom attributes by registering an extension name in the extensions map following CloudEvents Extension Context Attributes rules; consumers extend by composing filters on type or subject via a decorator that wraps the handler.",
+  "consumption_example": "def is_retry(e: EventEnvelope, seen: set[tuple[str, str]]) -> bool:\n    key = (e.source, e.id)\n    if key in seen:\n        return True\n    seen.add(key)\n    return False",
+  "sources": [
+    {
+      "source": "CloudEvents 1.0.2 Core Specification",
+      "locator": "github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md sections Required Attributes, Optional Attributes"
+    },
+    {
+      "source": "CloudEvents 1.0.2 Core Specification",
+      "locator": "github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md Extension Context Attributes section"
+    }
+  ],
+  "why_essential": "Dedup, replay and audit all depend on a stable identity tuple; if each producer invents its own event shape the skill cannot compose cross transport without adapters everywhere.",
+  "alternatives_considered": [
+    "Plain JSON blobs per producer which breaks dedup and forces per consumer parsing rules",
+    "AsyncAPI style schema registry coupling which pins transports earlier than needed"
+  ],
+  "maturity": "battle_tested"
+}

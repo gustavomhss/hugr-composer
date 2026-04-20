@@ -1,0 +1,744 @@
+{
+  "name": "CorrelationContext",
+  "namespace": "obs",
+  "maturity": "battle_tested",
+  "builder_agent_id": 9,
+  "catalog_entry_sha256": "53f6fc0389ecd29d85b9306ec051aa1e361ed2a8bbb7097c45444b98db4570ff",
+  "files": [
+    {
+      "path": "obs/CorrelationContext/CorrelationContext.contract.json",
+      "sha256": "52c8b0c697c8121d93fb8d2ba178f644ea4efad84292b469807689ba87feaa71",
+      "size_bytes": 3622,
+      "kind": "contract_json"
+    },
+    {
+      "path": "obs/CorrelationContext/CorrelationContext.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "obs/CorrelationContext/CorrelationContext.md",
+      "sha256": "b74812e51bb1158195dbac3068f8a4c6397b7f4f18587831c4c2c1684aa91c58",
+      "size_bytes": 3386,
+      "kind": "spec_md"
+    },
+    {
+      "path": "obs/CorrelationContext/CorrelationContext.py",
+      "sha256": "7894dae8006acbdf1f9f225f0d836a6fac927edbe43cb9fe34a6c1d81a28ca42",
+      "size_bytes": 7100,
+      "kind": "impl"
+    },
+    {
+      "path": "obs/CorrelationContext/behavioral_CorrelationContext.py",
+      "sha256": "ec391270031f4d5dada08943d129761db678fc9e4b7093c8ec1e66929bdb8f51",
+      "size_bytes": 2167,
+      "kind": "behavioral"
+    },
+    {
+      "path": "obs/CorrelationContext/chaos_CorrelationContext.py",
+      "sha256": "8ca24b59a7bfd76ba4bc1e293c4bc2ca80ef0c1cdba8941cd2e74a6f2f31179c",
+      "size_bytes": 2585,
+      "kind": "chaos"
+    },
+    {
+      "path": "obs/CorrelationContext/conftest.py",
+      "sha256": "7c56f31974b08ec9142aebbd7c9995aae21ceef4211149bc0c595a4c4855ac4c",
+      "size_bytes": 528,
+      "kind": "test"
+    },
+    {
+      "path": "obs/CorrelationContext/dashboard.json",
+      "sha256": "8869a43574b23bb5041769e97ef7059db3825639d71796766fd4f0c3ffb5a872",
+      "size_bytes": 405,
+      "kind": "dashboard"
+    },
+    {
+      "path": "obs/CorrelationContext/invariant_bindings.json",
+      "sha256": "d9fb7688424730fabe3720b52ae9ed69c631e3e964846254184b290ebed56a3d",
+      "size_bytes": 2430,
+      "kind": "test"
+    },
+    {
+      "path": "obs/CorrelationContext/metamorphic_CorrelationContext.py",
+      "sha256": "64856a83f17ff56a82ff37ac6133cb10b7d1f1292e4f1a22b150816bceb4f6d1",
+      "size_bytes": 1593,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "obs/CorrelationContext/observability_CorrelationContext.py",
+      "sha256": "647f3407821000559437b39c46c5cda4177ea35086ca3d95987820ef4a7adcbf",
+      "size_bytes": 1401,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/CorrelationContext/observability_schema.json",
+      "sha256": "50d0dbb4627fd3684d858d70db0c5e041344c563cf1bc7617563fd2589074016",
+      "size_bytes": 914,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/CorrelationContext/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "obs/CorrelationContext/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "obs/CorrelationContext/test_CorrelationContext.py",
+      "sha256": "4b47aeb7109bec546a1c64a906154c4c3d5cc105339e3e935301f56c97587a71",
+      "size_bytes": 6189,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "CORR_INV_01",
+      "invariant_text": "The request_id MUST be a lowercase hex or ULID string of at least 16 characters and SHALL be stable for the entire request lifecycle.",
+      "confirms_test": "test_inv_request_id_stable_confirms",
+      "prevents_test": "test_inv_request_id_stable_prevents",
+      "under_failure_test": "test_inv_request_id_stable_under_failure"
+    },
+    {
+      "invariant_id": "CORR_INV_02",
+      "invariant_text": "Baggage values MUST be ASCII and each individual value CANNOT exceed 8192 bytes per W3C Baggage specification.",
+      "confirms_test": "test_inv_baggage_limits_confirms",
+      "prevents_test": "test_inv_baggage_limits_prevents",
+      "under_failure_test": "test_inv_baggage_limits_under_failure"
+    },
+    {
+      "invariant_id": "CORR_INV_03",
+      "invariant_text": "Activating a context MUST restore the prior context on exit even if an exception is raised.",
+      "confirms_test": "test_inv_activate_restores_confirms",
+      "prevents_test": "test_inv_activate_restores_prevents",
+      "under_failure_test": "test_inv_activate_restores_under_failure"
+    },
+    {
+      "invariant_id": "CORR_INV_04",
+      "invariant_text": "When extracting from headers, an invalid traceparent value SHALL cause a new trace id to be generated and NEVER falls back to an empty trace context.",
+      "confirms_test": "test_inv_invalid_traceparent_confirms",
+      "prevents_test": "test_inv_invalid_traceparent_prevents",
+      "under_failure_test": "test_inv_invalid_traceparent_under_failure"
+    },
+    {
+      "invariant_id": "CORR_INV_05",
+      "invariant_text": "Baggage keys reserved for authentication (password, authorization, cookie) are FORBIDDEN and SHALL be stripped on ingest.",
+      "confirms_test": "test_inv_forbidden_keys_stripped_confirms",
+      "prevents_test": "test_inv_forbidden_keys_stripped_prevents",
+      "under_failure_test": "test_inv_forbidden_keys_stripped_under_failure"
+    },
+    {
+      "invariant_id": "CORR_INV_06",
+      "invariant_text": "CorrelationContext NEVER leaks across event loops; asynchronous task spawns copy-on-capture the current context via contextvars.",
+      "confirms_test": "test_inv_contextvars_isolation_confirms",
+      "prevents_test": "test_inv_contextvars_isolation_prevents",
+      "under_failure_test": "test_inv_contextvars_isolation_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 596,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1055,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 991,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 178196,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "42 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 3744,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 4126,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 70477,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 259067,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REQID-SHORT-HEX",
+        "hypothesis": "Constructing a CorrelationContext with request_id='abc123' (6 chars) should be rejected, but the implementation likely accepts any truthy string and propagates it, violating the minimum-16-char hex/ULID invariant downstream joins depend on.",
+        "input_fixture": "CorrelationContext(request_id='abc123').request_id  # expect ValueError, observe value passes through",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REQID-UPPERCASE",
+        "hypothesis": "A ULID in canonical uppercase Crockford base32 (e.g. '01ARZ3NDEKTSV4RRFFQ69G5FAV') will be accepted verbatim instead of normalized to lowercase, producing two different join keys for the same logical request across services that lowercase and those that do not.",
+        "input_fixture": "ctx = CorrelationContext.from_headers({'x-request-id': '01ARZ3NDEKTSV4RRFFQ69G5FAV'}); assert ctx.request_id.islower()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-BAGGAGE-NON-ASCII",
+        "hypothesis": "Baggage value containing UTF-8 multibyte characters ('na\u00efve=caf\u00e9') will be stored as-is and later emitted into HTTP headers, causing either a UnicodeEncodeError at egress or silent corruption, violating the ASCII-only baggage invariant.",
+        "input_fixture": "ctx.baggage()['user'] = 'caf\u00e9'; ctx.to_headers()  # W3C Baggage header must be ASCII",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-BAGGAGE-OVERSIZE",
+        "hypothesis": "A baggage value of exactly 8193 bytes (one past W3C limit) is accepted without truncation or rejection, allowing upstream services to reject the entire request or causing header amplification DoS on every downstream hop.",
+        "input_fixture": "ctx.set_baggage('k', 'A' * 8193); ctx.to_headers()  # expect ValueError; observe 8193-byte value propagated",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ACTIVATE-EXC-RESTORE",
+        "hypothesis": "When an exception is raised inside `with ctx.activate():`, the prior contextvar token is not reset in a finally block, so CorrelationContext.current() leaks the inner context to the outer scope, breaking nested request isolation.",
+        "input_fixture": "outer=CorrelationContext.current(); \ntry:\n  with new_ctx.activate(): raise RuntimeError('boom')\nexcept RuntimeError: pass\nassert CorrelationContext.current() is outer",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TRACEPARENT-MALFORMED",
+        "hypothesis": "from_headers({'traceparent': '00-INVALID-HEX-ZZ'}) silently yields trace_id=None or an empty string instead of regenerating a fresh valid trace id, producing orphan spans in the collector.",
+        "input_fixture": "ctx = CorrelationContext.from_headers({'traceparent': '00-ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ-ZZZZZZZZZZZZZZZZ-01'}); assert ctx.trace_id and len(ctx.trace_id)==32",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TRACEPARENT-EMPTY",
+        "hypothesis": "An empty traceparent header ('') or a header present with whitespace-only value takes a different code path than 'missing' and results in trace_id=None rather than a freshly minted id, violating the never-empty invariant.",
+        "input_fixture": "ctx = CorrelationContext.from_headers({'traceparent': '   '}); assert ctx.trace_id is not None",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RESERVED-AUTH-CASE",
+        "hypothesis": "Reserved-baggage stripping is case-sensitive, so headers like 'Authorization', 'COOKIE', 'Password' bypass the deny-list and are forwarded to downstream logs as baggage \u2014 a credential leak.",
+        "input_fixture": "ctx = CorrelationContext.from_headers({'baggage': 'Authorization=Bearer%20xyz,COOKIE=sid%3Dabc,Password=hunter2'}); assert 'Authorization' not in ctx.baggage() and 'COOKIE' not in ctx.baggage()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RESERVED-UNICODE-HOMOGLYPH",
+        "hypothesis": "Unicode-normalized or homoglyph variants of reserved keys (e.g. '\u0430uthorization' with Cyrillic \u0430, or 'authorizati\\u200bon') evade the deny-list and smuggle credentials through baggage.",
+        "input_fixture": "ctx = CorrelationContext.from_headers({'baggage': '\\u0430uthorization=Bearer%20xyz'}); assert all('uthorization' not in k.lower() for k in ctx.baggage())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ASYNC-LOOP-LEAK",
+        "hypothesis": "Spawning asyncio.create_task inside an activated context and awaiting it on a DIFFERENT event loop (e.g. asyncio.run_coroutine_threadsafe to another loop) causes the child task to see the PARENT loop's contextvar value rather than a proper copy, or in reverse, fails to propagate the context at all.",
+        "input_fixture": "loop2=asyncio.new_event_loop(); with ctx.activate(): fut=asyncio.run_coroutine_threadsafe(inspect_ctx(),loop2); assert fut.result().request_id==ctx.request_id",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-THREAD-NO-COPY",
+        "hypothesis": "Plain threading.Thread created inside an activated context inherits no contextvar snapshot (contextvars.copy_context() is not invoked), so the worker thread sees CorrelationContext.current() as a fresh/default context and log lines lose the request_id \u2014 breaking the stability invariant for the request lifecycle.",
+        "input_fixture": "with ctx.activate(): t=threading.Thread(target=lambda: captured.append(CorrelationContext.current().request_id)); t.start(); t.join(); assert captured[0]==ctx.request_id",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HEADERS-ROUNDTRIP-MUTATION",
+        "hypothesis": "from_headers(to_headers(ctx)) does not round-trip: percent-encoding of ',' or '=' inside baggage values is lost, producing a different baggage dict and thus a different request_id\u2194baggage join key after one hop.",
+        "input_fixture": "ctx.set_baggage('k','a,b=c'); ctx2=CorrelationContext.from_headers(ctx.to_headers()); assert ctx2.baggage()['k']=='a,b=c'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REQID-MUTATION-MIDFLIGHT",
+        "hypothesis": "If request_id is backed by a mutable contextvar without a frozen wrapper, a downstream tool can call ctx._set_request_id(...) or mutate ctx.__dict__ mid-request, violating lifecycle stability and forking log streams.",
+        "input_fixture": "orig=ctx.request_id; ctx.__dict__['request_id']='deadbeefdeadbeef'; assert CorrelationContext.current().request_id==orig",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HEADER-INJECTION-CRLF",
+        "hypothesis": "A baggage value containing '\\r\\nSet-Cookie: sid=evil' is not stripped on to_headers(), enabling HTTP response-splitting / header injection when the context is serialized into outgoing requests.",
+        "input_fixture": "ctx.set_baggage('x','a\\r\\nSet-Cookie: sid=evil'); h=ctx.to_headers(); assert '\\r' not in h.get('baggage','') and '\\n' not in h.get('baggage','')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-STALE-REQID",
+        "hypothesis": "from_headers accepts an arbitrary externally-supplied x-request-id without any freshness check, so an attacker can replay the same id across thousands of requests, collapsing distinct requests into one in observability dashboards (amplification of the original incident's blast radius).",
+        "input_fixture": "for _ in range(1000): CorrelationContext.from_headers({'x-request-id':'00000000000000000000000000000000'})  # all share same id; verify system still treats as distinct requests via a secondary discriminator",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REQID_BELOW_MIN_LEN",
+        "hypothesis": "Passing a 15-character lowercase hex string (one byte below the 16-char minimum) to from_headers under the request-id header should be rejected, but an implementation that only checks `len >= 16` via `>` instead of `>=` may silently accept a 16-char string while this boundary probe tests whether 15 chars is accepted, potentially allowing forged short IDs that evade join queries expecting full-length identifiers.",
+        "input_fixture": "CorrelationContext.from_headers({'x-request-id': 'deadbeefcafe123'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REQID_UPPERCASE_HEX",
+        "hypothesis": "The invariant requires lowercase hex; passing an uppercase hex string like 'DEADBEEFCAFE1234' to from_headers may be silently stored without normalization, then propagated via to_headers in mixed or upper case, breaking downstream join queries that assume lowercase and allowing two records with the same logical ID to appear as distinct IDs when compared case-sensitively.",
+        "input_fixture": "ctx = CorrelationContext.from_headers({'x-request-id': 'DEADBEEFCAFE1234ABCD'}); assert ctx.request_id == ctx.request_id.lower()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REQID_MUTABLE_DRIFT",
+        "hypothesis": "If request_id is implemented as a property backed by a mutable internal field or a callable that re-evaluates (e.g. uuid.uuid4() each call), calling ctx.request_id twice within the same activated context may return different values, violating the 'stable for the entire request lifecycle' guarantee and making it impossible to join distributed log records from a single request.",
+        "input_fixture": "with ctx.activate():\n    id1 = ctx.request_id\n    id2 = ctx.request_id\n    assert id1 == id2, f'Drift: {id1} != {id2}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-BAGGAGE_OVERSIZE_VALUE",
+        "hypothesis": "Supplying a baggage value of exactly 8193 bytes (one byte over the W3C 8192-byte per-value limit) should be rejected or truncated on ingest via from_headers; if the implementation skips length validation, it silently stores an oversized value that downstream consumers may also propagate, turning a single malicious header into unbounded memory amplification across every service hop.",
+        "input_fixture": "CorrelationContext.from_headers({'baggage': 'k=' + 'A' * 8193})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-BAGGAGE_UNICODE_SMUGGLE",
+        "hypothesis": "Passing a baggage value containing non-ASCII Unicode characters (e.g. U+00E9 '\u00e9' or a multi-byte emoji) should trigger the ASCII-only enforcement; an implementation that uses Python's str.isascii() only on the key, or that calls encode('utf-8') without checking the resulting byte range, may store non-ASCII bytes and later cause silent corruption or exception when a downstream service tries to set the value as an HTTP header.",
+        "input_fixture": "CorrelationContext.from_headers({'baggage': 'env=prod\\u00e9uction,user=caf\\u00e9'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-BAGGAGE_NULL_BYTE_INJECT",
+        "hypothesis": "A null byte (\\x00) is technically non-printable ASCII but str.isascii() returns True for it in Python (ord 0 is <= 127). Injecting a null byte into a baggage value may pass the ASCII guard, then poison log sinks that use C-string parsing, or truncate the value when serialized into headers that treat \\x00 as a terminator, allowing an attacker to smuggle hidden data after the null byte.",
+        "input_fixture": "CorrelationContext.from_headers({'baggage': 'role=admin\\x00injected=evil'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CTX_EXCEPTION_NO_RESTORE",
+        "hypothesis": "If activate()'s __exit__ is not invoked when BaseException subclasses (KeyboardInterrupt, SystemExit, GeneratorExit) are raised \u2014 rather than ordinary Exception \u2014 the prior context may never be restored. Code that catches BaseException or uses finally differently from the context manager may leave a stale CorrelationContext as the 'current' context for all subsequent work on that thread/task.",
+        "input_fixture": "outer = CorrelationContext.current()\nwith ctx.activate():\n    raise KeyboardInterrupt()\n# check CorrelationContext.current() is outer, not ctx",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CTX_NESTED_EXCEPTION_RESTORE",
+        "hypothesis": "With two nested activate() calls, an exception in the inner context should restore to the middle context, and an exception propagating through the outer should restore to the original. If the implementation uses a module-level stack rather than contextvars, a non-local exit (e.g. via a threading.Thread or asyncio.Task cancel) could pop the wrong frame, leaving the outer context as the permanently active one even after both managers have exited.",
+        "input_fixture": "root = CorrelationContext.current()\nwith ctx_a.activate():\n    with ctx_b.activate():\n        raise RuntimeError('boom')\n# Verify CorrelationContext.current() is root, not ctx_a or ctx_b",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TRACEPARENT_EMPTY_STRING_FALLBACK",
+        "hypothesis": "Passing an empty string as the traceparent header value is technically 'invalid' per W3C Trace Context; the spec requires a new trace_id to be generated. An implementation that treats empty string as 'absent' rather than 'invalid' may skip trace_id generation and return a context whose trace_id is None, violating the invariant that an invalid traceparent always produces a fresh trace_id rather than an empty trace context.",
+        "input_fixture": "ctx = CorrelationContext.from_headers({'traceparent': ''}); assert ctx.trace_id is not None",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TRACEPARENT_WRONG_VERSION",
+        "hypothesis": "The W3C traceparent format is '00-<trace-id>-<parent-id>-<flags>'. Supplying version byte 'ff' (reserved/invalid) such as 'ff-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01' should be treated as an invalid traceparent, triggering new trace_id generation. An implementation that only validates the structural pattern (4 dash-separated segments) without checking the version byte may accept it and propagate a context with a potentially forged trace_id.",
+        "input_fixture": "ctx = CorrelationContext.from_headers({'traceparent': 'ff-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01'}); assert ctx.trace_id != '0af7651916cd43dd8448eb211c80319c'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AUTH_KEY_CASE_BYPASS",
+        "hypothesis": "The forbidden-key list likely checks exact lowercase strings ('password', 'authorization', 'cookie'). Passing mixed-case variants like 'Authorization', 'COOKIE', or 'PassWord' as baggage keys via from_headers may bypass the strip logic if the implementation uses a case-sensitive set membership check, allowing credential material to be stored in baggage and later propagated in to_headers to downstream services.",
+        "input_fixture": "ctx = CorrelationContext.from_headers({'baggage': 'Authorization=Bearer+secret,Cookie=session=abc'}); assert 'Authorization' not in ctx.baggage() and 'Cookie' not in ctx.baggage()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AUTH_KEY_ENCODED_BYPASS",
+        "hypothesis": "If from_headers percent-decodes baggage keys before checking against the forbidden list, an attacker who controls headers could send 'baggage: %61uthorization=Bearer+secret' which decodes to 'authorization=Bearer+secret'. If decoding happens after the strip check, the forbidden key survives. If decoding happens before, this test validates correct ordering. Either way, the ambiguity in parsing order is an attack surface.",
+        "input_fixture": "ctx = CorrelationContext.from_headers({'baggage': '%61uthorization=Bearer+secret,p%61ssword=hunter2'}); assert 'authorization' not in ctx.baggage() and 'password' not in ctx.baggage()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ASYNCIO_CROSS_LOOP_LEAK",
+        "hypothesis": "The invariant states context must never leak across event loops. If the implementation uses a module-level threading.local or a plain global dict keyed by thread-id (rather than contextvars.ContextVar), spawning a second asyncio event loop on a different thread and running a coroutine there may inherit the context set on the first loop's thread, violating isolation and allowing one request's correlation data to appear in a completely unrelated request's async tasks.",
+        "input_fixture": "import asyncio, threading\nctx_a.activate().__enter__()\nresult = []\ndef run_in_new_loop():\n    loop = asyncio.new_event_loop()\n    result.append(loop.run_until_complete(asyncio.coroutine(lambda: CorrelationContext.current())()))\nthread = threading.Thread(target=run_in_new_loop); thread.start(); thread.join()\nassert result[0].request_id != ctx_a.request_id",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ASYNCIO_TASK_MUTATION_BLEEDBACK",
+        "hypothesis": "contextvars copy-on-capture means a spawned task should get a snapshot of the parent context at spawn time, not a live reference. If the implementation stores a mutable dict for baggage and the child task receives a reference to the same dict (shallow copy), mutations made inside the child task's activate() scope will bleed back into the parent context's baggage mapping, violating isolation between concurrent async tasks sharing the same originating request.",
+        "input_fixture": "import asyncio\nasync def child(ctx):\n    with ctx.activate():\n        ctx.baggage()['injected'] = 'evil'  # mutate if dict is shared\nasync def parent():\n    with ctx_a.activate():\n        await asyncio.create_task(child(ctx_a))\n        assert 'injected' not in CorrelationContext.current().baggage()\nasyncio.run(parent())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-BAGGAGE_AMPLIFICATION_MANY_KEYS",
+        "hypothesis": "The W3C Baggage spec caps individual values at 8192 bytes but does not mandate a maximum number of keys. Sending a from_headers call with 10,000 distinct baggage keys of max-size values (10,000 \u00d7 8192 = ~80 MB) may cause unbounded memory allocation on a single parse call. If the implementation has no key-count limit, a single malicious inbound request can exhaust heap memory, creating a denial-of-service vector at the observability layer before any application logic runs.",
+        "input_fixture": "big_baggage = ','.join(f'k{i}=' + 'A' * 8192 for i in range(10000))\nCorrelationContext.from_headers({'baggage': big_baggage})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CORR-LIFECYCLE-MUTATE",
+        "hypothesis": "request_id stability broken under concurrent thread activation; thread-2 activates context while thread-1 reads, causing thread-1 to see stale or mutated request_id mid-request",
+        "input_fixture": "Thread-1: ctx1=InMemoryCorrelationContext(request_id='0123456789abcdef'); with ctx1.activate(): read_ctx.request_id while Thread-2 does ctx2.activate() concurrently",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CORR-BAGGAGE-SIZE-BOUNDARY",
+        "hypothesis": "Baggage size validation off-by-one: value with len.encode('ascii')==8192 accepted, but code at line 83 comparison '>MAX_BAGGAGE_VALUE_BYTES' would reject 8193; attacker crafts exactly 8192-byte value to test boundary",
+        "input_fixture": "from_headers({'baggage': 'key=' + 'A'*8192}); verify InMemoryCorrelationContext.current().baggage()['key'] exists and has full 8192 bytes",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CORR-ACTIVATE-RESET-EXCEPTION",
+        "hypothesis": "Exception inside activate()'s finally block (e.g., ContextVar.reset() fails) leaves _CURRENT pointing to the closed context, leaking it to subsequent calls and violating context isolation",
+        "input_fixture": "Mock ContextVar.reset to raise RuntimeError; activate context; subsequent CorrelationContext.current() returns the leaked context instead of fresh default",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CORR-TRACEPARENT-EMPTY-GEN",
+        "hypothesis": "If _gen_trace_id() at line 161 ever returns empty string (race condition in secrets module or signal interruption), trace_id property becomes None/empty, violating invariant that invalid traceparent generates non-empty trace_id",
+        "input_fixture": "Mock secrets.token_hex to return empty string on first call; from_headers({'traceparent': 'invalid'}); verify ctx.trace_id is not None and not empty string",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CORR-FORBIDDEN-KEY-HOMOGLYPH",
+        "hypothesis": "Forbidden key check at lines 120 and 176 uses string equality after .lower(); Unicode homoglyph attacks like Cyrillic '\u0430' (U+0430) visually matching Latin 'a' could store sensitive data under guise of legitimate key, bypassing the lowercase comparison",
+        "input_fixture": "from_headers({'baggage': 'p\u00e4ssw\u00f6rd=secret123,\u0430uthorization=token456'}) where '\u0430' is U+0430; verify these suspicious keys appear in baggage() despite lookalike forbidden keys",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CORR-REQUEST-ID-DEFAULT-UNSTABLE",
+        "hypothesis": "When no context is active, CorrelationContext.current() at line 149 generates cls() with fresh request_id each call; if called twice without activation, two different request_ids returned, violating stability invariant for default context",
+        "input_fixture": "Do not activate any context; call CorrelationContext.current() twice; compare request_ids; they differ, violating CORR-INV-01 guarantee of stable request_id for lifecycle",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CORR-CONTEXT-LEAK-MANUAL-CURRENT",
+        "hypothesis": "Direct manipulation of _CURRENT ContextVar from external code (or via reflection) allows one async task to inject context into another task's execution scope, bypassing contextvars isolation",
+        "input_fixture": "Task-1 runs with ctx1 activated; Task-2 directly calls _CURRENT.set(ctx1) before Task-1 exits; both tasks now share same context, leaking across logical isolation boundaries",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CORR-BAGGAGE-ENCODING-MISMATCH",
+        "hypothesis": "Validation at line 83 checks len(value.encode('ascii'))<=8192, but if value contains non-ASCII that slips past line 81 isascii() check (e.g., via monkey-patching), encoding byte length could exceed limit undetected",
+        "input_fixture": "Patch str.isascii to return True for string containing UTF-8 multibyte: '\ud83d\udd10'*2048 (8192 bytes in UTF-8); validation passes but baggage violates max-byte invariant",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CORR-TRACEPARENT-REGEX-PARTIAL",
+        "hypothesis": "Regex at line 31 matches strictly, but split at line 158 assumes exact format; if traceparent='00-' with only 16 hex chars instead of 32 (e.g., '00-0123456789abcdef-0000000000000000-01'), regex rejects it correctly, BUT attacker crafts traceparent that passes regex but has unexpected structure",
+        "input_fixture": "from_headers({'traceparent': '00-00000000000000000000000000000000-0000000000000000-01'}) [valid format]; extract trace_id via split('-')[1]; ensure it's exactly 32 hex chars as expected",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CORR-BAGGAGE-HEADER-INJECTION",
+        "hypothesis": "W3C Baggage parsing at lines 171-182 splits on comma without respecting quoted values or escaped delimiters; attacker injects extra keys via malformed header like 'key1=value1,key2=foo,bar,key3=baz' to create spurious baggage entry",
+        "input_fixture": "from_headers({'baggage': 'key1=value1,key2=foo,bar,key3=baz'}); split(',') creates ['key1=value1','key2=foo','bar','key3=baz']; line 172 'bar' has no '=' so skipped, but subsequent entries misaligned",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CORR-REQUEST-ID-REPLAY-COLLISION",
+        "hypothesis": "to_headers() at line 187 exports request_id verbatim; attacker captures headers from one request, replays in another identical request; both requests have same request_id, causing log aggregation/tracing collision and violating per-request stability guarantee",
+        "input_fixture": "ctx1=from_headers({...}); headers1=ctx1.to_headers(); [later] ctx2=from_headers(headers1); assert ctx1.request_id==ctx2.request_id; two unrelated requests now share identity in observability systems",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CORR-ACTIVATE-NESTING-ISOLATION",
+        "hypothesis": "Nested activate() calls at lines 140-144 properly reset via token, but if concurrent thread modifies _CURRENT between yield and reset, the token might point to wrong context, causing restore to fail and leaving stale context active",
+        "input_fixture": "Thread-1: ctx1.activate() yields, sleeps; Thread-2: ctx2.activate() and ctx2.deactivate(); Thread-1 resume finally block resets with token pointing to ctx2 now, restoring wrong context",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "correlation.context.created",
+        "required_attributes": [
+          "request_id"
+        ]
+      },
+      {
+        "event_name": "correlation.baggage.rejected",
+        "required_attributes": [
+          "key",
+          "reason"
+        ]
+      },
+      {
+        "event_name": "correlation.traceparent.regenerated",
+        "required_attributes": [
+          "reason"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "correlation.contexts.created",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": []
+      },
+      {
+        "name": "correlation.baggage.rejected.count",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "reason"
+        ]
+      },
+      {
+        "name": "correlation.activations.depth",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 100,
+        "label_keys": []
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "correlation.activate",
+        "required_attributes": [
+          "request_id"
+        ]
+      },
+      {
+        "operation_name": "correlation.from_headers",
+        "required_attributes": [
+          "had_traceparent"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 8,
+        "rationale": "Implementation matches spec: all 6 invariants enforced (CORR-INV-01 via validate_request_id regex+length; INV-02 ASCII+8192B; INV-03 contextvars token reset in finally; INV-04 fallback trace_id generation; INV-05 forbidden keys stripped on ingest AND rejected on direct construction; INV-06 contextvars.ContextVar). Protocol surface matches api_signature exactly. Minor: to_headers generates a new span-id on each call which is reasonable but undocumented."
+      },
+      {
+        "axis": "completeness",
+        "score": 8,
+        "rationale": "All Protocol methods implemented: request_id, trace_id, baggage, activate, current, from_headers, to_headers. Header parsing handles traceparent, x-request-id, baggage. Graceful fallback when headers absent/invalid. current() returns detached default rather than raising \u2014 reasonable. Missing: no explicit bind() method mentioned in extension_contract, though that's an extension concern not a primitive concern."
+      },
+      {
+        "axis": "error_quality",
+        "score": 8,
+        "rationale": "CorrelationInvariantError subclasses ValueError (appropriate). Every raise cites the invariant ID (CORR-INV-01/02/05) and includes the offending value via repr. from_headers swallows per-entry baggage errors to avoid poisoning the whole context \u2014 correct tradeoff, matches 'stripped on ingest' semantics. Direct construction with forbidden key in baggage silently skips (INV-05 says 'stripped') \u2014 consistent."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Protocol-based surface enables alternative implementations. contextvars ensures async-task copy-on-capture. activate() is a standard context manager. to_headers/from_headers give clean transport boundary. Immutable baggage snapshot (dict copy on read) prevents aliasing. Module-level ContextVar is the standard pattern. Extension via subclassing Protocol is clean."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Uses secrets.token_hex (CSPRNG). No I/O, no locks, O(1) activation. Lazy validation, bounded memory. Thread/async safe via contextvars. No logging side effects. Minor gaps: self-observability metrics mentioned in spec (correlation.contexts.created, baggage.rejected.count) are NOT emitted \u2014 spec promises counters that implementation doesn't provide. activate() annotated as -> object instead of AbstractContextManager[None]."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace obs, name CorrelationContext, Protocol signature matches catalog verbatim. All 6 catalog invariants have corresponding CORR-INV-0N enforcement in code. Forbidden keys match (password, authorization, cookie) plus defensive additions (set-cookie, proxy-authorization). 8192-byte cap per W3C. Consumption example from catalog works against this implementation. __all__ exports the public surface cleanly."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "activate() appears in CORR_INV_03 but is never shown in the usage example \u2014 unclear how to start a context",
+          "'baggage' is used throughout without a one-line definition before first use",
+          "Usage example starts mid-flow (context already exists); no snippet showing how to create one from scratch"
+        ],
+        "rewrite_suggestion": "Add a 4-line 'Getting started' snippet above the existing example: create a CorrelationContext, call activate() as a context manager, then show the queue call. Define baggage in one sentence the first time it appears."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "Extension contract describes intent in prose but shows no interface \u2014 no protocol/ABC for the middleware or propagator adapter",
+          "bind() is mentioned as the baggage-extension mechanism but its signature and namespacing rules are absent",
+          "No statement on whether the implementation is OTEL SDK-compatible or stands beside it \u2014 critical for brownfield integration decisions"
+        ],
+        "rewrite_suggestion": "Add a short interface block (Python Protocol or TypeScript interface) for Middleware and PropagatorAdapter; show bind() signature with a namespaced key example; add one sentence on OTEL SDK co-existence."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "'Stripped on ingest' is ambiguous \u2014 ingest could mean deserialization, middleware activation, or outbound propagation; the exact enforcement point is unspecified",
+          "Auth-reserved key list uses 'e.g.' phrasing \u2014 the full canonical list is not given, leaving room for omissions",
+          "No mention of CRLF or header-injection sanitization for baggage values beyond ASCII and size constraints"
+        ],
+        "rewrite_suggestion": "Replace 'e.g.' with an exhaustive enumeration of reserved keys; define 'ingest' as a precise lifecycle step; add a single sentence confirming CRLF stripping or note its absence explicitly."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Metric types are omitted \u2014 counter vs. gauge matters for alert configuration (e.g., correlation.activations.depth should be a gauge, but it is not stated)",
+          "Possible reason label values for correlation.baggage.rejected.count are not enumerated \u2014 writing alert rules requires knowing cardinality",
+          "No guidance on what abnormal values look like or suggested alert thresholds"
+        ],
+        "rewrite_suggestion": "Add a metric table with columns: name, type (counter/gauge), unit, label keys, and example normal range. List all known reason values for the rejected counter."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "Invariants table is raw engineering spec \u2014 no translation to business risk or user impact",
+          "The usage code example and citations (W3C, OTel 1.32) add length without PM-relevant insight",
+          "'Extension contract' section is impenetrable jargon with no stated business outcome"
+        ],
+        "rewrite_suggestion": "Open with a two-sentence business impact statement ('Without this, debugging a payment failure across 12 services takes hours; with it, one query'). Move invariants and code to a collapsible 'Technical detail' section. Replace 'Extension contract' with 'How teams adopt it: drop in one middleware, zero app-code changes.'"
+      }
+    ]
+  }
+}

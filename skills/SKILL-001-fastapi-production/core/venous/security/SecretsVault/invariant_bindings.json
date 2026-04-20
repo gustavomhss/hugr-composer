@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "SV_INV_01",
+      "invariant_text": "Secret material MUST NEVER be logged, included in tracebacks, or serialized to telemetry.",
+      "confirms_test": "test_inv_no_material_leak_confirms",
+      "prevents_test": "test_inv_no_material_leak_prevents",
+      "under_failure_test": "test_inv_no_material_leak_under_failure"
+    },
+    {
+      "invariant_id": "SV_INV_02",
+      "invariant_text": "get() MUST honor a time-bounded cache; cached material MUST NEVER outlive not_after or the configured max-age.",
+      "confirms_test": "test_inv_cache_ttl_confirms",
+      "prevents_test": "test_inv_cache_ttl_prevents",
+      "under_failure_test": "test_inv_cache_ttl_under_failure"
+    },
+    {
+      "invariant_id": "SV_INV_03",
+      "invariant_text": "rotate() MUST produce a strictly increasing version and MUST NEVER return the same material for a different version.",
+      "confirms_test": "test_inv_rotation_monotonic_confirms",
+      "prevents_test": "test_inv_rotation_monotonic_prevents",
+      "under_failure_test": "test_inv_rotation_monotonic_under_failure"
+    },
+    {
+      "invariant_id": "SV_INV_04",
+      "invariant_text": "Every get()/rotate() call SHALL emit a structured audit event naming the secret (not the material) and the caller identity.",
+      "confirms_test": "test_inv_audit_event_confirms",
+      "prevents_test": "test_inv_audit_event_prevents",
+      "under_failure_test": "test_inv_audit_event_under_failure"
+    },
+    {
+      "invariant_id": "SV_INV_05",
+      "invariant_text": "When the underlying backend is unavailable, the vault MUST fail closed for cold secrets and CANNOT surface stale material past its cache TTL.",
+      "confirms_test": "test_inv_fail_closed_confirms",
+      "prevents_test": "test_inv_fail_closed_prevents",
+      "under_failure_test": "test_inv_fail_closed_under_failure"
+    }
+  ]
+}

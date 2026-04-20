@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "SS_INV_01",
+      "invariant_text": "Subject names MUST NOT contain null, whitespace, '.', '*' or '>' inside a token because these are the reserved separators.",
+      "confirms_test": "test_inv_token_chars_confirms",
+      "prevents_test": "test_inv_token_chars_prevents",
+      "under_failure_test": "test_inv_token_chars_under_failure"
+    },
+    {
+      "invariant_id": "SS_INV_02",
+      "invariant_text": "The '>' wildcard SHALL appear only as the final token of a pattern and match one or more remaining tokens.",
+      "confirms_test": "test_inv_greedy_terminal_confirms",
+      "prevents_test": "test_inv_greedy_terminal_prevents",
+      "under_failure_test": "test_inv_greedy_terminal_under_failure"
+    },
+    {
+      "invariant_id": "SS_INV_03",
+      "invariant_text": "The '*' wildcard MUST match exactly one token, never zero and never multiple.",
+      "confirms_test": "test_inv_star_exactly_one_confirms",
+      "prevents_test": "test_inv_star_exactly_one_prevents",
+      "under_failure_test": "test_inv_star_exactly_one_under_failure"
+    },
+    {
+      "invariant_id": "SS_INV_04",
+      "invariant_text": "Names starting with '$' are FORBIDDEN for user subjects because that prefix is reserved for system use.",
+      "confirms_test": "test_inv_system_prefix_confirms",
+      "prevents_test": "test_inv_system_prefix_prevents",
+      "under_failure_test": "test_inv_system_prefix_under_failure"
+    },
+    {
+      "invariant_id": "SS_INV_05",
+      "invariant_text": "Publishers ALWAYS send to a fully specified subject; wildcards CANNOT appear in a publish call.",
+      "confirms_test": "test_inv_no_wildcard_publish_confirms",
+      "prevents_test": "test_inv_no_wildcard_publish_prevents",
+      "under_failure_test": "test_inv_no_wildcard_publish_under_failure"
+    }
+  ]
+}

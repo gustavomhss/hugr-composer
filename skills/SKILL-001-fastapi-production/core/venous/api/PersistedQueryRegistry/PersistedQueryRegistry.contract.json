@@ -1,0 +1,25 @@
+{
+  "name": "PersistedQueryRegistry",
+  "namespace": "api",
+  "purpose": "SHA-256 -> query allow-list that lets production clients send deterministic 64-char ids instead of raw queries; unregistered ids are rejected.",
+  "api_signature": "from typing import Protocol, runtime_checkable\n\n@runtime_checkable\nclass PersistedQueryRegistry(Protocol):\n    def register(self, query: str) -> str: ...\n    def get(self, id: str) -> str | None: ...\n    def contains(self, id: str) -> bool: ...\n",
+  "invariants": [
+    {"id": "PQR_INV_01", "rule": "Hash id is lowercase sha-256 hex of UTF-8 query bytes; registration is idempotent."},
+    {"id": "PQR_INV_02", "rule": "get() never returns a query whose re-hash differs from the id (tamper detection)."},
+    {"id": "PQR_INV_03", "rule": "Registry is read-only in production mode; register() in prod raises PQRImmutableError."},
+    {"id": "PQR_INV_04", "rule": "Lookup is O(1) in the backing store."},
+    {"id": "PQR_INV_05", "rule": "Callers cannot enumerate registered ids (no public list() -- privacy)."}
+  ],
+  "extension_contract": "Adopters pass an optional snapshot_sink invoked after each registration to persist the state (disk, Redis, S3). Hash function is sealed; no weaker hash substitution.",
+  "consumption_example": "reg = InMemoryPersistedQueryRegistry()\nqid = reg.register('query { me { id } }')\nreg.freeze()\nassert reg.contains(qid)\n",
+  "sources": [
+    {"source": "Apollo APQ spec / apollographql/apollo-server", "locator": "https://github.com/apollographql/apollo-server"}
+  ],
+  "why_essential": "Without a persisted-query gate, production GraphQL or parametric-SQL endpoints accept arbitrary queries from clients; the surface enables resource exhaustion attacks and leaks internal schema shape.",
+  "alternatives_considered": [
+    "Server-side exact-string allow-list: leaks through whitespace differences.",
+    "Signed-query JWT: solves integrity but not allow-listing.",
+    "Disabling introspection only: closes discovery, not arbitrary queries."
+  ],
+  "maturity": "incubating"
+}

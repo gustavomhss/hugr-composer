@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "DI_INV_01",
+      "invariant_text": "MUST resolve a dependency graph without re-entering a partially-constructed node; cycle detection SHALL raise.",
+      "confirms_test": "test_inv_cycle_detect_confirms",
+      "prevents_test": "test_inv_cycle_detect_prevents",
+      "under_failure_test": "test_inv_cycle_detect_under_failure"
+    },
+    {
+      "invariant_id": "DI_INV_02",
+      "invariant_text": "NEVER returns an instance whose declared scope outlives the resolving scope; scoped CANNOT leak into singleton.",
+      "confirms_test": "test_inv_scope_leak_confirms",
+      "prevents_test": "test_inv_scope_leak_prevents",
+      "under_failure_test": "test_inv_scope_leak_under_failure"
+    },
+    {
+      "invariant_id": "DI_INV_03",
+      "invariant_text": "ALWAYS disposes instances it owns when the owning scope ends; callers MUST NOT dispose externally-created instances.",
+      "confirms_test": "test_inv_dispose_owned_confirms",
+      "prevents_test": "test_inv_dispose_owned_prevents",
+      "under_failure_test": "test_inv_dispose_owned_under_failure"
+    },
+    {
+      "invariant_id": "DI_INV_04",
+      "invariant_text": "MUST NOT silently replace a prior registration for the same key; re-registration SHALL be explicit.",
+      "confirms_test": "test_inv_no_silent_replace_confirms",
+      "prevents_test": "test_inv_no_silent_replace_prevents",
+      "under_failure_test": "test_inv_no_silent_replace_under_failure"
+    },
+    {
+      "invariant_id": "DI_INV_05",
+      "invariant_text": "register() MUST accept the interface type as the resolution key; keyed registrations MUST use an extra discriminator.",
+      "confirms_test": "test_inv_iface_key_confirms",
+      "prevents_test": "test_inv_iface_key_prevents",
+      "under_failure_test": "test_inv_iface_key_under_failure"
+    }
+  ]
+}

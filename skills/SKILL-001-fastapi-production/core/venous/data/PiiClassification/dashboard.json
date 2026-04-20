@@ -1,0 +1,7 @@
+{
+  "title": "PiiClassification",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "Leaks", "targets": [{"expr": "sum(rate(pii_leaks_total[5m]))"}]}
+  ]
+}

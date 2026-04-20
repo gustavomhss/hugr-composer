@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "CL_INV_01",
+      "invariant_text": "Consent MUST be keyed by (subject_id, purpose); a blanket grant across purposes CANNOT be recorded.",
+      "confirms_test": "test_inv_keyed_confirms",
+      "prevents_test": "test_inv_keyed_prevents",
+      "under_failure_test": "test_inv_keyed_under_failure"
+    },
+    {
+      "invariant_id": "CL_INV_02",
+      "invariant_text": "Every grant MUST reference a notice_version string so the exact text the subject accepted is reconstructible; missing version SHALL raise.",
+      "confirms_test": "test_inv_notice_version_confirms",
+      "prevents_test": "test_inv_notice_version_prevents",
+      "under_failure_test": "test_inv_notice_version_under_failure"
+    },
+    {
+      "invariant_id": "CL_INV_03",
+      "invariant_text": "Revocation MUST be as easy as grant and SHALL take effect immediately; future is_granted calls for that (subject, purpose) MUST return False.",
+      "confirms_test": "test_inv_revoke_immediate_confirms",
+      "prevents_test": "test_inv_revoke_immediate_prevents",
+      "under_failure_test": "test_inv_revoke_immediate_under_failure"
+    },
+    {
+      "invariant_id": "CL_INV_04",
+      "invariant_text": "History entries MUST be append-only; a revocation NEVER erases a prior grant, it supersedes it in time.",
+      "confirms_test": "test_inv_history_append_only_confirms",
+      "prevents_test": "test_inv_history_append_only_prevents",
+      "under_failure_test": "test_inv_history_append_only_under_failure"
+    },
+    {
+      "invariant_id": "CL_INV_05",
+      "invariant_text": "is_granted MUST be evaluated against the state at `at` (or now), not the latest, so audits can reproduce past authorizations.",
+      "confirms_test": "test_inv_temporal_confirms",
+      "prevents_test": "test_inv_temporal_prevents",
+      "under_failure_test": "test_inv_temporal_under_failure"
+    }
+  ]
+}

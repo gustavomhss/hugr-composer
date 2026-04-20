@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "RP_INV_01",
+      "invariant_text": "A pipeline MUST run its middleware in declared order, every time; reorder at runtime SHALL NEVER happen.",
+      "confirms_test": "test_inv_declared_order_confirms",
+      "prevents_test": "test_inv_declared_order_prevents",
+      "under_failure_test": "test_inv_declared_order_under_failure"
+    },
+    {
+      "invariant_id": "RP_INV_02",
+      "invariant_text": "A route joined to a pipeline MUST execute its chain before the handler; the chain CANNOT be bypassed per request.",
+      "confirms_test": "test_inv_chain_before_handler_confirms",
+      "prevents_test": "test_inv_chain_before_handler_prevents",
+      "under_failure_test": "test_inv_chain_before_handler_under_failure"
+    },
+    {
+      "invariant_id": "RP_INV_03",
+      "invariant_text": "Pipelines MUST NOT share mutable state across requests; any state SHALL live in RequestContext.assigns.",
+      "confirms_test": "test_inv_no_shared_state_confirms",
+      "prevents_test": "test_inv_no_shared_state_prevents",
+      "under_failure_test": "test_inv_no_shared_state_under_failure"
+    },
+    {
+      "invariant_id": "RP_INV_04",
+      "invariant_text": "Joining a route to a pipeline MUST be declarative; programmatic attach CANNOT happen after the router is sealed.",
+      "confirms_test": "test_inv_declarative_attach_confirms",
+      "prevents_test": "test_inv_declarative_attach_prevents",
+      "under_failure_test": "test_inv_declarative_attach_under_failure"
+    },
+    {
+      "invariant_id": "RP_INV_05",
+      "invariant_text": "A pipeline name MUST be unique within the router; duplicate declarations SHALL raise at boot.",
+      "confirms_test": "test_inv_unique_name_confirms",
+      "prevents_test": "test_inv_unique_name_prevents",
+      "under_failure_test": "test_inv_unique_name_under_failure"
+    }
+  ]
+}

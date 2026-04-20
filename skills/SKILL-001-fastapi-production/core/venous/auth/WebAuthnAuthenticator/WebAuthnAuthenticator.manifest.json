@@ -1,0 +1,676 @@
+{
+  "name": "WebAuthnAuthenticator",
+  "namespace": "auth",
+  "maturity": "emerging",
+  "builder_agent_id": 1,
+  "catalog_entry_sha256": "c9bfd432a3572582c926427996eae0ccc6d6245080b92fb23c1999d9450a116e",
+  "files": [
+    {
+      "path": "auth/WebAuthnAuthenticator/WebAuthnAuthenticator.contract.json",
+      "sha256": "553bf9242a06f542189e63dd85588f3176c769b5fb6defbfbbfee698e4ed08a5",
+      "size_bytes": 3239,
+      "kind": "contract_json"
+    },
+    {
+      "path": "auth/WebAuthnAuthenticator/WebAuthnAuthenticator.manifest.json",
+      "sha256": "8ef6f4f31d92417c8dc5da1093cbe2b19b20f9e0193cb996e2006fff66db9f17",
+      "size_bytes": 35300,
+      "kind": "manifest"
+    },
+    {
+      "path": "auth/WebAuthnAuthenticator/WebAuthnAuthenticator.md",
+      "sha256": "40db3a804b4dd144830db609faeb42857a417b20fef84da0a7031358dcfcd095",
+      "size_bytes": 6922,
+      "kind": "spec_md"
+    },
+    {
+      "path": "auth/WebAuthnAuthenticator/WebAuthnAuthenticator.py",
+      "sha256": "8a4370c116bd6debc35dc27641ee957e82749b903fe468e5346776ac1acd3d4d",
+      "size_bytes": 21178,
+      "kind": "impl"
+    },
+    {
+      "path": "auth/WebAuthnAuthenticator/behavioral_WebAuthnAuthenticator.py",
+      "sha256": "bcd598092f8ca79cf2907bf38369363af3ebec8b2ad0002bf135088647d5e825",
+      "size_bytes": 8506,
+      "kind": "behavioral"
+    },
+    {
+      "path": "auth/WebAuthnAuthenticator/chaos_WebAuthnAuthenticator.py",
+      "sha256": "a04fa3779e0f0a6c4374ad69072c36298d3474b67695fb2ea8d600c6c91bcefe",
+      "size_bytes": 5615,
+      "kind": "chaos"
+    },
+    {
+      "path": "auth/WebAuthnAuthenticator/dashboard.json",
+      "sha256": "d35b2af29e9484e23523cca89e0e60f85ec81e564b6a2423af6528b8294bbd63",
+      "size_bytes": 1061,
+      "kind": "dashboard"
+    },
+    {
+      "path": "auth/WebAuthnAuthenticator/invariant_bindings.json",
+      "sha256": "94576fad8d2ef5bb1cd135d841fbf5e2ab0f0771f1df3d65722a6e7177d4110d",
+      "size_bytes": 2396,
+      "kind": "test"
+    },
+    {
+      "path": "auth/WebAuthnAuthenticator/metamorphic_WebAuthnAuthenticator.py",
+      "sha256": "0a9bdb09f887728f7e6e4d100a7dbbad5dc6786631ec7db228bde0c7e6b1a9ac",
+      "size_bytes": 6372,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "auth/WebAuthnAuthenticator/observability_WebAuthnAuthenticator.py",
+      "sha256": "dcfab2d09444d4935b045b5a9e71ca525b590e28b6fbfdb0903ce809c821cd83",
+      "size_bytes": 2489,
+      "kind": "observability"
+    },
+    {
+      "path": "auth/WebAuthnAuthenticator/observability_schema.json",
+      "sha256": "3364375709e33be9eed6022849024be5a1f334b0796beef1f0a3e060f3f4932a",
+      "size_bytes": 1731,
+      "kind": "observability"
+    },
+    {
+      "path": "auth/WebAuthnAuthenticator/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "auth/WebAuthnAuthenticator/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "auth/WebAuthnAuthenticator/state_machine_WebAuthnAuthenticator.py",
+      "sha256": "b22f03089d56e80968eb4c764a75882d29449ed4cb8532b907f211a28872bbab",
+      "size_bytes": 4911,
+      "kind": "state_machine"
+    },
+    {
+      "path": "auth/WebAuthnAuthenticator/test_WebAuthnAuthenticator.py",
+      "sha256": "c5be2785118758b74c680c9f09502d589e1ed4af95ac4681ec5c0df4469dfd7a",
+      "size_bytes": 13537,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "WEBAUTHN_INV_01",
+      "invariant_text": "Challenges MUST be >=16 bytes from a CSPRNG and MUST be single-use; replaying a challenge SHALL reject the response.",
+      "confirms_test": "test_inv_challenge_single_use_confirms",
+      "prevents_test": "test_inv_challenge_single_use_prevents",
+      "under_failure_test": "test_inv_challenge_single_use_under_failure"
+    },
+    {
+      "invariant_id": "WEBAUTHN_INV_02",
+      "invariant_text": "The origin in clientDataJSON MUST exactly match the configured RP origin; subdomain or scheme mismatch CANNOT be accepted.",
+      "confirms_test": "test_inv_origin_exact_match_confirms",
+      "prevents_test": "test_inv_origin_exact_match_prevents",
+      "under_failure_test": "test_inv_origin_exact_match_under_failure"
+    },
+    {
+      "invariant_id": "WEBAUTHN_INV_03",
+      "invariant_text": "The RP ID hash in authenticatorData MUST equal SHA-256(rp_id); mismatch MUST fail verification.",
+      "confirms_test": "test_inv_rp_id_hash_confirms",
+      "prevents_test": "test_inv_rp_id_hash_prevents",
+      "under_failure_test": "test_inv_rp_id_hash_under_failure"
+    },
+    {
+      "invariant_id": "WEBAUTHN_INV_04",
+      "invariant_text": "finish_assertion() MUST reject when the new sign_count is <= the stored sign_count, except when the authenticator always returns 0.",
+      "confirms_test": "test_inv_sign_count_monotonic_confirms",
+      "prevents_test": "test_inv_sign_count_monotonic_prevents",
+      "under_failure_test": "test_inv_sign_count_monotonic_under_failure"
+    },
+    {
+      "invariant_id": "WEBAUTHN_INV_05",
+      "invariant_text": "The user-verification flag MUST be enforced for authenticators registered as user-verifying; absence SHALL fail the assertion.",
+      "confirms_test": "test_inv_uv_flag_enforced_confirms",
+      "prevents_test": "test_inv_uv_flag_enforced_prevents",
+      "under_failure_test": "test_inv_uv_flag_enforced_under_failure"
+    },
+    {
+      "invariant_id": "WEBAUTHN_INV_06",
+      "invariant_text": "Credential public keys MUST be stored bound to (user_id, credential_id) and SHALL NEVER be shared across users.",
+      "confirms_test": "test_inv_credential_binding_confirms",
+      "prevents_test": "test_inv_credential_binding_prevents",
+      "under_failure_test": "test_inv_credential_binding_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 509,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 986,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 3947,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1066,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 109956,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "45 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1161,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 117947,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY_CHALLENGE",
+        "hypothesis": "Submit a valid assertion twice with the same challenge bytes; if the authenticator does not mark challenges as consumed after first use, the second call will succeed and enable session replay across the network.",
+        "input_fixture": "finish_assertion(challenge=b'A'*32, response=valid_resp, stored_public_key=pk, stored_sign_count=5) called twice consecutively",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SHORT_CHALLENGE",
+        "hypothesis": "begin_registration returns a challenge shorter than 16 bytes or derived from time.time() rather than os.urandom; attacker precomputes responses. Test by mocking RNG to return 8 zero bytes and check acceptance.",
+        "input_fixture": "monkeypatch secrets.token_bytes to return b'\\x00'*8; call begin_registration(b'uid',  'alice')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ORIGIN_SUBDOMAIN",
+        "hypothesis": "clientDataJSON declares origin 'https://evil.example.com' while RP is configured as 'https://example.com'. If the verifier does suffix match rather than exact equality, a subdomain takeover yields full account compromise.",
+        "input_fixture": "response.clientDataJSON = base64(json({type:'webauthn.get',challenge:c,origin:'https://evil.example.com'}))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ORIGIN_SCHEME_HTTP",
+        "hypothesis": "Submit clientDataJSON with origin 'http://example.com' (http, not https). A lenient parser that strips scheme would accept a downgraded MITM origin and bypass TLS binding.",
+        "input_fixture": "clientDataJSON.origin='http://example.com'; RP origin configured as 'https://example.com'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RPID_HASH_MISMATCH",
+        "hypothesis": "Craft authenticatorData whose first 32 bytes are SHA-256('attacker.com') while RP ID is 'example.com'. If verifier ignores rpIdHash, a credential bound to another RP can authenticate.",
+        "input_fixture": "authenticatorData = sha256(b'attacker.com') + flags + counter + ...; rp_id='example.com'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SIGN_COUNTER_REPLAY",
+        "hypothesis": "Replay an authenticator response with sign_count equal to stored_sign_count (not strictly greater). If the check is < instead of <=, a cloned authenticator goes undetected.",
+        "input_fixture": "finish_assertion(challenge=c, response={..,signCount:5}, stored_public_key=pk, stored_sign_count=5)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SIGN_COUNTER_OVERFLOW",
+        "hypothesis": "Provide sign_count = 2**32 + 1 (overflow past uint32). If parsed as Python int without bounds check, comparison may succeed falsely or truncate and allow replay after rollover.",
+        "input_fixture": "authenticatorData.signCount = (2**32 + 1).to_bytes(8,'big'); stored_sign_count=2**32",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UV_FLAG_STRIPPED",
+        "hypothesis": "Credential was registered requiring user verification (UV=true). Submit assertion with authenticatorData flags byte having UV bit cleared (0x01 UP only). Lenient verifier accepts, enabling phishing via bypassed biometric.",
+        "input_fixture": "authenticatorData.flags = 0x01 (UP set, UV clear); credential stored with uv_required=True",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CREDENTIAL_CROSS_USER",
+        "hypothesis": "Call finish_assertion with victim's credential_id but attacker's stored_public_key loaded via mismatched lookup. If storage keys are (credential_id) alone instead of (user_id,credential_id), collisions enable account takeover.",
+        "input_fixture": "finish_assertion(challenge=c, response=victim_resp, stored_public_key=attacker_pk, stored_sign_count=0)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY_CREDENTIAL_IDS",
+        "hypothesis": "begin_assertion(credential_ids=[]) \u2014 empty allowlist may allow silent enumeration or fall through to 'any credential' path, defeating the per-user binding invariant.",
+        "input_fixture": "begin_assertion(credential_ids=[])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED_RESPONSE_TYPE",
+        "hypothesis": "Pass response as None or list instead of dict into finish_registration; if type-unchecked, may raise unhandled exception leaking stack or bypass checks via attribute errors.",
+        "input_fixture": "finish_registration(challenge=b'\\x00'*32, response=None)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CHALLENGE_TIMING_SKEW",
+        "hypothesis": "Submit a valid assertion 24h after challenge issuance. If no TTL is enforced alongside single-use, leaked challenges remain exploitable indefinitely via device theft + clipboard logging.",
+        "input_fixture": "challenge issued at t0, finish_assertion called at t0+86400s with valid signature",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ATTESTATION_NONE_TRUST",
+        "hypothesis": "finish_registration with attestationObject fmt='none' for a credential the RP policy marks as requiring 'direct' attestation. Lenient code accepts unverifiable AAGUID, leaking tracking + trusting untrusted authenticator.",
+        "input_fixture": "attestationObject CBOR {fmt:'none',attStmt:{},authData:<valid>} with policy requiring direct",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SIG_MALLEABILITY",
+        "hypothesis": "ECDSA signature with (r, n-s) instead of (r, s) \u2014 both verify under naive ECDSA. Signature counter increments; replay with flipped-s bypasses idempotency de-dup keyed on raw signature bytes.",
+        "input_fixture": "response.signature = DER(r, curve_order - s) of previously accepted assertion",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RACE_CONCURRENT_ASSERT",
+        "hypothesis": "Fire two finish_assertion calls concurrently with the same challenge from two threads. If challenge consumption is not atomic (TOCTOU between check and mark-used), both succeed.",
+        "input_fixture": "threading.Thread \u00d7 2 invoking finish_assertion(challenge=c,...) simultaneously",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CHALLENGE-REPLAY-SAME-SESSION",
+        "hypothesis": "If the server stores used challenges in a short-lived cache and the implementation evicts entries on high load or uses a TTL shorter than the registration window, replaying the identical challenge bytes from a just-completed finish_registration() call in a second finish_registration() call may succeed because the challenge was not atomically marked used before the response was serialised.",
+        "input_fixture": "ch = authenticator.begin_registration(user_id=b'u1', user_name='alice')['challenge']; r1 = authenticator.finish_registration(ch, build_valid_response(ch)); r2 = authenticator.finish_registration(ch, build_valid_response(ch))  # second call must raise",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CHALLENGE-CROSS-CEREMONY-REUSE",
+        "hypothesis": "A challenge produced by begin_registration() may be accepted by finish_assertion() (or vice-versa) if the challenge store is shared but the ceremony type is not encoded into the lookup key. An attacker intercepts the registration challenge and submits it as an assertion challenge to authenticate as another user.",
+        "input_fixture": "reg_opts = authenticator.begin_registration(b'victim', 'victim'); ch = reg_opts['challenge']; assert_opts = authenticator.begin_assertion([victim_cred_id]); # swap challenge into assertion response; authenticator.finish_assertion(ch, forge_assertion_response(ch), stored_pk, 0)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CHALLENGE-LEN-BOUNDARY-15B",
+        "hypothesis": "If begin_registration() can be overridden or mocked to emit a 15-byte challenge (one byte under the minimum) and the implementation does not re-validate challenge length inside finish_registration(), an attacker with control over the challenge source can force a weak challenge that is feasible to brute-force.",
+        "input_fixture": "short_ch = secrets.token_bytes(15); result = authenticator.finish_registration(short_ch, build_valid_response(short_ch))  # must raise ValueError('challenge too short')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ORIGIN-SUBDOMAIN-BYPASS",
+        "hypothesis": "Passing 'https://evil.example.com' as the origin when the configured RP origin is 'https://example.com' may be accepted if the implementation uses a suffix check (endswith) rather than exact equality, allowing a subdomain-controlled attacker to forge assertions.",
+        "input_fixture": "response = build_registration_response(origin='https://evil.example.com', rp_id='example.com', challenge=ch); authenticator.finish_registration(ch, response)  # must reject; not merely check origin.endswith(configured_origin)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ORIGIN-SCHEME-DOWNGRADE-HTTP",
+        "hypothesis": "Replacing 'https://' with 'http://' in the origin field of clientDataJSON should fail, but an implementation that strips the scheme before comparing or only checks the host component would silently accept a plaintext-origin credential, enabling MITM attacks on HTTP sites.",
+        "input_fixture": "response = build_registration_response(origin='http://example.com', rp_id='example.com', challenge=ch); authenticator.finish_registration(ch, response)  # must raise; origin scheme mismatch",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ORIGIN-TRAILING-SLASH",
+        "hypothesis": "If configured RP origin is 'https://example.com' (no trailing slash) but clientDataJSON carries 'https://example.com/' (trailing slash), a naive exact-string comparison without normalisation would reject a legitimate credential, but more importantly an implementation that strips trailing slashes may also strip meaningful path differences, allowing 'https://example.com/evil' to pass if only the normalised host is compared.",
+        "input_fixture": "for origin_variant in ['https://example.com/', 'https://example.com/path', 'HTTPS://EXAMPLE.COM']: response = build_registration_response(origin=origin_variant, ...); authenticator.finish_registration(ch, response)  # all must reject",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RPID-HASH-WRONG-DOMAIN",
+        "hypothesis": "Substituting SHA-256('attacker.com') for SHA-256('example.com') in the rpIdHash field of authenticatorData and signing with a key registered under 'attacker.com' should fail because the RP ID hash does not match the configured rp_id. An implementation that does not recompute SHA-256(configured_rp_id) before comparing may accept the forged hash.",
+        "input_fixture": "auth_data = craft_auth_data(rp_id_hash=hashlib.sha256(b'attacker.com').digest(), sign_count=1); response = sign_and_wrap(auth_data, attacker_privkey); authenticator.finish_assertion(ch, response, stored_pk, 0)  # must reject",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RPID-HASH-ALL-ZEROS",
+        "hypothesis": "Crafting an authenticatorData with a 32-byte all-zero rpIdHash tests whether the implementation special-cases or skips the hash check for a zero value, which could be a default left by careless initialisation or a memset bug in a C binding.",
+        "input_fixture": "auth_data = craft_auth_data(rp_id_hash=b'\\x00'*32, sign_count=1); response = sign_and_wrap(auth_data, valid_privkey); authenticator.finish_assertion(ch, response, stored_pk, 0)  # must reject",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SIGN-COUNT-EQUAL-STORED",
+        "hypothesis": "Providing a new_sign_count exactly equal to stored_sign_count (boundary condition) should be rejected per the invariant ('MUST reject when new sign_count <= stored'), but an implementation using strict less-than (<) instead of less-than-or-equal (<=) would accept the replayed counter, enabling credential cloning.",
+        "input_fixture": "stored = 42; auth_data = craft_auth_data(sign_count=42); response = sign_and_wrap(auth_data, valid_privkey); new_count = authenticator.finish_assertion(ch, response, stored_pk, stored)  # must raise; new_count==stored must be rejected",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SIGN-COUNT-ZERO-EXCEPTION-ABUSE",
+        "hypothesis": "The invariant exempts authenticators that 'always return 0'. An attacker who clones a credential can set sign_count=0 in every assertion response, exploiting the exception to bypass counter replay detection indefinitely. The implementation must distinguish 'authenticator always returns 0' (registered state) from 'attacker forces 0 after a non-zero count was previously observed'.",
+        "input_fixture": "# First assertion with count=5 (stored becomes 5); second assertion with count=0; authenticator.finish_assertion(ch2, response_with_count_0, stored_pk, stored_sign_count=5)  # must reject; 0 < 5",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SIGN-COUNT-OVERFLOW-WRAP",
+        "hypothesis": "Providing sign_count=0xFFFFFFFF (max uint32) followed by sign_count=0 in the next assertion tests whether an integer overflow/wrap causes the implementation to accept the rolled-over counter as if it were greater than the stored value, enabling indefinite replay after one overflow.",
+        "input_fixture": "authenticator.finish_assertion(ch1, response_count_0xFFFFFFFF, stored_pk, 0); # stored becomes 4294967295; authenticator.finish_assertion(ch2, response_count_0, stored_pk, 4294967295)  # must reject; 0 is not > 4294967295",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-UV-FLAG-ABSENT-FOR-UV-CREDENTIAL",
+        "hypothesis": "Registering a credential with UV=required and then asserting with a response where the UV bit (bit 2 of flags byte in authenticatorData) is cleared should fail. If the implementation only checks the UP (user present) flag and ignores UV, an attacker with physical access to the device but without knowledge of the PIN/biometric can bypass user verification.",
+        "input_fixture": "# Register with uv=True (UV flag set); auth_data = craft_auth_data(flags=0b00000001)  # UP=1, UV=0; response = sign_and_wrap(auth_data, privkey); authenticator.finish_assertion(ch, response, stored_pk, stored_sign_count)  # must reject UV not set",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CREDENTIAL-CROSS-USER-ASSERTION",
+        "hypothesis": "After registering a credential for user_id=b'alice', calling finish_assertion() with that credential's public key but supplying user_id=b'bob' as the lookup context should fail. If the implementation looks up credentials by credential_id alone without scoping to user_id, an attacker can assert with Alice's credential to authenticate as Bob.",
+        "input_fixture": "reg = authenticator.finish_registration(ch, build_response_for_alice()); # attempt assertion for bob using alice's stored key; authenticator.finish_assertion(ch2, forge_assertion(reg.credential_id), stored_public_key=reg.public_key, stored_sign_count=0)  # must check user binding",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CREDENTIAL-PUBLIC-KEY-ORACLE-ENUMERATION",
+        "hypothesis": "If the API surfaces different error messages for 'credential not found for user' vs 'signature verification failed', an attacker can enumerate which credential_ids belong to which users by calling begin_assertion with a credential_id registered to Alice while authenticated as Bob and observing the discriminating error code.",
+        "input_fixture": "err_alice = authenticator.begin_assertion([alice_cred_id])  # called in bob's session; err_unknown = authenticator.begin_assertion([random_cred_id]); assert err_alice.error_code == err_unknown.error_code  # must not differentiate",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONCURRENT-CHALLENGE-RACE",
+        "hypothesis": "Two concurrent threads each call begin_registration() and finish_registration() with the same challenge bytes (pre-seeded RNG or clock-based seed collision), racing the single-use check. If the used-challenge store uses a read-then-write pattern (check then insert) without an atomic compare-and-swap or database unique constraint, both finish calls may see the challenge as unused and succeed.",
+        "input_fixture": "import threading; results=[]; ch=b'A'*16; t1=threading.Thread(target=lambda: results.append(authenticator.finish_registration(ch, r1))); t2=threading.Thread(target=lambda: results.append(authenticator.finish_registration(ch, r2))); t1.start(); t2.start(); t1.join(); t2.join(); assert sum(1 for r in results if not isinstance(r,Exception))==1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CHALLENGE-REPLAY-BASIC",
+        "hypothesis": "Replaying the exact challenge-response pair bypasses single-use enforcement if the authenticator does not track consumed challenges in a persistent cache or if state lookup is missing.",
+        "input_fixture": "begin_registration() returns challenge=C; finish_registration(C, response) succeeds; call finish_registration(C, response) again with identical parameters; second call should reject but may succeed if challenge is not marked consumed.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CHALLENGE-LENGTH-BOUNDARY",
+        "hypothesis": "Challenge length validation boundary is off-by-one; a 15-byte challenge passes the >= 16 check due to exclusive comparison or missing validation, providing only 120 bits instead of required 128-bit entropy.",
+        "input_fixture": "Craft challenge of exactly 15 bytes; pass to finish_registration(challenge=b'...' 15 bytes, response); should fail minimum length but validation may allow it if using incorrect comparison operator.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CHALLENGE-RACE-CONDITION",
+        "hypothesis": "Two finish_registration() calls with the same challenge C execute concurrently; both threads read and validate challenge state before either writes the consumed marker; both succeed despite single-use guarantee.",
+        "input_fixture": "Generate challenge C; spawn thread1(finish_registration(C, resp1)) and thread2(finish_registration(C, resp2)) with synchronized start; both may validate C before either marks it consumed if no atomic lock guards consumption.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ORIGIN-SUBDOMAIN-BYPASS",
+        "hypothesis": "Origin validation extracts only the hostname portion, ignoring subdomain structure; RP configured as example.com but attacker presents api.example.com; hostname match succeeds despite subdomain divergence.",
+        "input_fixture": "Configure RP origin='https://example.com'; submit assertion with clientDataJSON origin='https://api.example.com'; should reject but may pass if origin parsing uses only host without subdomain components.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ORIGIN-SCHEME-MISMATCH",
+        "hypothesis": "RP origin is https://example.com but attacker submits http://example.com in clientDataJSON; scheme mismatch should fail, but if only hostname is validated against the origin, attack succeeds.",
+        "input_fixture": "RP origin configured as 'https://example.com'; assertion response has origin='http://example.com'; should fail due to scheme mismatch but may pass if validation ignores scheme component.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ORIGIN-CASE-SENSITIVITY",
+        "hypothesis": "Origin comparison treats Example.COM and example.com as equivalent, violating strict origin matching; attacker controls domain registration in mixed case to bypass origin pinning.",
+        "input_fixture": "RP origin pinned as 'https://Example.COM'; attacker controls https://EXAMPLE.COM (different case); assertion succeeds if origin comparison uses case-insensitive string matching.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RPID-HASH-MISSING-VALIDATION",
+        "hypothesis": "authenticatorData.rpIdHash must equal SHA-256(rp_id); if hash validation is commented out, disabled, or missing entirely, arbitrary rpIdHash values bypass verification.",
+        "input_fixture": "Configure rp_id='example.com'; submit authenticatorData with rpIdHash=SHA-256('attacker.com'); should fail due to hash mismatch but validation may be skipped or stubbed out.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SIGN-COUNT-MONOTONIC-DOWNGRADE",
+        "hypothesis": "finish_assertion() checks new_sign_count > stored_sign_count to detect cloning; if comparison is inverted (new <= stored instead of new > stored), downgrade attacks succeed.",
+        "input_fixture": "Register authenticator with sign_count progression 1\u21922\u21923; stored_sign_count=3; call finish_assertion(new_sign_count=2); should reject monotonic violation but inverted logic may allow downgrade.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SIGN-COUNT-WRAPAROUND-OVERFLOW",
+        "hypothesis": "Sign counter stored as uint32; at max value (2^32-1=4294967295), new assertion with sign_count=0 should reject (0 is not > 4294967295), but unsigned integer overflow during pre-increment may bypass check.",
+        "input_fixture": "Set stored_sign_count=4294967295; call finish_assertion(new_sign_count=0); comparison should reject, but if counter is incremented before comparison or overflow handling is missing, bypass occurs.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SIGN-COUNT-ZERO-AUTHENTICATOR-EXCEPTION",
+        "hypothesis": "Spec permits stateless authenticators that always return sign_count=0 with exception: 'except when the authenticator always returns 0'; if this exception is not implemented, valid zero-count assertions are rejected.",
+        "input_fixture": "Register stateless authenticator with sign_count=0; make multiple assertions each with new_sign_count=0; first assertion succeeds but second fails because code rejects (0 <= 0) without exception handling.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-USER-VERIFICATION-FLAG-BYPASS",
+        "hypothesis": "Credential registered with user-verifying authenticator requires UV flag in assertions; if UV flag validation is missing or commented out, authenticators without biometric/PIN bypass verification requirement.",
+        "input_fixture": "Register credential marked user-verifying (UV=1 in attestation); assert with UV flag=0 in response; should fail UV enforcement but may pass if flag check is disabled or deleted.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CREDENTIAL-CROSS-USER-BINDING",
+        "hypothesis": "Credentials bound to (user_id, credential_id) tuple; User A holds credential_id='X'; User B reuses X with their own user_id if lookup omits user_id from credential retrieval logic.",
+        "input_fixture": "User A registers credential_id='X' with public_key=PK_A; User B calls finish_assertion(credential_id='X', signature) using PK_A but with user_id='B'; should fail binding check but may succeed if stored_public_key is retrieved by credential_id alone.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-CHALLENGE-ZERO-LENGTH",
+        "hypothesis": "Challenge must be >=16 bytes for 128-bit entropy; zero-length challenge (b'') has zero entropy and should be rejected, but off-by-one or missing length validation allows it.",
+        "input_fixture": "Call finish_registration(challenge=b'', response) with empty bytes; should fail length validation, but if check uses (len(challenge) > 15) instead of (len(challenge) >= 16) or is missing entirely, bypass occurs.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MALFORMED-CLIENTDATA-JSON-PARSING",
+        "hypothesis": "clientDataJSON must be valid JSON with required origin field; if JSON parsing errors are silently caught or origin field is optional, malformed input bypasses origin validation entirely.",
+        "input_fixture": "Submit clientDataJSON as b'{incomplete_json'; should fail JSON parse, but if exception is swallowed and origin defaults to None or empty string, origin check may incorrectly pass or be skipped.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CREDENTIAL-ID-REUSE-ACROSS-REGISTRATIONS",
+        "hypothesis": "Each registration produces unique credential_id; if random generation or collision detection is missing, multiple users may obtain identical credential_ids, enabling cross-user exploitation.",
+        "input_fixture": "Call begin_registration() twice with different users; if credential_id generation is deterministic or lacks CSPRNG, both users receive same credential_id; second user can assert as first user.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "webauthn.registration.started",
+        "required_attributes": [
+          "user_id_hash",
+          "rp_id"
+        ]
+      },
+      {
+        "event_name": "webauthn.registration.completed",
+        "required_attributes": [
+          "user_id_hash",
+          "credential_id_hash",
+          "aaguid",
+          "user_verified"
+        ]
+      },
+      {
+        "event_name": "webauthn.assertion.completed",
+        "required_attributes": [
+          "credential_id_hash",
+          "new_sign_count",
+          "stored_sign_count"
+        ]
+      },
+      {
+        "event_name": "webauthn.assertion.rejected",
+        "required_attributes": [
+          "reason",
+          "credential_id_hash"
+        ]
+      },
+      {
+        "event_name": "webauthn.challenge.replay.blocked",
+        "required_attributes": [
+          "rp_id"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "webauthn.registrations",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "result",
+          "aaguid_class"
+        ]
+      },
+      {
+        "name": "webauthn.assertions",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "result"
+        ]
+      },
+      {
+        "name": "webauthn.assertion.latency",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "result"
+        ]
+      },
+      {
+        "name": "webauthn.counter.regressions",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": [
+          "rp_id"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "webauthn.finish.registration",
+        "required_attributes": [
+          "rp.id",
+          "credential.id.hash",
+          "user.id.hash"
+        ]
+      },
+      {
+        "operation_name": "webauthn.finish.assertion",
+        "required_attributes": [
+          "rp.id",
+          "credential.id.hash",
+          "sign.count.new",
+          "sign.count.stored"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "logs": [
+    {
+      "event_name": "token.introspected",
+      "required_attributes": ["issuer", "subject", "audience_matched", "result"]
+    },
+    {
+      "event_name": "token.rejected",
+      "required_attributes": ["issuer", "reason", "invariant_id"]
+    },
+    {
+      "event_name": "token.revoked",
+      "required_attributes": ["token_hash"]
+    },
+    {
+      "event_name": "jwks.fetched",
+      "required_attributes": ["issuer", "key_count", "cache_age_s"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "token.introspect.total",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["result", "path"]
+    },
+    {
+      "name": "token.cache.hit.ratio",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 5,
+      "label_keys": ["cache"]
+    },
+    {
+      "name": "jwks.fetch.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": ["issuer", "result"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "token.introspect",
+      "required_attributes": ["token.path", "issuer", "audience.required"]
+    },
+    {
+      "operation_name": "jwks.fetch",
+      "required_attributes": ["issuer", "key.count"]
+    },
+    {
+      "operation_name": "rfc7662.introspect",
+      "required_attributes": ["issuer", "active"]
+    }
+  ]
+}

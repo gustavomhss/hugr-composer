@@ -1,0 +1,9 @@
+{
+  "invariant_bindings": [
+    {"invariant_id": "PR_INV_01", "invariant_text": "Every code path that reads or writes PII MUST be annotated with a registered ProcessingRecord.activity; unregistered activities SHALL fail at startup.", "confirms_test": "test_inv_activity_registered_confirms", "prevents_test": "test_inv_activity_registered_prevents", "under_failure_test": "test_inv_activity_registered_under_failure"},
+    {"invariant_id": "PR_INV_02", "invariant_text": "Each record MUST reference a retention_ref that resolves to a bound RetentionPolicy; dangling refs CANNOT register.", "confirms_test": "test_inv_retention_ref_confirms", "prevents_test": "test_inv_retention_ref_prevents", "under_failure_test": "test_inv_retention_ref_under_failure"},
+    {"invariant_id": "PR_INV_03", "invariant_text": "legal_basis MUST be one of GDPR Article 6(1)(a-f); free-text values SHALL raise.", "confirms_test": "test_inv_legal_basis_confirms", "prevents_test": "test_inv_legal_basis_prevents", "under_failure_test": "test_inv_legal_basis_under_failure"},
+    {"invariant_id": "PR_INV_04", "invariant_text": "transfers_outside_eea entries MUST be ISO-3166 country codes; other formats are FORBIDDEN.", "confirms_test": "test_inv_iso_countries_confirms", "prevents_test": "test_inv_iso_countries_prevents", "under_failure_test": "test_inv_iso_countries_under_failure"},
+    {"invariant_id": "PR_INV_05", "invariant_text": "export_ropa() output MUST be byte-for-byte reproducible given the same registry so auditors can hash and diff releases.", "confirms_test": "test_inv_ropa_reproducible_confirms", "prevents_test": "test_inv_ropa_reproducible_prevents", "under_failure_test": "test_inv_ropa_reproducible_under_failure"}
+  ]
+}

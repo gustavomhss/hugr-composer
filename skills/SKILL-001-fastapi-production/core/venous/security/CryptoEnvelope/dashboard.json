@@ -1,0 +1,20 @@
+{
+  "title": "CryptoEnvelope — AEAD throughput, auth-fail rate, nonce collision watch",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "seal ops/s",
+     "targets": [{"expr": "sum(rate(crypto_envelope_operations_total{operation=\"seal\"}[5m]))"}]},
+    {"id": 2, "type": "stat", "title": "open auth-fail rate",
+     "targets": [{"expr": "sum(rate(crypto_envelope_operations_total{operation=\"open\",outcome=\"auth_fail\"}[5m]))"}]},
+    {"id": 3, "type": "timeseries", "title": "seal/open p50/p95/p99 (ms)",
+     "targets": [
+       {"expr": "histogram_quantile(0.50, rate(crypto_envelope_duration_bucket[5m]))"},
+       {"expr": "histogram_quantile(0.95, rate(crypto_envelope_duration_bucket[5m]))"},
+       {"expr": "histogram_quantile(0.99, rate(crypto_envelope_duration_bucket[5m]))"}
+     ]},
+    {"id": 4, "type": "stat", "title": "nonce collisions (alert > 0)",
+     "targets": [{"expr": "sum(increase(crypto_envelope_nonce_collisions_total[1h]))"}]},
+    {"id": 5, "type": "timeseries", "title": "ciphertext size distribution",
+     "targets": [{"expr": "histogram_quantile(0.95, rate(crypto_envelope_ciphertext_bytes_bucket[5m]))"}]}
+  ]
+}

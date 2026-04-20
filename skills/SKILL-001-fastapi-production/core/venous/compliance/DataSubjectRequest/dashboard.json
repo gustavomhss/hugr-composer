@@ -1,0 +1,7 @@
+{
+  "title": "DataSubjectRequest",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "Open DSRs", "targets": [{"expr": "sum(rate(dsr_open_count_total[1h]))"}]}
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "RetentionPolicy",
+  "namespace": "compliance",
+  "purpose": "Declarative binding of a data class to a maximum lifetime, enforced by scheduled purge and blocked at write-time if unclassified.",
+  "api_signature": "from dataclasses import dataclass\nfrom datetime import timedelta\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass RetentionPolicy:\n    data_class: str\n    max_age: timedelta\n    legal_basis: str\n    deletion_mode: str  # 'hard' | 'crypto_shred' | 'anonymize'\n\nclass RetentionEnforcer(Protocol):\n    def bind(self, policy: RetentionPolicy) -> None: ...\n    def enforce_on_write(self, data_class: str, record_id: str) -> None: ...\n    def sweep(self) -> int: ...",
+  "invariants": [
+    "Every persisted record MUST be tagged with a data_class that maps to a registered RetentionPolicy; writes of untagged data SHALL be rejected.",
+    "max_age MUST be finite and > 0; an open-ended 'keep forever' policy CANNOT be registered without an explicit legal_basis override.",
+    "deletion_mode MUST be one of 'hard', 'crypto_shred', or 'anonymize'; other values SHALL raise on bind.",
+    "The sweep job MUST be idempotent and SHALL not delete records under an active LegalHold.",
+    "Every purge action MUST emit an entry to the TamperEvidentAuditLog with the policy id and record count."
+  ],
+  "extension_contract": "Target applications register a policy per data_class and plug in deletion adapters (SQL delete, object-store lifecycle, crypto-shred key destroy). Custom deletion_modes are added by implementing a DeletionAdapter and binding it through the registry.",
+  "consumption_example": "from datetime import timedelta\n\npolicy = RetentionPolicy(\n    data_class='access_token',\n    max_age=timedelta(days=90),\n    legal_basis='GDPR Art 5(1)(e) storage limitation',\n    deletion_mode='hard',\n)\nenforcer.bind(policy)\npurged = enforcer.sweep()",
+  "sources": [
+    {"source": "EU GDPR Regulation 2016/679 Articles 5, 6, 7, 15, 17, 30, 32", "locator": "Article 5(1)(e) storage limitation"},
+    {"source": "PCI-DSS v4.0", "locator": "Requirement 3.2 \u2014 do not store cardholder data beyond retention need"},
+    {"source": "NIST SP 800-53 revision 5", "locator": "SI-12 Information Management and Retention"}
+  ],
+  "why_essential": "Retention without a shared primitive decays into per-table ad-hoc cron jobs that drift from policy; a single binding fixes data-class-to-lifetime across the whole target.",
+  "alternatives_considered": [
+    "Database TTL indexes \u2014 only work per collection and ignore legal_basis, legal hold, and deletion_mode.",
+    "Cron scripts per table \u2014 drift silently when schema evolves and produce no audit evidence.",
+    "Leaving retention to ops runbooks \u2014 moves the rule outside code review and fails SOC 2 evidence."
+  ],
+  "maturity": "battle_tested"
+}

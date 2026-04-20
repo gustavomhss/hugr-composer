@@ -1,0 +1,745 @@
+{
+  "name": "ErrorSink",
+  "namespace": "obs",
+  "maturity": "battle_tested",
+  "builder_agent_id": 9,
+  "catalog_entry_sha256": "0bae9e2b8b4c4f0832ac8b210adc67f189cba59283f68b4622acc2459723abea",
+  "files": [
+    {
+      "path": "obs/ErrorSink/ErrorSink.contract.json",
+      "sha256": "635d801df6ba2698be30b02c7d29939968a4714e7626c56485f1823aa53d5c0c",
+      "size_bytes": 3647,
+      "kind": "contract_json"
+    },
+    {
+      "path": "obs/ErrorSink/ErrorSink.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "obs/ErrorSink/ErrorSink.md",
+      "sha256": "59fd40ce1e1bbfb1e4305a303b150736280137f5fbdfcaaf6e2dd095dc040074",
+      "size_bytes": 3403,
+      "kind": "spec_md"
+    },
+    {
+      "path": "obs/ErrorSink/ErrorSink.py",
+      "sha256": "8171b56f9290e6b12ce96db2fd8b3412c0c2258afb91b4e1765f22c2cd32678c",
+      "size_bytes": 8578,
+      "kind": "impl"
+    },
+    {
+      "path": "obs/ErrorSink/behavioral_ErrorSink.py",
+      "sha256": "c2d16bf246be0efab90dce61cd74004fe4ec301ebee58ab8ed5ac8e51042da72",
+      "size_bytes": 2426,
+      "kind": "behavioral"
+    },
+    {
+      "path": "obs/ErrorSink/chaos_ErrorSink.py",
+      "sha256": "7cbb9059dc5b87b30f9b1a5d80afbb15ecc7039242e4431a99cb04a851724652",
+      "size_bytes": 2727,
+      "kind": "chaos"
+    },
+    {
+      "path": "obs/ErrorSink/conftest.py",
+      "sha256": "7c56f31974b08ec9142aebbd7c9995aae21ceef4211149bc0c595a4c4855ac4c",
+      "size_bytes": 528,
+      "kind": "test"
+    },
+    {
+      "path": "obs/ErrorSink/dashboard.json",
+      "sha256": "8b9939e14f8dbf061213a78462314ee2dafcb6789eaed03fed81933e667838d2",
+      "size_bytes": 526,
+      "kind": "dashboard"
+    },
+    {
+      "path": "obs/ErrorSink/invariant_bindings.json",
+      "sha256": "78445f543d4debe6db2766edea62a78bf1bcd6786f576d830f5606e6ec14e981",
+      "size_bytes": 2308,
+      "kind": "test"
+    },
+    {
+      "path": "obs/ErrorSink/metamorphic_ErrorSink.py",
+      "sha256": "67a0e1e384542c9a5a2134b86e4c1c0d1dbd3d6888dc6a5884ffb8109e2d4494",
+      "size_bytes": 2286,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "obs/ErrorSink/observability_ErrorSink.py",
+      "sha256": "7ac444ed80aebf07102924105eeda28b18e860bedbe78040f3d5acd0ffe656f3",
+      "size_bytes": 1390,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/ErrorSink/observability_schema.json",
+      "sha256": "b78cfc7c1677f93c8903ec9158dc0591fc12d3b0a43a66feb9c9b79b12048407",
+      "size_bytes": 880,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/ErrorSink/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "obs/ErrorSink/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "obs/ErrorSink/test_ErrorSink.py",
+      "sha256": "c28911120c7c73300c7c1978b1cb623d43cec2f291b2c02755708fc86dde3827",
+      "size_bytes": 6598,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "ERR_INV_01",
+      "invariant_text": "Every captured event MUST include the active trace_id, span_id, and request_id when any of those are set.",
+      "confirms_test": "test_inv_context_attached_confirms",
+      "prevents_test": "test_inv_context_attached_prevents",
+      "under_failure_test": "test_inv_context_attached_under_failure"
+    },
+    {
+      "invariant_id": "ERR_INV_02",
+      "invariant_text": "A fingerprint MUST be deterministic for the same exception type plus top-three stack frames; otherwise identical incidents SHALL NEVER split into separate issues.",
+      "confirms_test": "test_inv_fingerprint_stable_confirms",
+      "prevents_test": "test_inv_fingerprint_stable_prevents",
+      "under_failure_test": "test_inv_fingerprint_stable_under_failure"
+    },
+    {
+      "invariant_id": "ERR_INV_03",
+      "invariant_text": "capture_exception MUST redact registered PII field names (email, password, authorization) before transport.",
+      "confirms_test": "test_inv_pii_redacted_confirms",
+      "prevents_test": "test_inv_pii_redacted_prevents",
+      "under_failure_test": "test_inv_pii_redacted_under_failure"
+    },
+    {
+      "invariant_id": "ERR_INV_04",
+      "invariant_text": "The sink CANNOT block the caller; serialization and network transmission SHALL run on a background worker.",
+      "confirms_test": "test_inv_nonblocking_confirms",
+      "prevents_test": "test_inv_nonblocking_prevents",
+      "under_failure_test": "test_inv_nonblocking_under_failure"
+    },
+    {
+      "invariant_id": "ERR_INV_05",
+      "invariant_text": "before_send hooks returning None MUST drop the event and NEVER partially transmit it.",
+      "confirms_test": "test_inv_before_send_drop_confirms",
+      "prevents_test": "test_inv_before_send_drop_prevents",
+      "under_failure_test": "test_inv_before_send_drop_under_failure"
+    },
+    {
+      "invariant_id": "ERR_INV_06",
+      "invariant_text": "Sampling SHALL apply AFTER fingerprinting so rare variants are not accidentally suppressed by head-of-queue drops.",
+      "confirms_test": "test_inv_sampling_after_fp_confirms",
+      "prevents_test": "test_inv_sampling_after_fp_prevents",
+      "under_failure_test": "test_inv_sampling_after_fp_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 600,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 1 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 873,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 919,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 91788,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "42 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1282,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1426,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 67045,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 163734,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TRACE-CTX-RACE",
+        "hypothesis": "Spawn a background worker that captures an exception while the calling thread mutates contextvars (trace_id/span_id/request_id) between capture_exception invocation and worker serialization, causing the event to be serialized with a DIFFERENT trace_id than was active at capture time, violating the correlation-context invariant.",
+        "input_fixture": "Thread A: set trace_id=T1, call sink.capture_exception(ValueError('x')); immediately set trace_id=T2 before worker drains queue. Assert event.trace_id == T1.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FP-FRAME-NONDET",
+        "hypothesis": "Raising the same exception type from the same three top frames via two different call sites that pass through a decorator with functools.wraps yields frames whose __qualname__ or filename differ (e.g., absolute vs site-packages path), producing two fingerprints for identical incidents and splitting the issue group.",
+        "input_fixture": "def boom(): raise RuntimeError('x')\n@wraps_decorator\ndef f1(): boom()\ndef f2(): boom()\nsink.capture_exception from both; assert fingerprints equal.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PII-NESTED-REDACT",
+        "hypothesis": "PII redaction only scans top-level keys in extras/tags, so an email nested inside extras={'user': {'profile': {'email': 'x@y.com'}}} or inside a list of dicts is transmitted verbatim, leaking credentials/PII over the wire.",
+        "input_fixture": "sink.capture_exception(Exception('e'), extras={'user': {'profile': {'email': 'leak@x.com', 'password': 'p'}}, 'authz_list': [{'authorization': 'Bearer xyz'}]})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-BLOCK-BACKPRESSURE",
+        "hypothesis": "When the background worker queue is bounded and full (slow/unreachable backend), capture_exception falls back to a synchronous put or blocking send, violating the non-blocking invariant and blocking the caller's request-serving thread beyond an acceptable bound.",
+        "input_fixture": "Configure backend to hang 30s. Fire 10_000 capture_exception calls in a tight loop from the hot path; measure p99 latency of capture_exception \u2014 must remain <1ms.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-BEFORE-SEND-NONE-PARTIAL",
+        "hypothesis": "A before_send hook that mutates the event dict in-place and then returns None still leaks the partially-mutated event because the sink enqueued a reference before invoking the hook, or transmits metadata (breadcrumb, envelope header) even when the body is dropped.",
+        "input_fixture": "sink.before_send(lambda e: (e.__setitem__('leaked', 'yes'), None)[1]); sink.capture_exception(ValueError('x')); inspect backend for any transmission.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SAMPLE-BEFORE-FP",
+        "hypothesis": "Sampling decision is applied at capture_exception entry (before the fingerprinter runs), so a rare variant whose fingerprint would otherwise be kept for first-seen-boost is dropped by random head-of-queue sampling, violating the post-fingerprint sampling contract.",
+        "input_fixture": "Set sample_rate=0.01, seed rng deterministically. Emit 1000 exceptions: 999 of fingerprint A, 1 of fingerprint B. Assert variant B is never dropped.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CUSTOM-FP-EXCEPTION",
+        "hypothesis": "A registered fingerprinter that raises (e.g., AttributeError on exc.__cause__) causes the sink to fall back to exception-repr-based grouping, producing a different fingerprint than the default three-frame rule and splitting groups; or worse, swallows the event entirely.",
+        "input_fixture": "sink.register_fingerprinter(lambda e: e.nonexistent_attr); sink.capture_exception(ValueError('x')); compare fingerprint to default-path fingerprint for same exception.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNICODE-TAG-INJECT",
+        "hypothesis": "Malformed/oversized tag keys \u2014 e.g., tags with embedded NUL, newline, or 10MB string values, or non-str keys coerced via str() \u2014 bypass validation and crash the serializer on the worker thread, silently dropping all subsequent events queued behind it (amplification).",
+        "input_fixture": "sink.capture_exception(Exception('x'), tags={'\\x00\\n': 'A'*10_000_000, 123: 'v'}); then fire 100 normal captures; count delivered.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CHAINED-EXC-FRAMES",
+        "hypothesis": "Exceptions raised with `raise X from Y` expose __cause__ frames; the fingerprinter takes top-3 frames of the outermost exception in one call and top-3 of the innermost in another (depending on traceback walk direction), splitting identical chained errors into two groups.",
+        "input_fixture": "try: raise IOError('a')\nexcept IOError as e: raise ValueError('b') from e  \u2014 capture twice through different wrappers; assert fingerprints equal.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FORK-WORKER-DEAD",
+        "hypothesis": "After os.fork() (e.g., gunicorn prefork, multiprocessing.Process), the parent's background worker thread does not exist in the child, so capture_exception in the child either silently drops events or blocks on a dead queue; violates non-blocking AND event-capture guarantees.",
+        "input_fixture": "Initialize sink in parent. os.fork(). In child: raise and sink.capture_exception(exc). Assert capture returns <1ms AND event is delivered.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REDACT-CASE-ALIAS",
+        "hypothesis": "PII redaction uses exact case-sensitive key match, so 'Email', 'E-Mail', 'EMAIL', 'user_email', 'Authorization' (vs 'authorization'), 'passwd', or 'pwd' slip through and are transmitted in cleartext.",
+        "input_fixture": "sink.capture_exception(Exception('e'), extras={'Email': 'a@b', 'Authorization': 'Bearer k', 'user_email': 'c@d', 'PASSWORD': 'p'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-BEFORE-SEND-INJECT",
+        "hypothesis": "A before_send callback returning a crafted dict with oversized nested payload or recursive self-reference (event['self']=event) causes json serialization to infinite-loop or OOM on the worker, blocking all subsequent events \u2014 effective DoS amplification from a single malformed hook.",
+        "input_fixture": "ev={}; ev['self']=ev; sink.before_send(lambda e: ev); sink.capture_exception(Exception('x')); then fire 1000 more captures.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CTX-MISSING-VS-NONE",
+        "hypothesis": "When only request_id is set (trace_id/span_id unset), the serializer omits request_id because it requires all three to be present, OR writes literal 'None' strings, violating the 'when ANY of those are set' clause.",
+        "input_fixture": "Set only request_id='R1' (trace/span unset). sink.capture_exception(ValueError('x')). Assert event.request_id=='R1' and no 'None' literals appear.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SAMPLING-INT-OVERFLOW",
+        "hypothesis": "Sampling counter uses a 32-bit int that wraps after ~2^31 events, flipping the modulo-based keep/drop decision polarity mid-run and causing rare-variant suppression to silently invert.",
+        "input_fixture": "Configure sample_rate=1/10. Loop capture_exception 2_200_000_000 times with fingerprint variance and assert no polarity flip in the keep/drop stream (statistical check at the wrap boundary).",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-DEDUP-WINDOW",
+        "hypothesis": "Identical exceptions raised in a tight loop (e.g., retry storm) are deduplicated by a short in-memory window keyed on fingerprint only, so legitimate repeat incidents from distinct request_ids are dropped, violating capture-on-every-event expectation and hiding traffic spikes.",
+        "input_fixture": "Loop: for rid in 1000: set request_id=rid; sink.capture_exception(ValueError('same')). Assert backend received 1000 events (or documented sampling fraction thereof), not 1.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CTXVAR_TEARDOWN_RACE",
+        "hypothesis": "If trace_id/span_id/request_id are stored in contextvars.ContextVar and the background worker reads them asynchronously after the originating async task or thread finishes, the context is already torn down (or belongs to a new request reusing the same thread), causing the invariant 'event MUST include active trace_id' to be silently violated with either None or a wrong request's ID attached.",
+        "input_fixture": "async def handler(request):\n    ctx_trace.set('trace-abc-123')\n    try:\n        raise ValueError('boom')\n    except Exception as e:\n        sink.capture_exception(e)  # enqueues to background worker\n    # request context ends here; worker runs 200ms later on reused thread with ctx_trace='trace-xyz-999'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY_TRACEBACK_FINGERPRINT",
+        "hypothesis": "When an exception is constructed and raised programmatically with no Python stack frames (e.g., BaseException() raised via C extension, or exc.__traceback__ = None), the 'top-three stack frames' are absent. Two different code paths raising the same exception type with no frames would produce identical fingerprints (false merge), OR the implementation crashes/returns a random UUID each call (non-deterministic), violating the determinism invariant.",
+        "input_fixture": "exc = ValueError('disk full')\nexc.__traceback__ = None  # no frames\nsink.capture_exception(exc)  # first call -> fingerprint X\ntime.sleep(1)\nexc2 = ValueError('disk full')\nexc2.__traceback__ = None\nsink.capture_exception(exc2)  # second call -> must equal X",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PII_NESTED_EXTRAS_BYPASS",
+        "hypothesis": "The PII redaction contract specifies 'email, password, authorization' field names but does not constrain search depth. If extras contains a nested dict (e.g., extras={'user': {'email': 'victim@example.com', 'password': 's3cr3t'}}), a shallow-only redaction pass will leave the PII intact in the transported payload. Only top-level keys get scrubbed, leaking credentials via nested structure.",
+        "input_fixture": "sink.capture_exception(\n    RuntimeError('auth failure'),\n    extras={\n        'user': {\n            'email': 'victim@example.com',\n            'password': 'hunter2',\n            'authorization': 'Bearer eyJhbGciOi...'\n        },\n        'request_body': {'token': 'abc', 'password': 'letmein'}\n    }\n)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PII_CASE_AND_UNICODE_BYPASS",
+        "hypothesis": "PII redaction keyed on exact string matches ('email', 'password', 'authorization') will miss case variants ('Email', 'EMAIL', 'Password', 'AUTHORIZATION') and Unicode lookalikes ('em\u0430il' with Cyrillic \u0430, 'authoriz\u0430tion'). An attacker-controlled extras mapping with these keys passes through unredacted, leaking PII to the error-tracking backend.",
+        "input_fixture": "sink.capture_exception(\n    ValueError('bad input'),\n    extras={\n        'Email': 'victim@corp.com',         # capital E\n        'PASSWORD': 'supersecret',           # all caps\n        'Authorization': 'Bearer tok',       # title case\n        'em\\u0430il': 'also.leaked@x.com',  # Cyrillic a\n    }\n)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-BEFORE_SEND_PARTIAL_TRANSMIT",
+        "hypothesis": "If the background worker serializes and begins writing the event payload to the network socket (chunked HTTP) before invoking before_send hooks, a hook that returns None cannot retract bytes already flushed. The invariant 'NEVER partially transmit' is violated: the error-tracking backend receives a truncated but identifiable event fragment containing PII or sensitive stack frames.",
+        "input_fixture": "# Hook that unconditionally drops all events\nsink.before_send(lambda event: None)\n# Force a large event that triggers chunked transfer\nbig_extras = {'data': 'A' * 100_000}\nsink.capture_exception(RuntimeError('sensitive op'), extras=big_extras)\n# Monitor backend: assert zero bytes received",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SAMPLING_BEFORE_FINGERPRINT",
+        "hypothesis": "If the implementation applies the sampling rate check at enqueue time (head-of-queue) before the fingerprint is computed on the background worker, a sample_rate=0.01 will drop 99% of events at the queue boundary. A rare exception variant that fires only once will be discarded 99% of the time regardless of its fingerprint, violating the invariant that sampling applies AFTER fingerprinting so rare variants are never accidentally suppressed.",
+        "input_fixture": "# Configure 1% sample rate\nsink.set_sample_rate(0.01)\n# Fire a unique, never-before-seen exception variant exactly once\ntry:\n    raise IndexError('buffer overread at offset 0xDEAD')\nexcept IndexError as e:\n    event_id = sink.capture_exception(e)\n# Expected: this unique fingerprint is always captured (post-fingerprint sampling)\n# Bug: ~99% chance it is silently dropped at queue entry",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FINGERPRINTER_EXCEPTION_BLOCKS_CALLER",
+        "hypothesis": "A registered fingerprinter function that raises an unhandled exception (ZeroDivisionError, RecursionError, MemoryError) can propagate out of capture_exception if the implementation calls fingerprinters synchronously before handing off to the background worker. This blocks the caller thread, violating the 'CANNOT block the caller' invariant and introducing a denial-of-service vector where a buggy fingerprinter crashes request handlers.",
+        "input_fixture": "def bad_fingerprinter(exc: BaseException) -> list[str]:\n    raise ZeroDivisionError('fingerprinter bug')\n\nsink.register_fingerprinter(bad_fingerprinter)\n\n# Must NOT raise or block caller\ntry:\n    raise ValueError('normal error')\nexcept ValueError as e:\n    event_id = sink.capture_exception(e)  # should return immediately",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SLOW_BEFORE_SEND_BLOCKS_CALLER",
+        "hypothesis": "If before_send hooks are invoked synchronously in the caller's thread (common naive implementation), a hook that performs blocking I/O (database lookup, HTTP call, file read) will block capture_exception for the duration of that I/O operation. This violates the invariant that serialization and network transmission run on a background worker and the sink cannot block the caller.",
+        "input_fixture": "import time\n\ndef slow_enricher(event: dict) -> dict:\n    time.sleep(5)  # simulates slow external lookup\n    return event\n\nsink.before_send(slow_enricher)\n\nstart = time.monotonic()\ntry:\n    raise RuntimeError('quick error')\nexcept RuntimeError as e:\n    sink.capture_exception(e)\nelapsed = time.monotonic() - start\nassert elapsed < 0.01, f'caller blocked for {elapsed:.2f}s'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK_SKEW_SAMPLE_RATE_RESET",
+        "hypothesis": "If the sampling implementation uses a time-windowed token bucket or sliding window counter keyed on wall-clock time (time.time()), a backward NTP clock correction causes the current timestamp to fall into a previous window, resetting the budget and allowing a burst of events far exceeding the configured sample rate to be transmitted. Rare variants that should be captured once-per-window are now doubly counted, and common variants that should be suppressed escape the rate limiter.",
+        "input_fixture": "# Simulate NTP step-back of 60s mid-burst\nwith mock.patch('time.time', side_effect=[1000.0, 1000.1, 940.0, 940.1, 1000.2]):\n    sink.set_sample_rate(0.1)  # 10% sample rate\n    for i in range(100):\n        sink.capture_exception(ValueError(f'err {i}'))\n# Assert: total transmitted events <= expected_max_for_rate",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONE_HOOK_MULTI_SINK_FANOUT",
+        "hypothesis": "If the ErrorSink fans out to multiple backends (Sentry + Datadog + internal) and before_send returns None, the implementation must drop from ALL backends. A bug where the hook result is checked only for the first backend allows the event to propagate to secondary backends. The invariant says 'NEVER partially transmit' \u2014 transmission to any backend constitutes partial transmission.",
+        "input_fixture": "sink.add_backend('sentry', sentry_client)\nsink.add_backend('datadog', dd_client)\n\n# Hook drops event for PII scrubbing\nsink.before_send(lambda event: None)\n\nsink.capture_exception(ValueError('contains PII'))\n\n# Assert: sentry_client.send_event was NOT called\n# Assert: dd_client.send_event was NOT called (secondary backend leak)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FINGERPRINT_FRAME_LINENO_DRIFT",
+        "hypothesis": "The fingerprint includes 'top-three stack frames' but the specification does not pin which frame attributes are used. If line numbers are included and a code deployment increments line numbers (e.g., adding a docstring bumps all subsequent lines by 2), two captures of the exact same logical exception from the same logical code path produce different fingerprints across deployments, causing the same incident to split into separate issues. This violates the determinism invariant for cross-deployment fingerprint stability.",
+        "input_fixture": "# Deployment v1: exception raised at line 42\nfingerprint_v1 = compute_fingerprint(exc_from_v1)  # frames include lineno=42\n\n# Deployment v2: same function, docstring added, now line 44\nfingerprint_v2 = compute_fingerprint(exc_from_v2)  # frames include lineno=44\n\nassert fingerprint_v1 == fingerprint_v2, 'same logical error must not split issues'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TRACE_CTX_CROSS_THREAD_LEAK",
+        "hypothesis": "Under a thread-pool model (ThreadPoolExecutor reusing threads), if thread-local storage is used for trace_id/span_id/request_id and the background worker thread was previously used for a different request that set these values, a new exception captured on a fresh request before any trace context is set will incorrectly inherit the stale trace_id from the previous request that ran on the same worker thread. The invariant requires including context 'when any of those are set' but stale thread-local values appear set even when the new request never set them.",
+        "input_fixture": "# Thread T1 handles request A: sets trace_id='req-A-trace'\n# Thread T1 is reused for request B which never sets trace_id\n# Background worker is also T1 (same pool)\nexc = RuntimeError('request B error')\nevent_id = sink.capture_exception(exc)\n# Bug: event contains trace_id='req-A-trace' instead of None/absent",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONTEXT-VAR-RACE",
+        "hypothesis": "Trace ID set by parent thread is cleared by GC or context manager exit before background worker reads it, leaving event without required correlation ID despite invariant guarantee.",
+        "input_fixture": "Thread A: set_trace_id('abc123'); sink.capture_exception(exc). Thread B: del trace_id midway through serialization.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-FINGERPRINT-DYNAMIC-FRAMES",
+        "hypothesis": "Stack frame from eval() or dynamically generated code has non-deterministic file path or function name, causing identical logical exceptions to produce different fingerprints across runs.",
+        "input_fixture": "exec('raise ValueError(\"same\")'); capture_exception. Repeat. Different code object addresses \u2192 different frame repr \u2192 different fingerprint.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PII-NESTED-DICT-REDACT",
+        "hypothesis": "PII in nested structures like {\"user\": {\"email\": \"victim@company.com\"}} are not recursively redacted because redactor only scans top-level keys.",
+        "input_fixture": "register_fingerprinter(['email']); raise ValueError({'user': {'email': 'secret@co.com'}}); capture_exception(exc, extras={'data': {'password': '123'}})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CAPTURE-BLOCKS-LARGE-PAYLOAD",
+        "hypothesis": "Exception with 1GB extras dict passed to capture_exception blocks caller for seconds during serialization before returning, violating non-blocking guarantee.",
+        "input_fixture": "exc = ValueError('x'); sink.capture_exception(exc, extras={'blob': bytearray(1024*1024*1024)}); measure elapsed time.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-BEFORE-SEND-PARTIAL-TRANSMIT",
+        "hypothesis": "Event bytes are written to network socket before before_send hook is invoked, so returning None does not prevent partial transmission to server.",
+        "input_fixture": "Instrument socket.send(). Hook: before_send returns None. Observe socket.send() called before hook invocation.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SAMPLING-BEFORE-FINGERPRINT",
+        "hypothesis": "Random sample decision is made on event arrival, then fingerprint is computed, so a rare exception type with 0.1% sample rate gets dropped before its unique fingerprint is even known.",
+        "input_fixture": "set sample_rate=0.001; raise ExceptionType_A(); capture_exception(). Random.random()=0.5 \u2192 dropped before fingerprint computed.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TRACE-ID-CLEARED-ASYNC",
+        "hypothesis": "Async task calls capture_exception; background worker attempts to read contextvars.trace_id but context has been garbage collected by scheduler between capture call and background send.",
+        "input_fixture": "async def f(): await async_ctx(trace_id='xyz'); sink.capture_exception(exc). Context exits before bg worker reads trace_id from wrong context.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-FINGERPRINT-ZERO-FRAMES",
+        "hypothesis": "Exception with empty traceback (tb=None) causes IndexError in fingerprinter when accessing frame [0] or [:3], crashing fingerprint generation.",
+        "input_fixture": "exc = BaseException('msg'); exc.__traceback__ = None; sink.capture_exception(exc)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PII-CASE-MISMATCH",
+        "hypothesis": "PII field registered as lowercase 'email' but exception args contain uppercase key 'Email', so redactor misses it due to case-sensitive dict lookup.",
+        "input_fixture": "register_fingerprinter(['email', 'password']); sink.capture_exception(ValueError({'Email': 'user@co.com', 'Password': 'secret123'}))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HOOK-EXCEPTION-UNHANDLED",
+        "hypothesis": "before_send hook raises KeyError; exception propagates uncaught in background worker, leaving event in undefined state (partially sent or not sent) with no error signaling.",
+        "input_fixture": "before_send(lambda e: e['nonexistent_key']); capture_exception(exc). Background worker crashes.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SAMPLE-RATE-BOUNDARY",
+        "hypothesis": "Sample rate of 0.0 should drop all events, but due to floating-point comparison (e.g., random() >= 0.0 instead of >), all events pass through.",
+        "input_fixture": "set sample_rate=0.0; capture_exception(exc) multiple times; observe all reach backend instead of zero.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PII-CAUSE-CHAIN",
+        "hypothesis": "Exception.__cause__ chain contains PII (e.g., nested ValueError with 'email' in message) but redactor only scans top-level exception, not cause chain.",
+        "input_fixture": "try: raise ValueError('email is invalid@co.com'); except ValueError as e: raise RuntimeError('db_fail') from e; capture_exception",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-FINGERPRINT-FLOAT-DATA",
+        "hypothesis": "Exception args contain float values (e.g., 0.1 + 0.2) that have non-deterministic binary representation, causing fingerprint hash to differ across runs for logically identical exceptions.",
+        "input_fixture": "raise ValueError(0.1 + 0.2); capture_exception (run 1). Repeat in different process with float precision variance.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONTEXT-VAR-UNSET",
+        "hypothesis": "Request ID is set in parent context, but child async task never explicitly reads it, leaving event without required request_id even though one was logically active.",
+        "input_fixture": "set request_id='req-123' in parent. Spawn child task that calls sink.capture_exception() without copying context var into new task.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HOOK-QUEUE-OVERFLOW",
+        "hypothesis": "Before-send hooks are applied in background worker; if background queue overflows, some events may skip hook filtering before being dropped, allowing partial transmission.",
+        "input_fixture": "Queue size = 10. Flood with 1000 exceptions. Observe events queued after overflow reach network without passing through before_send.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "errorsink.event.captured",
+        "required_attributes": [
+          "fingerprint",
+          "level"
+        ]
+      },
+      {
+        "event_name": "errorsink.event.dropped",
+        "required_attributes": [
+          "reason",
+          "fingerprint"
+        ]
+      },
+      {
+        "event_name": "errorsink.pii.redacted",
+        "required_attributes": [
+          "field_count"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "errorsink.events.captured",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "level"
+        ]
+      },
+      {
+        "name": "errorsink.events.dropped",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "reason"
+        ]
+      },
+      {
+        "name": "errorsink.queue.depth",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": []
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "errorsink.capture",
+        "required_attributes": [
+          "fingerprint"
+        ]
+      },
+      {
+        "operation_name": "errorsink.before_send",
+        "required_attributes": []
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 8,
+        "rationale": "All six invariants implemented: context attachment (ERR-INV-01), deterministic fingerprint via type+top-3 frames (ERR-INV-02), recursive PII redaction (ERR-INV-03), background worker non-blocking (ERR-INV-04), before_send None-drop (ERR-INV-05), sampling post-fingerprint (ERR-INV-06). Minor: only first registered fingerprinter is consulted, which is a reasonable but undocumented choice."
+      },
+      {
+        "axis": "completeness",
+        "score": 8,
+        "rationale": "Protocol surface (capture_exception, capture_message, register_fingerprinter, before_send) fully realized. Reference InMemoryErrorSink plus set_context/flush/shutdown round out test and shutdown paths. capture_message redaction and fingerprint included. Missing: no self-observability counters (captured/dropped/queue.depth) the spec advertises."
+      },
+      {
+        "axis": "error_quality",
+        "score": 8,
+        "rationale": "Dedicated ErrorSinkInvariantError subclass; sampling_rate bounds checked at construction with a clear MUST message. Fingerprinter exceptions are isolated with a safe fallback to default_fingerprint. No silent swallowing elsewhere; queue.Empty handled narrowly."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Protocol-based ErrorSink with runtime_checkable enables duck-typed adapters. register_fingerprinter / before_send give clean extension seams matching the extension contract. PII set is injectable; sampling rate injectable; context plumbing is orthogonal. Neutral event dict payload lets TransportAdapters wrap without coupling."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Daemon worker, thread-safe sent list via lock, deterministic sampling bucket, lazy time import in flush. Gaps kept minor for a reference impl: unbounded queue (documented), _pending_worker_load is a stub, shutdown does not join the worker, and self-observability metrics are absent. Acceptable for in-memory reference; deployments wrap with bounded transport."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "API signature matches catalog Protocol exactly (names, kw-only args, return types). Invariants enumerated 1:1 with IDs in docstring. Extension contract (fingerprinter + before_send + neutral payload for TransportAdapter) honored. Namespace obs, purpose, and usage example align with spec."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'fingerprint' is used before it's defined \u2014 a one-liner like 'stable hash of exception type + top-3 call frames' would remove the mystery",
+          "'before_send returning None MUST drop' \u2014 'drop' means 'never send to backend' but reads like a crash condition to newcomers",
+          "Extension contract lists three steps (register fingerprinter, register before_send, implement TransportAdapter) with no example \u2014 the usage block only shows capture, not extension"
+        ],
+        "rewrite_suggestion": "Add a sidebar box: 'What is a fingerprint? A short hash computed from the exception class name and the top 3 stack frames. Two occurrences of the same bug produce the same fingerprint.' Then rename the extension section to 'How to plug in a new error backend' and add a three-line skeleton."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "ERR_INV_06 says sampling applies after fingerprinting but doesn't specify the sampling unit \u2014 per-fingerprint rate-limit, global head sampling, or tail sampling?",
+          "'5ms tick' on the background worker is a magic constant with no tuning knob documented; unclear if it's configurable or if it affects flush latency guarantees",
+          "Overflow policy says 'deployments wrap with a bounded-queue TransportAdapter' but no interface contract is shown, so the abstraction boundary is implied, not stated"
+        ],
+        "rewrite_suggestion": "Add an 'Invariant elaboration' subsection: clarify sampling strategy (per-fingerprint token-bucket recommended), document the worker tick as a constructor parameter with its default, and include the TransportAdapter abstract interface signature inline."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "The claim 'malicious before_send cannot observe raw PII' needs a mechanism \u2014 does redaction run in a separate pre-hook phase, or is there a copy made before calling before_send?",
+          "Custom PII field registration API is not shown \u2014 auditors need to verify that custom fields cannot accidentally bypass the deny-list",
+          "No mention of transport-layer security (TLS, mTLS, bearer token) for the backend connection \u2014 PII redaction protects in-process but wire security is unaddressed"
+        ],
+        "rewrite_suggestion": "Add a 'Redaction execution order' diagram: raw_event \u2192 deny-list scrub \u2192 copy \u2192 before_send(copy). State the API for adding custom fields (e.g., `sink.add_pii_field('tax_id')`). Add a one-sentence transport-security note pointing to TransportAdapter TLS requirements."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Queue overflow behavior is 'unbounded in the reference implementation' with no documented memory ceiling or OOM risk \u2014 no guidance on sizing the bounded-queue adapter",
+          "Three metric names are listed but cardinality (label values for `level` and `reason`) is not defined, making dashboard setup ambiguous",
+          "`flush()` is mentioned for tests/shutdown but timeout behavior (what happens if workers don't drain in N seconds?) is not documented"
+        ],
+        "rewrite_suggestion": "Add an 'Operations runbook' section: expected queue depth at steady state, flush timeout default and override, and a table of metric labels (level: debug|info|warning|error|critical; reason: overflow|before_send_drop|transport_error). Include a one-line OOM mitigation note."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "'MTTD' is not spelled out \u2014 product stakeholders outside engineering may not know Mean Time To Detect",
+          "No examples of supported backends (Sentry, Datadog, GCP Error Reporting) \u2014 hard to estimate integration cost or vendor lock-in risk",
+          "The 'DO NOT USE for audit trails' callout lacks a brief 'why' \u2014 product managers need to explain this boundary to compliance teams"
+        ],
+        "rewrite_suggestion": "Spell out MTTD on first use. Add a parenthetical: 'Compatible backends include Sentry, Datadog, and any system supporting the OpenTelemetry Exceptions spec.' Extend the audit-trail exclusion: 'Audit trails require guaranteed delivery and structured business context; ErrorSink is best-effort and optimized for developer debugging.'"
+      }
+    ]
+  }
+}

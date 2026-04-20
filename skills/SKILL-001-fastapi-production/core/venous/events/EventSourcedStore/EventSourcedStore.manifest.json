@@ -1,0 +1,766 @@
+{
+  "name": "EventSourcedStore",
+  "namespace": "events",
+  "maturity": "battle_tested",
+  "builder_agent_id": 3,
+  "catalog_entry_sha256": "07825871d369a1a65cd229a66c8ed7b121b829eab666441264d7121a7da2ea88",
+  "files": [
+    {
+      "path": "events/EventSourcedStore/EventSourcedStore.cfg",
+      "sha256": "f4d9252be71d05a5c479628cbe437c2a6a52169fee07f64db4eaca00dbf97ba9",
+      "size_bytes": 157,
+      "kind": "test"
+    },
+    {
+      "path": "events/EventSourcedStore/EventSourcedStore.contract.json",
+      "sha256": "26d62e4c1890049d9a4591d35bad9ad7e3cf74a79d23901280eb764631b16848",
+      "size_bytes": 2646,
+      "kind": "contract_json"
+    },
+    {
+      "path": "events/EventSourcedStore/EventSourcedStore.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "events/EventSourcedStore/EventSourcedStore.md",
+      "sha256": "0bc59b6e9b6d22f27ad8e7e06a9ee07e802a3d2be87abe43a07b7591c4f6b20d",
+      "size_bytes": 6471,
+      "kind": "spec_md"
+    },
+    {
+      "path": "events/EventSourcedStore/EventSourcedStore.py",
+      "sha256": "8fed3a0eda8244003c3f47ad5c69f0e2acc35fc880390c5f2f8b2b43ef560c94",
+      "size_bytes": 19090,
+      "kind": "impl"
+    },
+    {
+      "path": "events/EventSourcedStore/EventSourcedStore.tla",
+      "sha256": "f2352d960c8a33fcf0b02ca163a069b974a30380487fbd4233f61b708a863c57",
+      "size_bytes": 3463,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "events/EventSourcedStore/behavioral_EventSourcedStore.py",
+      "sha256": "058b3db59920b1c56110f8ce7e555d951fad293c57d33a8539ae76be7a5becc6",
+      "size_bytes": 7290,
+      "kind": "behavioral"
+    },
+    {
+      "path": "events/EventSourcedStore/chaos_EventSourcedStore.py",
+      "sha256": "5055d36ebf5d8073b39cad394aa3b10c00841d71069d97721e317bcf09cc6f28",
+      "size_bytes": 5880,
+      "kind": "chaos"
+    },
+    {
+      "path": "events/EventSourcedStore/concurrent_EventSourcedStore.py",
+      "sha256": "e6901b88ef49da6a0bab51137c084c66d60433ecc80e333760013fe45baaf8cf",
+      "size_bytes": 6608,
+      "kind": "concurrent"
+    },
+    {
+      "path": "events/EventSourcedStore/dashboard.json",
+      "sha256": "0ed5a7bd5ce48f765763e5ac1fcc669a035ff1332d32c37ff87a04dbb40a6c2d",
+      "size_bytes": 1131,
+      "kind": "dashboard"
+    },
+    {
+      "path": "events/EventSourcedStore/invariant_bindings.json",
+      "sha256": "a42501780f84d490ea7110385f6f938b58cb11ae8a4303126f7d21410a72525f",
+      "size_bytes": 1609,
+      "kind": "test"
+    },
+    {
+      "path": "events/EventSourcedStore/metamorphic_EventSourcedStore.py",
+      "sha256": "6cc2e3b61c091530efbc5896ef0c79f001cd9773b0cb4f98c95f976cbfdcfa1f",
+      "size_bytes": 4688,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "events/EventSourcedStore/observability_EventSourcedStore.py",
+      "sha256": "ba9540c76d9da13b5cfa69cc445b91e18d8f04267d6defc6f1ea4da9be512269",
+      "size_bytes": 2908,
+      "kind": "observability"
+    },
+    {
+      "path": "events/EventSourcedStore/observability_schema.json",
+      "sha256": "36c0f1cdb23013194c226050b907972194351a355a459863e65144f269b66532",
+      "size_bytes": 1600,
+      "kind": "observability"
+    },
+    {
+      "path": "events/EventSourcedStore/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "events/EventSourcedStore/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "events/EventSourcedStore/state_machine_EventSourcedStore.py",
+      "sha256": "9b705f57ba0e86cb7e72e7012acb3c4051262c0d8ce924ccf794e501098cd39d",
+      "size_bytes": 3878,
+      "kind": "state_machine"
+    },
+    {
+      "path": "events/EventSourcedStore/test_EventSourcedStore.py",
+      "sha256": "2354c41857712ad2a0f2fee9217e2abb52b8cbc6a3b26e1c15eddea488152050",
+      "size_bytes": 8168,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "ESS_INV_01",
+      "invariant_text": "append MUST fail with a concurrency error when expected_version does not match the aggregate's current tail; last-writer-wins is FORBIDDEN.",
+      "confirms_test": "test_inv_optimistic_concurrency_confirms",
+      "prevents_test": "test_inv_optimistic_concurrency_prevents",
+      "under_failure_test": "test_inv_optimistic_concurrency_under_failure"
+    },
+    {
+      "invariant_id": "ESS_INV_02",
+      "invariant_text": "Events already written CANNOT be mutated; corrections SHALL be expressed as new, compensating events.",
+      "confirms_test": "test_inv_event_immutability_confirms",
+      "prevents_test": "test_inv_event_immutability_prevents",
+      "under_failure_test": "test_inv_event_immutability_under_failure"
+    },
+    {
+      "invariant_id": "ESS_INV_03",
+      "invariant_text": "Snapshots MUST be reproducible from the event log; the store NEVER treats a snapshot as the source of truth.",
+      "confirms_test": "test_inv_snapshot_derivable_confirms",
+      "prevents_test": "test_inv_snapshot_derivable_prevents",
+      "under_failure_test": "test_inv_snapshot_derivable_under_failure"
+    },
+    {
+      "invariant_id": "ESS_INV_04",
+      "invariant_text": "Replays from zero ALWAYS produce the same logical state given the same event sequence; non-determinism is FORBIDDEN.",
+      "confirms_test": "test_inv_replay_determinism_confirms",
+      "prevents_test": "test_inv_replay_determinism_prevents",
+      "under_failure_test": "test_inv_replay_determinism_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 2032,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 9346,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 16987,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 38206,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 9019,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 9223,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 135454,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "40 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 10149,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 8771,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 78119,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 321233,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CONCURRENT-APPEND-RACE",
+        "hypothesis": "Two concurrent append() calls with the same expected_version=5 race past the version check; both commit, producing two events at version 6 or silently advancing to 7, violating optimistic concurrency and enabling last-writer-wins.",
+        "input_fixture": "Thread A: append('agg-1', expected_version=5, events=[E_a]); Thread B (simultaneously): append('agg-1', expected_version=5, events=[E_b]). Run 1000 iterations under threading.Barrier.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EXPECTED-VERSION-OVERFLOW",
+        "hypothesis": "Passing expected_version=2**63-1 or -1 bypasses the equality check if the store uses signed int comparison with wraparound, or treats negatives as 'any version', letting appends succeed regardless of tail.",
+        "input_fixture": "append('agg-1', expected_version=-1, events=[E]) on an aggregate at version 3; also try expected_version=9223372036854775807.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-EVENTS-APPEND",
+        "hypothesis": "append() with events=[] (empty iterable) still increments version or returns success, creating phantom versions that break subsequent expected_version arithmetic.",
+        "input_fixture": "append('agg-1', expected_version=0, events=iter([])) on a fresh aggregate; then append('agg-1', expected_version=1, events=[E]).",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EVENT-MUTATION-POST-APPEND",
+        "hypothesis": "If events are stored by reference (not deep-copied or serialized), mutating the original dict after append() mutates the persisted event, violating immutability of the log.",
+        "input_fixture": "e = {'amount': 100}; append('agg-1', 0, [e]); e['amount'] = 999; then load('agg-1') \u2014 expect 100, observe 999.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SNAPSHOT-AS-TRUTH",
+        "hypothesis": "latest_snapshot() is returned by load() as a shortcut without replaying the tail events since the snapshot version, causing load to miss the most recent appends.",
+        "input_fixture": "append 10 events; snapshot(agg, version=10, state=S10); append 3 more events at v=11,12,13; call load \u2014 expect 13 events replayed, observe only snapshot state S10.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SNAPSHOT-DIVERGENCE",
+        "hypothesis": "A snapshot stored with state that cannot be recomputed from replaying events 0..version is accepted silently; next load prefers the snapshot, producing state that diverges from the fold.",
+        "input_fixture": "append events that fold to state {x:5}; snapshot(agg, version=N, state={x:999}); load and compare to fresh fold from zero.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NONDETERMINISTIC-REPLAY-ORDER",
+        "hypothesis": "load() returns events from an unordered storage backend (dict/set) or parallel reads, producing different orderings across calls and thus different folded states.",
+        "input_fixture": "Append 1000 events sequentially with timestamps; call load() 100 times; compare ordering hashes; also run under pytest-xdist parallel workers.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED-AGGREGATE-ID",
+        "hypothesis": "aggregate_id='' empty string, None, or containing SQL/NoSQL injection payload ('; DROP TABLE events;--') is accepted and either corrupts the namespace or leaks into query layer.",
+        "input_fixture": "append('', 0, [E]); append(None, 0, [E]); append(\"a'; DELETE FROM events WHERE '1'='1\", 0, [E]).",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-CLOCK-NONDETERMINISM",
+        "hypothesis": "Event fold uses datetime.now() or time.time() inside the reducer, so replaying the same log on a different day produces different derived fields (e.g., age, expiry), violating determinism.",
+        "input_fixture": "Append events with embedded created_at; fold today; freeze clock to +90 days via freezegun; fold again; diff states.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-EVENT-AMPLIFICATION",
+        "hypothesis": "An iterable events argument is a generator consumed twice (once for validation, once for persistence) \u2014 or the store reads load() as a generator and a concurrent append causes duplicate yielding, amplifying a single logical event into many.",
+        "input_fixture": "append('agg-1', 0, (e for e in [E1,E2])); then load('agg-1'); also test load() while append() runs mid-iteration.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-EVENT-INJECTION",
+        "hypothesis": "Events containing serialized prompt-injection strings or pickled callables are deserialized on load() via pickle/eval, executing arbitrary code during replay \u2014 a credential/secret exfiltration vector.",
+        "input_fixture": "append('agg-1', 0, [{'__reduce__': (os.system, ('cat ~/.aws/credentials',))}]); call load('agg-1').",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-APPEND-RETURN-VERSION-SKEW",
+        "hypothesis": "append() returns the new tail version, but under a retry/replay of the same client call (idempotency missing), the same logical events are appended twice with consecutive versions, duplicating state transitions.",
+        "input_fixture": "client_call_id='abc'; append('agg-1', 0, [E]) \u2192 returns 1; network retry: append('agg-1', 0, [E]) again \u2192 should fail or dedupe, observe returns 2 with E duplicated.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TOCTOU_VERSION_RACE",
+        "hypothesis": "Two concurrent writers both read version N, both call append(id, N, ...) simultaneously; if the store uses a read-then-CAS pattern without a DB-level atomic compare-and-swap or serializable transaction, both writes succeed and one silently overwrites the other, violating last-writer-wins prohibition and the concurrency-error invariant.",
+        "input_fixture": "Thread A: append('agg-1', 0, [EventA]); Thread B: append('agg-1', 0, [EventB]) \u2014 both dispatched simultaneously before either completes",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EXPECTED_VERSION_NEG_ONE",
+        "hypothesis": "Passing expected_version=-1 (a sentinel sometimes interpreted as 'skip version check' in ES libraries) may bypass the OCC guard entirely, allowing any writer to force-append without conflict detection, violating the mandatory concurrency error invariant.",
+        "input_fixture": "append('agg-1', -1, [EventA]) when current tail is version 5",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-VERSION_INT_OVERFLOW",
+        "hypothesis": "Supplying expected_version=2**63-1 (max int64) causes an integer overflow or wraps to a negative number in version comparison logic, allowing a bogus append to pass the version check when the actual tail is at a completely different version.",
+        "input_fixture": "append('agg-1', 9223372036854775807, [EventX]) when actual tail version is 42",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY_EVENTS_BUMP",
+        "hypothesis": "Calling append with an empty events iterable may still increment the stored version counter, meaning a subsequent legitimate writer with expected_version=N will fail even though no domain event was actually written, creating phantom version advancement and stale OCC rejections.",
+        "input_fixture": "append('agg-1', 0, []) \u2014 empty list \u2014 when current tail is version 0",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DIRECT_STORAGE_MUTATION",
+        "hypothesis": "If the underlying persistence layer (e.g., a dict, list, or DB row) is returned by reference from load(), a caller can mutate the returned object in-place, silently altering the stored event log without going through append(), violating the immutability invariant.",
+        "input_fixture": "events = list(store.load('agg-1')); events[0]['payload'] = 'tampered'; # no append call \u2014 check if store.load('agg-1') now reflects the mutation",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SNAPSHOT_OVERRIDES_EVENTS",
+        "hypothesis": "Storing a snapshot at version N and then loading the aggregate returns only snapshot state without replaying events N+1..tail, meaning a corrupt or attacker-controlled snapshot becomes the effective source of truth, violating the invariant that snapshots are never authoritative.",
+        "input_fixture": "append('agg-1', 0, [E1, E2, E3]); snapshot('agg-1', 3, corrupted_state); result = load('agg-1') \u2014 verify whether E1..E3 are still replayed or corrupted_state is returned directly",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SNAPSHOT_FUTURE_VERSION",
+        "hypothesis": "Calling snapshot() with a version number higher than the current event tail causes load() to believe the aggregate is ahead of the event log; subsequent load-and-fold skips real events because their version is 'below' the snapshot, silently dropping domain history and making replay diverge from zero-replay.",
+        "input_fixture": "append('agg-1', 0, [E1]); snapshot('agg-1', 9999, fake_state); load('agg-1') \u2014 snapshot is at v9999 but only E1 (v1) exists",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONDETERMINISTIC_TIMESTAMP_IN_FOLD",
+        "hypothesis": "If any event or the fold function captures datetime.now() or uuid4() during replay rather than during original append, two separate load() calls for the same aggregate_id will produce different logical states, violating the deterministic-replay invariant.",
+        "input_fixture": "load('agg-1') called at T=0 \u2192 state_A; load('agg-1') called at T=5s \u2192 state_B; assert state_A == state_B \u2014 check for timestamp or UUID drift inside reconstructed state",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AGGREGATE_ID_INJECTION",
+        "hypothesis": "Passing an aggregate_id containing SQL metacharacters or path traversal sequences (e.g., \"'; DROP TABLE events; --\" or \"../admin\") exploits insufficient input sanitization and either corrupts the event store's storage layer or leaks events from a different aggregate's namespace.",
+        "input_fixture": "append(\"'; DROP TABLE events; --\", 0, [EventA]); load(\"'; DROP TABLE events; --\")",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY_AMPLIFICATION_LARGE_LOG",
+        "hypothesis": "An adversary appends INT_MAX events to a single aggregate_id (each call with expected_version=N); load() must fold all of them on every reconstruction with no upper bound, causing unbounded CPU/memory consumption and effectively a denial-of-service against any reader of that aggregate \u2014 the store provides no pagination or snapshot enforcement ceiling.",
+        "input_fixture": "for v in range(0, 10_000_000): append('agg-bomb', v, [TinyEvent()]); then load('agg-bomb') \u2014 measure memory and time",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONCURRENT_SNAPSHOT_VERSION_RACE",
+        "hypothesis": "Two threads simultaneously call snapshot('agg-1', 5, stateA) and snapshot('agg-1', 5, stateB); without a unique constraint on (aggregate_id, version) in the snapshot table, both rows are inserted. latest_snapshot() then returns whichever is physically last, making the snapshot layer non-deterministic and violating reproducibility.",
+        "input_fixture": "Thread A: snapshot('agg-1', 5, {'balance': 100}); Thread B: snapshot('agg-1', 5, {'balance': 999}) \u2014 dispatched concurrently; then latest_snapshot('agg-1')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LOAD_NONEXISTENT_AGGREGATE",
+        "hypothesis": "Calling load() for an aggregate_id that has never been written may return None or raise an exception rather than an empty iterable, breaking the fold caller who iterates the result and causing unexpected AttributeError or TypeError that leaks internal implementation details.",
+        "input_fixture": "result = store.load('does-not-exist-aggregate-xyz'); list(result)  # should be empty iterable, not None or exception",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SNAPSHOT_PAYLOAD_DESERIALIZATION",
+        "hypothesis": "If snapshot state is stored via pickle or eval and a malicious actor can write to the snapshot store (e.g., via an internal API or compromised service), loading the latest_snapshot() will execute arbitrary code during deserialization, achieving RCE and completely bypassing event-log integrity.",
+        "input_fixture": "snapshot('agg-1', 1, b\"cos\\nsystem\\n(S'id'\\ntR.\" )  # pickle exploit payload; latest_snapshot('agg-1')  # triggers exec",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EXPECTED_VERSION_FLOAT",
+        "hypothesis": "Passing expected_version=0.0 or expected_version=1e10 (a float) instead of an int may coerce incorrectly in Python comparisons (e.g., 1.0 == 1 is True), allowing a version check to pass when it should fail or causing a TypeError that skips the check entirely, bypassing OCC.",
+        "input_fixture": "append('agg-1', 0.0, [EventA]) when tail is at version 0; then append('agg-1', 1e0, [EventB]) \u2014 verify version check is strict-typed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EVENTS_GENERATOR_EXHAUSTION",
+        "hypothesis": "Passing a one-shot generator as the events argument to append(); if the implementation iterates it twice (once to validate, once to persist), the second pass yields nothing, silently writing zero events while reporting success and advancing version, corrupting the event log.",
+        "input_fixture": "gen = (e for e in [EventA, EventB]); append('agg-1', 0, gen)  # generator exhausted after first internal pass; verify both events are persisted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-VERSION-RACE",
+        "hypothesis": "Two threads simultaneously call append with expected_version=0 on empty aggregate. Both see version 0 before either write; both succeed, violating mutual exclusion guarantee.",
+        "input_fixture": "Thread A: append(agg_id='order-1', expected_version=0, events=[OrderCreated(id=1)]); Thread B: append(agg_id='order-1', expected_version=0, events=[OrderCreated(id=2)]); execute simultaneously.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-VERSION-INT-OVERFLOW",
+        "hypothesis": "After 2^31 append operations, version counter wraps to negative. Late append with expected_version=-2147483648 matches wrapped tail value, bypassing concurrency check.",
+        "input_fixture": "Append 2^31 events sequentially. Call append(agg_id, expected_version=-2147483648, events=[event]). Version wrapping makes check pass when it should fail.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EVENT-MUTATION-POST-PERSIST",
+        "hypothesis": "After append succeeds, attacker directly mutates persisted event data. load() returns mutated events; replay state diverges from original fold result.",
+        "input_fixture": "append(agg_id, 0, [Transfer(from='A', to='B', amount=100)]) succeeds. Attacker modifies persisted event amount to 1. load() and fold produce wrong state.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SNAPSHOT-TRUSTS-OVER-EVENTLOG",
+        "hypothesis": "Snapshot data is corrupted to contain wrong state. load() shortcuts to snapshot without fully replaying subsequent events, reconstructed state diverges from event log truth.",
+        "input_fixture": "Corrupt latest_snapshot(agg_id) to return (version=5, state={balance:999}). Event log shows correct balance=500. If load() trusts snapshot, state is wrong.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NONDETERMINISTIC-FOLD-WITH-CLOCK",
+        "hypothesis": "Fold function calls time.time() or datetime.now(). Replaying identical event sequence at different wall-clock times produces different reconstructed state.",
+        "input_fixture": "append(agg_id, 0, [TransferRequested()]) at T1. Fold applies current_time() to state. Replay same events at T2. Fold yields different timestamp. States diverge.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-APPEND-VERSION-BYPASS",
+        "hypothesis": "Calling append(agg_id, expected_version=0, events=[]) succeeds as no-op. Multiple calls with identical version all succeed, violating mutual exclusion on expected_version.",
+        "input_fixture": "append(agg_id, 0, []) returns 0; append(agg_id, 0, []) returns 0 again. Both succeed despite version mismatch invariant requiring failure.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NEGATIVE-EXPECTED-VERSION-COERCE",
+        "hypothesis": "If expected_version=-1 bypasses validation, it may coerce or match tail incorrectly, allowing conflicting appends with negative versions to both succeed.",
+        "input_fixture": "append(agg_id, expected_version=-1, events=[e1]); append(agg_id, expected_version=-1, events=[e2]). Both claim version -1, both succeed despite conflict.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TIMESTAMP-COLLISION-UNORDERED-FOLD",
+        "hypothesis": "Multiple events with identical timestamps fold in arbitrary iteration order (dict/set ordering). Replaying same events produces different states depending on fold order.",
+        "input_fixture": "append(agg_id, 0, [Event(ts=1000, id=1), Event(ts=1000, id=2)]). First load folds id=1 then id=2 -> state A. Second load folds id=2 then id=1 -> state B. A != B.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SNAPSHOT-VERSION-OUT-OF-BOUNDS",
+        "hypothesis": "latest_snapshot returns version=10 but event log contains only 8 events. Attempting to load from snapshot version causes index error or silent data loss.",
+        "input_fixture": "snapshot(agg_id, version=10, state={...}); truncate event log to 8 events. latest_snapshot returns (10, {...}). load() tries to replay from version 10, undefined behavior.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-SNAPSHOT-APPEND-RACE",
+        "hypothesis": "Thread A calls snapshot(agg_id, 2, state) concurrently with Thread B appending events, advancing version to 3. Snapshot captures intermediate state unreachable in any linearization.",
+        "input_fixture": "snapshot(agg_id, 2, state_value) races with append(agg_id, 2, [event3]). Snapshot state may not correspond to any point in linearized event sequence.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MALFORMED-EVENT-TYPE-SILENT-SKIP",
+        "hypothesis": "append includes None or invalid event type. Fold logic fails to validate, crashes or silently skips. Retry replay produces different state than original fold.",
+        "input_fixture": "append(agg_id, 0, [None, TransferCreated(amount=100)]). First fold crashes on None. Second load skips it. Same events fold to different reconstructed states.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-AGGREGATE-ID-PATH-TRAVERSAL-POISON",
+        "hypothesis": "If aggregate_id is not validated, attacker uses path traversal (../../../shared_id). Events written to wrong aggregate's log, poisoning shared data.",
+        "input_fixture": "append(agg_id='../../../account-X', expected_version=0, events=[TransferOut(amount=9999)]). Event log for account-X corrupted with attacker's event.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SNAPSHOT-MUTABLE-STATE-ESCAPE",
+        "hypothesis": "latest_snapshot returns mutable object (dict/list). Caller modifies returned state. Subsequent replay uses corrupted snapshot reference, diverging from event log truth.",
+        "input_fixture": "state = latest_snapshot(agg_id); state['balance'] = 999; fold() caches or reuses mutable state. Next load produces wrong state based on modified snapshot reference.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "ess.appended",
+        "required_attributes": [
+          "aggregate_id",
+          "expected_version",
+          "new_version",
+          "batch_size"
+        ]
+      },
+      {
+        "event_name": "ess.concurrency.rejected",
+        "required_attributes": [
+          "aggregate_id",
+          "expected_version",
+          "actual_version"
+        ]
+      },
+      {
+        "event_name": "ess.snapshot.recorded",
+        "required_attributes": [
+          "aggregate_id",
+          "version"
+        ]
+      },
+      {
+        "event_name": "ess.replay.completed",
+        "required_attributes": [
+          "aggregate_id",
+          "events_folded",
+          "from_snapshot"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "ess.appends",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": [
+          "result"
+        ]
+      },
+      {
+        "name": "ess.batch.size",
+        "metric_type": "histogram",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": []
+      },
+      {
+        "name": "ess.replay.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "from_snapshot"
+        ]
+      },
+      {
+        "name": "ess.aggregate.version",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 10000,
+        "label_keys": [
+          "aggregate_id"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "ess.append",
+        "required_attributes": [
+          "aggregate.id",
+          "expected.version",
+          "batch.size"
+        ]
+      },
+      {
+        "operation_name": "ess.load",
+        "required_attributes": [
+          "aggregate.id",
+          "events.count"
+        ]
+      },
+      {
+        "operation_name": "ess.snapshot",
+        "required_attributes": [
+          "aggregate.id",
+          "version"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 10,
+        "rationale": "Protocol matches catalog api_signature verbatim; invariants ESS-INV-01..04 are faithfully encoded (version check, deep-copy on ingress/egress, snapshot-never-source-of-truth, deterministic ordering). Sources cited align with Fowler/Vernon/Richardson."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "Covers load/append/snapshot/latest_snapshot plus replay, replay_from_snapshot, AggregateTypeRegistry (extension contract), ConcurrencyError, SnapshotRecord. Minor: no explicit metrics hooks though spec mentions ess.* telemetry \u2014 observability is left to adapters."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Typed exception hierarchy (EventSourcedStoreInvariantError \u2192 ConcurrencyError) with invariant IDs embedded in messages; ConcurrencyError carries structured fields. bool-vs-int guard is thoughtful. Messages are safe to log (no contents leaked)."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Protocol + runtime_checkable, clean registry for fold/serializer, replay helpers accept any fold. Minor coupling: replay helpers type-hint InMemoryEventSourcedStore instead of the Protocol, slightly narrowing substitutability."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "RLock-guarded mutation, materialised iterator prevents torn reads, deep-copy defends against mutation, aggregate-count and id-length caps prevent unbounded growth. In-memory only (expected for reference); no metrics emission or async variant."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 10,
+        "rationale": "Protocol signature is byte-for-byte consistent with catalog api_signature; invariants, extension_contract (registry), and consumption_example align with the spec. Zero import-time I/O as required."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "API section defers authority to 'EventSourcedStore.contract.json' without saying where that file lives or how to open it \u2014 a first-timer hits a dead end before seeing any signatures.",
+          "'Fold function' and 'aggregate' are used without definition; a dev coming from ActiveRecord-style ORMs will not know what to fold or why state starts as None in the rebuild example.",
+          "The retry loop after ConcurrencyError is mentioned but not shown \u2014 the usage example only shows the happy path, leaving the most important failure case undocumented by code."
+        ],
+        "rewrite_suggestion": "Add a three-step 'Quick Start' block that (1) shows the full load \u2192 command \u2192 append \u2192 ConcurrencyError retry cycle in one runnable snippet, (2) defines 'aggregate' in one sentence inline, and (3) replaces the contract.json reference with a direct link or an inline summary of the four main method signatures."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "Schema evolution for events is completely absent \u2014 no guidance on how adding/removing/renaming fields in an event struct interacts with the replay-determinism invariant (ESS-INV-04).",
+          "The extension contract says silent re-registration is rejected but does not specify the exception type or whether registration is thread-safe, which matters for module-level registration at import time.",
+          "Outbox / dual-write is not addressed; systems that emit outbound events need to know whether append and publish are atomic or whether they must implement an outbox themselves."
+        ],
+        "rewrite_suggestion": "Add an 'Event Schema Evolution' subsection (additive-only, version-tagged envelope, or versioned fold dispatch) and a note in the Extension Contract section on thread-safety of AggregateTypeRegistry.register plus a one-sentence outbox recommendation."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "Authorization model is entirely absent \u2014 the store accepts any aggregate_id from any caller; there is no mention of whether read or append access must be gated upstream and what that boundary looks like.",
+          "'Redact before append' is stated as policy but there is no mechanism, pattern reference, or example; a PII-containing event that slips through has no remediation path given the immutability invariant.",
+          "The in-memory reference implementation deep-copies on egress, but the durable adapter contract does not mandate the same protection \u2014 a naive adapter could hand out live references."
+        ],
+        "rewrite_suggestion": "Add an 'Authorization boundary' note stating that the store is not an authorization primitive and callers must enforce access control before calling load/append. Add a 'PII handling' paragraph that links to a redaction helper or event-envelope pattern. Mandate deep-copy semantics in the adapter contract explicitly."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "The in-memory store loses all state on process restart; there is no mention of what durability story exists for production (durable adapter, registry pattern) or how to detect accidental use of the in-memory store in prod.",
+          "The 5% conflict ratio heuristic has no source or confidence interval \u2014 SREs need to know whether this is empirical, theoretical, or a placeholder so they can calibrate alerts correctly.",
+          "No SLO targets or p99 baselines are given for ess.replay.duration; 'starts to miss its SLO' is circular \u2014 the doc needs at least an example threshold or a pointer to where SLOs are defined."
+        ],
+        "rewrite_suggestion": "Add a 'Production readiness' callout that explicitly warns InMemoryEventSourcedStore is not durable and names the durable adapter pattern. Replace the bare 5% with a sourced reference or label it as a starting heuristic. Add example SLO values (e.g., p99 replay < 50 ms) or a pointer to the runbook where they live."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The Provenance section (Fowler 2002, Vernon 2013, Richardson 2018) reads as an academic bibliography \u2014 a PM gains nothing from it and it signals 'this is for engineers only' before they reach the trade-off content they do need.",
+          "The 'when NOT to use' bullet about snapshot design is worded as a technical prerequisite ('design snapshotting first') without explaining what that costs in time or complexity, making it hard to use in a scoping conversation.",
+          "There is no summary of the operational cost delta versus a plain repository (extra complexity, extra metrics, retry logic in callers) that a PM could use to justify or reject the primitive in a project proposal."
+        ],
+        "rewrite_suggestion": "Replace Provenance with a two-sentence 'Trade-off summary' (audit + temporal queries in exchange for higher call-site complexity and snapshot operational overhead). Rewrite the snapshot NOT-USE bullet as a cost statement: 'if the event log grows to thousands of events per aggregate, you will need to invest in snapshot infrastructure before launch.'"
+      }
+    ]
+  }
+}

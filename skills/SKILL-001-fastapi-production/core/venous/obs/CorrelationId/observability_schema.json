@@ -1,0 +1,16 @@
+{
+  "logs": [
+    {"event_name": "correlation_id.generated", "required_attributes": ["request_id"]},
+    {"event_name": "correlation_id.propagated", "required_attributes": ["request_id", "source_header"]},
+    {"event_name": "correlation_id.rejected", "required_attributes": ["reason"]}
+  ],
+  "metrics": [
+    {"name": "correlation_id.generated.count", "metric_type": "counter", "unit": "1", "cardinality_bound": 10, "label_keys": []},
+    {"name": "correlation_id.propagated.count", "metric_type": "counter", "unit": "1", "cardinality_bound": 20, "label_keys": ["source_header"]},
+    {"name": "correlation_id.rejected.count", "metric_type": "counter", "unit": "1", "cardinality_bound": 20, "label_keys": ["reason"]}
+  ],
+  "spans": [
+    {"operation_name": "correlation_id.extract", "required_attributes": ["had_upstream"]},
+    {"operation_name": "correlation_id.inject", "required_attributes": ["request_id"]}
+  ]
+}

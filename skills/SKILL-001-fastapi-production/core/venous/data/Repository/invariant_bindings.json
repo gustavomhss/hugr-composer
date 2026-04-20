@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "REPO_INV_01",
+      "invariant_text": "A Repository MUST only expose aggregate roots, NEVER internal child entities of another aggregate.",
+      "confirms_test": "test_inv_aggregate_root_only_confirms",
+      "prevents_test": "test_inv_aggregate_root_only_prevents",
+      "under_failure_test": "test_inv_aggregate_root_only_under_failure"
+    },
+    {
+      "invariant_id": "REPO_INV_02",
+      "invariant_text": "Query methods MUST accept a Specification object or a named finder and SHALL NOT leak SQL, ORM, or storage syntax to callers.",
+      "confirms_test": "test_inv_specification_surface_confirms",
+      "prevents_test": "test_inv_specification_surface_prevents",
+      "under_failure_test": "test_inv_specification_surface_under_failure"
+    },
+    {
+      "invariant_id": "REPO_INV_03",
+      "invariant_text": "A single logical aggregate type MUST have exactly one Repository; duplicate repositories for the same root are FORBIDDEN.",
+      "confirms_test": "test_inv_singleton_root_confirms",
+      "prevents_test": "test_inv_singleton_root_prevents",
+      "under_failure_test": "test_inv_singleton_root_under_failure"
+    },
+    {
+      "invariant_id": "REPO_INV_04",
+      "invariant_text": "Mutations (add, remove) MUST enlist with the active UnitOfWork and NEVER issue direct writes bypassing it.",
+      "confirms_test": "test_inv_enlist_mutations_confirms",
+      "prevents_test": "test_inv_enlist_mutations_prevents",
+      "under_failure_test": "test_inv_enlist_mutations_under_failure"
+    },
+    {
+      "invariant_id": "REPO_INV_05",
+      "invariant_text": "The Repository CANNOT return stale in-memory copies when an IdentityMap is present; it MUST consult the map first.",
+      "confirms_test": "test_inv_identity_map_first_confirms",
+      "prevents_test": "test_inv_identity_map_first_prevents",
+      "under_failure_test": "test_inv_identity_map_first_under_failure"
+    }
+  ]
+}

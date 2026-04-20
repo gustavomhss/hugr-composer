@@ -1,0 +1,32 @@
+{
+  "name": "SignatureVerifier",
+  "namespace": "security",
+  "purpose": "Produce and verify detached digital signatures with key-id selection, typed message framing, and refusal of weak or unannounced algorithms.",
+  "api_signature": "from typing import Protocol\n\nclass SignatureVerifier(Protocol):\n    def sign(self, message: bytes, key_id: str) -> bytes: ...\n    def verify(self, message: bytes, signature: bytes, key_id: str) -> None: ...",
+  "invariants": [
+    "verify() MUST raise on signature mismatch and MUST NEVER return a boolean indicating partial verification.",
+    "Accepted algorithms MUST be declared per key_id; algorithm confusion (substituting HS256 for RS256) CANNOT occur.",
+    "sign() MUST use deterministic signing (RFC 6979 for ECDSA) or a CSPRNG nonce; ECDSA nonce reuse SHALL be treated as key compromise.",
+    "Public keys used for verify MUST be fetched from a pinned trust anchor and MUST NEVER be learned from the same message being verified.",
+    "verify() MUST be constant-time with respect to the signature bytes; timing leaks on tag comparison are FORBIDDEN."
+  ],
+  "extension_contract": "New signature schemes (Ed25519, RSA-PSS, ECDSA-P256, HMAC-SHA256) register as signer adapters implementing the Protocol and declaring their key handle format. The registry refuses to bind adapters for algorithms deprecated by the profile (RSA-PKCS1-v1_5, ECDSA with SHA-1).",
+  "consumption_example": "def issue_token(signer: SignatureVerifier, payload: bytes, key_id: str) -> bytes:\n    signature = signer.sign(message=payload, key_id=key_id)\n    return payload + b\".\" + signature",
+  "sources": [
+    {
+      "source": "OWASP ASVS 4.0.3",
+      "locator": "V6.2 Algorithms (V6.2.7 asymmetric algorithms)"
+    },
+    {
+      "source": "OWASP Top 10 2021",
+      "locator": "A02:2021 Cryptographic Failures"
+    }
+  ],
+  "why_essential": "Every JWT, webhook, and signed URL uses signatures; without a shared verifier the service accidentally accepts 'alg: none' or compares MACs with != instead of compare_digest.",
+  "alternatives_considered": [
+    "Raw library call per call-site \u2014 algorithm confusion bugs stay endemic.",
+    "HMAC-only for all signing \u2014 does not meet non-repudiation for outbound signatures.",
+    "Gateway-terminated signatures only \u2014 leaves internal services vulnerable if bypassed."
+  ],
+  "maturity": "battle_tested"
+}

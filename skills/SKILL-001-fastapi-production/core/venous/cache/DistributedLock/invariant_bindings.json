@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "DL_INV_01",
+      "invariant_text": "At most one caller MUST hold a given resource_id at a time; try_lock on a held lock returns None.",
+      "confirms_test": "test_inv_mutual_exclusion_confirms",
+      "prevents_test": "test_inv_mutual_exclusion_prevents",
+      "under_failure_test": "test_inv_mutual_exclusion_under_failure"
+    },
+    {
+      "invariant_id": "DL_INV_02",
+      "invariant_text": "Locks ALWAYS auto release after lease_s elapses so a crashed holder CANNOT deadlock the resource forever.",
+      "confirms_test": "test_inv_lease_expiry_confirms",
+      "prevents_test": "test_inv_lease_expiry_prevents",
+      "under_failure_test": "test_inv_lease_expiry_under_failure"
+    },
+    {
+      "invariant_id": "DL_INV_03",
+      "invariant_text": "Unlock with a non-matching owner_id MUST be rejected so callers cannot release locks they do not own.",
+      "confirms_test": "test_inv_owner_fencing_confirms",
+      "prevents_test": "test_inv_owner_fencing_prevents",
+      "under_failure_test": "test_inv_owner_fencing_under_failure"
+    },
+    {
+      "invariant_id": "DL_INV_04",
+      "invariant_text": "lease_s MUST be positive; a zero or negative lease SHALL raise a configuration error.",
+      "confirms_test": "test_inv_lease_bound_confirms",
+      "prevents_test": "test_inv_lease_bound_prevents",
+      "under_failure_test": "test_inv_lease_bound_under_failure"
+    },
+    {
+      "invariant_id": "DL_INV_05",
+      "invariant_text": "The primitive NEVER guarantees fairness across callers beyond the single holder invariant.",
+      "confirms_test": "test_inv_no_fairness_confirms",
+      "prevents_test": "test_inv_no_fairness_prevents",
+      "under_failure_test": "test_inv_no_fairness_under_failure"
+    }
+  ]
+}

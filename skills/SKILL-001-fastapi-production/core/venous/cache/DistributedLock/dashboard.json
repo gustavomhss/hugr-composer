@@ -1,0 +1,9 @@
+{
+  "title": "DistributedLock — Contention, Fencing, Holds",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "Acquire attempts (5m)", "targets": [{"expr": "sum(rate(lock_acquire_attempts[5m]))"}]},
+    {"id": 2, "type": "timeseries", "title": "Fencing rejections", "targets": [{"expr": "sum(rate(lock_fence_rejections[5m]))"}]},
+    {"id": 3, "type": "timeseries", "title": "Hold p50/p95", "targets": [{"expr": "histogram_quantile(0.50, rate(lock_hold_duration_bucket[5m]))"}, {"expr": "histogram_quantile(0.95, rate(lock_hold_duration_bucket[5m]))"}]}
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "title": "OutputGuardrail — Verdict & Block Health",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Total verdicts (5m)",
+      "targets": [{"expr": "sum(rate(guardrail_verdicts_total[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Block rate by guardrail",
+      "targets": [{"expr": "sum by (guardrail_name) (rate(guardrail_verdicts_total{action=\"block\"}[5m]))"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Evaluate p95 latency (ms)",
+      "targets": [{"expr": "histogram_quantile(0.95, rate(guardrail_evaluate_latency_bucket[5m]))"}]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Rewrite rate by guardrail",
+      "targets": [{"expr": "sum by (guardrail_name) (rate(guardrail_verdicts_total{action=\"rewrite\"}[5m]))"}]
+    }
+  ]
+}

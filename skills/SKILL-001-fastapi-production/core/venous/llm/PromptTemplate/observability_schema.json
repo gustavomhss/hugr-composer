@@ -1,0 +1,49 @@
+{
+  "logs": [
+    {
+      "event_name": "prompt.registered",
+      "required_attributes": ["prompt.name", "prompt.version", "prompt.fingerprint"]
+    },
+    {
+      "event_name": "prompt.rendered",
+      "required_attributes": ["prompt.name", "prompt.version", "prompt.fingerprint"]
+    },
+    {
+      "event_name": "prompt.render.missing_variable",
+      "required_attributes": ["prompt.name", "prompt.version", "missing_variables"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "prompt.registry.size",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 1000,
+      "label_keys": ["name"]
+    },
+    {
+      "name": "prompt.render.latency",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 500,
+      "label_keys": ["name", "version"]
+    },
+    {
+      "name": "prompt.render.errors",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 200,
+      "label_keys": ["name", "error_kind"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "prompt.render",
+      "required_attributes": ["prompt.name", "prompt.version", "prompt.fingerprint"]
+    },
+    {
+      "operation_name": "prompt.register",
+      "required_attributes": ["prompt.name", "prompt.version"]
+    }
+  ]
+}

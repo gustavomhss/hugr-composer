@@ -1,0 +1,649 @@
+{
+  "name": "DistributedLock",
+  "namespace": "cache",
+  "maturity": "emerging",
+  "builder_agent_id": 2,
+  "catalog_entry_sha256": "48036aaa7468cb11460857aa3c546e41da35e343dc04ecbbf9e3abcd7b9eaa9e",
+  "files": [
+    {
+      "path": "cache/DistributedLock/DistributedLock.cfg",
+      "sha256": "cc0f4ce3708d5dc02f1d340a05ba77989f097342a0ecc268f1d45e48c9ca748f",
+      "size_bytes": 132,
+      "kind": "test"
+    },
+    {
+      "path": "cache/DistributedLock/DistributedLock.contract.json",
+      "sha256": "01313cf98e7b694912827b4267d63485c5dd28b141e9df1fc86c7bd6054df61f",
+      "size_bytes": 2414,
+      "kind": "contract_json"
+    },
+    {
+      "path": "cache/DistributedLock/DistributedLock.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "cache/DistributedLock/DistributedLock.md",
+      "sha256": "39a838f95aa7618ad408ccc51c3e593f3a5375c5cca7ffa54012e20744dd4060",
+      "size_bytes": 4768,
+      "kind": "spec_md"
+    },
+    {
+      "path": "cache/DistributedLock/DistributedLock.py",
+      "sha256": "cf0a37555d571f195b4b28b2d18eb6abdfe94bb28e4b8a0431c244d0bc4fc9a0",
+      "size_bytes": 7723,
+      "kind": "impl"
+    },
+    {
+      "path": "cache/DistributedLock/DistributedLock.tla",
+      "sha256": "c50714141598a3c4eaf9bec6d27eec526e3317ca5682272cd81f3a7c92d03bef",
+      "size_bytes": 2461,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "cache/DistributedLock/behavioral_DistributedLock.py",
+      "sha256": "91f473db8ed06391564fe7a67e7574b64a56ef6a42c38b8670f1191e45eda85b",
+      "size_bytes": 3256,
+      "kind": "behavioral"
+    },
+    {
+      "path": "cache/DistributedLock/chaos_DistributedLock.py",
+      "sha256": "a7765b7be469bd759b14f68fd261acc5d968a0651842edd0f3ad54afa200f7a2",
+      "size_bytes": 3223,
+      "kind": "chaos"
+    },
+    {
+      "path": "cache/DistributedLock/concurrent_DistributedLock.py",
+      "sha256": "f844df3ece50f32db9182c28fa0179b7dffae71f66b5dfc237fa51e3b0fea65f",
+      "size_bytes": 2469,
+      "kind": "concurrent"
+    },
+    {
+      "path": "cache/DistributedLock/dashboard.json",
+      "sha256": "430778e44b836a3e1569b1e8fa993604b3e65e98e9f62f5fd573b9e6bfe2a9d1",
+      "size_bytes": 589,
+      "kind": "dashboard"
+    },
+    {
+      "path": "cache/DistributedLock/invariant_bindings.json",
+      "sha256": "11c682194cfa328b64c61e3a05471dd1f3148883f50528b52afc7f932999c27b",
+      "size_bytes": 1800,
+      "kind": "test"
+    },
+    {
+      "path": "cache/DistributedLock/metamorphic_DistributedLock.py",
+      "sha256": "c2eeff458fdfb767f2c2e2e5a66aa124ad352b07a7ffde1652b7a0889b6bc646",
+      "size_bytes": 2719,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "cache/DistributedLock/observability_DistributedLock.py",
+      "sha256": "2fcdd6cb927db0013978593e6c0540319b487f1c989c0bba0de8f865f5dd779d",
+      "size_bytes": 1708,
+      "kind": "observability"
+    },
+    {
+      "path": "cache/DistributedLock/observability_schema.json",
+      "sha256": "ae1ec3cc7b4f17b67bab270ce520604d5dfb42579f8ca270f5c003f1ad335fce",
+      "size_bytes": 1231,
+      "kind": "observability"
+    },
+    {
+      "path": "cache/DistributedLock/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "cache/DistributedLock/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "cache/DistributedLock/state_machine_DistributedLock.py",
+      "sha256": "c51b92a162610ab74ec03818b041d12588b1faf0c040d89ab5002178beaeb93b",
+      "size_bytes": 3098,
+      "kind": "state_machine"
+    },
+    {
+      "path": "cache/DistributedLock/test_DistributedLock.py",
+      "sha256": "f20152dd15f0c5e604a2cc8b08440a5154c1e255476604ff6f42ec7b2770cbf8",
+      "size_bytes": 8050,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "DL_INV_01",
+      "invariant_text": "At most one caller MUST hold a given resource_id at a time; try_lock on a held lock returns None.",
+      "confirms_test": "test_inv_mutual_exclusion_confirms",
+      "prevents_test": "test_inv_mutual_exclusion_prevents",
+      "under_failure_test": "test_inv_mutual_exclusion_under_failure"
+    },
+    {
+      "invariant_id": "DL_INV_02",
+      "invariant_text": "Locks ALWAYS auto release after lease_s elapses so a crashed holder CANNOT deadlock the resource forever.",
+      "confirms_test": "test_inv_lease_expiry_confirms",
+      "prevents_test": "test_inv_lease_expiry_prevents",
+      "under_failure_test": "test_inv_lease_expiry_under_failure"
+    },
+    {
+      "invariant_id": "DL_INV_03",
+      "invariant_text": "Unlock with a non-matching owner_id MUST be rejected so callers cannot release locks they do not own.",
+      "confirms_test": "test_inv_owner_fencing_confirms",
+      "prevents_test": "test_inv_owner_fencing_prevents",
+      "under_failure_test": "test_inv_owner_fencing_under_failure"
+    },
+    {
+      "invariant_id": "DL_INV_04",
+      "invariant_text": "lease_s MUST be positive; a zero or negative lease SHALL raise a configuration error.",
+      "confirms_test": "test_inv_lease_bound_confirms",
+      "prevents_test": "test_inv_lease_bound_prevents",
+      "under_failure_test": "test_inv_lease_bound_under_failure"
+    },
+    {
+      "invariant_id": "DL_INV_05",
+      "invariant_text": "The primitive NEVER guarantees fairness across callers beyond the single holder invariant.",
+      "confirms_test": "test_inv_no_fairness_confirms",
+      "prevents_test": "test_inv_no_fairness_prevents",
+      "under_failure_test": "test_inv_no_fairness_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 811,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1230,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 2248,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1119,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 73721,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "41 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1286,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 80836,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DOUBLE-ACQUIRE-RACE",
+        "hypothesis": "Two callers invoke try_lock concurrently on the same resource_id with different owner_ids at the exact same millisecond; a non-atomic check-then-set implementation grants both callers a handle, violating the single-holder invariant under contention.",
+        "input_fixture": "asyncio.gather(lock.try_lock('r1','A',30), lock.try_lock('r1','B',30)) repeated 1000x",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-EARLY-EXPIRE",
+        "hypothesis": "Backend node clock jumps forward (NTP step) causing lease to be considered expired while original holder still believes it owns the lock; a second caller acquires, producing two concurrent holders until original owner notices.",
+        "input_fixture": "try_lock('r1','A',60); mock time.monotonic to jump +120s on server only; try_lock('r1','B',60) -> expect None but gets handle",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ZERO-LEASE",
+        "hypothesis": "Passing lease_s=0 is accepted silently and lock is stored with zero expiry, which either never expires (treated as sentinel) or expires instantly allowing infinite rapid reacquisition by different owners.",
+        "input_fixture": "await lock.try_lock('r1','A', 0)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NEGATIVE-LEASE",
+        "hypothesis": "Negative lease like -1 bypasses validation and is stored as expiry in the past, causing the lock to be immediately releasable by any caller and breaking single-holder semantics.",
+        "input_fixture": "await lock.try_lock('r1','A', -1)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INT-OVERFLOW-LEASE",
+        "hypothesis": "Passing lease_s=2**63-1 overflows when added to current epoch for expiry computation, wrapping to a negative timestamp and making the lock appear already expired.",
+        "input_fixture": "await lock.try_lock('r1','A', 9223372036854775807)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNLOCK-WRONG-OWNER",
+        "hypothesis": "Attacker constructs a LockHandle dataclass with the victim's resource_id but their own owner_id and calls unlock; if backend only checks resource_id key existence and not owner match, the victim's lock is released.",
+        "input_fixture": "h_victim=await lock.try_lock('r1','victim',60); forged=LockHandle('r1','attacker',60); await lock.unlock(forged)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNLOCK-REPLAY-AFTER-EXPIRE",
+        "hypothesis": "Owner A acquires then lease expires; owner B acquires same resource_id; owner A replays its old handle to unlock, releasing B's lock because owner_id comparison does not include a fencing token or acquisition epoch.",
+        "input_fixture": "hA=try_lock('r1','A',1); sleep(2); hB=try_lock('r1','B',60); await unlock(hA)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CRASHED-HOLDER-DEADLOCK",
+        "hypothesis": "If backend stores lease as TTL set on write but a bug sets TTL only on first acquire and not on re-entrant acquire (or omits EXPIRE on SET), a crashed holder leaves the key permanently preventing auto-release.",
+        "input_fixture": "try_lock('r1','A',30) then SIGKILL process; wait 60s; try_lock('r1','B',30) -> expect handle, gets None",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-RESOURCE-ID",
+        "hypothesis": "Passing resource_id='' is accepted and collapses all empty-string callers onto a single global lock, or backend key construction (f'lock:{id}') produces 'lock:' which collides across tenants/namespaces.",
+        "input_fixture": "await lock.try_lock('','A',30); await lock.try_lock('','B',30)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED-TYPES",
+        "hypothesis": "Passing resource_id=None or lease_s='30' (string) bypasses runtime type validation; backend coerces or crashes mid-operation leaving partial state (key written without TTL) and a permanent stale lock.",
+        "input_fixture": "await lock.try_lock(None,'A',30); await lock.try_lock('r1','A','30')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-KEY-INJECTION",
+        "hypothesis": "resource_id containing backend-specific separators like 'r1\\x00../other' or Redis glob chars manipulates the composed key, letting an attacker acquire or release locks for a different resource_id.",
+        "input_fixture": "await lock.try_lock('r1\\n*','attacker',30); await lock.unlock(LockHandle('r1','victim',30))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNLOCK-AMPLIFICATION",
+        "hypothesis": "Calling unlock repeatedly on an already-released handle is not idempotent and either deletes a newly-acquired lock by a different owner or floods the backend (amplification), breaking ownership guarantees.",
+        "input_fixture": "h=try_lock('r1','A',60); await unlock(h); hB=try_lock('r1','B',60); await unlock(h) # replay",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-LEASE-EXPIRE-MIDUNLOCK",
+        "hypothesis": "Lease expires between server-side owner check and DEL operation in unlock; during that window another owner acquires the same key and the in-flight DEL removes the new owner's lock.",
+        "input_fixture": "try_lock('r1','A',1); delay unlock network 1.5s so expire+reacquire by B occurs before DEL lands",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HUGE-RESOURCE-ID",
+        "hypothesis": "A resource_id of 10MB causes backend key-size limits to truncate the key, collapsing many distinct logical resources into one physical key and violating mutual exclusion across tenants.",
+        "input_fixture": "rid='x'*10_000_000; await lock.try_lock(rid+'a','A',30); await lock.try_lock(rid+'b','B',30)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-OWNER-ID-LEAK-LOGS",
+        "hypothesis": "If owner_id is used as a bearer token for unlock authorization and the implementation logs handles (debug/trace) or serializes them in errors, owner_id leaks allow any observer to forge unlock calls.",
+        "input_fixture": "enable DEBUG logs; try_lock('r1','secret-owner-abc',30); grep logs for 'secret-owner-abc'; craft unlock",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TOCTOU-CONCURRENT-ACQUIRE",
+        "hypothesis": "Two coroutines calling try_lock on the same resource_id concurrently may both see the lock as unheld during the check phase before either writes, allowing both to receive a non-None LockHandle \u2014 violating the single-holder invariant via a classic TOCTOU race on the backend SET-if-not-exists operation when the implementation uses a non-atomic read-then-write pattern.",
+        "input_fixture": "asyncio.gather(lock.try_lock('res-X', 'owner-A', 30), lock.try_lock('res-X', 'owner-B', 30))  # expect exactly one None, one LockHandle; if both return LockHandle mutual exclusion is broken",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LEASE-ZERO-BOUNDARY",
+        "hypothesis": "Passing lease_s=0 should raise a configuration error per the spec, but implementations that coerce the value to a truthy check (e.g., `if not lease_s`) or cast it before validation may silently accept zero, issuing a lock that expires before it is returned to the caller, creating a phantom acquired state.",
+        "input_fixture": "handle = await lock.try_lock('res-Y', 'owner-C', 0)  # must raise ValueError or ConfigError, not return None or LockHandle",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LEASE-NEGATIVE-INT",
+        "hypothesis": "A negative lease_s (e.g., -1) passed to backends like Redis EXPIRE or Postgres interval arithmetic may silently succeed, delete the key immediately, or compute a future timestamp in the past \u2014 effectively making the lock never held or immediately released, potentially allowing two holders simultaneously after the negative TTL is applied.",
+        "input_fixture": "handle = await lock.try_lock('res-Z', 'owner-D', -1)  # must raise, not silently succeed; also try lease_s=-2**63",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-OWNER-SPOOF-UNLOCK",
+        "hypothesis": "If owner_id validation inside unlock compares only the string length or a truncated prefix rather than the full value (e.g., short-circuit in hashed comparison), an attacker who knows or guesses the resource_id can pass a crafted owner_id that passes the check and forcibly releases a lock they do not own, violating the ownership invariant.",
+        "input_fixture": "handle_real = await lock.try_lock('res-A', 'correct-owner-uuid', 60)\nfake_handle = LockHandle(resource_id='res-A', owner_id='wrong-owner-uuid', lease_s=60)\nawait lock.unlock(fake_handle)  # must raise PermissionError or equivalent, not silently succeed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY-STALE-HANDLE",
+        "hypothesis": "After a lock is acquired and then explicitly released, replaying the original LockHandle in a second unlock call may succeed if the backend does not verify current ownership state and merely checks that the stored record matches the handle fields, allowing a stale handle to release a newly acquired lock held by a different owner.",
+        "input_fixture": "h = await lock.try_lock('res-B', 'owner-E', 30)\nawait lock.unlock(h)  # legitimate release\nh2 = await lock.try_lock('res-B', 'owner-F', 30)  # new holder\nawait lock.unlock(h)  # replay old handle \u2014 must be rejected because owner-E no longer holds the lock",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK-SKEW-PREMATURE-EXPIRY",
+        "hypothesis": "If lease expiry is computed as wall-clock time (datetime.utcnow() + timedelta(seconds=lease_s)) and the system clock jumps forward (NTP correction, VM live migration, DST), a lock with lease_s=300 may appear expired after only a few seconds of real time, allowing a second caller to acquire it while the original holder is still within its expected exclusive window \u2014 breaking the single-holder guarantee.",
+        "input_fixture": "# Simulate: acquire lock with lease_s=300, then advance system clock by 301s (via mock or libfaketime), then call try_lock('same-resource', 'new-owner', 60) \u2014 should return None if original holder still operational, but clock skew causes it to return a valid handle",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LEASE-INT-OVERFLOW",
+        "hypothesis": "Passing lease_s=sys.maxsize (9223372036854775807) may cause integer overflow in backend TTL computation (e.g., Redis PEXPIRE takes milliseconds as int64; multiplying seconds\u00d71000 overflows), resulting in a negative or zero TTL being set, making the lock expire immediately instead of holding for the intended duration \u2014 breaking the crash-safety invariant.",
+        "input_fixture": "import sys\nhandle = await lock.try_lock('res-C', 'owner-G', sys.maxsize)  # backend may compute sys.maxsize*1000 overflowing int64 to negative; lock evaporates instantly",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY-RESOURCE-ID-COLLISION",
+        "hypothesis": "Passing an empty string as resource_id may collide with a sentinel or default key in the backend (e.g., the empty key in Redis, or NULL in SQL), potentially sharing state with other empty-resource locks or with internal health-check keys, causing unrelated try_lock calls to interfere with each other and violating mutual exclusion for unrelated callers.",
+        "input_fixture": "h1 = await lock.try_lock('', 'owner-H', 10)\nh2 = await lock.try_lock('', 'owner-I', 10)  # must return None; also check if empty-key lock bleeds into other namespace keys",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TYPE-CONFUSION-LEASE-STRING",
+        "hypothesis": "Passing lease_s as a string (e.g., '30') or float (30.5) instead of int may bypass the positive-integer validation if the implementation uses duck-typing truthiness checks rather than isinstance guards. A string '0' is truthy in Python, so it would pass `if not lease_s` validation but represents an invalid zero lease when cast.",
+        "input_fixture": "await lock.try_lock('res-D', 'owner-J', '0')   # '0' is truthy; must raise\nawait lock.try_lock('res-D', 'owner-J', 0.0)   # 0.0 is falsy but a float; edge on isinstance check\nawait lock.try_lock('res-D', 'owner-J', '30')  # should likely raise TypeError, not succeed silently",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-THUNDERING-HERD-AMPLIFICATION",
+        "hypothesis": "When a high-contention resource's lock expires, all waiting callers simultaneously retry try_lock in a tight loop, creating a thundering herd that floods the backend (Redis/Postgres) with SET NX commands. The backend may become overwhelmed, causing legitimate lock acquisitions to time out \u2014 effectively a denial-of-service that prevents any caller from holding the lock, violating the liveness expectation implicit in the single-holder invariant.",
+        "input_fixture": "# Launch 1000 concurrent tasks all polling try_lock('hot-resource', f'owner-{i}', 5) in a while loop with no backoff; measure backend query rate and whether any caller ever acquires the lock within 60s",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NEAR-EXPIRY-RACE-WINDOW",
+        "hypothesis": "Between the moment a backend TTL expires and the moment the backend atomically marks the key as gone, a brief window exists where the old holder may still believe it holds the lock (has not received a crash/expiry signal) while a new caller acquires it via try_lock \u2014 producing two simultaneous holders for the duration of that window. This is especially likely with coarse-grained TTL resolution (1s granularity) and high-latency networks.",
+        "input_fixture": "h = await lock.try_lock('res-E', 'owner-K', 1)  # lease_s=1, shortest valid lease\nawait asyncio.sleep(0.99)  # sleep just under expiry\n# original holder still believes it owns the lock\nh2 = await lock.try_lock('res-E', 'owner-L', 10)  # race: may return LockHandle if TTL already lapsed in backend\n# both owner-K and owner-L believe they hold the lock simultaneously",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INJECTION-RESOURCE-ID-REDIS-GLOB",
+        "hypothesis": "If resource_id is used to construct Redis key names via string interpolation (e.g., f'lock:{resource_id}') and the backend uses key-scanning or KEYS commands internally, injecting Redis glob metacharacters (*, ?, [a-z]) into resource_id could match unintended keys during cleanup or status checks, causing unrelated locks to be enumerated or deleted.",
+        "input_fixture": "await lock.try_lock('*', 'owner-M', 10)          # glob wildcard\nawait lock.try_lock('lock:*', 'owner-N', 10)      # key prefix escape\nawait lock.try_lock('res\\r\\nSET malicious 1', 'owner-O', 10)  # RESP protocol injection attempt",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-UNLOCK-AFTER-EXPIRY-SILENT-NOOP",
+        "hypothesis": "If a lock's TTL has elapsed and the key no longer exists in the backend, calling unlock with the original valid LockHandle may silently succeed (return None) instead of raising an error. This silent no-op masks the fact that the caller lost its lock due to expiry \u2014 it believes it cleanly released while another holder may have already acquired the resource, creating a false sense of clean shutdown.",
+        "input_fixture": "h = await lock.try_lock('res-F', 'owner-P', 1)\nawait asyncio.sleep(2)  # let lease expire\nawait lock.unlock(h)  # should this raise (lock already gone) or silently succeed? silent success hides lost-lock bug in caller",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FENCING-TOKEN-ABSENT-STALE-WRITE",
+        "hypothesis": "The LockHandle carries no monotonic fencing token (epoch/version number). A process that holds a lock, pauses (GC stop-the-world, OS scheduling), has its lease expire, and then resumes \u2014 still holding a syntactically valid LockHandle \u2014 can call unlock and have it succeed (owner_id matches the stored record if the same process re-acquired it) or can proceed to write to a protected resource without knowing it lost and regained the lock. Without a fencing token, downstream storage cannot detect stale writes from a zombie holder.",
+        "input_fixture": "h1 = await lock.try_lock('res-G', 'owner-Q', 1)\nawait asyncio.sleep(2)  # lease expires; owner-R acquires\nh2 = await lock.try_lock('res-G', 'owner-R', 30)  # new holder\n# owner-Q wakes up, still has h1, calls unlock(h1) \u2014 h1.owner_id != current owner so must be rejected\n# but if owner-Q and owner-R share an owner_id by accident, unlock silently succeeds",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-TRY-LOCK",
+        "hypothesis": "Two concurrent try_lock calls for the same resource_id with different owner IDs both succeed, violating the single-holder invariant.",
+        "input_fixture": "Spawn two tasks: (1) try_lock('db1', 'proc-a', 30) and (2) try_lock('db1', 'proc-b', 30) with <1ms scheduling gap. Both receive non-None LockHandle.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ZERO-LEASE-VALIDATION",
+        "hypothesis": "Passing lease_s=0 bypasses positive lease validation and allows lock acquisition with zero effective timeout.",
+        "input_fixture": "try_lock('resource-x', 'owner-1', lease_s=0). Function returns LockHandle instead of raising ConfigurationError.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NEGATIVE-LEASE-ACCEPTANCE",
+        "hypothesis": "Passing negative lease_s is not rejected; wraps to large positive via signed arithmetic or creates undefined behavior.",
+        "input_fixture": "try_lock('res-neg', 'owner', lease_s=-100). Call succeeds and returns handle instead of raising ConfigurationError.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-OWNER-MISMATCH-UNLOCK",
+        "hypothesis": "Unlock does not validate LockHandle.owner_id and allows a different owner to release locks they do not own.",
+        "input_fixture": "try_lock('data-shard', 'alice', 30) returns H1. Call unlock(H1) from execution context of 'bob'. Unlock succeeds without error.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-RESOURCE-COLLISION",
+        "hypothesis": "Empty resource_id='' is not rejected and creates a single shared lock, allowing multiple callers to hold it simultaneously.",
+        "input_fixture": "try_lock('', 'owner-1', 30) returns H1; try_lock('', 'owner-2', 30) returns H2. Both non-None; same resource held by two owners.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-OWNER-AMBIGUITY",
+        "hypothesis": "Empty owner_id='' is permitted, allowing multiple distinct callers to share the same ownership identity and bypass authorization.",
+        "input_fixture": "try_lock('file', '', 30) returns H1; try_lock('file', '', 30) returns None. Or both return handles if pool is not locked. Later, any caller with empty owner_id can unlock.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-FABRICATED-HANDLE-UNLOCK",
+        "hypothesis": "Unlock accepts hand-crafted LockHandle objects that were never returned by try_lock, releasing arbitrary protected resources.",
+        "input_fixture": "Construct synthetic LockHandle(resource_id='critical', owner_id='attacker', lease_s=999). Call unlock(synthetic_handle). Resource is freed without prior try_lock by that owner.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK-SKEW-PREMATURE-RELEASE",
+        "hypothesis": "System clock skew backward triggers lease expiry before holder releases, making resource available while holder still owns it.",
+        "input_fixture": "try_lock('shared', 'proc-1', lease_s=60). After 10s, OS clock jumps backward 70s. try_lock('shared', 'proc-2', 30) returns non-None while proc-1 holds it.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-LEASE-OVERFLOW-WRAP",
+        "hypothesis": "Passing lease_s=INT64_MAX overflows expiry timestamp calculation, wrapping to negative or near-zero effective lease duration.",
+        "input_fixture": "try_lock('overflow-test', 'owner', lease_s=9223372036854775807). Lock either expires immediately or handle creation fails silently.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-UNLOCK-DOUBLE-RELEASE",
+        "hypothesis": "Two threads concurrently call unlock with identical handle; no mutual exclusion on release path causes double-release and state corruption.",
+        "input_fixture": "try_lock('resource', 'owner', 30) returns H. Launch two goroutines both executing unlock(H). No synchronization; second unlock may corrupt state.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REPLAY-EXPIRED-HANDLE-REACQUIRE",
+        "hypothesis": "After lease expires and different owner acquires lock, original owner replays stale LockHandle to regain access or corrupt state.",
+        "input_fixture": "try_lock('resource', 'alice', 30) returns H1. Lease expires (30s). try_lock('resource', 'bob', 30) succeeds. alice calls unlock(H1) again. H1 is honored despite expiry.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MUTABLE-HANDLE-TAMPERING",
+        "hypothesis": "LockHandle is not frozen; caller modifies handle.owner_id before unlock, allowing release with spoofed ownership.",
+        "input_fixture": "try_lock('protected', 'real-owner', 30) returns mutable H. Mutate H.owner_id='fake-owner'. Call unlock(H). Modified handle is processed as valid.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "lock.acquired",
+        "required_attributes": [
+          "resource_id",
+          "owner_id",
+          "lease_s"
+        ]
+      },
+      {
+        "event_name": "lock.contended",
+        "required_attributes": [
+          "resource_id",
+          "caller_id"
+        ]
+      },
+      {
+        "event_name": "lock.released",
+        "required_attributes": [
+          "resource_id",
+          "owner_id"
+        ]
+      },
+      {
+        "event_name": "lock.fence.rejected",
+        "required_attributes": [
+          "resource_id",
+          "caller_id",
+          "holder_id"
+        ]
+      },
+      {
+        "event_name": "lock.lease.expired",
+        "required_attributes": [
+          "resource_id",
+          "owner_id"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "lock.acquire.attempts",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 100,
+        "label_keys": [
+          "outcome"
+        ]
+      },
+      {
+        "name": "lock.hold.duration",
+        "metric_type": "histogram",
+        "unit": "s",
+        "cardinality_bound": 100,
+        "label_keys": [
+          "resource_id"
+        ]
+      },
+      {
+        "name": "lock.fence.rejections",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": []
+      },
+      {
+        "name": "lock.active",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 100,
+        "label_keys": [
+          "resource_id"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "lock.try_lock",
+        "required_attributes": [
+          "resource_id",
+          "owner_id"
+        ]
+      },
+      {
+        "operation_name": "lock.unlock",
+        "required_attributes": [
+          "resource_id",
+          "owner_id"
+        ]
+      }
+    ]
+  }
+}

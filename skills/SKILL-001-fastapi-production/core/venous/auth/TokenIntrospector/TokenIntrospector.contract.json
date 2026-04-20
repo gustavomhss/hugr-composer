@@ -1,0 +1,37 @@
+{
+  "name": "TokenIntrospector",
+  "namespace": "auth",
+  "purpose": "Validate access tokens by signature, issuer, audience, expiry, and not-before claims, with optional RFC 7662 introspection for opaque tokens.",
+  "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass TokenClaims:\n    subject: str\n    scopes: frozenset[str]\n    audience: frozenset[str]\n    issuer: str\n    expires_at: int\n\nclass TokenIntrospector(Protocol):\n    def introspect(self, token: str, required_audience: str) -> TokenClaims: ...",
+  "invariants": [
+    "JWT verification MUST reject the 'none' algorithm and MUST pin the accepted algorithm set per issuer.",
+    "introspect() MUST reject tokens whose aud claim does not include required_audience and SHALL raise a typed error.",
+    "Expired tokens (now \u2265 exp) and not-yet-valid tokens (now < nbf) MUST be rejected with no claim surface returned.",
+    "Signing keys MUST be fetched from the issuer's JWKS with bounded caching; stale keys beyond max-age CANNOT be trusted.",
+    "Opaque tokens MUST be introspected against the authorization server per RFC 7662 and NEVER parsed locally.",
+    "Introspection results MUST NEVER be cached past the token's exp or past the documented TTL, whichever is lower."
+  ],
+  "extension_contract": "Token formats register as introspector adapters (JWT, opaque, DPoP-bound) implementing the Protocol. An adapter plugin declares supported issuers and the key resolution strategy; the registry rejects adapters that accept the 'none' alg or skip aud checking.",
+  "consumption_example": "def require_scope(scope: str, introspector: TokenIntrospector, audience: str):\n    def dependency(token: str) -> TokenClaims:\n        claims = introspector.introspect(token, required_audience=audience)\n        if scope not in claims.scopes:\n            raise PermissionError(f\"missing scope: {scope}\")\n        return claims\n    return dependency",
+  "sources": [
+    {
+      "source": "RFC 6749",
+      "locator": "Section 7 Accessing Protected Resources (audience, scope)"
+    },
+    {
+      "source": "RFC 7662",
+      "locator": "Section 2 Introspection Request/Response"
+    },
+    {
+      "source": "OpenID Connect Core 1.0",
+      "locator": "Section 3.1.3.7 ID Token Validation"
+    }
+  ],
+  "why_essential": "Each resource server must apply the same claim checks in the same order; scattering verification across controllers yields endpoints that accept tokens meant for another audience.",
+  "alternatives_considered": [
+    "Trust the upstream gateway to verify \u2014 leaves services vulnerable if the gateway is bypassed.",
+    "Parse JWT inline with a library call per handler \u2014 produces inconsistent alg and aud policy.",
+    "Always introspect remotely \u2014 unacceptable latency for JWT deployments at scale."
+  ],
+  "maturity": "battle_tested"
+}

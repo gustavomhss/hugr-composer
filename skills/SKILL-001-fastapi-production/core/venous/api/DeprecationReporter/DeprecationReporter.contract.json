@@ -1,0 +1,20 @@
+{
+  "name": "DeprecationReporter",
+  "namespace": "api",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "In-memory call-count tracker for deprecated endpoints: record a hit per request, emit a usage report sorted by call volume so operators can tell which deprecated endpoints still have live traffic before they sunset.",
+  "api_signature": "class DeprecationReporter: def record(path, method) -> None; def get_count(path, method) -> int; def usage_report() -> list[dict]; def reset() -> None",
+  "invariants": [
+    "DEPRECATION_REPORTER_INV_01: record(path, method) MUST increment the counter for 'METHOD path' by exactly 1 per call; method casing MUST NOT produce divergent counters.",
+    "DEPRECATION_REPORTER_INV_02: get_count() MUST return 0 (never raise, never None) for an endpoint that has never been recorded.",
+    "DEPRECATION_REPORTER_INV_03: usage_report() MUST return entries sorted by call_count descending so the hottest deprecated endpoint is always first in the report.",
+    "DEPRECATION_REPORTER_INV_04: reset() MUST clear ALL counters atomically; a subsequent get_count() for any key MUST return 0."
+  ],
+  "status": "promoted",
+  "enrichment": {
+    "invariants_mined": 4,
+    "ambiguous": false,
+    "source": "human.triage.venous_batch_1"
+  }
+}

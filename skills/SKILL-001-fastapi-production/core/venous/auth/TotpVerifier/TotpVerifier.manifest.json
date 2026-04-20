@@ -1,0 +1,732 @@
+{
+  "name": "TotpVerifier",
+  "namespace": "auth",
+  "maturity": "battle_tested",
+  "builder_agent_id": 1,
+  "catalog_entry_sha256": "599ebf5cc0ab28bcb837ff06669e13c8f003d3d6b726460988360665956bdf1a",
+  "files": [
+    {
+      "path": "auth/TotpVerifier/TotpVerifier.cfg",
+      "sha256": "f7b54db777f14b8d5bf4765d88e37bd2651e11ababc0f023dd6146846fdc7f82",
+      "size_bytes": 139,
+      "kind": "test"
+    },
+    {
+      "path": "auth/TotpVerifier/TotpVerifier.contract.json",
+      "sha256": "be95eeb0a63593ee86bc883f38ca68ab3e70a31f71c510e490b8e44105a968d5",
+      "size_bytes": 2487,
+      "kind": "contract_json"
+    },
+    {
+      "path": "auth/TotpVerifier/TotpVerifier.manifest.json",
+      "sha256": "e3094bc50f12fa1abdab1fcbfba2e7ef2628318be15afbd30f3a98a0da3670de",
+      "size_bytes": 44186,
+      "kind": "manifest"
+    },
+    {
+      "path": "auth/TotpVerifier/TotpVerifier.md",
+      "sha256": "07ec7c3c55d3edf00a21892296d9ce0b1171ce5f6b0f8918f139bd517c50f4f9",
+      "size_bytes": 6685,
+      "kind": "spec_md"
+    },
+    {
+      "path": "auth/TotpVerifier/TotpVerifier.py",
+      "sha256": "2cbeea815265ac56fd6dea79d356cda29ee259ce237a0597e3364bf91f4d2c4a",
+      "size_bytes": 14163,
+      "kind": "impl"
+    },
+    {
+      "path": "auth/TotpVerifier/TotpVerifier.tla",
+      "sha256": "e8a3c4c4537cba77222a5cb8167a9cfeff6beb004fbf06530d6328fa4a7fc28e",
+      "size_bytes": 2371,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "auth/TotpVerifier/behavioral_TotpVerifier.py",
+      "sha256": "7764966d38db80db278fb1234716ba2f3e656e52b2fb1b3b38316e97c401854c",
+      "size_bytes": 4579,
+      "kind": "behavioral"
+    },
+    {
+      "path": "auth/TotpVerifier/chaos_TotpVerifier.py",
+      "sha256": "4fa8228dc236b7af07e0a511d80a21960e3174440b870a0ae180a69ce5e9331f",
+      "size_bytes": 4577,
+      "kind": "chaos"
+    },
+    {
+      "path": "auth/TotpVerifier/concurrent_TotpVerifier.py",
+      "sha256": "f06d505c795a52c14d1c081735b4faf7d8fcb65f706bb1a2a1770a7476d1ba14",
+      "size_bytes": 3585,
+      "kind": "concurrent"
+    },
+    {
+      "path": "auth/TotpVerifier/dashboard.json",
+      "sha256": "65a4c447ae54bf7a42ea82cfcdd1d3c84279b03ce540e111ece862ad55ecd02d",
+      "size_bytes": 825,
+      "kind": "dashboard"
+    },
+    {
+      "path": "auth/TotpVerifier/invariant_bindings.json",
+      "sha256": "9a5b52470bcfebca3bd0339c392de73e378d185cd4dea156df89225fbbe29e51",
+      "size_bytes": 2047,
+      "kind": "test"
+    },
+    {
+      "path": "auth/TotpVerifier/metamorphic_TotpVerifier.py",
+      "sha256": "9f11c541aade0918c4be73a9299ff67c38450f2df8af5278820e5ff9732152aa",
+      "size_bytes": 3828,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "auth/TotpVerifier/observability_TotpVerifier.py",
+      "sha256": "bfb5750a560f95a5d7b357a29eb467827685c6132e047ec6c1070f29b3b2d389",
+      "size_bytes": 2385,
+      "kind": "observability"
+    },
+    {
+      "path": "auth/TotpVerifier/observability_schema.json",
+      "sha256": "e8d7c70aba66816d618fb519373e1fbaaba638be7a551b9a1cdc5109065c5c28",
+      "size_bytes": 1118,
+      "kind": "observability"
+    },
+    {
+      "path": "auth/TotpVerifier/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "auth/TotpVerifier/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "auth/TotpVerifier/state_machine_TotpVerifier.py",
+      "sha256": "5bc0c1ed2f3902997cb5f6cdd1fba72735336f5d032f31522b4986a880820d81",
+      "size_bytes": 3060,
+      "kind": "state_machine"
+    },
+    {
+      "path": "auth/TotpVerifier/test_TotpVerifier.py",
+      "sha256": "474f3ea29021fb2d007a17802249c04b09eb7b1fb7eb247435e3454796e278fb",
+      "size_bytes": 10706,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "TOTP_INV_01",
+      "invariant_text": "Shared secrets MUST be >=160 bits drawn from a CSPRNG; the verifier REJECTS secrets shorter than 20 bytes and NEVER transmits secret material outside the enrollment channel.",
+      "confirms_test": "test_inv_secret_entropy_confirms",
+      "prevents_test": "test_inv_secret_entropy_prevents",
+      "under_failure_test": "test_inv_secret_entropy_under_failure"
+    },
+    {
+      "invariant_id": "TOTP_INV_02",
+      "invariant_text": "verify() MUST compare codes in constant time via hmac.compare_digest and SHALL NEVER short-circuit on prefix match.",
+      "confirms_test": "test_inv_constant_time_confirms",
+      "prevents_test": "test_inv_constant_time_prevents",
+      "under_failure_test": "test_inv_constant_time_under_failure"
+    },
+    {
+      "invariant_id": "TOTP_INV_03",
+      "invariant_text": "Accepted clock skew MUST be bounded to +/-1 step (+/-30s); larger windows CANNOT be configured through the public surface.",
+      "confirms_test": "test_inv_skew_window_confirms",
+      "prevents_test": "test_inv_skew_window_prevents",
+      "under_failure_test": "test_inv_skew_window_under_failure"
+    },
+    {
+      "invariant_id": "TOTP_INV_04",
+      "invariant_text": "A successfully used step number MUST be recorded and the same step CANNOT be accepted again for the same secret; replay attempts SHALL be rejected.",
+      "confirms_test": "test_inv_replay_rejected_confirms",
+      "prevents_test": "test_inv_replay_rejected_prevents",
+      "under_failure_test": "test_inv_replay_rejected_under_failure"
+    },
+    {
+      "invariant_id": "TOTP_INV_05",
+      "invariant_text": "Codes SHALL be six decimal digits derived from HMAC-SHA1 per RFC 4226; alternative digit counts MUST be explicitly opted in via allow_nonstandard_digits=True.",
+      "confirms_test": "test_inv_six_digits_confirms",
+      "prevents_test": "test_inv_six_digits_prevents",
+      "under_failure_test": "test_inv_six_digits_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 416,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1374,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 1732,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 4928,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1418,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 1980,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 129599,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "38 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 936,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1235,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 83402,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 227721,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TIMING-PREFIX-LEAK",
+        "hypothesis": "verify() uses Python == or short-circuits on first mismatched digit, allowing a timing side-channel attacker to recover the expected code digit-by-digit by measuring response latency across many verification attempts.",
+        "input_fixture": "for i in range(10): t0=time.perf_counter_ns(); verify(secret, f'{i}00000', None); measure delta. Compare ns distribution across 10 candidates per position.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-NULL-STEP",
+        "hypothesis": "Passing last_used_step=None after a successful verification lets an attacker replay the same 6-digit code within the 30s window because the caller 'forgot' to persist state and the verifier does not enforce monotonicity internally.",
+        "input_fixture": "code=generate(secret,now); verify(secret,code,None) -> step=X; verify(secret,code,None) again within 30s -> expect rejection, observe acceptance.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SKEW-WINDOW-OVERRIDE",
+        "hypothesis": "Configuration parser accepts skew_steps=10 (\u00b15 minutes) without validation, violating the \u00b11-step bound and enabling wide replay / brute-force windows.",
+        "input_fixture": "TotpVerifier(skew_steps=10); or env TOTP_SKEW=9999; verify code generated 4 minutes ago -> expect reject, observe accept.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-WEAK-SECRET-SHORT",
+        "hypothesis": "provision_uri() accepts a 40-bit secret (5 bytes) or empty bytes without rejecting, violating the \u2265160-bit CSPRNG requirement and producing brute-forceable TOTPs.",
+        "input_fixture": "provision_uri('alice@x','Acme', b'\\x00\\x00\\x00\\x00\\x00') and provision_uri('a','b', b'')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NEG-STEP-REPLAY",
+        "hypothesis": "Supplying last_used_step=-1 or a very negative int bypasses the replay guard because the comparison 'current_step > last_used_step' trivially holds, re-accepting the same current step repeatedly.",
+        "input_fixture": "verify(secret, code, last_used_step=-2**63); repeat with same code.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INT-OVERFLOW-STEP",
+        "hypothesis": "Passing last_used_step=2**63-1 or 2**64 triggers OverflowError or wraps in HMAC counter packing (struct.pack('>Q', step)), crashing verify or miscomputing the expected code.",
+        "input_fixture": "verify(secret, '000000', last_used_step=2**64+7)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-FUTURE",
+        "hypothesis": "System clock jumped 10 minutes forward (NTP glitch / VM resume); verify accepts codes derived from future steps beyond \u00b11 and then records a far-future last_used_step, locking out the legitimate user.",
+        "input_fixture": "freeze_time(now+600); code=gen(secret,now+600); unfreeze; verify(secret, code, None).",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NON-DIGIT-CODE",
+        "hypothesis": "verify() accepts code='00000a' or '  123456' or '123456\\n' via int() coercion or lenient strip, crashing or matching unintended values; malformed-type: code=123456 (int) may bypass length check.",
+        "input_fixture": "verify(secret,'0o12345',None); verify(secret,123456,None); verify(secret,'12345',None)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DIGIT-COUNT-SMUGGLE",
+        "hypothesis": "provision_uri honors a user-supplied 'digits=8' query param embedded in account/issuer, causing verify() to silently accept 8-digit codes without explicit opt-in, violating the six-digit default.",
+        "input_fixture": "provision_uri('alice?digits=8','Acme&digits=8', secret); subsequent verify(secret,'12345678',None)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-URI-INJECTION",
+        "hypothesis": "account='alice@x.com&secret=JBSWY3DPEHPK3PXP&issuer=Evil' is not URL-encoded, producing a provisioning URI that overrides the true secret/issuer \u2014 an enrollment-phase prompt-injection/credential-leak attack.",
+        "input_fixture": "provision_uri('alice&secret=OVERRIDE', 'Acme\\nIssuer: Evil', secret)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SECRET-IN-LOGS",
+        "hypothesis": "verify() logs the secret or provisioning URI (which contains the base32 secret) at DEBUG level, leaking shared secrets to stdout/journald/Sentry.",
+        "input_fixture": "logging.basicConfig(level=DEBUG); provision_uri(...); inspect captured stream for 'secret=' or base32 pattern [A-Z2-7]{32,}.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RACE-DOUBLE-VERIFY",
+        "hypothesis": "Two concurrent verify() calls with the same valid code and last_used_step=None both succeed because the step-recording is not atomic (check-then-set race), enabling replay across parallel sessions.",
+        "input_fixture": "Thread A: verify(secret,code,None); Thread B: verify(secret,code,None) simultaneously; expect exactly one success.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HMAC-KEY-TYPE",
+        "hypothesis": "Passing secret as str ('JBSWY3DPEHPK3PXP') vs bytes silently base32-decodes or utf8-encodes inconsistently between provision_uri and verify, producing divergent HMAC keys \u2014 codes generated by the authenticator app never match.",
+        "input_fixture": "provision_uri(...,b'raw'); verify('JBSWY3DPEHPK3PXP', code, None)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AMPLIFICATION-BRUTE",
+        "hypothesis": "No rate-limit / lockout: attacker issues 10^6 verify() calls per second against a known account; at 10^6 codes and \u00b11 skew (3 windows), expected hit in ~0.3s.",
+        "input_fixture": "while True: verify(secret, f'{random.randint(0,999999):06d}', None)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY_SAME_STEP",
+        "hypothesis": "If two verify() calls arrive with the same valid code before the step increments, and last_used_step is passed as the return value of the first call, a naive implementation might still accept the second call if the comparison happens before the write is committed, allowing a replay within the same 30-second window when the caller fails to persist last_used_step atomically between calls.",
+        "input_fixture": "step_n = verifier.verify(secret, code_for_step_n, None)  # returns step_n\nresult2 = verifier.verify(secret, code_for_step_n, None)  # None again \u2014 caller forgot to store; must return -1 or raise",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE_CONCURRENT_VERIFY",
+        "hypothesis": "Under concurrent load two goroutine/thread-style callers each call verify(secret, same_code, last_used_step=None) simultaneously. If last_used_step is read then written non-atomically (read-check-write without a lock), both threads pass the check before either writes the consumed step, granting both callers a valid session \u2014 classic TOCTOU replay.",
+        "input_fixture": "import threading\nresults = []\ndef call(): results.append(verifier.verify(secret, live_code, None))\nt1, t2 = threading.Thread(target=call), threading.Thread(target=call)\nt1.start(); t2.start(); t1.join(); t2.join()\nassert results.count(lambda r: r >= 0) <= 1  # both should NOT be >= 0",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SKEW_WINDOW_PLUS2",
+        "hypothesis": "Passing a code generated for current_step+2 (60 seconds in the future) should be rejected because the invariant bounds tolerance to \u00b11 step. An implementation that iterates window=[\u22121,0,1,2] or uses abs(delta)<=2 would incorrectly accept it, expanding the brute-force surface from 3 valid codes to 5 simultaneously valid codes.",
+        "input_fixture": "import hmac, hashlib, struct, time\ndef hotp(secret, counter): ...\nfuture_code = hotp(secret, int(time.time()//30) + 2)\nassert verifier.verify(secret, future_code, None) == -1  # MUST be rejected",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TIMING_PREFIX_LEAK",
+        "hypothesis": "A non-constant-time string comparison (e.g., Python '==' on str, or an early-return loop) leaks how many leading digits of a guessed code match the real code via measurable latency differences. Attacker submits '000000'..'999999' first-digit sweep and measures response time distribution to identify the correct first digit, then repeats for each position \u2014 reducing brute force from 1M to 60 guesses.",
+        "input_fixture": "import time\nlatencies = {}\nfor first_digit in '0123456789':\n    probe = first_digit + '00000'\n    t0 = time.perf_counter_ns()\n    verifier.verify(secret, probe, None)\n    latencies[first_digit] = time.perf_counter_ns() - t0\n# If max(latencies.values()) - min(latencies.values()) > threshold \u2192 timing oracle",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WEAK_SECRET_80BIT",
+        "hypothesis": "Passing a 10-byte (80-bit) secret to verify() or provision_uri() should be rejected outright. If the implementation only validates secret length at provisioning time and not at verify() time, an attacker who knows the secret is short can brute-force the entire keyspace (2^80) offline, violating the \u2265160-bit security requirement.",
+        "input_fixture": "weak_secret = b'\\x00' * 10  # 80 bits\ntry:\n    uri = verifier.provision_uri('user@example.com', 'Acme', weak_secret)\n    assert False, 'Should have raised ValueError for < 160-bit secret'\nexcept ValueError:\n    pass\n# Also test verify() path:\ntry:\n    verifier.verify(weak_secret, '123456', None)\n    assert False\nexcept ValueError:\n    pass",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SECRET_IN_URI_LOG",
+        "hypothesis": "provision_uri() encodes the raw secret as Base32 in the returned otpauth:// URI (standard behavior). If the caller logs or returns this URI over an unencrypted channel, the secret is fully exposed. The invariant says secrets MUST NEVER be transmitted outside the enrollment channel \u2014 this attack probes whether the implementation provides any safeguard (e.g., marking the URI as sensitive, refusing to include secret in debug repr) or whether it silently leaks the secret in __str__/__repr__ of a wrapper object.",
+        "input_fixture": "uri = verifier.provision_uri('alice', 'Acme', secret_bytes)\nimport base64, re\nm = re.search(r'secret=([A-Z2-7]+)', uri)\nif m:\n    recovered = base64.b32decode(m.group(1))\n    assert recovered == secret_bytes  # confirms full secret recovery from URI string\n# Verify repr/str of any returned object does NOT embed secret\nassert str(secret_bytes) not in repr(verifier)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY_CODE_INPUT",
+        "hypothesis": "Passing an empty string as code to verify() should not raise an unhandled exception that leaks stack frames or internal state. More critically, if the implementation does len(code)==0 check and returns 0 or a truthy step number as a no-op success path, an attacker with an empty string bypasses authentication entirely. The primitive must return -1 or raise, never a valid step.",
+        "input_fixture": "result = verifier.verify(secret, '', None)\nassert result == -1 or result is None, f'Empty code must not return valid step, got {result}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONDIGIT_CODE_BYPASS",
+        "hypothesis": "Codes must be exactly six decimal digits per RFC 4226. Passing a string with non-decimal characters such as '12345a', ' 12345', '123456\\x00', or '\u0661\u0662\u0663\u0664\u0665\u0666' (Arabic-Indic numerals that Python's str.isdigit() accepts) might slip past naive validation and accidentally match the expected code if the comparison normalizes Unicode, allowing an authentication bypass with a malformed input.",
+        "input_fixture": "malformed_codes = ['12345a', ' 123456', '123456\\x00', '\u0661\u0662\u0663\u0664\u0665\u0666', '1234567', '12345']\nfor code in malformed_codes:\n    result = verifier.verify(secret, code, None)\n    assert result == -1, f'Non-decimal/wrong-length code {code!r} must be rejected, got {result}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EIGHT_DIGIT_CODE_ACCEPT",
+        "hypothesis": "The invariant states alternative digit counts must be explicitly opted in. If the implementation passes the raw code string to a truncation function that accepts any length, a caller might pass an 8-digit code derived from the same HMAC-SHA1 secret (which is valid RFC 4226 with digits=8) and the implementation might accept it without the opt-in flag being set, silently upgrading the window to 10M guesses instead of 1M.",
+        "input_fixture": "# Generate valid 8-digit HOTP for current step\nimport hmac, hashlib, struct, time\ncounter = int(time.time() // 30)\nmsg = struct.pack('>Q', counter)\nhmac_val = hmac.new(secret, msg, hashlib.sha1).digest()\noffset = hmac_val[-1] & 0x0f\ncode_int = struct.unpack('>I', hmac_val[offset:offset+4])[0] & 0x7fffffff\neight_digit = str(code_int % 100_000_000).zfill(8)\nresult = verifier.verify(secret, eight_digit, None)\nassert result == -1, f'8-digit code must be rejected without explicit opt-in, got {result}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-STEP_INT_OVERFLOW",
+        "hypothesis": "When the system clock is set to a value near sys.maxsize (year 292277026596 on 64-bit or ~2038 on 32-bit), the step counter int(time.time()//30) may overflow or wrap, causing the skew window to span steps across the overflow boundary. This could allow codes from very old or future steps to be accepted, or cause the replay-prevention comparison (last_used_step < current_step) to malfunction if step wraps to a small positive number.",
+        "input_fixture": "import unittest.mock, time\nfar_future_ts = 2**31 - 1  # 32-bit overflow boundary: 2038-01-19\nwith unittest.mock.patch('time.time', return_value=float(far_future_ts + 60)):\n    code = generate_totp(secret, far_future_ts + 60)\n    step = verifier.verify(secret, code, None)\n    assert step > 0  # must still work correctly near boundary\n    # And replay must still be blocked:\n    assert verifier.verify(secret, code, step) == -1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LAST_USED_STEP_NEGATIVE",
+        "hypothesis": "Passing last_used_step=-1 or last_used_step=0 to verify() may trick the implementation into treating any valid step as 'not yet used', effectively bypassing replay prevention for the first few steps after epoch. An attacker who intercepts a code and replays it with last_used_step=None or last_used_step=-1 could always re-authenticate if the caller's persistence layer returns a sentinel on first use.",
+        "input_fixture": "valid_step = verifier.verify(secret, live_code, None)  # consumes step\n# Attacker replays with forged sentinel:\nresult_forged = verifier.verify(secret, live_code, -1)\nassert result_forged == -1, f'Negative last_used_step must not allow replay, got {result_forged}'\nresult_zero = verifier.verify(secret, live_code, 0)\nassert result_zero == -1, f'last_used_step=0 must not allow replay of a later step with same code'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NULL_ZERO_BYTE_SECRET",
+        "hypothesis": "Passing a 20-byte secret composed entirely of zero bytes (b'\\x00'*20) satisfies the \u2265160-bit length check but has zero entropy \u2014 it is not drawn from a CSPRNG. The implementation should either validate entropy (e.g., reject all-zero or all-same-byte secrets) or document that the caller is responsible. If the implementation silently accepts b'\\x00'*20, an attacker who knows the account name can try this well-known weak key and authenticate without ever obtaining the real secret.",
+        "input_fixture": "zero_secret = b'\\x00' * 20  # 160 bits but zero entropy\ntry:\n    uri = verifier.provision_uri('victim@example.com', 'Acme', zero_secret)\n    # If no exception: attacker tries TOTP codes generated from zero_secret\n    import time\n    step = int(time.time() // 30)\n    guessed_code = generate_totp(zero_secret, step)\n    result = verifier.verify(zero_secret, guessed_code, None)\n    # This succeeding with a known-weak secret reveals the invariant is not enforced\n    assert False, 'All-zero secret should be rejected at provision time'\nexcept ValueError:\n    pass",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SHORT-SECRET-128BIT",
+        "hypothesis": "Accepts 128-bit secrets below the required 160-bit minimum, reducing entropy and violating cryptographic requirements",
+        "input_fixture": "provision_uri(account='user@example.com', issuer='MyApp', secret=bytes(16))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TIMING-SIDE-CHANNEL",
+        "hypothesis": "Verify implementation uses non-constant-time string comparison that leaks code prefix through timing differences",
+        "input_fixture": "Measure latency: t1=verify(secret, code='123456', last_used_step=None); t2=verify(secret, code='999999', last_used_step=None); repeat 1000x to detect prefix-match timing variance",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REPLAY-SAME-CODE-STEP",
+        "hypothesis": "Same code and step accepted multiple times when last_used_step is None, allowing unlimited replay within 30-second window",
+        "input_fixture": "code=derive_valid_code(secret); verify(secret, code, last_used_step=None) returns step S; verify(secret, code, last_used_step=None) returns step S again at same time",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK-SKEW-PLUS-60",
+        "hypothesis": "Verify accepts time skew exceeding \u00b130 seconds by tolerating \u00b12 or more steps instead of strict \u00b11 step bound",
+        "input_fixture": "Advance system clock by 60 seconds; code=derive_code_at_new_time; verify(secret, code, last_used_step=None) succeeds instead of rejecting",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-STEP-INTEGER-OVERFLOW",
+        "hypothesis": "Step counter calculation wraps or overflows on extremely large timestamps, causing step collision and code reuse vulnerability",
+        "input_fixture": "timestamp=9223372036854775807 (int64-max); step=(timestamp//30); verify with HMAC code derived from wrapped step value",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-ZERO-LENGTH-SECRET",
+        "hypothesis": "Empty or zero-length secret accepted, completely collapsing entropy and making all 1M codes independently derivable",
+        "input_fixture": "provision_uri(account='user', issuer='app', secret=b'') or verify(secret=b'', code='123456', last_used_step=None) succeeds",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SECRET-LEAKED-IN-URI",
+        "hypothesis": "Provision_uri embeds raw secret bytes or base32-encoded form in returned URI, leaking credential via logs, proxies, or referer headers",
+        "input_fixture": "secret=random_160bit; uri=provision_uri(account='user', issuer='app', secret); assert base32(secret) in uri or hex(secret) in uri",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-WRONG-CODE-DIGIT-LENGTH",
+        "hypothesis": "Verify accepts non-6-digit codes like '123' (3 digits) or '12345678' (8 digits) without explicit opt-in, violating RFC 6238",
+        "input_fixture": "verify(secret, code='123', last_used_step=None) returns success or verify(secret, code='12345678', last_used_step=None) returns success",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-STEP-RACE",
+        "hypothesis": "Two parallel verify calls with identical secret, code, and step value both succeed, bypassing step-uniqueness check",
+        "input_fixture": "Thread1: verify(secret, code='123456', last_used_step=None) || Thread2: verify(secret, code='123456', last_used_step=None); both complete without rejection",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ACCOUNT-ISSUER-NEWLINE-INJECT",
+        "hypothesis": "Account or issuer parameters accept embedded newlines or control characters that corrupt URI format or inject unvalidated parameters",
+        "input_fixture": "provision_uri(account='user%0Amalicious=1', issuer='app%0D%0A', secret=valid_160bit) returns malformed URI with injected content",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NEGATIVE-LAST-USED-STEP",
+        "hypothesis": "Negative or sentinel last_used_step values (e.g. -1 or INT_MIN) bypass step-reuse check, enabling replay of arbitrarily old codes",
+        "input_fixture": "old_code=derive_code_from_1_hour_ago(secret); verify(secret, old_code, last_used_step=-2147483648) succeeds without step-mismatch rejection",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-BRUTE-FORCE-ALL-CODES-UNTHROTTLED",
+        "hypothesis": "No rate limiting or attempt throttling allows attacker to exhaustively submit all 1M possible 6-digit codes per secret in seconds",
+        "input_fixture": "for i in range(1000000): verify(secret, format(i, '06d'), last_used_step=None); completes without timeout or exponential backoff in less than 10 seconds",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "totp.verify.accepted",
+        "required_attributes": [
+          "subject_id",
+          "step",
+          "algorithm"
+        ]
+      },
+      {
+        "event_name": "totp.verify.rejected",
+        "required_attributes": [
+          "subject_id",
+          "reason"
+        ]
+      },
+      {
+        "event_name": "totp.replay.detected",
+        "required_attributes": [
+          "subject_id",
+          "attempted_step"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "totp.verify.total",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": [
+          "result"
+        ]
+      },
+      {
+        "name": "totp.replay.rejections",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 5,
+        "label_keys": [
+          "result"
+        ]
+      },
+      {
+        "name": "totp.verify.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "result"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "totp.verify",
+        "required_attributes": [
+          "subject.id",
+          "result",
+          "algorithm"
+        ]
+      },
+      {
+        "operation_name": "totp.provision_uri",
+        "required_attributes": [
+          "issuer"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol matches catalog api_signature verbatim; RFC 6238/4226 HOTP truncation correct; constant-time compare via hmac.compare_digest; skew hard-capped to \u00b11; replay via both caller-supplied last_used_step and in-memory fingerprint set."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "Covers provision_uri, verify, secret generation, adapter registry, all five invariants, fingerprint cache, algorithm map, label validation. Missing only the self-observability counters/histograms the spec advertises (totp.verify.total, replay.rejections, duration)."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Dedicated hierarchy (TotpInvariantError \u2192 TotpReplayError / TotpInvalidCodeError); each message cites the violated invariant ID; distinguishes invalid-code from replay from shape errors; no secret material leaks into messages."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "runtime_checkable Protocol, pure constructor with injectable now_fn, zero import-time I/O, TotpAdapterRegistry for alt schemes, caller owns persistence of last_used_step. Clean __all__. Adapter isinstance check against Protocol is structural-only but acceptable."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe lock around replay cache, constant-time loop continues past match, CSPRNG for generate_secret, bounded step_seconds. Weaknesses: unbounded _seen_steps set (memory growth over process lifetime \u2014 no TTL/eviction), and the advertised metrics hooks are absent."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Protocol signature, invariants, extension_contract (registry rejects non-Protocol/non-callable verify), and consumption_example all align with TotpVerifier.contract.json. Registry enforces replay-step return via Protocol shape; explicit opt-in for non-standard digits matches INV-05."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'160-bit CSPRNG secret' is unexplained \u2014 juniors may not know whether generate_secret() handles this or if they must supply their own entropy.",
+          "The last_used_step round-trip requirement is buried mid-doc; easy to miss that forgetting to persist `step` silently breaks replay protection.",
+          "The TLA+/state-machine section uses formal-methods notation with no actionable takeaway \u2014 juniors will skip it confused rather than reassured."
+        ],
+        "rewrite_suggestion": "Open with the usage snippet (it's already clear), add a bold callout box immediately after `step = totp.verify(...)` saying 'You MUST save this value to your DB before returning \u2014 skipping it defeats replay protection.' Replace the state-machine section with one sentence: 'The library tracks used codes for you; your only job is to persist and return last_used_step.'"
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "TotpAdapterRegistry is described but has no import path, Protocol stub, or example registration call \u2014 impossible to extend without reading source.",
+          "TotpVerifier.tla and invariant_bindings.json are referenced with no repo-relative paths, making them unresolvable during code review.",
+          "The in-memory replay cache has no documented eviction policy \u2014 in a long-running process with millions of users the (fingerprint, step) set is unbounded."
+        ],
+        "rewrite_suggestion": "Add a collapsible 'Extension contract' code block showing the TotpAdapter Protocol stub and a one-liner registry call. Inline repo-relative paths for every referenced artifact. Add one sentence on cache eviction: 'Entries older than MaxSkew steps are pruned on each verify() call, bounding memory to O(active_secrets).'"
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "No rate-limiting guidance \u2014 the +/-1 window exposes 3 valid codes per 30 s; without caller-layer throttling an attacker gets ~10,000 guesses/hour undetected.",
+          "Secret rotation is unaddressed \u2014 re-enrollment behavior (old secret invalidation, replay cache flush) is undefined, leaving a potential window during handoff.",
+          "last_used_step loss recovery (e.g., DB restore from backup) reopens the replay window with no documented mitigation or warning."
+        ],
+        "rewrite_suggestion": "Add a 'Caller responsibilities' security box listing: (1) enforce \u22645 attempts per user per 30 s at the application layer, (2) flush the replay cache and rotate the secret on re-enrollment, (3) treat last_used_step as security-critical state \u2014 restoring a stale backup value MUST trigger forced re-enrollment."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "The in-memory replay cache is process-local \u2014 in a horizontally scaled deployment two pods can independently accept the same code; this is a silent correctness failure with no documented workaround.",
+          "No exception taxonomy \u2014 it's unclear whether verify() raises on bad input (invalid secret length, non-numeric code) vs. returns a sentinel, which matters for alert classification.",
+          "No NTP dependency note \u2014 if host clock drifts beyond 30 s, all users are locked out; this is the most likely on-call scenario and it's not mentioned."
+        ],
+        "rewrite_suggestion": "Add an 'Operational constraints' section: (1) 'Single-process only \u2014 multi-pod deployments require an external shared store for last_used_step (Redis SETNX recommended).' (2) Exception table: TotpSecretError (bad secret) vs. TotpCodeError (bad code) vs. TotpReplayError (replay). (3) 'This primitive depends on system clock accuracy; NTP drift >30 s causes universal lockout \u2014 alert on clock_diff metric.'"
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "No enrollment UX flow \u2014 PM cannot spec screens or error states without knowing the steps: generate secret \u2192 show QR \u2192 user scans \u2192 confirm with first code \u2192 store secret.",
+          "Recovery flow is entirely absent \u2014 losing an authenticator app is the #1 support ticket for MFA; PM needs to know if recovery codes are in scope or a separate primitive.",
+          "No latency figures \u2014 PM cannot set SLA expectations or decide whether to show a spinner without a p99 for verify()."
+        ],
+        "rewrite_suggestion": "Add a 3-bullet 'User journey': Setup (generate + QR), Confirmation (user enters first code to prove scan worked), Daily use (enter code at login). Add one line: 'Account recovery (lost device) is out of scope \u2014 pair with a RecoveryCodes primitive.' Add one performance line: 'verify() completes in <1 ms p99 on commodity hardware \u2014 no loading state needed.'"
+      }
+    ]
+  }
+}

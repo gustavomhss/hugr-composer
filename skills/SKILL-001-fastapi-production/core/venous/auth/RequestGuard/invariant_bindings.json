@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "RG_INV_01",
+      "invariant_text": "A False return MUST prevent the handler from running and SHALL produce a 401/403 response.",
+      "confirms_test": "test_inv_deny_blocks_handler_confirms",
+      "prevents_test": "test_inv_deny_blocks_handler_prevents",
+      "under_failure_test": "test_inv_deny_blocks_handler_under_failure"
+    },
+    {
+      "invariant_id": "RG_INV_02",
+      "invariant_text": "Guards MUST NOT mutate the request body; they CANNOT transform payloads, only accept or reject.",
+      "confirms_test": "test_inv_no_mutation_confirms",
+      "prevents_test": "test_inv_no_mutation_prevents",
+      "under_failure_test": "test_inv_no_mutation_under_failure"
+    },
+    {
+      "invariant_id": "RG_INV_03",
+      "invariant_text": "Multiple guards MUST be composed with logical AND: any False blocks the request and SHALL short-circuit remaining guards.",
+      "confirms_test": "test_inv_and_composition_confirms",
+      "prevents_test": "test_inv_and_composition_prevents",
+      "under_failure_test": "test_inv_and_composition_under_failure"
+    },
+    {
+      "invariant_id": "RG_INV_04",
+      "invariant_text": "Guards MUST execute after authentication has bound a principal and CANNOT be reused once terminal; a fresh composite is required per request.",
+      "confirms_test": "test_inv_lifecycle_confirms",
+      "prevents_test": "test_inv_lifecycle_prevents",
+      "under_failure_test": "test_inv_lifecycle_under_failure"
+    },
+    {
+      "invariant_id": "RG_INV_05",
+      "invariant_text": "A guard that raises NEVER gets silently treated as allow; exceptions SHALL map to a 500 outcome by the error filter.",
+      "confirms_test": "test_inv_raise_is_error_confirms",
+      "prevents_test": "test_inv_raise_is_error_prevents",
+      "under_failure_test": "test_inv_raise_is_error_under_failure"
+    }
+  ]
+}

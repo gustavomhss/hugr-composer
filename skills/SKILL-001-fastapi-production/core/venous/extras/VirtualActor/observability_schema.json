@@ -1,0 +1,28 @@
+{
+  "logs": [
+    {"event_name": "actor.invoke.enqueued",
+     "required_attributes": ["actor_type", "key", "method"]},
+    {"event_name": "actor.invoke.started",
+     "required_attributes": ["actor_type", "key", "method"]},
+    {"event_name": "actor.invoke.completed",
+     "required_attributes": ["actor_type", "key", "method", "duration_ms", "outcome"]},
+    {"event_name": "actor.reminder.fired",
+     "required_attributes": ["actor_type", "key", "reminder"]},
+    {"event_name": "actor.activation.migrated",
+     "required_attributes": ["actor_type", "key", "from_host", "to_host"]}
+  ],
+  "metrics": [
+    {"name": "actor.invoke.calls", "metric_type": "counter", "unit": "1",
+     "cardinality_bound": 1000, "label_keys": ["actor_type", "method", "outcome"]},
+    {"name": "actor.invoke.duration", "metric_type": "histogram", "unit": "ms",
+     "cardinality_bound": 1000, "label_keys": ["actor_type", "method"]},
+    {"name": "actor.queue.depth", "metric_type": "gauge", "unit": "1",
+     "cardinality_bound": 200, "label_keys": ["actor_type"]}
+  ],
+  "spans": [
+    {"operation_name": "actor.invoke",
+     "required_attributes": ["actor.type", "actor.key", "actor.method"]},
+    {"operation_name": "actor.reminder.fire",
+     "required_attributes": ["actor.type", "actor.key", "reminder.name"]}
+  ]
+}

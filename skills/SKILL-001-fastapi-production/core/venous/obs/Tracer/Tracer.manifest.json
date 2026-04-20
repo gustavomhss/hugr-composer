@@ -1,0 +1,818 @@
+{
+  "name": "Tracer",
+  "namespace": "obs",
+  "maturity": "battle_tested",
+  "builder_agent_id": 7,
+  "catalog_entry_sha256": "b45ab21c5ff0b3e7a27ac37698af963a1a9af527d4315e4ef1093d52b6c9e007",
+  "files": [
+    {
+      "path": "obs/Tracer/Tracer.contract.json",
+      "sha256": "e054e2a648a0d74032267e3f0a4961b0a940bdc21de2718335710f0693b90de7",
+      "size_bytes": 3954,
+      "kind": "contract_json"
+    },
+    {
+      "path": "obs/Tracer/Tracer.manifest.json",
+      "sha256": "8a9e06c2a208412b6fa7c481d4701ea2b4c6707a6147b3b7134f950aa68040f7",
+      "size_bytes": 45788,
+      "kind": "manifest"
+    },
+    {
+      "path": "obs/Tracer/Tracer.md",
+      "sha256": "07f2208356d58955d427fce6488e457a6039a97243a0d17f2d2184556154018a",
+      "size_bytes": 7157,
+      "kind": "spec_md"
+    },
+    {
+      "path": "obs/Tracer/Tracer.py",
+      "sha256": "18d92ca50cd44cc6ef454c52b1ffd87f25e39bb673b0e4cf20dd71f3f2e9c3b1",
+      "size_bytes": 11699,
+      "kind": "impl"
+    },
+    {
+      "path": "obs/Tracer/behavioral_Tracer.py",
+      "sha256": "18e8409f82b715ae7e0c48da120983f17c4285f2b6a2f560b6bb78c8000b5037",
+      "size_bytes": 3037,
+      "kind": "behavioral"
+    },
+    {
+      "path": "obs/Tracer/chaos_Tracer.py",
+      "sha256": "db77f9ddb6f1e36900ba9cb4a8a56815070d30b3406f753e0bef2742eb3f6909",
+      "size_bytes": 3187,
+      "kind": "chaos"
+    },
+    {
+      "path": "obs/Tracer/dashboard.json",
+      "sha256": "dcd3728302431eed543f08ac44999f955a7052157b179c50fed9c9e0316956c0",
+      "size_bytes": 833,
+      "kind": "dashboard"
+    },
+    {
+      "path": "obs/Tracer/invariant_bindings.json",
+      "sha256": "20791b91a3b697f57b40f64648f450907cf91f25723d4d1024b73f60a109c87c",
+      "size_bytes": 2322,
+      "kind": "test"
+    },
+    {
+      "path": "obs/Tracer/metamorphic_Tracer.py",
+      "sha256": "844c0940e3657aa9bb0bded9f079efc1542de6546ebff9b955d0731fb0411fec",
+      "size_bytes": 2291,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "obs/Tracer/observability_Tracer.py",
+      "sha256": "45a772c546bce3918c493415dd004f6496470ae65e6589012cdda0e6df25da8d",
+      "size_bytes": 1881,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/Tracer/observability_schema.json",
+      "sha256": "203ff935f0124dec2894230651e1387b6858ef1b56cdc10d6fd0612484a59fd3",
+      "size_bytes": 1255,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/Tracer/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "obs/Tracer/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "obs/Tracer/test_Tracer.py",
+      "sha256": "498b96ad8a3e2caa005ffa9bbc4ac91b878c40833438bf1dc8a74748c2eca685",
+      "size_bytes": 8386,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "TRACER_INV_01",
+      "invariant_text": "Every span MUST have a non-empty name, a start timestamp, and an end timestamp in that causal order.",
+      "confirms_test": "test_inv_name_timestamps_confirms",
+      "prevents_test": "test_inv_name_timestamps_prevents",
+      "under_failure_test": "test_inv_name_timestamps_under_failure"
+    },
+    {
+      "invariant_id": "TRACER_INV_02",
+      "invariant_text": "A span CANNOT be ended twice; a second end call SHALL be a no-op with a recorded internal warning.",
+      "confirms_test": "test_inv_end_idempotent_confirms",
+      "prevents_test": "test_inv_end_idempotent_prevents",
+      "under_failure_test": "test_inv_end_idempotent_under_failure"
+    },
+    {
+      "invariant_id": "TRACER_INV_03",
+      "invariant_text": "The tracer MUST honor W3C Trace Context headers (traceparent, tracestate) on both inject and extract without mutation of unknown tracestate vendor entries.",
+      "confirms_test": "test_inv_w3c_context_confirms",
+      "prevents_test": "test_inv_w3c_context_prevents",
+      "under_failure_test": "test_inv_w3c_context_under_failure"
+    },
+    {
+      "invariant_id": "TRACER_INV_04",
+      "invariant_text": "Recording an exception MUST set the span status code to ERROR unless the caller explicitly overrides with OK.",
+      "confirms_test": "test_inv_exception_status_confirms",
+      "prevents_test": "test_inv_exception_status_prevents",
+      "under_failure_test": "test_inv_exception_status_under_failure"
+    },
+    {
+      "invariant_id": "TRACER_INV_05",
+      "invariant_text": "Attribute values MUST be one of: string, bool, int, float, or a homogeneous sequence of those types; nested structures are FORBIDDEN.",
+      "confirms_test": "test_inv_attribute_types_confirms",
+      "prevents_test": "test_inv_attribute_types_prevents",
+      "under_failure_test": "test_inv_attribute_types_under_failure"
+    },
+    {
+      "invariant_id": "TRACER_INV_06",
+      "invariant_text": "The tracer SHALL NEVER block the caller waiting for exporter acknowledgement; export is asynchronous.",
+      "confirms_test": "test_inv_async_export_confirms",
+      "prevents_test": "test_inv_async_export_prevents",
+      "under_failure_test": "test_inv_async_export_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 3226,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1179,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1288,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 69682,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "50 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 833,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 751,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 72390,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 149826,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-SPAN-NAME",
+        "hypothesis": "Calling start_as_current_span with name='' or a whitespace-only string should be rejected, but implementations often accept it, producing unnamed spans that violate the non-empty-name invariant and corrupt downstream aggregation by trace name.",
+        "input_fixture": "tracer.start_as_current_span('') and tracer.start_as_current_span('   ')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-REVERSAL",
+        "hypothesis": "Monotonic vs wall clock skew (NTP step backward, VM pause, suspend/resume) can cause end_timestamp < start_timestamp. If the tracer naively uses time.time() twice rather than a monotonic base, the causal order invariant breaks and exporters may drop or mis-order spans.",
+        "input_fixture": "freeze_time start=1000.0; enter span; freeze_time 999.0; exit span",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DOUBLE-END-RACE",
+        "hypothesis": "Two threads exit the same span's context manager concurrently (shared span leaked outside its CM). The second .end() should be a no-op, but without a CAS/lock on an ended flag both will run finalization, double-dispatching to the exporter and double-counting metrics.",
+        "input_fixture": "span=tracer.start_as_current_span('x').__enter__(); Thread(target=span.__exit__).start() x2",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TRACESTATE-VENDOR-MUTATION",
+        "hypothesis": "Extract then inject of a carrier containing tracestate='vendorX=abc,vendorY=def' should round-trip unknown vendor entries verbatim. Implementations commonly re-serialize by re-ordering, lowercasing, stripping whitespace, or dropping unknown vendors, breaking the 'no mutation of unknown vendor entries' invariant.",
+        "input_fixture": "carrier={'traceparent':'00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01','tracestate':'vendorX=abc,  vendorY=def ,congo=t61rcWkgMzE'}; ctx=tracer.extract(carrier); out={}; tracer.inject(out); assert out['tracestate']==carrier['tracestate']",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TRACEPARENT-MALFORMED",
+        "hypothesis": "A traceparent with version 'ff' (invalid per spec), or with trace-id of all zeros, or with extra fields separated by '-' should be rejected but retained for forward compatibility per W3C. Many impls either crash with IndexError or silently accept all-zero trace-id, violating spec conformance.",
+        "input_fixture": "carrier={'traceparent':'ff-00000000000000000000000000000000-0000000000000000-01-extra'}",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NESTED-ATTR-DICT",
+        "hypothesis": "set_attribute('user', {'id':1,'roles':['a','b']}) or attributes={'meta':{'nested':True}} in start_as_current_span should be rejected per the homogeneous-scalar rule. Implementations often silently str() the dict or pass it to the exporter, violating the forbidden-nested-structure invariant and potentially leaking PII via repr.",
+        "input_fixture": "span.set_attribute('user', {'id':1,'roles':['a','b']})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HETEROGENEOUS-SEQUENCE",
+        "hypothesis": "An attribute value of ['a', 1, True] is a sequence but not homogeneous. The invariant forbids it. A common bug is checking isinstance(v, (list,tuple)) without validating element type uniformity, so mixed arrays slip through and crash the exporter at serialization time.",
+        "input_fixture": "span.set_attribute('tags', ['a', 1, True, 3.14])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RECORD-EXC-NO-ERROR",
+        "hypothesis": "record_exception(ValueError('x')) followed by no explicit set_status should leave span status=ERROR. If the implementation defers status to the context manager __exit__ based on exc_info only, a manually recorded exception (without raising) will produce status=UNSET, breaking the invariant that record_exception implies ERROR.",
+        "input_fixture": "with tracer.start_as_current_span('op') as s: s.record_exception(ValueError('boom'))  # no raise; assert s.status=='ERROR'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-OK-OVERRIDE-LOST",
+        "hypothesis": "After record_exception, the caller explicitly calls set_status('OK'). A naive impl that re-forces ERROR on __exit__ when _recorded_exception flag is set will clobber the explicit OK override, violating the 'unless caller explicitly overrides with OK' clause.",
+        "input_fixture": "with tracer.start_as_current_span('op') as s: s.record_exception(RuntimeError()); s.set_status('OK'); # assert final status OK",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EXPORTER-BLOCKING-BACKPRESSURE",
+        "hypothesis": "If the span processor's internal queue is full and the exporter is slow (network stall), naive impls block the caller inside __exit__ waiting on queue.put() or a sync flush. Flood 100k spans at a blocked-network exporter and measure __exit__ latency \u2014 should stay <1ms; if it spikes into seconds, the async-export invariant is violated.",
+        "input_fixture": "install exporter that sleeps 10s on export(); for _ in range(100000): with tracer.start_as_current_span('x'): pass; assert p99_exit_latency_ms<5",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INJECT-AMPLIFICATION",
+        "hypothesis": "inject() into an attacker-controlled dict that already has 32 hostile tracestate vendor entries should cap tracestate at 32 entries per W3C spec. If the impl just appends, an attacker causes unbounded header growth (amplification) downstream, exceeding HTTP header size limits and DoS-ing proxies.",
+        "input_fixture": "carrier={'tracestate':','.join(f'v{i}=x' for i in range(32))}; tracer.inject(carrier); assert len(carrier['tracestate'].split(','))<=32",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EXTRACT-INJECTION-PAYLOAD",
+        "hypothesis": "A malicious upstream sends traceparent containing log-injection payloads or ANSI escapes ('00-...-01\\n[ERROR] admin logged in'). If the tracer logs the raw header on parse failure, this enables log forging. Also SQL/command metachars in tracestate could be reflected into attribute exporters.",
+        "input_fixture": "carrier={'traceparent':'00-aa\\x1b[31mEVIL\\x1b[0m-bb-01','tracestate':'k=v\\nADMIN=true'}",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INT-OVERFLOW-ATTR",
+        "hypothesis": "Attribute int value of 2**63 (one past signed-64 max) or 2**128 violates OTLP int64 wire type. A compliant impl should reject or coerce; many silently pass to protobuf serializer which raises at export time (crashing the exporter thread and losing subsequent spans).",
+        "input_fixture": "span.set_attribute('big', 2**63); span.set_attribute('huge', 2**128)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NAN-INF-ATTR",
+        "hypothesis": "float('nan') and float('inf') are valid Python floats but invalid JSON and produce undefined behavior in many exporters. The invariant says float is allowed, but NaN/Inf should be scrubbed or rejected; otherwise downstream JSON exporters emit invalid JSON breaking the receiver.",
+        "input_fixture": "span.set_attribute('ratio', float('nan')); span.set_attribute('score', float('inf'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CONTEXT-LEAK-ACROSS-TASKS",
+        "hypothesis": "start_as_current_span uses contextvars; spawning asyncio.create_task inside a span and then exiting the parent span should not end the child's context. A bug where the exit propagates to all tasks causes early end and double-end warnings when the task later exits its own span.",
+        "input_fixture": "async def run(): with tracer.start_as_current_span('p'): asyncio.create_task(child()); # parent exits before child",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-TRACEPARENT",
+        "hypothesis": "An attacker replays a captured traceparent with a known trace-id/span-id to correlate their requests with a victim's trace, poisoning observability. The tracer should accept extracted context but mark sampled=remote and never reuse the span-id as local. Impls that copy span-id verbatim as parent_span_id without treating trace-id as untrusted allow trace graph poisoning.",
+        "input_fixture": "replay traceparent='00-<victim_trace_id>-<victim_span_id>-01' 10000x",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-LINKS-SELF-CYCLE",
+        "hypothesis": "Passing links=[current_span_context] creates a self-link; passing links containing the span's own to-be-assigned context via a reference cycle could cause infinite recursion in exporters that walk the link graph. Also links=[None] or links with malformed SpanContext should be rejected, not crash.",
+        "input_fixture": "tracer.start_as_current_span('x', links=[None, 'not-a-context', object()])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CREDENTIAL-LEAK-ATTR",
+        "hypothesis": "Callers routinely pass request headers as attributes: set_attribute('http.request.header.authorization', 'Bearer eyJ...'). If the tracer has no redaction for well-known sensitive keys (authorization, cookie, set-cookie, x-api-key), credentials leak to every exporter/backend, violating least-privilege and many compliance regimes.",
+        "input_fixture": "span.set_attribute('http.request.header.authorization','Bearer sk-live-AAAA'); span.set_attribute('db.statement','SELECT password FROM users')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNICODE-NAME-BOUNDARY",
+        "hypothesis": "A span name containing 10MB of zero-width joiners, or a single '\\x00' byte, or RTL override chars, is technically non-empty but abusive. Exporters often truncate at 255 bytes silently; null bytes may terminate C-string serializers early, producing an effectively empty name downstream while the invariant check at the API layer passes.",
+        "input_fixture": "tracer.start_as_current_span('\\x00'); tracer.start_as_current_span('A'*10_000_000); tracer.start_as_current_span('\\u202e' + 'admin')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-END-BEFORE-START-FORK",
+        "hypothesis": "Process fork() between start and end: parent starts span, forks, child exits the CM. Two ends for the same span-id occur in different processes, each thinking it's the first end. Without PID-aware dedup, the double-end-no-op invariant is violated across process boundaries.",
+        "input_fixture": "with tracer.start_as_current_span('op'): pid=os.fork();  # both parent and child exit the CM",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY_SPAN_NAME",
+        "hypothesis": "Passing an empty string as the span name should violate INV-1 (non-empty name), but many implementations delegate to the underlying SDK without validating, silently creating a span with name='' that passes all downstream checks and is exported with a blank name, making traces unreadable and breaking any downstream name-based sampling rules.",
+        "input_fixture": "tracer.start_as_current_span('')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WHITESPACE_ONLY_NAME",
+        "hypothesis": "A name composed entirely of whitespace characters (e.g. '   \\t\\n') is technically non-empty by len() > 0, so an implementation that only checks truthiness or len will accept it and emit a span whose name is invisible in UIs, violating the semantic intent of INV-1 and creating unqueryable traces.",
+        "input_fixture": "tracer.start_as_current_span('   \\t\\n  ', kind='SERVER')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK_SKEW_REVERSE",
+        "hypothesis": "If the host clock is stepped backward (NTP correction, VM migration, or mocked time.time_ns()) between span start and span end, the recorded end_timestamp will be less than start_timestamp, violating the causal-order requirement of INV-1. Implementations that rely on wall-clock time without a monotonic fallback are vulnerable.",
+        "input_fixture": "import time; _orig = time.time_ns; time.time_ns = lambda: _orig() - 10**9  # inject at span.__exit__ via monkeypatch; with tracer.start_as_current_span('op'): pass",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DOUBLE_END_RACE",
+        "hypothesis": "Two threads acquiring the same span reference and both calling __exit__ concurrently may both pass a 'not yet ended' guard check before either writes the ended flag, resulting in two export calls for the same span. The invariant requires the second end to be a no-op, but without a lock this is a classic check-then-act TOCTOU race.",
+        "input_fixture": "import threading; span_ref = None\nwith tracer.start_as_current_span('payment') as s:\n    span_ref = s\n    def end_again(): span_ref.__exit__(None, None, None)\n    t = threading.Thread(target=end_again); t.start()\n# main thread also exits context here simultaneously\nt.join()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REENTER_ENDED_SPAN",
+        "hypothesis": "Re-entering a finished context-manager object (calling __enter__ on an already-exited span CM) may reset the span state and clear the ended flag, allowing a subsequent __exit__ to record a second end timestamp and a second export, bypassing the double-end no-op protection.",
+        "input_fixture": "cm = tracer.start_as_current_span('login')\nwith cm as s:\n    pass\n# span is ended here\ncm.__enter__()       # re-enter: implementation may not guard this\ncm.__exit__(None, None, None)  # second end \u2014 should be no-op but may export again",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TRACESTATE_VENDOR_MUTATION",
+        "hypothesis": "When inject() serialises a tracestate header that contains unknown vendor entries (e.g. 'congo=t61rcWkgMzE,rojo=00f067') alongside the implementation's own vendor entry, the implementation may drop, reorder, or URL-encode the foreign entries, violating the W3C requirement to forward unknown vendor entries unchanged.",
+        "input_fixture": "carrier = {}\n# Seed context from an upstream that includes a foreign vendor\nupstream = {'traceparent': '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01', 'tracestate': 'congo=t61rcWkgMzE,rojo=00f067aa0ba902b7'}\nctx = tracer.extract(upstream)\n# Propagate further; inject should preserve both vendor entries verbatim\ntracer.inject(carrier)  # assert 'congo=t61rcWkgMzE' still present and unmodified in carrier['tracestate']",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-MALFORMED_TRACEPARENT_INJECTION",
+        "hypothesis": "Extracting a traceparent header with a version field other than '00' (e.g. 'ff-...') should be handled per W3C spec: unknown versions must be accepted if the rest parses, but some implementations reject the entire header and silently return a new root context, breaking distributed trace continuity without any error signal to the caller.",
+        "input_fixture": "carrier = {'traceparent': 'ff-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01'}\nctx = tracer.extract(carrier)\n# If ctx is a fresh root context the remote span-id is lost; distributed trace is severed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EXCEPTION_STATUS_OVERRIDE_ORDER",
+        "hypothesis": "The invariant states record_exception MUST set status to ERROR 'unless the caller explicitly overrides with OK'. If a caller calls set_status('OK') BEFORE record_exception, the implementation may still overwrite OK with ERROR (because the exception recording runs after), violating the caller's explicit intent and the invariant's override carve-out.",
+        "input_fixture": "with tracer.start_as_current_span('checkout') as span:\n    span.set_status('OK', 'pre-validated')\n    try:\n        raise ValueError('stock depleted')\n    except ValueError as e:\n        span.record_exception(e)\n        # Caller already set OK \u2014 record_exception must NOT downgrade it back to ERROR",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NON_BASEEXCEPTION_ARG",
+        "hypothesis": "Passing an object that is not a BaseException subclass to record_exception (e.g. a plain string or a dict) should raise TypeError or be explicitly rejected, but lenient implementations may silently succeed without setting ERROR status, violating INV-4 and leaving the span status as UNSET while swallowing the error signal.",
+        "input_fixture": "with tracer.start_as_current_span('parse') as span:\n    span.record_exception('this is not an exception')  # str, not BaseException\n    # status should still be ERROR per INV-4, or TypeError raised; neither may happen",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NESTED_DICT_ATTRIBUTE",
+        "hypothesis": "Passing a nested dict as an attribute value (e.g. {'user': {'id': 1}}) should be rejected per INV-5, which forbids nested structures. A naive implementation that calls str() or json.dumps() on the value may silently accept it and serialize it as a string, bypassing the type constraint and allowing arbitrary data exfiltration via span attributes.",
+        "input_fixture": "with tracer.start_as_current_span('request') as span:\n    span.set_attribute('http.request', {'headers': {'Authorization': 'Bearer sk-secret'}, 'body': '<payload>'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-HETEROGENEOUS_SEQUENCE_ATTR",
+        "hypothesis": "A list mixing types (e.g. [1, 'two', 3.0, True]) is a heterogeneous sequence and must be rejected per INV-5. Implementations that only check isinstance(value, list) without verifying element type homogeneity will accept the value, corrupt the OTLP schema (which requires typed arrays), and may cause exporter panics or silent data loss downstream.",
+        "input_fixture": "with tracer.start_as_current_span('batch') as span:\n    span.set_attribute('item.ids', [1, 'two', 3.0, True, None])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EXPORT_BLOCKING_SYNC",
+        "hypothesis": "If the configured exporter is replaced with a synchronous blocking implementation (e.g. one that calls requests.post() inline without a timeout), the tracer's span processor may invoke it on the calling thread during span end, blocking the caller indefinitely and violating INV-6. This can be triggered in tests or misconfigured deployments.",
+        "input_fixture": "import time\nclass BlockingExporter:\n    def export(self, spans): time.sleep(9999)  # simulates hung network\n    def shutdown(self): pass\n# Install BlockingExporter as the active exporter, then:\nwith tracer.start_as_current_span('slow-op') as span:\n    pass\n# __exit__ should return immediately; if it hangs INV-6 is violated",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EXPORT_QUEUE_FULL_BACKPRESSURE",
+        "hypothesis": "When the async export queue is full (e.g. 2048 pending spans and exporter is offline), adding more spans may trigger backpressure that blocks start_as_current_span or __exit__. The invariant requires the tracer to NEVER block; implementations using a bounded queue with a blocking put() call violate INV-6 under sustained load.",
+        "input_fixture": "# Fill the export queue by generating 10 000 spans while exporter is paused\nfor i in range(10_000):\n    with tracer.start_as_current_span(f'flood-{i}'):\n        pass\n# If any iteration blocks > ~1ms, INV-6 is violated",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INJECT_NON_STRING_CARRIER_VALUE",
+        "hypothesis": "When inject() writes into a carrier dict, it must write only string values per W3C spec. An implementation that coerces numeric or bytes objects and writes them directly (e.g. carrier['traceparent'] = b'00-...' instead of str) will produce a carrier that breaks HTTP header serialisation and downstream extract() calls silently returning a fresh root context.",
+        "input_fixture": "carrier = {}\ntracer.inject(carrier)\n# Verify all values are str, not bytes, int, or other types\nassert all(isinstance(v, str) for v in carrier.values()), f'Non-string carrier value: {carrier}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SPAN_GENERATOR_ABANDON",
+        "hypothesis": "If a generator function uses start_as_current_span as a context manager but is abandoned (garbage collected without full iteration), __exit__ may never be called, leaving the span with a start timestamp but no end timestamp. The invariant requires every span to have an end timestamp; abandoned generator spans violate INV-1 silently.",
+        "input_fixture": "def gen():\n    with tracer.start_as_current_span('stream-chunk') as span:\n        yield 1\n        yield 2\ng = gen()\nnext(g)   # start span, get first value\ndel g     # abandon generator \u2014 __exit__ may not be called; span has no end timestamp",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-SPAN-NAME",
+        "hypothesis": "Span created with empty string name violates the non-empty name invariant and may cause downstream trace collection failures or parsing errors.",
+        "input_fixture": "tracer.start_as_current_span(\"\") as span: pass",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DOUBLE-SPAN-END",
+        "hypothesis": "Calling span end twice fails to record the internal warning on the second call, breaking the no-op contract.",
+        "input_fixture": "with tracer.start_as_current_span('test') as span: pass; # context manager ends span; manually call __exit__ again or span.end()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TRACEPARENT-MALFORMED",
+        "hypothesis": "extract() with malformed traceparent header (invalid format like '00-bad-bad-00') crashes or corrupts span context instead of gracefully handling invalid W3C header.",
+        "input_fixture": "tracer.extract({'traceparent': '00-invalidhexstringhere-0000000000000000-00'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TRACESTATE-VENDOR-MUTATE",
+        "hypothesis": "inject() and extract() round-trip silently drops or mutates vendor-specific tracestate entries, violating W3C immutability requirement for unknown vendors.",
+        "input_fixture": "carrier = {}; tracer.inject(carrier); assert 'tracestate' in carrier with 'vendor1=val1,w3c-internal=x'; ctx = tracer.extract(carrier); re-inject and compare; vendor1 entry missing/corrupted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NESTED-DICT-ATTRIBUTE",
+        "hypothesis": "Setting attribute with nested dictionary value bypasses type validation, allowing forbidden complex structures to be stored.",
+        "input_fixture": "span.set_attribute('config', {'nested': {'deep': 'value'}, 'count': 5})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MIXED-TYPE-SEQUENCE",
+        "hypothesis": "Attribute set with heterogeneous sequence (int, string, float, bool mixed) bypasses homogeneity validation, violating the type contract.",
+        "input_fixture": "span.set_attribute('mixed', [1, 'string', 2.5, True, 42])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EXCEPTION-NO-STATUS-OVERRIDE",
+        "hypothesis": "record_exception() without explicit set_status(OK) may fail to set span status to ERROR, leaving status code undefined or unset.",
+        "input_fixture": "try: raise ValueError('test error'); except: span.record_exception(exc); # no set_status call; span status should be ERROR but may be UNSET",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-BLOCKING-EXPORT",
+        "hypothesis": "Tracer internals block the caller waiting for exporter acknowledgement when creating/ending many spans, violating the async export contract.",
+        "input_fixture": "t0 = time(); for i in range(10000): with tracer.start_as_current_span(f's{i}') as s: s.set_attribute('n', i); t1 = time(); elapsed = t1-t0; should be <10ms but may be >1s if export blocks",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-END-BEFORE-START",
+        "hypothesis": "Concurrent or adversarial timing causes span end timestamp to be recorded before start timestamp, violating causal order invariant.",
+        "input_fixture": "Create span; spawn thread that manipulates internal clock or races to read timestamps; verify start < end fails",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NONE-VALUE-ATTRIBUTE",
+        "hypothesis": "Attribute value None (not in the allowed type list) is accepted without error, violating type contract.",
+        "input_fixture": "span.set_attribute('nullable', None)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-DOUBLE-END",
+        "hypothesis": "Two threads calling span end simultaneously both succeed in finalizing the span, breaking the single-end-only invariant.",
+        "input_fixture": "Create span; spawn 2 threads; both call span's __exit__() or end() concurrently; only first should succeed, second is no-op without warning",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CUSTOM-OBJECT-ATTRIBUTE",
+        "hypothesis": "Attribute value is a custom object instance (not string/int/float/bool/sequence) and bypasses type validation completely.",
+        "input_fixture": "class MyClass: pass; span.set_attribute('obj', MyClass())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TRACEPARENT-ZERO-ID",
+        "hypothesis": "traceparent header with all-zero trace-id or span-id (invalid per W3C spec) is accepted and propagated without validation.",
+        "input_fixture": "tracer.extract({'traceparent': '00-00000000000000000000000000000000-0000000000000000-00'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CREDENTIAL-DISCLOSURE",
+        "hypothesis": "API keys or sensitive credentials stored as span attribute values are exported without sanitization, causing information disclosure in logs/traces.",
+        "input_fixture": "span.set_attribute('api_key', 'sk-1234567890abcdefg'); span.set_attribute('password', 'secret123'); attributes exported to collector/logs unmasked",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EXCEPTION-OK-OVERRIDE",
+        "hypothesis": "Calling record_exception followed by set_status('OK') fails to allow caller override, leaving status as ERROR despite explicit OK directive.",
+        "input_fixture": "span.record_exception(RuntimeError('err')); span.set_status('OK'); span status should be OK, not ERROR",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "tracer.span.started",
+        "required_attributes": [
+          "span_name",
+          "span_kind",
+          "trace_id"
+        ]
+      },
+      {
+        "event_name": "tracer.span.ended",
+        "required_attributes": [
+          "span_name",
+          "status_code",
+          "duration_ns"
+        ]
+      },
+      {
+        "event_name": "tracer.end.duplicate",
+        "required_attributes": [
+          "span_name",
+          "warning"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "tracer.spans.created",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "kind"
+        ]
+      },
+      {
+        "name": "tracer.span.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "kind",
+          "status"
+        ]
+      },
+      {
+        "name": "tracer.export.calls",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": [
+          "result"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "tracer.span.create",
+        "required_attributes": [
+          "span.name",
+          "span.kind"
+        ]
+      },
+      {
+        "operation_name": "tracer.context.extract",
+        "required_attributes": [
+          "traceparent.valid"
+        ]
+      },
+      {
+        "operation_name": "tracer.context.inject",
+        "required_attributes": [
+          "carrier.keys"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol surface matches catalog api_signature verbatim (Span/Tracer methods, kwargs, defaults). Span.set_attribute typed as str|float|bool (catalog says str|int|float|bool) but int is a float subtype in typing terms and runtime validation accepts int \u2014 minor spec-text deviation."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All six invariants enforced: name/timestamp ordering (INV-01), idempotent end with warning (INV-02), W3C traceparent regex + tracestate cap preserving unknowns (INV-03), exception\u2192ERROR with OK-override (INV-04), primitive/homogeneous attribute validation (INV-05), non-blocking export counter (INV-06). Links exhausted but opaque \u2014 acceptable per spec."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Dedicated TracerInvariantError(ValueError), every raise cites the exact INV id, includes offending value/type, and distinguishes 'supporting' sub-rules. Messages are actionable and greppable."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Zero-I/O import, runtime_checkable Protocols, lazy threading/time only, clean __all__, no framework coupling. InMemoryTracer is swappable per extension_contract. contextvars/CorrelationContext delegation noted in spec, honored by not holding per-loop state."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe via per-span lock; monotonic_ns for durations; idempotent end; bounded tracestate. Weakness: export_calls is a plain int incremented outside the lock (benign race on counter); no real BatchSpanProcessor/drop-oldest counter as spec's SRE section describes \u2014 reference impl only, which spec permits."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Protocols re-declared verbatim with matching signatures, kwargs-only kind/attributes/links, defaults preserved. SPAN_KINDS/STATUS_CODES align with OTel. Minor: Span.set_attribute annotation drops explicit int (subsumed by float in PEP 484 numeric tower), otherwise conforms."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "API surface section references external files (Tracer.contract.json, Tracer.py) without showing actual method signatures \u2014 a newcomer cannot code from this doc alone",
+          "Terms like 'TextMapPropagator', 'BatchSpanProcessor', and 'SpanProcessor adapter' appear without definition or links",
+          "The extension contract section is advanced and will confuse beginners who only need to open a span and set attributes"
+        ],
+        "rewrite_suggestion": "Add a 'Quick start in 3 lines' block above the usage example showing imports and minimal tracer setup. Inline the key method signatures (start_as_current_span, set_attribute, record_exception) as a short table directly in the doc. Move the extension contract behind an 'Advanced' heading so the happy path is not buried."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "The Protocol declaration is promised in Tracer.contract.json but no method signatures appear in the doc itself, making cross-referencing mandatory before any design decision",
+          "Thread-safety guarantee for start_as_current_span is stated but lock granularity is unspecified (per-span vs. per-tracer), which matters under high concurrency",
+          "Extension contract references SemanticAttributes and TextMapPropagator without indicating whether these are in-repo protocols or third-party OTel SDK types"
+        ],
+        "rewrite_suggestion": "Embed the full api_signature block inline (or as a fenced code snippet) so the doc is self-contained. Clarify lock scope with a one-liner (e.g., 'each Span holds its own RLock'). Note explicitly whether extension interfaces are defined in this repo or imported from the OTel SDK, and provide the import path."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "The tracestate-cap-at-32-entries control is stated as a security measure but is backed by no invariant ID or test triple, making it unverifiable against the test suite",
+          "Attribute scrubbing is declared caller-responsibility with no enforcement mechanism or CI lint hook described, so there is no way to confirm the control is operative",
+          "Access control for exported spans (collector ACLs, RBAC on the observability backend) is entirely absent \u2014 the security boundary is unclear"
+        ],
+        "rewrite_suggestion": "Promote the tracestate-cap rule to TRACER_INV_07 with a corresponding test triple in invariant_bindings.json. Add a 'Security CI checklist' subsection listing the lint steps (or Semgrep rules) that catch forbidden attribute patterns. Add a note that collector-level access control is out of scope for this primitive and link to the ops security runbook."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "'Sustained increase in dropped' is qualitative with no alert threshold or PromQL/recording-rule expression for an on-call runbook",
+          "CardinalityGuard is referenced without explanation or a link, leaving the operator without cardinality limit defaults",
+          "BatchSpanProcessor configuration (queue size, flush interval, worker count) is mentioned but no defaults or recommended values are given"
+        ],
+        "rewrite_suggestion": "Add a 'Recommended alert thresholds' table (e.g., 'tracer.spans.dropped > 0 for 5 min \u2192 warning; > 100/min \u2192 page'). Link or inline CardinalityGuard defaults. Add a 'BatchSpanProcessor defaults' config block with sane starting values and a note on tuning for high-throughput services."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "'Diagnose incidents faster' and 'predictable latency reporting' are stated without a benchmark or example metric, making business value hard to communicate upward",
+          "The alternatives-considered section uses engineering jargon (OpenTracing, contextvars) with no plain-language summary of why the chosen design wins",
+          "No indication of adoption effort or risk for a team instrumenting a new service for the first time"
+        ],
+        "rewrite_suggestion": "Add a two-sentence 'Why this matters' blurb with a concrete data point (e.g., 'Teams with distributed tracing reduce MTTR by ~30%; spans feed the SLA latency dashboards product has committed to stakeholders'). Replace the alternatives section with a one-liner: 'We evaluated three approaches and chose this because it works across every service type without breaking at the first cross-service hop.' Add an effort callout (e.g., '~1 engineering day to fully instrument a new service')."
+      }
+    ]
+  }
+}

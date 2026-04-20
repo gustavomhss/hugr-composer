@@ -1,0 +1,64 @@
+{
+  "logs": [
+    {
+      "event_name": "view.applied",
+      "required_attributes": ["view_name", "event_type", "seq"]
+    },
+    {
+      "event_name": "view.rebuilt",
+      "required_attributes": ["view_name", "source_event_count", "schema_version"]
+    },
+    {
+      "event_name": "view.schema.evolved",
+      "required_attributes": ["view_name", "old_version", "new_version"]
+    },
+    {
+      "event_name": "view.query.stale",
+      "required_attributes": ["view_name", "staleness_s"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "view.applied.events",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["view", "event_type"]
+    },
+    {
+      "name": "view.staleness",
+      "metric_type": "gauge",
+      "unit": "s",
+      "cardinality_bound": 20,
+      "label_keys": ["view"]
+    },
+    {
+      "name": "view.rebuild.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 20,
+      "label_keys": ["view", "result"]
+    },
+    {
+      "name": "view.rows",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["view"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "view.apply",
+      "required_attributes": ["view.name", "event.type", "event.seq"]
+    },
+    {
+      "operation_name": "view.rebuild",
+      "required_attributes": ["view.name", "source.count", "schema.version"]
+    },
+    {
+      "operation_name": "view.query",
+      "required_attributes": ["view.name", "criteria.keys", "staleness.s"]
+    }
+  ]
+}

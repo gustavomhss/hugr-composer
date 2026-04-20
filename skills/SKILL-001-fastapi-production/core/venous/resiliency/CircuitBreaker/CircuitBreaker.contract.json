@@ -1,0 +1,37 @@
+{
+  "name": "CircuitBreaker",
+  "namespace": "resiliency",
+  "purpose": "Short-circuit calls to a failing dependency by transitioning between closed, open, and half-open states driven by a rolling failure metric.",
+  "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Awaitable, Callable, TypeVar, Literal\n\nT = TypeVar('T')\nState = Literal['closed', 'open', 'half_open']\n\nclass CircuitBreaker(Protocol):\n    name: str\n    state: State\n    async def call(self, fn: Callable[..., Awaitable[T]], /, *args, **kwargs) -> T: ...\n    def on_success(self, elapsed_ms: float) -> None: ...\n    def on_failure(self, exc: BaseException, elapsed_ms: float) -> None: ...\n    def force_open(self, reason: str) -> None: ...\n    def allow_probe(self) -> bool: ...\n",
+  "invariants": [
+    "When state is open the breaker MUST reject calls without invoking the wrapped function.",
+    "The transition from open to half-open SHALL occur only after the configured cooldown interval has elapsed.",
+    "A half-open breaker MUST permit at most the configured permitted_calls_in_half_open probes concurrently.",
+    "A single failure recorded while half-open SHALL force the state back to open and restart the cooldown.",
+    "The breaker CANNOT make a transition decision using a sample smaller than minimum_number_of_calls.",
+    "The breaker NEVER mutates state without emitting a state_transition event on the observability bus."
+  ],
+  "extension_contract": "Adopters register a FailureClassifier provider that decides which exceptions count as failures, slow_call_duration_threshold, and a state listener hook; the sliding window type (count-based or time-based) is selected via a SlidingWindowPolicy adapter. Rolling metrics and the state machine itself remain sealed.",
+  "consumption_example": "async def charge(order_id: str) -> Receipt:\n    return await CircuitBreaker.call(_charge_impl, order_id)\n\nbreaker = CircuitBreaker  # type: ignore[assignment]\nif not breaker.allow_probe():\n    raise DependencyUnavailable('payments')\n",
+  "sources": [
+    {
+      "source": "Nygard, Release It! 2nd edition (2018), Pragmatic Bookshelf",
+      "locator": "Chapter 5 'Stability Patterns', section 'Circuit Breaker', pages 104-111"
+    },
+    {
+      "source": "resilience4j 2.2.0 reference documentation",
+      "locator": "core-modules/circuitbreaker, subsection 'Create a CircuitBreakerRegistry' and 'State transitions'"
+    },
+    {
+      "source": "Netflix Tech Blog, 'Making the Netflix API More Resilient' (Ben Christensen, 2011)",
+      "locator": "section describing Hystrix command state machine and half-open probing"
+    }
+  ],
+  "why_essential": "Without a shared breaker every caller reinvents its own failure-detection loop, creating inconsistent thresholds, divergent cooldowns and thundering-herd recovery storms against a convalescing dependency.",
+  "alternatives_considered": [
+    "Per-call timeout only: detects slowness but NEVER stops the caller from piling load onto a sick dependency.",
+    "Retry with exponential backoff alone: amplifies load during outages instead of shedding it.",
+    "Client-side rate limiter: caps throughput but cannot react to the dependency's actual health signals."
+  ],
+  "maturity": "battle_tested"
+}

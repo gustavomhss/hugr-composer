@@ -1,0 +1,49 @@
+{
+  "logs": [
+    {
+      "event_name": "timeout.budget.opened",
+      "required_attributes": ["origin", "deadline_ns"]
+    },
+    {
+      "event_name": "timeout.budget.derived",
+      "required_attributes": ["origin", "parent_deadline_ns", "child_deadline_ns"]
+    },
+    {
+      "event_name": "timeout.budget.expired",
+      "required_attributes": ["origin", "endpoint"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "timeout.budget.for_call",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": ["endpoint"]
+    },
+    {
+      "name": "timeout.budget.refusals",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["reason"]
+    },
+    {
+      "name": "timeout.budget.remaining",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 30,
+      "label_keys": ["hop"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "timeout.budget.derive",
+      "required_attributes": ["origin", "child_deadline_ns"]
+    },
+    {
+      "operation_name": "timeout.budget.dispatch",
+      "required_attributes": ["origin", "endpoint", "effective_ms"]
+    }
+  ]
+}

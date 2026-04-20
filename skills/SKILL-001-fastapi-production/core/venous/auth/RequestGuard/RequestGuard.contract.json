@@ -1,0 +1,32 @@
+{
+  "name": "RequestGuard",
+  "namespace": "auth",
+  "purpose": "Predicate invoked before a handler runs that returns allow/deny based on RequestContext and CurrentPrincipal, short-circuiting the pipeline on deny.",
+  "api_signature": "from typing import Protocol\n\nclass RequestGuard(Protocol):\n    async def allow(self, ctx: RequestContext, principal: CurrentPrincipal) -> bool: ...\n",
+  "invariants": [
+    "A False return MUST prevent the handler from running and SHALL produce a 401/403 response.",
+    "Guards MUST NOT mutate the request body; they CANNOT transform payloads, only accept or reject.",
+    "Multiple guards MUST be composed with logical AND: any False blocks the request.",
+    "Guards MUST execute before interceptors/pipes but after authentication middleware has bound a principal.",
+    "A guard that raises NEVER gets silently treated as allow; exceptions SHALL map to 500 by the error filter."
+  ],
+  "extension_contract": "Downstream tools implement RequestGuard and register via a decorator (e.g. @UseGuards on a controller, a register() call on the pipeline, or a Plug inserted before dispatch); guards compose, they CANNOT replace one another.",
+  "consumption_example": "class RoleGuard:\n    def __init__(self, role: str) -> None:\n        self.role = role\n    async def allow(self, ctx: RequestContext, principal: CurrentPrincipal) -> bool:\n        return not principal.is_anonymous and self.role in principal.roles\n\ng: RequestGuard = RoleGuard('admin')\n",
+  "sources": [
+    {
+      "source": "Nest.js 10 \u2014 Guards (CanActivate)",
+      "locator": "docs.nestjs.com/guards \u2014 canActivate(context) returns boolean | Promise | Observable"
+    },
+    {
+      "source": "ASP.NET Core 8.0 \u2014 Authorization policies",
+      "locator": "learn.microsoft.com/aspnet/core/security/authorization/policies \u2014 IAuthorizationRequirement, [Authorize]"
+    }
+  ],
+  "why_essential": "Authorization must be declarative and uniform across handlers; when each handler reimplements role checks, audit coverage CANNOT be proven and policy changes SHALL ripple unsafely.",
+  "alternatives_considered": [
+    "Inline role checks in handlers \u2014 no central audit, easy to forget",
+    "Single monolithic authorization middleware \u2014 cannot attach different policies per route",
+    "Decorator metadata only \u2014 requires a reader and still needs a guard to enforce"
+  ],
+  "maturity": "battle_tested"
+}

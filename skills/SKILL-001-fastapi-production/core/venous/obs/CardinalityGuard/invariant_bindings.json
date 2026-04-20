@@ -1,0 +1,53 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "CARD_INV_01",
+      "invariant_text": "When the per-metric series limit is reached, new attribute combinations MUST be collapsed into a single 'overflow' series and NEVER emitted with their original values.",
+      "confirms_test": "test_inv_per_metric_overflow_confirms",
+      "prevents_test": "test_inv_per_metric_overflow_prevents",
+      "under_failure_test": "test_inv_per_metric_overflow_under_failure"
+    },
+    {
+      "invariant_id": "CARD_INV_02",
+      "invariant_text": "The guard MUST reject any attribute key whose value has been seen in more than per_key_limit distinct forms across the window.",
+      "confirms_test": "test_inv_per_key_limit_confirms",
+      "prevents_test": "test_inv_per_key_limit_prevents",
+      "under_failure_test": "test_inv_per_key_limit_under_failure"
+    },
+    {
+      "invariant_id": "CARD_INV_03",
+      "invariant_text": "User identifiers, full URL paths, email addresses, and freeform query strings as attribute values are FORBIDDEN by the default deny-list.",
+      "confirms_test": "test_inv_deny_list_confirms",
+      "prevents_test": "test_inv_deny_list_prevents",
+      "under_failure_test": "test_inv_deny_list_under_failure"
+    },
+    {
+      "invariant_id": "CARD_INV_04",
+      "invariant_text": "Admission decisions SHALL be deterministic given the same (metric_name, attributes) tuple within a single aggregation window.",
+      "confirms_test": "test_inv_deterministic_admit_confirms",
+      "prevents_test": "test_inv_deterministic_admit_prevents",
+      "under_failure_test": "test_inv_deterministic_admit_under_failure"
+    },
+    {
+      "invariant_id": "CARD_INV_05",
+      "invariant_text": "The guard NEVER mutates the caller's attribute mapping in place; it ALWAYS returns a new mapping.",
+      "confirms_test": "test_inv_no_mutation_confirms",
+      "prevents_test": "test_inv_no_mutation_prevents",
+      "under_failure_test": "test_inv_no_mutation_under_failure"
+    },
+    {
+      "invariant_id": "CARD_INV_06",
+      "invariant_text": "Overflow events MUST be observable through a dedicated counter so operators can detect label pressure before ingestion breaks.",
+      "confirms_test": "test_inv_overflow_counter_confirms",
+      "prevents_test": "test_inv_overflow_counter_prevents",
+      "under_failure_test": "test_inv_overflow_counter_under_failure"
+    },
+    {
+      "invariant_id": "CARD_INV_07",
+      "invariant_text": "Configure CANNOT be invoked after the first admit call in a given process to preserve deterministic behavior.",
+      "confirms_test": "test_inv_configure_locked_confirms",
+      "prevents_test": "test_inv_configure_locked_prevents",
+      "under_failure_test": "test_inv_configure_locked_under_failure"
+    }
+  ]
+}

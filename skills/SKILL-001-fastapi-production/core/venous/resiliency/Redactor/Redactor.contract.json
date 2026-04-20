@@ -1,0 +1,14 @@
+{
+  "name": "Redactor",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Structlog processor that redacts PII-shaped substrings (emails, CC numbers, tokens, etc.) from every string value in an event dict, in-place. Called on the logging hot path; MUST be O(1) in event-dict size for non-string values and never raise.",
+  "api_signature": "",
+  "invariants": [
+    "REDACTOR_INV_01: `__call__` MUST return the SAME event_dict object it received (in-place mutation) so downstream structlog processors see the redacted payload.",
+    "REDACTOR_INV_02: Non-string values (ints, lists, objects) MUST pass through UNCHANGED \u2014 the redactor only rewrites string values.",
+    "REDACTOR_INV_03: No matter what malformed input arrives, `__call__` MUST NOT raise; a logging processor that throws breaks the entire logging pipeline."
+  ],
+  "status": "promoted"
+}

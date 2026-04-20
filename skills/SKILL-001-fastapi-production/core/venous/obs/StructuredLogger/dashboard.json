@@ -1,0 +1,12 @@
+{
+  "title": "StructuredLogger — Rate, Rejections, Redaction",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "timeseries", "title": "Records/s by Level",
+     "targets": [{"expr": "sum by (level) (rate(logger_records_emitted_total[5m]))"}]},
+    {"id": 2, "type": "timeseries", "title": "Rejections/s",
+     "targets": [{"expr": "sum by (reason) (rate(logger_validation_rejections_total[5m]))"}]},
+    {"id": 3, "type": "timeseries", "title": "Emit Duration p99 (us)",
+     "targets": [{"expr": "histogram_quantile(0.99, rate(logger_emit_duration_bucket[5m]))"}]}
+  ]
+}

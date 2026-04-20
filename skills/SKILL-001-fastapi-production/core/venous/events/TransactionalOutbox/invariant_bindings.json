@@ -1,0 +1,32 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "TXN_INV_01",
+      "invariant_text": "enqueue MUST write the outbox row inside the same database transaction as the originating state change; cross-transaction writes are FORBIDDEN.",
+      "confirms_test": "test_inv_atomic_enqueue_confirms",
+      "prevents_test": "test_inv_atomic_enqueue_prevents",
+      "under_failure_test": "test_inv_atomic_enqueue_under_failure"
+    },
+    {
+      "invariant_id": "TXN_INV_02",
+      "invariant_text": "A message MUST NOT be marked published until the broker has acknowledged it.",
+      "confirms_test": "test_inv_ack_before_published_confirms",
+      "prevents_test": "test_inv_ack_before_published_prevents",
+      "under_failure_test": "test_inv_ack_before_published_under_failure"
+    },
+    {
+      "invariant_id": "TXN_INV_03",
+      "invariant_text": "The relay SHALL deliver at-least-once; consumers MUST be idempotent and duplicate suppression CANNOT be assumed.",
+      "confirms_test": "test_inv_at_least_once_confirms",
+      "prevents_test": "test_inv_at_least_once_prevents",
+      "under_failure_test": "test_inv_at_least_once_under_failure"
+    },
+    {
+      "invariant_id": "TXN_INV_04",
+      "invariant_text": "Ordering per partition key ALWAYS follows transaction commit order; reordering across commits is FORBIDDEN.",
+      "confirms_test": "test_inv_per_key_order_confirms",
+      "prevents_test": "test_inv_per_key_order_prevents",
+      "under_failure_test": "test_inv_per_key_order_under_failure"
+    }
+  ]
+}

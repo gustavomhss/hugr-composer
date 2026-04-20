@@ -1,0 +1,2 @@
+{"title": "CorsPolicy", "schemaVersion": 38,
+ "panels": [{"id": 1, "type": "stat", "title": "Denied", "targets": [{"expr": "sum(cors_denied_total)"}]}]}

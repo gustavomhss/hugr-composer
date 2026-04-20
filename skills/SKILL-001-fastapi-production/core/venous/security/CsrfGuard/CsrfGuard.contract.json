@@ -1,0 +1,32 @@
+{
+  "name": "CsrfGuard",
+  "namespace": "security",
+  "purpose": "Bind state-changing HTTP requests to the authenticated session through per-session tokens validated against a matching header or form field.",
+  "api_signature": "from typing import Protocol\n\nclass CsrfGuard(Protocol):\n    def issue(self, session_id: str) -> str: ...\n    def verify(self, session_id: str, submitted_token: str) -> None: ...",
+  "invariants": [
+    "Tokens MUST be bound to the session id and MUST NEVER be accepted for a different session.",
+    "verify() MUST compare tokens in constant time and MUST raise on mismatch with no information about the expected value.",
+    "Safe methods (GET, HEAD, OPTIONS) MUST NEVER mutate state; the guard SHALL only be enforced for unsafe methods.",
+    "Cross-origin requests lacking both a valid token and a same-site cookie CANNOT be processed.",
+    "Tokens MUST be rotated on session rotation and on explicit logout; stale tokens SHALL be rejected."
+  ],
+  "extension_contract": "Delivery shapes (double-submit cookie, synchronizer token, custom-header-only for SPAs) register as csrf-strategy adapters implementing the Protocol. The registry refuses to bind a strategy that does not validate Origin/Referer for cookie-only flows.",
+  "consumption_example": "def mutate(guard: CsrfGuard, session_id: str, submitted_token: str, do_work):\n    guard.verify(session_id=session_id, submitted_token=submitted_token)\n    return do_work()",
+  "sources": [
+    {
+      "source": "OWASP ASVS 4.0.3",
+      "locator": "V4.2 Operation Level Access Control (CSRF)"
+    },
+    {
+      "source": "OWASP Top 10 2021",
+      "locator": "A01:2021 Broken Access Control \u2014 CSRF subsection"
+    }
+  ],
+  "why_essential": "CSRF defenses are trivial to get wrong in a single controller; centralizing issuance and verification removes the one endpoint that forgot to bind the token to the session.",
+  "alternatives_considered": [
+    "SameSite=Strict cookies only \u2014 blocks legitimate cross-site navigation and is bypassed by subdomain takeover.",
+    "Origin header check only \u2014 insufficient when Origin is missing (old browsers, same-origin XHR).",
+    "Per-form hidden token with no session binding \u2014 accepts any valid token from any user."
+  ],
+  "maturity": "battle_tested"
+}

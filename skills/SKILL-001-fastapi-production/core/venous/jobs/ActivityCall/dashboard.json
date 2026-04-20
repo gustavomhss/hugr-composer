@@ -1,0 +1,12 @@
+{
+  "title": "ActivityCall — Attempts, Failures, Heartbeats",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "Attempts / sec",
+     "targets": [{"expr": "sum(rate(activity_attempts_total[5m]))"}]},
+    {"id": 2, "type": "timeseries", "title": "Failure Rate by Activity",
+     "targets": [{"expr": "sum by (activity_name) (rate(activity_attempts_total{outcome=\"failure\"}[5m]))"}]},
+    {"id": 3, "type": "timeseries", "title": "Heartbeat Misses / sec",
+     "targets": [{"expr": "sum(rate(activity_heartbeat_missed_total[5m]))"}]}
+  ]
+}

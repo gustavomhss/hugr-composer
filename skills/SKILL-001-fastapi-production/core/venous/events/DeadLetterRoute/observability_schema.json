@@ -1,0 +1,71 @@
+{
+  "logs": [
+    {
+      "event_name": "dlq.sent",
+      "required_attributes": ["route_source", "route_destination", "envelope_source", "envelope_id", "reason", "attempt"]
+    },
+    {
+      "event_name": "dlq.inspected",
+      "required_attributes": ["route_destination", "reason"]
+    },
+    {
+      "event_name": "dlq.requeued",
+      "required_attributes": ["route_source", "route_destination", "envelope_source", "envelope_id", "reason", "attempt"]
+    },
+    {
+      "event_name": "dlq.purged",
+      "required_attributes": ["route_source", "route_destination", "envelope_source", "envelope_id", "reason", "attempt"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "dlq.parked.depth",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 100,
+      "label_keys": ["destination_topic"]
+    },
+    {
+      "name": "dlq.sent.total",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 200,
+      "label_keys": ["destination_topic", "reason"]
+    },
+    {
+      "name": "dlq.requeued.total",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 100,
+      "label_keys": ["source_topic", "destination_topic"]
+    },
+    {
+      "name": "dlq.purged.total",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 100,
+      "label_keys": ["destination_topic", "reason"]
+    },
+    {
+      "name": "dlq.age.seconds",
+      "metric_type": "histogram",
+      "unit": "s",
+      "cardinality_bound": 100,
+      "label_keys": ["destination_topic"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "dlq.send",
+      "required_attributes": ["route.source", "route.destination", "envelope.id", "attempt"]
+    },
+    {
+      "operation_name": "dlq.requeue",
+      "required_attributes": ["route.source", "route.destination", "envelope.id"]
+    },
+    {
+      "operation_name": "dlq.purge",
+      "required_attributes": ["route.destination", "evicted.count"]
+    }
+  ]
+}

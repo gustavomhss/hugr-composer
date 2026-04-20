@@ -1,0 +1,743 @@
+{
+  "name": "CorsPolicy",
+  "namespace": "policy",
+  "maturity": "battle_tested",
+  "builder_agent_id": 7,
+  "catalog_entry_sha256": "659bede2d98b1b99da12d9a6d0168a8d277de4ac938c84d4793932b31a96f46e",
+  "files": [
+    {
+      "path": "policy/CorsPolicy/CorsPolicy.contract.json",
+      "sha256": "38079b9d2b41a3035e87353bd2b66e2367e188927235123f5919733fb5ee501f",
+      "size_bytes": 2862,
+      "kind": "contract_json"
+    },
+    {
+      "path": "policy/CorsPolicy/CorsPolicy.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "policy/CorsPolicy/CorsPolicy.md",
+      "sha256": "8378c8efac33936ab52ff1599f8fe447cde7d034c6bb34dbb4d8840940444bdb",
+      "size_bytes": 6081,
+      "kind": "spec_md"
+    },
+    {
+      "path": "policy/CorsPolicy/CorsPolicy.py",
+      "sha256": "0407b7749548380715fb95e016038fbf8acfdb50699ca3df719a6e96dce53e10",
+      "size_bytes": 17895,
+      "kind": "impl"
+    },
+    {
+      "path": "policy/CorsPolicy/behavioral_CorsPolicy.py",
+      "sha256": "bd6c7da8d6b4784bf26bbb7db47b37e44aca718b9262e469640a016c4cfce08e",
+      "size_bytes": 3701,
+      "kind": "behavioral"
+    },
+    {
+      "path": "policy/CorsPolicy/chaos_CorsPolicy.py",
+      "sha256": "f5933d0b9b0790c3cee686311f7285f36acb4d1d574171ad08ba9e72ba561579",
+      "size_bytes": 3623,
+      "kind": "chaos"
+    },
+    {
+      "path": "policy/CorsPolicy/dashboard.json",
+      "sha256": "5c0d604457265c0a4b65a173c6f99c3f518534675030523626269cdd1eda5482",
+      "size_bytes": 153,
+      "kind": "dashboard"
+    },
+    {
+      "path": "policy/CorsPolicy/invariant_bindings.json",
+      "sha256": "784e4df438e9c5d253bc7b0fbecf364c79042137017b4683c862d3bc75f4ad1f",
+      "size_bytes": 1645,
+      "kind": "test"
+    },
+    {
+      "path": "policy/CorsPolicy/metamorphic_CorsPolicy.py",
+      "sha256": "6c2d476d958944a3e7c76748d9a0eae016183226f891b9e97d62300391239bcc",
+      "size_bytes": 3796,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "policy/CorsPolicy/observability_CorsPolicy.py",
+      "sha256": "1a5dd8d44ee1b50f8b2ffd773f6046d2e8eedbf88bcd78454fbfacac659f9e78",
+      "size_bytes": 1467,
+      "kind": "observability"
+    },
+    {
+      "path": "policy/CorsPolicy/observability_schema.json",
+      "sha256": "f820f09910cdabf37c7ee72f69696699f4c0f88be4adb6af718debe34cd92166",
+      "size_bytes": 846,
+      "kind": "observability"
+    },
+    {
+      "path": "policy/CorsPolicy/persona_reviews.json",
+      "sha256": "27c42175503d1ae0ae0caf2476c356ec4ead33b5f32e488a3c7eecb64d008dbb",
+      "size_bytes": 515,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "policy/CorsPolicy/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "policy/CorsPolicy/test_CorsPolicy.py",
+      "sha256": "9ff26db980e217f6feed91b427f7125f1d0171a6f26e9c1673853244286dc30a",
+      "size_bytes": 7103,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "CP_INV_01",
+      "invariant_text": "evaluate() MUST NEVER echo back an Origin that is not in the configured allowlist.",
+      "confirms_test": "test_inv_allowlist_closed_confirms",
+      "prevents_test": "test_inv_allowlist_closed_prevents",
+      "under_failure_test": "test_inv_allowlist_closed_under_failure"
+    },
+    {
+      "invariant_id": "CP_INV_02",
+      "invariant_text": "When allow_credentials is True, allow_origin CANNOT be '*' and MUST be a single exact origin.",
+      "confirms_test": "test_inv_credentials_exact_confirms",
+      "prevents_test": "test_inv_credentials_exact_prevents",
+      "under_failure_test": "test_inv_credentials_exact_under_failure"
+    },
+    {
+      "invariant_id": "CP_INV_03",
+      "invariant_text": "Vary: Origin MUST be emitted on any response that decides per-origin, or the policy SHALL reject evaluation.",
+      "confirms_test": "test_inv_vary_origin_confirms",
+      "prevents_test": "test_inv_vary_origin_prevents",
+      "under_failure_test": "test_inv_vary_origin_under_failure"
+    },
+    {
+      "invariant_id": "CP_INV_04",
+      "invariant_text": "Preflight caching (Access-Control-Max-Age) MUST be <=86400 seconds and MUST NEVER default to unbounded.",
+      "confirms_test": "test_inv_max_age_cap_confirms",
+      "prevents_test": "test_inv_max_age_cap_prevents",
+      "under_failure_test": "test_inv_max_age_cap_under_failure"
+    },
+    {
+      "invariant_id": "CP_INV_05",
+      "invariant_text": "Null origin ('null') MUST be rejected in credentialed mode because it collapses distinct sandboxed contexts.",
+      "confirms_test": "test_inv_null_origin_confirms",
+      "prevents_test": "test_inv_null_origin_prevents",
+      "under_failure_test": "test_inv_null_origin_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 372,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 2 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1006,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 971,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 83629,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "43 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1149,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1276,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 58535,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 147265,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ORIGIN-CASE-BYPASS",
+        "hypothesis": "Configured allowlist contains 'https://app.example.com' but evaluate() is called with 'https://APP.example.com' or 'https://app.Example.com'. If comparison is case-insensitive on scheme/host but the echoed allow_origin reflects the attacker's casing verbatim, the policy echoes a value not literally in the allowlist, breaking invariant #1.",
+        "input_fixture": "policy.evaluate(origin='https://APP.Example.com', method='GET', requested_headers=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TRAILING-DOT-FQDN",
+        "hypothesis": "Browsers and resolvers treat 'https://app.example.com.' (trailing dot) as equivalent to 'https://app.example.com'. If the policy normalizes for lookup but echoes the raw input, it reflects an origin not in the allowlist; if it does not normalize, an attacker-controlled cache key may collide.",
+        "input_fixture": "policy.evaluate(origin='https://app.example.com.', method='GET', requested_headers=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-WILDCARD-WITH-CREDS",
+        "hypothesis": "Configure policy with allow_credentials=True and an allowlist containing '*' (or wildcard subdomain pattern resolving to '*'). evaluate() should refuse to construct a CorsDecision with allow_origin='*' when credentials are on; if it returns allow_origin='*' and allow_credentials=True together, browsers will accept it and leak cookies cross-origin.",
+        "input_fixture": "build_policy(allowed_origins=['*'], allow_credentials=True).evaluate(origin='https://evil.test', method='GET', requested_headers=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NULL-ORIGIN-CRED",
+        "hypothesis": "Sandboxed iframes, data: documents, and file:// pages send Origin: null. In credentialed mode the policy must reject 'null'. If evaluate() echoes allow_origin='null' with allow_credentials=True, every sandboxed attacker page in the world shares the same allowlisted identity.",
+        "input_fixture": "build_policy(allowed_origins=['null','https://app.example.com'], allow_credentials=True).evaluate(origin='null', method='POST', requested_headers=('content-type',))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MAX-AGE-OVERFLOW",
+        "hypothesis": "max_age_seconds is documented \u226486400. Pass a config value of 2**63-1, -1, or 31536000 (1 year). If evaluate() returns it unclamped, browsers cache preflight decisions far past policy rotation, defeating revocation.",
+        "input_fixture": "build_policy(max_age=2**63-1).evaluate(origin='https://app.example.com', method='OPTIONS', requested_headers=('x-custom',))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MAX-AGE-DEFAULT-UNBOUNDED",
+        "hypothesis": "When config omits max_age, evaluate() may default to 0 (treated as 'browser default ~5s', acceptable) or to a sentinel like None / -1 / int.MAX which serializes as unbounded. Construct a policy with no explicit max_age and check the returned max_age_seconds.",
+        "input_fixture": "build_policy(allowed_origins=['https://app.example.com']).evaluate(origin='https://app.example.com', method='GET', requested_headers=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-VARY-MISSING-PER-ORIGIN",
+        "hypothesis": "Policy returns different allow_origin values per request input but the CorsDecision dataclass exposes no Vary signaling and the contract doesn't force the caller to emit Vary: Origin. A shared CDN then caches the first response and serves cross-origin responses with a stale Allow-Origin. The invariant requires either emission of Vary or rejection.",
+        "input_fixture": "d1=policy.evaluate('https://a.example.com','GET',()); d2=policy.evaluate('https://b.example.com','GET',()); assert hasattr(d1,'vary') or policy_rejected",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-METHOD-CASE-SMUGGLE",
+        "hypothesis": "Allowlist contains 'GET','POST'. Caller passes method='get' or 'GeT' or ' POST' (whitespace). If evaluate() lowercases for compare but reflects the raw token in allow_methods, downstream HTTP layer may treat it inconsistently; worse, if it accepts ' POST' it bypasses the closed list.",
+        "input_fixture": "policy.evaluate(origin='https://app.example.com', method=' POST', requested_headers=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HEADER-INJECTION-CRLF",
+        "hypothesis": "Pass requested_headers containing 'X-Foo\\r\\nSet-Cookie: a=b'. If evaluate() returns this string unchanged in allow_headers and a serializer concatenates it into a header line, response splitting occurs. The invariant on allowlist purity is violated because no such header is configured.",
+        "input_fixture": "policy.evaluate(origin='https://app.example.com', method='OPTIONS', requested_headers=('X-Foo\\r\\nSet-Cookie: pwn=1',))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SUBDOMAIN-PREFIX-CONFUSION",
+        "hypothesis": "Allowlist contains 'https://app.example.com'. Attacker sends Origin 'https://app.example.com.evil.test' or 'https://app.example.com@evil.test'. A naive startswith / endswith / regex check that omits anchors will match and echo the attacker origin.",
+        "input_fixture": "policy.evaluate(origin='https://app.example.com.evil.test', method='GET', requested_headers=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNICODE-PUNYCODE-MIX",
+        "hypothesis": "Allowlist holds the punycode form 'https://xn--e1afmkfd.example' (Cyrillic '\u043f\u0440\u0438\u043c\u0435\u0440'). Attacker sends the U+ form 'https://\u043f\u0440\u0438\u043c\u0435\u0440.example'. Mismatched IDNA normalization may either echo the unicode form (not in allowlist) or accept a lookalike domain registered by attacker.",
+        "input_fixture": "policy.evaluate(origin='https://\u043f\u0440\u0438\u043c\u0435\u0440.example', method='GET', requested_headers=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-ORIGIN",
+        "hypothesis": "Browsers can omit Origin or send empty string for same-origin or privacy modes. Pass origin=''. evaluate() should return allow_origin=None; if it returns '' or echoes the empty string into a Decision with allow_credentials=True, downstream code may treat absent header as allow-all.",
+        "input_fixture": "policy.evaluate(origin='', method='GET', requested_headers=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CONFIG-MUTATION-RACE",
+        "hypothesis": "CorsDecision is frozen but the underlying allowlist tuple may be swapped at runtime. Thread A starts evaluate() with old allowlist snapshot, thread B reloads config removing 'https://old.example'. If evaluate() reads allowlist twice (once for membership, once for echo), a TOCTOU window can echo a removed origin.",
+        "input_fixture": "concurrent: T1=evaluate('https://old.example','GET',()); T2=policy.reload(allowed=['https://new.example'])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PORT-DEFAULT-CONFUSION",
+        "hypothesis": "Allowlist 'https://app.example.com' (implicit :443). Attacker sends 'https://app.example.com:443' explicitly, or vice versa. Inconsistent normalization yields either an echo of an unlisted literal or a denial of a legitimate origin; the dangerous case is the echo path.",
+        "input_fixture": "policy.evaluate(origin='https://app.example.com:443', method='GET', requested_headers=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HEADER-AMPLIFICATION",
+        "hypothesis": "Send requested_headers as a 10,000-element tuple of distinct names. If evaluate() iterates O(n*m) against the allowlist or returns the full echoed list in allow_headers, a single preflight produces megabyte responses, enabling amplification DoS. The closed-list invariant should cap allow_headers size.",
+        "input_fixture": "policy.evaluate(origin='https://app.example.com', method='OPTIONS', requested_headers=tuple(f'x-h{i}' for i in range(10000)))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ORIGIN-REFLECT-UNICODE-NORM",
+        "hypothesis": "If the allowlist check normalizes Unicode (e.g. NFC/NFKC) before comparison but the echo reflects the raw supplied value, an attacker supplying 'https://\u212fxample.com' (where \u212f is U+212F SCRIPT SMALL E) could receive back the un-normalized string even though the allowlist only contains 'https://example.com', effectively echoing a non-allowlisted origin because the normalization direction is inconsistent between lookup and reflection.",
+        "input_fixture": "policy = CorsPolicy(allowlist={'https://example.com'}, allow_credentials=False); decision = policy.evaluate(origin='https://\u212fxample.com', method='GET', requested_headers=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WILDCARD-CREDS-STAR",
+        "hypothesis": "If the implementation short-circuits to allow_origin='*' for an open allowlist while allow_credentials=True, the returned CorsDecision violates the invariant that credentialed responses must carry a single exact origin. An attacker triggers this by sending any origin when the policy is misconfigured with allowlist={'*'} and credentials=True.",
+        "input_fixture": "policy = CorsPolicy(allowlist={'*'}, allow_credentials=True); decision = policy.evaluate(origin='https://evil.com', method='POST', requested_headers=('Content-Type',)); assert decision.allow_origin != '*' and decision.allow_credentials is True",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NULL-ORIGIN-CREDS",
+        "hypothesis": "Sending the literal string 'null' as the origin in credentialed mode should be explicitly rejected, but an implementation that simply checks 'is origin in allowlist' would pass it if 'null' was naively included, or worse, if the implementation treats None/null as a special allow-all case. Even without explicit listing, the implementation may not have a dedicated null-rejection guard separate from the allowlist check, allowing a sandboxed iframe to steal credentialed cross-origin responses.",
+        "input_fixture": "policy = CorsPolicy(allowlist={'https://trusted.com', 'null'}, allow_credentials=True); decision = policy.evaluate(origin='null', method='GET', requested_headers=()); # must be rejected: allow_origin must be None",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-MAXAGE-INT-OVERFLOW",
+        "hypothesis": "If max_age_seconds is sourced from an untrusted config or computed (e.g. from a subtraction of timestamps), passing sys.maxsize or a negative value after underflow could yield a value that bypasses the <=86400 guard due to overflow wrapping in 32-bit environments or silent truncation when serialized to an HTTP header integer field, causing unbounded or negative caching.",
+        "input_fixture": "import sys; policy = CorsPolicy(allowlist={'https://a.com'}, max_age_seconds=sys.maxsize); decision = policy.evaluate(origin='https://a.com', method='OPTIONS', requested_headers=()); assert decision.max_age_seconds <= 86400",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-MAXAGE-NEGATIVE-BYPASS",
+        "hypothesis": "A negative max_age_seconds value (e.g. -1) technically satisfies a naive <=86400 check but semantically means 'do not cache', which may be interpreted by browsers as unbounded caching depending on implementation. The invariant says MUST NEVER default to unbounded \u2014 a negative sentinel could be treated as unlimited by the downstream HTTP layer.",
+        "input_fixture": "policy = CorsPolicy(allowlist={'https://a.com'}, max_age_seconds=-1); decision = policy.evaluate(origin='https://a.com', method='OPTIONS', requested_headers=()); assert decision.max_age_seconds >= 0",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ORIGIN-TRAILING-SLASH",
+        "hypothesis": "RFC 6454 origins do not include trailing slashes, but many URL libraries produce 'https://example.com/' with a trailing slash. If the allowlist stores 'https://example.com' (no slash) and the evaluation receives 'https://example.com/', a naive equality check rejects it, but a lenient implementation that strips trailing slashes would echo back 'https://example.com/' \u2014 a string not literally in the allowlist \u2014 violating INV-1.",
+        "input_fixture": "policy = CorsPolicy(allowlist={'https://example.com'}, allow_credentials=False); decision = policy.evaluate(origin='https://example.com/', method='GET', requested_headers=()); assert decision.allow_origin is None  # must not echo the slash variant",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ORIGIN-CASE-FOLD",
+        "hypothesis": "HTTP origin comparison is case-insensitive for scheme and host per RFC 6454, but if the implementation lowercases the incoming origin before allowlist lookup while the allowlist stores mixed-case, an origin like 'HTTPS://Example.COM' might match 'https://example.com' in the lookup, then echo back the uppercased original that is not literally in the allowlist \u2014 a reflected non-allowlisted origin.",
+        "input_fixture": "policy = CorsPolicy(allowlist={'https://example.com'}, allow_credentials=False); decision = policy.evaluate(origin='HTTPS://EXAMPLE.COM', method='DELETE', requested_headers=()); assert decision.allow_origin in (None, 'https://example.com')  # must normalize, not echo raw",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-VARY-HEADER-OMISSION",
+        "hypothesis": "When the policy decides per-origin (i.e., not a universal wildcard), a Vary: Origin header must accompany the response so caches do not serve one origin's approved response to a different origin. If the CorsDecision dataclass has no field to carry this directive and the caller never emits it, the invariant is violated silently. Sending two different allowed origins in sequence through a shared cache proxy would let origin B receive origin A's credentialed response.",
+        "input_fixture": "policy = CorsPolicy(allowlist={'https://a.com', 'https://b.com'}, allow_credentials=True); d = policy.evaluate(origin='https://a.com', method='GET', requested_headers=()); assert hasattr(d, 'vary_origin') and d.vary_origin is True  # field must exist and be set",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CREDS-MULTI-ORIGIN-STAR-FALLBACK",
+        "hypothesis": "When credentials mode is True and the allowlist has multiple entries, an implementation might fall back to allow_origin='*' for simplicity when the incoming origin does not match any single entry, rather than returning allow_origin=None. This is an incorrect wildcard fallback that simultaneously violates the no-star-with-credentials invariant and the no-arbitrary-reflection invariant.",
+        "input_fixture": "policy = CorsPolicy(allowlist={'https://a.com', 'https://b.com'}, allow_credentials=True); decision = policy.evaluate(origin='https://attacker.com', method='PUT', requested_headers=('Authorization',)); assert decision.allow_origin is None and decision.allow_credentials is False",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CRLF-INJECTION-ORIGIN",
+        "hypothesis": "Passing an origin containing CRLF sequences (e.g. 'https://a.com\\r\\nAccess-Control-Allow-Origin: *') could allow header injection if the implementation concatenates the echoed origin directly into HTTP response headers without sanitization, effectively bypassing the allowlist by injecting a second Access-Control-Allow-Origin header with wildcard value.",
+        "input_fixture": "policy = CorsPolicy(allowlist={'https://a.com'}, allow_credentials=False); evil = 'https://a.com\\r\\nAccess-Control-Allow-Origin: *'; decision = policy.evaluate(origin=evil, method='GET', requested_headers=()); assert decision.allow_origin is None  # CRLF-containing origin is not in allowlist",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY-ORIGIN-BYPASS",
+        "hypothesis": "Passing an empty string as the origin should not be echoed back or treated as an implicit match-all. Some implementations skip the allowlist check when origin is falsy, returning allow_origin='' or allow_origin='*', which would constitute reflection of a non-allowlisted (and invalid) origin.",
+        "input_fixture": "policy = CorsPolicy(allowlist={'https://example.com'}, allow_credentials=False); decision = policy.evaluate(origin='', method='GET', requested_headers=()); assert decision.allow_origin is None",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-MAXAGE-BOUNDARY-86401",
+        "hypothesis": "The exact boundary value 86401 (one second above the 86400 maximum) must be rejected or clamped. An off-by-one error in the comparison (using < instead of <=) would permit 86400 but incorrectly reject it, while using > instead of >= would silently pass 86401 through, violating the stated upper bound of exactly 86400 seconds.",
+        "input_fixture": "policy = CorsPolicy(allowlist={'https://a.com'}, max_age_seconds=86401); decision = policy.evaluate(origin='https://a.com', method='OPTIONS', requested_headers=()); assert decision.max_age_seconds <= 86400  # 86401 must be clamped or raise",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NULL-ORIGIN-ALLOWLIST-MEMBERSHIP",
+        "hypothesis": "Even if an administrator explicitly adds the string 'null' to the allowlist (perhaps to support file:// or sandboxed iframes in non-credentialed mode), the policy MUST still reject 'null' when allow_credentials=True. The invariant is unconditional \u2014 no allowlist membership can override the null+credentials prohibition because multiple distinct sandboxed contexts all present as 'null', making targeted credential theft possible.",
+        "input_fixture": "policy = CorsPolicy(allowlist={'https://trusted.com', 'null'}, allow_credentials=True); decision = policy.evaluate(origin='null', method='POST', requested_headers=('Cookie',)); assert decision.allow_origin is None",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE-ALLOWLIST-HOT-RELOAD",
+        "hypothesis": "If the allowlist supports hot-reload (e.g. reloading from config without restart), a race condition between a thread checking 'origin in allowlist' and another thread swapping the allowlist set could cause a thread to pass the guard with the old allowlist but emit the response with the new (smaller) allowlist, or vice versa \u2014 echoing an origin that is no longer authorized. The frozen dataclass return value would then contain a non-current-allowlist origin.",
+        "input_fixture": "import threading; results = []; policy = HotReloadCorsPolicy(allowlist={'https://a.com'}); def attack(): results.append(policy.evaluate('https://a.com', 'GET', ())); t = threading.Thread(target=attack); policy.swap_allowlist(set()); t.start(); t.join(); # https://a.com may appear in results after removal",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PROTO-DOWNGRADE-HTTP-BYPASS",
+        "hypothesis": "If the allowlist contains 'https://secure.com' and the attacker sends 'http://secure.com' (same host, downgraded scheme), an implementation that strips the scheme before comparison for 'flexibility' would incorrectly match and echo back the HTTP origin, reflecting a non-allowlisted value and potentially enabling mixed-content credential theft in environments where credentialed cookies are not Secure-flagged.",
+        "input_fixture": "policy = CorsPolicy(allowlist={'https://secure.com'}, allow_credentials=True); decision = policy.evaluate(origin='http://secure.com', method='GET', requested_headers=('Authorization',)); assert decision.allow_origin is None",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ORIGIN-ECHO-UNAUTHORIZED",
+        "hypothesis": "evaluate() reflects back an origin value that does not exist in the configured allowlist, violating the foundational constraint that only whitelisted origins should be authorized.",
+        "input_fixture": "whitelist=['https://trusted.com']; evaluate(origin='https://attacker.com', method='GET', requested_headers=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-WILDCARD-CREDENTIAL-COMBO",
+        "hypothesis": "When allow_credentials=True, policy returns allow_origin='*' instead of a single exact origin, violating CORS spec and enabling unauthorized access.",
+        "input_fixture": "policy with allow_credentials=True; evaluate(origin='https://any.com', method='GET', requested_headers=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-VARY-HEADER-OMISSION",
+        "hypothesis": "Response lacks Vary: Origin despite per-origin decision logic, causing caches to serve wrong CORS headers to different origins.",
+        "input_fixture": "evaluate() called; response sent without Vary header; cache hit on subsequent origin request",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MAX-AGE-OVERFLOW-LARGE",
+        "hypothesis": "max_age_seconds set to 2147483647, exceeding 86400-second bound and allowing unbounded preflight caching.",
+        "input_fixture": "CorsDecision(allow_origin='https://trusted.com', allow_methods=('GET',), allow_headers=(), allow_credentials=False, max_age_seconds=2147483647)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MAX-AGE-UNBOUNDED-DEFAULT",
+        "hypothesis": "When max_age_seconds not explicitly configured, policy defaults to None or infinity, causing indefinite preflight caching.",
+        "input_fixture": "CorsPolicy() instantiated without max_age_seconds; evaluate() returns decision with unbound cache time",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NULL-ORIGIN-CREDENTIALED-ACCEPT",
+        "hypothesis": "Credentialed request from sandboxed iframe with origin='null' is accepted, collapsing security boundary between distinct sandboxed documents.",
+        "input_fixture": "allow_credentials=True; evaluate(origin='null', method='GET', requested_headers=('Authorization',))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PUNYCODE-NORMALIZATION-BYPASS",
+        "hypothesis": "Whitelist contains 'xn--example.com' but policy accepts 'example.com' via unicode normalization, bypassing origin validation.",
+        "input_fixture": "whitelist=['https://xn--e1afmkfd.xn--p1ai']; evaluate(origin='https://\u043f\u0440\u0438\u043c\u0435\u0440.\u0440\u0444', method='GET', requested_headers=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MALFORMED-MULTI-HOST-ORIGIN",
+        "hypothesis": "Origin header contains space-separated hosts 'host1.com host2.com'; policy fails to reject and reflects one unintended host.",
+        "input_fixture": "whitelist=['https://host1.com']; evaluate(origin='https://host1.com https://attacker.com', method='GET', requested_headers=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CASE-SENSITIVITY-MISMATCH",
+        "hypothesis": "Whitelist contains 'https://EXAMPLE.COM' but policy matching is case-insensitive; attacker sends lowercase and bypasses validation.",
+        "input_fixture": "whitelist=['https://Example.Com']; evaluate(origin='https://example.com', method='GET', requested_headers=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CREDENTIAL-STAR-INTERNAL-CONFIG",
+        "hypothesis": "Internal configuration has allow_credentials=True and allow_origin='*' simultaneously; policy reflects wildcard on credentialed request.",
+        "input_fixture": "policy internal state: allow_credentials=True, allow_origin='*'; evaluate(origin='https://attacker.com', method='GET', requested_headers=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MAX-AGE-NEGATIVE-INTEGER",
+        "hypothesis": "max_age_seconds set to -1 or negative value; browsers skip caching but downstream systems treat negative as unbounded.",
+        "input_fixture": "CorsDecision(allow_origin='https://trusted.com', allow_methods=('GET',), allow_headers=(), allow_credentials=False, max_age_seconds=-3600)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-GLOB-SUBSTRING-INJECTION",
+        "hypothesis": "Whitelist uses glob pattern 'https://*.example.com' but policy applies substring matching; attacker sends 'https://prefix.example.com.attacker.com'.",
+        "input_fixture": "whitelist=['https://*.example.com']; evaluate(origin='https://subdomain.example.com.attacker.com', method='GET', requested_headers=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NULL-ORIGIN-CREDENTIAL-FALSE",
+        "hypothesis": "Origin='null' is accepted even when allow_credentials=False; null origins should be rejected due to sandbox collapse risk regardless of credential mode.",
+        "input_fixture": "allow_credentials=False; evaluate(origin='null', method='GET', requested_headers=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "cors.decision.allowed",
+        "required_attributes": [
+          "origin",
+          "method"
+        ]
+      },
+      {
+        "event_name": "cors.decision.denied",
+        "required_attributes": [
+          "origin",
+          "reason"
+        ]
+      },
+      {
+        "event_name": "cors.policy.bound",
+        "required_attributes": [
+          "matcher_count"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "cors.evaluations",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 500,
+        "label_keys": [
+          "outcome"
+        ]
+      },
+      {
+        "name": "cors.denied",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 500,
+        "label_keys": [
+          "reason"
+        ]
+      },
+      {
+        "name": "cors.allowlist.size",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 100,
+        "label_keys": []
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "cors.evaluate",
+        "required_attributes": [
+          "origin",
+          "method"
+        ]
+      },
+      {
+        "operation_name": "cors.bind",
+        "required_attributes": [
+          "matcher_count"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 10,
+        "rationale": "CorsDecision dataclass and CorsPolicy Protocol match catalog signature byte-for-byte; evaluate() signature exact."
+      },
+      {
+        "axis": "completeness",
+        "score": 10,
+        "rationale": "All 5 invariants enforced at bind and runtime; deny-by-default, credentials+exact coupling, max_age cap, null rejection, vary pinned, regex/suffix/exact matchers, builder helper."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "CorsPolicyError subclasses ValueError; every raise cites invariant ID (CP_INV_0X) and includes offending value via repr. Silent denies vs raises distinguished correctly."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "OriginMatcher Protocol enables plugin extension; frozen dataclasses, runtime_checkable. Minor: re.compile in RegexOriginMatcher.matches recompiles per call instead of caching the compiled pattern."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 9,
+        "rationale": "Frozen dataclasses, defensive re-checks against object.__setattr__ mutation, bool-vs-int guard on max_age, header normalization, RFC 6454 origin shape check. Regex recompile per matches() is a small perf nit."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 10,
+        "rationale": "Namespace/purpose honored; extension_contract (regex bind-time refusal of .*/empty) implemented; invariants map 1:1 to CP_INV_01..05; consumption example aligns."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "Protocol plugin pattern and OriginMatcher extension contract assume familiarity with Python structural subtyping \u2014 no example of how to register a custom matcher",
+          "'Credentialed mode' is used repeatedly before being defined; the reader must infer it means allow_credentials=True from context",
+          "CP_INV_02/CP_INV_05 mention 'bind' (construction-time) vs request-time enforcement but the distinction is never labeled, making it unclear when to catch CorsPolicyError"
+        ],
+        "rewrite_suggestion": "Add a two-sentence glossary box at the top defining 'credentialed mode' (allow_credentials=True), 'bind time' (policy construction), and 'request time' (evaluate() call). In the Extension contract section, add a five-line example: `class MyMatcher: def matches(self, origin): return origin.endswith('.internal')` and show it being passed to build_policy."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "Thread-safety guarantees are absent \u2014 frozen dataclass implies immutability but the doc never states whether evaluate() is safe to call concurrently from multiple threads/event-loop tasks",
+          "build_policy() vs direct ClosedAllowlistCorsPolicy instantiation: the doc says 'assembled via build_policy' but never shows what build_policy's signature is or what validation it adds on top",
+          "No complexity or performance note: evaluate() traverses matchers \u2014 is the order deterministic? Is there an early-exit on first match? Matters for policies with many SuffixTenantMatchers"
+        ],
+        "rewrite_suggestion": "Add a one-row table under API surface: `build_policy(exact_origins, allowed_methods, allowed_headers, allow_credentials, max_age_seconds) -> CorsPolicy` with a note that it validates all invariants eagerly and returns a frozen, thread-safe instance. Append a one-sentence concurrency note: 'evaluate() is pure and stateless; the returned CorsDecision is immutable \u2014 safe to call from concurrent threads or coroutines.'"
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "The doc claims vary_origin is 're-checked at evaluate() to survive frozen-dataclass mutation via object.__setattr__' but gives no test vector or assertion \u2014 an auditor cannot verify the countermeasure without reading source",
+          "RegexOriginMatcher requires a review_ticket but the doc does not specify format, storage, or whether the ticket is validated at runtime or is purely advisory \u2014 enforcement strength is ambiguous",
+          "No mention of logging or auditability: denied requests produce a silent CorsDecision(allow_origin=None) with no hook for alerting, making it impossible to distinguish misconfiguration from an active probe"
+        ],
+        "rewrite_suggestion": "In Security considerations, add a 'Tamper-resistance' bullet: 'vary_origin integrity is verified inside evaluate() by reading the field directly; a frozen-dataclass bypass via object.__setattr__ raises FrozenInstanceError before evaluate() can return.' For RegexOriginMatcher, clarify: 'review_ticket is a non-empty string stored as metadata on the matcher instance; it is not network-validated \u2014 teams MUST enforce ticket existence in CI.' Add an Observability note: 'callers SHOULD log denied decisions (request id, origin, method) for anomaly detection.'"
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "No observability surface: the only signal for a misconfigured allowlist is a 403 reaching the client \u2014 there is no counter, structured log field, or hook to distinguish a legitimate new origin from a malicious probe",
+          "No guidance on how the policy object should be lifecycle-managed: instantiated once at startup and shared, rebuilt on config reload, or created per-request \u2014 matters for hot-reload and memory pressure in high-QPS services",
+          "max_age_seconds ceiling of 86400 is documented but there is no guidance on recommended production values or the operational trade-off (low = more preflight traffic; high = longer blast radius on misconfiguration)"
+        ],
+        "rewrite_suggestion": "Add an Operational guidance section with three bullets: (1) 'Instantiate once at startup; the object is immutable and safe to share across workers.' (2) 'To hot-reload: build a new policy instance and swap the reference atomically; no lock needed on the old instance.' (3) 'Recommended max_age_seconds: 600 (10 min) for staging, 3600 (1 hr) for production \u2014 balances preflight overhead against reconfiguration latency.' Add a note: 'CorsDecision.allow_origin=None SHOULD be emitted as a structured log event (fields: origin, method, policy_id) to distinguish misconfiguration from probing.'"
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "'CORS footgun where * reflection combined with credentials leaks authenticated session data' assumes the reader knows what wildcard reflection means \u2014 the customer-visible harm (another site stealing user data) is buried in jargon",
+          "Regulation anchors table lists four standards but gives no indication of which are mandatory compliance requirements vs informational references \u2014 a PM cannot assess legal/audit exposure without this",
+          "Alternatives considered section uses per-route ad-hoc header writing example in Python without explaining why a dev would do that in the first place \u2014 the 'before/after' contrast is lost"
+        ],
+        "rewrite_suggestion": "Rewrite the first sentence of 'What it does' to lead with customer impact: 'Without CorsPolicy, a misconfigured server can be tricked into letting any website read your users' authenticated API responses \u2014 CorsPolicy closes that hole by default.' In the Regulation anchors table, add a 'Mandatory?' column (Yes/Informational). In Alternatives considered, add one sentence before the per-route example: 'The easiest mistake is a single line that echoes any Origin back \u2014 common in tutorials \u2014 which silently gives every site on the internet read access to credentialed responses.'"
+      }
+    ]
+  }
+}

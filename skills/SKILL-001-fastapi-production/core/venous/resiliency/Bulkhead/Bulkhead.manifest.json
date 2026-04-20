@@ -1,0 +1,746 @@
+{
+  "name": "Bulkhead",
+  "namespace": "resiliency",
+  "maturity": "battle_tested",
+  "builder_agent_id": 4,
+  "catalog_entry_sha256": "8b89b945a6f482b06c0dbc5f682cea151b20f44298dd16cd9f68df4609bf37fd",
+  "files": [
+    {
+      "path": "resiliency/Bulkhead/Bulkhead.cfg",
+      "sha256": "197d911dd0aef916d77bffc9bfed5e2cfb5d9823797ad62746d21a150774dd21",
+      "size_bytes": 178,
+      "kind": "test"
+    },
+    {
+      "path": "resiliency/Bulkhead/Bulkhead.contract.json",
+      "sha256": "8a5690812db8392a71892098aea396e5335b552d39e96bd155e084b7610699db",
+      "size_bytes": 2720,
+      "kind": "contract_json"
+    },
+    {
+      "path": "resiliency/Bulkhead/Bulkhead.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "resiliency/Bulkhead/Bulkhead.md",
+      "sha256": "0ceafe41f19a4d20a2b2e9457f78c80a0a9cd96184c331030341eec04d1fc1fc",
+      "size_bytes": 6433,
+      "kind": "spec_md"
+    },
+    {
+      "path": "resiliency/Bulkhead/Bulkhead.py",
+      "sha256": "c278f35d0f715ea22d6d95e4389b27d72b365dc0cf7ed0404db36253998e26e0",
+      "size_bytes": 20448,
+      "kind": "impl"
+    },
+    {
+      "path": "resiliency/Bulkhead/Bulkhead.tla",
+      "sha256": "b2c4c2ef5be76a05d37dacde20acdc1069b15165b5453d7961f470ae899c0867",
+      "size_bytes": 2373,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "resiliency/Bulkhead/behavioral_Bulkhead.py",
+      "sha256": "94f3f61dde2dc04eec37d171b29a452b299d30fab0a067308711b15577d55023",
+      "size_bytes": 5604,
+      "kind": "behavioral"
+    },
+    {
+      "path": "resiliency/Bulkhead/chaos_Bulkhead.py",
+      "sha256": "eb36005643f7f666e81bd68b3e9788a8138dbfbff5ae4a53f4f1dd59179ad3c2",
+      "size_bytes": 5276,
+      "kind": "chaos"
+    },
+    {
+      "path": "resiliency/Bulkhead/concurrent_Bulkhead.py",
+      "sha256": "c1aa0ca8c09ba00e71b497bfbb6222c01758d9ef6ad36a80dea116c3fb5fc945",
+      "size_bytes": 3796,
+      "kind": "concurrent"
+    },
+    {
+      "path": "resiliency/Bulkhead/dashboard.json",
+      "sha256": "595107023d39db3cb93c9a0f9ceacfea23b3bac3a62b088762a373d4ed6ecb11",
+      "size_bytes": 852,
+      "kind": "dashboard"
+    },
+    {
+      "path": "resiliency/Bulkhead/invariant_bindings.json",
+      "sha256": "d93d472e14a90ef361ce71201852b8c8d87ec501148e0cb397101de70b7c3aad",
+      "size_bytes": 1859,
+      "kind": "test"
+    },
+    {
+      "path": "resiliency/Bulkhead/metamorphic_Bulkhead.py",
+      "sha256": "6424938104ac4456481fb85ba1c8cd5f234a3a9e92c5435eca8c24fdfef828ef",
+      "size_bytes": 3937,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "resiliency/Bulkhead/observability_Bulkhead.py",
+      "sha256": "3891bcf6a04d439276719be0a6c194e6fb5ecdb2f752563300220c26f9f475b4",
+      "size_bytes": 2791,
+      "kind": "observability"
+    },
+    {
+      "path": "resiliency/Bulkhead/observability_schema.json",
+      "sha256": "6c3b985993959a44cc5e79661ebc4e52d916a341a63eb942c366ebbf21943092",
+      "size_bytes": 1258,
+      "kind": "observability"
+    },
+    {
+      "path": "resiliency/Bulkhead/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "resiliency/Bulkhead/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "resiliency/Bulkhead/state_machine_Bulkhead.py",
+      "sha256": "c927128e879991259b05102c618e41fcac2d640af95cc40b8684591d7ad00b59",
+      "size_bytes": 4110,
+      "kind": "state_machine"
+    },
+    {
+      "path": "resiliency/Bulkhead/test_Bulkhead.py",
+      "sha256": "10bc843b228800b887873525f0d95239cedb9bc4215119b643a314694e610d57",
+      "size_bytes": 12390,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "BH_INV_01",
+      "invariant_text": "The number of in-flight calls per partition MUST NEVER exceed max_concurrent_calls.",
+      "confirms_test": "test_inv_capacity_ceiling_confirms",
+      "prevents_test": "test_inv_capacity_ceiling_prevents",
+      "under_failure_test": "test_inv_capacity_ceiling_under_failure"
+    },
+    {
+      "invariant_id": "BH_INV_02",
+      "invariant_text": "A caller that waits longer than max_wait_duration_ms for a permit SHALL receive BulkheadFull and NEVER be admitted.",
+      "confirms_test": "test_inv_wait_deadline_confirms",
+      "prevents_test": "test_inv_wait_deadline_prevents",
+      "under_failure_test": "test_inv_wait_deadline_under_failure"
+    },
+    {
+      "invariant_id": "BH_INV_03",
+      "invariant_text": "A rejection by Bulkhead MUST NOT be retried inside the same partition in the same request.",
+      "confirms_test": "test_inv_no_intra_request_retry_confirms",
+      "prevents_test": "test_inv_no_intra_request_retry_prevents",
+      "under_failure_test": "test_inv_no_intra_request_retry_under_failure"
+    },
+    {
+      "invariant_id": "BH_INV_04",
+      "invariant_text": "Permits CANNOT be shared across partitions; each partition holds an isolated counter.",
+      "confirms_test": "test_inv_partition_isolation_confirms",
+      "prevents_test": "test_inv_partition_isolation_prevents",
+      "under_failure_test": "test_inv_partition_isolation_under_failure"
+    },
+    {
+      "invariant_id": "BH_INV_05",
+      "invariant_text": "The bulkhead SHALL emit a rejection metric labelled with the partition name on every rejection.",
+      "confirms_test": "test_inv_rejection_metric_confirms",
+      "prevents_test": "test_inv_rejection_metric_prevents",
+      "under_failure_test": "test_inv_rejection_metric_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 1619,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 1 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 2011,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 2621,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 72475,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1532,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 1427,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 73163,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "39 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1026,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 6533,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 85571,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 249094,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-OVERSHOOT-RACE",
+        "hypothesis": "Concurrent acquire under CAS race: two coroutines observe available_permits=1 and both proceed to increment, pushing in-flight to max_concurrent_calls+1 due to non-atomic check-then-act between available_permits() and internal counter mutation.",
+        "input_fixture": "asyncio.gather(*[bh.submit(slow_fn) for _ in range(max_concurrent_calls*4)]) with slow_fn sleeping 50ms; assert peak in-flight observed via instrumented counter",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NEG-MAX",
+        "hypothesis": "Constructing Bulkhead with max_concurrent_calls=0 or negative should reject config; if accepted, submit() may deadlock forever or permit silently (division/modulo by zero in fairness queue).",
+        "input_fixture": "Bulkhead(name='x', kind='semaphore', max_concurrent_calls=0, max_wait_duration_ms=100); await bh.submit(lambda: asyncio.sleep(0))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INT-OVERFLOW-WAIT",
+        "hypothesis": "max_wait_duration_ms=2**63-1 or negative leads to integer overflow when added to monotonic clock, causing immediate timeout, permanent block, or OverflowError leaking instead of BulkheadFull.",
+        "input_fixture": "Bulkhead(name='x', kind='semaphore', max_concurrent_calls=1, max_wait_duration_ms=9223372036854775807); saturate then submit one more",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-NTP",
+        "hypothesis": "If wait timer uses time.time() instead of monotonic, an NTP step backward during wait causes the waiter to be admitted AFTER exceeding max_wait_duration_ms, violating the NEVER-admitted clause.",
+        "input_fixture": "Saturate bulkhead; start waiter with max_wait=100ms; mock time.time() to step -500ms mid-wait; verify waiter is rejected, not admitted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CANCEL-PERMIT-LEAK",
+        "hypothesis": "asyncio.CancelledError raised between permit acquisition and fn invocation (or during fn) leaks the permit if release happens in finally only on normal path, reducing effective capacity to zero over time.",
+        "input_fixture": "Loop 1000\u00d7: task=asyncio.create_task(bh.submit(never_returns)); await asyncio.sleep(0.001); task.cancel(); assert bh.available_permits()==max_concurrent_calls",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RETRY-SAME-PARTITION",
+        "hypothesis": "A middleware wraps submit() with automatic retry on BulkheadFull, re-entering the same partition within the same request and amplifying load \u2014 invariant forbids retry in same partition but there's no request-scoped sentinel to enforce it.",
+        "input_fixture": "With saturated bulkhead, call submit() \u2192 catch BulkheadFull \u2192 immediately resubmit same fn with same request_id header; verify the second call is refused by bulkhead as a same-request retry",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NAME-COLLISION-CROSS",
+        "hypothesis": "Two partitions constructed with names that normalize to the same key (e.g., 'Db' vs 'db' under case-folding registry, or name='' default) collapse into one counter, sharing permits across what callers believe are isolated partitions.",
+        "input_fixture": "bh_a=Bulkhead(name='Payments', max=5); bh_b=Bulkhead(name='payments', max=5); saturate bh_a; observe bh_b.available_permits<5",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-KWARG-FN-INJECTION",
+        "hypothesis": "Passing kwargs named 'fn', 'self', or reserved internals (e.g., '_permit') to submit() collides with the bulkhead's own binding, either swapping out the wrapped callable or bypassing accounting entirely.",
+        "input_fixture": "await bh.submit(target, fn=malicious_coro, _permit=None, self='attacker')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SYNC-CALLABLE",
+        "hypothesis": "submit() is typed as Callable[..., Awaitable[T]] but a sync callable returning a non-awaitable is passed; if not validated, it runs inline holding the permit forever (TypeError during await never releases) or executes without permit accounting.",
+        "input_fixture": "def sync(): return 1; await bh.submit(sync)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-METRIC-MISSING-LABEL",
+        "hypothesis": "Under high rejection volume, metric emission is batched/sampled and some rejections ship without the partition name label (or with label='unknown') violating the 'every rejection' contract, breaking alert routing.",
+        "input_fixture": "Saturate bulkhead at 10k rps for 10s; scrape metrics; assert counter{partition='x'} equals total BulkheadFull raised",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-CACHED-PERMIT",
+        "hypothesis": "If permits are tokenized and a stale token from a prior completed call is replayed on a new submit(), accounting admits beyond max_concurrent_calls because the token check trusts prior issuance.",
+        "input_fixture": "Capture permit token t1 from completed call; on saturated partition, craft submit with _permit=t1; observe admission",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-THREAD-POOL-GIL-STALL",
+        "hypothesis": "In kind='thread_pool', a blocking C-extension call holds a worker past max_wait_duration_ms; waiters' asyncio timers fire but the thread pool queue admits them anyway when a worker frees, violating NEVER-admitted.",
+        "input_fixture": "Bulkhead(kind='thread_pool', max=2, max_wait_ms=50); submit 2\u00d7 blocking C ext (200ms); submit 5 more; verify none of the 5 execute after their 50ms timeout elapsed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ZERO-WAIT-BOUNDARY",
+        "hypothesis": "max_wait_duration_ms=0 is ambiguous: 'no wait' vs 'wait forever'. Off-by-one admits one caller into the wait queue, or blocks indefinitely instead of immediate BulkheadFull.",
+        "input_fixture": "Bulkhead(max_concurrent_calls=1, max_wait_duration_ms=0); saturate; submit extra; assert immediate BulkheadFull with <1ms elapsed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE_PERMIT_EXCEED",
+        "hypothesis": "Two coroutines racing through available_permits() check (reading > 0) before either decrements can both acquire a permit, letting in-flight count momentarily exceed max_concurrent_calls by the number of racing coroutines. This targets the semaphore's internal compare-and-decrement not being atomic at the asyncio event-loop level when the implementation uses a plain integer counter instead of asyncio.Semaphore.",
+        "input_fixture": "max_concurrent_calls=1; launch 50 concurrent submit() coroutines each sleeping 10 ms; assert max observed in-flight count via instrumented wrapper == 1 at every yield point",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EXCEPTION_PERMIT_LEAK",
+        "hypothesis": "If the submitted callable raises an exception (including BaseException subclasses like KeyboardInterrupt or asyncio.CancelledError), the implementation may skip the permit-release path if it uses try/finally incorrectly or catches only Exception, leaving the semaphore permanently decremented and eventually starving all future callers even when no real work is running.",
+        "input_fixture": "fill bulkhead to max_concurrent_calls=3; have each fn raise RuntimeError; submit a 4th call; expect it to eventually succeed after the first 3 complete, not hang indefinitely",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CANCELLED_TASK_PERMIT_LEAK",
+        "hypothesis": "asyncio.CancelledError is injected via task.cancel() while a coroutine is suspended inside Bulkhead.submit() awaiting the semaphore or executing fn. If the acquire succeeded before cancellation, the permit may never be released because CancelledError propagates past a bare except/finally that only handles Exception, permanently reducing available permits.",
+        "input_fixture": "max_concurrent_calls=2; submit 2 long-running fns; then submit a 3rd (will wait); cancel the 3rd task mid-wait; cancel one of the first two mid-execution; submit two fresh calls and verify both succeed without deadlock",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WAIT_TIMEOUT_CLOCK_SKEW",
+        "hypothesis": "If the implementation measures max_wait_duration_ms using time.time() (wall clock) instead of time.monotonic() or loop.time(), an NTP step-forward or system clock adjustment during the wait period can make the elapsed calculation report a negative duration, causing a caller that has already waited past the deadline to still be admitted rather than rejected with BulkheadFull.",
+        "input_fixture": "Patch time.time to jump backwards by 1 second mid-wait; set max_wait_duration_ms=500; fill bulkhead; submit extra caller; assert BulkheadFull is raised even after the mocked clock jump",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ZERO_WAIT_BOUNDARY",
+        "hypothesis": "When max_wait_duration_ms=0 the contract requires immediate rejection if no permit is available. An off-by-one in the timeout path (e.g., asyncio.wait_for(acquire(), timeout=0) which yields once before timing out) may admit the call before raising, violating the 'NEVER be admitted' clause for zero-wait bulkheads.",
+        "input_fixture": "max_concurrent_calls=1, max_wait_duration_ms=0; hold the single permit; submit a second call; assert BulkheadFull is raised without the second fn being invoked at all",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REENTRANT_SAME_PARTITION",
+        "hypothesis": "A callable submitted to partition P internally calls bulkhead.submit() on the same partition P (direct or via a shared helper). If the implementation uses a non-reentrant asyncio.Semaphore and max_concurrent_calls=1 the inner call deadlocks, starving the partition forever. If max_concurrent_calls>1 the reentrant call consumes an additional permit, potentially pushing in-flight count past the declared ceiling.",
+        "input_fixture": "max_concurrent_calls=2; fn_outer does await bulkhead.submit(fn_inner); fn_inner also awaits bulkhead.submit(fn_innermost); all three share the same partition; assert only 2 permits are ever simultaneously held",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CROSS_PARTITION_SHARED_SEMAPHORE",
+        "hypothesis": "If the Bulkhead factory stores semaphores in a module-level dict keyed by name, two Bulkhead instances instantiated with identical names but different max_concurrent_calls will share the same underlying semaphore object. Saturation in one logical partition will starve callers that believe they belong to an isolated partition, violating permit isolation.",
+        "input_fixture": "Create bulkhead_a = Bulkhead('db', 'semaphore', max_concurrent_calls=2, ...); create bulkhead_b = Bulkhead('db', 'semaphore', max_concurrent_calls=10, ...); fill bulkhead_a; verify bulkhead_b.submit() is also blocked despite its higher limit",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NAME_COLLISION_UNICODE_NORMALIZATION",
+        "hypothesis": "Two partition names that are canonically distinct ASCII strings but normalize to the same value after Unicode NFKC normalization (e.g., 'payments' U+0070 vs '\uff50ayments' fullwidth-p) may hash to the same key in an implementation that normalizes names for metric labels or internal dicts, causing two logically separate partitions to share a permit pool.",
+        "input_fixture": "Bulkhead(name='payments', ..., max_concurrent_calls=1); Bulkhead(name='\\uff50ayments', ..., max_concurrent_calls=1); fill first; assert second still accepts calls independently",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-METRIC_EMIT_EXCEPTION_SWALLOWED",
+        "hypothesis": "If the rejection-metric emission call (e.g., statsd.increment or prometheus Counter.inc) raises an exception (network error, misconfigured client) and the implementation wraps it in a bare except that then suppresses the BulkheadFull re-raise, callers receive no exception and the call is silently dropped or incorrectly admitted, violating both the rejection-signal invariant and the metric-labelling invariant simultaneously.",
+        "input_fixture": "Inject a mock metrics client whose increment() raises RuntimeError; fill bulkhead; submit extra call; assert BulkheadFull is still raised to the caller despite the metrics failure",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-METRIC_LABEL_PROMPT_INJECTION",
+        "hypothesis": "A partition name containing metric-label special characters (e.g., 'db{env=prod}', 'svc;DROP TABLE metrics', newline chars) is passed directly as a Prometheus label value without sanitization. This can corrupt the metric stream, cause label cardinality explosion (one name per request if name includes a request ID), or allow a second-order injection into monitoring dashboards.",
+        "input_fixture": "Bulkhead(name='db{env=\\\"pwned\\\",extra=\\\"injected\\\"}', ...); trigger rejection; inspect raw metric line; assert the partition label is sanitized/escaped and does not contain unescaped braces",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INTEGER_OVERFLOW_MAX_CONCURRENT",
+        "hypothesis": "Passing max_concurrent_calls=0 or a negative integer may cause the underlying asyncio.Semaphore(0) to block every caller immediately (effectively a deadlock) rather than raising a configuration error. Alternatively, max_concurrent_calls=2**63 may silently overflow to a negative sentinel on some semaphore backends, making the bulkhead non-functional while reporting available_permits as a huge positive number.",
+        "input_fixture": "Bulkhead(name='x', kind='semaphore', max_concurrent_calls=0, max_wait_duration_ms=100); submit any call; expect immediate BulkheadFull or a ValueError at construction, not an indefinite hang",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AVAILABLE_PERMITS_STALE_READ",
+        "hypothesis": "available_permits() is a non-atomic snapshot. If callers use its return value as a guard before calling submit() (check-then-act), a TOCTOU race allows the count to drop to zero between the read and the submit, leading to a BulkheadFull that the caller did not expect and may retry inside the same partition, violating the no-intra-partition-retry invariant. The API contract should document this or the implementation should prevent optimistic use.",
+        "input_fixture": "available_permits() returns 1; two coroutines both observe 1 and both call submit() concurrently; assert only one succeeds and the other raises BulkheadFull without any retry logic being triggered inside the bulkhead itself",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-THREAD_POOL_KIND_ASYNC_FN",
+        "hypothesis": "When kind='thread_pool', the implementation likely runs fn via loop.run_in_executor(). If fn is a coroutine function (returns a coroutine object rather than a value), run_in_executor will return the coroutine object unawaited, immediately freeing the permit while the actual async work is never executed. This means in-flight accounting is wrong and the result is silently lost.",
+        "input_fixture": "Bulkhead(name='x', kind='thread_pool', max_concurrent_calls=2, max_wait_duration_ms=1000); submit an async def fn that sets a flag and sleeps 50 ms; await the submit result; assert the flag was actually set",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RACE-CONCURRENT-PERMITS-OVERFLOW",
+        "hypothesis": "Two concurrent submit() calls both observe available permits > 0, both proceed to acquire, violating max_concurrent_calls invariant when second caller shouldn't be admitted.",
+        "input_fixture": "bulkhead = Bulkhead(name='test', kind='semaphore', max_concurrent_calls=1); submit(slow_fn_1ms) and submit(slow_fn_2ms) concurrently; assert in_flight_calls > max_concurrent_calls",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ZERO-PERMITS-ADMISSION",
+        "hypothesis": "Bulkhead initialized with max_concurrent_calls=0 should reject all submissions immediately, but allows at least one due to off-by-one in permit initialization.",
+        "input_fixture": "bulkhead = Bulkhead(max_concurrent_calls=0, max_wait_duration_ms=5000); result = await submit(fn); assert result != BulkheadFull",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-WAIT-TIMEOUT-CLOCK-SKEW",
+        "hypothesis": "System clock skew (backward jump) causes timeout check to fail; caller waits < 1ms then clock jumps back 50ms, timeout never fires, admitted after deadline.",
+        "input_fixture": "bulkhead = Bulkhead(max_wait_duration_ms=10); occupy 1 permit; submit(fn) waits 10ms; system clock -30ms jump; submit admitted despite timeout window closed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NEGATIVE-WAIT-DURATION-NEVER-TIMEOUT",
+        "hypothesis": "Negative max_wait_duration_ms interpreted as infinite wait or never-timeout, causing indefinite blocking instead of immediate rejection.",
+        "input_fixture": "bulkhead = Bulkhead(max_wait_duration_ms=-1000, max_concurrent_calls=1); occupy 1 permit; result = await submit(fn, timeout=100ms); blocks forever instead of raising BulkheadFull",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EXCEPTION-PERMIT-LEAK-DEADLOCK",
+        "hypothesis": "When submitted function raises exception mid-execution, permit counter never decremented, leaked permits exhaust partition, future submissions wait forever.",
+        "input_fixture": "bulkhead = Bulkhead(max_concurrent_calls=1); submit(fn_raises_exception); exception caught; submit(fn2) waits indefinitely; available_permits() remains 0",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CROSS-PARTITION-PERMIT-SHARING",
+        "hypothesis": "Two Bulkhead instances with identical name='payment' share internal permit counter; filling first bulkhead starves second, violating partition isolation.",
+        "input_fixture": "b1 = Bulkhead(name='payment', max_concurrent_calls=2); b2 = Bulkhead(name='payment', max_concurrent_calls=2); b1.submit(fn1); b1.submit(fn2); b2.submit(fn3) succeeds (should fail)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NULL-NAME-ISOLATION-COLLAPSE",
+        "hypothesis": "Bulkhead(name=None) and Bulkhead(name=None) treated as same partition, permits shared instead of isolated.",
+        "input_fixture": "b1 = Bulkhead(name=None, max_concurrent_calls=1); b2 = Bulkhead(name=None, max_concurrent_calls=1); b1.submit(slow_fn); b2.submit(fn2) blocks (should fail immediately)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REJECTION-METRIC-MISSING",
+        "hypothesis": "BulkheadFull rejection raised but rejection_counter metric not incremented with partition label, unobservable to monitoring systems.",
+        "input_fixture": "bulkhead = Bulkhead(name='api', max_concurrent_calls=1, max_wait_duration_ms=5); occupy 1 permit; submit(fn) timeout; check metrics.get('bulkhead_rejection{partition=\"api\"}') == 0",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-REJECTIONS-METRIC-RACE",
+        "hypothesis": "100 concurrent calls timeout and reject simultaneously; metric emission not locked, final counter shows 50 instead of 100 due to lost writes.",
+        "input_fixture": "bulkhead = Bulkhead(name='db', max_concurrent_calls=1, max_wait_duration_ms=1); occupy 1; submit(fn) \u00d7 100 concurrently all timeout; metric_count(bulkhead_rejection, partition='db') < 100",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RECURSIVE-REENTRY-SAME-PARTITION",
+        "hypothesis": "submitted fn calls bulkhead.submit() recursively on same partition; hits permit limit, caller blocks within event loop, causes deadlock.",
+        "input_fixture": "bulkhead = Bulkhead(name='x', max_concurrent_calls=1); submit(fn_that_calls_bulkhead_submit('x')); deadlock / coroutine never completes",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PERMIT-UNDERFLOW-NEGATIVE-AVAILABLE",
+        "hypothesis": "Permit release implemented with decrement; concurrent release and timeout trigger double-decrement, available_permits() returns negative integer.",
+        "input_fixture": "bulkhead = Bulkhead(max_concurrent_calls=1); submit(fn) acquires; timeout fires while fn still executing; timeout releases permit; fn completes and releases again; available_permits() == -1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INVALID-KIND-DEFAULT-UNSAFE",
+        "hypothesis": "Bulkhead(kind='thread_queue') with typo not validated; defaults to unsafe mode ignoring concurrency limits, allows unlimited concurrent calls.",
+        "input_fixture": "bulkhead = Bulkhead(kind='thread_queue', max_concurrent_calls=1); submit(fn) \u00d7 100 simultaneously; in_flight_calls > 1 (should be \u22641)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-AVAILABLE-PERMITS-NEGATIVE-REPORT",
+        "hypothesis": "available_permits() incorrectly reports negative value after concurrent release/timeout race, exposing internal permit counter corruption.",
+        "input_fixture": "bulkhead = Bulkhead(max_concurrent_calls=3); submit \u00d7 3 concurrently; all timeout simultaneously; available_permits() returns -2 (corrupted)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "bulkhead.submitted",
+        "required_attributes": [
+          "partition",
+          "request_id",
+          "available_permits"
+        ]
+      },
+      {
+        "event_name": "bulkhead.rejected",
+        "required_attributes": [
+          "partition",
+          "request_id",
+          "reason"
+        ]
+      },
+      {
+        "event_name": "bulkhead.completed",
+        "required_attributes": [
+          "partition",
+          "request_id",
+          "duration_ms",
+          "outcome"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "bulkhead.rejections",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 32,
+        "label_keys": [
+          "partition",
+          "reason"
+        ]
+      },
+      {
+        "name": "bulkhead.in_flight",
+        "metric_type": "updown_counter",
+        "unit": "1",
+        "cardinality_bound": 32,
+        "label_keys": [
+          "partition"
+        ]
+      },
+      {
+        "name": "bulkhead.wait.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 64,
+        "label_keys": [
+          "partition",
+          "outcome"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "bulkhead.submit",
+        "required_attributes": [
+          "bulkhead.partition",
+          "bulkhead.capacity",
+          "bulkhead.available"
+        ]
+      },
+      {
+        "operation_name": "bulkhead.acquire",
+        "required_attributes": [
+          "bulkhead.partition",
+          "bulkhead.wait_ms"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol matches api_signature verbatim (name, kind, max_concurrent_calls, max_wait_duration_ms, submit, available_permits). Kind literal and TypeVar match. Only the thread_pool kind is declared but not implemented \u2014 acceptable since reference is sealed to semaphore, but catalog lists both kinds."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All 5 invariants (BH_INV_01\u201305) enforced: capacity ceiling guarded in _acquire_slot, wait_for enforces timeout, RequestRejectionLedger blocks retries, PartitionRegistry enforces isolation, RejectionMeter labels every rejection. thread_pool adapter not implemented but extension contract is open."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Clear taxonomy: BulkheadError base, BulkheadFull for admission refusal (both timeout and retry-forbidden), BulkheadInvariantError for drift. Messages cite invariant IDs, include partition name, capacity, and reason. `raise ... from None` suppresses TimeoutError noise."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Meter and ledger injectable and shareable across partitions via registry. Router hook is pluggable. Sealed accounting with read-only introspection (in_flight, available_permits, snapshot). Protocol is runtime_checkable. Lazy-import policy honored (zero I/O at import)."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Permit released in finally on exception/cancellation; threading.Lock protects counters; asyncio.Semaphore gates admission; unbounded ledger growth mitigated by explicit clear_request (documented). Minor: 1e-9 zero-wait hack is pragmatic but relies on wait_for semantics; RejectionMeter events list grows unbounded \u2014 fine for in-memory reference but worth a cap in prod."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Matches catalog api_signature types exactly; Kind Literal matches; namespace/name implicit via module; invariants quoted verbatim in module docstring and enforced. BulkheadFull naming matches Nygard/resilience4j taxonomy (noqa justified inline)."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "Usage example uses undefined symbols (`_fraud_client`, `Principal`) \u2014 copy-pasting the snippet fails immediately without a complete minimal example.",
+          "API section references `BH_INV_03` and `RequestRejectionLedger` inline, but those terms aren't introduced until later sections, creating a forward-reference gap.",
+          "`PartitionRegistry` is mentioned as an alternative construction path but never explained \u2014 junior devs won't know when or why to choose it over direct instantiation."
+        ],
+        "rewrite_suggestion": "Open the Usage section with a fully self-contained runnable snippet (no external symbols). Move invariant-ID references to the Invariants table and replace them in the API prose with plain English. Add one sentence defining PartitionRegistry before it's first used."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "The relationship between `InMemoryBulkhead`, `PartitionRegistry`, and `PartitionRouter` is described piecemeal across three sections; no single diagram or flow shows how they wire together.",
+          "`state_machine_Bulkhead.py` and `Bulkhead.tla` are cited without file paths, making them hard to locate in the repo for code review or extension.",
+          "The `thread_pool` kind adapter is mentioned in the Extension contract but its semantics (executor type, queue discipline, back-pressure model) are entirely absent."
+        ],
+        "rewrite_suggestion": "Add a two-sentence architecture note showing InMemoryBulkhead \u2194 PartitionRegistry \u2194 PartitionRouter data flow, include repo-relative paths for both formal specs, and expand the thread_pool entry with its executor type and queue-full behaviour."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "The partition-name injection warning says 'do not derive from untrusted input' but provides no validation rule (allowlist pattern, max length, character set) that implementors can enforce.",
+          "`ledger.clear_request(request_id)` is the caller's responsibility, but there is no guidance on ownership or lifecycle enforcement \u2014 a middleware that skips the call causes silent unbounded growth.",
+          "No statement on whether rejection metrics or `in_flight` counters are accessible to unauthenticated observers, leaving a potential information-leakage surface unaddressed."
+        ],
+        "rewrite_suggestion": "Append a one-line validation rule for partition names (e.g., `^[a-z][a-z0-9_]{0,47}$`). Add an explicit 'Ledger lifecycle' note naming the middleware layer responsible for `clear_request`. Address metric exposure in the Security section."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Only `bulkhead_rejections_total` is named; `in_flight`, `total_admitted`, and `total_rejected` are listed as observable fields in the Extension contract but their metric names, types (gauge vs counter), and label sets are never specified.",
+          "The alert threshold `X` in `rate(bulkhead_rejections_total[5m]) > X` is undefined \u2014 no starting heuristic (e.g., `> 1/s` or `> 5% of admitted`) is given, leaving on-call without a baseline.",
+          "No guidance on whether `max_concurrent_calls` is hot-reloadable at runtime or requires a process restart, which matters for capacity tuning under live traffic."
+        ],
+        "rewrite_suggestion": "Emit a metrics table listing each counter/gauge name, type, and labels. Replace `> X` with a concrete starting value and tuning note. Add one sentence stating whether capacity is runtime-mutable."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "No quantified reliability claim \u2014 the ship metaphor lands emotionally but there is no reference to what cascade-failure rate or SLA impact a bulkhead typically prevents.",
+          "Integration effort is unstated; a PM cannot estimate sprint cost without knowing whether adoption is one decorator per call site or a cross-cutting infrastructure change.",
+          "Maturity level is referenced as a field in `Bulkhead.contract.json` but never surfaced in the human-readable doc \u2014 a PM cannot assess production-readiness without hunting for the JSON."
+        ],
+        "rewrite_suggestion": "Add a two-sentence 'Business value' blurb with a reliability reference. State integration complexity upfront (e.g., 'one `await bulkhead.submit()` wrapper per dependency call site'). Surface the maturity level explicitly at the top of the doc."
+      }
+    ]
+  }
+}

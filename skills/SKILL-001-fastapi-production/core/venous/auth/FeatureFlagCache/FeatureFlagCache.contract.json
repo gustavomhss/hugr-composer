@@ -1,0 +1,14 @@
+{
+  "name": "FeatureFlagCache",
+  "namespace": "auth",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Bounded in-process async LRU cache with per-entry TTL for feature-flag payloads. Thread-safe via an asyncio.Lock. Evicts on capacity (LRU) and on read (expired-TTL). Stable under concurrent access.",
+  "api_signature": "class FeatureFlagCache: get(...), set(...), invalidate(...), clear(...), start_invalidation_listener(...), stop(...)",
+  "invariants": [
+    "FEATURE_FLAG_CACHE_INV_01: `get(k)` on an expired entry MUST return None AND remove the stale entry from the store (read-through eviction).",
+    "FEATURE_FLAG_CACHE_INV_02: The store size MUST never exceed MAX_CACHE_SIZE after any `set`; eviction order is strict LRU (least recently accessed key first).",
+    "FEATURE_FLAG_CACHE_INV_03: After `set(k, v)`, a subsequent `get(k)` within the TTL window MUST return the stored `v` (write-then-read consistency)."
+  ],
+  "status": "promoted"
+}

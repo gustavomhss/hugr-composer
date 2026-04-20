@@ -1,0 +1,31 @@
+{
+  "name": "RpcInterceptor",
+  "namespace": "extras",
+  "purpose": "Per call middleware that wraps a remote procedure invocation to read or mutate metadata, enforce deadlines and translate errors consistently across services.",
+  "api_signature": "from typing import Protocol, Callable, Awaitable, Any\nfrom dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass RpcContext:\n    method: str\n    deadline_ms: int | None\n    metadata: dict[str, str]\n\nHandler = Callable[[RpcContext, bytes], Awaitable[bytes]]\n\nclass RpcInterceptor(Protocol):\n    async def intercept(self, ctx: RpcContext, payload: bytes, next: Handler) -> bytes: ...",
+  "invariants": [
+    "Interceptors MUST call next exactly once per invocation unless they deliberately short circuit with a status.",
+    "Metadata keys that end with '-bin' ALWAYS carry binary values and CANNOT be compared as plain strings.",
+    "Keys starting with 'grpc-' are FORBIDDEN for user metadata because that prefix is reserved by the runtime.",
+    "A deadline propagated in ctx MUST NOT be extended by an interceptor; it SHALL only be shortened or respected.",
+    "Cancellation signals NEVER cross interceptor boundaries silently; every interceptor SHALL honor cancel or raise a cancellation error."
+  ],
+  "extension_contract": "Plug an interceptor into the chain by registering it on the client or server channel at construction time; compose multiple interceptors as an ordered list where earlier entries sit closer to the network and later entries closer to the handler.",
+  "consumption_example": "class AuthInterceptor(RpcInterceptor):\n    async def intercept(self, ctx: RpcContext, payload: bytes, next: Handler) -> bytes:\n        if 'authorization' not in ctx.metadata:\n            raise PermissionError('missing token')\n        return await next(ctx, payload)",
+  "sources": [
+    {
+      "source": "gRPC Core Concepts guide",
+      "locator": "grpc.io/docs/what-is-grpc/core-concepts/ Metadata and Deadlines/Timeouts paragraphs"
+    },
+    {
+      "source": "gRPC Interceptors guide",
+      "locator": "grpc.io/docs/guides/interceptors/ When to use, Client vs Server, Interceptor ordering sections"
+    }
+  ],
+  "why_essential": "Authentication, tracing, rate limiting and deadline discipline must apply uniformly to every RPC; an interceptor contract is where those concerns compose without editing each generated stub.",
+  "alternatives_considered": [
+    "Decorators on each service method which duplicate logic per endpoint",
+    "Global monkey patching of the RPC client which breaks generated stubs on upgrade"
+  ],
+  "maturity": "battle_tested"
+}

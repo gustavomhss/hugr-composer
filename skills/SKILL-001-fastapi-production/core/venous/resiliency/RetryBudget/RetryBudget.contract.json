@@ -1,0 +1,14 @@
+{
+  "name": "RetryBudget",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Sliding-window retry budget: caps the ratio of retries to total requests over a rolling time window so a failing downstream cannot be DDoS'd by the caller's own retry loop. Enforces only after a warm-up threshold (`min_requests`) to avoid false positives on cold starts.",
+  "api_signature": "class RetryBudget: record_request(...), record_retry(...), can_retry(...), current_ratio(...), stats(...)",
+  "invariants": [
+    "RETRY_BUDGET_INV_01: `can_retry()` MUST return True when total requests in the window is below `min_requests` (warm-up bypass).",
+    "RETRY_BUDGET_INV_02: After warm-up, `can_retry()` MUST return False iff `len(_retries) / len(_requests) > ratio` over the current window.",
+    "RETRY_BUDGET_INV_03: Samples older than `window_s` MUST be evicted on every record/check, so the decision is always based on the CURRENT rolling window."
+  ],
+  "status": "promoted"
+}

@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "WEBAUTHN_INV_01",
+      "invariant_text": "Challenges MUST be >=16 bytes from a CSPRNG and MUST be single-use; replaying a challenge SHALL reject the response.",
+      "confirms_test": "test_inv_challenge_single_use_confirms",
+      "prevents_test": "test_inv_challenge_single_use_prevents",
+      "under_failure_test": "test_inv_challenge_single_use_under_failure"
+    },
+    {
+      "invariant_id": "WEBAUTHN_INV_02",
+      "invariant_text": "The origin in clientDataJSON MUST exactly match the configured RP origin; subdomain or scheme mismatch CANNOT be accepted.",
+      "confirms_test": "test_inv_origin_exact_match_confirms",
+      "prevents_test": "test_inv_origin_exact_match_prevents",
+      "under_failure_test": "test_inv_origin_exact_match_under_failure"
+    },
+    {
+      "invariant_id": "WEBAUTHN_INV_03",
+      "invariant_text": "The RP ID hash in authenticatorData MUST equal SHA-256(rp_id); mismatch MUST fail verification.",
+      "confirms_test": "test_inv_rp_id_hash_confirms",
+      "prevents_test": "test_inv_rp_id_hash_prevents",
+      "under_failure_test": "test_inv_rp_id_hash_under_failure"
+    },
+    {
+      "invariant_id": "WEBAUTHN_INV_04",
+      "invariant_text": "finish_assertion() MUST reject when the new sign_count is <= the stored sign_count, except when the authenticator always returns 0.",
+      "confirms_test": "test_inv_sign_count_monotonic_confirms",
+      "prevents_test": "test_inv_sign_count_monotonic_prevents",
+      "under_failure_test": "test_inv_sign_count_monotonic_under_failure"
+    },
+    {
+      "invariant_id": "WEBAUTHN_INV_05",
+      "invariant_text": "The user-verification flag MUST be enforced for authenticators registered as user-verifying; absence SHALL fail the assertion.",
+      "confirms_test": "test_inv_uv_flag_enforced_confirms",
+      "prevents_test": "test_inv_uv_flag_enforced_prevents",
+      "under_failure_test": "test_inv_uv_flag_enforced_under_failure"
+    },
+    {
+      "invariant_id": "WEBAUTHN_INV_06",
+      "invariant_text": "Credential public keys MUST be stored bound to (user_id, credential_id) and SHALL NEVER be shared across users.",
+      "confirms_test": "test_inv_credential_binding_confirms",
+      "prevents_test": "test_inv_credential_binding_prevents",
+      "under_failure_test": "test_inv_credential_binding_under_failure"
+    }
+  ]
+}

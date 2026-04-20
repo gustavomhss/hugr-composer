@@ -1,0 +1,26 @@
+{
+  "name": "BreachNotificationQueue",
+  "namespace": "compliance",
+  "purpose": "Tracks suspected and confirmed personal-data incidents with a statutory notification clock, so the 72-hour window is enforced in code.",
+  "api_signature": "from typing import Protocol, Literal\nfrom datetime import datetime\n\nSeverity = Literal['low', 'medium', 'high', 'critical']\n\nclass BreachNotificationQueue(Protocol):\n    def open_incident(self, detected_at: datetime, severity: Severity, summary: str) -> str: ...\n    def confirm(self, incident_id: str, confirmed_at: datetime, data_classes: tuple[str, ...]) -> None: ...\n    def notify_authority(self, incident_id: str, authority: str, at: datetime, reference: str) -> None: ...\n    def close(self, incident_id: str, outcome: str) -> None: ...",
+  "invariants": [
+    "An incident confirmed as affecting personal data MUST have a notify_authority call within 72 hours of confirmed_at; the queue SHALL emit a breach-of-SLA alert at T-24h.",
+    "open_incident MUST be callable from any service with write access to the queue; there is NEVER a gating step that delays detection recording.",
+    "Every state transition (open, confirm, notify, close) MUST emit a TamperEvidentAuditLog entry.",
+    "data_classes on confirm MUST be a non-empty tuple of PiiClassification-registered classes; empty tuples SHALL raise.",
+    "An incident CANNOT close without either a notify_authority entry or an explicit 'no_notification_required' outcome with a legal_basis field."
+  ],
+  "extension_contract": "Detection sources (IDS, anomaly scoring, manual reports) call open_incident. Notification channel plugins (DPA portal adapters, HHS OCR form submitters) subscribe to the notify phase and register themselves as NotificationChannel implementations.",
+  "consumption_example": "from datetime import datetime, timezone\n\ndef on_anomaly(queue: BreachNotificationQueue, evidence: str) -> str:\n    now = datetime.now(timezone.utc)\n    return queue.open_incident(detected_at=now, severity='high', summary=evidence)",
+  "sources": [
+    {"source": "EU GDPR Regulation 2016/679 Articles 5, 6, 7, 15, 17, 30, 32", "locator": "Article 33 notification of personal data breach to supervisory authority within 72 hours"},
+    {"source": "HIPAA Security Rule 45 CFR \u00a7\u00a7 164.308-164.312", "locator": "\u00a7 164.308(a)(6) Security incident procedures"}
+  ],
+  "why_essential": "Incident trackers in ticketing tools have no statutory clock; a domain-specific queue makes the 72-hour GDPR window and HIPAA incident response requirement computable and alertable.",
+  "alternatives_considered": [
+    "Generic Jira project for incidents \u2014 no statutory clock, no authority-notification tracking.",
+    "PagerDuty postmortems \u2014 operational focus, not regulatory evidence.",
+    "Email distribution list \u2014 untracked, non-reproducible state."
+  ],
+  "maturity": "emerging"
+}

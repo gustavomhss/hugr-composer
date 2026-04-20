@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "SESSION_INV_01",
+      "invariant_text": "Session ids MUST carry >=128 bits of CSPRNG entropy and MUST NEVER encode user-controlled input.",
+      "confirms_test": "test_inv_sid_entropy_confirms",
+      "prevents_test": "test_inv_sid_entropy_prevents",
+      "under_failure_test": "test_inv_sid_entropy_under_failure"
+    },
+    {
+      "invariant_id": "SESSION_INV_02",
+      "invariant_text": "On privilege elevation the session id MUST be rotated; the prior id CANNOT be reused.",
+      "confirms_test": "test_inv_rotate_fixation_confirms",
+      "prevents_test": "test_inv_rotate_fixation_prevents",
+      "under_failure_test": "test_inv_rotate_fixation_under_failure"
+    },
+    {
+      "invariant_id": "SESSION_INV_03",
+      "invariant_text": "Sessions MUST expire at min(idle, absolute); server-side revocation MUST win over client-held cookies.",
+      "confirms_test": "test_inv_expiry_min_confirms",
+      "prevents_test": "test_inv_expiry_min_prevents",
+      "under_failure_test": "test_inv_expiry_min_under_failure"
+    },
+    {
+      "invariant_id": "SESSION_INV_04",
+      "invariant_text": "Session cookies MUST be Secure + HttpOnly + SameSite in {Lax, Strict}; Domain SHALL NEVER be broader than the application host.",
+      "confirms_test": "test_inv_cookie_attrs_confirms",
+      "prevents_test": "test_inv_cookie_attrs_prevents",
+      "under_failure_test": "test_inv_cookie_attrs_under_failure"
+    },
+    {
+      "invariant_id": "SESSION_INV_05",
+      "invariant_text": "revoke_all_for_subject MUST terminate every live session for that subject atomically and MUST be invoked on password change.",
+      "confirms_test": "test_inv_revoke_all_confirms",
+      "prevents_test": "test_inv_revoke_all_prevents",
+      "under_failure_test": "test_inv_revoke_all_under_failure"
+    },
+    {
+      "invariant_id": "SESSION_INV_06",
+      "invariant_text": "load() MUST NEVER extend a session past absolute_expires_at even on sustained activity.",
+      "confirms_test": "test_inv_absolute_ceiling_confirms",
+      "prevents_test": "test_inv_absolute_ceiling_prevents",
+      "under_failure_test": "test_inv_absolute_ceiling_under_failure"
+    }
+  ]
+}

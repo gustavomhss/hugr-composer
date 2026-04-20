@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "ACF_INV_01",
+      "invariant_text": "begin() MUST generate state and nonce from a CSPRNG with at least 128 bits of entropy and MUST NEVER reuse either value.",
+      "confirms_test": "test_inv_csprng_entropy_confirms",
+      "prevents_test": "test_inv_csprng_entropy_prevents",
+      "under_failure_test": "test_inv_csprng_entropy_under_failure"
+    },
+    {
+      "invariant_id": "ACF_INV_02",
+      "invariant_text": "exchange() MUST reject any callback whose state does not byte-equal the stored state and SHALL abort before touching the token endpoint.",
+      "confirms_test": "test_inv_state_equal_confirms",
+      "prevents_test": "test_inv_state_equal_prevents",
+      "under_failure_test": "test_inv_state_equal_under_failure"
+    },
+    {
+      "invariant_id": "ACF_INV_03",
+      "invariant_text": "The code_verifier MUST be bound to the authorization request and CANNOT be substituted at exchange time (PKCE S256).",
+      "confirms_test": "test_inv_pkce_bound_confirms",
+      "prevents_test": "test_inv_pkce_bound_prevents",
+      "under_failure_test": "test_inv_pkce_bound_under_failure"
+    },
+    {
+      "invariant_id": "ACF_INV_04",
+      "invariant_text": "Redirect URI sent on exchange MUST exactly match the URI registered with the authorization server; wildcard suffixes are FORBIDDEN.",
+      "confirms_test": "test_inv_redirect_exact_confirms",
+      "prevents_test": "test_inv_redirect_exact_prevents",
+      "under_failure_test": "test_inv_redirect_exact_under_failure"
+    },
+    {
+      "invariant_id": "ACF_INV_05",
+      "invariant_text": "Authorization codes MUST be single-use; replay of the same code SHALL produce an invalid_grant error from the client adapter.",
+      "confirms_test": "test_inv_code_single_use_confirms",
+      "prevents_test": "test_inv_code_single_use_prevents",
+      "under_failure_test": "test_inv_code_single_use_under_failure"
+    },
+    {
+      "invariant_id": "ACF_INV_06",
+      "invariant_text": "Tokens received MUST NEVER be logged in full; only opaque hashes MAY appear in audit traces.",
+      "confirms_test": "test_inv_token_redaction_confirms",
+      "prevents_test": "test_inv_token_redaction_prevents",
+      "under_failure_test": "test_inv_token_redaction_under_failure"
+    }
+  ]
+}

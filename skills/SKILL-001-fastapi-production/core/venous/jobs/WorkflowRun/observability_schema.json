@@ -1,0 +1,28 @@
+{
+  "logs": [
+    {"event_name": "workflow.run.started",
+     "required_attributes": ["workflow_id", "run_id", "workflow_type", "task_queue"]},
+    {"event_name": "workflow.run.completed",
+     "required_attributes": ["workflow_id", "run_id", "duration_ms"]},
+    {"event_name": "workflow.run.canceled",
+     "required_attributes": ["workflow_id", "run_id"]},
+    {"event_name": "workflow.run.failed",
+     "required_attributes": ["workflow_id", "run_id", "reason"]},
+    {"event_name": "workflow.activity.scheduled",
+     "required_attributes": ["workflow_id", "run_id", "activity_name"]}
+  ],
+  "metrics": [
+    {"name": "workflow.runs.started", "metric_type": "counter", "unit": "1",
+     "cardinality_bound": 500, "label_keys": ["workflow_type", "task_queue"]},
+    {"name": "workflow.run.duration", "metric_type": "histogram", "unit": "ms",
+     "cardinality_bound": 500, "label_keys": ["workflow_type", "outcome"]},
+    {"name": "workflow.active.runs", "metric_type": "gauge", "unit": "1",
+     "cardinality_bound": 500, "label_keys": ["workflow_type"]}
+  ],
+  "spans": [
+    {"operation_name": "workflow.run.start",
+     "required_attributes": ["workflow.id", "workflow.type", "task.queue"]},
+    {"operation_name": "workflow.run.describe",
+     "required_attributes": ["workflow.id"]}
+  ]
+}

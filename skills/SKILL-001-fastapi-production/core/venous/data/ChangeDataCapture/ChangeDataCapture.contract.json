@@ -1,0 +1,31 @@
+{
+  "name": "ChangeDataCapture",
+  "namespace": "data",
+  "purpose": "Publishes an ordered stream of row-level changes from a source database so downstream systems can consume mutations without dual writes.",
+  "api_signature": "from typing import Protocol, Iterator, Any\n\nclass ChangeDataCapture(Protocol):\n    def subscribe(self, table: str, from_position: object) -> Iterator[Any]: ...\n    def checkpoint(self, position: object) -> None: ...\n    def schema(self, table: str) -> dict: ...",
+  "invariants": [
+    "Every committed row change in the source MUST appear in the stream exactly once in commit order; reordering across transactions is FORBIDDEN.",
+    "Consumers MUST be able to resume from a persisted checkpoint; the stream SHALL carry a monotonically increasing position.",
+    "CDC events NEVER include uncommitted changes; dirty reads are forbidden on the downstream side.",
+    "Schema changes at the source MUST surface as schema events so consumers CANNOT silently parse new columns with the old parser."
+  ],
+  "extension_contract": "New sources extend ChangeDataCapture by implementing a connector plugin that emits position-tagged change events and registering it with the stream broker; transformations are added via composed filter stages that MUST NOT reorder events within a transaction.",
+  "consumption_example": "def relay_orders(cdc: ChangeDataCapture, producer, pos):\n    for change in cdc.subscribe('orders', pos):\n        producer.publish('order.changes', change)\n        cdc.checkpoint(change['pos'])",
+  "sources": [
+    {
+      "source": "Kleppmann 'Designing Data-Intensive Applications' (2017)",
+      "locator": "Chapter 11, Change Data Capture, pp. 454-461"
+    },
+    {
+      "source": "Richardson 'Microservices Patterns' (2018)",
+      "locator": "Chapter 3, Transactional messaging, CDC section, pp. 96-102"
+    }
+  ],
+  "why_essential": "Without a shared primitive, each tool reaches for dual writes (DB then broker) and loses either the database update or the event on failure, breaking downstream consistency.",
+  "alternatives_considered": [
+    "Dual write from application code: non-atomic; either DB or broker writes fail independently.",
+    "Polling last_modified columns: misses deletes and creates read load.",
+    "Trigger-based outbox inside DB: works but constrains schema and complicates migrations."
+  ],
+  "maturity": "battle_tested"
+}

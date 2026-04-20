@@ -1,0 +1,20 @@
+{
+  "name": "InboundVerifier",
+  "namespace": "api",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Abstract extension point for provider-specific inbound webhook verification (Stripe, GitHub, Slack, internal HMAC, ...): each concrete verifier turns raw (body, headers) into a trusted VerifiedEvent or raises HTTPException — never returns None, never swallows an error.",
+  "api_signature": "class InboundVerifier(ABC): name: str; @abstractmethod def verify(body: bytes, headers: dict[str, str]) -> VerifiedEvent",
+  "invariants": [
+    "INBOUND_VERIFIER_INV_01: verify(body, headers) MUST either return a VerifiedEvent built from the validated payload OR raise HTTPException; returning None or silently swallowing an error is FORBIDDEN by contract.",
+    "INBOUND_VERIFIER_INV_02: Subclasses MUST set the class attribute `name` to a stable provider slug; the registry uses this name for routing and audit logs.",
+    "INBOUND_VERIFIER_INV_03: verify MUST raise HTTPException(400) on signature mismatch or malformed body and HTTPException(401) on missing required auth header; other error classes are a contract violation.",
+    "INBOUND_VERIFIER_INV_04: verify MUST NOT mutate the input body or headers dict; callers MAY pass shared references and MUST observe them unchanged after the call."
+  ],
+  "status": "promoted",
+  "enrichment": {
+    "invariants_mined": 4,
+    "ambiguous": false,
+    "source": "human.triage.venous_batch_1"
+  }
+}

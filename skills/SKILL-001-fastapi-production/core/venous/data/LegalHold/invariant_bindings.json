@@ -1,0 +1,9 @@
+{
+  "invariant_bindings": [
+    {"invariant_id": "LH_INV_01", "invariant_text": "RetentionPolicy.sweep and DataSubjectRequest erasure MUST call covers(record_id) before deletion; deletion of held records is FORBIDDEN.", "confirms_test": "test_inv_covers_gates_delete_confirms", "prevents_test": "test_inv_covers_gates_delete_prevents", "under_failure_test": "test_inv_covers_gates_delete_under_failure"},
+    {"invariant_id": "LH_INV_02", "invariant_text": "Opening and releasing a hold MUST each emit a TamperEvidentAuditLog entry with actor and scope.", "confirms_test": "test_inv_audit_on_lifecycle_confirms", "prevents_test": "test_inv_audit_on_lifecycle_prevents", "under_failure_test": "test_inv_audit_on_lifecycle_under_failure"},
+    {"invariant_id": "LH_INV_03", "invariant_text": "A hold CANNOT be silently released; release requires a distinct released_by actor from opened_by or an explicit override flag.", "confirms_test": "test_inv_distinct_releaser_confirms", "prevents_test": "test_inv_distinct_releaser_prevents", "under_failure_test": "test_inv_distinct_releaser_under_failure"},
+    {"invariant_id": "LH_INV_04", "invariant_text": "Held records MUST remain readable to authorized investigators; indexes SHALL NOT drop held rows.", "confirms_test": "test_inv_readable_held_confirms", "prevents_test": "test_inv_readable_held_prevents", "under_failure_test": "test_inv_readable_held_under_failure"},
+    {"invariant_id": "LH_INV_05", "invariant_text": "scope_query MUST be stable against schema evolution; unresolved fields SHALL raise on open rather than silently miss records.", "confirms_test": "test_inv_scope_valid_confirms", "prevents_test": "test_inv_scope_valid_prevents", "under_failure_test": "test_inv_scope_valid_under_failure"}
+  ]
+}

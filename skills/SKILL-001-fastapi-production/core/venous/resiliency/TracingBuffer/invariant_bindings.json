@@ -1,0 +1,25 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "TRACING_BUFFER_INV_01",
+      "invariant_text": "Buffer length MUST never exceed `maxlen`; oldest entries are evicted FIFO once the ring is full (deque-with-maxlen semantics).",
+      "confirms_test": "test_inv_ring_bounded_confirms",
+      "prevents_test": "test_inv_ring_bounded_prevents",
+      "under_failure_test": "test_inv_ring_bounded_under_failure"
+    },
+    {
+      "invariant_id": "TRACING_BUFFER_INV_02",
+      "invariant_text": "`get_all()` MUST return entries in newest-first order (reverse of insertion).",
+      "confirms_test": "test_inv_newest_first_confirms",
+      "prevents_test": "test_inv_newest_first_prevents",
+      "under_failure_test": "test_inv_newest_first_under_failure"
+    },
+    {
+      "invariant_id": "TRACING_BUFFER_INV_03",
+      "invariant_text": "`get_by_id(id)` MUST return the stored dict iff an entry with matching `id` is still in the buffer; else None (no exceptions).",
+      "confirms_test": "test_inv_lookup_by_id_confirms",
+      "prevents_test": "test_inv_lookup_by_id_prevents",
+      "under_failure_test": "test_inv_lookup_by_id_under_failure"
+    }
+  ]
+}

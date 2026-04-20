@@ -1,0 +1,724 @@
+{
+  "name": "ValueObject",
+  "namespace": "data",
+  "maturity": "battle_tested",
+  "builder_agent_id": 3,
+  "catalog_entry_sha256": "c1992d8fb71540aa0be23be1f22fa77adbc12aeb267067f8f9c12bcde7ed2d31",
+  "files": [
+    {
+      "path": "data/ValueObject/ValueObject.contract.json",
+      "sha256": "91dc8ca5374131788cc0dc7f3079dfaa0bf5b9d978ca67ac421fadb415f098fa",
+      "size_bytes": 2034,
+      "kind": "contract_json"
+    },
+    {
+      "path": "data/ValueObject/ValueObject.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "data/ValueObject/ValueObject.md",
+      "sha256": "45f52835bd8886c9c92afa60e86dfd0f05b52ab63eada8460b98165d7460130f",
+      "size_bytes": 7709,
+      "kind": "spec_md"
+    },
+    {
+      "path": "data/ValueObject/ValueObject.py",
+      "sha256": "f517fe7c29a7833466a8a0d5f73da97b13c26c502006c50b62d64de47755f9be",
+      "size_bytes": 14753,
+      "kind": "impl"
+    },
+    {
+      "path": "data/ValueObject/behavioral_ValueObject.py",
+      "sha256": "0948cb7c41bf2de88953fef2a5aed7f3303233d28da9a1d37c3c45a187f2fcb9",
+      "size_bytes": 3935,
+      "kind": "behavioral"
+    },
+    {
+      "path": "data/ValueObject/chaos_ValueObject.py",
+      "sha256": "30765391674e121b36538fbcaf3312493e843405345b4be71c053746c1b9428b",
+      "size_bytes": 4495,
+      "kind": "chaos"
+    },
+    {
+      "path": "data/ValueObject/dashboard.json",
+      "sha256": "019fb6b24e12225448de9b8e8606b81e3f81690424cff703f8f1f7dc1a883982",
+      "size_bytes": 700,
+      "kind": "dashboard"
+    },
+    {
+      "path": "data/ValueObject/invariant_bindings.json",
+      "sha256": "fe10f9990646724fdaf1e816ce8ad9568ab1025380e94c7031356c9fbda75a00",
+      "size_bytes": 1545,
+      "kind": "test"
+    },
+    {
+      "path": "data/ValueObject/metamorphic_ValueObject.py",
+      "sha256": "ae1e2f56bdef535b85fb1fc23f9523dfe4a92393bf4f9d6d5b19c7c1138aa87b",
+      "size_bytes": 3733,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "data/ValueObject/observability_ValueObject.py",
+      "sha256": "406ce0dbd0d331b2d30564a9aa6e2f6e2961ae26804e9507adfe4e74116f3a35",
+      "size_bytes": 2092,
+      "kind": "observability"
+    },
+    {
+      "path": "data/ValueObject/observability_schema.json",
+      "sha256": "f8fe7f150c812a86cd817d5a70e30139410069a77bceefed0a97854e5fa15c56",
+      "size_bytes": 1350,
+      "kind": "observability"
+    },
+    {
+      "path": "data/ValueObject/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "data/ValueObject/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "data/ValueObject/test_ValueObject.py",
+      "sha256": "f99f889db5022765411532978cd0d36d490afca0da6239573754d92b35e54acc",
+      "size_bytes": 6734,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "VO_INV_01",
+      "invariant_text": "Instances MUST be immutable after construction; attribute assignment post-init is FORBIDDEN.",
+      "confirms_test": "test_inv_immutable_after_construction_confirms",
+      "prevents_test": "test_inv_immutable_after_construction_prevents",
+      "under_failure_test": "test_inv_immutable_after_construction_under_failure"
+    },
+    {
+      "invariant_id": "VO_INV_02",
+      "invariant_text": "Two instances with the same attribute values MUST compare equal and MUST share the same hash.",
+      "confirms_test": "test_inv_equality_by_value_confirms",
+      "prevents_test": "test_inv_equality_by_value_prevents",
+      "under_failure_test": "test_inv_equality_by_value_under_failure"
+    },
+    {
+      "invariant_id": "VO_INV_03",
+      "invariant_text": "A ValueObject CANNOT hold a reference to an Aggregate root or Entity whose identity is unstable.",
+      "confirms_test": "test_inv_no_unstable_identity_refs_confirms",
+      "prevents_test": "test_inv_no_unstable_identity_refs_prevents",
+      "under_failure_test": "test_inv_no_unstable_identity_refs_under_failure"
+    },
+    {
+      "invariant_id": "VO_INV_04",
+      "invariant_text": "Construction SHALL validate every invariant eagerly; a partially-valid instance NEVER exists.",
+      "confirms_test": "test_inv_eager_validation_confirms",
+      "prevents_test": "test_inv_eager_validation_prevents",
+      "under_failure_test": "test_inv_eager_validation_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 2345,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 4951,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 5581,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 76706,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "40 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 3690,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 3983,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 94836,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 193528,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MUTATE-VIA-SETATTR",
+        "hypothesis": "Bypass immutability by calling object.__setattr__(instance, 'field', new_val) directly, circumventing any __setattr__ override on the class without using frozen dataclass semantics that block this path.",
+        "input_fixture": "vo = Money(amount=10, currency='USD'); object.__setattr__(vo, 'amount', 999); assert vo.amount == 10",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MUTATE-DICT",
+        "hypothesis": "Mutate the underlying __dict__ directly: vo.__dict__['amount']=999. If the class lacks __slots__ and isn't frozen, this silently mutates state and breaks any cached hash.",
+        "input_fixture": "vo = Money(10,'USD'); vo.__dict__['amount']=999; d={vo:1}; vo.__dict__['amount']=10; d[vo]  # KeyError",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MUTABLE-CONTAINER-FIELD",
+        "hypothesis": "A ValueObject holding a list/dict attribute is only shallowly immutable. Mutating the contained list changes equality and hash semantics, violating value identity.",
+        "input_fixture": "vo = Tags(items=['a','b']); h1=hash(vo); vo.items.append('c'); h2=hash(vo); assert h1==h2  # but equality with peer fails",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EQ-HASH-DIVERGENCE",
+        "hypothesis": "Two instances with attribute values that compare equal under custom __eq__ (e.g. Decimal('1.0')==Decimal('1.00')) yield different hashes because hash uses repr or tuple of raw fields.",
+        "input_fixture": "a=Money(Decimal('1.0'),'USD'); b=Money(Decimal('1.00'),'USD'); assert a==b and hash(a)==hash(b)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NAN-EQUALITY",
+        "hypothesis": "Field containing float('nan'): a==a returns False because NaN!=NaN, but hash(a)==hash(a). Breaks reflexivity of equality required for set/dict invariants.",
+        "input_fixture": "a=Measure(value=float('nan')); assert a==a",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SUBCLASS-EQ-ASYMMETRY",
+        "hypothesis": "Subclass adds field; eq compares only base fields. Parent==child True, child==parent False (or vice versa via NotImplemented handling), violating symmetry contract that hash/eq invariant depends on.",
+        "input_fixture": "class Sub(Money): extra=0\\nassert (Money(1,'USD')==Sub(1,'USD'))==(Sub(1,'USD')==Money(1,'USD'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-WITH-CHANGES-UNKNOWN-KW",
+        "hypothesis": "with_changes(**kwargs) silently accepts an unknown keyword (typo like 'amout' instead of 'amount'), returning an instance identical to original \u2014 violating eager validation invariant.",
+        "input_fixture": "vo=Money(10,'USD'); vo2=vo.with_changes(amout=99); assert vo2.amount==10  # typo silently lost",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-WITH-CHANGES-INVALID-VAL",
+        "hypothesis": "with_changes bypasses constructor validation by assigning directly via __dict__ or copy.replace without re-running invariant checks, producing a partially-valid instance.",
+        "input_fixture": "vo=Money(10,'USD'); bad=vo.with_changes(currency='ZZZ_INVALID'); # should raise but doesn't",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AGGREGATE-REF-LEAK",
+        "hypothesis": "Constructor accepts an Entity in a generic 'metadata' dict field. The VO now transitively holds an unstable identity reference, violating the no-aggregate-ref rule because validation only inspects top-level fields.",
+        "input_fixture": "vo=Annotation(payload={'order': SomeOrderEntity(id=1)}); SomeOrderEntity changes state -> hash(vo) drifts",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PARTIAL-INIT-RAISE",
+        "hypothesis": "Validation runs after some attributes assigned; if a later validator raises, the half-built instance is captured by an exception handler in a __post_init__ that swallows errors, leaving a partially-valid object accessible via weakref or thread-local.",
+        "input_fixture": "try: vo=Money(amount=-1, currency='USD')\\nexcept: pass\\n# inspect gc.get_objects() for leaked Money with amount=-1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PICKLE-BYPASS",
+        "hypothesis": "Reconstruction via pickle/__reduce__ skips __init__ validators, allowing an attacker-controlled byte stream to materialize a ValueObject in an invalid state (negative amount, malformed currency).",
+        "input_fixture": "import pickle; payload=pickle.dumps(Money(1,'USD')).replace(b'USD',b'\\x00\\x00\\x00'); pickle.loads(payload)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HASH-COLLISION-AMPLIFY",
+        "hypothesis": "Hash defined as sum/xor of field hashes is trivially colliding: Point(1,2) and Point(2,1) hash equal, enabling hash-flooding DoS in dict-based caches keyed by VO.",
+        "input_fixture": "for i in range(10000): d[Point(i, -i)]=1  # all collide -> O(n^2) insert",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RACE-LAZY-VALIDATE",
+        "hypothesis": "If validation is deferred to first attribute access (lazy), two threads constructing concurrently can observe a window where one sees raw kwargs before validators have run \u2014 partially-valid instance exists transiently.",
+        "input_fixture": "Thread A: vo=Slow(); Thread B: reads vo.field before A's validator completes",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-WITH-CHANGES-RETURNS-SELF",
+        "hypothesis": "Optimization: with_changes() with no kwargs returns self. Caller then mutates returned object expecting a fresh copy, propagating changes back. Combined with __dict__ mutation, breaks immutability contract for the original.",
+        "input_fixture": "vo=Money(10,'USD'); copy=vo.with_changes(); copy.__dict__['amount']=999; assert vo.amount==10",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-DATETIME-FIELD",
+        "hypothesis": "VO with datetime field constructed from datetime.now() in two processes during DST transition or NTP step: equal logical instants but different tzinfo/offset cause eq to fail while hash (computed from utc timestamp) matches \u2014 breaks hash/eq invariant.",
+        "input_fixture": "a=Timestamp(datetime(2026,3,8,2,30,tzinfo=Local)); b=Timestamp(datetime(2026,3,8,2,30,tzinfo=Local))  # ambiguous DST",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-MUTABLE-LIST-INTERIOR",
+        "hypothesis": "If a ValueObject stores a list attribute without defensively copying it, the caller retains a reference to the same list object. Mutating that reference after construction silently alters the instance's internal state, violating immutability without triggering any __setattr__ guard. Hash and equality checks on the mutated VO will then return results inconsistent with the original construction values.",
+        "input_fixture": "items = [1, 2, 3]\nvo = MyValueObject(items=items)\nitems.append(99)  # mutates VO internal state\nassert vo.items == [1, 2, 3]  # FAILS: vo.items is now [1, 2, 3, 99]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DICT-SETATTR-BYPASS",
+        "hypothesis": "A __setattr__ guard that raises AttributeError can be sidestepped by directly writing to the instance's __dict__. If the implementation does not also override __dict__ access (e.g., via __slots__ or a custom descriptor), an attacker can inject arbitrary attribute values post-construction, breaking immutability silently.",
+        "input_fixture": "vo = MyValueObject(price=10)\nvo.__dict__['price'] = 9999\nassert vo.price == 10  # FAILS: price is now 9999",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FLOAT-NAN-EQUALITY",
+        "hypothesis": "IEEE-754 NaN is not equal to itself (float('nan') != float('nan') is True in Python). If a ValueObject holds a NaN-valued float attribute, two instances constructed with identical NaN values will fail __eq__ comparison and may produce different hashes, violating the structural-equality invariant even when both instances are bitwise-identical at construction time.",
+        "input_fixture": "import math\nvo1 = MyValueObject(value=float('nan'))\nvo2 = MyValueObject(value=float('nan'))\nassert vo1 == vo2  # FAILS: NaN != NaN\nassert hash(vo1) == hash(vo2)  # likely also FAILS",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-HASH-MUTABLE-AFTER-MUTCONT",
+        "hypothesis": "If hash is computed from a mutable container stored inside the VO (e.g., a tuple wrapping a list), and the container is mutated externally, subsequent hash() calls will return a different value than the one stored in a dict/set at insertion time. This silently invalidates any set membership or dict key lookup, breaking structural-identity semantics without any error.",
+        "input_fixture": "inner = [1, 2]\nvo = MyValueObject(data=tuple([inner]))\nh1 = hash(vo)\ninner.append(3)  # mutates the tuple's contents if tuple holds mutable refs\nh2 = hash(vo)\nassert h1 == h2  # FAILS if hash is recomputed from live attributes",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AGGREGATE-REF-INJECTION",
+        "hypothesis": "A ValueObject that accepts an arbitrary object as an attribute could receive a mutable Aggregate root (e.g., an Order entity with a mutable status field). The VO's identity then silently depends on that Entity's mutable state. Two VOs constructed with the same Aggregate reference at different points in time will compare as equal even though the Aggregate's semantics have changed, violating the prohibition on holding unstable identity references.",
+        "input_fixture": "order = Order(id=1, status='pending')\nvo1 = MyValueObject(ref=order)\norder.status = 'cancelled'\nvo2 = MyValueObject(ref=order)\nassert vo1 == vo2  # misleadingly True; identity is now inconsistent",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WITH-CHANGES-SKIPS-VALIDATION",
+        "hypothesis": "with_changes() may construct the new instance by copying existing attributes and overwriting specified ones, but if it calls object.__init__ directly or uses __new__ + manual attribute injection instead of routing through the validated constructor, it can produce an instance that violates a business rule (e.g., negative price) that the constructor would have rejected.",
+        "input_fixture": "vo = MyValueObject(price=10)\nvo_bad = vo.with_changes(price=-1)\n# If with_changes bypasses __init__ validation:\nassert vo_bad.price == -1  # partially-valid instance exists \u2014 invariant violated",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PICKLE-BYPASS-INIT",
+        "hypothesis": "Python's pickle protocol calls __new__ and then __setstate__ (or directly restores __dict__) without invoking __init__ or __post_init__. A frozen dataclass or custom ValueObject that relies solely on __init__-time validation will have its invariants skipped during deserialization, potentially restoring a partially-valid or mutated instance from a crafted pickle payload.",
+        "input_fixture": "import pickle\nvo = MyValueObject(price=10)\ndata = pickle.dumps(vo)\n# Tamper: patch bytes to set price=-1 in the pickled __dict__\npatched = data.replace(b'\\x0a', b'\\xff')  # naive illustration\nvo_evil = pickle.loads(patched)\nassert vo_evil.price >= 0  # FAILS: validation was never re-run",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-OBJECT-SETATTR-FROZEN",
+        "hypothesis": "Python's frozen dataclass raises FrozenInstanceError on normal attribute assignment, but object.__setattr__(instance, 'attr', value) calls the base C-level setter and bypasses the frozen guard entirely. Any implementation that relies only on dataclass(frozen=True) without also blocking object.__setattr__ is trivially mutable by anyone who knows this trick.",
+        "input_fixture": "from dataclasses import dataclass\n@dataclass(frozen=True)\nclass Price:\n    amount: int\np = Price(amount=10)\nobject.__setattr__(p, 'amount', 9999)\nassert p.amount == 10  # FAILS: object.__setattr__ bypasses frozen guard",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SUBCLASS-SETATTR-OVERRIDE",
+        "hypothesis": "A subclass of the ValueObject can override __setattr__ to a no-op or permissive implementation, then freely mutate inherited attributes. Because the base class's immutability is enforced via an instance-level __setattr__ that Python resolves through the MRO, a subclass override completely undermines the guarantee for all instances of the subclass.",
+        "input_fixture": "class MutableVO(MyValueObject):\n    def __setattr__(self, name, value):\n        object.__setattr__(self, name, value)  # bypass parent guard\n\nvo = MutableVO(price=10)\nvo.price = 9999  # succeeds silently\nassert vo.price == 10  # FAILS",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-COPY-DEEPCOPY-NO-REVALIDATION",
+        "hypothesis": "copy.copy() and copy.deepcopy() may invoke __copy__/__deepcopy__ or fall back to __reduce_ex__, both of which can bypass __init__. If the ValueObject implementation does not define __copy__/__deepcopy__ to route through the validated constructor, a deep-copied VO whose mutable nested objects were tampered with post-construction will have its invariants violated in the copy without any error.",
+        "input_fixture": "import copy\ninner = {'amount': 10}\nvo = MyValueObject(data=inner)\ninner['amount'] = -999  # mutate after construction\nvo_copy = copy.deepcopy(vo)\nassert vo_copy.data['amount'] >= 0  # FAILS: copy inherits the mutated state",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LAZY-HASH-RACE-CONCURRENT",
+        "hypothesis": "If the implementation caches the hash lazily (computing on first call and storing in a private slot to avoid recomputation), two threads calling hash() on a freshly constructed instance simultaneously can both observe the uninitialised sentinel, both compute the hash, and one stores it while the other reads a torn intermediate value. Under CPython the GIL reduces\u2014but does not eliminate\u2014this window; under free-threaded builds (PEP 703 / 3.13t) the race is fully exposed.",
+        "input_fixture": "import threading\nvo = MyValueObject(value=42)\nresults = []\ndef read_hash():\n    results.append(hash(vo))\nthreads = [threading.Thread(target=read_hash) for _ in range(200)]\n[t.start() for t in threads]; [t.join() for t in threads]\nassert len(set(results)) == 1  # FAILS under free-threaded CPython if hash slot is torn",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONE-FIELD-PARTIAL-VALID",
+        "hypothesis": "Passing None for a required field might be accepted at construction time if the validator only checks field presence (key exists) rather than value truthiness or type. This creates a partially-valid instance\u2014the field exists but its value violates the domain contract\u2014bypassing eager validation and allowing None-valued attributes to propagate silently into downstream business logic.",
+        "input_fixture": "vo = MyValueObject(amount=None, currency='USD')\n# If validator checks 'amount' in kwargs but not isinstance(amount, (int, float)):\nassert vo.amount is not None  # FAILS: None slipped through eager validation",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ENTITY-WRAPPED-IN-FROZENSET",
+        "hypothesis": "A ValueObject constructor that accepts frozensets as attributes for legitimate set-valued fields can be given a frozenset containing an Entity object. The frozenset is itself immutable, but the Entity inside it remains mutable. The VO technically 'holds an immutable container' but indirectly references an unstable Aggregate identity, violating the prohibition in a way that type or shallow-immutability checks will not catch.",
+        "input_fixture": "entity = OrderLineEntity(id=7, qty=1)\nvo = MyValueObject(tags=frozenset([entity]))\nentity.qty = 99  # mutates entity inside the frozenset\nassert vo is not changed  # structurally true but semantically violated",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DIRECT-SETATTR-POST-INIT",
+        "hypothesis": "Instances bypass immutability by direct __setattr__ after construction; expected immutable objects become mutable.",
+        "input_fixture": "vo = ValueObject(name='Alice', age=30); vo.age = 31; assert vo.age == 31  # VIOLATION",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MUTABLE-CONTAINER-ESCAPE",
+        "hypothesis": "ValueObject holds reference to mutable list/dict; caller mutates container post-init, breaking immutability guarantee.",
+        "input_fixture": "tags = ['a', 'b']; vo = ValueObject(name='item', tags=tags); tags.append('c'); assert vo.tags == ['a','b','c']  # VIOLATION",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HASH-MISMATCH-DIFFERENT-EQUAL",
+        "hypothesis": "Two instances compare equal by __eq__ but produce different hash values; breaks dict/set invariant hash(a) == hash(b) when a == b.",
+        "input_fixture": "vo1 = ValueObject(x=1.0); vo2 = ValueObject(x=1); assert vo1 == vo2; assert hash(vo1) != hash(vo2)  # VIOLATION",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HASH-INSTABILITY-NAN",
+        "hypothesis": "ValueObject containing float NaN field: hash(vo) differs on successive calls or NaN equality breaks expected semantics.",
+        "input_fixture": "vo1 = ValueObject(value=float('nan')); vo2 = ValueObject(value=float('nan')); assert vo1 == vo2 fails; hash(vo1) != hash(vo2)  # VIOLATION",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ENTITY-REFERENCE-UNSTABLE-ID",
+        "hypothesis": "ValueObject holds reference to Entity whose identity field is mutable; Entity identity changes post-storage, breaking ValueObject identity assumption.",
+        "input_fixture": "entity = Entity(id='uuid-1', name='Bob'); vo = ValueObject(owner=entity); entity.id = 'uuid-2'; collections.defaultdict()[vo] loses lookup  # VIOLATION",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-AGGREGATE-ROOT-LIFECYCLE-MISMATCH",
+        "hypothesis": "ValueObject stores AggregateRoot reference; AggregateRoot is garbage collected or unloaded mid-transaction; ValueObject reference becomes dangling/stale.",
+        "input_fixture": "agg = AggregateRoot(version=1); vo = ValueObject(aggregate_ref=agg); del agg; gc.collect(); vo.aggregate_ref.version  # VIOLATION",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-VALIDATION-BYPASS-LAZY-CHECK",
+        "hypothesis": "Constructor skips invariant validation; instance constructed with invalid state; validation deferred to first method call.",
+        "input_fixture": "vo = ValueObject(email='not-an-email', age=-5); assert vo.email; assert vo.age > 0  # Both fail, not caught at init  # VIOLATION",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-CONTAINER-BYPASS",
+        "hypothesis": "ValueObject with required non-empty list/dict field accepts empty container at init; validation bypasses boundary check.",
+        "input_fixture": "vo = ValueObject(required_tags=[]); assert len(vo.required_tags) > 0  # Fails; empty bypassed  # VIOLATION",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TYPE-COERCION-BYPASS",
+        "hypothesis": "ValueObject accepts wrong type at init via implicit coercion; type invariant violated (e.g. str passed as int).",
+        "input_fixture": "vo = ValueObject(count='five'); isinstance(vo.count, int) == False  # Type validation skipped  # VIOLATION",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CIRCULAR-REF-IDENTITY-CYCLE",
+        "hypothesis": "ValueObject A holds Entity B which holds Entity C which holds reference back to A; circular chain breaks identity resolution and hash stability.",
+        "input_fixture": "entityA.ref = entityB; entityB.ref = entityC; entityC.ref = entityA; vo = ValueObject(entity=entityA); vo == ValueObject(entity=entityA)  # VIOLATION",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DESCRIPTOR-PROTOCOL-OVERRIDE",
+        "hypothesis": "ValueObject uses descriptor protocol on attribute; __get__ mutates internal state or returns different value on successive calls.",
+        "input_fixture": "counter = 0; class VO(ValueObject): value = property(lambda s: globals().__setitem__('counter', counter+1) or counter); hash(vo) != hash(vo)  # VIOLATION",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CREDENTIAL-LEAK-REPR",
+        "hypothesis": "ValueObject.__repr__/__str__ exposes sensitive credential fields (password, API key, token); immutability violated via log amplification.",
+        "input_fixture": "vo = ValueObject(api_key='sk-1234'); logs = [repr(vo) for _ in range(1M)]; api_key leaked 1M times in logs  # VIOLATION",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "valueobject.constructed",
+        "required_attributes": [
+          "class_name",
+          "field_count"
+        ]
+      },
+      {
+        "event_name": "valueobject.validation.failed",
+        "required_attributes": [
+          "class_name",
+          "invariant_id",
+          "reason"
+        ]
+      },
+      {
+        "event_name": "valueobject.with_changes",
+        "required_attributes": [
+          "class_name",
+          "fields_changed"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "valueobject.constructed.total",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "class_name"
+        ]
+      },
+      {
+        "name": "valueobject.with_changes.total",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "class_name"
+        ]
+      },
+      {
+        "name": "valueobject.validation.failures",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 400,
+        "label_keys": [
+          "class_name",
+          "invariant_id"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "valueobject.construct",
+        "required_attributes": [
+          "vo.class_name"
+        ]
+      },
+      {
+        "operation_name": "valueobject.with_changes",
+        "required_attributes": [
+          "vo.class_name",
+          "vo.fields_changed"
+        ]
+      },
+      {
+        "operation_name": "valueobject.coerce",
+        "required_attributes": [
+          "vo.class_name",
+          "vo.direction"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol mirrors catalog api_signature verbatim; FrozenValueObject implements all four invariants correctly via frozen+slots dataclass, eager __post_init__ validation, and with_changes via dataclasses.replace. Minor: Protocol's with_changes returns ValueObject while impl returns Self \u2014 compatible but slight variance."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "Covers all 4 invariants, provides 3 canonical VOs (Money/Email/DateRange), CoercionRegistry for extension contract, observability counters, iter_fields helper, to_dict for serialization. __all__ is explicit. Only gap: no explicit hash-stability test hook, but spec says tests live elsewhere."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Single typed exception ValueObjectInvariantError(ValueError); every raise cites invariant ID (VO-INV-01/03/04) and names the offending field/type. Messages are actionable and uniform. Could distinguish INV-01 vs INV-03 more granularly in validate_attributes but acceptable."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Nested VOs explicitly allowed; CoercionRegistry decouples serialization; Protocol is runtime_checkable; iter_fields/to_dict enable generic adapters; zero import-time I/O. Aggregate-smuggling guard keeps composition honest."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "No I/O, no locks, O(fields) construction, slots for memory, frozen for thread-safe reads, documented counter under-count under concurrency, lazy/no external deps. COUNTERS helpers defined but not actually invoked inside __post_init__/with_changes \u2014 observability wired but not fired, a real gap vs spec claim."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Protocol signature matches catalog verbatim; invariants 01-04 enforced and cited; extension_contract realized via FrozenValueObject subclassing + CoercionRegistry.register; consumption_example works as written. Namespace 'data' not asserted in code but that's metadata-layer concern."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "API surface section says 'api_signature is the sole authority; see ValueObject.contract.json for the verbatim Protocol declaration' \u2014 a junior won't know what a Protocol declaration is or where to find that file relative to their project.",
+          "'CoercionRegistry.register(cls, to_mapping, from_mapping)' appears in the Extension contract with no definition, example, or link; first encounter is mid-paragraph with no scaffolding.",
+          "The Alternatives section uses terms like 'primitive obsession', 'NamedTuple tuple-based equality', and 'DTO layers' without explanation, making the reasoning feel out of reach even though the conclusion (use FrozenValueObject) is correct."
+        ],
+        "rewrite_suggestion": "Add a one-paragraph 'Quick mental model' block immediately after the Usage example: 'Think of a ValueObject like a Python int \u2014 two ints with value 5 are the same thing, not two different objects. FrozenValueObject gives you that guarantee for your own domain types.' Move the Protocol/contract.json reference to an 'Advanced' callout box so it does not block the main reading path. Inline a minimal CoercionRegistry snippet (3 lines) in the Extension contract section."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "CoercionRegistry is load-bearing in the Extension contract and in the rejection of Pydantic, but its interface (register signature, error semantics, thread safety) is never defined in the doc \u2014 a reviewer cannot audit the extension boundary without reading source.",
+          "'The catalog api_signature is the sole authority' is stated but the signature itself is not reproduced inline; the principal must chase ValueObject.contract.json to verify the Protocol matches the reference implementation, adding unnecessary indirection.",
+          "The COUNTERS non-atomicity is documented as 'acceptable' but there is no stated upper bound on under-count skew under the described chaos load (8 workers \u00d7 500 constructions), leaving open whether the instrumentation degrades gracefully at 10\u00d7 that load."
+        ],
+        "rewrite_suggestion": "Inline the Protocol signature (it is presumably short \u2014 a frozen dataclass ABC with __post_init__, with_changes, and the four dunder methods) directly in the API surface section. Add a CoercionRegistry interface box (class-level docstring style: register(cls, to_mapping, from_mapping) \u2192 None with error semantics). Note the observed COUNTERS under-count percentage from the chaos run so future load-test regressions have a baseline."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "Aggregate smuggling detection relies on marker attributes (_aggregate_id, _entity_id, __aggregate_root__, __entity__) but the doc does not state where these markers are defined, whether they are enforced at import time or at construction time, or whether a caller can defeat the check by subclassing without the marker.",
+          "CoercionRegistry's from_mapping (deserialization path) is mentioned only obliquely; there is no statement about whether deserialized input passes through __post_init__ validation \u2014 a critical gap if ValueObjects cross a trust boundary (e.g., reconstructed from a database row or message queue payload).",
+          "__repr__ behavior is unspecified: for PII-holding ValueObjects like Email, the default dataclass __repr__ will emit the raw address in logs and tracebacks, contradicting the stated 'redaction happens at the log/trace boundary' responsibility assignment."
+        ],
+        "rewrite_suggestion": "Add a 'Security invariant enforcement' sub-section under Security considerations: (1) specify that marker detection runs in FrozenValueObject.__post_init__ at construction time and cannot be bypassed by omitting the marker on a subclass (or explicitly note if it can); (2) state that from_mapping MUST call cls(**fields) so __post_init__ fires on deserialized instances; (3) add a PII __repr__ guidance note \u2014 recommend overriding __repr__ to mask sensitive fields and point to the canonical pattern."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Three metrics are named (valueobject.constructed.total, valueobject.with_changes.total, valueobject.validation.failures) but there are no suggested alert thresholds, no example PromQL/Datadog query, and no runbook pointer \u2014 the SRE knows what to watch but not what 'bad' looks like.",
+          "The chaos suite result ('8 concurrent workers \u00d7 500 constructions') reads like a test statistic rather than an operational guarantee; it does not state the P99 construction latency observed, making capacity planning impossible.",
+          "COUNTERS under-count is documented as acceptable for 'SRE dashboards' but there is no guidance on how large the under-count can be \u2014 if dashboards are used to set autoscaling triggers, an unbounded skew matters."
+        ],
+        "rewrite_suggestion": "Add a small 'Operational runbook' table: metric name | alert condition (e.g., 'validation.failures rate > 1% of constructed.total over 5 min') | likely cause | remediation. Append observed P99 construction time from the chaos suite next to the O(fields) note. Quantify the COUNTERS skew: 'in the chaos suite (8 workers \u00d7 500 ops) under-count was \u2264 N% \u2014 treat dashboard values as approximate to within that margin.'"
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The Alternatives section is written entirely for engineers (NamedTuple, Pydantic BaseModel, mutable dataclasses) with no business framing \u2014 a PM cannot use this to justify adoption to a tech lead or explain the tradeoff in a sprint planning session.",
+          "The maturity field is referenced in the Schema section ('see CONTRACT_STANDARDS.md section 2') but the maturity level of this primitive is never stated in the doc itself \u2014 a PM cannot assess readiness for production use without hunting through another file.",
+          "There is no mention of adoption cost or migration effort: the doc says what ValueObject is and why it is good, but not how long it takes to retrofit an existing codebase or what the rollout risk is \u2014 information a PM needs to prioritize the work."
+        ],
+        "rewrite_suggestion": "Add a two-sentence 'Maturity & readiness' line near the top: e.g., 'Status: production-ready (maturity: stable). Typical adoption for a new domain concept: <1 sprint; retrofitting an existing model: 1\u20133 sprints depending on test coverage.' Replace the Alternatives section with a single sentence for non-engineers: 'We chose this approach because it catches data errors at the moment they are created, rather than letting bad data travel through the system and cause failures later \u2014 this reduces debugging time and customer-facing bugs.'"
+      }
+    ]
+  }
+}

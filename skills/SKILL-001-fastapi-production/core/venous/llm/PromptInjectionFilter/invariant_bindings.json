@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "PIF_INV_01",
+      "invariant_text": "quarantine() MUST wrap the raw text in explicit delimiters the model is instructed to treat as data; raw insertion into system prompts is FORBIDDEN.",
+      "confirms_test": "test_inv_wrap_delimiters_confirms",
+      "prevents_test": "test_inv_wrap_delimiters_prevents",
+      "under_failure_test": "test_inv_wrap_delimiters_under_failure"
+    },
+    {
+      "invariant_id": "PIF_INV_02",
+      "invariant_text": "Fragments matching known instruction patterns SHALL be stripped from the body and returned in stripped_fragments for audit.",
+      "confirms_test": "test_inv_strip_fragments_confirms",
+      "prevents_test": "test_inv_strip_fragments_prevents",
+      "under_failure_test": "test_inv_strip_fragments_under_failure"
+    },
+    {
+      "invariant_id": "PIF_INV_03",
+      "invariant_text": "The filter MUST NEVER execute or interpret the raw text; it only transforms text (no eval, exec, or templating).",
+      "confirms_test": "test_inv_no_execution_confirms",
+      "prevents_test": "test_inv_no_execution_prevents",
+      "under_failure_test": "test_inv_no_execution_under_failure"
+    },
+    {
+      "invariant_id": "PIF_INV_04",
+      "invariant_text": "Every quarantined block SHALL declare its kind so downstream guardrails CAN apply kind-specific rules.",
+      "confirms_test": "test_inv_kind_declared_confirms",
+      "prevents_test": "test_inv_kind_declared_prevents",
+      "under_failure_test": "test_inv_kind_declared_under_failure"
+    },
+    {
+      "invariant_id": "PIF_INV_05",
+      "invariant_text": "Quarantining is NEVER optional for retrieved or tool_output content; skipping the filter on those sources is FORBIDDEN.",
+      "confirms_test": "test_inv_mandatory_for_untrusted_confirms",
+      "prevents_test": "test_inv_mandatory_for_untrusted_prevents",
+      "under_failure_test": "test_inv_mandatory_for_untrusted_under_failure"
+    }
+  ]
+}

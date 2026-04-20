@@ -1,0 +1,618 @@
+{
+  "name": "DataResidencyPolicy",
+  "namespace": "policy",
+  "maturity": "emerging",
+  "builder_agent_id": 8,
+  "catalog_entry_sha256": "448e6355157d6898e52ca83e26b1181a8b6bfde9e1628425e06b233957ec5e74",
+  "files": [
+    {
+      "path": "policy/DataResidencyPolicy/DataResidencyPolicy.contract.json",
+      "sha256": "82bd7c67bc5ab628c284adb666ec6134e2e418684da71e6e10dfce69912ed271",
+      "size_bytes": 2855,
+      "kind": "contract_json"
+    },
+    {
+      "path": "policy/DataResidencyPolicy/DataResidencyPolicy.manifest.json",
+      "sha256": "59e2608cd91a0a0a23ade825878782202de328c67e1433c0a8a6a9c5dea2933d",
+      "size_bytes": 33411,
+      "kind": "manifest"
+    },
+    {
+      "path": "policy/DataResidencyPolicy/DataResidencyPolicy.md",
+      "sha256": "628c455021229c319b6dfbc9b1c191f2778be554aa7115d884b04ac4832e9a51",
+      "size_bytes": 1348,
+      "kind": "spec_md"
+    },
+    {
+      "path": "policy/DataResidencyPolicy/DataResidencyPolicy.py",
+      "sha256": "9fcaf206a7fa62c71773ee7217b7fb862f291794c165cba70cdd7c304f3eefbd",
+      "size_bytes": 6573,
+      "kind": "impl"
+    },
+    {
+      "path": "policy/DataResidencyPolicy/behavioral_DataResidencyPolicy.py",
+      "sha256": "1636ef89dfb01337b820782fdb38ed8a5880d2234af461d174fea2ccc46f1d75",
+      "size_bytes": 1638,
+      "kind": "behavioral"
+    },
+    {
+      "path": "policy/DataResidencyPolicy/chaos_DataResidencyPolicy.py",
+      "sha256": "04faa2a302167a6571a309b8f1d6735eb4ac021044cf7905e6b88c1788ac2bc1",
+      "size_bytes": 1541,
+      "kind": "chaos"
+    },
+    {
+      "path": "policy/DataResidencyPolicy/dashboard.json",
+      "sha256": "fd0656a4b590215837574efff94be8e64e9118e57bd7a9e65dbc95f0da1835d5",
+      "size_bytes": 166,
+      "kind": "dashboard"
+    },
+    {
+      "path": "policy/DataResidencyPolicy/invariant_bindings.json",
+      "sha256": "e36ffb1b5d6c69bf07139a08d08a80e85d15d566ed0640896e9a2ad2998eac92",
+      "size_bytes": 1691,
+      "kind": "test"
+    },
+    {
+      "path": "policy/DataResidencyPolicy/metamorphic_DataResidencyPolicy.py",
+      "sha256": "01f7d2790e8ac4b349f55e51d45d4ad82503a87a2405697a4386bd296f09d45d",
+      "size_bytes": 1545,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "policy/DataResidencyPolicy/observability_DataResidencyPolicy.py",
+      "sha256": "d645d28a069d1eb0a2668a2b5650c6496227b4fe681311c87a9350233bf1f703",
+      "size_bytes": 1387,
+      "kind": "observability"
+    },
+    {
+      "path": "policy/DataResidencyPolicy/observability_schema.json",
+      "sha256": "3961eeb9368165899fceb3a22f8f80f339689e1857a4fab687b0c6e35a74c33c",
+      "size_bytes": 921,
+      "kind": "observability"
+    },
+    {
+      "path": "policy/DataResidencyPolicy/persona_reviews.json",
+      "sha256": "27c42175503d1ae0ae0caf2476c356ec4ead33b5f32e488a3c7eecb64d008dbb",
+      "size_bytes": 515,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "policy/DataResidencyPolicy/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "policy/DataResidencyPolicy/test_DataResidencyPolicy.py",
+      "sha256": "2799424c7b503562263d979f9ef4013a3640cffb87684d4a95f0a1cb6407def3",
+      "size_bytes": 4115,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "DRP_INV_01",
+      "invariant_text": "allowed_regions MUST be ISO-3166 codes; arbitrary strings SHALL raise on bind.",
+      "confirms_test": "test_inv_iso_regions_confirms",
+      "prevents_test": "test_inv_iso_regions_prevents",
+      "under_failure_test": "test_inv_iso_regions_under_failure"
+    },
+    {
+      "invariant_id": "DRP_INV_02",
+      "invariant_text": "A write to a non-allowed region MUST fail loudly; silent replication outside the policy is FORBIDDEN.",
+      "confirms_test": "test_inv_write_gate_confirms",
+      "prevents_test": "test_inv_write_gate_prevents",
+      "under_failure_test": "test_inv_write_gate_under_failure"
+    },
+    {
+      "invariant_id": "DRP_INV_03",
+      "invariant_text": "A cross-border transfer outside the EEA CANNOT proceed without a valid transfer_mechanism reference on the bound policy.",
+      "confirms_test": "test_inv_cross_border_confirms",
+      "prevents_test": "test_inv_cross_border_prevents",
+      "under_failure_test": "test_inv_cross_border_under_failure"
+    },
+    {
+      "invariant_id": "DRP_INV_04",
+      "invariant_text": "check_write MUST be called before any persistence primitive stores the record; policies enforced only at read time NEVER satisfy residency.",
+      "confirms_test": "test_inv_write_time_enforcement_confirms",
+      "prevents_test": "test_inv_write_time_enforcement_prevents",
+      "under_failure_test": "test_inv_write_time_enforcement_under_failure"
+    },
+    {
+      "invariant_id": "DRP_INV_05",
+      "invariant_text": "Policy changes MUST emit a TamperEvidentAuditLog entry so region scope changes are reviewable.",
+      "confirms_test": "test_inv_policy_audit_confirms",
+      "prevents_test": "test_inv_policy_audit_prevents",
+      "under_failure_test": "test_inv_policy_audit_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 643,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1256,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1336,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 71495,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "43 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 992,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 76132,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-LOWERCASE_ISO_BYPASS",
+        "hypothesis": "Binding a policy with lowercase region codes like ('eu-west-1','us') may bypass ISO-3166 validation if the check only uppercases inputs for comparison without rejecting non-canonical forms, silently admitting invalid codes.",
+        "input_fixture": "DataResidencyPolicy(data_class='PII', allowed_regions=('eu','us-east'), transfer_mechanism='SCC_2021/914'); enforcer.bind(policy)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNICODE_HOMOGLYPH_REGION",
+        "hypothesis": "A homoglyph region code like 'D\u0415' (Cyrillic E) passes a naive length/isalpha check but is not a real ISO-3166 code. If bind uses str comparison rather than a canonical ISO set, the policy admits a ghost region that never matches real writes, effectively disabling enforcement.",
+        "input_fixture": "DataResidencyPolicy('PII', ('D\u0415','FR'), 'adequacy_decision')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY_ALLOWED_REGIONS",
+        "hypothesis": "An empty allowed_regions tuple may be interpreted as 'no restriction' (vacuous truth) instead of 'deny all', letting every write succeed against a policy that forbids everything.",
+        "input_fixture": "DataResidencyPolicy('PII', (), 'SCC_2021/914'); enforcer.check_write('PII','US')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RACE_REBIND_WRITE",
+        "hypothesis": "Between bind(new_policy_tightening_regions) and check_write, a concurrent writer thread holding the old policy snapshot writes to a region just removed. Without a memory barrier or versioned read, the stale snapshot silently replicates outside the new scope.",
+        "input_fixture": "T1: enforcer.bind(policy_US_only); T2 concurrently: enforcer.check_write('PII','IN') after T1 replaces policy to EU-only",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CASE_MISMATCH_DENY",
+        "hypothesis": "check_write('PII','us') against allowed_regions=('US',) may fail-open if comparison is case-sensitive and a catch-all except turns KeyError into a pass. Equally dangerous: fail-closed that raises on a legitimate lowercase code from an upstream SDK masking correctness.",
+        "input_fixture": "bind(DataResidencyPolicy('PII',('US',),'SCC')); check_write('PII','us')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNBOUND_DATACLASS_WRITE",
+        "hypothesis": "check_write is invoked for a data_class that was never bound. If the enforcer defaults to allow-when-unknown, unclassified PII writes everywhere go through silently, violating residency by omission.",
+        "input_fixture": "enforcer.check_write('HEALTH_RECORDS','RU') with no prior bind for HEALTH_RECORDS",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TRANSFER_NO_MECHANISM",
+        "hypothesis": "transfer_mechanism is a non-empty but bogus string like 'N/A' or 'TODO'. Because the Protocol only types it as str, check_transfer accepts any truthy string and authorizes EEA->US transfers without a real legal basis.",
+        "input_fixture": "bind(DataResidencyPolicy('PII',('DE','US'),'TODO')); check_transfer('PII','DE','US')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EEA_BOUNDARY_GB",
+        "hypothesis": "GB (post-Brexit) and CH are not EEA members but are frequently treated as such. A DE->GB transfer may skip the transfer_mechanism check if the classifier hardcodes a legacy 'EU28' list.",
+        "input_fixture": "bind(DataResidencyPolicy('PII',('DE','GB'),'')); check_transfer('PII','DE','GB')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-READ_TIME_ONLY",
+        "hypothesis": "Persistence layer writes first, then a downstream reader invokes check_write defensively. The data is already at rest in a forbidden region; the raise happens too late to prevent storage, violating write-before-persist ordering.",
+        "input_fixture": "db.insert(record, region='RU'); later enforcer.check_write('PII','RU')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REBIND_NO_AUDIT",
+        "hypothesis": "Calling bind() twice for the same data_class to narrow or widen allowed_regions may overwrite in-memory state without emitting a TamperEvidentAuditLog entry, erasing forensic evidence of policy scope change.",
+        "input_fixture": "bind(policy_v1_EU); bind(policy_v2_EU_plus_US); inspect audit log",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MUTABLE_TUPLE_SHARING",
+        "hypothesis": "Although the dataclass is frozen, allowed_regions is a tuple of strings shared by reference with caller code. If the enforcer later stores the tuple in a mutable cache keyed by id(), an attacker-controlled path swapping the cache entry widens scope without re-bind or audit.",
+        "input_fixture": "regions=('DE',); p=DataResidencyPolicy('PII',regions,'SCC'); bind(p); monkeypatch enforcer._cache[p.data_class]=('DE','RU')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TRANSFER_SELF_LOOP",
+        "hypothesis": "check_transfer('PII','DE','DE') with transfer_mechanism='' may raise erroneously (no mechanism) though it's intra-region, or conversely check_transfer('PII','DE','US') may pass when source==destination check short-circuits on normalized aliases like 'DE'/'DEU'.",
+        "input_fixture": "check_transfer('PII','DEU','DE') with allowed_regions=('DE',) and empty mechanism",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AMPLIFICATION_BIND_FLOOD",
+        "hypothesis": "Repeated bind() calls with ever-growing allowed_regions tuples (thousands of codes) cause O(n) linear scans in check_write and unbounded audit log writes, enabling a log-amplification DoS that masks a single malicious scope widen inside noise.",
+        "input_fixture": "for i in range(10000): bind(DataResidencyPolicy('PII', tuple(f'X{i:03d}' for _ in range(100)), 'SCC'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REGION-UNICODE-SPOOF",
+        "hypothesis": "A region code containing a Unicode homoglyph or zero-width character (e.g. 'D\u200bE' \u2014 'D' + U+200B + 'E') may pass a naive `in allowed_regions` tuple membership check because Python string equality is byte-exact, meaning a policy bound with 'DE' would NOT match 'D\u200bE', but an attacker-controlled input carrying the spoofed code would silently fail validation if the validator only checks `len==2` and `isalpha()` without normalizing Unicode to NFKC/NFC first, allowing writes to an unlisted region to slip through.",
+        "input_fixture": "policy = DataResidencyPolicy(data_class='PII', allowed_regions=('DE', 'FR'), transfer_mechanism='adequacy_decision'); enforcer.bind(policy); enforcer.check_write('PII', 'D\u200bE')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REGION-CASE-BYPASS",
+        "hypothesis": "ISO-3166 codes are uppercase by spec, but if the validator uses a case-insensitive comparison or the caller passes lowercase 'de' instead of 'DE', the check_write guard may either silently pass a region that is NOT in the allow-list (if comparison is case-insensitive while the tuple stores uppercase) or silently fail to match (if comparison is case-sensitive but the bind validator accepted the lowercase form), creating an inconsistency that can be exploited to route writes to regions outside the policy.",
+        "input_fixture": "policy = DataResidencyPolicy(data_class='HealthData', allowed_regions=('DE',), transfer_mechanism='SCC_2021/914'); enforcer.bind(policy); enforcer.check_write('HealthData', 'de')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY-REGIONS-BIND",
+        "hypothesis": "Binding a policy with an empty allowed_regions tuple should itself raise, because an empty allow-list is semantically equivalent to 'no region is permitted' and any subsequent check_write call could either always raise (correct) or always pass (if the implementation short-circuits on empty collection with 'no policy = no restriction'), silently allowing writes everywhere.",
+        "input_fixture": "policy = DataResidencyPolicy(data_class='FinancialData', allowed_regions=(), transfer_mechanism='intra_group_BCR'); enforcer.bind(policy); enforcer.check_write('FinancialData', 'US')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FROZEN-DICT-MUTATION",
+        "hypothesis": "Python's `frozen=True` dataclass prevents normal attribute assignment but does NOT prevent `object.__setattr__(policy, 'allowed_regions', ('US', 'CN'))` or direct `policy.__dataclass_fields__` mutation via `__dict__` on mutable class-level state. An attacker who holds a reference to a bound policy can widen the allowed_regions tuple in-place after binding, bypassing the bind-time validation entirely, with no TamperEvidentAuditLog entry emitted because the enforcer only audits calls to its own bind() method.",
+        "input_fixture": "policy = DataResidencyPolicy(data_class='PII', allowed_regions=('DE',), transfer_mechanism='adequacy_decision'); enforcer.bind(policy); object.__setattr__(policy, 'allowed_regions', ('DE', 'CN', 'RU')); enforcer.check_write('PII', 'CN')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE-BIND-WRITE",
+        "hypothesis": "If the enforcer stores the bound policy in a plain dict and bind() is not protected by a lock, a race condition between two threads \u2014 one calling bind() with a narrow policy (only 'DE') and another calling check_write() mid-replace \u2014 can result in check_write reading a partially-written or stale policy reference, allowing a write to 'US' to pass during the window when the enforcer's internal mapping has been cleared but not yet updated with the new policy.",
+        "input_fixture": "Thread-1: enforcer.bind(DataResidencyPolicy('PII', ('DE',), 'adequacy_decision')); Thread-2 (concurrent): enforcer.check_write('PII', 'US') \u2014 interleaved so check_write executes after enforcer._policies.clear() but before _policies['PII'] = new_policy",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TRANSFER-NO-BIND",
+        "hypothesis": "check_transfer may be called for a data_class that was never bound via bind(), and if the enforcer's lookup raises a KeyError it could be swallowed by a bare `except Exception: pass` or result in a truthy default return, silently approving a cross-border transfer (e.g., EU\u2192US) with no valid transfer_mechanism on record, violating the invariant that transfers outside EEA require a valid mechanism.",
+        "input_fixture": "enforcer.check_transfer('UnregisteredClass', source='DE', destination='US')  # no prior bind() call for 'UnregisteredClass'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WRITE-BYPASSED-VIA-TRANSFER",
+        "hypothesis": "The invariant states check_write MUST be called before any persistence primitive stores a record. If a caller uses check_transfer() alone to validate a cross-region write (e.g., treating 'transfer' as a superset of 'write'), the enforcer may approve the operation without ever validating whether the destination region is in allowed_regions, because check_transfer only validates the transfer mechanism, not whether the destination is an allowed write region.",
+        "input_fixture": "enforcer.bind(DataResidencyPolicy('PII', ('DE',), 'SCC_2021/914')); result = enforcer.check_transfer('PII', 'DE', 'US')  # called instead of check_write; persistence layer writes to US without check_write being invoked",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TRANSFER-MECH-INJECTION",
+        "hypothesis": "The transfer_mechanism field is a free-form string (e.g. 'SCC_2021/914'). If the enforcer validates it by checking membership in a hard-coded set, an attacker could pass a value like 'adequacy_decision; DROP TABLE audit_log;--' or a CLRF-injected value that, when written to a structured audit log (CSV, syslog, JSON), breaks log parsers or injects false entries, undermining the TamperEvidentAuditLog invariant's reliability without technically bypassing the enforcer's allow-list check.",
+        "input_fixture": "DataResidencyPolicy(data_class='PII', allowed_regions=('US',), transfer_mechanism='adequacy_decision\\n{\\\"region_scope\\\": \\\"*\\\", \\\"approved\\\": true}')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-GB-EEA-ADEQUACY-CONFUSION",
+        "hypothesis": "GB (United Kingdom) held an EU adequacy decision until late 2025 but is NOT part of the EEA. An implementation that hardcodes a static EEA country set may include GB, treating a DE\u2192GB transfer as intra-EEA and skipping transfer_mechanism validation. If the implementation's EEA list was compiled before the adequacy decision review and includes GB unconditionally, transfers to GB without a valid SCC or BCR will silently proceed.",
+        "input_fixture": "policy = DataResidencyPolicy(data_class='PII', allowed_regions=('DE', 'GB'), transfer_mechanism=''); enforcer.bind(policy); enforcer.check_transfer('PII', 'DE', 'GB')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REBIND-NO-AUDIT",
+        "hypothesis": "Calling bind() twice for the same data_class (first with allowed_regions=('DE',), then with allowed_regions=('DE','CN','RU')) replaces the policy silently. If the enforcer does not treat re-bind as a policy change requiring a TamperEvidentAuditLog entry \u2014 treating the second bind as an idempotent no-op or a regular update without audit \u2014 the scope expansion is invisible to compliance reviewers.",
+        "input_fixture": "enforcer.bind(DataResidencyPolicy('PII', ('DE',), 'adequacy_decision')); enforcer.bind(DataResidencyPolicy('PII', ('DE', 'CN', 'RU'), 'intra_group_BCR'))  # second bind widens scope; audit log should record diff",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WILDCARD-REGION-CODE",
+        "hypothesis": "Passing '*' or '__all__' as a region code in allowed_regions may be 2 characters and pass an `isalpha()` + `len==2` check (for '*' it fails isalpha but '__all__' does not; however a single-char wildcard '?' may confuse regex-based validators). More critically, if the enforcer resolves region membership with a glob or regex match internally, a literal '*' in the tuple could match every region string, turning a scoped policy into an unrestricted one.",
+        "input_fixture": "DataResidencyPolicy(data_class='HealthData', allowed_regions=('DE', '*'), transfer_mechanism='SCC_2021/914')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONE-REGION-IN-TUPLE",
+        "hypothesis": "Python tuples can contain None. If allowed_regions=('DE', None) is passed to bind(), a validator that iterates with `all(isinstance(r, str) and len(r)==2 for r in allowed_regions)` will correctly reject it, but a validator using `r.upper() in VALID_ISO_SET` will raise AttributeError on None rather than a domain-specific PolicyValidationError, potentially causing the enforcer to crash and fail open (if caller catches generic exceptions) rather than fail closed.",
+        "input_fixture": "DataResidencyPolicy(data_class='PII', allowed_regions=('DE', None), transfer_mechanism='adequacy_decision'); enforcer.bind(policy)  # observe whether AttributeError propagates or is swallowed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AUDIT-CLOCK-SKEW",
+        "hypothesis": "TamperEvidentAuditLog entries are typically timestamped with the system clock. If the host clock is adjusted backward (NTP correction, VM live migration, container restart with skewed clock), two audit entries for sequential policy changes may appear out-of-order or with identical timestamps, breaking temporal ordering guarantees relied upon by compliance auditors to detect unauthorized scope expansions. A monotonic clock source is required; wall-clock time alone is insufficient.",
+        "input_fixture": "Simulate: os.system('date -s \"2026-01-01\"'); enforcer.bind(policy_v1); os.system('date -s \"2025-06-01\"'); enforcer.bind(policy_v2_wider_scope)  # audit log shows policy_v2 predates policy_v1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-LARGE-REGION-TUPLE-AMPLIFICATION",
+        "hypothesis": "Passing a tuple with 50,000 duplicate or near-duplicate region strings to allowed_regions forces the bind-time ISO validation loop to perform O(N) work per bind call. If the enforcer is exposed via an MCP tool or API endpoint, an attacker can submit repeated bind requests with large tuples to cause CPU amplification. Additionally, if the audit log records the full allowed_regions payload, log storage can be exhausted, potentially causing audit logging to fail and writes to proceed without audit trail.",
+        "input_fixture": "DataResidencyPolicy(data_class='PII', allowed_regions=tuple(['DE'] * 50000), transfer_mechanism='adequacy_decision'); enforcer.bind(policy)  # repeated 1000x concurrently",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY-REVOKED-POLICY",
+        "hypothesis": "If a caller serializes a DataResidencyPolicy (e.g., via pickle or JSON) and replays it after the policy has been revoked or replaced with a narrower one, the enforcer has no mechanism to detect the replay \u2014 frozen dataclasses carry no version token, nonce, or issuer signature. The replayed policy, when passed to bind(), will silently overwrite the current (narrower) policy with the old (wider) one, re-opening previously closed regions with no audit log entry distinguishing this from a legitimate re-bind.",
+        "input_fixture": "import pickle; p_wide = DataResidencyPolicy('PII', ('DE','US','CN'), 'SCC_2021/914'); blob = pickle.dumps(p_wide); enforcer.bind(DataResidencyPolicy('PII', ('DE',), 'adequacy_decision')); enforcer.bind(pickle.loads(blob))  # replayed old wide policy",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INVALID-ISO-CODE",
+        "hypothesis": "Bind accepts non-ISO-3166 country codes without validation, allowing policies with invalid regions",
+        "input_fixture": "bind(DataResidencyPolicy('user', ('InvalidCode', 'NotACountry'), 'SCC_2021/914'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-REGIONS",
+        "hypothesis": "Policy binds successfully with empty allowed_regions, creating unenforceable or overly restrictive state",
+        "input_fixture": "bind(DataResidencyPolicy('user', (), 'adequacy_decision')); check_write('user', 'US')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CASE-SENSITIVITY-BYPASS",
+        "hypothesis": "Bind accepts lowercase ISO codes ('us', 'gb'); check_write uses uppercase comparison ('US'), causing mismatch",
+        "input_fixture": "bind(DataResidencyPolicy('user', ('us', 'gb'), 'SCC_2021/914')); check_write('user', 'US') fails",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SILENT-WRITE-BYPASS",
+        "hypothesis": "Direct persistence layer write bypasses check_write guard entirely, storing data outside allowed region with no failure",
+        "input_fixture": "bind(allowed=['US']); backend_db.write('user', data, region='JP'); check_write never invoked; JP data persists",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RACE-POLICY-CHECK",
+        "hypothesis": "Thread A passes check_write; Thread B rebinds policy to remove that region; Thread A writes under stale permission",
+        "input_fixture": "thread1: check_write('user','FR') ok; thread2: bind(allowed=['US']); thread1: write('user','FR') succeeds",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EEA-TRANSFER-BYPASS",
+        "hypothesis": "Non-EEA transfer (US to JP) proceeds without transfer_mechanism, or EEA transfer rejected despite no mechanism requirement",
+        "input_fixture": "check_transfer('user', 'US', 'JP', mechanism=None) succeeds; check_transfer('user', 'DE', 'FR', mechanism=None) fails",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MISSING-AUDIT-LOG",
+        "hypothesis": "Policy rebind to disjoint regions completes without emitting or emits only partial TamperEvidentAuditLog entry",
+        "input_fixture": "bind(allowed=['US','EU']); bind(allowed=['JP']); query_audit_log('policy_change') returns empty or stale",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INVALID-MECHANISM-REF",
+        "hypothesis": "check_transfer accepts arbitrary transfer_mechanism string without validating against known legal agreements",
+        "input_fixture": "check_transfer('user', 'US', 'IN', mechanism='FAKE_2099/999') succeeds; mechanism never verified against registry",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NULL-REGIONS-TUPLE",
+        "hypothesis": "Bind accepts None for allowed_regions, causing null dereference or silent bypass in region membership tests",
+        "input_fixture": "bind(DataResidencyPolicy('user', None, 'SCC_2021/914')); check_write('user', 'US') crashes or passes",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DUPLICATE-REGION-LIST",
+        "hypothesis": "Bind accepts ('US','US','EU'); deduplication fails; internal region count or audit log counts region twice",
+        "input_fixture": "bind(DataResidencyPolicy('user', ('US','US','EU'), 'SCC_2021/914')); audit_log shows region_count=3 instead of 2",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLASS-NAME-INJECTION",
+        "hypothesis": "data_class parameter not sanitized; SQL or filesystem injection possible when enforcer queries or logs policy",
+        "input_fixture": "bind(DataResidencyPolicy(\"user; DROP TABLE audit_logs; --\", ('US',), 'SCC_2021/914')); SQL executed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ASYNC-AUDIT-WINDOW",
+        "hypothesis": "Audit log emission is asynchronous; policy rebind visible to check_write before audit entry durably written",
+        "input_fixture": "bind(new_policy); check_write uses new policy; audit_log.write still pending; process crash before fsync",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DEPRECATED-ISO-CODE",
+        "hypothesis": "Bind accepts deprecated ISO-3166 code ('SU' for USSR, 'YU' for Yugoslavia), causing region routing ambiguity",
+        "input_fixture": "bind(DataResidencyPolicy('user', ('SU','YU','CS'), 'SCC_2021/914')); modern data tagged 'RU' rejected",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK-SKEW-AUDIT-LOG",
+        "hypothesis": "System clock reversals cause audit log timestamps to become non-monotonic, allowing temporal forgery of policy history",
+        "input_fixture": "audit_entry T1:00 policy_v1; clock -1hr; audit_entry T0:30 policy_v2; history reordered, older appears newer",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-POLICY-HISTORY-CORRUPTION",
+        "hypothesis": "Data written under old policy regions, policy rebound to disjoint regions, stale data now violates new policy undetected",
+        "input_fixture": "bind(allowed=['EU']); write('user',data,'FR'); rebind(allowed=['US']); query('user',data) still in FR, violates US-only policy",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "residency.policy_bound",
+        "required_attributes": [
+          "data_class",
+          "regions"
+        ]
+      },
+      {
+        "event_name": "residency.denied",
+        "required_attributes": [
+          "data_class",
+          "region"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "residency.bindings",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "mechanism"
+        ]
+      },
+      {
+        "name": "residency.denied",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "data_class"
+        ]
+      },
+      {
+        "name": "residency.checks",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 500,
+        "label_keys": [
+          "operation"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "residency.bind",
+        "required_attributes": [
+          "data_class"
+        ]
+      },
+      {
+        "operation_name": "residency.check_write",
+        "required_attributes": [
+          "data_class",
+          "region"
+        ]
+      },
+      {
+        "operation_name": "residency.check_transfer",
+        "required_attributes": [
+          "data_class",
+          "source",
+          "destination"
+        ]
+      }
+    ]
+  }
+}

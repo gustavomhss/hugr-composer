@@ -1,0 +1,14 @@
+{
+  "name": "BatchCore",
+  "namespace": "api",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Async batch executor with per-item timeout, bounded parallelism, and two isolation modes (all-or-nothing / best-effort). Guarantees result order aligns with input order regardless of completion order.",
+  "api_signature": "class BatchCore: run(...)",
+  "invariants": [
+    "BATCH_CORE_INV_01: The returned `list[BatchItemResult]` MUST be the same length as the input `items` list and aligned by index (result[i] corresponds to items[i]).",
+    "BATCH_CORE_INV_02: In `all_or_nothing` mode, the FIRST item with status_code >= 400 MUST stop subsequent processing; all remaining items receive a 409 rollback placeholder.",
+    "BATCH_CORE_INV_03: In parallel strategy, concurrency MUST be bounded by `max_parallel` \u2014 the semaphore acquires at most that many permits simultaneously."
+  ],
+  "status": "promoted"
+}

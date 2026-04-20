@@ -1,0 +1,31 @@
+{
+  "name": "StreamSubject",
+  "namespace": "events",
+  "purpose": "Hierarchical dot separated event routing name that supports single token and trailing wildcard matching for consumer filters and stream captures.",
+  "api_signature": "from dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass StreamSubject:\n    name: str\n\n    def matches(self, pattern: str) -> bool:\n        name_tokens = self.name.split('.')\n        pattern_tokens = pattern.split('.')\n        for i, tok in enumerate(pattern_tokens):\n            if tok == '>':\n                return i <= len(name_tokens)\n            if i >= len(name_tokens):\n                return False\n            if tok != '*' and tok != name_tokens[i]:\n                return False\n        return len(pattern_tokens) == len(name_tokens)",
+  "invariants": [
+    "Subject names MUST NOT contain null, whitespace, '.', '*' or '>' inside a token because these are the reserved separators.",
+    "The '>' wildcard SHALL appear only as the final token of a pattern and match one or more remaining tokens.",
+    "The '*' wildcard MUST match exactly one token, never zero and never multiple.",
+    "Names starting with '$' are FORBIDDEN for user subjects because that prefix is reserved for system use.",
+    "Publishers ALWAYS send to a fully specified subject; wildcards CANNOT appear in a publish call."
+  ],
+  "extension_contract": "Extend routing by composing a StreamSubject with a predicate filter or by registering a subject mapping adapter on stream ingestion; custom taxonomies plug in by implementing a naming convention validator that wraps the constructor.",
+  "consumption_example": "def route(subjects: list[StreamSubject], pattern: str) -> list[StreamSubject]:\n    return [s for s in subjects if s.matches(pattern)]",
+  "sources": [
+    {
+      "source": "NATS 2.10 Subjects concept documentation",
+      "locator": "docs.nats.io/nats-concepts/subjects sections Wildcards, Naming Rules"
+    },
+    {
+      "source": "NATS 2.10 JetStream overview",
+      "locator": "docs.nats.io/nats-concepts/jetstream Subject mapping transformations paragraph"
+    }
+  ],
+  "why_essential": "Hierarchical subject matching is the substrate for fan out, filtering and multi tenant isolation; a shared type prevents every tool from reimplementing a buggy wildcard matcher.",
+  "alternatives_considered": [
+    "Plain string equality topics which lose the hierarchical fan out pattern",
+    "Regex based routing which is expressive but rejects NATS style constraints and costs more at scale"
+  ],
+  "maturity": "battle_tested"
+}

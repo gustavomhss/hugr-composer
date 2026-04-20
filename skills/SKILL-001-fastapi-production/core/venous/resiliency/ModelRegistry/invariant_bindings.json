@@ -1,0 +1,25 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "MODEL_REGISTRY_INV_01",
+      "invariant_text": "`get(name, version)` MUST invoke the loader at most once per name:version pair across the registry's lifetime (memoisation).",
+      "confirms_test": "test_inv_lazy_single_load_confirms",
+      "prevents_test": "test_inv_lazy_single_load_prevents",
+      "under_failure_test": "test_inv_lazy_single_load_under_failure"
+    },
+    {
+      "invariant_id": "MODEL_REGISTRY_INV_02",
+      "invariant_text": "`get()` on an unregistered name:version MUST raise KeyError \u2014 fail-loud, no silent None return, no implicit registration.",
+      "confirms_test": "test_inv_unknown_key_raises_confirms",
+      "prevents_test": "test_inv_unknown_key_raises_prevents",
+      "under_failure_test": "test_inv_unknown_key_raises_under_failure"
+    },
+    {
+      "invariant_id": "MODEL_REGISTRY_INV_03",
+      "invariant_text": "`register()` with `version` defaulting to 'latest' MUST be the logical identifier for unversioned callers; two distinct version strings under the same name MUST coexist as independent cache slots.",
+      "confirms_test": "test_inv_version_isolation_confirms",
+      "prevents_test": "test_inv_version_isolation_prevents",
+      "under_failure_test": "test_inv_version_isolation_under_failure"
+    }
+  ]
+}

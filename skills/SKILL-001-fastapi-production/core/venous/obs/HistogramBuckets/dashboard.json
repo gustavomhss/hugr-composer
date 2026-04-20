@@ -1,0 +1,8 @@
+{
+  "title": "HistogramBuckets",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "timeseries", "title": "Rejections/s",
+     "targets": [{"expr": "sum by (reason) (rate(histogrambuckets_rejections_total[5m]))"}]}
+  ]
+}

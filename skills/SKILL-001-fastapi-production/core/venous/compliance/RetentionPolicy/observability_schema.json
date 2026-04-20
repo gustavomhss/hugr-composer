@@ -1,0 +1,15 @@
+{
+  "logs": [
+    {"event_name": "retention.policy.bound", "required_attributes": ["data_class", "max_age_seconds"]},
+    {"event_name": "retention.sweep.completed", "required_attributes": ["data_class", "purged"]}
+  ],
+  "metrics": [
+    {"name": "retention.records.purged", "metric_type": "counter", "unit": "1", "cardinality_bound": 100, "label_keys": ["data_class", "deletion_mode"]},
+    {"name": "retention.records.held", "metric_type": "counter", "unit": "1", "cardinality_bound": 100, "label_keys": ["data_class"]},
+    {"name": "retention.sweep.duration", "metric_type": "histogram", "unit": "ms", "cardinality_bound": 50, "label_keys": []}
+  ],
+  "spans": [
+    {"operation_name": "retention.enforce_on_write", "required_attributes": ["data_class", "record_id"]},
+    {"operation_name": "retention.sweep", "required_attributes": ["purged"]}
+  ]
+}

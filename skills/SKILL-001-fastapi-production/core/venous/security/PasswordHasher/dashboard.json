@@ -1,0 +1,16 @@
+{
+  "title": "PasswordHasher — Auth cost, rehash pressure, error rate",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "verify ops/s",
+     "targets": [{"expr": "sum(rate(password_hasher_operations_total{operation=\"verify\"}[5m]))"}]},
+    {"id": 2, "type": "timeseries", "title": "hash duration p50/p95/p99 (ms)",
+     "targets": [
+       {"expr": "histogram_quantile(0.50, rate(password_hasher_duration_bucket{operation=\"hash\"}[5m]))"},
+       {"expr": "histogram_quantile(0.95, rate(password_hasher_duration_bucket{operation=\"hash\"}[5m]))"},
+       {"expr": "histogram_quantile(0.99, rate(password_hasher_duration_bucket{operation=\"hash\"}[5m]))"}
+     ]},
+    {"id": 3, "type": "timeseries", "title": "rehash pending rate",
+     "targets": [{"expr": "sum(rate(password_hasher_rehash_pending_total[5m]))"}]}
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "title": "EventSourcedStore — Appends, Concurrency, Replay",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Appends OK (5m)",
+      "targets": [{"expr": "sum(rate(ess_appends_total{result=\"ok\"}[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Concurrency Conflicts (5m)",
+      "targets": [{"expr": "sum(rate(ess_appends_total{result=\"concurrency_conflict\"}[5m]))"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Replay Duration p50/p95/p99 (ms)",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(ess_replay_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(ess_replay_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(ess_replay_duration_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Batch Size Distribution",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(ess_batch_size_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(ess_batch_size_bucket[5m]))"}
+      ]
+    }
+  ]
+}

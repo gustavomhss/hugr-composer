@@ -1,0 +1,20 @@
+{
+  "name": "DeprecationEntry",
+  "namespace": "api",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Value object carrying the metadata required to emit RFC 8594 Sunset / Deprecation headers for a single endpoint: path, method, sunset date, replacement URL, and a derived warn-window flag.",
+  "api_signature": "class DeprecationEntry: sunset_header -> str; days_until_sunset -> int; should_warn -> bool; to_dict() -> dict",
+  "invariants": [
+    "DEPRECATION_ENTRY_INV_01: sunset_header MUST be the ISO-8601 date string of the configured sunset date, suitable verbatim as an RFC 8594 Sunset header value.",
+    "DEPRECATION_ENTRY_INV_02: method MUST be stored uppercase regardless of the casing passed to __init__, so lookups by method are case-stable.",
+    "DEPRECATION_ENTRY_INV_03: days_until_sunset MUST compute (sunset_date - date.today()).days and MUST go negative when the sunset date has already passed (never clamp to 0).",
+    "DEPRECATION_ENTRY_INV_04: should_warn MUST be True iff days_until_sunset <= settings.DEPRECATION_WARN_DAYS_BEFORE_SUNSET (default 30), including the past-sunset case."
+  ],
+  "status": "promoted",
+  "enrichment": {
+    "invariants_mined": 4,
+    "ambiguous": false,
+    "source": "human.triage.venous_batch_1"
+  }
+}

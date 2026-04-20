@@ -1,0 +1,36 @@
+{
+  "name": "TimeoutBudget",
+  "namespace": "resiliency",
+  "purpose": "Attach a monotonic deadline to an inbound request and propagate the remaining budget to every downstream call so no call outlives its originating request.",
+  "api_signature": "from __future__ import annotations\nfrom typing import Protocol\nfrom contextvars import ContextVar\n\nclass TimeoutBudget(Protocol):\n    deadline_ns: int\n    origin: str\n    def remaining_ms(self) -> int: ...\n    def for_call(self, max_ms: int) -> int: ...\n    def expired(self) -> bool: ...\n\nCURRENT_BUDGET: ContextVar[TimeoutBudget | None] = ContextVar('current_budget', default=None)\n",
+  "invariants": [
+    "Every outbound call MUST use min(local_timeout, TimeoutBudget.remaining_ms()) and NEVER the local timeout alone.",
+    "The deadline MUST be measured on a monotonic clock and SHALL NOT move backward on wall-clock jumps.",
+    "A call issued when remaining_ms is not positive SHALL be refused before any socket I/O begins.",
+    "The budget CANNOT be extended inside the request scope; extensions FORBIDDEN without a new request boundary.",
+    "The budget SHALL be propagated across task boundaries via the context variable, never via thread-local state."
+  ],
+  "extension_contract": "Adopters bind a DeadlineSource adapter to ingress (HTTP header, gRPC deadline, CLI flag) and register a propagation middleware for each transport client so the remaining budget is written into outbound headers (e.g. grpc-timeout, X-Deadline-Ms).",
+  "consumption_example": "async def fetch_profile(uid: str) -> Profile:\n    budget = TimeoutBudget\n    call_ms = budget.for_call(max_ms=250)\n    return await http.get(f'/profile/{uid}', timeout_ms=call_ms)\n",
+  "sources": [
+    {
+      "source": "Google SRE Workbook (Beyer et al., O'Reilly, 2018)",
+      "locator": "Chapter 22 'Addressing Cascading Failures', section 'Server Overload' discussing deadline propagation"
+    },
+    {
+      "source": "Nygard, Release It! 2nd edition (2018), Pragmatic Bookshelf",
+      "locator": "Chapter 5 'Stability Patterns', section 'Timeouts', pages 91-97"
+    },
+    {
+      "source": "Envoy proxy documentation, HTTP connection manager",
+      "locator": "api-v3/config/route/v3/route_components.proto RouteAction.timeout and idle_timeout semantics"
+    }
+  ],
+  "why_essential": "Per-call timeouts set locally diverge from the caller's real deadline, allowing a chain of retries to exceed the inbound SLA by multiples and convert a slow dependency into a stampede of zombie work.",
+  "alternatives_considered": [
+    "Static per-client timeout: cannot shrink as the request ages through hops.",
+    "Server-side cancellation only: wastes client and network resources before the server decides.",
+    "Budget enforced via exception unwinding: triggers too late to free downstream resources."
+  ],
+  "maturity": "battle_tested"
+}

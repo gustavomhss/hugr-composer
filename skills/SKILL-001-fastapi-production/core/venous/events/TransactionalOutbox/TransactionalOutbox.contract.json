@@ -1,0 +1,31 @@
+{
+  "name": "TransactionalOutbox",
+  "namespace": "events",
+  "purpose": "Stores outgoing messages in the same local transaction as the state change so a relay can publish them atomically with the commit.",
+  "api_signature": "from typing import Protocol, Any, Iterable\n\nclass TransactionalOutbox(Protocol):\n    def enqueue(self, destination: str, payload: Any, key: str) -> None: ...\n    def pending(self, limit: int) -> Iterable[dict]: ...\n    def mark_published(self, message_id: str) -> None: ...\n    def mark_failed(self, message_id: str, reason: str) -> None: ...",
+  "invariants": [
+    "enqueue MUST write the outbox row inside the same database transaction as the originating state change; cross-transaction writes are FORBIDDEN.",
+    "A message MUST NOT be marked published until the broker has acknowledged it.",
+    "The relay SHALL deliver at-least-once; consumers MUST therefore be idempotent, and duplicate suppression CANNOT be assumed.",
+    "Ordering per partition key ALWAYS follows transaction commit order; reordering across commits is FORBIDDEN."
+  ],
+  "extension_contract": "New brokers extend TransactionalOutbox by implementing a publisher adapter and registering it with the outbox relay; storage backends for the outbox table plug in through an adapter, but atomicity with the domain transaction SHALL remain invariant.",
+  "consumption_example": "def place_order(uow, outbox: TransactionalOutbox, order):\n    with uow:\n        orders.add(order)\n        outbox.enqueue('orders.placed', order.to_event(), key=order.id)\n        uow.commit()",
+  "sources": [
+    {
+      "source": "Richardson 'Microservices Patterns' (2018)",
+      "locator": "Chapter 3, Transactional Outbox pattern, pp. 97-99"
+    },
+    {
+      "source": "Kleppmann 'Designing Data-Intensive Applications' (2017)",
+      "locator": "Chapter 11, Idempotence and at-least-once delivery, pp. 478-483"
+    }
+  ],
+  "why_essential": "Without a shared primitive, tools resort to dual writes (DB + broker) and lose messages on crash between the two, producing silent data divergence across services.",
+  "alternatives_considered": [
+    "Two-phase commit (XA) across DB and broker: high latency, limited broker support, operational complexity.",
+    "Publish-then-save: loses the DB write on crash, corrupts state.",
+    "Save-then-publish: loses the message on crash, breaks downstream state."
+  ],
+  "maturity": "battle_tested"
+}

@@ -1,0 +1,71 @@
+{
+  "logs": [
+    {
+      "event_name": "crypto_envelope.seal.completed",
+      "required_attributes": ["algorithm", "key_id", "ciphertext_bytes", "duration_ms"]
+    },
+    {
+      "event_name": "crypto_envelope.open.completed",
+      "required_attributes": ["algorithm", "key_id", "outcome", "duration_ms"]
+    },
+    {
+      "event_name": "crypto_envelope.nonce.collision_detected",
+      "required_attributes": ["algorithm", "key_id", "severity"]
+    },
+    {
+      "event_name": "crypto_envelope.key.rotated",
+      "required_attributes": ["from_key_id", "to_key_id", "algorithm"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "crypto_envelope.operations",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["operation", "algorithm", "outcome"]
+    },
+    {
+      "name": "crypto_envelope.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": ["operation", "algorithm"]
+    },
+    {
+      "name": "crypto_envelope.ciphertext_bytes",
+      "metric_type": "histogram",
+      "unit": "By",
+      "cardinality_bound": 50,
+      "label_keys": ["algorithm"]
+    },
+    {
+      "name": "crypto_envelope.nonce.collisions",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": ["algorithm"]
+    },
+    {
+      "name": "crypto_envelope.key.active",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["algorithm", "key_id"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "crypto_envelope.seal",
+      "required_attributes": ["algorithm", "key_id"]
+    },
+    {
+      "operation_name": "crypto_envelope.open",
+      "required_attributes": ["algorithm", "key_id", "outcome"]
+    },
+    {
+      "operation_name": "crypto_envelope.key.resolve",
+      "required_attributes": ["algorithm", "decision"]
+    }
+  ]
+}

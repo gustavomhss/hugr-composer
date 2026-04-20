@@ -1,0 +1,33 @@
+{
+  "name": "CryptoEnvelope",
+  "namespace": "security",
+  "purpose": "Encrypt and decrypt payloads with authenticated encryption, key-id-tagged ciphertext, and deterministic header framing that enables key rotation without re-encryption on read.",
+  "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass Envelope:\n    key_id: str\n    nonce: bytes\n    ciphertext: bytes\n    aad: bytes\n\nclass CryptoEnvelope(Protocol):\n    def seal(self, plaintext: bytes, aad: bytes) -> Envelope: ...\n    def open(self, envelope: Envelope, aad: bytes) -> bytes: ...",
+  "invariants": [
+    "seal() MUST use an AEAD construction (AES-GCM, ChaCha20-Poly1305) and CANNOT emit an envelope without an authentication tag.",
+    "Nonces MUST NEVER repeat for a given key; nonce reuse under AES-GCM SHALL be treated as a critical incident.",
+    "open() MUST verify aad byte-for-byte; mismatched aad MUST abort before returning plaintext.",
+    "key_id MUST resolve to a live key in the vault; decryption with an unknown key_id CANNOT return partial plaintext.",
+    "Keys MUST be rotatable without re-encrypting stored ciphertext; open() MUST resolve the correct key by key_id from the envelope.",
+    "Plaintext buffers SHALL be zeroed where the runtime allows after use; plaintext MUST NEVER be logged."
+  ],
+  "extension_contract": "AEAD algorithms register as cipher adapters implementing the Protocol and declaring the nonce size, tag size, and key handle type. The registry refuses to bind an adapter that exposes non-AEAD modes (CBC without HMAC, ECB) or allows nonce reuse.",
+  "consumption_example": "def store_pii(env: CryptoEnvelope, record_id: str, pii: bytes):\n    sealed = env.seal(plaintext=pii, aad=record_id.encode())\n    repo.save(record_id=record_id, ciphertext=sealed.ciphertext, nonce=sealed.nonce, key_id=sealed.key_id)",
+  "sources": [
+    {
+      "source": "OWASP ASVS 4.0.3",
+      "locator": "V6.2 Algorithms (V6.2.4, V6.2.5); V6.3 Random Values"
+    },
+    {
+      "source": "OWASP Top 10 2021",
+      "locator": "A02:2021 Cryptographic Failures \u2014 algorithm and mode selection"
+    }
+  ],
+  "why_essential": "Callers that roll their own AES invariably ship CBC-without-HMAC, key-in-cleartext, or nonce-from-timestamp bugs; a shared AEAD envelope moves those decisions out of application code.",
+  "alternatives_considered": [
+    "Raw AES-CBC with HMAC composition \u2014 easy to mis-pair; PAD oracle risk.",
+    "pgcrypto pgp_sym_encrypt \u2014 opaque to app-layer rotation and audit.",
+    "Field-level library per model \u2014 scatters key policy across schemas."
+  ],
+  "maturity": "battle_tested"
+}

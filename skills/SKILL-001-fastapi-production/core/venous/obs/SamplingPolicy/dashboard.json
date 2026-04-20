@@ -1,0 +1,10 @@
+{
+  "title": "SamplingPolicy — Decisions",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "timeseries", "title": "Decisions/s by Reason",
+     "targets": [{"expr": "sum by (reason) (rate(sampler_decisions_count_total[5m]))"}]},
+    {"id": 2, "type": "stat", "title": "Head Ratio",
+     "targets": [{"expr": "sampler_head_ratio"}]}
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "logs": [
+    {
+      "event_name": "domain.event.staged",
+      "required_attributes": ["event_id", "aggregate_type", "aggregate_id", "version"]
+    },
+    {
+      "event_name": "domain.event.published",
+      "required_attributes": ["event_id", "aggregate_type", "aggregate_id", "version", "event_type", "schema_version"]
+    },
+    {
+      "event_name": "domain.event.discarded",
+      "required_attributes": ["aggregate_type", "aggregate_id", "count"]
+    },
+    {
+      "event_name": "domain.event.rejected",
+      "required_attributes": ["reason", "invariant_id"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "domain.event.published",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 200,
+      "label_keys": ["aggregate_type", "event_type"]
+    },
+    {
+      "name": "domain.event.rejected",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["invariant_id"]
+    },
+    {
+      "name": "domain.event.stream.pending",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 500,
+      "label_keys": ["aggregate_type"]
+    },
+    {
+      "name": "domain.event.publish.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 100,
+      "label_keys": ["aggregate_type", "result"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "domain.event.stage",
+      "required_attributes": ["event.id", "aggregate.type", "aggregate.id", "event.version"]
+    },
+    {
+      "operation_name": "domain.event.flush",
+      "required_attributes": ["aggregate.type", "aggregate.id", "batch.size"]
+    },
+    {
+      "operation_name": "domain.event.validate_schema",
+      "required_attributes": ["event.type", "schema.version"]
+    }
+  ]
+}

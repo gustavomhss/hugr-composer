@@ -1,0 +1,27 @@
+{
+  "name": "IdentityMap",
+  "namespace": "data",
+  "purpose": "Caches loaded domain objects by identity inside one session so the same row is never represented twice in memory.",
+  "api_signature": "from typing import Protocol, Any, Optional\n\nclass IdentityMap(Protocol):\n    def get(self, type_: type, id: object) -> Optional[Any]: ...\n    def add(self, obj: Any) -> None: ...\n    def remove(self, type_: type, id: object) -> None: ...\n    def contains(self, type_: type, id: object) -> bool: ...",
+  "invariants": [
+    "Given the same (type, id) within one session, the IdentityMap MUST return the same Python object reference on every lookup.",
+    "An object CANNOT be inserted twice for the same identity; a second add with a new instance SHALL raise a conflict error.",
+    "The map MUST be scoped to a single UnitOfWork or session and NEVER shared across concurrent transactions.",
+    "On UnitOfWork disposal the map ALWAYS clears its contents; retaining references beyond the session is FORBIDDEN."
+  ],
+  "extension_contract": "Storage backends extend IdentityMap by implementing the Protocol and binding it into the UnitOfWork factory; eviction policies are added via a register hook, but referential-identity within a session SHALL NOT be weakened.",
+  "consumption_example": "def load_order(repo, imap: IdentityMap, order_id: int):\n    cached = imap.get(Order, order_id)\n    if cached is not None:\n        return cached\n    order = repo.get(order_id)\n    imap.add(order)\n    return order",
+  "sources": [
+    {
+      "source": "Fowler 'Patterns of Enterprise Application Architecture' (2002)",
+      "locator": "Chapter 11, Identity Map pattern, pp. 195-200"
+    }
+  ],
+  "why_essential": "Absent a shared map, two reads of the same row yield two divergent objects; updates on one silently overwrite the other when flushed through the same UnitOfWork.",
+  "alternatives_considered": [
+    "Per-query result caching: does not guarantee referential identity across queries.",
+    "Rely on ORM internal session cache only: obscures the contract and blocks non-ORM repositories.",
+    "Global process cache: violates session scoping and corrupts concurrent transactions."
+  ],
+  "maturity": "battle_tested"
+}

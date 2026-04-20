@@ -1,0 +1,49 @@
+{
+  "logs": [
+    {
+      "event_name": "ratelimiter.admitted",
+      "required_attributes": ["limiter", "key", "cost", "waited_ms"]
+    },
+    {
+      "event_name": "ratelimiter.rejected",
+      "required_attributes": ["limiter", "key", "cost", "retry_after_ms"]
+    },
+    {
+      "event_name": "ratelimiter.reset",
+      "required_attributes": ["limiter", "key"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "ratelimiter.admissions",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 60,
+      "label_keys": ["limiter", "outcome"]
+    },
+    {
+      "name": "ratelimiter.wait.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": ["limiter", "outcome"]
+    },
+    {
+      "name": "ratelimiter.tokens",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 500,
+      "label_keys": ["limiter", "key"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "ratelimiter.acquire",
+      "required_attributes": ["limiter.name", "key", "cost", "outcome"]
+    },
+    {
+      "operation_name": "ratelimiter.try.acquire",
+      "required_attributes": ["limiter.name", "key", "cost", "outcome"]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "title": "FeatureToggle — Rollout Decisions",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Evaluations per minute",
+      "targets": [{"expr": "sum(rate(toggle_evaluations_total[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Active-rate by toggle key",
+      "targets": [{"expr": "sum by (key) (rate(toggle_evaluations_total{decision=\"true\"}[5m])) / sum by (key) (rate(toggle_evaluations_total[5m]))"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Provider failures (fail-closed)",
+      "targets": [{"expr": "sum by (key) (rate(toggle_failures_total[5m]))"}]
+    }
+  ]
+}

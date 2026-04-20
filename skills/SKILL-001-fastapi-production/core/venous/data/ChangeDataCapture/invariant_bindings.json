@@ -1,0 +1,32 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "CDC_INV_01",
+      "invariant_text": "Every committed row change in the source MUST appear in the stream exactly once in commit order; reordering across transactions is FORBIDDEN.",
+      "confirms_test": "test_inv_commit_order_confirms",
+      "prevents_test": "test_inv_commit_order_prevents",
+      "under_failure_test": "test_inv_commit_order_under_failure"
+    },
+    {
+      "invariant_id": "CDC_INV_02",
+      "invariant_text": "Consumers MUST be able to resume from a persisted checkpoint; the stream SHALL carry a monotonically increasing position.",
+      "confirms_test": "test_inv_monotonic_position_confirms",
+      "prevents_test": "test_inv_monotonic_position_prevents",
+      "under_failure_test": "test_inv_monotonic_position_under_failure"
+    },
+    {
+      "invariant_id": "CDC_INV_03",
+      "invariant_text": "CDC events NEVER include uncommitted changes; dirty reads are FORBIDDEN on the downstream side.",
+      "confirms_test": "test_inv_no_dirty_reads_confirms",
+      "prevents_test": "test_inv_no_dirty_reads_prevents",
+      "under_failure_test": "test_inv_no_dirty_reads_under_failure"
+    },
+    {
+      "invariant_id": "CDC_INV_04",
+      "invariant_text": "Schema changes at the source MUST surface as schema events so consumers CANNOT silently parse new columns with the old parser.",
+      "confirms_test": "test_inv_schema_events_confirms",
+      "prevents_test": "test_inv_schema_events_prevents",
+      "under_failure_test": "test_inv_schema_events_under_failure"
+    }
+  ]
+}

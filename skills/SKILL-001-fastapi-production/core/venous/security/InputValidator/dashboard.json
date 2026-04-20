@@ -1,0 +1,14 @@
+{
+  "title": "InputValidator — Parse Accepts, Rejects, Latency",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "parse ops/s",
+     "targets": [{"expr": "sum(rate(input_validator_parse_calls_total[5m]))"}]},
+    {"id": 2, "type": "stat", "title": "rejection rate",
+     "targets": [{"expr": "sum(rate(input_validator_rejections_total[5m]))"}]},
+    {"id": 3, "type": "timeseries", "title": "parse p99 latency (us)",
+     "targets": [{"expr": "histogram_quantile(0.99, rate(input_validator_parse_duration_bucket[5m]))"}]},
+    {"id": 4, "type": "timeseries", "title": "rejections by reason",
+     "targets": [{"expr": "sum by (reason) (rate(input_validator_rejections_total[5m]))"}]}
+  ]
+}

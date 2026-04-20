@@ -1,0 +1,1 @@
+{"title": "BreachNotificationQueue", "schemaVersion": 38, "panels": [{"id": 1, "type": "stat", "title": "SLA breaches", "targets": [{"expr": "sum(breach_sla_breached_total)"}]}]}

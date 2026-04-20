@@ -1,0 +1,12 @@
+{
+  "name": "PersistedQueryRegistry",
+  "namespace": "api",
+  "maturity": "incubating",
+  "files": [
+    {"path": "api/PersistedQueryRegistry/PersistedQueryRegistry.py", "kind": "impl"},
+    {"path": "api/PersistedQueryRegistry/PersistedQueryRegistry.protocol.py", "kind": "protocol"},
+    {"path": "api/PersistedQueryRegistry/PersistedQueryRegistry.md", "kind": "spec_md"},
+    {"path": "api/PersistedQueryRegistry/PersistedQueryRegistry.contract.json", "kind": "contract_json"},
+    {"path": "api/PersistedQueryRegistry/test_PersistedQueryRegistry.py", "kind": "test"}
+  ]
+}

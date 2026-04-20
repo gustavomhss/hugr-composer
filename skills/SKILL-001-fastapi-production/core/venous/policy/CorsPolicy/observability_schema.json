@@ -1,0 +1,16 @@
+{
+  "logs": [
+    {"event_name": "cors.decision.allowed", "required_attributes": ["origin", "method"]},
+    {"event_name": "cors.decision.denied", "required_attributes": ["origin", "reason"]},
+    {"event_name": "cors.policy.bound", "required_attributes": ["matcher_count"]}
+  ],
+  "metrics": [
+    {"name": "cors.evaluations", "metric_type": "counter", "unit": "1", "cardinality_bound": 500, "label_keys": ["outcome"]},
+    {"name": "cors.denied", "metric_type": "counter", "unit": "1", "cardinality_bound": 500, "label_keys": ["reason"]},
+    {"name": "cors.allowlist.size", "metric_type": "gauge", "unit": "1", "cardinality_bound": 100, "label_keys": []}
+  ],
+  "spans": [
+    {"operation_name": "cors.evaluate", "required_attributes": ["origin", "method"]},
+    {"operation_name": "cors.bind", "required_attributes": ["matcher_count"]}
+  ]
+}

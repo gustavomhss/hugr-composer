@@ -1,0 +1,31 @@
+{
+  "name": "PromptInjectionFilter",
+  "namespace": "llm",
+  "purpose": "Quarantine untrusted text (retrieved documents, tool outputs, user messages) by wrapping it in delimiters and stripping instruction-like fragments that target the model.",
+  "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nclass QuarantinedText(Protocol):\n    kind: Literal[\"user\", \"retrieved\", \"tool_output\"]\n    wrapped: str\n    stripped_fragments: tuple[str, ...]\n\nclass PromptInjectionFilter(Protocol):\n    def quarantine(self, raw: str, kind: str) -> QuarantinedText: ...\n",
+  "invariants": [
+    "quarantine() MUST wrap the raw text in delimiters the model is instructed to treat as data; raw insertion into system prompts is FORBIDDEN.",
+    "Fragments matching known instruction patterns (imperative directives, role-override phrases) SHALL be stripped and the removed text returned in stripped_fragments for audit.",
+    "The filter MUST NEVER execute or interpret the raw text; it only transforms text.",
+    "Every quarantined block SHALL declare its kind so downstream guardrails can apply kind-specific rules (retrieved vs user vs tool_output).",
+    "Quarantining is NEVER optional for retrieved or tool_output content; skipping the filter on those sources is FORBIDDEN."
+  ],
+  "extension_contract": "Projects extend the pattern catalog by registering stripping rules as adapters; each rule implements a pattern matcher and a redactor, composed into a pipeline the filter runs in declared order.",
+  "consumption_example": "def build_context(f: PromptInjectionFilter, snippets: list[tuple[str, str]]) -> list[str]:\n    return [f.quarantine(text, kind).wrapped for kind, text in snippets]\n",
+  "sources": [
+    {
+      "source": "OWASP Top 10 for LLM Applications (2023)",
+      "locator": "LLM01: Prompt Injection \u2014 indirect injection via retrieved content and tool outputs"
+    },
+    {
+      "source": "Anthropic Model Context Protocol (MCP) 1.x specification",
+      "locator": "Server-provided resources: treated as untrusted context, surfaced with provenance"
+    }
+  ],
+  "why_essential": "Indirect prompt injection through retrieved documents and tool outputs is the leading unpatched LLM failure mode; a shared quarantine primitive ensures every context-assembly path applies the same defense.",
+  "alternatives_considered": [
+    "String concatenation of retrieved content into system prompt \u2014 directly exploitable.",
+    "Relying on model refusal \u2014 inconsistent and not auditable."
+  ],
+  "maturity": "emerging"
+}

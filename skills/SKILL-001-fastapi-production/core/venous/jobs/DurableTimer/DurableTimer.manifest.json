@@ -1,0 +1,766 @@
+{
+  "name": "DurableTimer",
+  "namespace": "jobs",
+  "maturity": "battle_tested",
+  "builder_agent_id": 3,
+  "catalog_entry_sha256": "c2144c03750ed14614225dc0579e070765dbb83f1d8bb4ef297b0ba54976c38d",
+  "files": [
+    {
+      "path": "jobs/DurableTimer/DurableTimer.cfg",
+      "sha256": "d5be4606cd2954eb47267cc96f10028accc67bf67447e5f4323f741d0b6242d7",
+      "size_bytes": 117,
+      "kind": "test"
+    },
+    {
+      "path": "jobs/DurableTimer/DurableTimer.contract.json",
+      "sha256": "06468b7fd467a4596daeeff99b816a9ca54cb88b2884c016f0608dafaaa3c4ef",
+      "size_bytes": 2390,
+      "kind": "contract_json"
+    },
+    {
+      "path": "jobs/DurableTimer/DurableTimer.manifest.json",
+      "sha256": "e07bf8017d0f30c7c21a777da2d7595d3db38f4f686fe97ba8b6d7ab0b98c9d7",
+      "size_bytes": 43145,
+      "kind": "manifest"
+    },
+    {
+      "path": "jobs/DurableTimer/DurableTimer.md",
+      "sha256": "cac2b6931979b2fc84114b23b05d346bb3b87a71592c949a98aab7c5f80f4dac",
+      "size_bytes": 4222,
+      "kind": "spec_md"
+    },
+    {
+      "path": "jobs/DurableTimer/DurableTimer.py",
+      "sha256": "1d7eee63a0c02215cf0c2235f95c44a3da6b62097b75289d349087c7c3abf8ac",
+      "size_bytes": 7776,
+      "kind": "impl"
+    },
+    {
+      "path": "jobs/DurableTimer/DurableTimer.tla",
+      "sha256": "6348abd0a2cd2f8485e7080e3252e9dd353e9bfe82aa3154e22946dd0deeeeb0",
+      "size_bytes": 2106,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "jobs/DurableTimer/behavioral_DurableTimer.py",
+      "sha256": "9b634a9c9703e2be9724400d89f88f92f7aaf505b824ecb95c438433822e0af5",
+      "size_bytes": 2223,
+      "kind": "behavioral"
+    },
+    {
+      "path": "jobs/DurableTimer/chaos_DurableTimer.py",
+      "sha256": "26eba390df678b6220cd729af1c263f2bcc556cb3065408ebb60602891ef82ff",
+      "size_bytes": 1666,
+      "kind": "chaos"
+    },
+    {
+      "path": "jobs/DurableTimer/concurrent_DurableTimer.py",
+      "sha256": "9ecf3e04afe75a7ce7bed7156d2ae9e5fae523f24d6568989c6d8ac2c62b2403",
+      "size_bytes": 1859,
+      "kind": "concurrent"
+    },
+    {
+      "path": "jobs/DurableTimer/dashboard.json",
+      "sha256": "2cfa2748b6247f1b5bce7edc7e2417f658bbb53177566671e2fc36f3ccda2761",
+      "size_bytes": 722,
+      "kind": "dashboard"
+    },
+    {
+      "path": "jobs/DurableTimer/invariant_bindings.json",
+      "sha256": "47d54a005b0bcbcca1896d6848d964443490ad3c7ebcbc44b8789926bd373e41",
+      "size_bytes": 1912,
+      "kind": "test"
+    },
+    {
+      "path": "jobs/DurableTimer/metamorphic_DurableTimer.py",
+      "sha256": "e0e128e2e58986de91412f918e9966194d329a12fa766bc5d319f909942cb9c0",
+      "size_bytes": 2038,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "jobs/DurableTimer/observability_DurableTimer.py",
+      "sha256": "d14d263971bc3f61adb8b9caad68bbee46f50cdf3c43f569f5e7b44040837c8f",
+      "size_bytes": 1261,
+      "kind": "observability"
+    },
+    {
+      "path": "jobs/DurableTimer/observability_schema.json",
+      "sha256": "190697c3311a5478fd69112db79808648a2b01abe0ff234bf20f11cdd880f9f9",
+      "size_bytes": 968,
+      "kind": "observability"
+    },
+    {
+      "path": "jobs/DurableTimer/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "jobs/DurableTimer/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "jobs/DurableTimer/state_machine_DurableTimer.py",
+      "sha256": "06162bf68b74c8aa1bc031bb23cee4cb1da07a6ea7bbfbe338c66a01e250f6bb",
+      "size_bytes": 1855,
+      "kind": "state_machine"
+    },
+    {
+      "path": "jobs/DurableTimer/test_DurableTimer.py",
+      "sha256": "6517e40b835b2bd15f72a989a00a53e617016f87f5a65cead72e9265766bf64a",
+      "size_bytes": 5770,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "DT_INV_01",
+      "invariant_text": "A fired timer MUST be recorded as an event so workflow replay reconstructs the same fire point.",
+      "confirms_test": "test_inv_fire_recorded_confirms",
+      "prevents_test": "test_inv_fire_recorded_prevents",
+      "under_failure_test": "test_inv_fire_recorded_under_failure"
+    },
+    {
+      "invariant_id": "DT_INV_02",
+      "invariant_text": "Wall clock sleep calls inside a workflow are FORBIDDEN because they break determinism and do not survive outages.",
+      "confirms_test": "test_inv_no_wallclock_sleep_confirms",
+      "prevents_test": "test_inv_no_wallclock_sleep_prevents",
+      "under_failure_test": "test_inv_no_wallclock_sleep_under_failure"
+    },
+    {
+      "invariant_id": "DT_INV_03",
+      "invariant_text": "A canceled timer SHALL NEVER fire; cancellation ALWAYS reaches the workflow before a fired event is recorded.",
+      "confirms_test": "test_inv_canceled_never_fires_confirms",
+      "prevents_test": "test_inv_canceled_never_fires_prevents",
+      "under_failure_test": "test_inv_canceled_never_fires_under_failure"
+    },
+    {
+      "invariant_id": "DT_INV_04",
+      "invariant_text": "delay_s MUST be non negative; a negative delay CANNOT be scheduled and raises an argument error.",
+      "confirms_test": "test_inv_delay_nonnegative_confirms",
+      "prevents_test": "test_inv_delay_nonnegative_prevents",
+      "under_failure_test": "test_inv_delay_nonnegative_under_failure"
+    },
+    {
+      "invariant_id": "DT_INV_05",
+      "invariant_text": "A single worker NEVER caps the number of concurrent durable timers at the process level because timers persist server side.",
+      "confirms_test": "test_inv_no_worker_cap_confirms",
+      "prevents_test": "test_inv_no_worker_cap_prevents",
+      "under_failure_test": "test_inv_no_worker_cap_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 542,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 961,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 1263,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 4850,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 931,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 1102,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 61908,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "42 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1009,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1044,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 52544,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 126649,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NEG-DELAY-NAN",
+        "hypothesis": "Passing float('nan') as delay_s bypasses the non-negative check because NaN comparisons return False for both < and >=, so the invariant that rejects negative delays may silently schedule an undefined timer that never fires or fires immediately.",
+        "input_fixture": "DurableTimer(workflow_id='wf1', timer_id='t1', delay_s=float('nan')); await svc.start(timer)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NEG-ZERO-SUBNORMAL",
+        "hypothesis": "delay_s=-0.0 or -1e-323 subnormal may pass >=0 checks depending on IEEE754 handling, scheduling a negative-interpreted timer that violates the non-negative contract.",
+        "input_fixture": "DurableTimer('wf','t',-0.0); DurableTimer('wf','t2',-5e-324)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CANCEL-FIRE-RACE",
+        "hypothesis": "Concurrent cancel() arriving microseconds before the server-side fire commits can lose the race: fired event is appended to history before cancel reaches the workflow, violating the cancellation-always-wins invariant.",
+        "input_fixture": "start(timer delay=0.001); asyncio.gather(fire_trigger(), cancel('wf','t'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-WALLCLOCK-SMUGGLE",
+        "hypothesis": "A workflow author imports time.sleep or asyncio.sleep indirectly via a third-party library (e.g., requests timeout, retry decorator) \u2014 forbidden wall clock usage is not statically detected and breaks determinism on replay.",
+        "input_fixture": "@workflow\\ndef wf(): requests.get(url, timeout=5); await asyncio.sleep(1)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-MISSING-EVENT",
+        "hypothesis": "Worker crashes after timer fires server-side but before the TimerFired event is flushed to history; on replay the timer re-fires at a different logical point, violating determinism.",
+        "input_fixture": "start(delay=1); kill -9 worker at t=1.0s between fire dispatch and event persistence",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-BACKWARDS",
+        "hypothesis": "Server node with NTP jumping backward 30s re-evaluates pending timers and may fire the same timer twice or delay past delay_s, corrupting event history ordering.",
+        "input_fixture": "start(delay=60); at t=30 set server clock to t=0",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INT-OVERFLOW-DELAY",
+        "hypothesis": "delay_s=1e308 or sys.float_info.max multiplied to nanoseconds overflows int64 when converted to deadline timestamp, wrapping negative and firing immediately.",
+        "input_fixture": "DurableTimer('wf','t', 1e308)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DUP-TIMER-ID",
+        "hypothesis": "Calling start() twice with same (workflow_id, timer_id) may create two persisted timers; cancel only reaches one, so the other fires after supposed cancellation.",
+        "input_fixture": "await svc.start(t); await svc.start(t); await svc.cancel('wf','t')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-IDS",
+        "hypothesis": "workflow_id='' or timer_id='' or containing null bytes/unicode RTL overrides may be accepted by start(), corrupting server-side index keys so cancel() targets wrong timer.",
+        "input_fixture": "DurableTimer('','',0.1); DurableTimer('wf\\x00evil','t',1)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AMPLIFICATION-FANOUT",
+        "hypothesis": "Invariant says process never caps concurrent timers, but a workflow starting 10M timers causes server-side queue amplification and OOM, indirectly violating the 'timers persist server side' guarantee.",
+        "input_fixture": "for i in range(10_000_000): await svc.start(DurableTimer('wf',f't{i}',3600))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-NONDET-CANCEL",
+        "hypothesis": "Cancel issued during replay (before event cursor reaches cancel point) may re-issue to server, producing duplicate cancel events and possibly firing a timer marked canceled in one history branch.",
+        "input_fixture": "replay workflow with cancel at history[5]; inject new cancel at history[3]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TYPE-CONFUSION-DELAY",
+        "hypothesis": "delay_s passed as Decimal, numpy.float64, or bool (True==1.0) bypasses isinstance(float) checks and serializes unexpectedly to server, violating schedule contract.",
+        "input_fixture": "DurableTimer('wf','t', True); DurableTimer('wf','t2', Decimal('1.5'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-INJECT-EVENT",
+        "hypothesis": "A malicious replay source injects a forged TimerFired event for a timer that was never started, poisoning the history so the workflow proceeds past a sleep that never actually elapsed.",
+        "input_fixture": "history.append(TimerFired(timer_id='t', ts=0)); replay(history)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY-RACE-CANCEL",
+        "hypothesis": "If a cancel() arrives at the server between the moment the server marks a timer 'fired' and the moment it appends the fire event to the workflow history, the cancel races with the event write. The cancel is acknowledged, but the fire event still lands in the log, causing replay to reconstruct a fire that should never have happened \u2014 violating both INV-CANCEL-NEVER-FIRES and INV-REPLAY-EVENT.",
+        "input_fixture": "t = DurableTimer('wf-1', 'tmr-1', delay_s=0.001); await svc.start(t); await asyncio.sleep(0.0009); await svc.cancel('wf-1', 'tmr-1')  # cancel sent 100\u00b5s before expiry; assert server log has no TIMER_FIRED event for tmr-1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NEG-FLOAT-NAN",
+        "hypothesis": "float('nan') passes a Python > 0 guard check because nan > 0 is False AND nan < 0 is also False \u2014 so a naive `if delay_s < 0: raise` guard silently accepts NaN. A NaN delay is semantically undefined and must raise an ArgumentError, not schedule an indeterminate timer.",
+        "input_fixture": "import math; t = DurableTimer('wf-2', 'tmr-nan', delay_s=float('nan')); await svc.start(t)  # expected: ArgumentError; actual risk: timer scheduled with undefined fire time",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NEG-FLOAT-INF",
+        "hypothesis": "float('inf') is technically non-negative, so it passes a `delay_s >= 0` guard. Scheduling a timer with infinite delay consumes a server-side slot permanently and can never fire legitimately, amounting to a resource leak that contradicts the spirit of bounded scheduling and may hang replay forever.",
+        "input_fixture": "t = DurableTimer('wf-3', 'tmr-inf', delay_s=float('inf')); await svc.start(t)  # expected: ArgumentError or bounded cap; actual risk: orphaned server-side timer",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WALL-CLOCK-INJECTION",
+        "hypothesis": "If TimerService.start() internally falls back to asyncio.sleep(delay_s) when the persistence backend is unreachable, it silently violates the wall-clock-sleep-forbidden invariant. A test that cuts the backend connection mid-call should expose this fallback.",
+        "input_fixture": "# Simulate backend outage: mock persistence layer to raise ConnectionError on write; t = DurableTimer('wf-4', 'tmr-wclock', delay_s=60); patch('backend.store', side_effect=ConnectionError); await svc.start(t); assert no asyncio.sleep was called (use mock.patch('asyncio.sleep') and assert_not_called)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY-NO-EVENT-ON-OUTAGE",
+        "hypothesis": "If the worker crashes after the timer fires server-side but before the fire event is flushed to durable storage, replay on recovery has no TIMER_FIRED record. The workflow resumes as if the timer never fired, executing a different code path than the original run, breaking deterministic replay.",
+        "input_fixture": "t = DurableTimer('wf-5', 'tmr-crash', delay_s=0.01); await svc.start(t); # inject worker SIGKILL at exactly T+delay_s before event flush; await worker.restart(); replay_log = await get_history('wf-5'); assert any(e.type == 'TIMER_FIRED' and e.timer_id == 'tmr-crash' for e in replay_log)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DUP-TIMER-ID-AMPLIFY",
+        "hypothesis": "Calling start() twice with the identical (workflow_id, timer_id) pair should be idempotent. If it is not, two server-side timers fire for the same logical timer, the workflow receives two TIMER_FIRED events for the same timer_id, and replay diverges on the second event \u2014 an amplification / double-fire defect.",
+        "input_fixture": "t = DurableTimer('wf-6', 'tmr-dup', delay_s=5); await svc.start(t); await svc.start(t)  # duplicate start; events = await collect_fired_events('wf-6', 'tmr-dup', wait=6); assert len(events) == 1, f'expected 1 fire, got {len(events)}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CANCEL-NONEXISTENT-TIMER",
+        "hypothesis": "Canceling a timer_id that was never started (or was already fired and cleaned up) should raise a well-typed error or be a safe no-op \u2014 never silently succeed in a way that masks a programming error. If cancel() returns success on a nonexistent ID, callers get false confidence that a running timer was stopped.",
+        "input_fixture": "await svc.cancel('wf-7', 'tmr-ghost')  # timer never started; # expected: KeyError / NotFoundError OR documented no-op with warning; assert no silent success that could mask double-cancel bugs",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INT-OVERFLOW-DELAY",
+        "hypothesis": "Passing delay_s = 2**63 (a very large int coerced to float) may silently overflow to float('inf') or a platform-specific max, bypassing validation and scheduling a timer that never expires. Python floats are IEEE-754 doubles; values beyond ~9.2e18 seconds saturate to inf.",
+        "input_fixture": "t = DurableTimer('wf-8', 'tmr-overflow', delay_s=2**63); await svc.start(t)  # expected: ArgumentError for unreasonable delay; actual risk: inf-delay timer silently accepted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK-SKEW-EARLY-FIRE",
+        "hypothesis": "If the server computes fire_at = now() + delay_s using a system clock that is ahead of the actual wall clock (positive skew), the timer fires earlier than the logical delay intended. After a worker failover to a node with a corrected clock, replay using recorded fire_at sees a past timestamp and re-fires immediately, potentially double-firing relative to what the original worker observed.",
+        "input_fixture": "# Inject +30s NTP offset on server node A; t = DurableTimer('wf-9', 'tmr-skew', delay_s=60); await svc.start(t)  # server records fire_at = now+60 (shifted +30); # failover to node B with correct clock; # node B replays: fire_at is 30s in the past \u2192 immediate re-fire; assert replay event count == 1 (not 2)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONCURRENT-TIMER-CAP-LEAK",
+        "hypothesis": "Even though invariant states no per-process cap, if the TimerService implementation maintains an in-process dict or semaphore to track in-flight timers for deduplication, spawning 100,000 concurrent timers will exhaust heap memory and crash the worker, indirectly imposing a de-facto cap at the process level.",
+        "input_fixture": "timers = [DurableTimer('wf-10', f'tmr-{i}', delay_s=3600) for i in range(100_000)]; await asyncio.gather(*[svc.start(t) for t in timers]); # monitor worker RSS; assert worker process did not OOM or raise MemoryError; assert all 100_000 timers are registered server-side not in-process",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY-WRONG-TIMER-ORDER",
+        "hypothesis": "If two timers with nearly identical delays fire within the same millisecond and their TIMER_FIRED events are written in a non-deterministic order to the history log, replay may reconstruct them in a different order than the original run, causing any workflow logic that branches on which timer fires first to diverge.",
+        "input_fixture": "t1 = DurableTimer('wf-11', 'tmr-A', delay_s=1.0000); t2 = DurableTimer('wf-11', 'tmr-B', delay_s=1.0001); await asyncio.gather(svc.start(t1), svc.start(t2)); events = await get_history('wf-11'); assert events.index(FIRED('tmr-A')) < events.index(FIRED('tmr-B'))  # strict order required for determinism",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CANCEL-AFTER-FIRE-REPLAY",
+        "hypothesis": "Calling cancel() after a timer has already fired and its event is durably recorded should be a documented no-op or raise an error. If instead it attempts to delete the TIMER_FIRED record from history, subsequent replay will miss the fire event and reconstruct a different execution path \u2014 a post-hoc history mutation.",
+        "input_fixture": "t = DurableTimer('wf-12', 'tmr-late', delay_s=0.001); await svc.start(t); await asyncio.sleep(0.1)  # let timer fire; await svc.cancel('wf-12', 'tmr-late')  # late cancel; events = await get_history('wf-12'); assert any(e.type == 'TIMER_FIRED' for e in events)  # event must still exist",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REPLAY-CRASH-RACE",
+        "hypothesis": "Worker crashes immediately after timer fires but before event persistence commits; workflow replay loses the fire point entirely.",
+        "input_fixture": "start(DurableTimer('w1', 't1', 1.0)), wait for fire signal, SIGKILL before persistence acks",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EARLY-EVENT-PERSIST",
+        "hypothesis": "Event persisted to stream before actual delay elapses; replay advances workflow before delay_s time has passed.",
+        "input_fixture": "Mock start() to immediately write fire event; check event timestamp vs actual elapsed time",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK-SKEW-BACKWARD",
+        "hypothesis": "System clock jumps backward between start and fire; fire_timestamp becomes invalid (in past), breaking monotonic replay assumptions.",
+        "input_fixture": "start(timer), ntp correction backward 30s, fire event written with skewed timestamp",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-BLOCKING-SLEEP-UNDETECTED",
+        "hypothesis": "Workflow orchestration code contains time.sleep(30) but system has no instrumentation to detect blocking calls; determinism violated silently.",
+        "input_fixture": "Workflow that calls time.sleep() directly alongside start(DurableTimer); measure actual vs deterministic replay time",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-CANCEL-FIRE-RACE",
+        "hypothesis": "Simultaneous cancel() and fire() requests for same timer both reach persistence layer; race condition allows both operations to succeed, timer fires despite cancellation.",
+        "input_fixture": "start(timer), then fire_internal() and cancel() execute concurrently, query final state",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REPLAY-CANCEL-DROPPED",
+        "hypothesis": "Cancellation event is dropped from event log during replay; timer that was canceled in original run fires again on replay.",
+        "input_fixture": "start, cancel, record events, replay omitting cancel event, check if fire fires",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PARTITION-CANCEL-ASYNC",
+        "hypothesis": "Cancel request sent to persistence layer but network partition occurs; fire() executes on isolated partition, both operations commit, violating mutual exclusion.",
+        "input_fixture": "start(timer), cancel() network request, partition event, fire() fires locally, partition heals",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NEGATIVE-DELAY-BYPASS",
+        "hypothesis": "Negative delay_s value is not validated on start() call; timer is scheduled with invalid delay and behavior is undefined.",
+        "input_fixture": "start(DurableTimer('w1', 't1', -5.0))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-FLOAT-BOUNDARY-NEGATIVE",
+        "hypothesis": "Very small negative delay (e.g., -1e-15) bypasses naive zero-check and causes timer to fire immediately or with undefined behavior.",
+        "input_fixture": "start(DurableTimer('w1', 't1', -1e-15))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NAN-DELAY-UNDEF",
+        "hypothesis": "delay_s set to float('nan') bypasses numeric validation; timer scheduling logic produces undefined behavior with NaN comparisons.",
+        "input_fixture": "start(DurableTimer('w1', 't1', float('nan')))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NUMERIC-OVERFLOW-HUGE-DELAY",
+        "hypothesis": "delay_s is cast to integer milliseconds/nanoseconds without overflow check; 1e308 seconds causes integer overflow in timer scheduling logic.",
+        "input_fixture": "start(DurableTimer('w1', 't1', 1e308))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNBOUNDED-PROCESS-TIMERS",
+        "hypothesis": "System has undocumented per-process limit on concurrent timers (e.g., file descriptor exhaustion); creating 50k timers hits ResourceExhausted without backpressure.",
+        "input_fixture": "for i in range(50000): await start(DurableTimer(f'w{i}', f't{i}', 3600))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MEMORY-AMPLIFICATION-DOS",
+        "hypothesis": "Each timer requires server-side memory for state machine; 1M timers cause OOM on single worker despite claim that 'timers persist server side'.",
+        "input_fixture": "for i in range(1000000): await start(DurableTimer(f'w1', f't{i}', 86400))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ZERO-DELAY-IMMEDIATE-FIRE",
+        "hypothesis": "Zero delay timer fires synchronously during start() call before event is persisted, causing event loss on crash.",
+        "input_fixture": "start(DurableTimer('w1', 't1', 0.0)) with crash immediately after call returns",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DUPLICATE-FIRE-LOST",
+        "hypothesis": "Timer fires multiple times (due to server-side retry bug) but event log only records one; replay loses subsequent fires.",
+        "input_fixture": "Simulate server-side double-fire due to exactly-once processing failure; check event log",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TIMER-ID-COLLISION",
+        "hypothesis": "Two workflows with same workflow_id and timer_id schedule concurrently; cancellation of one cancels the other due to missing uniqueness enforcement.",
+        "input_fixture": "await start(DurableTimer('w1', 't_same', 100)), await start(DurableTimer('w1', 't_same', 100)), cancel('w1', 't_same')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EVENT-ORDERING-CAUSAL",
+        "hypothesis": "If multiple timers fire simultaneously, event ordering in log is nondeterministic; replay may process fires in different order, breaking causal semantics.",
+        "input_fixture": "start multiple timers with same delay, let them all fire at same instant, check event ordering across replays",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "timer.scheduled",
+        "required_attributes": [
+          "workflow_id",
+          "timer_id",
+          "delay_s"
+        ]
+      },
+      {
+        "event_name": "timer.fired",
+        "required_attributes": [
+          "workflow_id",
+          "timer_id",
+          "event_seq"
+        ]
+      },
+      {
+        "event_name": "timer.canceled",
+        "required_attributes": [
+          "workflow_id",
+          "timer_id"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "timer.scheduled",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 500,
+        "label_keys": [
+          "workflow_id"
+        ]
+      },
+      {
+        "name": "timer.fired",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 500,
+        "label_keys": [
+          "workflow_id"
+        ]
+      },
+      {
+        "name": "timer.delay",
+        "metric_type": "histogram",
+        "unit": "s",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "workflow_id"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "timer.start",
+        "required_attributes": [
+          "workflow.id",
+          "timer.id",
+          "timer.delay_s"
+        ]
+      },
+      {
+        "operation_name": "timer.cancel",
+        "required_attributes": [
+          "workflow.id",
+          "timer.id"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Implementation matches catalog Protocol (DurableTimer dataclass, TimerService with async start/cancel). Invariants DT-INV-01..05 explicitly cited and enforced. Minor: catalog signature doesn't include fire/wait_for_timer, but those are reference-runtime extensions clearly scoped."
+      },
+      {
+        "axis": "completeness",
+        "score": 8,
+        "rationale": "All five invariants enforced. Schedule/cancel/fire transitions, event log, status inspection, and polling adapter present. Missing: no explicit duplicate-schedule invariant in spec but implementation adds it (bonus). No test file shipped here but spec references invariant_bindings.json."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Single DurableTimerError taxonomy, every raise cites the DT-INV-NN it supports, messages include offending key/value/type. Distinguishes 'supporting' vs primary invariant. Clear and greppable."
+      },
+      {
+        "axis": "composability",
+        "score": 8,
+        "rationale": "runtime_checkable Protocol enables adapter substitution per extension_contract. Zero import-time I/O. wait_for_timer narrowly couples to InMemoryTimerService via isinstance \u2014 acceptable as a reference adapter but limits polymorphic reuse; a status Protocol would be cleaner."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Frozen dataclass, Final constant, lazy asyncio, no global state, __all__ defined. Reference runtime is explicitly in-memory (spec says Temporal substitutes in prod). _next_seq is not thread-safe but spec claims serialization via counter \u2014 acceptable for single-loop async; concurrent loops would race."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace jobs.DurableTimer, dataclass + Protocol signatures match catalog api_signature verbatim. Invariant texts align with catalog list. Provenance, alternatives, extension_contract all reflected in spec. Maturity battle_tested is plausible given TLA+ check."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'decision tick' is used without definition \u2014 the glossary covers delay_s/fire/cancel but not the replay loop concept that makes timers durable",
+          "The usage example only shows `svc.start(timer)` with no follow-up \u2014 how does the workflow actually *await* the timer firing? There is no `await timer.wait()` or equivalent shown",
+          "API Surface says 'see DurableTimer.contract.json' \u2014 juniors need inline signatures, not a pointer to a separate file they may not have"
+        ],
+        "rewrite_suggestion": "Extend the usage snippet to show the full round-trip: create \u2192 start \u2192 await fire event, and define 'decision tick' in the glossary. Inline the key method signatures directly in the doc instead of delegating to contract.json."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "_next_seq() is described as 'monotonic' but it is unclear whether this counter resets on worker restart \u2014 if it is in-memory only, replayed workflows could produce sequence collisions",
+          "The Extension contract says 'middleware registered on the worker' without specifying the registration API, making it impossible to implement without reading source",
+          "No stated behavior when start() is called twice with the same timer_id \u2014 idempotent, error, or undefined?"
+        ],
+        "rewrite_suggestion": "Add a duplicate-start contract (idempotent vs error), document whether _next_seq() persists across restarts, and add a one-line code example for middleware registration."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "No authorization model \u2014 any caller that has a workflow_id can cancel another caller's timer; the doc does not state whether access control is in-scope or explicitly out-of-scope",
+          "The 90-day policy cap is recommended but the enforcement point is unspecified \u2014 is it enforced at the SDK, at the Temporal server, or in application code?",
+          "No mention of audit logging: fired/canceled events go into workflow history, but is that history tamper-evident and who can read it?"
+        ],
+        "rewrite_suggestion": "Add an explicit 'Authorization' sub-section stating whether timer_id ownership is enforced, where the upper delay_s cap is enforced, and whether event history provides an audit trail."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "No failure modes documented \u2014 what happens when the Temporal server is unreachable at the moment start() is called? Does it block, error, or queue locally?",
+          "No alerting guidance \u2014 timer.delay histogram spike is flagged as a signal but no threshold or example alert rule is given",
+          "No mention of timer cardinality limits in the Temporal server itself (server-side schedule caps, history size limits) that could cause operational incidents"
+        ],
+        "rewrite_suggestion": "Add a 'Failure Modes' table (server unavailable, history size exceeded) and a concrete alert example for the timer.delay histogram spike pattern."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The Formal Model and Provenance sections are noise for a PM \u2014 TLA+, TLC 2.19, and 'Agent #2 DISTRIBUTED' carry no product meaning and bury the key constraints",
+          "The 90-day maximum wait is mentioned only inside Security Considerations, not in the USE / DO NOT USE section where a PM would look for scope boundaries",
+          "No user-facing failure story: what does an end user experience if a timer fires late (e.g. Temporal server backlog)? Is late firing possible and by how much?"
+        ],
+        "rewrite_suggestion": "Move the 90-day cap into the USE / DO NOT USE block, remove or collapse the TLA+ paragraph to a one-liner ('formally verified'), and add a one-sentence answer to 'can timers fire late and what's the expected jitter?'"
+      }
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "CTXMAP_INV_01",
+      "invariant_text": "Every pairwise integration between contexts MUST be classified by one of the canonical relationship kinds; ad-hoc or blank relationships are FORBIDDEN.",
+      "confirms_test": "test_inv_canonical_kind_confirms",
+      "prevents_test": "test_inv_canonical_kind_prevents",
+      "under_failure_test": "test_inv_canonical_kind_under_failure"
+    },
+    {
+      "invariant_id": "CTXMAP_INV_02",
+      "invariant_text": "The graph of contexts SHALL be acyclic for Customer-Supplier relationships; a cycle CANNOT be introduced without promotion to Partnership.",
+      "confirms_test": "test_inv_directional_acyclic_confirms",
+      "prevents_test": "test_inv_directional_acyclic_prevents",
+      "under_failure_test": "test_inv_directional_acyclic_under_failure"
+    },
+    {
+      "invariant_id": "CTXMAP_INV_03",
+      "invariant_text": "A BoundedContext CANNOT participate in an integration absent from the ContextMap; shadow integrations MUST be surfaced.",
+      "confirms_test": "test_inv_no_shadow_integration_confirms",
+      "prevents_test": "test_inv_no_shadow_integration_prevents",
+      "under_failure_test": "test_inv_no_shadow_integration_under_failure"
+    },
+    {
+      "invariant_id": "CTXMAP_INV_04",
+      "invariant_text": "Relationship changes ALWAYS require an explicit mutation through add_relationship so history is auditable.",
+      "confirms_test": "test_inv_auditable_mutation_confirms",
+      "prevents_test": "test_inv_auditable_mutation_prevents",
+      "under_failure_test": "test_inv_auditable_mutation_under_failure"
+    }
+  ]
+}

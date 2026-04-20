@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "UOW_INV_01",
+      "invariant_text": "A successful commit MUST apply every registered new, dirty, and removed object in a single atomic transaction; on any exception the unit MUST rollback.",
+      "confirms_test": "test_inv_atomic_commit_confirms",
+      "prevents_test": "test_inv_atomic_commit_prevents",
+      "under_failure_test": "test_inv_atomic_commit_under_failure"
+    },
+    {
+      "invariant_id": "UOW_INV_02",
+      "invariant_text": "The same object instance SHALL NEVER be registered in more than one of new, dirty, or removed within one unit.",
+      "confirms_test": "test_inv_single_bucket_confirms",
+      "prevents_test": "test_inv_single_bucket_prevents",
+      "under_failure_test": "test_inv_single_bucket_under_failure"
+    },
+    {
+      "invariant_id": "UOW_INV_03",
+      "invariant_text": "A UnitOfWork instance CANNOT be reused after commit or rollback; a fresh unit MUST be opened for the next transaction.",
+      "confirms_test": "test_inv_no_reuse_confirms",
+      "prevents_test": "test_inv_no_reuse_prevents",
+      "under_failure_test": "test_inv_no_reuse_under_failure"
+    },
+    {
+      "invariant_id": "UOW_INV_04",
+      "invariant_text": "Context-manager semantics ALWAYS drive lifecycle so leaks on exception paths are impossible; on exception the unit MUST rollback.",
+      "confirms_test": "test_inv_ctxmgr_rollback_confirms",
+      "prevents_test": "test_inv_ctxmgr_rollback_prevents",
+      "under_failure_test": "test_inv_ctxmgr_rollback_under_failure"
+    },
+    {
+      "invariant_id": "UOW_INV_05",
+      "invariant_text": "Repositories operating inside a unit MUST enlist their mutations with that unit; direct writes bypassing the unit are FORBIDDEN.",
+      "confirms_test": "test_inv_enlist_confirms",
+      "prevents_test": "test_inv_enlist_prevents",
+      "under_failure_test": "test_inv_enlist_under_failure"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "name": "FeatureToggle",
+  "namespace": "flags",
+  "purpose": "Named boolean (or variant) predicate, evaluated against the current context, that controls whether a code path is live for a given request.",
+  "api_signature": "from typing import Protocol\nfrom dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass ToggleContext:\n    principal_id: str | None\n    tenant_id: str | None\n    environment: str\n\nclass FeatureToggle(Protocol):\n    key: str\n    def is_active(self, ctx: ToggleContext) -> bool: ...\n",
+  "invariants": [
+    "is_active() MUST be pure given the same (key, ctx); side effects (I/O, random draws) SHALL NEVER leak into evaluation.",
+    "Evaluation MUST default to False (off) when the backing store is unreachable; CANNOT default to on.",
+    "A toggle key MUST be unique within the registry and SHALL follow a fixed naming convention.",
+    "The evaluation path MUST record an observability event (toggle key + decision) for every call; audit entries NEVER are dropped.",
+    "Removing a toggle MUST be a two-step deprecation: mark stale, then delete; code references CANNOT disappear abruptly."
+  ],
+  "extension_contract": "Downstream tools declare a FeatureToggle (e.g. an enum member or a class), register a strategy/provider (percent-rollout, per-tenant, per-role), and evaluation runs through the configured provider so new stores (Togglz/Spring @ConditionalOnProperty/OpenFeature) plug in as adapters.",
+  "consumption_example": "class HotFeature:\n    key = 'hot_feature'\n    def is_active(self, ctx: ToggleContext) -> bool:\n        return ctx.environment == 'prod' and ctx.tenant_id == 'acme'\n\nft: FeatureToggle = HotFeature()\nassert ft.key == 'hot_feature'\n",
+  "sources": [
+    {
+      "source": "Togglz 4.x \u2014 Feature enum and isActive()",
+      "locator": "togglz.org/documentation/usage.html \u2014 'MyFeatures.HOT_NEW_FEATURE.isActive()'"
+    },
+    {
+      "source": "Spring Boot 3.x Reference \u2014 Conditional beans",
+      "locator": "org.springframework.boot.autoconfigure.condition.ConditionalOnProperty \u2014 'name', 'havingValue'"
+    },
+    {
+      "source": "Spring Framework \u2014 Profiles",
+      "locator": "org.springframework.context.annotation.Profile \u2014 @Profile('production'), '!production'"
+    }
+  ],
+  "why_essential": "Feature flags straddle code, product, and ops; without one contract, each tool reinvents on-off logic, audits drift, and there is no single place to list what is live in prod.",
+  "alternatives_considered": [
+    "If-statements on env vars \u2014 no per-user rollout, no audit",
+    "Runtime config reloads only \u2014 no context-aware evaluation",
+    "Manual DNS/Traffic splits \u2014 wrong layer; operates on infrastructure not logic"
+  ],
+  "maturity": "battle_tested"
+}

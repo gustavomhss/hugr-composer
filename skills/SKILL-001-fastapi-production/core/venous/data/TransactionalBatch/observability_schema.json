@@ -1,0 +1,26 @@
+{
+  "logs": [
+    {"event_name": "batch.commit.started",
+     "required_attributes": ["batch_id", "op_count"]},
+    {"event_name": "batch.commit.committed",
+     "required_attributes": ["batch_id", "op_count", "duration_ms"]},
+    {"event_name": "batch.commit.aborted",
+     "required_attributes": ["batch_id", "op_count", "reason"]},
+    {"event_name": "batch.op.appended",
+     "required_attributes": ["batch_id", "op", "key"]}
+  ],
+  "metrics": [
+    {"name": "batch.commit.calls", "metric_type": "counter", "unit": "1",
+     "cardinality_bound": 100, "label_keys": ["outcome"]},
+    {"name": "batch.commit.duration", "metric_type": "histogram", "unit": "ms",
+     "cardinality_bound": 200, "label_keys": ["outcome"]},
+    {"name": "batch.op.count", "metric_type": "histogram", "unit": "1",
+     "cardinality_bound": 100, "label_keys": ["outcome"]}
+  ],
+  "spans": [
+    {"operation_name": "batch.commit",
+     "required_attributes": ["batch.id", "batch.op_count"]},
+    {"operation_name": "batch.apply",
+     "required_attributes": ["batch.id", "store.name"]}
+  ]
+}

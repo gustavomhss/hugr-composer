@@ -1,0 +1,10 @@
+{
+  "title": "CorrelationContext — Activations, Rejections",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "Active Contexts",
+     "targets": [{"expr": "correlation_activations_depth"}]},
+    {"id": 2, "type": "timeseries", "title": "Baggage Rejections/s by Reason",
+     "targets": [{"expr": "sum by (reason) (rate(correlation_baggage_rejected_count_total[5m]))"}]}
+  ]
+}

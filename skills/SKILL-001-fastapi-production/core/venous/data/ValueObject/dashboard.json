@@ -1,0 +1,24 @@
+{
+  "title": "ValueObject — Construction, Changes, Validation Failures",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "ValueObjects Constructed (5m)",
+      "targets": [{"expr": "sum(rate(valueobject_constructed_total[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "with_changes Calls (rate/s) by class",
+      "targets": [{"expr": "sum by (class_name) (rate(valueobject_with_changes_total[5m]))"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Validation Failures by Invariant",
+      "targets": [{"expr": "sum by (invariant_id) (rate(valueobject_validation_failures[5m]))"}]
+    }
+  ]
+}

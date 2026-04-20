@@ -1,0 +1,778 @@
+{
+  "name": "FeatureToggle",
+  "namespace": "flags",
+  "maturity": "battle_tested",
+  "builder_agent_id": 1,
+  "catalog_entry_sha256": "000c0608960af1168605af1b223b4dfffc00baf1e8e7f43a8c1a9847b154e87f",
+  "files": [
+    {
+      "path": "flags/FeatureToggle/FeatureToggle.contract.json",
+      "sha256": "cc32cef12ee23dcb991ab98a1c644d6027eda292d9266d2b58226c473fd83fe6",
+      "size_bytes": 2790,
+      "kind": "contract_json"
+    },
+    {
+      "path": "flags/FeatureToggle/FeatureToggle.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "flags/FeatureToggle/FeatureToggle.md",
+      "sha256": "821b9ee4f2bd910a04ada96b9b7bfac170bed19c11d4ba4b98fb09fb8d12e867",
+      "size_bytes": 4345,
+      "kind": "spec_md"
+    },
+    {
+      "path": "flags/FeatureToggle/FeatureToggle.py",
+      "sha256": "6757c60acef1a77c16f459e2a2a4583160fe83df95e7af7f46884507f0a48229",
+      "size_bytes": 5878,
+      "kind": "impl"
+    },
+    {
+      "path": "flags/FeatureToggle/behavioral_FeatureToggle.py",
+      "sha256": "8176b93179f769c4459843605fa216aa8e74d250aeb145325919ef85562c3458",
+      "size_bytes": 3211,
+      "kind": "behavioral"
+    },
+    {
+      "path": "flags/FeatureToggle/chaos_FeatureToggle.py",
+      "sha256": "d0ee68a1c9c65a097a661ffe42cc03f2d63a66562d14ef32832707e520eafec3",
+      "size_bytes": 3531,
+      "kind": "chaos"
+    },
+    {
+      "path": "flags/FeatureToggle/dashboard.json",
+      "sha256": "d43749bbcf9fe6c6f3d3c9e055d9b9f5e1dabbd048a9373c4684102fd884c4e7",
+      "size_bytes": 692,
+      "kind": "dashboard"
+    },
+    {
+      "path": "flags/FeatureToggle/invariant_bindings.json",
+      "sha256": "9dcc1bd63ae71e83b6b27a17a0319e88f67f3fb5d0be5f11b4ce17b23d1f3517",
+      "size_bytes": 1901,
+      "kind": "test"
+    },
+    {
+      "path": "flags/FeatureToggle/metamorphic_FeatureToggle.py",
+      "sha256": "17f1a6289cfe84cff4a59e9f0e4270e50e277f5563c28f1731b803505b7fa7cc",
+      "size_bytes": 3048,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "flags/FeatureToggle/observability_FeatureToggle.py",
+      "sha256": "ad078a373f1e8fd8ced6eef580517c4e48c052b1a743fc7b19714d336fb46ada",
+      "size_bytes": 1850,
+      "kind": "observability"
+    },
+    {
+      "path": "flags/FeatureToggle/observability_schema.json",
+      "sha256": "af834031571f28f77c8abfbb2a7fe17d61579219c3f5a2b4f1a15dc991fab435",
+      "size_bytes": 1056,
+      "kind": "observability"
+    },
+    {
+      "path": "flags/FeatureToggle/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "flags/FeatureToggle/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "flags/FeatureToggle/test_FeatureToggle.py",
+      "sha256": "261c3cf72b07d0780877bb79af7cd133ff3caf0ae10ee9b85d637e920c0c76b3",
+      "size_bytes": 6751,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "FT_INV_01",
+      "invariant_text": "is_active() MUST be pure given the same (key, ctx); side effects (I/O, random draws) SHALL NEVER leak into evaluation.",
+      "confirms_test": "test_inv_pure_evaluation_confirms",
+      "prevents_test": "test_inv_pure_evaluation_prevents",
+      "under_failure_test": "test_inv_pure_evaluation_under_failure"
+    },
+    {
+      "invariant_id": "FT_INV_02",
+      "invariant_text": "Evaluation MUST default to False (off) when the backing store is unreachable; CANNOT default to on.",
+      "confirms_test": "test_inv_off_by_default_confirms",
+      "prevents_test": "test_inv_off_by_default_prevents",
+      "under_failure_test": "test_inv_off_by_default_under_failure"
+    },
+    {
+      "invariant_id": "FT_INV_03",
+      "invariant_text": "A toggle key MUST be unique within the registry and SHALL follow a fixed naming convention.",
+      "confirms_test": "test_inv_key_uniqueness_confirms",
+      "prevents_test": "test_inv_key_uniqueness_prevents",
+      "under_failure_test": "test_inv_key_uniqueness_under_failure"
+    },
+    {
+      "invariant_id": "FT_INV_04",
+      "invariant_text": "The evaluation path MUST record an observability event (toggle key + decision) for every call; audit entries NEVER are dropped.",
+      "confirms_test": "test_inv_audit_recorded_confirms",
+      "prevents_test": "test_inv_audit_recorded_prevents",
+      "under_failure_test": "test_inv_audit_recorded_under_failure"
+    },
+    {
+      "invariant_id": "FT_INV_05",
+      "invariant_text": "Removing a toggle MUST be a two-step deprecation: mark stale, then delete; code references CANNOT disappear abruptly.",
+      "confirms_test": "test_inv_two_step_delete_confirms",
+      "prevents_test": "test_inv_two_step_delete_prevents",
+      "under_failure_test": "test_inv_two_step_delete_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 684,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 1 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1595,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1674,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 67432,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "47 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1169,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1202,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 71859,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 146050,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SIDE-EFFECT-RANDOM",
+        "hypothesis": "is_active() uses random.random() or time.time() for percentage rollouts, making two calls with identical (key, ctx) return different bool values, violating purity invariant under deterministic replay or cache memoization.",
+        "input_fixture": "ctx=ToggleContext('u1','t1','prod'); call toggle.is_active(ctx) 1000x with a 50% rollout toggle 'flags.checkout.v2'; assert all results equal.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FAIL-OPEN-TIMEOUT",
+        "hypothesis": "When backing store (Redis/LaunchDarkly) times out instead of raising ConnectionError, the fetch wrapper treats None/timeout sentinel as truthy or falls through to a cached 'last known good' value that was True, defaulting ON instead of OFF.",
+        "input_fixture": "Mock store with asyncio.TimeoutError on get('flags.billing.new_engine'); previous cached value=True; call is_active(); expect False.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DUP-KEY-CASE",
+        "hypothesis": "Registry uses case-sensitive dict keys, permitting both 'flags.Checkout' and 'flags.checkout' to coexist as distinct toggles, breaking uniqueness and enabling a shadow toggle attack to bypass kill-switches.",
+        "input_fixture": "registry.register(FeatureToggle(key='flags.checkout')); registry.register(FeatureToggle(key='flags.Checkout')); expect DuplicateKeyError.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NAMING-INJECTION",
+        "hypothesis": "Naming convention regex is not anchored (missing ^$), so keys like 'flags.ok\\n; DROP TABLE toggles' or 'flags.ok.../../etc' pass validation, enabling log injection and path traversal in audit sinks.",
+        "input_fixture": "registry.register(FeatureToggle(key='flags.ok\\nflags.evil')); expect InvalidKeyError.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AUDIT-DROP-ASYNC",
+        "hypothesis": "Observability emit uses fire-and-forget asyncio.create_task without awaiting; under backpressure (queue full, loop shutdown) events are silently dropped yet is_active() still returns, violating 'audit entries NEVER dropped'.",
+        "input_fixture": "Fill observability queue to maxsize; call is_active() 10k times; count audit entries received; expect 10k, observe <10k.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AUDIT-EXCEPTION-SWALLOW",
+        "hypothesis": "Audit sink raising (disk full, broker down) is caught in a try/except that logs and returns the decision anyway, so an attacker DoSing the sink causes silent audit loss while toggles still evaluate.",
+        "input_fixture": "Patch audit.emit to raise IOError; call is_active(ctx); expect either hard fail or retry queue; observe decision returned with no audit.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DELETE-WITHOUT-STALE",
+        "hypothesis": "registry.delete('flags.x') succeeds even when the toggle was never marked stale, allowing an operator to abruptly remove a key while production code still references it, causing KeyError at runtime.",
+        "input_fixture": "registry.register(key='flags.x'); registry.delete('flags.x'); expect DeprecationRequiredError since mark_stale() was not called first.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-STALE-TTL-BYPASS",
+        "hypothesis": "Two-step deprecation enforces only a flag (stale=True) with no minimum grace window, so a single commit can mark_stale() then delete() in the same transaction, defeating the purpose of deprecation.",
+        "input_fixture": "t0: mark_stale('flags.y'); t0+1ms: delete('flags.y'); expect MinDeprecationWindowError (e.g., 7 days).",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CTX-MUTATION-RACE",
+        "hypothesis": "Though ToggleContext is frozen, the evaluator caches results keyed by id(ctx) or by principal_id only; two concurrent requests with same principal but different tenant_id collide, returning wrong tenant's decision (race + cache poisoning).",
+        "input_fixture": "Thread A: is_active(ctx(principal='p',tenant='A',env='prod')); Thread B concurrent: is_active(ctx(principal='p',tenant='B',env='prod')); assert per-tenant isolation.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NONE-PRINCIPAL-COERCE",
+        "hypothesis": "principal_id=None is coerced to string 'None' or empty string in the hash/bucket function, so all anonymous users land in the same bucket and a rollout intended for 1% hits 100% of anonymous traffic.",
+        "input_fixture": "ctx=ToggleContext(principal_id=None, tenant_id=None, environment='prod'); evaluate 50% rollout 'flags.anon.exp' 10000 times across varied contexts; expect ~50% True.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ENV-CLOCK-SKEW",
+        "hypothesis": "Toggle has scheduled activation at timestamp T; evaluator uses local wall-clock time.time() instead of monotonic/authoritative time, so a node with skewed clock activates the toggle early, violating purity across the fleet.",
+        "input_fixture": "Set node clock +1h; schedule toggle activation at now+30min UTC; call is_active() on skewed node vs correct node; expect identical result.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-BOOL-TYPE-CONFUSION",
+        "hypothesis": "Backing store returns string 'false' (JSON-decoded as str not bool); is_active() does `return bool(value)` which is True for any non-empty string, flipping the toggle ON when config says off.",
+        "input_fixture": "Mock store returns {'enabled': 'false'} for key 'flags.z'; is_active() expected False, observe True.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-STALE-CACHE",
+        "hypothesis": "After operator flips toggle OFF (kill switch for incident), in-process TTL cache (5min) continues serving True; no invalidation channel, so incident mitigation is delayed by full TTL, effectively defaulting-on during outage.",
+        "input_fixture": "is_active() returns True; admin sets remote value=False; immediately call is_active() on node with warm cache; expect False within <1s.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-KEY-LENGTH-AMPLIFY",
+        "hypothesis": "Accepting arbitrarily long keys (no max length) causes audit log entries to balloon; attacker registering 'flags.' + 'a'*10MB amplifies observability storage and may crash the emitter, dropping subsequent audits.",
+        "input_fixture": "registry.register(key='flags.' + 'a'*1_000_000); call is_active() 1000x; measure audit sink memory and dropped events.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE-REGISTRY-DOUBLE-WRITE",
+        "hypothesis": "Two threads simultaneously registering the same key beat the uniqueness check if the registry uses a read-check-then-write pattern without an atomic compare-and-set. Both registrations succeed, producing two distinct FeatureToggle objects under the same key; subsequent lookups are non-deterministic, breaking the uniqueness invariant silently.",
+        "input_fixture": "Thread-A: registry.register(FeatureToggle(key='billing.new_flow', ...)); Thread-B (same instant): registry.register(FeatureToggle(key='billing.new_flow', ...)); assert len(registry.get_all('billing.new_flow')) == 1  # fails with 2",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FAILOPEN-EXCEPTION-SWALLOW",
+        "hypothesis": "If the backing store raises a non-timeout exception (e.g., PermissionError, JSONDecodeError on a corrupted record) and the implementation only catches TimeoutError or ConnectionError, the exception propagates uncaught and the caller's except-block catches it, returning True from a higher-level default \u2014 silently switching the system to fail-open instead of fail-closed.",
+        "input_fixture": "backing_store.get('payments.3ds') raises json.JSONDecodeError('bad payload', '', 0); caller: try: active = toggle.is_active(ctx) except Exception: active = True  # fallback in application code makes it fail-open",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-IMPURE-RANDOM-GRADUAL-ROLLOUT",
+        "hypothesis": "A gradual-rollout variant implementation that computes percentage via random.random() < threshold instead of a deterministic hash(key + principal_id) % 100 will return different booleans on repeated calls with identical (key, ctx) tuples, violating the purity invariant. The same request evaluated twice in the same millisecond may see different code paths.",
+        "input_fixture": "ctx = ToggleContext(principal_id='user-42', tenant_id='t1', environment='prod'); results = {toggle.is_active(ctx) for _ in range(1000)}; assert len(results) == 1  # fails: both True and False observed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AUDIT-SINK-BACKPRESSURE-DROP",
+        "hypothesis": "If the observability sink (e.g., a bounded async queue or a UDP socket) is full or blocked, the emit() call silently drops the audit event rather than blocking or raising. Under load, the sink reaches capacity and subsequent is_active() calls complete without recording, meaning evaluation decisions are made but never audited \u2014 violating the 'never dropped' guarantee.",
+        "input_fixture": "Flood 50 000 concurrent is_active() calls; audit_queue.maxsize=1000; assert audit_queue.qsize() == 50000  # actual: 1000; 49000 events silently dropped",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-KEY-CONVENTION-BYPASS-UNICODE",
+        "hypothesis": "Naming convention enforcement that relies on a regex anchored to ASCII printable characters (e.g., ^[a-z0-9_.]+$) will accept a key that passes regex validation pre-normalization but contains homoglyph Unicode characters (\u0435 vs e, Cyrillic). Two keys that look identical in logs are distinct in the registry, allowing a shadow toggle to be inserted alongside an existing canonical one, breaking uniqueness observability.",
+        "input_fixture": "registry.register(FeatureToggle(key='billing.new_flow'))  # ASCII e\nregistry.register(FeatureToggle(key='billing.n\u0435w_flow'))  # Cyrillic \u0435 U+0435\nassert registry.size() == 1  # fails: 2 entries",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK-SKEW-SCHEDULED-TOGGLE",
+        "hypothesis": "A time-gated toggle that reads datetime.now() inside is_active() is impure: two calls with an identical ToggleContext at wall-clock times straddling the activation window return different values. Clock skew between application nodes (NTP drift \u00b1500 ms) or daylight-saving transitions also cause is_active() to return True on one replica and False on another for the same (key, ctx), silently splitting traffic.",
+        "input_fixture": "ctx = ToggleContext(principal_id='u1', tenant_id=None, environment='prod')\n# toggle activates at 2026-04-18T00:00:00Z\nwith freeze_time('2026-04-17T23:59:59.999Z'): r1 = toggle.is_active(ctx)  # False\nwith freeze_time('2026-04-18T00:00:00.001Z'): r2 = toggle.is_active(ctx)  # True\nassert r1 == r2  # fails \u2014 same ctx, different result",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-HARD-DELETE-NO-STALE-MARK",
+        "hypothesis": "An operator who directly calls registry.delete('old_toggle') without first calling registry.mark_stale('old_toggle') can remove a toggle that still has live code references. The two-step deprecation invariant relies on enforcement at the API boundary; if delete() does not assert that the toggle is already in STALE state, abrupt removal proceeds, leaving dead code references calling is_active() on a non-existent key \u2014 silent fail-open or exception depending on error handling.",
+        "input_fixture": "registry.register(FeatureToggle(key='legacy.feature'))  # active toggle\nregistry.delete('legacy.feature')  # called WITHOUT mark_stale first\nassert registry.get('legacy.feature').state == 'STALE'  # raises KeyError \u2014 invariant violated",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CREDENTIAL-LEAK-AUDIT-EVENT",
+        "hypothesis": "If ToggleContext fields are serialized verbatim into the audit event payload and principal_id is allowed to carry a bearer token or session cookie (no schema validation on the field), evaluation of toggle.is_active() will write the credential to the observability log. Log aggregation pipelines rarely redact structured fields, so the secret propagates to every log sink \u2014 SIEM, S3 archive, third-party APM.",
+        "input_fixture": "ctx = ToggleContext(principal_id='Bearer eyJhbGciOiJSUzI1NiJ9...', tenant_id='t1', environment='prod')\ntoggle.is_active(ctx)\n# audit log contains: {\"key\": \"payments.3ds\", \"principal_id\": \"Bearer eyJhbGciOiJSUzI1NiJ9...\", \"decision\": true}",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY-STALE-CACHE-DECISION",
+        "hypothesis": "A memoization or in-process LRU cache keyed on (key, ctx) that does not respect TTL will serve a cached True decision even after the backing store has flipped the toggle to False. An operator emergency-disabling a toggle during an incident will see the feature remain active for cached callers until process restart \u2014 audit events still fire (from cache hit) but reflect the stale True decision, not the current store state.",
+        "input_fixture": "cache[(key, ctx)] = True  # cached at T=0\nbacking_store.set(key, enabled=False)  # operator disables at T=30s\nassert toggle.is_active(ctx) == False  # fails: returns True from stale cache for up to TTL duration",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AMPLIFICATION-AUDIT-LOOP",
+        "hypothesis": "If the observability emit() call itself evaluates a FeatureToggle (e.g., 'should we sample this event?'), a recursive is_active() invocation triggers another audit emit(), which triggers another is_active() \u2014 infinite recursion until stack overflow. This can be triggered by any caller once the audit subsystem is wired to use a toggle for its own sampling logic.",
+        "input_fixture": "audit_emitter.is_sampling_enabled = lambda: toggle_registry.get('audit.sampling').is_active(ctx)\n# Now: toggle.is_active(ctx) \u2192 emit() \u2192 is_sampling_enabled() \u2192 toggle.is_active(ctx) \u2192 emit() \u2192 ...\n# Result: RecursionError after ~1000 frames, all audit events lost",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY-KEY-REGISTRY-POLLUTION",
+        "hypothesis": "Registering a toggle with an empty string key ('') or whitespace-only key ('   ') that passes a permissive regex (pattern allows zero-length match or only checks non-None) inserts an unaddressable entry into the registry. Lookups for '' collide with sentinel values; iteration-based audits that assume non-empty keys emit malformed events. The naming convention invariant is violated at registration time.",
+        "input_fixture": "registry.register(FeatureToggle(key=''))  # empty string\nregistry.register(FeatureToggle(key='   '))  # whitespace\nassert registry.get('') is None  # may return the empty-key toggle, breaking lookup contract",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONE-CONTEXT-FIELDS-IMPURE-BRANCH",
+        "hypothesis": "An implementation that branches on whether principal_id is None (e.g., 'anonymous users always get False, identified users evaluated against rule') treats None as a special value carrying semantic meaning. If the same logical user can be represented as both ToggleContext(principal_id=None) and ToggleContext(principal_id='anonymous'), is_active() returns different booleans for semantically equivalent contexts, violating deterministic purity and enabling a bypass by passing principal_id=None.",
+        "input_fixture": "ctx_none = ToggleContext(principal_id=None, tenant_id='t1', environment='prod')\nctx_anon = ToggleContext(principal_id='anonymous', tenant_id='t1', environment='prod')\nassert toggle.is_active(ctx_none) == toggle.is_active(ctx_anon)  # fails if None short-circuits to False while 'anonymous' evaluates rule",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-STALE-MARK-WITHOUT-CODE-REMOVAL-ENFORCEM",
+        "hypothesis": "The two-step deprecation marks a toggle STALE in the registry but nothing enforces that code references are actually removed before the DELETE step is permitted. An operator marks stale, waits 1 second (no CI gate), then deletes. The toggle key disappears from the registry while application code still calls is_active() \u2014 the primitive returns a default (hopefully False) but without an audit event, silently breaking the observability invariant for all post-deletion calls.",
+        "input_fixture": "registry.mark_stale('payments.legacy_flow')  # step 1\ntime.sleep(1)  # no CI gate enforcing code-reference scan\nregistry.delete('payments.legacy_flow')  # step 2 \u2014 key gone\n# Application code: toggle.is_active(ctx)  # KeyError or silent False, no audit event emitted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PURITY_CONTEXT_MUTATION",
+        "hypothesis": "Passing mutable ToggleContext to is_active() allows modification during evaluation, breaking purity guarantee. Same key + modified context returns different boolean without determinism.",
+        "input_fixture": "ctx = ToggleContext(principal_id='user1', tenant_id='acme', environment='prod'); result1 = toggle.is_active(ctx); ctx.principal_id = 'user2'; result2 = toggle.is_active(ctx); assert result1 == result2 fails",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NONDETERMINISTIC-RNG",
+        "hypothesis": "Evaluator seeds RNG once at startup or uses unseeded random draws within is_active(), causing identical (key, ctx) pairs to return different results on successive calls.",
+        "input_fixture": "for i in range(100): results.append(toggle.is_active(ctx)); assert len(set(results)) > 1, 'nondeterminism detected'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DEFAULT-TRUE-ON-UNREACHABLE",
+        "hypothesis": "When backing store becomes unreachable (connection error, timeout, 5xx), is_active() returns True instead of safe default False, flipping features on unexpectedly.",
+        "input_fixture": "backing_store.shutdown(); result = toggle.is_active(ctx); assert result == False, 'should default to False but got {}'.format(result)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EXCEPTION-SUPPRESSED-TRUE",
+        "hypothesis": "Exception in backing store access (KeyError, network timeout) is caught and silently returns True, violating fail-safe default to False.",
+        "input_fixture": "registry.set_backing_store(lambda: raise RuntimeError()); result = toggle.is_active(ctx); assert result == True, 'caught exception should default to False'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TIMEOUT-INDEFINITE-HANG",
+        "hypothesis": "Backing store query hangs indefinitely (no timeout configured), causing is_active() to block caller threads forever instead of failing safe to False.",
+        "input_fixture": "set_backing_store_latency(999999); start = time.time(); toggle.is_active(ctx); elapsed = time.time() - start; assert elapsed < 5.0, 'should timeout but took {}s'.format(elapsed)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DUPLICATE-KEY-OVERRIDE",
+        "hypothesis": "Registering two toggles with identical key allows second to silently override first without uniqueness error, orphaning original references.",
+        "input_fixture": "registry.register(key='auth.feature', condition=lambda: True); registry.register(key='auth.feature', condition=lambda: False); assert registry.get('auth.feature').condition() == False, 'duplicate key silently overwrote'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INVALID-KEY-NO-VALIDATE",
+        "hypothesis": "Key naming convention (e.g., 'feature_name' or 'namespace.feature') is not enforced at registration, allowing keys with spaces, special chars, or uppercase that violate convention.",
+        "input_fixture": "registry.register(key='FEATURE X!@#'); toggle = registry.get('FEATURE X!@#'); assert toggle is not None, 'invalid key was accepted'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CASE-SENSITIVITY-DUPE",
+        "hypothesis": "Toggle keys are case-sensitive ('feature_x' vs 'FEATURE_X'), allowing duplicates that violate uniqueness invariant and confuse evaluators.",
+        "input_fixture": "registry.register(key='Feature_Toggle'); registry.register(key='feature_toggle'); assert len(registry.list_keys()) == 2, 'case variants treated as unique'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-AUDIT-ENTRY-DROPPED",
+        "hypothesis": "Under high concurrency (10k+ is_active calls/sec), audit queue overflows and audit entries are silently dropped without alerting, violating never-drop invariant.",
+        "input_fixture": "with concurrent.futures.ThreadPoolExecutor(max_workers=100) as pool: pool.map(lambda _: toggle.is_active(ctx), range(100000)); audit_count = audit_store.count_entries(); assert audit_count >= 100000, 'audit entries dropped'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MISSING-CONTEXT-IN-AUDIT",
+        "hypothesis": "Audit trail records toggle key and decision boolean but omits context fields (principal_id, tenant_id, environment), making forensics impossible.",
+        "input_fixture": "toggle.is_active(ToggleContext(principal_id='user123', tenant_id='acme', environment='prod')); entry = audit_store.get_latest(); assert entry.principal_id == 'user123', 'context missing from audit'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SILENT-AUDIT-FAILURE",
+        "hypothesis": "Audit subsystem fails (disk full, RBAC deny, network down) but exception is silently caught, so is_active() returns correct result while audit is not recorded.",
+        "input_fixture": "audit_store.shutdown(); result = toggle.is_active(ctx); audit_count = audit_store.query(key=toggle.key).count(); assert audit_count > 0, 'audit failure suppressed silently'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SINGLE-STEP-DELETE",
+        "hypothesis": "Toggle can be deleted in one operation without deprecation marking step, allowing code paths to reference deleted key and fail hard instead of gracefully degrading.",
+        "input_fixture": "registry.delete(key='old_feature'); try: toggle = registry.get('old_feature'); assert False, 'should have been marked deprecated first' except KeyError: pass",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RACE-MARK-DELETE-ORDERING",
+        "hypothesis": "Concurrent calls to mark_deprecated() and delete() race, allowing deletion to complete before deprecation marker is persisted, violating two-step invariant.",
+        "input_fixture": "import threading; t1 = threading.Thread(target=registry.mark_deprecated, args=('feature',)); t2 = threading.Thread(target=registry.delete, args=('feature',)); t2.start(); t1.start(); t2.join(); assert registry.is_deprecated('feature') == True, 'delete raced past marking'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CODE-REF-ORPHANED",
+        "hypothesis": "After toggle is deleted (even with deprecation marking), code that calls is_active(ctx) raises KeyError instead of returning safe False, causing cascading failures.",
+        "input_fixture": "registry.delete(key='feature_x'); try: toggle.is_active(ctx) except KeyError: assert False, 'should return False for deleted toggle, not raise'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CACHE-RACE-COHERENCY",
+        "hypothesis": "Thread-local or process-level toggle cache is not coherent across threads; Thread A reads stale cached decision while Thread B updates backing store.",
+        "input_fixture": "t1_result = []; t2_result = []; def t1(): t1_result.append(toggle.is_active(ctx)); time.sleep(0.01); t1_result.append(toggle.is_active(ctx)); def t2(): time.sleep(0.005); registry.update_toggle(key, new_condition); threading.Thread(target=t1).start(); threading.Thread(target=t2).start(); assert t1_result[0] != t1_result[1], 'cache not coherent'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CREDENTIAL-LEAK-AUDIT",
+        "hypothesis": "Context object containing sensitive data (API keys, session tokens, bearer auth) is logged verbatim in audit trail without sanitization.",
+        "input_fixture": "ctx = ToggleContext(principal_id='sk-1234567890abcdef', tenant_id='acme', environment='prod'); toggle.is_active(ctx); entry = audit_store.get_latest(); assert 'sk-1234567890abcdef' not in entry.logged_context, 'credential leaked'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK-SKEW-TTL-EXPIRY",
+        "hypothesis": "Toggle with TTL expiration checks system clock; if clock is set backward, toggle expires prematurely; if forward, expiration is skipped, violating time-based rules.",
+        "input_fixture": "toggle_ttl_ms = 5000; start = time.time_ns(); toggle.is_active(ctx); system_time.set_offset(-10000); elapsed = time.time_ns() - start; assert toggle.is_active(ctx) == (elapsed < toggle_ttl_ms), 'clock skew broke TTL'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-CONTEXT-EVAL",
+        "hypothesis": "Passing ToggleContext with all None/empty fields (principal_id=None, tenant_id=None, environment='') causes evaluation to crash instead of defaulting to False safely.",
+        "input_fixture": "ctx = ToggleContext(principal_id=None, tenant_id=None, environment=''); try: result = toggle.is_active(ctx) except (TypeError, AttributeError, KeyError): assert False, 'should handle empty context, not crash'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-AUDIT-AMPLIFICATION-STORM",
+        "hypothesis": "Single is_active() call triggers 100+ audit entries instead of 1 due to logging in loop, causing storage and network amplification attack via repeated evaluations.",
+        "input_fixture": "audit_store.clear(); toggle.is_active(ctx); count = audit_store.count_entries(); assert count == 1, 'audit amplified: {} entries for 1 call'.format(count)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REPLAY-TOGGLE-EVAL",
+        "hypothesis": "Replaying identical is_active() call with same ctx does not generate new audit entry, violating audit-every-call invariant and enabling replay attacks.",
+        "input_fixture": "toggle.is_active(ctx); entry1_time = audit_store.get_latest().timestamp; time.sleep(0.1); toggle.is_active(ctx); entry2_time = audit_store.get_latest().timestamp; assert entry1_time != entry2_time, 'replay not audited'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "toggle.evaluated",
+        "required_attributes": [
+          "key",
+          "decision",
+          "tenant_id",
+          "environment"
+        ]
+      },
+      {
+        "event_name": "toggle.registered",
+        "required_attributes": [
+          "key"
+        ]
+      },
+      {
+        "event_name": "toggle.deprecated",
+        "required_attributes": [
+          "key",
+          "phase"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "toggle.evaluations",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 500,
+        "label_keys": [
+          "key",
+          "decision"
+        ]
+      },
+      {
+        "name": "toggle.failures",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 100,
+        "label_keys": [
+          "key",
+          "reason"
+        ]
+      },
+      {
+        "name": "toggle.registry.size",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": []
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "toggle.is_active",
+        "required_attributes": [
+          "key"
+        ]
+      },
+      {
+        "operation_name": "toggle.register",
+        "required_attributes": [
+          "key"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "API mirrors catalog api_signature verbatim: ToggleContext frozen dataclass with exact fields, FeatureToggle Protocol with key:str and is_active(ctx)->bool. runtime_checkable added is a non-breaking enhancement. Consumption example in spec works against this surface unchanged."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All 5 invariants implemented and enforced: FT-INV-01 (pure Protocol + ctx type guard), FT-INV-02 (unknown key + exception \u2192 False), FT-INV-03 (regex + uniqueness), FT-INV-04 (audit appended on every path incl. unknown/failing), FT-INV-05 (mark_stale\u2192delete two-step). Registry exposes audit, is_stale, known_keys as stated."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Dedicated FeatureToggleInvariantError(ValueError) with messages prefixed by invariant ID (FT-INV-03, FT-INV-05, FT-INV-01). Includes offending key/pattern in message for debuggability. Fail-closed path swallows provider BaseException by design (documented in spec as fail-closed), which is intentional not sloppy."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Pure Protocol-based extension contract \u2014 any object with key+is_active plugs in (Togglz/OpenFeature/LaunchDarkly adapters trivial). Immutable ToggleContext and AuditEntry are safe to pass across boundaries. No hidden global state; registry is instantiable. __all__ is explicit and minimal."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe via single lock around toggles/stale/audit; fail-closed on provider exception; audit never dropped; key regex blocks path-traversal/whitespace. Caveat acknowledged in spec: unbounded in-memory audit list requires external flushing \u2014 acceptable for a reference primitive but not a drop-in for long-running processes without a sink."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace 'flags', purpose, invariants, extension_contract, and consumption_example all reflected in code/spec. Invariant IDs are consistent (FT-INV-0N) across docstring, errors, and spec table. Provenance cited (Togglz, Spring ConditionalOnProperty, @Profile). Matches 'battle_tested' maturity claim."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'Protocol' is Python typing jargon used without explanation \u2014 a junior reading this may not know it just means 'any class with these two attributes'.",
+          "Two-step removal (mark_stale \u2192 delete) is mentioned in invariants but absent from the usage example, so a junior will likely call delete() directly and violate FT_INV_05.",
+          "'Fail-closed' is used before it is defined; the first mention is in the invariants table with no plain-language gloss."
+        ],
+        "rewrite_suggestion": "Add a 'Key concepts' sidebar before the API surface section: (1) Protocol = duck-typed interface \u2014 any class with key:str and is_active() qualifies. (2) Fail-closed = when something goes wrong the feature turns OFF, not on. (3) Show the two-step removal in a code snippet alongside the registration example."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "contract.json is referenced three times but never inlined \u2014 forces an out-of-band file lookup to verify the exact Protocol shape, defeating the doc as a self-contained spec.",
+          "Variant toggles are mentioned in the first sentence ('boolean or variant') but the variant evaluation contract (what values are returned? how does ToggleContext carry variant weights?) is never defined.",
+          "Lock granularity is unspecified: one coarse lock on the whole registry means register() and is_active() contend under high throughput \u2014 this matters for principal-level capacity planning."
+        ],
+        "rewrite_suggestion": "Inline the Protocol TypedDict from contract.json directly in the API surface section. Add a 'Variant toggles' paragraph: 'is_active() returns bool; variant evaluation is out of scope for this primitive \u2014 use VariantToggle (see LINK) for multi-armed experiments.' State the lock strategy explicitly: 'One threading.Lock guards the entire registry; is_active() holds the lock for the duration of evaluation.'"
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "No authorization model for register() and delete(): any caller with a registry reference can register a toggle key that shadows an existing one \u2014 a supply-chain or injection risk that is not addressed.",
+          "mark_stale has no stated authz requirement; the two-step removal process could be bypassed if the caller only needs delete() access, not stale-marking access.",
+          "'Do not serialize AuditEntry dicts into logs that also include credentials' is advisory with no enforcement path documented \u2014 no mention of whether AuditEntry implements __repr__ sanitization or whether a log formatter strips it."
+        ],
+        "rewrite_suggestion": "Add a 'Trust boundary' subsection under Security considerations: 'registry.register() and registry.delete() are privileged operations; callers MUST be authorized at the application layer before reaching the registry. The registry itself performs no authz check.' Also note whether AuditEntry.__repr__ is safe to log by default."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "toggle.failures and toggle.registry.size are cited as metric names but the instrumentation system (Prometheus, StatsD, OTEL) is unspecified \u2014 an SRE cannot wire alerts without knowing the emission path.",
+          "'MUST periodically flush or cap the audit buffer' is a hard operational requirement, but no flush() method or eviction API appears in the documented surface \u2014 the SRE has no actionable lever.",
+          "No timeout or circuit-breaker contract for the backing store: FT_INV_02 says default False on unreachable, but there is no stated deadline before is_active() resolves, making it impossible to set a latency SLO."
+        ],
+        "rewrite_suggestion": "Add a 'Runbook hooks' section: (1) Metrics: emitted via OTEL as toggle.failures (counter) and toggle.registry.size (gauge) \u2014 instrument with your collector of choice. (2) Audit drain: call registry.drain_audit(max_entries=10_000) on a scheduler; entries older than the drain point are discarded. (3) Store timeout: is_active() enforces a 50 ms deadline on the backing store call; tune via TOGGLE_STORE_TIMEOUT_MS env var."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "'Named boolean (or variant) predicate' in the purpose line loses non-technical PMs immediately \u2014 'variant' is never explained in business terms (e.g., 'show version A to 10% of users, version B to the rest').",
+          "The audit trail is described technically (AuditEntry, principal_id) but there is no mention of where a PM views this data \u2014 no dashboard, no export format, no link to an observability tool.",
+          "The alternatives-rejected section explains technical reasons but not business impact \u2014 a PM justifying the adoption of this primitive needs the 'why not env vars' story in outcome language, not implementation language."
+        ],
+        "rewrite_suggestion": "Open the doc with a one-paragraph business summary: 'FeatureToggle lets you ship code today but turn the feature on tomorrow \u2014 for a single customer, a region, or everyone \u2014 and roll back instantly without a release. Every time someone sees (or doesn't see) the feature, it is recorded so you can answer audit questions.' Move the technical Protocol details to an appendix. Reframe alternatives-rejected as: 'Env-var flags cannot target a single customer and leave no record of who saw what.'"
+      }
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:32:38.790984+00:00",
+  "source_tool": "infrastructure/add_cost_tracker.py",
+  "origin_candidate": {
+    "docstring": "Aggregate per-request cost estimates from registered estimators.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 363,
+    "line_start": 278,
+    "name": "CostTracker",
+    "origin": "string_template",
+    "shape_hash": "ade334390371aaf3",
+    "size_bytes": 3343,
+    "size_lines": 86,
+    "tool": "infrastructure/add_cost_tracker.py",
+    "method_count": 6,
+    "complexity": 11,
+    "disqualified": false,
+    "primitive_score": 882552
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

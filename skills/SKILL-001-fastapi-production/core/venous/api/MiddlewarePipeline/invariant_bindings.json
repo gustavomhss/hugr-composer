@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "MWP_INV_01",
+      "invariant_text": "Execution order MUST be the registration order; swap or insert operations SHALL be explicit, never implicit.",
+      "confirms_test": "test_inv_order_preserved_confirms",
+      "prevents_test": "test_inv_order_preserved_prevents",
+      "under_failure_test": "test_inv_order_preserved_under_failure"
+    },
+    {
+      "invariant_id": "MWP_INV_02",
+      "invariant_text": "A middleware that does NOT await call_next MUST short-circuit the remainder of the pipeline.",
+      "confirms_test": "test_inv_short_circuit_confirms",
+      "prevents_test": "test_inv_short_circuit_prevents",
+      "under_failure_test": "test_inv_short_circuit_under_failure"
+    },
+    {
+      "invariant_id": "MWP_INV_03",
+      "invariant_text": "Each middleware CANNOT bypass downstream error handling: exceptions NEVER skip registered error filters.",
+      "confirms_test": "test_inv_error_filter_runs_confirms",
+      "prevents_test": "test_inv_error_filter_runs_prevents",
+      "under_failure_test": "test_inv_error_filter_runs_under_failure"
+    },
+    {
+      "invariant_id": "MWP_INV_04",
+      "invariant_text": "Registration MUST be frozen before run() is first called; adding middleware at request time SHALL raise.",
+      "confirms_test": "test_inv_frozen_after_run_confirms",
+      "prevents_test": "test_inv_frozen_after_run_prevents",
+      "under_failure_test": "test_inv_frozen_after_run_under_failure"
+    },
+    {
+      "invariant_id": "MWP_INV_05",
+      "invariant_text": "MUST produce a response even if every middleware halts; an unhandled halt SHALL yield a 500 by contract.",
+      "confirms_test": "test_inv_always_responds_confirms",
+      "prevents_test": "test_inv_always_responds_prevents",
+      "under_failure_test": "test_inv_always_responds_under_failure"
+    }
+  ]
+}

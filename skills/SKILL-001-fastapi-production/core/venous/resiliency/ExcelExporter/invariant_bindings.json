@@ -1,0 +1,25 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "EXCEL_EXPORTER_INV_01",
+      "invariant_text": "Total rows written across all `add_sheet`/`write_rows` calls MUST NEVER exceed `max_rows`; exceeding the cap raises ValueError BEFORE any partial data is written past the limit.",
+      "confirms_test": "test_inv_max_rows_cap_confirms",
+      "prevents_test": "test_inv_max_rows_cap_prevents",
+      "under_failure_test": "test_inv_max_rows_cap_under_failure"
+    },
+    {
+      "invariant_id": "EXCEL_EXPORTER_INV_02",
+      "invariant_text": "`create_workbook()` MUST raise ImportError with an actionable message ('pip install openpyxl') when openpyxl is unavailable \u2014 never silently returns a broken stub.",
+      "confirms_test": "test_inv_import_error_actionable_confirms",
+      "prevents_test": "test_inv_import_error_actionable_prevents",
+      "under_failure_test": "test_inv_import_error_actionable_under_failure"
+    },
+    {
+      "invariant_id": "EXCEL_EXPORTER_INV_03",
+      "invariant_text": "Rows MUST be written in batches of `chunk_size`; given n rows, at most ceil(n / chunk_size) flush points occur (bounded memory footprint).",
+      "confirms_test": "test_inv_chunked_write_confirms",
+      "prevents_test": "test_inv_chunked_write_prevents",
+      "under_failure_test": "test_inv_chunked_write_under_failure"
+    }
+  ]
+}

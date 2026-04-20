@@ -1,0 +1,32 @@
+{
+  "name": "RouterPipeline",
+  "namespace": "api",
+  "purpose": "Named bundle of middleware (e.g. 'browser', 'api') that a route joins with pipe_through so groups of endpoints share the same pre-dispatch chain.",
+  "api_signature": "from typing import Protocol, Sequence\n\nclass RouterPipeline(Protocol):\n    name: str\n    middleware: Sequence['Middleware']\n\n    def attach(self, route: str) -> None: ...\n",
+  "invariants": [
+    "A pipeline MUST run its middleware in declared order, every time; reorder at runtime SHALL NEVER happen.",
+    "A route joined to a pipeline MUST execute its chain before the handler; the chain CANNOT be bypassed per request.",
+    "Pipelines MUST NOT share mutable state across requests; any state SHALL live in RequestContext.assigns.",
+    "Joining a route to a pipeline MUST be declarative; programmatic attach CANNOT happen after the router is sealed.",
+    "A pipeline name MUST be unique within the router; duplicate declarations SHALL raise at boot."
+  ],
+  "extension_contract": "Downstream tools declare a pipeline via a register() call or a pipeline/2-style macro, then scoped routes join it with a pipe_through directive; frameworks like Phoenix or Rails Rack chains plug in by providing their own adapter that respects the name and order invariants.",
+  "consumption_example": "def build_api(router: dict) -> None:\n    p: RouterPipeline = router['pipelines']['api']\n    p.attach('/v1/users/:id')\n\n# At compile time, pipeline ensures order:\nassert hasattr(RouterPipeline, 'attach')\n",
+  "sources": [
+    {
+      "source": "Phoenix 1.7 Router \u2014 pipeline/2, pipe_through/1",
+      "locator": "hexdocs.pm/phoenix/Phoenix.Router.html \u2014 'Pipelines' and 'Scopes' sections"
+    },
+    {
+      "source": "Plug 1.x \u2014 Plug.Builder pipelines",
+      "locator": "hexdocs.pm/plug/Plug.Builder.html \u2014 'plug' directive composition"
+    }
+  ],
+  "why_essential": "Route groups share concerns (auth, parsing, throttling); without one vocabulary, 'add auth to /api' becomes a per-file change and regressions appear when a route is added outside the group.",
+  "alternatives_considered": [
+    "Per-route decorator stacks \u2014 duplication across many handlers",
+    "Single global middleware chain \u2014 cannot vary by route group",
+    "URL-prefix-based conditionals in middleware \u2014 fragile, easy to miss"
+  ],
+  "maturity": "battle_tested"
+}

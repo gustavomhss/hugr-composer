@@ -1,0 +1,743 @@
+{
+  "name": "Specification",
+  "namespace": "data",
+  "maturity": "battle_tested",
+  "builder_agent_id": 3,
+  "catalog_entry_sha256": "385755ea3832cde22fe6995e5921b7f00e63fb9d2d0fc068fee0f1842eb93ae1",
+  "files": [
+    {
+      "path": "data/Specification/Specification.cfg",
+      "sha256": "903d0852bddde7d059dd355ecceebe10cb3892c51e4475da638cf69c86499f4d",
+      "size_bytes": 140,
+      "kind": "test"
+    },
+    {
+      "path": "data/Specification/Specification.contract.json",
+      "sha256": "9aab56909399c1ce4fe7efce57e1be6906b5bf3730cd59ea2f5e45a978c18d30",
+      "size_bytes": 2436,
+      "kind": "contract_json"
+    },
+    {
+      "path": "data/Specification/Specification.manifest.json",
+      "sha256": "d17df1920e84e84b54b1688c524819c59c989153454efd4b8f4083e416fc550b",
+      "size_bytes": 38899,
+      "kind": "manifest"
+    },
+    {
+      "path": "data/Specification/Specification.md",
+      "sha256": "8e3c2ffffb34ed371320c6890ab20ac416a1eb35188586d52f636d4f0ace1afd",
+      "size_bytes": 6743,
+      "kind": "spec_md"
+    },
+    {
+      "path": "data/Specification/Specification.py",
+      "sha256": "569faeb41ddac8adbf59aea07eeaa342eb396ff449ebceadd3e1222643a0dd7a",
+      "size_bytes": 14108,
+      "kind": "impl"
+    },
+    {
+      "path": "data/Specification/Specification.tla",
+      "sha256": "e32f473c577fccface82657d3ade45e8e8d6419d10e8c43d005bd7e1c750a538",
+      "size_bytes": 1982,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "data/Specification/behavioral_Specification.py",
+      "sha256": "95dd4c04b2a80fe3764e9181a72772f0b9ea0c5c9a855506035d79261f51dc70",
+      "size_bytes": 3995,
+      "kind": "behavioral"
+    },
+    {
+      "path": "data/Specification/chaos_Specification.py",
+      "sha256": "6dde263093097546a4963d5acad5f4c299369485bc91a41a5e35bb8a74f4ea18",
+      "size_bytes": 3592,
+      "kind": "chaos"
+    },
+    {
+      "path": "data/Specification/concurrent_Specification.py",
+      "sha256": "ccc541253373c73de2612c59f3e8da4cca1570baf770238913443c6b040ac453",
+      "size_bytes": 3794,
+      "kind": "concurrent"
+    },
+    {
+      "path": "data/Specification/dashboard.json",
+      "sha256": "5038aafea8e5c22e7ec0807aa27a91713bc141eba7d917ca3b61e342c2d2697f",
+      "size_bytes": 1093,
+      "kind": "dashboard"
+    },
+    {
+      "path": "data/Specification/invariant_bindings.json",
+      "sha256": "3e64f30fd09beeb8bdac191e9fa38e35799a6126627413c8d8574cafc1b53c8c",
+      "size_bytes": 2033,
+      "kind": "test"
+    },
+    {
+      "path": "data/Specification/metamorphic_Specification.py",
+      "sha256": "9f7bbf8a6994a2550bb47a95d86a33466b2b24528d4711c4c623f67d2e2e76ee",
+      "size_bytes": 3332,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "data/Specification/observability_Specification.py",
+      "sha256": "44718e31690d56dbd49be39203391cf6fcdeddf6fa13816792eb98a7c9a546d6",
+      "size_bytes": 2392,
+      "kind": "observability"
+    },
+    {
+      "path": "data/Specification/observability_schema.json",
+      "sha256": "c9c1d98441f0713e8b0776d8f49da3ef503c997cf92865533084a916596feeb5",
+      "size_bytes": 1135,
+      "kind": "observability"
+    },
+    {
+      "path": "data/Specification/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "data/Specification/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "data/Specification/state_machine_Specification.py",
+      "sha256": "aeffb155ca3fb8c8630212889ea0da8f45bbcfef22e17e29b8d6aaf2a23ec315",
+      "size_bytes": 3871,
+      "kind": "state_machine"
+    },
+    {
+      "path": "data/Specification/test_Specification.py",
+      "sha256": "e6a231acb45b0c546282cfb012cdf1979b037659d2b5d55ee086cfd304757732",
+      "size_bytes": 10817,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "SPEC_INV_01",
+      "invariant_text": "is_satisfied_by MUST be a pure predicate: no I/O, no mutation of the candidate, and NEVER time-dependent unless time is injected.",
+      "confirms_test": "test_inv_pure_predicate_confirms",
+      "prevents_test": "test_inv_pure_predicate_prevents",
+      "under_failure_test": "test_inv_pure_predicate_under_failure"
+    },
+    {
+      "invariant_id": "SPEC_INV_02",
+      "invariant_text": "Composed specifications (and_, or_, not_) MUST preserve the identity laws of boolean algebra so refactors CANNOT change semantics.",
+      "confirms_test": "test_inv_boolean_algebra_confirms",
+      "prevents_test": "test_inv_boolean_algebra_prevents",
+      "under_failure_test": "test_inv_boolean_algebra_under_failure"
+    },
+    {
+      "invariant_id": "SPEC_INV_03",
+      "invariant_text": "A Specification CANNOT depend on the persistence layer; repository translation MUST be delegated to a separate visitor or translator registry.",
+      "confirms_test": "test_inv_translator_isolation_confirms",
+      "prevents_test": "test_inv_translator_isolation_prevents",
+      "under_failure_test": "test_inv_translator_isolation_under_failure"
+    },
+    {
+      "invariant_id": "SPEC_INV_04",
+      "invariant_text": "The same Specification used for in-memory filtering and repository querying SHALL produce logically equivalent results.",
+      "confirms_test": "test_inv_filter_query_parity_confirms",
+      "prevents_test": "test_inv_filter_query_parity_prevents",
+      "under_failure_test": "test_inv_filter_query_parity_under_failure"
+    },
+    {
+      "invariant_id": "SPEC_INV_05",
+      "invariant_text": "Composition operators (and_, or_, not_) SHALL NOT be overridden by subclasses; only is_satisfied_by MAY be overridden.",
+      "confirms_test": "test_inv_sealed_operators_confirms",
+      "prevents_test": "test_inv_sealed_operators_prevents",
+      "under_failure_test": "test_inv_sealed_operators_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 1327,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 2816,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 3963,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 20252,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 3736,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 3368,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 86546,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "39 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 3080,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 3477,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 57746,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 187814,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-IO-SIDE-EFFECT",
+        "hypothesis": "A Specification's is_satisfied_by secretly calls an HTTP API or reads a file to fetch reference data, violating purity; under network partition the predicate raises or returns stale results inconsistent with prior calls on identical input.",
+        "input_fixture": "spec = RemoteBlacklistSpec(); spec.is_satisfied_by(User(id=1)) called twice with network up then down",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CANDIDATE-MUTATION",
+        "hypothesis": "is_satisfied_by mutates candidate (e.g., lazy-loads attributes, normalizes fields, appends to a list). Calling spec.is_satisfied_by(obj) changes obj.state so subsequent specs see different input and compositions become order-dependent.",
+        "input_fixture": "obj = Order(items=[]); NormalizingSpec().is_satisfied_by(obj); assert obj.items == []",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-DEPENDENCY",
+        "hypothesis": "Spec uses datetime.utcnow() internally (e.g., IsActiveSpec) so evaluating the same candidate at t and t+1s yields different booleans \u2014 non-deterministic without injected clock; breaks replay/testing.",
+        "input_fixture": "spec = IsActiveSpec(); freeze_time('2026-04-19'); r1 = spec.is_satisfied_by(sub); freeze_time('2027-01-01'); r2 = spec.is_satisfied_by(sub)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DEMORGAN-VIOLATION",
+        "hypothesis": "not_(and_(A,B)) is NOT semantically equivalent to or_(not_(A), not_(B)) due to short-circuit with exceptions or non-bool returns, breaking De Morgan identity required by boolean algebra.",
+        "input_fixture": "A=AlwaysTrue(); B=RaisesOnEval(); left=A.and_(B).not_(); right=A.not_().or_(B.not_()); compare on candidate=obj",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DOUBLE-NEGATION",
+        "hypothesis": "spec.not_().not_() returns an object whose is_satisfied_by differs from spec for candidates where the underlying predicate returns a truthy non-bool (e.g., 0, '', []), violating involution A == \u00ac\u00acA.",
+        "input_fixture": "spec = LenSpec(); candidate with len==0; assert spec.not_().not_().is_satisfied_by(c) == spec.is_satisfied_by(c)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-OR-SHORTCIRCUIT-LEAK",
+        "hypothesis": "or_ short-circuits on first True and never evaluates the right branch; if right branch has validation side-effects relied upon elsewhere, results drift. Also breaks commutativity A|B vs B|A when predicates raise.",
+        "input_fixture": "A=AlwaysTrue(); B=Raises(); A.or_(B).is_satisfied_by(x) vs B.or_(A).is_satisfied_by(x)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPO-LEAK",
+        "hypothesis": "A concrete Specification subclass calls session.query() inside is_satisfied_by to check FK existence, coupling it to the persistence layer and making in-memory evaluation impossible without a DB connection.",
+        "input_fixture": "spec = HasValidCustomerSpec(); spec.is_satisfied_by(Order(customer_id=1)) with no DB session bound",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TRANSLATOR-DRIFT",
+        "hypothesis": "SQL translator maps StartsWithSpec('A%') to LIKE 'A%%' but in-memory uses str.startswith('A%'), so DB returns rows where name begins with 'A' while in-memory requires literal 'A%'. Repository and memory results diverge.",
+        "input_fixture": "spec=StartsWithSpec('A%'); memory_filter([Row('Apple'),Row('A%x')], spec) vs repo.find(spec)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NULL-TRIVALUED",
+        "hypothesis": "SQL three-valued logic: NOT(col = 5) excludes NULL rows, but in-memory not_(EqSpec(5)) on candidate.col is None returns True. Symmetric difference between repo and memory result sets on nullable columns.",
+        "input_fixture": "rows with col in [5, None, 7]; spec = EqSpec('col',5).not_(); compare memory vs SQL result set",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNICODE-COLLATION",
+        "hypothesis": "DB uses case-insensitive collation (ci_ai) so NameEq('jos\u00e9') matches 'JOSE'; in-memory uses == so only exact match. Logical equivalence broken for i18n data.",
+        "input_fixture": "spec=NameEq('jos\u00e9'); memory=[User('JOSE'),User('jos\u00e9')] vs repo with utf8_general_ci",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RACE-SHARED-STATE",
+        "hypothesis": "Spec caches last-seen candidate in an instance attribute for optimization; concurrent threads calling is_satisfied_by on different candidates produce interleaved state returning wrong bool \u2014 impure under concurrency.",
+        "input_fixture": "spec=CachingSpec(); ThreadPool.map(spec.is_satisfied_by, [c1,c2,c1,c2]*1000); assert stable results",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DEEP-RECURSION",
+        "hypothesis": "Composing 10_000 specs via reduce(and_) yields a right-leaning tree; is_satisfied_by recurses and blows Python's 1000-frame stack with RecursionError, breaking the invariant that composition preserves semantics (crash != bool).",
+        "input_fixture": "from functools import reduce; big = reduce(lambda a,b: a.and_(b), [AlwaysTrue() for _ in range(10000)]); big.is_satisfied_by(x)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TYPE-CONFUSION",
+        "hypothesis": "Generic[T] erased at runtime; passing wrong-typed candidate (dict vs dataclass) causes AttributeError inside predicate rather than False, violating total-function expectation for pure predicate.",
+        "input_fixture": "spec:Specification[User] = AgeGtSpec(18); spec.is_satisfied_by({'age':20})  # dict not User",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FLOAT-BOUNDARY",
+        "hypothesis": "Boundary predicate PriceLt(0.1+0.2) evaluated in-memory uses IEEE-754 0.30000000000000004 while DB column is NUMERIC(10,2) storing exactly 0.30; candidate.price=0.3 yields True in memory, False in repo.",
+        "input_fixture": "spec=PriceLt(0.1+0.2); candidate=Item(price=Decimal('0.3')); compare memory vs repo",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SIDE_EFFECT_MUTATION",
+        "hypothesis": "If is_satisfied_by mutates an internal counter or caches a result on the candidate object (e.g., candidate.__dict__['_spec_visited'] = True), the predicate is no longer pure. Repeated calls return identical boolean values but leave observable state on the candidate, violating the no-mutation invariant. The bug surfaces only when the same candidate is evaluated by two different specifications in a pipeline.",
+        "input_fixture": "spec = VisitedTrackingSpec(); candidate = MyEntity(id=1); spec.is_satisfied_by(candidate); assert hasattr(candidate, '_spec_visited')  # mutation detected",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-IMPLICIT_CLOCK",
+        "hypothesis": "A DateRangeSpecification that reads datetime.datetime.now() inside is_satisfied_by will return True for a candidate at one instant and False a millisecond later if the range boundary is 'today'. This violates the 'never time-dependent unless time is injected' clause. The same candidate object evaluated twice returns different results with no change to its state.",
+        "input_fixture": "spec = ActiveTodaySpec()  # uses datetime.now() internally\ncandidate = Event(date=datetime.date.today())\nresult1 = spec.is_satisfied_by(candidate)\n# advance system clock past midnight\nresult2 = spec.is_satisfied_by(candidate)\nassert result1 == result2  # FAILS after midnight",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-IO_IN_PREDICATE",
+        "hypothesis": "A RemoteFeatureFlagSpec that issues an HTTP GET inside is_satisfied_by to check whether a flag is enabled introduces network I/O into a pure predicate. This breaks idempotency (flag state can flip), adds latency, and can cause non-deterministic failures in offline or test environments. The invariant forbids any I/O.",
+        "input_fixture": "spec = RemoteFeatureFlagSpec(flag_name='new_checkout')\ncandidate = Order(id=42)\n# HTTP GET https://flags.internal/new_checkout is fired inside is_satisfied_by\nresult = spec.is_satisfied_by(candidate)  # raises ConnectionError in CI",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DOUBLE_NEGATION",
+        "hypothesis": "not_(not_(spec)) MUST be semantically equivalent to spec by the double-negation law of boolean algebra. If the implementation wraps NotSpec in a new NotSpec object each time, __eq__ / structural comparison may fail but more critically a chain of 100 not_() calls on a single spec should not produce a stack overflow via recursive is_satisfied_by calls, and the final result must equal the original spec's output. An iterative or recursive implementation that hits Python's default recursion limit (~1000) will raise RecursionError.",
+        "input_fixture": "base_spec = PriceAboveSpec(threshold=100)\ncandidate = Product(price=150)\ndeeply_negated = base_spec\nfor _ in range(600):  # 600 not_() wrappers\n    deeply_negated = deeply_negated.not_()\nassert deeply_negated.is_satisfied_by(candidate) == base_spec.is_satisfied_by(candidate)  # RecursionError",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AND_IDENTITY_LAW",
+        "hypothesis": "spec.and_(AlwaysTrueSpec()) must be semantically equivalent to spec (identity law: P AND True == P). If the and_ implementation short-circuits in the wrong direction \u2014 evaluating AlwaysTrueSpec first and returning its result \u2014 and AlwaysTrueSpec has a hidden side effect, the identity law is violated even though both branches ultimately return the same boolean. Separately, if spec raises on evaluation, the composed spec must also raise rather than silently returning True.",
+        "input_fixture": "class SometimesRaisesSpec:\n    def is_satisfied_by(self, c): raise ValueError('boom')\n    def and_(self, other): return AndSpec(self, other)\n\ncomposed = SometimesRaisesSpec().and_(AlwaysTrueSpec())\ncomposed.is_satisfied_by(candidate)  # must raise ValueError, not return True",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-OR_ABSORPTION_LAW",
+        "hypothesis": "spec.or_(AlwaysFalseSpec()) must equal spec (identity: P OR False == P). A broken or_ that always evaluates both branches and merges them with Python's `or` operator will silently coerce truthy non-boolean return values (e.g. a non-empty list, integer 1) from is_satisfied_by instead of preserving strict bool semantics, leading to absorption-law violations when composed with other specs.",
+        "input_fixture": "class TruthySpec:\n    def is_satisfied_by(self, c): return [c]  # truthy non-bool\n\nspec = TruthySpec()\ncomposed = spec.or_(AlwaysFalseSpec())\nassert type(composed.is_satisfied_by(candidate)) is bool  # may fail: returns list",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PERSISTENCE_LAYER_LEAK",
+        "hypothesis": "A CategorySpec that builds an ORM query fragment (e.g., SQLAlchemy BinaryExpression) inside is_satisfied_by will import and evaluate a Session when used for in-memory filtering, leaking the persistence layer directly into the domain predicate. If no session is active the call raises sqlalchemy.exc.DetachedInstanceError or similar, confirming the invariant is broken.",
+        "input_fixture": "spec = CategorySpec(category='electronics')  # stores ORM Column reference\ncandidate = Product(category='electronics')\n# is_satisfied_by executes: return session.query(...).filter(Category.name == self.category).first() is not None\nresult = spec.is_satisfied_by(candidate)  # raises DetachedInstanceError outside request context",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPO_TRANSLATOR_BYPASS",
+        "hypothesis": "If a developer adds a to_query() convenience method directly on the Specification class that returns a raw SQL string, callers will bypass the mandated visitor/translator pattern and embed query generation in the specification itself. This ties the spec to a specific SQL dialect and database driver, violating the persistence-independence invariant even if is_satisfied_by remains pure.",
+        "input_fixture": "class InStockSpec(Specification[Product]):\n    def is_satisfied_by(self, c): return c.stock > 0\n    def to_query(self): return \"stock > 0\"  # INV-3 violation: persistence logic on spec\n\n# caller: repo.filter_raw(spec.to_query()) \u2014 translator bypassed entirely",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-IN_MEMORY_VS_DB_BOUNDARY",
+        "hypothesis": "A PriceRangeSpec(min=10, max=100) evaluated in-memory uses Python float comparison (inclusive on both ends). The same spec translated to SQL via a visitor may emit 'price BETWEEN 10 AND 100' which is also inclusive, BUT if translated to 'price > 10 AND price < 100' (exclusive), the boundary values price=10 and price=100 produce different results for in-memory vs. repository paths, breaking logical equivalence.",
+        "input_fixture": "spec = PriceRangeSpec(min=10.0, max=100.0)\nboundary_candidate = Product(price=10.0)\nin_memory_result = spec.is_satisfied_by(boundary_candidate)  # True (inclusive)\ndb_result = repo.find_all(spec)  # False if SQL uses strict > / < operators\nassert in_memory_result == db_result  # FAILS",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NULL_FIELD_DIVERGENCE",
+        "hypothesis": "A DiscountedSpec that checks candidate.discount > 0 in Python raises no error when discount is None (Python: None > 0 raises TypeError). The equivalent SQL 'discount > 0' silently excludes NULL rows (SQL NULL comparison returns UNKNOWN, treated as FALSE). So a candidate with discount=None is rejected by the DB but raises an exception in-memory \u2014 the two paths are not logically equivalent and the in-memory path crashes.",
+        "input_fixture": "spec = DiscountedSpec()\nnull_discount_product = Product(id=5, discount=None)\n# in-memory: TypeError: '>' not supported between NoneType and int\n# DB path: row excluded silently (SQL NULL semantics)\nin_memory = spec.is_satisfied_by(null_discount_product)  # raises TypeError\ndb_set = repo.find_all(spec)  # silently excludes product id=5",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CASE_SENSITIVITY_DIVERGENCE",
+        "hypothesis": "A NameContainsSpec(substring='apple') that uses Python's 'in' operator is case-sensitive by default. If the SQL translation uses LIKE '%apple%' without LOWER() normalization, mixed-case values like 'Apple' pass SQL on some case-insensitive collations (e.g., utf8_general_ci in MySQL) but fail the Python in-memory check \u2014 or vice versa. The invariant of logical equivalence is broken on a data class that is entirely valid domain data.",
+        "input_fixture": "spec = NameContainsSpec(substring='apple')\nproduct = Product(name='Apple iPhone')\nin_memory = spec.is_satisfied_by(product)  # False (case-sensitive Python)\ndb_results = repo.find_all(spec)  # True on case-insensitive MySQL collation\nassert in_memory == (product in db_results)  # FAILS",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY_MUTABLE_CLOSURE",
+        "hypothesis": "A specification built via closure that captures a mutable list reference (e.g., allowed_ids = [1,2,3]; spec = IdInListSpec(allowed_ids)) will silently change its predicate semantics if the original list is mutated after construction. Two evaluations of is_satisfied_by with the same candidate at different times return different results because the captured reference \u2014 not a snapshot \u2014 is used. This violates the pure-predicate invariant by introducing mutable external state as a hidden dependency.",
+        "input_fixture": "allowed = [1, 2, 3]\nspec = IdInListSpec(allowed_ids=allowed)  # stores reference, not copy\ncandidate = Entity(id=3)\nassert spec.is_satisfied_by(candidate) == True\nallowed.remove(3)  # external mutation\nassert spec.is_satisfied_by(candidate) == False  # same candidate, different result \u2014 not pure",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SIDE_EFFECT_MUTATION",
+        "hypothesis": "Specification mutates candidate during is_satisfied_by (e.g., setting .last_checked), violating pure predicate contract and affecting downstream filtering.",
+        "input_fixture": "class MutatingSpec(Specification[User]): def is_satisfied_by(self, u): u.visits += 1; return u.age > 18",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TIME_WALL_CLOCK_DEPENDENCY",
+        "hypothesis": "Specification reads system time without injection, making identical candidate satisfy spec only during specific time windows.",
+        "input_fixture": "class TTLSpec(Specification[Token]): def is_satisfied_by(self, t): return time.time() < t.expires_at",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NETWORK_IO_DURING_CHECK",
+        "hypothesis": "Specification performs remote HTTP call inside is_satisfied_by, introducing I/O latency and non-determinism into pure predicate.",
+        "input_fixture": "class APIValidationSpec(Specification[Email]): def is_satisfied_by(self, e): return requests.get(verify_url, params={'email': e.addr}).json()['valid']",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DEMORGAN_COMPOSITION_BREAK",
+        "hypothesis": "not_(A.and_(B)) produces different truth value than A.not_().or_(B.not_()) on same candidate, violating De Morgan law.",
+        "input_fixture": "A=MinPriceSpec(100); B=InStockSpec; obj=Product(price=50, stock=0); not_(A.and_(B)).is_satisfied_by(obj) != A.not_().or_(B.not_()).is_satisfied_by(obj)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-AND_ASSOCIATIVITY_LOSS",
+        "hypothesis": "Nested and_ breaks associativity: (A.and_(B)).and_(C).is_satisfied_by(x) differs from A.and_(B.and_(C)).is_satisfied_by(x).",
+        "input_fixture": "A=PositiveSpec; B=EvenSpec; C=LessThan100Spec; x=2; left=(A.and_(B)).and_(C); right=A.and_(B.and_(C)); left.is_satisfied_by(x) != right.is_satisfied_by(x)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DOUBLE_NEGATION_NONIDEMPOTENT",
+        "hypothesis": "Double negation spec.not_().not_() produces different result than original spec, violating law of double negation.",
+        "input_fixture": "spec=StringLengthSpec(min=5); candidate='hello'; spec.is_satisfied_by(candidate) != spec.not_().not_().is_satisfied_by(candidate)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-IDEMPOTENCY_AND_BROKEN",
+        "hypothesis": "A.and_(A) produces different result than A alone, violating idempotent law of boolean algebra.",
+        "input_fixture": "spec=RoleSpec('admin'); user=User(roles=['admin']); spec.is_satisfied_by(user) != spec.and_(spec).is_satisfied_by(user)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PERSISTENCE_LAYER_QUERY",
+        "hypothesis": "Specification directly accesses database inside is_satisfied_by (e.g., User.objects.filter), coupling to persistence layer.",
+        "input_fixture": "class DBCoupledSpec(Specification[User]): def is_satisfied_by(self, u): return db_session.query(User).filter(User.id==u.id).count() > 0",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-FLOATING_POINT_SERIALIZATION_MISMATCH",
+        "hypothesis": "Float precision in in-memory comparison diverges from database storage (0.1 + 0.2 != 0.3), causing spec equivalence violation.",
+        "input_fixture": "class PriceRangeSpec(Specification[Item]): def is_satisfied_by(self, i): return 9.99 < i.price < 10.01; item.price=0.1+0.2 in Python vs DB stored 0.3 differs",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SQL_NULL_VS_PYTHON_NONE",
+        "hypothesis": "Spec treats None differently than SQL NULL when translated to repository query, producing logically inequivalent results.",
+        "input_fixture": "class OptionalFieldSpec(Specification[Record]): def is_satisfied_by(self, r): return r.middle_name is not None; SQL WHERE middle_name IS NOT NULL differs from None check in Python",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-STRING_COLLATION_LOCALE_DRIFT",
+        "hypothesis": "String comparison in spec uses Python locale rules but repository uses database collation, producing different sort/equality results.",
+        "input_fixture": "class EmailDomainSpec(Specification[User]): def is_satisfied_by(self, u): return u.email.lower()=='TEST@EXAMPLE.COM'; Python ASCII vs MySQL utf8_general_ci case handling differs",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TYPE_COERCION_DIVERGENCE",
+        "hypothesis": "Type coercion differs between in-memory evaluation and database query (string '1' vs integer 1), breaking specification equivalence.",
+        "input_fixture": "class NumericSpec(Specification[Data]): def is_satisfied_by(self, d): return d.code == 1; d.code='1' in Python (True) vs DB INTEGER comparison (False)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DEEP_COMPOSITION_STACK_OVERFLOW",
+        "hypothesis": "Deeply nested composition (1000+ levels of and_/or_) exhausts stack or heap, causing evaluation to crash or timeout.",
+        "input_fixture": "spec=BaseSpec; for _ in range(1000): spec=spec.and_(BaseSpec); spec.is_satisfied_by(obj) \u2192 stack overflow or exponential CPU",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "spec.evaluated",
+        "required_attributes": [
+          "spec_id",
+          "outcome"
+        ]
+      },
+      {
+        "event_name": "spec.composed",
+        "required_attributes": [
+          "spec_id",
+          "operator",
+          "child_count"
+        ]
+      },
+      {
+        "event_name": "spec.translated",
+        "required_attributes": [
+          "spec_id",
+          "backend",
+          "leaf_count"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "spec.evaluations",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "outcome"
+        ]
+      },
+      {
+        "name": "spec.composition.depth",
+        "metric_type": "histogram",
+        "unit": "1",
+        "cardinality_bound": 30,
+        "label_keys": [
+          "operator"
+        ]
+      },
+      {
+        "name": "spec.translate.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "backend",
+          "result"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "spec.evaluate",
+        "required_attributes": [
+          "spec.id",
+          "spec.kind"
+        ]
+      },
+      {
+        "operation_name": "spec.translate",
+        "required_attributes": [
+          "spec.id",
+          "backend",
+          "leaf.count"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol matches catalog api_signature verbatim; T TypeVar, is_satisfied_by/and_/or_/not_ all present. BaseSpecification faithfully implements Evans/Fowler algebra with sealed operators per SPEC-INV-05. Minor: Protocol uses runtime_checkable but BaseSpecification doesn't technically need to inherit it \u2014 acceptable."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "Covers all 5 invariants: pure predicate base, sealed algebra via __init_subclass__, TranslatorRegistry for SPEC-INV-03, in_memory_filter for SPEC-INV-04 parity, double-negation collapse. PredicateSpecification + default_registry included. Missing: no explicit De Morgan/distributivity normalization, but invariants only require preservation not normalization."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "SpecificationInvariantError with invariant-ID prefix (SPEC-INV-0X) on every raise, names offending type/name/backend. Matches spec's 'grep by invariant-ID' operational guidance. Messages are actionable and consistent."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Closed algebra with introspection via kind/children() enables visitor-pattern translation without backend coupling. TranslatorRegistry decouples persistence cleanly. Double-negation collapses. Leaves dispatch by name for translator registration."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe registry via lock with snapshot-then-evaluate pattern (avoids deadlock on callbacks). Zero I/O at import. Immutable specs are safe to share. Lacks metrics hooks mentioned in spec (spec.evaluations, spec.translate.duration) \u2014 spec describes them but module doesn't emit; acceptable if observability is external."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Protocol signature byte-matches catalog; invariants 1\u20134 enforced; SPEC-INV-05 added from spec.md as extension. Namespace 'data', purpose, extension_contract all honored. __all__ exports the documented surface."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "Protocol and Generic[T] in the API signature assumes Python typing fluency most juniors lack \u2014 the code block lands before any explanation of what T is",
+          "No guidance on when to subclass BaseSpecification versus use PredicateSpecification(name, fn) \u2014 two paths, no decision rule",
+          "TranslatorRegistry is introduced in the usage section without a mental model: juniors won't know why a registry is needed or what 'boot' means in this context"
+        ],
+        "rewrite_suggestion": "Add a one-paragraph 'How to add a new rule' section before the API surface that walks through the two entry points (subclass vs PredicateSpecification) with a decision sentence: 'Use PredicateSpecification for a one-liner predicate; subclass BaseSpecification when you need constructor arguments or helper methods.'"
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "Thread-safety section says translate reads a 'snapshot of the backend map under the lock' but does not state whether the snapshot is shallow or deep \u2014 matters if translator callables themselves are mutable closures",
+          "No complexity note on composition depth: a deeply nested AND/OR tree evaluated in-memory on a large iterable is O(n \u00d7 depth); no guidance on when that becomes a problem",
+          "contract.json is called 'the authority' for the API surface but its full schema is only summarised \u2014 no pointer to the actual file path in the repo"
+        ],
+        "rewrite_suggestion": "Add a 'Performance characteristics' paragraph noting O(n \u00d7 depth) for in_memory_filter, recommend keeping composition depth \u2264 10 for hot paths, and surface the contract.json path explicitly (e.g., skills/SKILL-001-fastapi-production/specs/Specification.contract.json)."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "No mention of resource-exhaustion risk: an adversary-controlled composition tree with unbounded recursion depth could cause a stack overflow in is_satisfied_by traversal \u2014 no max-depth guard is documented",
+          "The docs say 'reviewers MUST audit every register call' but give no tooling or grep pattern to find all register call sites automatically \u2014 the audit is manual and error-prone",
+          "Predicate callables in PredicateSpecification are described as 'must be pure' but there is no enforcement mechanism documented \u2014 no sandbox, no static analysis hook, no runtime assertion"
+        ],
+        "rewrite_suggestion": "Add a 'Security invariants enforcement' subsection listing: (1) the max composition depth constant and where it is enforced, (2) the grep command to find all register() calls (e.g., rg 'TranslatorRegistry.register'), (3) that PredicateSpecification runs the callable in a try/except that re-raises as SpecificationInvariantError if it performs I/O (if such a guard exists)."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Three metrics are named but no alert thresholds or SLO targets are given \u2014 oncall has no starting point for setting up pages",
+          "The error message format says 'invariant-ID prefix' but does not show what that prefix looks like (e.g., '[SPEC_INV_03]') \u2014 makes grep patterns ambiguous in a noisy log stream",
+          "in_memory_filter on a large iterable holds the entire result in memory; no streaming or chunked variant is mentioned, creating a latent OOM scenario with no runbook guidance"
+        ],
+        "rewrite_suggestion": "Add an 'Alerting quick-start' table with three rows \u2014 metric, suggested threshold, likely cause \u2014 e.g., spec.translate.duration p99 > 50 ms \u2192 incomplete registry boot. Also show a literal log-line example for SpecificationInvariantError so oncall can paste it straight into their log search."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "'Composable-predicate primitive' in the opening line is jargon-first; the plain-language sentence that follows it ('packages one boolean test') should be the headline",
+          "The 'DO NOT USE' list mentions 'stateful business workflows' without a single concrete example \u2014 PMs cannot relay this constraint to stakeholders without one",
+          "'TranslatorRegistry' appears in the usage example with no business-language analogue, making it hard to scope engineering effort or explain the feature to non-technical stakeholders"
+        ],
+        "rewrite_suggestion": "Reorder the opening: lead with the plain-language sentence, then add a two-row 'Business impact' table (Problem it solves / Example outcome) before the API surface. In the DO NOT USE section, append a concrete counter-example: 'e.g., an order-approval workflow that sends emails and updates status is NOT a Specification.'"
+      }
+    ]
+  }
+}

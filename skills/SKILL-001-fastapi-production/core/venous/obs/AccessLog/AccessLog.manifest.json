@@ -1,0 +1,648 @@
+{
+  "name": "AccessLog",
+  "namespace": "obs",
+  "maturity": "battle_tested",
+  "builder_agent_id": 8,
+  "catalog_entry_sha256": "c0da4869e9ebbf8583778ea4e07eab7e1660a71b484d9096737165366d894f07",
+  "files": [
+    {
+      "path": "obs/AccessLog/AccessLog.contract.json",
+      "sha256": "b49d627a562195ffbb530e583eae5106fc1c68805df35a7897857815623b950a",
+      "size_bytes": 2710,
+      "kind": "contract_json"
+    },
+    {
+      "path": "obs/AccessLog/AccessLog.manifest.json",
+      "sha256": "c2067a40c60aba5a59713094d50c837ed72545e847bd48a22d7894271fc9d958",
+      "size_bytes": 44392,
+      "kind": "manifest"
+    },
+    {
+      "path": "obs/AccessLog/AccessLog.md",
+      "sha256": "6bdcdda44f9b0e559f064d5916dab9d6b6346a6923fedaaa12998aa85ccdb470",
+      "size_bytes": 2186,
+      "kind": "spec_md"
+    },
+    {
+      "path": "obs/AccessLog/AccessLog.py",
+      "sha256": "25b7219952477dcfc3291682ed30e3aa1557155dcf273a05f33966e40c136878",
+      "size_bytes": 5781,
+      "kind": "impl"
+    },
+    {
+      "path": "obs/AccessLog/behavioral_AccessLog.py",
+      "sha256": "3263445f15e2172dc99525fa9d602253bafb440ad4ebebfe0fa4c25a12cde9a4",
+      "size_bytes": 1699,
+      "kind": "behavioral"
+    },
+    {
+      "path": "obs/AccessLog/chaos_AccessLog.py",
+      "sha256": "04676002071402d269da64513597f2614bf273073ca7b773b0073a549465547e",
+      "size_bytes": 1592,
+      "kind": "chaos"
+    },
+    {
+      "path": "obs/AccessLog/dashboard.json",
+      "sha256": "b645cf7a35ae2c57622cb579d9161901d25ac0ff517d67ceec8fec61515fa8e0",
+      "size_bytes": 177,
+      "kind": "dashboard"
+    },
+    {
+      "path": "obs/AccessLog/invariant_bindings.json",
+      "sha256": "20ec2333a176851405f5df8cdd9f58aef2ec48f6a574af47e4a645843283dbb5",
+      "size_bytes": 1747,
+      "kind": "test"
+    },
+    {
+      "path": "obs/AccessLog/metamorphic_AccessLog.py",
+      "sha256": "caf9853cd4095ab6e8a49aa8df4c14d3fce2056998226e23a787255bc1f3b705",
+      "size_bytes": 1570,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "obs/AccessLog/observability_AccessLog.py",
+      "sha256": "d55d729802647e5da2a4ad727b0d15ba9163659257af76e7a9c7f3558891ff86",
+      "size_bytes": 1352,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/AccessLog/observability_schema.json",
+      "sha256": "b197d1fcf33a3276782fc2d5aec22976bb621c41650c354874475fff0e320308",
+      "size_bytes": 725,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/AccessLog/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "obs/AccessLog/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "obs/AccessLog/test_AccessLog.py",
+      "sha256": "72cca2c84710490f26c97604751e2d573a757fb92678f535a99b4666f29dbb89",
+      "size_bytes": 4047,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "AL_INV_01",
+      "invariant_text": "Every read of a PiiClassification-tagged record MUST emit one AccessLog entry before the response leaves the process.",
+      "confirms_test": "test_inv_read_records_confirms",
+      "prevents_test": "test_inv_read_records_prevents",
+      "under_failure_test": "test_inv_read_records_under_failure"
+    },
+    {
+      "invariant_id": "AL_INV_02",
+      "invariant_text": "purpose_of_use MUST be one of a registered set; ad-hoc free-text values SHALL be rejected.",
+      "confirms_test": "test_inv_purpose_enum_confirms",
+      "prevents_test": "test_inv_purpose_enum_prevents",
+      "under_failure_test": "test_inv_purpose_enum_under_failure"
+    },
+    {
+      "invariant_id": "AL_INV_03",
+      "invariant_text": "AccessLog entries MUST NEVER be merged with the TamperEvidentAuditLog so high-volume read traffic cannot mask low-volume security events.",
+      "confirms_test": "test_inv_distinct_from_audit_confirms",
+      "prevents_test": "test_inv_distinct_from_audit_prevents",
+      "under_failure_test": "test_inv_distinct_from_audit_under_failure"
+    },
+    {
+      "invariant_id": "AL_INV_04",
+      "invariant_text": "Actor MUST be a resolved identity (user, service account, or break-glass id); 'system' without a concrete id is FORBIDDEN.",
+      "confirms_test": "test_inv_concrete_actor_confirms",
+      "prevents_test": "test_inv_concrete_actor_prevents",
+      "under_failure_test": "test_inv_concrete_actor_under_failure"
+    },
+    {
+      "invariant_id": "AL_INV_05",
+      "invariant_text": "Retention of AccessLog MUST follow a RetentionPolicy bound at registration; unbounded accumulation CANNOT occur.",
+      "confirms_test": "test_inv_retention_bound_confirms",
+      "prevents_test": "test_inv_retention_bound_prevents",
+      "under_failure_test": "test_inv_retention_bound_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 440,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1146,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1287,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 67681,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "44 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1108,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1042,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "failed",
+      "duration_ms": 72350,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Judge / persona report rejected by contract.",
+      "error_details": "1 validation error for LLMJudgeReport\n  Value error, Every axis MUST score \u2265 8/10. Below-threshold axes: [('completeness', 7), ('catalog_conformance', 7)] [type=value_error, input_value={'judge_model': 'claude-o...tch catalog sources.')]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error"
+    }
+  ],
+  "build_duration_ms": 145618,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MISSING-EMIT-BEFORE-RESPONSE",
+        "hypothesis": "A read handler returns the PII payload to the caller before record_read() is awaited/flushed, so a crash or async cancellation between response send and log write leaves a classified read unrecorded in AccessLog.",
+        "input_fixture": "GET /patients/42 with PiiClassification tag; inject asyncio.CancelledError after response.write() but before await access_log.record_read(...); assert no entry exists for record_id=42.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PURPOSE-FREETEXT-BYPASS",
+        "hypothesis": "purpose_of_use validation is a substring/startswith check rather than exact membership in the registered set, allowing 'treatment; see notes: exfil' to pass because it contains 'treatment'.",
+        "input_fixture": "record_read(actor='u1', record_id='r1', data_class='PHI', purpose_of_use='treatment\\x00adhoc-exfil', at=now())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PURPOSE-UNICODE-HOMOGLYPH",
+        "hypothesis": "Registered set check is case-insensitive or NFC-normalized inconsistently; Cyrillic '\u0430' homoglyph in 'tr\\u0430etment' matches the allowlist after normalization but bypasses policy semantics.",
+        "input_fixture": "record_read(actor='svc:billing', record_id='r2', data_class='PCI', purpose_of_use='tr\\u0430etment', at=now())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MERGE-WITH-TAMPEREVIDENT",
+        "hypothesis": "Both logs share a backing table/stream distinguished only by a 'kind' column; a high-volume burst of AccessLog writes starves the TamperEvidentAuditLog hash-chain writer and masks a concurrent auth-bypass security event.",
+        "input_fixture": "Concurrent: 100000 record_read(...) calls + 1 security_audit.log('privilege_escalation'); assert security event durably persisted and ordered independent of access log pressure.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ACTOR-SYSTEM-UNRESOLVED",
+        "hypothesis": "Background job worker records reads with actor='system' (literal) when no principal is attached to the context, violating the resolved-identity invariant.",
+        "input_fixture": "record_read(actor='system', record_id='r9', data_class='PII', purpose_of_use='reporting', at=now())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ACTOR-EMPTY-WHITESPACE",
+        "hypothesis": "Actor validator trims but does not reject empty/whitespace or '   system   '; whitespace-padded sentinel slips past the 'system' blocklist.",
+        "input_fixture": "record_read(actor='  system  ', record_id='r10', data_class='PHI', purpose_of_use='treatment', at=now())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-FUTURE-AT",
+        "hypothesis": "Caller-supplied `at` is trusted; a future-dated timestamp pushes the entry beyond the RetentionPolicy window or breaks count_by_actor(since=...) monotonicity.",
+        "input_fixture": "record_read(actor='u1', record_id='r3', data_class='PHI', purpose_of_use='treatment', at=datetime(2999,1,1)); then count_by_actor('u1', since=now())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RETENTION-UNBOUNDED-NO-POLICY",
+        "hypothesis": "AccessLog can be instantiated without a RetentionPolicy (default=None) and silently accumulates forever; registration-time binding is not enforced.",
+        "input_fixture": "AccessLog() # no policy arg; loop 10M record_read(...); assert oldest entry still present after policy horizon.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-QUERY-RACE-DURING-EMIT",
+        "hypothesis": "query() reads an in-memory buffer before record_read()'s durable fsync; a crash between read-response and flush yields a response delivered without a persisted entry (TOCTOU on emit-before-leave).",
+        "input_fixture": "Thread A: record_read(...); SIGKILL between append and fsync. Thread B after restart: query(record_id=X) returns [] though response was sent.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-COUNT-INTEGER-OVERFLOW",
+        "hypothesis": "count_by_actor uses a fixed-width int (e.g., i32) or SQL INT; a prolific service account crosses 2^31 and wraps negative, breaking rate-limit/anomaly thresholds built on top.",
+        "input_fixture": "Preload 2_147_483_648 entries for actor='svc:etl'; call count_by_actor('svc:etl', since=epoch); assert >=0 and correct.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-QUERY-INJECTION-RECORD-ID",
+        "hypothesis": "query(record_id=...) interpolates into SQL/NoSQL filter, enabling tautology to dump all PII access history across tenants or crash index.",
+        "input_fixture": "query(record_id=\"' OR '1'='1\")",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-DUPLICATE-EMIT",
+        "hypothesis": "Retry middleware re-invokes record_read with identical (actor, record_id, at) on transient failure; absence of idempotency key inflates count_by_actor and amplifies storage, hastening retention pressure.",
+        "input_fixture": "for _ in range(1000): record_read(actor='u1', record_id='r1', data_class='PHI', purpose_of_use='treatment', at=fixed_ts)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PURPOSE-NULL-TYPE",
+        "hypothesis": "Passing None or non-str (bytes, enum) for purpose_of_use bypasses the allowlist check via type coercion (str(None)=='None' accidentally registered, or membership test on bytes always False but exception swallowed).",
+        "input_fixture": "record_read(actor='u1', record_id='r1', data_class='PHI', purpose_of_use=None, at=now())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CREDENTIAL-LEAK-IN-ACTOR",
+        "hypothesis": "Actor string is stored verbatim; callers pass 'user:alice;token=eyJhbGci...' and the bearer token is persisted into AccessLog, exportable via query().",
+        "input_fixture": "record_read(actor='user:alice;bearer=eyJhbGciOiJIUzI1NiJ9.secret', record_id='r1', data_class='PHI', purpose_of_use='treatment', at=now()); then query(actor=...)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AMPLIFICATION-QUERY-UNBOUNDED",
+        "hypothesis": "query() with both args None returns the entire log with no pagination/row cap; a low-priv reader triggers OOM and DoSes the audit plane, indirectly masking security events by crashing the process.",
+        "input_fixture": "query(record_id=None, actor=None) on a 50M-row log",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE_ASYNC_EMIT",
+        "hypothesis": "If record_read is implemented with an async fire-and-forget coroutine (e.g. asyncio.create_task or a background thread), the response can leave the process before the AccessLog entry is durably committed, violating the 'before the response leaves' ordering guarantee. A caller that awaits the read result but not the log coroutine will pass integration tests yet break the invariant under load.",
+        "input_fixture": "actor='alice', record_id='pii-123', data_class='PiiClassification', purpose_of_use='treatment', at=datetime.utcnow()  \u2014 implementation uses asyncio.create_task(log.record_read(...)) then immediately returns data; task may never execute if event loop closes",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PURPOSE_UNICODE_HOMOGLYPH",
+        "hypothesis": "Unicode homoglyphs or zero-width characters inserted into a rejected purpose string may cause it to pass a naive string-equality or regex-based allowlist check by appearing visually identical to a registered value. For example, 'tre\u0430tment' with Cyrillic '\u0430' (U+0430) instead of Latin 'a' would not match 'treatment' in a strict set but may pass case-folding or NFC normalization depending on implementation.",
+        "input_fixture": "purpose_of_use='tre\\u0430tment'  (Cyrillic small letter a at position 3, visually identical to 'treatment'). If the registered set contains 'treatment' and comparison is done after .lower() only, this passes validation and writes an invalid purpose.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PURPOSE_INJECTION_DELIMITER",
+        "hypothesis": "A purpose_of_use value containing a newline, null byte, or log-format delimiter could be stored verbatim and when serialized to a shared storage backend that is also used by TamperEvidentAuditLog, it could create a record that is parsed as two entries\u2014one AccessLog entry and one synthetic security event\u2014blurring the separation between the two logs.",
+        "input_fixture": "purpose_of_use='treatment\\nSECURITY_EVENT: privilege_escalation actor=root'  \u2014 if the validation only checks membership after stripping, and the raw value is stored, downstream parsers see two lines",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ACTOR_SYSTEM_COLON_EMPTY",
+        "hypothesis": "The invariant forbids the literal string 'system' without a concrete id. A guard checking actor != 'system' is bypassed by passing 'system:' (colon with empty suffix) or 'system\\x00' (null-terminated), which is syntactically distinct but semantically equivalent to an unresolved system identity. This lets an unattributed process write AccessLog entries that cannot be traced to a human or service account.",
+        "input_fixture": "actor='system:'  OR  actor='system\\x00'  OR  actor='SYSTEM' (uppercase bypass if check is case-sensitive)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ACTOR_EMPTY_STRING",
+        "hypothesis": "Passing an empty string as actor sidesteps a guard that only checks for the literal 'system'. An empty actor is neither 'system' nor a resolved identity, yet it may pass isinstance(actor, str) and actor != 'system' checks, resulting in an AccessLog entry attributed to no one\u2014which is worse than the 'system' case because it provides zero traceability.",
+        "input_fixture": "log.record_read(actor='', record_id='pii-456', data_class='PiiClassification', purpose_of_use='treatment', at=datetime.utcnow())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RETENTION_NEG_DURATION",
+        "hypothesis": "If the RetentionPolicy registration accepts a ttl_days parameter as an integer and does not validate for positive values, passing ttl_days=0 or ttl_days=-1 may cause the retention pruner to either never delete entries (treating 0 as 'off') or to immediately delete all entries (negative cutoff in the past means everything qualifies), enabling either unbounded accumulation or total data loss of the access log.",
+        "input_fixture": "register_retention_policy(namespace='obs.access_log', ttl_days=0)  \u2014 then call record_read 1 000 000 times; pruner condition is 'entry.at < now - timedelta(days=ttl_days)' which becomes 'entry.at < now - timedelta(days=0)' = always False \u2192 nothing pruned",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RETENTION_MAXINT_OVERFLOW",
+        "hypothesis": "Registering a RetentionPolicy with ttl_days=sys.maxsize (9223372036854775807) should be semantically equivalent to unbounded accumulation. If the implementation stores this as a Python int and later converts to timedelta(days=ttl_days), Python's timedelta raises OverflowError for values beyond ~2.7M days. The exception may be swallowed, retention silently disabled, and logs accumulate forever.",
+        "input_fixture": "register_retention_policy(namespace='obs.access_log', ttl_days=9223372036854775807)  \u2014 triggers timedelta overflow, exception caught generically, pruner skips this namespace permanently",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK_SKEW_FUTURE_TIMESTAMP",
+        "hypothesis": "The `at` parameter is caller-supplied. Passing a far-future timestamp (e.g. year 9999) means the entry will not be eligible for retention-policy pruning until that date, creating effectively permanent entries that violate the bounded-retention invariant. An attacker with write access to record_read (e.g. a compromised service account) can use this to preserve evidence of their accesses indefinitely while legitimate entries age out.",
+        "input_fixture": "log.record_read(actor='svc-billing', record_id='pii-789', data_class='PiiClassification', purpose_of_use='billing', at=datetime(9999, 12, 31, 23, 59, 59))  \u2014 retention pruner condition 'entry.at < cutoff' is False forever",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-QUERY_UNBOUNDED_AMPLIFICATION",
+        "hypothesis": "query(record_id=None, actor=None) with both filters omitted returns the entire AccessLog table. With high-volume read traffic (the use-case explicitly mentioned), this query could return millions of rows, exhausting memory, causing OOM kills, and denying service to the security team trying to investigate events. There is no pagination or result-size cap described in the API signature.",
+        "input_fixture": "log.query()  \u2014 called with no arguments after 50 million record_read calls; response object holds entire table in memory as list[dict]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EXCEPTION_SWALLOW_BYPASS",
+        "hypothesis": "If the caller wraps record_read in a try/except and the AccessLog backend raises (e.g. DB connection lost, quota exceeded), the caller may proceed and return data to the requester without any log entry. The invariant says the entry MUST be emitted before the response leaves, but there is no mechanism in the Protocol definition forcing the caller to propagate or handle the failure by aborting the read response.",
+        "input_fixture": "try:\\n    log.record_read(...)  # backend offline, raises ConnectionError\\nexcept Exception:\\n    pass  # log silently dropped\\nreturn classified_record  # response leaves without AccessLog entry",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DATACLASS_SPOOF_NOPII",
+        "hypothesis": "record_read accepts data_class as a free-text string parameter. A caller reading a PiiClassification-tagged record could pass data_class='PUBLIC' or data_class='INTERNAL' to deceive any downstream assertion that only enforces logging when data_class == 'PiiClassification'. The Protocol itself does not validate that the declared data_class matches the record's actual classification, creating an honor-system loophole.",
+        "input_fixture": "log.record_read(actor='svc-analytics', record_id='pii-secret-001', data_class='PUBLIC', purpose_of_use='analytics', at=datetime.utcnow())  \u2014 actual record is PiiClassification but caller declares PUBLIC; no AccessLog compliance check fires",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-COUNT_SINCE_EPOCH_ZERO",
+        "hypothesis": "count_by_actor(actor, since=datetime.min) forces a full table scan from the epoch of datetime.min (year 1). On a large log, this is a long-running query that can exhaust DB connection pool slots and block retention-pruning jobs, causing the table to grow unbounded during the outage window. It also leaks the total historical read count for a given actor, which could be sensitive metadata.",
+        "input_fixture": "log.count_by_actor(actor='dr-jones', since=datetime.min)  \u2014 datetime.min = datetime(1, 1, 1, 0, 0); full-table actor-filter scan; blocks concurrent pruner transactions",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY_DUPLICATE_ENTRY",
+        "hypothesis": "record_read has no idempotency key or deduplication guard in its Protocol signature. A middleware or message-queue retry mechanism could call record_read twice with the same (actor, record_id, at) triple, creating duplicate AccessLog entries. Under high-volume traffic, duplicate entries inflate access counts and could trigger false positives in anomaly detectors, masking real security events by drowning them in noise\u2014which erodes the separation guarantee from TamperEvidentAuditLog.",
+        "input_fixture": "for _ in range(3):\\n    log.record_read(actor='nurse-1', record_id='pii-123', data_class='PiiClassification', purpose_of_use='treatment', at=fixed_ts)  \u2014 all three entries persist; count_by_actor returns 3 instead of 1; retention policy applies per-entry so storage triples",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ACTOR_NONE_TYPE_CONFUSION",
+        "hypothesis": "Python's Protocol does not enforce types at runtime. Passing actor=None bypasses any string-equality guard ('system' check) because None != 'system' is True, yet None is not a resolved identity. If the implementation stores actor directly and uses it in a SQL query as a bind parameter, actor=None becomes NULL in the database, making all such entries unattributable and potentially causing count_by_actor to silently return 0 for NULL actors regardless of how many reads occurred.",
+        "input_fixture": "log.record_read(actor=None, record_id='pii-456', data_class='PiiClassification', purpose_of_use='treatment', at=datetime.utcnow())  \u2014 actor=None passes 'actor != system' guard, stored as NULL, invisible to count_by_actor(actor=None, since=...) if implementation uses actor = ? bind",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RACE-MISSING-LOG",
+        "hypothesis": "Concurrent read dispatch with async log writing creates race window where response sent before AccessLog.record_read() completes, violating invariant of every read emitting log before response leaves process.",
+        "input_fixture": "concurrent: Thread A calls read_pii_data(record_id='rec-123') | Thread B immediately calls network.send_response() without awaiting log completion",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PURPOSE-OF-USE-INJECTION",
+        "hypothesis": "purpose_of_use parameter accepts unvalidated user input containing SQL metacharacters or newlines, bypassing registered set constraint through injection payloads.",
+        "input_fixture": "record_read(actor='user-1', record_id='rec-123', data_class='PII', purpose_of_use=\"x'; DROP TABLE accesslog; --\", at=now())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-LOG-MERGING",
+        "hypothesis": "AccessLog entries stored in same table as TamperEvidentAuditLog without schema separation, allowing security events to be buried under high-volume read traffic.",
+        "input_fixture": "execute 1000x record_read() + 1x security_alert() in same database, then query_security_events() returns mixed result set without differentiation",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SYSTEM-ACTOR-UNRESOLVED",
+        "hypothesis": "Actor validation accepts literal string 'system' without resolving to concrete user, service account, or break-glass ID, violating actor identity requirements.",
+        "input_fixture": "record_read(actor='system', record_id='rec-456', data_class='PII', purpose_of_use='monthly_report', at=now())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNBOUNDED-RETENTION",
+        "hypothesis": "RetentionPolicy not enforced at registration, causing entries to accumulate indefinitely without automatic purge, violating bounded retention invariant.",
+        "input_fixture": "Loop 10M iterations: record_read(actor=f'user-{i}', record_id=f'rec-{i}', ...) with zero retention policy checks, disk usage grows unbounded",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK-SKEW-FUTURE",
+        "hypothesis": "at parameter accepts future timestamps unchecked, allowing entries backdated years ahead to break temporal ordering and audit trail chronology.",
+        "input_fixture": "record_read(actor='user-1', record_id='rec-123', data_class='PII', purpose_of_use='query', at=datetime(2099, 12, 31))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-RECORD-ID",
+        "hypothesis": "Empty or null record_id accepted without validation, creating log entry that cannot be correlated to actual record, breaking audit trail traceability.",
+        "input_fixture": "record_read(actor='user-1', record_id='', data_class='PII', purpose_of_use='authorized_query', at=now())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SILENT-VALIDATION-FAIL",
+        "hypothesis": "Invalid purpose_of_use value silently rejected with no exception raised and no log entry created, leaving sensitive data read unrecorded and unauditable.",
+        "input_fixture": "record_read(actor='user-1', record_id='rec-123', data_class='PII', purpose_of_use='INVALID_UNREGISTERED', at=now()) returns success without logging",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REPLAY-SAME-ENTRY",
+        "hypothesis": "No idempotency key or deduplication allows identical read parameters to be logged N times via replay, inflating actor access counts and falsifying audit statistics.",
+        "input_fixture": "entry={'actor':'user-1', 'record_id':'rec-123', ...} replayed 100x: for i in range(100): log.record_read(**entry) then count_by_actor('user-1') returns 100 instead of 1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CREDENTIAL-LEAK-PURPOSE",
+        "hypothesis": "purpose_of_use field lacks secret scanning, allowing API keys and passwords to be logged as plaintext, exposing credentials in audit trail storage.",
+        "input_fixture": "record_read(actor='user-1', record_id='rec-123', data_class='PII', purpose_of_use='sk_live_4eC39HqLyjWDarhtT657j81e', at=now())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-QUERY-AUDIT-LOG-MIX",
+        "hypothesis": "query() method returns entries from both AccessLog and TamperEvidentAuditLog in single result, defeating separation invariant and allowing security events to mix with read traffic.",
+        "input_fixture": "query(record_id='rec-123') returns list with entries marked as both access_log and audit_log without source differentiation",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ACTOR-FALSY-VALUE",
+        "hypothesis": "Actor validation accepts falsy values like 0 or coerces numeric IDs without verifying concrete identity, bypassing requirement for resolved identities.",
+        "input_fixture": "record_read(actor=0, record_id='rec-123', data_class='PII', purpose_of_use='system_query', at=now())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RETENTION-TOCTOU",
+        "hypothesis": "Async retention cleanup deletes entries while concurrent query reads them, creating time-of-check-time-of-use race where audit trail disappears after write verification.",
+        "input_fixture": "Thread A: record_read(...) succeeds | Thread B: (concurrent) cleanup(retention_days=0) deletes entry | Thread A: query() finds no record",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DOUBLE-LOG-DECORATOR",
+        "hypothesis": "record_read called by both audit decorator and explicit caller, logging identical read twice and violating one-entry-per-read invariant.",
+        "input_fixture": "@access_log_decorator def fetch(): record_read(...explicit...) then decorator also calls record_read with same params, 2 identical entries logged",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TYPE-COERCION-ACTOR",
+        "hypothesis": "Actor parameter accepts None or accepts boolean False (falsy) which gets silently coerced to string, bypassing concrete identity verification requirement.",
+        "input_fixture": "record_read(actor=None, record_id='rec-789', data_class='PII', purpose_of_use='access', at=now())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "access.read.recorded",
+        "required_attributes": [
+          "actor",
+          "record_id",
+          "data_class",
+          "purpose_of_use"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "access.reads",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 500,
+        "label_keys": [
+          "data_class",
+          "purpose_of_use"
+        ]
+      },
+      {
+        "name": "access.unique_actors",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 100,
+        "label_keys": []
+      },
+      {
+        "name": "access.retention.dropped",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": []
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "access.record_read",
+        "required_attributes": [
+          "actor",
+          "data_class"
+        ]
+      },
+      {
+        "operation_name": "access.query",
+        "required_attributes": []
+      }
+    ]
+  }
+}

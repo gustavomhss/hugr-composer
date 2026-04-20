@@ -1,0 +1,766 @@
+{
+  "name": "DiContainer",
+  "namespace": "data",
+  "maturity": "battle_tested",
+  "builder_agent_id": 1,
+  "catalog_entry_sha256": "94fb518ba85d17cdc069a3678a878e995e7ba7b2380a557f590398f893125417",
+  "files": [
+    {
+      "path": "data/DiContainer/DiContainer.cfg",
+      "sha256": "4b497b44eb4d1e477c0736f93de165b595c7d46bd1f2712830c43a21f7110a16",
+      "size_bytes": 211,
+      "kind": "test"
+    },
+    {
+      "path": "data/DiContainer/DiContainer.contract.json",
+      "sha256": "8a22dc989bea80691b2c971153a1ac080c635bcd20ce04c5037ca3feb3788858",
+      "size_bytes": 2941,
+      "kind": "contract_json"
+    },
+    {
+      "path": "data/DiContainer/DiContainer.manifest.json",
+      "sha256": "75439718038f5297872285c805462f1954e9be6a5fabebd0dce92fe37d81ea04",
+      "size_bytes": 46776,
+      "kind": "manifest"
+    },
+    {
+      "path": "data/DiContainer/DiContainer.md",
+      "sha256": "eac4680d8fb4ab2da21aa5b11ee93e75935dcc7e30fe5255285f5cffeecdbc50",
+      "size_bytes": 8907,
+      "kind": "spec_md"
+    },
+    {
+      "path": "data/DiContainer/DiContainer.py",
+      "sha256": "1021c431a86b24c5ad671e058159bcbe01800a38078a1fd0ceb4d3c973d1fff4",
+      "size_bytes": 16155,
+      "kind": "impl"
+    },
+    {
+      "path": "data/DiContainer/DiContainer.tla",
+      "sha256": "1aefbcdfb8a23bc2d7d3bb54c304285efdc5b6419fe14ced552201958e7d782a",
+      "size_bytes": 2821,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "data/DiContainer/behavioral_DiContainer.py",
+      "sha256": "eeeb9337df7cf0a84e4c17a5d9e7f3a17875f270be9aa967e4264c1be3e0acd0",
+      "size_bytes": 2458,
+      "kind": "behavioral"
+    },
+    {
+      "path": "data/DiContainer/chaos_DiContainer.py",
+      "sha256": "ea7139b318417584494ff4f2c3ccf531bcc3ad66382bdb9c2d2c3b51c4ad5903",
+      "size_bytes": 3001,
+      "kind": "chaos"
+    },
+    {
+      "path": "data/DiContainer/concurrent_DiContainer.py",
+      "sha256": "ae84b8fb08d26d759420d06242f5a1fbe42a16a8c96ccb3d0724aed7322092d2",
+      "size_bytes": 3007,
+      "kind": "concurrent"
+    },
+    {
+      "path": "data/DiContainer/dashboard.json",
+      "sha256": "b0b689c391def1bbfb2a04b78c82487fbea3c1f424a46d20a8fa899bc1b18f23",
+      "size_bytes": 826,
+      "kind": "dashboard"
+    },
+    {
+      "path": "data/DiContainer/invariant_bindings.json",
+      "sha256": "575d80c810c3f3646c7a1663f7e18601ee5e8f6a4e27c64592a528d250098d26",
+      "size_bytes": 1869,
+      "kind": "test"
+    },
+    {
+      "path": "data/DiContainer/metamorphic_DiContainer.py",
+      "sha256": "62ca672f49e1b9ce78f0ae709b2e60df49d09284d145fe1d21159389bf4e18b3",
+      "size_bytes": 2070,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "data/DiContainer/observability_DiContainer.py",
+      "sha256": "914d170d0e73c6caff579fe2921eb183d4cd0d260fc8b9cdc7f6eed1e415672e",
+      "size_bytes": 1808,
+      "kind": "observability"
+    },
+    {
+      "path": "data/DiContainer/observability_schema.json",
+      "sha256": "c75577327115e596e190f2498ea830096ce0b01ddca0a1ba980bc0b0cc2d9991",
+      "size_bytes": 1111,
+      "kind": "observability"
+    },
+    {
+      "path": "data/DiContainer/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "data/DiContainer/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "data/DiContainer/state_machine_DiContainer.py",
+      "sha256": "c1590eb5bb8dd9a2e088b442bd212ea2d6b1069659338a74b92ea75796c07c00",
+      "size_bytes": 2650,
+      "kind": "state_machine"
+    },
+    {
+      "path": "data/DiContainer/test_DiContainer.py",
+      "sha256": "ebfeb2f1d1f6fe43a16626af8efd51e93668d22bf8e6dcee38c990126236d676",
+      "size_bytes": 6605,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "DI_INV_01",
+      "invariant_text": "MUST resolve a dependency graph without re-entering a partially-constructed node; cycle detection SHALL raise.",
+      "confirms_test": "test_inv_cycle_detect_confirms",
+      "prevents_test": "test_inv_cycle_detect_prevents",
+      "under_failure_test": "test_inv_cycle_detect_under_failure"
+    },
+    {
+      "invariant_id": "DI_INV_02",
+      "invariant_text": "NEVER returns an instance whose declared scope outlives the resolving scope; scoped CANNOT leak into singleton.",
+      "confirms_test": "test_inv_scope_leak_confirms",
+      "prevents_test": "test_inv_scope_leak_prevents",
+      "under_failure_test": "test_inv_scope_leak_under_failure"
+    },
+    {
+      "invariant_id": "DI_INV_03",
+      "invariant_text": "ALWAYS disposes instances it owns when the owning scope ends; callers MUST NOT dispose externally-created instances.",
+      "confirms_test": "test_inv_dispose_owned_confirms",
+      "prevents_test": "test_inv_dispose_owned_prevents",
+      "under_failure_test": "test_inv_dispose_owned_under_failure"
+    },
+    {
+      "invariant_id": "DI_INV_04",
+      "invariant_text": "MUST NOT silently replace a prior registration for the same key; re-registration SHALL be explicit.",
+      "confirms_test": "test_inv_no_silent_replace_confirms",
+      "prevents_test": "test_inv_no_silent_replace_prevents",
+      "under_failure_test": "test_inv_no_silent_replace_under_failure"
+    },
+    {
+      "invariant_id": "DI_INV_05",
+      "invariant_text": "register() MUST accept the interface type as the resolution key; keyed registrations MUST use an extra discriminator.",
+      "confirms_test": "test_inv_iface_key_confirms",
+      "prevents_test": "test_inv_iface_key_prevents",
+      "under_failure_test": "test_inv_iface_key_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 606,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 6 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1247,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 1933,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 4233,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1097,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 1184,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 88647,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "42 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1972,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 2214,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 55696,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 159473,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DIRECT-CYCLE",
+        "hypothesis": "Register A depending on B, and B depending on A. Resolving A should raise a cycle detection error, but a naive implementation will recurse infinitely and stack-overflow instead of raising explicitly.",
+        "input_fixture": "container.register(A, A, scope='transient'); container.register(B, B, scope='transient') where A.__init__(self, b: B) and B.__init__(self, a: A); container.resolve(A)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SELF-CYCLE",
+        "hypothesis": "A class depending on itself directly (A needs A). Expect cycle detection to raise; naive visited-set implementations keyed per-resolve may miss self-edges and infinitely recurse.",
+        "input_fixture": "class A: def __init__(self, a: 'A'): ...; container.register(A, A, scope='transient'); container.resolve(A)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SCOPED-LEAK-SINGLETON",
+        "hypothesis": "A singleton Foo depends on a scoped Bar. First resolve of Foo captures a Bar from scope S1; after S1 is disposed, the singleton still holds Bar, violating the scope-outlives invariant.",
+        "input_fixture": "container.register(Bar, Bar, scope='scoped'); container.register(Foo, Foo, scope='singleton'); s1=container.create_scope(); s1.resolve(Foo); dispose(s1); container.resolve(Foo).bar  # should have raised at registration or resolve",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TRANSIENT-DISPOSE-LEAK",
+        "hypothesis": "Transient instances with close()/dispose() created by the container but never tracked will leak resources \u2014 container claims ownership but forgets to dispose at scope end.",
+        "input_fixture": "register 1000 transient Disposable in scope s; dispose(s); assert all .disposed==True  # expect many still False",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EXTERNAL-INSTANCE-DISPOSE",
+        "hypothesis": "If register_instance(x) is used with a pre-built object, container MUST NOT dispose it on scope end. A buggy impl will call close() on externally-owned instances.",
+        "input_fixture": "obj=ExternalResource(); container.register(IFace, lambda: obj, scope='singleton'); dispose(container); assert obj.closed is False",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SILENT-REREGISTER",
+        "hypothesis": "Calling register(IFoo, FooA) then register(IFoo, FooB) without an explicit override flag should raise; a lax impl silently replaces FooA, breaking callers that resolved earlier.",
+        "input_fixture": "container.register(IFoo, FooA, scope='singleton'); container.register(IFoo, FooB, scope='singleton')  # expect DuplicateRegistration",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SUBCLASS-KEY-COLLISION",
+        "hypothesis": "Registering a subclass of an already-registered interface may collide or be accepted as a distinct key despite MRO overlap, letting callers resolve the wrong impl.",
+        "input_fixture": "class IFoo: ...; class IFooV2(IFoo): ...; container.register(IFoo, A, scope='singleton'); container.register(IFooV2, B, scope='singleton'); resolve(IFoo)  # returns B unexpectedly",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-KEYED-WITHOUT-DISCRIMINATOR",
+        "hypothesis": "Two 'keyed' registrations for IFoo with names 'primary' and 'replica' must use an extra discriminator; if impl maps solely on iface type, the second overwrites the first silently.",
+        "input_fixture": "container.register(IDb, Primary, scope='singleton', name='primary'); container.register(IDb, Replica, scope='singleton', name='replica'); resolve(IDb, name='primary')  # returns Replica",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CONCURRENT-SINGLETON-RACE",
+        "hypothesis": "Two threads resolve a singleton simultaneously on first access. Without double-checked locking, two instances are constructed; one silently leaks without dispose.",
+        "input_fixture": "register IFoo singleton; Thread(resolve).start() x 32 concurrently on cold container; count Foo.__init__ calls == 1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DISPOSE-DURING-RESOLVE",
+        "hypothesis": "Dispose scope S concurrently while another thread is mid-resolve in S. Resolve may return a half-initialized or already-disposed instance instead of raising.",
+        "input_fixture": "s=create_scope(); t1=Thread(target=lambda: s.resolve(Heavy)); t2=Thread(target=lambda: dispose(s)); start both; expect no partially-constructed return",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NON-TYPE-KEY",
+        "hypothesis": "Passing a non-Type as iface (e.g., a string, instance, or typing.Protocol alias) should be rejected; lax impls use it as a dict key and accept malformed registrations.",
+        "input_fixture": "container.register('IFoo', FooImpl, scope='singleton')  # expect TypeError; resolve('IFoo') should NOT succeed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNKNOWN-SCOPE-STRING",
+        "hypothesis": "scope='Singleton' (capitalized) or 'session' silently accepted and defaulted to transient, violating lifetime guarantees without warning.",
+        "input_fixture": "container.register(IFoo, Foo, scope='Singleton'); resolve twice; assert identity \u2014 likely two distinct instances",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CHILD-SCOPE-SINGLETON-DUP",
+        "hypothesis": "create_scope() child resolving a singleton registered on parent should reuse the parent instance. Buggy impls construct a new singleton per child scope, breaking singleton identity.",
+        "input_fixture": "container.register(IFoo, Foo, scope='singleton'); a=container.resolve(IFoo); c=container.create_scope(); b=c.resolve(IFoo); assert a is b",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FACTORY-RAISES-PARTIAL",
+        "hypothesis": "A factory raises mid-construction after partially wiring dependencies. Container must unwind and not cache a partially-constructed node; bug: the in-progress marker stays, poisoning subsequent resolves with 'cycle detected'.",
+        "input_fixture": "register IFoo with factory that raises RuntimeError after constructing Bar; resolve(IFoo) -> error; resolve(IFoo) again -> must retry cleanly, not report false cycle",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DEEP-GRAPH-RECURSION",
+        "hypothesis": "A linear dependency chain of depth 2000 triggers Python recursion limit inside resolve(), surfacing as RecursionError rather than a controlled DependencyGraphTooDeep or successful resolution.",
+        "input_fixture": "chain A0 -> A1 -> ... -> A2000 all transient; resolve(A0)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CYCLE_SELF_REF",
+        "hypothesis": "Registering a class whose __init__ accepts its own interface type and then calling resolve() should raise a cycle error, but a naive stack-based detector keyed on type identity may miss self-referential factories that bypass the type registry (e.g., a lambda that calls container.resolve(SameIface) inline), allowing infinite recursion to exhaust the call stack instead of raising a clean CycleError.",
+        "input_fixture": "container.register(IFoo, lambda: container.resolve(IFoo), scope='singleton'); container.resolve(IFoo)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CYCLE_INDIRECT_THREE_HOP",
+        "hypothesis": "An indirect three-node cycle A->B->C->A should be caught by the in-progress set, but if the container clears the in-progress marker after a failed partial construction rather than preserving it through re-entry, a second resolve() of A after the first partially-failed one can succeed and return a half-constructed A object, violating cycle detection.",
+        "input_fixture": "register(IA, ImplA(dep=IB)); register(IB, ImplB(dep=IC)); register(IC, ImplC(dep=IA)); try: resolve(IA) except: pass; resolve(IA)  # second call should still raise",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SCOPE_LEAK_SCOPED_INTO_SINGLETON",
+        "hypothesis": "If a singleton is registered after a scoped dependency that it depends on, the container may capture the scoped instance inside the singleton at construction time. When the child scope ends and disposes the scoped instance, the singleton holds a dangling reference to a disposed object, violating the rule that scoped instances cannot outlive their scope via a singleton.",
+        "input_fixture": "root = DiContainer(); root.register(IRepo, ScopedRepo, scope='scoped'); root.register(IService, ServiceThatTakesRepo, scope='singleton'); child = root.create_scope(); svc = child.resolve(IService);  # singleton now holds scoped repo; child.dispose(); svc.repo.query()  # use-after-dispose",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SCOPE_LEAK_GRANDCHILD_OUTLIVES_PARENT",
+        "hypothesis": "Creating a grandchild scope from a child scope, disposing the child scope, but retaining a reference to the grandchild scope and resolving from it should raise because the grandchild's lifetime cannot exceed its parent's. A container that tracks ancestry only at creation time and not at resolve time may silently allow resolution on an orphaned grandchild scope.",
+        "input_fixture": "root = DiContainer(); child = root.create_scope(); grandchild = child.create_scope(); child.dispose(); grandchild.resolve(ISomething)  # should raise, not silently succeed",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DISPOSE_EXTERNAL_INSTANCE",
+        "hypothesis": "When a caller registers an externally-constructed instance (already-constructed object, not a class or factory), the container MUST NOT call dispose/close/__exit__ on it when the scope ends, because the caller owns its lifecycle. An implementation that calls dispose() on all registered instances regardless of whether they were provided as instances vs factories will incorrectly destroy caller-owned objects.",
+        "input_fixture": "ext = MyResource(); container.register(IResource, lambda: ext, scope='scoped'); scope = container.create_scope(); scope.resolve(IResource); scope.dispose(); assert not ext.is_disposed  # container must not have disposed caller-owned instance",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DISPOSE_DOUBLE_DISPOSE_SCOPE",
+        "hypothesis": "Calling dispose() on a scope twice (or calling create_scope().dispose() followed by resolve()) should be idempotent or raise on second dispose, not crash with an unhandled AttributeError or silently attempt to double-free managed resources. A container with no disposed-guard flag will iterate its instance registry a second time and call dispose() on already-disposed objects.",
+        "input_fixture": "scope = container.create_scope(); scope.resolve(IFoo); scope.dispose(); scope.dispose()  # second dispose must not raise unexpected exception or double-free",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SILENT_REREG_SAME_KEY",
+        "hypothesis": "Calling register() twice with the same interface type and no explicit override flag should raise a RegistrationConflict error. An implementation that uses a plain dict and silently overwrites the entry on second register() violates this invariant. This is testable by checking that the first-registered implementation is never returned after a silent overwrite.",
+        "input_fixture": "container.register(IFoo, ImplA, scope='singleton'); container.register(IFoo, ImplB, scope='singleton')  # must raise RegistrationConflict, not silently replace",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REREG_DIFFERENT_SCOPE_SAME_KEY",
+        "hypothesis": "Re-registering the same interface with a different scope (e.g., first 'singleton' then 'transient') is a particularly dangerous form of silent replacement because the scope change may go undetected during testing if the test only checks the resolved type, not its lifetime. The container must raise even when only the scope argument changes on re-registration.",
+        "input_fixture": "container.register(IFoo, ImplA, scope='singleton'); container.register(IFoo, ImplA, scope='transient')  # scope change alone must trigger RegistrationConflict",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-KEY_NONE_IFACE",
+        "hypothesis": "Passing None as the iface argument to register() should raise TypeError immediately, not defer the failure until resolve() time. An implementation that stores None as a dict key (valid in Python) will accept the registration silently and then fail with a confusing KeyError or return None on resolve(None), leaking internal state.",
+        "input_fixture": "container.register(None, ImplFoo, scope='singleton')  # must raise TypeError at register() time, not at resolve()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-KEY_COLLISION_SUBCLASS",
+        "hypothesis": "If IBase and IDerived (where IDerived inherits IBase) are registered separately, resolving IBase must not accidentally return the IDerived implementation. A container that uses issubclass() or isinstance() for key matching instead of exact type identity will collapse distinct registrations into the same bucket, violating the discriminator requirement for keyed registrations.",
+        "input_fixture": "container.register(IBase, ImplBase, scope='singleton'); container.register(IDerived, ImplDerived, scope='singleton'); assert type(container.resolve(IBase)) is ImplBase  # must NOT return ImplDerived",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-RACE_SINGLETON_DOUBLE_INIT",
+        "hypothesis": "Under concurrent access with two threads both calling resolve() on an uninitialized singleton simultaneously, a container without a per-key lock may construct the singleton class twice, store the second instance, and return the first to one thread. This violates the singleton scope guarantee and can cause resource duplication (e.g., two DB connection pools).",
+        "input_fixture": "import threading; results = []; threads = [threading.Thread(target=lambda: results.append(container.resolve(IHeavySingleton))) for _ in range(50)]; [t.start() for t in threads]; [t.join() for t in threads]; assert len(set(id(r) for r in results)) == 1  # all must be same instance",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-AMPLIFY_DIAMOND_TRANSIENT",
+        "hypothesis": "In a diamond dependency graph (A depends on B and C, both B and C depend on D), if D is registered as 'singleton' but the container builds the graph depth-first without memoizing the in-progress singleton before its dependents are resolved, D may be constructed twice during a single resolve(A) call. The second construction wins, the first is orphaned and never disposed, leaking the resource.",
+        "input_fixture": "container.register(IA, ImplA, scope='transient'); container.register(IB, ImplB, scope='transient'); container.register(IC, ImplC, scope='transient'); container.register(ID, ImplD, scope='singleton'); a = container.resolve(IA); assert ImplD.instance_count == 1  # singleton must not be constructed twice",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY_RESOLVE_AFTER_SCOPE_DISPOSE",
+        "hypothesis": "After a scope has been disposed, calling resolve() on that same scope object should raise a DisposedScopeError. A container that only clears its instance cache on dispose but does not set a 'disposed' flag will silently create fresh instances in a scope whose lifetime has officially ended, allowing callers to obtain instances that will never be disposed.",
+        "input_fixture": "scope = container.create_scope(); scope.resolve(IFoo); scope.dispose(); zombie = scope.resolve(IFoo)  # must raise DisposedScopeError, not return a fresh or cached instance",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-MALFORMED_IMPL_NOT_CALLABLE",
+        "hypothesis": "Passing a non-callable, non-type value (e.g., an integer literal or a string) as the impl argument should raise TypeError at register() time. A container that defers all validation to resolve() time will accept the bad registration silently, and the error will surface far from the registration site, making debugging difficult and violating fail-fast expectations.",
+        "input_fixture": "container.register(IFoo, 42, scope='singleton')  # must raise TypeError immediately at register()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-BOUNDARY_EMPTY_SCOPE_STRING",
+        "hypothesis": "Passing an empty string as the scope argument should raise ValueError because it is not a declared lifetime scope. An implementation that accepts arbitrary strings and then branches on known values with an else-pass will silently treat unknown scopes as transient or singleton depending on the fallback branch, constructing instances with an unintended lifetime.",
+        "input_fixture": "container.register(IFoo, ImplFoo, scope='')  # must raise ValueError: unknown scope",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CIRCULAR-AB-LOOP",
+        "hypothesis": "Container enters infinite recursion resolving circular dependency A\u2194B without detecting cycle or raising exception.",
+        "input_fixture": "register(A, factory=lambda: B()); register(B, factory=lambda: A()); resolve(A)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SELF-REFERENCE-CONSTRUCT",
+        "hypothesis": "Service depending on itself evades cycle detection and causes stack overflow during construction.",
+        "input_fixture": "register(Service, factory=lambda: Service(dep=Service())); resolve(Service)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DEEP-CHAIN-CYCLE-EVASION",
+        "hypothesis": "Long chain A\u2192B\u2192C\u2192D\u2192A escapes detection due to incomplete graph traversal or depth-limit bypass.",
+        "input_fixture": "register(A, B), register(B, C), register(C, D), register(D, A); resolve(A)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RUNTIME-CONDITIONAL-CYCLE",
+        "hypothesis": "Circular dependency materializes only at runtime in Callable, evading registration-time static cycle analysis.",
+        "input_fixture": "register(A, factory=lambda: B() if flag else Dummy()); register(B, factory=lambda: A()); set flag=True; resolve(A)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SCOPED-OUTLIVES-SCOPE",
+        "hypothesis": "Scoped-lifetime instance returned from singleton scope and remains accessible after scoped container disposed.",
+        "input_fixture": "register(Service, impl, scope='scoped'); inst = container.resolve(Service); scope_owner.dispose(); inst still references memory",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CHILD-SCOPE-LEAK-PARENT",
+        "hypothesis": "Child scope instance escapes to parent scope consumer, outliving child lifetime and causing use-after-free.",
+        "input_fixture": "child_scope = create_scope(); inst = child_scope.resolve(Service); parent_consumer(inst); child_scope.dispose(); parent accesses freed inst",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SILENT-OVERRIDE-REREGISTER",
+        "hypothesis": "Re-registering same interface silently replaces prior implementation with no explicit error or flag.",
+        "input_fixture": "register(IService, ImplV1); register(IService, ImplV2); resolve(IService) returns ImplV2 without exception",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNKEYED-INTERFACE-COLLISION",
+        "hypothesis": "Multiple implementations of same interface without discriminator silently overwrite, losing first registration.",
+        "input_fixture": "register(IHandler, HandlerA); register(IHandler, HandlerB); resolve(IHandler) returns HandlerB, HandlerA lost",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DOUBLE-DISPOSE-CRASH",
+        "hypothesis": "Calling dispose twice on same instance causes invariant violation or crash due to already-released resources.",
+        "input_fixture": "scope.dispose(); external_caller_also_calls(inst.dispose()) \u2192 resource already freed, exception or memory corruption",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SCOPE-END-RESOURCE-LEAK",
+        "hypothesis": "Scope.dispose() omits cleanup on pooled resources, causing file descriptors or memory to leak.",
+        "input_fixture": "scope.resolve(DatabaseConnection); scope.dispose() skips connection.close() \u2192 connection stays open",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-REGISTER-RACE",
+        "hypothesis": "Two threads register same interface concurrently; registry becomes corrupted or returns undefined result.",
+        "input_fixture": "Thread1 register(Service,ImplA) || Thread2 register(Service,ImplB); resolve(Service) \u2192 undefined or torn state",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-SINGLETON-DOUBLE-CREATE",
+        "hypothesis": "Multiple threads resolving singleton dependency concurrently both bypass half-constructed check, creating duplicates.",
+        "input_fixture": "Thread1 resolve(Singleton) || Thread2 resolve(Singleton); no lock \u2192 both instances created in parallel",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "di.registered",
+        "required_attributes": [
+          "iface",
+          "scope"
+        ]
+      },
+      {
+        "event_name": "di.resolved",
+        "required_attributes": [
+          "iface",
+          "scope",
+          "cached"
+        ]
+      },
+      {
+        "event_name": "di.scope.disposed",
+        "required_attributes": [
+          "scope_id",
+          "instance_count"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "di.resolves",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "scope",
+          "cached"
+        ]
+      },
+      {
+        "name": "di.scope.instance_count",
+        "metric_type": "histogram",
+        "unit": "1",
+        "cardinality_bound": 30,
+        "label_keys": [
+          "scope"
+        ]
+      },
+      {
+        "name": "di.resolve.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "iface"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "di.resolve",
+        "required_attributes": [
+          "di.iface",
+          "di.scope",
+          "di.cached"
+        ]
+      },
+      {
+        "operation_name": "di.scope.dispose",
+        "required_attributes": [
+          "di.scope_id",
+          "di.instance_count"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Implements Protocol verbatim (register/resolve/create_scope). Extensions (name, allow_override, register_instance) are additive and documented. Scope semantics match spec."
+      },
+      {
+        "axis": "completeness",
+        "score": 8,
+        "rationale": "All 5 invariants enforced; cycle detection, scope-leak check, dispose, override guard, keyed registration all present. Minor gap: no DI support for factory args (documented), and root dispose doesn't dispose singletons (spec acknowledges this)."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "All errors raise DiContainerInvariantError with explicit DI-INV-NN prefix, include offending types/names, and name the remediation (e.g. allow_override=True, zero-arg factory). Cycle error renders full path."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Runtime-checkable Protocol, child scopes share registry/locks with root, context-manager support, introspection helpers (is_registered, snapshots), register_instance for external ownership. Clean extension surface."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "RLocks for registry/singleton/scope, threading.local resolve stack, dispose drains in reverse order and suppresses close() failures per spec, zero I/O at import, __slots__ on record. Swallowing dispose exceptions is intentional but loses diagnostics (no logging hook)."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Protocol signature matches api_signature exactly; invariants DI-INV-01..05 cited in docstring and enforced in code paths; extension_contract honored (adapter-friendly Protocol). Namespace/purpose reflected in module docstring."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'composition root' is used in When-to-use without definition \u2014 juniors won't know this pattern",
+          "'zero-arg callable' in the API surface description is jargon; no example of a factory lambda is shown",
+          "The contract.json is called 'authoritative' but there's no path or command to open it, leaving the junior with no next step"
+        ],
+        "rewrite_suggestion": "Add '(composition root = the single place your app wires everything together, e.g. main.py)' inline; show a one-liner factory example next to the class example; add a note like 'find DiContainer.contract.json at the repo root' or inline the relevant snippet."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "Constructor injection mechanics are never shown \u2014 it's unclear whether the container introspects __init__ type-hints or requires explicit factory registration",
+          "The custom-container Protocol is referenced ('implement the Protocol') but never shown, making adapter implementation a guessing game",
+          "No mention of circular-dependency detection algorithm (eager vs lazy, depth-first) \u2014 principals will want to know the resolution strategy, not just that cycles raise"
+        ],
+        "rewrite_suggestion": "Add a section 'How resolve() wires constructors' (type-hint introspection vs explicit factory); inline the 4-method Protocol definition; add one sentence on cycle detection strategy (e.g., 'resolve stack is depth-first; a node seen twice in the current stack raises CyclicDependencyError')."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "No guidance on auditing or logging registration events \u2014 there's no hook, event, or log line to detect unexpected re-registrations in production",
+          "Disposal failure is 'swallowed' with no mention of logging, so a leaking database connection would be silent in production",
+          "No mention of supply-chain risk: factories are arbitrary callables, so a compromised registration call can execute arbitrary code at resolve time \u2014 the docs should flag this"
+        ],
+        "rewrite_suggestion": "Add: 'Disposal errors are logged at WARNING level before being swallowed'; note that a registration audit log (DEBUG) fires on every register() call; add a security note: 'factories are arbitrary callables \u2014 restrict who can call register() in production bootstrap code'."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Metrics are listed by name (di.resolves, etc.) but no instrumentation library, export format, or endpoint is specified \u2014 impossible to wire into Prometheus/Datadog without reading source",
+          "Disposal-failure swallowing is mentioned but there's no alertable signal (log level? counter increment?) to page on leaked resources",
+          "No shutdown ordering guidance \u2014 the docs say 'dispose() at shutdown' but don't address whether child scopes must be drained before root.dispose(), which matters for graceful pod termination"
+        ],
+        "rewrite_suggestion": "Specify 'metrics are emitted via the standard opentelemetry-sdk MetricProvider'; document di.dispose.error counter that increments on swallowed failures; add a shutdown checklist: 'drain open scopes \u2192 call root.dispose() \u2192 container is inert'."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The 'Why use this?' value proposition is buried inside technical language \u2014 no sentence connects DI to reduced bug rate, faster onboarding, or easier testing in plain terms",
+          "'Composition root' and 'scope leak' appear in the When-to-use section with no plain-language fallback, so a PM cannot relay the guidance to stakeholders",
+          "Alternatives-considered reads as a list of anti-patterns without explaining what was gained by choosing DiContainer over them (e.g., 'test coverage improved because mocks are now swappable in one line')"
+        ],
+        "rewrite_suggestion": "Prepend a two-sentence executive summary: 'DiContainer lets any team member swap out a database, clock, or API client for a test double without changing application code. This cuts the time to write isolated tests and removes the need to maintain per-environment import hacks.' Replace jargon in When-to-use with plain analogies."
+      }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "INBOUND_VERIFIER_INV_01",
+      "invariant_text": "verify(body, headers) MUST either return a VerifiedEvent built from the validated payload OR raise HTTPException; returning None or silently swallowing an error is FORBIDDEN by contract.",
+      "confirms_test": "test_inv_verify_confirms",
+      "prevents_test": "test_inv_verify_prevents",
+      "under_failure_test": "test_inv_verify_under_failure"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "title": "DataMapper — Map Calls, Schema Drift, Row Size",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Map calls (5m)",
+      "targets": [{"expr": "sum(rate(datamapper_map_calls_total[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Schema drift (5m)",
+      "targets": [{"expr": "sum(rate(datamapper_schema_drift_count_total[5m]))"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Row columns p50/p95/p99",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(datamapper_row_columns_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(datamapper_row_columns_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(datamapper_row_columns_bucket[5m]))"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "logs": [
+    {
+      "event_name": "csrf_guard.token.issued",
+      "required_attributes": ["session_id_hash", "duration_ms"]
+    },
+    {
+      "event_name": "csrf_guard.token.verified",
+      "required_attributes": ["session_id_hash", "outcome", "duration_ms"]
+    },
+    {
+      "event_name": "csrf_guard.verification.rejected",
+      "required_attributes": ["session_id_hash", "reason"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "csrf_guard.operations",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 12,
+      "label_keys": ["operation", "outcome"]
+    },
+    {
+      "name": "csrf_guard.verify.duration",
+      "metric_type": "histogram",
+      "unit": "us",
+      "cardinality_bound": 50,
+      "label_keys": ["outcome"]
+    },
+    {
+      "name": "csrf_guard.rejections",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": ["reason"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "csrf_guard.issue",
+      "required_attributes": ["session.id_hash"]
+    },
+    {
+      "operation_name": "csrf_guard.verify",
+      "required_attributes": ["session.id_hash", "outcome"]
+    }
+  ]
+}

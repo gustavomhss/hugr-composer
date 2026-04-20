@@ -1,0 +1,17 @@
+{
+  "logs": [
+    {"event_name": "pii.field.registered", "required_attributes": ["model", "field", "class"]},
+    {"event_name": "pii.reclassified", "required_attributes": ["model", "field", "old", "new", "approver"]},
+    {"event_name": "pii.leak.recorded", "required_attributes": ["sink", "obj_type"]}
+  ],
+  "metrics": [
+    {"name": "pii.fields.registered", "metric_type": "counter", "unit": "1", "cardinality_bound": 500, "label_keys": ["class"]},
+    {"name": "pii.masks", "metric_type": "counter", "unit": "1", "cardinality_bound": 20, "label_keys": ["audience"]},
+    {"name": "pii.leaks", "metric_type": "counter", "unit": "1", "cardinality_bound": 30, "label_keys": ["sink"]}
+  ],
+  "spans": [
+    {"operation_name": "pii.register", "required_attributes": ["model", "field"]},
+    {"operation_name": "pii.mask", "required_attributes": ["audience"]},
+    {"operation_name": "pii.reclassify", "required_attributes": ["model", "field", "approver"]}
+  ]
+}

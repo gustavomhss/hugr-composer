@@ -1,0 +1,25 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "GRACEFUL_SHUTDOWN_INV_01",
+      "invariant_text": "Once `register()` observes a shutdown signal, `is_draining()` MUST return True for the rest of the process lifetime (monotonic, never resets).",
+      "confirms_test": "test_inv_draining_monotonic_confirms",
+      "prevents_test": "test_inv_draining_monotonic_prevents",
+      "under_failure_test": "test_inv_draining_monotonic_under_failure"
+    },
+    {
+      "invariant_id": "GRACEFUL_SHUTDOWN_INV_02",
+      "invariant_text": "`wait_complete()` MUST NOT return before `drain_seconds` elapses AND (in-flight count drops to zero OR `timeout_seconds` elapses), whichever comes first.",
+      "confirms_test": "test_inv_wait_complete_respects_deadline_confirms",
+      "prevents_test": "test_inv_wait_complete_respects_deadline_prevents",
+      "under_failure_test": "test_inv_wait_complete_respects_deadline_under_failure"
+    },
+    {
+      "invariant_id": "GRACEFUL_SHUTDOWN_INV_03",
+      "invariant_text": "`decrement_in_flight()` MUST NOT let the in-flight counter go negative \u2014 unbalanced decrements are clamped to zero, not the caller's problem.",
+      "confirms_test": "test_inv_in_flight_counter_non_negative_confirms",
+      "prevents_test": "test_inv_in_flight_counter_non_negative_prevents",
+      "under_failure_test": "test_inv_in_flight_counter_non_negative_under_failure"
+    }
+  ]
+}

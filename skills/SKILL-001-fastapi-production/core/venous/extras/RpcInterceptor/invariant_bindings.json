@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "RPCI_INV_01",
+      "invariant_text": "An interceptor MUST call next exactly once per invocation unless it deliberately short-circuits the call with a status.",
+      "confirms_test": "test_inv_next_exactly_once_confirms",
+      "prevents_test": "test_inv_next_exactly_once_prevents",
+      "under_failure_test": "test_inv_next_exactly_once_under_failure"
+    },
+    {
+      "invariant_id": "RPCI_INV_02",
+      "invariant_text": "Metadata keys that end with '-bin' ALWAYS carry binary values and CANNOT be compared as plain strings.",
+      "confirms_test": "test_inv_bin_suffix_confirms",
+      "prevents_test": "test_inv_bin_suffix_prevents",
+      "under_failure_test": "test_inv_bin_suffix_under_failure"
+    },
+    {
+      "invariant_id": "RPCI_INV_03",
+      "invariant_text": "Metadata keys starting with 'grpc-' are FORBIDDEN for user values because that prefix is reserved by the runtime.",
+      "confirms_test": "test_inv_grpc_prefix_reserved_confirms",
+      "prevents_test": "test_inv_grpc_prefix_reserved_prevents",
+      "under_failure_test": "test_inv_grpc_prefix_reserved_under_failure"
+    },
+    {
+      "invariant_id": "RPCI_INV_04",
+      "invariant_text": "A deadline propagated in the RpcContext MUST NOT be extended by an interceptor; it SHALL only be shortened or respected.",
+      "confirms_test": "test_inv_deadline_monotone_confirms",
+      "prevents_test": "test_inv_deadline_monotone_prevents",
+      "under_failure_test": "test_inv_deadline_monotone_under_failure"
+    },
+    {
+      "invariant_id": "RPCI_INV_05",
+      "invariant_text": "Cancellation signals NEVER cross interceptor boundaries silently; every interceptor SHALL honor cancel or raise a cancellation error.",
+      "confirms_test": "test_inv_cancellation_propagates_confirms",
+      "prevents_test": "test_inv_cancellation_propagates_prevents",
+      "under_failure_test": "test_inv_cancellation_propagates_under_failure"
+    }
+  ]
+}

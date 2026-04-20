@@ -1,0 +1,31 @@
+{
+  "name": "Specification",
+  "namespace": "data",
+  "purpose": "Encapsulates a predicate over a domain object so selection, validation, and building criteria share one reusable rule.",
+  "api_signature": "from typing import Protocol, TypeVar, Generic\n\nT = TypeVar('T')\n\nclass Specification(Protocol, Generic[T]):\n    def is_satisfied_by(self, candidate: T) -> bool: ...\n    def and_(self, other: 'Specification[T]') -> 'Specification[T]': ...\n    def or_(self, other: 'Specification[T]') -> 'Specification[T]': ...\n    def not_(self) -> 'Specification[T]': ...",
+  "invariants": [
+    "is_satisfied_by MUST be a pure predicate: no I/O, no mutation of the candidate, and NEVER time-dependent unless time is injected.",
+    "Composed specifications (and_, or_, not_) MUST preserve the identity laws of boolean algebra so refactors cannot change semantics.",
+    "A Specification CANNOT depend on the persistence layer; repository translation MUST be delegated to a separate visitor or translator.",
+    "The same Specification used for in-memory filtering and repository querying SHALL produce logically equivalent results."
+  ],
+  "extension_contract": "New rules extend Specification by subclassing and overriding is_satisfied_by, or by registering a translator adapter that converts the spec tree to a backend query; composition operators SHALL NOT be overridden by subclasses.",
+  "consumption_example": "def eligible_accounts(repo, dormant: Specification, high_value: Specification):\n    criterion = dormant.and_(high_value.not_())\n    return [a for a in repo.find_all() if criterion.is_satisfied_by(a)]",
+  "sources": [
+    {
+      "source": "Evans 'Domain-Driven Design' (2003)",
+      "locator": "Chapter 9, Specification pattern, pp. 224-240"
+    },
+    {
+      "source": "Fowler and Evans 'Specifications' white paper (2002)",
+      "locator": "Section 'Composite Specification' and 'Querying'"
+    }
+  ],
+  "why_essential": "If selection rules live only as inline lambdas or ORM filters, the same policy gets re-implemented divergently in validation, UI filtering, and reports, making policy drift silent.",
+  "alternatives_considered": [
+    "Inline lambdas per callsite: duplicated logic and no composition algebra.",
+    "Raw SQL fragments: storage-coupled and untestable in-memory.",
+    "Rule-engine DSL: heavier than needed for the 80% case and opaque to domain experts."
+  ],
+  "maturity": "battle_tested"
+}

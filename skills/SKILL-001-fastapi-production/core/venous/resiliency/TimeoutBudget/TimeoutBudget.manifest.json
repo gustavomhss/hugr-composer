@@ -1,0 +1,741 @@
+{
+  "name": "TimeoutBudget",
+  "namespace": "resiliency",
+  "maturity": "battle_tested",
+  "builder_agent_id": 4,
+  "catalog_entry_sha256": "37c63a1e2c202ab77b4a037bd152ef5462eac87ed4dbae517ae944d238fab917",
+  "files": [
+    {
+      "path": "resiliency/TimeoutBudget/TimeoutBudget.cfg",
+      "sha256": "c0dc8a4e8b6116db2308e951c67efb49051a9e3639386e573ae2bfa9e0f48045",
+      "size_bytes": 134,
+      "kind": "test"
+    },
+    {
+      "path": "resiliency/TimeoutBudget/TimeoutBudget.contract.json",
+      "sha256": "1d2aae8cb06d385781e08a28a660a1dd461b8714b88be90e89e071947783fba1",
+      "size_bytes": 2878,
+      "kind": "contract_json"
+    },
+    {
+      "path": "resiliency/TimeoutBudget/TimeoutBudget.manifest.json",
+      "sha256": "6df44cc98a02d5ed2684ae10feb0426ba9844f30418561a218530e31e0e774e3",
+      "size_bytes": 50002,
+      "kind": "manifest"
+    },
+    {
+      "path": "resiliency/TimeoutBudget/TimeoutBudget.md",
+      "sha256": "5871a510cecdd251410505e8155d1ec2c3d0554aa19788376cd7d1dfc77294b3",
+      "size_bytes": 7244,
+      "kind": "spec_md"
+    },
+    {
+      "path": "resiliency/TimeoutBudget/TimeoutBudget.py",
+      "sha256": "dd37e9f1d0f50c7421fde104f4dfc493b1ebc472efee155b57e396924be5de87",
+      "size_bytes": 14722,
+      "kind": "impl"
+    },
+    {
+      "path": "resiliency/TimeoutBudget/TimeoutBudget.tla",
+      "sha256": "321d6594e38d9663862229e3b710b06d1e7281461bed61c05d0e49f0e1d99bde",
+      "size_bytes": 1834,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "resiliency/TimeoutBudget/behavioral_TimeoutBudget.py",
+      "sha256": "5ca0c6d1fc2513f621ad30db355822f44fdea9e5949624693b02b0b1a1d5bf19",
+      "size_bytes": 3168,
+      "kind": "behavioral"
+    },
+    {
+      "path": "resiliency/TimeoutBudget/chaos_TimeoutBudget.py",
+      "sha256": "8dc63fd5715f858a4b75564dc79da874c6cfa60c7665e8f4841df9fe797efc1a",
+      "size_bytes": 3868,
+      "kind": "chaos"
+    },
+    {
+      "path": "resiliency/TimeoutBudget/concurrent_TimeoutBudget.py",
+      "sha256": "a133d8ccc080eaa000c70aace5dc787a79a44d263364f5e2df78453447a53305",
+      "size_bytes": 2530,
+      "kind": "concurrent"
+    },
+    {
+      "path": "resiliency/TimeoutBudget/dashboard.json",
+      "sha256": "3df2ff2f958adbbc2f830125c40dce3b9f1257a68aad6ebb035667a6d35c04eb",
+      "size_bytes": 897,
+      "kind": "dashboard"
+    },
+    {
+      "path": "resiliency/TimeoutBudget/invariant_bindings.json",
+      "sha256": "171203061413f96a386d71dbc8fffb6ffb342d1448ba8b7156fa602ec1dcaffe",
+      "size_bytes": 1963,
+      "kind": "test"
+    },
+    {
+      "path": "resiliency/TimeoutBudget/metamorphic_TimeoutBudget.py",
+      "sha256": "007a7401e999f3ac8578796d0f85e3cdb09dde93323faf8639f2e4cf08e5099c",
+      "size_bytes": 2921,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "resiliency/TimeoutBudget/observability_TimeoutBudget.py",
+      "sha256": "85bdc1f7070340382901267b5b3eea7737103425e94880bcfbaf260b19cd2cae",
+      "size_bytes": 2033,
+      "kind": "observability"
+    },
+    {
+      "path": "resiliency/TimeoutBudget/observability_schema.json",
+      "sha256": "41900c07e44507560293d29d9ec0f096eed231fb787232c12ea7c361f8fcf5b7",
+      "size_bytes": 1183,
+      "kind": "observability"
+    },
+    {
+      "path": "resiliency/TimeoutBudget/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "resiliency/TimeoutBudget/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "resiliency/TimeoutBudget/state_machine_TimeoutBudget.py",
+      "sha256": "1497d9cd901c8429b0144313162d644a2cd61479fddc15f39fa75b349657c9b0",
+      "size_bytes": 2437,
+      "kind": "state_machine"
+    },
+    {
+      "path": "resiliency/TimeoutBudget/test_TimeoutBudget.py",
+      "sha256": "d39acbb2e1a8580ddf353849db33e68a1fe4a31dac1ebdedea9ea69bf1c198cc",
+      "size_bytes": 8984,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "TB_INV_01",
+      "invariant_text": "Every outbound call MUST use min(local_timeout, TimeoutBudget.remaining_ms()) and NEVER the local timeout alone.",
+      "confirms_test": "test_inv_for_call_min_confirms",
+      "prevents_test": "test_inv_for_call_min_prevents",
+      "under_failure_test": "test_inv_for_call_min_under_failure"
+    },
+    {
+      "invariant_id": "TB_INV_02",
+      "invariant_text": "The deadline MUST be measured on a monotonic clock and SHALL NOT move backward on wall-clock jumps.",
+      "confirms_test": "test_inv_monotonic_clock_confirms",
+      "prevents_test": "test_inv_monotonic_clock_prevents",
+      "under_failure_test": "test_inv_monotonic_clock_under_failure"
+    },
+    {
+      "invariant_id": "TB_INV_03",
+      "invariant_text": "A call issued when remaining_ms is not positive SHALL be refused before any socket I/O begins.",
+      "confirms_test": "test_inv_expired_refuses_confirms",
+      "prevents_test": "test_inv_expired_refuses_prevents",
+      "under_failure_test": "test_inv_expired_refuses_under_failure"
+    },
+    {
+      "invariant_id": "TB_INV_04",
+      "invariant_text": "The budget CANNOT be extended inside the request scope; a derived child budget MUST NEVER exceed the parent's deadline. FORBIDDEN to renew without a new request boundary.",
+      "confirms_test": "test_inv_no_extension_confirms",
+      "prevents_test": "test_inv_no_extension_prevents",
+      "under_failure_test": "test_inv_no_extension_under_failure"
+    },
+    {
+      "invariant_id": "TB_INV_05",
+      "invariant_text": "The budget SHALL be propagated across task boundaries via the CURRENT_BUDGET context variable and NEVER via thread-local state.",
+      "confirms_test": "test_inv_contextvar_propagation_confirms",
+      "prevents_test": "test_inv_contextvar_propagation_prevents",
+      "under_failure_test": "test_inv_contextvar_propagation_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 1080,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 1 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1646,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 2006,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 8110,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1846,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 1601,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 75356,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "39 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1543,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1285,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 65279,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 160689,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-LOCAL-TIMEOUT-ALONE",
+        "hypothesis": "A downstream httpx client is initialized with a hardcoded timeout=30.0 at module import and never consults TimeoutBudget.remaining_ms(), so a request with 200ms remaining will wait 30s on a slow upstream and outlive its parent deadline.",
+        "input_fixture": "set deadline_ns to now+200ms; invoke downstream call via pre-built httpx.AsyncClient(timeout=30.0); upstream sleeps 5s",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-WALL-CLOCK-JUMP",
+        "hypothesis": "If deadline_ns is derived from time.time()*1e9 instead of time.monotonic_ns(), an NTP step backward of 10s while the request is in flight will make remaining_ms() return a falsely-large positive value and the call will outlive the original deadline.",
+        "input_fixture": "freeze wall clock, start budget(500ms), step wall clock back 10s mid-flight, call remaining_ms()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ZERO-REMAINING-IO",
+        "hypothesis": "When remaining_ms() returns 0 exactly (boundary), for_call(max_ms) may return 0 and still be passed to socket.connect(timeout=0), which on some platforms means 'blocking forever' rather than 'refuse immediately'.",
+        "input_fixture": "deadline_ns = monotonic_ns(); call for_call(1000) then socket.create_connection(addr, timeout=result)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NEGATIVE-REMAINING",
+        "hypothesis": "After deadline has passed by 50ms, remaining_ms() returns -50 and for_call naively does min(max_ms, -50) returning -50, which when cast to httpx timeout raises or is coerced to None=infinite.",
+        "input_fixture": "sleep past deadline; invoke for_call(5000); pass to httpx.get(timeout=...)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-BUDGET-EXTENSION",
+        "hypothesis": "A middleware re-enters the scope and calls CURRENT_BUDGET.set(new_budget_with_later_deadline), effectively extending the deadline within the same request, violating the no-extension invariant.",
+        "input_fixture": "within request scope: CURRENT_BUDGET.set(TimeoutBudget(deadline_ns=monotonic_ns()+10_000_000_000))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-THREADPOOL-LEAK",
+        "hypothesis": "Code offloads work via loop.run_in_executor or threading.Thread without contextvars.copy_context, so the worker thread sees CURRENT_BUDGET as None and falls back to local_timeout alone.",
+        "input_fixture": "async handler schedules blocking job via ThreadPoolExecutor that calls downstream HTTP",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ASYNCIO-CREATE-TASK-DETACH",
+        "hypothesis": "asyncio.ensure_future with a custom loop or using loop.call_soon_threadsafe from another thread drops the contextvar copy, leaving downstream tasks with no budget.",
+        "input_fixture": "from thread A: loop.call_soon_threadsafe(lambda: asyncio.create_task(downstream()))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INT64-OVERFLOW",
+        "hypothesis": "Passing max_ms=2**63 to for_call causes deadline_ns arithmetic (now + max_ms*1_000_000) to overflow Python-int-to-C-int boundary when handed to select()/epoll, yielding negative timeouts interpreted as immediate or indefinite.",
+        "input_fixture": "for_call(2**63); forward result to selectors.DefaultSelector.select(timeout=...)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-HEADER-FORGE",
+        "hypothesis": "If origin/deadline propagates over HTTP via X-Deadline-Ms header and the server trusts it blindly, an attacker replays a stale request with a forged huge deadline to bypass budget enforcement on an internal service.",
+        "input_fixture": "curl -H 'X-Deadline-Ms: 999999999' internal-svc/endpoint",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CONTEXTVAR-GLOBAL-LEAK",
+        "hypothesis": "Implementation uses a module-level dict keyed by thread id instead of ContextVar, so two concurrent asyncio tasks on the same thread share/overwrite each other's budget, leading to one request inheriting another's (longer) deadline.",
+        "input_fixture": "gather(request_A(deadline=50ms), request_B(deadline=30_000ms)); observe A using B's remaining",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-ORIGIN",
+        "hypothesis": "origin='' (empty string) or None bypasses auditing/enforcement middleware that gates on `if budget.origin:` and silently disables deadline checks for this request.",
+        "input_fixture": "construct TimeoutBudget(deadline_ns=..., origin='')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RETRY-AMPLIFICATION",
+        "hypothesis": "A retry wrapper uses for_call(max_ms) once then retries N times reusing the same max_ms without re-consulting remaining_ms, so total wall time = N*max_ms far exceeding the budget.",
+        "input_fixture": "tenacity.retry(stop=stop_after_attempt(5), wait=wait_fixed(2)) around call using for_call(5000)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PROMPT-INJECTION-ORIGIN",
+        "hypothesis": "origin is populated from user-controlled request header without sanitization and later interpolated into a logged audit string or shell subprocess, enabling log-injection or command injection.",
+        "input_fixture": "X-Origin: \"foo\\n[CRIT] deadline bypassed; rm -rf /\"",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SUBMS-ROUNDING",
+        "hypothesis": "remaining_ms() integer-floors 0.4ms to 0, causing for_call to refuse a call that actually has 400 microseconds of budget remaining \u2014 but in some impls it returns 1 (ceil), causing I/O to proceed past deadline.",
+        "input_fixture": "deadline_ns = monotonic_ns() + 400_000; call remaining_ms()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TOCTOU-REMAINING-RACE",
+        "hypothesis": "remaining_ms() is called, returns a positive value, but the budget expires in the nanoseconds between that read and the value being passed to the socket connect call. The check passes, I/O begins, yet the budget was already exhausted at I/O start \u2014 violating the 'refused before any socket I/O begins' invariant under a race window that grows with CPU contention.",
+        "input_fixture": "budget = make_budget(deadline_ns=time.monotonic_ns()+1_000_000)  # 1ms\nrm = budget.remaining_ms()  # returns 1\ntime.sleep(0.002)  # budget now expired\nhttpx.get(url, timeout=budget.for_call(5000))  # I/O begins with stale positive check",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WALLCLOCK-FALLBACK",
+        "hypothesis": "If the implementation derives deadline_ns from time.time_ns() rather than time.monotonic_ns(), an NTP step-back of even 1 second will cause remaining_ms() to return a value larger than the true remaining budget, allowing calls to proceed past their actual deadline, violating the monotonic-clock invariant.",
+        "input_fixture": "# Simulate NTP step-back\nwith mock.patch('time.time_ns', side_effect=[1_000_000_000_000, 999_000_000_000]):\n    budget = make_budget(ttl_ms=500)\n    assert budget.remaining_ms() > 500  # clock went backward, remaining inflated",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ZERO-BOUNDARY-BYPASS",
+        "hypothesis": "If the pre-call guard is implemented as 'remaining_ms() < 0' instead of '<= 0', a budget where remaining_ms() returns exactly 0 will pass the guard and initiate socket I/O with a zero-millisecond timeout, effectively a fire-and-forget with undefined behavior. The invariant says 'not positive' (i.e., <= 0) must be refused.",
+        "input_fixture": "budget = make_budget(deadline_ns=time.monotonic_ns())  # exactly now\nassert budget.remaining_ms() == 0\nassert budget.expired() == True\n# guard: if budget.remaining_ms() < 0: raise  -- misses == 0 case\ncall_with_budget(budget)  # must NOT reach socket",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONTEXTVAR-TASK-ORPHAN",
+        "hypothesis": "asyncio.create_task() copies the current context snapshot at creation time, but if the budget ContextVar is set AFTER the task is spawned (e.g., in middleware that sets it post-dispatch), the task sees CURRENT_BUDGET=None and silently falls back to its local timeout, bypassing propagation entirely.",
+        "input_fixture": "async def handler():\n    task = asyncio.create_task(downstream())  # context snapshot taken HERE, budget=None\n    CURRENT_BUDGET.set(make_budget(ttl_ms=200))  # set AFTER task creation\n    await task  # downstream sees None budget, uses local_timeout=5000ms alone",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-THREADLOCAL-EXECUTOR-LEAK",
+        "hypothesis": "Code running in loop.run_in_executor() (a ThreadPoolExecutor) does NOT inherit ContextVar values unless contextvars.copy_context().run() is used explicitly. A blocking DB call inside an executor will read CURRENT_BUDGET as None and apply only its own local timeout, violating the propagation invariant.",
+        "input_fixture": "async def fetch_from_db():\n    CURRENT_BUDGET.set(make_budget(ttl_ms=300))\n    result = await asyncio.get_event_loop().run_in_executor(\n        None, blocking_db_query  # ContextVar NOT propagated to thread\n    )\n    # blocking_db_query reads CURRENT_BUDGET.get() => None",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-BUDGET-MUTATION-EXTEND",
+        "hypothesis": "If deadline_ns is a plain mutable attribute (not a read-only property), any code within the request scope can reassign it to extend the deadline, violating the 'budget CANNOT be extended inside the request scope' invariant. A middleware or interceptor could silently do this as an optimization.",
+        "input_fixture": "budget = make_budget(ttl_ms=100)\nCURRENT_BUDGET.set(budget)\n# Attacker-controlled middleware:\nbudget.deadline_ns = time.monotonic_ns() + 60_000_000_000  # extend by 60s\nassert budget.remaining_ms() > 59_000  # invariant violated",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FOR-CALL-AMPLIFICATION",
+        "hypothesis": "When N parallel downstream calls each invoke for_call(max_ms), they all receive min(local_max, remaining_ms()) independently. The budget does not partition itself across fans-out \u2014 each branch gets the full remaining budget. A request with 1000ms remaining can fan out to 100 parallel calls each with 1000ms, amplifying wall-clock exposure by 100x beyond intent.",
+        "input_fixture": "budget = make_budget(ttl_ms=1000)\nawait asyncio.gather(*[\n    call_service(i, timeout=budget.for_call(2000))  # each gets full 1000ms\n    for i in range(100)\n])  # total possible wall time = 1000ms, but each branch independently consumes it",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONE-BUDGET-SILENT-BYPASS",
+        "hypothesis": "When CURRENT_BUDGET.get() returns None (budget was never set, e.g., an internal cron job calls a shared utility), the outbound call helper may fall back to using only the local_timeout parameter. This means the invariant 'NEVER use local timeout alone' is silently violated for any code path where the budget was not injected.",
+        "input_fixture": "# No budget set \u2014 simulates cron/internal call path\nassert CURRENT_BUDGET.get() is None\n# If helper does: timeout = budget.remaining_ms() if budget else local_timeout\nhttpx.get(url, timeout=30)  # local timeout used alone, invariant broken",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REPLAY-STALE-BUDGET",
+        "hypothesis": "A budget object from a completed request (deadline already expired) is stored in a cache or object pool and reused for a new request without resetting the deadline_ns. The new request inherits an already-expired budget, causing all calls to be refused immediately, or if the guard is wrong, proceeds with a negative remaining_ms passed to timeout.",
+        "input_fixture": "budget = make_budget(ttl_ms=100)\ntime.sleep(0.2)  # budget expires\nrequest_pool.put(budget)  # pooled for reuse\n\n# New request\nnew_budget = request_pool.get()  # stale, expired\nCURRENT_BUDGET.set(new_budget)\nassert new_budget.remaining_ms() < 0  # all calls immediately refused",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NS-TO-MS-TRUNCATION-DRIFT",
+        "hypothesis": "remaining_ms() converts monotonic nanoseconds to milliseconds via integer division (ns // 1_000_000). For a budget with 999_999 ns remaining (~0.999ms), this returns 0, causing a premature refusal. Conversely, if rounded up (math.ceil), 1ns remaining returns 1ms, allowing a call that will certainly timeout. Either truncation or ceiling creates a systematic boundary error.",
+        "input_fixture": "budget = make_budget(deadline_ns=time.monotonic_ns() + 999_999)  # 0.999ms\nassert budget.remaining_ms() == 0  # truncation: premature refusal\n# OR\nassert budget.remaining_ms() == 1  # ceiling: allows call with ~0ms true budget",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INT-OVERFLOW-DEADLINE-NS",
+        "hypothesis": "If deadline_ns is set with a very large TTL (e.g., ttl_ms=2**53 passed by a misconfigured caller), adding it to time.monotonic_ns() can overflow a 64-bit signed integer in Python-native implementations or in Rust/C extensions that serialize to i64. The overflowed deadline wraps to a past timestamp, making remaining_ms() return a large negative number and refusing all calls immediately.",
+        "input_fixture": "import sys\nbig_ttl_ms = sys.maxsize  # 9223372036854775807\nbig_ttl_ns = big_ttl_ms * 1_000_000  # overflows int64 in C extensions\nbudget = make_budget(ttl_ms=big_ttl_ms)\nassert budget.deadline_ns > 0  # may be negative after overflow",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ORIGIN-INJECTION-LOG-FORGE",
+        "hypothesis": "The 'origin' field is a free-form string set by the caller and propagated to distributed traces, structured logs, and audit records. An attacker controlling an inbound header (e.g., X-Request-Origin) can inject newline characters or JSON-breaking sequences into origin, causing log forging, corrupted trace spans, or SIEM alert suppression if the downstream observability pipeline does not sanitize it.",
+        "input_fixture": "malicious_origin = 'svc-A\\n{\"level\":\"INFO\",\"msg\":\"auth_ok\",\"user\":\"admin\"}'\nbudget = make_budget(ttl_ms=500, origin=malicious_origin)\n# Structured logger emits: {\"origin\": \"svc-A\\n{...forged line...}\"}\n# Log parsers split on newline, treating forged JSON as a separate log entry",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FOR-CALL-NEGATIVE-MAX",
+        "hypothesis": "for_call(max_ms=-1) is called by a misconfigured caller. If the implementation computes min(remaining_ms(), max_ms) and remaining_ms() is positive, the result is -1, which is then passed as a timeout to an HTTP client. Most clients interpret negative timeouts as 'infinite' or raise an error after I/O has already begun, violating the pre-I/O refusal invariant.",
+        "input_fixture": "budget = make_budget(ttl_ms=1000)\ntimeout = budget.for_call(max_ms=-1)  # min(1000, -1) = -1\nhttpx.get(url, timeout=timeout)  # httpx treats -1 as infinite timeout",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-IGNORE-BUDGET-MIN",
+        "hypothesis": "Implementation uses local_timeout directly instead of min(local_timeout, remaining_ms), allowing calls to exceed the global deadline.",
+        "input_fixture": "TimeoutBudget(deadline_ns=1000ms ago, remaining_ms=0) + local_timeout=5000ms \u2192 socket call proceeds instead of rejecting",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REMAINING-OVERFLOW",
+        "hypothesis": "Integer overflow in remaining_ms calculation when deadline_ns is very large, returning negative value interpreted as large timeout.",
+        "input_fixture": "deadline_ns=2^63-1, current_time=now() \u2192 remaining_ms wraps to negative, passed to min() as large positive",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-WALL-CLOCK-DEADLINE",
+        "hypothesis": "Deadline calculated using wall-clock time instead of monotonic clock, causing backward jump when system time adjusts (NTP, daylight savings).",
+        "input_fixture": "System time jumps backward 1 hour \u2192 deadline_ns recalculated with old reference, effective timeout extends backward in real time.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK-SKEW-NEGATIVE",
+        "hypothesis": "No guard against negative remaining_ms when clock skew or monotonic clock reset occurs, allowing socket calls with inverted deadline.",
+        "input_fixture": "remaining_ms = -500 (clock went backward) \u2192 not validated before socket I/O, connection hangs with invalid timeout.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SOCKET-IO-RACE",
+        "hypothesis": "Race condition where remaining_ms is checked as positive, but by the time socket I/O starts, budget has expired in another thread.",
+        "input_fixture": "Thread A: check remaining_ms > 0 (true), context switch, Thread B: expire budget, Thread A: issue socket call with expired budget",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DEADLINE-MUTATION",
+        "hypothesis": "TimeoutBudget object is mutable; caller extends deadline_ns directly without new request boundary, breaking propagation contract.",
+        "input_fixture": "budget.deadline_ns += 10_000_000_000 (add 10 more seconds) inside request handler, violates no-extension invariant",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONTEXT-VAR-SIBLING-LEAK",
+        "hypothesis": "Async sibling tasks don't inherit ContextVar correctly when spawned without context copy, one task sees another's budget.",
+        "input_fixture": "create_task(handler_b()) without copying context from handler_a \u2192 budget from handler_a leaks or handler_b loses budget entirely",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-THREAD-SPAWN-NO-PROPAGATE",
+        "hypothesis": "New thread spawned without setting ContextVar, child thread has no budget context even though parent does.",
+        "input_fixture": "threading.Thread(target=worker).start() where worker calls socket with budget from parent \u2192 ContextVar returns None, no timeout enforced",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EXPIRED-BUDGET-REUSE",
+        "hypothesis": "Old budget from previous request (deadline already passed) is reused in a new request due to improper context reset.",
+        "input_fixture": "Request A ends with budget expired, Request B reuses same context without clearing ContextVar \u2192 Request B inherits dead budget",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REMAINING-MS-BOUNDARY",
+        "hypothesis": "remaining_ms at exact boundary (zero) allows marginal socket call when specification requires refusal before any I/O.",
+        "input_fixture": "remaining_ms checks deadline is exactly 0, caller issues socket with zero timeout instead of immediate rejection",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONTEXT-NONE-FALLBACK",
+        "hypothesis": "When ContextVar returns None (budget not set), implementation falls back to infinite timeout instead of requiring explicit budget.",
+        "input_fixture": "Worker function called without ContextVar.set() \u2192 remaining_ms() returns None, fallback to 300s local timeout, no deadline enforced",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SHALLOW-COPY-ISOLATION",
+        "hypothesis": "Multiple concurrent requests share same TimeoutBudget object via shallow copy, modifications in one request affect others.",
+        "input_fixture": "Request A and B both reference same budget object in context, Request A modifies origin field, Request B sees contaminated budget",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "timeout.budget.opened",
+        "required_attributes": [
+          "origin",
+          "deadline_ns"
+        ]
+      },
+      {
+        "event_name": "timeout.budget.derived",
+        "required_attributes": [
+          "origin",
+          "parent_deadline_ns",
+          "child_deadline_ns"
+        ]
+      },
+      {
+        "event_name": "timeout.budget.expired",
+        "required_attributes": [
+          "origin",
+          "endpoint"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "timeout.budget.for_call",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "endpoint"
+        ]
+      },
+      {
+        "name": "timeout.budget.refusals",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "reason"
+        ]
+      },
+      {
+        "name": "timeout.budget.remaining",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 30,
+        "label_keys": [
+          "hop"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "timeout.budget.derive",
+        "required_attributes": [
+          "origin",
+          "child_deadline_ns"
+        ]
+      },
+      {
+        "operation_name": "timeout.budget.dispatch",
+        "required_attributes": [
+          "origin",
+          "endpoint",
+          "effective_ms"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol matches catalog api_signature verbatim (deadline_ns, origin, remaining_ms, for_call, expired) and CURRENT_BUDGET ContextVar is exposed. Monotonic clock only, immutable post-init, derive enforces child \u2264 parent. Minor: Protocol attributes declared at class level without defaults \u2014 acceptable for runtime_checkable."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All five invariants covered with enforcement paths: for_call (TB-01/03), monotonic_ns (TB-02), __setattr__ freeze + derive cap (TB-04), bind/current via ContextVar (TB-05). Header codec and GuardedCall provide extension surface. from_ms root factory included."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Dedicated taxonomy: TimeoutBudgetInvariantError base + TimeoutBudgetExpired subclass for short-circuit distinction. Every raise cites the invariant ID, includes offending value and context (origin, types). noqa on N818 documents the catalog-visible naming choice."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Protocol-based surface, contextvars propagation (async-safe), symmetric DeadlineHeaderCodec for transport hops, GuardedCall as test-double transport. derive enables hierarchical composition. Zero import-time I/O. __all__ is explicit."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Immutable dataclass-like via __slots__ + frozen guard, monotonic-only clock, lock-guarded refusal counter in GuardedCall, lazy/no I/O at import. Clear SRE signals documented in spec (refusals metric, for_call histogram). No observability hooks wired in-module but that's the adopter's job per extension contract."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Protocol signature matches catalog byte-for-byte; CURRENT_BUDGET name and default align; invariants 01\u201305 each mapped to concrete enforcement with IDs cited in docstrings and error messages. Namespace (resiliency) and maturity (battle_tested) reflected in spec doc. Consumption example mirrors catalog."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "contextvars.ContextVar vs thread-local distinction is introduced without explaining what a ContextVar is or why it matters for async code",
+          "The invariant table lists rules (TB_INV_01\u201305) before any usage example, so a reader doesn't yet know what 'outbound call' or 'dispatch' means in this codebase",
+          "DeadlineHeaderCodec and GuardedCall are named in the API surface but have no usage snippet \u2014 their role is only inferable from the invariant-binding paragraph"
+        ],
+        "rewrite_suggestion": "Move the usage example to the top of the API surface section and annotate each line (e.g., '# propagates via asyncio task automatically'). Add one sentence defining ContextVar: 'a Python stdlib slot that asyncio copies into every new task so the budget follows your coroutines without extra plumbing.' Add a two-line GuardedCall snippet next to its definition."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "from_ms creates a root budget but the underlying clock source (time.monotonic_ns, perf_counter?) is not stated \u2014 critical for knowing whether cross-process deadline math is valid",
+          "GuardedCall's interface (constructor signature, what 'records each dispatch's effective timeout' means in practice) is described in prose but never shown as code",
+          "derive(child_max_ms) nesting depth: no guidance on whether a 10-hop deep call tree accumulates GC pressure or whether derived budgets share the parent's monotonic reference point"
+        ],
+        "rewrite_suggestion": "Add a 'Internals' subsection: state the clock call, show that derive() stores a reference to the root deadline (not a copy), and note that nesting is O(1) in memory. Show GuardedCall.__init__ and .dispatches property signatures in the API surface table."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "origin is described as 'free-form label used for logging' but no sanitization contract is stated \u2014 a hostile caller can inject newlines or ANSI escapes into structured logs",
+          "DeadlineHeaderCodec.decode maximum accepted value is unspecified \u2014 an attacker sending X-Deadline-Ms: 2^63 cannot widen the budget but may cause integer overflow or allocation in the decoder",
+          "No mention of what decode raises on non-integer, negative, or absent header values \u2014 callers need to know whether to expect ValueError, TimeoutBudgetExpired, or a silent zero"
+        ],
+        "rewrite_suggestion": "Add a 'Input validation' paragraph to the Security section: specify origin is truncated to N chars and stripped of control characters before emission; state the accepted numeric range for the header (e.g., 1\u20133_600_000 ms) and that values outside it raise TimeoutBudgetExpired; enumerate the three error cases for decode."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Metric names (timeout.budget.refusals, timeout.budget.for_call) are listed without label schemas \u2014 oncall cannot write a Prometheus alert without knowing the cardinality (service, endpoint, reason labels?)",
+          "No guidance on what sets total_ms at ingress: is it a config value, an SLO file, a per-route annotation? SREs need to know where to tune the knob during an incident",
+          "No alert threshold or runbook pointer for the 'sustained rise in refusals' symptom \u2014 the docs diagnose the signal but leave the response procedure entirely implicit"
+        ],
+        "rewrite_suggestion": "Add an 'Observability reference' table: metric name, type (counter/histogram), and labels. Add a 'Configuration' entry pointing to the ingress adapter config key. Add a one-paragraph runbook stub: 'If timeout.budget.refusals{reason=expired} rises >5% over 5 min, check the for_call histogram for the degraded hop, then inspect upstream p99 latency.'"
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "'Zombie work' and 'stampede' are engineering idioms with no translated customer impact \u2014 a PM cannot connect these to an SLA metric or user-visible error rate",
+          "The 'when NOT to use' section lists streams and retries but doesn't explain the business consequence of misapplying it (e.g., 'mis-applying to a streaming endpoint will cancel the user's download mid-flight')",
+          "No success metric or adoption signal: how does a team know TimeoutBudget is working? The docs are silent on what a healthy vs degraded budget profile looks like at the product level"
+        ],
+        "rewrite_suggestion": "Prepend a 'Business case' paragraph: 'Without deadline propagation, one slow database shard can cause every in-flight request to queue behind it, turning a P99 spike into a full outage. TimeoutBudget stops the cascade at source and makes tail-latency budget visible per hop.' Add a 'You'll know it's working when' line: 'P99 error rate from downstream timeouts drops and timeout.budget.for_call median stays above your hop SLA.'"
+      }
+    ]
+  }
+}

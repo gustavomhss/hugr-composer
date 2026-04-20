@@ -1,0 +1,34 @@
+{
+  "title": "EventStream — Appends, Tail Position, Consumer Lag",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Events Appended (5m)",
+      "targets": [{"expr": "sum(rate(event_stream_events_appended_total[5m])) by (partition)"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Append Duration p50/p95/p99 (ms)",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(event_stream_append_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(event_stream_append_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(event_stream_append_duration_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Consumer Lag (positions behind tail)",
+      "targets": [{"expr": "event_stream_consumer_lag"}]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Tail Position per Partition",
+      "targets": [{"expr": "event_stream_tail_position"}]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "name": "AccessLog",
+  "namespace": "obs",
+  "purpose": "Records every successful read of classified data with actor, purpose-of-use, and record identifier, distinct from the security audit log.",
+  "api_signature": "from typing import Protocol\nfrom datetime import datetime\n\nclass AccessLog(Protocol):\n    def record_read(self, actor: str, record_id: str, data_class: str, purpose_of_use: str, at: datetime) -> None: ...\n    def query(self, record_id: str | None = None, actor: str | None = None) -> list[dict]: ...\n    def count_by_actor(self, actor: str, since: datetime) -> int: ...",
+  "invariants": [
+    "Every read of a PiiClassification-tagged record MUST emit one AccessLog entry before the response leaves the process.",
+    "purpose_of_use MUST be one of a registered set; ad-hoc free-text values SHALL be rejected.",
+    "AccessLog entries MUST NEVER be merged with the TamperEvidentAuditLog so high-volume read traffic cannot mask low-volume security events.",
+    "Actor MUST be a resolved identity (user, service account, or break-glass id); 'system' without a concrete id is FORBIDDEN.",
+    "Retention of AccessLog MUST follow a RetentionPolicy bound at registration; unbounded accumulation CANNOT occur."
+  ],
+  "extension_contract": "Repositories wrap reads with an access-log interceptor that calls record_read. Custom purpose-of-use codes are added via register_purpose(code, description). Export adapters subscribe to the log to feed HIPAA accounting-of-disclosures reports.",
+  "consumption_example": "from datetime import datetime, timezone\n\ndef read_patient(access: AccessLog, actor: str, patient_id: str) -> dict:\n    record = _repo_get(patient_id)\n    access.record_read(actor, patient_id, 'phi', 'treatment', datetime.now(timezone.utc))\n    return record",
+  "sources": [
+    {"source": "HIPAA Security Rule 45 CFR \u00a7\u00a7 164.308-164.312", "locator": "\u00a7 164.312(b) Audit controls \u2014 recording and examining access"},
+    {"source": "AICPA SOC 2 Trust Services Criteria (2017, 2022 revision)", "locator": "CC6.1 \u2014 logical access to protected information"}
+  ],
+  "why_essential": "Mixing reads into the security audit drowns anomaly detection and breaks HIPAA's accounting-of-disclosures requirement; a separate primitive keeps volumes, retention, and semantics distinct.",
+  "alternatives_considered": [
+    "Single combined audit stream \u2014 hides security events under read noise and miscounts for 164.528 disclosures.",
+    "Database-level query logging \u2014 captures SQL not business actor or purpose_of_use.",
+    "HTTP access logs at the proxy \u2014 lacks record identity and data classification."
+  ],
+  "maturity": "battle_tested"
+}

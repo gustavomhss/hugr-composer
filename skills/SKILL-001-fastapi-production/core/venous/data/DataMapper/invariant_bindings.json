@@ -1,0 +1,32 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "DM_INV_01",
+      "invariant_text": "The domain object MUST have no import-time or runtime dependency on storage types; persistence knowledge SHALL live exclusively in the mapper.",
+      "confirms_test": "test_inv_domain_decoupled_confirms",
+      "prevents_test": "test_inv_domain_decoupled_prevents",
+      "under_failure_test": "test_inv_domain_decoupled_under_failure"
+    },
+    {
+      "invariant_id": "DM_INV_02",
+      "invariant_text": "Given a row r, load(r) followed by insert or update on the resulting entity MUST yield a row with the same identity key (round-trip identity); schema drift is detected before translation.",
+      "confirms_test": "test_inv_round_trip_identity_confirms",
+      "prevents_test": "test_inv_round_trip_identity_prevents",
+      "under_failure_test": "test_inv_round_trip_identity_under_failure"
+    },
+    {
+      "invariant_id": "DM_INV_03",
+      "invariant_text": "The mapper CANNOT mutate the domain object for persistence convenience; derived columns MUST be computed in map methods, never injected into the domain.",
+      "confirms_test": "test_inv_no_domain_mutation_confirms",
+      "prevents_test": "test_inv_no_domain_mutation_prevents",
+      "under_failure_test": "test_inv_no_domain_mutation_under_failure"
+    },
+    {
+      "invariant_id": "DM_INV_04",
+      "invariant_text": "A DataMapper NEVER issues database I/O directly; it returns parameterized payloads the UnitOfWork flush executes.",
+      "confirms_test": "test_inv_no_direct_io_confirms",
+      "prevents_test": "test_inv_no_direct_io_prevents",
+      "under_failure_test": "test_inv_no_direct_io_under_failure"
+    }
+  ]
+}

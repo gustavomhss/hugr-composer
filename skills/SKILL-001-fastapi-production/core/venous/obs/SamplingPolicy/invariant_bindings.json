@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "SAMP_INV_01",
+      "invariant_text": "When a parent span carries the sampled flag, child spans MUST inherit that decision unless the policy explicitly declares itself parent-overriding.",
+      "confirms_test": "test_inv_parent_inheritance_confirms",
+      "prevents_test": "test_inv_parent_inheritance_prevents",
+      "under_failure_test": "test_inv_parent_inheritance_under_failure"
+    },
+    {
+      "invariant_id": "SAMP_INV_02",
+      "invariant_text": "The sampling decision SHALL be deterministic for the same trace_id so that siblings agree without coordination.",
+      "confirms_test": "test_inv_deterministic_decision_confirms",
+      "prevents_test": "test_inv_deterministic_decision_prevents",
+      "under_failure_test": "test_inv_deterministic_decision_under_failure"
+    },
+    {
+      "invariant_id": "SAMP_INV_03",
+      "invariant_text": "Probabilistic sampling MUST use the trace_id hash modulo a rate, NEVER a per-span random draw, to keep entire traces intact.",
+      "confirms_test": "test_inv_trace_id_hash_confirms",
+      "prevents_test": "test_inv_trace_id_hash_prevents",
+      "under_failure_test": "test_inv_trace_id_hash_under_failure"
+    },
+    {
+      "invariant_id": "SAMP_INV_04",
+      "invariant_text": "Policies CANNOT raise; a failing policy SHALL fall back to the default deny and emit an internal counter increment.",
+      "confirms_test": "test_inv_never_raises_confirms",
+      "prevents_test": "test_inv_never_raises_prevents",
+      "under_failure_test": "test_inv_never_raises_under_failure"
+    },
+    {
+      "invariant_id": "SAMP_INV_05",
+      "invariant_text": "Tail-based sampling decisions MUST NOT retroactively modify already-exported spans; they ALWAYS run before export buffering flushes.",
+      "confirms_test": "test_inv_tail_before_export_confirms",
+      "prevents_test": "test_inv_tail_before_export_prevents",
+      "under_failure_test": "test_inv_tail_before_export_under_failure"
+    },
+    {
+      "invariant_id": "SAMP_INV_06",
+      "invariant_text": "description() returns a stable, human-readable string that NEVER includes secret keys or cardinality-exploding values.",
+      "confirms_test": "test_inv_description_safe_confirms",
+      "prevents_test": "test_inv_description_safe_prevents",
+      "under_failure_test": "test_inv_description_safe_under_failure"
+    }
+  ]
+}

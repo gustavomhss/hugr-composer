@@ -1,0 +1,36 @@
+{
+  "name": "RequestContext",
+  "namespace": "api",
+  "purpose": "Per-request bag that carries identity, headers, correlation id, and free-form assigns through the handler stack without global state.",
+  "api_signature": "from typing import Any, Mapping, Protocol\n\nclass RequestContext(Protocol):\n    request_id: str\n    principal: object | None\n    headers: Mapping[str, str]\n    assigns: dict[str, Any]\n\n    def put(self, key: str, value: Any) -> 'RequestContext': ...\n    def halt(self) -> 'RequestContext': ...\n",
+  "invariants": [
+    "MUST be constructed once per inbound request and disposed when the response is sent.",
+    "NEVER leaks across request boundaries; a background task CANNOT reuse a parent context as live state.",
+    "put() MUST be idempotent for the same (key, value); overwriting an existing key SHALL be explicit.",
+    "halt() MUST cause subsequent middleware/interceptors to skip, but SHALL NOT abort already-queued response bytes.",
+    "request_id MUST be populated before the first user code runs; a missing id SHALL be replaced with a generated UUID."
+  ],
+  "extension_contract": "Middleware reads/writes via put() and assigns; cross-cutting concerns subscribe by registering a plug/interceptor/middleware component that receives the context, mutates assigns, and returns the context (or halts).",
+  "consumption_example": "def auth_plug(ctx: RequestContext, cfg: dict) -> RequestContext:\n    if 'authorization' not in ctx.headers:\n        return ctx.halt()\n    return ctx.put('principal', parse_token(ctx.headers['authorization']))\n\ndef correlation(ctx: RequestContext) -> str:\n    return ctx.request_id\n",
+  "sources": [
+    {
+      "source": "ASP.NET Core 8.0 \u2014 HttpContext",
+      "locator": "learn.microsoft.com/aspnet/core/fundamentals/http-context \u2014 HttpContext.User, HttpContext.TraceIdentifier, HttpContext.Items"
+    },
+    {
+      "source": "Plug 1.x \u2014 Plug.Conn struct",
+      "locator": "hexdocs.pm/plug/Plug.Conn.html \u2014 assigns, req_headers, halt/1"
+    },
+    {
+      "source": "Ruby on Rails 7 Guides \u2014 ActiveSupport::CurrentAttributes",
+      "locator": "api.rubyonrails.org/classes/ActiveSupport/CurrentAttributes.html \u2014 attribute/reset"
+    }
+  ],
+  "why_essential": "Any feature touching identity, tenancy, or tracing needs the same per-request state surface; if every tool defines its own, observability and authorization fragment and memory leaks appear at shutdown.",
+  "alternatives_considered": [
+    "Thread-local globals \u2014 break under asyncio/threadpools",
+    "Per-call argument threading \u2014 explodes function signatures across layers",
+    "Pass dict everywhere \u2014 no type safety, no lifecycle guarantees"
+  ],
+  "maturity": "battle_tested"
+}

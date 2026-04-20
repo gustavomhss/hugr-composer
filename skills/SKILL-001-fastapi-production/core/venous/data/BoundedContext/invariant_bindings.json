@@ -1,0 +1,32 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "BC_INV_01",
+      "invariant_text": "Every Aggregate type MUST be owned by exactly one BoundedContext; shared ownership across contexts is FORBIDDEN.",
+      "confirms_test": "test_inv_single_ownership_confirms",
+      "prevents_test": "test_inv_single_ownership_prevents",
+      "under_failure_test": "test_inv_single_ownership_under_failure"
+    },
+    {
+      "invariant_id": "BC_INV_02",
+      "invariant_text": "Cross-context calls MUST pass through an AntiCorruptionLayer or a published-language schema; raw object sharing is NEVER permitted.",
+      "confirms_test": "test_inv_acl_translation_confirms",
+      "prevents_test": "test_inv_acl_translation_prevents",
+      "under_failure_test": "test_inv_acl_translation_under_failure"
+    },
+    {
+      "invariant_id": "BC_INV_03",
+      "invariant_text": "The ubiquitous language of a context SHALL be locally consistent: one term CANNOT carry two meanings inside the same BoundedContext.",
+      "confirms_test": "test_inv_language_consistent_confirms",
+      "prevents_test": "test_inv_language_consistent_prevents",
+      "under_failure_test": "test_inv_language_consistent_under_failure"
+    },
+    {
+      "invariant_id": "BC_INV_04",
+      "invariant_text": "A BoundedContext ALWAYS exposes its integration points through a ContextMap relationship (Customer-Supplier, Conformist, Partnership, Open Host).",
+      "confirms_test": "test_inv_context_map_confirms",
+      "prevents_test": "test_inv_context_map_prevents",
+      "under_failure_test": "test_inv_context_map_under_failure"
+    }
+  ]
+}

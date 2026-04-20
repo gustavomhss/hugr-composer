@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "GUARD_INV_01",
+      "invariant_text": "evaluate() MUST be deterministic for a given (text, context) unless the guardrail declares itself probabilistic via its name suffix.",
+      "confirms_test": "test_inv_determinism_confirms",
+      "prevents_test": "test_inv_determinism_prevents",
+      "under_failure_test": "test_inv_determinism_under_failure"
+    },
+    {
+      "invariant_id": "GUARD_INV_02",
+      "invariant_text": "A BLOCK decision MUST halt the pipeline; the caller CANNOT silently downgrade it to allow.",
+      "confirms_test": "test_inv_block_halts_confirms",
+      "prevents_test": "test_inv_block_halts_prevents",
+      "under_failure_test": "test_inv_block_halts_under_failure"
+    },
+    {
+      "invariant_id": "GUARD_INV_03",
+      "invariant_text": "REDACT decisions SHALL return redacted_text and MUST NEVER return the original text under a redact verdict.",
+      "confirms_test": "test_inv_redact_replaces_confirms",
+      "prevents_test": "test_inv_redact_replaces_prevents",
+      "under_failure_test": "test_inv_redact_replaces_under_failure"
+    },
+    {
+      "invariant_id": "GUARD_INV_04",
+      "invariant_text": "Every decision MUST carry a non-empty reason so downstream audit can explain the verdict.",
+      "confirms_test": "test_inv_reason_nonempty_confirms",
+      "prevents_test": "test_inv_reason_nonempty_prevents",
+      "under_failure_test": "test_inv_reason_nonempty_under_failure"
+    },
+    {
+      "invariant_id": "GUARD_INV_05",
+      "invariant_text": "Guardrails MUST NEVER store raw blocked inputs in logs in clear form; storage SHALL be hashed or truncated.",
+      "confirms_test": "test_inv_blocked_inputs_hashed_confirms",
+      "prevents_test": "test_inv_blocked_inputs_hashed_prevents",
+      "under_failure_test": "test_inv_blocked_inputs_hashed_under_failure"
+    }
+  ]
+}

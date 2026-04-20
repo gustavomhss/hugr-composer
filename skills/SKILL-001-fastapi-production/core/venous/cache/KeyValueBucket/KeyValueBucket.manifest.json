@@ -1,0 +1,627 @@
+{
+  "name": "KeyValueBucket",
+  "namespace": "cache",
+  "maturity": "emerging",
+  "builder_agent_id": 2,
+  "catalog_entry_sha256": "078380c8bf75dc9fa777b7261597f72d8eacac377645c2e31a299265ed4d5b42",
+  "files": [
+    {
+      "path": "cache/KeyValueBucket/KeyValueBucket.contract.json",
+      "sha256": "b05e27d6e1424307bc7c7bf9391eb40a9549f1c319a4b466437cf26d0a45f2c3",
+      "size_bytes": 2511,
+      "kind": "contract_json"
+    },
+    {
+      "path": "cache/KeyValueBucket/KeyValueBucket.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "cache/KeyValueBucket/KeyValueBucket.md",
+      "sha256": "f9dd6ff31e991d715f3ff6995e01d13295007f123a627bb2be97d677e93814ca",
+      "size_bytes": 4148,
+      "kind": "spec_md"
+    },
+    {
+      "path": "cache/KeyValueBucket/KeyValueBucket.py",
+      "sha256": "41f1b113f660f60a32f2eeee575be636f89924eedbde4eb26dcd687b72696aa0",
+      "size_bytes": 9016,
+      "kind": "impl"
+    },
+    {
+      "path": "cache/KeyValueBucket/behavioral_KeyValueBucket.py",
+      "sha256": "8f93698958877086f99c17b1dbd9a2b9ddc8379b9c69da73d9af942b78e3e287",
+      "size_bytes": 3270,
+      "kind": "behavioral"
+    },
+    {
+      "path": "cache/KeyValueBucket/chaos_KeyValueBucket.py",
+      "sha256": "b1cfaef996709c0918ab634a954a367ce9623d1db69256992265eb51a6edca32",
+      "size_bytes": 2457,
+      "kind": "chaos"
+    },
+    {
+      "path": "cache/KeyValueBucket/dashboard.json",
+      "sha256": "586a70073a5d196289b204cba6a15049bb1490567ad6bf059b9a725503ea8180",
+      "size_bytes": 459,
+      "kind": "dashboard"
+    },
+    {
+      "path": "cache/KeyValueBucket/invariant_bindings.json",
+      "sha256": "d4a29f5e581b0921a6239f99d1f6eb60a333457a0f60ee8a7e86c6f09dd50544",
+      "size_bytes": 1846,
+      "kind": "test"
+    },
+    {
+      "path": "cache/KeyValueBucket/metamorphic_KeyValueBucket.py",
+      "sha256": "977cad0fc73dab1f7b0e8254377ff8649c6e046a44c354a6853635406bf81cb9",
+      "size_bytes": 2589,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "cache/KeyValueBucket/observability_KeyValueBucket.py",
+      "sha256": "78b1b696b9eea65014e7a7c304929a4dc5f0eaa10679a0ad3f6673cf2c1835c8",
+      "size_bytes": 1579,
+      "kind": "observability"
+    },
+    {
+      "path": "cache/KeyValueBucket/observability_schema.json",
+      "sha256": "23a05c1e4f770d3776e7e0bdc58d65eae145bbc042d54a2b0826553e4fb78514",
+      "size_bytes": 1162,
+      "kind": "observability"
+    },
+    {
+      "path": "cache/KeyValueBucket/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "cache/KeyValueBucket/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "cache/KeyValueBucket/test_KeyValueBucket.py",
+      "sha256": "65573a57ebfa13df38470664a6c2bb1fd0e5f63be356b65c60347176dea5ab75",
+      "size_bytes": 8254,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "KVB_INV_01",
+      "invariant_text": "create MUST fail when the key already exists; it NEVER overwrites a present value.",
+      "confirms_test": "test_inv_create_exclusive_confirms",
+      "prevents_test": "test_inv_create_exclusive_prevents",
+      "under_failure_test": "test_inv_create_exclusive_under_failure"
+    },
+    {
+      "invariant_id": "KVB_INV_02",
+      "invariant_text": "update MUST fail when the supplied revision does not match the stored revision (compare-and-swap semantics).",
+      "confirms_test": "test_inv_cas_update_confirms",
+      "prevents_test": "test_inv_cas_update_prevents",
+      "under_failure_test": "test_inv_cas_update_under_failure"
+    },
+    {
+      "invariant_id": "KVB_INV_03",
+      "invariant_text": "Every successful write ALWAYS increases the entry revision monotonically.",
+      "confirms_test": "test_inv_revision_monotonic_confirms",
+      "prevents_test": "test_inv_revision_monotonic_prevents",
+      "under_failure_test": "test_inv_revision_monotonic_under_failure"
+    },
+    {
+      "invariant_id": "KVB_INV_04",
+      "invariant_text": "Watch channels SHALL emit changes in revision order for a given key and CANNOT skip a revision without a gap signal.",
+      "confirms_test": "test_inv_watch_in_order_confirms",
+      "prevents_test": "test_inv_watch_in_order_prevents",
+      "under_failure_test": "test_inv_watch_in_order_under_failure"
+    },
+    {
+      "invariant_id": "KVB_INV_05",
+      "invariant_text": "Deleting a key NEVER frees its historical revisions if history retention is configured greater than one.",
+      "confirms_test": "test_inv_history_preserved_confirms",
+      "prevents_test": "test_inv_history_preserved_prevents",
+      "under_failure_test": "test_inv_history_preserved_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 813,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1455,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1500,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 60973,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "42 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1342,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 66623,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CREATE-RACE-DUPLICATE",
+        "hypothesis": "Two concurrent create() calls for the same non-existent key both succeed because the existence check and write are not atomic, causing one to silently overwrite the other instead of one failing with KeyExists.",
+        "input_fixture": "asyncio.gather(bucket.create('k', b'A'), bucket.create('k', b'B')) on fresh bucket",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UPDATE-CAS-RACE",
+        "hypothesis": "Two updaters read revision=5, both call update(key,v,5) concurrently; a non-atomic CAS lets both succeed, violating compare-and-swap semantics and producing divergent revisions.",
+        "input_fixture": "e=await get('k'); asyncio.gather(update('k',b'X',e.revision), update('k',b'Y',e.revision))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REVISION-INT-OVERFLOW",
+        "hypothesis": "Revision counter overflows when pushed past 2**63-1 (or 2**31 on 32-bit stream seq) and wraps to a smaller value, breaking strict monotonicity.",
+        "input_fixture": "Seed bucket with revision=9223372036854775807 via underlying stream, then call update()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-WATCH-GAP-COMPACTION",
+        "hypothesis": "When the underlying stream compacts messages mid-watch, the watch iterator silently skips revisions without emitting a gap/reset signal to the consumer.",
+        "input_fixture": "Start watch('k'); write rev 1..1000; trigger stream compaction to retain only last 10; observe gap emission",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-WATCH-OUT-OF-ORDER",
+        "hypothesis": "Under reconnect/replay after a broker failover, the watch channel delivers revisions in non-monotonic order because buffered local events race with replay from server.",
+        "input_fixture": "Start watch, flood 50 updates, kill broker connection mid-stream, reconnect; assert rev order",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DELETE-HISTORY-PURGE",
+        "hypothesis": "Calling delete() with history retention>1 internally calls a purge that removes historical revisions, contradicting the retention guarantee.",
+        "input_fixture": "Configure history=10; write 5 revisions; await delete('k'); inspect stream for historical entries",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CREATE-EMPTY-KEY",
+        "hypothesis": "create('', b'x') is accepted and subsequent create('', b'y') also succeeds because empty-string key bypasses the uniqueness index keyed on hashed subjects.",
+        "input_fixture": "await bucket.create('', b'a'); await bucket.create('', b'b')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-KEY-UNICODE-NORMALIZATION",
+        "hypothesis": "Keys 'caf\\u00e9' (NFC) and 'cafe\\u0301' (NFD) hash differently in index but collide on underlying subject encoding, allowing create to succeed twice for the 'same' logical key.",
+        "input_fixture": "await create('caf\\u00e9', b'1'); await create('cafe\\u0301', b'2')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UPDATE-NEGATIVE-REVISION",
+        "hypothesis": "update(key, value, revision=-1) or revision=0 is accepted as a sentinel 'force' by some implementations, bypassing CAS entirely.",
+        "input_fixture": "await create('k', b'a'); await update('k', b'z', revision=-1)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UPDATE-WRONG-TYPE",
+        "hypothesis": "update(key, value=<str instead of bytes>, revision=1) is silently coerced or stored, corrupting entry.value type contract and possibly bypassing size checks.",
+        "input_fixture": "await create('k', b'a'); await update('k', 'not-bytes', 1)  # str not bytes",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-REPLAY",
+        "hypothesis": "If revision is derived from server wall clock on a clustered backend, NTP skew between nodes lets a later write land with a smaller revision than a prior write.",
+        "input_fixture": "Force node A clock +5s ahead; write on A (rev t1); failover to B; write on B (rev t0<t1)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-WATCH-REPLAY-DUPLICATE",
+        "hypothesis": "After client reconnect, the watch re-emits already-delivered revisions without deduplication, which combined with at-least-once semantics lets consumers observe rev 7 twice \u2014 violating strict ordering as equality is not increase.",
+        "input_fixture": "Start watch, consume rev 1..7, disconnect client, reconnect; assert no rev<=7 re-emitted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-VALUE-SIZE-AMPLIFICATION",
+        "hypothesis": "A single create with a 1GiB value is accepted, fans out to every watcher and every history replica, amplifying memory/bandwidth >N\u00d7 and potentially causing partial writes that leave half-persisted revision visible.",
+        "input_fixture": "await bucket.create('big', b'\\x00' * (1<<30))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DELETE-NONE-REVISION",
+        "hypothesis": "delete(key, revision=None) deletes unconditionally even when caller had a stale view, and some implementations also purge history despite retention>1.",
+        "input_fixture": "history=5; create+update 3x; await bucket.delete('k', revision=None)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CREATE-AFTER-TOMBSTONE",
+        "hypothesis": "After delete, create('k', v) succeeds but the new entry inherits revision 1 instead of prior_max+1, breaking monotonicity against the retained history.",
+        "input_fixture": "await create('k', b'a'); await delete('k'); await create('k', b'b'); assert new.revision > old.revision",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CREATE_RACE_TOCTOU",
+        "hypothesis": "Two coroutines concurrently call create() for the same key. Both read absence before either write commits. Without an atomic compare-and-set at the stream layer, both succeed and the second write silently overwrites the first, violating the 'create MUST fail when key already exists' invariant.",
+        "input_fixture": "asyncio.gather(bucket.create('user:1', b'alice'), bucket.create('user:1', b'bob'))  # expect one WrongLastMsgSeqnoError, one KvEntry",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CAS_DOUBLE_UPDATE_RACE",
+        "hypothesis": "Two coroutines each hold revision=3 for a key and both call update() concurrently. If the underlying stream serialises at a lower layer, one succeeds and the other should fail; but a buggy optimistic-lock window could let both writes land, producing two entries at revision 4 and breaking compare-and-swap uniqueness.",
+        "input_fixture": "entry = await bucket.create('counter', b'0')  # revision=1\nawait bucket.update('counter', b'1', 1)  # -> revision=2\nawait bucket.update('counter', b'2', 2)  # -> revision=3\nasyncio.gather(bucket.update('counter', b'A', 3), bucket.update('counter', b'B', 3))  # expect exactly one KeyWrongLastMsgSeqnoError",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REVISION_INT_OVERFLOW",
+        "hypothesis": "If the underlying stream uses a signed 64-bit sequence number and it wraps to a negative value (or zero) after 2^63 increments, the 'revision always increases monotonically' invariant silently breaks. Simulate by injecting a mock stream that returns seq=9223372036854775807, then increments to -9223372036854775808.",
+        "input_fixture": "stream_mock.next_seq = 2**63 - 1\nentry = await bucket.create('k', b'v')  # revision = 9223372036854775807\nnext_entry = await bucket.update('k', b'v2', entry.revision)  # revision wraps; assert next_entry.revision > entry.revision fails",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WATCH_SKIP_ON_RAPID_WRITES",
+        "hypothesis": "If watch() is implemented by polling or by subscribing after a small delay, rapid back-to-back updates can produce revisions 4,5,6 while the consumer only sees 4 and 6 \u2014 revision 5 is silently dropped with no gap signal. This violates the watch channel ordering invariant.",
+        "input_fixture": "watch_iter = bucket.watch('sensor')\nentry = await bucket.create('sensor', b'0')\nfor i in range(1, 10):\n    await bucket.update('sensor', bytes([i]), i)\nobserved = [e.revision async for e in watch_iter]  # collect first 9\ngaps = [observed[i+1]-observed[i] for i in range(len(observed)-1)]\nassert all(g==1 for g in gaps), f'revision gap without signal: {gaps}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DELETE_PURGES_HISTORY",
+        "hypothesis": "When history retention > 1, calling delete() with revision=None (no-revision delete) may trigger a stream purge that destroys prior message history rather than merely marking the latest sequence as a delete tombstone. A subsequent history walk would return fewer entries than the retention policy allows.",
+        "input_fixture": "bucket_hist = KeyValueBucket(retention=5)\ne1 = await bucket_hist.create('doc', b'v1')\ne2 = await bucket_hist.update('doc', b'v2', 1)\ne3 = await bucket_hist.update('doc', b'v3', 2)\nawait bucket_hist.delete('doc')  # no revision supplied\nhistory = await bucket_hist.history('doc')  # should have 4 entries (3 puts + 1 delete marker)\nassert len(history) == 4, f'history truncated: {len(history)}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CREATE_EMPTY_KEY",
+        "hypothesis": "Calling create() with an empty string key may bypass key-existence checks because the bucket looks up '' in a namespace-prefixed store (e.g. 'cache.' + '' = 'cache.'), which may never match an existing entry even after the empty key was previously created. The second create() would succeed instead of raising KeyExistsError.",
+        "input_fixture": "await bucket.create('', b'first')\ntry:\n    await bucket.create('', b'second')  # MUST raise\n    raise AssertionError('second create on empty key should have failed')\nexcept KeyExistsError:\n    pass",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-UPDATE_STALE_REVISION_REPLAY",
+        "hypothesis": "After a key reaches revision 5, an attacker replays an update call with an old revision (e.g. revision=2). The CAS check compares only the stored last-revision; if the implementation compares against a cached value that is stale (e.g. local variable not refreshed after concurrent update), the stale-revision write succeeds and skips revisions 3-4, breaking monotonicity.",
+        "input_fixture": "e = await bucket.create('token', b'init')  # rev=1\nfor r in range(1, 5):\n    e = await bucket.update('token', bytes([r]), r)  # advances to rev=5\ntry:\n    bad = await bucket.update('token', b'replay', 2)  # stale revision\n    raise AssertionError(f'replay succeeded at rev={bad.revision}')\nexcept WrongRevisionError:\n    pass",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NAMESPACE_INJECTION_VIA_KEY",
+        "hypothesis": "If the bucket prefixes keys as '{namespace}.{key}' without escaping, a key containing a literal dot or the namespace string (e.g. key='cache.admin') resolves to 'cache.cache.admin', while key='admin' from a different bucket 'cache' resolves to the same path. Cross-namespace collision lets create() on one namespace suppress create() in another, or bypass the key-exists check entirely.",
+        "input_fixture": "bucket_a = KeyValueBucket(namespace='cache')\nbucket_b = KeyValueBucket(namespace='cache.cache')  # or namespace=''\nawait bucket_a.create('cache.secret', b'owned')  # produces raw key 'cache.cache.secret'\nawait bucket_b.create('secret', b'shadow')  # also maps to 'cache.cache.secret' -> MUST fail or MUST succeed atomically",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WATCH_CONSUMER_SLOW_AMPLIFICATION",
+        "hypothesis": "A malicious or slow consumer holds a watch() channel open without reading. If the implementation buffers all revisions in memory (unbounded channel), a high-frequency writer can force memory exhaustion by producing millions of revisions while the watcher never advances. This is a resource-amplification attack against the watch channel implementation.",
+        "input_fixture": "watch_iter = bucket.watch('flood')  # consumer never reads\nawait bucket.create('flood', b'0')\nfor i in range(1, 1_000_001):\n    await bucket.update('flood', str(i).encode(), i)  # 1M updates\n# assert process RSS < 500 MB; if unbounded buffer, RSS >> 500 MB",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DELETE_WITH_WRONG_REVISION_SUCCEEDS",
+        "hypothesis": "delete() accepts an optional revision parameter. If the implementation treats revision=None as 'skip CAS check' but also accepts revision=0 as 'skip CAS check' (conflating falsy values), then passing revision=0 bypasses optimistic locking and deletes a key that has advanced well beyond revision 0, allowing unauthorized deletion without knowing the current revision.",
+        "input_fixture": "e = await bucket.create('resource', b'data')  # rev=1\nfor r in range(1, 5):\n    e = await bucket.update('resource', b'data', r)\n# key is now at revision 5\ntry:\n    await bucket.delete('resource', revision=0)  # 0 is falsy; should fail CAS\n    got = await bucket.get('resource')\n    if got is None:\n        raise AssertionError('delete with revision=0 bypassed CAS and deleted rev-5 key')\nexcept WrongRevisionError:\n    pass",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CREATE_AFTER_DELETE_SAME_REVISION",
+        "hypothesis": "After a key is deleted, create() on the same key should succeed and assign a new (higher) revision. If the implementation reuses the deleted entry's last revision as the starting revision for the recreated key (e.g. revision=3 again), monotonicity breaks because a new entry would hold a revision already used by a prior live entry, corrupting watch-channel ordering.",
+        "input_fixture": "e1 = await bucket.create('slot', b'a')  # rev=1\ne2 = await bucket.update('slot', b'b', 1)  # rev=2\nawait bucket.delete('slot', revision=2)\ne3 = await bucket.create('slot', b'c')  # MUST have rev > 2, not rev=1 or 2\nassert e3.revision > e2.revision, f'revision regressed after delete+recreate: {e3.revision} <= {e2.revision}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WATCH_GAP_AFTER_RECONNECT",
+        "hypothesis": "If the underlying stream connection drops and reconnects, the watch() AsyncIterator may restart delivery from the latest sequence without emitting a gap signal for the revisions missed during the outage. A consumer that assumes contiguous revisions would silently miss updates \u2014 violating the 'CANNOT skip a revision without a gap signal' invariant.",
+        "input_fixture": "watch_iter = bucket.watch('heartbeat')\ne = await bucket.create('heartbeat', b'1')\nawait simulate_network_partition(duration_ms=200)  # drop stream connection\nfor i in range(2, 6):\n    await bucket.update('heartbeat', bytes([i]), i)  # 4 updates during partition\nawait simulate_network_restore()\nobserved = []\nasync for entry in watch_iter:\n    observed.append(entry.revision)\n    if entry.revision == 5:\n        break\nrevisions = [e.revision for e in observed]\n# Expect gap signal (e.g. KvEntry with special flag) if 2,3,4 were skipped\nassert revisions == [1,2,3,4,5] or contains_gap_signal(observed), f'silent gap in watch: {revisions}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CREATE-CONCURRENT-RACE",
+        "hypothesis": "Two concurrent create calls for identical key both succeed due to TOCTOU gap, bypassing create-fails-if-exists invariant",
+        "input_fixture": "spawn_concurrent([create('user:123', b'alice'), create('user:123', b'bob')]); both return KvEntry with different values",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UPDATE-REVISION-IGNORED",
+        "hypothesis": "Update succeeds with revision parameter completely ignored, allowing CAS bypass and unconditional overwrites",
+        "input_fixture": "create('config', b'v1') returns KvEntry(revision=5); update('config', b'v2', revision=999) succeeds and returns KvEntry(revision=6)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REVISION-INTEGER-OVERFLOW",
+        "hypothesis": "Revision counter wraps from max_int64 to negative or zero on next write, violating monotonic increase invariant",
+        "input_fixture": "set_internal_revision('key', 9223372036854775807); update('key', b'data', 9223372036854775807) returns revision=-9223372036854775808",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-WATCH-REVISION-SKIP-BUFFERING",
+        "hypothesis": "Watch iterator loses revisions under concurrent rapid updates; buffer overflow causes non-consecutive emits like [1,2,4,5] skipping revision 3",
+        "input_fixture": "watch('key'); concurrent_updates([b'a',b'b',b'c',b'd',b'e']) in rapid succession; watch yields only 4 revisions instead of 5",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DELETE-IGNORES-RETENTION-POLICY",
+        "hypothesis": "Delete operation permanently removes all historical revisions despite history_retention=10 configuration, violating retention guarantee",
+        "input_fixture": "create with history_retention=10; update 10 times creating revisions 1-10; delete('key', revision=10); subsequent get_history returns empty list",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NEGATIVE-REVISION-CAS-BYPASS",
+        "hypothesis": "Passing negative or zero revision to update bypasses compare-and-swap check, allowing unconditional overwrite regardless of current state",
+        "input_fixture": "create('item', b'v1') returns revision=5; update('item', b'v2', revision=-1) succeeds and increments revision despite mismatch",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-STRING-KEY-DUPLICATE-CREATE",
+        "hypothesis": "Two concurrent create calls using empty string key=''; both succeed creating two separate entries for same key, breaking uniqueness",
+        "input_fixture": "spawn_concurrent([create('', b'first'), create('', b'second')]) with no synchronization; both return KvEntry without error",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-STALE-READ-REVISION-VISIBILITY",
+        "hypothesis": "Get returns stale cached revision not reflecting latest update; write monotonicity violated when newer update goes to stale read",
+        "input_fixture": "update('key', b'v1', revision=5) succeeds; get('key') returns KvEntry(revision=4) instead of 6; next update sees revision=4 not 6",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DELETE-NONE-REVISION-WIPE-HISTORY",
+        "hypothesis": "Calling delete with revision=None parameter wipes all retained history regardless of history_retention setting greater than one",
+        "input_fixture": "history_retention=15; create and update 20 times; delete('key', revision=None); subsequent recreate at revision 1 instead of 21",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-WATCH-REPLAY-DUPLICATE-EMIT",
+        "hypothesis": "Watch iterator replays same revision multiple times due to stream position reset or checkpoint replay, emitting revision=5 twice non-consecutively",
+        "input_fixture": "watch('key'); update creates revisions 1-5; watch yields [1,2,3,4,5]; internal stream rewind; watch yields [1,2,3,4,5] again out of order",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CREATE-AFTER-DELETE-REVISION-JUMP",
+        "hypothesis": "Create after delete in soft-delete scenario reuses or jumps revision numbers, creating non-monotonic progression or allowing revision collision",
+        "input_fixture": "create('item', b'v1') returns rev=1; delete('item'); create('item', b'v2') returns rev=1 again instead of rev=2, or rev jumps to 100",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-UPDATE-NO-INCREMENT",
+        "hypothesis": "Two concurrent updates with correct revisions both succeed, one overwrites the other without revision increment, breaking monotonicity guarantee",
+        "input_fixture": "create('key') returns rev=1; spawn_concurrent([update('key', b'a', 1), update('key', b'b', 1)]) both succeed; final revision=2 not 3",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-WATCH-GAP-WITHOUT-SIGNAL",
+        "hypothesis": "Watch channel exhibits gap from revision 5 to 8 with no explicit gap-detected signal or error, silently dropping revisions 6-7",
+        "input_fixture": "watch('key'); 8 rapid updates; watch iterator yields [1,2,3,4,5,8,9] with revisions 6,7 missing and no gap notification returned",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SAME-VALUE-UPDATE-SKIPS-REVISION",
+        "hypothesis": "Updating with identical value to current value skips revision increment, reusing old revision instead of monotonically advancing",
+        "input_fixture": "create('key', b'data') returns rev=1; update('key', b'data', rev=1) returns KvEntry(revision=1) instead of revision=2",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK-SKEW-REVISION-ORDER",
+        "hypothesis": "System clock skew or clock reset causes revision generation to reverse chronologically; watch emits higher revision before lower revision to same client",
+        "input_fixture": "NTP event causes clock setback 1 second; update('key', b'a') at T+2s gets rev=3; update('key', b'b') at T+1s gets rev=2; watch yields [3,2]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "kv.bucket.created",
+        "required_attributes": [
+          "key",
+          "revision"
+        ]
+      },
+      {
+        "event_name": "kv.bucket.updated",
+        "required_attributes": [
+          "key",
+          "revision",
+          "prior_revision"
+        ]
+      },
+      {
+        "event_name": "kv.bucket.cas.rejected",
+        "required_attributes": [
+          "key",
+          "expected",
+          "got"
+        ]
+      },
+      {
+        "event_name": "kv.bucket.deleted",
+        "required_attributes": [
+          "key",
+          "revision"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "kv.bucket.writes.total",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "op"
+        ]
+      },
+      {
+        "name": "kv.bucket.cas.rejections",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": []
+      },
+      {
+        "name": "kv.bucket.revision",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 1,
+        "label_keys": []
+      },
+      {
+        "name": "kv.bucket.watch.emit",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": []
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "kv.bucket.create",
+        "required_attributes": [
+          "kv.key"
+        ]
+      },
+      {
+        "operation_name": "kv.bucket.update",
+        "required_attributes": [
+          "kv.key",
+          "kv.revision"
+        ]
+      },
+      {
+        "operation_name": "kv.bucket.delete",
+        "required_attributes": [
+          "kv.key"
+        ]
+      }
+    ]
+  }
+}

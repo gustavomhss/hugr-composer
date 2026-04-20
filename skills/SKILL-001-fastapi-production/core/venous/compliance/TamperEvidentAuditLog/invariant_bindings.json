@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "TEAL_INV_01",
+      "invariant_text": "Entries MUST be append-only; the store SHALL reject UPDATE or DELETE on any prior sequence.",
+      "confirms_test": "test_inv_append_only_confirms",
+      "prevents_test": "test_inv_append_only_prevents",
+      "under_failure_test": "test_inv_append_only_under_failure"
+    },
+    {
+      "invariant_id": "TEAL_INV_02",
+      "invariant_text": "Each entry MUST contain the SHA-256 of the prior entry, forming a chain that CANNOT be mutated without detection.",
+      "confirms_test": "test_inv_hash_chain_confirms",
+      "prevents_test": "test_inv_hash_chain_prevents",
+      "under_failure_test": "test_inv_hash_chain_under_failure"
+    },
+    {
+      "invariant_id": "TEAL_INV_03",
+      "invariant_text": "Each entry MUST carry a signature from a key whose private half is NEVER held by the writing service.",
+      "confirms_test": "test_inv_signer_external_confirms",
+      "prevents_test": "test_inv_signer_external_prevents",
+      "under_failure_test": "test_inv_signer_external_under_failure"
+    },
+    {
+      "invariant_id": "TEAL_INV_04",
+      "invariant_text": "Sequence numbers MUST be monotonically increasing with no gaps; verify_chain SHALL fail on gap or regression.",
+      "confirms_test": "test_inv_monotonic_seq_confirms",
+      "prevents_test": "test_inv_monotonic_seq_prevents",
+      "under_failure_test": "test_inv_monotonic_seq_under_failure"
+    },
+    {
+      "invariant_id": "TEAL_INV_05",
+      "invariant_text": "Actor, action, resource, outcome, and timestamp MUST be present and non-empty on every entry; absence SHALL raise.",
+      "confirms_test": "test_inv_required_fields_confirms",
+      "prevents_test": "test_inv_required_fields_prevents",
+      "under_failure_test": "test_inv_required_fields_under_failure"
+    },
+    {
+      "invariant_id": "TEAL_INV_06",
+      "invariant_text": "Clock source MUST be monotonic server-side; client-supplied timestamps SHALL be rejected.",
+      "confirms_test": "test_inv_server_timestamp_confirms",
+      "prevents_test": "test_inv_server_timestamp_prevents",
+      "under_failure_test": "test_inv_server_timestamp_under_failure"
+    }
+  ]
+}

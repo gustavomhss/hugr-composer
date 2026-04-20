@@ -1,0 +1,9 @@
+{
+  "invariant_bindings": [
+    {"invariant_id": "KRS_INV_01", "invariant_text": "A new key version MUST be produced on or before next_rotation_at; missing a rotation SHALL raise an alert to the compliance channel.", "confirms_test": "test_inv_missed_rotation_confirms", "prevents_test": "test_inv_missed_rotation_prevents", "under_failure_test": "test_inv_missed_rotation_under_failure"},
+    {"invariant_id": "KRS_INV_02", "invariant_text": "overlap MUST be > 0 so decryption of records written with the prior version NEVER fails during cutover.", "confirms_test": "test_inv_overlap_positive_confirms", "prevents_test": "test_inv_overlap_positive_prevents", "under_failure_test": "test_inv_overlap_positive_under_failure"},
+    {"invariant_id": "KRS_INV_03", "invariant_text": "active_key() MUST return exactly one current key per alias at any instant; ties or gaps CANNOT occur.", "confirms_test": "test_inv_exact_active_confirms", "prevents_test": "test_inv_exact_active_prevents", "under_failure_test": "test_inv_exact_active_under_failure"},
+    {"invariant_id": "KRS_INV_04", "invariant_text": "Keys past cadence + overlap MUST be marked decrypt-only; new writes with such keys SHALL be rejected.", "confirms_test": "test_inv_decrypt_only_confirms", "prevents_test": "test_inv_decrypt_only_prevents", "under_failure_test": "test_inv_decrypt_only_under_failure"},
+    {"invariant_id": "KRS_INV_05", "invariant_text": "Rotation events MUST emit a TamperEvidentAuditLog entry capturing old and new key versions.", "confirms_test": "test_inv_audit_on_rotate_confirms", "prevents_test": "test_inv_audit_on_rotate_prevents", "under_failure_test": "test_inv_audit_on_rotate_under_failure"}
+  ]
+}

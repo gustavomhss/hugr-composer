@@ -1,0 +1,841 @@
+{
+  "name": "MetricMeter",
+  "namespace": "obs",
+  "maturity": "battle_tested",
+  "builder_agent_id": 9,
+  "catalog_entry_sha256": "dbb123f1b02179d08f34a9d599a33fd07262b6f2997e327557631a15894f28b4",
+  "files": [
+    {
+      "path": "obs/MetricMeter/MetricMeter.contract.json",
+      "sha256": "6b90b9ae536aa8af02c0dfd3208b07b5ff2a7ae49947129aaf709b7cce6e4101",
+      "size_bytes": 4140,
+      "kind": "contract_json"
+    },
+    {
+      "path": "obs/MetricMeter/MetricMeter.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "obs/MetricMeter/MetricMeter.md",
+      "sha256": "a044cc53aac69a2db796c2d7d794f04f145353ae3b0dc84a1b928f5a6a8b31b9",
+      "size_bytes": 3213,
+      "kind": "spec_md"
+    },
+    {
+      "path": "obs/MetricMeter/MetricMeter.py",
+      "sha256": "87002b036905d47bdccb269f24fb420095eeaff4c51180c76ae4dab68ba2449b",
+      "size_bytes": 10293,
+      "kind": "impl"
+    },
+    {
+      "path": "obs/MetricMeter/behavioral_MetricMeter.py",
+      "sha256": "5a2d8b7ea218d5262ea07df31fbe2fe3abd70a93616cd6d13f81abe83f94f1ba",
+      "size_bytes": 2080,
+      "kind": "behavioral"
+    },
+    {
+      "path": "obs/MetricMeter/chaos_MetricMeter.py",
+      "sha256": "bf807620655ef41c15efe1fe27cfcd7d54ca0d0d3a52c76fc5edf467c44fc643",
+      "size_bytes": 2289,
+      "kind": "chaos"
+    },
+    {
+      "path": "obs/MetricMeter/conftest.py",
+      "sha256": "7c56f31974b08ec9142aebbd7c9995aae21ceef4211149bc0c595a4c4855ac4c",
+      "size_bytes": 528,
+      "kind": "test"
+    },
+    {
+      "path": "obs/MetricMeter/dashboard.json",
+      "sha256": "bba8b38fad9a7bf8f7dd9425314adc9c1579149d37ee39affe263e0d206e01a6",
+      "size_bytes": 548,
+      "kind": "dashboard"
+    },
+    {
+      "path": "obs/MetricMeter/invariant_bindings.json",
+      "sha256": "816a756ac5381a5326b678c53483adb0c1e753353c61a48b1dae21834fb147c9",
+      "size_bytes": 2396,
+      "kind": "test"
+    },
+    {
+      "path": "obs/MetricMeter/metamorphic_MetricMeter.py",
+      "sha256": "b4c0d06a0c8eb8d91ae599ec78da24c7a364eb3fbf493834e7519d1a90f77f06",
+      "size_bytes": 1625,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "obs/MetricMeter/observability_MetricMeter.py",
+      "sha256": "9f231ba4f0f20e9f41cf04d752ba3a8ca1234e1ac75b90f6d7355e0535b2ba37",
+      "size_bytes": 1489,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/MetricMeter/observability_schema.json",
+      "sha256": "6642e72ace41529f80df099030c133eea1e90f816ad388dd6a57a7bf5e65fe14",
+      "size_bytes": 1161,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/MetricMeter/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "obs/MetricMeter/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "obs/MetricMeter/test_MetricMeter.py",
+      "sha256": "9699c66e1654883ae56f1bbd4400a35baec8ca5256e5062ac08e3216f6391e96",
+      "size_bytes": 6661,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "METRIC_INV_01",
+      "invariant_text": "Counter instruments MUST only accept non-negative values; negative deltas SHALL raise and are FORBIDDEN to be silently clamped.",
+      "confirms_test": "test_inv_counter_nonneg_confirms",
+      "prevents_test": "test_inv_counter_nonneg_prevents",
+      "under_failure_test": "test_inv_counter_nonneg_under_failure"
+    },
+    {
+      "invariant_id": "METRIC_INV_02",
+      "invariant_text": "Histogram boundaries MUST be finite, strictly increasing, and immutable once the instrument is created.",
+      "confirms_test": "test_inv_boundaries_strict_confirms",
+      "prevents_test": "test_inv_boundaries_strict_prevents",
+      "under_failure_test": "test_inv_boundaries_strict_under_failure"
+    },
+    {
+      "invariant_id": "METRIC_INV_03",
+      "invariant_text": "Instrument names MUST match the regex '^[A-Za-z][A-Za-z0-9_./-]{0,62}$' per OTel specification and CANNOT collide with a differently-typed instrument of the same name.",
+      "confirms_test": "test_inv_name_discipline_confirms",
+      "prevents_test": "test_inv_name_discipline_prevents",
+      "under_failure_test": "test_inv_name_discipline_under_failure"
+    },
+    {
+      "invariant_id": "METRIC_INV_04",
+      "invariant_text": "Every instrument MUST carry a UCUM unit string (e.g. 'ms', 's', 'By') \u2014 an empty unit is FORBIDDEN.",
+      "confirms_test": "test_inv_unit_required_confirms",
+      "prevents_test": "test_inv_unit_required_prevents",
+      "under_failure_test": "test_inv_unit_required_under_failure"
+    },
+    {
+      "invariant_id": "METRIC_INV_05",
+      "invariant_text": "Observable gauge callbacks MUST be idempotent within a collection cycle and SHALL NEVER raise; exceptions are logged and the measurement is dropped.",
+      "confirms_test": "test_inv_gauge_safe_confirms",
+      "prevents_test": "test_inv_gauge_safe_prevents",
+      "under_failure_test": "test_inv_gauge_safe_under_failure"
+    },
+    {
+      "invariant_id": "METRIC_INV_06",
+      "invariant_text": "Attribute sets attached to measurements NEVER include unbounded-cardinality keys (user id, request id, full URL path).",
+      "confirms_test": "test_inv_cardinality_keys_confirms",
+      "prevents_test": "test_inv_cardinality_keys_prevents",
+      "under_failure_test": "test_inv_cardinality_keys_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 576,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 1 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 981,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1165,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 120847,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "53 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 828,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 859,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 98773,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 223935,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-COUNTER-NEG-FLOAT",
+        "hypothesis": "Counter.add(-0.0001) will be silently accepted (or clamped to 0) instead of raising. Many implementations only validate against 0 for integers or skip the check for tiny floats, violating the non-negative invariant.",
+        "input_fixture": "c = meter.counter('http.server.requests', unit='1', description='x'); c.add(-0.0001)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-COUNTER-NAN-INF",
+        "hypothesis": "Counter.add(float('nan')) and add(float('inf')) bypass the non-negative check because NaN comparisons return False and +inf is technically >=0, poisoning downstream aggregates and violating the spirit of the non-negative invariant.",
+        "input_fixture": "c.add(float('nan')); c.add(float('inf')); c.add(float('-inf'))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-COUNTER-INT-OVERFLOW",
+        "hypothesis": "Repeatedly calling add(2**62) on a counter backed by a signed 64-bit accumulator will wrap to negative, which the exporter then rejects or reports as a huge delta \u2014 classic integer overflow.",
+        "input_fixture": "for _ in range(10): c.add(2**62)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HIST-BOUNDARIES-NONMONO",
+        "hypothesis": "Histogram accepts boundaries=[1,2,2,3] (duplicate) or [1,3,2] (non-monotonic) because validation checks length only. This breaks bucket assignment and silently corrupts distributions.",
+        "input_fixture": "meter.histogram('lat', unit='ms', description='x', boundaries=[1,2,2,3]); meter.histogram('lat2', unit='ms', description='x', boundaries=[1,3,2])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HIST-BOUNDARIES-NONFINITE",
+        "hypothesis": "Histogram accepts boundaries containing NaN, +inf, or -inf. Implementations often use numeric comparison which mis-sorts NaN and treats inf as a legitimate bucket edge, violating finiteness.",
+        "input_fixture": "meter.histogram('x', unit='ms', description='y', boundaries=[0.0, float('nan'), 10.0, float('inf')])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HIST-BOUNDARIES-MUTATE",
+        "hypothesis": "Passing a mutable list as boundaries and mutating it post-construction changes the instrument's buckets at runtime because the implementation stored the reference rather than a tuple copy \u2014 violates immutability.",
+        "input_fixture": "bs=[1.0,2.0,5.0]; h=meter.histogram('lat', unit='ms', description='x', boundaries=bs); bs.append(0.5); bs.sort(); h.record(0.7)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NAME-REGEX-BOUNDARY",
+        "hypothesis": "Names with leading digit ('1svc'), length 64, unicode homoglyphs ('\uff41pi'), or control chars ('svc\\n') slip past a weak regex or a .matches (unanchored) check.",
+        "input_fixture": "for n in ['','1svc','a'*64,'\uff41pi','svc\\n','svc\\x00','-leading']: meter.counter(n, unit='1', description='x')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NAME-TYPE-COLLIDE-RACE",
+        "hypothesis": "Two threads concurrently call meter.counter('ops') and meter.histogram('ops'); without a lock-protected registry check, both instruments get created and cross-type collision goes undetected \u2014 race on the name registry.",
+        "input_fixture": "import threading; t1=threading.Thread(target=lambda: meter.counter('ops', unit='1', description='x')); t2=threading.Thread(target=lambda: meter.histogram('ops', unit='1', description='x')); t1.start(); t2.start(); t1.join(); t2.join()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNIT-EMPTY-WHITESPACE",
+        "hypothesis": "unit='' is rejected but unit=' ', unit='\\t', or unit=None (via Mapping coercion) pass the empty-string check and emit instruments with effectively-empty UCUM units.",
+        "input_fixture": "meter.counter('x', unit=' ', description='y'); meter.counter('z', unit='\\t', description='y'); meter.counter('w', unit='', description='y')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-GAUGE-CALLBACK-RAISES",
+        "hypothesis": "An observable_gauge callback that raises ZeroDivisionError crashes the collection thread instead of being swallowed+logged, violating the 'SHALL NEVER raise' invariant and taking down the meter provider.",
+        "input_fixture": "def cb(): return 1/0\nmeter.observable_gauge('heap.used', cb, unit='By', description='x')\n# trigger collection cycle",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-GAUGE-NONIDEMPOTENT-CLOCK",
+        "hypothesis": "A callback returning time.time() returns different values on repeated invocation inside the same collection cycle; implementations that invoke it twice (once for logs, once for export) emit inconsistent points \u2014 clock-skew / idempotency violation.",
+        "input_fixture": "import time\nmeter.observable_gauge('now', time.time, unit='s', description='x')\n# force two reads in same cycle and diff",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ATTR-HIGH-CARDINALITY-AMP",
+        "hypothesis": "Recording with attributes={'user_id': uid, 'request_id': rid, 'path': full_url} in a tight loop creates unbounded time-series, amplifying memory and exporter payload (cardinality explosion / amplification DoS).",
+        "input_fixture": "for i in range(100000): c.add(1, {'user_id': f'u{i}', 'request_id': f'r{i}', 'path': f'/users/{i}/orders/{i*2}'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ATTR-CRED-LEAK",
+        "hypothesis": "Attributes such as {'authorization':'Bearer eyJ...', 'api_key':'sk-...'} are forwarded to exporters and log sinks; no allowlist/denylist scrub causes credentials to leak into observability backends.",
+        "input_fixture": "c.add(1, {'authorization':'Bearer eyJhbGciOi...','x-api-key':'sk_live_abcd1234','cookie':'session=...'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NAME-LOG-INJECTION",
+        "hypothesis": "An instrument name containing '\\n[CRITICAL] fake-log entry' or ANSI escapes is accepted (regex matched via re.match without $) and later written verbatim to logs, allowing log/prompt injection into downstream LLM-parsed telemetry.",
+        "input_fixture": "meter.counter('ok\\n[ALERT] pwned', unit='1', description='inject'); meter.counter('x\\x1b[31mRED', unit='1', description='x')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-REDEFINE",
+        "hypothesis": "Calling meter.counter('ops', unit='1', description='a') then meter.counter('ops', unit='ms', description='b') returns a cached instrument but silently ignores the new unit, enabling replay-style redefinition that hides unit mismatches (semantic drift).",
+        "input_fixture": "a=meter.counter('ops', unit='1', description='a'); b=meter.counter('ops', unit='ms', description='b'); assert a is b  # unit silently ignored",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-COUNTER-NEG-INT",
+        "hypothesis": "Counter.add(-1) may be silently clamped to 0 instead of raising, violating the explicit 'negative deltas SHALL raise' requirement. Implementations that defensively clamp to prevent metric corruption would pass correctness checks while hiding the contract violation from callers.",
+        "input_fixture": "meter = build_meter(); c = meter.counter('req.total', unit='1', description='d'); c.add(-1)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-COUNTER-NEG-ZERO",
+        "hypothesis": "IEEE 754 negative zero (-0.0) compares equal to 0.0 in Python, so a naive `if value < 0: raise` guard passes it through silently. Yet -0.0 is mathematically negative and semantically a violation of the non-negative invariant. An implementation that does not also check `math.copysign(1, value) < 0` will silently accept it.",
+        "input_fixture": "import math; c.add(-0.0)  # math.copysign(1, -0.0) == -1.0, yet -0.0 < 0 is False",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-COUNTER-NAN-VALUE",
+        "hypothesis": "float('nan') satisfies neither value >= 0 nor value < 0, so a simple `< 0` guard lets it through. NaN propagates silently into aggregated sums, corrupting exported metrics without any raised exception.",
+        "input_fixture": "c.add(float('nan'), attributes={'env': 'prod'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-HIST-NAN-BOUNDARY",
+        "hypothesis": "A boundary list containing NaN ([1.0, float('nan'), 100.0]) is not strictly increasing because NaN comparisons are always False. An implementation using `all(a < b for a, b in zip(...))` silently accepts NaN boundaries, producing undefined bucketing behaviour at record time.",
+        "input_fixture": "meter.histogram('latency', unit='ms', description='d', boundaries=[1.0, float('nan'), 100.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-HIST-INF-BOUNDARY",
+        "hypothesis": "float('+inf') is not finite. A boundary list ending in [100.0, float('inf')] violates the 'boundaries MUST be finite' clause, but implementations that only verify strictly-increasing order will accept it because inf > 100.0.",
+        "input_fixture": "meter.histogram('resp_size', unit='By', description='d', boundaries=[10.0, 100.0, float('inf')])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-HIST-EQUAL-BOUNDARIES",
+        "hypothesis": "Boundaries [1.0, 1.0, 2.0] are not strictly increasing (1.0 == 1.0). An implementation using `<=` instead of `<` in its monotonicity check silently creates duplicate bucket edges, corrupting histogram semantics. This tests the strictly-increasing clause specifically.",
+        "input_fixture": "meter.histogram('queue_depth', unit='1', description='d', boundaries=[1.0, 1.0, 2.0, 5.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-HIST-BOUND-MUTATE",
+        "hypothesis": "If the implementation stores a reference to the caller-supplied list rather than copying it, mutating the list after creation silently changes the live boundary definition mid-flight, violating the immutability clause. An attacker (or buggy caller) can shift bucket edges after the first datapoint is recorded.",
+        "input_fixture": "bounds = [10.0, 100.0, 1000.0]; h = meter.histogram('db.query', unit='ms', description='d', boundaries=bounds); bounds.append(9999.0); h.record(500.0)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NAME-TYPE-COLLISION",
+        "hypothesis": "Creating a Counter named 'http.requests' and then a Histogram with the same name 'http.requests' MUST raise a collision error. An implementation backed by a plain dict keyed only on name \u2014 ignoring instrument type \u2014 will silently return the pre-existing Counter when a Histogram is requested, masking a severe contract violation.",
+        "input_fixture": "meter.counter('http.requests', unit='1', description='a'); meter.histogram('http.requests', unit='1', description='b', boundaries=[10.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NAME-STARTS-DIGIT",
+        "hypothesis": "The regex requires the first character to be [A-Za-z]. A name like '1requests' starts with a digit and must be rejected. Implementations that only validate length or perform a loose `str.isidentifier()` check (which also rejects digits but for different reasons) may produce misleading error messages or, if no validation exists, silently accept invalid names.",
+        "input_fixture": "meter.counter('1requests', unit='1', description='starts with digit')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NAME-TOO-LONG",
+        "hypothesis": "The regex allows at most 63 characters total (1 leading letter + 62 further chars). A 64-character name must be rejected. Implementations that omit an explicit length check and rely solely on the compiled regex may fail differently than documented (no error at all if the regex is applied with re.match and the pattern accidentally matches a prefix).",
+        "input_fixture": "meter.counter('A' + 'b' * 62, unit='s', description='name is 63 chars \u2014 boundary'); meter.counter('A' + 'b' * 63, unit='s', description='name is 64 chars \u2014 over limit')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-UNIT-EMPTY-STRING",
+        "hypothesis": "Passing unit='' must raise immediately. An implementation that only checks `if unit is None` will silently accept the empty string, creating instruments that export metrics with no unit annotation, breaking downstream OTel collectors and violating the 'empty unit is FORBIDDEN' clause.",
+        "input_fixture": "meter.counter('requests', unit='', description='empty unit should be forbidden')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-UNIT-WHITESPACE-ONLY",
+        "hypothesis": "A unit string of ' ' (single space) is non-empty and passes an `if not unit` guard, but is not a valid UCUM unit string. Implementations that do not strip-and-validate will silently accept it, exporting structurally invalid unit metadata.",
+        "input_fixture": "meter.histogram('request.duration', unit='   ', description='whitespace-only unit', boundaries=[5.0, 50.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-GAUGE-CALLBACK-RAISES",
+        "hypothesis": "An observable gauge whose callback raises RuntimeError on every invocation must not propagate the exception to the collection loop. Instead it must be caught, logged, and the measurement dropped. An implementation that does not wrap the callback call in try/except will crash the entire metrics collection cycle.",
+        "input_fixture": "def exploding(): raise RuntimeError('boom'); meter.observable_gauge('cpu.usage', exploding, unit='1', description='d'); trigger_collection_cycle()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-GAUGE-NONIDEMPOTENT-SIDE-EFFECT",
+        "hypothesis": "A callback that increments a global counter on each invocation is not idempotent \u2014 calling it twice in the same collection window produces different observable state. The invariant says callbacks MUST be idempotent within a collection cycle. An implementation that calls the callback more than once per cycle (e.g., once to sample, once to export) will silently violate this invariant with no error surfaced.",
+        "input_fixture": "call_count = [0]\ndef stateful_cb():\n    call_count[0] += 1\n    return float(call_count[0])\nmeter.observable_gauge('g', stateful_cb, unit='1', description='d'); trigger_collection_cycle(); assert call_count[0] == 1, f'callback invoked {call_count[0]} times'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ATTR-UNBOUNDED-USER-ID",
+        "hypothesis": "Passing a UUID as the value of attribute key 'user_id' constitutes an unbounded-cardinality dimension that must be rejected or sanitised. An implementation that blindly forwards all attributes to the OTel SDK will create one metric series per unique user, causing a cardinality explosion that exhausts collector memory.",
+        "input_fixture": "import uuid; c.add(1, attributes={'user_id': str(uuid.uuid4()), 'env': 'prod'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ATTR-FULL-URL-PATH",
+        "hypothesis": "Passing the raw request path as an attribute key value (e.g., path='/api/v1/users/abc123/orders/xyz/items') encodes user-specific data in a high-cardinality dimension forbidden by the invariant. An implementation without a cardinality guard will silently propagate this into exported metrics.",
+        "input_fixture": "h.record(42.0, attributes={'http.route': '/api/v1/users/abc123-uuid/orders/9f1e2a/items', 'method': 'GET'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-COUNTER-INT-OVERFLOW",
+        "hypothesis": "Passing sys.maxsize + 1 (a Python arbitrary-precision int) to Counter.add may overflow if the implementation converts to a C double internally. The conversion silently saturates or wraps, losing precision without raising an error. The non-negative guard passes (value > 0) but the stored delta is incorrect.",
+        "input_fixture": "import sys; c.add(sys.maxsize + 1)  # 2^63 on 64-bit; forced through float conversion loses low bits",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONCURRENT-NAME-COLLISION",
+        "hypothesis": "Two threads simultaneously calling meter.counter('events', ...) and meter.histogram('events', ...) on the same meter instance may both pass the pre-creation name-type check before either registration completes, resulting in a race that registers both instruments under the same name without raising a collision error. This targets the TOCTOU gap in the collision-detection logic.",
+        "input_fixture": "import threading; t1 = threading.Thread(target=lambda: meter.counter('events', unit='1', description='a')); t2 = threading.Thread(target=lambda: meter.histogram('events', unit='1', description='b')); t1.start(); t2.start(); t1.join(); t2.join()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-COUNTER-NEGATIVE",
+        "hypothesis": "counter.add(-5) may silently clamp to 0 instead of raising exception, violating the hard constraint that negative values are forbidden.",
+        "input_fixture": "meter.counter('requests', unit='1', description='count').add(-5)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-COUNTER-FLOAT-NEGATIVE",
+        "hypothesis": "Small negative float -0.001 bypasses integer-only type checking and silently clamps instead of raising error.",
+        "input_fixture": "meter.counter('latency', unit='ms', description='response time').add(-0.001)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-COUNTER-OVERFLOW-HUGE-VALUE",
+        "hypothesis": "counter.add(10**100) causes silent integer wraparound or truncation instead of raising on overflow.",
+        "input_fixture": "meter.counter('events', unit='1', description='total').add(10**100)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HISTOGRAM-NON-MONOTONIC",
+        "hypothesis": "boundaries=[1.0, 0.5, 2.0] fail strict increasing order; validation may only check for no duplicates, not decreasing pairs.",
+        "input_fixture": "meter.histogram('latency', unit='ms', description='response times', boundaries=[1.0, 0.5, 2.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HISTOGRAM-DUPLICATE-BOUNDARY",
+        "hypothesis": "boundaries=[1.0, 1.0, 2.0] contain duplicates; equal values violate strictly increasing constraint if validator only checks a[i] < a[i+1].",
+        "input_fixture": "meter.histogram('sizes', unit='By', description='bytes', boundaries=[1.0, 1.0, 2.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HISTOGRAM-INFINITE-BOUNDARY",
+        "hypothesis": "boundaries=[1.0, float('inf')] should be rejected as non-finite; implementation may not validate finiteness separately.",
+        "input_fixture": "meter.histogram('temps', unit='K', description='kelvin', boundaries=[1.0, float('inf')])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HISTOGRAM-NAN-BOUNDARY",
+        "hypothesis": "boundaries=[float('nan'), 1.0] violates finiteness and comparison semantics; NaN == NaN is false, breaking validation logic.",
+        "input_fixture": "meter.histogram('quality', unit='1', description='rating', boundaries=[float('nan'), 1.0])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HISTOGRAM-EMPTY-BOUNDARIES",
+        "hypothesis": "boundaries=[] may be allowed if spec is ambiguous; no boundaries defined could mean unbounded histogram.",
+        "input_fixture": "meter.histogram('unknown', unit='1', description='test', boundaries=[])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HISTOGRAM-IMMUTABILITY-BREACH",
+        "hypothesis": "Pass mutable list [1.0, 2.0], then mutate to [5.0, 6.0]; boundaries not copied/frozen allows post-creation mutation.",
+        "input_fixture": "bounds = [1.0, 2.0]; h = meter.histogram('mut', unit='1', description='test', boundaries=bounds); bounds[0] = 5.0",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NAME-INVALID-START-CHAR",
+        "hypothesis": "name='_metrics' starts with underscore, violating regex '^[A-Za-z]'; validator may only check character set, not start char.",
+        "input_fixture": "meter.counter('_requests', unit='1', description='count')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NAME-SPACE-CHARACTER",
+        "hypothesis": "name='my metric' contains space not in allowed charset [A-Za-z0-9_./-]; regex validation may be missing or weak.",
+        "input_fixture": "meter.counter('my metric', unit='1', description='requests')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NAME-LENGTH-OVERFLOW",
+        "hypothesis": "name with 64 chars exceeds limit of 63; off-by-one error in length validation or truncation without error.",
+        "input_fixture": "meter.counter('a'*64, unit='1', description='test')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NAME-TYPE-COLLISION",
+        "hypothesis": "Create counter 'metric', then histogram 'metric'; collision detection may not verify type mismatch.",
+        "input_fixture": "meter.counter('metric', unit='1', description='x'); meter.histogram('metric', unit='1', description='y')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY-UNIT-STRING",
+        "hypothesis": "unit='' is explicitly forbidden; implementation may not validate non-empty or default to empty string.",
+        "input_fixture": "meter.counter('requests', unit='', description='count')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NULL-UNIT-VALUE",
+        "hypothesis": "unit=None should be rejected; implementation may silently default to None or allow null without raising.",
+        "input_fixture": "meter.counter('items', unit=None, description='total')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-GAUGE-EXCEPTION-UNHANDLED",
+        "hypothesis": "Observable gauge callback raises ValueError; spec requires logging + drop but exception may propagate and break collection.",
+        "input_fixture": "def bad(): raise ValueError('io'); meter.observable_gauge('temp', bad, unit='C', description='celsius')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-GAUGE-STATE-MUTATION",
+        "hypothesis": "Observable gauge callback mutates external counter; violates idempotency within cycle\u2014multiple reads return different values.",
+        "input_fixture": "count=[0]; def inc(): count[0]+=1; return count[0]; meter.observable_gauge('tally', inc, unit='1', description='x')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-GAUGE-CONCURRENT-MUTATION",
+        "hypothesis": "Observable gauge with callback reading global mutable state; concurrent collection cycles race, breaking idempotency guarantees.",
+        "input_fixture": "state={'val':0}; def read(): return state['val']; meter.observable_gauge('race', read, unit='1', description='x'); state['val']=1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HIGH-CARDINALITY-USERID",
+        "hypothesis": "attributes={'user_id':'12345'} contains high-cardinality key; implementation may not detect or reject unbounded keys.",
+        "input_fixture": "meter.counter('auth', unit='1', description='login').add(1, attributes={'user_id':'12345'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HIGH-CARDINALITY-PATH",
+        "hypothesis": "attributes={'path':'/api/user/123/order/456'} contains full URL path; unbounded cardinality explodes metric dimensions.",
+        "input_fixture": "meter.counter('request', unit='1', description='http').add(1, attributes={'path':'/api/user/123/order/456'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "meter.instrument.created",
+        "required_attributes": [
+          "name",
+          "kind",
+          "unit"
+        ]
+      },
+      {
+        "event_name": "meter.instrument.collision",
+        "required_attributes": [
+          "name",
+          "existing_kind",
+          "attempted_kind"
+        ]
+      },
+      {
+        "event_name": "meter.gauge.dropped",
+        "required_attributes": [
+          "name",
+          "reason"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "meter.instruments.count",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "kind"
+        ]
+      },
+      {
+        "name": "meter.values.rejected",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "reason"
+        ]
+      },
+      {
+        "name": "meter.gauge.callback.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 100,
+        "label_keys": [
+          "name"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "metric.instrument.create",
+        "required_attributes": [
+          "instrument.name",
+          "instrument.kind"
+        ]
+      },
+      {
+        "operation_name": "metric.instrument.record",
+        "required_attributes": [
+          "instrument.name"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocols mirror catalog api_signature exactly (counter/up_down_counter/histogram/observable_gauge with identical kwargs). All 6 invariants enforced at runtime with matching IDs. Minor gap: spec says gauge exceptions 'reported via a counter meter.gauge.dropped' but implementation only swallows silently without the drop counter."
+      },
+      {
+        "axis": "completeness",
+        "score": 8,
+        "rationale": "All four instrument shapes, name/unit/boundary/attribute validators, collision detection, and collect_gauge are present. Missing: the meter.gauge.dropped counter mentioned in spec, and no explicit idempotency check for gauge callbacks within a collection cycle (INV-05 half-enforced)."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Dedicated MetricInvariantError(ValueError) subclass. Every raise cites the invariant ID (METRIC-INV-01..06) and states the forbidden behavior. Messages include offending value via !r. Bool-vs-int trap handled explicitly. One message ('METRIC-INV-01 supporting') is slightly awkward phrasing."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Pure Protocol surface enables DI; runtime_checkable allows isinstance. Validators are standalone and reusable (exported in __all__). Zero I/O at import. FORBIDDEN_CARDINALITY_KEYS composes cleanly with a future CardinalityGuard. Extension_contract (MetricReader/View) isn't scaffolded but the Protocol boundary doesn't block it."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe via per-instrument locks and meter-level registration lock. O(1) add/record. Lazy, no import I/O. Gauge callbacks safely swallowed. Concern: unbounded _measurements list grows without cap \u2014 fine for reference/in-memory but would OOM in prod; acceptable since class is named InMemoryMetricMeter. UCUM_ALLOWED_UNITS defined but unused by validate_unit (accepts any non-empty string)."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Name, namespace intent (obs), purpose, all 6 invariants, and api_signature match. Consumption example executes against this implementation. Sources cited in module docstring/spec. Maturity 'battle_tested' is aspirational but the invariant coverage supports it. Minor: UCUM_ALLOWED_UNITS is exported but not enforced, creating a small gap between declared and actual unit discipline."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "No instantiation example \u2014 `meter` appears in the usage snippet from nowhere; how is MetricMeter constructed or injected?",
+          "'UCUM unit string' is undefined; a junior won't know that '1' means dimensionless or why 'ms' is the right token vs 'milliseconds'.",
+          "'Observable gauge' appears in METRIC_INV_05 but is absent from the usage example, leaving the fourth instrument shape mysterious."
+        ],
+        "rewrite_suggestion": "Prepend a two-line setup snippet (e.g., `meter = MetricMeter(name='my-service')`) before the checkout example. Annotate `unit='ms'` inline as '(milliseconds \u2014 UCUM standard)'. Add a four-line gauge example mirroring the histogram block."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "Lock primitive is unspecified \u2014 `threading.Lock` vs `asyncio.Lock` vs `RLock` has correctness implications in async-heavy services.",
+          "Extension contract says 'subclassing the meter provider' but names no base class or interface; impossible to satisfy the contract without reading source.",
+          "No lifecycle (flush / shutdown) semantics documented \u2014 critical for correctness at process exit or during rolling deploys."
+        ],
+        "rewrite_suggestion": "Name the exact lock type used per instrument; expose the `MeterProvider` base class or ABC in the extension contract section with its method signatures; add a 'Lifecycle' paragraph covering flush guarantees and shutdown ordering."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "Forbidden-key list is illustrative only (`user.id`, `request.id`, `trace_id`) \u2014 coverage gap and whether the list is extensible at runtime is unspecified.",
+          "Enforcement point is ambiguous: is the block applied at `add()`/`record()` call time or at instrument construction?",
+          "Failure mode for a forbidden attribute is unspecified \u2014 silent drop, attribute redaction, or exception each have different audit implications."
+        ],
+        "rewrite_suggestion": "Publish the canonical forbidden-key list or a stable config reference. State explicitly that enforcement occurs at `add()`/`record()` time. Specify the failure mode (e.g., 'raises `ForbiddenAttributeError`; the measurement is discarded and `meter.gauge.dropped` is incremented')."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Default histogram bucket boundaries are not listed \u2014 impossible to assess p99 representability for a given latency domain without them.",
+          "`meter.gauge.dropped` counter is mentioned but no alert expression, cardinality budget, or expected baseline rate is provided.",
+          "MetricReader / export protocol is deferred to 'downstream tools' with no pointer to a reference adapter, SDK version matrix, or scrape interval default."
+        ],
+        "rewrite_suggestion": "Document the default bucket array and the override API. Add a recommended PromQL/OTLP alert for `meter.gauge.dropped > 0`. Link to a MetricReader reference implementation and specify the default export interval and compatible SDK versions."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "'High-cardinality dimensions' in 'When NOT to use' is undefined; PMs need a plain rule like 'don't tag metrics with per-user or per-request IDs'.",
+          "The alternatives section (StatsD, OTLP, pull-only) is pure implementation jargon with no one-phrase business-risk translation.",
+          "'Cross-service SLO math works' lacks a concrete before/after example showing what actually breaks when teams use inconsistent units or bucket boundaries."
+        ],
+        "rewrite_suggestion": "Replace 'high-cardinality dimensions' with 'attributes whose value is unique per user or request (e.g., user IDs)'. Append a parenthetical business risk to each rejected alternative. Add a one-sentence SLO example: 'Without shared units, an error-rate alert in service A uses ms while service B uses s \u2014 the dashboard combines them incorrectly.'"
+      }
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "HealthProbe",
+  "namespace": "obs",
+  "purpose": "Small probe that reports UP/DOWN/DEGRADED with optional detail so orchestrators (Kubernetes, load balancers) can route traffic safely.",
+  "api_signature": "from dataclasses import dataclass, field\nfrom enum import Enum\nfrom typing import Mapping, Protocol\n\nclass HealthStatus(str, Enum):\n    UP = 'up'\n    DOWN = 'down'\n    DEGRADED = 'degraded'\n\n@dataclass(frozen=True)\nclass HealthReport:\n    status: HealthStatus\n    details: Mapping[str, str] = field(default_factory=dict)\n\nclass HealthProbe(Protocol):\n    name: str\n    async def check(self) -> HealthReport: ...\n",
+  "invariants": [
+    "check() MUST complete within a declared timeout; a hanging probe SHALL be treated as DOWN.",
+    "A probe MUST NEVER throw; unexpected exceptions SHALL be caught and turned into DOWN with the exception class as detail.",
+    "name MUST be unique within the registry; duplicate registrations SHALL be rejected.",
+    "details MUST NOT leak secrets (connection strings, tokens); callers CANNOT rely on raw credentials appearing.",
+    "The aggregated readiness endpoint MUST be UP only when every required probe is UP; optional probes CANNOT force readiness false."
+  ],
+  "extension_contract": "Downstream tools implement HealthProbe and register via a decorator/register() call; the aggregator composes probes into readiness and liveness groups, and new probe sources plug in without changing the endpoint code.",
+  "consumption_example": "class DbProbe:\n    name = 'db'\n    async def check(self) -> HealthReport:\n        ok = True\n        return HealthReport(HealthStatus.UP if ok else HealthStatus.DOWN)\n\np: HealthProbe = DbProbe()\n",
+  "sources": [
+    {
+      "source": "Spring Boot 3.x Actuator \u2014 HealthIndicator",
+      "locator": "docs.spring.io/spring-boot/reference/actuator/endpoints.html \u2014 HealthIndicator.health(), Health.up()/down()/status()"
+    },
+    {
+      "source": "ASP.NET Core 8.0 \u2014 Health checks",
+      "locator": "learn.microsoft.com/aspnet/core/host-and-deploy/health-checks \u2014 IHealthCheck.CheckHealthAsync"
+    }
+  ],
+  "why_essential": "Kubernetes and load balancers make routing decisions from the /health endpoint; if every tool owns its own probe shape, readiness signals conflict and deployments fail to roll back safely.",
+  "alternatives_considered": [
+    "Single monolithic /health handler \u2014 every team edits the same file",
+    "TCP port open as readiness \u2014 ignores app-level failures",
+    "Per-service custom /ping formats \u2014 blocks generic orchestrator checks"
+  ],
+  "maturity": "battle_tested"
+}

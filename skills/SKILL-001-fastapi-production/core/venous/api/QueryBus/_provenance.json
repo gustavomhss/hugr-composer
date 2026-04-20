@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:47:01.442033+00:00",
+  "source_tool": "api_design/add_cqrs.py",
+  "origin_candidate": {
+    "docstring": "Dispatch Queries to their registered async handlers.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 414,
+    "line_start": 380,
+    "name": "QueryBus",
+    "origin": "string_template",
+    "shape_hash": "91bc639aa31cca33",
+    "size_bytes": 1270,
+    "size_lines": 35,
+    "tool": "api_design/add_cqrs.py",
+    "method_count": 3,
+    "complexity": 1,
+    "disqualified": false,
+    "primitive_score": 15240
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

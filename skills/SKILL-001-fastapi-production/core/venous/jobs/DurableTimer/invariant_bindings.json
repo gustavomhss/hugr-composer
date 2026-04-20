@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "DT_INV_01",
+      "invariant_text": "A fired timer MUST be recorded as an event so workflow replay reconstructs the same fire point.",
+      "confirms_test": "test_inv_fire_recorded_confirms",
+      "prevents_test": "test_inv_fire_recorded_prevents",
+      "under_failure_test": "test_inv_fire_recorded_under_failure"
+    },
+    {
+      "invariant_id": "DT_INV_02",
+      "invariant_text": "Wall clock sleep calls inside a workflow are FORBIDDEN because they break determinism and do not survive outages.",
+      "confirms_test": "test_inv_no_wallclock_sleep_confirms",
+      "prevents_test": "test_inv_no_wallclock_sleep_prevents",
+      "under_failure_test": "test_inv_no_wallclock_sleep_under_failure"
+    },
+    {
+      "invariant_id": "DT_INV_03",
+      "invariant_text": "A canceled timer SHALL NEVER fire; cancellation ALWAYS reaches the workflow before a fired event is recorded.",
+      "confirms_test": "test_inv_canceled_never_fires_confirms",
+      "prevents_test": "test_inv_canceled_never_fires_prevents",
+      "under_failure_test": "test_inv_canceled_never_fires_under_failure"
+    },
+    {
+      "invariant_id": "DT_INV_04",
+      "invariant_text": "delay_s MUST be non negative; a negative delay CANNOT be scheduled and raises an argument error.",
+      "confirms_test": "test_inv_delay_nonnegative_confirms",
+      "prevents_test": "test_inv_delay_nonnegative_prevents",
+      "under_failure_test": "test_inv_delay_nonnegative_under_failure"
+    },
+    {
+      "invariant_id": "DT_INV_05",
+      "invariant_text": "A single worker NEVER caps the number of concurrent durable timers at the process level because timers persist server side.",
+      "confirms_test": "test_inv_no_worker_cap_confirms",
+      "prevents_test": "test_inv_no_worker_cap_prevents",
+      "under_failure_test": "test_inv_no_worker_cap_under_failure"
+    }
+  ]
+}

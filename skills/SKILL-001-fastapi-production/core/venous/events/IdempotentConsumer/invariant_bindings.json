@@ -1,0 +1,32 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "IDC_INV_01",
+      "invariant_text": "Two messages with the same idempotency key MUST produce the same observable system state; divergence is FORBIDDEN.",
+      "confirms_test": "test_inv_same_key_same_state_confirms",
+      "prevents_test": "test_inv_same_key_same_state_prevents",
+      "under_failure_test": "test_inv_same_key_same_state_under_failure"
+    },
+    {
+      "invariant_id": "IDC_INV_02",
+      "invariant_text": "handle CANNOT perform non-compensatable side-effects without first consulting an InboxDeduplicator or equivalent.",
+      "confirms_test": "test_inv_inbox_gate_confirms",
+      "prevents_test": "test_inv_inbox_gate_prevents",
+      "under_failure_test": "test_inv_inbox_gate_under_failure"
+    },
+    {
+      "invariant_id": "IDC_INV_03",
+      "invariant_text": "on_duplicate MUST NEVER raise as a primary error path; duplicates are an expected steady-state condition.",
+      "confirms_test": "test_inv_on_duplicate_no_raise_confirms",
+      "prevents_test": "test_inv_on_duplicate_no_raise_prevents",
+      "under_failure_test": "test_inv_on_duplicate_no_raise_under_failure"
+    },
+    {
+      "invariant_id": "IDC_INV_04",
+      "invariant_text": "The consumer SHALL publish its own outputs through a TransactionalOutbox so downstream systems can dedupe similarly.",
+      "confirms_test": "test_inv_outbox_publishing_confirms",
+      "prevents_test": "test_inv_outbox_publishing_prevents",
+      "under_failure_test": "test_inv_outbox_publishing_under_failure"
+    }
+  ]
+}

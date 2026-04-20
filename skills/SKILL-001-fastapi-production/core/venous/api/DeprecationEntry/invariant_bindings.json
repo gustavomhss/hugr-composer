@@ -1,0 +1,11 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "DEPRECATION_ENTRY_INV_01",
+      "invariant_text": "sunset_header MUST be the ISO-8601 date string of the configured sunset date, suitable verbatim as an RFC 8594 Sunset header value.",
+      "confirms_test": "test_inv_sunset_header_confirms",
+      "prevents_test": "test_inv_sunset_header_prevents",
+      "under_failure_test": "test_inv_sunset_header_under_failure"
+    }
+  ]
+}

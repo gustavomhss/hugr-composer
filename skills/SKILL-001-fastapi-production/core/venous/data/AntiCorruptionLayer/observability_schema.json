@@ -1,0 +1,64 @@
+{
+  "logs": [
+    {
+      "event_name": "acl.translation.inbound",
+      "required_attributes": ["version", "result"]
+    },
+    {
+      "event_name": "acl.translation.outbound",
+      "required_attributes": ["version", "result"]
+    },
+    {
+      "event_name": "acl.guard.rejected",
+      "required_attributes": ["version", "reason"]
+    },
+    {
+      "event_name": "acl.schema.drift.detected",
+      "required_attributes": ["declared_version", "known_versions"]
+    },
+    {
+      "event_name": "acl.reentry.blocked",
+      "required_attributes": ["operation"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "acl.translations.total",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 100,
+      "label_keys": ["version", "direction"]
+    },
+    {
+      "name": "acl.guard.rejections",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["version"]
+    },
+    {
+      "name": "acl.schema.drift.events",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["declared_version"]
+    },
+    {
+      "name": "acl.registered.versions",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 30,
+      "label_keys": ["system"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "acl.to_local",
+      "required_attributes": ["acl.version", "acl.direction"]
+    },
+    {
+      "operation_name": "acl.to_foreign",
+      "required_attributes": ["acl.version", "acl.direction"]
+    }
+  ]
+}

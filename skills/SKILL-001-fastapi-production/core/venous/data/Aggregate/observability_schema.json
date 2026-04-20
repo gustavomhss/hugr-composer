@@ -1,0 +1,60 @@
+{
+  "logs": [
+    {
+      "event_name": "aggregate.created",
+      "required_attributes": ["aggregate_id", "aggregate_type", "version"]
+    },
+    {
+      "event_name": "aggregate.mutated",
+      "required_attributes": ["aggregate_id", "aggregate_type", "version", "command"]
+    },
+    {
+      "event_name": "aggregate.invariant.violated",
+      "required_attributes": ["aggregate_id", "aggregate_type", "invariant_id", "reason"]
+    },
+    {
+      "event_name": "aggregate.concurrency.rejected",
+      "required_attributes": ["aggregate_id", "stored_version", "incoming_version"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "aggregate.commands",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["aggregate_type", "result"]
+    },
+    {
+      "name": "aggregate.version",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 100,
+      "label_keys": ["aggregate_type"]
+    },
+    {
+      "name": "aggregate.pending.events",
+      "metric_type": "histogram",
+      "unit": "1",
+      "cardinality_bound": 30,
+      "label_keys": ["aggregate_type"]
+    },
+    {
+      "name": "aggregate.concurrency.conflicts",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["aggregate_type"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "aggregate.mutate",
+      "required_attributes": ["aggregate.id", "aggregate.type", "aggregate.version", "command"]
+    },
+    {
+      "operation_name": "aggregate.save",
+      "required_attributes": ["aggregate.id", "aggregate.type", "aggregate.version", "event.count"]
+    }
+  ]
+}

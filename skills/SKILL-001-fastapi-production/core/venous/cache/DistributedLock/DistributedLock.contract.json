@@ -1,0 +1,27 @@
+{
+  "name": "DistributedLock",
+  "namespace": "cache",
+  "purpose": "Named mutex with lease expiry that grants one holder exclusive access across processes and is released explicitly or by lease timeout on crash.",
+  "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass LockHandle:\n    resource_id: str\n    owner_id: str\n    lease_s: int\n\nclass DistributedLock(Protocol):\n    async def try_lock(self, resource_id: str, owner_id: str, lease_s: int) -> LockHandle | None: ...\n    async def unlock(self, handle: LockHandle) -> None: ...",
+  "invariants": [
+    "At most one caller MUST hold a given resource_id at a time; try_lock on a held lock returns None.",
+    "Locks ALWAYS auto release after lease_s elapses so a crashed holder CANNOT deadlock the resource forever.",
+    "Unlock with a non matching owner_id MUST be rejected so callers cannot release locks they do not own.",
+    "lease_s MUST be positive; a zero or negative lease SHALL raise a configuration error.",
+    "The primitive NEVER guarantees fairness across callers beyond the single holder invariant."
+  ],
+  "extension_contract": "Swap backends by implementing DistributedLock as an adapter (Redis SET NX PX, etcd lease, Consul session) and register it as a component; higher guarantees (fencing tokens) plug in by wrapping try_lock in a middleware that annotates the handle.",
+  "consumption_example": "async def with_critical_section(lock: DistributedLock, resource: str, owner: str) -> bool:\n    handle = await lock.try_lock(resource, owner, lease_s=30)\n    if handle is None:\n        return False\n    try:\n        return True\n    finally:\n        await lock.unlock(handle)",
+  "sources": [
+    {
+      "source": "Dapr 1.14 Distributed Lock building block overview",
+      "locator": "docs.dapr.io/developing-applications/building-blocks/distributed-lock/distributed-lock-api-overview/ Lease, TryLock, Unlock sections"
+    }
+  ],
+  "why_essential": "Coordinating rare sequential work across workers (backfills, leader only cron) needs one contract; scattering ad hoc Redis SETNX code loses lease semantics and owner checks.",
+  "alternatives_considered": [
+    "Advisory Postgres locks which tie correctness to one database and one transaction",
+    "Quorum based leader election which solves a bigger problem and is often overkill"
+  ],
+  "maturity": "emerging"
+}

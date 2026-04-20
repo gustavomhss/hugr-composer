@@ -1,0 +1,37 @@
+{
+  "name": "SemanticAttributes",
+  "namespace": "obs",
+  "purpose": "Expose the OpenTelemetry semantic-convention attribute keys as typed constants and enforce that primitives populate required keys for HTTP, database, messaging, and GenAI operations.",
+  "api_signature": "from typing import Final\n\nclass SemanticAttributes:\n    SERVICE_NAME: Final[str] = 'service.name'\n    SERVICE_VERSION: Final[str] = 'service.version'\n    DEPLOYMENT_ENVIRONMENT: Final[str] = 'deployment.environment.name'\n    HTTP_REQUEST_METHOD: Final[str] = 'http.request.method'\n    HTTP_ROUTE: Final[str] = 'http.route'\n    HTTP_RESPONSE_STATUS_CODE: Final[str] = 'http.response.status_code'\n    DB_SYSTEM: Final[str] = 'db.system'\n    DB_STATEMENT: Final[str] = 'db.statement'\n    MESSAGING_SYSTEM: Final[str] = 'messaging.system'\n    MESSAGING_DESTINATION_NAME: Final[str] = 'messaging.destination.name'\n    GEN_AI_SYSTEM: Final[str] = 'gen_ai.system'\n    GEN_AI_REQUEST_MODEL: Final[str] = 'gen_ai.request.model'\n    GEN_AI_USAGE_INPUT_TOKENS: Final[str] = 'gen_ai.usage.input_tokens'\n    GEN_AI_USAGE_OUTPUT_TOKENS: Final[str] = 'gen_ai.usage.output_tokens'\n",
+  "invariants": [
+    "Attribute keys MUST match the lowercase dotted notation specified by OpenTelemetry Semantic Conventions 1.27 and SHALL NEVER be aliased to custom names.",
+    "Required keys for a given domain (http.request.method for HTTP server spans, db.system for DB spans) MUST be populated before a span ends.",
+    "Values for enum attributes (db.system, messaging.system) MUST come from the SemConv registry and CANNOT be free-form strings.",
+    "Deprecated keys SHALL be aliased to the current key with a one-time warning, NEVER silently dropped.",
+    "The full SQL statement under db.statement MUST be redacted when the deployment environment is production; literal parameter values are FORBIDDEN.",
+    "SemanticAttributes class keys are immutable class attributes and NEVER reassigned at runtime."
+  ],
+  "extension_contract": "New domains extend the attribute set by subclassing SemanticAttributes and adding Final-typed constants that track a specific semconv version; the subclass is bound to a namespace via register() so linting tools can enforce that domain spans carry the subclass's required keys.",
+  "consumption_example": "def annotate_http_span(span, method: str, route: str, status: int) -> None:\n    span.set_attribute(SemanticAttributes.HTTP_REQUEST_METHOD, method)\n    span.set_attribute(SemanticAttributes.HTTP_ROUTE, route)\n    span.set_attribute(SemanticAttributes.HTTP_RESPONSE_STATUS_CODE, status)\n",
+  "sources": [
+    {
+      "source": "OpenTelemetry Semantic Conventions 1.27 \u2014 General",
+      "locator": "semconv/resource/README.md and semconv/general/attributes.md 'service.*' and 'deployment.*'"
+    },
+    {
+      "source": "OpenTelemetry Semantic Conventions 1.27 \u2014 HTTP",
+      "locator": "semconv/http/http-spans.md 'Required attributes' and 'http.request.method' enum"
+    },
+    {
+      "source": "OpenTelemetry Semantic Conventions 1.27 \u2014 GenAI",
+      "locator": "semconv/gen-ai/gen-ai-spans.md (gen_ai.system, gen_ai.request.model, gen_ai.usage.*)"
+    }
+  ],
+  "why_essential": "Shared keys are what make traces, metrics, and logs from different services joinable in a backend; without a single source of attribute names, every team invents 'httpMethod' vs 'http_method' and queries fragment.",
+  "alternatives_considered": [
+    "Free-form string keys \u2014 rejected because every team spells the same concept differently and dashboards cannot be shared.",
+    "Per-tool attribute modules \u2014 rejected because they drift from upstream semconv updates and miss required-key enforcement.",
+    "OpenTracing tag taxonomy \u2014 rejected because it was frozen in 2019 and lacks HTTP, DB, messaging, and GenAI coverage."
+  ],
+  "maturity": "emerging"
+}

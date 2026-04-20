@@ -1,0 +1,68 @@
+{
+  "logs": [
+    {
+      "event_name": "saga.started",
+      "required_attributes": ["correlation_id", "saga_name"]
+    },
+    {
+      "event_name": "saga.step.completed",
+      "required_attributes": ["correlation_id", "step_name"]
+    },
+    {
+      "event_name": "saga.step.failed",
+      "required_attributes": ["correlation_id", "step_name", "reason"]
+    },
+    {
+      "event_name": "saga.compensated",
+      "required_attributes": ["correlation_id", "step_name"]
+    },
+    {
+      "event_name": "saga.finished",
+      "required_attributes": ["correlation_id", "final_state"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "saga.started",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": ["saga_name"]
+    },
+    {
+      "name": "saga.outcomes",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["saga_name", "outcome"]
+    },
+    {
+      "name": "saga.compensations",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["saga_name", "step_name"]
+    },
+    {
+      "name": "saga.step.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": ["saga_name", "step_name"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "saga.start",
+      "required_attributes": ["saga.correlation_id", "saga.name"]
+    },
+    {
+      "operation_name": "saga.step",
+      "required_attributes": ["saga.correlation_id", "saga.step_name"]
+    },
+    {
+      "operation_name": "saga.compensate",
+      "required_attributes": ["saga.correlation_id", "saga.from_step"]
+    }
+  ]
+}

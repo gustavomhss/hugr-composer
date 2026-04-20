@@ -1,0 +1,31 @@
+{
+  "name": "TransactionalBatch",
+  "namespace": "data",
+  "purpose": "Atomic multi key write unit that commits a set of upsert and delete operations to one state store under a single transaction boundary.",
+  "api_signature": "from typing import Protocol, Literal, Any\nfrom dataclasses import dataclass\n\n@dataclass\nclass _Op:\n    op: Literal['upsert', 'delete']\n    key: str\n    value: bytes | None\n    etag: str | None\n\nclass TransactionalBatch(Protocol):\n    def upsert(self, key: str, value: bytes, etag: str | None = None) -> 'TransactionalBatch': ...\n    def delete(self, key: str, etag: str | None = None) -> 'TransactionalBatch': ...\n    async def commit(self) -> None: ...",
+  "invariants": [
+    "Commit MUST apply every queued operation atomically or apply none of them, with no partial visible state.",
+    "A conflicting etag on any queued operation MUST abort the entire batch and surface a conflict error.",
+    "After commit returns successfully the batch MUST NOT be reusable; reusing it SHALL raise a state error.",
+    "Operations inside one batch ALWAYS target the same state store instance to preserve the atomicity boundary.",
+    "Read operations are FORBIDDEN inside the batch because the contract covers only writes and deletes."
+  ],
+  "extension_contract": "Backend authors extend the protocol by implementing an adapter for their store's native transaction API (Redis MULTI, Postgres BEGIN, Kafka transactions via transactional.id); composition happens at the runtime, which binds one adapter per configured store name.",
+  "consumption_example": "async def transfer(batch: TransactionalBatch, src: str, dst: str, amount: int) -> None:\n    batch.upsert(src, str(-amount).encode()).upsert(dst, str(amount).encode())\n    await batch.commit()",
+  "sources": [
+    {
+      "source": "Dapr 1.14 State Management building block overview",
+      "locator": "docs.dapr.io/.../state-management-overview/ Transactional API section"
+    },
+    {
+      "source": "Confluent Kafka Design: Message Delivery Semantics",
+      "locator": "docs.confluent.io/kafka/design/delivery-semantics.html Transactional Producer paragraph"
+    }
+  ],
+  "why_essential": "Cross key consistency is a runtime level capability, so pushing it to each tool forces ad hoc compensation code; a shared batch primitive centralizes the atomicity boundary and its error type.",
+  "alternatives_considered": [
+    "Two phase commit coordinator per tool which adds operational cost and rarely matches store capabilities",
+    "Saga compensation at the application layer which is a different tradeoff and not a replacement for local atomicity"
+  ],
+  "maturity": "battle_tested"
+}

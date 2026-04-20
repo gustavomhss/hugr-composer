@@ -1,0 +1,7 @@
+{
+  "title": "ConsentLedger",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "Grants/rev", "targets": [{"expr": "rate(consent_grants_total[5m])"}]}
+  ]
+}

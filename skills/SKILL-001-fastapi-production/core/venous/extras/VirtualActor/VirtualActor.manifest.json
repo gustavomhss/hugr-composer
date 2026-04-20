@@ -1,0 +1,822 @@
+{
+  "name": "VirtualActor",
+  "namespace": "extras",
+  "maturity": "battle_tested",
+  "builder_agent_id": 3,
+  "catalog_entry_sha256": "6ab20e1af5f8a03437d4407bc00187e246ef2950a65aee4aeca079ccf5787e46",
+  "files": [
+    {
+      "path": "extras/VirtualActor/VirtualActor.contract.json",
+      "sha256": "fff37d01a2a533061d49a99f781d0541be896f51a8a4c02574fe1ed4b4c56936",
+      "size_bytes": 2455,
+      "kind": "contract_json"
+    },
+    {
+      "path": "extras/VirtualActor/VirtualActor.manifest.json",
+      "sha256": "40e376ef7eff5ff96c6fea5c24f97514182199bd556fc011d80834bdcb9bea95",
+      "size_bytes": 42516,
+      "kind": "manifest"
+    },
+    {
+      "path": "extras/VirtualActor/VirtualActor.md",
+      "sha256": "22073cf5f35223714ef00147b70816dc45829add7438227342c511f66845441f",
+      "size_bytes": 4297,
+      "kind": "spec_md"
+    },
+    {
+      "path": "extras/VirtualActor/VirtualActor.py",
+      "sha256": "89f30c41b89f39a6d6c156b91733681fa180e302e5559f73850e83c795219c7f",
+      "size_bytes": 8259,
+      "kind": "impl"
+    },
+    {
+      "path": "extras/VirtualActor/behavioral_VirtualActor.py",
+      "sha256": "907d0a016a7eff4ba8e1c8225125f753f3b09466d735bc563ba5e8e1bb72f69a",
+      "size_bytes": 2533,
+      "kind": "behavioral"
+    },
+    {
+      "path": "extras/VirtualActor/chaos_VirtualActor.py",
+      "sha256": "f0868eba918ef393c248db4c9aba8d9db691dfd4e2c9b72ce3ac076a45f2dedc",
+      "size_bytes": 2932,
+      "kind": "chaos"
+    },
+    {
+      "path": "extras/VirtualActor/dashboard.json",
+      "sha256": "559a538a88e03c4ed878fe6d79e4ee4df71497c36e17c8f4db11eedddee05b02",
+      "size_bytes": 553,
+      "kind": "dashboard"
+    },
+    {
+      "path": "extras/VirtualActor/invariant_bindings.json",
+      "sha256": "5c8b4ecc1b9350b30f42fc9724155f28e4f71aa01a60de9b5c8860392bd148b9",
+      "size_bytes": 1963,
+      "kind": "test"
+    },
+    {
+      "path": "extras/VirtualActor/metamorphic_VirtualActor.py",
+      "sha256": "0438b762cb7ee8fea5398aa0d5984b6968fbf12ead769e852f8a9791c1d0467b",
+      "size_bytes": 2075,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "extras/VirtualActor/observability_VirtualActor.py",
+      "sha256": "73a6743262f8755b54530174159720f270dafa5ae43366437dac510f5b3976e7",
+      "size_bytes": 1287,
+      "kind": "observability"
+    },
+    {
+      "path": "extras/VirtualActor/observability_schema.json",
+      "sha256": "0f452c3721802e6c4766b070c68bd5ef08033ec35da6cedfdc57edf492bf73b3",
+      "size_bytes": 1308,
+      "kind": "observability"
+    },
+    {
+      "path": "extras/VirtualActor/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "extras/VirtualActor/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "extras/VirtualActor/test_VirtualActor.py",
+      "sha256": "416f50ae45a9b1d0aef81d587de09960916e60faad8b6f5a0a03f2180a3c005d",
+      "size_bytes": 7879,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "VACT_INV_01",
+      "invariant_text": "Only one invocation of a given ActorId runs at a time; concurrent calls MUST queue in arrival order.",
+      "confirms_test": "test_inv_single_writer_confirms",
+      "prevents_test": "test_inv_single_writer_prevents",
+      "under_failure_test": "test_inv_single_writer_under_failure"
+    },
+    {
+      "invariant_id": "VACT_INV_02",
+      "invariant_text": "Actor state NEVER escapes the actor instance; callers ALWAYS read it through invoke, never via direct store access.",
+      "confirms_test": "test_inv_state_encapsulated_confirms",
+      "prevents_test": "test_inv_state_encapsulated_prevents",
+      "under_failure_test": "test_inv_state_encapsulated_under_failure"
+    },
+    {
+      "invariant_id": "VACT_INV_03",
+      "invariant_text": "Reminders MUST survive actor deactivation and restart; they SHALL fire after the configured period regardless of host.",
+      "confirms_test": "test_inv_reminders_persist_confirms",
+      "prevents_test": "test_inv_reminders_persist_prevents",
+      "under_failure_test": "test_inv_reminders_persist_under_failure"
+    },
+    {
+      "invariant_id": "VACT_INV_04",
+      "invariant_text": "Timers within an actor CANNOT outlive deactivation; reminders are the durable option for scheduling after restart.",
+      "confirms_test": "test_inv_timers_die_on_deactivation_confirms",
+      "prevents_test": "test_inv_timers_die_on_deactivation_prevents",
+      "under_failure_test": "test_inv_timers_die_on_deactivation_under_failure"
+    },
+    {
+      "invariant_id": "VACT_INV_05",
+      "invariant_text": "Caller code MUST NOT depend on the physical host of an actor because placement can migrate on failover.",
+      "confirms_test": "test_inv_host_transparent_confirms",
+      "prevents_test": "test_inv_host_transparent_prevents",
+      "under_failure_test": "test_inv_host_transparent_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 959,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 8 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1310,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1096,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 83461,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "49 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 954,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 1014,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 52607,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 141836,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CONCURRENT_INVOKE_RACE",
+        "hypothesis": "Fire 1000 concurrent invoke() calls to the same ActorId from different client tasks while activation is cold; verify only one runs at a time and arrival order is preserved. Suspect race between activation lock acquisition and queue insertion allows two handlers to execute concurrently during cold start.",
+        "input_fixture": "asyncio.gather(*[actor.invoke(ActorId('Counter','k1'), 'inc', b'') for _ in range(1000)]); assert final counter == 1000 and observed_concurrency == 1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REENTRANT_DEADLOCK",
+        "hypothesis": "Inside handler for ActorId(A,'x'), call invoke(ActorId(A,'x'), ...) recursively. Single-writer lock will deadlock or silently allow reentrancy, breaking serialization either way.",
+        "input_fixture": "async def handle(): await actor.invoke(ActorId('A','x'), 'self_call', b''); actor.invoke(ActorId('A','x'),'handle',b'')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REMINDER_CLOCK_SKEW",
+        "hypothesis": "Set reminder period_s=60, then jump host wall clock backward 1 hour (NTP correction). Reminder may never fire or fire 60x in burst depending on monotonic vs wall clock implementation.",
+        "input_fixture": "set_reminder(id,'r',60); subprocess.run(['date','-s','-1 hour']); sleep(120)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REMINDER_LOST_ON_CRASH",
+        "hypothesis": "set_reminder then SIGKILL the host process before next checkpoint flush. On restart on different host, reminder should still fire but likely lost if persistence is async-batched.",
+        "input_fixture": "await set_reminder(id,'r',30); os.kill(host_pid, 9); restart_on_other_host(); wait(60)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-STATE_LEAK_VIA_STORE",
+        "hypothesis": "Direct read from underlying state store (Redis/SQL) bypassing invoke() returns mid-mutation state because writes are not transactional with handler completion.",
+        "input_fixture": "task1=invoke(id,'long_write',b''); concurrently: redis.get(f'actor:{id}'); compare to invoke(id,'read',b'')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PAYLOAD_OVERFLOW",
+        "hypothesis": "invoke() with payload of 2**31 bytes triggers integer overflow in length-prefix framing or OOM kills host, dropping queued messages without ordering guarantee on restart.",
+        "input_fixture": "actor.invoke(id,'echo', b'\\x00' * (2**31 + 1))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY_KEY_COLLISION",
+        "hypothesis": "ActorId(actor_type='', key='') and ActorId('','') from different namespaces hash-collide to same activation slot, breaking isolation.",
+        "input_fixture": "a=ActorId('',''); b=ActorId('',''); invoke(a,'set',b'1'); assert invoke(b,'get',b'')!=b'1'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REMINDER_TTL_REPLAY",
+        "hypothesis": "set_reminder with ttl_s=0 should never fire, but boundary check uses <= vs < inconsistently \u2014 fires once then loops indefinitely after TTL elapsed due to negative remaining-time arithmetic.",
+        "input_fixture": "await set_reminder(id,'r', period_s=1, ttl_s=0); sleep(5); count_fires()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FAILOVER_SPLIT_BRAIN",
+        "hypothesis": "During failover, old host believes it still owns ActorId while new host activates it. Both process messages concurrently for several seconds until lease expires, violating single-writer.",
+        "input_fixture": "partition_network(host_a); invoke(id,'inc',b'') on host_b; heal_partition(); compare counter to expected",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TIMER_SURVIVES_DEACTIVATION",
+        "hypothesis": "asyncio.create_task() inside handler is not cancelled on deactivation; task fires after actor moves to new host, mutating stale state and writing back over newer state.",
+        "input_fixture": "invoke(id,'start_bg_timer',b''); force_deactivate(id); migrate(id, host_b); wait(timer_period); read state",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CANCEL_NONEXISTENT_REMINDER",
+        "hypothesis": "cancel_reminder(name='../../etc/passwd') with path-traversal name either crashes persistence layer or silently cancels unrelated reminder due to unsanitized key.",
+        "input_fixture": "await cancel_reminder(id, '../../*'); list_reminders(id)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-METHOD_PROMPT_INJECTION",
+        "hypothesis": "method parameter accepts arbitrary string; passing '__class__.__dict__' or '__init__' reflects into Python attribute lookup if dispatch uses getattr(self, method) without allowlist, leaking actor internals.",
+        "input_fixture": "await actor.invoke(id, '__dict__', b''); await actor.invoke(id, '_state', b'')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-QUEUE_AMPLIFICATION_DOS",
+        "hypothesis": "Single slow handler (sleep 60s) with 1M queued invocations exhausts memory on host since queue is unbounded; ordering invariant maintained but liveness lost and other actors on same host starve.",
+        "input_fixture": "asyncio.gather(*[invoke(id,'slow',b'') for _ in range(10**6)])",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REMINDER_DUPLICATE_AT_LEAST_ONCE",
+        "hypothesis": "Reminder fires, handler completes, but ack to reminder service is lost; on retry the same reminder fires twice within one period, violating period contract and causing duplicate side effects.",
+        "input_fixture": "set_reminder(id,'r',10); inject_ack_loss_after_first_fire(); count fires in 15s",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NEGATIVE_PERIOD",
+        "hypothesis": "set_reminder(period_s=-1) is accepted; scheduler computes next_fire = now + (-1) = past, causing tight infinite loop firing reminder thousands of times per second.",
+        "input_fixture": "await set_reminder(id,'r', period_s=-1); sleep(2); count_fires()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONCURRENT_FIFO_VIOLATION",
+        "hypothesis": "If the runtime uses an asyncio.gather or ThreadPoolExecutor to fan out concurrent calls to the same ActorId, the internal lock may be acquired out of arrival order because Python's asyncio Lock does not guarantee FIFO wakeup order across coroutines. This means two callers that arrive in order A\u2192B may actually execute B\u2192A, violating the queue-in-arrival-order invariant.",
+        "input_fixture": "actor_id = ActorId('counter', 'x'); tasks = [asyncio.create_task(actor.invoke(actor_id, 'increment', b'')) for _ in range(20)]; results = await asyncio.gather(*tasks); assert results == list(range(20))  # ordering check",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-STATE_ESCAPE_SHARED_CLASSVAR",
+        "hypothesis": "If the actor implementation stores its state in a class-level mutable attribute (e.g. a dict defined at class scope rather than in __init__), then all instances of the same actor_type share one state object. A caller that retains a reference to a value deserialized from a prior response can observe mutations made by another caller's invocation, effectively reading state outside invoke().",
+        "input_fixture": "class BadActor: _state = {}; async def on_invoke(self, method, payload): self._state['val'] = payload; return self._state  # returns live dict ref\nactor.invoke(ActorId('BadActor','1'), 'set', b'secret'); external_ref = actor.invoke(ActorId('BadActor','2'), 'get', b'')  # reads '1' state via shared class dict",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REMINDER_LOST_ON_CRASH",
+        "hypothesis": "If reminders are only stored in-process (e.g. asyncio.TimerHandle or an in-memory dict) and not committed to a durable store before set_reminder() returns, a process crash between the ack and the write causes the reminder to be silently lost. After restart the reminder never fires, violating the durability guarantee.",
+        "input_fixture": "await actor.set_reminder(ActorId('billing','42'), 'monthly', period_s=30)\nos.kill(os.getpid(), signal.SIGKILL)  # simulate crash\n# restart process; wait 35s\nassert reminder_fired_count == 1  # FAIL: count stays 0",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REMINDER_INT_OVERFLOW_PERIOD",
+        "hypothesis": "Passing sys.maxsize (9223372036854775807) as period_s to set_reminder() may overflow when the runtime converts it to milliseconds for storage or scheduling (multiplying by 1000 overflows a 64-bit signed integer). This could result in a negative or zero period, causing the reminder to fire immediately and repeatedly or raise an unhandled exception.",
+        "input_fixture": "import sys; await actor.set_reminder(ActorId('x','1'), 'overflow', period_s=sys.maxsize)\n# expect: ValueError or clamped max; actual risk: fires immediately in tight loop",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TIMER_SURVIVES_DEACTIVATION",
+        "hypothesis": "If an actor uses asyncio.call_later() or threading.Timer inside an invoke() handler and the actor is deactivated (instance GC'd) before the timer fires, the closure may still hold a reference to the actor instance, preventing garbage collection and allowing the timer callback to execute post-deactivation. This violates the invariant that timers cannot outlive deactivation.",
+        "input_fixture": "class LeakyActor:\n  async def on_invoke(self, method, payload):\n    asyncio.get_event_loop().call_later(5, self._side_effect)\n    return b'ok'\n  def _side_effect(self): self._state['fired_after_deactivation'] = True\nawait actor.invoke(ActorId('LeakyActor','1'), 'arm', b'')\nactor._runtime.deactivate(ActorId('LeakyActor','1'))\nawait asyncio.sleep(6)\nassert leaked_state == {}  # FAIL: side_effect ran post-deactivation",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-HOST_AFFINITY_HARDCODED",
+        "hypothesis": "An actor that calls socket.gethostname() or reads /etc/hostname inside invoke() and embeds the result in its persisted state will produce different behavior after failover migration to a new host, because callers that cached the old host-derived value will see a mismatch. This is a violation of the location-transparency invariant.",
+        "input_fixture": "import socket\nclass HostPinnedActor:\n  async def on_invoke(self, method, payload):\n    return socket.gethostname().encode()  # host-specific\nresult1 = await actor.invoke(ActorId('HostPinnedActor','1'), 'get_host', b'')\n# simulate failover: actor migrates to node-2\nresult2 = await actor.invoke(ActorId('HostPinnedActor','1'), 'get_host', b'')\nassert result1 == result2  # FAIL after migration",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REMINDER_REPLAY_AFTER_CANCEL",
+        "hypothesis": "A race between cancel_reminder() and an already-enqueued reminder fire event could cause the reminder to execute once after cancellation if the runtime dequeues the event before processing the cancel. This is a TOCTOU window: the cancel is ACK'd to the caller but the reminder still fires, effectively replaying a cancelled action.",
+        "input_fixture": "await actor.set_reminder(ActorId('order','99'), 'expire', period_s=1)\nawait asyncio.sleep(0.99)  # near fire time\nawait actor.cancel_reminder(ActorId('order','99'), 'expire')\nawait asyncio.sleep(0.5)\nassert expire_callback_count == 0  # FAIL: fires once after cancel",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CLOCK_SKEW_REMINDER_DRIFT",
+        "hypothesis": "If reminder scheduling uses wall-clock time (datetime.now()) stored at set_reminder() call time and the host clock is later adjusted backward by NTP, the period calculation can yield a negative next-fire time, causing the reminder to never fire or fire immediately in a tight loop until the delta is consumed. Systems using monotonic time for scheduling but UTC for persistence also have a split-brain risk across hosts with skewed clocks.",
+        "input_fixture": "await actor.set_reminder(ActorId('sched','1'), 'tick', period_s=60)\n# simulate NTP step: move system clock back 120s\nfaker.freeze(datetime.now() - timedelta(seconds=120))\nawait asyncio.sleep(70)\nassert tick_count == 1  # FAIL: either 0 (never fires) or >1 (tight-loop)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY_PAYLOAD_INVOKE",
+        "hypothesis": "Passing an empty bytes payload (b'') to invoke() may trigger an unhandled exception in the deserialization layer (e.g. msgpack.unpack raising UnpackValueError, json.loads raising JSONDecodeError) if the runtime unconditionally deserializes before dispatching to the actor handler. This could bypass the single-writer queue entirely by crashing the dispatch loop, leaving the actor locked.",
+        "input_fixture": "result = await actor.invoke(ActorId('user','1'), 'update', b'')\n# expect: actor-level error wrapped in ToolResult; risk: dispatch loop crash + deadlock on next invoke",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ACTORID_NULL_BYTE_KEY",
+        "hypothesis": "Constructing an ActorId with a key containing null bytes ('user\\x00admin') may cause silent truncation in storage backends that treat keys as C-strings (SQLite TEXT, Redis key), resulting in two logically distinct ActorIds ('user\\x00admin' and 'user') resolving to the same physical actor. This breaks isolation: two callers believing they address different actors actually share one instance and its state.",
+        "input_fixture": "id1 = ActorId('tenant', 'alice\\x00mallory')\nid2 = ActorId('tenant', 'alice')\nawait actor.invoke(id1, 'set_secret', b'TOP_SECRET')\nresult = await actor.invoke(id2, 'get_secret', b'')\nassert result != b'TOP_SECRET'  # FAIL: same physical actor due to null truncation",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REMINDER_AMPLIFICATION_LOOP",
+        "hypothesis": "An actor whose reminder handler calls set_reminder() with a progressively shorter period (halving each fire) can create an exponential amplification loop. With no minimum-period enforcement, within minutes the reminder fires thousands of times per second, constituting a self-inflicted DoS. The runtime must enforce a floor period and detect loops, otherwise reminders do not 'fire after the configured period' \u2014 they fire out of control.",
+        "input_fixture": "class AmpActor:\n  period = 64\n  async def on_remind(self, name):\n    self.period //= 2\n    if self.period < 1: self.period = 1\n    await actor.set_reminder(self.id, name, period_s=self.period)\nawait actor.set_reminder(ActorId('AmpActor','1'), 'bomb', period_s=64)\nawait asyncio.sleep(130)  # expect 2 fires; actual: thousands",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONCURRENT_SAME_ID_DIFFERENT_TYPE",
+        "hypothesis": "ActorId equality depends on both actor_type and key. If the runtime hashes ActorId using only the key (e.g. hash(id.key)) for its lock/queue map, two ActorIds with the same key but different actor_types will collide into the same queue. This causes cross-type serialization: an invocation of ActorId('payment','42') blocks waiting for ActorId('order','42'), violating isolation and potentially deadlocking if both actors invoke each other.",
+        "input_fixture": "id_a = ActorId('payment', '42')\nid_b = ActorId('order', '42')\nasync def slow_payment(): await actor.invoke(id_a, 'charge', b'')  # sleeps 2s internally\nasync def fast_order(): await actor.invoke(id_b, 'status', b'')\nt0 = time.monotonic()\nawait asyncio.gather(slow_payment(), fast_order())\nassert time.monotonic() - t0 < 1.0  # FAIL if hash collision serializes them",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REMINDER_TTL_ZERO",
+        "hypothesis": "Passing ttl_s=0 to set_reminder() creates a reminder that should expire immediately (zero time-to-live). If the runtime does not validate ttl_s > 0 before persisting, the reminder is stored then immediately marked expired, but may still fire once before the expiry check runs. Alternatively, a negative ttl_s could wrap around to a very large unsigned value, making the reminder never expire.",
+        "input_fixture": "await actor.set_reminder(ActorId('task','1'), 'one-shot', period_s=5, ttl_s=0)\nawait asyncio.sleep(6)\nassert fire_count == 0  # FAIL: fires once despite zero TTL\n\nawait actor.set_reminder(ActorId('task','2'), 'forever', period_s=5, ttl_s=-1)\nawait asyncio.sleep(30)\nassert fire_count < 10  # FAIL: -1 wraps to maxuint, reminder never expires",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-STATE_ESCAPE_DIRECT_STORE_REFLECTION",
+        "hypothesis": "If the runtime exposes a debug or health endpoint (e.g. GET /actors/{type}/{key}/state) that reads actor state directly from the backing store without going through invoke(), callers can bypass the invoke() contract entirely. Even if undocumented, such an endpoint violates the invariant that state is NEVER accessible except through invoke().",
+        "input_fixture": "await actor.invoke(ActorId('wallet','u1'), 'deposit', b'{\"amount\":1000}')\nresponse = httpx.get('http://runtime-host/debug/actors/wallet/u1/state')\nassert response.status_code == 404  # FAIL: returns {\"balance\": 1000} directly from store",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-FAILOVER_IN_FLIGHT_DOUBLE_EXECUTE",
+        "hypothesis": "When the actor host fails mid-invoke() (after the actor has mutated state but before returning the response), the framework may retry the invocation on a new host. If the actor's state mutation was already persisted (partial commit), the retry causes the method to execute twice on durable state. The caller receives two side effects for one call, and the at-least-once retry model breaks the single-writer serial guarantee for mutation operations.",
+        "input_fixture": "# Actor 'transfer' debits src and credits dst atomically\nid = ActorId('transfer','tx-99')\n# inject fault: kill host after debit written, before response sent\nfault_injector.kill_after_write()\nresult = await actor.invoke(id, 'execute', b'{\"src\":\"A\",\"dst\":\"B\",\"amt\":100}')\n# check: src debited once, dst credited once\nassert ledger['A'] == 900 and ledger['B'] == 1100  # FAIL: double debit/credit",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-INVOKE-RACE",
+        "hypothesis": "Two simultaneous invoke() calls with same ActorId proceed in parallel instead of queueing, violating single-writer invariant",
+        "input_fixture": "Thread 1: invoke(ActorId('counter','global'), 'increment', b'') [sleeps 1s in handler]\nThread 2: invoke(ActorId('counter','global'), 'read', b'') [should queue, not run concurrently]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INVOKE-QUEUE-ORDERING-LOSS",
+        "hypothesis": "Three rapid invokes (A,B,C) on same actor; first invoke throws exception. B and C execute out of order or B is skipped entirely",
+        "input_fixture": "invoke(id, 'fail', b'') \u2192 throws\ninvoke(id, 'op_B', b'state') \u2192 should be second\ninvoke(id, 'op_C', b'') \u2192 should be third but executes second",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INVOKE-NULL-METHOD-DISPATCH",
+        "hypothesis": "Passing empty string or null method name bypasses method routing, invoking wildcard handler or causing segfault",
+        "input_fixture": "invoke(ActorId('service','1'), '', b'payload')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INVOKE-GIGABYTE-PAYLOAD-OVERFLOW",
+        "hypothesis": "Payload size exceeds int32 range (2^31-1 bytes). Integer overflow in size field causes buffer overrun or silent truncation",
+        "input_fixture": "invoke(ActorId('blob','big'), 'store', bytes(2**31 + 1024))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-STATE-DIRECT-BACKING-STORE-READ",
+        "hypothesis": "Caller accesses actor state directly from persistence layer (database/cache) instead of via invoke(), reading stale/intermediate data",
+        "input_fixture": "Thread 1: invoke(id, 'update', b'new_val') [in progress]\nThread 2: db.get(f'actor:{id}') [bypasses invoke] \u2192 returns old value before commit",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ACTOR-ID-EQUALITY-TYPE-CONFUSION",
+        "hypothesis": "ActorId(type='user', key='42') and ActorId(type='product', key='42') treated as same actor due to key-only hash collision",
+        "input_fixture": "a1 = ActorId('user', '42')\na2 = ActorId('product', '42')\ninvoke(a1, 'set', b'data_A')\ninvoke(a2, 'get', b'') \u2192 corrupted state merge",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-STATE-MUTATION-OBSERVATION",
+        "hypothesis": "One invoke mid-execution mutates internal state, concurrent query invoke reads half-applied mutation from shared memory without serialization",
+        "input_fixture": "invoke(id, 'complex_op', b'') updates [field_a, field_b, field_c] non-atomically\ninvoke(id, 'read', b'') observes field_a=new but field_b=old",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REMINDER-CLOCK-SKEW-BACKWARD",
+        "hypothesis": "System clock moved backward 1 hour after reminder set. Reminder scheduled for +3600s now appears to have 5400s left or fires immediately",
+        "input_fixture": "set_reminder(ActorId('job','1'), 'run', period_s=3600, ttl_s=None)\n[system.clock -= 3600]\nExpect reminder at +3600s, but now at -3600s. Does it fire or hang?",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REMINDER-TTL-EXPIRES-BEFORE-PERIOD",
+        "hypothesis": "Setting reminder with period_s > ttl_s means TTL expires before period completes. Message fires after TTL expiry or never fires",
+        "input_fixture": "set_reminder(ActorId('alert','x'), 'notify', period_s=7200, ttl_s=300)\n[wait 301s] TTL expired, but period not reached. Does orphaned reminder fire?",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REMINDER-ZERO-PERIOD-DOS",
+        "hypothesis": "period_s=0 causes reminder to fire every tick or immediately requeue, creating denial-of-service loop in reminder system",
+        "input_fixture": "set_reminder(ActorId('spam','1'), 'fire', period_s=0, ttl_s=10)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REMINDER-NEGATIVE-PERIOD-UNDERFLOW",
+        "hypothesis": "Negative period_s (e.g., -86400) wraps to large unsigned int or causes integer underflow, scheduling reminder for year 2099",
+        "input_fixture": "set_reminder(ActorId('neg','test'), 'delayed', period_s=-86400)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REMINDER-HOST-FAILOVER-LOSS",
+        "hypothesis": "Reminder set on host1, host1 crashes before persisting reminder. Actor restarts on host2. Reminder never fires because lost in crash",
+        "input_fixture": "Host1: set_reminder(id, 'cleanup', period_s=300) [in-memory only]\nHost1 crashes\nHost2: Actor boots, reminder is gone, never fires",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TIMER-TASK-SURVIVES-DEACTIVATION",
+        "hypothesis": "Actor handler spawns background task (asyncio.create_task), actor deactivates. Background task continues running on same host, violating timer lifecycle",
+        "input_fixture": "invoke(...): handler spawns asyncio.create_task(async_work(60))\nActor deactivates\n60s later: async_work() fires despite actor inactive",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-LOCATION-HOSTNAME-LEAK-IN-RESPONSE",
+        "hypothesis": "invoke() response includes {state, metadata: {host: 'worker-42', az: 'us-east-1a'}}. Caller now knows physical placement, defeating location transparency",
+        "input_fixture": "invoke(ActorId('api','user123'), 'status', b'') \u2192 {status: 'ok', _host: 'node-7', _shard: 'shard-3'}",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-FAILOVER-IN-FLIGHT-STATE-LOSS",
+        "hypothesis": "Actor on host1 receives invoke, modifies state in-memory, crashes before flushing. Host2 restarts actor from stale snapshot. In-flight state lost",
+        "input_fixture": "Host1: invoke(id, 'transfer', b'move_100_from_A_to_B') [credits deducted, not flushed]\nHost1 OOM crash\nHost2: invoke(id, 'balance', b'') \u2192 A has old balance, B never got credits",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-CANCEL-SET-REMINDER-RACE",
+        "hypothesis": "cancel_reminder(id, 'r1') executes concurrently with set_reminder(id, 'r1'). Reminder list becomes corrupted or reminder fires twice",
+        "input_fixture": "Thread A: set_reminder(id, 'cleanup', 60)\nThread B: cancel_reminder(id, 'cleanup')\nRace: reminder list has stale ptr or double-inserted entry",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REMINDER-CLOCK-JUMP-FORWARD-MULTIPLE-FIR",
+        "hypothesis": "Reminder set for period=60s. System clock jumps +180s. Reminder fires 3 times (at 60s, 120s, 180s) or crashes trying to backfill",
+        "input_fixture": "set_reminder(id, 'tick', 60)\n[clock += 180]\nreminder handler executes 1, 2, or 3 times non-deterministically",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ACTOR-DOUBLE-ACTIVATION-RACE",
+        "hypothesis": "Two hosts simultaneously try to activate the same ActorId from deactivated state. Both become active, breaking single-writer invariant",
+        "input_fixture": "Host1: activate(id) [acquires lock]\nHost2: activate(id) [acquires same lock due to race] [both think they own it]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INVOKE-EXCEPTION-QUEUE-BYPASS",
+        "hypothesis": "First invoke throws uncaught exception and deadlocks queue processing. Second invoke in queue never executes or entire actor becomes unresponsive",
+        "input_fixture": "invoke(id, 'crash', b'') \u2192 raises SystemExit\ninvoke(id, 'next', b'') \u2192 never runs, times out",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "actor.invoke.enqueued",
+        "required_attributes": [
+          "actor_type",
+          "key",
+          "method"
+        ]
+      },
+      {
+        "event_name": "actor.invoke.started",
+        "required_attributes": [
+          "actor_type",
+          "key",
+          "method"
+        ]
+      },
+      {
+        "event_name": "actor.invoke.completed",
+        "required_attributes": [
+          "actor_type",
+          "key",
+          "method",
+          "duration_ms",
+          "outcome"
+        ]
+      },
+      {
+        "event_name": "actor.reminder.fired",
+        "required_attributes": [
+          "actor_type",
+          "key",
+          "reminder"
+        ]
+      },
+      {
+        "event_name": "actor.activation.migrated",
+        "required_attributes": [
+          "actor_type",
+          "key",
+          "from_host",
+          "to_host"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "actor.invoke.calls",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 1000,
+        "label_keys": [
+          "actor_type",
+          "method",
+          "outcome"
+        ]
+      },
+      {
+        "name": "actor.invoke.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 1000,
+        "label_keys": [
+          "actor_type",
+          "method"
+        ]
+      },
+      {
+        "name": "actor.queue.depth",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "actor_type"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "actor.invoke",
+        "required_attributes": [
+          "actor.type",
+          "actor.key",
+          "actor.method"
+        ]
+      },
+      {
+        "operation_name": "actor.reminder.fire",
+        "required_attributes": [
+          "actor.type",
+          "actor.key",
+          "reminder.name"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol signatures match catalog verbatim (invoke/set_reminder/cancel_reminder with id, method, payload, period_s, ttl_s). ActorId is frozen dataclass as specified. runtime_checkable Protocol matches."
+      },
+      {
+        "axis": "completeness",
+        "score": 8,
+        "rationale": "All three Protocol methods implemented plus register/reinstate/deactivate_all for lifecycle and inspection hooks for tests. Reminder persistence is in-memory only but spec acknowledges this as reference impl."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Single VirtualActorError taxonomy; every raise cites specific VACT-INV-NN id with context (actual vs expected type, offending value). Validation covers empty strings, bad payload types, missing methods, non-bytes return, bad period_s/ttl_s."
+      },
+      {
+        "axis": "composability",
+        "score": 8,
+        "rationale": "Protocol + handler table allows interceptor wrapping around invoke per extension_contract. MethodHandler type alias exported. Lock-per-ActorId enables parallel distinct actors. No global state beyond runtime instance."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Zero I/O at import, lazy structure, lock released via async with on handler exceptions. Reference runtime is explicitly in-memory (spec-acknowledged); real deployment needs persistent reminder store, but that's documented not hidden."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace/name matches extras.VirtualActor. api_signature reproduced exactly (ActorId fields, Protocol methods, defaults). All 5 invariants encoded with VACT-INV-0N ids. __all__ exports primitive surface cleanly."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "API surface says 'See VirtualActor.contract.json' but gives no quick-start on finding or reading that file",
+          "'Placement is the runtime's job' is used before 'placement' is ever defined \u2014 needs a one-liner",
+          "Thread/async-safety section mentions asyncio.Lock internals that a junior won't know to ignore vs. act on"
+        ],
+        "rewrite_suggestion": "Add a 'Getting started in 3 steps' subsection before API surface: (1) import + instantiate the runtime, (2) register a handler, (3) invoke as shown in the usage snippet. Define 'placement' inline on first use ('placement = which machine runs this actor \u2014 the runtime decides, not you')."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "Extension contract says 'Protocol surface is v1' with no stability guarantees or migration path for v2",
+          "'Real deployment swaps in a persistent store for reminders' names no supported backends (Redis? Postgres? Dapr state store?)",
+          "Interceptor API for cross-cutting concerns is mentioned but has no type signature or example"
+        ],
+        "rewrite_suggestion": "Add a 'Persistence backends' table (backend, maturity, link) and expand the extension contract with a minimal interceptor signature. Add a compatibility blurb: 'v1 is stable; breaking changes will bump the major version and be announced in CHANGELOG.md'."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "'Callers MUST apply authz in the handler' \u2014 no example or interface for how authz context reaches the handler",
+          "Reminder payload security is mentioned for names but not for the reminder payload body itself",
+          "No threat model section: what is the trust boundary between caller, runtime, and actor?"
+        ],
+        "rewrite_suggestion": "Add a 'Trust boundary' diagram (one paragraph or ASCII): caller -> transport -> runtime -> handler. Extend the reminder callout to cover both name and payload. Provide a one-liner showing how authz context (e.g., a JWT claim) should be threaded into the payload and validated inside the handler."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "'Sustained depth > 1 indicates a hot key' gives no time window \u2014 depth > 1 for 10 seconds vs. 10 minutes are very different alerts",
+          "No runbook link or remediation steps for common failure modes (actor crash loop, reminder storm, reminder leak)",
+          "Reminder count 'unbounded growth is a leak symptom' with no suggested alert threshold or GC mechanism"
+        ],
+        "rewrite_suggestion": "Add a 'Runbook quick-reference' table: symptom | metric | threshold | action. Example rows: hot key (queue.depth p95 > 5 for 60 s \u2192 shard key space), reminder leak (reminder.count > N and not decreasing \u2192 check cancel paths). Define 'sustained' as a concrete window (e.g., p95 over a 5-minute window)."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "No capacity or scale numbers \u2014 PMs need 'supports N actors, M invocations/sec' to set roadmap expectations",
+          "Alternatives section is too technical ('consumer-group rebuild') \u2014 needs business-level framing of the tradeoff",
+          "'asyncio' leaks into the thread-safety section; PM readers will skip it but may ask about concurrency limits without context"
+        ],
+        "rewrite_suggestion": "Add a one-paragraph 'Scale envelope' (e.g., 'tested up to X concurrent actor types, Y invocations/sec per actor'). Rewrite the alternatives rejection in plain English: 'Database locks stop working when you add servers; message queues recreate this feature without the built-in scheduler \u2014 both were rejected because they shift operational complexity to teams.' Move asyncio detail to a collapsible 'Implementation notes' subsection."
+      }
+    ]
+  }
+}

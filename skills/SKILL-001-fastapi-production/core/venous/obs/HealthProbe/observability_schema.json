@@ -1,0 +1,68 @@
+{
+  "logs": [
+    {
+      "event_name": "healthprobe.liveness.checked",
+      "required_attributes": ["probe_name", "status", "duration_ms"]
+    },
+    {
+      "event_name": "healthprobe.readiness.checked",
+      "required_attributes": ["probe_name", "status", "dependency_count"]
+    },
+    {
+      "event_name": "healthprobe.dependency.down",
+      "required_attributes": ["probe_name", "dependency_name", "requirement"]
+    },
+    {
+      "event_name": "healthprobe.debounce.held",
+      "required_attributes": ["probe_name", "debounce_s", "window_remaining_s"]
+    },
+    {
+      "event_name": "healthprobe.timeout",
+      "required_attributes": ["probe_name", "kind", "timeout_s"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "healthprobe.checks.total",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 200,
+      "label_keys": ["probe", "kind", "status"]
+    },
+    {
+      "name": "healthprobe.check.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 400,
+      "label_keys": ["probe", "kind"]
+    },
+    {
+      "name": "healthprobe.dependencies.registered",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["probe"]
+    },
+    {
+      "name": "healthprobe.transitions.total",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 100,
+      "label_keys": ["probe", "from", "to"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "healthprobe.liveness",
+      "required_attributes": ["probe.name"]
+    },
+    {
+      "operation_name": "healthprobe.readiness",
+      "required_attributes": ["probe.name", "dependencies.count"]
+    },
+    {
+      "operation_name": "healthprobe.dependency.check",
+      "required_attributes": ["dependency.name", "dependency.requirement"]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "invariant_bindings": [
+    {"invariant_id": "BNQ_INV_01", "invariant_text": "An incident confirmed as affecting personal data MUST have a notify_authority call within 72 hours of confirmed_at; the queue SHALL emit a breach-of-SLA alert at T-24h.", "confirms_test": "test_inv_sla_72h_confirms", "prevents_test": "test_inv_sla_72h_prevents", "under_failure_test": "test_inv_sla_72h_under_failure"},
+    {"invariant_id": "BNQ_INV_02", "invariant_text": "open_incident MUST be callable from any service with write access to the queue; there is NEVER a gating step that delays detection recording.", "confirms_test": "test_inv_open_non_gating_confirms", "prevents_test": "test_inv_open_non_gating_prevents", "under_failure_test": "test_inv_open_non_gating_under_failure"},
+    {"invariant_id": "BNQ_INV_03", "invariant_text": "Every state transition (open, confirm, notify, close) MUST emit a TamperEvidentAuditLog entry.", "confirms_test": "test_inv_audit_lifecycle_confirms", "prevents_test": "test_inv_audit_lifecycle_prevents", "under_failure_test": "test_inv_audit_lifecycle_under_failure"},
+    {"invariant_id": "BNQ_INV_04", "invariant_text": "data_classes on confirm MUST be a non-empty tuple of PiiClassification-registered classes; empty tuples SHALL raise.", "confirms_test": "test_inv_data_classes_confirms", "prevents_test": "test_inv_data_classes_prevents", "under_failure_test": "test_inv_data_classes_under_failure"},
+    {"invariant_id": "BNQ_INV_05", "invariant_text": "An incident CANNOT close without either a notify_authority entry or an explicit 'no_notification_required' outcome with a legal_basis field.", "confirms_test": "test_inv_close_gated_confirms", "prevents_test": "test_inv_close_gated_prevents", "under_failure_test": "test_inv_close_gated_under_failure"}
+  ]
+}

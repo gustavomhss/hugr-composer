@@ -1,0 +1,790 @@
+{
+  "name": "Aggregate",
+  "namespace": "data",
+  "maturity": "battle_tested",
+  "builder_agent_id": 3,
+  "catalog_entry_sha256": "8861f2d554d3c0b3d42a73028aec266145a61126bf96e2342a2d21c8ad0ddc38",
+  "files": [
+    {
+      "path": "data/Aggregate/Aggregate.cfg",
+      "sha256": "26953e2dc900bbd73b09b924723492768f31e6b801ade5e2f1156cb1867f63c8",
+      "size_bytes": 133,
+      "kind": "test"
+    },
+    {
+      "path": "data/Aggregate/Aggregate.contract.json",
+      "sha256": "d2bec970827807530a2317a8a44a6f7907f63ad4b38def8dc837c9498f15bff4",
+      "size_bytes": 2441,
+      "kind": "contract_json"
+    },
+    {
+      "path": "data/Aggregate/Aggregate.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "data/Aggregate/Aggregate.md",
+      "sha256": "79033ab78fe1430c15e4e571663593c62a91ffbb00b08b34db8c4b2086d7ad77",
+      "size_bytes": 6082,
+      "kind": "spec_md"
+    },
+    {
+      "path": "data/Aggregate/Aggregate.py",
+      "sha256": "050aaed581ce74fd1f749ae11be8ff671df0eeba37c87fb508775f9d983446fe",
+      "size_bytes": 12351,
+      "kind": "impl"
+    },
+    {
+      "path": "data/Aggregate/Aggregate.tla",
+      "sha256": "82f992fad05791e728c87c1793fbe7e7bfdcf052d4e9327acc4aa67e876e1948",
+      "size_bytes": 1492,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "data/Aggregate/behavioral_Aggregate.py",
+      "sha256": "1f81634866d610c7c9cd25a981ca838925cad95c19fff28cde2369b466736360",
+      "size_bytes": 3410,
+      "kind": "behavioral"
+    },
+    {
+      "path": "data/Aggregate/chaos_Aggregate.py",
+      "sha256": "07cff3c2ff026658c508bcea5e69fec24757393584f0e761e0eacc92c61b23c1",
+      "size_bytes": 3953,
+      "kind": "chaos"
+    },
+    {
+      "path": "data/Aggregate/concurrent_Aggregate.py",
+      "sha256": "60280b290ff48eeb32fa32d9bea30966d380f3a9c4c7288343cde8a935ed7307",
+      "size_bytes": 3731,
+      "kind": "concurrent"
+    },
+    {
+      "path": "data/Aggregate/dashboard.json",
+      "sha256": "398ae8bbb15dee1337e9416a1f5abfb8252bb51c518259a1c313eebe29616443",
+      "size_bytes": 1093,
+      "kind": "dashboard"
+    },
+    {
+      "path": "data/Aggregate/invariant_bindings.json",
+      "sha256": "3512e640b8a968db863b5a8b997482c48eba4504931a30e570037e5574de14dd",
+      "size_bytes": 1990,
+      "kind": "test"
+    },
+    {
+      "path": "data/Aggregate/metamorphic_Aggregate.py",
+      "sha256": "7b2faa10e25194043455d14e753f971e48f1f0c72b06ead11f76c88ee97e4c27",
+      "size_bytes": 2790,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "data/Aggregate/observability_Aggregate.py",
+      "sha256": "d57a89e62dca1a7646bbf17e3defe63d6ac85e848495ffce4765d6e0e0ade650",
+      "size_bytes": 1785,
+      "kind": "observability"
+    },
+    {
+      "path": "data/Aggregate/observability_schema.json",
+      "sha256": "c4f2e05039a21031de4ddc60e7158b9c3333705abfef834b97f9e0d3205c16ad",
+      "size_bytes": 1647,
+      "kind": "observability"
+    },
+    {
+      "path": "data/Aggregate/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "data/Aggregate/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "data/Aggregate/state_machine_Aggregate.py",
+      "sha256": "39bab24b1c7dd53f7a2cf93c5143af2d71775f772685a230889e4e1bfc5e8708",
+      "size_bytes": 2215,
+      "kind": "state_machine"
+    },
+    {
+      "path": "data/Aggregate/test_Aggregate.py",
+      "sha256": "e96e05c54153189cc55844da30d99623b7d50722d33ab07909cea16d4c3d3f59",
+      "size_bytes": 7314,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "AGG_INV_01",
+      "invariant_text": "Only the aggregate root MUST be referenced from outside the aggregate; external references to internal children are FORBIDDEN.",
+      "confirms_test": "test_inv_root_only_access_confirms",
+      "prevents_test": "test_inv_root_only_access_prevents",
+      "under_failure_test": "test_inv_root_only_access_under_failure"
+    },
+    {
+      "invariant_id": "AGG_INV_02",
+      "invariant_text": "A single transaction MUST modify at most one aggregate instance; cross-aggregate changes SHALL be coordinated via domain events.",
+      "confirms_test": "test_inv_single_aggregate_tx_confirms",
+      "prevents_test": "test_inv_single_aggregate_tx_prevents",
+      "under_failure_test": "test_inv_single_aggregate_tx_under_failure"
+    },
+    {
+      "invariant_id": "AGG_INV_03",
+      "invariant_text": "All invariants defined by the root MUST hold at the end of every public method; intermediate illegal states CANNOT be exposed.",
+      "confirms_test": "test_inv_root_invariants_confirms",
+      "prevents_test": "test_inv_root_invariants_prevents",
+      "under_failure_test": "test_inv_root_invariants_under_failure"
+    },
+    {
+      "invariant_id": "AGG_INV_04",
+      "invariant_text": "The aggregate version NEVER decreases and MUST increment on every state-changing operation for optimistic concurrency.",
+      "confirms_test": "test_inv_version_monotonic_confirms",
+      "prevents_test": "test_inv_version_monotonic_prevents",
+      "under_failure_test": "test_inv_version_monotonic_under_failure"
+    },
+    {
+      "invariant_id": "AGG_INV_05",
+      "invariant_text": "External collaborators SHALL reference other aggregates by identifier only, NEVER by object reference.",
+      "confirms_test": "test_inv_id_only_reference_confirms",
+      "prevents_test": "test_inv_id_only_reference_prevents",
+      "under_failure_test": "test_inv_id_only_reference_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 1320,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 3965,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 3271,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 20971,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 3125,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 3130,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 85646,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "42 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 6808,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 4813,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 80526,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 215544,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CHILD-LEAK-REF",
+        "hypothesis": "Caller obtains a reference to an internal child entity via a getter returning the live object, then mutates it outside the root, bypassing invariant checks and leaving the aggregate in an illegal state.",
+        "input_fixture": "order = Order(id=1); item = order.get_line_item(0); item.quantity = -5  # mutates child directly, skipping Order.validate()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CROSS-AGG-TX",
+        "hypothesis": "A single repository.save() call persists two aggregate instances in one DB transaction, violating the one-aggregate-per-transaction rule and causing lock contention plus stale reads across bounded contexts.",
+        "input_fixture": "with uow: uow.orders.save(order_a); uow.orders.save(order_b); uow.commit()  # two roots, one tx",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-VERSION-OVERFLOW",
+        "hypothesis": "version is a fixed-width int (e.g., int32 in storage); after 2^31-1 state changes it overflows/wraps to negative, violating the monotonic-never-decreases invariant and breaking optimistic concurrency.",
+        "input_fixture": "for _ in range(2**31): agg.apply(NoopEvent())  # version wraps to -2147483648",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-VERSION-NO-INC-ON-FAIL",
+        "hypothesis": "A public method raises mid-execution after partial mutation; the rollback restores state but leaves version incremented (or vice versa), desynchronizing optimistic concurrency from actual state.",
+        "input_fixture": "try: order.add_item(bad_item_triggering_validation_error) except: pass; assert order.version == original  # fails",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CONCURRENT-PULL-EVENTS",
+        "hypothesis": "Two threads call pull_events() concurrently; the iterable is consumed twice or events are lost due to non-atomic clear, causing duplicate dispatch or silent event drop (replay/amplification).",
+        "input_fixture": "Thread(target=lambda: list(agg.pull_events())).start(); Thread(target=lambda: list(agg.pull_events())).start()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PULL-EVENTS-LAZY-MUTATE",
+        "hypothesis": "pull_events() returns a lazy generator bound to internal list; caller iterates while another method appends new events, triggering RuntimeError or exposing intermediate illegal states mid-iteration.",
+        "input_fixture": "gen = agg.pull_events(); agg.do_something(); next(gen)  # mutation during iteration",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ID-MUTABLE",
+        "hypothesis": "The id property returns a mutable object (list, dict, custom with __eq__ but mutable hash); caller mutates it, corrupting identity maps and repository lookups, enabling aggregate impersonation.",
+        "input_fixture": "agg_id = agg.id  # returns list [1,2]; agg_id.append(3); repo.get(agg_id)  # now misses",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-ID",
+        "hypothesis": "Aggregate constructed with id=None or empty string bypasses identity checks; two such aggregates compare equal and overwrite each other in identity map, violating reference-by-id rule.",
+        "input_fixture": "a = Order(id=None); b = Order(id=None); identity_map[a.id] = a; identity_map[b.id] = b  # collision",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-OBJECT-REF-OTHER-AGG",
+        "hypothesis": "Aggregate A stores a direct object reference to Aggregate B (e.g., self.customer = customer_obj) instead of CustomerId; B is mutated, A's invariants silently break without version bump.",
+        "input_fixture": "order = Order(customer=customer_instance); customer_instance.deactivate(); order.place()  # uses stale invariant",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PARTIAL-STATE-EXPOSED",
+        "hypothesis": "A public method mutates field X, then calls self.notify() (which re-enters via callback/event handler reading state) before validating final invariants \u2014 external code observes illegal intermediate state.",
+        "input_fixture": "agg.transfer(amount=100)  # debits src, emits event synchronously, handler reads agg before credit applied",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PICKLE-REPLAY",
+        "hypothesis": "Aggregate is deserialized from pickle/JSON with a version LOWER than a previously persisted one (replay of stale snapshot); no check prevents loading, violating monotonic-version invariant across process restarts.",
+        "input_fixture": "old_snapshot = pickle.dumps(agg_v2); agg.apply(...); agg.apply(...)  # v4; loaded = pickle.loads(old_snapshot)  # v2 resurrected",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EVENTS-NOT-CLEARED",
+        "hypothesis": "pull_events() returns events but doesn't clear internal buffer (or clears only on full consumption); subsequent pull_events() re-emits same events, causing amplification/replay downstream.",
+        "input_fixture": "list(agg.pull_events())[:1]  # partial consume via islice; list(agg.pull_events())  # same events again",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED-ID-TYPE",
+        "hypothesis": "Generic ID TypeVar unenforced at runtime; passing a dict or unhashable type as id breaks identity_map[agg.id] lookups, raising TypeError deep in repository and leaving partial writes.",
+        "input_fixture": "Order(id={'composite': [1,2]})  # unhashable; repo.save(order) succeeds; repo.get({'composite':[1,2]}) raises",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-VERSION-CLOCK-SKEW",
+        "hypothesis": "Version derived from time.time_ns() instead of monotonic counter; NTP adjustment or clock skew between replicas causes two sequential writes to produce equal or decreasing versions, breaking optimistic concurrency checks.",
+        "input_fixture": "with freeze_time t1: agg.update(); with freeze_time t0 (t0<t1): agg.update()  # version decreases",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CHILD-VIA-ITER",
+        "hypothesis": "Aggregate exposes __iter__ or a property returning the live internal list of children; caller does `list(agg)[0].field = X` obtaining live refs, bypassing root-only mutation rule.",
+        "input_fixture": "for child in agg: child.price = -1  # live refs via iteration",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CHILD_REF_LEAK_RETURN",
+        "hypothesis": "A public method on the aggregate root returns a direct reference to an internal child entity (e.g., a mutable OrderLine object). External callers can then mutate the child's state without going through the root, bypassing all invariant checks and leaving the aggregate in an inconsistent state without a version bump.",
+        "input_fixture": "order = Order(id=OrderId('o1'), lines=[OrderLine(id='l1', qty=5)])\nline = order.get_line('l1')  # returns the live object, not a copy\nline.qty = 999  # mutates internal state, bypassing root, no version increment",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CHILD_REF_LEAK_EVENT",
+        "hypothesis": "A domain event emitted via pull_events() carries a direct object reference to an internal child entity instead of a value-object snapshot or identifier. The event consumer holds a live reference into the aggregate boundary, allowing post-event mutation of internals without the root's knowledge.",
+        "input_fixture": "order = Order(id=OrderId('o1'), lines=[OrderLine(id='l1', qty=5)])\norder.add_line(OrderLine(id='l2', qty=2))\nevents = list(order.pull_events())\ninternal_line = events[0].line  # live reference, not a copy\ninternal_line.qty = -1  # corrupts aggregate internals post-event",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CROSS_AGG_SAME_TX",
+        "hypothesis": "A unit-of-work / repository implementation flushes two dirty aggregates in a single DB transaction. If one aggregate's invariant fails mid-flush, partial writes from the first aggregate may already be committed depending on isolation level, violating the one-aggregate-per-transaction rule and producing split-brain state.",
+        "input_fixture": "with uow:\n    order.confirm()   # marks order dirty\n    inventory.reserve(sku, qty)  # marks inventory dirty\n    uow.commit()  # flush both in same tx \u2014 violates INV-2",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-VERSION_NO_INCREMENT",
+        "hypothesis": "A state-changing method that only modifies a nested value object (e.g., updating a shipping address) forgets to call self._increment_version(). The version stays the same. A concurrent writer with the same optimistic-lock version will silently overwrite the address change, producing a lost-update anomaly.",
+        "input_fixture": "order = Order(id=OrderId('o1'), version=3)\norder.update_shipping_address(Address('123 Main St'))\nassert order.version == 3  # version unchanged \u2014 lost update window open",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-VERSION_REPLAY_DECREMENT",
+        "hypothesis": "An event-sourced aggregate that replays historical events to rebuild state applies a snapshot with version=N then replays events starting from an earlier version. If the replay loop subtracts rather than adds (off-by-one in the reconstructor), version can decrease below its snapshot value, breaking the monotonicity invariant and corrupting optimistic concurrency guards.",
+        "input_fixture": "agg = Order.from_snapshot(snapshot_version=10)\nfor event in event_store.load_from(stream_id, from_version=10):\n    agg._apply(event)  # bug: apply() does version -= 1 instead of += 1\nassert agg.version < 10  # version decreased \u2014 invariant violated",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INTERMEDIATE_STATE_EXPOSED",
+        "hypothesis": "A public method performs a multi-step operation (e.g., remove item then recalculate totals). If the method raises an exception after step 1 but before step 2, and the exception is caught by a caller who retries only step 2, the aggregate is left in an intermediate state (item removed, totals stale) that would violate invariants if pull_events() is called at that point.",
+        "input_fixture": "try:\n    order.remove_and_recalculate(line_id='l1')  # crashes after remove, before recalc\nexcept:\n    pass\nevents = list(order.pull_events())  # sees OrderLineRemoved but no TotalUpdated\norder.confirm()  # proceeds on stale/invalid total \u2014 invariant not enforced",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EXTERNAL_OBJ_REF_COLLAB",
+        "hypothesis": "An aggregate stores a direct Python object reference to another aggregate (e.g., self._customer = customer_aggregate) instead of storing only the customer's identifier. This creates an invisible cross-boundary coupling: the embedded aggregate can be mutated externally, and serialization frameworks (pickle, JSON) will deep-copy the foreign aggregate into the owning aggregate's snapshot, causing data duplication and divergence.",
+        "input_fixture": "class Order:\n    def __init__(self, customer: Customer):  # stores object ref, not CustomerId\n        self._customer = customer  # FORBIDDEN \u2014 should be self._customer_id = customer.id\n\ncustomer.deactivate()  # mutates state Order doesn't know about\norder.confirm()  # reads self._customer.is_active \u2014 stale snapshot vs live object",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PULL_EVENTS_REPLAY",
+        "hypothesis": "pull_events() is not idempotent: calling it twice without an intervening state change returns the same events both times (events list is not cleared after first pull). A downstream consumer calling pull_events() twice will process every domain event twice, triggering duplicate side effects (double emails, double charges) while the aggregate version only incremented once.",
+        "input_fixture": "order.confirm()\nevents_1 = list(order.pull_events())\nevents_2 = list(order.pull_events())  # should be empty \u2014 is it?\nassert events_2 == []  # fails if pull_events doesn't clear the buffer",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-VERSION_INTEGER_OVERFLOW",
+        "hypothesis": "In a high-throughput aggregate (e.g., a ledger entry updated millions of times), the version counter is stored as a 32-bit signed integer. After 2^31 - 1 updates the counter overflows to a negative value, breaking the monotonicity invariant. Optimistic concurrency checks using version == expected_version will now falsely succeed or fail unpredictably.",
+        "input_fixture": "import ctypes\nversion = ctypes.c_int32(2**31 - 1).value\nversion += 1  # overflows to -2147483648 in a 32-bit store\nassert version > 0  # fails \u2014 version decreased from max to negative",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONCURRENT_VERSION_RACE",
+        "hypothesis": "Two concurrent threads both read version=5 of the same aggregate, both apply a state change and both attempt to persist with expected_version=5. Without row-level locking or compare-and-swap, both writes succeed and the second write silently overwrites the first, even though the optimistic concurrency check was supposed to prevent this. Version ends at 6 instead of 7 \u2014 one operation lost.",
+        "input_fixture": "# Thread A and Thread B both load order with version=5\n# Thread A: order.add_line(line_a) \u2192 version becomes 6, persist\n# Thread B: order.add_line(line_b) \u2192 also expects version=5, DB has 6\n# If check is 'SELECT ... WHERE version >= expected' instead of '=', both succeed\n# Result: version=6 with only one line added \u2014 update lost",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DRY_RUN_VERSION_BUMP",
+        "hypothesis": "A dry_run=True mode intended for validation-only executes the full business logic path including the version increment, then discards the result without persisting. If the aggregate object is reused after a dry run, its in-memory version is now N+1 but the persisted version is still N, causing the next real save to fail with an optimistic concurrency conflict \u2014 or worse, to silently skip the conflict check.",
+        "input_fixture": "order.confirm(dry_run=True)  # increments self._version in memory\nassert order.version == initial_version + 1  # bumped despite no real change\norder.confirm()  # real confirm \u2014 now persists with version=initial+2 but DB has initial",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DOMAIN_EVENT_CROSS_AGG_SYNC",
+        "hypothesis": "A domain event handler that processes OrderConfirmed synchronously within the same DB transaction calls inventory.reserve() on a second aggregate. This collapses the event-driven coordination into a synchronous cross-aggregate modification in one transaction, violating INV-2 even though the code superficially uses events. The real enforcement boundary is the transaction, not the event bus.",
+        "input_fixture": "@event_handler(OrderConfirmed)\ndef on_order_confirmed(event, uow):  # called INSIDE the original commit transaction\n    inventory = uow.inventories.get(event.sku)\n    inventory.reserve(event.qty)  # second aggregate modified in same tx \u2014 INV-2 violated\n    uow.commit()",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-MUTABLE_DEFAULT_CHILD_SHARED",
+        "hypothesis": "An aggregate's __init__ uses a mutable default argument for its internal child collection (e.g., def __init__(self, lines=[]). All instances created without an explicit lines argument share the same list object. Appending to one aggregate's internal list appends to all instances, silently cross-contaminating aggregate boundaries and breaking encapsulation at class-level.",
+        "input_fixture": "class Order:\n    def __init__(self, id, lines=[]):  # mutable default \u2014 shared across instances\n        self._lines = lines\n\no1 = Order(id='o1')\no2 = Order(id='o2')\no1._lines.append('line')  # also mutates o2._lines \u2014 aggregate boundary broken",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ROOT-CHILD-ESCAPE",
+        "hypothesis": "Public method returns direct reference to internal child entity, allowing caller to mutate it outside transaction and bypass aggregate invariant checks",
+        "input_fixture": "line_item = order.get_line_items()[0]; line_item.quantity = 999; no recalc of order total",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MUTABLE-COLLECTION-LEAK",
+        "hypothesis": "Method exposes internal children collection reference; caller adds/removes items, corrupting aggregate state and breaking invariants",
+        "input_fixture": "items = aggregate.items_ref; items.append(Item()); items.pop(); aggregate inconsistent",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-BIDIRECTIONAL-OBJECT-REFS",
+        "hypothesis": "Store direct object reference to other aggregate instead of ID, creating forbidden cross-aggregate reference cycle",
+        "input_fixture": "Order.customer_ref = Customer(obj); Customer.last_order_ref = Order(obj) \u2192 bidirectional object coupling",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MULTI-AGGREGATE-TX-VIOLATION",
+        "hypothesis": "Single public method modifies multiple aggregate roots in shared database transaction, violating one-aggregate-per-transaction boundary",
+        "input_fixture": "settle(account): account.debit(); self.credit(); both persist in single TX",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INVARIANT-EXCEPTION-ESCAPE",
+        "hypothesis": "Exception thrown after state mutation but before invariant restoration leaves aggregate in illegal intermediate state readable by observers",
+        "input_fixture": "balance -= amount; raise IntegrityError \u2192 balance changed, no corresponding ledger entry persisted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-VERSION-INTEGER-OVERFLOW",
+        "hypothesis": "Version increments overflow signed integer boundary, wrapping negative or to zero, breaking monotonic version invariant",
+        "input_fixture": "version = 2147483647 (MAX_INT); increment once \u2192 version wraps to -2147483648",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-VERSION-NO-INCREMENT-ON-CHANGE",
+        "hypothesis": "State-changing public method modifies aggregate without incrementing version, breaking optimistic locking and allowing silent conflicts",
+        "input_fixture": "self.status = 'ACTIVE'; return (version unchanged) \u2192 concurrent tx reads stale v5, writes v5 again",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-VERSION-RACE",
+        "hypothesis": "Two concurrent threads read-modify-write version from same base value, both increment to identical version despite different state changes",
+        "input_fixture": "T1: read v=5; T2: read v=5; T1: write v=6; T2: write v=6 \u2192 version collision, second write undetected",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-WEAK-REF-AGG-CIRCUMVENT",
+        "hypothesis": "Store weakref or proxy wrapper to another aggregate object, technically bypassing ID-only requirement while maintaining live reference",
+        "input_fixture": "self.other = weakref.proxy(other_aggregate_instance) or Proxy(obj) \u2192 dereferences to object on access",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-VERSION-BACKWARD-MOVE",
+        "hypothesis": "Event replay or manual version assignment causes version to decrease, violating monotonic invariant and enabling state rollback attacks",
+        "input_fixture": "apply_events([old_v1_events]); version set to 1; apply_events([new_v3_events]); version set back to 3 then revert to 1",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-VERSION-SKIP-GAPS",
+        "hypothesis": "Selective event replay or filtering creates version gaps (v1, v3, v5), making version unreliable for detecting all state changes",
+        "input_fixture": "pull_events() filters and returns only odd versions; gaps hide even-numbered state mutations",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CHILD-REFERENCE-PERSISTENCE",
+        "hypothesis": "Caller stores reference to internal child entity across method calls, modifying it outside transaction and bypassing aggregate's invariant enforcement",
+        "input_fixture": "user = account.owner; (later) user.email = 'hacked@evil.com' outside aggregate TX \u2192 unaudited change",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CIRCULAR-OBJECT-REFERENCE",
+        "hypothesis": "Two aggregates store object references to each other instead of IDs, creating circular dependency and ownership ambiguity",
+        "input_fixture": "Order contains Customer object ref; Customer contains Order object ref \u2192 unclear who owns, both can mutate",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-VERSION-MANUAL-BYPASS",
+        "hypothesis": "Directly set version field bypassing increment logic, allowing arbitrary version values and disabling optimistic concurrency detection",
+        "input_fixture": "aggregate.version = 999; (mutate state); version=999 \u2192 concurrent read at v5 unaware of change",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "aggregate.created",
+        "required_attributes": [
+          "aggregate_id",
+          "aggregate_type",
+          "version"
+        ]
+      },
+      {
+        "event_name": "aggregate.mutated",
+        "required_attributes": [
+          "aggregate_id",
+          "aggregate_type",
+          "version",
+          "command"
+        ]
+      },
+      {
+        "event_name": "aggregate.invariant.violated",
+        "required_attributes": [
+          "aggregate_id",
+          "aggregate_type",
+          "invariant_id",
+          "reason"
+        ]
+      },
+      {
+        "event_name": "aggregate.concurrency.rejected",
+        "required_attributes": [
+          "aggregate_id",
+          "stored_version",
+          "incoming_version"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "aggregate.commands",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "aggregate_type",
+          "result"
+        ]
+      },
+      {
+        "name": "aggregate.version",
+        "metric_type": "gauge",
+        "unit": "1",
+        "cardinality_bound": 100,
+        "label_keys": [
+          "aggregate_type"
+        ]
+      },
+      {
+        "name": "aggregate.pending.events",
+        "metric_type": "histogram",
+        "unit": "1",
+        "cardinality_bound": 30,
+        "label_keys": [
+          "aggregate_type"
+        ]
+      },
+      {
+        "name": "aggregate.concurrency.conflicts",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "aggregate_type"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "aggregate.mutate",
+        "required_attributes": [
+          "aggregate.id",
+          "aggregate.type",
+          "aggregate.version",
+          "command"
+        ]
+      },
+      {
+        "operation_name": "aggregate.save",
+        "required_attributes": [
+          "aggregate.id",
+          "aggregate.type",
+          "aggregate.version",
+          "event.count"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol matches catalog api_signature verbatim (ID TypeVar, id/version/pull_events). Minor deviation: introduces ID_co covariant for Protocol \u2014 pragmatically necessary for mypy but not in catalog signature. Semantics preserved."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All 5 invariants addressed with runtime enforcement: AGG-INV-01 (private _OrderLine, tuple projections), 02 (single-aggregate save), 03 (_check_invariants + rollback), 04 (monotonic version, OptimisticConcurrencyError), 05 (require_identifier_reference). Reference aggregate + repository included."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Dedicated exception hierarchy (AggregateInvariantError, ForbiddenReferenceError subclass, OptimisticConcurrencyError). Messages cite invariant IDs (AGG-INV-03/04/05) verbatim \u2014 excellent for debugging and log correlation with spec."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Clean Protocol surface, generic over ID, extension via _check_invariants/_snapshot/_restore hooks, repository decoupled from root. Subclassing contract explicit in spec. runtime_checkable enables duck-typed consumers."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 9,
+        "rationale": "Thread-safe via RLock on root and Lock on repo; atomic snapshot/restore on BaseException (catches KeyboardInterrupt too); events drained after save so publishers see only committed state; zero import I/O; __all__ defined; no mutable default args."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace data.Aggregate honored, Protocol signature verbatim, invariants cited by ID, maturity-appropriate depth, sources referenced in docstrings/spec. ID_co split is the only cosmetic divergence and is justified by typing constraints."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "Protocol, Generic[ID] syntax is unexplained \u2014 a junior reading the API surface won't know what Protocol means or why Generic[ID] matters vs a plain base class",
+          "'optimistic concurrency' is used without definition \u2014 the version-increment purpose is clear but the concurrency failure mode (what happens when two writers race?) is not shown",
+          "'emit a domain event and let the other side react' leaves the reaction mechanism a mystery \u2014 no pointer to how a consumer subscribes or handles the event"
+        ],
+        "rewrite_suggestion": "Add a one-paragraph 'How it works in 60 seconds' before the API surface that skips jargon: root owns the rules, every change bumps a counter, side-effects travel as events. Extend the usage example to show an invariant violation (add_line with qty=0) and what exception/result comes back."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "Event ordering and idempotency guarantees for consumers are absent \u2014 the doc says events drain inside save but is silent on ordering across concurrent saves and whether consumers must be idempotent",
+          "_snapshot/_restore override contract is underspecified: 'capture and restore additional mutable state' leaves open whether nested mutable collections (lists of value objects) need deep-copy semantics",
+          "No serialization/persistence contract: how does the version field survive a round-trip through the storage layer, and is there a canonical wire format for events that downstream projections can rely on?"
+        ],
+        "rewrite_suggestion": "Add a 'Persistence contract' subsection covering: (1) version must be persisted atomically with the aggregate state, (2) events are emitted in command-application order, consumers must be idempotent, (3) _snapshot must return a deep copy of all mutable state."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "require_identifier_reference enforcement point is undocumented \u2014 reviewers are told to flag violations but cannot verify the guardrail is actually present without hunting through source; the doc should state where in the call stack it is enforced (decorator, base class __init_subclass__, etc.)",
+          "No guidance on sensitive data in domain events \u2014 events leave the aggregate and may be logged, queued, or replicated; PII or secrets in command arguments that flow into event payloads are not addressed",
+          "Authorization boundary is unspecified \u2014 there is no note on whether the aggregate itself enforces caller identity or whether that is expected to be handled by the application layer before a command is invoked"
+        ],
+        "rewrite_suggestion": "Expand the Security section with: (1) where require_identifier_reference is enforced and how to test it, (2) a rule that event payloads must not carry raw PII \u2014 use identifiers only, (3) explicit statement that authorization is the caller's responsibility and must be applied before dispatching any command."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "No latency or throughput baseline \u2014 aggregate.concurrency.conflicts and aggregate.invariant.violated are named but there is no p95 target, alerting threshold, or 'normal vs abnormal' range to calibrate alerts against",
+          "Event publisher failure at save time is not covered \u2014 if the publisher is unavailable, is the save rolled back, retried, or committed with events silently dropped? The answer determines incident severity",
+          "No mention of the persistence backend or connection pool requirements \u2014 version-bump optimistic locking relies on atomic compare-and-swap; which storage backends provide this guarantee and what happens if the backend does not?"
+        ],
+        "rewrite_suggestion": "Add a 'Failure modes' table with columns: symptom metric, likely cause, recommended action. Include rows for concurrency conflict spike, invariant violation spike, and event drain failure. Add a one-liner on which storage backends are tested to provide atomic compare-and-swap for version checks."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The plain-language opener is good but the very next section jumps into Protocol/Generic/invariant table with no bridge \u2014 a PM loses the thread before reaching 'When to use'",
+          "No canonical product scenario is called out as the poster-child example \u2014 'Order + OrderLines' is mentioned in passing but never shown as a complete before/after to illustrate the business value of the boundary",
+          "No indication of implementation cost or adoption trigger \u2014 a PM evaluating whether to ask engineers to use this pattern has no signal for 'use this when X entities or Y transaction rate' to justify the investment"
+        ],
+        "rewrite_suggestion": "Open with a two-sentence business-value statement: 'An Aggregate is how we guarantee that an Order's total always matches its lines, enforced in code rather than by convention. Use it whenever two pieces of data must stay consistent together.' Then move 'When to use / not to use' immediately after, before any API detail."
+      }
+    ]
+  }
+}

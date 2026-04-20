@@ -1,0 +1,22 @@
+{
+  "extracted_at": "2026-04-19T23:32:36.664897+00:00",
+  "source_tool": "api_design/add_batch_endpoint.py",
+  "origin_candidate": {
+    "docstring": "Async batch executor with per-item timeout and isolation support.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 468,
+    "line_start": 369,
+    "name": "BatchCore",
+    "origin": "string_template",
+    "shape_hash": "05bce8bf28feda31",
+    "size_bytes": 3661,
+    "size_lines": 100,
+    "tool": "api_design/add_batch_endpoint.py",
+    "method_count": 3,
+    "complexity": 6,
+    "disqualified": false,
+    "primitive_score": 263592
+  },
+  "wrapped_by": "engine.extraction.wrap_shell"
+}

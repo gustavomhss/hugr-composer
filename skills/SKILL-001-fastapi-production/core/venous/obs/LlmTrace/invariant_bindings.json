@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "LLMTRACE_INV_01",
+      "invariant_text": "Every model call SHALL open exactly one LlmTrace span; unspanned calls are FORBIDDEN.",
+      "confirms_test": "test_inv_one_span_per_call_confirms",
+      "prevents_test": "test_inv_one_span_per_call_prevents",
+      "under_failure_test": "test_inv_one_span_per_call_under_failure"
+    },
+    {
+      "invariant_id": "LLMTRACE_INV_02",
+      "invariant_text": "Span attribute names MUST match the OpenTelemetry GenAI semantic conventions (gen_ai.system, gen_ai.request.model, gen_ai.usage.input_tokens, gen_ai.usage.output_tokens).",
+      "confirms_test": "test_inv_semconv_attrs_confirms",
+      "prevents_test": "test_inv_semconv_attrs_prevents",
+      "under_failure_test": "test_inv_semconv_attrs_under_failure"
+    },
+    {
+      "invariant_id": "LLMTRACE_INV_03",
+      "invariant_text": "Spans MUST record prompt_fingerprint so the trace can be correlated with the PromptTemplate version that generated it.",
+      "confirms_test": "test_inv_prompt_fingerprint_confirms",
+      "prevents_test": "test_inv_prompt_fingerprint_prevents",
+      "under_failure_test": "test_inv_prompt_fingerprint_under_failure"
+    },
+    {
+      "invariant_id": "LLMTRACE_INV_04",
+      "invariant_text": "On provider error the span MUST call record_error before exiting; swallowing the error without recording is FORBIDDEN.",
+      "confirms_test": "test_inv_record_error_confirms",
+      "prevents_test": "test_inv_record_error_prevents",
+      "under_failure_test": "test_inv_record_error_under_failure"
+    },
+    {
+      "invariant_id": "LLMTRACE_INV_05",
+      "invariant_text": "Child tool-call spans MUST nest under the model-call span so the causal chain is reconstructable end-to-end.",
+      "confirms_test": "test_inv_nested_children_confirms",
+      "prevents_test": "test_inv_nested_children_prevents",
+      "under_failure_test": "test_inv_nested_children_under_failure"
+    }
+  ]
+}

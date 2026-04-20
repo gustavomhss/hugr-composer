@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "KVB_INV_01",
+      "invariant_text": "create MUST fail when the key already exists; it NEVER overwrites a present value.",
+      "confirms_test": "test_inv_create_exclusive_confirms",
+      "prevents_test": "test_inv_create_exclusive_prevents",
+      "under_failure_test": "test_inv_create_exclusive_under_failure"
+    },
+    {
+      "invariant_id": "KVB_INV_02",
+      "invariant_text": "update MUST fail when the supplied revision does not match the stored revision (compare-and-swap semantics).",
+      "confirms_test": "test_inv_cas_update_confirms",
+      "prevents_test": "test_inv_cas_update_prevents",
+      "under_failure_test": "test_inv_cas_update_under_failure"
+    },
+    {
+      "invariant_id": "KVB_INV_03",
+      "invariant_text": "Every successful write ALWAYS increases the entry revision monotonically.",
+      "confirms_test": "test_inv_revision_monotonic_confirms",
+      "prevents_test": "test_inv_revision_monotonic_prevents",
+      "under_failure_test": "test_inv_revision_monotonic_under_failure"
+    },
+    {
+      "invariant_id": "KVB_INV_04",
+      "invariant_text": "Watch channels SHALL emit changes in revision order for a given key and CANNOT skip a revision without a gap signal.",
+      "confirms_test": "test_inv_watch_in_order_confirms",
+      "prevents_test": "test_inv_watch_in_order_prevents",
+      "under_failure_test": "test_inv_watch_in_order_under_failure"
+    },
+    {
+      "invariant_id": "KVB_INV_05",
+      "invariant_text": "Deleting a key NEVER frees its historical revisions if history retention is configured greater than one.",
+      "confirms_test": "test_inv_history_preserved_confirms",
+      "prevents_test": "test_inv_history_preserved_prevents",
+      "under_failure_test": "test_inv_history_preserved_under_failure"
+    }
+  ]
+}

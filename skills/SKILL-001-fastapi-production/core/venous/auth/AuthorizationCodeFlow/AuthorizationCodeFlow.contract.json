@@ -1,0 +1,37 @@
+{
+  "name": "AuthorizationCodeFlow",
+  "namespace": "auth",
+  "purpose": "Execute the OAuth 2.0 authorization-code grant with PKCE, enforcing state, nonce, redirect URI pinning, and one-time code exchange against the token endpoint.",
+  "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass AuthorizationRequest:\n    authorization_url: str\n    state: str\n    nonce: str\n    code_verifier: str\n\nclass AuthorizationCodeFlow(Protocol):\n    def begin(self, scopes: list[str]) -> AuthorizationRequest: ...\n    def exchange(self, code: str, state: str, stored: AuthorizationRequest) -> dict: ...",
+  "invariants": [
+    "begin() MUST generate state and nonce from a CSPRNG with \u2265128 bits of entropy and MUST NEVER reuse either value.",
+    "exchange() MUST reject any callback whose state does not byte-equal the stored state and SHALL abort before touching the token endpoint.",
+    "The code_verifier MUST be bound to the authorization request and CANNOT be substituted at exchange time (PKCE S256).",
+    "Redirect URI sent on exchange MUST exactly match the URI registered with the authorization server; wildcard suffixes are FORBIDDEN.",
+    "Authorization codes MUST be single-use; replay of the same code SHALL produce an invalid_grant error from the client adapter.",
+    "Tokens received MUST NEVER be logged in full; only opaque hashes MAY appear in audit traces."
+  ],
+  "extension_contract": "New identity providers register as provider adapters implementing the Protocol and publishing metadata (authorization_endpoint, token_endpoint, jwks_uri). The registry refuses to bind a provider that does not advertise PKCE S256 and code_challenge_methods_supported.",
+  "consumption_example": "def start_login(flow: AuthorizationCodeFlow, session) -> str:\n    request = flow.begin(scopes=[\"openid\", \"profile\"])\n    session[\"oauth_request\"] = request\n    return request.authorization_url\n\ndef finish_login(flow: AuthorizationCodeFlow, session, code: str, state: str) -> dict:\n    return flow.exchange(code=code, state=state, stored=session.pop(\"oauth_request\"))",
+  "sources": [
+    {
+      "source": "RFC 6749",
+      "locator": "Section 4.1 Authorization Code Grant"
+    },
+    {
+      "source": "RFC 7636",
+      "locator": "Sections 4.1\u20134.6 PKCE code_verifier/code_challenge"
+    },
+    {
+      "source": "OpenID Connect Core 1.0",
+      "locator": "Section 3.1 Authentication using the Authorization Code Flow"
+    }
+  ],
+  "why_essential": "Every tool that accepts federated login needs the same state/nonce/PKCE discipline; reimplementing the dance per integration spawns subtle CSRF and code-injection bugs that no test catches.",
+  "alternatives_considered": [
+    "Implicit flow \u2014 deprecated by OAuth 2.1; tokens leak through browser history.",
+    "Resource-owner password credentials grant \u2014 forbidden by OAuth 2.1 for untrusted clients.",
+    "Per-provider bespoke flow in each microservice \u2014 guarantees divergent state validation."
+  ],
+  "maturity": "battle_tested"
+}

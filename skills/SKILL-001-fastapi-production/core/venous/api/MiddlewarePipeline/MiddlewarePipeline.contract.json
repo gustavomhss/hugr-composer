@@ -1,0 +1,36 @@
+{
+  "name": "MiddlewarePipeline",
+  "namespace": "api",
+  "purpose": "Ordered chain of components that each transform the RequestContext and decide whether to call the next, enabling cross-cutting concerns.",
+  "api_signature": "from typing import Awaitable, Callable, Protocol\n\nNext = Callable[[], Awaitable[None]]\n\nclass Middleware(Protocol):\n    async def __call__(self, ctx: RequestContext, call_next: Next) -> None: ...\n\nclass MiddlewarePipeline(Protocol):\n    def use(self, mw: Middleware) -> 'MiddlewarePipeline': ...\n    async def run(self, ctx: RequestContext) -> None: ...\n",
+  "invariants": [
+    "Execution order MUST be the registration order; swap or insert operations SHALL be explicit, never implicit.",
+    "A middleware that does NOT await call_next MUST short-circuit the remainder of the pipeline.",
+    "Each middleware CANNOT bypass downstream error handling: exceptions NEVER skip registered error filters.",
+    "Registration MUST be frozen before run() is first called; adding middleware at request time SHALL raise.",
+    "MUST produce a response even if every middleware halts; an unhandled halt SHALL yield a 500 by contract."
+  ],
+  "extension_contract": "Consumers add behavior by implementing Middleware and calling pipeline.use(); alternative styles (NestJS interceptor, Plug module, ASP.NET IMiddleware, Rack app) MUST be bound via an adapter that forwards (ctx, call_next) and preserves ordering.",
+  "consumption_example": "async def timing(ctx: RequestContext, call_next: Next) -> None:\n    t0 = 0.0\n    await call_next()\n    ctx.put('elapsed_ms', t0)\n\ndef build(p: MiddlewarePipeline) -> MiddlewarePipeline:\n    return p.use(timing)\n",
+  "sources": [
+    {
+      "source": "Plug 1.x \u2014 Plug specification (init/1, call/2)",
+      "locator": "hexdocs.pm/plug/readme.html \u2014 'Plug' behaviour section"
+    },
+    {
+      "source": "ASP.NET Core 8.0 \u2014 Middleware order",
+      "locator": "learn.microsoft.com/aspnet/core/fundamentals/middleware \u2014 RequestDelegate, app.Use pattern"
+    },
+    {
+      "source": "Nest.js 10 \u2014 Interceptors (NestInterceptor.intercept)",
+      "locator": "docs.nestjs.com/interceptors \u2014 intercept(context, next) returns Observable"
+    }
+  ],
+  "why_essential": "Authentication, logging, rate limiting, and error shaping are the same kind of component; without one chain contract, each feature reimplements ordering and every new concern reopens the same debate.",
+  "alternatives_considered": [
+    "AOP via bytecode weaving \u2014 invisible and hard to debug",
+    "Decorators per handler \u2014 combinatorial explosion",
+    "Monkey-patching dispatcher \u2014 breaks framework upgrades"
+  ],
+  "maturity": "battle_tested"
+}

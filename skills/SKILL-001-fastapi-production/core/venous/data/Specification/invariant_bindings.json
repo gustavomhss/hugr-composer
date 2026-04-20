@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "SPEC_INV_01",
+      "invariant_text": "is_satisfied_by MUST be a pure predicate: no I/O, no mutation of the candidate, and NEVER time-dependent unless time is injected.",
+      "confirms_test": "test_inv_pure_predicate_confirms",
+      "prevents_test": "test_inv_pure_predicate_prevents",
+      "under_failure_test": "test_inv_pure_predicate_under_failure"
+    },
+    {
+      "invariant_id": "SPEC_INV_02",
+      "invariant_text": "Composed specifications (and_, or_, not_) MUST preserve the identity laws of boolean algebra so refactors CANNOT change semantics.",
+      "confirms_test": "test_inv_boolean_algebra_confirms",
+      "prevents_test": "test_inv_boolean_algebra_prevents",
+      "under_failure_test": "test_inv_boolean_algebra_under_failure"
+    },
+    {
+      "invariant_id": "SPEC_INV_03",
+      "invariant_text": "A Specification CANNOT depend on the persistence layer; repository translation MUST be delegated to a separate visitor or translator registry.",
+      "confirms_test": "test_inv_translator_isolation_confirms",
+      "prevents_test": "test_inv_translator_isolation_prevents",
+      "under_failure_test": "test_inv_translator_isolation_under_failure"
+    },
+    {
+      "invariant_id": "SPEC_INV_04",
+      "invariant_text": "The same Specification used for in-memory filtering and repository querying SHALL produce logically equivalent results.",
+      "confirms_test": "test_inv_filter_query_parity_confirms",
+      "prevents_test": "test_inv_filter_query_parity_prevents",
+      "under_failure_test": "test_inv_filter_query_parity_under_failure"
+    },
+    {
+      "invariant_id": "SPEC_INV_05",
+      "invariant_text": "Composition operators (and_, or_, not_) SHALL NOT be overridden by subclasses; only is_satisfied_by MAY be overridden.",
+      "confirms_test": "test_inv_sealed_operators_confirms",
+      "prevents_test": "test_inv_sealed_operators_prevents",
+      "under_failure_test": "test_inv_sealed_operators_under_failure"
+    }
+  ]
+}

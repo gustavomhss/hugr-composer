@@ -1,0 +1,28 @@
+{
+  "title": "DiContainer — Resolves, Scopes, Disposal",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Resolves (5m)",
+      "targets": [{"expr": "sum(rate(di_resolves_total[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Scope Instance Count",
+      "targets": [{"expr": "histogram_quantile(0.95, rate(di_scope_instance_count_bucket[5m]))"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Resolve Duration p50/p95/p99 (ms)",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(di_resolve_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(di_resolve_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(di_resolve_duration_bucket[5m]))"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,732 @@
+{
+  "name": "StructuredLogger",
+  "namespace": "obs",
+  "maturity": "battle_tested",
+  "builder_agent_id": 9,
+  "catalog_entry_sha256": "6b56134bf379ce8b6ba5dcf6a137714cdb9895b544a63c9d2a7dc69ae764698c",
+  "files": [
+    {
+      "path": "obs/StructuredLogger/StructuredLogger.contract.json",
+      "sha256": "a6e9bae48601f53ad382df05a9211067b90c67d58a5e2c680b8cf321d8ef829e",
+      "size_bytes": 3699,
+      "kind": "contract_json"
+    },
+    {
+      "path": "obs/StructuredLogger/StructuredLogger.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "obs/StructuredLogger/StructuredLogger.md",
+      "sha256": "384f4fbc6ecfd7e03e27ea3e67f3902168dd8e6bc13b45bcf3d37ca0bd18eff6",
+      "size_bytes": 3371,
+      "kind": "spec_md"
+    },
+    {
+      "path": "obs/StructuredLogger/StructuredLogger.py",
+      "sha256": "8e10e7d7382dcd01781ded111f81e4b75963be7c399bfeb1a05ad68d87955859",
+      "size_bytes": 7702,
+      "kind": "impl"
+    },
+    {
+      "path": "obs/StructuredLogger/behavioral_StructuredLogger.py",
+      "sha256": "ce787cf52a822fda0d9f0c0dc276c1512988052c041f16ce1a9683179ca88b3d",
+      "size_bytes": 1810,
+      "kind": "behavioral"
+    },
+    {
+      "path": "obs/StructuredLogger/chaos_StructuredLogger.py",
+      "sha256": "2acaf57d1f75039d96eb3eba0ec6e448de5d78422b9cc2f09df0428335560786",
+      "size_bytes": 2446,
+      "kind": "chaos"
+    },
+    {
+      "path": "obs/StructuredLogger/conftest.py",
+      "sha256": "7c56f31974b08ec9142aebbd7c9995aae21ceef4211149bc0c595a4c4855ac4c",
+      "size_bytes": 528,
+      "kind": "test"
+    },
+    {
+      "path": "obs/StructuredLogger/dashboard.json",
+      "sha256": "79ac9788ce8f7ce136b8eb47f09bd60d53ef60b2da5ef780e121df278c4c8985",
+      "size_bytes": 585,
+      "kind": "dashboard"
+    },
+    {
+      "path": "obs/StructuredLogger/invariant_bindings.json",
+      "sha256": "b9e1e317c635aedcbe36fb7d21f01705e34c27aeeafe92344b2487c9f0138eaa",
+      "size_bytes": 2349,
+      "kind": "test"
+    },
+    {
+      "path": "obs/StructuredLogger/metamorphic_StructuredLogger.py",
+      "sha256": "cebfd5db06f3249bc8c23fb4c67cb927db3eb41579a6bd328ddb5a09826b0585",
+      "size_bytes": 2106,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "obs/StructuredLogger/observability_StructuredLogger.py",
+      "sha256": "6668ba5d34a3c30eacbc72e8bca700aa673eda851893b996b8f72bb89ea36b75",
+      "size_bytes": 1341,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/StructuredLogger/observability_schema.json",
+      "sha256": "6bbd0c2857bd77f1b657d5352ca158ec228c85679d6a152a90d3d0482c02b0d9",
+      "size_bytes": 867,
+      "kind": "observability"
+    },
+    {
+      "path": "obs/StructuredLogger/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "obs/StructuredLogger/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "obs/StructuredLogger/test_StructuredLogger.py",
+      "sha256": "2fd1e7e9a16c6f699c823c13c24e042800a0f9b8ba913a3cd8bd8ccc86adc95e",
+      "size_bytes": 5369,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "LOG_INV_01",
+      "invariant_text": "Every emitted record MUST be a single line of valid UTF-8 JSON with keys 'ts', 'level', 'event', plus the caller-provided fields.",
+      "confirms_test": "test_inv_json_single_line_confirms",
+      "prevents_test": "test_inv_json_single_line_prevents",
+      "under_failure_test": "test_inv_json_single_line_under_failure"
+    },
+    {
+      "invariant_id": "LOG_INV_02",
+      "invariant_text": "Log level SHALL be one of DEBUG, INFO, WARN, ERROR; TRACE and FATAL are FORBIDDEN to prevent drift from OTel log severity ranges.",
+      "confirms_test": "test_inv_level_taxonomy_confirms",
+      "prevents_test": "test_inv_level_taxonomy_prevents",
+      "under_failure_test": "test_inv_level_taxonomy_under_failure"
+    },
+    {
+      "invariant_id": "LOG_INV_03",
+      "invariant_text": "When a span is active in the current context, the record MUST automatically include 'trace_id' and 'span_id' in hex form.",
+      "confirms_test": "test_inv_span_attachment_confirms",
+      "prevents_test": "test_inv_span_attachment_prevents",
+      "under_failure_test": "test_inv_span_attachment_under_failure"
+    },
+    {
+      "invariant_id": "LOG_INV_04",
+      "invariant_text": "Printf-style formatting with %s or f-strings inside the event message is FORBIDDEN; values ALWAYS travel as typed fields.",
+      "confirms_test": "test_inv_no_formatting_confirms",
+      "prevents_test": "test_inv_no_formatting_prevents",
+      "under_failure_test": "test_inv_no_formatting_under_failure"
+    },
+    {
+      "invariant_id": "LOG_INV_05",
+      "invariant_text": "Secrets matching registered redaction patterns (authorization headers, bearer tokens, card PANs) MUST be replaced with '[REDACTED]' before serialization.",
+      "confirms_test": "test_inv_redaction_confirms",
+      "prevents_test": "test_inv_redaction_prevents",
+      "under_failure_test": "test_inv_redaction_under_failure"
+    },
+    {
+      "invariant_id": "LOG_INV_06",
+      "invariant_text": "Binding a field NEVER mutates the parent logger; bind returns a new immutable logger instance.",
+      "confirms_test": "test_inv_bind_immutable_confirms",
+      "prevents_test": "test_inv_bind_immutable_prevents",
+      "under_failure_test": "test_inv_bind_immutable_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 934,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 0 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1135,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no formal model required.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no state-machine exploration required.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 979,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "skipped",
+      "duration_ms": 0,
+      "evidence_path": null,
+      "tool_name": null,
+      "tool_version": null,
+      "summary": "Stateless primitive \u2014 no shared state, nothing to linearize.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 180061,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "40 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 3356,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 3638,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 95486,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 285146,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NON_UTF8_BYTES_FIELD",
+        "hypothesis": "Passing a field value containing raw bytes with invalid UTF-8 sequences (e.g., b'\\xff\\xfe\\x00') will cause JSON serialization to either crash or emit non-UTF-8 output, violating the single-line valid UTF-8 JSON invariant.",
+        "input_fixture": "logger.info('req', payload=b'\\xff\\xfe\\x00\\x80invalid')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NEWLINE_IN_EVENT",
+        "hypothesis": "An event name containing embedded newlines or CR (e.g., 'user\\nlogin\\r\\nadmin') will split the output across multiple lines, breaking the single-line JSON record invariant and enabling log injection attacks where attackers forge fake records.",
+        "input_fixture": "logger.info('user\\nlogin\\r\\n{\"level\":\"ERROR\",\"event\":\"fake\"}')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FORBIDDEN_FATAL_LEVEL",
+        "hypothesis": "The bind() method may accept a 'level' field override that bypasses the level taxonomy, allowing FATAL or TRACE to slip into serialized records via logger.bind(level='FATAL').info(...).",
+        "input_fixture": "logger.bind(level='FATAL').info('crash')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-RESERVED_KEY_COLLISION",
+        "hypothesis": "A caller-provided field named 'ts', 'level', or 'event' will overwrite the reserved structural keys, producing a record with caller-controlled timestamp or level and silently corrupting log aggregation pipelines.",
+        "input_fixture": "logger.info('login', ts='1970-01-01', level='DEBUG', event='other')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REDACTION_BYPASS_NESTED",
+        "hypothesis": "Redaction likely scans top-level field values only; a bearer token nested inside a dict or list (e.g., headers={'Authorization': 'Bearer sk_live_xxx'}) will be serialized verbatim, leaking credentials to log storage.",
+        "input_fixture": "logger.info('req', headers={'Authorization': 'Bearer sk_live_abc123secret'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REDACTION_BYPASS_CASE",
+        "hypothesis": "Case variants or unicode lookalikes in header names ('AUTHORIZATION', 'authoriz\\u0430tion' with Cyrillic 'a') bypass case-sensitive redaction regex, leaking tokens while appearing syntactically identical to operators.",
+        "input_fixture": "logger.info('req', AUTHORIZATION='Bearer tok_secret', authoriz\\u0430tion='Bearer other')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PAN_WITH_SPACES",
+        "hypothesis": "Card PAN redaction likely matches contiguous 13-19 digits; a PAN formatted with spaces ('4111 1111 1111 1111') or dashes evades the regex and leaks card data through the log pipeline.",
+        "input_fixture": "logger.info('payment', card='4111 1111 1111 1111', alt='4111-1111-1111-1111')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-BIND_MUTATES_PARENT",
+        "hypothesis": "If bind() stores fields in a shared mutable dict on the parent (dict.copy() forgotten for nested values), calling parent.info() after child = parent.bind(user='x') will emit 'user' on the parent, violating immutability.",
+        "input_fixture": "p=get_logger(); c=p.bind(user='alice'); p.info('hit')  # must not contain user=alice",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-BIND_NESTED_MUTATION",
+        "hypothesis": "bind() likely shallow-copies fields; mutating a nested dict passed to bind (ctx={'roles':['admin']}; logger.bind(ctx=ctx); ctx['roles'].append('root')) propagates the mutation into subsequent records, breaking immutability.",
+        "input_fixture": "ctx={'roles':['admin']}; child=logger.bind(ctx=ctx); ctx['roles'].append('root'); child.info('x')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MISSING_TRACE_CONCURRENT",
+        "hypothesis": "Under concurrent asyncio tasks sharing a ContextVar span, a task that awaits across a span boundary may emit records with stale or missing trace_id/span_id due to incorrect context propagation using threading.local instead of contextvars.",
+        "input_fixture": "asyncio.gather(*[task_with_span(i) for i in range(100)]) where each task starts/ends a span and logs mid-await",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NON_HEX_TRACE_ID",
+        "hypothesis": "If span.trace_id is an int (OTel internal representation), naive str(tid) emits decimal digits, not hex, violating the hex-form invariant and breaking downstream trace correlation in Jaeger/Tempo.",
+        "input_fixture": "with tracer.start_as_current_span('op'): logger.info('evt')  # record['trace_id'] must be 32-char hex",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FSTRING_IN_EVENT",
+        "hypothesis": "Callers passing f-strings like logger.info(f'user {uid} logged in') produce events with interpolated values, violating the no-positional-formatting invariant; the primitive must reject or detect format-specifier patterns in event strings.",
+        "input_fixture": "uid=42; logger.info(f'user {uid} logged in from {ip}', extra='ok')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PRINTF_PERCENT_S",
+        "hypothesis": "Event strings containing %s, %d, or {0} format specifiers indicate printf-style usage and must be rejected, but a permissive impl will pass them through, silently violating the typed-fields invariant and hiding bugs from reviewers.",
+        "input_fixture": "logger.info('user %s logged in from %d', user='alice', ip=8080)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNSERIALIZABLE_FIELD",
+        "hypothesis": "A field containing a non-JSON-serializable object (datetime, set, custom class without __json__) causes json.dumps to raise TypeError, crashing the logger call and violating the guarantee that every emit produces a valid JSON line.",
+        "input_fixture": "logger.info('evt', when=datetime.now(), tags={1,2,3}, obj=object())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CIRCULAR_REFERENCE",
+        "hypothesis": "A field with a self-referential structure (a={}; a['self']=a) triggers infinite recursion or ValueError in json.dumps, crashing the emit path and leaving the application without a log record for a critical event.",
+        "input_fixture": "a={}; a['self']=a; logger.error('boom', ctx=a)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK_SKEW_TS",
+        "hypothesis": "If 'ts' is sourced from time.time() without monotonic guarantees, an NTP step backward produces records with non-monotonic timestamps and duplicates, confusing deduplication and forensic timelines.",
+        "input_fixture": "freeze_time jumps backward 5s between two logger.info calls in the same process",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REDACTION_AMPLIFICATION",
+        "hypothesis": "A pathological input (1MB string with 100k overlapping 'Bearer ' prefixes) causes the redaction regex to exhibit catastrophic backtracking, turning each log call into a multi-second CPU spike \u2014 a DoS amplifier.",
+        "input_fixture": "logger.info('evt', data='Bearer '*100000 + 'x'*1000000)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EXC_CHAIN_SECRET_LEAK",
+        "hypothesis": "logger.error(exc=e) likely serializes e.args and __cause__ traceback; if an upstream exception embeds a connection string with password ('postgres://u:pw@h'), the redaction pipeline skips exception frames and leaks credentials.",
+        "input_fixture": "try: connect('postgres://u:supersecret@db'); except Exception as e: logger.error('db', exc=e)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY_IDENTICAL_TS",
+        "hypothesis": "Two logger.info calls within the same nanosecond tick produce records with identical 'ts' and no sequence number, allowing log replay attacks and breaking downstream ordering under high throughput.",
+        "input_fixture": "for _ in range(1000): logger.info('tick', n=_)  # check ts uniqueness or ordering key",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-WITH_CONTEXT_TYPE_CONFUSION",
+        "hypothesis": "with_context accepts Mapping[str, Any]; passing a dict subclass with __getitem__ side effects (or a defaultdict that injects keys on access) causes non-deterministic field sets and potential KeyError during later emits.",
+        "input_fixture": "from collections import defaultdict; ctx=defaultdict(lambda: 'injected'); logger.with_context(ctx).info('x')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NEWLINE-INJECT",
+        "hypothesis": "Newline in event string produces multi-line JSON output, breaking single-line invariant and enabling log injection attacks.",
+        "input_fixture": "logger.info(event='user login\\nmalicious log line', user_id=123)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UTF8-INVALID",
+        "hypothesis": "Invalid UTF-8 byte sequence in field value causes encoder to crash or emit non-UTF-8 bytes, violating JSON contract.",
+        "input_fixture": "logger.error(event='decode failed', raw_data=b'\\xff\\xfe\\xfd')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MISSING-REQ-KEY",
+        "hypothesis": "Logger omits required 'ts', 'level', or 'event' key from JSON record, producing structurally invalid output.",
+        "input_fixture": "logger.info(event='test') - verify all required keys present in serialized JSON output.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INVALID-LEVEL",
+        "hypothesis": "Logger accepts TRACE or FATAL level despite explicit invariant forbidding them, violating OTel spec compliance.",
+        "input_fixture": "logger.trace(event='forbidden trace') or logger.fatal(event='forbidden fatal')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-LEVEL-CASE-NORM",
+        "hypothesis": "Level serialized as lowercase 'debug' instead of uppercase 'DEBUG', deviating from declared invariant format.",
+        "input_fixture": "logger.debug(event='test') - verify JSON contains level='DEBUG' not level='debug'.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TRACE-ID-OMIT",
+        "hypothesis": "When span context is active, logger fails to include trace_id in record, breaking distributed traceability requirement.",
+        "input_fixture": "set_span_context('abc123def'); logger.info(event='request') - verify trace_id present in output.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SPAN-ID-FORMAT",
+        "hypothesis": "Span ID present but serialized as decimal or non-hex format, violating mandatory hex encoding requirement.",
+        "input_fixture": "set_span_context(span_id=255); logger.info(event='test') - span_id should be 'ff' not '255'.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PRINTF-PERCENT",
+        "hypothesis": "Event contains %s format specifier with interpolated values via % operator, bypassing no-printf invariant.",
+        "input_fixture": "logger.info(event='user %s logged in' % username, username=username)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-FSTRING-INTERP",
+        "hypothesis": "Event is f-string with embedded expressions, violating rule that values must travel as separate typed fields.",
+        "input_fixture": "username='alice'; logger.info(event=f'user {username} logged in')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-BEARER-PLAINTEXT",
+        "hypothesis": "Bearer token in field value serialized without redaction, leaking authentication credential to log storage and downstream.",
+        "input_fixture": "logger.info(event='api call', auth='Bearer sk_live_123456789abcdef')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CARD-UNREDACTED",
+        "hypothesis": "Credit card PAN number in field fails to match redaction regex, exposing full card number in logs and violating PCI scope.",
+        "input_fixture": "logger.info(event='charge', card_number='4532123456789010')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SECRET-DEEP-NEST",
+        "hypothesis": "Bearer token nested inside dict or list field bypasses shallow redaction scanner, leaking secret in nested structure.",
+        "input_fixture": "logger.info(event='request', headers={'Authorization': 'Bearer secret_token_xyz'})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-BIND-MUTATE-PARENT",
+        "hypothesis": "bind() returns same logger instance instead of new copy, allowing child bind to mutate parent logger state in place.",
+        "input_fixture": "parent=logger; child=parent.bind(user='alice'); child.bind(user='bob'); assert parent.user=='alice'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-BIND-SHARED-DICT",
+        "hypothesis": "bind() shares mutable dict between parent and child logger, mutation in child propagates backwards to parent fields.",
+        "input_fixture": "p=logger.bind(tags={1,2}); c=p.bind(); c.tags.add(3); assert 3 not in p.tags",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK-SKEW",
+        "hypothesis": "System clock rolled backwards causes newer log entry to have earlier timestamp than prior entry, violating causality.",
+        "input_fixture": "emit log1 at t1; clock_set(t0 where t0<t1); emit log2; verify log1.ts < log2.ts despite emission order.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONTEXT-RACE",
+        "hypothesis": "Context span_id changes between logger.info() call and record serialization, creating non-atomic read of span context.",
+        "input_fixture": "thread1: logger.info(event='x'); thread2: switch_span_context(); verify thread1 record has original span_id not thread2's.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REDACT-ENCODE-BYPASS",
+        "hypothesis": "Secret token base64-encoded or hex-encoded bypasses string-match redaction pattern detector, leaking encoded secret.",
+        "input_fixture": "logger.info(event='auth', token=base64.b64encode(b'Bearer secret_123').decode())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-LEVEL-AMPLIFY",
+        "hypothesis": "Attacker issues logger.error() for benign events in tight loop, artificially amplifying error rate and deceiving oncall.",
+        "input_fixture": "for i in range(1000000): logger.error(event='benign check', id=i); monitor observes false error spike.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-INT-PRECISION-LOSS",
+        "hypothesis": "Large integer field value exceeding IEEE 754 double precision loses data during JSON number serialization silently.",
+        "input_fixture": "logger.info(event='count', value=9007199254740992); JSON serializes as 9007199254740993, losing lower bits.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REDACT-REGEX-REDOS",
+        "hypothesis": "Malicious redaction pattern with exponential backtracking causes CPU burn on log emit, enabling log-based DoS attack.",
+        "input_fixture": "register_redaction(r'(a+)+b$'); logger.info(event='x', payload='a'*100); CPU usage spikes to 100% on emit.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "logger.record.emitted",
+        "required_attributes": [
+          "level",
+          "event"
+        ]
+      },
+      {
+        "event_name": "logger.validation.failed",
+        "required_attributes": [
+          "reason",
+          "event"
+        ]
+      },
+      {
+        "event_name": "logger.redaction.applied",
+        "required_attributes": [
+          "field_count"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "logger.records.emitted",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "level"
+        ]
+      },
+      {
+        "name": "logger.validation.rejections",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": [
+          "reason"
+        ]
+      },
+      {
+        "name": "logger.emit.duration",
+        "metric_type": "histogram",
+        "unit": "us",
+        "cardinality_bound": 100,
+        "label_keys": [
+          "level"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "logger.emit",
+        "required_attributes": [
+          "level",
+          "event"
+        ]
+      },
+      {
+        "operation_name": "logger.bind",
+        "required_attributes": []
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Implementation matches spec: Protocol surface exact, all 6 invariants enforced (JSON line, level whitelist, trace/span injection, formatting ban, redaction, immutable bind). Minor: spec says 'hex' trace_id but code accepts any string \u2014 no hex validation."
+      },
+      {
+        "axis": "completeness",
+        "score": 8,
+        "rationale": "All six methods present, redaction defaults for bearer/authz/PAN, span context carrier, exception enrichment, binary stringification, records accessor. Missing: no register-processor hook from extension_contract, no WriteAdapter seam shown (only in-memory buffer)."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "LogInvariantError subclass of ValueError; messages cite invariant IDs (LOG-INV-01/02/04) with expected vs actual. Consistent taxonomy. Minor: LOG-INV-03 and LOG-INV-05 have no explicit raise path (silently enforced), acceptable but not symmetric."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Protocol-based surface, runtime_checkable, immutable bind returns same type, pluggable redaction_patterns and context carrier via constructor. Clean seams for WriteAdapter/Tracer injection. Minor: _SpanContext is private; external tracer integration requires adapter glue not shown."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe buffer via Lock, no I/O at import, lazy context read, ensure_ascii=True avoids encoding surprises, default=str prevents serialization crashes. Gaps: threading.local for span context is wrong primitive for async (should be contextvars); unbounded _records list is a memory leak in long-running processes."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace obs, Protocol signature matches catalog api_signature verbatim, all 6 invariants mapped with IDs, consumption example runs against this impl, sources cited in docstring provenance. Minor: catalog claims 'battle_tested' but reference impl is in-memory only."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "bind() is used in the example without explaining what it does or why you'd want a 'child logger' \u2014 the concept of immutable context scoping is assumed",
+          "trace_id/span_id appear in invariants with no explanation of what a trace or span is; a reader who hasn't used OpenTelemetry is stuck",
+          "WriteAdapter is mentioned under back-pressure but never defined, leaving the impression the logger silently drops records in production"
+        ],
+        "rewrite_suggestion": "Add a 'Core concepts' paragraph before the invariants table covering three things: (1) bind() creates a child logger with extra fields pre-attached so you don't repeat them on every call, (2) trace_id/span_id are request identifiers injected automatically when an OpenTelemetry span is active, (3) WriteAdapter is an optional production hook \u2014 the logger works without one. The existing usage example is the doc's strongest asset; add a second, simpler example that shows bind() in isolation without the try/except to let beginners pattern-match before reading the full example."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "The 'register-processor hook' in the extension contract has no signature \u2014 whether it receives a raw dict, a typed LogRecord, or a bytes buffer is unspecifiable from the docs alone",
+          "Buffer back-pressure says 'buffers in memory' with no capacity limit or overflow policy: drop oldest, block the caller, or raise \u2014 each has different implications for correctness under load",
+          "SLIs are named but the emission mechanism is absent \u2014 whether they are OTLP metrics, Prometheus counters, or internal counters determines what the platform team needs to wire up"
+        ],
+        "rewrite_suggestion": "Add an 'API surface' section with the actual signatures: register_processor(fn: Callable[[LogRecord], LogRecord]) -> None and the WriteAdapter Protocol (write(record: bytes) -> None, flush() -> None). Document the overflow policy as a configuration key with allowed values and their semantics. For SLIs, add one line: 'emitted as OTLP metrics via the active MeterProvider; no-op when none is configured.'"
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "Redaction pattern format is unspecified \u2014 Python regex, glob, or a custom DSL \u2014 so a misconfigured pattern silently leaks secrets with no compile-time warning",
+          "LOG_INV_01 requires one line of JSON per record but there is no mention of newline or null-byte sanitisation in the event string, leaving log injection as an open question",
+          "PII scope covers tokens, auth headers, and PANs but GDPR-regulated fields (email address, IP, name) are not stated as covered or explicitly out-of-scope, creating an audit gap"
+        ],
+        "rewrite_suggestion": "State redaction pattern format explicitly ('compiled Python re.Pattern objects applied in registration order'). Add one sentence to LOG_INV_01: 'Newline and null-byte characters in any string field are escaped to \\n and \\0 before serialisation.' Add a 'PII handling' sub-section that lists default-covered categories and names GDPR/PCI-DSS as the applicable regimes, directing readers to register custom patterns for fields outside the defaults."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "WriteAdapter is the integration point for every production fan-out (stderr + shipper), but its interface is absent \u2014 writing one requires reading source code",
+          "Buffer overflow behavior is unspecified; under a shipper outage the logger's behavior (drop, block, or exception) determines whether the application degrades or halts",
+          "Three SLIs are named but there are no recommended alert thresholds or runbook pointers, making them decoration rather than operational guidance"
+        ],
+        "rewrite_suggestion": "Add an 'Operating in production' section with three items: (1) the WriteAdapter Protocol showing write() and flush() signatures with their error-handling contract, (2) a two-row table mapping overflow_policy=drop vs overflow_policy=block to their behavior and trade-offs, (3) recommended alert thresholds \u2014 'page if logger.validation.rejections rate > 1% over 5 min or logger.emit.duration p99 > 5 ms.' This converts the SLI list into an actionable runbook entry."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The invariants table lists six rules with no stated business consequence \u2014 a PM cannot prioritise a violation or explain its risk to stakeholders",
+          "Provenance citations (OTel spec version, book chapter numbers) carry no adoption, cost, or risk signal relevant to a go/no-go decision",
+          "Integration effort is invisible: whether this is a drop-in library, a sidecar, or a platform service requiring infrastructure changes affects roadmap estimates significantly"
+        ],
+        "rewrite_suggestion": "Replace the raw invariants table with a 'Guarantees' prose paragraph: 'Every log record is queryable by time, request ID, and severity. Secrets are stripped before leaving the process. Log context never leaks between concurrent requests.' Collapse provenance to a single footnote. Add an 'Adoption cost' line at the top: 'Pure Python library, no sidecar required. Replaces print/stdlib logging in one import; estimate one sprint to instrument a medium service end-to-end.'"
+      }
+    ]
+  }
+}

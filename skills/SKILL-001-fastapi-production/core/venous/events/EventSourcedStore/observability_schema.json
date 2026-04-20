@@ -1,0 +1,64 @@
+{
+  "logs": [
+    {
+      "event_name": "ess.appended",
+      "required_attributes": ["aggregate_id", "expected_version", "new_version", "batch_size"]
+    },
+    {
+      "event_name": "ess.concurrency.rejected",
+      "required_attributes": ["aggregate_id", "expected_version", "actual_version"]
+    },
+    {
+      "event_name": "ess.snapshot.recorded",
+      "required_attributes": ["aggregate_id", "version"]
+    },
+    {
+      "event_name": "ess.replay.completed",
+      "required_attributes": ["aggregate_id", "events_folded", "from_snapshot"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "ess.appends",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": ["result"]
+    },
+    {
+      "name": "ess.batch.size",
+      "metric_type": "histogram",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": []
+    },
+    {
+      "name": "ess.replay.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": ["from_snapshot"]
+    },
+    {
+      "name": "ess.aggregate.version",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 10000,
+      "label_keys": ["aggregate_id"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "ess.append",
+      "required_attributes": ["aggregate.id", "expected.version", "batch.size"]
+    },
+    {
+      "operation_name": "ess.load",
+      "required_attributes": ["aggregate.id", "events.count"]
+    },
+    {
+      "operation_name": "ess.snapshot",
+      "required_attributes": ["aggregate.id", "version"]
+    }
+  ]
+}

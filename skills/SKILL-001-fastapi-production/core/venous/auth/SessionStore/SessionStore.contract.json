@@ -1,0 +1,33 @@
+{
+  "name": "SessionStore",
+  "namespace": "auth",
+  "purpose": "Issue, rotate, and revoke server-side session records keyed by high-entropy identifiers, with fixation resistance and explicit lifetime boundaries.",
+  "api_signature": "from dataclasses import dataclass\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass Session:\n    id: str\n    subject: str\n    created_at: int\n    idle_expires_at: int\n    absolute_expires_at: int\n\nclass SessionStore(Protocol):\n    def create(self, subject: str) -> Session: ...\n    def load(self, session_id: str) -> Session | None: ...\n    def rotate(self, session_id: str) -> Session: ...\n    def revoke(self, session_id: str) -> None: ...\n    def revoke_all_for_subject(self, subject: str) -> int: ...",
+  "invariants": [
+    "Session ids MUST carry \u2265128 bits of entropy from a CSPRNG and MUST NEVER encode user-controlled input.",
+    "On privilege elevation (login, role change, MFA step-up) the session id MUST be rotated; the prior id CANNOT be reused.",
+    "Sessions MUST expire at min(idle_timeout, absolute_timeout); server-side revocation MUST win over client-held cookies.",
+    "Session cookies MUST be set Secure, HttpOnly, and with SameSite=Lax or Strict; Domain SHALL NEVER be broader than the application host.",
+    "revoke_all_for_subject() MUST terminate every live session for that subject atomically and MUST be invoked on password change.",
+    "load() MUST NEVER extend a session past absolute_expires_at even on activity."
+  ],
+  "extension_contract": "Storage backends register as session-store adapters (redis, postgres, signed-cookie) implementing the Protocol. Adapters that cannot perform server-side revocation (pure signed cookies) are forbidden from binding when revoke_all_for_subject is required by policy.",
+  "consumption_example": "def login(store: SessionStore, response, subject: str) -> None:\n    session = store.create(subject=subject)\n    response.set_cookie(\"sid\", session.id, secure=True, httponly=True, samesite=\"lax\")\n\ndef escalate(store: SessionStore, response, old_sid: str) -> None:\n    rotated = store.rotate(old_sid)\n    response.set_cookie(\"sid\", rotated.id, secure=True, httponly=True, samesite=\"lax\")",
+  "sources": [
+    {
+      "source": "OWASP ASVS 4.0.3",
+      "locator": "V3 Session Management Requirements (V3.2 Session Binding, V3.3 Session Logout)"
+    },
+    {
+      "source": "OWASP Top 10 2021",
+      "locator": "A07:2021 Identification and Authentication Failures"
+    }
+  ],
+  "why_essential": "Fixation, idle timeout, and subject-wide revocation are the shared burden of every authenticated product; without a shared store each team reinvents one missing control and the security posture decays to the weakest.",
+  "alternatives_considered": [
+    "Pure JWT sessions with no server state \u2014 cannot revoke without a parallel denylist.",
+    "Framework default session middleware \u2014 often lacks idle-plus-absolute dual clock.",
+    "Sticky-session in memory \u2014 fails revoke_all_for_subject under horizontal scale."
+  ],
+  "maturity": "battle_tested"
+}

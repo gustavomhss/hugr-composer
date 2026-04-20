@@ -1,0 +1,16 @@
+{
+  "title": "DurableTimer — Scheduled, Fired, Canceled",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "Timers Scheduled (5m)",
+     "targets": [{"expr": "sum(rate(timer_scheduled_total[5m]))"}]},
+    {"id": 2, "type": "timeseries", "title": "Timer Delay (p50/p95/p99)",
+     "targets": [
+       {"expr": "histogram_quantile(0.50, rate(timer_delay_bucket[5m]))"},
+       {"expr": "histogram_quantile(0.95, rate(timer_delay_bucket[5m]))"},
+       {"expr": "histogram_quantile(0.99, rate(timer_delay_bucket[5m]))"}
+     ]},
+    {"id": 3, "type": "timeseries", "title": "Fire : Cancel Ratio",
+     "targets": [{"expr": "rate(timer_fired_total[5m]) / rate(timer_scheduled_total[5m])"}]}
+  ]
+}

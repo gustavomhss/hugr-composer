@@ -1,0 +1,31 @@
+{
+  "name": "TopicBus",
+  "namespace": "events",
+  "purpose": "Publish and subscribe facade over a broker topic that delivers CloudEvents at least once to named subscriber groups with optional dead letter routing.",
+  "api_signature": "from typing import Protocol, Callable, Awaitable\n\nAck = Callable[[], Awaitable[None]]\nNack = Callable[[str], Awaitable[None]]\n\nclass TopicBus(Protocol):\n    async def publish(self, topic: str, envelope: 'EventEnvelope') -> None: ...\n    def subscribe(self, topic: str, group: str, handler: Callable[['EventEnvelope', Ack, Nack], Awaitable[None]]) -> None: ...",
+  "invariants": [
+    "Delivery to a subscribed handler MUST be at least once by default, so handlers SHALL tolerate duplicates.",
+    "Inside one consumer group a given message ALWAYS goes to exactly one handler instance at a time.",
+    "Negative acknowledgement MUST cause redelivery or routing to a dead letter destination when configured.",
+    "Subscribers CANNOT rely on global ordering across topic partitions, only on partition local order.",
+    "Publish NEVER succeeds without the broker confirming the persisted append."
+  ],
+  "extension_contract": "Swap brokers by implementing a TopicBus adapter per backend (Kafka, NATS JetStream, Redis Streams, RabbitMQ) and register it as a pubsub component; cross cutting behavior (retry, tracing, audit) plugs in as middleware wrapping the handler.",
+  "consumption_example": "async def on_order(e: EventEnvelope, ack: Ack, nack: Nack) -> None:\n    try:\n        await process(e)\n        await ack()\n    except Exception:\n        await nack('transient')\n\ndef wire(bus: TopicBus) -> None:\n    bus.subscribe('orders', 'fulfillment', on_order)",
+  "sources": [
+    {
+      "source": "Dapr 1.14 Publish and Subscribe building block overview",
+      "locator": "docs.dapr.io/developing-applications/building-blocks/pubsub/pubsub-overview/ Delivery guarantees and Dead letter topics sections"
+    },
+    {
+      "source": "Confluent Kafka Design: Message Delivery Semantics",
+      "locator": "docs.confluent.io/kafka/design/delivery-semantics.html At-least-once section"
+    }
+  ],
+  "why_essential": "Every worker needs to emit domain events the same way; centralizing publish and subscribe with ack/nack and groups lets the skill compose across backends without leaking broker APIs into business code.",
+  "alternatives_considered": [
+    "Direct broker SDK in each tool which couples business logic to Kafka or NATS APIs",
+    "HTTP webhooks only which lose ordering and group semantics"
+  ],
+  "maturity": "battle_tested"
+}

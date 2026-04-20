@@ -1,0 +1,20 @@
+{
+  "tool": "api_design/add_graphql_subscriptions.py",
+  "candidate": {
+    "docstring": "In-process pub/sub using asyncio.Queue per subscriber.",
+    "is_async": false,
+    "kind": "class",
+    "line_end": 311,
+    "line_start": 269,
+    "name": "MemoryPubSubBackend",
+    "origin": "string_template",
+    "shape_hash": "223284459a87d516",
+    "size_bytes": 1411,
+    "size_lines": 43,
+    "tool": "api_design/add_graphql_subscriptions.py",
+    "method_count": 3,
+    "complexity": 5,
+    "disqualified": false,
+    "primitive_score": 84660
+  }
+}

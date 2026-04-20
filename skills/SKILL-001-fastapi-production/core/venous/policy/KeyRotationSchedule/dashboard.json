@@ -1,0 +1,1 @@
+{"title": "KeyRotationSchedule", "schemaVersion": 38, "panels": [{"id": 1, "type": "stat", "title": "Rotations", "targets": [{"expr": "rate(key_rotations_total[1h])"}]}]}

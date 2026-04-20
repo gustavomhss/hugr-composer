@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "AUD_INV_01",
+      "invariant_text": "event_hash MUST be computed as SHA-256 over the canonical serialization of all non-hash fields concatenated with prev_hash; a mismatched hash SHALL invalidate the chain.",
+      "confirms_test": "test_inv_hash_chain_confirms",
+      "prevents_test": "test_inv_hash_chain_prevents",
+      "under_failure_test": "test_inv_hash_chain_under_failure"
+    },
+    {
+      "invariant_id": "AUD_INV_02",
+      "invariant_text": "Once emitted, an AuditEvent is append-only and CANNOT be updated, deleted, or logically superseded.",
+      "confirms_test": "test_inv_append_only_confirms",
+      "prevents_test": "test_inv_append_only_prevents",
+      "under_failure_test": "test_inv_append_only_under_failure"
+    },
+    {
+      "invariant_id": "AUD_INV_03",
+      "invariant_text": "outcome MUST be one of 'success', 'failure', 'denied'; any other value is FORBIDDEN to keep reporting queryable.",
+      "confirms_test": "test_inv_outcome_enum_confirms",
+      "prevents_test": "test_inv_outcome_enum_prevents",
+      "under_failure_test": "test_inv_outcome_enum_under_failure"
+    },
+    {
+      "invariant_id": "AUD_INV_04",
+      "invariant_text": "actor_id MUST be set even for system-initiated actions; 'system' is a reserved literal and NEVER empty.",
+      "confirms_test": "test_inv_actor_required_confirms",
+      "prevents_test": "test_inv_actor_required_prevents",
+      "under_failure_test": "test_inv_actor_required_under_failure"
+    },
+    {
+      "invariant_id": "AUD_INV_05",
+      "invariant_text": "occurred_at MUST be an absolute UTC timestamp with at least millisecond precision; naive timestamps are FORBIDDEN.",
+      "confirms_test": "test_inv_utc_timestamp_confirms",
+      "prevents_test": "test_inv_utc_timestamp_prevents",
+      "under_failure_test": "test_inv_utc_timestamp_under_failure"
+    },
+    {
+      "invariant_id": "AUD_INV_06",
+      "invariant_text": "action verbs MUST come from a controlled vocabulary (CREATE / READ / UPDATE / DELETE / GRANT / REVOKE / EXPORT) and ALWAYS use that controlled set for cross-system joins.",
+      "confirms_test": "test_inv_action_vocabulary_confirms",
+      "prevents_test": "test_inv_action_vocabulary_prevents",
+      "under_failure_test": "test_inv_action_vocabulary_under_failure"
+    }
+  ]
+}

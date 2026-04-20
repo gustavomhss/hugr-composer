@@ -1,0 +1,15 @@
+{
+  "logs": [
+    {"event_name": "key.rotation.performed", "required_attributes": ["alias", "new_version"]},
+    {"event_name": "key.rotation.missed", "required_attributes": ["alias"]}
+  ],
+  "metrics": [
+    {"name": "key.rotations", "metric_type": "counter", "unit": "1", "cardinality_bound": 200, "label_keys": ["alias"]},
+    {"name": "key.rotation.missed", "metric_type": "counter", "unit": "1", "cardinality_bound": 50, "label_keys": ["alias"]},
+    {"name": "key.active_version", "metric_type": "gauge", "unit": "1", "cardinality_bound": 100, "label_keys": ["alias"]}
+  ],
+  "spans": [
+    {"operation_name": "key.rotate", "required_attributes": ["alias"]},
+    {"operation_name": "key.active", "required_attributes": ["alias"]}
+  ]
+}

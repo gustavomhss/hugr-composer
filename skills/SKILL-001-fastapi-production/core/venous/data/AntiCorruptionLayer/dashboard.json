@@ -1,0 +1,32 @@
+{
+  "title": "AntiCorruptionLayer — Translation, Guards, Schema Drift",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Translations by direction",
+      "targets": [
+        {"expr": "sum by (direction) (rate(acl_translations_total[5m]))"}
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Guard rejections (5m)",
+      "targets": [{"expr": "sum(rate(acl_guard_rejections_total[5m]))"}]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Schema drift events (5m)",
+      "targets": [{"expr": "sum(rate(acl_schema_drift_events_total[5m]))"}]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Registered versions",
+      "targets": [{"expr": "sum by (system) (acl_registered_versions)"}]
+    }
+  ]
+}

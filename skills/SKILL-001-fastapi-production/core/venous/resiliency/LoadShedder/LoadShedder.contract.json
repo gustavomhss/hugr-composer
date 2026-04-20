@@ -1,0 +1,32 @@
+{
+  "name": "LoadShedder",
+  "namespace": "resiliency",
+  "purpose": "Drop or reject low-priority work when the server enters an overload regime so that high-priority traffic continues to meet its SLA.",
+  "api_signature": "from __future__ import annotations\nfrom typing import Protocol, Literal\n\nPriority = Literal['critical', 'normal', 'sheddable_plus', 'sheddable']\n\nclass LoadShedder(Protocol):\n    def admit(self, priority: Priority, queue_depth: int, cpu_load_ewma: float) -> bool: ...\n    def current_cutoff(self) -> Priority: ...\n    def shed_rate(self) -> float: ...\n",
+  "invariants": [
+    "The shedder SHALL admit strictly by descending priority class and MUST NEVER admit a lower class while a higher class is being rejected.",
+    "A rejected request MUST be returned with an explicit overload signal (HTTP 503 or status UNAVAILABLE) and a retry-after hint.",
+    "The cutoff priority CANNOT change more than once per control_interval_ms to prevent oscillation.",
+    "A request that passed admission control SHALL NEVER be shed later in the pipeline.",
+    "The shedder MUST publish the current cutoff as a metric so clients can cooperate with backoff."
+  ],
+  "extension_contract": "Adopters register a LoadSignal provider (CPU, queue depth, event-loop lag, p99 latency) and a PriorityExtractor hook that reads the priority class from request context; the composition rule across signals is selected via a CompositionAdapter (max, ewma, quantile).",
+  "consumption_example": "if not LoadShedder.admit('sheddable', queue_depth=len(q), cpu_load_ewma=cpu):\n    return Response(status=503, headers={'Retry-After': '1'})\n",
+  "sources": [
+    {
+      "source": "Google SRE Workbook (Beyer et al., O'Reilly, 2018)",
+      "locator": "Chapter 21 'Managing Load', section 'Graceful Service Degradation' and 'Load Shedding'"
+    },
+    {
+      "source": "Google SRE Book (Beyer et al., O'Reilly, 2016)",
+      "locator": "Chapter 22 'Addressing Cascading Failures', section 'Preventing Server Overload'"
+    }
+  ],
+  "why_essential": "Without an admission decision that knows priority, overload degrades every class equally, causing critical paths to fail first because they were competing for resources with batch or crawler traffic.",
+  "alternatives_considered": [
+    "Fixed rate limiter: caps QPS but CANNOT differentiate priorities and under-uses idle capacity.",
+    "Backpressure from downstream only: reacts too late, after a queue has already formed.",
+    "Autoscaling alone: scale-out latency NEVER matches a sub-second overload spike."
+  ],
+  "maturity": "battle_tested"
+}

@@ -1,0 +1,764 @@
+{
+  "name": "AuthorizationCodeFlow",
+  "namespace": "auth",
+  "maturity": "battle_tested",
+  "builder_agent_id": 5,
+  "catalog_entry_sha256": "e88d918695c0cd38a1795faab8b31291eb270726d412d41aaa7b837ae67e8e68",
+  "files": [
+    {
+      "path": "auth/AuthorizationCodeFlow/AuthorizationCodeFlow.cfg",
+      "sha256": "eac98a78291f407b24da78b30560d45a399a72ad30d40ff65ffe9ed28cc12a58",
+      "size_bytes": 129,
+      "kind": "test"
+    },
+    {
+      "path": "auth/AuthorizationCodeFlow/AuthorizationCodeFlow.contract.json",
+      "sha256": "4d33c387fc93f55bcc8909577539050f00f8431e5c3a84688bc82d9fb7bd1a25",
+      "size_bytes": 3090,
+      "kind": "contract_json"
+    },
+    {
+      "path": "auth/AuthorizationCodeFlow/AuthorizationCodeFlow.manifest.json",
+      "sha256": "ad66b506d033e965317d4f40f70af695c44350139c043c1f8f4adb302ec4c875",
+      "size_bytes": 56900,
+      "kind": "manifest"
+    },
+    {
+      "path": "auth/AuthorizationCodeFlow/AuthorizationCodeFlow.md",
+      "sha256": "c0e98e15eb79fe5028f2434837b67640221b0162e6107c6bb61ba0c67e3fc95b",
+      "size_bytes": 7497,
+      "kind": "spec_md"
+    },
+    {
+      "path": "auth/AuthorizationCodeFlow/AuthorizationCodeFlow.py",
+      "sha256": "165e75a5a902b879d50312af5666f9b065562da92b56596c0444c68427f2ef3d",
+      "size_bytes": 24510,
+      "kind": "impl"
+    },
+    {
+      "path": "auth/AuthorizationCodeFlow/AuthorizationCodeFlow.tla",
+      "sha256": "b425192cf9e2dc5685e98eae62228f31b9e3a931ec7f44388ca5b38691dbb5fb",
+      "size_bytes": 2210,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "auth/AuthorizationCodeFlow/behavioral_AuthorizationCodeFlow.py",
+      "sha256": "ff9d2a4722dcb8b618fc18cbcd7880fca80e9bad70edf3549838bdd1480b2995",
+      "size_bytes": 4607,
+      "kind": "behavioral"
+    },
+    {
+      "path": "auth/AuthorizationCodeFlow/chaos_AuthorizationCodeFlow.py",
+      "sha256": "8e5bfd4a2f86903891e3c80ba40ae1f68c34e46f9d012ca0d90b313611651cb5",
+      "size_bytes": 5272,
+      "kind": "chaos"
+    },
+    {
+      "path": "auth/AuthorizationCodeFlow/concurrent_AuthorizationCodeFlow.py",
+      "sha256": "f4c62fb4fadbda532b6ac25f151b4654aba1f36fa6726fd8bc33fffd310ec83f",
+      "size_bytes": 5027,
+      "kind": "concurrent"
+    },
+    {
+      "path": "auth/AuthorizationCodeFlow/dashboard.json",
+      "sha256": "13fa8f53be3d16fadc963919ab57f7403dc3818c7f03e150cfa36d61da4e8d9b",
+      "size_bytes": 1093,
+      "kind": "dashboard"
+    },
+    {
+      "path": "auth/AuthorizationCodeFlow/invariant_bindings.json",
+      "sha256": "7af0c1149d32484344e7eb407f2b6d53e13dba6c56a36cf862d8a3479964c16d",
+      "size_bytes": 2316,
+      "kind": "test"
+    },
+    {
+      "path": "auth/AuthorizationCodeFlow/metamorphic_AuthorizationCodeFlow.py",
+      "sha256": "455bc3c90f1f08869caa459ac28b60c1dbe2ab78e03c4eb9468ce2e6ffbfe483",
+      "size_bytes": 4525,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "auth/AuthorizationCodeFlow/observability_AuthorizationCodeFlow.py",
+      "sha256": "04c3046cce27dd9cd2ecd46ec9a88da28198bb08ee0b5134ad384df09ea7b0b0",
+      "size_bytes": 3340,
+      "kind": "observability"
+    },
+    {
+      "path": "auth/AuthorizationCodeFlow/observability_schema.json",
+      "sha256": "03c986cf3c28f5455a7720cddcbcc775ed28afbaa1c99c3ce48c853721cecf4d",
+      "size_bytes": 1124,
+      "kind": "observability"
+    },
+    {
+      "path": "auth/AuthorizationCodeFlow/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "auth/AuthorizationCodeFlow/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "auth/AuthorizationCodeFlow/state_machine_AuthorizationCodeFlow.py",
+      "sha256": "4e99b9d9049a979a2f8f898e07ab05f4d752135300b481d08c7915a9c1837fb0",
+      "size_bytes": 3757,
+      "kind": "state_machine"
+    },
+    {
+      "path": "auth/AuthorizationCodeFlow/test_AuthorizationCodeFlow.py",
+      "sha256": "6e2d025f80aaf2e76a3251c347dc3fdfca363360c355b64f5731f6ab062ec736",
+      "size_bytes": 11816,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "ACF_INV_01",
+      "invariant_text": "begin() MUST generate state and nonce from a CSPRNG with at least 128 bits of entropy and MUST NEVER reuse either value.",
+      "confirms_test": "test_inv_csprng_entropy_confirms",
+      "prevents_test": "test_inv_csprng_entropy_prevents",
+      "under_failure_test": "test_inv_csprng_entropy_under_failure"
+    },
+    {
+      "invariant_id": "ACF_INV_02",
+      "invariant_text": "exchange() MUST reject any callback whose state does not byte-equal the stored state and SHALL abort before touching the token endpoint.",
+      "confirms_test": "test_inv_state_equal_confirms",
+      "prevents_test": "test_inv_state_equal_prevents",
+      "under_failure_test": "test_inv_state_equal_under_failure"
+    },
+    {
+      "invariant_id": "ACF_INV_03",
+      "invariant_text": "The code_verifier MUST be bound to the authorization request and CANNOT be substituted at exchange time (PKCE S256).",
+      "confirms_test": "test_inv_pkce_bound_confirms",
+      "prevents_test": "test_inv_pkce_bound_prevents",
+      "under_failure_test": "test_inv_pkce_bound_under_failure"
+    },
+    {
+      "invariant_id": "ACF_INV_04",
+      "invariant_text": "Redirect URI sent on exchange MUST exactly match the URI registered with the authorization server; wildcard suffixes are FORBIDDEN.",
+      "confirms_test": "test_inv_redirect_exact_confirms",
+      "prevents_test": "test_inv_redirect_exact_prevents",
+      "under_failure_test": "test_inv_redirect_exact_under_failure"
+    },
+    {
+      "invariant_id": "ACF_INV_05",
+      "invariant_text": "Authorization codes MUST be single-use; replay of the same code SHALL produce an invalid_grant error from the client adapter.",
+      "confirms_test": "test_inv_code_single_use_confirms",
+      "prevents_test": "test_inv_code_single_use_prevents",
+      "under_failure_test": "test_inv_code_single_use_under_failure"
+    },
+    {
+      "invariant_id": "ACF_INV_06",
+      "invariant_text": "Tokens received MUST NEVER be logged in full; only opaque hashes MAY appear in audit traces.",
+      "confirms_test": "test_inv_token_redaction_confirms",
+      "prevents_test": "test_inv_token_redaction_prevents",
+      "under_failure_test": "test_inv_token_redaction_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 921,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 1 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 1117,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 2004,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 5215,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1453,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 1710,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 95040,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "41 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 969,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 985,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 71118,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 181246,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-STATE-REUSE",
+        "hypothesis": "Calling begin() twice in rapid succession may reuse the same state value if the CSPRNG is seeded from a low-entropy source like time.time(), allowing CSRF via prediction across concurrent sessions.",
+        "input_fixture": "for _ in range(10000): reqs.append(flow.begin(['openid'])); assert len({r.state for r in reqs}) == 10000",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-STATE-MISMATCH-BYPASS",
+        "hypothesis": "exchange() may use string equality (==) instead of hmac.compare_digest, enabling timing side-channel to recover state byte-by-byte; or may normalize whitespace/case allowing 'ABC ' to match 'ABC'.",
+        "input_fixture": "flow.exchange(code='valid', state=stored.state + '\\x00', stored=stored)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-STATE-NULL-EMPTY",
+        "hypothesis": "Passing state='' or state=None when stored.state is also falsy (due to a bug in begin()) may pass equality check and reach token endpoint, bypassing CSRF protection entirely.",
+        "input_fixture": "flow.exchange(code='c', state='', stored=AuthorizationRequest(url='',state='',nonce='',code_verifier=''))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PKCE-VERIFIER-SWAP",
+        "hypothesis": "Attacker obtains an authorization code via intercepted redirect and submits exchange() with stored=AuthorizationRequest crafted with attacker's own code_verifier, defeating PKCE binding to the original session.",
+        "input_fixture": "attacker_stored = AuthorizationRequest(url=victim.url, state=victim.state, nonce=victim.nonce, code_verifier='attacker_verifier'); flow.exchange(victim_code, victim.state, attacker_stored)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-PKCE-PLAIN-DOWNGRADE",
+        "hypothesis": "If begin() supports method=plain fallback when S256 hashing fails, attacker can force downgrade by intercepting authorization_url and stripping code_challenge_method=S256, defeating PKCE entirely.",
+        "input_fixture": "req = flow.begin(['openid']); tampered_url = req.authorization_url.replace('S256','plain')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REDIRECT-WILDCARD",
+        "hypothesis": "Redirect URI matching may use startswith() or regex with unanchored patterns, allowing https://app.example.com.attacker.com/cb to match registered https://app.example.com/cb prefix.",
+        "input_fixture": "flow.exchange(code='c', state=s.state, stored=replace(s, authorization_url=s.authorization_url.replace('redirect_uri=https://app.example.com/cb','redirect_uri=https://app.example.com.evil.com/cb')))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REDIRECT-PATH-TRAVERSAL",
+        "hypothesis": "Redirect URI normalization may collapse /cb/../evil to /evil after registration check, or accept https://app.example.com/cb/..%2fadmin bypassing exact match through percent-encoding.",
+        "input_fixture": "redirect_uri='https://app.example.com/cb/%2e%2e/admin'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CODE-REPLAY",
+        "hypothesis": "Calling exchange() twice with the same code and same stored AuthorizationRequest may succeed both times if no nonce-store/used-codes cache exists client-side, allowing token theft on replay.",
+        "input_fixture": "t1 = flow.exchange('code123', s.state, s); t2 = flow.exchange('code123', s.state, s); assert t2 raises invalid_grant",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CODE-REPLAY-RACE",
+        "hypothesis": "Concurrent exchange() calls with identical code from two threads may both pass the single-use check before either marks the code consumed (TOCTOU), yielding two valid token sets.",
+        "input_fixture": "with ThreadPoolExecutor(2) as ex: list(ex.map(lambda _: flow.exchange('c', s.state, s), range(2)))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TOKEN-LOG-LEAK",
+        "hypothesis": "On HTTP error or debug mode, the full access_token / id_token may be written to logs via repr(response) or exception chaining, violating the never-log-full-token invariant.",
+        "input_fixture": "with caplog.at_level('DEBUG'): flow.exchange('c', s.state, s); assert 'eyJhbGc' not in caplog.text",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NONCE-PREDICTABLE",
+        "hypothesis": "If nonce is generated with random.random() or uuid1() (MAC+timestamp) instead of secrets.token_urlsafe, attacker can predict nonce for ID token replay across sessions.",
+        "input_fixture": "nonces = [flow.begin(['openid']).nonce for _ in range(1000)]; check entropy via chi-square",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CODE-INJECTION",
+        "hypothesis": "Authorization code containing CRLF or shell metacharacters ('; rm -rf /') may be passed unsanitized into HTTP request body or subprocess, enabling header injection or command injection at the token endpoint adapter.",
+        "input_fixture": "flow.exchange(code='valid\\r\\nAuthorization: Bearer attacker', state=s.state, stored=s)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED-STORED",
+        "hypothesis": "Passing stored=None or stored as untrusted dict (not the frozen dataclass) may bypass type checks via duck typing, letting attacker supply arbitrary state/verifier matching their forged callback.",
+        "input_fixture": "flow.exchange('c', 'attacker_state', stored={'state':'attacker_state','code_verifier':'x','nonce':'y','authorization_url':''})",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-AMPLIFICATION-BEGIN",
+        "hypothesis": "begin() with scopes=['x']*1_000_000 may produce a multi-MB authorization_url consuming memory and amplifying client\u2192AS bandwidth, enabling DoS.",
+        "input_fixture": "flow.begin(['openid'] * 10_000_000)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CLOCK-SKEW-NONCE",
+        "hypothesis": "If nonce includes a timestamp validated with strict clock skew (<1s), legitimate exchanges fail under NTP drift; conversely if skew window is huge (>1h), replay window expands.",
+        "input_fixture": "freeze_time('2026-04-19 +2h'): flow.exchange('c', s.state, s)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PRNG-SEED-COLLISION",
+        "hypothesis": "If begin() seeds the PRNG from time.time() or os.urandom() with a short seed before generating state/nonce, two rapid concurrent calls (within the same OS scheduler tick) may produce identical state+nonce pairs, violating the never-reuse invariant and enabling session fixation across two victims sharing the same authorization_url.",
+        "input_fixture": "import threading; results = []; [threading.Thread(target=lambda: results.append(flow.begin(['openid']))).start() for _ in range(500)]; states = [r.state for r in results]; assert len(states) == len(set(states)), 'COLLISION DETECTED'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-STATE-BYTESTR-TYPE-CONFUSION",
+        "hypothesis": "Python's == operator returns False when comparing bytes and str even if they encode the same content (b'abc' != 'abc'). If begin() stores state as bytes internally but exchange() receives it as str from an HTTP callback parser (or vice-versa), the byte-equal check silently fails, allowing any attacker-supplied state string to pass if the comparison short-circuits to True via a type-coercion bug.",
+        "input_fixture": "req = flow.begin(['openid']); malicious_state = req.state.encode() if isinstance(req.state, str) else req.state.decode(); result = flow.exchange(code='legit_code', state=malicious_state, stored=req)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-STATE-TIMING-ORACLE",
+        "hypothesis": "If the state comparison uses a non-constant-time equality check (e.g., Python's default str ==, which short-circuits on first differing byte), an attacker can mount a timing oracle to brute-force the state one byte at a time. With ~128 \u00d7 256 attempts they can reconstruct state and forge CSRF tokens for an in-flight session.",
+        "input_fixture": "import time; req = flow.begin(['openid']); charset='abcdefghijklmnopqrstuvwxyz0123456789-_'; timings = {}; [timings.update({c: (lambda s,e: e-s)(time.perf_counter_ns(), (flow.exchange('c', req.state[:i]+c+'x'*(len(req.state)-i-1), req), time.perf_counter_ns())[1]}) for c in charset]) for i in range(len(req.state))]",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PKCE-VERIFIER-SWAP",
+        "hypothesis": "If exchange() accepts a code_verifier parameter directly rather than reading it exclusively from the stored AuthorizationRequest, an attacker who intercepts the authorization code can supply their own pre-computed verifier pair (verifier2, challenge2) and successfully complete the exchange with a code that was issued against challenge1, bypassing PKCE binding entirely.",
+        "input_fixture": "import hashlib, base64, os; req = flow.begin(['openid']); evil_verifier = base64.urlsafe_b64encode(os.urandom(32)).rstrip(b'=').decode(); tampered_stored = AuthorizationRequest(req.authorization_url, req.state, req.nonce, evil_verifier); result = flow.exchange(code='intercepted_code', state=req.state, stored=tampered_stored)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REDIRECT-URI-PATH-TRAVERSAL",
+        "hypothesis": "If redirect URI matching uses a prefix check or parsed-URL component comparison that normalizes paths, a URI like 'https://app.example.com/callback/../evil' or 'https://app.example.com/callback%2F..%2Fevil' may pass the registered-URI check while the authorization server resolves it to a different endpoint, enabling token delivery to an attacker-controlled path.",
+        "input_fixture": "flow_with_bad_redirect = AuthorizationCodeFlowImpl(redirect_uri='https://app.example.com/callback'); req = flow_with_bad_redirect.begin(['openid']); result = flow_with_bad_redirect.exchange(code='c', state=req.state, stored=req, redirect_uri_override='https://app.example.com/callback/../admin/token-collector')",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REDIRECT-URI-OPEN-REDIRECT-SUBDOMAIN",
+        "hypothesis": "If the redirect URI validator uses a suffix match or 'startswith' on the registered domain string (e.g. checking that URI starts with 'https://app.example.com'), then 'https://app.example.com.evil.net/callback' passes the check because it starts with the registered prefix, constituting an open redirect that delivers tokens to the attacker's domain.",
+        "input_fixture": "registered = 'https://app.example.com/callback'; attacker_uri = 'https://app.example.com.evil.net/callback'; assert attacker_uri.startswith(registered.split('/callback')[0]), 'demonstrates prefix bypass'; result = flow.exchange(code='c', state=stored.state, stored=stored, redirect_uri=attacker_uri)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CODE-REPLAY-RACE",
+        "hypothesis": "If the single-use code enforcement is implemented via a non-atomic check-then-delete (read used_codes set, check membership, then add), two concurrent exchange() calls with the same code racing in separate threads may both pass the 'not in used_codes' check before either inserts the code, allowing double redemption and issuing two valid token sets from a single authorization code.",
+        "input_fixture": "import threading; req = flow.begin(['openid']); results = []; threads = [threading.Thread(target=lambda: results.append(flow.exchange('stolen_code', req.state, req))) for _ in range(10)]; [t.start() for t in threads]; [t.join() for t in threads]; successes = [r for r in results if 'access_token' in r]; assert len(successes) <= 1, f'REPLAY SUCCEEDED {len(successes)} times'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TOKEN-LEAK-VIA-EXCEPTION-TRACEBACK",
+        "hypothesis": "If the token endpoint returns an access_token inside a JSON response and exchange() raises an exception (e.g., scope validation failure, nonce mismatch, or network error on a second request), the exception message or traceback may contain the full token dict as a repr() string. Standard Python logging handlers and Sentry-style error reporters would then capture the full token, violating the no-full-token-logging invariant.",
+        "input_fixture": "import logging, io; log_capture = io.StringIO(); logging.basicConfig(stream=log_capture, level=logging.DEBUG); req = flow.begin(['openid']); try: flow.exchange(code='code_that_triggers_post_token_validation_error', state=req.state, stored=req) except Exception as e: log_output = log_capture.getvalue(); assert 'access_token' not in log_output and 'Bearer ' not in log_output, f'TOKEN LEAKED IN LOG: {log_output[:200]}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ENTROPY-TRUNCATION-BASE64",
+        "hypothesis": "If state is generated as base64(os.urandom(16)) but then trimmed to satisfy a length constraint (e.g., state[:20]), effective entropy drops below 128 bits (20 chars of base64 = 120 bits). An attacker enumerating states offline can feasibly collide within 2^60 operations with birthday-bound probability, enabling CSRF.",
+        "input_fixture": "import os, base64, re; samples = [base64.urlsafe_b64encode(os.urandom(16)).decode()[:20] for _ in range(1000)]; assert all(len(s) >= 22 for s in samples), f'ENTROPY TRUNCATED: sample={samples[0]}, effective_bits={len(samples[0])*6}'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EMPTY-SCOPES-NULL-REQUEST",
+        "hypothesis": "Passing an empty list to begin() may cause the implementation to generate a malformed authorization_url with no scope parameter, or worse, skip state/nonce generation entirely via an early-return fast path. The returned AuthorizationRequest could contain empty-string or None state values, which would then trivially 'match' any subsequent exchange() call with state='' or state=None.",
+        "input_fixture": "req = flow.begin([]); assert req.state is not None and len(req.state) >= 22, f'EMPTY SCOPES BROKE STATE: state={req.state!r}'; assert req.nonce is not None and len(req.nonce) >= 22, f'EMPTY SCOPES BROKE NONCE: nonce={req.nonce!r}'; result = flow.exchange('code', '', req)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-STATE-NONE-BYPASS",
+        "hypothesis": "If exchange() compares state using 'stored.state == state' and the stored AuthorizationRequest was somehow constructed with state=None (e.g., via deserialization from a tampered session cookie), then passing state=None in the callback would satisfy the equality check because None == None is True in Python, completely bypassing CSRF protection without touching the PRNG.",
+        "input_fixture": "from dataclasses import dataclass; tampered = AuthorizationRequest(authorization_url='https://as.example.com/auth', state=None, nonce=None, code_verifier='verifier'); result = flow.exchange(code='attacker_code', state=None, stored=tampered); assert 'access_token' not in result, 'NULL STATE BYPASS SUCCEEDED'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PKCE-DOWNGRADE-PLAIN",
+        "hypothesis": "If the PKCE challenge method is not explicitly locked to S256 and the implementation accepts the 'plain' method as a fallback (either by sending no code_challenge_method or by sending code_challenge_method=plain), an interceptor who captures the authorization request URL can read the code_challenge directly, use it verbatim as the code_verifier in exchange(), and complete the flow without ever possessing the original verifier.",
+        "input_fixture": "req = flow.begin(['openid']); auth_url = req.authorization_url; assert 'code_challenge_method=S256' in auth_url, f'PKCE PLAIN DOWNGRADE: url={auth_url}'; assert 'code_challenge_method=plain' not in auth_url.lower(), f'PLAIN METHOD EXPOSED IN URL'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-TOKEN-LEAK-DEBUG-REPR",
+        "hypothesis": "If the dict returned by exchange() is ever passed to str(), repr(), or f-string formatting in a debug log, structured logger, or monitoring span attribute, the full token including access_token and refresh_token will be serialized as plaintext. A 'log token hash only' policy enforced only at the return site fails if any intermediate code path stringifies the response dict before it is filtered.",
+        "input_fixture": "import logging; logger = logging.getLogger('auth.debug'); req = flow.begin(['openid']); token_response = flow.exchange('code', req.state, req); logger.debug('token_response=%s', token_response); logger.debug(f'exchanged tokens: {token_response}'); logger.debug('result: %r', token_response)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-WEAK_RNG_STATE",
+        "hypothesis": "begin() uses weak random source (e.g., Python's random module instead of secrets) yielding <64 bits entropy; attacker predicts next state via seed recovery",
+        "input_fixture": "call begin() 10 times within same process; collect returned states; attempt seed inference; verify predictability with <2^64 guesses",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT_STATE_COLLISION",
+        "hypothesis": "Race condition: two threads call begin() simultaneously; both read same uninitialized state variable or use non-atomic RNG, producing identical state values",
+        "input_fixture": "concurrent.futures spawn 100 threads each calling begin(); collect all returned states; verify duplicates appear with >1% frequency",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-STATE_VALIDATION_SKIP",
+        "hypothesis": "exchange() performs state equality check AFTER token endpoint request initiated, or skips check entirely if code is valid",
+        "input_fixture": "exchange(code='valid_code', state='attacker_injected_state', stored=AuthorizationRequest(state='legitimate_state')); verify request completes without state validation error",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-STATE_CASE_NORMALIZATION",
+        "hypothesis": "State comparison uses case-insensitive or unicode-normalized equality; 'aBcDeF' == 'abcdef' or NFC(state) == NFD(state)",
+        "input_fixture": "begin() returns state='XyZaBc123'; exchange with state='xyzabc123'; verify accepted if case normalization occurs",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MALFORMED_STATE_TYPE_COERCION",
+        "hypothesis": "exchange() receives state parameter as int/None/list instead of string; type coercion or missing validation allows int(0) == None to evaluate True",
+        "input_fixture": "exchange(code='valid', state=0, stored=AuthorizationRequest(state=0)); verify accepted if type validation absent",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PKCE_VERIFIER_SUBSTITUTION",
+        "hypothesis": "exchange() accepts arbitrary code_verifier parameter without binding to stored request; attacker provides different verifier that hashes to same S256 digest",
+        "input_fixture": "exchange(code='auth_code', state=correct, code_verifier='attacker_payload'); if len(attacker_payload)==43 and SHA256(attacker_payload) collides with stored S256, accepted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REDIRECT_URI_WILDCARD_SUFFIX",
+        "hypothesis": "Redirect URI comparison uses endswith() or regex wildcard; stored='https://myapp.com/cb' matches request='https://attacker.com/myapp.com/cb'",
+        "input_fixture": "stored_redirect_uri='https://app.example.com/callback'; exchange with redirect_uri='https://evil.com/app.example.com/callback'; verify rejected",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REDIRECT_URI_SUBSTRING_INJECTION",
+        "hypothesis": "Redirect URI validation uses substring matching (in operator) instead of exact equality; 'https://myapp.com' found in 'https://attacker.com?callback=https://myapp.com'",
+        "input_fixture": "stored='https://secure.example.com/auth'; exchange with redirect_uri='https://phishing.site/?uri=https://secure.example.com/auth'; verify rejected",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CODE_REPLAY_ATTACK",
+        "hypothesis": "Authorization code checked for single-use AFTER token request completes; two rapid exchange() calls with same code both succeed if concurrent",
+        "input_fixture": "exchange(code='auth_123', state=state1); simultaneously exchange(code='auth_123', state=state1); verify second call returns invalid_grant error",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TOKEN_PLAINTEXT_LOG_EXPOSURE",
+        "hypothesis": "Full token values logged in plaintext to stderr/stdout/logfile; attacker extracts 'access_token=\"eyJ...\"' from debug output or exception messages",
+        "input_fixture": "exchange(...); grep audit logs and exception messages for 'access_token' or 'Bearer'; verify only hash_sha256(...) appears, not literal token",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-EMPTY_STATE_NULL_CHECK",
+        "hypothesis": "exchange() state validation fails for empty string; if stored.state='' then any state='' or state='x' accepted due to falsy check",
+        "input_fixture": "begin() incorrectly returns state=''; exchange(code=valid, state=''); verify accepted; then exchange(code=valid, state='different'); verify also accepted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NONCE_REUSE_RNG_COLLISION",
+        "hypothesis": "CSPRNG not properly seeded across restarts or calls within same millisecond window; begin() called twice returns nonce='same_value' both times",
+        "input_fixture": "freeze time; call begin() twice; verify nonce differs; unfreeze; call begin() again in restarted process; verify nonce does not repeat",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NONCE_EXPIRY_CLOCK_SKEW",
+        "hypothesis": "Nonce freshness validated against system clock with fixed tolerance; if client clock ahead by >tolerance, legitimate nonce rejected as expired",
+        "input_fixture": "begin() at time T; advance system clock by +90s; exchange() at T+90s; verify rejected as 'nonce_expired' if tolerance<90s",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "acf.begin",
+        "required_attributes": [
+          "state_hash",
+          "nonce_hash",
+          "scope_count"
+        ]
+      },
+      {
+        "event_name": "acf.exchange.success",
+        "required_attributes": [
+          "state_hash",
+          "code_hash",
+          "token_response"
+        ]
+      },
+      {
+        "event_name": "acf.exchange.rejected",
+        "required_attributes": [
+          "reason",
+          "state_hash"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "acf.begin.count",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 10,
+        "label_keys": [
+          "client_id"
+        ]
+      },
+      {
+        "name": "acf.exchange.count",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 20,
+        "label_keys": [
+          "result"
+        ]
+      },
+      {
+        "name": "acf.exchange.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "result"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "acf.begin",
+        "required_attributes": [
+          "client.id",
+          "scope.count"
+        ]
+      },
+      {
+        "operation_name": "acf.exchange",
+        "required_attributes": [
+          "client.id",
+          "result"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol signature matches catalog verbatim (begin/exchange, AuthorizationRequest fields). PKCE S256, byte-exact redirect, single-use codes, hashed audit all faithfully implement the six invariants. Minor: catalog says 'dict' return; impl returns dict[str,object] \u2014 compatible."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All 6 invariants covered with code paths: CSPRNG sampling w/ collision retry, constant-time state check before token endpoint, PKCE binding, byte-exact redirect, single-use w/ TTL + transport-error release, redaction. Includes factory, provider gate, introspection, audit hooks."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Dedicated hierarchy (InvalidState/Grant/Redirect/Request) carrying OAuth error code + invariant_id. Messages cite the rule and expected shape. BaseException catch on transport is intentional and documented (release reservation, re-raise)."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "Token endpoint and audit_sink injected; clock + rng injectable for deterministic tests; frozen dataclasses prevent mutation; runtime_checkable Protocol; lazy SDK boundary (no httpx import). Lock released before endpoint call avoids reentrancy deadlock."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe via lock, TTL expiry, constant-time compares, redaction, defence-in-depth PKCE check. Caveat: redeemed_codes/issued_nonces grow unbounded over process lifetime (no GC of expired entries) \u2014 fine for typical request volumes but worth noting for long-lived processes."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Namespace/name/api_signature/invariants all reflected; ProviderMetadata enforces extension_contract (S256 advertised); maturity matches battle_tested posture; consumption_example in spec mirrors actual API. __all__ exports the documented surface."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "PKCE S256, CSPRNG, nonce, and code_verifier are used without explanation \u2014 a junior hitting these terms cold will tab away to MDN before writing a line",
+          "'Stash the AuthorizationRequest in your session verbatim' is ambiguous \u2014 no hint of what 'session' means (cookie? Redis? JWT?), which is the most likely stumbling block in practice",
+          "'Confidential or public client' distinction is referenced but never defined, leaving readers unsure whether the primitive applies to their app"
+        ],
+        "rewrite_suggestion": "Add a collapsible 'Glossary' box right after 'What it does' with one-line definitions for PKCE, state, nonce, code_verifier, and confidential vs public client. Change 'stash verbatim in your session' to a concrete snippet showing Flask/Django session or a Redis SET call, so the pattern is copy-pasteable without prior OAuth knowledge."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "The token endpoint callable is declared as `Mapping[str,str] -> Mapping[str,object]` in prose but the exact TypedDict / Protocol shape is deferred to contract.json \u2014 principal engineers designing adapters need the concrete type inline",
+          "Locking semantics say concurrent begin() calls are safe but don't specify whether a single flow instance is meant to serve multiple simultaneous user sessions or only one \u2014 critical for deciding whether to share instances across requests",
+          "No guidance on distributed deployments: if session affinity is broken (e.g., rolling restart between begin() and exchange()), the stored AuthorizationRequest lives in one process's memory and the callback hits another \u2014 silent breakage"
+        ],
+        "rewrite_suggestion": "Inline the Protocol definition for the token endpoint callable alongside the prose. Add a 'Instance lifecycle' note: 'one flow instance per OAuth client registration, not per user session \u2014 AuthorizationRequest objects are the per-user unit.' Add a 'Distributed deployments' callout warning that the default in-memory state store requires sticky sessions or an external store adapter."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "Nonce binding is listed as an invariant (ACF_INV_01) but nonce validation at ID token verification is never mentioned \u2014 it's ambiguous whether the primitive validates the nonce in the id_token or delegates that to the caller, which is a common OIDC attack surface",
+          "The `redact_token_response` boundary is named but its signature and redaction rules are not shown; auditors cannot verify completeness without hunting through contract.json",
+          "No mention of whether the primitive validates the `iss` and `aud` claims in the returned ID token or whether that is entirely the caller's responsibility \u2014 a gap that has caused real-world token substitution attacks"
+        ],
+        "rewrite_suggestion": "Add a 'Caller responsibilities' table with three rows: (1) nonce validation in id_token \u2014 caller, (2) iss/aud claim validation \u2014 caller, (3) token redaction in logs \u2014 primitive enforces at audit_sink boundary, caller must apply redact_token_response if logging raw response. Show the redact_token_response signature inline."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "Metric names are listed but the instrumentation backend is unspecified \u2014 no example of how to wire acf.* metrics to OpenTelemetry, Prometheus, or Datadog, making the 'self-observability' claim difficult to operationalise quickly",
+          "No recommended alert thresholds or SLOs: 'sustained rise' in invalid_state is the CSRF indicator, but without a baseline or a suggested rate (e.g., >1% over 5 min \u2192 page) the metric is informational rather than actionable",
+          "audit_sink failure mode is undocumented \u2014 if the sink raises, does exchange() abort and deny the user, or swallow the error and grant tokens? Either answer has operational implications and both are missing"
+        ],
+        "rewrite_suggestion": "Add an 'Ops runbook' subsection with: (1) a 3-line OpenTelemetry SDK snippet registering the three meters; (2) two example alert rules (invalid_state rate > 1% \u2192 CSRF investigation, invalid_grant rate > 5% \u2192 replay/provider check); (3) one sentence on audit_sink failure policy ('exceptions are caught and logged at WARNING; token exchange proceeds \u2014 change audit_sink to raise if you need hard auditability')."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The business value sentence is buried in 'When to use': readers have to parse 'federated login via an external identity provider' before understanding what this unlocks for users \u2014 the lede is hidden",
+          "RFC citations and draft-spec references appear in the main flow description; for a PM reading to scope a sprint or write acceptance criteria, these are noise that obscures the feature boundary",
+          "No indication of out-of-the-box provider compatibility (Google, Auth0, Keycloak are mentioned as examples but not confirmed as tested/supported), making it hard to answer 'does this work with our IdP?'"
+        ],
+        "rewrite_suggestion": "Open 'What it does' with a single business sentence: 'Lets users log in with Google, Auth0, Keycloak, or any OIDC provider \u2014 your app never sees their password.' Move all RFC references to a collapsed 'Standards compliance' appendix. Add a one-line 'Tested providers' list so PMs can answer IdP compatibility questions without pulling in an engineer."
+      }
+    ]
+  }
+}

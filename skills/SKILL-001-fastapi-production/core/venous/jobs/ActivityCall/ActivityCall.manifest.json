@@ -1,0 +1,790 @@
+{
+  "name": "ActivityCall",
+  "namespace": "jobs",
+  "maturity": "battle_tested",
+  "builder_agent_id": 3,
+  "catalog_entry_sha256": "6d7658c6fdf70b374dc3720b08268e21bc2b36526cabbcfa9361bce850b7ffdf",
+  "files": [
+    {
+      "path": "jobs/ActivityCall/ActivityCall.cfg",
+      "sha256": "8b5a57d0a657d065b0b42579950e2de795f79328eb8ff953ab43596befeb0d78",
+      "size_bytes": 111,
+      "kind": "test"
+    },
+    {
+      "path": "jobs/ActivityCall/ActivityCall.contract.json",
+      "sha256": "ee56e19be103ec60045e0fbd17fc9cfe0056fb10a8be9d6a826dce704b6f8618",
+      "size_bytes": 2850,
+      "kind": "contract_json"
+    },
+    {
+      "path": "jobs/ActivityCall/ActivityCall.manifest.json",
+      "sha256": "ee562a90048941e8d9605946c94b9406e72b3eca1c3ede4d40d94d783eef57b4",
+      "size_bytes": 47772,
+      "kind": "manifest"
+    },
+    {
+      "path": "jobs/ActivityCall/ActivityCall.md",
+      "sha256": "65844c80392b5915db6adc8dc6b3dbeb4d24ddf707803dd1bef3c04879b70719",
+      "size_bytes": 5542,
+      "kind": "spec_md"
+    },
+    {
+      "path": "jobs/ActivityCall/ActivityCall.py",
+      "sha256": "bc51685ed063052ae1c905ceaa6e467282e80e706c49a7336d60120a2ec9a922",
+      "size_bytes": 7744,
+      "kind": "impl"
+    },
+    {
+      "path": "jobs/ActivityCall/ActivityCall.tla",
+      "sha256": "fccc745483a18a9382384438668958d7d4e575443df9d8c9f3b59f0562d01839",
+      "size_bytes": 2140,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "jobs/ActivityCall/behavioral_ActivityCall.py",
+      "sha256": "9217087b859c8e9e13cd119c8455ce28e3788e73ff45e8307d29bbf1ce94ae3f",
+      "size_bytes": 3086,
+      "kind": "behavioral"
+    },
+    {
+      "path": "jobs/ActivityCall/chaos_ActivityCall.py",
+      "sha256": "8126f8107d9f17f37ffefd5bb01955f962894f6f4e474d0c093967894a59d7a8",
+      "size_bytes": 2907,
+      "kind": "chaos"
+    },
+    {
+      "path": "jobs/ActivityCall/concurrent_ActivityCall.py",
+      "sha256": "67228fb877274c339a07f9364b4fe471ce973d9c63c2d826df48670961cf88a8",
+      "size_bytes": 2777,
+      "kind": "concurrent"
+    },
+    {
+      "path": "jobs/ActivityCall/dashboard.json",
+      "sha256": "653a8d0ad36a1995c90b764661d69f73f1f9a92fe509912d0d9e79cce4ffd087",
+      "size_bytes": 569,
+      "kind": "dashboard"
+    },
+    {
+      "path": "jobs/ActivityCall/invariant_bindings.json",
+      "sha256": "317861fbc73cb2ebe5bfb6461727a665cfb3a793eb3d9311b6e75738893295df",
+      "size_bytes": 1936,
+      "kind": "test"
+    },
+    {
+      "path": "jobs/ActivityCall/metamorphic_ActivityCall.py",
+      "sha256": "78e3ab6e283f7231f726c2592bdc05e6a38607a97039129a41cb98b155768ae8",
+      "size_bytes": 2363,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "jobs/ActivityCall/observability_ActivityCall.py",
+      "sha256": "ff9a795a4d09c18c50279549cbb7bdb04fb82b6acbac50c97a07e39d45ed266f",
+      "size_bytes": 1294,
+      "kind": "observability"
+    },
+    {
+      "path": "jobs/ActivityCall/observability_schema.json",
+      "sha256": "172f4d7cd3858e80b55b6008b14b5da91d9cb93fa6e87f0b43a80d15931d68e7",
+      "size_bytes": 1315,
+      "kind": "observability"
+    },
+    {
+      "path": "jobs/ActivityCall/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "jobs/ActivityCall/proposed_invariants.json",
+      "sha256": "666c038ed9d488e284132b72398e0244582508df1c2f985728b8dec1bc0dc404",
+      "size_bytes": 17,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "jobs/ActivityCall/state_machine_ActivityCall.py",
+      "sha256": "2eb36f682e55b8803461c08fb220b2df266348cdab84044fbd823350ebc68413",
+      "size_bytes": 2164,
+      "kind": "state_machine"
+    },
+    {
+      "path": "jobs/ActivityCall/test_ActivityCall.py",
+      "sha256": "55d17664bf10cb0f3e05da83022deb11f811c8b8dbe20ac2831f2f1e13a1fa79",
+      "size_bytes": 7776,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "AC_INV_01",
+      "invariant_text": "Execution semantics are at-least-once, so activity code MUST be idempotent under retry.",
+      "confirms_test": "test_inv_at_least_once_confirms",
+      "prevents_test": "test_inv_at_least_once_prevents",
+      "under_failure_test": "test_inv_at_least_once_under_failure"
+    },
+    {
+      "invariant_id": "AC_INV_02",
+      "invariant_text": "start_to_close_s MUST be set and be a positive integer; a missing value SHALL raise a configuration error.",
+      "confirms_test": "test_inv_start_to_close_required_confirms",
+      "prevents_test": "test_inv_start_to_close_required_prevents",
+      "under_failure_test": "test_inv_start_to_close_required_under_failure"
+    },
+    {
+      "invariant_id": "AC_INV_03",
+      "invariant_text": "Long running activities ALWAYS heartbeat within heartbeat_s; a missed heartbeat CANNOT be treated as success.",
+      "confirms_test": "test_inv_heartbeat_missed_confirms",
+      "prevents_test": "test_inv_heartbeat_missed_prevents",
+      "under_failure_test": "test_inv_heartbeat_missed_under_failure"
+    },
+    {
+      "invariant_id": "AC_INV_04",
+      "invariant_text": "A failure whose attempt count reaches RetryPolicy.maximum_attempts MUST surface to the workflow as a terminal error.",
+      "confirms_test": "test_inv_max_attempts_terminal_confirms",
+      "prevents_test": "test_inv_max_attempts_terminal_prevents",
+      "under_failure_test": "test_inv_max_attempts_terminal_under_failure"
+    },
+    {
+      "invariant_id": "AC_INV_05",
+      "invariant_text": "Heartbeat details NEVER persist across a successful completion; they scope only to the in flight attempt and its retries.",
+      "confirms_test": "test_inv_heartbeat_scope_confirms",
+      "prevents_test": "test_inv_heartbeat_scope_prevents",
+      "under_failure_test": "test_inv_heartbeat_scope_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 773,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 1 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 3504,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 1680,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 9285,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 1620,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 1362,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 58728,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "43 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 1788,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 3527,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 67916,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 151016,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MISSING-STC",
+        "hypothesis": "Instantiating ActivityCall without start_to_close_s (None) should raise a configuration error per invariant, but the frozen dataclass has no __post_init__ validator so None silently passes and the executor may default it to infinity, violating the positive integer requirement.",
+        "input_fixture": "ActivityCall(name='x', task_queue='q', start_to_close_s=None, schedule_to_close_s=None, heartbeat_s=None, retry=RetryPolicy(1.0,2.0,3))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-ZERO-STC",
+        "hypothesis": "start_to_close_s=0 is not a positive integer but will bypass naive truthiness validation (if not stc) only when None is checked; zero means instant timeout, making every attempt fail before work runs, causing infinite retry storms.",
+        "input_fixture": "ActivityCall(name='x', task_queue='q', start_to_close_s=0, schedule_to_close_s=60, heartbeat_s=None, retry=RetryPolicy(1.0,2.0,5))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NEGATIVE-STC",
+        "hypothesis": "A negative start_to_close_s passes Python int type check but violates positivity; downstream scheduler may coerce via abs() or treat as past-deadline, producing immediate timeout and silent retry amplification.",
+        "input_fixture": "ActivityCall(name='x', task_queue='q', start_to_close_s=-1, schedule_to_close_s=10, heartbeat_s=None, retry=RetryPolicy(0.1,2.0,10))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INT-OVERFLOW-STC",
+        "hypothesis": "start_to_close_s=2**63 overflows 64-bit duration encoders used by most runtimes (Temporal/gRPC), causing wraparound to negative or truncation, effectively disabling the timeout and permitting runaway activities.",
+        "input_fixture": "ActivityCall(name='x', task_queue='q', start_to_close_s=2**63, schedule_to_close_s=None, heartbeat_s=None, retry=RetryPolicy(1.0,2.0,3))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HEARTBEAT-RACE",
+        "hypothesis": "Worker sends heartbeat at T=heartbeat_s - epsilon but network delay causes server receipt at T=heartbeat_s + epsilon; clock skew between worker and server plus non-monotonic wall clocks lets a missed heartbeat be misclassified as live, letting a stuck activity complete as success.",
+        "input_fixture": "ActivityCall(name='slow', task_queue='q', start_to_close_s=3600, schedule_to_close_s=None, heartbeat_s=5, retry=RetryPolicy(1.0,2.0,3)) run on worker with +10s clock skew",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HEARTBEAT-PERSIST",
+        "hypothesis": "Heartbeat details from attempt N leak into attempt N+1 after the runtime marks success mid-flight due to a race between completion RPC and heartbeat RPC, violating scoping and causing downstream consumers to observe stale progress state.",
+        "input_fixture": "Activity returns successfully while a pending heartbeat(details={'cursor':42}) is in flight; next workflow run reads stale cursor=42",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NON-IDEMPOTENT-REPLAY",
+        "hypothesis": "At-least-once delivery plus a non-idempotent activity (e.g. charge_card without idempotency key) double-charges when worker crashes after side effect but before ack; retry executes the side effect a second time.",
+        "input_fixture": "ActivityCall(name='charge_card', args=(user_id, 100_00), retry=RetryPolicy(1.0,2.0,5)); worker SIGKILL between stripe.charge() and return",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MAX-ATTEMPTS-ZERO",
+        "hypothesis": "RetryPolicy(maximum_attempts=0) is an integer but means never-execute; runtime may treat 0 as unlimited (falsey check) or as one attempt, neither matching the terminal-error contract, producing silent no-op or infinite retry.",
+        "input_fixture": "RetryPolicy(initial_interval_s=1.0, backoff_coefficient=2.0, maximum_attempts=0)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-BACKOFF-OVERFLOW",
+        "hypothesis": "backoff_coefficient=1e308 with maximum_attempts=50 overflows float math for next_delay = initial*coef**n, producing inf or NaN; scheduler either sleeps forever or schedules immediately, bypassing terminal-error surfacing.",
+        "input_fixture": "RetryPolicy(initial_interval_s=1.0, backoff_coefficient=1e308, maximum_attempts=50)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MALFORMED-ARGS",
+        "hypothesis": "args contains a non-serializable object (open file handle, lambda, thread.Lock); the scheduler silently drops or pickles partial state, so retry reconstructs with different args violating idempotency assumptions and possibly leaking credentials via __repr__ in logs.",
+        "input_fixture": "ActivityCall(name='x', task_queue='q', start_to_close_s=10, schedule_to_close_s=None, heartbeat_s=None, retry=RetryPolicy(1.0,2.0,3), args=(lambda: SECRET_KEY,))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SCHEDULE-LT-START",
+        "hypothesis": "schedule_to_close_s < start_to_close_s creates an impossible deadline: single attempt exceeds overall budget, so first-attempt timeout bypasses retry entirely and fails before maximum_attempts is reached, violating terminal-error semantics.",
+        "input_fixture": "ActivityCall(name='x', task_queue='q', start_to_close_s=600, schedule_to_close_s=5, heartbeat_s=None, retry=RetryPolicy(1.0,2.0,10))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-TASK-QUEUE-INJECT",
+        "hypothesis": "task_queue accepts arbitrary str including control chars or prompt-injection payloads that route to an attacker-controlled worker pool; name/args may contain secrets logged by that worker, causing credential leak.",
+        "input_fixture": "ActivityCall(name='transfer_funds', task_queue='default\\n\\x00attacker-pool', start_to_close_s=10, schedule_to_close_s=None, heartbeat_s=None, retry=RetryPolicy(1.0,2.0,1), args=(API_KEY,))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-HEARTBEAT-GT-STC",
+        "hypothesis": "heartbeat_s > start_to_close_s means activity times out before any heartbeat is due; missed-heartbeat detection never fires and the attempt is cancelled as start_to_close timeout, but runtime may mark as success if completion arrives during the race window.",
+        "input_fixture": "ActivityCall(name='x', task_queue='q', start_to_close_s=5, schedule_to_close_s=None, heartbeat_s=3600, retry=RetryPolicy(1.0,2.0,3))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EMPTY-NAME",
+        "hypothesis": "name='' passes str type check but no activity is registered under empty string; executor may fallback to default handler or raise at runtime after retry budget consumed, masking misconfiguration as transient failure.",
+        "input_fixture": "ActivityCall(name='', task_queue='q', start_to_close_s=10, schedule_to_close_s=None, heartbeat_s=None, retry=RetryPolicy(1.0,2.0,3))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REPLAY-AMPLIFY",
+        "hypothesis": "Worker receives same ActivityCall twice due to broker redelivery after ack loss; both workers execute concurrently because no per-call lease token is enforced, doubling side effects and violating at-least-once intent of single active attempt.",
+        "input_fixture": "Two workers poll same task_queue; broker redelivers task after ack TCP RST; both execute charge_card(user, 100) simultaneously",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INV2-ZERO_TIMEOUT",
+        "hypothesis": "Passing start_to_close_s=0 may bypass the positive-integer guard if the implementation checks `if not value` (which is truthy for 0) instead of `value is None`, allowing a zero-second timeout to be accepted silently and every execution to immediately time out before doing any work.",
+        "input_fixture": "ActivityCall(name='charge', task_queue='billing', start_to_close_s=0, schedule_to_close_s=None, heartbeat_s=None, retry=RetryPolicy(1.0, 2.0, 3), args=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INV2-FLOAT_COERCE",
+        "hypothesis": "Passing start_to_close_s=30.9 (a float) may silently coerce to 30 via int() truncation, or be accepted as-is on runtimes where the type annotation is unenforced, bypassing the 'positive integer' requirement. The invariant says integer; a float is not one.",
+        "input_fixture": "ActivityCall(name='ingest', task_queue='data', start_to_close_s=30.9, schedule_to_close_s=None, heartbeat_s=None, retry=RetryPolicy(1.0, 2.0, 3), args=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INV2-NEGATIVE_INT",
+        "hypothesis": "A negative start_to_close_s such as -1 is technically an integer and passes an isinstance check, but is not a positive integer. If the validator only checks `isinstance(v, int)` without also checking `v > 0`, the configuration error is never raised and the runtime receives an nonsensical negative timeout.",
+        "input_fixture": "ActivityCall(name='send_email', task_queue='comms', start_to_close_s=-1, schedule_to_close_s=None, heartbeat_s=None, retry=RetryPolicy(1.0, 2.0, 3), args=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INV1-DOUBLE_CHARGE_RACE",
+        "hypothesis": "At-least-once semantics allow two workers to receive the same task concurrently (e.g., after a slow ACK). A non-idempotent activity like a payment debit will be executed twice. The invariant mandates idempotency in activity code, but the runtime provides no enforcement; a naive implementation double-charges the user.",
+        "input_fixture": "Two concurrent ActivityExecutor.execute(ActivityCall(name='debit_wallet', task_queue='payments', start_to_close_s=10, ...)) calls with identical args=('user-42', 100.00) before the first ACK reaches the broker.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INV1-REPLAY-STALE-RESULT",
+        "hypothesis": "A replayed workflow history re-delivers a previously recorded completed ActivityCall result (same name + args) to a new execution context. If the executor caches results keyed only by (name, args) without a workflow-run-scoped nonce, the stale cached result is returned, skipping execution and silently violating at-least-once guarantees or returning outdated data.",
+        "input_fixture": "Start workflow W1, complete ActivityCall(name='fetch_price', args=('AAPL',)); then replay W1 as W2 with same parameters 24 hours later; executor returns cached $150.00 instead of current price.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INV3-HEARTBEAT_CLOCK_SKEW",
+        "hypothesis": "If the worker clock is 5 seconds ahead of the runtime clock and heartbeat_s=10, the runtime may receive a heartbeat timestamped in the future, treat it as invalid or ignore it, and mark the activity as missed-heartbeat even though the worker sent one on time. A missed heartbeat must not be treated as success, but here success is incorrectly blocked.",
+        "input_fixture": "Worker NTP offset: +5s. heartbeat_s=10. Worker sends heartbeat at T+9s (worker clock), which arrives at runtime at T+4s (runtime clock). Runtime expects next heartbeat by T+10s; receives none (from its perspective) until T+14s. Runtime cancels activity.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INV3-HEARTBEAT_SWALLOW_ON_SUCCESS",
+        "hypothesis": "A worker that completes execution at T+heartbeat_s+1 (one second after the heartbeat deadline) might race the timeout check: the success response arrives at the runtime concurrently with the missed-heartbeat cancellation signal. If the runtime prioritises the success response, a missed heartbeat is silently treated as success, violating the invariant.",
+        "input_fixture": "heartbeat_s=5, activity runs for 6 seconds without calling heartbeat(), but returns a successful result at T+6s. Runtime and worker responses arrive within the same event loop tick.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INV4-MAX_ATTEMPTS_ZERO",
+        "hypothesis": "RetryPolicy.maximum_attempts=0 is semantically ambiguous: zero attempts means never run, or run once with no retries? If the executor interprets it as 'unlimited retries' (loop until success), the terminal-error invariant is never triggered and a permanently failing activity runs forever, exhausting worker capacity.",
+        "input_fixture": "ActivityCall(name='broken_op', task_queue='q', start_to_close_s=5, schedule_to_close_s=None, heartbeat_s=None, retry=RetryPolicy(1.0, 2.0, 0), args=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INV4-ATTEMPTS_OVERFLOW",
+        "hypothesis": "Setting maximum_attempts=2**31 (larger than int32 max) may wrap to a negative number in a language or serialisation layer that stores it as a 32-bit signed integer, turning a large-but-finite retry budget into a number the comparator always treats as 'not yet reached', making the activity retry infinitely and never surface a terminal error.",
+        "input_fixture": "RetryPolicy(initial_interval_s=0.1, backoff_coefficient=1.0, maximum_attempts=2147483648)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INV4-CONCURRENT_TERMINAL_RACE",
+        "hypothesis": "When two workers each hold an in-flight attempt and both fail simultaneously at attempt == maximum_attempts, a race in the retry-count increment (read-modify-write without a lock) may allow one failure to overwrite the other, decrementing the counter below the threshold and scheduling another retry instead of surfacing a terminal error.",
+        "input_fixture": "maximum_attempts=3; attempts 2 and 3 fail at the exact same millisecond on two different workers; counter CAS is not atomic; one increment is lost; retry counter reads 2 instead of 3; a fourth attempt is scheduled.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INV5-HEARTBEAT_DETAIL_CREDENTIAL_LEAK",
+        "hypothesis": "A developer stores an OAuth access token inside heartbeat details to resume a long upload. The activity eventually succeeds. The invariant states heartbeat details must not persist after successful completion, but if the workflow history backend snapshots them into the completed-event record, the credential leaks into audit logs and is readable by anyone with history read access.",
+        "input_fixture": "executor.heartbeat({'oauth_token': 'Bearer eyJhbGc...', 'bytes_uploaded': 1048576}); activity completes successfully; workflow history GET /namespaces/jobs/workflows/{id}/history returns the heartbeat event including the token.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INV5-HEARTBEAT_DETAIL_CROSS_ATTEMPT",
+        "hypothesis": "After a successful completion the next retry attempt (triggered by an unrelated transient error in a different branch) should not see the previous attempt's heartbeat details. If the executor passes the last-persisted heartbeat detail as the initial 'last heartbeat' for the new attempt, business logic that branches on heartbeat presence will skip already-completed work steps on a fresh attempt that should start from scratch.",
+        "input_fixture": "Attempt 1 heartbeats {'step': 'uploaded'} then fails due to unrelated network error (not a terminal error). Attempt 2 calls get_heartbeat_details() and receives {'step': 'uploaded'} from attempt 1, skipping the upload step despite starting fresh.",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INV2-SCHEDULE_LT_START",
+        "hypothesis": "If schedule_to_close_s is set and is less than start_to_close_s, the activity cannot possibly start and complete within the schedule window. No invariant explicitly forbids this combination, so the executor may accept the configuration and then immediately expire the activity before it starts, producing a confusing terminal error that looks like a worker failure rather than a configuration error.",
+        "input_fixture": "ActivityCall(name='slow_job', task_queue='q', start_to_close_s=300, schedule_to_close_s=60, heartbeat_s=None, retry=RetryPolicy(1.0, 2.0, 3), args=())",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-IDEMPOTENT-DUPLICATE-EXEC",
+        "hypothesis": "Activity called twice with identical args executes side effects twice because implementation lacks idempotency verification (fingerprint/dedup check), violating at-least-once semantics.",
+        "input_fixture": "call = ActivityCall('transfer_funds', 'payments', 30, None, None, RetryPolicy(1,2,3), ('acct_1','acct_2',100)); execute(call); execute(call) \u2014 second execution transfers again",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-START-CLOSE-MISSING",
+        "hypothesis": "ActivityCall accepts start_to_close_s=None and bypasses validation; raises error at execution time instead of construction, violating configuration error guarantee.",
+        "input_fixture": "ActivityCall('task', 'queue', None, None, None, RetryPolicy(1,2,3)) \u2014 None not caught by dataclass validator",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-START-CLOSE-ZERO",
+        "hypothesis": "Setting start_to_close_s=0 creates unsatisfiable timeout boundary; executor either hangs or immediately fails all activities regardless of actual work duration.",
+        "input_fixture": "ActivityCall('task', 'queue', 0, None, None, RetryPolicy(1,2,3)) \u2014 activity duration > 0 always exceeds 0s limit",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-START-CLOSE-NEGATIVE",
+        "hypothesis": "Negative start_to_close_s value passes validation as integer but creates inverted timeout semantics or undefined behavior in deadline calculation.",
+        "input_fixture": "ActivityCall('task', 'queue', -5, None, None, RetryPolicy(1,2,3)) \u2014 negative duration silently accepted",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-START-CLOSE-INT-OVERFLOW",
+        "hypothesis": "start_to_close_s set to value exceeding max int64 causes wraparound or crash in timeout arithmetic, breaking deadline enforcement.",
+        "input_fixture": "ActivityCall('task', 'queue', 2**63, None, None, RetryPolicy(1,2,3)) \u2014 timeout arithmetic overflows during duration addition",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HEARTBEAT-MISSED-SILENT",
+        "hypothesis": "Activity stalls 100s without heartbeating while heartbeat_s=5; executor fails to detect missing heartbeat and incorrectly marks activity successful.",
+        "input_fixture": "ActivityCall with heartbeat_s=5, start_to_close_s=120; activity stalls at 50s without sending heartbeat; executor does not timeout",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HEARTBEAT-ZERO-IMMEDIATE",
+        "hypothesis": "heartbeat_s=0 enforces instantaneous heartbeat deadline; legitimate activity completes in 50ms but heartbeat check fires before first heartbeat possible.",
+        "input_fixture": "ActivityCall('work', 'queue', 30, None, 0, RetryPolicy(1,2,3)) \u2014 heartbeat required every 0s, immediate timeout",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CLOCK-SKEW-HEARTBEAT",
+        "hypothesis": "System clock moves backward 10s mid-heartbeat monitoring; deadline calculation using absolute time produces negative duration or deadline in past.",
+        "input_fixture": "Heartbeat deadline = now + 5s = T; clock jumps back 10s; new now = T-10; deadline - now = negative; timeout never fires or fires instantly",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MAX-ATTEMPTS-ZERO",
+        "hypothesis": "Setting maximum_attempts=0 violates retry contract: cannot execute zero times; causes immediate failure or infinite retry loop without attempt counter decrement.",
+        "input_fixture": "ActivityCall with RetryPolicy(initial_interval_s=1, backoff_coefficient=2, maximum_attempts=0) \u2014 activity cannot make even first attempt",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-MAX-ATTEMPTS-SWALLOWED-ERROR",
+        "hypothesis": "After maximum_attempts reached and final failure, error is logged internally but never propagated to workflow; workflow waits indefinitely for result.",
+        "input_fixture": "Activity fails 3 times with maximum_attempts=3; executor catches exception but fails to surface ActivityFailure to workflow caller",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HEARTBEAT-STATE-PERSISTENCE",
+        "hypothesis": "Heartbeat tracking state from failed attempt 1 persists into attempt 2; stale heartbeat timestamp causes spurious timeout even though attempt 2 is active.",
+        "input_fixture": "Attempt 1 records heartbeat_last_seen=T1, fails; Attempt 2 starts but heartbeat_last_seen not reset; timeout uses stale T1 value",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-RETRY-BACKOFF-OVERFLOW",
+        "hypothesis": "Exponential backoff calculation: backoff_coefficient \u00d7 previous_interval overflows int64, wrapping to negative delay or zero, breaking retry timing.",
+        "input_fixture": "RetryPolicy(initial_interval_s=2**62, backoff_coefficient=100, maximum_attempts=3); second retry: 2**62 * 100 overflows",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-SCHEDULE-CLOSE-RETRY-RACE",
+        "hypothesis": "schedule_to_close_s deadline and retry backoff sleep race; if deadline fires during backoff sleep, termination semantics unclear\u2014abort vs. let retry finish.",
+        "input_fixture": "schedule_to_close_s=10, attempt 1 fails at 7s, backoff 5s sleep triggered, deadline hits at 9s\u2014executor state undefined",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-ARGS-MUTATION-BETWEEN-RETRIES",
+        "hypothesis": "Args tuple contains mutable reference modified between attempt 1 and attempt 2; second execution sees different state, violating idempotency premise.",
+        "input_fixture": "args=(mutable_dict,); dict={'x':1}; attempt 1 fails; external code mutates dict to {'x':2}; attempt 2 sees different args",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-HEARTBEAT-NONE-LIVENESS-LOSS",
+        "hypothesis": "When heartbeat_s=None, executor disables heartbeat timeout; activity stalls 1000s without signal but completes within start_to_close_s, silently succeeding.",
+        "input_fixture": "ActivityCall(start_to_close_s=3600, heartbeat_s=None); activity hangs 10s then succeeds; no heartbeat required, no liveness guarantee",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "activity.attempt.started",
+        "required_attributes": [
+          "activity_name",
+          "task_queue",
+          "attempt_no"
+        ]
+      },
+      {
+        "event_name": "activity.attempt.succeeded",
+        "required_attributes": [
+          "activity_name",
+          "attempt_no",
+          "duration_ms"
+        ]
+      },
+      {
+        "event_name": "activity.attempt.failed",
+        "required_attributes": [
+          "activity_name",
+          "attempt_no",
+          "reason"
+        ]
+      },
+      {
+        "event_name": "activity.heartbeat.missed",
+        "required_attributes": [
+          "activity_name",
+          "attempt_no"
+        ]
+      },
+      {
+        "event_name": "activity.exhausted",
+        "required_attributes": [
+          "activity_name",
+          "maximum_attempts"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "activity.attempts",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 500,
+        "label_keys": [
+          "activity_name",
+          "outcome"
+        ]
+      },
+      {
+        "name": "activity.attempt.duration",
+        "metric_type": "histogram",
+        "unit": "ms",
+        "cardinality_bound": 500,
+        "label_keys": [
+          "activity_name",
+          "outcome"
+        ]
+      },
+      {
+        "name": "activity.heartbeat.missed",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 200,
+        "label_keys": [
+          "activity_name"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "activity.execute",
+        "required_attributes": [
+          "activity.name",
+          "activity.task_queue"
+        ]
+      },
+      {
+        "operation_name": "activity.attempt",
+        "required_attributes": [
+          "activity.name",
+          "attempt.no"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Dataclasses, Protocol, and async execute signature mirror the catalog api_signature exactly; field names, types, and defaults match. RetryPolicy and ActivityCall are frozen as implied by api_signature."
+      },
+      {
+        "axis": "completeness",
+        "score": 8,
+        "rationale": "All five invariants enforced: AC-INV-02 in __post_init__, AC-INV-03 via wait_for + heartbeat_missed outcome, AC-INV-04 via terminal error, AC-INV-05 by not persisting heartbeats post-success, AC-INV-01 documented. retry_delay_s computed but not actually applied between attempts in executor \u2014 minor gap vs spec's backoff semantics."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Distinct exception types (ActivityCallError/ValueError, MaxAttemptsExceeded/RuntimeError, HeartbeatMissed/RuntimeError); messages cite invariant IDs and offending values; terminal error chains last_error via `from`; timeout chained via __cause__."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "runtime_checkable Protocol enables drop-in Temporal/Dapr executors; frozen dataclasses are hashable/serializable; handler registration decoupled; zero import-time I/O; lazy structure honors the swap-in-Temporal claim."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Reference executor is honest about scope; validation strict; no global state; deterministic attempt records aid observability. Lacks actual backoff sleep between attempts and explicit schedule_to_close enforcement, but spec scopes these to production runtimes."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Names, namespaces, fields, and Protocol shape match catalog JSON verbatim; invariants 1:1 with spec; usage example runs against the shipped API; __all__ exports cover the public surface."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "`schedule_to_close_s` appears in the code example but is absent from the glossary \u2014 its relationship to `start_to_close_s` is left to inference.",
+          "'See ActivityCall.contract.json' gives no path, no field table, and no hint of what to look for \u2014 a dead end for someone setting up their first call.",
+          "The TLA+/formal-model section adds jargon (TLC 2.19, MaxAttempts=3, NoSilentDrop) with no actionable guidance; it reads as noise before the usage example."
+        ],
+        "rewrite_suggestion": "Add `schedule_to_close_s` (wall-clock deadline for all attempts combined) to the glossary alongside `start_to_close_s`. Replace the contract.json pointer with an inline field table (name | type | required | default | meaning). Move the formal-model section to an appendix so the usage example lands earlier."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "The 'single-line change' claim for swapping InMemoryActivityExecutor \u2192 Temporal SDK is asserted without showing the shared interface signature \u2014 hard to verify or design against.",
+          "Extension contract section ('worker interceptors that wrap execute') is too abstract to design middleware against; no method signature or lifecycle hook is named.",
+          "No versioning strategy for activity args: rolling deployments that change the args tuple shape could silently break durable histories."
+        ],
+        "rewrite_suggestion": "Surface the shared interface as a typed protocol block (`class ActivityExecutor(Protocol): async def execute(self, call: ActivityCall) -> Any: ...`). Add a concrete interceptor stub (pre/post hooks). Add one paragraph on backward-compatible arg evolution (add fields at the tail of the tuple; never remove)."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "'Mutable-list replay attack' is named but never defined \u2014 the threat model is incomplete without a concrete attack scenario (e.g., caller mutates the list between serialization and retry, producing non-deterministic args).",
+          "AC_INV_05 says heartbeat details don't outlive a *successful* attempt, but the policy for *failed* attempts is unspecified \u2014 a potential secret-leakage vector across retries.",
+          "No mention of worker authentication, payload encryption, or the trust boundary between the workflow orchestrator and activity workers."
+        ],
+        "rewrite_suggestion": "Expand the security section: (1) define the replay attack with a two-line example; (2) amend AC_INV_05 to cover both success and failure paths; (3) add a trust-boundary paragraph covering mTLS between orchestrator and worker, payload encryption at rest, and worker identity verification."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "No alert thresholds or SLO targets accompany the three listed metrics \u2014 operators must define baselines with zero guidance.",
+          "The post-`maximum_attempts` path is described only as 'terminal error to workflow'; no runbook hint, dead-letter queue, or on-call escalation path is mentioned.",
+          "No guidance on which metric should drive activity-worker autoscaling (queue depth? p99 duration? heartbeat-miss rate?)."
+        ],
+        "rewrite_suggestion": "Add a table with example alert expressions (e.g., `rate(activity.heartbeat.missed[5m]) > 0.1` \u2192 page), a one-paragraph runbook stub for the terminal-error case, and a note that task-queue depth is the primary autoscaling signal with a reference to the Temporal workflow metrics page."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "'battle_tested' maturity references Temporal 1.24 but cites no scale numbers, SLAs, or adoption evidence \u2014 insufficient to communicate confidence to non-technical stakeholders.",
+          "The 'Alternatives considered' section uses untranslated technical terms (tenacity, schedule_to_close envelope, durable state) with no plain-English summary of the rejection rationale.",
+          "Provenance and TLA sections add length without business value; a PM reading top-to-bottom hits them before the usage example."
+        ],
+        "rewrite_suggestion": "Add a one-sentence scale statement (e.g., 'Used in production across two runtimes handling >X billion activity executions'). Replace the alternatives section with: 'We ruled out in-process retry libraries because they lose all progress if the process crashes, and custom per-feature queues because they multiply ops burden.' Move provenance/TLA to an appendix."
+      }
+    ]
+  }
+}

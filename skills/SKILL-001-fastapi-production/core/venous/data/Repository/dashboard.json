@@ -1,0 +1,27 @@
+{
+  "title": "Repository — Lookups, Mutations, IdentityMap Hit Ratio",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Gets (5m)",
+      "targets": [{"expr": "sum(rate(repo_get_calls_total[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Mutations by op (5m)",
+      "targets": [{"expr": "sum by (op) (rate(repo_mutations_total[5m]))"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "IdentityMap Hit Ratio",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(repo_identity_map_hit_ratio_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(repo_identity_map_hit_ratio_bucket[5m]))"}
+      ]
+    }
+  ]
+}

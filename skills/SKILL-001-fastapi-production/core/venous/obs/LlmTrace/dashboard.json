@@ -1,0 +1,44 @@
+{
+  "title": "LlmTrace — Model Calls, Tokens, Errors",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Model Calls (5m)",
+      "targets": [{"expr": "sum(rate(llmtrace_spans_created_total[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Input Tokens p50/p95/p99",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(llmtrace_tokens_input_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(llmtrace_tokens_input_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(llmtrace_tokens_input_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Output Tokens p50/p95/p99",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(llmtrace_tokens_output_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(llmtrace_tokens_output_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(llmtrace_tokens_output_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Provider Error Rate",
+      "targets": [{"expr": "sum by (error_code) (rate(llmtrace_provider_errors_total[5m]))"}]
+    },
+    {
+      "id": 5,
+      "type": "gauge",
+      "title": "Cache Hit Ratio",
+      "targets": [{"expr": "avg(llmtrace_cache_hit_ratio)"}]
+    }
+  ]
+}

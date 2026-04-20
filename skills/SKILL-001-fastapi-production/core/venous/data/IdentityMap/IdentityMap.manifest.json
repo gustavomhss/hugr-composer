@@ -1,0 +1,764 @@
+{
+  "name": "IdentityMap",
+  "namespace": "data",
+  "maturity": "battle_tested",
+  "builder_agent_id": 3,
+  "catalog_entry_sha256": "403aedd45ad736eb0e9b257dd5082fa7670cbb26bea00a6fd44863a20a44f3d3",
+  "files": [
+    {
+      "path": "data/IdentityMap/IdentityMap.cfg",
+      "sha256": "4176dd0868c0e696c4087141cfc0b5817df64d81871fb4ffcdcdfb41348310a9",
+      "size_bytes": 118,
+      "kind": "test"
+    },
+    {
+      "path": "data/IdentityMap/IdentityMap.contract.json",
+      "sha256": "fb68a613f703c31526971c886e5a759593cb253e2e6e230e12c13eb04e203131",
+      "size_bytes": 2232,
+      "kind": "contract_json"
+    },
+    {
+      "path": "data/IdentityMap/IdentityMap.manifest.json",
+      "sha256": "5e9f77cfe07b54fc2557f3b3b552c9d6461804effe3e69c6ef10a4e08598f5c0",
+      "size_bytes": 26,
+      "kind": "manifest"
+    },
+    {
+      "path": "data/IdentityMap/IdentityMap.md",
+      "sha256": "3ecfd02dbc191cd86d2c747ecdafb6bac32bd9043520596d04df23ecc3f4cc3f",
+      "size_bytes": 6502,
+      "kind": "spec_md"
+    },
+    {
+      "path": "data/IdentityMap/IdentityMap.py",
+      "sha256": "147110c126fbcf3ddef2d413d40a0b27b311efef0f0dcdbaf4a268a7c64d04e7",
+      "size_bytes": 10749,
+      "kind": "impl"
+    },
+    {
+      "path": "data/IdentityMap/IdentityMap.tla",
+      "sha256": "43fba9d55af6708e91b6490cd1ac64aeac0fffd6a8cf0597b7362a97c993bd91",
+      "size_bytes": 2365,
+      "kind": "formal_tla"
+    },
+    {
+      "path": "data/IdentityMap/behavioral_IdentityMap.py",
+      "sha256": "d3aafd257efca8574b85d47652cddcb1e6bf00a3bd1cd9000494a6f626859098",
+      "size_bytes": 3778,
+      "kind": "behavioral"
+    },
+    {
+      "path": "data/IdentityMap/chaos_IdentityMap.py",
+      "sha256": "d123376078206a9e437798e1dda243f0c493adaee0199614b16d125404633aeb",
+      "size_bytes": 3759,
+      "kind": "chaos"
+    },
+    {
+      "path": "data/IdentityMap/concurrent_IdentityMap.py",
+      "sha256": "2d99ddb6f9bd8a33ac4658c9536868c1dcc6c9730b3442ad1d1b226cda039039",
+      "size_bytes": 4213,
+      "kind": "concurrent"
+    },
+    {
+      "path": "data/IdentityMap/dashboard.json",
+      "sha256": "baff666a6aeb807dc6740a99694a3b532c79ad5c6abebaea76f083d71d96d7f1",
+      "size_bytes": 826,
+      "kind": "dashboard"
+    },
+    {
+      "path": "data/IdentityMap/invariant_bindings.json",
+      "sha256": "171e37728bdc2d5e38ce71b120ea6a08088564a89b6b1497a8fcd81997d381f5",
+      "size_bytes": 1574,
+      "kind": "test"
+    },
+    {
+      "path": "data/IdentityMap/metamorphic_IdentityMap.py",
+      "sha256": "0dd969c3a785ad3201f9cbc644fa16c1a0da8c06fa8c5756c67eb6c7143ea43b",
+      "size_bytes": 2783,
+      "kind": "metamorphic"
+    },
+    {
+      "path": "data/IdentityMap/observability_IdentityMap.py",
+      "sha256": "41979cace898c1c227bb641cab5f890f743dea46c4731ef34ba20bcbc4322daa",
+      "size_bytes": 2240,
+      "kind": "observability"
+    },
+    {
+      "path": "data/IdentityMap/observability_schema.json",
+      "sha256": "1ec1886c63fdef730b3eb7880c6eeee7b38f944652da7a0e9204491c4c3c3e4a",
+      "size_bytes": 1567,
+      "kind": "observability"
+    },
+    {
+      "path": "data/IdentityMap/persona_reviews.json",
+      "sha256": "1337866299480094aac56387bdd6d2d9cbef528df2ced21db799f8c9f38fac0c",
+      "size_bytes": 531,
+      "kind": "persona_reviews"
+    },
+    {
+      "path": "data/IdentityMap/proposed_invariants.json",
+      "sha256": "8e9c20f445b1cf67f9e27863314da573b4957a4336bdde60401496ffaefab3c6",
+      "size_bytes": 21,
+      "kind": "proposed_invariants"
+    },
+    {
+      "path": "data/IdentityMap/state_machine_IdentityMap.py",
+      "sha256": "6dd037f47fc7f7ecf5279e67480493c910ee0987b344d1c5804d4fe75d6f0a3a",
+      "size_bytes": 3169,
+      "kind": "state_machine"
+    },
+    {
+      "path": "data/IdentityMap/test_IdentityMap.py",
+      "sha256": "622e5a99d0c1aaf66060559714768d0cd0557c8536f3bf72feb32d39a7db41e8",
+      "size_bytes": 7941,
+      "kind": "test"
+    }
+  ],
+  "invariant_bindings": [
+    {
+      "invariant_id": "IDMAP_INV_01",
+      "invariant_text": "Given the same (type, id) within one session, the IdentityMap MUST return the same Python object reference on every lookup.",
+      "confirms_test": "test_inv_same_reference_confirms",
+      "prevents_test": "test_inv_same_reference_prevents",
+      "under_failure_test": "test_inv_same_reference_under_failure"
+    },
+    {
+      "invariant_id": "IDMAP_INV_02",
+      "invariant_text": "An object CANNOT be inserted twice for the same identity; a second add with a new instance SHALL raise a conflict error.",
+      "confirms_test": "test_inv_no_duplicate_identity_confirms",
+      "prevents_test": "test_inv_no_duplicate_identity_prevents",
+      "under_failure_test": "test_inv_no_duplicate_identity_under_failure"
+    },
+    {
+      "invariant_id": "IDMAP_INV_03",
+      "invariant_text": "The map MUST be scoped to a single UnitOfWork or session and NEVER shared across concurrent transactions.",
+      "confirms_test": "test_inv_session_scoped_confirms",
+      "prevents_test": "test_inv_session_scoped_prevents",
+      "under_failure_test": "test_inv_session_scoped_under_failure"
+    },
+    {
+      "invariant_id": "IDMAP_INV_04",
+      "invariant_text": "On UnitOfWork disposal the map ALWAYS clears its contents; retaining references beyond the session is FORBIDDEN.",
+      "confirms_test": "test_inv_dispose_clears_confirms",
+      "prevents_test": "test_inv_dispose_clears_prevents",
+      "under_failure_test": "test_inv_dispose_clears_under_failure"
+    }
+  ],
+  "tier_reports": [
+    {
+      "tier": "T0_static",
+      "status": "passed",
+      "duration_ms": 1137,
+      "evidence_path": "_evidence/t0_static.json",
+      "tool_name": "mypy+ruff",
+      "tool_version": "mypy 1.20.1 + ruff 0.15.11",
+      "summary": "mypy --strict clean; ruff (curated ALL) clean; 6 suppressions all rationale-attached.",
+      "error_details": null
+    },
+    {
+      "tier": "T1_behavioral",
+      "status": "passed",
+      "duration_ms": 4697,
+      "evidence_path": "_evidence/t1_behavioral_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": "pytest 9.0.3",
+      "summary": "All behavioral scenarios passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T2_formal",
+      "status": "passed",
+      "duration_ms": 3690,
+      "evidence_path": "_evidence/t2_tlc.log",
+      "tool_name": "tlc",
+      "tool_version": "\u001b[1mNAME\u001b[0m",
+      "summary": "TLA+ model check passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T3_state_machine",
+      "status": "passed",
+      "duration_ms": 13908,
+      "evidence_path": "_evidence/t3_state_machine_junit.xml",
+      "tool_name": "hypothesis+pytest",
+      "tool_version": null,
+      "summary": "State-machine suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T4_metamorphic",
+      "status": "passed",
+      "duration_ms": 2922,
+      "evidence_path": "_evidence/t4_metamorphic_junit.xml",
+      "tool_name": "pytest",
+      "tool_version": null,
+      "summary": "Metamorphic + differential suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T5_concurrency",
+      "status": "passed",
+      "duration_ms": 3201,
+      "evidence_path": "_evidence/t5_concurrency_junit.xml",
+      "tool_name": "pytest-asyncio+linearizer",
+      "tool_version": null,
+      "summary": "Concurrency suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T6_adversarial",
+      "status": "passed",
+      "duration_ms": 84236,
+      "evidence_path": "_evidence/t6_adversarial.json",
+      "tool_name": "claude-cli-ensemble",
+      "tool_version": "ensemble-3x",
+      "summary": "39 attacks across 3 models, 0 successful.",
+      "error_details": null
+    },
+    {
+      "tier": "T7_observability",
+      "status": "passed",
+      "duration_ms": 4632,
+      "evidence_path": "_evidence/t7_observability_junit.xml",
+      "tool_name": "pytest+schema",
+      "tool_version": null,
+      "summary": "Observability schema + assertions passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T8_chaos",
+      "status": "passed",
+      "duration_ms": 4717,
+      "evidence_path": "_evidence/t8_chaos_junit.xml",
+      "tool_name": "pytest+chaos",
+      "tool_version": null,
+      "summary": "Chaos / game-day suite passed.",
+      "error_details": null
+    },
+    {
+      "tier": "T9_meta",
+      "status": "passed",
+      "duration_ms": 86386,
+      "evidence_path": "_evidence/t9_meta.json",
+      "tool_name": "claude-cli",
+      "tool_version": "opus-4-7+sonnet-4-6",
+      "summary": "LLM judge \u22658/10 on six axes; all five personas understood the docs.",
+      "error_details": null
+    }
+  ],
+  "build_duration_ms": 211350,
+  "llm_cost_usd": 0.0,
+  "adversarial": {
+    "models_run": [
+      "claude-opus-4-7",
+      "claude-sonnet-4-6",
+      "claude-haiku-4-5"
+    ],
+    "attacks": [
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-SUBCLASS_TYPE_AMBIGUITY",
+        "hypothesis": "Adding a parent class instance and then querying with a subclass type (or vice versa) with the same id will yield two distinct object references for what ORM semantics treat as the same identity, violating unique-reference invariant.",
+        "input_fixture": "im.add(Animal(id=1)); im.add(Dog(id=1)); a=im.get(Animal,1); d=im.get(Dog,1); assert a is d",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INT_STR_ID_COLLISION",
+        "hypothesis": "Keys like 1 and '1' or 1 and True hash equally in Python dicts; add(obj,id=1) then add(obj2,id=True) will silently overwrite or fail to detect the duplicate identity depending on storage, breaking conflict detection.",
+        "input_fixture": "im.add(User(id=1)); im.add(User(id=True))  # expect ConflictError or stable isolation",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CONCURRENT_SESSION_LEAK",
+        "hypothesis": "If the IdentityMap is implemented as a module-level or class-level singleton / shared dict, two threads running separate UnitOfWorks will observe each other's objects, violating session isolation.",
+        "input_fixture": "Thread A: im_a.add(User(id=1)); Thread B: assert im_b.get(User,1) is None",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-DISPOSAL_REFERENCE_RETENTION",
+        "hypothesis": "After uow.dispose(), calling get(User,1) or holding a previous reference to the map still returns the cached object because clear() only shallow-resets a field while closures captured the dict, breaking the clear-on-dispose invariant.",
+        "input_fixture": "ref=im._store; uow.dispose(); assert ref == {} and im.get(User,1) is None",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-UNHASHABLE_ID",
+        "hypothesis": "Passing an unhashable composite id (e.g. a list [1,2] or a dict) will raise TypeError inside the map instead of a typed domain error, and may leave the internal dict in a partially mutated state.",
+        "input_fixture": "im.add(Order(id=[1,2]))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-NONE_ID_INSERT",
+        "hypothesis": "Adding an entity whose id is None (unsaved/transient) should be rejected, but many implementations happily cache it; two different transient objects with id=None then collapse into the same slot or wrongly conflict.",
+        "input_fixture": "im.add(User(id=None)); im.add(User(id=None))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-MUTATED_ID_AFTER_ADD",
+        "hypothesis": "If a caller mutates obj.id after add(), contains(type,original_id) still returns True while get(type,new_id) returns None, producing two divergent views of the same object and violating unique-reference guarantees.",
+        "input_fixture": "u=User(id=1); im.add(u); u.id=2; im.get(User,1); im.get(User,2)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-REMOVE_THEN_READD_DIFFERENT_INSTANCE",
+        "hypothesis": "After remove(User,1), adding a fresh User(id=1) instance and then a stale reference elsewhere still lookup-matching returns the new instance \u2014 but code paths holding the old reference break the 'same object ref within session' invariant for the lifetime of the session.",
+        "input_fixture": "a=User(id=1); im.add(a); im.remove(User,1); b=User(id=1); im.add(b); assert im.get(User,1) is a",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-INT_OVERFLOW_BIGINT_ID",
+        "hypothesis": "An id of 2**63 or larger (Python bigint) used as dict key works, but if the implementation coerces to fixed-width (ctypes, C extension, sqlite adapter) it overflows and collides with a smaller id, silently merging two entities.",
+        "input_fixture": "im.add(User(id=2**63)); im.add(User(id=0))  # check no collision",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-CONCURRENT_ADD_RACE",
+        "hypothesis": "Two threads sharing the same UoW (anti-pattern but possible via async gather / threadpool) racing add() for the same (type,id) both pass the contains() check before either inserts; last-write-wins and no ConflictError is raised, violating the duplicate-insert invariant.",
+        "input_fixture": "asyncio.gather(run_in_executor(im.add,User(id=1)), run_in_executor(im.add,User(id=1)))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-WEAKREF_GC_EVICTION",
+        "hypothesis": "If the map stores objects via weakref to avoid leaks, GC between two get() calls for the same id returns a freshly loaded (different) object reference, violating the same-object-within-session invariant.",
+        "input_fixture": "im.add(User(id=1)); del local_ref; gc.collect(); im.get(User,1)  # new instance",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-EQ_HASH_OVERRIDE_POISONING",
+        "hypothesis": "A domain type overrides __eq__/__hash__ based on mutable fields; two distinct rows with same business key but different PKs hash-collide inside the map's internal keying scheme and one evicts the other.",
+        "input_fixture": "class U: __hash__=lambda s:0; __eq__=lambda s,o:True; im.add(U(id=1)); im.add(U(id=2))",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-opus-4-7",
+        "attack_id": "ATK-FORK_SESSION_SHARED_STATE",
+        "hypothesis": "After os.fork() a child process inherits the parent's IdentityMap dict by reference (copy-on-write); writes in child are invisible to parent but both believe they are in their own session \u2014 cross-transaction contamination under multiprocessing workers.",
+        "input_fixture": "pid=os.fork(); if pid==0: im.add(User(id=1)); else: assert not im.contains(User,1)",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-WEAKREF_GC_EVICTION",
+        "hypothesis": "If the IdentityMap stores values in a WeakValueDictionary to avoid memory leaks, the garbage collector can evict an object whose only strong reference was held by the caller's local variable that went out of scope between two lookups within the same session. A second get() would return None (or a freshly loaded copy), silently breaking the 'same object reference per session' invariant without raising any error.",
+        "input_fixture": "map.add(obj); del obj; gc.collect(); result = map.get(MyEntity, 1); assert result is not None  # fails if WeakValueDict used",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-MUTABLE_ID_HASH_DRIFT",
+        "hypothesis": "If the caller passes a mutable object (e.g., a list or dict) as the `id` argument and the implementation hashes it at add-time, mutating that id object afterward drifts the hash. A subsequent get() with the same object now hashes to a different bucket, returning None and allowing a second add() of a conflicting instance to succeed silently, destroying both the same-reference guarantee and the conflict-on-duplicate invariant.",
+        "input_fixture": "uid = [1, 2]; map.add(obj); uid.append(3); map.get(MyEntity, uid)  # returns None; map.add(obj2)  # no conflict raised",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SUBCLASS_TYPE_ALIASING",
+        "hypothesis": "When the stored type key is the concrete subclass (e.g., AdminUser) but the lookup uses the parent class (User), the (type, id) tuple differs, so get() returns None and add() accepts a second object for the same database row, giving the session two in-memory representations of the same identity and violating the uniqueness guarantee.",
+        "input_fixture": "map.add(AdminUser(id=5)); map.get(User, 5)  # returns None; map.add(User(id=5))  # succeeds \u2014 two objects for same row",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONCURRENT_DOUBLE_ADD_TOCTOU",
+        "hypothesis": "Two threads simultaneously call add() for the same (type, id) with different object instances. If the conflict check is implemented as a read-then-write ('if key not in self._store: self._store[key] = obj') without a lock, both threads pass the guard concurrently and both writes land, with the second silently overwriting the first. No conflict error is raised and one thread now holds a reference that is no longer the canonical instance.",
+        "input_fixture": "Thread A: map.add(UserA); Thread B: map.add(UserB) \u2014 both with User id=42, concurrent execution, no mutex",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-SHARED_MAP_CROSS_TX",
+        "hypothesis": "If the IdentityMap instance is created once and reused across two concurrent UnitOfWork contexts (e.g., a connection pool that hands the same session object to two coroutines), Transaction B's get(User, 1) returns Transaction A's dirty, uncommitted object. The isolation invariant is violated: B observes A's in-flight mutations before A commits or rolls back.",
+        "input_fixture": "uow1 = UnitOfWork(identity_map=shared_map); uow2 = UnitOfWork(identity_map=shared_map); uow1.load(User, 1).name='dirty'; uow2.get(User, 1).name  # returns 'dirty'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-ASYNCIO_TASK_SCOPE_BLEED",
+        "hypothesis": "In an async framework, if the IdentityMap is stored as an instance attribute on a service object that is shared across coroutines (a common singleton pattern), concurrent async tasks within different logical sessions share the same map. An await boundary between add() and get() allows another coroutine to insert a conflicting object or observe a foreign session's objects without any error.",
+        "input_fixture": "service = MyService()  # singleton; async task1: service.uow.map.add(obj1); await asyncio.sleep(0); async task2: service.uow.map.get(User, 1)  # returns obj1 from task1's session",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-DISPOSE_REFERENCE_RETENTION",
+        "hypothesis": "After UnitOfWork.dispose() calls map.clear(), a caller that obtained an object reference before disposal still holds a live Python object. If the map stored that object as a value in a plain dict and clear() only removes the dict entry (not the object itself), the object is not garbage-collected and keeps pointing to potentially stale, post-rollback state. This does not clear the contents in the sense of invalidating external references, violating the spirit of 'retaining references beyond the session is FORBIDDEN'.",
+        "input_fixture": "with UnitOfWork() as uow: obj = uow.get(User, 1); # uow disposes; obj.name  # still accessible \u2014 reference leaked beyond session",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-NONE_ID_COLLISION",
+        "hypothesis": "Passing None as the `id` argument is not explicitly prohibited. If the implementation uses a dict keyed by (type, id), (MyEntity, None) is a valid Python dict key. Multiple callers can add different objects under id=None across different entity types, and a type that legitimately uses None as a sentinel id could silently alias with another entity's None-id entry, returning the wrong object on get().",
+        "input_fixture": "map.add(User(id=None)); map.add(Order(id=None)); map.get(User, None)  # might return Order instance if type not used in key",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-EQUAL_IDENTITY_NO_CONFLICT",
+        "hypothesis": "If the conflict detection uses equality (`obj == existing`) rather than identity (`obj is existing`), two distinct Python objects that implement __eq__ based on field values will appear 'equal' and the second add() will be silently accepted as a no-op instead of raising a conflict error. The map now holds the first object but the caller holds the second, and subsequent mutations to obj2 are not reflected in future get() calls, violating the same-reference guarantee.",
+        "input_fixture": "obj1 = User(id=1, name='Alice'); obj2 = User(id=1, name='Alice'); map.add(obj1); map.add(obj2)  # no error; obj2.name='Bob'; map.get(User,1).name  # still 'Alice'",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-PICKLE_DEEPCOPY_IDENTITY_BREAK",
+        "hypothesis": "If the IdentityMap or the UnitOfWork is serialized (pickle/deepcopy) for caching or worker hand-off, unpickling creates new Python objects with different memory addresses. A get() on the deserialized map returns an object that is NOT `is`-identical to any object the original session ever touched, breaking the object-reference identity invariant for any code that cached the pre-serialization references.",
+        "input_fixture": "import pickle; uow2 = pickle.loads(pickle.dumps(uow)); uow2.map.get(User, 1) is original_obj  # False \u2014 different Python object",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-INT_OVERFLOW_ID_ALIASING",
+        "hypothesis": "Python integers are arbitrary precision, but if the underlying storage or a comparison layer truncates ids to 64-bit signed integers (e.g., via numpy int64, a Cython extension, or a hash that uses C long), then ids 2**63 and 2**63 - 2**64 = -1 could alias to the same slot. Two entities with mathematically distinct ids would hash identically, causing one object to silently override the other or get() to return the wrong entity.",
+        "input_fixture": "map.add(User(id=2**63)); map.add(User(id=-9223372036854775808))  # same C long value; map.get(User, 2**63) may return second object",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-REMOVE_THEN_READD_REPLAY",
+        "hypothesis": "After remove(type_, id) is called, a new add() with a fresh instance should succeed. However, if the remove implementation does not fully purge internal metadata (e.g., a 'known ids' set used for conflict detection separate from the value store), the second add() may incorrectly raise a spurious conflict error as if the identity is still present, or worse, silently succeed but return the old (removed) object on the next get() because the value store was not properly synchronized with the metadata store.",
+        "input_fixture": "map.add(obj1); map.remove(User, 1); map.add(obj2); map.get(User, 1) is obj2  # might return obj1 or raise false conflict",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-THREAD_DISPOSE_USE_AFTER_FREE",
+        "hypothesis": "If Thread A calls UnitOfWork.dispose() (which clears the map) while Thread B is mid-execution between a contains() check and a get() call for the same (type, id), Thread B's get() returns None after the clear, even though Thread B legitimately loaded the object earlier in the same session. Without a lock around dispose+clear, the map violates its own session-scoping guarantee from Thread B's perspective.",
+        "input_fixture": "Thread A: uow.dispose(); Thread B (concurrent): assert map.contains(User,1); obj = map.get(User,1); assert obj is not None  # fails",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "attack_id": "ATK-CONTEXT_VAR_SCOPE_ESCAPE",
+        "hypothesis": "If the IdentityMap is propagated via a contextvars.ContextVar and a spawned task inherits the parent context (the default in asyncio.create_task), the child task operates on the parent session's IdentityMap. Mutations in the child (add/remove) are visible to the parent post-await, effectively sharing one map across two logical sessions that should be isolated.",
+        "input_fixture": "_map_var = ContextVar('map'); async def parent(): _map_var.set(IdentityMap()); asyncio.create_task(child())  # child inherits context; child mutates map; parent sees mutations",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REFERENCE-MISMATCH",
+        "hypothesis": "get() returns different object instances for identical (type, id) on successive calls, violating identity guarantee",
+        "input_fixture": "add(User(id=1)); obj1 = get(User, 1); obj2 = get(User, 1); assert obj1 is obj2 fails",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-DUPLICATE-INSERT-ACCEPTED",
+        "hypothesis": "Adding second instance with same (type, id) silently overwrites or accepts duplicate instead of raising ConflictError",
+        "input_fixture": "add(User(id=1, name='Alice')); add(User(id=1, name='Bob')) returns success instead of error",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONCURRENT-ADD-GET-RACE",
+        "hypothesis": "Concurrent add() and get() without synchronization causes race: get() sees partial state or None instead of cached object",
+        "input_fixture": "Thread1: add(obj, id=1); Thread2: get(User, 1) simultaneous without locking returns inconsistent state",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-PERSISTENCE-AFTER-DISPOSE",
+        "hypothesis": "Identity map retains objects after UnitOfWork.dispose(), allowing second session to access stale objects from first session",
+        "input_fixture": "uow1.identity_map.add(User(id=1)); uow1.dispose(); uow2.identity_map.contains(User, 1) returns True instead of False",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-TYPE-COLLISION-SAME-ID",
+        "hypothesis": "Different entity types with same ID value collide in storage: User(id=1) and Post(id=1) map to same key, type discrimination lost",
+        "input_fixture": "add(User(id=1)); add(Post(id=1)); get(User, 1) returns Post instance instead of User",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-UNHASHABLE-ID-TYPE",
+        "hypothesis": "Using unhashable mutable object as ID (list, dict, set) causes TypeError or silent hash collision in internal dict",
+        "input_fixture": "add(obj with id=[1, 2, 3]) raises TypeError or collides with other mutable ID in same bucket",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-NULL-IDENTITY-MULTIPLE-INSERT",
+        "hypothesis": "Adding multiple objects with None as ID should conflict but None treated ambiguously by comparison logic",
+        "input_fixture": "add(User(id=None)); add(User(id=None)) silently succeeds instead of raising ConflictError",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-WEAKREF-PREMATURE-COLLECTION",
+        "hypothesis": "If implementation uses weakref without strong backing, object garbage-collected prematurely; get() fails or returns None",
+        "input_fixture": "add(obj); del obj; gc.collect(); get(User, 1) returns None or raises instead of returning cached reference",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-GLOBAL-MAP-SESSION-LEAK",
+        "hypothesis": "Identity map is global singleton instead of per-UnitOfWork instance; concurrent sessions contaminate each other's identity state",
+        "input_fixture": "uow1.identity_map is uow2.identity_map (True); uow1.add(obj); uow2.contains(type, id) returns True instead of False",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-REMOVE-THEN-READD-GHOST",
+        "hypothesis": "Removing object then re-adding new instance with same (type, id) either raises false conflict or get() returns ghost from before removal",
+        "input_fixture": "add(obj1, id=1); remove(User, 1); add(obj2, id=1) raises error or get(User, 1) returns obj1 not obj2",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-CONTAINS-GET-DIVERGENCE",
+        "hypothesis": "contains(type, id) and get(type, id) use different lookup paths: contains() returns True but get() returns None",
+        "input_fixture": "add(User(id=1)); contains(User, 1) returns True; get(User, 1) returns None instead of cached object",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "attack_id": "ATK-OBJECT-IDENTITY-MUTATION",
+        "hypothesis": "Mutating object's ID field after insertion breaks key invariant: object becomes unfindable by old ID, findable by wrong new ID",
+        "input_fixture": "obj = User(id=1); add(obj); obj.id = 2; get(User, 1) returns None; get(User, 2) returns obj incorrectly",
+        "defender_outcome": "rejected",
+        "violated_invariant_id": null
+      }
+    ],
+    "successful_attacks": 0
+  },
+  "observability": {
+    "logs": [
+      {
+        "event_name": "idmap.opened",
+        "required_attributes": [
+          "session_id"
+        ]
+      },
+      {
+        "event_name": "idmap.hit",
+        "required_attributes": [
+          "session_id",
+          "root_type"
+        ]
+      },
+      {
+        "event_name": "idmap.miss",
+        "required_attributes": [
+          "session_id",
+          "root_type"
+        ]
+      },
+      {
+        "event_name": "idmap.conflict",
+        "required_attributes": [
+          "session_id",
+          "root_type",
+          "id"
+        ]
+      },
+      {
+        "event_name": "idmap.disposed",
+        "required_attributes": [
+          "session_id",
+          "entries_cleared"
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "name": "idmap.hits",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "root_type"
+        ]
+      },
+      {
+        "name": "idmap.misses",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "root_type"
+        ]
+      },
+      {
+        "name": "idmap.conflicts",
+        "metric_type": "counter",
+        "unit": "1",
+        "cardinality_bound": 50,
+        "label_keys": [
+          "root_type"
+        ]
+      },
+      {
+        "name": "idmap.size",
+        "metric_type": "histogram",
+        "unit": "1",
+        "cardinality_bound": 100,
+        "label_keys": [
+          "result"
+        ]
+      }
+    ],
+    "spans": [
+      {
+        "operation_name": "idmap.get",
+        "required_attributes": [
+          "session.id",
+          "root.type",
+          "hit"
+        ]
+      },
+      {
+        "operation_name": "idmap.add",
+        "required_attributes": [
+          "session.id",
+          "root.type",
+          "outcome"
+        ]
+      },
+      {
+        "operation_name": "idmap.dispose",
+        "required_attributes": [
+          "session.id",
+          "entries.cleared"
+        ]
+      }
+    ]
+  },
+  "judge": {
+    "judge_model": "claude-opus-4-7",
+    "axes": [
+      {
+        "axis": "fidelity",
+        "score": 9,
+        "rationale": "Protocol matches catalog api_signature verbatim; invariants IDMAP-INV-01..04 cited and enforced; Fowler provenance preserved."
+      },
+      {
+        "axis": "completeness",
+        "score": 9,
+        "rationale": "All four catalog methods + lifecycle (dispose, __enter__/__exit__), session_scope, eviction hooks, ThreadBound variant, and introspection (size, snapshot, state) included."
+      },
+      {
+        "axis": "error_quality",
+        "score": 9,
+        "rationale": "Dedicated IdentityMapInvariantError/ConcurrentSessionError; messages cite exact INV IDs and identifying context (type name, id repr); idempotent re-add distinguished from conflict."
+      },
+      {
+        "axis": "composability",
+        "score": 9,
+        "rationale": "runtime_checkable Protocol enables duck-typed backends; eviction hook extension point; session_scope integrates cleanly with UoW; ThreadBound subclass shows extension story."
+      },
+      {
+        "axis": "production_readiness",
+        "score": 8,
+        "rationale": "Thread-safe via lock, idempotent dispose, exception-safe scope, lazy import-free, zero I/O at import. Minor: hooks invoked outside lock (fine), no metrics emission though spec mentions counters."
+      },
+      {
+        "axis": "catalog_conformance",
+        "score": 9,
+        "rationale": "Protocol signature matches catalog exactly (type_, id, return types); namespace/purpose honored; extension_contract clause about not weakening identity explicitly enforced in docstring and design."
+      }
+    ]
+  },
+  "personas": {
+    "reviews": [
+      {
+        "persona": "junior_dev",
+        "understood": true,
+        "friction_points": [
+          "'UnitOfWork' is used 10+ times but never defined \u2014 a one-line parenthetical ('a UnitOfWork is the object that groups all DB changes for one request') would unblock readers immediately.",
+          "The add() docstring says '(type, id) derived from obj and obj.id' but doesn't say what happens if the domain object uses a different id attribute name \u2014 the convention is assumed, not stated.",
+          "The import in the usage example (`from IdentityMap import session_scope`) looks like a module name, not a package path \u2014 a real installable import path or a note that this is pseudocode would prevent confusion."
+        ],
+        "rewrite_suggestion": "Add a one-sentence aside on first UoW mention: 'A UnitOfWork is the object that owns all database changes for one request.' In the add() signature, replace the parenthetical with 'id is read from obj.id \u2014 your domain object MUST expose .id.' Prefix the usage block with '# pseudocode \u2014 actual import path depends on your project layout'."
+      },
+      {
+        "persona": "principal_engineer",
+        "understood": true,
+        "friction_points": [
+          "ThreadBoundIdentityMap is introduced in the thread-safety section and recommended for production workers, but it is absent from the API surface \u2014 its constructor, thread-binding mechanism, and error type are unspecified.",
+          "The extension contract says 'implementing the IdentityMap Protocol' but the Protocol's required methods are not listed; an engineer wiring a Redis-backed implementation has no formal checklist.",
+          "The locking statement ('first writer wins; every subsequent writer with a DIFFERENT instance raises') leaves open what happens when two threads race to add the SAME instance \u2014 is it idempotent or does it also raise?"
+        ],
+        "rewrite_suggestion": "Add a collapsible 'Advanced API' block listing ThreadBoundIdentityMap with its signature and the thread-check mechanism. Append a 'Protocol checklist' table (method, required, notes). Clarify the same-instance race: 'add(obj) where obj is already the canonical reference is a no-op; only a different instance for the same identity raises'."
+      },
+      {
+        "persona": "security_auditor",
+        "understood": true,
+        "friction_points": [
+          "Mutable id scenario is unaddressed: if a caller mutates obj.id after add(), the map index becomes a phantom entry \u2014 no warning, no invariant covers this, and the stale key persists until dispose().",
+          "IdentityMapInvariantError is raised on conflict but there is no specification of what the error message contains \u2014 if it includes object repr(), secret fields in __repr__ could surface in logs.",
+          "Eviction hooks are described as 'observation-only' but a hook with a closure over a long-lived object graph could silently extend the lifetime of secret-bearing aggregates past dispose() \u2014 this surface is not analyzed."
+        ],
+        "rewrite_suggestion": "Add an 'id mutability' warning under invariants: 'Mutating obj.id after add() produces a phantom entry; treat the id as immutable for the session lifetime.' Specify that IdentityMapInvariantError MUST NOT include object repr. Add a hook-security note: 'Hooks that capture object references defeat disposal \u2014 hooks SHOULD be stateless.'."
+      },
+      {
+        "persona": "sre",
+        "understood": true,
+        "friction_points": [
+          "The four named metrics (hits, misses, conflicts, size) have no exposition path specified \u2014 whether they are prometheus counters, OpenTelemetry instruments, or something else determines how an SRE wires them into dashboards.",
+          "There is no documented memory bound: a session that adds thousands of large aggregates and never disposes grows unboundedly \u2014 the docs should state whether a max-size eviction policy exists or whether OOM is the caller's problem.",
+          "No alerting threshold or rate guidance is given for idmap.conflicts \u2014 'a sustained rise is the primary symptom' is qualitative; SREs need a baseline or a ratio (conflicts/hits > X% \u2192 page) to configure alerts."
+        ],
+        "rewrite_suggestion": "Add an 'Instrumentation' subsection: 'Metrics are emitted via [prometheus_client | opentelemetry-sdk] \u2014 import path X.' Add a 'Memory' note: 'No built-in eviction cap; session size is bounded only by the caller's UoW lifetime \u2014 long-running batches should checkpoint.' Provide a sample alert rule: 'conflicts / (hits + misses) > 1% over 5 m \u2192 investigate duplicate materialisation'."
+      },
+      {
+        "persona": "pm",
+        "understood": true,
+        "friction_points": [
+          "The business risk avoided is never stated in concrete terms \u2014 something like 'without this, a payment service could debit an account twice in one request because two different in-memory copies each saw the balance before the first debit' would make the stakes tangible.",
+          "Every section after 'Purpose' uses domain jargon (aggregate, canonical instance, UnitOfWork disposal) without a plain-language bridge \u2014 the PM can quote the first two paragraphs but cannot explain the rest to stakeholders.",
+          "There is no summary of the cost/benefit trade-off: the docs say 'do not use for read-only workloads' but give no guidance on how to decide \u2014 a one-line decision rule ('if your session modifies fewer than N objects, the overhead is negligible') would help scope conversations."
+        ],
+        "rewrite_suggestion": "Open the doc with a 'Why this matters' callout: 'Prevents data corruption bugs where the same database row is loaded twice and one copy's changes silently overwrite the other's.' Add a plain-language TL;DR after 'Purpose': 'Think of it as a name-tag system for objects inside one database transaction \u2014 every object gets one tag and one body.' Close 'When to use' with a business decision rule: 'If the workflow writes to the same record more than once in a single request, you need this; if it only reads, you probably don't'."
+      }
+    ]
+  }
+}

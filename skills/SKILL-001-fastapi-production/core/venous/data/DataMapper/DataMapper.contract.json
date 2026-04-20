@@ -1,0 +1,27 @@
+{
+  "name": "DataMapper",
+  "namespace": "data",
+  "purpose": "Moves state between in-memory domain objects and rows in storage while keeping both ignorant of each other.",
+  "api_signature": "from typing import Protocol, TypeVar, Generic, Any\n\nT = TypeVar('T')\n\nclass DataMapper(Protocol, Generic[T]):\n    def load(self, row: dict) -> T: ...\n    def insert(self, entity: T) -> dict: ...\n    def update(self, entity: T) -> dict: ...\n    def delete(self, entity: T) -> dict: ...",
+  "invariants": [
+    "The domain object MUST have no import-time or runtime dependency on storage types; persistence knowledge SHALL live exclusively in the mapper.",
+    "Given a row r, load(r) followed by insert or update on the resulting entity MUST yield a row with the same identity key.",
+    "The mapper CANNOT mutate the domain object for persistence convenience; derived columns MUST be computed in map methods, never injected into the domain.",
+    "A DataMapper NEVER issues database I/O directly; it returns parameterized payloads the UnitOfWork flush executes."
+  ],
+  "extension_contract": "New persistent types extend DataMapper by implementing the Protocol per aggregate and registering the pair via a register call on the mapper registry; storage-specific encodings plug in through an adapter (for JSONB, arrays, encrypted columns) without the domain being recompiled.",
+  "consumption_example": "def persist(entity, mapper: DataMapper, uow) -> None:\n    payload = mapper.update(entity) if entity.id else mapper.insert(entity)\n    uow.enqueue_write(payload)",
+  "sources": [
+    {
+      "source": "Fowler 'Patterns of Enterprise Application Architecture' (2002)",
+      "locator": "Chapter 10, Data Mapper pattern, pp. 165-182"
+    }
+  ],
+  "why_essential": "Without a shared mapper contract, every tool either smears ORM-specific types across the domain or reinvents row-to-object translation with subtle conversion bugs.",
+  "alternatives_considered": [
+    "Active Record: collapses domain and persistence and prevents pure-domain unit tests.",
+    "Table Module with record sets: suits simple CRUD but not rich aggregates.",
+    "ORM auto-mapping only: magical, brittle across schema evolution, and ties the domain to ORM types."
+  ],
+  "maturity": "battle_tested"
+}

@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "TI_INV_01",
+      "invariant_text": "JWT verification MUST reject the 'none' algorithm and MUST pin the accepted algorithm set per issuer.",
+      "confirms_test": "test_inv_pinned_algorithm_confirms",
+      "prevents_test": "test_inv_pinned_algorithm_prevents",
+      "under_failure_test": "test_inv_pinned_algorithm_under_failure"
+    },
+    {
+      "invariant_id": "TI_INV_02",
+      "invariant_text": "introspect() MUST reject tokens whose aud claim does not include required_audience and SHALL raise a typed error.",
+      "confirms_test": "test_inv_audience_enforcement_confirms",
+      "prevents_test": "test_inv_audience_enforcement_prevents",
+      "under_failure_test": "test_inv_audience_enforcement_under_failure"
+    },
+    {
+      "invariant_id": "TI_INV_03",
+      "invariant_text": "Expired tokens (now >= exp) and not-yet-valid tokens (now < nbf) MUST be rejected with no claim surface returned.",
+      "confirms_test": "test_inv_time_bounds_confirms",
+      "prevents_test": "test_inv_time_bounds_prevents",
+      "under_failure_test": "test_inv_time_bounds_under_failure"
+    },
+    {
+      "invariant_id": "TI_INV_04",
+      "invariant_text": "Signing keys MUST be fetched from the issuer's JWKS with bounded caching; stale keys beyond max-age CANNOT be trusted.",
+      "confirms_test": "test_inv_jwks_cache_confirms",
+      "prevents_test": "test_inv_jwks_cache_prevents",
+      "under_failure_test": "test_inv_jwks_cache_under_failure"
+    },
+    {
+      "invariant_id": "TI_INV_05",
+      "invariant_text": "Opaque tokens MUST be introspected against the authorization server per RFC 7662 and NEVER parsed locally.",
+      "confirms_test": "test_inv_opaque_rfc7662_confirms",
+      "prevents_test": "test_inv_opaque_rfc7662_prevents",
+      "under_failure_test": "test_inv_opaque_rfc7662_under_failure"
+    },
+    {
+      "invariant_id": "TI_INV_06",
+      "invariant_text": "Introspection results MUST NEVER be cached past the token's exp or past the documented TTL, whichever is lower.",
+      "confirms_test": "test_inv_cache_ttl_confirms",
+      "prevents_test": "test_inv_cache_ttl_prevents",
+      "under_failure_test": "test_inv_cache_ttl_under_failure"
+    }
+  ]
+}

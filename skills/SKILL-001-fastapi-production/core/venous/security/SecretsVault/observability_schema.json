@@ -1,0 +1,82 @@
+{
+  "logs": [
+    {
+      "event_name": "secrets_vault.get.completed",
+      "required_attributes": ["secret_name", "caller_identity", "version", "outcome", "cache_hit", "duration_ms"]
+    },
+    {
+      "event_name": "secrets_vault.rotate.completed",
+      "required_attributes": ["secret_name", "caller_identity", "version", "outcome", "duration_ms"]
+    },
+    {
+      "event_name": "secrets_vault.invalidate.completed",
+      "required_attributes": ["secret_name", "caller_identity", "outcome"]
+    },
+    {
+      "event_name": "secrets_vault.backend.unavailable",
+      "required_attributes": ["secret_name", "caller_identity", "severity"]
+    },
+    {
+      "event_name": "secrets_vault.scope.denied",
+      "required_attributes": ["caller_identity", "severity"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "secrets_vault.operations",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["operation", "outcome"]
+    },
+    {
+      "name": "secrets_vault.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 50,
+      "label_keys": ["operation"]
+    },
+    {
+      "name": "secrets_vault.cache.hits",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": ["outcome"]
+    },
+    {
+      "name": "secrets_vault.cache.entries",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": []
+    },
+    {
+      "name": "secrets_vault.rotations",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": ["outcome"]
+    },
+    {
+      "name": "secrets_vault.backend.unavailable",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": ["operation"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "secrets_vault.get",
+      "required_attributes": ["secret_name", "caller_identity", "cache_hit", "outcome"]
+    },
+    {
+      "operation_name": "secrets_vault.rotate",
+      "required_attributes": ["secret_name", "caller_identity", "outcome"]
+    },
+    {
+      "operation_name": "secrets_vault.invalidate",
+      "required_attributes": ["secret_name", "caller_identity"]
+    }
+  ]
+}

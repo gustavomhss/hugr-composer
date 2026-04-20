@@ -1,0 +1,31 @@
+{
+  "name": "WorkflowRun",
+  "namespace": "jobs",
+  "purpose": "Durable replayable orchestration identified by a workflow id that survives worker restarts and reconstructs state from a recorded event history.",
+  "api_signature": "from typing import Protocol, Any\nfrom dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass WorkflowRun:\n    workflow_id: str\n    run_id: str\n    task_queue: str\n\nclass WorkflowClient(Protocol):\n    async def start(self, workflow_type: str, workflow_id: str, task_queue: str, args: tuple[Any, ...]) -> WorkflowRun: ...\n    async def describe(self, workflow_id: str) -> WorkflowRun: ...\n    async def cancel(self, workflow_id: str) -> None: ...",
+  "invariants": [
+    "Workflow code MUST be deterministic so replay from the event history reconstructs the same decisions.",
+    "Non deterministic calls (random, wall clock time, direct network IO) are FORBIDDEN inside the workflow function.",
+    "A completed or canceled WorkflowRun CANNOT be resumed under the same run_id; reruns ALWAYS allocate a new run_id.",
+    "Every externally observable effect MUST flow through an activity, timer, signal or child workflow rather than direct side effects.",
+    "Starting a workflow with an id that already has an open run SHALL either reject or reuse according to the configured id reuse policy."
+  ],
+  "extension_contract": "Register new workflow types as decorated functions on a worker polling a named task queue; extend behavior by composing interceptors on the worker that wrap workflow and activity invocations, and by implementing custom payload converters as adapters.",
+  "consumption_example": "async def kickoff(client: WorkflowClient) -> WorkflowRun:\n    run: WorkflowRun = await client.start('ShipOrder', workflow_id='order-42', task_queue='orders', args=(42,))\n    return run",
+  "sources": [
+    {
+      "source": "Temporal 1.24 Workflows concept page",
+      "locator": "docs.temporal.io/workflows Workflow Definition and Determinism paragraphs"
+    },
+    {
+      "source": "Temporal 1.24 Workflows concept page",
+      "locator": "docs.temporal.io/workflows Event History and Replay paragraphs"
+    }
+  ],
+  "why_essential": "Long running orchestration cannot be invented per tool; a shared contract pins the determinism rules and the identity model so operators can observe and cancel runs uniformly.",
+  "alternatives_considered": [
+    "Chained Celery tasks which lack durable replay and event history",
+    "Custom state machines per worker which repeat the same determinism bugs"
+  ],
+  "maturity": "battle_tested"
+}

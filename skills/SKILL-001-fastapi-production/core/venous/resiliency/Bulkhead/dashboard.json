@@ -1,0 +1,28 @@
+{
+  "title": "Bulkhead — Partitions, In-flight, Rejections",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "In-flight per partition",
+      "targets": [{"expr": "sum by (partition) (bulkhead_in_flight)"}]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Rejections (5m) per partition",
+      "targets": [{"expr": "sum by (partition) (rate(bulkhead_rejections_total[5m]))"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Wait duration p50/p95/p99 (ms)",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(bulkhead_wait_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(bulkhead_wait_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(bulkhead_wait_duration_bucket[5m]))"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "ERR_INV_01",
+      "invariant_text": "Every captured event MUST include the active trace_id, span_id, and request_id when any of those are set.",
+      "confirms_test": "test_inv_context_attached_confirms",
+      "prevents_test": "test_inv_context_attached_prevents",
+      "under_failure_test": "test_inv_context_attached_under_failure"
+    },
+    {
+      "invariant_id": "ERR_INV_02",
+      "invariant_text": "A fingerprint MUST be deterministic for the same exception type plus top-three stack frames; otherwise identical incidents SHALL NEVER split into separate issues.",
+      "confirms_test": "test_inv_fingerprint_stable_confirms",
+      "prevents_test": "test_inv_fingerprint_stable_prevents",
+      "under_failure_test": "test_inv_fingerprint_stable_under_failure"
+    },
+    {
+      "invariant_id": "ERR_INV_03",
+      "invariant_text": "capture_exception MUST redact registered PII field names (email, password, authorization) before transport.",
+      "confirms_test": "test_inv_pii_redacted_confirms",
+      "prevents_test": "test_inv_pii_redacted_prevents",
+      "under_failure_test": "test_inv_pii_redacted_under_failure"
+    },
+    {
+      "invariant_id": "ERR_INV_04",
+      "invariant_text": "The sink CANNOT block the caller; serialization and network transmission SHALL run on a background worker.",
+      "confirms_test": "test_inv_nonblocking_confirms",
+      "prevents_test": "test_inv_nonblocking_prevents",
+      "under_failure_test": "test_inv_nonblocking_under_failure"
+    },
+    {
+      "invariant_id": "ERR_INV_05",
+      "invariant_text": "before_send hooks returning None MUST drop the event and NEVER partially transmit it.",
+      "confirms_test": "test_inv_before_send_drop_confirms",
+      "prevents_test": "test_inv_before_send_drop_prevents",
+      "under_failure_test": "test_inv_before_send_drop_under_failure"
+    },
+    {
+      "invariant_id": "ERR_INV_06",
+      "invariant_text": "Sampling SHALL apply AFTER fingerprinting so rare variants are not accidentally suppressed by head-of-queue drops.",
+      "confirms_test": "test_inv_sampling_after_fp_confirms",
+      "prevents_test": "test_inv_sampling_after_fp_prevents",
+      "under_failure_test": "test_inv_sampling_after_fp_under_failure"
+    }
+  ]
+}

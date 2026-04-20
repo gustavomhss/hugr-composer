@@ -1,0 +1,24 @@
+{
+  "title": "LoadShedder — Cutoff, Shed Rate, Priority Admission",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Current Cutoff",
+      "targets": [{"expr": "load_shedder_current_cutoff"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Shed Rate (5m)",
+      "targets": [{"expr": "sum by (priority) (rate(load_shedder_admissions_total{result=\"rejected\"}[5m]))"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Admission Rate by Priority (5m)",
+      "targets": [{"expr": "sum by (priority) (rate(load_shedder_admissions_total{result=\"admitted\"}[5m]))"}]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "VO_INV_01",
+      "invariant_text": "Instances MUST be immutable after construction; attribute assignment post-init is FORBIDDEN.",
+      "confirms_test": "test_inv_immutable_after_construction_confirms",
+      "prevents_test": "test_inv_immutable_after_construction_prevents",
+      "under_failure_test": "test_inv_immutable_after_construction_under_failure"
+    },
+    {
+      "invariant_id": "VO_INV_02",
+      "invariant_text": "Two instances with the same attribute values MUST compare equal and MUST share the same hash.",
+      "confirms_test": "test_inv_equality_by_value_confirms",
+      "prevents_test": "test_inv_equality_by_value_prevents",
+      "under_failure_test": "test_inv_equality_by_value_under_failure"
+    },
+    {
+      "invariant_id": "VO_INV_03",
+      "invariant_text": "A ValueObject CANNOT hold a reference to an Aggregate root or Entity whose identity is unstable.",
+      "confirms_test": "test_inv_no_unstable_identity_refs_confirms",
+      "prevents_test": "test_inv_no_unstable_identity_refs_prevents",
+      "under_failure_test": "test_inv_no_unstable_identity_refs_under_failure"
+    },
+    {
+      "invariant_id": "VO_INV_04",
+      "invariant_text": "Construction SHALL validate every invariant eagerly; a partially-valid instance NEVER exists.",
+      "confirms_test": "test_inv_eager_validation_confirms",
+      "prevents_test": "test_inv_eager_validation_prevents",
+      "under_failure_test": "test_inv_eager_validation_under_failure"
+    }
+  ]
+}

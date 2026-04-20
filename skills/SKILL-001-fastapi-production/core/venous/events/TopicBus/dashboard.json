@@ -1,0 +1,36 @@
+{
+  "title": "TopicBus — Publish, Delivery, DLQ, Lag",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Publishes / sec",
+      "targets": [{"expr": "sum(rate(bus_publish_total{result=\"ok\"}[1m])) by (topic)"}]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "DLQ events / sec",
+      "targets": [{"expr": "sum(rate(bus_dlq_total[5m])) by (topic, reason)"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Delivery attempts p50/p95/p99",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(bus_delivery_attempts_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(bus_delivery_attempts_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(bus_delivery_attempts_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Handler duration p95 (ms)",
+      "targets": [
+        {"expr": "histogram_quantile(0.95, rate(bus_handler_duration_bucket[5m])) by (topic, group)"}
+      ]
+    }
+  ]
+}

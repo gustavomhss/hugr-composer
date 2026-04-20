@@ -1,0 +1,46 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "CBREAK_INV_01",
+      "invariant_text": "When state is open the breaker MUST reject calls without invoking the wrapped function.",
+      "confirms_test": "test_inv_open_rejects_confirms",
+      "prevents_test": "test_inv_open_rejects_prevents",
+      "under_failure_test": "test_inv_open_rejects_under_failure"
+    },
+    {
+      "invariant_id": "CBREAK_INV_02",
+      "invariant_text": "The transition from open to half_open SHALL occur only after the configured cooldown interval has elapsed on a monotonic clock.",
+      "confirms_test": "test_inv_cooldown_gate_confirms",
+      "prevents_test": "test_inv_cooldown_gate_prevents",
+      "under_failure_test": "test_inv_cooldown_gate_under_failure"
+    },
+    {
+      "invariant_id": "CBREAK_INV_03",
+      "invariant_text": "A half_open breaker MUST permit at most the configured permitted_calls_in_half_open probes concurrently.",
+      "confirms_test": "test_inv_halfopen_permits_confirms",
+      "prevents_test": "test_inv_halfopen_permits_prevents",
+      "under_failure_test": "test_inv_halfopen_permits_under_failure"
+    },
+    {
+      "invariant_id": "CBREAK_INV_04",
+      "invariant_text": "A single failure recorded while half_open SHALL force the state back to open and restart the cooldown.",
+      "confirms_test": "test_inv_halfopen_failure_reopens_confirms",
+      "prevents_test": "test_inv_halfopen_failure_reopens_prevents",
+      "under_failure_test": "test_inv_halfopen_failure_reopens_under_failure"
+    },
+    {
+      "invariant_id": "CBREAK_INV_05",
+      "invariant_text": "The breaker CANNOT make a transition decision using a sample smaller than minimum_number_of_calls.",
+      "confirms_test": "test_inv_min_samples_confirms",
+      "prevents_test": "test_inv_min_samples_prevents",
+      "under_failure_test": "test_inv_min_samples_under_failure"
+    },
+    {
+      "invariant_id": "CBREAK_INV_06",
+      "invariant_text": "The breaker NEVER mutates state without emitting a state_transition event on the observability bus.",
+      "confirms_test": "test_inv_emit_on_transition_confirms",
+      "prevents_test": "test_inv_emit_on_transition_prevents",
+      "under_failure_test": "test_inv_emit_on_transition_under_failure"
+    }
+  ]
+}

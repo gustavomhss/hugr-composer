@@ -1,0 +1,32 @@
+{
+  "name": "ValueTransform",
+  "namespace": "api",
+  "purpose": "Strongly-typed parse/validate step that converts a raw inbound argument (body/query/param) into the typed value the handler expects.",
+  "api_signature": "from typing import Protocol, TypeVar\nfrom dataclasses import dataclass\n\nI = TypeVar('I')\nO = TypeVar('O')\n\n@dataclass(frozen=True)\nclass ArgumentMetadata:\n    kind: str\n    metatype: type | None\n    data: str | None\n\nclass ValueTransform(Protocol):\n    def transform(self, value: I, meta: ArgumentMetadata) -> O: ...\n",
+  "invariants": [
+    "transform() MUST raise a typed validation error on bad input; it NEVER returns None to signal invalid.",
+    "A ValueTransform MUST be pure: same (value, meta) SHALL produce the same output with no observable side effects.",
+    "metatype MUST drive the coercion target; CANNOT silently ignore the declared type.",
+    "Composed transforms MUST apply left-to-right in declaration order; swapping order SHALL be explicit.",
+    "NEVER mutates the incoming value in place; the returned value is always fresh."
+  ],
+  "extension_contract": "Downstream tools implement ValueTransform (e.g. a ZodValidationPipe-style class) and bind it with a decorator/register call on a parameter or handler; built-in transforms (ParseInt, Validation) MUST satisfy the same Protocol and compose cleanly.",
+  "consumption_example": "class ParseInt:\n    def transform(self, value: str, meta: ArgumentMetadata) -> int:\n        return int(value)\n\nmeta = ArgumentMetadata(kind='param', metatype=int, data='id')\nv: ValueTransform = ParseInt()\nassert v.transform('7', meta) == 7\n",
+  "sources": [
+    {
+      "source": "Nest.js 10 \u2014 Pipes (PipeTransform, ArgumentMetadata)",
+      "locator": "docs.nestjs.com/pipes \u2014 transform(value, metadata: ArgumentMetadata) where kind \u2208 body|query|param|custom"
+    },
+    {
+      "source": "ASP.NET Core 8.0 \u2014 Model binding and validation",
+      "locator": "learn.microsoft.com/aspnet/core/mvc/models/model-binding \u2014 ModelBinder, [FromBody]/[FromQuery]"
+    }
+  ],
+  "why_essential": "A handler that receives raw strings has to re-validate the same fields on every path; one contract lets validators/coercers be shared across all entry points and keeps error shapes consistent.",
+  "alternatives_considered": [
+    "Validation inside each handler \u2014 duplicated logic, inconsistent errors",
+    "Manual parsing with framework helpers only \u2014 no composition of custom rules",
+    "JSON-Schema only \u2014 cannot express cross-field rules cleanly"
+  ],
+  "maturity": "battle_tested"
+}

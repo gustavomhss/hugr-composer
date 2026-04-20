@@ -1,0 +1,9 @@
+{
+  "invariant_bindings": [
+    {"invariant_id": "AL_INV_01", "invariant_text": "Every read of a PiiClassification-tagged record MUST emit one AccessLog entry before the response leaves the process.", "confirms_test": "test_inv_read_records_confirms", "prevents_test": "test_inv_read_records_prevents", "under_failure_test": "test_inv_read_records_under_failure"},
+    {"invariant_id": "AL_INV_02", "invariant_text": "purpose_of_use MUST be one of a registered set; ad-hoc free-text values SHALL be rejected.", "confirms_test": "test_inv_purpose_enum_confirms", "prevents_test": "test_inv_purpose_enum_prevents", "under_failure_test": "test_inv_purpose_enum_under_failure"},
+    {"invariant_id": "AL_INV_03", "invariant_text": "AccessLog entries MUST NEVER be merged with the TamperEvidentAuditLog so high-volume read traffic cannot mask low-volume security events.", "confirms_test": "test_inv_distinct_from_audit_confirms", "prevents_test": "test_inv_distinct_from_audit_prevents", "under_failure_test": "test_inv_distinct_from_audit_under_failure"},
+    {"invariant_id": "AL_INV_04", "invariant_text": "Actor MUST be a resolved identity (user, service account, or break-glass id); 'system' without a concrete id is FORBIDDEN.", "confirms_test": "test_inv_concrete_actor_confirms", "prevents_test": "test_inv_concrete_actor_prevents", "under_failure_test": "test_inv_concrete_actor_under_failure"},
+    {"invariant_id": "AL_INV_05", "invariant_text": "Retention of AccessLog MUST follow a RetentionPolicy bound at registration; unbounded accumulation CANNOT occur.", "confirms_test": "test_inv_retention_bound_confirms", "prevents_test": "test_inv_retention_bound_prevents", "under_failure_test": "test_inv_retention_bound_under_failure"}
+  ]
+}

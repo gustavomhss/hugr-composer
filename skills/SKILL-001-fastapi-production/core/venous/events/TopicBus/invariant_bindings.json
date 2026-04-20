@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "TB_INV_01",
+      "invariant_text": "Delivery to a subscribed handler MUST be at least once by default; handlers SHALL tolerate duplicates and MUST NOT block indefinitely on ack.",
+      "confirms_test": "test_inv_at_least_once_confirms",
+      "prevents_test": "test_inv_at_least_once_prevents",
+      "under_failure_test": "test_inv_at_least_once_under_failure"
+    },
+    {
+      "invariant_id": "TB_INV_02",
+      "invariant_text": "Inside one consumer group a given message ALWAYS goes to exactly one handler instance at a time; concurrent overlap is FORBIDDEN.",
+      "confirms_test": "test_inv_exclusive_dispatch_confirms",
+      "prevents_test": "test_inv_exclusive_dispatch_prevents",
+      "under_failure_test": "test_inv_exclusive_dispatch_under_failure"
+    },
+    {
+      "invariant_id": "TB_INV_03",
+      "invariant_text": "Negative acknowledgement MUST cause redelivery until the bound is exhausted, then the envelope MUST route to the configured dead-letter topic; silent drop is FORBIDDEN.",
+      "confirms_test": "test_inv_nack_redelivery_confirms",
+      "prevents_test": "test_inv_nack_redelivery_prevents",
+      "under_failure_test": "test_inv_nack_redelivery_under_failure"
+    },
+    {
+      "invariant_id": "TB_INV_04",
+      "invariant_text": "Subscribers CANNOT rely on global ordering across topic partitions; same-key envelopes ALWAYS land at a group handler in publish order.",
+      "confirms_test": "test_inv_per_key_order_confirms",
+      "prevents_test": "test_inv_per_key_order_prevents",
+      "under_failure_test": "test_inv_per_key_order_under_failure"
+    },
+    {
+      "invariant_id": "TB_INV_05",
+      "invariant_text": "Publish NEVER succeeds without the broker confirming the persisted append; fanout to subscribers MUST be strictly downstream of the committed log record.",
+      "confirms_test": "test_inv_publish_append_atomic_confirms",
+      "prevents_test": "test_inv_publish_append_atomic_prevents",
+      "under_failure_test": "test_inv_publish_append_atomic_under_failure"
+    }
+  ]
+}

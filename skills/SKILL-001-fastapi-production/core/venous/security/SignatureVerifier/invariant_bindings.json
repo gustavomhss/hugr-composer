@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "SIG_INV_01",
+      "invariant_text": "verify() MUST raise on signature mismatch and MUST NEVER return a boolean indicating partial verification.",
+      "confirms_test": "test_inv_raise_on_mismatch_confirms",
+      "prevents_test": "test_inv_raise_on_mismatch_prevents",
+      "under_failure_test": "test_inv_raise_on_mismatch_under_failure"
+    },
+    {
+      "invariant_id": "SIG_INV_02",
+      "invariant_text": "Accepted algorithms MUST be declared per key_id; algorithm confusion (substituting HS256 for RS256) CANNOT occur.",
+      "confirms_test": "test_inv_algorithm_binding_confirms",
+      "prevents_test": "test_inv_algorithm_binding_prevents",
+      "under_failure_test": "test_inv_algorithm_binding_under_failure"
+    },
+    {
+      "invariant_id": "SIG_INV_03",
+      "invariant_text": "sign() MUST use deterministic signing (RFC 6979 for ECDSA) or a CSPRNG nonce; ECDSA nonce reuse SHALL be treated as key compromise.",
+      "confirms_test": "test_inv_deterministic_or_csprng_nonce_confirms",
+      "prevents_test": "test_inv_deterministic_or_csprng_nonce_prevents",
+      "under_failure_test": "test_inv_deterministic_or_csprng_nonce_under_failure"
+    },
+    {
+      "invariant_id": "SIG_INV_04",
+      "invariant_text": "Public keys used for verify MUST be fetched from a pinned trust anchor and MUST NEVER be learned from the same message being verified.",
+      "confirms_test": "test_inv_pinned_trust_anchor_confirms",
+      "prevents_test": "test_inv_pinned_trust_anchor_prevents",
+      "under_failure_test": "test_inv_pinned_trust_anchor_under_failure"
+    },
+    {
+      "invariant_id": "SIG_INV_05",
+      "invariant_text": "verify() MUST be constant-time with respect to the signature bytes; timing leaks on tag comparison are FORBIDDEN.",
+      "confirms_test": "test_inv_constant_time_compare_confirms",
+      "prevents_test": "test_inv_constant_time_compare_prevents",
+      "under_failure_test": "test_inv_constant_time_compare_under_failure"
+    }
+  ]
+}

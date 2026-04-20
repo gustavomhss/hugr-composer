@@ -1,0 +1,39 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "PROMPT_INV_01",
+      "invariant_text": "Rendered output MUST be byte-identical across two calls with the same (version, values) pair.",
+      "confirms_test": "test_inv_render_determinism_confirms",
+      "prevents_test": "test_inv_render_determinism_prevents",
+      "under_failure_test": "test_inv_render_determinism_under_failure"
+    },
+    {
+      "invariant_id": "PROMPT_INV_02",
+      "invariant_text": "A published version MUST NEVER be mutated; changes SHALL produce a new integer version.",
+      "confirms_test": "test_inv_immutable_confirms",
+      "prevents_test": "test_inv_immutable_prevents",
+      "under_failure_test": "test_inv_immutable_under_failure"
+    },
+    {
+      "invariant_id": "PROMPT_INV_03",
+      "invariant_text": "render() MUST raise when a declared variable is missing from values and MUST NEVER silently inject an empty string.",
+      "confirms_test": "test_inv_missing_variable_confirms",
+      "prevents_test": "test_inv_missing_variable_prevents",
+      "under_failure_test": "test_inv_missing_variable_under_failure"
+    },
+    {
+      "invariant_id": "PROMPT_INV_04",
+      "invariant_text": "fingerprint() MUST cover template text, target_model, and variable names; drift in any of them SHALL change the fingerprint.",
+      "confirms_test": "test_inv_fingerprint_covers_all_confirms",
+      "prevents_test": "test_inv_fingerprint_covers_all_prevents",
+      "under_failure_test": "test_inv_fingerprint_covers_all_under_failure"
+    },
+    {
+      "invariant_id": "PROMPT_INV_05",
+      "invariant_text": "Variable interpolation MUST use explicit delimiters and CANNOT treat unescaped user input as template syntax.",
+      "confirms_test": "test_inv_no_injection_confirms",
+      "prevents_test": "test_inv_no_injection_prevents",
+      "under_failure_test": "test_inv_no_injection_under_failure"
+    }
+  ]
+}

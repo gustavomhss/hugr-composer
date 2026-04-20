@@ -1,0 +1,26 @@
+{
+  "name": "KeyRotationSchedule",
+  "namespace": "policy",
+  "purpose": "Drives rotation of data-encryption keys on a fixed cadence with overlap window, and blocks new writes with a key past its cutover.",
+  "api_signature": "from dataclasses import dataclass\nfrom datetime import datetime, timedelta\nfrom typing import Protocol\n\n@dataclass(frozen=True)\nclass KeyRotationSchedule:\n    key_alias: str\n    cadence: timedelta\n    overlap: timedelta\n    next_rotation_at: datetime\n\nclass KeyRotator(Protocol):\n    def schedule(self, sched: KeyRotationSchedule) -> None: ...\n    def rotate_now(self, key_alias: str) -> str: ...\n    def active_key(self, key_alias: str, at: datetime) -> str: ...",
+  "invariants": [
+    "A new key version MUST be produced on or before next_rotation_at; missing a rotation SHALL raise an alert to the compliance channel.",
+    "overlap MUST be > 0 so decryption of records written with the prior version NEVER fails during cutover.",
+    "active_key() MUST return exactly one current key per alias at any instant; ties or gaps CANNOT occur.",
+    "Keys past cadence + overlap MUST be marked decrypt-only; new writes with such keys SHALL be rejected.",
+    "Rotation events MUST emit a TamperEvidentAuditLog entry capturing old and new key versions."
+  ],
+  "extension_contract": "KMS providers implement a RotationAdapter with .create_version(alias) and .set_primary(alias, version). Target applications register schedules at startup; custom post-rotation steps are added via a rotation hook that runs inside the rotation transaction.",
+  "consumption_example": "from datetime import datetime, timedelta, timezone\n\nsched = KeyRotationSchedule(\n    key_alias='alias/pii-field',\n    cadence=timedelta(days=90),\n    overlap=timedelta(days=7),\n    next_rotation_at=datetime.now(timezone.utc) + timedelta(days=90),\n)\nrotator.schedule(sched)\nkid = rotator.active_key('alias/pii-field', datetime.now(timezone.utc))",
+  "sources": [
+    {"source": "PCI-DSS v4.0", "locator": "Requirement 3.7.4 \u2014 cryptographic key changes at defined cryptoperiod"},
+    {"source": "NIST SP 800-53 revision 5", "locator": "SC-12 Cryptographic Key Establishment and Management"}
+  ],
+  "why_essential": "Rotation done via quarterly runbooks silently lapses; a scheduled primitive turns cadence into code and makes missed rotations a failing build signal rather than an audit finding.",
+  "alternatives_considered": [
+    "Manual rotation via ops playbook \u2014 depends on humans and misses under load.",
+    "Cloud-managed auto-rotation only \u2014 covers CMKs but not application-scoped DEKs or HMAC keys.",
+    "Single long-lived key with periodic audit \u2014 leaves a long blast radius on compromise."
+  ],
+  "maturity": "battle_tested"
+}

@@ -1,0 +1,53 @@
+{
+  "logs": [
+    {
+      "event_name": "tracer.span.started",
+      "required_attributes": ["span_name", "span_kind", "trace_id"]
+    },
+    {
+      "event_name": "tracer.span.ended",
+      "required_attributes": ["span_name", "status_code", "duration_ns"]
+    },
+    {
+      "event_name": "tracer.end.duplicate",
+      "required_attributes": ["span_name", "warning"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "tracer.spans.created",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["kind"]
+    },
+    {
+      "name": "tracer.span.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 200,
+      "label_keys": ["kind", "status"]
+    },
+    {
+      "name": "tracer.export.calls",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 10,
+      "label_keys": ["result"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "tracer.span.create",
+      "required_attributes": ["span.name", "span.kind"]
+    },
+    {
+      "operation_name": "tracer.context.extract",
+      "required_attributes": ["traceparent.valid"]
+    },
+    {
+      "operation_name": "tracer.context.inject",
+      "required_attributes": ["carrier.keys"]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "title": "RequestGuard — Allow / Deny / Error Rates & Depth",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Allow Decisions (5m)",
+      "targets": [{"expr": "sum(rate(guard_decisions_total{outcome=\"allow\"}[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "403 Forbidden (5m)",
+      "targets": [{"expr": "sum(rate(guard_decisions_total{outcome=\"deny_forbidden\"}[5m]))"}]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "401 Unauthenticated (5m)",
+      "targets": [{"expr": "sum(rate(guard_decisions_total{outcome=\"deny_unauthenticated\"}[5m]))"}]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Guard Errors → 500 (5m)",
+      "targets": [{"expr": "sum(rate(guard_decisions_total{outcome=\"error\"}[5m]))"}]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Evaluation Duration p50/p95/p99 (ms)",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(guard_evaluation_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(guard_evaluation_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(guard_evaluation_duration_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Short-Circuit Depth (guards invoked per dispatch)",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(guard_short_circuit_depth_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(guard_short_circuit_depth_bucket[5m]))"}
+      ]
+    }
+  ]
+}

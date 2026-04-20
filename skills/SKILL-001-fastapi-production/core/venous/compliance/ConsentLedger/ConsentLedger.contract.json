@@ -1,0 +1,26 @@
+{
+  "name": "ConsentLedger",
+  "namespace": "compliance",
+  "purpose": "Records granular per-subject, per-purpose consent grants and revocations with timestamp and version of the notice accepted.",
+  "api_signature": "from typing import Protocol\nfrom datetime import datetime\n\nclass ConsentLedger(Protocol):\n    def grant(self, subject_id: str, purpose: str, notice_version: str, at: datetime) -> str: ...\n    def revoke(self, subject_id: str, purpose: str, at: datetime) -> None: ...\n    def is_granted(self, subject_id: str, purpose: str, at: datetime | None = None) -> bool: ...\n    def history(self, subject_id: str) -> list[dict]: ...",
+  "invariants": [
+    "Consent MUST be keyed by (subject_id, purpose); a blanket grant across purposes CANNOT be recorded.",
+    "Every grant MUST reference a notice_version string so the exact text the subject accepted is reconstructible; missing version SHALL raise.",
+    "Revocation MUST be as easy as grant and SHALL take effect immediately; future is_granted calls for that (subject, purpose) MUST return False.",
+    "History entries MUST be append-only; a revocation NEVER erases a prior grant, it supersedes it in time.",
+    "is_granted MUST be evaluated against the state at `at` (or now), not the latest, so audits can reproduce past authorizations."
+  ],
+  "extension_contract": "Target applications register purposes (e.g. 'marketing_email', 'analytics_profiling') and plug a NoticeVersionProvider adapter. Consent-gated code paths compose the ledger via a policy decorator that blocks execution when is_granted is False.",
+  "consumption_example": "from datetime import datetime, timezone\n\ndef send_marketing(ledger: ConsentLedger, subject_id: str) -> None:\n    now = datetime.now(timezone.utc)\n    if not ledger.is_granted(subject_id, 'marketing_email', now):\n        raise PermissionError('no marketing consent')\n    # ... dispatch email",
+  "sources": [
+    {"source": "EU GDPR Regulation 2016/679 Articles 5, 6, 7, 15, 17, 30, 32", "locator": "Article 7 Conditions for consent; Article 6(1)(a) lawful basis"},
+    {"source": "AICPA SOC 2 Trust Services Criteria (2017, 2022 revision)", "locator": "Privacy criteria P3.1 \u2014 consent collection and documentation"}
+  ],
+  "why_essential": "Consent scattered in flags or CRM fields cannot prove lawful basis at a point in time; a shared ledger keeps every grant reproducible and every revocation effective in one place.",
+  "alternatives_considered": [
+    "Boolean column on users table \u2014 no history, no notice version, no temporal query.",
+    "CRM tool as source of truth \u2014 outside the transactional boundary, racy against data processing.",
+    "Cookie banner state only \u2014 covers web UI consent, not API/backend-initiated processing."
+  ],
+  "maturity": "battle_tested"
+}

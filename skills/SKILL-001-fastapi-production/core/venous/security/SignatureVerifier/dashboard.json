@@ -1,0 +1,20 @@
+{
+  "title": "SignatureVerifier — sign/verify throughput, rejection rate, replay watch",
+  "schemaVersion": 38,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "sign ops/s",
+     "targets": [{"expr": "sum(rate(signature_verifier_operations_total{operation=\"sign\"}[5m]))"}]},
+    {"id": 2, "type": "stat", "title": "verify rejection rate",
+     "targets": [{"expr": "sum(rate(signature_verifier_verify_rejections_total[5m]))"}]},
+    {"id": 3, "type": "timeseries", "title": "sign/verify p50/p95/p99 (ms)",
+     "targets": [
+       {"expr": "histogram_quantile(0.50, rate(signature_verifier_duration_bucket[5m]))"},
+       {"expr": "histogram_quantile(0.95, rate(signature_verifier_duration_bucket[5m]))"},
+       {"expr": "histogram_quantile(0.99, rate(signature_verifier_duration_bucket[5m]))"}
+     ]},
+    {"id": 4, "type": "stat", "title": "replay detections (alert > 0)",
+     "targets": [{"expr": "sum(increase(signature_verifier_replay_detections_total[1h]))"}]},
+    {"id": 5, "type": "timeseries", "title": "verify rejections by reason",
+     "targets": [{"expr": "sum by (reason) (rate(signature_verifier_verify_rejections_total[5m]))"}]}
+  ]
+}

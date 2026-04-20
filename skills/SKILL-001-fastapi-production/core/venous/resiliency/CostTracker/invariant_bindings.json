@@ -1,0 +1,25 @@
+{
+  "invariant_bindings": [
+    {
+      "invariant_id": "COST_TRACKER_INV_01",
+      "invariant_text": "An exception raised by an estimator MUST NOT propagate out of `estimate_request()` \u2014 cost observation is always fail-open.",
+      "confirms_test": "test_inv_estimator_failure_isolated_confirms",
+      "prevents_test": "test_inv_estimator_failure_isolated_prevents",
+      "under_failure_test": "test_inv_estimator_failure_isolated_under_failure"
+    },
+    {
+      "invariant_id": "COST_TRACKER_INV_02",
+      "invariant_text": "`_history` length MUST NEVER exceed `_max_history`; the oldest entry is evicted FIFO when the bound is hit.",
+      "confirms_test": "test_inv_history_bounded_confirms",
+      "prevents_test": "test_inv_history_bounded_prevents",
+      "under_failure_test": "test_inv_history_bounded_under_failure"
+    },
+    {
+      "invariant_id": "COST_TRACKER_INV_03",
+      "invariant_text": "`total_cost_usd` on the returned estimate MUST equal `db_cost_usd + s3_cost_usd + api_cost_usd` (conservation).",
+      "confirms_test": "test_inv_total_conservation_confirms",
+      "prevents_test": "test_inv_total_conservation_prevents",
+      "under_failure_test": "test_inv_total_conservation_under_failure"
+    }
+  ]
+}

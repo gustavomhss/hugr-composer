@@ -1,0 +1,14 @@
+{
+  "logs": [
+    {"event_name": "ropa.activity.registered", "required_attributes": ["activity", "controller"]},
+    {"event_name": "ropa.exported", "required_attributes": ["bytes"]}
+  ],
+  "metrics": [
+    {"name": "ropa.activities", "metric_type": "gauge", "unit": "1", "cardinality_bound": 500, "label_keys": []},
+    {"name": "ropa.exports", "metric_type": "counter", "unit": "1", "cardinality_bound": 50, "label_keys": []}
+  ],
+  "spans": [
+    {"operation_name": "ropa.register", "required_attributes": ["activity"]},
+    {"operation_name": "ropa.export", "required_attributes": []}
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "title": "Specification — Evaluations, Composition Depth, Translator Health",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Evaluations per second (5m)",
+      "targets": [{"expr": "sum(rate(spec_evaluations_total[5m]))"}]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Composition Depth p50/p95/p99",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(spec_composition_depth_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(spec_composition_depth_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(spec_composition_depth_bucket[5m]))"}
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Translate Duration (ms) p50/p95/p99 by backend",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(spec_translate_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.95, rate(spec_translate_duration_bucket[5m]))"},
+        {"expr": "histogram_quantile(0.99, rate(spec_translate_duration_bucket[5m]))"}
+      ]
+    }
+  ]
+}

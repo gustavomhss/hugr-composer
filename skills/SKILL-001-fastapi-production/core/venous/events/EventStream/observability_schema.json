@@ -1,0 +1,64 @@
+{
+  "logs": [
+    {
+      "event_name": "event_stream.appended",
+      "required_attributes": ["partition", "seq"]
+    },
+    {
+      "event_name": "event_stream.read.started",
+      "required_attributes": ["partition", "from_offset"]
+    },
+    {
+      "event_name": "event_stream.truncated",
+      "required_attributes": ["partition", "from_offset", "to_offset"]
+    },
+    {
+      "event_name": "event_stream.append.rejected",
+      "required_attributes": ["partition", "reason"]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "event_stream.events.appended",
+      "metric_type": "counter",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["partition"]
+    },
+    {
+      "name": "event_stream.append.duration",
+      "metric_type": "histogram",
+      "unit": "ms",
+      "cardinality_bound": 30,
+      "label_keys": ["partition", "result"]
+    },
+    {
+      "name": "event_stream.tail.position",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 20,
+      "label_keys": ["partition"]
+    },
+    {
+      "name": "event_stream.consumer.lag",
+      "metric_type": "gauge",
+      "unit": "1",
+      "cardinality_bound": 50,
+      "label_keys": ["consumer", "partition"]
+    }
+  ],
+  "spans": [
+    {
+      "operation_name": "event_stream.append",
+      "required_attributes": ["partition", "seq"]
+    },
+    {
+      "operation_name": "event_stream.read_from",
+      "required_attributes": ["partition", "from_offset", "events"]
+    },
+    {
+      "operation_name": "event_stream.truncate",
+      "required_attributes": ["partition", "to_offset"]
+    }
+  ]
+}

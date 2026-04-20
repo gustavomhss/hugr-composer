@@ -1,0 +1,14 @@
+{
+  "name": "TracingBuffer",
+  "namespace": "resiliency",
+  "maturity": "emerging",
+  "kind": "extracted",
+  "purpose": "Thread-safe in-memory ring buffer of the last N request traces. Supports newest-first iteration, lookup by request id, and p99 slow-path query. Designed for in-process diagnostic UIs, NOT durable storage.",
+  "api_signature": "class TracingBuffer: record(...), get_all(...), get_by_id(...), get_slow(...)",
+  "invariants": [
+    "TRACING_BUFFER_INV_01: Buffer length MUST never exceed `maxlen`; oldest entries are evicted FIFO once the ring is full (deque-with-maxlen semantics).",
+    "TRACING_BUFFER_INV_02: `get_all()` MUST return entries in newest-first order (reverse of insertion).",
+    "TRACING_BUFFER_INV_03: `get_by_id(id)` MUST return the stored dict iff an entry with matching `id` is still in the buffer; else None (no exceptions)."
+  ],
+  "status": "promoted"
+}
