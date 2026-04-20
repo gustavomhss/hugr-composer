@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_auth',
+    'description': 'Generate complete auth stack: argon2id hasher, PyJWT tokens, OAuth2 deps, login routes.',
+    'tags': ['auth', 'generator'],
+    'entry': 'generate_auth',
+}
+
 import textwrap
 from pathlib import Path
 
@@ -95,7 +102,6 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.core.config import settings
 from app.core.jwt import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
 from app.core.rate_limit import limiter
 from app.core.security import DUMMY_HASH, verify_password
@@ -170,3 +176,29 @@ async def test_token(current_user: CurrentUser) -> dict:
     notes.append("Login uses DUMMY_HASH for timing-attack prevention on non-existent users.")
 
     return {"files_created": [str(file_path)], "notes": notes}
+
+
+def generate_auth(output_dir: str, prefix: str = "/api/v1") -> dict:
+    """MCP entry: generate complete auth stack (hasher, JWT, deps, routes, schemas).
+
+    Includes DUMMY_HASH for timing-attack prevention and password-recovery
+    that never reveals email existence.
+    """
+    from generators.auth.hasher import generate_password_hasher
+    from generators.auth.jwt import generate_jwt
+    from generators.auth.deps import generate_auth_deps
+    from generators.auth.routes import generate_auth_routes as _gar
+    from generators.auth.schemas import generate_auth_schemas
+
+    results: dict = {"files_created": [], "notes": []}
+    for gen in [
+        lambda: generate_password_hasher(output_dir),
+        lambda: generate_jwt(output_dir),
+        lambda: generate_auth_deps(output_dir, f"{prefix}/login/access-token"),
+        lambda: _gar(output_dir),
+        lambda: generate_auth_schemas(output_dir),
+    ]:
+        r = gen()
+        results["files_created"].extend(r["files_created"])
+        results["notes"].extend(r.get("notes", []))
+    return results

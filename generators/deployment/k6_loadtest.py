@@ -31,6 +31,13 @@ results CI-parseable (e.g. for Grafana annotations or Datadog events).
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_loadtest',
+    'description': 'Generate k6 load test with ramp/spike/recovery stages and SLA thresholds.',
+    'tags': ['deployment', 'generator'],
+    'entry': 'generate_k6_loadtest',
+}
+
 import textwrap
 from pathlib import Path
 

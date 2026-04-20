@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_model',
+    'description': 'Generate a SQLAlchemy ORM model with UUID PK, typed columns, and optional timestamps/soft-delete.',
+    'tags': ['database', 'generator'],
+    'entry': 'generate_model',
+}
+
 import textwrap
 from pathlib import Path
 
@@ -130,7 +137,7 @@ def generate_model(
 
     # stdlib
     if "datetime" in stdlib_imports:
-        import_lines.append("from datetime import datetime, timezone")
+        import_lines.append("from datetime import datetime")
     if "decimal" in stdlib_imports:
         import_lines.append("from decimal import Decimal")
     if "uuid" in stdlib_imports:

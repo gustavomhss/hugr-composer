@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_engine',
+    'description': 'Generate async database engine with pool_pre_ping, pool_recycle, and sized connection pool.',
+    'tags': ['database', 'generator'],
+    'entry': 'generate_engine',
+}
+
 import textwrap
 from pathlib import Path
 

@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_env_example',
+    'description': 'Generate .env.example with all required environment variables and safe placeholders.',
+    'tags': ['generator', 'infra'],
+    'entry': 'generate_env_example',
+}
+
 import textwrap
 from pathlib import Path
 

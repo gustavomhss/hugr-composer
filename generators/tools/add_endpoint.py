@@ -23,6 +23,14 @@ Usage::
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_add_endpoint',
+    'description': 'Add a custom endpoint to an existing route file.',
+    'tags': ['adapt'],
+    'entry': 'add_endpoint',
+    'annotations': {'readOnlyHint': False},
+}
+
 import re
 import textwrap
 from pathlib import Path

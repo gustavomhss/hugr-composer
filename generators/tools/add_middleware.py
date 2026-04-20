@@ -27,6 +27,14 @@ Usage::
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_add_middleware',
+    'description': 'Add custom middleware to the stack at the correct position.',
+    'tags': ['adapt'],
+    'entry': 'add_middleware',
+    'annotations': {'readOnlyHint': False},
+}
+
 import re
 import textwrap
 from pathlib import Path

@@ -34,6 +34,13 @@ manual threading.
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_otel',
+    'description': 'Generate OpenTelemetry setup: TracerProvider, BatchSpanProcessor, auto-instrumentation.',
+    'tags': ['generator', 'observability'],
+    'entry': 'generate_otel_setup',
+}
+
 import textwrap
 from pathlib import Path
 

@@ -13,6 +13,13 @@ The generated tests are designed to work with the fixtures from
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_generate_tests',
+    'description': 'Generate complete test infrastructure + test suite.',
+    'tags': ['generator', 'testing'],
+    'entry': 'generate_tests',
+}
+
 import re
 import textwrap
 from pathlib import Path
@@ -636,3 +643,29 @@ def _generate_crud_tests(
         f"\n"
         f"    assert response.status_code == 404\n"
     )
+
+
+def generate_tests(
+    output_dir: str,
+    models: dict[str, dict[str, str]] | None = None,
+    owner_models: dict[str, str] | None = None,
+    with_auth: bool = True,
+) -> dict:
+    """MCP entry: generate test infrastructure + test suite.
+
+    Produces: conftest.py (async SQLite, fixtures for superuser/regular tokens),
+    test_login.py (5 tests), test_users.py (8 tests), and test_{model}.py
+    (6 tests each).
+    """
+    from generators.testing.conftest import generate_test_infrastructure
+    from generators.testing.test_suite import generate_test_suite as _gts
+
+    results: dict = {"files_created": [], "notes": []}
+    r1 = generate_test_infrastructure(output_dir, with_auth=with_auth)
+    results["files_created"].extend(r1["files_created"])
+    results["notes"].extend(r1.get("notes", []))
+    if models or with_auth:
+        r2 = _gts(output_dir, models=models, owner_models=owner_models, with_auth=with_auth)
+        results["files_created"].extend(r2["files_created"])
+        results["notes"].extend(r2.get("notes", []))
+    return results
