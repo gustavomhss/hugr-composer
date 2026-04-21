@@ -330,6 +330,87 @@ test -f PRODUCT.md && test -f ROADMAP.md && test -f CONTRACT.md \
 - **Quality (SOTA):** Not just any 15 — the 15 enumerated in B1.3
   (highest-value, most-composed patterns).
 
+#### B1.7 — FastAPI adapter coverage
+
+> Adapters are the thin framework-specific shims that wire framework-free
+> primitives into FastAPI (ADR 0003). Without test coverage a subtle
+> adapter bug breaks every generated app silently — so each adapter
+> MUST have a `test_<Name>Adapter.py` beside it AND reference a
+> primitive that exists in the registry.
+
+- **DoD:**
+  - `core/venous/_adapters/fastapi/` contains ≥ 15 `<Name>Adapter.py`
+    files (floor chosen to match the 15 top-value Rails-style wirings
+    enumerated in B1.3).
+  - Every `<Name>Adapter.py` has a colocated `test_<Name>Adapter.py`.
+  - Every adapter filename resolves to a registered primitive. The
+    resolution rules (in priority order) are:
+    1. Strip `Adapter` suffix → literal primitive name in registry
+       (e.g. `CircuitBreakerAdapter` → `CircuitBreaker`).
+    2. Family tag (e.g. `Workflow`, `AuditLog`, `OAuth2`, `Saga`,
+       `WebhookReceiver`) maps to a registered primitive set;
+       family tags are enumerated in `engine/audit/contract_check.py`.
+    3. Registry name appears as a substring of the adapter stem.
+  - Rule enforced by `_r_adapter_coverage` in
+    `engine/audit/contract_check.py`.
+- **Invariants:**
+  - Adding a new adapter that breaks any resolution rule fails
+    B1.7 in CI.
+  - `MCP_TOOL` tools may call adapter helpers but MUST NOT import from
+    `_adapters/fastapi/` when a registered primitive covers the need
+    (§A2 first; adapters are Rails-style wiring, not shortcuts).
+- **Completeness:** Every adapter in `_adapters/fastapi/` passes the
+  three checks; no adapter bypasses the registry.
+- **Quality (SOTA):** Adapters carry `MCP_TOOL` metadata (discoverable
+  from Maestro) and ship with an orientation comment explaining
+  which primitive(s) they wire and which FastAPI seam they attach to
+  (middleware, dependency, route handler, startup hook).
+
+#### B1.8 — Tier-lite eligibility
+
+> Tier-lite (see ADR 0004) is a second valid registered tier for
+> stateless primitives whose invariants collapse to first-order
+> predicates over inputs — no TLA+ specification required. Tier-lite
+> reduces ritual for primitives where formal verification adds zero
+> safety, WITHOUT loosening the bar for stateful or concurrent ones.
+
+- **DoD:**
+  - `engine/primitives_by_concern.yaml` schema accepts
+    `tier: "lite" | "full"`; default is `"full"` (backwards-compatible
+    — all v0.x primitives retain `full` semantics).
+  - For every registry entry with `tier == "lite"`,
+    `_r_tier_lite_eligibility` in
+    `engine/audit/contract_check.py` verifies ALL of:
+    1. `core/venous/<ns>/<Name>/<Name>.py` exists and is readable.
+    2. Zero `REPLACE_ME` markers in that file.
+    3. No framework imports (`fastapi`, `starlette`, `sqlalchemy`,
+       `sqlmodel`, `pydantic`, `django`, `flask`, `tornado`,
+       `aiohttp`) AND no implicit framework tokens (`Mapped[`,
+       `APIRouter(`, `Depends(`, `class Base(`) detected by the AST
+       helpers in `engine/promotion/state.py`.
+    4. No concurrency imports or primitives (`threading`, `asyncio`,
+       `multiprocessing`, `Lock`, `Semaphore`, `Queue`, …).
+  - Lite primitives indexed in `engine/index/catalog.json` with
+    `tier="lite"`; consumers can filter by tier.
+- **Invariants:**
+  - A lite primitive found to violate any eligibility check at audit
+    time fails B1.8 — silent drift rejected at CI.
+  - Upgrading lite → full requires adding the `.tla` spec and
+    flipping the registry field in a single PR; the primitive's
+    public API MUST NOT change across the upgrade (§A10).
+  - Lite primitives cannot depend on unregistered staged primitives
+    (dependency closure must be fully registered).
+- **Completeness:** All existing registered primitives keep
+  `tier: "full"` at the v1.0 cut; any new lite primitive ships
+  with an eligibility proof in its PR description (maps each of the
+  four machine checks + three human-review bullets from ADR 0004 §2.1).
+- **Quality (SOTA):** A lite primitive's `.md` documents WHY it
+  qualifies for lite in a one-paragraph eligibility justification
+  naming which of the seven ADR 0004 §2.1 bullets apply. Promotion
+  executor (`engine/promotion/promote.py`) refuses `tier="lite"`
+  until the ratification token `§B1.8 ratified` appears in
+  CONTRACT.md §E.
+
 **Phase 1 exit criterion:**
 ```
 python -m engine.registry_check                                # B1.1
@@ -337,6 +418,7 @@ python -m engine.registry_check                                # B1.1
 python -m engine.audit.tool_import_audit --require 15          # B1.3 + B1.6
 python -m engine.audit.tool_payload_schema                     # B1.4
 [ $(grep -c '@mcp_app.tool' mcp_tools/generators.py) -eq 0 ]   # B1.5
+python -m engine.audit.contract_check                          # B1.7 + B1.8
 ```
 
 ---
