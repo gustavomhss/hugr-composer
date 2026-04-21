@@ -8,7 +8,7 @@ license: Apache-2.0
 
 ## Overview
 
-Turns a plain-English backend spec into a running, tested, production-grade FastAPI service. Emits idiomatic code that imports from a curated library of 122 framework-free primitives (the "venous system"), so generated output survives hand-editing. Ships 188 MCP tools behind 7 tier-1 meta tools + 1 domain-tree dispatcher — drive the skill exclusively through those, never by listing the full catalog.
+Turns a plain-English backend spec into a running, tested, production-grade FastAPI service. Emits idiomatic code that imports from a curated library of 122 registered + 180 staged framework-free primitives (the "venous system"), so generated output survives hand-editing. Ships 201 MCP tools behind 7 tier-1 meta tools + 9 domain-tree dispatchers — drive the skill exclusively through those, never by listing the full catalog.
 
 ## When to use
 
@@ -72,7 +72,7 @@ invariants:
 | `fastapi_meta_verify` | Meta-audit — verify the audit itself is sound. | Immediately after `audit`. |
 | `fastapi_auth` | Tree dispatcher for 15 auth slice tools (bundle / slice / primitive granularities). | Any auth-related request. |
 
-All other tools (~180) are discovered on demand via `fastapi_meta_search`.
+All other tools (~185) are discovered on demand via `fastapi_meta_search`.
 
 ## Few-shot transcripts
 
@@ -85,7 +85,7 @@ USER: Build me a SaaS backend with email auth and Stripe subscriptions.
 
 STEP 1  → orient
 TOOL    fastapi_meta_home()
-RESULT  {repo: "empty", catalog: {tools: 188, primitives: 122, recipes: 385}}
+RESULT  {repo: "empty", catalog: {tools: 201, primitives: 302, recipes: 385}}
 
 STEP 2  → clarify
 ASSISTANT  "Two quick questions before I scaffold:

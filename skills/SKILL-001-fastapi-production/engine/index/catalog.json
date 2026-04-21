@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "65cad13",
-  "generated_at": "2026-04-21T03:53:10+00:00",
+  "kit_commit": "ce0044f",
+  "generated_at": "2026-04-21T04:07:37+00:00",
   "verbs": [
     "add",
     "generate",
@@ -3776,9 +3776,7 @@
       "since": "",
       "module_path": "generators/orchestrator.py",
       "test_paths": [],
-      "primitives_used": [
-        "GracefulShutdown"
-      ],
+      "primitives_used": [],
       "example_input": null,
       "example_output": null
     },
@@ -3816,9 +3814,7 @@
       "since": "",
       "module_path": "generators/scaffold_venous.py",
       "test_paths": [],
-      "primitives_used": [
-        "GracefulShutdown"
-      ],
+      "primitives_used": [],
       "example_input": null,
       "example_output": null
     },

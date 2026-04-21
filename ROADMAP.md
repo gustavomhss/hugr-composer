@@ -52,7 +52,7 @@ reconcile against INVENTORY.md — drift = audit bug.
 
 ### What's still open
 
-- ⚠️ **Rails-vs-Yeoman rule (PRODUCT.md §6.1)** — only 18/100 `adapt/extend/` tools import from `core.venous.*`. The other 82 emit inline logic. ROADMAP Phase-1 item #9 remains open.
+- ⚠️ **Rails-vs-Yeoman rule (PRODUCT.md §6.1)** — only 19/100 `adapt/extend/` tools import from `core.venous.*`. The other 81 emit inline logic. ROADMAP Phase-1 item #9 remains open.
 - ⚠️ **`/examples/`** — 5 directories, all empty. ROADMAP Phase-4 item #20 remains open.
 - ⚠️ **Code-level benchmark** — current baseline is plan-level. ROADMAP Phase-5 needs an executable-run rubric (does `curl /health` actually return 200 from the emitted code?).
 - ⚠️ **Extraction promotion queue** — 180 staged primitives visible but the promotion pipeline isn't triggered by benchmark signals yet. Phase-5 item #25 still open.
@@ -64,11 +64,11 @@ slice generators (adapt + generators + modules), a primitive catalogue
 (`primitives_by_concern.yaml` + 385 recipes), discoverability
 (`fastapi_meta_search`), and LLM-first composition
 (`fastapi_meta_compose`). The remaining work is integration discipline
-(82 tools still emit inline logic, violating §6.1), concrete examples
+(81 tools still emit inline logic, violating §6.1), concrete examples
 (5 empty dirs), and code-level behavioural scoring.
 
 Infrastructure: **~98% complete**. Integration discipline: **~20%
-complete** (18/100 extend tools wire primitives).
+complete** (19/100 extend tools wire primitives).
 
 ---
 
@@ -104,7 +104,7 @@ Rails-analogy wiring. **~80% complete, 1 key item open**.
 |---|---|---|
 | 7 | Primitives-by-concern registry (`engine/primitives_by_concern.yaml`) | ✅ done |
 | 8 | Composition recipes in primitive `.md` (385 extracted) | ✅ done |
-| 9 | **Connect 15 top-value extend tools to import `core.venous.*`** | ⚠️ **18/100 — open** |
+| 9 | **Connect 15 top-value extend tools to import `core.venous.*`** | ⚠️ **19/100 — open** |
 | 10 | MCP tool responses cite composed primitives | ✅ done (`primitives_used` populated via AST + string-scan) |
 | 11 | Generator auto-discovery via `MCP_TOOL` | ✅ done |
 
@@ -118,7 +118,7 @@ observability-stack. Each tool shrinks ~50% on refactor.
 
 **Exit criteria for Phase 1 closeout:**
 `grep -rlE "^from core\.venous|from core\.venous" adapt/extend/*.py | wc -l`
-≥ 35 (currently 18). Enforce going forward via a contract rule.
+≥ 35 (currently 19, floored at 19). Enforce going forward via a contract rule.
 
 ### Phase 2 — Discoverability layer ✅ DONE
 
@@ -220,7 +220,7 @@ Only after SKILL-001 hits 70% code-level benchmark.
 - **Framework churn.** FastAPI / Pydantic breaking releases are real
   maintenance cost. Mitigate: pin versions per skill release, run the
   benchmark nightly against pinned versions.
-- **Integration-discipline drift.** Right now 82 extend tools inline
+- **Integration-discipline drift.** Right now 81 extend tools inline
   logic in violation of §6.1. Without a contract rule + CI gate, this
   regresses as new tools land. Add the rule when closing Phase-1 #9.
 - **Staging pool temptation.** 180 `_extracted/` primitives are visible

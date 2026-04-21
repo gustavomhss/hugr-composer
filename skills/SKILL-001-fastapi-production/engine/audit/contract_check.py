@@ -255,11 +255,40 @@ def _r_compose_with_coverage() -> tuple[bool, str]:
 
 
 def _r_tools_import_primitives() -> tuple[bool, str]:
-    tools_dir = SKILL_ROOT / "adapt" / "extend"
-    hits = _grep_count(r"from core\.venous|import core\.venous", [tools_dir])
-    if hits < 15:
-        return False, f"only {hits}/100+ tools import from core.venous (need ≥15)"
-    return True, f"{hits} tools import from core.venous"
+    """B1.3 — ≥15 extend add_* tools import a registered primitive.
+
+    Authoritative count = catalog.json's `primitives_used` populated via
+    the MCP_TOOL.imports_primitives declaration or real import scan. A
+    docstring that merely mentions `core.venous.Foo.Bar` does NOT satisfy
+    this rule (verified by the tightened scan in
+    `engine.index.manifest._extract_primitive_imports`).
+
+    The current floor (19) is a non-regression guarantee: no PR may
+    reduce the count below this without updating the CONTRACT.
+    """
+    catalog_path = SKILL_ROOT / "engine" / "index" / "catalog.json"
+    if not catalog_path.exists():
+        return False, "catalog.json missing — run engine.index.manifest build"
+    try:
+        cat = json.loads(catalog_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return False, f"catalog.json unreadable: {exc}"
+    connected = [
+        t for t in cat.get("tools", [])
+        if t.get("verb") == "add"
+        and t.get("module_path", "").startswith("adapt/extend/")
+        and t.get("primitives_used")
+    ]
+    FLOOR = 19
+    if len(connected) < FLOOR:
+        return False, (
+            f"only {len(connected)}/100 extend add_* tools import primitives "
+            f"(floor={FLOOR}; regression bars PR)"
+        )
+    return True, (
+        f"{len(connected)}/100 extend add_* tools primitive-connected "
+        f"(floor={FLOOR}, §B1.3 Rails-style wiring)"
+    )
 
 
 def _r_no_manual_mcp_tool_decorator() -> tuple[bool, str]:

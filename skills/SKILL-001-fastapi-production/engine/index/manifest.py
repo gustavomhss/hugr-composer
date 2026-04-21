@@ -315,27 +315,47 @@ def _scan_tools() -> list[dict]:
     return out
 
 
-_CORE_VENOUS_REF_RE = re.compile(
-    r"core\.venous\.(?!_adapters\b|_extracted\b)"
+_CORE_VENOUS_IMPORT_RE = re.compile(
+    r"(?:from|import)\s+core\.venous\.(?!_adapters\b|_extracted\b)"
     r"[a-z][a-z_]*\.(?P<name>[A-Z][A-Za-z0-9]+)"
 )
 
 
-def _extract_primitive_imports(py: Path) -> tuple[str, ...]:
-    """Return the set of `core.venous.<ns>.<Name>` references in a module.
+def _extract_primitive_imports(py: Path, declared: tuple[str, ...] = ()) -> tuple[str, ...]:
+    """Return the set of `core.venous.<ns>.<Name>` references *actually used*.
 
-    Two channels matter:
-      1. Real Python imports (AST scan) — captures 16 FastAPI adapters + a
-         handful of tools that compose primitives inline.
-      2. String-embedded imports — captures the 100 adapt/extend tools that
-         emit `from core.venous.<ns>.<Name>` inside templated strings. Regex
-         scan over the raw source is sufficient; false positives on comments
-         are acceptable because the registered primitive list filters them
-         back down in `_tool_entries`.
+    Precedence:
+
+      0. MCP_TOOL.imports_primitives — if the author explicitly declared
+         which primitives the emitted code references, trust the declaration.
+         This is authoritative; inference below is only a fallback.
+      1. Python imports (AST scan) — captures adapter + compose-like tools
+         that import primitives at module load.
+      2. String-embedded imports — captures generator tools that emit
+         `from core.venous.<ns>.<Name> import <Name>` inside templated
+         strings. We parse the AST, collect every string literal that is
+         NOT a docstring, then regex-match `(from|import) core.venous.*`
+         against that set. This is strict: a primitive mentioned only in
+         prose (comments, docstrings) does NOT populate primitives_used —
+         it has to be an actual import line.
+
+    `declared` is the MCP_TOOL["imports_primitives"] list (paths like
+    ``core.venous.resiliency.RateLimiter``); we extract the last segment
+    as the primitive name.
 
     The `_adapters` and `_extracted` sub-roots are excluded — those are
     meta namespaces, not primitives.
     """
+    # Channel 0: explicit MCP_TOOL declaration wins.
+    if declared:
+        names: set[str] = set()
+        for path in declared:
+            parts = str(path).split(".")
+            if len(parts) >= 4 and parts[0] == "core" and parts[1] == "venous":
+                if parts[2] in ("_adapters", "_extracted"):
+                    continue
+                names.add(parts[3])
+        return tuple(sorted(names))
     try:
         source = py.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError):
@@ -344,25 +364,46 @@ def _extract_primitive_imports(py: Path) -> tuple[str, ...]:
     try:
         tree = ast.parse(source)
     except SyntaxError:
-        tree = None
-    if tree is not None:
-        for node in ast.walk(tree):
-            if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith("core.venous."):
-                parts = node.module.split(".")
-                if len(parts) >= 4 and parts[2] not in ("_adapters", "_extracted"):
-                    names.add(parts[3])
-                elif len(parts) >= 3 and parts[2] not in ("_adapters", "_extracted"):
-                    for alias in node.names:
-                        names.add(alias.name)
-            elif isinstance(node, ast.Import):
+        return ()
+
+    # Channel 1: real Python imports.
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith("core.venous."):
+            parts = node.module.split(".")
+            if len(parts) >= 4 and parts[2] not in ("_adapters", "_extracted"):
+                names.add(parts[3])
+            elif len(parts) >= 3 and parts[2] not in ("_adapters", "_extracted"):
                 for alias in node.names:
-                    if alias.name.startswith("core.venous."):
-                        parts = alias.name.split(".")
-                        if len(parts) >= 4 and parts[2] not in ("_adapters", "_extracted"):
-                            names.add(parts[3])
-    # String-embedded references (template emissions in generator tools).
-    for m in _CORE_VENOUS_REF_RE.finditer(source):
-        names.add(m.group("name"))
+                    names.add(alias.name)
+        elif isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name.startswith("core.venous."):
+                    parts = alias.name.split(".")
+                    if len(parts) >= 4 and parts[2] not in ("_adapters", "_extracted"):
+                        names.add(parts[3])
+
+    # Channel 2: string-embedded `from/import core.venous.*` inside non-
+    # docstring string constants. Docstrings are excluded so narrative
+    # prose doesn't create false positives.
+    docstring_ids: set[int] = set()
+    def _collect_docstring_ids(n: ast.AST) -> None:
+        if isinstance(n, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            body = getattr(n, "body", None) or []
+            if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant) and isinstance(body[0].value.value, str):
+                docstring_ids.add(id(body[0].value))
+        for child in ast.iter_child_nodes(n):
+            _collect_docstring_ids(child)
+    _collect_docstring_ids(tree)
+
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Constant):
+            continue
+        if not isinstance(node.value, str):
+            continue
+        if id(node) in docstring_ids:
+            continue
+        for m in _CORE_VENOUS_IMPORT_RE.finditer(node.value):
+            names.add(m.group("name"))
     return tuple(sorted(names))
 
 
@@ -555,7 +596,8 @@ def _tool_entries(raw_tools: list[dict], primitive_names: set[str]) -> list[Tool
         synopsis = re.sub(r"\s+", " ", description).strip().rstrip(".")[:100]
         when_to_call = description.strip() or synopsis
 
-        primitives_used = _extract_primitive_imports(SKILL_ROOT / module_path)
+        declared = tuple(meta.get("imports_primitives") or ())
+        primitives_used = _extract_primitive_imports(SKILL_ROOT / module_path, declared=declared)
         # Drop any primitive we reference that isn't actually registered.
         primitives_used = tuple(p for p in primitives_used if p in primitive_names)
 
