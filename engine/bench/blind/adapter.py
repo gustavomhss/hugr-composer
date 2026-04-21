@@ -425,72 +425,81 @@ def _build_prompt(spec, workdir: Path, *, has_kit_mcp: bool) -> str:  # noqa: AN
         kit_block = """
 ---
 
-YOU HAVE A SKILL. This MCP server is SKILL-001 — FastAPI production scaffold,
-the LLM-equivalent of `rails new`. You are NOT a human reading a library
-guide. You are an LLM and your job is to CALL THE SCAFFOLD TOOL with the
-business-domain parameters extracted from the brief, and let it write the
-project for you.
+YOU HAVE A SKILL. SKILL-001 (HuGR) is the LLM-equivalent of `rails new`
+for FastAPI production backends. Six tier-1 "meta" tools are your
+entry surface; the remaining 180 tools live in a catalog the meta
+tools navigate for you. You are NOT expected to read a library guide —
+you are an LLM and the skill speaks your language.
 
-REQUIRED WORKFLOW (do NOT skip step 1):
+CANONICAL WORKFLOW (follow the breadcrumbs in every return's next_steps):
 
-  STEP 1 — scaffold (ONE call). Your FIRST action is:
+  TURN 1 — Orient. Your FIRST call is:
 
-      mcp__fastapi-production__fastapi_generate_project(
+      mcp__fastapi-production__fastapi_meta_search_home()
+
+    Returns the 10-domain landscape in ~1200 tokens. See the shape of
+    the skill before scanning 180 tool descriptions.
+
+  TURN 2 — Scaffold. Call:
+
+      mcp__fastapi-production__fastapi_meta_generate_scaffold(
           output_dir="<this cwd>",
-          name="<slug derived from brief>",
-          models={
-              "<EntityName>": {"field": "type", ...},
-              ...
-          },
-          owner_models={"<EntityName>": "user"},   # if spec has auth
-          profile="full",                           # or "minimal"
+          name="<slug>",
+          models={"<Entity>": {"field": "type", ...}, ...},
+          owner_models={"<Entity>": "user"},
+          profile="full",
       )
 
-    This single call writes ~40-60 files: FastAPI app, auth, middleware
-    stack, CRUD routes, DB models, alembic migrations, Dockerfile,
-    health + metrics, tests. Running `uvicorn app.main:app` on the
-    emitted project returns 200 on /health immediately after the call.
-    You do NOT hand-write any of this.
+    One call → ~40-60 files: FastAPI app, DB, alembic, auth, middleware,
+    CRUD, observability, Docker, tests. The return's next_steps name
+    the exact slice tools to call next given the brief.
 
-  STEP 2 — add capability slices. For each feature in the brief that
-    the scaffold didn't cover by default, call the matching slice tool:
+  TURN 3+ — Capability slices. For each brief requirement not covered
+    by default, follow the returned next_steps OR query the catalog:
 
-      mcp__fastapi-production__fastapi_add_rate_limiting(...)
-      mcp__fastapi-production__fastapi_add_webhook_receiver(...)
-      mcp__fastapi-production__fastapi_add_audit_log(...)
-      mcp__fastapi-production__fastapi_add_idempotency(...)
-      mcp__fastapi-production__fastapi_add_saga(...)
-      mcp__fastapi-production__fastapi_add_rbac(...)
-      mcp__fastapi-production__fastapi_add_event_sourcing(...)
-      ...and ~95 more. Call `ListMcpResourcesTool` or search for
-      `fastapi_add_` in the tool list to see the full catalog.
+      mcp__fastapi-production__fastapi_meta_search_search(
+          query="exactly-once webhook",
+          domain="realtime",
+          k=5,
+      )
 
-    Each `fastapi_add_*` tool EDITS the emitted project — it doesn't
-    return code for you to paste. It writes the wiring into the same
-    `output_dir` from step 1.
+    Returns top matching tool + synopsis + next_steps pointing at the
+    exact invocation.
 
-  STEP 3 — business logic. Only AFTER steps 1 and 2, write any
-    remaining route handlers that are pure business rules (not
-    infrastructure). Keep these minimal; the scaffold + slice tools
-    already cover auth, rate limits, idempotency, audit, etc.
+  TURN N — Verify. Before finishing, call:
 
-  STEP 4 — (only if needed) discovery. If the brief mentions a
-    capability and you can't find a matching `fastapi_add_*` tool,
-    then (and only then) call:
-      mcp__fastapi-production__fastapi_find_primitive(query, concern?)
-      mcp__fastapi-production__fastapi_suggest_composition(intent)
-    to locate a Lego block in `core.venous.*` that you import directly.
+      mcp__fastapi-production__fastapi_meta_check_audit()
 
-ANTI-PATTERN: reading the brief, then hand-writing `app/main.py` +
-`app/models.py` + `app/auth.py` from scratch. That's naked agent
-behaviour. You have the skill — USE the scaffold tool. The judge
-will credit the BEHAVIOUR of the emitted app regardless of how many
-hand-written lines you contribute, but the scaffold-first workflow
-is 10× faster and ships production-grade invariants (idempotency,
-tamper-evident audit, rate limiting, graceful shutdown, observability)
-that naked agents routinely miss.
+    Runs the structural contract. Per-rule failures + fix breadcrumbs.
+    Loop until green.
 
-TLDR: CALL `fastapi_generate_project` BEFORE YOU CALL `Write`.
+  DEEP DIVE (any turn). For a specific tool/primitive/recipe name:
+
+      mcp__fastapi-production__fastapi_meta_search_describe(name="...")
+
+    Returns the full schema, when-to-call, primitives composed.
+
+EVERY tier-1 return carries a next_steps list — FOLLOW IT. That is the
+skill talking back: it watched what you just did and names the tool to
+call next. Don't call `Write` for files the scaffold should write;
+don't grep when fastapi_meta_search_search returns the answer.
+
+SPEC → PRIMITIVE QUICK-MAP (query the search tool for the full set):
+  - Exactly-once / idempotency     → IdempotentConsumer + IdempotencyStore
+  - Tamper-evident audit           → TamperEvidentAuditLog + AuditEvent
+  - Transactional outbox           → TransactionalOutbox + UnitOfWork
+  - Optimistic concurrency         → OptimisticConcurrency
+  - Rate limit + priority shed     → RateLimiter + Bulkhead + LoadShedder
+  - Session cache with TTL         → SessionCache
+  - Sharded hot-key counter        → ShardedCounter
+  - Causal reorder under partition → CausalReorderBuffer
+  - Heterogeneous worker pool      → HeterogeneousWorkerPool
+
+All primitives above are 10-tier gated upstream (compile / types /
+concurrency / chaos / observability). Hand-rolling means the judge
+catches edge cases we've already closed.
+
+TLDR: Call `fastapi_meta_search_home()` FIRST. Let the skill drive.
 """
     return f"""You are a senior backend engineer. Produce a working FastAPI project that implements the requirements in the brief below. Write all files to the current working directory ({workdir}). The evaluator will boot your project with the boot command declared in the brief's metadata and run a sealed test suite you will NOT see.
 
