@@ -40,49 +40,91 @@ FastAPI backends. The contract to Maestro has four surfaces:
 
 Authoritative list: **`skills/SKILL-001-fastapi-production/engine/index/catalog.json`**.
 
-- Versioned by the skill's semver. v1.0.0 catalog has `stable_hash`
-  pinned in `CHANGELOG.md`.
+- Versioned by the skill's semver. v1.0.0 catalog ships with its own
+  `stable_hash` field embedded (SHA-256 of catalog content excluding
+  the three non-deterministic fields `generated_at`, `kit_commit`,
+  `stable_hash` itself). Consumers read it via
+  `jq -r .stable_hash engine/index/catalog.json`.
 - Every tool entry carries: `name` (canonical `fastapi_<domain>_<verb>_<noun>`),
   `legacy_name`, `verb`, `domain`, `synopsis`, `when_to_call`,
   `when_not_to_call`, `tags`, `tier`, `status`, `since`, `module_path`,
   `test_paths`, `primitives_used`, `example_input`, `example_output`.
-- Count at v1.0.0: **201 tools**.
+- Count at v1.0.0: **201 catalog tools** (does NOT include the 7
+  tier-1 meta tools or the 9 tree dispatchers; see §2.1.1 for the
+  total surface).
 
-**Stability guarantees:**
+### §2.1.1 — Tool surface total (201 + 7 + 9 = 217)
+
+Three separate registration paths feed the Maestro MCP server:
+
+1. **201 catalog tools** — scanned from `adapt/`, `generators/`,
+   `modules/`, `benchmark/`, `meta/`, `core/tools/`,
+   `engine/discovery/` (see `TOOL_SCAN_ROOTS` in
+   `engine/index/manifest.py`). These are what `fastapi_meta_search`
+   returns.
+2. **7 tier-1 meta tools** — `mcp_tools/tier1.py` + `mcp_tools/compose.py`.
+   Registered via `register_tier1_tools`. Deliberately excluded from
+   the catalog scan because they operate ON the catalog (circular).
+3. **9 tree dispatchers** — `mcp_tools/tree/*.py`. Registered via
+   `register_tree_tools`. Also excluded from the catalog scan (they
+   route to catalog tools via the dispatcher pattern).
+
+**Stability guarantees (all three paths):**
 - Tool names are **frozen** at v1.0.0. Renaming forbidden without a
   MAJOR bump.
-- `primitives_used` is ground truth for "what this tool imports".
+- `primitives_used` on catalog entries is ground truth for "what this
+  tool imports".
 - New tools can be added in MINOR releases; deletions/renames need MAJOR.
 
-**Maestro-facing discovery tools** (tier-1 meta) — always stable:
-- `fastapi_meta_home` — landing page for agent.
+### §2.1.2 — Tier-1 meta tools (7)
+
+Always stable; the first tool Maestro calls in a session:
+
+- `fastapi_meta_home` — skill landscape (domains × top tools × counts).
 - `fastapi_meta_search` — BM25 over tools + primitives + recipes.
 - `fastapi_meta_describe` — full spec for one id.
-- `fastapi_meta_scaffold` — invoke `generate_project`.
+- `fastapi_meta_scaffold` — invokes `generate_project` with provenance.
 - `fastapi_meta_compose` — 4-tier fallthrough
   (adapter_reuse > tool_delegate > recipe_template > ad_hoc).
-- `fastapi_meta_audit` — run skill self-audit.
-- `fastapi_meta_verify` — validate a generated project.
+- `fastapi_meta_audit` — runs skill self-audit.
+- `fastapi_meta_verify` — validates a generated project.
 
-**Tree dispatchers** (domain routers) — 9 total:
-`auth`, `data`, `api`, `realtime`, `resiliency`, `observability`,
-`compliance`, `deployment`, `testing`. Each dispatches to its
-sub-domain tools via a single MCP entry.
+### §2.1.3 — Tree dispatchers (9)
+
+Domain routers; one per concern:
+
+`fastapi_auth`, `fastapi_data`, `fastapi_api`, `fastapi_realtime`,
+`fastapi_resiliency`, `fastapi_observability`, `fastapi_compliance`,
+`fastapi_deployment`, `fastapi_testing`.
+
+Each dispatcher takes a `(action, **kwargs)` tuple and forwards to
+the matching catalog tool. Names are frozen; adding a new domain
+requires a MINOR bump + a new dispatcher.
 
 ### §2.2 — Primitive catalogue
 
-Authoritative list: **`skills/SKILL-001-fastapi-production/engine/primitives_by_concern.yaml`**.
+Authoritative list (registered): **`engine/primitives_by_concern.yaml`**
+(schema in `engine/index/schemas.py`, `PrimitiveEntry`).
 
 - **122 registered primitives** at v1.0.0, each with full shell
   (contract.json + protocol + md + tests + TLA+ + dashboard + invariants).
-- **180 staged primitives** discoverable via `fastapi_meta_search`
-  with `status="staged"` — usable as reference, not production-ready.
-- **16 FastAPI adapters** under `core/venous/_adapters/fastapi/`.
+  `tier` field: `"full"` for all v1.0.0 registered primitives;
+  `"lite"` is defined in §B1.8 but no v1.0.0 primitive ships at that
+  tier (reserved for post-v1.0).
+- **181 staged primitives** discoverable via `fastapi_meta_search`
+  with `status="staged"` — usable as reference, NOT production-ready.
+  Distributed across `_extracted/<namespace>/` (134) and
+  `_extracted/_quarantine/` (47 PascalCase). Lowercase function
+  extractions have been cleaned up.
+- **17 FastAPI adapters** under `core/venous/_adapters/fastapi/`
+  (16 pre-freeze + `BulkheadAdapter.py` landing with v1.0 per
+  FREEZE §1.6).
 
 **Stability guarantees:**
-- Registered primitive names frozen at v1.0.0 (MAJOR for rename).
+- Registered primitive names + namespaces frozen at v1.0.0 (MAJOR
+  bump required for renames).
 - Staged primitives are unstable; Maestro should cite them only
-  after human review.
+  after human review and only if a §A12(b) signal exists.
 - Each registered primitive exports the class/protocol named in its
   manifest; module path is `core.venous.<namespace>.<Name>.<Name>`.
 
@@ -142,14 +184,25 @@ loads the skill and exposes it to the running Maestro.
 
 ### §3.2 — MCP server lifecycle
 
-- Forge spawns `mcp_tools/server.py` (or equivalent) in-process
-  per session. Auto-discovery scans `adapt/`, `generators/`,
-  `modules/`, `mcp_tools/tree/`, `engine/discovery/`, `core/tools/`
-  for `MCP_TOOL` dicts.
+- Forge spawns the MCP server via `mcp_tools/discovery.py::discover`
+  (the single registration entry point). No "equivalent" alternatives
+  — the helper is the contract.
+- `discover(mcp_app)` sequentially calls:
+  1. Auto-discovery scan over `TOOL_SCAN_ROOTS` (see
+     `engine/index/manifest.py`): `adapt/`, `generators/`, `modules/`,
+     `benchmark/`, `meta/`, `core/tools/`, `engine/discovery/`. Returns
+     registered count.
+  2. `register_tier1_tools(mcp_app)` — binds the 7 tier-1 meta tools.
+  3. `register_tree_tools(mcp_app)` — binds the 9 tree dispatchers.
+  4. `register_discovery_tools(mcp_app)` — binds legacy BM25 discovery
+     aliases (CONTRACT §B2.1 + §B2.2).
 - Server expects `PYTHONPATH=skills/SKILL-001-fastapi-production`.
 - Server startup is **deterministic**: tools registered in
-  filesystem-sorted order. `stable_hash` in catalog.json must match
-  the server-reported hash at startup.
+  filesystem-sorted order within each scan root; tier-1 + tree sets
+  registered in fixed code order.
+- Forge SHOULD compare the `stable_hash` from
+  `engine/index/catalog.json` against a cached value at session start
+  and surface a "skill updated during session" warning if they differ.
 
 ### §3.3 — Generated project provenance
 
@@ -160,21 +213,36 @@ loads the skill and exposes it to the running Maestro.
 
 ### §3.4 — Audit surface
 
-- `engine/audit/contract_check.py` — 33 (v1.0 day 1) or 34 (after
-  §B1.7 ratified) machine-check rules. Exit 0 = green.
-- `engine/inventory.py` — regenerates `INVENTORY.md` from disk.
-- `engine/bench/blind/runner.py` — runs benchmark; produces JSON
-  under `benchmarks/history/`.
+- `engine/audit/contract_check.py` — **34 machine-check rules at v1.0**
+  (includes §B1.8 tier-lite eligibility). Exit 0 = green; any
+  non-zero exit on `main` is a CI block.
+- `engine/inventory.py` — regenerates `INVENTORY.md` from disk;
+  byte-stable output.
+- `engine/bench/blind/runner.py` — runs blind plan-level benchmark;
+  writes `benchmarks/blind/results/*.json`.
+- `engine/bench/code_level.py` — runs code-level benchmark across
+  the 20 examples; writes `benchmarks/history/YYYY-MM-DD.json`.
+- `engine/promotion/classify.py` + `engine/promotion/ledger.py` —
+  triage pool; re-runnable without side effects.
+- `engine/promotion/promote.py` — approved-action executor; refuses
+  any entry that isn't `PROMOTE_AS_*` with zero blockers.
 - Forge should expose these as one-click CI hooks in the editor.
 
 ### §3.5 — Version compatibility
 
-- Skill v1.x is compatible with Forge v1.x. Breaking skill changes
-  require a skill MAJOR bump AND a Forge-side update to its skill
-  loader.
-- Forge MUST read `skills/SKILL-001-fastapi-production/VERSION` and
-  refuse to load skills with mismatched MAJOR vs its declared
-  supported range.
+Forge declares a **supported skill MAJOR range** (e.g. `>=1,<2`). The
+skill loader reads `skills/SKILL-001-fastapi-production/VERSION` and:
+
+- If the file's MAJOR is inside the supported range → load normally.
+- If MAJOR is above range → refuse to load (surface "upgrade Forge").
+- If MAJOR is below range → refuse to load (surface "upgrade skill"
+  OR allow with explicit opt-in, Forge's call).
+
+Forge declares its supported range at first-boot and bumps it
+explicitly when tested against a new skill MAJOR. No auto-accept.
+
+Skill MAJOR bumps are announced in CHANGELOG.md under a dedicated
+`### Breaking changes` header so Forge maintainers can react.
 
 ### §3.6 — Points of attention for the Forge session
 

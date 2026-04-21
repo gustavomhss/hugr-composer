@@ -676,18 +676,33 @@ def build() -> CatalogManifest:
 
 
 def write(manifest: CatalogManifest, path: Path = CATALOG_PATH) -> str:
+    """Write catalog + persist the stable content hash for consumers.
+
+    The hash is computed over catalog content with the two non-deterministic
+    fields (`generated_at`, `kit_commit`) stripped, AND with any prior
+    `stable_hash` value itself stripped (otherwise the hash would be
+    circular: computing it requires the file to not yet contain it).
+
+    Consumers (Forge, Maestro, CI) read `stable_hash` from the on-disk
+    catalog to pin the skill surface for a session / benchmark run.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
-    # Pin generated_at + kit_commit to the manifest itself so the file is
-    # self-describing; strip them only for determinism-hashing purposes.
     data = manifest.model_dump(mode="json")
-    path.write_text(json.dumps(data, indent=2, sort_keys=False), encoding="utf-8")
-    # Return a stable content hash that excludes the two variable fields.
-    stable = dict(data)
-    stable.pop("generated_at", None)
-    stable.pop("kit_commit",   None)
-    return hashlib.sha256(
+
+    # Compute hash first, over non-hash fields only.
+    stable = {
+        k: v
+        for k, v in data.items()
+        if k not in ("generated_at", "kit_commit", "stable_hash")
+    }
+    digest = hashlib.sha256(
         json.dumps(stable, indent=2, sort_keys=True).encode()
     ).hexdigest()
+
+    # Write catalog WITH the hash embedded so consumers can read it back.
+    data["stable_hash"] = digest
+    path.write_text(json.dumps(data, indent=2, sort_keys=False), encoding="utf-8")
+    return digest
 
 
 def main(argv: list[str] | None = None) -> int:

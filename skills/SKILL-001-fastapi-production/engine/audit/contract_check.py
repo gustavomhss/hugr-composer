@@ -291,6 +291,86 @@ def _r_tools_import_primitives() -> tuple[bool, str]:
     )
 
 
+def _r_tier_lite_eligibility() -> tuple[bool, str]:
+    """B1.8 — every `tier: "lite"` primitive satisfies §B1.8 eligibility.
+
+    Reads `engine/primitives_by_concern.yaml`; for each entry with
+    `tier == "lite"` verifies (all must be true):
+
+    1. `core/venous/<namespace>/<Name>/<Name>.py` exists.
+    2. That primary .py has no REPLACE_ME marker.
+    3. That primary .py imports no framework modules (fastapi, starlette,
+       sqlalchemy, sqlmodel, pydantic, django, flask, tornado, aiohttp),
+       and declares no implicit framework tokens (`Mapped[`, `APIRouter(`,
+       `Depends(`, `class Base(`).
+    4. That primary .py contains no concurrency imports (threading,
+       asyncio, multiprocessing) or names (Lock, Semaphore, Queue, etc.).
+
+    Trivially green when zero lite primitives are registered. Satisfies
+    CONTRACT §B1.8 and the 0004-tier-lite decision doc.
+    """
+    reg_path = SKILL_ROOT / "engine" / "primitives_by_concern.yaml"
+    if not reg_path.exists():
+        return False, "primitives_by_concern.yaml missing"
+    try:
+        import yaml as _yaml
+
+        data = _yaml.safe_load(reg_path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        return False, f"registry unreadable: {exc}"
+    if not isinstance(data, dict):
+        return False, "registry malformed"
+
+    lite = [p for p in data.get("primitives", []) if p.get("tier") == "lite"]
+    if not lite:
+        return True, "§B1.8 vacuously satisfied (0 lite primitives registered)"
+
+    # Lazy-import so contract_check doesn't pay promotion-module cost when
+    # no lite primitives exist. The promotion module's AST helpers are the
+    # single source of truth for these checks.
+    import sys as _sys
+
+    _sys.path.insert(0, str(SKILL_ROOT))
+    from engine.promotion.state import (
+        _detect_concurrency,
+        _detect_framework_imports,
+    )
+
+    offenders: list[str] = []
+    for p in lite:
+        name = p.get("name")
+        ns = p.get("namespace", "")
+        if not name or not ns:
+            offenders.append(f"{name or '?'}: registry entry missing name/namespace")
+            continue
+        py = SKILL_ROOT / "core" / "venous" / ns / name / f"{name}.py"
+        if not py.exists():
+            offenders.append(f"{name}: primary .py missing at {py.relative_to(SKILL_ROOT)}")
+            continue
+        try:
+            text = py.read_text(encoding="utf-8", errors="ignore")
+        except OSError as exc:
+            offenders.append(f"{name}: unreadable ({exc})")
+            continue
+        if "REPLACE_ME" in text:
+            offenders.append(f"{name}: REPLACE_ME markers still present")
+        fw = _detect_framework_imports(py)
+        if fw:
+            offenders.append(f"{name}: framework imports {fw}")
+        if _detect_concurrency(py):
+            offenders.append(
+                f"{name}: concurrency imports present (lite forbids; promote at full tier)"
+            )
+
+    if offenders:
+        joined = "\n    - ".join(offenders)
+        return False, (
+            f"§B1.8 lite eligibility violations ({len(offenders)}):\n    - {joined}\n"
+            "Demote violating primitives to `_extracted/` or promote at full tier."
+        )
+    return True, f"§B1.8 satisfied ({len(lite)} lite primitive(s), all eligible)"
+
+
 def _r_no_manual_mcp_tool_decorator() -> tuple[bool, str]:
     gen = SKILL_ROOT / "mcp_tools" / "generators.py"
     if not gen.exists():
@@ -1191,6 +1271,7 @@ RULES: list[Rule] = [
     Rule("B1.5", 1, "no hardcoded @mcp_app.tool decorators", _r_no_manual_mcp_tool_decorator),
     Rule("B1.6", 1, "no orphan generators (every generate_* is tool or internal)", _r_no_orphan_generators),
     Rule("B1.7", 1, "fastapi adapter coverage (tested + maps to registry)", _r_adapter_coverage),
+    Rule("B1.8", 1, "tier-lite eligibility (stateless, framework-free, no REPLACE_ME)", _r_tier_lite_eligibility),
     Rule("B2.1", 2, "find_primitive MCP tool + BM25 quality gate", _r_find_primitive_discovery),
     Rule("B2.2", 2, "suggest_composition MCP tool + recipe quality gate", _r_suggest_composition),
     Rule("B2.3", 2, "reference docs site idempotent build", _r_docs_site),

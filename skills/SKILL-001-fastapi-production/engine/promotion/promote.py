@@ -7,7 +7,7 @@ Usage:
 Invariants:
     - Refuses to promote unless the ledger entry says PROMOTE_FULL /
       PROMOTE_LITE AND has zero blockers.
-    - PROMOTE_LITE requires the ratification line "§B1.7 ratified"
+    - PROMOTE_LITE requires the ratification line "§B1.8 ratified"
       in CONTRACT.md §E. Without it, the executor refuses (§A12 intact).
     - Every action is fully reversible: a pre-flight copy of the
       affected trees is written to a temp dir; on any failure, the
@@ -47,10 +47,16 @@ class PromotionPlan:
     is_lite: bool
 
     def describe(self) -> str:
+        if self.entry.verdict == Verdict.PROMOTE_AS_ADAPTER:
+            tier_label = "adapter"
+        elif self.is_lite:
+            tier_label = "lite"
+        else:
+            tier_label = "full"
         bits = [
             f"Primitive: {self.entry.primitive}",
             f"Namespace: {self.entry.namespace}",
-            f"Tier: {'lite' if self.is_lite else 'full'}",
+            f"Tier: {tier_label}",
             f"Source:  {self.source_dir.relative_to(SKILL_ROOT)}",
             f"Target:  {self.target_dir.relative_to(SKILL_ROOT)}",
             f"Signals: {len(self.entry.signals)}",
@@ -68,11 +74,11 @@ def _load_ledger() -> Ledger:
 
 
 def _lite_ratified() -> bool:
-    """True iff CONTRACT.md §E carries a ratification of §B1.7 / §A12 amendment."""
+    """True iff CONTRACT.md §E carries a ratification of §B1.8 / §A12 amendment."""
     if not _CONTRACT_PATH.exists():
         return False
     text = _CONTRACT_PATH.read_text(encoding="utf-8")
-    return "§B1.7 ratified" in text or "tier-lite ratified" in text
+    return "§B1.8 ratified" in text or "tier-lite ratified" in text
 
 
 def _find_source(entry: LedgerEntry) -> Path:
@@ -113,13 +119,45 @@ def _build_registry_entry(entry: LedgerEntry, is_lite: bool) -> dict:
     }
 
 
-def plan(name: str) -> PromotionPlan:
-    """Load ledger, validate, and return a concrete promotion plan."""
-    ledger = _load_ledger()
+def _resolve_match(
+    ledger: Ledger, name: str, is_quarantined: bool | None
+) -> LedgerEntry:
+    """Select one ledger entry unambiguously, or raise with context.
+
+    Handles the common case where a staged primitive appears twice
+    (once under `_extracted/<ns>/<Name>/` and once under
+    `_extracted/_quarantine/<Name>/`). Callers disambiguate via the
+    `is_quarantined` hint; if ambiguous without a hint, raise with
+    both candidate paths so the user can re-invoke with the right one.
+    """
     matches = [e for e in ledger.entries if e.primitive == name]
     if not matches:
         raise SystemExit(f"No ledger entry for primitive `{name}`.")
-    entry = matches[0]
+    if is_quarantined is None:
+        if len(matches) == 1:
+            return matches[0]
+        locations = [
+            "_quarantine" if e.state.is_quarantined else e.namespace
+            for e in matches
+        ]
+        raise SystemExit(
+            f"Primitive `{name}` appears {len(matches)} times in the ledger "
+            f"(locations: {locations}). Re-invoke with "
+            "`--quarantined` or `--staged` to disambiguate."
+        )
+    filtered = [e for e in matches if e.state.is_quarantined == is_quarantined]
+    if not filtered:
+        raise SystemExit(
+            f"No ledger entry for `{name}` matches "
+            f"is_quarantined={is_quarantined}."
+        )
+    return filtered[0]
+
+
+def plan(name: str, is_quarantined: bool | None = None) -> PromotionPlan:
+    """Load ledger, validate, and return a concrete promotion plan."""
+    ledger = _load_ledger()
+    entry = _resolve_match(ledger, name, is_quarantined)
 
     if entry.verdict not in (
         Verdict.PROMOTE_AS_ADAPTER,
@@ -142,7 +180,7 @@ def plan(name: str) -> PromotionPlan:
 
     if is_lite and not _lite_ratified():
         raise SystemExit(
-            f"Refusing to promote `{name}` at lite tier: §B1.7 not ratified "
+            f"Refusing to promote `{name}` at lite tier: §B1.8 not ratified "
             "in CONTRACT.md §E. Add a ratification block first."
         )
 
@@ -286,9 +324,14 @@ def _execute_primitive(p: PromotionPlan, backup_root: Path) -> str:
     return f"Primitive promoted: {p.entry.primitive} → {p.target_dir.relative_to(SKILL_ROOT)}"
 
 
-def execute(name: str, *, dry_run: bool = False) -> int:
+def execute(
+    name: str,
+    *,
+    dry_run: bool = False,
+    is_quarantined: bool | None = None,
+) -> int:
     """Execute the promotion — with automatic rollback on any failure."""
-    p = plan(name)
+    p = plan(name, is_quarantined=is_quarantined)
     print("Promotion plan:")
     print("  " + p.describe())
     if dry_run:
@@ -323,16 +366,18 @@ def execute(name: str, *, dry_run: bool = False) -> int:
         return 1
 
 
-def execute_delete(name: str, *, dry_run: bool = False) -> int:
+def execute_delete(
+    name: str,
+    *,
+    dry_run: bool = False,
+    is_quarantined: bool | None = None,
+) -> int:
     """Remove a staged primitive marked REDUNDANT in the ledger.
 
     REDUNDANT deletion is explicit opt-in — default stance is leave in place.
     """
     ledger = _load_ledger()
-    matches = [e for e in ledger.entries if e.primitive == name]
-    if not matches:
-        raise SystemExit(f"No ledger entry for primitive `{name}`.")
-    entry = matches[0]
+    entry = _resolve_match(ledger, name, is_quarantined)
     if entry.verdict != Verdict.REDUNDANT:
         raise SystemExit(
             f"Ledger verdict for `{name}` is {entry.verdict.value}, not redundant. "
@@ -372,6 +417,21 @@ def main() -> int:
     ap.add_argument("--from-ledger", metavar="NAME", help="Promote primitive NAME.")
     ap.add_argument("--delete", metavar="NAME", help="Delete staged primitive NAME.")
     ap.add_argument("--dry-run", action="store_true")
+    # Disambiguators for primitives that appear in BOTH the staged
+    # namespace folder AND the _quarantine/ folder (same name, two
+    # locations). Without one of these flags, the executor refuses to
+    # pick — explicit is better than implicit.
+    group = ap.add_mutually_exclusive_group()
+    group.add_argument(
+        "--staged",
+        action="store_true",
+        help="Target the copy under _extracted/<ns>/, not _quarantine/.",
+    )
+    group.add_argument(
+        "--quarantined",
+        action="store_true",
+        help="Target the copy under _extracted/_quarantine/.",
+    )
     args = ap.parse_args()
 
     if args.from_ledger and args.delete:
@@ -379,9 +439,15 @@ def main() -> int:
     if not args.from_ledger and not args.delete:
         ap.error("Specify one of --from-ledger or --delete.")
 
+    is_q: bool | None = None
+    if args.quarantined:
+        is_q = True
+    elif args.staged:
+        is_q = False
+
     if args.from_ledger:
-        return execute(args.from_ledger, dry_run=args.dry_run)
-    return execute_delete(args.delete, dry_run=args.dry_run)
+        return execute(args.from_ledger, dry_run=args.dry_run, is_quarantined=is_q)
+    return execute_delete(args.delete, dry_run=args.dry_run, is_quarantined=is_q)
 
 
 if __name__ == "__main__":

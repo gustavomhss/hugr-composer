@@ -2,7 +2,7 @@
 
 > **Status:** Proposed, awaiting Gustavo ratification.
 > **Author:** Claude (overnight 2026-04-21 / 2026-04-22).
-> **Depends on:** Amendment to CONTRACT §A12 and addition of §B1.7.
+> **Depends on:** Amendment to CONTRACT §A12 and addition of §B1.8.
 > **Scope:** Defines a second valid promotion target ("registered-lite")
 > so the staged pool can drain without forcing TLA+ on primitives where
 > it adds zero value.
@@ -120,7 +120,7 @@ with a clear decision per item. The original discipline is preserved
 — the amendment only adds a controlled escape hatch for operational
 cleanup.
 
-## 4. §B1.7 proposal (new contract item)
+## 4. §B1.8 proposal (new contract item)
 
 ```
 #### B1.7 — Registered-lite tier
@@ -163,7 +163,7 @@ cleanup.
 If this decision proves wrong, the reversal is mechanical:
 - Run `engine/promotion/demote.py --all-lite` to move every lite
   primitive back to `_extracted/`.
-- Remove §B1.7 from CONTRACT.md.
+- Remove §B1.8 from CONTRACT.md.
 - Remove the `tier` field from `primitives_by_concern.yaml` schema.
 
 No data loss, no primitives deleted, no production code change — the
@@ -171,7 +171,7 @@ registry entry and YAML field are purely bookkeeping.
 
 ## 7. Decision requested
 
-Gustavo to ratify §A12 amendment + §B1.7 addition via the standard
+Gustavo to ratify §A12 amendment + §B1.8 addition via the standard
 CONTRACT §C4 ratification block. Until ratified, the promotion
 executor (`engine/promotion/promote.py`) refuses to promote with
 `tier="lite"` by default — requires explicit `--unratified-preview`

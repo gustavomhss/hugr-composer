@@ -120,6 +120,16 @@ class CatalogManifest(BaseModel):
     primitives: tuple[PrimitiveEntry, ...]
     recipes: tuple[RecipeEntry, ...]
     counts: dict[str, int] = Field(default_factory=dict)   # shortcut: {tools: 180, primitives: 122, recipes: 290}
+    stable_hash: str | None = Field(
+        default=None,
+        description=(
+            "SHA-256 content hash (hex) over the catalog excluding "
+            "`generated_at`, `kit_commit`, and `stable_hash` itself. "
+            "Populated at write time by `engine.index.manifest.write`. "
+            "Consumers (Forge, Maestro, CI) read this value to pin the "
+            "skill surface version within a session / benchmark run."
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -24,7 +24,7 @@ class Verdict(str, Enum):
       to `_adapters/fastapi/<Motor>Adapter.py`.
     * promote_as_primitive — stateless, framework-free, registered-lite
       eligible. Fill REPLACE_ME (if any) + promote to
-      `core/venous/<ns>/<Name>/` with `tier: "lite"`. Requires §B1.7
+      `core/venous/<ns>/<Name>/` with `tier: "lite"`. Requires §B1.8
       ratification for lite; otherwise full tier.
     * extract_motor_pair — framework-coupled with NO motor registered.
       Requires splitting into (framework-free motor primitive + FastAPI
@@ -156,7 +156,7 @@ class LedgerEntry(BaseModel):
         description=(
             "Target registration tier. 'adapter' for promote_as_adapter; "
             "'lite' / 'full' for promote_as_primitive (lite requires "
-            "§B1.7 ratification). 'none' for non-promotion verdicts."
+            "§B1.8 ratification). 'none' for non-promotion verdicts."
         ),
     )
     rationale: str = Field(
