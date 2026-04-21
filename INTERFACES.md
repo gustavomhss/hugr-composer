@@ -1,0 +1,273 @@
+# INTERFACES — SKILL-001 ↔ Maestro / Forge contract
+
+> **Purpose:** enumerate exactly what the skill promises to Maestro
+> (consumer LLM agent) and to Forge (host editor/runtime). Anyone
+> building against the skill reads this and knows what's stable, what's
+> versioned, and what they can rely on.
+>
+> **Audience:** Maestro session & Forge session (pass verbatim to
+> those teams).
+>
+> **Binding at:** v1.0.0. Breaking changes only on MAJOR bumps.
+
+---
+
+## §1 — How the skill is distributed
+
+The skill is a **standalone module** living at `skills/SKILL-001-fastapi-production/`
+in this repo. It has no runtime dependency on Forge or Maestro — both
+consume it, neither owns it.
+
+Installation surface:
+- **Path install** (copy directory) — `install.sh` at repo root.
+- **Docker** — `Dockerfile` lives next to `install.sh`; validated
+  nightly by `.github/workflows/install-docker.yml`.
+- **PyPI** — *not* shipped in v1.0. Install from git ref for now.
+
+File that identifies the skill to a host:
+- **`skills/SKILL-001-fastapi-production/SKILL.md`** (Anthropic Agent
+  Skills format: YAML frontmatter + ≤500-line body). This is the
+  entry point Maestro reads first.
+
+---
+
+## §2 — Contract exposed to **Maestro** (consumer)
+
+Maestro is an LLM agent that invokes skill tools via MCP to build
+FastAPI backends. The contract to Maestro has four surfaces:
+
+### §2.1 — MCP tool catalog
+
+Authoritative list: **`skills/SKILL-001-fastapi-production/engine/index/catalog.json`**.
+
+- Versioned by the skill's semver. v1.0.0 catalog has `stable_hash`
+  pinned in `CHANGELOG.md`.
+- Every tool entry carries: `name` (canonical `fastapi_<domain>_<verb>_<noun>`),
+  `legacy_name`, `verb`, `domain`, `synopsis`, `when_to_call`,
+  `when_not_to_call`, `tags`, `tier`, `status`, `since`, `module_path`,
+  `test_paths`, `primitives_used`, `example_input`, `example_output`.
+- Count at v1.0.0: **201 tools**.
+
+**Stability guarantees:**
+- Tool names are **frozen** at v1.0.0. Renaming forbidden without a
+  MAJOR bump.
+- `primitives_used` is ground truth for "what this tool imports".
+- New tools can be added in MINOR releases; deletions/renames need MAJOR.
+
+**Maestro-facing discovery tools** (tier-1 meta) — always stable:
+- `fastapi_meta_home` — landing page for agent.
+- `fastapi_meta_search` — BM25 over tools + primitives + recipes.
+- `fastapi_meta_describe` — full spec for one id.
+- `fastapi_meta_scaffold` — invoke `generate_project`.
+- `fastapi_meta_compose` — 4-tier fallthrough
+  (adapter_reuse > tool_delegate > recipe_template > ad_hoc).
+- `fastapi_meta_audit` — run skill self-audit.
+- `fastapi_meta_verify` — validate a generated project.
+
+**Tree dispatchers** (domain routers) — 9 total:
+`auth`, `data`, `api`, `realtime`, `resiliency`, `observability`,
+`compliance`, `deployment`, `testing`. Each dispatches to its
+sub-domain tools via a single MCP entry.
+
+### §2.2 — Primitive catalogue
+
+Authoritative list: **`skills/SKILL-001-fastapi-production/engine/primitives_by_concern.yaml`**.
+
+- **122 registered primitives** at v1.0.0, each with full shell
+  (contract.json + protocol + md + tests + TLA+ + dashboard + invariants).
+- **180 staged primitives** discoverable via `fastapi_meta_search`
+  with `status="staged"` — usable as reference, not production-ready.
+- **16 FastAPI adapters** under `core/venous/_adapters/fastapi/`.
+
+**Stability guarantees:**
+- Registered primitive names frozen at v1.0.0 (MAJOR for rename).
+- Staged primitives are unstable; Maestro should cite them only
+  after human review.
+- Each registered primitive exports the class/protocol named in its
+  manifest; module path is `core.venous.<namespace>.<Name>.<Name>`.
+
+### §2.3 — Composition recipes
+
+- **385 recipes** parsed from primitive `.md` `## Compose with:`
+  sections.
+- Searchable via `fastapi_meta_search_composition`.
+- Every recipe names ≥ 2 sibling primitives + the invariant their
+  composition guarantees.
+
+**Stability guarantee:** recipe IDs are stable within a MINOR release;
+a recipe can be refined but not removed mid-minor.
+
+### §2.4 — What Maestro MUST do
+
+- Always load `SKILL.md` first.
+- Always check `status` of any primitive before citing — refuse to
+  emit code referencing a `status="staged"` primitive without calling
+  it out in the session transcript.
+- Always call `fastapi_meta_scaffold` (not `generate_project` directly)
+  so provenance manifest is written.
+- Never emit generated code that imports framework modules
+  (`fastapi`, `starlette`, `sqlalchemy`, `pydantic`) from
+  `core.venous.<ns>.<Name>` — only from `core.venous._adapters.fastapi.*`.
+
+### §2.5 — Points of attention for the Maestro session
+
+1. **Canonical names locked.** If a benchmark run shows Maestro calling
+   legacy names (`add_auth_jwt` vs `fastapi_auth_add_auth_jwt`), fix
+   Maestro prompt, not the skill — skill's canonical names don't shift.
+2. **Compose tier discipline.** Maestro must try tier 4a (tool_delegate)
+   before falling to ad-hoc emission. Regression: if examples show
+   Maestro skipping tiers, tighten the prompt.
+3. **Staged primitive opt-in.** Maestro may only promote a staged
+   primitive to production scaffold if it also writes a benchmark
+   spec that cites the need (§A12 respected).
+4. **No editing under `core/venous/_adapters/`** without matching
+   primitive update. If Maestro tries to patch an adapter inline, that's
+   a bug — adapter edits go through the adapter's own test suite.
+
+---
+
+## §3 — Contract exposed to **Forge** (host editor)
+
+Forge is the HuGR editor runtime where Maestro sessions execute. Forge
+loads the skill and exposes it to the running Maestro.
+
+### §3.1 — Skill discovery
+
+- Forge must treat `skills/SKILL-001-fastapi-production/SKILL.md` as
+  the canonical entry point for the skill.
+- The YAML frontmatter of SKILL.md declares: `version`, `tools_count`,
+  `primitives_count`, `benchmark_score`, `entry_points`.
+- Forge reads frontmatter to register the skill in its UI and to
+  filter session tool availability.
+
+### §3.2 — MCP server lifecycle
+
+- Forge spawns `mcp_tools/server.py` (or equivalent) in-process
+  per session. Auto-discovery scans `adapt/`, `generators/`,
+  `modules/`, `mcp_tools/tree/`, `engine/discovery/`, `core/tools/`
+  for `MCP_TOOL` dicts.
+- Server expects `PYTHONPATH=skills/SKILL-001-fastapi-production`.
+- Server startup is **deterministic**: tools registered in
+  filesystem-sorted order. `stable_hash` in catalog.json must match
+  the server-reported hash at startup.
+
+### §3.3 — Generated project provenance
+
+- Every scaffolded project receives a `.venous_manifest.json` at its
+  root listing which primitives + adapters were copied.
+- Forge must NOT mutate this file — tools use it to detect already-
+  shipped code on re-invocation (idempotency).
+
+### §3.4 — Audit surface
+
+- `engine/audit/contract_check.py` — 33 (v1.0 day 1) or 34 (after
+  §B1.7 ratified) machine-check rules. Exit 0 = green.
+- `engine/inventory.py` — regenerates `INVENTORY.md` from disk.
+- `engine/bench/blind/runner.py` — runs benchmark; produces JSON
+  under `benchmarks/history/`.
+- Forge should expose these as one-click CI hooks in the editor.
+
+### §3.5 — Version compatibility
+
+- Skill v1.x is compatible with Forge v1.x. Breaking skill changes
+  require a skill MAJOR bump AND a Forge-side update to its skill
+  loader.
+- Forge MUST read `skills/SKILL-001-fastapi-production/VERSION` and
+  refuse to load skills with mismatched MAJOR vs its declared
+  supported range.
+
+### §3.6 — Points of attention for the Forge session
+
+1. **Skill is not a plugin owned by Forge.** Forge reads the skill,
+   does not rewrite it. Any change to skill files during a session
+   is a bug — write to the user's generated project, never to
+   `skills/SKILL-001-fastapi-production/`.
+2. **Catalog hash pin.** Forge should record the skill's
+   `stable_hash` at session start. If the hash changes mid-session
+   (skill update during work), surface a notice before invoking tools.
+3. **Install validation.** Forge's skill-import path must run
+   `engine.audit.contract_check` on import. Skill with non-zero exit
+   should be loaded in read-only mode (search/describe only), not
+   scaffold/compose.
+4. **Adapter registration.** Forge should NOT auto-register adapter
+   files (`_adapters/fastapi/*.py`) as Maestro tools. Adapters are
+   called from generated code, not via MCP.
+
+---
+
+## §4 — Shared guarantees (apply to both Maestro and Forge)
+
+### §4.1 — Semver binding
+
+- MAJOR = incompatible surface changes (tool renames, primitive
+  renames, MCP schema changes, removal of a tier-1 meta tool).
+- MINOR = additive (new tools, new primitives, new recipes, new
+  adapters, new examples).
+- PATCH = bug fixes, docs, non-surface refactors.
+- Every release cites its plan + code benchmark scores in CHANGELOG.
+
+### §4.2 — Frozen files (no change without MAJOR bump)
+
+- `engine/index/catalog.json` schema.
+- `engine/primitives_by_concern.yaml` schema (entry keys, `tier` literal).
+- Tier-1 meta tool names + return shapes.
+- Tree dispatcher names + kwargs names.
+- `.venous_manifest.json` schema.
+- CONTRACT §A (12 inviolable rules).
+
+### §4.3 — Non-frozen (can evolve within MINOR)
+
+- Tool `synopsis`, `when_to_call`, `when_not_to_call`, `example_*`.
+- Primitive `.md` composition recipes.
+- Benchmark specs (can be added; can't be removed mid-major).
+
+### §4.4 — Error surface
+
+- Skill errors use `skill_error_code` + `message` + `remediation`
+  (stable schema).
+- Forge surfaces the remediation string to the user.
+- Maestro surfaces error_code in the session transcript.
+
+---
+
+## §5 — Escalation path
+
+- **Discrepancy between skill and this doc:** skill wins for runtime
+  behaviour; this doc wins for contractual intent. File an INTERFACES
+  drift issue, update both in the same PR.
+- **Breaking-change request from Maestro or Forge team:** opens a
+  MAJOR-bump discussion, not a silent patch.
+- **Security issue:** out-of-band to Gustavo; skill has no runtime
+  hotfix path beyond a PATCH release.
+
+---
+
+## §6 — Open questions for Maestro + Forge teams
+
+Items the skill cannot answer unilaterally; relay to those sessions:
+
+1. **Maestro:** what's the expected transcript format when skill tools
+   are invoked? The skill produces structured `ToolResult`s; Maestro
+   session must decide render format.
+2. **Maestro:** how should staged primitives be presented in search
+   results — filtered out by default, or shown with warning badge?
+3. **Forge:** does the skill loader run in the same process as the
+   Maestro session, or is it IPC? Affects how `MCP_TOOL` discovery
+   errors surface.
+4. **Forge:** does the editor have a per-skill "pinned catalog hash"
+   UI? If yes, skill `stable_hash` flow should integrate; if no, add
+   to §3.6 roadmap.
+5. **Both:** is there a shared **session replay** format (Maestro
+   transcript + generated project snapshot) that includes the skill
+   version + stable_hash so failures can be reproduced? The skill
+   doesn't define it today.
+6. **Forge:** install strategy — does Forge vendor the skill inside
+   its distribution, or fetch from a pinned git ref at runtime?
+   Affects §3.5 version compatibility enforcement.
+
+---
+
+## §7 — Change log for this doc
+
+- 2026-04-22: initial draft (Claude). Awaits Gustavo review + relay
+  to Maestro + Forge sessions.
