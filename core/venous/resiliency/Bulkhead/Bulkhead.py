@@ -35,7 +35,8 @@ import asyncio
 import threading
 import time
 from collections import defaultdict
-from collections.abc import Awaitable, Callable, Mapping
+from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from typing import Final, Literal, Protocol, TypeVar, runtime_checkable
 
@@ -324,28 +325,39 @@ class InMemoryBulkhead:
         # BH_INV_05: every rejection emits a partition-labelled metric.
         self._meter.record(self.name, reason)
 
-    # ---- public submit (BH_INV_01 / BH_INV_02 / BH_INV_03) ----------------
-    async def submit(
-        self,
-        fn: Callable[..., Awaitable[T]],
-        /,
-        *args: object,
-        **kwargs: object,
-    ) -> T:
-        """Acquire a permit, invoke ``fn``, release the permit.
+    # ---- public acquire (BH_INV_01 / BH_INV_02 / BH_INV_03) ---------------
+    @asynccontextmanager
+    async def acquire(
+        self, *, request_id: str | None = None
+    ) -> AsyncIterator[None]:
+        """Hold one permit for the duration of the ``async with`` block.
 
-        Three refusal paths:
+        ``acquire`` is the permit-accounting primitive; ``submit`` is sugar
+        over it. Same three refusal paths:
 
         1. BH_INV_03 — the per-request ledger already recorded a rejection
-           for this partition on this request; we refuse without queuing.
-        2. BH_INV_02 — acquisition did not complete within
-           ``max_wait_duration_ms``; we refuse and emit a rejection metric.
+           for this partition on this request; fail fast without queuing.
+        2. BH_INV_02 — permit not available within
+           ``max_wait_duration_ms``; record a partition-labelled metric and
+           raise ``BulkheadFull``. The ``async with`` body is NEVER entered.
         3. BH_INV_01 — impossible under correct semaphore usage, but a drift
            is caught by the accounting assertions inside ``_acquire_slot``.
-        """
-        request_id = self._extract_request_id(kwargs)
 
-        if self._ledger is not None and request_id is not None:
+        Usage::
+
+            async with bh.acquire():
+                return await call_next(request)
+
+        Or with request-scoped anti-retry::
+
+            async with bh.acquire(request_id="req-123"):
+                ...
+        """
+        if (
+            self._ledger is not None
+            and request_id is not None
+            and request_id != ""
+        ):
             # BH_INV_03: fail fast on intra-request retry.
             if self._ledger.has_rejection(request_id, self.name):
                 self._record_rejection("retry_forbidden")
@@ -363,9 +375,13 @@ class InMemoryBulkhead:
         try:
             await asyncio.wait_for(self._sem.acquire(), timeout=effective_timeout)
         except (TimeoutError, asyncio.TimeoutError):
-            # BH_INV_02: wait exceeded → reject, record, DO NOT invoke fn.
+            # BH_INV_02: wait exceeded → reject, record, DO NOT enter the body.
             self._record_rejection("wait_timeout")
-            if self._ledger is not None and request_id is not None:
+            if (
+                self._ledger is not None
+                and request_id is not None
+                and request_id != ""
+            ):
                 self._ledger.record(request_id, self.name)
             raise BulkheadFull(
                 self.name,
@@ -376,10 +392,29 @@ class InMemoryBulkhead:
         # Permit acquired — account for it under the state lock.
         self._acquire_slot()
         try:
-            return await fn(*args, **kwargs)
+            yield
         finally:
             self._release_slot()
             self._sem.release()
+
+    # ---- public submit — sugar over ``acquire`` ---------------------------
+    async def submit(
+        self,
+        fn: Callable[..., Awaitable[T]],
+        /,
+        *args: object,
+        **kwargs: object,
+    ) -> T:
+        """Acquire a permit, invoke ``fn``, release the permit.
+
+        Thin sugar over ``acquire()`` so callers who only need "run this
+        coroutine under the bulkhead" don't have to write the context
+        manager. Behaviour is identical to ``acquire`` for all three refusal
+        paths (BH_INV_01 / BH_INV_02 / BH_INV_03).
+        """
+        request_id = self._extract_request_id(kwargs)
+        async with self.acquire(request_id=request_id):
+            return await fn(*args, **kwargs)
 
     @staticmethod
     def _extract_request_id(kwargs: Mapping[str, object]) -> str | None:
