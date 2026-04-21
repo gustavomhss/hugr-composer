@@ -25,3 +25,6 @@ sqlalchemy[asyncio]>=2.0.36
 
 # Alembic (used by adapt tools that generate Alembic migrations)
 alembic>=1.14.0
+
+# YAML parser (primitives_by_concern.yaml + promotion pipeline + audit rules)
+PyYAML>=6.0.0
