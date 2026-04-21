@@ -541,8 +541,8 @@ def _r_find_primitive_discovery() -> tuple[bool, str]:
             "from mcp_tools import mcp, discover_and_register; "
             "discover_and_register(mcp); "
             "import asyncio; "
-            "t = asyncio.run(mcp.get_tool('fastapi_find_primitive')); "
-            "assert t.name == 'fastapi_find_primitive', t.name; print('ok')"
+            "t = asyncio.run(mcp.get_tool('fastapi_meta_search_primitive')); "
+            "assert t.name == 'fastapi_meta_search_primitive', t.name; print('ok')"
         ),
     ]
     out = subprocess.run(
@@ -586,8 +586,8 @@ def _r_suggest_composition() -> tuple[bool, str]:
             "from mcp_tools import mcp, discover_and_register; "
             "discover_and_register(mcp); "
             "import asyncio; "
-            "t = asyncio.run(mcp.get_tool('fastapi_suggest_composition')); "
-            "assert t.name == 'fastapi_suggest_composition', t.name; print('ok')"
+            "t = asyncio.run(mcp.get_tool('fastapi_meta_search_composition')); "
+            "assert t.name == 'fastapi_meta_search_composition', t.name; print('ok')"
         ),
     ]
     out = subprocess.run(
@@ -783,7 +783,7 @@ def _r_skill_md_contract() -> tuple[bool, str]:
         "fastapi_meta_home", "fastapi_meta_search", "fastapi_meta_describe",
         "fastapi_meta_scaffold", "fastapi_meta_compose",
         "fastapi_meta_audit", "fastapi_meta_verify",
-        "fastapi_auth", "fastapi_find_primitive", "fastapi_suggest_composition",
+        "fastapi_auth", "fastapi_meta_search_primitive", "fastapi_meta_search_composition",
     }
     valid_tool_names = cat_tool_names | known_non_catalog
     missing_tools = [

@@ -18,6 +18,14 @@ Generated files:
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_resiliency_generate_cache',
+    'description': 'Generate production Redis caching module: cache-aside, stampede prevention (XFetch), distributed lock, ETag, warming.',
+    'tags': ['caching', 'resiliency', 'generator'],
+    'entry': 'generate_cache_module',
+    'annotations': {'readOnlyHint': False, 'destructiveHint': False},
+}
+
 import sys
 import textwrap
 from pathlib import Path

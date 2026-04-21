@@ -14,6 +14,14 @@ Creates a SOTA multi-stage Dockerfile for FastAPI/Python applications with:
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_deployment_generate_docker',
+    'description': 'Generate production multi-stage Dockerfile for FastAPI: non-root user, layer cache optimization, HEALTHCHECK, .dockerignore.',
+    'tags': ['deployment', 'generator'],
+    'entry': 'generate_dockerfile',
+    'annotations': {'readOnlyHint': False, 'destructiveHint': False},
+}
+
 import sys
 import textwrap
 from pathlib import Path

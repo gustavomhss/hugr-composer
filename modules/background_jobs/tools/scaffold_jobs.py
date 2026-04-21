@@ -17,6 +17,14 @@ Generated files:
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_resiliency_generate_jobs',
+    'description': 'Generate production ARQ-based async task queue: DLQ, retry with backoff, idempotency keys, periodic tasks, health monitoring.',
+    'tags': ['jobs', 'resiliency', 'generator'],
+    'entry': 'generate_background_jobs',
+    'annotations': {'readOnlyHint': False, 'destructiveHint': False},
+}
+
 import sys
 import textwrap
 from pathlib import Path

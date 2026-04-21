@@ -3,7 +3,7 @@ from __future__ import annotations
 
 
 MCP_TOOL = {
-    "name": "fastapi_check_headers",
+    "name": "fastapi_meta_check_headers",
     "description": "Check security headers and CORS of a running instance.",
     "tags": ["runtime", "verify"],
     "entry": "entry",

@@ -168,55 +168,43 @@ def register_tier1_tools(mcp_app) -> int:
 
 
 def register_discovery_tools(mcp_app) -> int:
-    """Register Phase 2 discoverability tools (CONTRACT §B2.1, §B2.2).
+    """Register legacy BM25 discovery tools (CONTRACT §B2.1, §B2.2).
 
-    Exposes `find_primitive(concern, query, limit)` as a first-class MCP
-    tool so the Maestro can query the primitive catalog at composition
-    time. Pure retrieval — no LLM call inside the tool.
+    The MCP_TOOL metadata dicts live alongside the entry functions in
+    `engine/discovery/find_primitive.py` and `engine/discovery/compose.py`;
+    this function is the runtime-registration sidecar so the MCP server
+    binds the callables while the manifest scanner indexes the metadata.
+    Single source of truth = the MCP_TOOL dict.
     """
     from engine.discovery import find_primitive as _find
     from engine.discovery import suggest_composition as _suggest
+    from engine.discovery.find_primitive import MCP_TOOL as PRIM_META
+    from engine.discovery.compose import MCP_TOOL as COMP_META
 
     def find_primitive(concern: str = "", query: str = "", limit: int = 10) -> list[dict]:
         """Search the primitive catalog by concern and free-text query.
 
-        Args:
-            concern: registry concern tag (e.g. ``auth``, ``resiliency``,
-                ``events``, ``observability``). Empty string searches across
-                all concerns.
-            query: natural-language fragment matched via BM25 over primitive
-                name + purpose + compose-with + body. Example:
-                ``"dedupe webhook deliveries"``.
-            limit: maximum hits to return (1-10, capped at 10).
-
-        Returns:
-            List of ``{name, namespace, concern, purpose, score}`` dicts
-            ranked by BM25 relevance descending.
+        Returns a BM25-ranked list of ``{name, namespace, concern, purpose,
+        score}`` dicts. Pure retrieval — no LLM call inside the tool.
         """
         return _find(concern=concern, query=query, limit=limit)
 
     mcp_app.tool(
-        name="fastapi_find_primitive",
-        tags={"discovery", "catalog", "retrieval"},
+        name=PRIM_META["name"],
+        tags=set(PRIM_META.get("tags", [])),
     )(find_primitive)
 
     def suggest_composition(intent: str, limit: int = 5) -> list[dict]:
         """Rank compose-with recipes against a free-text intent.
 
-        Args:
-            intent: natural-language description of what to build — e.g.
-                ``"webhook receiver with dedupe and audit"``.
-            limit: maximum compositions to return (1-5, capped at 5).
-
-        Returns:
-            Ranked list of ``{primitives, rationale, score, source, name}``
-            dicts. Pure retrieval — no LLM call inside the tool.
+        Returns a ranked list of ``{primitives, rationale, score, source,
+        name}`` dicts. Pure retrieval — no LLM call inside the tool.
         """
         return _suggest(intent=intent, limit=limit)
 
     mcp_app.tool(
-        name="fastapi_suggest_composition",
-        tags={"discovery", "composition", "retrieval"},
+        name=COMP_META["name"],
+        tags=set(COMP_META.get("tags", [])),
     )(suggest_composition)
     return 2
 

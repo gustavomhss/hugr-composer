@@ -9,6 +9,14 @@ no reconnection support, and missing connection cleanup.
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_realtime_verify_ws',
+    'description': 'AST/regex analysis of FastAPI WebSocket code for 8 anti-patterns: no auth, missing heartbeat, no connection limits, etc.',
+    'tags': ['realtime', 'verify'],
+    'entry': 'verify_websocket_config',
+    'annotations': {'readOnlyHint': True, 'destructiveHint': False},
+}
+
 import ast
 import os
 import re

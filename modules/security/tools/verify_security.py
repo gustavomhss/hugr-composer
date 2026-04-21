@@ -10,6 +10,14 @@ exception details exposed to clients.
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_auth_verify_security',
+    'description': 'AST analysis of FastAPI for 10 security anti-patterns: CORS wildcard, missing headers, no rate limit, secrets in code, debug mode.',
+    'tags': ['security', 'verify'],
+    'entry': 'verify_security_config',
+    'annotations': {'readOnlyHint': True, 'destructiveHint': False},
+}
+
 import ast
 import os
 import re

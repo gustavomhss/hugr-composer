@@ -61,9 +61,15 @@ from meta.contracts.audit_tool_contract import (
 
 
 MCP_TOOL = {
-    "name": "fastapi_audit_tool",
-    "description": "Run 20 automated quality checks on any SKILL-001 adapt tool.",
+    "name": "fastapi_meta_verify_tool",
+    "description": (
+        "Run 20 automated quality checks on any SKILL-001 adapt tool file. "
+        "Validates anti-patterns, contract compliance, test coverage, and "
+        "the emit-quality of generated code. Returns AuditOutput (Pydantic) "
+        "with verdict=PASS/FAIL."
+    ),
     "tags": ["meta", "audit"],
+    "annotations": {"readOnlyHint": True, "destructiveHint": False},
     "entry": "audit_tool",
 }
 

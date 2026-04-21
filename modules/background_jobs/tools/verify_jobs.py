@@ -9,6 +9,14 @@ error handling, and unbounded task results.
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_resiliency_verify_jobs',
+    'description': 'AST/regex analysis of FastAPI background task config for 8 anti-patterns (missing retry, no DLQ, blocking calls, etc).',
+    'tags': ['jobs', 'resiliency', 'verify'],
+    'entry': 'verify_job_config',
+    'annotations': {'readOnlyHint': True, 'destructiveHint': False},
+}
+
 import ast
 import os
 import re

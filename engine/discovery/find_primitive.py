@@ -10,6 +10,21 @@ Contract: B2.1 (CONTRACT.md §B).
 """
 from __future__ import annotations
 
+MCP_TOOL = {
+    "name": "fastapi_meta_search_primitive",
+    "description": (
+        "BM25 retrieval over primitives_by_concern.yaml. Returns ranked "
+        "{name, namespace, concern, purpose, score} hits. Pure retrieval, "
+        "deterministic, <50ms p95. Narrower than fastapi_meta_search "
+        "(which unifies tools + primitives + recipes); kept because "
+        "CONTRACT §B2.1 quality gates pin accuracy thresholds against this "
+        "exact retrieval path."
+    ),
+    "tags": ["meta", "discovery", "retrieval"],
+    "annotations": {"readOnlyHint": True, "destructiveHint": False},
+    "entry": "find_primitive",
+}
+
 import math
 import re
 import threading

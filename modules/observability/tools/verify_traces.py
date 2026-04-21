@@ -10,6 +10,14 @@ check exclusion from metrics, no error status on spans, and unstructured logging
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_observability_verify_traces',
+    'description': 'AST analysis for 10 observability anti-patterns: missing OTel, no custom spans, print() debugging, unstructured logging, etc.',
+    'tags': ['observability', 'verify'],
+    'entry': 'verify_observability',
+    'annotations': {'readOnlyHint': True, 'destructiveHint': False},
+}
+
 import ast
 import os
 import re

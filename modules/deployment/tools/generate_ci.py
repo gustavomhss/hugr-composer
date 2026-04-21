@@ -15,6 +15,14 @@ Each stage gates the next — a failure at any point blocks deployment.
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_deployment_generate_ci_pipeline',
+    'description': 'Generate GitHub Actions CI/CD workflow for FastAPI: test, lint, Docker build with caching, Trivy scan, push, deploy.',
+    'tags': ['deployment', 'generator'],
+    'entry': 'generate_github_actions',
+    'annotations': {'readOnlyHint': False, 'destructiveHint': False},
+}
+
 import sys
 import textwrap
 from pathlib import Path

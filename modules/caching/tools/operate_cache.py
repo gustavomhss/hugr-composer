@@ -8,6 +8,14 @@ to be called as an operational tool for live monitoring and diagnostics.
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_resiliency_operate_cache',
+    'description': 'Check runtime Redis cache health: memory usage, hit/miss rates, evictions, connected clients, key distribution, latency.',
+    'tags': ['caching', 'resiliency', 'operate'],
+    'entry': 'check_cache_health',
+    'annotations': {'readOnlyHint': True, 'destructiveHint': False},
+}
+
 import sys
 import time
 from pathlib import Path

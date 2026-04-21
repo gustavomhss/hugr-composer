@@ -15,6 +15,14 @@ Generated files:
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_auth_generate_module',
+    'description': 'Generate production FastAPI auth boilerplate: JWT pairs, argon2id hashing, refresh rotation, rate limiting.',
+    'tags': ['auth', 'security', 'generator'],
+    'entry': 'generate_auth_module',
+    'annotations': {'readOnlyHint': False, 'destructiveHint': False},
+}
+
 import os
 import sys
 import textwrap

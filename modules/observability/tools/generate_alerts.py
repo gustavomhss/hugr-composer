@@ -12,6 +12,14 @@ Generated files:
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_observability_generate_alerts',
+    'description': 'Generate Prometheus multi-burn-rate alerting rules and Grafana dashboard with Four Golden Signals + SLO error budget.',
+    'tags': ['observability', 'generator'],
+    'entry': 'generate_alerting_rules',
+    'annotations': {'readOnlyHint': False, 'destructiveHint': False},
+}
+
 import json
 import sys
 import textwrap

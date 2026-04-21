@@ -23,7 +23,7 @@ scaffold a project tree, uses slice tools to add capabilities (auth,
 CRUD, payments, realtime, compliance, ...), and composes primitives
 directly when a capability doesn't match any slice tool. All three
 surfaces are MCP-registered and JIT-discoverable via
-`fastapi_find_primitive` and `fastapi_suggest_composition`.
+`fastapi_meta_search_primitive` and `fastapi_meta_search_composition`.
 
 ## On-disk counts (machine-verified)
 
@@ -43,15 +43,15 @@ surfaces are MCP-registered and JIT-discoverable via
 The 180 MCP tools decompose as: 100 `adapt/extend/` slice tools + 3
 other `adapt/` tools (extract, verify, evolve) + 74 MCP-registered
 generator and module tools + 2 discovery tools
-(`fastapi_find_primitive`, `fastapi_suggest_composition`) + 1 audit
+(`fastapi_meta_search_primitive`, `fastapi_meta_search_composition`) + 1 audit
 tool. All auto-discovered via `MCP_TOOL` metadata scan —
 CONTRACT §B1.5 forbids manual `@mcp_app.tool` decorators.
 
 ## Maestro workflow
 
 1. **Discovery.** MCP client lists tools via `tools/list`. JIT
-   retrieval via `fastapi_find_primitive(query, concern?)` +
-   `fastapi_suggest_composition(intent)` — BM25 + recipe index.
+   retrieval via `fastapi_meta_search_primitive(query, concern?)` +
+   `fastapi_meta_search_composition(intent)` — BM25 + recipe index.
    Latency <50 ms cold; top-1 accuracy 85% (primitives), 90% (recipes).
 2. **Scaffold.** Maestro calls a macro generator (e.g.
    `fastapi_generate_project`) to lay down the project tree.

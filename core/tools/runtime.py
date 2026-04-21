@@ -8,7 +8,7 @@ Uses httpx for async HTTP. All connection errors are handled gracefully.
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_check_health',
+    'name': 'fastapi_meta_check_health',
     'description': 'Check 3-level health endpoints (/healthz, /readyz, /startupz) of a running instance.',
     'tags': ['runtime', 'verify'],
     'entry': 'mcp_fastapi_check_health',

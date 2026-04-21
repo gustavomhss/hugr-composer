@@ -14,7 +14,7 @@ The generated tests are designed to work with the fixtures from
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_generate_tests',
+    'name': 'fastapi_testing_generate_suite',
     'description': 'Generate complete test infrastructure + test suite.',
     'tags': ['generator', 'testing'],
     'entry': 'generate_tests',

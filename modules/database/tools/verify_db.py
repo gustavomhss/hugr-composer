@@ -16,6 +16,14 @@ database anti-patterns:
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_data_verify_db',
+    'description': 'AST analysis of FastAPI/SQLAlchemy code for 8 DB anti-patterns (no pool_pre_ping, sync engine, N+1 risk, raw SQL, etc).',
+    'tags': ['database', 'verify'],
+    'entry': 'verify_db_config',
+    'annotations': {'readOnlyHint': True, 'destructiveHint': False},
+}
+
 import ast
 import os
 import re

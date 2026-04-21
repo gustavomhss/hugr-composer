@@ -33,7 +33,7 @@ _HIGH_RISK_PATTERNS = ["auth", "payment", "admin", "security", "token", "billing
 
 
 MCP_TOOL = {
-    "name": "fastapi_test_coverage_gaps",
+    "name": "fastapi_testing_verify_coverage_gaps",
     "description": "Identify test coverage gaps with risk-weighted analysis.",
     "tags": ["verify"],
     "entry": "test_coverage_gaps",
