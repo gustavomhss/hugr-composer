@@ -17,18 +17,20 @@ scaffold (skill) + slice generators (tools) + reusable building blocks
 ## Current status
 
 ```
-Phase:       5 (code-level benchmark) — v0.2.0
+Phase:      v1.0.0-rc.1 (golive frozen, awaiting ratification)
 Skills:      1   (SKILL-001-fastapi-production)
-Tools:     183   (MCP-registered: 180 adapt + 2 discovery + 1 audit)
-Primitives: 122  (production, catalog-derived with 10-tier gate)
-Staged:    430+  (core/venous/_extracted/, pre-audited pool)
+Tools:     217   (201 catalog + 7 tier-1 + 9 tree dispatchers)
+Primitives: 122  (production, 16-FastAPI-adapter-wired, 10-tier gate)
+Staged:    181   (core/venous/_extracted/, +47 quarantined, pre-audited pool)
 Benchmark: 100.00 plan · 100.00 code-level (20/20 specs × 100%)
-Contract:  30/30 green
+Contract:  36/36 green
 Examples:   20   (full spec coverage; /examples/01-20)
 ```
 
 Numbers machine-verified via
 `python -m engine.audit.contract_check` from the skill root.
+See `INVENTORY.md` in the skill dir for the full machine-verified
+manifest and `FREEZE.md` + `GOLIVE.md` for the v1.0 cut checklist.
 
 ## Quick orient
 
@@ -37,14 +39,18 @@ HuGR_Skills/
 ├── PRODUCT.md            # architecture contract
 ├── ROADMAP.md            # phased plan
 ├── CONTRACT.md           # execution rules
+├── FREEZE.md             # v1.0 scope lock
+├── GOLIVE.md             # v1.0 execution checklist
+├── INTERFACES.md         # Maestro + Forge contracts
 └── skills/
     └── SKILL-001-fastapi-production/
-        ├── SKILL.md              # skill manifest
-        ├── adapt/extend/         # 100 slice tools
-        ├── generators/           # macro scaffold helpers
-        ├── core/venous/          # 97 production primitives
-        ├── mcp_tools/            # MCP server (FastMCP)
-        └── engine/               # audit + extraction pipelines
+        ├── SKILL.md              # skill manifest (Anthropic Agent Skills format)
+        ├── INVENTORY.md          # machine-verified on-disk counts
+        ├── adapt/                # 127 tools (100 extend + 27 other)
+        ├── generators/           # 60 macro scaffold helpers
+        ├── core/venous/          # 122 primitives + 16 FastAPI adapters + 181 staged
+        ├── mcp_tools/            # MCP server + tier-1 meta + tree dispatchers
+        └── engine/               # audit + index + bench + promotion + extraction
 ```
 
 ## Install

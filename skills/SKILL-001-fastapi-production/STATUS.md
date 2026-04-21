@@ -1,7 +1,7 @@
 ---
 name: fastapi-production
 description: HuGR SKILL-001 — scaffolds AND customizes production-grade FastAPI backends. Rails-style 3-layer kit (skill + slice tools + primitives) invokable via MCP.
-version: 0.1.0
+version: 1.0.0-rc.1
 ---
 
 # SKILL-001 — FastAPI Production
@@ -30,25 +30,28 @@ surfaces are MCP-registered and JIT-discoverable via
 | Surface | Count | Verify |
 |---|---:|---|
 | Slice tools under `adapt/extend/` | 100 | `find adapt/extend -name 'add_*.py' ! -name 'test_*' \| wc -l` |
-| Slice tools total (adapt/) | 103 | `find adapt -name 'add_*.py' ! -name 'test_*' \| wc -l` |
+| Total tools in `adapt/` (all verbs + categories) | 127 | `find adapt -name '*.py' ! -name '__init__.py' ! -name 'test_*' \| wc -l` |
+| FastAPI adapters (`core/venous/_adapters/fastapi/`) | 16 | `find core/venous/_adapters/fastapi -maxdepth 1 -name '*Adapter.py' ! -name 'test_*' \| wc -l` |
 | Generator files (`generators/`) | 60 | `find generators -name '*.py' ! -name '__init__.py' ! -name 'test_*' \| wc -l` |
-| MCP-registered tools (all surfaces) | 201 | `jq '.tools \| length' engine/index/catalog.json` |
+| MCP-registered tools (catalog) | 201 | `jq '.tools \| length' engine/index/catalog.json` |
+| Maestro-visible surface (catalog + tier-1 + tree) | 217 | 201 catalog + 7 tier-1 + 9 tree dispatchers |
 | Production primitives (registered) | 122 | `grep -c '^- name:' engine/primitives_by_concern.yaml` |
 | Production primitive directories | 122 | `find core/venous -mindepth 2 -maxdepth 2 -type d ! -path '*_extracted*' ! -path '*_adapters*' ! -path '*__pycache__*' \| wc -l` |
-| Staged primitives (extracted pool) | 430+ | `find core/venous/_extracted -mindepth 2 -maxdepth 2 -type d \| wc -l` |
+| Staged primitives (PascalCase, promotable) | 181 | `jq '[.primitives[] \| select(.status=="staged")] \| length' engine/index/catalog.json` |
+| Quarantined primitives (rejected by extraction gate) | 47 | `find core/venous/_extracted/_quarantine -mindepth 2 -maxdepth 2 -type d \| wc -l` |
 | Benchmark specs (Phase 3) | 20 | `find benchmarks/specs -name '*.md' ! -name 'README.md' \| wc -l` |
-| Contract items green | 33/33 | `PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check` |
-| Staged primitives (pre-audited, REPLACE_ME) | 180 | `jq '[.primitives[] \| select(.status=="staged")] \| length' engine/index/catalog.json` |
-| Extend tools primitive-connected | 19/100 | `jq '[.tools[] \| select(.verb=="add" and (.module_path \| startswith("adapt/extend/")) and (.primitives_used \| length > 0))] \| length' engine/index/catalog.json` |
+| Contract items green | 36/36 | `PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check` |
+| Extend tools primitive-connected | 22/100 | `jq '[.tools[] \| select(.verb=="add" and (.module_path \| startswith("adapt/extend/")) and (.primitives_used \| length > 0))] \| length' engine/index/catalog.json` |
 | Benchmark score (plan-level, best-of ensemble) | 100.00 | `jq '.overall' benchmarks/latest_score.json` |
+| Benchmark score (code-level, 20/20 specs) | 100.00 | `jq '.overall' benchmarks/code_level_latest.json` |
 
-The 201 catalog tools decompose as: 100 `adapt/extend/` slice tools + 26
-other `adapt/` tools (evolve/operate/verify/contracts/proactive) + 56
-generators + 20 module tools + 7 tier-1 meta + 9 domain-tree dispatchers + 2
-legacy discovery tools (`fastapi_meta_search_primitive`,
-`fastapi_meta_search_composition`) + 1 audit tool. All auto-discovered via
-`MCP_TOOL` metadata scan — CONTRACT §B1.5 forbids manual `@mcp_app.tool`
-decorators.
+The 217 Maestro-visible surfaces decompose as: 201 auto-discovered catalog
+tools (100 `adapt/extend/` slice + 27 other `adapt/` tools across
+evolve/operate/verify/contracts/proactive + 60 generators + 9 module-tools
++ remainder = audit/discovery helpers) + 7 tier-1 meta tools
+(`mcp_tools/tier1.py` + `mcp_tools/compose.py`) + 9 domain-tree
+dispatchers (`mcp_tools/tree/`). All auto-discovered via `MCP_TOOL`
+metadata scan — CONTRACT §B1.5 forbids manual `@mcp_app.tool` decorators.
 
 ## Maestro workflow
 
@@ -164,7 +167,7 @@ Validated nightly in a fresh `python:3.12-slim` container —
 ## Contract enforcement
 
 ```bash
-# Run the full 33-rule check
+# Run the full 36-rule check
 PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check
 
 # Run a single phase (for PR work targeting one phase)
@@ -208,6 +211,6 @@ the plan-level transcript the Maestro used to build them.
 
 ---
 
-Signed: Gustavo Schneiter — v0.1.0 release (Phase 4 complete).
+Signed: Gustavo Schneiter — v1.0.0-rc.1 (Phase 5 complete, golive pending).
 Every claim above is machine-verifiable via the commands shown.
 Drift from this file is a §A8 bug to fix same-day.

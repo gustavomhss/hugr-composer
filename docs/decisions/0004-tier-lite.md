@@ -13,8 +13,12 @@
 
 ## 1. Motivation
 
-`core/venous/_extracted/` holds 194 PascalCase-named staged primitives
-plus 121 quarantined variants — 315 items total. They each carry the
+`core/venous/_extracted/` holds 181 PascalCase-named staged primitives
+plus 47 quarantined variants — 228 items total (numbers updated
+post-cleanup 2026-04-22; ADR originally cited 194 + 121 = 315 before
+the _extracted/ pool was cleaned of 305 lowercase-function extraction
+garbage and 13 duplicates of already-registered primitives). They each
+carry the
 bulk of the HuGR shell already (`.py` implementation, `.protocol.py`,
 `.contract.json`, `.md`, `test_*.py`, `conftest.py`, `dashboard.json`,
 `invariant_bindings.json`, `observability_schema.json`,

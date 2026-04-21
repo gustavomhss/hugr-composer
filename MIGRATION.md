@@ -96,10 +96,13 @@ import. v1.0.0 introduces the adapter layer (ADR 0003): primitives are
 framework-free; FastAPI glue lives in
 `core/venous/_adapters/fastapi/<Name>Adapter.py`.
 
-Affected primitives at v1.0.0 (17 adapters): AuditLog, Bulkhead,
-CircuitBreaker, CostTracker, EventSourcedStore, FeatureToggle,
-GracefulShutdown, LoadShedder, OAuth2, RateLimiter, RequestGuard,
-RetryPolicy, Saga, TotpVerifier, UnitOfWork, WebhookReceiver, Workflow.
+Affected primitives at v1.0.0 (16 adapters): AuditLog, CircuitBreaker,
+CostTracker, EventSourcedStore, FeatureToggle, GracefulShutdown,
+LoadShedder, OAuth2, RateLimiter, RequestGuard, RetryPolicy, Saga,
+TotpVerifier, UnitOfWork, WebhookReceiver, Workflow. `Bulkhead` is
+deferred to post-v1.0 per FREEZE §1.6 — its adapter lands in a
+post-release sprint alongside the 2 pre-existing bulkhead test fixes
+(FREEZE §2.8).
 
 **Fix:** generated code should import from the primitive AND from its
 adapter. Example (Bulkhead):

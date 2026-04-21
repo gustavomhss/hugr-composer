@@ -29,11 +29,11 @@ reconcile against INVENTORY.md — drift = audit bug.
 | Module packages | 28 | auth, background_jobs, caching, database, deployment, observability, payments, security, websockets |
 | Registered primitives | 122 | `core/venous/<ns>/<Name>/` with contract.json + tests + TLA+ specs |
 | FastAPI adapters | 16 | Production-wired in `core/venous/_adapters/fastapi/` |
-| Staged primitives | 180 | PascalCase subset of `_extracted/`, surfaced in catalog as `status="staged"` |
-| Quarantined primitives | 121 | Rejected by extraction gate, hidden from catalog |
+| Staged primitives | 181 | PascalCase subset of `_extracted/`, surfaced in catalog as `status="staged"` |
+| Quarantined primitives | 47 | Rejected by extraction gate, hidden from catalog |
 | Recipes | 385 | Parsed from primitive `.md` `## Compose with:` sections |
 | Benchmark specs | 20 | 5 baseline + 10 mid + 5 adversarial |
-| Contract rules passing | 33/33 | Machine-verified by `engine.audit.contract_check` |
+| Contract rules passing | 36/36 | Machine-verified by `engine.audit.contract_check` |
 
 ### What's done (formerly "aspirational")
 
@@ -177,14 +177,14 @@ must justify itself against behavioural evidence.
 |---|---|---|
 | 24 | Weekly benchmark review — which specs still red? | pending — first review after #25 ships |
 | 25 | Code-level scoring rubric — run pytest against examples, aggregate | ✅ done — 100.00 across 20/20 specs (§B3.6 green) |
-| 26 | Surgical primitive promotion from `_extracted/` when benchmark asks | pending — 180 candidates visible in catalog |
+| 26 | Surgical primitive promotion from `_extracted/` when benchmark asks | pending — 181 candidates visible in catalog |
 | 27 | Close Phase-1 item #9 (15+ extend tools import primitives) | pending |
 | 28 | ~~Close Phase-4 #20~~ | ✅ done — 20 examples populated |
 | 29 | Target score: ≥ 70% on the code-level rubric by v1.0 | ✅ met — 100.00 (headroom: 30 points) |
-| 30 | **Staged/quarantined triage — close the backlog, leave nothing behind** | pending — 180 staged + 121 quarantined, zero decisioned |
+| 30 | **Staged/quarantined triage — close the backlog, leave nothing behind** | triaged via ledger (2026-04-22); 118 EXTRACT_MOTOR_PAIR + 104 NEEDS_CALLER deferred post-v1.0 per FREEZE §2.4/§2.5 |
 
 **Phase-5 #30 — Staged/quarantined triage (added 2026-04-21):**
-The 180 `_extracted/` staged primitives + 121 `_quarantine/` items are
+The 181 `_extracted/` staged primitives + 47 `_quarantine/` items are
 a pool, not a graveyard. Each must receive an explicit decision so
 nothing sits unaudited:
 

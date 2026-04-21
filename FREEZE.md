@@ -204,8 +204,10 @@ No other pre-existing test failures at v1.0.
 These MUST be true at the freeze commit:
 
 1. Git tree clean.
-2. CONTRACT **34/34 items green** (§B1.8 landed as part of this
-   ratification).
+2. CONTRACT **36/36 items green** (§B1.7 FastAPI adapter coverage +
+   §B1.8 tier-lite eligibility formally defined in §B; §B4.6 VERSION
+   triplet sync + §B4.7 canonical counts sync added as part of the
+   pre-freeze rigor audit).
 3. Plan-level benchmark == 100.00 on 20/20 specs.
 4. Code-level benchmark == 100.00 on 20/20 specs.
 5. `engine.inventory` output matches `INVENTORY.md` on disk

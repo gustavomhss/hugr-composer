@@ -30,10 +30,10 @@ HuGR_Skills/
 │       │   ├── verify/                 # 6 validation tools
 │       │   ├── operate/                # 8 operations tools
 │       │   ├── evolve/                 # 8 evolution tools
-│       │   ├── contracts/              # 3 contract tools
+│       │   ├── contracts/              # 4 contract tools
 │       │   └── proactive/              # 1 proactive tool
 │       ├── modules/                    # 28 feature packages prontos
-│       ├── core/venous/                # 122 registered primitives + 16 FastAPI adapters + 194 staged em _extracted/
+│       ├── core/venous/                # 122 registered primitives + 16 FastAPI adapters + 181 staged em _extracted/ (+47 quarantined)
 │       ├── mcp_tools/                  # Tier-1 meta + tree dispatchers + auto-discovery
 │       │   ├── tier1.py + compose.py   # 7 meta tools (home/search/describe/scaffold/compose/audit/verify)
 │       │   └── tree/                   # 9 domain dispatchers (auth, data, api, realtime, resiliency, obs, compliance, deployment, testing)
@@ -75,16 +75,16 @@ A skill principal. Convention over Configuration para FastAPI.
 257  arquivos com MCP_TOOL      (superfície Maestro)
 201  tools indexados no catalog.json
 122  primitivos registrados      (core/venous/<ns>/<Name>/)
-194  primitivos staged           (PascalCase-filtered, +121 quarantined)
+181  primitivos staged           (PascalCase-filtered, +47 quarantined)
  16  FastAPI adapters            (production-wired)
-126  adapt tools                 (100 extend + 8 operate + 8 evolve + 6 verify + 3 contracts + 1 proactive)
+127  adapt tools                 (100 extend + 8 operate + 8 evolve + 6 verify + 4 contracts + 1 proactive)
  22  extend add_* Rails-connected (§B1.3 floor = 22, non-regressive)
  56  generators
  28  modules/ packages           (auth, payments, caching, db, deployment, obs, security, background_jobs, websockets)
  20  examples/ apps completos    (5 baseline + 10 mid + 5 adversarial, repo-root /examples/)
  20  benchmark specs             (plan 100.00, code 100.00)
 124  specs formais
- 33  contract rules (33/33 green)
+ 36  contract rules (36/36 green)
 ```
 
 ### Camadas do skill (arquitetura Rails-style)
@@ -92,11 +92,11 @@ A skill principal. Convention over Configuration para FastAPI.
 | Camada | Onde | Qtd | O que é |
 |---|---|---:|---|
 | Primitivos registrados | `core/venous/<ns>/<Name>/` | 122 | Peças framework-free |
-| Primitivos staged (PascalCase) | `core/venous/_extracted/` | 194 | HuGR-shelled mas com REPLACE_ME, +121 quarantined |
+| Primitivos staged (PascalCase) | `core/venous/_extracted/` | 181 | HuGR-shelled mas com REPLACE_ME, +47 quarantined |
 | Adapters FastAPI | `core/venous/_adapters/fastapi/` | 16 | Wiring production-grade |
 | EXTEND tools | `adapt/extend/` | 100 | Slice generators (add_*) |
-| Outros adapt | `adapt/{verify,operate,evolve,contracts,proactive}/` | 26 | Validação, ops, evolução |
-| Generators | `generators/` | 56 | Scaffolders de subsistemas |
+| Outros adapt | `adapt/{verify,operate,evolve,contracts,proactive}/` | 27 | Validação, ops, evolução |
+| Generators | `generators/` | 56 | Scaffolders de subsistemas (per `engine.inventory`; 60 .py files on disk incl. 3 top-level helpers + conftest) |
 | Modules | `modules/` | 28 | Feature packages prontos |
 | Tier-1 meta | `mcp_tools/tier1.py` + `compose.py` | 7 | home/search/describe/scaffold/compose/audit/verify |
 | Tree dispatchers | `mcp_tools/tree/` | 9 | auth, data, api, realtime, resiliency, obs, compliance, deployment, testing |

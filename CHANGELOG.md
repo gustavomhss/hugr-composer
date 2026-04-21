@@ -37,7 +37,9 @@ tool / primitive renames going forward (CONTRACT §A10).
 - **181 staged primitives** (`_extracted/`, `status="staged"`) — discoverable,
   not promoted.
 - **20 complete examples** at `/examples/` (5 baseline + 10 mid + 5 adversarial).
-- **34/34 CONTRACT rules green.**
+- **36/36 CONTRACT rules green.** (34 pre-freeze + §B4.6 VERSION
+  triplet sync + §B4.7 canonical counts sync, both added as
+  drift-guard rules during the pre-freeze rigor audit.)
 - **Catalog `stable_hash`: `50338fa37aa2...`** (full 64-char value in
   `engine/index/catalog.json`) — consumers pin this for session
   reproducibility. Verify with `jq -r .stable_hash
@@ -72,7 +74,12 @@ tool / primitive renames going forward (CONTRACT §A10).
 - **Ledger verdicts** renamed from delete-heavy to action-focused:
   PROMOTE_AS_ADAPTER / PROMOTE_AS_PRIMITIVE / EXTRACT_MOTOR_PAIR /
   FILL_AND_PROMOTE / REDUNDANT / NEEDS_CALLER / NEEDS_REVIEW.
-- **Contract count** 33 → 34 (added §B1.8).
+- **Contract count** 33 → 36. Added: §B1.7 (FastAPI adapter coverage
+  formally defined in CONTRACT — rule was already implemented pre-v1.0
+  but not spec'd), §B1.8 (tier-lite eligibility), §B4.6 (VERSION
+  triplet sync), §B4.7 (canonical counts sync). §B4.6 and §B4.7
+  were added during the pre-freeze rigor audit after Gustavo's
+  demand for brutal transparency.
 
 ### Security
 
@@ -105,9 +112,18 @@ bumps (v2.0+) may rename or remove; v1.x will only add.
 
 ---
 
-## [Unreleased] — v0.3.0-dev
+## [1.0.0 pre-release sprint log] — archived 2026-04-21
 
-Three parallel tracks in development:
+> This block is the engineering narrative for the three sprints that
+> fed into [1.0.0]. Each intermediate claim below (contract counts,
+> verdict names, staged totals) was accurate **at the moment of that
+> sprint's commit**. The consolidated final state — 36/36 contract,
+> action-focused verdict taxonomy, 181 staged + 47 quarantined, 16
+> FastAPI adapters — is canonical in the [1.0.0] block above.
+> Intermediate discrepancies are preserved for audit provenance, not
+> for consumption by release readers.
+
+Three parallel tracks contributed to v1.0.0:
 
 ### Track B — Promotion pipeline for the staged pool (2026-04-21 overnight)
 
@@ -139,6 +155,10 @@ primitives in `core/venous/_extracted/` without silently amending §A12
     quarantined → KEEP_STAGED; no signal → KEEP_STAGED; signal + stub
     shell → NEEDS_REVIEW; signal + concurrent → PROMOTE_FULL; signal
     + lite-eligible → PROMOTE_LITE; fallthrough → NEEDS_REVIEW.
+    *Taxonomy redesigned before v1.0 cut — see [1.0.0] §Changed for
+    the action-focused verdicts (PROMOTE_AS_ADAPTER /
+    PROMOTE_AS_PRIMITIVE / EXTRACT_MOTOR_PAIR / FILL_AND_PROMOTE /
+    REDUNDANT / NEEDS_CALLER / NEEDS_REVIEW) that shipped.*
   - `promote.py` — atomic executor with automatic rollback. Refuses
     non-ready entries and §B1.7-unratified lite promotions. Rebuilds
     catalog + runs contract gate per promotion; any failure triggers
