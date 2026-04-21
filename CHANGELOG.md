@@ -11,11 +11,85 @@ so a reader can tell — in one glance — whether to upgrade.
 
 ## [Unreleased] — v0.3.0-dev
 
-Phase 6 — **blind benchmark harness** (third-party-credibility-first).
-In development; not yet versioned as a minor release because live
-runs (naked vs kit on real Claude CLI subagent) have not executed.
+Two parallel tracks in development:
 
-### Ships (harness + pre-registration)
+### Track A — Catalog wiring + Rails-connection discipline (2026-04-21 sprint)
+
+Surfaced + enforced the library the Maestro is supposed to consume. Every
+machine-verified, every commit lands `33/33 ALL GREEN`.
+
+**Ships (Maestro-facing surface):**
+
+- **Canonical naming enforcement** — `fastapi_<domain>_<verb>_<noun>` with
+  closed vocabularies (10 domains × 9 verbs). Manifest canonicalizer
+  trusts author-declared names when they match the scheme; infers only
+  for legacy. Fixed a regression where 173 catalog tools had
+  double-prefix names (`fastapi_api_add_api_add_api_deprecation` — every
+  `add_*` tool was affected, breaking BM25 search and adapter lookup).
+- **+28 catalog tools** (173 → 201) — recovered meta/audit_tool,
+  core/tools/{check_health,check_headers,analyze_project_v2},
+  generators/testing/test_suite, adapt/verify/test_coverage_gaps, and
+  20 module-level tools (modules/{auth,background_jobs,caching,
+  database,deployment,observability,payments,security,websockets}/tools/)
+  that were registered at the MCP layer but invisible to the catalog.
+  All now carry canonical `MCP_TOOL` dicts.
+- **180 staged primitives surfaced** (`status="staged"`) — the
+  `core/venous/_extracted/` HuGR-shelled pool (PascalCase-filtered,
+  deduped vs the registered 122) is now discoverable via
+  `fastapi_meta_search`. Opt-in promotion via the extraction pipeline
+  stays Phase-5 work; surfacing them is benchmark-gap-driven.
+- **`fastapi_meta_compose` 4-tier fallthrough** — new `tool_delegate`
+  tier between adapter_reuse and recipe_template. If an indexed tool
+  already emits the caller's exact primitive set, compose points at
+  that tool (zero files written, `mode_quality=HIGH`) instead of
+  duplicating its output. Example: `{AuditEvent, TamperEvidentAuditLog}`
+  now delegates to `fastapi_data_add_audit_log`.
+- **`primitives_used` authoritative detection** — manifest precedence
+  is now (0) explicit `MCP_TOOL.imports_primitives` declaration,
+  (1) real AST imports, (2) `(from|import) core.venous.*` inside
+  non-docstring string constants only. Docstring mentions no longer
+  create false positives; the signal now matches Rails-style wiring
+  reality.
+- **3 extend refactors Rails-connected** — `add_bulkhead_isolation`,
+  `add_adaptive_timeouts`, `add_outbox_pattern` now copy-in the
+  matching primitive (Bulkhead / TimeoutBudget / TransactionalOutbox)
+  and emit ≤20-line glue. All three primitive APIs used are
+  pre-existing (no invention). Bumps §B1.3 connected count from 18 →
+  19/100 extend `add_*` tools.
+- **`fastapi_auth` dispatcher bug fixed** — bundle action was returning
+  0/8 installed because `_call_slice` passed raw `output_dir` kwarg
+  where the adapt slices expect `ToolInput(project_dir=...)`.
+  Translation added; auth bundle now installs 8/8 slices cleanly.
+- **Contract §B1.3 rewritten** — was a loose `grep -E "from
+  core.venous"` over adapt/extend (counted docstring mentions).
+  Now reads `catalog.json` and counts tools whose `primitives_used`
+  actually populated (authoritative). Floor set at 19 as a
+  non-regression guarantee; any PR that lowers trips the audit.
+
+**Ships (ground-truth docs):**
+
+- **`engine.inventory`** — single machine-verified inventory script
+  (→ `INVENTORY.md`) that is THE source of truth for counts. Every
+  number in CLAUDE.md / STATUS.md / SKILL.md / ROADMAP.md reconciles
+  against it; drift = audit bug. CLAUDE.md, STATUS.md, SKILL.md,
+  ROADMAP.md all resynced against fresh inventory.
+- **ROADMAP v2** — earlier ROADMAP claimed Phase-3 benchmark + Phase-5
+  code-level rubric were "future work". Running the existing code
+  (`engine/bench/code_level.py`) proved code-level 100.00 across 20/20
+  specs with 100% coverage. Narrative now matches §B3.6 reality.
+- **Phase-4 #20 ghost closed** — 5 "empty" scaffolds under
+  `skills/SKILL-001-fastapi-production/examples/` were duplicate noise;
+  the 20 populated examples live at repo-root `/examples/`. Deleted
+  the duplicate; `engine.inventory.examples_dir` now resolves to the
+  canonical path.
+
+### Track B — Phase 6 blind benchmark harness (pre-registered)
+
+Third-party-credibility-first harness. Not yet versioned as a minor
+release because live runs (naked vs kit on real Claude CLI subagent)
+have not executed.
+
+#### Ships (harness + pre-registration)
 
 - **PROTOCOL.md** — pre-registered 2026-04-20. Declares H1/H2, trajectory
   schema, contamination guards, two-arm condition design (naked vs kit),
@@ -41,7 +115,7 @@ runs (naked vs kit on real Claude CLI subagent) have not executed.
 - **Contract rule B3.7** — blind harness + authored specs + stub
   fixtures + importability smoke. 30/30 → **31/31 ALL GREEN**.
 
-### Known open (does not ship in v0.3.0 — tracked as v0.3.1+)
+#### Known open (does not ship in v0.3.0 — tracked as v0.3.1+)
 
 Each of the following is an honest gap the current code calls out
 explicitly in PROTOCOL.md, comments, or `_stub_fixtures/README.md`:
