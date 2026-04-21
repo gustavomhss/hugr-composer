@@ -18,8 +18,10 @@ import ast
 import sys
 from pathlib import Path
 
+import json
+
 from adapt.contracts import ToolInput
-from adapt.extend.auth_access.add_feature_flags import add_feature_flags
+from adapt.extend.auth_access.add_feature_flags import MCP_TOOL, add_feature_flags
 from tests.common.fixture_factory import create_fixture_project
 
 
@@ -318,6 +320,67 @@ def test_dry_run_writes_nothing() -> None:
 
 
 # ---------------------------------------------------------------------------
+# CONTRACT §B1.0 + §B1.0.1 — primitive copy + thin glue
+# ---------------------------------------------------------------------------
+
+def test_primitive_copied() -> None:
+    """CONTRACT §B1.0: FeatureToggle + FeatureFlagCache primitives are copied."""
+    project_dir = create_fixture_project(name="ff_b10_prim")
+    add_feature_flags(ToolInput(project_dir=str(project_dir)))
+    ft = project_dir / "core" / "venous" / "flags" / "FeatureToggle" / "FeatureToggle.py"
+    ffc = project_dir / "core" / "venous" / "auth" / "FeatureFlagCache" / "FeatureFlagCache.py"
+    assert ft.exists(), f"FeatureToggle primitive not copied: {ft}"
+    assert ffc.exists(), f"FeatureFlagCache primitive not copied: {ffc}"
+    assert "class FeatureToggleRegistry" in ft.read_text()
+    assert "class FeatureFlagCache" in ffc.read_text()
+
+
+def test_manifest_records_primitives() -> None:
+    """CONTRACT §B1.0: .venous_manifest.json records both primitives."""
+    project_dir = create_fixture_project(name="ff_b10_manifest")
+    add_feature_flags(ToolInput(project_dir=str(project_dir)))
+    manifest = json.loads((project_dir / ".venous_manifest.json").read_text())
+    qnames = {p["qualified_name"] for p in manifest["primitives"]}
+    assert "core.venous.flags.FeatureToggle" in qnames
+    assert "core.venous.auth.FeatureFlagCache" in qnames
+
+
+def test_glue_imports_primitives() -> None:
+    """CONTRACT §B1.0.1: glue imports FeatureToggleRegistry + FeatureFlagCache."""
+    project_dir = create_fixture_project(name="ff_b10_glue_imports")
+    add_feature_flags(ToolInput(project_dir=str(project_dir)))
+    glue = project_dir / "app" / "feature_flags.py"
+    assert glue.exists(), f"glue not written: {glue}"
+    body = glue.read_text()
+    assert "from core.venous.flags.FeatureToggle" in body
+    assert "from core.venous.auth.FeatureFlagCache" in body
+    assert "FeatureToggleRegistry" in body
+    assert "FeatureFlagCache" in body
+
+
+def test_glue_body_under_20_loc() -> None:
+    """CONTRACT §B1.0.1: primary glue body stays below 20 executable lines."""
+    project_dir = create_fixture_project(name="ff_b10_loc")
+    add_feature_flags(ToolInput(project_dir=str(project_dir)))
+    tree = ast.parse((project_dir / "app" / "feature_flags.py").read_text())
+    body_lines = 0
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            start = node.body[0].lineno
+            end = node.end_lineno or start
+            body_lines += end - start + 1
+    assert body_lines <= 20, body_lines
+
+
+def test_mcp_tool_metadata() -> None:
+    """MCP_TOOL declares imports_primitives per CONTRACT §B1.0."""
+    assert MCP_TOOL["entry"] == "add_feature_flags"
+    assert "core.venous.flags.FeatureToggle" in MCP_TOOL["imports_primitives"]
+    assert "core.venous.auth.FeatureFlagCache" in MCP_TOOL["imports_primitives"]
+    assert tuple(MCP_TOOL["imports_adapters"]) == ()
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner (fallback when pytest is unavailable)
 # ---------------------------------------------------------------------------
 
@@ -348,6 +411,11 @@ if __name__ == "__main__":
         test_idempotent_returns_no_op,
         test_idempotent_project_still_parses,
         test_dry_run_writes_nothing,
+        test_primitive_copied,
+        test_manifest_records_primitives,
+        test_glue_imports_primitives,
+        test_glue_body_under_20_loc,
+        test_mcp_tool_metadata,
     ]
 
     passed = 0

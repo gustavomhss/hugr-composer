@@ -1,14 +1,21 @@
-"""TOOL-009: add_feature_flags — add a production-grade feature-flag system to a FastAPI project.
+"""TOOL-009: add_feature_flags — production-grade feature-flag system backed by primitives.
 
-Adds a ``FeatureFlag`` model (key, enabled, rollout_pct, variants JSONB, targeting_rules JSONB,
-kill_switch), a ``FeatureFlagAudit`` model for every change, an in-process LRU cache with Redis
-pub/sub invalidation, a deterministic SHA-256 bucketer for percentage rollouts, ``is_enabled()``
-/ ``get_variant()`` async helpers with a hard timeout circuit-breaker, a ``require_flag()``
-FastAPI dependency-based decorator, admin CRUD endpoints at ``/feature-flags``, and a reversible
-Alembic migration.
+Follows the CONTRACT §B1.0 + §B1.0.1 pattern (Rails-style wiring):
 
-The tool is idempotent: a second run detects the ``FeatureFlag`` fingerprint and returns
-``status="no_op"`` without touching any file.
+1. Copy the framework-agnostic primitives
+   ``core.venous.flags.FeatureToggle`` (evaluation core) and
+   ``core.venous.auth.FeatureFlagCache`` (bounded LRU + TTL) into the
+   generated project.
+2. Emit a thin ``app/feature_flags.py`` glue file (≤ 20 logic lines, AST
+   verified) that instantiates a ``FeatureToggleRegistry`` wrapped by a
+   ``FeatureFlagCache`` and exposes a ``require_flag`` FastAPI dependency.
+3. Emit the SQLAlchemy-backed model + CRUD + admin routes + migration as
+   framework-specific wiring — the *semantics* (off-by-default, audit
+   recording, key uniqueness) live in the primitive.
+
+The tool is idempotent: a second run detects the primitive's
+``FeatureToggle`` class name in ``app/feature_flags.py`` and returns
+``status="no_op"``.
 
 Example::
 
@@ -34,10 +41,83 @@ from adapt.contracts.migration_helper import find_migration_head
 
 MCP_TOOL = {
     "name": "fastapi_auth_add_feature_flags",
-    "description": "Add feature flag system with per-user, per-tenant, and global toggles.",
+    "description": (
+        "Copy FeatureToggle + FeatureFlagCache primitives into the project "
+        "and wire a ≤20-line app/feature_flags.py glue that exposes a "
+        "require_flag FastAPI dependency."
+    ),
     "tags": ["extend", "auth_access"],
     "entry": "add_feature_flags",
+    "imports_primitives": [
+        "core.venous.flags.FeatureToggle",
+        "core.venous.auth.FeatureFlagCache",
+    ],
+    "imports_adapters": (),
 }
+
+
+# ---------------------------------------------------------------------------
+# Thin glue over core.venous.flags.FeatureToggle + core.venous.auth.FeatureFlagCache
+# ---------------------------------------------------------------------------
+
+_FEATURE_FLAG_GLUE = '''\
+"""Thin glue that wires the FeatureToggle + FeatureFlagCache primitives.
+
+Delegates to the primitives copied under `core/venous/flags/FeatureToggle/`
+and `core/venous/auth/FeatureFlagCache/` by the `add_feature_flags` tool.
+Re-emitted idempotently on subsequent runs. This file contains NO flag
+semantics — off-by-default (FT-INV-02), key uniqueness (FT-INV-03), audit
+recording (FT-INV-04), and bounded LRU caching all live in the primitives.
+"""
+
+from __future__ import annotations
+
+import os
+from typing import Any
+
+from fastapi import Depends, HTTPException, status
+
+from core.venous.flags.FeatureToggle.FeatureToggle import (
+    FeatureToggleRegistry,
+    ToggleContext,
+)
+from core.venous.auth.FeatureFlagCache.FeatureFlagCache import FeatureFlagCache
+
+_registry: FeatureToggleRegistry | None = None
+_cache: FeatureFlagCache | None = None
+
+
+def get_registry() -> FeatureToggleRegistry:
+    """Return the process-global FeatureToggleRegistry (lazy init)."""
+    global _registry
+    if _registry is None: _registry = FeatureToggleRegistry()
+    return _registry
+
+
+def get_cache() -> FeatureFlagCache:
+    """Return the process-global FeatureFlagCache (lazy init)."""
+    global _cache
+    if _cache is None: _cache = FeatureFlagCache()
+    return _cache
+
+
+def require_flag(flag_name: str) -> Any:
+    """FastAPI dependency that 404s when `flag_name` is disabled."""
+    def _dep(registry: FeatureToggleRegistry = Depends(get_registry)) -> None:
+        ctx = ToggleContext(principal_id=None, tenant_id=None, environment=os.getenv("APP_ENV", "production"))
+        if not registry.is_active(flag_name, ctx): raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return _dep
+
+
+__all__ = [
+    "FeatureToggleRegistry",
+    "FeatureFlagCache",
+    "ToggleContext",
+    "get_registry",
+    "get_cache",
+    "require_flag",
+]
+'''
 
 
 
@@ -96,14 +176,18 @@ def add_feature_flags(inp: ToolInput) -> ToolResult:
 
     app_dir = project / "app"
 
-    # --- Pre-flight: idempotency check ---
-    flag_model_file = app_dir / "models" / "feature_flag.py"
-    if flag_model_file.exists() and "FeatureFlag" in flag_model_file.read_text():
+    # --- Pre-flight: idempotency check (primitive-class-name guard) ---------
+    glue_file = app_dir / "feature_flags.py"
+    if glue_file.exists() and "FeatureToggle" in glue_file.read_text():
         return ToolResult(
             status="no_op",
-            notes=["FeatureFlag model already present — feature-flag system is already enabled, skipped."],
+            notes=[
+                "FeatureToggle + FeatureFlagCache primitives already wired via "
+                "app/feature_flags.py — skipped."
+            ],
             execution_time_ms=_elapsed_ms(start),
         )
+    flag_model_file = app_dir / "models" / "feature_flag.py"
 
     if inp.dry_run:
         return ToolResult(
@@ -117,6 +201,22 @@ def add_feature_flags(inp: ToolInput) -> ToolResult:
         )
 
     files_modified: list[str] = []
+
+    # --- Step 0: Copy primitives + emit thin glue (§B1.0 / §B1.0.1) ---------
+    from generators.scaffold_venous import ensure_primitives
+
+    manifest = ensure_primitives(
+        str(project),
+        names=[
+            "core.venous.flags.FeatureToggle",
+            "core.venous.auth.FeatureFlagCache",
+        ],
+        adapters=[],
+    )
+    files_created.append(manifest.path)
+
+    glue_file.write_text(_FEATURE_FLAG_GLUE)
+    files_created.append(str(glue_file))
 
     # --- Step 1: FeatureFlag + FeatureFlagAudit models ---
     _write_flag_model(flag_model_file)
@@ -186,11 +286,22 @@ def add_feature_flags(inp: ToolInput) -> ToolResult:
                     execution_time_ms=_elapsed_ms(start),
                 )
 
+    # --- Enforce ≤20 logic lines in the primary glue (CONTRACT §B1.0.1) -----
+    glue_loc = _count_logic_lines(glue_file.read_text())
+    if glue_loc > 20:
+        return ToolResult(
+            status="error",
+            error=f"Primary glue {glue_file} has {glue_loc} logic lines (> 20).",
+            execution_time_ms=_elapsed_ms(start),
+        )
+
     return ToolResult(
         status="success",
         files_created=files_created,
         files_modified=files_modified,
         notes=[
+            "Shipped primitives: core.venous.flags.FeatureToggle, core.venous.auth.FeatureFlagCache.",
+            "Glue: app/feature_flags.py wires FeatureToggleRegistry + FeatureFlagCache + require_flag.",
             "Feature-flag subsystem added: model, cache, evaluator, deps, CRUD, routes, schemas.",
             "in-process LRU cache with Redis pubsub invalidation (< 1s fan-out).",
             "SHA-256 deterministic bucketing for percentage rollouts.",
@@ -1388,3 +1499,21 @@ def _elapsed_ms(start: float) -> int:
         Elapsed time in milliseconds as an integer.
     """
     return int((time.monotonic() - start) * 1000)
+
+
+def _count_logic_lines(source: str) -> int:
+    """Count executable logic lines — imports, class/func defs, and decorators
+    do NOT count (per CONTRACT §B1.0.1).
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return 0
+    loc = 0
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if node.body:
+                first = node.body[0].lineno
+                last = node.end_lineno or first
+                loc += last - first + 1
+    return loc

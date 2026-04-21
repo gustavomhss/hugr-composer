@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "ce0044f",
-  "generated_at": "2026-04-21T04:07:37+00:00",
+  "kit_commit": "d377564",
+  "generated_at": "2026-04-21T04:55:39+00:00",
   "verbs": [
     "add",
     "generate",
@@ -417,8 +417,8 @@
       "legacy_name": null,
       "verb": "add",
       "domain": "auth",
-      "synopsis": "Add feature flag system with per-user, per-tenant, and global toggles",
-      "when_to_call": "Add feature flag system with per-user, per-tenant, and global toggles.",
+      "synopsis": "Copy FeatureToggle + FeatureFlagCache primitives into the project and wire a \u226420-line app/feature_fl",
+      "when_to_call": "Copy FeatureToggle + FeatureFlagCache primitives into the project and wire a \u226420-line app/feature_flags.py glue that exposes a require_flag FastAPI dependency.",
       "when_not_to_call": "",
       "tags": [],
       "tier": 2,
@@ -428,7 +428,10 @@
       "test_paths": [
         "adapt/extend/auth_access/test_add_feature_flags.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "FeatureFlagCache",
+        "FeatureToggle"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -2271,8 +2274,8 @@
       "legacy_name": null,
       "verb": "add",
       "domain": "realtime",
-      "synopsis": "Add outbound webhook delivery system with retry, signature, and delivery log",
-      "when_to_call": "Add outbound webhook delivery system with retry, signature, and delivery log.",
+      "synopsis": "Copy SignatureVerifier + RetryPolicy primitives into the project and wire a \u226420-line app/webhooks/se",
+      "when_to_call": "Copy SignatureVerifier + RetryPolicy primitives into the project and wire a \u226420-line app/webhooks/sender.py glue that signs and retries outbound webhook POSTs.",
       "when_not_to_call": "",
       "tags": [
         "webhook"
@@ -2284,7 +2287,10 @@
       "test_paths": [
         "adapt/extend/realtime/test_add_webhook_sender.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "RetryPolicy",
+        "SignatureVerifier"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -2520,8 +2526,8 @@
       "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
-      "synopsis": "Add Redis caching layer with decorator, invalidation strategy, and TTL management",
-      "when_to_call": "Add Redis caching layer with decorator, invalidation strategy, and TTL management.",
+      "synopsis": "Copy KeyValueBucket + SessionCache + DistributedLock primitives into the project and wire a \u226420-line",
+      "when_to_call": "Copy KeyValueBucket + SessionCache + DistributedLock primitives into the project and wire a \u226420-line app/cache.py glue that exposes cache_aside() + get_session_cache() helpers.",
       "when_not_to_call": "",
       "tags": [],
       "tier": 2,
@@ -2531,7 +2537,11 @@
       "test_paths": [
         "adapt/extend/infrastructure/test_add_cache_layer.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "DistributedLock",
+        "KeyValueBucket",
+        "SessionCache"
+      ],
       "example_input": null,
       "example_output": null
     },
