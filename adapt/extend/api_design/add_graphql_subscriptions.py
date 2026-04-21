@@ -464,12 +464,16 @@ def _write_subscriptions(dest: Path) -> None:
 
         import logging
         from collections.abc import AsyncIterator
-        from typing import TYPE_CHECKING
 
         import strawberry
 
-        if TYPE_CHECKING:
-            from app.graphql.context import GraphQLContext
+        # Imported at MODULE level (not TYPE_CHECKING) because strawberry
+        # resolves forward-reference strings in Subscription field
+        # annotations at schema-construction time via `__globals__`.
+        # TYPE_CHECKING-only imports leave the name undefined at runtime
+        # and strawberry raises "Subscription fields cannot be resolved.
+        # name 'GraphQLContext' is not defined" when the schema is built.
+        from app.graphql.context import GraphQLContext  # noqa: F401 — used in annotations
 
         logger = logging.getLogger(__name__)
 
@@ -753,28 +757,15 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to ``app/core/config.py``.
     """
-    src = config_file.read_text()
-    if "GRAPHQL_WS_ENABLED" in src:
-        return
+    from adapt.contracts.config_patcher import patch_settings_fields
 
-    new_fields = (
-        "\n"
-        "    GRAPHQL_WS_ENABLED: bool = True\n"
-        "    GRAPHQL_SUBSCRIPTION_KEEPALIVE_MS: int = 30_000\n"
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("GRAPHQL_WS_ENABLED", "GRAPHQL_WS_ENABLED: bool = True"),
+            ("GRAPHQL_SUBSCRIPTION_KEEPALIVE_MS", "GRAPHQL_SUBSCRIPTION_KEEPALIVE_MS: int = 30_000"),
+        ],
     )
-
-    # Insert before the closing of the Settings class — find last field line
-    if "class Settings" in src:
-        # Append fields before the closing `settings = Settings()` line or at end of class
-        if "\nsettings = Settings()" in src:
-            src = src.replace(
-                "\nsettings = Settings()",
-                new_fields + "\nsettings = Settings()",
-            )
-        else:
-            # Append to end of file
-            src = src.rstrip("\n") + new_fields + "\n"
-    config_file.write_text(src)
 
 
 def _patch_main(main_file: Path) -> None:

@@ -614,19 +614,26 @@ def _patch_main(main_file: Path, model_names: list[str]) -> None:
     else:
         src = middleware_import + v1_import + v2_import + "\n" + src
 
-    # Add middleware registration before app.include_router lines if possible
+    # Add middleware registration + versioned router includes. Trailing "\n"
+    # is LOAD-BEARING: in the "insert after existing add_middleware" branch,
+    # the following character is the next statement in main.py; without a
+    # terminating newline the inserted block concatenates with that statement
+    # on the same line, producing SyntaxError at import time (regression
+    # caught 2026-04-22 when a 58-tool chain put `app.include_router(...)`
+    # immediately after the insertion point).
     middleware_call = (
         "\napp.add_middleware(VersionResolverMiddleware)"
         "\napp.include_router(_v1_router, prefix='/api/v1')"
         "\napp.include_router(_v2_router, prefix='/api/v2')"
+        "\n"
     )
     if "app.add_middleware" in src:
-        # Insert after last add_middleware call
+        # Insert after last add_middleware call.
         idx = src.rfind("app.add_middleware")
         end = src.find("\n", idx)
         src = src[: end + 1] + middleware_call + src[end + 1:]
     else:
-        src = src.rstrip("\n") + "\n" + middleware_call + "\n"
+        src = src.rstrip("\n") + "\n" + middleware_call
 
     main_file.write_text(src)
 

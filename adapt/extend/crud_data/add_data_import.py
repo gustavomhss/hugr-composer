@@ -262,24 +262,15 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to the config module.
     """
-    src = config_file.read_text()
-    if "IMPORT_MAX_FILE_SIZE_MB" in src:
-        return
-    # 4-space indented so they sit inside the Settings class body
-    fields = (
-        "\n"
-        "    # Import settings\n"
-        "    IMPORT_MAX_FILE_SIZE_MB: int = 50\n"
-        "    IMPORT_BATCH_SIZE: int = 500\n"
+    from adapt.contracts.config_patcher import patch_settings_fields
+
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("IMPORT_MAX_FILE_SIZE_MB", "IMPORT_MAX_FILE_SIZE_MB: int = 50"),
+            ("IMPORT_BATCH_SIZE", "IMPORT_BATCH_SIZE: int = 500"),
+        ],
     )
-    if "settings = Settings()" in src:
-        src = src.replace(
-            "\nsettings = Settings()",
-            fields + "\nsettings = Settings()",
-        )
-    else:
-        src = src.rstrip("\n") + fields + "\n"
-    config_file.write_text(src)
 
 
 def _write_imports_init(dest: Path) -> None:
