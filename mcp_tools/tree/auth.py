@@ -275,7 +275,7 @@ def fastapi_auth(action: str, params: dict | None = None) -> dict:
                 [
                     "Bundle complete. Boot: `uvicorn app.main:app`, then POST /auth/login.",
                     "For advanced flows (social, passkey, DPoP), call the individual add_* slices.",
-                    "Call fastapi_meta_check_audit() to verify the contract.",
+                    "Call fastapi_meta_audit() to verify the contract.",
                 ] if ok else
                 [f"Fix errors above. Retry failing slices individually via action=<slice>."]
             ),
@@ -308,7 +308,7 @@ def fastapi_auth(action: str, params: dict | None = None) -> dict:
             result=res,
             next_steps=[
                 f"Import in your handler: from core.venous.auth.{name} import {name}",
-                f"Call fastapi_meta_search_describe(name='{name}') for Protocol + invariants.",
+                f"Call fastapi_meta_describe(name='{name}') for Protocol + invariants.",
             ],
             t0=t0,
         )
@@ -328,7 +328,7 @@ def fastapi_auth(action: str, params: dict | None = None) -> dict:
                 ok=False, what=f"slice {action!r} failed: {exc}",
                 result={}, next_steps=[
                     f"Check params for {action!r}. "
-                    f"Call fastapi_meta_search_describe(name='fastapi_{SLICES[action]['mod']}') for the schema."
+                    f"Call fastapi_meta_describe(name='fastapi_{SLICES[action]['mod']}') for the schema."
                 ], t0=t0,
             )
         return _envelope(

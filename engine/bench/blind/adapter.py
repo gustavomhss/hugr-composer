@@ -435,14 +435,14 @@ CANONICAL WORKFLOW (follow the breadcrumbs in every return's next_steps):
 
   TURN 1 — Orient. Your FIRST call is:
 
-      mcp__fastapi-production__fastapi_meta_search_home()
+      mcp__fastapi-production__fastapi_meta_home()
 
     Returns the 10-domain landscape in ~1200 tokens. See the shape of
     the skill before scanning 180 tool descriptions.
 
   TURN 2 — Scaffold. Call:
 
-      mcp__fastapi-production__fastapi_meta_generate_scaffold(
+      mcp__fastapi-production__fastapi_meta_scaffold(
           output_dir="<this cwd>",
           name="<slug>",
           models={"<Entity>": {"field": "type", ...}, ...},
@@ -457,7 +457,7 @@ CANONICAL WORKFLOW (follow the breadcrumbs in every return's next_steps):
   TURN 3+ — Capability slices. For each brief requirement not covered
     by default, follow the returned next_steps OR query the catalog:
 
-      mcp__fastapi-production__fastapi_meta_search_search(
+      mcp__fastapi-production__fastapi_meta_search(
           query="exactly-once webhook",
           domain="realtime",
           k=5,
@@ -485,26 +485,26 @@ CANONICAL WORKFLOW (follow the breadcrumbs in every return's next_steps):
     The auth dispatcher indirects to 15 legacy auth slices under the
     hood — you do NOT need to call fastapi_add_oauth2 directly.
     Additional per-domain dispatchers ship incrementally; always check
-    fastapi_meta_search_home() for which are live before hunting for
+    fastapi_meta_home() for which are live before hunting for
     individual add_* tools in a domain.
 
   TURN N — Verify. Before finishing, call:
 
-      mcp__fastapi-production__fastapi_meta_check_audit()
+      mcp__fastapi-production__fastapi_meta_audit()
 
     Runs the structural contract. Per-rule failures + fix breadcrumbs.
     Loop until green.
 
   DEEP DIVE (any turn). For a specific tool/primitive/recipe name:
 
-      mcp__fastapi-production__fastapi_meta_search_describe(name="...")
+      mcp__fastapi-production__fastapi_meta_describe(name="...")
 
     Returns the full schema, when-to-call, primitives composed.
 
 EVERY tier-1 return carries a next_steps list — FOLLOW IT. That is the
 skill talking back: it watched what you just did and names the tool to
 call next. Don't call `Write` for files the scaffold should write;
-don't grep when fastapi_meta_search_search returns the answer.
+don't grep when fastapi_meta_search returns the answer.
 
 SPEC → PRIMITIVE QUICK-MAP (query the search tool for the full set):
   - Exactly-once / idempotency     → IdempotentConsumer + IdempotencyStore
@@ -521,7 +521,7 @@ All primitives above are 10-tier gated upstream (compile / types /
 concurrency / chaos / observability). Hand-rolling means the judge
 catches edge cases we've already closed.
 
-TLDR: Call `fastapi_meta_search_home()` FIRST. Let the skill drive.
+TLDR: Call `fastapi_meta_home()` FIRST. Let the skill drive.
 """
     return f"""You are a senior backend engineer. Produce a working FastAPI project that implements the requirements in the brief below. Write all files to the current working directory ({workdir}). The evaluator will boot your project with the boot command declared in the brief's metadata and run a sealed test suite you will NOT see.
 
