@@ -466,6 +466,28 @@ CANONICAL WORKFLOW (follow the breadcrumbs in every return's next_steps):
     Returns top matching tool + synopsis + next_steps pointing at the
     exact invocation.
 
+  TREE DISPATCHERS (preferred for domain work when one exists). If the
+    brief mentions auth/identity, prefer the domain-level dispatcher
+    over hunting for individual slices:
+
+      mcp__fastapi-production__fastapi_auth(action="list")
+        → returns the full auth tree (1 bundle + 15 slices + 8 primitives)
+      mcp__fastapi-production__fastapi_auth(
+          action="bundle", params={"output_dir": "<cwd>"}
+      )
+        → installs curated production auth stack in ONE call
+      mcp__fastapi-production__fastapi_auth(
+          action="primitive",
+          params={"name": "SessionStore", "output_dir": "<cwd>"}
+      )
+        → copy ONE Lego block surgically into core/venous/auth/<Name>/
+
+    The auth dispatcher indirects to 15 legacy auth slices under the
+    hood — you do NOT need to call fastapi_add_oauth2 directly.
+    Additional per-domain dispatchers ship incrementally; always check
+    fastapi_meta_search_home() for which are live before hunting for
+    individual add_* tools in a domain.
+
   TURN N — Verify. Before finishing, call:
 
       mcp__fastapi-production__fastapi_meta_check_audit()
