@@ -412,11 +412,11 @@ def fastapi_meta_generate_scaffold(
     files = res.get("files_created") if isinstance(res, dict) else None
     files_count = len(files) if isinstance(files, list) else -1
     next_steps = [
-        f"Boot check: `python -m uvicorn app.main:app --port 8000` then GET /health.",
-        "For auth refresh-token + revocation → call fastapi_auth_add_* (search: \"refresh token\").",
-        "For exactly-once webhooks → call fastapi_realtime_add_webhook_receiver + fastapi_api_add_idempotency.",
-        "For rate limiting + priority shedding → call fastapi_resiliency_add_rate_limiting + fastapi_resiliency_add_bulkhead.",
-        "When done, run fastapi_meta_check_audit() to validate the structural contract.",
+        f"Boot: python -m uvicorn app.main:app --port 8000 then GET /health.",
+        f"For auth (signup/login/MFA/RBAC/sessions) → CALL fastapi_auth(action='bundle', params={{'output_dir':'{output_dir}'}}).",
+        f"For ONE auth feature only → fastapi_auth(action='<slice>', params={{...}}); use action='list' to see the tree.",
+        f"For exactly-once / idempotency / webhooks / rate-limit → fastapi_meta_search_search(query='<need>', k=5).",
+        f"When done, fastapi_meta_check_audit() validates the structural contract.",
     ]
     return _envelope(
         ok=True, what=f"scaffold emitted {files_count} files at {output_dir}",
