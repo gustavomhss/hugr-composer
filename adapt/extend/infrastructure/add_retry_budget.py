@@ -136,21 +136,19 @@ def add_retry_budget(inp: ToolInput) -> ToolResult:
     files_modified: list[str] = []
     config_file = app_dir / "core" / "config.py"
     if config_file.exists() and "RETRY_MAX_ATTEMPTS" not in config_file.read_text():
-        src = config_file.read_text()
-        fields = (
-            "\n    # Retry policy (TOOL-098)\n"
-            "    RETRY_MAX_ATTEMPTS: int = 3\n"
-            "    RETRY_INITIAL_MS: int = 100\n"
-            "    RETRY_MULTIPLIER: float = 2.0\n"
-            "    RETRY_MAX_INTERVAL_MS: int = 30_000\n"
-            "    RETRY_JITTER: float = 1.0\n"
-            "    RETRY_BUDGET_RATIO: float = 0.1\n"
+        from adapt.contracts.config_patcher import patch_settings_fields
+
+        patch_settings_fields(
+            config_file,
+            fields=[
+                ("RETRY_MAX_ATTEMPTS", "RETRY_MAX_ATTEMPTS: int = 3"),
+                ("RETRY_INITIAL_MS", "RETRY_INITIAL_MS: int = 100"),
+                ("RETRY_MULTIPLIER", "RETRY_MULTIPLIER: float = 2.0"),
+                ("RETRY_MAX_INTERVAL_MS", "RETRY_MAX_INTERVAL_MS: int = 30_000"),
+                ("RETRY_JITTER", "RETRY_JITTER: float = 1.0"),
+                ("RETRY_BUDGET_RATIO", "RETRY_BUDGET_RATIO: float = 0.1"),
+            ],
         )
-        if "settings = Settings()" in src:
-            src = src.replace("settings = Settings()", fields + "\nsettings = Settings()")
-        else:
-            src = src.rstrip("\n") + "\n" + fields
-        config_file.write_text(src)
         files_modified.append(str(config_file))
 
     for path_str in files_created:

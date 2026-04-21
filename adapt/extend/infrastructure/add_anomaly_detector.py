@@ -640,26 +640,17 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to ``app/core/config.py``.
     """
-    src = config_file.read_text()
-    if "ANOMALY_ENABLED" in src:
-        return
+    from adapt.contracts.config_patcher import patch_settings_fields
 
-    # 4-space-indented block to inject inside the Settings class body
-    injection = (
-        "\n"
-        "    # Anomaly detection — added by add_anomaly_detector tool\n"
-        "    ANOMALY_ENABLED: bool = False\n"
-        "    ANOMALY_SENSITIVITY: float = 3.0\n"
-        "    ANOMALY_WINDOW_SIZE: int = 100\n"
-        "    ANOMALY_ALERT_WEBHOOK_URL: str = \"\"\n"
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("ANOMALY_ENABLED", "ANOMALY_ENABLED: bool = False"),
+            ("ANOMALY_SENSITIVITY", "ANOMALY_SENSITIVITY: float = 3.0"),
+            ("ANOMALY_WINDOW_SIZE", "ANOMALY_WINDOW_SIZE: int = 100"),
+            ("ANOMALY_ALERT_WEBHOOK_URL", 'ANOMALY_ALERT_WEBHOOK_URL: str = ""'),
+        ],
     )
-
-    if "settings = Settings()" in src:
-        src = src.replace("settings = Settings()", injection + "\nsettings = Settings()")
-    else:
-        src = src.rstrip("\n") + "\n" + injection
-
-    config_file.write_text(src)
 
 
 # ---------------------------------------------------------------------------

@@ -788,27 +788,17 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to ``app/core/config.py``.
     """
-    src = config_file.read_text()
-    if "DEBUG_RECORDER_ENABLED" in src:
-        return
+    from adapt.contracts.config_patcher import patch_settings_fields
 
-    # 4-space-indented block to inject inside the Settings class body
-    injection = (
-        "\n"
-        "    # Debug replay recorder — added by add_api_replay_debugger tool\n"
-        "    DEBUG_RECORDER_ENABLED: bool = False\n"
-        "    DEBUG_RECORDER_TTL_S: int = 3600\n"
-        "    DEBUG_RECORDER_MAX_ENTRIES: int = 10000\n"
-        "    DEBUG_RECORDER_EXCLUDE_PATHS: str = \"/healthz,/metrics,/debug\"\n"
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("DEBUG_RECORDER_ENABLED", "DEBUG_RECORDER_ENABLED: bool = False"),
+            ("DEBUG_RECORDER_TTL_S", "DEBUG_RECORDER_TTL_S: int = 3600"),
+            ("DEBUG_RECORDER_MAX_ENTRIES", "DEBUG_RECORDER_MAX_ENTRIES: int = 10000"),
+            ("DEBUG_RECORDER_EXCLUDE_PATHS", 'DEBUG_RECORDER_EXCLUDE_PATHS: str = "/healthz,/metrics,/debug"'),
+        ],
     )
-
-    # Inject before settings = Settings() (which is outside the class)
-    if "settings = Settings()" in src:
-        src = src.replace("settings = Settings()", injection + "\nsettings = Settings()")
-    else:
-        src = src.rstrip("\n") + "\n" + injection
-
-    config_file.write_text(src)
 
 
 def _patch_main(main_file: Path) -> None:

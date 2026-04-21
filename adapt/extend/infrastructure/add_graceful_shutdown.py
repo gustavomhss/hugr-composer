@@ -153,17 +153,15 @@ def add_graceful_shutdown(inp: ToolInput) -> ToolResult:
     files_modified: list[str] = []
     config_file = app_dir / "core" / "config.py"
     if config_file.exists() and "SHUTDOWN_DRAIN_SECONDS" not in config_file.read_text():
-        src = config_file.read_text()
-        fields = (
-            "\n    # Graceful shutdown (TOOL-100)\n"
-            "    SHUTDOWN_DRAIN_SECONDS: float = 5.0\n"
-            "    SHUTDOWN_TIMEOUT_SECONDS: float = 30.0\n"
+        from adapt.contracts.config_patcher import patch_settings_fields
+
+        patch_settings_fields(
+            config_file,
+            fields=[
+                ("SHUTDOWN_DRAIN_SECONDS", "SHUTDOWN_DRAIN_SECONDS: float = 5.0"),
+                ("SHUTDOWN_TIMEOUT_SECONDS", "SHUTDOWN_TIMEOUT_SECONDS: float = 30.0"),
+            ],
         )
-        if "settings = Settings()" in src:
-            src = src.replace("settings = Settings()", fields + "\nsettings = Settings()")
-        else:
-            src = src.rstrip("\n") + "\n" + fields
-        config_file.write_text(src)
         files_modified.append(str(config_file))
 
     # --- Step 4: validate every .py we created parses ---------------------

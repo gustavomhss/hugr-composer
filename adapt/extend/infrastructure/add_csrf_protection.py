@@ -564,26 +564,18 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to ``app/core/config.py``.
     """
-    src = config_file.read_text()
-    if "CSRF_ENABLED" in src:
-        return
-    # Fields must be 4-space indented to sit inside the Settings class body.
-    addition = (
-        "\n"
-        "    # --- CSRF Protection (added by add_csrf_protection tool) ---\n"
-        "    CSRF_ENABLED: bool = True\n"
-        "    CSRF_SECRET_KEY: str = \"change-this-csrf-secret-key-min-32-chars!\"\n"
-        "    CSRF_COOKIE_NAME: str = \"csrftoken\"\n"
-        "    CSRF_HEADER_NAME: str = \"X-CSRF-Token\"\n"
-        "    CSRF_EXEMPT_PATHS: list[str] = []\n"
+    from adapt.contracts.config_patcher import patch_settings_fields
+
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("CSRF_ENABLED", "CSRF_ENABLED: bool = True"),
+            ("CSRF_SECRET_KEY", 'CSRF_SECRET_KEY: str = "change-this-csrf-secret-key-min-32-chars!"'),
+            ("CSRF_COOKIE_NAME", 'CSRF_COOKIE_NAME: str = "csrftoken"'),
+            ("CSRF_HEADER_NAME", 'CSRF_HEADER_NAME: str = "X-CSRF-Token"'),
+            ("CSRF_EXEMPT_PATHS", "CSRF_EXEMPT_PATHS: list[str] = []"),
+        ],
     )
-    # Insert inside the class body — before the module-level `settings = Settings()` line.
-    if "settings = Settings()" in src:
-        src = src.replace("settings = Settings()", addition + "\nsettings = Settings()")
-    else:
-        # Fallback: append 4-space-indented fields before the end of file
-        src = src.rstrip("\n") + "\n" + addition + "\n"
-    config_file.write_text(src)
 
 
 def _patch_main(main_file: Path) -> None:

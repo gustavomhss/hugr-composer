@@ -580,21 +580,17 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to ``app/core/config.py``.
     """
-    src = config_file.read_text()
-    if "CHAOS_ENABLED" in src:
-        return
-    fields = (
-        "\n    # Chaos testing (TOOL-099) — NEVER enable in production\n"
-        "    CHAOS_ENABLED: bool = False\n"
-        "    CHAOS_LATENCY_MS: int = 0\n"
-        "    CHAOS_ERROR_RATE: float = 0.0\n"
-        "    CHAOS_TIMEOUT_RATE: float = 0.0\n"
+    from adapt.contracts.config_patcher import patch_settings_fields
+
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("CHAOS_ENABLED", "CHAOS_ENABLED: bool = False"),
+            ("CHAOS_LATENCY_MS", "CHAOS_LATENCY_MS: int = 0"),
+            ("CHAOS_ERROR_RATE", "CHAOS_ERROR_RATE: float = 0.0"),
+            ("CHAOS_TIMEOUT_RATE", "CHAOS_TIMEOUT_RATE: float = 0.0"),
+        ],
     )
-    if "settings = Settings()" in src:
-        src = src.replace("settings = Settings()", fields + "\nsettings = Settings()")
-    else:
-        src = src.rstrip("\n") + "\n" + fields
-    config_file.write_text(src)
 
 
 def _patch_main(main_file: Path) -> None:

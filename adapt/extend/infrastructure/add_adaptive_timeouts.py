@@ -465,24 +465,17 @@ def add_adaptive_timeouts(inp: ToolInput) -> ToolResult:
 
 def _patch_config(config_file: Path) -> None:
     """Add ADAPTIVE_TIMEOUT_* fields to ``app/core/config.py`` Settings class."""
-    src = config_file.read_text()
-    if "ADAPTIVE_TIMEOUT_ENABLED" in src:
-        return
+    from adapt.contracts.config_patcher import patch_settings_fields
 
-    fields = (
-        "\n    # Adaptive timeouts\n"
-        "    ADAPTIVE_TIMEOUT_ENABLED: bool = False\n"
-        "    ADAPTIVE_TIMEOUT_FLOOR_MS: float = 100.0\n"
-        "    ADAPTIVE_TIMEOUT_CEILING_MS: float = 10000.0\n"
-        "    ADAPTIVE_TIMEOUT_WINDOW_SIZE: int = 100\n"
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("ADAPTIVE_TIMEOUT_ENABLED", "ADAPTIVE_TIMEOUT_ENABLED: bool = False"),
+            ("ADAPTIVE_TIMEOUT_FLOOR_MS", "ADAPTIVE_TIMEOUT_FLOOR_MS: float = 100.0"),
+            ("ADAPTIVE_TIMEOUT_CEILING_MS", "ADAPTIVE_TIMEOUT_CEILING_MS: float = 10000.0"),
+            ("ADAPTIVE_TIMEOUT_WINDOW_SIZE", "ADAPTIVE_TIMEOUT_WINDOW_SIZE: int = 100"),
+        ],
     )
-
-    if "settings = Settings()" in src:
-        src = src.replace("settings = Settings()", fields + "\nsettings = Settings()")
-    else:
-        src = src.rstrip("\n") + "\n" + fields + "\n"
-
-    config_file.write_text(src)
 
 
 def _count_logic_lines(source: str) -> int:

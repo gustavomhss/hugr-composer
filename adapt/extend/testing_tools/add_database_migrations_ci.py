@@ -682,21 +682,15 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to ``app/core/config.py``.
     """
-    src = config_file.read_text()
-    if "MIGRATION_CI_FAIL_ON_DESTRUCTIVE" in src:
-        return
-    # 4-space-indented so they land inside class Settings body.
-    addition = (
-        "\n"
-        "    # --- Migration CI (added by add_database_migrations_ci tool) ---\n"
-        "    MIGRATION_CI_FAIL_ON_DESTRUCTIVE: bool = True\n"
-        "    MIGRATION_CI_REQUIRE_ROLLBACK: bool = True\n"
+    from adapt.contracts.config_patcher import patch_settings_fields
+
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("MIGRATION_CI_FAIL_ON_DESTRUCTIVE", "MIGRATION_CI_FAIL_ON_DESTRUCTIVE: bool = True"),
+            ("MIGRATION_CI_REQUIRE_ROLLBACK", "MIGRATION_CI_REQUIRE_ROLLBACK: bool = True"),
+        ],
     )
-    if "settings = Settings()" in src:
-        src = src.replace("settings = Settings()", addition + "\nsettings = Settings()")
-    else:
-        src = src.rstrip("\n") + "\n" + addition + "\n"
-    config_file.write_text(src)
 
 
 # ---------------------------------------------------------------------------

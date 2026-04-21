@@ -135,18 +135,16 @@ def add_rate_limiting(inp: ToolInput) -> ToolResult:
     files_modified: list[str] = []
     config_file = app_dir / "core" / "config.py"
     if config_file.exists() and "RATE_LIMIT_PER_SECOND" not in config_file.read_text():
-        src = config_file.read_text()
-        fields = (
-            "\n    # Rate limiter (TOOL-057)\n"
-            "    RATE_LIMIT_PER_SECOND: float = 100.0\n"
-            "    RATE_LIMIT_BURST: int = 200\n"
-            "    RATE_LIMIT_KEY: str = \"ip\"\n"
+        from adapt.contracts.config_patcher import patch_settings_fields
+
+        patch_settings_fields(
+            config_file,
+            fields=[
+                ("RATE_LIMIT_PER_SECOND", "RATE_LIMIT_PER_SECOND: float = 100.0"),
+                ("RATE_LIMIT_BURST", "RATE_LIMIT_BURST: int = 200"),
+                ("RATE_LIMIT_KEY", 'RATE_LIMIT_KEY: str = "ip"'),
+            ],
         )
-        if "settings = Settings()" in src:
-            src = src.replace("settings = Settings()", fields + "\nsettings = Settings()")
-        else:
-            src = src.rstrip("\n") + "\n" + fields
-        config_file.write_text(src)
         files_modified.append(str(config_file))
 
     for path_str in files_created:
