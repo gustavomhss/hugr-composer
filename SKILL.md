@@ -218,7 +218,7 @@ ASSISTANT  "Login via Google OAuth at /auth/login; every route now
 
 ## Reference files
 
-- `STATUS.md` — machine-verified counts, test matrix, benchmark score (human-audience).
+- `STATUS.md` — machine-verified counts and health metrics (human-audience only).
 - `/docs/research/SKILL_META_FORMAT.md` — the design doc this SKILL.md ships against.
 - `/docs/research/COMPOSE_TOOL_DESIGN.md` — `fastapi_meta_compose` design.
 - `/docs/research/DUAL_INDEX_DESIGN.md` — overall tier-1/tier-2 architecture.
