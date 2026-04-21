@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "2206203",
-  "generated_at": "2026-04-21T14:58:53+00:00",
+  "kit_commit": "ab3972d",
+  "generated_at": "2026-04-21T16:02:17+00:00",
   "verbs": [
     "add",
     "generate",
@@ -221,7 +221,7 @@
       "verb": "add",
       "domain": "api",
       "synopsis": "Copy WorkflowRun + DurableTimer primitives + FastAPI WorkflowAdapter into the project and wire a \u226420",
-      "when_to_call": "Copy WorkflowRun + DurableTimer primitives + FastAPI WorkflowAdapter into the project and wire a \u226420-line app/tasks.py caller plus task routes.",
+      "when_to_call": "Copy WorkflowRun + DurableTimer primitives + FastAPI WorkflowAdapter into the project and wire a \u226420-line app/workflow.py caller plus task routes.",
       "when_not_to_call": "",
       "tags": [],
       "tier": 2,
@@ -11707,5 +11707,5 @@
     "primitives": 302,
     "recipes": 385
   },
-  "stable_hash": "638cba3e05bb93556df0d97d8d4291f02cc5fe7b2327c48c0c091f2af3eaa129"
+  "stable_hash": "50338fa37aa2dc5cdefe7fa3b1e99cdc2b32298eca5480953d53b1421c5d1b5f"
 }

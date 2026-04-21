@@ -87,7 +87,7 @@ def test_manifest_records_both_primitives_and_adapter() -> None:
 def test_glue_imports_adapter() -> None:
     d = create_fixture_project(name="lrt_t07")
     add_long_running_task(ToolInput(project_dir=str(d)))
-    body = (d / "app" / "tasks.py").read_text()
+    body = (d / "app" / "workflow.py").read_text()
     assert "from core.venous._adapters.fastapi.WorkflowAdapter import" in body
     assert "def install_long_running_tasks" in body
 
@@ -95,7 +95,7 @@ def test_glue_imports_adapter() -> None:
 def test_glue_body_under_20_loc() -> None:
     d = create_fixture_project(name="lrt_t08")
     add_long_running_task(ToolInput(project_dir=str(d)))
-    tree = ast.parse((d / "app" / "tasks.py").read_text())
+    tree = ast.parse((d / "app" / "workflow.py").read_text())
     body_lines = 0
     for node in tree.body:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
