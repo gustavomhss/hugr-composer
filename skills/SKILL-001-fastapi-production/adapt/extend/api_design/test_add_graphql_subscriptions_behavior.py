@@ -225,10 +225,23 @@ def test_b02_pubsub_importable_without_redis(behavior_project: Path) -> None:
         pytest.fail(f"pubsub.py has a SyntaxError: {exc}")
 
     try:
-        sys.modules.pop("app.graphql.pubsub", None)
+        # Purge any cached module BEFORE we touch sys.modules["core.*"] so
+        # the module re-imports against the project-local venous tree.
+        for cached in [
+            "app.graphql.pubsub",
+            "core.venous.events.PubSub",
+            "core.venous.events.PubSub.PubSub",
+            "core.venous._adapters.redis",
+            "core.venous._adapters.redis.PubSubAdapter",
+        ]:
+            sys.modules.pop(cached, None)
         mod = importlib.import_module("app.graphql.pubsub")
-        assert hasattr(mod, "PubSubManager"), "PubSubManager not in module"
-        assert hasattr(mod, "get_pubsub_manager"), "get_pubsub_manager not in module"
+        # Post-Rails facade: `get_pubsub` is the canonical entry; the
+        # `get_pubsub_manager` alias is retained for backward-compat.
+        assert hasattr(mod, "get_pubsub"), "get_pubsub not in module"
+        assert hasattr(mod, "get_pubsub_manager"), (
+            "get_pubsub_manager compat alias missing"
+        )
     except ImportError:
         pass  # optional deps not installed — acceptable
     except Exception as exc:
@@ -348,7 +361,12 @@ def test_b08_requirements_has_graphql_ws(behavior_project: Path) -> None:
 
 @pytest.mark.anyio
 async def test_b09_memory_pubsub_roundtrip(behavior_project: Path) -> None:
-    """B-09: MemoryPubSubBackend publishes and subscribe receives the payload."""
+    """B-09: End-to-end fanout works through the generated ``get_pubsub()``.
+
+    Post-Rails: the generated facade returns a HuGR-shipped
+    ``InMemoryPubSub`` by default (no REDIS_URL); the motor's semantics
+    are what drive the test.
+    """
     project_str = str(behavior_project)
     added = False
     if project_str not in sys.path:
@@ -356,9 +374,20 @@ async def test_b09_memory_pubsub_roundtrip(behavior_project: Path) -> None:
         added = True
 
     try:
-        sys.modules.pop("app.graphql.pubsub", None)
+        # Force memory backend selection.
+        import os
+        os.environ.pop("REDIS_URL", None)
+
+        # Purge cached modules so the project's copy is the one that loads.
+        for cached in [
+            "app.graphql.pubsub",
+            "core.venous.events.PubSub",
+            "core.venous.events.PubSub.PubSub",
+        ]:
+            sys.modules.pop(cached, None)
+
         mod = importlib.import_module("app.graphql.pubsub")
-        backend = mod.MemoryPubSubBackend()
+        backend = mod.get_pubsub()
 
         received: list[Any] = []
 
