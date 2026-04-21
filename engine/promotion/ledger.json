@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-04-21T06:13:56+00:00",
+  "generated_at": "2026-04-21T13:42:52+00:00",
   "classifier_version": "1.0",
-  "total_staged": 195,
+  "total_staged": 182,
   "total_quarantined": 47,
   "entries": [
     {
@@ -2752,57 +2752,6 @@
       "classifier_version": "1.0"
     },
     {
-      "primitive": "FeatureFlagCache",
-      "namespace": "auth",
-      "verdict": "delete",
-      "tier": "none",
-      "rationale": "Duplicate of registered primitive `FeatureFlagCache`. Staged copy adds no value; registered canonical version already ships.",
-      "signals": [
-        {
-          "kind": "tool_import",
-          "source": "adapt/extend/auth_access/add_feature_flags.py",
-          "detail": "Tool `fastapi_auth_add_feature_flags` declares imports_primitives including `FeatureFlagCache`."
-        },
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_feature_flags.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_feature_flags.py` (still in catalog); origin tool remains a live caller pattern."
-        },
-        {
-          "kind": "module_ref",
-          "source": "adapt/extend/auth_access/test_add_feature_flags.py",
-          "detail": "File imports `core.venous.*.FeatureFlagCache` directly \u2014 staged primitive has a live caller."
-        },
-        {
-          "kind": "module_ref",
-          "source": "adapt/extend/auth_access/add_feature_flags.py",
-          "detail": "File imports `core.venous.*.FeatureFlagCache` directly \u2014 staged primitive has a live caller."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "FeatureFlagCache",
-        "namespace": "auth",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": true,
-        "has_mutable_class_state": true,
-        "loc": 96,
-        "primitive_score": 1114932,
-        "origin_tool": "auth_access/add_feature_flags.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [],
-        "duplicate_of_registered": "FeatureFlagCache",
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": null,
-      "delete_reason": "Redundant with core/venous/*/FeatureFlagCache/ (same name; registered version is canonical).",
-      "classifier_version": "1.0"
-    },
-    {
       "primitive": "FeatureFlagPublic",
       "namespace": "auth",
       "verdict": "keep_staged",
@@ -2836,64 +2785,6 @@
       },
       "staging_reason": "No \u00a7A12(b) signal yet. Primitive was extracted from a tool (`auth_access/add_feature_flags.py`) but no current caller declares it in imports_primitives or imports from core.venous. Will re-evaluate on the next triage pass.",
       "delete_reason": null,
-      "classifier_version": "1.0"
-    },
-    {
-      "primitive": "FeatureToggle",
-      "namespace": "auth",
-      "verdict": "delete",
-      "tier": "none",
-      "rationale": "Duplicate of registered primitive `FeatureToggle`. Staged copy adds no value; registered canonical version already ships.",
-      "signals": [
-        {
-          "kind": "tool_import",
-          "source": "adapt/extend/auth_access/add_feature_flags.py",
-          "detail": "Tool `fastapi_auth_add_feature_flags` declares imports_primitives including `FeatureToggle`."
-        },
-        {
-          "kind": "tool_import",
-          "source": "adapt/extend/auth_access/add_feature_toggles_api.py",
-          "detail": "Tool `fastapi_auth_add_feature_toggles_api` declares imports_primitives including `FeatureToggle`."
-        },
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_feature_toggles_api.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_feature_toggles_api.py` (still in catalog); origin tool remains a live caller pattern."
-        },
-        {
-          "kind": "module_ref",
-          "source": "adapt/extend/auth_access/test_add_feature_flags.py",
-          "detail": "File imports `core.venous.*.FeatureToggle` directly \u2014 staged primitive has a live caller."
-        },
-        {
-          "kind": "module_ref",
-          "source": "adapt/extend/auth_access/add_feature_flags.py",
-          "detail": "File imports `core.venous.*.FeatureToggle` directly \u2014 staged primitive has a live caller."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "FeatureToggle",
-        "namespace": "auth",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 27,
-        "primitive_score": 6020,
-        "origin_tool": "auth_access/add_feature_toggles_api.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [
-          "sqlalchemy"
-        ],
-        "duplicate_of_registered": "FeatureToggle",
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": null,
-      "delete_reason": "Redundant with core/venous/*/FeatureToggle/ (same name; registered version is canonical).",
       "classifier_version": "1.0"
     },
     {
@@ -4694,42 +4585,6 @@
       "classifier_version": "1.0"
     },
     {
-      "primitive": "SchemaComparator",
-      "namespace": "extras",
-      "verdict": "delete",
-      "tier": "none",
-      "rationale": "Duplicate of registered primitive `SchemaComparator`. Staged copy adds no value; registered canonical version already ships.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/testing_tools/add_schema_evolution_guard.py",
-          "detail": "Primitive was extracted from `adapt/extend/testing_tools/add_schema_evolution_guard.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "SchemaComparator",
-        "namespace": "extras",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 119,
-        "primitive_score": 1737400,
-        "origin_tool": "testing_tools/add_schema_evolution_guard.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [],
-        "duplicate_of_registered": "SchemaComparator",
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": null,
-      "delete_reason": "Redundant with core/venous/*/SchemaComparator/ (same name; registered version is canonical).",
-      "classifier_version": "1.0"
-    },
-    {
       "primitive": "SchemaEnforcerMiddleware",
       "namespace": "extras",
       "verdict": "keep_staged",
@@ -5143,57 +4998,6 @@
       },
       "staging_reason": "No \u00a7A12(b) signal yet. Primitive was extracted from a tool (`infrastructure/add_secret_rotation.py`) but no current caller declares it in imports_primitives or imports from core.venous. Will re-evaluate on the next triage pass.",
       "delete_reason": null,
-      "classifier_version": "1.0"
-    },
-    {
-      "primitive": "Bulkhead",
-      "namespace": "resiliency",
-      "verdict": "delete",
-      "tier": "none",
-      "rationale": "Duplicate of registered primitive `Bulkhead`. Staged copy adds no value; registered canonical version already ships.",
-      "signals": [
-        {
-          "kind": "tool_import",
-          "source": "adapt/extend/infrastructure/add_bulkhead_isolation.py",
-          "detail": "Tool `fastapi_resiliency_add_bulkhead_isolation` declares imports_primitives including `Bulkhead`."
-        },
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_bulkhead_isolation.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_bulkhead_isolation.py` (still in catalog); origin tool remains a live caller pattern."
-        },
-        {
-          "kind": "module_ref",
-          "source": "adapt/extend/infrastructure/add_bulkhead_isolation.py",
-          "detail": "File imports `core.venous.*.Bulkhead` directly \u2014 staged primitive has a live caller."
-        },
-        {
-          "kind": "module_ref",
-          "source": "adapt/extend/infrastructure/test_add_bulkhead_isolation.py",
-          "detail": "File imports `core.venous.*.Bulkhead` directly \u2014 staged primitive has a live caller."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "Bulkhead",
-        "namespace": "resiliency",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 48,
-        "primitive_score": 21132,
-        "origin_tool": "infrastructure/add_bulkhead_isolation.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [],
-        "duplicate_of_registered": "Bulkhead",
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": null,
-      "delete_reason": "Redundant with core/venous/*/Bulkhead/ (same name; registered version is canonical).",
       "classifier_version": "1.0"
     },
     {
@@ -5802,47 +5606,6 @@
       "classifier_version": "1.0"
     },
     {
-      "primitive": "CostTracker",
-      "namespace": "resiliency",
-      "verdict": "delete",
-      "tier": "none",
-      "rationale": "Duplicate of registered primitive `CostTracker`. Staged copy adds no value; registered canonical version already ships.",
-      "signals": [
-        {
-          "kind": "tool_import",
-          "source": "adapt/extend/infrastructure/add_cost_tracker.py",
-          "detail": "Tool `fastapi_resiliency_add_cost_tracker` declares imports_primitives including `CostTracker`."
-        },
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_cost_tracker.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_cost_tracker.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "CostTracker",
-        "namespace": "resiliency",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 72,
-        "primitive_score": 882552,
-        "origin_tool": "infrastructure/add_cost_tracker.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [],
-        "duplicate_of_registered": "CostTracker",
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": null,
-      "delete_reason": "Redundant with core/venous/*/CostTracker/ (same name; registered version is canonical).",
-      "classifier_version": "1.0"
-    },
-    {
       "primitive": "CreateAdminUserStep",
       "namespace": "resiliency",
       "verdict": "keep_staged",
@@ -6333,42 +6096,6 @@
       "classifier_version": "1.0"
     },
     {
-      "primitive": "ExcelExporter",
-      "namespace": "resiliency",
-      "verdict": "delete",
-      "tier": "none",
-      "rationale": "Duplicate of registered primitive `ExcelExporter`. Staged copy adds no value; registered canonical version already ships.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_excel_export.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_excel_export.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "ExcelExporter",
-        "namespace": "resiliency",
-        "is_quarantined": false,
-        "replace_me_count": 5,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 101,
-        "primitive_score": 392880,
-        "origin_tool": "infrastructure/add_excel_export.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [],
-        "duplicate_of_registered": "ExcelExporter",
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": null,
-      "delete_reason": "Redundant with core/venous/*/ExcelExporter/ (same name; registered version is canonical).",
-      "classifier_version": "1.0"
-    },
-    {
       "primitive": "FCMProvider",
       "namespace": "resiliency",
       "verdict": "keep_staged",
@@ -6479,47 +6206,6 @@
       },
       "staging_reason": "No \u00a7A12(b) signal yet. Primitive was extracted from a tool (`infrastructure/add_request_fingerprint.py`) but no current caller declares it in imports_primitives or imports from core.venous. Will re-evaluate on the next triage pass.",
       "delete_reason": null,
-      "classifier_version": "1.0"
-    },
-    {
-      "primitive": "GracefulShutdown",
-      "namespace": "resiliency",
-      "verdict": "delete",
-      "tier": "none",
-      "rationale": "Duplicate of registered primitive `GracefulShutdown`. Staged copy adds no value; registered canonical version already ships.",
-      "signals": [
-        {
-          "kind": "tool_import",
-          "source": "adapt/extend/infrastructure/add_graceful_shutdown.py",
-          "detail": "Tool `fastapi_resiliency_add_graceful_shutdown` declares imports_primitives including `GracefulShutdown`."
-        },
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_graceful_shutdown.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_graceful_shutdown.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "GracefulShutdown",
-        "namespace": "resiliency",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": true,
-        "has_mutable_class_state": true,
-        "loc": 92,
-        "primitive_score": 870688,
-        "origin_tool": "infrastructure/add_graceful_shutdown.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [],
-        "duplicate_of_registered": "GracefulShutdown",
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": null,
-      "delete_reason": "Redundant with core/venous/*/GracefulShutdown/ (same name; registered version is canonical).",
       "classifier_version": "1.0"
     },
     {
@@ -6783,47 +6469,6 @@
       "classifier_version": "1.0"
     },
     {
-      "primitive": "LoadShedder",
-      "namespace": "resiliency",
-      "verdict": "delete",
-      "tier": "none",
-      "rationale": "Duplicate of registered primitive `LoadShedder`. Staged copy adds no value; registered canonical version already ships.",
-      "signals": [
-        {
-          "kind": "tool_import",
-          "source": "adapt/extend/infrastructure/add_load_shedding.py",
-          "detail": "Tool `fastapi_resiliency_add_load_shedding` declares imports_primitives including `LoadShedder`."
-        },
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_load_shedding.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_load_shedding.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "LoadShedder",
-        "namespace": "resiliency",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": true,
-        "loc": 76,
-        "primitive_score": 521472,
-        "origin_tool": "infrastructure/add_load_shedding.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [],
-        "duplicate_of_registered": "LoadShedder",
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": null,
-      "delete_reason": "Redundant with core/venous/*/LoadShedder/ (same name; registered version is canonical).",
-      "classifier_version": "1.0"
-    },
-    {
       "primitive": "LoadSheddingMiddleware",
       "namespace": "resiliency",
       "verdict": "keep_staged",
@@ -7049,42 +6694,6 @@
       },
       "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
       "delete_reason": null,
-      "classifier_version": "1.0"
-    },
-    {
-      "primitive": "ModelRegistry",
-      "namespace": "resiliency",
-      "verdict": "delete",
-      "tier": "none",
-      "rationale": "Duplicate of registered primitive `ModelRegistry`. Staged copy adds no value; registered canonical version already ships.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_ml_model_server.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_ml_model_server.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "ModelRegistry",
-        "namespace": "resiliency",
-        "is_quarantined": false,
-        "replace_me_count": 5,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 84,
-        "primitive_score": 260560,
-        "origin_tool": "infrastructure/add_ml_model_server.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [],
-        "duplicate_of_registered": "ModelRegistry",
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": null,
-      "delete_reason": "Redundant with core/venous/*/ModelRegistry/ (same name; registered version is canonical).",
       "classifier_version": "1.0"
     },
     {
@@ -7550,42 +7159,6 @@
       "classifier_version": "1.0"
     },
     {
-      "primitive": "Redactor",
-      "namespace": "resiliency",
-      "verdict": "delete",
-      "tier": "none",
-      "rationale": "Duplicate of registered primitive `Redactor`. Staged copy adds no value; registered canonical version already ships.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_structured_logging.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_structured_logging.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "Redactor",
-        "namespace": "resiliency",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 22,
-        "primitive_score": 5800,
-        "origin_tool": "infrastructure/add_structured_logging.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [],
-        "duplicate_of_registered": "Redactor",
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": null,
-      "delete_reason": "Redundant with core/venous/*/Redactor/ (same name; registered version is canonical).",
-      "classifier_version": "1.0"
-    },
-    {
       "primitive": "Refund",
       "namespace": "resiliency",
       "verdict": "keep_staged",
@@ -7733,42 +7306,6 @@
       },
       "staging_reason": "No \u00a7A12(b) signal yet. Primitive was extracted from a tool (`infrastructure/add_pdf_reports.py`) but no current caller declares it in imports_primitives or imports from core.venous. Will re-evaluate on the next triage pass.",
       "delete_reason": null,
-      "classifier_version": "1.0"
-    },
-    {
-      "primitive": "RequestContext",
-      "namespace": "resiliency",
-      "verdict": "delete",
-      "tier": "none",
-      "rationale": "Duplicate of registered primitive `RequestContext`. Staged copy adds no value; registered canonical version already ships.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_cost_tracker.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_cost_tracker.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "RequestContext",
-        "namespace": "resiliency",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 18,
-        "primitive_score": 1452,
-        "origin_tool": "infrastructure/add_cost_tracker.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [],
-        "duplicate_of_registered": "RequestContext",
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": null,
-      "delete_reason": "Redundant with core/venous/*/RequestContext/ (same name; registered version is canonical).",
       "classifier_version": "1.0"
     },
     {
@@ -7990,42 +7527,6 @@
       },
       "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
       "delete_reason": null,
-      "classifier_version": "1.0"
-    },
-    {
-      "primitive": "RetryBudget",
-      "namespace": "resiliency",
-      "verdict": "delete",
-      "tier": "none",
-      "rationale": "Duplicate of registered primitive `RetryBudget`. Staged copy adds no value; registered canonical version already ships.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_retry_budget.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_retry_budget.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "RetryBudget",
-        "namespace": "resiliency",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": true,
-        "has_mutable_class_state": false,
-        "loc": 108,
-        "primitive_score": 1036224,
-        "origin_tool": "infrastructure/add_retry_budget.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [],
-        "duplicate_of_registered": "RetryBudget",
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": null,
-      "delete_reason": "Redundant with core/venous/*/RetryBudget/ (same name; registered version is canonical).",
       "classifier_version": "1.0"
     },
     {
@@ -8913,42 +8414,6 @@
       },
       "staging_reason": "No \u00a7A12(b) signal yet. Primitive was extracted from a tool (`infrastructure/add_request_tracing_ui.py`) but no current caller declares it in imports_primitives or imports from core.venous. Will re-evaluate on the next triage pass.",
       "delete_reason": null,
-      "classifier_version": "1.0"
-    },
-    {
-      "primitive": "TracingBuffer",
-      "namespace": "resiliency",
-      "verdict": "delete",
-      "tier": "none",
-      "rationale": "Duplicate of registered primitive `TracingBuffer`. Staged copy adds no value; registered canonical version already ships.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_request_tracing_ui.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_request_tracing_ui.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "TracingBuffer",
-        "namespace": "resiliency",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 60,
-        "primitive_score": 315840,
-        "origin_tool": "infrastructure/add_request_tracing_ui.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [],
-        "duplicate_of_registered": "TracingBuffer",
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": null,
-      "delete_reason": "Redundant with core/venous/*/TracingBuffer/ (same name; registered version is canonical).",
       "classifier_version": "1.0"
     },
     {

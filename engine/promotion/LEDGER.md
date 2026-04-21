@@ -1,6 +1,6 @@
 # Promotion Ledger
 
-**Generated:** 2026-04-21T06:13:56+00:00 · **Classifier:** v1.0 · **Total:** 242 (195 staged + 47 quarantined)
+**Generated:** 2026-04-21T13:42:52+00:00 · **Classifier:** v1.0 · **Total:** 229 (182 staged + 47 quarantined)
 
 > **How to use this ledger.** Each entry is a proposed verdict, not a
 > decided action. Tick the checkbox of an entry to mark it approved;
@@ -13,125 +13,11 @@
 
 | Verdict | Count | Gustavo's next step |
 |---|---:|---|
-| delete | 13 | Review + approve individually; executor removes each. |
+| delete | 0 | Review + approve individually; executor removes each. |
 | promote_full | 0 | Review + approve individually; executor runs each. |
 | promote_lite | 0 | Ratify §B1.7 first; then review + approve. |
 | needs_review | 0 | Resolve blockers, then re-run classifier. |
 | keep_staged | 229 | No action required. Revisit on next triage pass. |
-
-## Delete (redundant or not salvageable) — 13 primitive(s)
-
-Either duplicates of a registered primitive (registered version is canonical), or quarantined with non-fixable framework coupling. Approve to run:
-
-```
-PYTHONPATH=. .venv/bin/python -m engine.promotion.promote --delete <NAME>
-```
-
-### 1. [ ] `FeatureToggle` (auth)
-
-  - **Rationale:** Duplicate of registered primitive `FeatureToggle`. Staged copy adds no value; registered canonical version already ships.
-  - **State:** REPLACE_ME=7 · loc=27 · tla=n · concurrency=n · mutable=n · tests=y · dup_of=FeatureToggle · score=6020
-  - **Signals:** `tool_import`: `adapt/extend/auth_access/add_feature_flags.py` · `tool_import`: `adapt/extend/auth_access/add_feature_toggles_api.py` · `generator_ref`: `adapt/extend/auth_access/add_feature_toggles_api.py` · `module_ref`: `adapt/extend/auth_access/test_add_feature_flags.py` · `module_ref`: `adapt/extend/auth_access/add_feature_flags.py`
-  - **Delete reason:** Redundant with core/venous/*/FeatureToggle/ (same name; registered version is canonical).
-  - **Run:** `python -m engine.promotion.promote --delete FeatureToggle`
-
-### 2. [ ] `FeatureFlagCache` (auth)
-
-  - **Rationale:** Duplicate of registered primitive `FeatureFlagCache`. Staged copy adds no value; registered canonical version already ships.
-  - **State:** REPLACE_ME=7 · loc=96 · tla=n · concurrency=y · mutable=y · tests=y · dup_of=FeatureFlagCache · score=1114932
-  - **Signals:** `tool_import`: `adapt/extend/auth_access/add_feature_flags.py` · `generator_ref`: `adapt/extend/auth_access/add_feature_flags.py` · `module_ref`: `adapt/extend/auth_access/test_add_feature_flags.py` · `module_ref`: `adapt/extend/auth_access/add_feature_flags.py`
-  - **Delete reason:** Redundant with core/venous/*/FeatureFlagCache/ (same name; registered version is canonical).
-  - **Run:** `python -m engine.promotion.promote --delete FeatureFlagCache`
-
-### 3. [ ] `Bulkhead` (resiliency)
-
-  - **Rationale:** Duplicate of registered primitive `Bulkhead`. Staged copy adds no value; registered canonical version already ships.
-  - **State:** REPLACE_ME=7 · loc=48 · tla=n · concurrency=n · mutable=n · tests=y · dup_of=Bulkhead · score=21132
-  - **Signals:** `tool_import`: `adapt/extend/infrastructure/add_bulkhead_isolation.py` · `generator_ref`: `adapt/extend/infrastructure/add_bulkhead_isolation.py` · `module_ref`: `adapt/extend/infrastructure/add_bulkhead_isolation.py` · `module_ref`: `adapt/extend/infrastructure/test_add_bulkhead_isolation.py`
-  - **Delete reason:** Redundant with core/venous/*/Bulkhead/ (same name; registered version is canonical).
-  - **Run:** `python -m engine.promotion.promote --delete Bulkhead`
-
-### 4. [ ] `CostTracker` (resiliency)
-
-  - **Rationale:** Duplicate of registered primitive `CostTracker`. Staged copy adds no value; registered canonical version already ships.
-  - **State:** REPLACE_ME=7 · loc=72 · tla=n · concurrency=n · mutable=n · tests=y · dup_of=CostTracker · score=882552
-  - **Signals:** `tool_import`: `adapt/extend/infrastructure/add_cost_tracker.py` · `generator_ref`: `adapt/extend/infrastructure/add_cost_tracker.py`
-  - **Delete reason:** Redundant with core/venous/*/CostTracker/ (same name; registered version is canonical).
-  - **Run:** `python -m engine.promotion.promote --delete CostTracker`
-
-### 5. [ ] `GracefulShutdown` (resiliency)
-
-  - **Rationale:** Duplicate of registered primitive `GracefulShutdown`. Staged copy adds no value; registered canonical version already ships.
-  - **State:** REPLACE_ME=7 · loc=92 · tla=n · concurrency=y · mutable=y · tests=y · dup_of=GracefulShutdown · score=870688
-  - **Signals:** `tool_import`: `adapt/extend/infrastructure/add_graceful_shutdown.py` · `generator_ref`: `adapt/extend/infrastructure/add_graceful_shutdown.py`
-  - **Delete reason:** Redundant with core/venous/*/GracefulShutdown/ (same name; registered version is canonical).
-  - **Run:** `python -m engine.promotion.promote --delete GracefulShutdown`
-
-### 6. [ ] `LoadShedder` (resiliency)
-
-  - **Rationale:** Duplicate of registered primitive `LoadShedder`. Staged copy adds no value; registered canonical version already ships.
-  - **State:** REPLACE_ME=7 · loc=76 · tla=n · concurrency=n · mutable=y · tests=y · dup_of=LoadShedder · score=521472
-  - **Signals:** `tool_import`: `adapt/extend/infrastructure/add_load_shedding.py` · `generator_ref`: `adapt/extend/infrastructure/add_load_shedding.py`
-  - **Delete reason:** Redundant with core/venous/*/LoadShedder/ (same name; registered version is canonical).
-  - **Run:** `python -m engine.promotion.promote --delete LoadShedder`
-
-### 7. [ ] `SchemaComparator` (extras)
-
-  - **Rationale:** Duplicate of registered primitive `SchemaComparator`. Staged copy adds no value; registered canonical version already ships.
-  - **State:** REPLACE_ME=7 · loc=119 · tla=n · concurrency=n · mutable=n · tests=y · dup_of=SchemaComparator · score=1737400
-  - **Signals:** `generator_ref`: `adapt/extend/testing_tools/add_schema_evolution_guard.py`
-  - **Delete reason:** Redundant with core/venous/*/SchemaComparator/ (same name; registered version is canonical).
-  - **Run:** `python -m engine.promotion.promote --delete SchemaComparator`
-
-### 8. [ ] `ExcelExporter` (resiliency)
-
-  - **Rationale:** Duplicate of registered primitive `ExcelExporter`. Staged copy adds no value; registered canonical version already ships.
-  - **State:** REPLACE_ME=5 · loc=101 · tla=n · concurrency=n · mutable=n · tests=y · dup_of=ExcelExporter · score=392880
-  - **Signals:** `generator_ref`: `adapt/extend/infrastructure/add_excel_export.py`
-  - **Delete reason:** Redundant with core/venous/*/ExcelExporter/ (same name; registered version is canonical).
-  - **Run:** `python -m engine.promotion.promote --delete ExcelExporter`
-
-### 9. [ ] `ModelRegistry` (resiliency)
-
-  - **Rationale:** Duplicate of registered primitive `ModelRegistry`. Staged copy adds no value; registered canonical version already ships.
-  - **State:** REPLACE_ME=5 · loc=84 · tla=n · concurrency=n · mutable=n · tests=y · dup_of=ModelRegistry · score=260560
-  - **Signals:** `generator_ref`: `adapt/extend/infrastructure/add_ml_model_server.py`
-  - **Delete reason:** Redundant with core/venous/*/ModelRegistry/ (same name; registered version is canonical).
-  - **Run:** `python -m engine.promotion.promote --delete ModelRegistry`
-
-### 10. [ ] `Redactor` (resiliency)
-
-  - **Rationale:** Duplicate of registered primitive `Redactor`. Staged copy adds no value; registered canonical version already ships.
-  - **State:** REPLACE_ME=7 · loc=22 · tla=n · concurrency=n · mutable=n · tests=y · dup_of=Redactor · score=5800
-  - **Signals:** `generator_ref`: `adapt/extend/infrastructure/add_structured_logging.py`
-  - **Delete reason:** Redundant with core/venous/*/Redactor/ (same name; registered version is canonical).
-  - **Run:** `python -m engine.promotion.promote --delete Redactor`
-
-### 11. [ ] `RequestContext` (resiliency)
-
-  - **Rationale:** Duplicate of registered primitive `RequestContext`. Staged copy adds no value; registered canonical version already ships.
-  - **State:** REPLACE_ME=7 · loc=18 · tla=n · concurrency=n · mutable=n · tests=y · dup_of=RequestContext · score=1452
-  - **Signals:** `generator_ref`: `adapt/extend/infrastructure/add_cost_tracker.py`
-  - **Delete reason:** Redundant with core/venous/*/RequestContext/ (same name; registered version is canonical).
-  - **Run:** `python -m engine.promotion.promote --delete RequestContext`
-
-### 12. [ ] `RetryBudget` (resiliency)
-
-  - **Rationale:** Duplicate of registered primitive `RetryBudget`. Staged copy adds no value; registered canonical version already ships.
-  - **State:** REPLACE_ME=7 · loc=108 · tla=n · concurrency=y · mutable=n · tests=y · dup_of=RetryBudget · score=1036224
-  - **Signals:** `generator_ref`: `adapt/extend/infrastructure/add_retry_budget.py`
-  - **Delete reason:** Redundant with core/venous/*/RetryBudget/ (same name; registered version is canonical).
-  - **Run:** `python -m engine.promotion.promote --delete RetryBudget`
-
-### 13. [ ] `TracingBuffer` (resiliency)
-
-  - **Rationale:** Duplicate of registered primitive `TracingBuffer`. Staged copy adds no value; registered canonical version already ships.
-  - **State:** REPLACE_ME=7 · loc=60 · tla=n · concurrency=n · mutable=n · tests=y · dup_of=TracingBuffer · score=315840
-  - **Signals:** `generator_ref`: `adapt/extend/infrastructure/add_request_tracing_ui.py`
-  - **Delete reason:** Redundant with core/venous/*/TracingBuffer/ (same name; registered version is canonical).
-  - **Run:** `python -m engine.promotion.promote --delete TracingBuffer`
-
----
 
 ## Keep staged (awaiting signal or re-extraction) — 229 primitive(s)
 

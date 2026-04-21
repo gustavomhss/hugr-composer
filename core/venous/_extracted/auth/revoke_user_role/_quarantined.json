@@ -1,7 +1,0 @@
-{
-  "reason": "domain_coupled",
-  "forbidden_modules": [
-    "sqlalchemy",
-    "sqlalchemy.ext.asyncio"
-  ]
-}
