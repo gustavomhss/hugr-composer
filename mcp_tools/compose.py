@@ -4,15 +4,18 @@ Given a set of primitives (or a recipe id), emit them PLUGGED TOGETHER
 into a single `app/compositions/<slug>.py` exporting `install(app, ...)`.
 
 Design contract: `/docs/research/COMPOSE_TOOL_DESIGN.md`.
-Three-tier fallthrough:
+Four-tier fallthrough (first match wins):
 
   1. adapter_reuse   — set-equality with one of the 16 FastAPI adapters
                        under `core/venous/_adapters/fastapi/*Adapter.py`.
                        Emit a thin call-site into the shipped adapter.
-  2. recipe_template — set-match against one of 385 recipes in
+  2. tool_delegate   — set-equality with a catalog tool's
+                       `primitives_used`. Return the tool name + pointer
+                       instead of duplicating its output. No file written.
+  3. recipe_template — set-match against one of 385 recipes in
                        `engine/index/catalog.json`. Emit a render-
                        friendly skeleton using the recipe's intent prose.
-  3. ad_hoc          — no match; emit a skeleton with a visible WARNING
+  4. ad_hoc          — no match; emit a skeleton with a visible WARNING
                        banner and `mode="ad_hoc"` + quality flag.
 
 Envelope shape identical to the other tier-1 tools (ok/what_happened/
@@ -186,6 +189,24 @@ def _match_adapter(primitives_set: frozenset[str]) -> str | None:
         if adapter_prims == primitives_set and adapter_prims:
             return stem
     return None
+
+
+def _match_tool(primitives_set: frozenset[str], catalog: dict) -> dict | None:
+    """Return the catalog tool whose ``primitives_used`` EQUALS the caller's
+    primitive set, or None.
+
+    Prefer this over recipe_template because a matching tool is an
+    already-tested code generator — calling it is strictly better than
+    emitting a skeleton. Ties broken deterministically by tool name.
+    """
+    hits: list[dict] = []
+    for t in catalog["tools"]:
+        used = frozenset(t.get("primitives_used") or ())
+        if used and used == primitives_set:
+            hits.append(t)
+    if not hits:
+        return None
+    return sorted(hits, key=lambda t: t["name"])[0]
 
 
 def _match_recipe(primitives_set: frozenset[str], catalog: dict) -> dict | None:
@@ -480,9 +501,46 @@ def fastapi_meta_compose(
             t0=t0,
         )
 
-    # 4. Mode selection
+    # 4. Mode selection — first-match priority:
+    #      adapter_reuse > tool_delegate > recipe_template > ad_hoc
     prim_set = frozenset(resolved_prims)
+
     adapter_stem = _match_adapter(prim_set)
+    if adapter_stem is None and not recipe_id:
+        # 4a. Tool delegation — if an indexed tool already emits exactly
+        # this primitive set, don't duplicate its work. Return early with a
+        # pointer so the Maestro can call that tool (which has tests,
+        # MCP_TOOL metadata, and a stable entry signature). Only consulted
+        # when no adapter matches; adapter is strictly better when both do.
+        matching_tool = _match_tool(prim_set, catalog)
+        if matching_tool is not None:
+            return _envelope(
+                ok=True,
+                what=(
+                    f"tool {matching_tool['name']!r} already emits this exact "
+                    f"primitive set ({len(resolved_prims)} primitives) — call "
+                    f"it directly instead of composing a skeleton"
+                ),
+                result={
+                    "mode": "tool_delegate",
+                    "delegate_tool": matching_tool["name"],
+                    "delegate_module": matching_tool["module_path"],
+                    "primitives_used": list(resolved_prims),
+                    "files_written": [],
+                    "validation_report": {
+                        "ast_parse": True,
+                        "ast_error": "",
+                        "primitives_resolved": True,
+                        "mode_quality": "HIGH",
+                    },
+                },
+                next_steps=[
+                    f"Call {matching_tool['name']}(output_dir={output_dir!r}, …) — see fastapi_meta_describe for its schema.",
+                    "Pass `recipe_id=…` to this tool if you want a skeleton anyway.",
+                ],
+                t0=t0,
+            )
+
     if adapter_stem is not None:
         mode = "adapter_reuse"
         source = _emit_adapter_reuse(adapter_stem, resolved_prims, mount_path, slug)

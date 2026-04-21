@@ -315,27 +315,54 @@ def _scan_tools() -> list[dict]:
     return out
 
 
+_CORE_VENOUS_REF_RE = re.compile(
+    r"core\.venous\.(?!_adapters\b|_extracted\b)"
+    r"[a-z][a-z_]*\.(?P<name>[A-Z][A-Za-z0-9]+)"
+)
+
+
 def _extract_primitive_imports(py: Path) -> tuple[str, ...]:
-    """Return the set of `core.venous.<ns>.<Name>` imports in a module."""
+    """Return the set of `core.venous.<ns>.<Name>` references in a module.
+
+    Two channels matter:
+      1. Real Python imports (AST scan) — captures 16 FastAPI adapters + a
+         handful of tools that compose primitives inline.
+      2. String-embedded imports — captures the 100 adapt/extend tools that
+         emit `from core.venous.<ns>.<Name>` inside templated strings. Regex
+         scan over the raw source is sufficient; false positives on comments
+         are acceptable because the registered primitive list filters them
+         back down in `_tool_entries`.
+
+    The `_adapters` and `_extracted` sub-roots are excluded — those are
+    meta namespaces, not primitives.
+    """
     try:
-        tree = ast.parse(py.read_text(encoding="utf-8"))
-    except (SyntaxError, OSError):
+        source = py.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
         return ()
     names: set[str] = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith("core.venous."):
-            parts = node.module.split(".")
-            if len(parts) >= 4:
-                names.add(parts[3])
-            else:
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        tree = None
+    if tree is not None:
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith("core.venous."):
+                parts = node.module.split(".")
+                if len(parts) >= 4 and parts[2] not in ("_adapters", "_extracted"):
+                    names.add(parts[3])
+                elif len(parts) >= 3 and parts[2] not in ("_adapters", "_extracted"):
+                    for alias in node.names:
+                        names.add(alias.name)
+            elif isinstance(node, ast.Import):
                 for alias in node.names:
-                    names.add(alias.name)
-        elif isinstance(node, ast.Import):
-            for alias in node.names:
-                if alias.name.startswith("core.venous."):
-                    parts = alias.name.split(".")
-                    if len(parts) >= 4:
-                        names.add(parts[3])
+                    if alias.name.startswith("core.venous."):
+                        parts = alias.name.split(".")
+                        if len(parts) >= 4 and parts[2] not in ("_adapters", "_extracted"):
+                            names.add(parts[3])
+    # String-embedded references (template emissions in generator tools).
+    for m in _CORE_VENOUS_REF_RE.finditer(source):
+        names.add(m.group("name"))
     return tuple(sorted(names))
 
 

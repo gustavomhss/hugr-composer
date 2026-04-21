@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "6315a0e",
-  "generated_at": "2026-04-21T03:19:44+00:00",
+  "kit_commit": "726e4fa",
+  "generated_at": "2026-04-21T03:26:34+00:00",
   "verbs": [
     "add",
     "generate",
@@ -231,7 +231,10 @@
       "test_paths": [
         "adapt/extend/api_design/test_add_long_running_task.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "DurableTimer",
+        "WorkflowRun"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -445,7 +448,9 @@
       "test_paths": [
         "adapt/extend/auth_access/test_add_feature_toggles_api.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "FeatureToggle"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -467,7 +472,9 @@
       "test_paths": [
         "adapt/extend/auth_access/test_add_mfa.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "TotpVerifier"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -509,7 +516,10 @@
       "test_paths": [
         "adapt/extend/auth_access/test_add_oauth2_provider.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "SessionStore",
+        "TokenIntrospector"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -571,7 +581,10 @@
       "test_paths": [
         "adapt/extend/auth_access/test_add_rbac.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "CurrentPrincipal",
+        "RequestGuard"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -767,7 +780,10 @@
       "test_paths": [
         "adapt/extend/crud_data/test_add_audit_log.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "AuditEvent",
+        "TamperEvidentAuditLog"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -914,7 +930,10 @@
       "test_paths": [
         "adapt/extend/crud_data/test_add_event_sourcing.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "DomainEvent",
+        "EventSourcedStore"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -976,7 +995,9 @@
       "test_paths": [
         "adapt/extend/infrastructure/test_add_saga.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "SagaOrchestrator"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -1018,7 +1039,9 @@
       "test_paths": [
         "adapt/extend/crud_data/test_add_soft_delete.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "UnitOfWork"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -2231,7 +2254,13 @@
       "test_paths": [
         "adapt/extend/realtime/test_add_webhook_receiver.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "AuditEvent",
+        "IdempotentConsumer",
+        "InboxDeduplicator",
+        "SignatureVerifier",
+        "TransactionalOutbox"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -2559,7 +2588,9 @@
       "test_paths": [
         "adapt/extend/infrastructure/test_add_circuit_breaker.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "CircuitBreaker"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -2619,7 +2650,9 @@
       "test_paths": [
         "adapt/extend/infrastructure/test_add_cost_tracker.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "CostTracker"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -2741,7 +2774,9 @@
       "test_paths": [
         "adapt/extend/infrastructure/test_add_graceful_shutdown.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "GracefulShutdown"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -2845,7 +2880,9 @@
       "test_paths": [
         "adapt/extend/infrastructure/test_add_load_shedding.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "LoadShedder"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -3013,7 +3050,9 @@
       "test_paths": [
         "adapt/extend/infrastructure/test_add_rate_limiting.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "RateLimiter"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -3075,7 +3114,9 @@
       "test_paths": [
         "adapt/extend/infrastructure/test_add_retry_budget.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "RetryPolicy"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -3729,7 +3770,9 @@
       "since": "",
       "module_path": "generators/orchestrator.py",
       "test_paths": [],
-      "primitives_used": [],
+      "primitives_used": [
+        "GracefulShutdown"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -3767,7 +3810,9 @@
       "since": "",
       "module_path": "generators/scaffold_venous.py",
       "test_paths": [],
-      "primitives_used": [],
+      "primitives_used": [
+        "GracefulShutdown"
+      ],
       "example_input": null,
       "example_output": null
     },
