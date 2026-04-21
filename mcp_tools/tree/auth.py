@@ -102,15 +102,37 @@ def _envelope(*, ok: bool, what: str, result: Any, next_steps: list[str], t0: fl
 # ---------------------------------------------------------------------------
 
 def _call_slice(slice_name: str, **kwargs) -> dict:
-    """Route to the underlying `adapt/extend/auth_access/<module>` tool."""
+    """Route to the underlying `adapt/extend/auth_access/<module>` tool.
+
+    Slice entry functions accept a ``ToolInput(project_dir=...)`` dataclass
+    (adapt convention), NOT raw kwargs. We translate dispatcher kwargs
+    (`output_dir`, `dry_run`) into the ToolInput shape, drop dispatcher-
+    only keys (like `providers` for OAuth2), and call the entry. The
+    `ToolResult` return is returned as-is for the envelope wrapper.
+    """
+    from adapt.contracts import ToolInput
+
     meta = SLICES[slice_name]
     mod_name = f"adapt.extend.auth_access.{meta['mod']}"
     mod = importlib.import_module(mod_name)
-    # Entry function = module stem (convention; verified below).
     entry = getattr(mod, meta["mod"], None)
     if entry is None or not callable(entry):
         raise RuntimeError(f"slice {slice_name!r}: entry function {meta['mod']!r} not found in {mod_name}")
-    return entry(**kwargs)
+    project_dir = kwargs.pop("output_dir", None) or kwargs.pop("project_dir", None)
+    if not project_dir:
+        raise ValueError(f"slice {slice_name!r}: output_dir is required")
+    dry_run = bool(kwargs.pop("dry_run", False))
+    # Remaining kwargs are slice-specific extras (e.g. providers=['google'])
+    # that the contract-level ToolInput doesn't carry. Drop them for now —
+    # the slice reads its own env/config. Future work: pass a typed payload.
+    inp = ToolInput(project_dir=str(project_dir), dry_run=dry_run)
+    result = entry(inp)
+    # Normalise ToolResult → dict for the envelope.
+    if hasattr(result, "model_dump"):
+        return result.model_dump(mode="json")
+    if hasattr(result, "_asdict"):
+        return result._asdict()
+    return dict(result) if not isinstance(result, dict) else result
 
 
 # ---------------------------------------------------------------------------
