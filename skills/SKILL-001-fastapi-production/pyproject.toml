@@ -1,0 +1,160 @@
+# HuGR SkillKit — SKILL-001 FastAPI Production
+#
+# This file declares the skill as a Python project for tooling
+# compatibility (pytest discovery, `pip install -e`, type-checker
+# roots). The canonical install path remains `install.sh` at the repo
+# root, which clones the repo and pip-installs `requirements-mcp.txt`.
+# This pyproject.toml is additive, not replacement.
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+
+[project]
+name = "hugr-skill-001-fastapi-production"
+description = "HuGR SkillKit SKILL-001 — Rails-style FastAPI production scaffolder"
+readme = "SKILL.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary — see /LICENSE at repo root" }
+authors = [
+    { name = "HumanGR Labs", email = "gustavo@humangr.com" },
+]
+keywords = [
+    "fastapi",
+    "code-generation",
+    "llm-agent",
+    "mcp",
+    "anthropic-agent-skills",
+    "hugr",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: Other/Proprietary License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: Libraries",
+    "Private :: Do Not Upload",
+]
+
+# Version is sourced from the sibling VERSION file so a single bump
+# updates every consumer (manifest, README, CHANGELOG template).
+dynamic = ["version"]
+
+# Runtime deps mirror requirements-mcp.txt exactly; any change here
+# MUST be reflected in that file and vice versa. See CONTRACT §C5 for
+# the invariant.
+dependencies = [
+    "fastmcp>=2.3.0",
+    "pydantic>=2.10.0",
+    "fastapi>=0.115.0",
+    "httpx>=0.28.0",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "alembic>=1.14.0",
+    "PyYAML>=6.0.0",
+]
+
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.0",
+    "pytest-asyncio>=1.3.0",
+    "pytest-json-report>=1.5.0",
+    "pytest-metadata>=3.1.1",
+    "hypothesis>=6.150.0",
+]
+
+
+[project.urls]
+Homepage = "https://github.com/humangr-labs/HuGR_Skills"
+Repository = "https://github.com/humangr-labs/HuGR_Skills"
+Issues = "https://github.com/humangr-labs/HuGR_Skills/issues"
+Changelog = "https://github.com/humangr-labs/HuGR_Skills/blob/main/CHANGELOG.md"
+
+
+[tool.hatch.version]
+path = "VERSION"
+pattern = "^(?P<version>[\\w.+-]+)\\s*$"
+
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "adapt",
+    "core",
+    "engine",
+    "generators",
+    "mcp_tools",
+    "modules",
+]
+exclude = [
+    "core/venous/_extracted/**",
+    "core/venous/**/__pycache__/**",
+    "**/test_*.py",
+    "**/*.pyc",
+]
+
+
+# -----------------------------------------------------------------------------
+# Tooling config (co-located so `hatch`/`pytest`/`ruff` all read the same file)
+# -----------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+minversion = "9.0"
+testpaths = ["adapt", "engine", "tests", "generators", "modules"]
+python_files = ["test_*.py", "*_test.py"]
+asyncio_mode = "strict"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+]
+markers = [
+    "slow: tests that take more than 30 seconds",
+    "postgres: tests requiring a live PostgreSQL instance",
+    "soak: long-running stability tests (minutes)",
+    "mutation: AST mutation tests (inherently slow)",
+]
+norecursedirs = [
+    # pytest defaults (must preserve — this key REPLACES, not extends)
+    "*.egg",
+    ".*",
+    "_darcs",
+    "build",
+    "CVS",
+    "dist",
+    "node_modules",
+    "venv",
+    "{arch}",
+    # project-specific
+    ".venv",
+    "__pycache__",
+    "_extracted",
+    "_quarantine",
+    ".git",
+]
+
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = [
+    "core/venous/_extracted",
+    ".venv",
+]
+
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "SIM", "UP", "N"]
+ignore = [
+    "E501",  # line length — enforced by formatter
+    "N802",  # function naming — some MCP tools use PascalCase on purpose
+]
+
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B011", "F401"]

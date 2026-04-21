@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+#
+# HuGR SkillKit pre-commit gate.
+#
+# Runs CONTRACT §C5 machine-check on every commit, blocking the commit
+# if any rule regresses. Checked into the repo at `.githooks/pre-commit`
+# (git-tracked); install locally with:
+#
+#     git config core.hooksPath .githooks
+#
+# Enabling is opt-in per developer — `.git/hooks/` is gitignored by
+# design, so this canonical hook lives under `.githooks/` and each
+# clone must activate it once. CI runs the same check so a missed
+# hook activation does not let regressions land on main.
+#
+# Failure mode: if the hook fails, fix the root cause and re-run. Do
+# NOT bypass with `--no-verify` — CONTRACT §C7 forbids it.
+
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+skill_dir="${repo_root}/skills/SKILL-001-fastapi-production"
+
+if [ ! -d "${skill_dir}" ]; then
+    echo "pre-commit: skill dir missing at ${skill_dir}" >&2
+    exit 1
+fi
+
+# Prefer the skill's own venv; fall back to system python if absent.
+if [ -x "${skill_dir}/.venv/bin/python" ]; then
+    python_bin="${skill_dir}/.venv/bin/python"
+else
+    python_bin="$(command -v python3)"
+fi
+if [ -z "${python_bin}" ]; then
+    echo "pre-commit: no python interpreter found" >&2
+    exit 1
+fi
+
+# Run contract check — this is the inviolable gate.
+cd "${skill_dir}"
+PYTHONPATH=. "${python_bin}" -m engine.audit.contract_check
+rc=$?
+
+if [ "${rc}" -ne 0 ]; then
+    echo "" >&2
+    echo "pre-commit: CONTRACT check failed (exit ${rc})." >&2
+    echo "pre-commit: fix the failing rule(s) above; do NOT use --no-verify." >&2
+    exit "${rc}"
+fi
+
+# Promotion-pipeline unit tests — cheap, catches state/schema drift.
+PYTHONPATH=. "${python_bin}" -m pytest engine/promotion/tests -q --no-header
+rc=$?
+if [ "${rc}" -ne 0 ]; then
+    echo "pre-commit: promotion-pipeline tests regressed." >&2
+    exit "${rc}"
+fi
+
+exit 0

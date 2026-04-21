@@ -9,6 +9,93 @@ so a reader can tell — in one glance — whether to upgrade.
 
 ---
 
+## [1.0.0] — YYYY-MM-DD (template — fill at freeze commit)
+
+> **This block is a template pre-populated with the values we know to
+> be correct at freeze-prep time. On the freeze day, fill `YYYY-MM-DD`,
+> replace `<stable_hash>` with `jq -r .stable_hash engine/index/catalog.json`,
+> re-verify every count against `engine.inventory`, then remove this
+> note and move the block above the `[Unreleased]` section.**
+
+### Summary
+
+First stable release. Skill surface frozen; MAJOR bumps required for
+tool / primitive renames going forward (CONTRACT §A10).
+
+### Highlights
+
+- **Plan-level benchmark:** 100.00 (methodology `plan_level_v3_best_of_ensemble`).
+- **Code-level benchmark:** 100.00 on 20/20 specs.
+- **217 Maestro-facing tools** total:
+    - 201 catalog tools (`engine/index/catalog.json`)
+    - 7 tier-1 meta tools (`mcp_tools/tier1.py` + `mcp_tools/compose.py`)
+    - 9 tree dispatchers (`mcp_tools/tree/`)
+- **122 registered primitives** (full shell: contract + protocol + tests +
+  TLA+ + dashboard + invariants + observability).
+- **17 FastAPI adapters** (`core/venous/_adapters/fastapi/`) including the
+  new `BulkheadAdapter.py` landed during freeze.
+- **181 staged primitives** (`_extracted/`, `status="staged"`) — discoverable,
+  not promoted.
+- **20 complete examples** at `/examples/` (5 baseline + 10 mid + 5 adversarial).
+- **34/34 CONTRACT rules green.**
+- **Catalog `stable_hash`: `<stable_hash>`** — consumers pin this for session
+  reproducibility.
+
+### Added
+
+- **Tier-lite (§B1.8)** — new registered tier for stateless primitives;
+  no TLA+ required. Machine-checked by `_r_tier_lite_eligibility`.
+  Vacuously green at v1.0 (0 lite primitives registered).
+- **Promotion pipeline** — `engine/promotion/`: classifier, ledger,
+  atomic executor with rollback, ambiguity-safe CLI
+  (`--staged` / `--quarantined`). 38 unit tests.
+- **Catalog `stable_hash`** now embedded in `engine/index/catalog.json`
+  (was stdout-only in v0.x).
+- **`BulkheadAdapter.py`** — completes the Bulkhead motor+adapter pair.
+- **`LICENSE`** — proprietary (HumanGR Labs).
+- **`SECURITY.md`** — disclosure policy + SLA tiers.
+- **`MIGRATION.md`** — v0.x → v1.0 breaking changes.
+- **`FREEZE.md` / `GOLIVE.md` / `INTERFACES.md`** — release triad.
+- **`pyproject.toml`** in the skill dir for tooling compatibility
+  (install path remains `install.sh` + `requirements-mcp.txt`).
+- **`.githooks/pre-commit`** — canonical pre-commit gate running
+  contract + promotion tests (install with `git config core.hooksPath .githooks`).
+- **ADR 0001** — retroactive record of SKILL-001 scope + FastAPI choice.
+- **`POST_RELEASE.md`** — rollback runbook + first-72h monitoring.
+
+### Changed
+
+- **§A12** amended to recognise a ratified triage-pass as a valid
+  promotion trigger (beside benchmark gap + registered-tool import).
+  See `/docs/decisions/0004-tier-lite.md` §3.
+- **Ledger verdicts** renamed from delete-heavy to action-focused:
+  PROMOTE_AS_ADAPTER / PROMOTE_AS_PRIMITIVE / EXTRACT_MOTOR_PAIR /
+  FILL_AND_PROMOTE / REDUNDANT / NEEDS_CALLER / NEEDS_REVIEW.
+- **Contract count** 33 → 34 (added §B1.8).
+
+### Security
+
+- No advisories at release. Disclosure channel live per `SECURITY.md`.
+
+### Migration notes
+
+See `MIGRATION.md`. Short version: rename any legacy tool calls to the
+canonical `fastapi_<domain>_<verb>_<noun>` form; update primitive
+imports to include the adapter when framework glue is needed;
+check staged primitives via `status="staged"` filter.
+
+### Known issues
+
+None blocking v1.0.0. Post-v1.0 items tracked in
+`FREEZE.md §2` (explicitly deferred) and `ROADMAP.md` (phase plan).
+
+### Breaking changes
+
+Tool and primitive names are frozen at this release. Future MAJOR
+bumps (v2.0+) may rename or remove; v1.x will only add.
+
+---
+
 ## [Unreleased] — v0.3.0-dev
 
 Three parallel tracks in development:

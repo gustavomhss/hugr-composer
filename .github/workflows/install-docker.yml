@@ -11,12 +11,16 @@ on:
     paths:
       - 'install.sh'
       - 'skills/SKILL-001-fastapi-production/requirements-mcp.txt'
+      - 'skills/SKILL-001-fastapi-production/pyproject.toml'
+      - 'skills/SKILL-001-fastapi-production/VERSION'
       - '.github/workflows/install-docker.yml'
   pull_request:
     branches: [main]
     paths:
       - 'install.sh'
       - 'skills/SKILL-001-fastapi-production/requirements-mcp.txt'
+      - 'skills/SKILL-001-fastapi-production/pyproject.toml'
+      - 'skills/SKILL-001-fastapi-production/VERSION'
       - '.github/workflows/install-docker.yml'
   schedule:
     - cron: '23 4 * * *'   # 04:23 UTC nightly

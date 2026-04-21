@@ -49,6 +49,8 @@
 | 3.11 | Soak test (5 min, 10 concurrent) | `python tests/test_soak.py --duration 300` exits 0 | Claude |
 | 3.12 | Mutation runner (sample of ≥ 10 modules) | `python tests/mutation_runner.py --sample 10` exits 0 | Claude |
 | 3.13 | All `/examples/` pass pytest | `for d in /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/*/; do (cd "$d" && pytest -q); done` — 0 failures across 20 examples | Claude |
+| 3.14 | Performance baseline | `pytest tests/test_performance_baseline.py -v` → 5/5 pass | Claude |
+| 3.15 | Fresh-clone install smoke | `.github/workflows/install-docker.yml` nightly green ≥ 3 consecutive nights pre-freeze; triggered additionally by any change to `pyproject.toml`, `VERSION`, or `requirements-mcp.txt` (paths wired in the workflow) | Claude (monitor) |
 
 ## §4 — Benchmark gate
 
@@ -75,15 +77,44 @@
 | 5.9 | HANDOFF.md + session_handoff memory updated | Reflects v1.0 cut + points next session at post-v1.0 work | Claude |
 | 5.10 | `/ROADMAP.md` updated to post-v1.0 state | Phases 0-4 marked ✅; Phase 5 `#25/#29` marked ✅; current phase declared "v1.0 shipped, expansion ahead" | Claude |
 | 5.11 | FREEZE.md §4 signed | `grep -E "Ratified 20[0-9]{2}-[0-9]{2}-[0-9]{2} by Gustavo" FREEZE.md` matches | Gustavo |
+| 5.12 | Release rehearsal in throwaway branch | `git checkout -b rehearsal/v1.0.0 && bash .githooks/pre-commit && PYTHONPATH=. .venv/bin/python -m engine.index.manifest verify && echo OK` — rehearsal passes, branch discarded | Claude |
+| 5.13 | Python 3.11 / 3.12 / 3.13 smoke on clean venv | For each supported minor (see `pyproject.toml` classifiers), create fresh venv, `pip install -e .[dev]`, `pytest engine/promotion/tests -q` → 38/38 pass | Claude |
 
 ## §6 — Freeze commit + tag + release (manual steps — Gustavo)
 
 | # | Item | Done check | Owner |
 |---|---|---|---|
-| 6.1 | Create signed tag `v1.0.0` on the freeze commit | `git tag -s v1.0.0 -m "SKILL-001 v1.0.0 frozen"` | Gustavo |
+| 6.1 | Create signed tag `v1.0.0` on the freeze commit using the tag-message template below | `git tag -s v1.0.0 -F .git/V1_TAG_MSG` (where `V1_TAG_MSG` is written from the template) | Gustavo |
 | 6.2 | Push `main` + tag | `git push origin main v1.0.0` | Gustavo |
 | 6.3 | GitHub release draft with body pointing to CHANGELOG `[1.0.0]` | Release appears at `github.com/humangr-labs/HuGR_Skills/releases/tag/v1.0.0` | Gustavo |
 | 6.4 | Install.sh validated on release tag in fresh Docker | nightly workflow runs green pinned to `v1.0.0` for 48h | Claude (monitor) |
+| 6.5 | First-72h monitoring live per `POST_RELEASE.md §1` | Every morning during window, the three audit commands in `POST_RELEASE.md §1` pass | Gustavo |
+
+### §6.1a — Tag message template
+
+Write this to `.git/V1_TAG_MSG` (or any scratch path), then
+`git tag -s v1.0.0 -F <path>`:
+
+```
+SKILL-001 v1.0.0 — Rails-style FastAPI production scaffolder
+
+Benchmark: plan 100.00 / code 100.00 on 20/20 specs.
+Stable_hash: <fill from `jq -r .stable_hash engine/index/catalog.json`>.
+
+Surface: 217 Maestro tools (201 catalog + 7 tier-1 + 9 tree),
+122 registered primitives, 17 FastAPI adapters, 181 staged
+primitives discoverable, 20 complete examples, 34/34 contract
+rules green.
+
+First stable release; tool/primitive names frozen (semver §A10).
+See CHANGELOG.md [1.0.0] + MIGRATION.md for details.
+
+Ratifications:
+- §A12 amended (triage-pass clause) — CONTRACT.md §E.
+- §B1.8 tier-lite added — CONTRACT.md §E.
+
+Signed-off-by: Gustavo Schneiter <gustavo@humangr.com>
+```
 
 ---
 
