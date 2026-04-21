@@ -32,20 +32,23 @@ surfaces are MCP-registered and JIT-discoverable via
 | Slice tools under `adapt/extend/` | 100 | `find adapt/extend -name 'add_*.py' ! -name 'test_*' \| wc -l` |
 | Slice tools total (adapt/) | 103 | `find adapt -name 'add_*.py' ! -name 'test_*' \| wc -l` |
 | Generator files (`generators/`) | 60 | `find generators -name '*.py' ! -name '__init__.py' ! -name 'test_*' \| wc -l` |
-| MCP-registered tools (all surfaces) | 180 | `PYTHONPATH=. .venv/bin/python -c 'from mcp_tools.server import mcp; from mcp_tools.discovery import discover_and_register; print(discover_and_register(mcp))'` |
+| MCP-registered tools (all surfaces) | 201 | `jq '.tools \| length' engine/index/catalog.json` |
 | Production primitives (registered) | 122 | `grep -c '^- name:' engine/primitives_by_concern.yaml` |
 | Production primitive directories | 122 | `find core/venous -mindepth 2 -maxdepth 2 -type d ! -path '*_extracted*' ! -path '*_adapters*' ! -path '*__pycache__*' \| wc -l` |
 | Staged primitives (extracted pool) | 430+ | `find core/venous/_extracted -mindepth 2 -maxdepth 2 -type d \| wc -l` |
 | Benchmark specs (Phase 3) | 20 | `find benchmarks/specs -name '*.md' ! -name 'README.md' \| wc -l` |
-| Contract items green | 28/28 | `PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check` |
+| Contract items green | 33/33 | `PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check` |
+| Staged primitives (pre-audited, REPLACE_ME) | 180 | `jq '[.primitives[] \| select(.status=="staged")] \| length' engine/index/catalog.json` |
+| Extend tools primitive-connected | 19/100 | `jq '[.tools[] \| select(.verb=="add" and (.module_path \| startswith("adapt/extend/")) and (.primitives_used \| length > 0))] \| length' engine/index/catalog.json` |
 | Benchmark score (plan-level, best-of ensemble) | 100.00 | `jq '.overall' benchmarks/latest_score.json` |
 
-The 180 MCP tools decompose as: 100 `adapt/extend/` slice tools + 3
-other `adapt/` tools (extract, verify, evolve) + 74 MCP-registered
-generator and module tools + 2 discovery tools
-(`fastapi_meta_search_primitive`, `fastapi_meta_search_composition`) + 1 audit
-tool. All auto-discovered via `MCP_TOOL` metadata scan —
-CONTRACT §B1.5 forbids manual `@mcp_app.tool` decorators.
+The 201 catalog tools decompose as: 100 `adapt/extend/` slice tools + 26
+other `adapt/` tools (evolve/operate/verify/contracts/proactive) + 56
+generators + 20 module tools + 7 tier-1 meta + 9 domain-tree dispatchers + 2
+legacy discovery tools (`fastapi_meta_search_primitive`,
+`fastapi_meta_search_composition`) + 1 audit tool. All auto-discovered via
+`MCP_TOOL` metadata scan — CONTRACT §B1.5 forbids manual `@mcp_app.tool`
+decorators.
 
 ## Maestro workflow
 
@@ -57,7 +60,7 @@ CONTRACT §B1.5 forbids manual `@mcp_app.tool` decorators.
    `fastapi_generate_project`) to lay down the project tree.
 3. **Capability adds.** Maestro invokes one or more slice tools
    (`fastapi_add_stripe_webhook`, `fastapi_add_rbac`, …). 64 of the
-   103 slice tools emit code that imports from `core.venous.*` —
+   19 slice tools emit code that imports from `core.venous.*` —
    the Rails-analogy connection is fully operative (Phase 1 complete).
 4. **Customize.** Where no slice tool fits exactly, Maestro composes
    primitives directly — `from core.venous.<ns>.<Name>` into the
@@ -161,7 +164,7 @@ Validated nightly in a fresh `python:3.12-slim` container —
 ## Contract enforcement
 
 ```bash
-# Run the full 28-rule check
+# Run the full 33-rule check
 PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check
 
 # Run a single phase (for PR work targeting one phase)
