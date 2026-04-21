@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-04-21T18:38:58+00:00",
+  "generated_at": "2026-04-21T22:08:38+00:00",
   "classifier_version": "1.0",
-  "total_staged": 182,
-  "total_quarantined": 47,
+  "total_staged": 180,
+  "total_quarantined": 45,
   "entries": [
     {
       "primitive": "AdaptiveThrottleMiddleware",
@@ -121,46 +121,6 @@
       "staging_reason": null,
       "delete_reason": null,
       "promotion_target": null,
-      "classifier_version": "1.0"
-    },
-    {
-      "primitive": "BulkheadMiddleware",
-      "namespace": "resiliency",
-      "verdict": "promote_as_adapter",
-      "tier": "adapter",
-      "rationale": "Framework-coupled (fastapi, starlette). Motor `Bulkhead` registered but `BulkheadAdapter.py` is MISSING. Promote this staged item as `core/venous/_adapters/fastapi/BulkheadAdapter.py` \u2014 completes the motor+adapter pair.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_bulkhead_isolation.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_bulkhead_isolation.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "BulkheadMiddleware",
-        "namespace": "resiliency",
-        "is_quarantined": true,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 29,
-        "primitive_score": 16116,
-        "origin_tool": "infrastructure/add_bulkhead_isolation.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [
-          "fastapi",
-          "starlette"
-        ],
-        "duplicate_of_registered": null,
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": null,
-      "delete_reason": null,
-      "promotion_target": "core/venous/_adapters/fastapi/BulkheadAdapter.py",
       "classifier_version": "1.0"
     },
     {
@@ -634,45 +594,6 @@
       },
       "staging_reason": null,
       "delete_reason": null,
-      "promotion_target": null,
-      "classifier_version": "1.0"
-    },
-    {
-      "primitive": "FeatureToggleService",
-      "namespace": "auth",
-      "verdict": "redundant",
-      "tier": "none",
-      "rationale": "Framework-coupled (sqlalchemy). Motor `FeatureToggle` registered, AND `FeatureToggleAdapter.py` already ships under _adapters/fastapi/. Both halves of the pair exist \u2014 staged copy is pure redundancy.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_feature_toggles_api.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_feature_toggles_api.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "FeatureToggleService",
-        "namespace": "auth",
-        "is_quarantined": true,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 101,
-        "primitive_score": 491904,
-        "origin_tool": "auth_access/add_feature_toggles_api.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [
-          "sqlalchemy"
-        ],
-        "duplicate_of_registered": null,
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": null,
-      "delete_reason": "Motor `FeatureToggle` + `FeatureToggleAdapter.py` both registered. Staged `FeatureToggleService` duplicates shipped code.",
       "promotion_target": null,
       "classifier_version": "1.0"
     },
@@ -2866,47 +2787,6 @@
       },
       "staging_reason": "No \u00a7A12(b) signal yet. Primitive was extracted from `auth_access/add_feature_flags.py` but no current caller declares it. Re-evaluate on the next triage pass.",
       "delete_reason": null,
-      "promotion_target": null,
-      "classifier_version": "1.0"
-    },
-    {
-      "primitive": "FeatureToggleService",
-      "namespace": "auth",
-      "verdict": "redundant",
-      "tier": "none",
-      "rationale": "Framework-coupled (sqlalchemy). Motor `FeatureToggle` registered, AND `FeatureToggleAdapter.py` already ships under _adapters/fastapi/. Both halves of the pair exist \u2014 staged copy is pure redundancy.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_feature_toggles_api.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_feature_toggles_api.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "FeatureToggleService",
-        "namespace": "auth",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 101,
-        "primitive_score": 491904,
-        "origin_tool": "auth_access/add_feature_toggles_api.py",
-        "quarantine_reason": "domain_coupled",
-        "forbidden_modules": [
-          "sqlalchemy.ext.asyncio"
-        ],
-        "framework_imports": [
-          "sqlalchemy"
-        ],
-        "duplicate_of_registered": null,
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": null,
-      "delete_reason": "Motor `FeatureToggle` + `FeatureToggleAdapter.py` both registered. Staged `FeatureToggleService` duplicates shipped code.",
       "promotion_target": null,
       "classifier_version": "1.0"
     },
@@ -5176,48 +5056,6 @@
       "staging_reason": "No \u00a7A12(b) signal yet. Primitive was extracted from `infrastructure/add_bulkhead_isolation.py` but no current caller declares it. Re-evaluate on the next triage pass.",
       "delete_reason": null,
       "promotion_target": null,
-      "classifier_version": "1.0"
-    },
-    {
-      "primitive": "BulkheadMiddleware",
-      "namespace": "resiliency",
-      "verdict": "promote_as_adapter",
-      "tier": "adapter",
-      "rationale": "Framework-coupled (fastapi, starlette). Motor `Bulkhead` registered but `BulkheadAdapter.py` is MISSING. Promote this staged item as `core/venous/_adapters/fastapi/BulkheadAdapter.py` \u2014 completes the motor+adapter pair.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_bulkhead_isolation.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_bulkhead_isolation.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "BulkheadMiddleware",
-        "namespace": "resiliency",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 29,
-        "primitive_score": 16116,
-        "origin_tool": "infrastructure/add_bulkhead_isolation.py",
-        "quarantine_reason": "domain_coupled",
-        "forbidden_modules": [
-          "starlette.middleware.base"
-        ],
-        "framework_imports": [
-          "fastapi",
-          "starlette"
-        ],
-        "duplicate_of_registered": null,
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": null,
-      "delete_reason": null,
-      "promotion_target": "core/venous/_adapters/fastapi/BulkheadAdapter.py",
       "classifier_version": "1.0"
     },
     {

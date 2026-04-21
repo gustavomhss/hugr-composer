@@ -273,7 +273,7 @@ def _rebuild_catalog_and_audit() -> tuple[bool, str]:
     )
     if "ALL GREEN" not in r2.stdout:
         return False, f"contract_check failed:\n{r2.stdout}\n{r2.stderr}"
-    return True, "catalog rebuilt; contract 33/33 green."
+    return True, "catalog rebuilt; contract check passed."
 
 
 def _env() -> dict:

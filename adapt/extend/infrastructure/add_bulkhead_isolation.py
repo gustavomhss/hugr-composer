@@ -48,7 +48,9 @@ MCP_TOOL = {
     "imports_primitives": [
         "core.venous.resiliency.Bulkhead",
     ],
-    "imports_adapters": (),
+    "imports_adapters": (
+        "core.venous._adapters.fastapi.BulkheadAdapter",
+    ),
 }
 
 
@@ -57,55 +59,49 @@ MCP_TOOL = {
 # ---------------------------------------------------------------------------
 
 _BULKHEAD_GLUE = '''\
-"""Thin glue that wires the Bulkhead primitive into a FastAPI app.
+"""Thin glue that wires the Bulkhead FastAPI adapter into the app.
 
-Delegates to the primitive copied under `core/venous/resiliency/Bulkhead/`
-by the `add_bulkhead_isolation` tool. Re-emitted idempotently on subsequent
-runs. This file contains NO business logic — partition accounting,
-invariant checks (BH_INV_01..05), and rejection metering all live in
-``core.venous.resiliency.Bulkhead``. The primitive uses asyncio.Semaphore
-for concurrency control.
+Re-exports ``Bulkhead`` (multi-partition facade) and ``BulkheadFullError``
+from ``core.venous._adapters.fastapi.BulkheadAdapter`` — the adapter owns
+the convenience API (acquire, status, middleware). The motor primitive at
+``core.venous.resiliency.Bulkhead`` owns all permit accounting, invariant
+enforcement (BH_INV_01..05) and rejection metering. No business logic
+lives in this file.
+
+``get_bulkhead()`` builds a process-global ``Bulkhead`` from env vars.
 """
 
 from __future__ import annotations
 
 import os
 
-from core.venous.resiliency.Bulkhead import (
-    BulkheadFull as BulkheadFullError,
-    InMemoryBulkhead as Bulkhead,
-    PartitionConfig,
-    PartitionRegistry,
+from core.venous._adapters.fastapi.BulkheadAdapter import (
+    Bulkhead,
+    BulkheadFullError,
 )
+from app.resilience.pool_config import BulkheadConfig, get_default_config
 
-_registry: PartitionRegistry | None = None
-
-
-def get_bulkhead() -> PartitionRegistry:
-    """Return the process-global PartitionRegistry (lazy init from env)."""
-    global _registry
-    if _registry is None:
-        reg = PartitionRegistry()
-        for name, default in (("payments", "10"), ("crud", "50"), ("analytics", "20")):
-            env = f"BULKHEAD_{name.upper()}_MAX"
-            reg.register(PartitionConfig(
-                name=name,
-                max_concurrent_calls=int(os.getenv(env, default)),
-                max_wait_duration_ms=int(os.getenv("BULKHEAD_WAIT_MS", "0")),
-            ))
-        _registry = reg
-    return _registry
+_bulkhead: Bulkhead | None = None
 
 
-__all__ = ["Bulkhead", "BulkheadFullError", "get_bulkhead"]
+def get_bulkhead() -> Bulkhead:
+    """Return the process-global Bulkhead (lazy init from env)."""
+    global _bulkhead
+    if _bulkhead is None:
+        _bulkhead = Bulkhead(get_default_config())
+    return _bulkhead
+
+
+__all__ = ["Bulkhead", "BulkheadConfig", "BulkheadFullError", "get_bulkhead"]
 '''
 
 
 _POOL_CONFIG_GLUE = '''\
-"""Per-group limits + route classifier. Thin helper for the Bulkhead glue.
+"""App-specific bulkhead configuration + route classifier.
 
-Concurrency accounting lives in ``core.venous.resiliency.Bulkhead`` — this
-module only maps URL paths to partition names and loads env-driven limits.
+``BulkheadConfig`` is re-exported from the shipped adapter so the app
+uses the exact type ``Bulkhead`` validates against. ``classify_route``
+is app-specific policy: it decides which URL paths go to which partition.
 
 Groups:
     payments   — payment processing (default: 10)
@@ -116,30 +112,20 @@ Groups:
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
 
-
-@dataclass
-class BulkheadConfig:
-    """Configuration for per-group concurrency limits."""
-
-    limits: dict[str, int] = field(default_factory=dict)
-
-    def __post_init__(self) -> None:
-        for group, limit in self.limits.items():
-            if limit < 1:
-                raise ValueError(
-                    f"Bulkhead limit for '{group}' must be >= 1, got {limit}"
-                )
+from core.venous._adapters.fastapi.BulkheadAdapter import BulkheadConfig
 
 
 def get_default_config() -> BulkheadConfig:
     """Return BulkheadConfig populated from environment variables."""
-    return BulkheadConfig(limits={
-        "payments": int(os.getenv("BULKHEAD_PAYMENTS_MAX", "10")),
-        "crud": int(os.getenv("BULKHEAD_CRUD_MAX", "50")),
-        "analytics": int(os.getenv("BULKHEAD_ANALYTICS_MAX", "20")),
-    })
+    return BulkheadConfig(
+        limits={
+            "payments": int(os.getenv("BULKHEAD_PAYMENTS_MAX", "10")),
+            "crud": int(os.getenv("BULKHEAD_CRUD_MAX", "50")),
+            "analytics": int(os.getenv("BULKHEAD_ANALYTICS_MAX", "20")),
+        },
+        wait_ms=int(os.getenv("BULKHEAD_WAIT_MS", "0")),
+    )
 
 
 def classify_route(path: str) -> str:
@@ -149,75 +135,56 @@ def classify_route(path: str) -> str:
     if path.startswith(("/analytics", "/reports", "/exports", "/metrics")):
         return "analytics"
     return "crud"
+
+
+__all__ = ["BulkheadConfig", "classify_route", "get_default_config"]
 '''
 
 
 _MIDDLEWARE_GLUE = '''\
-"""BulkheadMiddleware: thin ASGI glue over the Bulkhead primitive.
+"""BulkheadMiddleware re-export + env-gated installer.
 
-Classifies each request into a partition, calls ``submit`` on the primitive,
-returns 503 + X-Bulkhead-Group when the partition rejects (BulkheadFull).
-The primitive enforces concurrency invariants; the middleware is pure
-framework wiring.
+The middleware class itself lives in the shipped adapter
+(``core.venous._adapters.fastapi.BulkheadAdapter``). This file adds the
+``BULKHEAD_ENABLED`` env guard and the ``install_if_enabled`` helper so
+``main.py`` can opt in with one line.
 """
 
 from __future__ import annotations
 
-import logging
 import os
 
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
+from fastapi import FastAPI
 
-from app.resilience.bulkhead import BulkheadFullError, get_bulkhead
+from core.venous._adapters.fastapi.BulkheadAdapter import BulkheadMiddleware
+from app.resilience.bulkhead import get_bulkhead
 from app.resilience.pool_config import classify_route
 
-logger = logging.getLogger(__name__)
+
+def install_if_enabled(app: FastAPI) -> bool:
+    """Install BulkheadMiddleware on *app* iff BULKHEAD_ENABLED=true in env.
+
+    Returns ``True`` if installed, ``False`` otherwise.
+    """
+    if os.getenv("BULKHEAD_ENABLED", "false").lower() != "true":
+        return False
+    app.add_middleware(
+        BulkheadMiddleware,
+        bulkhead=get_bulkhead(),
+        classify_route=classify_route,
+    )
+    return True
 
 
-class BulkheadMiddleware(BaseHTTPMiddleware):
-    """ASGI middleware that routes requests through a Bulkhead partition."""
-
-    async def dispatch(
-        self,
-        request: Request,
-        call_next: RequestResponseEndpoint,
-    ) -> Response:
-        if os.getenv("BULKHEAD_ENABLED", "false").lower() != "true":
-            return await call_next(request)
-        group = classify_route(request.url.path)
-        registry = get_bulkhead()
-        try:
-            partition = registry.get(group)
-        except Exception:
-            return await call_next(request)
-
-        async def _run() -> Response:
-            return await call_next(request)
-
-        try:
-            return await partition.submit(_run)
-        except BulkheadFullError as exc:
-            logger.warning("Bulkhead full for group '%s': %s", group, exc)
-            return JSONResponse(
-                status_code=503,
-                content={
-                    "detail": (
-                        f"Service unavailable: '{group}' pool at capacity. "
-                        "Please retry."
-                    )
-                },
-                headers={"X-Bulkhead-Group": group},
-            )
+__all__ = ["BulkheadMiddleware", "install_if_enabled"]
 '''
 
 
 _STATUS_ROUTE_GLUE = '''\
 """GET /resilience/bulkheads — pool utilization per bulkhead partition.
 
-Reads counters directly from the primitive's ``PartitionRegistry`` — this
-route is pure glue (no logic of its own).
+Delegates to ``Bulkhead.status()`` on the adapter facade — no local
+computation. Counters live in the motor primitive.
 """
 
 from __future__ import annotations
@@ -225,7 +192,6 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.resilience.bulkhead import get_bulkhead
-from core.venous.resiliency.Bulkhead import snapshot
 
 router = APIRouter(prefix="/resilience", tags=["resilience"])
 
@@ -233,16 +199,7 @@ router = APIRouter(prefix="/resilience", tags=["resilience"])
 @router.get("/bulkheads", response_model=dict)
 async def bulkhead_status() -> dict:
     """Return current partition utilization for every registered group."""
-    registry = get_bulkhead()
-    out: dict[str, dict[str, int]] = {}
-    for name in registry.names():
-        snap = snapshot(registry.get(name))
-        out[name] = {
-            "active": snap.in_flight,
-            "max": snap.capacity,
-            "available": snap.available,
-        }
-    return out
+    return get_bulkhead().status()
 '''
 
 
@@ -280,11 +237,11 @@ def add_bulkhead_isolation(inp: ToolInput) -> ToolResult:
     resilience_dir = app_dir / "resilience"
     glue_file = resilience_dir / "bulkhead.py"
 
-    # --- Idempotency guard (check for the primitive's class name) ------------
-    if glue_file.exists() and "InMemoryBulkhead" in glue_file.read_text():
+    # --- Idempotency guard (detect the adapter's Bulkhead facade import) ----
+    if glue_file.exists() and "BulkheadAdapter" in glue_file.read_text():
         return ToolResult(
             status="no_op",
-            notes=["Bulkhead primitive already wired via app/resilience/bulkhead.py."],
+            notes=["Bulkhead adapter already wired via app/resilience/bulkhead.py."],
             execution_time_ms=_elapsed_ms(start),
         )
 
@@ -306,7 +263,7 @@ def add_bulkhead_isolation(inp: ToolInput) -> ToolResult:
     manifest = ensure_primitives(
         str(project),
         names=["core.venous.resiliency.Bulkhead"],
-        adapters=[],
+        adapters=["core.venous._adapters.fastapi.BulkheadAdapter"],
     )
     files_created.append(manifest.path)
 
@@ -384,16 +341,17 @@ def add_bulkhead_isolation(inp: ToolInput) -> ToolResult:
         files_modified=files_modified,
         notes=[
             "Shipped primitive: core.venous.resiliency.Bulkhead.",
-            "Glue: app/resilience/bulkhead.py wires InMemoryBulkhead + PartitionRegistry.",
-            "BulkheadMiddleware routes requests to partitions and returns 503 + "
-            "X-Bulkhead-Group when a partition is saturated.",
-            "Status endpoint: GET /resilience/bulkheads (reads primitive counters).",
+            "Shipped adapter: core.venous._adapters.fastapi.BulkheadAdapter "
+            "(Bulkhead facade + BulkheadMiddleware).",
+            "Glue: app/resilience/bulkhead.py re-exports adapter + get_bulkhead() factory.",
+            "app/middleware/bulkhead.py: install_if_enabled(app) — one-line wire-in.",
+            "Status endpoint: GET /resilience/bulkheads (delegates to Bulkhead.status()).",
             "Config: BULKHEAD_ENABLED, BULKHEAD_PAYMENTS_MAX, BULKHEAD_CRUD_MAX, "
-            "BULKHEAD_ANALYTICS_MAX.",
+            "BULKHEAD_ANALYTICS_MAX, BULKHEAD_WAIT_MS.",
         ],
         next_steps=[
             "Set BULKHEAD_ENABLED=true in .env to activate.",
-            "Add BulkheadMiddleware to app.add_middleware() in main.py.",
+            "Call `install_if_enabled(app)` from main.py (idempotent no-op when disabled).",
             "Include bulkhead_status router in app for /resilience/bulkheads.",
             "Tune BULKHEAD_*_MAX values to match your workload profiles.",
             "Monitor /resilience/bulkheads to identify bottleneck groups.",
@@ -428,9 +386,9 @@ def _patch_main(main_file: Path) -> None:
         return
     note = (
         "\n# Bulkhead isolation — added by add_bulkhead_isolation tool\n"
-        "# from app.middleware.bulkhead import BulkheadMiddleware\n"
+        "# from app.middleware.bulkhead import install_if_enabled\n"
         "# from app.api.routes.bulkhead_status import router as bulkhead_router\n"
-        "# app.add_middleware(BulkheadMiddleware)\n"
+        "# install_if_enabled(app)\n"
         "# app.include_router(bulkhead_router)\n"
     )
     main_file.write_text(src.rstrip("\n") + "\n" + note)
