@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "ab3972d",
-  "generated_at": "2026-04-21T16:02:17+00:00",
+  "kit_commit": "6ec95f8",
+  "generated_at": "2026-04-21T16:27:46+00:00",
   "verbs": [
     "add",
     "generate",

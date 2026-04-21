@@ -255,23 +255,17 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to app/core/config.py.
     """
-    content = config_file.read_text()
-    if "WEBAUTHN_RP_ID" in content:
-        return
-    # Fields must be 4-space indented to sit inside the Settings class body
-    fields = (
-        "\n"
-        "    # WebAuthn / passkeys (TOOL-075)\n"
-        '    WEBAUTHN_RP_ID: str = "localhost"\n'
-        '    WEBAUTHN_RP_NAME: str = "My App"\n'
-        '    WEBAUTHN_ORIGIN: str = "http://localhost:8000"\n'
-        "    WEBAUTHN_CHALLENGE_TTL_SECONDS: int = 300\n"
+    from adapt.contracts.config_patcher import patch_settings_fields
+
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("WEBAUTHN_RP_ID", 'WEBAUTHN_RP_ID: str = "localhost"'),
+            ("WEBAUTHN_RP_NAME", 'WEBAUTHN_RP_NAME: str = "My App"'),
+            ("WEBAUTHN_ORIGIN", 'WEBAUTHN_ORIGIN: str = "http://localhost:8000"'),
+            ("WEBAUTHN_CHALLENGE_TTL_SECONDS", "WEBAUTHN_CHALLENGE_TTL_SECONDS: int = 300"),
+        ],
     )
-    if "settings = Settings()" in content:
-        content = content.replace("settings = Settings()", fields + "\nsettings = Settings()")
-    else:
-        content += fields
-    config_file.write_text(content)
 
 
 def _patch_routes_init(routes_init: Path) -> None:

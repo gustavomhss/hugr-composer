@@ -257,27 +257,21 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to app/core/config.py.
     """
-    content = config_file.read_text()
-    if "TWILIO_ACCOUNT_SID" in content:
-        return
-    # Fields must be 4-space indented to sit inside the Settings class body
-    fields = (
-        "\n"
-        "    # SMS OTP (TOOL-076)\n"
-        '    SMS_PROVIDER: str = "twilio"\n'
-        '    TWILIO_ACCOUNT_SID: str = ""\n'
-        '    TWILIO_AUTH_TOKEN: str = ""\n'
-        '    TWILIO_FROM_NUMBER: str = ""\n'
-        "    OTP_LENGTH: int = 6\n"
-        "    OTP_EXPIRY_SECONDS: int = 300\n"
-        "    OTP_RATE_LIMIT_MAX: int = 5\n"
-        "    OTP_RATE_LIMIT_WINDOW_SECONDS: int = 3600\n"
+    from adapt.contracts.config_patcher import patch_settings_fields
+
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("SMS_PROVIDER", 'SMS_PROVIDER: str = "twilio"'),
+            ("TWILIO_ACCOUNT_SID", 'TWILIO_ACCOUNT_SID: str = ""'),
+            ("TWILIO_AUTH_TOKEN", 'TWILIO_AUTH_TOKEN: str = ""'),
+            ("TWILIO_FROM_NUMBER", 'TWILIO_FROM_NUMBER: str = ""'),
+            ("OTP_LENGTH", "OTP_LENGTH: int = 6"),
+            ("OTP_EXPIRY_SECONDS", "OTP_EXPIRY_SECONDS: int = 300"),
+            ("OTP_RATE_LIMIT_MAX", "OTP_RATE_LIMIT_MAX: int = 5"),
+            ("OTP_RATE_LIMIT_WINDOW_SECONDS", "OTP_RATE_LIMIT_WINDOW_SECONDS: int = 3600"),
+        ],
     )
-    if "settings = Settings()" in content:
-        content = content.replace("settings = Settings()", fields + "\nsettings = Settings()")
-    else:
-        content += fields
-    config_file.write_text(content)
 
 
 def _patch_routes_init(routes_init: Path) -> None:

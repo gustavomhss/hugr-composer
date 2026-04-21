@@ -263,30 +263,23 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to app/core/config.py.
     """
-    content = config_file.read_text()
-    if "GOOGLE_CLIENT_ID" in content:
-        return
-    # Fields must be 4-space indented to sit inside the Settings class body
-    fields = (
-        "\n"
-        "    # Social login (TOOL-074)\n"
-        '    GOOGLE_CLIENT_ID: str = ""\n'
-        '    GOOGLE_CLIENT_SECRET: str = ""\n'
-        '    GITHUB_CLIENT_ID: str = ""\n'
-        '    GITHUB_CLIENT_SECRET: str = ""\n'
-        '    APPLE_CLIENT_ID: str = ""\n'
-        '    APPLE_CLIENT_SECRET: str = ""\n'
-        '    APPLE_TEAM_ID: str = ""\n'
-        '    APPLE_KEY_ID: str = ""\n'
-        '    APPLE_PRIVATE_KEY: str = ""\n'
-        '    SOCIAL_LOGIN_CALLBACK_BASE_URL: str = "http://localhost:8000"\n'
+    from adapt.contracts.config_patcher import patch_settings_fields
+
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("GOOGLE_CLIENT_ID", 'GOOGLE_CLIENT_ID: str = ""'),
+            ("GOOGLE_CLIENT_SECRET", 'GOOGLE_CLIENT_SECRET: str = ""'),
+            ("GITHUB_CLIENT_ID", 'GITHUB_CLIENT_ID: str = ""'),
+            ("GITHUB_CLIENT_SECRET", 'GITHUB_CLIENT_SECRET: str = ""'),
+            ("APPLE_CLIENT_ID", 'APPLE_CLIENT_ID: str = ""'),
+            ("APPLE_CLIENT_SECRET", 'APPLE_CLIENT_SECRET: str = ""'),
+            ("APPLE_TEAM_ID", 'APPLE_TEAM_ID: str = ""'),
+            ("APPLE_KEY_ID", 'APPLE_KEY_ID: str = ""'),
+            ("APPLE_PRIVATE_KEY", 'APPLE_PRIVATE_KEY: str = ""'),
+            ("SOCIAL_LOGIN_CALLBACK_BASE_URL", 'SOCIAL_LOGIN_CALLBACK_BASE_URL: str = "http://localhost:8000"'),
+        ],
     )
-    # Insert before the closing of Settings class — before the final `settings = Settings()`
-    if "settings = Settings()" in content:
-        content = content.replace("settings = Settings()", fields + "\nsettings = Settings()")
-    else:
-        content += fields
-    config_file.write_text(content)
 
 
 def _patch_routes_init(routes_init: Path) -> None:

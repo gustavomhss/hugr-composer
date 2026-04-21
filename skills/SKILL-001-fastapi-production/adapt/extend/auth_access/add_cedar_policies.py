@@ -701,30 +701,16 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Absolute path to app/core/config.py.
     """
-    content = config_file.read_text()
-    fields = [
-        "    CEDAR_ENABLED: bool = False",
-        '    CEDAR_POLICY_DIR: str = "app/authz/policies"',
-        '    CEDAR_DEFAULT_EFFECT: str = "deny"',
-    ]
-    new_lines: list[str] = []
-    for field in fields:
-        field_name = field.strip().split(":")[0].strip()
-        if field_name not in content:
-            new_lines.append(field)
-    if not new_lines:
-        return
-    # Insert before the closing of the Settings class — find 'settings = Settings()'
-    sentinel = "settings = Settings()"
-    if sentinel in content:
-        insert_block = "\n".join(new_lines) + "\n\n"
-        content = content.replace(sentinel, insert_block + sentinel)
-    else:
-        # Fallback: append at end of file
-        if not content.endswith("\n"):
-            content += "\n"
-        content += "\n".join(new_lines) + "\n"
-    config_file.write_text(content)
+    from adapt.contracts.config_patcher import patch_settings_fields
+
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("CEDAR_ENABLED", "CEDAR_ENABLED: bool = False"),
+            ("CEDAR_POLICY_DIR", 'CEDAR_POLICY_DIR: str = "app/authz/policies"'),
+            ("CEDAR_DEFAULT_EFFECT", 'CEDAR_DEFAULT_EFFECT: str = "deny"'),
+        ],
+    )
 
 
 def _patch_routes_init(routes_init: Path) -> None:

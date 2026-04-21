@@ -1184,38 +1184,19 @@ def _write_dockerfile(dest: Path) -> None:
 def _patch_config(config_file: Path) -> None:
     """Patch ``app/core/config.py`` to add TEMPORAL_* settings.
 
-    Fields are appended inside the ``Settings`` class body (4-space indent).
-    Already-present fields are never duplicated (idempotent).
-
-    Args:
-        config_file: Absolute path to ``app/core/config.py``.
+    Delegates to the shared `adapt.contracts.config_patcher` so the
+    same AST-safe logic is used by every tool that edits Settings.
     """
-    if not config_file.exists():
-        return
-    content = config_file.read_text()
-    fields_to_add = [
-        ('TEMPORAL_HOST', '    TEMPORAL_HOST: str = "localhost:7233"'),
-        ('TEMPORAL_NAMESPACE', '    TEMPORAL_NAMESPACE: str = "default"'),
-        ('TEMPORAL_TASK_QUEUE', '    TEMPORAL_TASK_QUEUE: str = "main-queue"'),
-    ]
-    new_lines: list[str] = []
-    for field_name, field_line in fields_to_add:
-        if field_name not in content:
-            new_lines.append(field_line)
-    if not new_lines:
-        return
-    # Insert before the closing line of Settings class or append before settings = Settings()
-    insert_marker = "settings = Settings()"
-    if insert_marker in content:
-        content = content.replace(
-            insert_marker,
-            "\n".join(new_lines) + "\n\n" + insert_marker,
-        )
-    else:
-        if not content.endswith("\n"):
-            content += "\n"
-        content += "\n".join(new_lines) + "\n"
-    config_file.write_text(content)
+    from adapt.contracts.config_patcher import patch_settings_fields
+
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("TEMPORAL_HOST", 'TEMPORAL_HOST: str = "localhost:7233"'),
+            ("TEMPORAL_NAMESPACE", 'TEMPORAL_NAMESPACE: str = "default"'),
+            ("TEMPORAL_TASK_QUEUE", 'TEMPORAL_TASK_QUEUE: str = "main-queue"'),
+        ],
+    )
 
 
 def _patch_requirements(requirements_file: Path) -> None:
