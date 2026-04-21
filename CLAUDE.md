@@ -33,13 +33,13 @@ HuGR_Skills/
 │       │   ├── contracts/              # 3 contract tools
 │       │   └── proactive/              # 1 proactive tool
 │       ├── modules/                    # 28 feature packages prontos
-│       ├── core/venous/                # 122 registered primitives + 16 FastAPI adapters + 426 staged em _extracted/
+│       ├── core/venous/                # 122 registered primitives + 16 FastAPI adapters + 194 staged em _extracted/
 │       ├── mcp_tools/                  # Tier-1 meta + tree dispatchers + auto-discovery
 │       │   ├── tier1.py + compose.py   # 7 meta tools (home/search/describe/scaffold/compose/audit/verify)
 │       │   └── tree/                   # 9 domain dispatchers (auth, data, api, realtime, resiliency, obs, compliance, deployment, testing)
 │       ├── engine/                     # audit, index, bench, docs, extraction, inventory
-│       ├── examples/                   # 5 apps completos de referência
 │       ├── specs/                      # 124 formal specifications
+│       # examples/ vive em /examples/ no repo root — 20 apps completos
 │       ├── tests/                      # Test infrastructure
 │       │   ├── common/                 # Fixture factory
 │       │   ├── contracts/              # Pydantic delivery contract + agent briefing
@@ -72,15 +72,17 @@ A skill principal. Convention over Configuration para FastAPI.
 > Drift entre este bloco e INVENTORY.md = bug de audit.
 
 ```
-229  arquivos com MCP_TOOL      (superfície Maestro)
-173  tools indexados no catalog.json
+257  arquivos com MCP_TOOL      (superfície Maestro)
+201  tools indexados no catalog.json
 122  primitivos registrados      (core/venous/<ns>/<Name>/)
-426  primitivos staged           (core/venous/_extracted/, +121 quarantined)
+194  primitivos staged           (PascalCase-filtered, +121 quarantined)
  16  FastAPI adapters            (production-wired)
 126  adapt tools                 (100 extend + 8 operate + 8 evolve + 6 verify + 3 contracts + 1 proactive)
+ 22  extend add_* Rails-connected (§B1.3 floor = 22, non-regressive)
  56  generators
  28  modules/ packages           (auth, payments, caching, db, deployment, obs, security, background_jobs, websockets)
-  5  examples/ apps completos    (saas, multi-tenant, stripe, event-sourced, llm-agent)
+ 20  examples/ apps completos    (5 baseline + 10 mid + 5 adversarial, repo-root /examples/)
+ 20  benchmark specs             (plan 100.00, code 100.00)
 124  specs formais
  33  contract rules (33/33 green)
 ```
@@ -90,7 +92,7 @@ A skill principal. Convention over Configuration para FastAPI.
 | Camada | Onde | Qtd | O que é |
 |---|---|---:|---|
 | Primitivos registrados | `core/venous/<ns>/<Name>/` | 122 | Peças framework-free |
-| Primitivos staged | `core/venous/_extracted/` | 426 | HuGR-shelled mas com REPLACE_ME |
+| Primitivos staged (PascalCase) | `core/venous/_extracted/` | 194 | HuGR-shelled mas com REPLACE_ME, +121 quarantined |
 | Adapters FastAPI | `core/venous/_adapters/fastapi/` | 16 | Wiring production-grade |
 | EXTEND tools | `adapt/extend/` | 100 | Slice generators (add_*) |
 | Outros adapt | `adapt/{verify,operate,evolve,contracts,proactive}/` | 26 | Validação, ops, evolução |
