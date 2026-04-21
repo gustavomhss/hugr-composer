@@ -18,8 +18,10 @@ import ast
 import sys
 from pathlib import Path
 
+import json
+
 from adapt.contracts import ToolInput
-from adapt.extend.infrastructure.add_outbox_pattern import add_outbox_pattern
+from adapt.extend.infrastructure.add_outbox_pattern import MCP_TOOL, add_outbox_pattern
 from tests.common.fixture_factory import create_fixture_project
 
 
@@ -279,6 +281,63 @@ def test_next_steps_mention_alembic_and_arq() -> None:
 
 
 # ---------------------------------------------------------------------------
+# CONTRACT §B1.0 + §B1.0.1 — primitive copy + thin glue
+# ---------------------------------------------------------------------------
+
+def test_primitive_copied() -> None:
+    """CONTRACT §B1.0: the TransactionalOutbox primitive is copied into the project."""
+    project_dir = create_fixture_project(name="obx_t24")
+    add_outbox_pattern(ToolInput(project_dir=str(project_dir)))
+    p = project_dir / "core" / "venous" / "events" / "TransactionalOutbox" / "TransactionalOutbox.py"
+    assert p.exists(), f"primitive not copied: {p}"
+    body = p.read_text()
+    assert "InMemoryTransactionalOutbox" in body
+    assert "Copied from HuGR SkillKit" in body
+
+
+def test_manifest_records_primitive() -> None:
+    """CONTRACT §B1.0: .venous_manifest.json records the copied primitive."""
+    project_dir = create_fixture_project(name="obx_t25")
+    add_outbox_pattern(ToolInput(project_dir=str(project_dir)))
+    manifest = json.loads((project_dir / ".venous_manifest.json").read_text())
+    assert "core.venous.events.TransactionalOutbox" in {
+        p["qualified_name"] for p in manifest["primitives"]
+    }
+
+
+def test_glue_imports_primitive() -> None:
+    """CONTRACT §B1.0.1: glue imports from core.venous.events.TransactionalOutbox."""
+    project_dir = create_fixture_project(name="obx_t26")
+    add_outbox_pattern(ToolInput(project_dir=str(project_dir)))
+    glue = project_dir / "app" / "events" / "outbox.py"
+    assert glue.exists(), f"glue not written: {glue}"
+    body = glue.read_text()
+    assert "from core.venous.events.TransactionalOutbox import" in body
+    assert "InMemoryTransactionalOutbox" in body
+
+
+def test_glue_body_under_20_loc() -> None:
+    """CONTRACT §B1.0.1: primary glue body stays below 20 executable lines."""
+    project_dir = create_fixture_project(name="obx_t27")
+    add_outbox_pattern(ToolInput(project_dir=str(project_dir)))
+    tree = ast.parse((project_dir / "app" / "events" / "outbox.py").read_text())
+    body_lines = 0
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            start = node.body[0].lineno
+            end = node.end_lineno or start
+            body_lines += end - start + 1
+    assert body_lines <= 20, body_lines
+
+
+def test_mcp_tool_metadata() -> None:
+    """MCP_TOOL declares imports_primitives per CONTRACT §B1.0."""
+    assert MCP_TOOL["entry"] == "add_outbox_pattern"
+    assert "core.venous.events.TransactionalOutbox" in MCP_TOOL["imports_primitives"]
+    assert tuple(MCP_TOOL["imports_adapters"]) == ()
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
 
@@ -307,6 +366,11 @@ if __name__ == "__main__":
         test_dry_run_writes_nothing,
         test_execution_time_recorded,
         test_next_steps_mention_alembic_and_arq,
+        test_primitive_copied,
+        test_manifest_records_primitive,
+        test_glue_imports_primitive,
+        test_glue_body_under_20_loc,
+        test_mcp_tool_metadata,
     ]
 
     passed = failed = 0

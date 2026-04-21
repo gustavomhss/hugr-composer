@@ -18,8 +18,10 @@ import ast
 import sys
 from pathlib import Path
 
+import json
+
 from adapt.contracts import ToolInput
-from adapt.extend.infrastructure.add_bulkhead_isolation import add_bulkhead_isolation
+from adapt.extend.infrastructure.add_bulkhead_isolation import MCP_TOOL, add_bulkhead_isolation
 from tests.common.fixture_factory import create_fixture_project
 
 
@@ -355,6 +357,62 @@ def test_all_four_config_fields_present() -> None:
 
 
 # ---------------------------------------------------------------------------
+# CONTRACT §B1.0 + §B1.0.1 — primitive copy + thin glue
+# ---------------------------------------------------------------------------
+
+def test_primitive_copied() -> None:
+    """CONTRACT §B1.0: the Bulkhead primitive is copied into the project."""
+    project_dir = create_fixture_project(name="bh_t23")
+    add_bulkhead_isolation(ToolInput(project_dir=str(project_dir)))
+    p = project_dir / "core" / "venous" / "resiliency" / "Bulkhead" / "Bulkhead.py"
+    assert p.exists(), f"primitive not copied: {p}"
+    body = p.read_text()
+    assert "InMemoryBulkhead" in body
+    assert "Copied from HuGR SkillKit" in body
+
+
+def test_manifest_records_primitive() -> None:
+    """CONTRACT §B1.0: .venous_manifest.json records the copied primitive."""
+    project_dir = create_fixture_project(name="bh_t24")
+    add_bulkhead_isolation(ToolInput(project_dir=str(project_dir)))
+    manifest = json.loads((project_dir / ".venous_manifest.json").read_text())
+    assert "core.venous.resiliency.Bulkhead" in {
+        p["qualified_name"] for p in manifest["primitives"]
+    }
+
+
+def test_glue_imports_primitive() -> None:
+    """CONTRACT §B1.0.1: glue file imports from core.venous.resiliency.Bulkhead."""
+    project_dir = create_fixture_project(name="bh_t25")
+    add_bulkhead_isolation(ToolInput(project_dir=str(project_dir)))
+    glue = project_dir / "app" / "resilience" / "bulkhead.py"
+    body = glue.read_text()
+    assert "from core.venous.resiliency.Bulkhead import" in body
+    assert "InMemoryBulkhead" in body
+
+
+def test_glue_body_under_20_loc() -> None:
+    """CONTRACT §B1.0.1: primary glue body stays below 20 executable lines."""
+    project_dir = create_fixture_project(name="bh_t26")
+    add_bulkhead_isolation(ToolInput(project_dir=str(project_dir)))
+    tree = ast.parse((project_dir / "app" / "resilience" / "bulkhead.py").read_text())
+    body_lines = 0
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            start = node.body[0].lineno
+            end = node.end_lineno or start
+            body_lines += end - start + 1
+    assert body_lines <= 20, body_lines
+
+
+def test_mcp_tool_metadata() -> None:
+    """MCP_TOOL declares imports_primitives per CONTRACT §B1.0."""
+    assert MCP_TOOL["entry"] == "add_bulkhead_isolation"
+    assert "core.venous.resiliency.Bulkhead" in MCP_TOOL["imports_primitives"]
+    assert tuple(MCP_TOOL["imports_adapters"]) == ()
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
 
@@ -382,6 +440,11 @@ if __name__ == "__main__":
         test_idempotent_project_still_parses,
         test_classify_route_defined,
         test_all_four_config_fields_present,
+        test_primitive_copied,
+        test_manifest_records_primitive,
+        test_glue_imports_primitive,
+        test_glue_body_under_20_loc,
+        test_mcp_tool_metadata,
     ]
 
     passed = failed = 0

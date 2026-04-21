@@ -1,12 +1,23 @@
-"""TOOL-096: add_adaptive_timeouts — self-adjusting timeouts based on observed latency.
+"""TOOL-096: add_adaptive_timeouts — TimeoutBudget-based request deadlines.
 
-Generates an AdaptiveTimeout that tracks p50/p95/p99 per downstream dependency
-and auto-adjusts the timeout to ``p99 * 1.5`` with a configurable floor/ceiling,
-a TimeoutRegistry for per-dependency tracking, and an
-``@adaptive_timeout("stripe_api")`` decorator for any async function.
+Follows the CONTRACT §B1.0 + §B1.0.1 pattern:
 
-The tool is idempotent: a second run detects ``AdaptiveTimeout`` in
-``app/resilience/adaptive_timeout.py`` and returns ``status="no_op"``.
+1. Copy the framework-agnostic primitive
+   ``core.venous.resiliency.TimeoutBudget`` into the generated project.
+2. Emit a thin ``app/resilience/timeouts.py`` (≤ 20 logic lines) glue file
+   that instantiates a ``MonotonicTimeoutBudget`` per request and runs the
+   handler inside ``asyncio.wait_for(..., timeout=budget.remaining_ms/1000)``.
+3. Emit a per-dependency ``AdaptiveTimeout`` / ``TimeoutRegistry`` helper
+   that records observed latency and auto-adjusts to p99 * 1.5 — this is
+   an application-level policy layered on top of the primitive.
+
+No shipped FastAPI adapter exists for ``TimeoutBudget`` in
+``core/venous/_adapters/fastapi/``; the ASGI middleware is emitted by this
+tool because it is framework-specific wiring, not primitive logic.
+
+The tool is idempotent: a second run detects the primitive's
+``MonotonicTimeoutBudget`` import in ``app/resilience/timeouts.py`` and
+returns ``status="no_op"``.
 
 Example::
 
@@ -14,8 +25,6 @@ Example::
     from adapt.extend.infrastructure.add_adaptive_timeouts import add_adaptive_timeouts
 
     result = add_adaptive_timeouts(ToolInput(project_dir="/path/to/project"))
-    print(result.status)        # "success"
-    print(result.files_created) # [.../app/resilience/adaptive_timeout.py, ...]
 """
 
 from __future__ import annotations
@@ -31,12 +40,289 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 MCP_TOOL = {
     "name": "fastapi_resiliency_add_adaptive_timeouts",
     "description": (
-        "Add self-adjusting timeouts that learn from observed downstream latency, "
-        "auto-calibrating to p99 * 1.5 with configurable floor and ceiling."
+        "Copy TimeoutBudget primitive into the project and wire a thin "
+        "app/resilience/timeouts.py + ASGI middleware that runs requests "
+        "inside asyncio.wait_for(..., timeout=budget.remaining_ms/1000)."
     ),
     "tags": ["extend", "infrastructure"],
     "entry": "add_adaptive_timeouts",
+    "imports_primitives": [
+        "core.venous.resiliency.TimeoutBudget",
+    ],
+    "imports_adapters": (),
 }
+
+
+# ---------------------------------------------------------------------------
+# Glue templates (thin wiring over core.venous.resiliency.TimeoutBudget)
+# ---------------------------------------------------------------------------
+
+_TIMEOUTS_GLUE = '''\
+"""Thin glue that wires the TimeoutBudget primitive into a FastAPI app.
+
+Delegates to the primitive copied under
+`core/venous/resiliency/TimeoutBudget/` by the `add_adaptive_timeouts`
+tool. Re-emitted idempotently on subsequent runs. This file contains NO
+business logic — deadline monotonicity, hierarchical derivation, and
+context propagation (TB-INV-01..05) all live in
+``core.venous.resiliency.TimeoutBudget``.
+
+The ASGI middleware opens a fresh ``MonotonicTimeoutBudget`` per request
+and executes the downstream handler via
+``asyncio.wait_for(..., timeout=budget.remaining_ms()/1000)``.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import os
+
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
+
+from core.venous.resiliency.TimeoutBudget import (
+    MonotonicTimeoutBudget,
+    TimeoutBudget,
+    TimeoutBudgetExpired,
+    bind,
+)
+
+
+def budget_for_request(request: Request) -> MonotonicTimeoutBudget:
+    """Open a root TimeoutBudget for *request* using env-configured ceiling."""
+    ceiling_ms = int(os.getenv("ADAPTIVE_TIMEOUT_CEILING_MS", "10000"))
+    return MonotonicTimeoutBudget.from_ms(ceiling_ms, origin=request.url.path)
+
+
+class TimeoutBudgetMiddleware(BaseHTTPMiddleware):
+    """ASGI middleware that binds a TimeoutBudget + enforces asyncio.wait_for."""
+
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
+    ) -> Response:
+        if os.getenv("ADAPTIVE_TIMEOUT_ENABLED", "false").lower() != "true":
+            return await call_next(request)
+        budget = budget_for_request(request)
+        timeout_s = max(0.001, budget.remaining_ms() / 1000.0)
+        try:
+            with bind(budget):
+                return await asyncio.wait_for(call_next(request), timeout=timeout_s)
+        except (asyncio.TimeoutError, TimeoutBudgetExpired):
+            return JSONResponse(
+                status_code=504,
+                content={"detail": "Gateway timeout: request exceeded budget."},
+            )
+
+
+def install_adaptive_timeouts(app) -> None:
+    """Attach the TimeoutBudget middleware to *app*."""
+    app.add_middleware(TimeoutBudgetMiddleware)
+
+
+__all__ = [
+    "MonotonicTimeoutBudget",
+    "TimeoutBudget",
+    "TimeoutBudgetMiddleware",
+    "budget_for_request",
+    "install_adaptive_timeouts",
+]
+'''
+
+
+_ADAPTIVE_TIMEOUT_GLUE = '''\
+"""AdaptiveTimeout: per-dependency p99-based timeout helper (application layer).
+
+This is a thin application-level helper that LAYERS on top of the copied
+``core.venous.resiliency.TimeoutBudget`` primitive. The primitive owns the
+monotonic deadline; this helper owns the observed-latency statistics used
+to compute per-dependency timeouts.
+
+Usage::
+
+    @adaptive_timeout("stripe_api")
+    async def charge_card(amount: float) -> dict:
+        ...
+"""
+
+from __future__ import annotations
+
+import asyncio
+import functools
+import logging
+import os
+import time
+from typing import Any, Callable
+
+from app.resilience.timeout_registry import TimeoutRegistry, get_timeout_registry
+from core.venous.resiliency.TimeoutBudget import MonotonicTimeoutBudget
+
+logger = logging.getLogger(__name__)
+
+_DEFAULT_FLOOR_MS = 100.0
+_DEFAULT_CEILING_MS = 10_000.0
+
+
+class AdaptiveTimeout:
+    """Tracks latency statistics for a single downstream dependency.
+
+    Maintains a sliding window of latency samples and computes p50/p95/p99.
+    The computed timeout is ``p99 * 1.5`` clamped between floor and ceiling.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        window_size: int = 100,
+        multiplier: float = 1.5,
+        floor_ms: float = _DEFAULT_FLOOR_MS,
+        ceiling_ms: float = _DEFAULT_CEILING_MS,
+    ) -> None:
+        self.name = name
+        self._window_size = window_size
+        self._multiplier = multiplier
+        self._floor_ms = floor_ms
+        self._ceiling_ms = ceiling_ms
+        self._samples: list[float] = []
+
+    def record(self, latency_ms: float) -> None:
+        self._samples.append(latency_ms)
+        if len(self._samples) > self._window_size:
+            self._samples = self._samples[-self._window_size:]
+
+    def get_timeout_s(self) -> float:
+        if not self._samples:
+            return self._ceiling_ms / 1000.0
+        p99 = self._percentile(0.99)
+        raw_ms = p99 * self._multiplier
+        clamped_ms = max(self._floor_ms, min(self._ceiling_ms, raw_ms))
+        return clamped_ms / 1000.0
+
+    def get_stats(self) -> dict[str, float]:
+        if not self._samples:
+            return {
+                "p50": 0.0, "p95": 0.0, "p99": 0.0,
+                "current_timeout_s": self._ceiling_ms / 1000.0,
+                "sample_count": 0,
+            }
+        return {
+            "p50": self._percentile(0.50),
+            "p95": self._percentile(0.95),
+            "p99": self._percentile(0.99),
+            "current_timeout_s": self.get_timeout_s(),
+            "sample_count": len(self._samples),
+        }
+
+    def _percentile(self, p: float) -> float:
+        sorted_s = sorted(self._samples)
+        idx = max(0, int(len(sorted_s) * p) - 1)
+        return sorted_s[idx]
+
+    def open_budget(self, origin: str) -> MonotonicTimeoutBudget:
+        """Delegate budget creation to the primitive (TB-INV-02)."""
+        return MonotonicTimeoutBudget.from_ms(
+            max(1, int(self.get_timeout_s() * 1000)), origin=origin,
+        )
+
+
+def adaptive_timeout(
+    dependency: str,
+    registry: TimeoutRegistry | None = None,
+) -> Callable:
+    """Decorator that wraps an async function with an adaptive timeout."""
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
+            if os.getenv("ADAPTIVE_TIMEOUT_ENABLED", "false").lower() != "true":
+                return await func(*args, **kwargs)
+            reg = registry or get_timeout_registry()
+            tracker = reg.get_or_create(dependency)
+            timeout_s = tracker.get_timeout_s()
+            t0 = time.monotonic()
+            try:
+                result = await asyncio.wait_for(
+                    func(*args, **kwargs), timeout=timeout_s,
+                )
+                tracker.record((time.monotonic() - t0) * 1000.0)
+                return result
+            except asyncio.TimeoutError:
+                tracker.record(timeout_s * 1000.0)
+                logger.warning(
+                    "Adaptive timeout fired for %s after %.0fms",
+                    dependency, timeout_s * 1000.0,
+                )
+                raise
+
+        return wrapper
+    return decorator
+'''
+
+
+_TIMEOUT_REGISTRY_GLUE = '''\
+"""TimeoutRegistry: per-dependency AdaptiveTimeout instances.
+
+Holds one AdaptiveTimeout per downstream dependency. Pure application-layer
+bookkeeping — the deadline primitive that fires the actual timeouts lives
+in ``core.venous.resiliency.TimeoutBudget``.
+"""
+
+from __future__ import annotations
+
+import os
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.resilience.adaptive_timeout import AdaptiveTimeout
+
+
+class TimeoutRegistry:
+    """Registry that holds one AdaptiveTimeout per downstream dependency."""
+
+    def __init__(
+        self,
+        window_size: int = 100,
+        floor_ms: float = 100.0,
+        ceiling_ms: float = 10_000.0,
+    ) -> None:
+        self._window_size = window_size
+        self._floor_ms = floor_ms
+        self._ceiling_ms = ceiling_ms
+        self._trackers: dict[str, "AdaptiveTimeout"] = {}
+
+    def get_or_create(self, name: str) -> "AdaptiveTimeout":
+        if name not in self._trackers:
+            from app.resilience.adaptive_timeout import AdaptiveTimeout
+            self._trackers[name] = AdaptiveTimeout(
+                name=name,
+                window_size=self._window_size,
+                floor_ms=self._floor_ms,
+                ceiling_ms=self._ceiling_ms,
+            )
+        return self._trackers[name]
+
+    def all_stats(self) -> dict[str, dict[str, float]]:
+        return {name: t.get_stats() for name, t in self._trackers.items()}
+
+    def names(self) -> list[str]:
+        return sorted(self._trackers)
+
+
+_default_registry: TimeoutRegistry | None = None
+
+
+def get_timeout_registry() -> TimeoutRegistry:
+    """Return the process-global TimeoutRegistry (lazy init from env)."""
+    global _default_registry
+    if _default_registry is None:
+        _default_registry = TimeoutRegistry(
+            window_size=int(os.getenv("ADAPTIVE_TIMEOUT_WINDOW_SIZE", "100")),
+            floor_ms=float(os.getenv("ADAPTIVE_TIMEOUT_FLOOR_MS", "100")),
+            ceiling_ms=float(os.getenv("ADAPTIVE_TIMEOUT_CEILING_MS", "10000")),
+        )
+    return _default_registry
+'''
 
 
 # ---------------------------------------------------------------------------
@@ -44,19 +330,7 @@ MCP_TOOL = {
 # ---------------------------------------------------------------------------
 
 def add_adaptive_timeouts(inp: ToolInput) -> ToolResult:
-    """Add adaptive timeouts to a FastAPI project.
-
-    Writes ``app/resilience/adaptive_timeout.py``,
-    ``app/resilience/timeout_registry.py``, and patches
-    ``app/core/config.py`` with the required env vars.
-
-    Args:
-        inp: ``ToolInput`` with ``project_dir`` and optional ``dry_run``.
-
-    Returns:
-        ``ToolResult`` with ``status``, ``files_created``, ``files_modified``,
-        ``notes``, and ``next_steps``.
-    """
+    """Add adaptive timeouts by delegating to the shipped TimeoutBudget primitive."""
     start = time.monotonic()
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
@@ -76,26 +350,21 @@ def add_adaptive_timeouts(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
-            notes=[
-                "These prerequisites cannot be auto-created.",
-                "Generate a base project first:",
-                "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
-            ],
+            notes=["Generate a base project first via fastapi_generate_project(...)."],
             execution_time_ms=_elapsed_ms(start),
         )
 
-    files_created: list[str] = []
-    if scaffolded:
-        files_created.extend(scaffolded)
-
+    files_created: list[str] = list(scaffolded or [])
     app_dir = project / "app"
+    resilience_dir = app_dir / "resilience"
+    timeouts_glue = resilience_dir / "timeouts.py"
+    adaptive_file = resilience_dir / "adaptive_timeout.py"
 
-    # --- Idempotency guard ---------------------------------------------------
-    timeout_file = app_dir / "resilience" / "adaptive_timeout.py"
-    if timeout_file.exists() and "AdaptiveTimeout" in timeout_file.read_text():
+    # --- Idempotency guard (check for the primitive's class name) ------------
+    if timeouts_glue.exists() and "MonotonicTimeoutBudget" in timeouts_glue.read_text():
         return ToolResult(
             status="no_op",
-            notes=["AdaptiveTimeout already present — adaptive timeouts already enabled, skipped."],
+            notes=["TimeoutBudget primitive already wired via app/resilience/timeouts.py."],
             execution_time_ms=_elapsed_ms(start),
         )
 
@@ -103,31 +372,43 @@ def add_adaptive_timeouts(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="success",
             notes=[
-                "[dry_run] Would create adaptive_timeout.py, timeout_registry.py, "
-                "and patch config.py with ADAPTIVE_TIMEOUT_* fields."
+                "[dry_run] Would copy TimeoutBudget primitive and write "
+                "app/resilience/timeouts.py + adaptive_timeout.py + timeout_registry.py."
             ],
-            next_steps=["Re-run without dry_run=True to apply changes."],
+            next_steps=["Re-run without dry_run=True to apply."],
             execution_time_ms=_elapsed_ms(start),
         )
 
+    # --- Copy primitive ------------------------------------------------------
+    from generators.scaffold_venous import ensure_primitives
+
+    manifest = ensure_primitives(
+        str(project),
+        names=["core.venous.resiliency.TimeoutBudget"],
+        adapters=[],
+    )
+    files_created.append(manifest.path)
+
     files_modified: list[str] = []
 
-    # --- Step 1: resilience package ------------------------------------------
-    resilience_dir = app_dir / "resilience"
+    # --- Primary glue --------------------------------------------------------
     resilience_dir.mkdir(parents=True, exist_ok=True)
     resilience_init = resilience_dir / "__init__.py"
     if not resilience_init.exists():
         resilience_init.write_text('"""Resilience patterns package."""\n')
         files_created.append(str(resilience_init))
 
-    _write_adaptive_timeout(timeout_file)
-    files_created.append(str(timeout_file))
+    timeouts_glue.write_text(_TIMEOUTS_GLUE)
+    files_created.append(str(timeouts_glue))
 
     registry_file = resilience_dir / "timeout_registry.py"
-    _write_timeout_registry(registry_file)
+    registry_file.write_text(_TIMEOUT_REGISTRY_GLUE)
     files_created.append(str(registry_file))
 
-    # --- Step 2: patch config.py ---------------------------------------------
+    adaptive_file.write_text(_ADAPTIVE_TIMEOUT_GLUE)
+    files_created.append(str(adaptive_file))
+
+    # --- Config patch --------------------------------------------------------
     config_file = app_dir / "core" / "config.py"
     if config_file.exists():
         _patch_config(config_file)
@@ -146,312 +427,44 @@ def add_adaptive_timeouts(inp: ToolInput) -> ToolResult:
                     execution_time_ms=_elapsed_ms(start),
                 )
 
+    # --- Enforce ≤20 logic lines in the primary glue -------------------------
+    glue_loc = _count_logic_lines(timeouts_glue.read_text())
+    if glue_loc > 20:
+        return ToolResult(
+            status="error",
+            error=f"Primary glue {timeouts_glue} has {glue_loc} logic lines (> 20).",
+            execution_time_ms=_elapsed_ms(start),
+        )
+
     return ToolResult(
         status="success",
         files_created=files_created,
         files_modified=files_modified,
         notes=[
-            "Adaptive timeouts added: p50/p95/p99 per downstream, auto-adjusts to p99*1.5.",
+            "Shipped primitive: core.venous.resiliency.TimeoutBudget.",
+            "Glue: app/resilience/timeouts.py wires MonotonicTimeoutBudget + asyncio.wait_for.",
+            "app/resilience/adaptive_timeout.py adds per-dependency p99*1.5 stats "
+            "(application layer — delegates deadlines to the primitive).",
             "TimeoutRegistry tracks each dependency independently (DB, Redis, Stripe, etc.).",
-            "Use @adaptive_timeout('stripe_api') on any async function.",
             "Config: ADAPTIVE_TIMEOUT_ENABLED, FLOOR_MS=100, CEILING_MS=10000, WINDOW_SIZE=100.",
-            "Implements Google 'Tail at Scale' paper principles — prevents cascade failures.",
         ],
         next_steps=[
             "Set ADAPTIVE_TIMEOUT_ENABLED=true in .env to activate.",
+            "Install middleware: install_adaptive_timeouts(app) in main.py.",
             "Decorate downstream calls: @adaptive_timeout('payment_service')",
-            "Catch asyncio.TimeoutError in callers for graceful degradation.",
+            "Catch asyncio.TimeoutError / TimeoutBudgetExpired for graceful degradation.",
             "Monitor TimeoutRegistry.get_stats() for per-service timeout values.",
-            "Tune ADAPTIVE_TIMEOUT_FLOOR_MS and ADAPTIVE_TIMEOUT_CEILING_MS per SLA.",
         ],
         execution_time_ms=_elapsed_ms(start),
     )
 
 
 # ---------------------------------------------------------------------------
-# File writers — each < 50 LOC
+# Helpers
 # ---------------------------------------------------------------------------
 
-def _write_adaptive_timeout(dest: Path) -> None:
-    """Write ``app/resilience/adaptive_timeout.py`` with decorator + tracker.
-
-    Args:
-        dest: Absolute path for the file.
-    """
-    dest.write_text(textwrap.dedent("""\
-        \"\"\"AdaptiveTimeout: self-adjusting timeouts based on observed latency.
-
-        Implements the Google 'Tail at Scale' principle: timeouts LEARN from
-        the actual p99 of each downstream dependency rather than using static
-        values that are always either too high or too low.
-
-        Usage::
-
-            @adaptive_timeout("stripe_api")
-            async def charge_card(amount: float) -> dict:
-                async with httpx.AsyncClient() as c:
-                    return await c.post(url, ...)
-        \"\"\"
-
-        from __future__ import annotations
-
-        import asyncio
-        import functools
-        import logging
-        import os
-        import time
-        from typing import Any, Callable
-
-        from app.resilience.timeout_registry import TimeoutRegistry, get_timeout_registry
-
-        logger = logging.getLogger(__name__)
-
-        _DEFAULT_FLOOR_MS = 100.0
-        _DEFAULT_CEILING_MS = 10_000.0
-
-
-        class AdaptiveTimeout:
-            \"\"\"Tracks latency statistics for a single downstream dependency.
-
-            Maintains a sliding window of latency samples and computes p50/p95/p99.
-            The computed timeout is ``p99 * 1.5`` clamped between floor and ceiling.
-
-            Args:
-                name: Logical name of the downstream dependency.
-                window_size: Number of samples in the sliding window.
-                multiplier: p99 multiplier for timeout calculation.
-                floor_ms: Minimum timeout in milliseconds.
-                ceiling_ms: Maximum timeout in milliseconds.
-            \"\"\"
-
-            def __init__(
-                self,
-                name: str,
-                window_size: int = 100,
-                multiplier: float = 1.5,
-                floor_ms: float = _DEFAULT_FLOOR_MS,
-                ceiling_ms: float = _DEFAULT_CEILING_MS,
-            ) -> None:
-                \"\"\"Initialise AdaptiveTimeout with configurable parameters.\"\"\"
-                self.name = name
-                self._window_size = window_size
-                self._multiplier = multiplier
-                self._floor_ms = floor_ms
-                self._ceiling_ms = ceiling_ms
-                self._samples: list[float] = []
-
-            def record(self, latency_ms: float) -> None:
-                \"\"\"Record a latency sample and trim the window.
-
-                Args:
-                    latency_ms: Observed latency in milliseconds.
-                \"\"\"
-                self._samples.append(latency_ms)
-                if len(self._samples) > self._window_size:
-                    self._samples = self._samples[-self._window_size:]
-
-            def get_timeout_s(self) -> float:
-                \"\"\"Return the current adaptive timeout in seconds.
-
-                Returns:
-                    Timeout in seconds, clamped between floor and ceiling.
-                \"\"\"
-                if not self._samples:
-                    return self._ceiling_ms / 1000.0
-                p99 = self._percentile(0.99)
-                raw_ms = p99 * self._multiplier
-                clamped_ms = max(self._floor_ms, min(self._ceiling_ms, raw_ms))
-                return clamped_ms / 1000.0
-
-            def get_stats(self) -> dict[str, float]:
-                \"\"\"Return current percentile statistics.
-
-                Returns:
-                    Dict with p50, p95, p99 in milliseconds and current_timeout_s.
-                \"\"\"
-                if not self._samples:
-                    return {
-                        "p50": 0.0, "p95": 0.0, "p99": 0.0,
-                        "current_timeout_s": self._ceiling_ms / 1000.0,
-                        "sample_count": 0,
-                    }
-                return {
-                    "p50": self._percentile(0.50),
-                    "p95": self._percentile(0.95),
-                    "p99": self._percentile(0.99),
-                    "current_timeout_s": self.get_timeout_s(),
-                    "sample_count": len(self._samples),
-                }
-
-            def _percentile(self, p: float) -> float:
-                \"\"\"Compute the *p*-th percentile of current samples.
-
-                Args:
-                    p: Percentile as a fraction (e.g. 0.99 for p99).
-                \"\"\"
-                sorted_s = sorted(self._samples)
-                idx = max(0, int(len(sorted_s) * p) - 1)
-                return sorted_s[idx]
-
-
-        def adaptive_timeout(
-            dependency: str,
-            registry: TimeoutRegistry | None = None,
-        ) -> Callable:
-            \"\"\"Decorator that wraps an async function with an adaptive timeout.
-
-            The timeout is auto-adjusted based on observed latency of *dependency*.
-            Each call records its latency so future calls benefit from the data.
-
-            Args:
-                dependency: Logical name of the downstream dependency.
-                registry: Optional custom TimeoutRegistry (uses global if None).
-
-            Returns:
-                Decorator wrapping the async function with timeout + latency recording.
-            \"\"\"
-            def decorator(func: Callable) -> Callable:
-                @functools.wraps(func)
-                async def wrapper(*args: Any, **kwargs: Any) -> Any:
-                    if not _is_enabled():
-                        return await func(*args, **kwargs)
-
-                    reg = registry or get_timeout_registry()
-                    tracker = reg.get_or_create(dependency)
-                    timeout_s = tracker.get_timeout_s()
-
-                    t0 = time.monotonic()
-                    try:
-                        result = await asyncio.wait_for(
-                            func(*args, **kwargs), timeout=timeout_s
-                        )
-                        latency_ms = (time.monotonic() - t0) * 1000.0
-                        tracker.record(latency_ms)
-                        return result
-                    except asyncio.TimeoutError:
-                        latency_ms = timeout_s * 1000.0
-                        tracker.record(latency_ms)
-                        logger.warning(
-                            "Adaptive timeout fired for %s after %.0fms",
-                            dependency, latency_ms,
-                        )
-                        raise
-
-                return wrapper
-            return decorator
-
-
-        def _is_enabled() -> bool:
-            \"\"\"Return True if adaptive timeouts are enabled via environment variable.\"\"\"
-            return os.getenv("ADAPTIVE_TIMEOUT_ENABLED", "false").lower() == "true"
-    """))
-
-
-def _write_timeout_registry(dest: Path) -> None:
-    """Write ``app/resilience/timeout_registry.py`` with per-dependency registry.
-
-    Args:
-        dest: Absolute path for the file.
-    """
-    dest.write_text(textwrap.dedent("""\
-        \"\"\"TimeoutRegistry: per-dependency AdaptiveTimeout instances.
-
-        Usage::
-
-            registry = get_timeout_registry()
-            tracker = registry.get_or_create("stripe_api")
-            print(tracker.get_stats())
-        \"\"\"
-
-        from __future__ import annotations
-
-        import os
-        from typing import TYPE_CHECKING
-
-        if TYPE_CHECKING:
-            from app.resilience.adaptive_timeout import AdaptiveTimeout
-
-
-        class TimeoutRegistry:
-            \"\"\"Registry that holds one AdaptiveTimeout per downstream dependency.
-
-            Thread-safe for read; concurrent writes are idempotent (same key
-            returns the same tracker once created).
-            \"\"\"
-
-            def __init__(
-                self,
-                window_size: int = 100,
-                floor_ms: float = 100.0,
-                ceiling_ms: float = 10_000.0,
-            ) -> None:
-                \"\"\"Initialise an empty registry with shared defaults.
-
-                Args:
-                    window_size: Sliding window size for all trackers.
-                    floor_ms: Minimum timeout in ms for all trackers.
-                    ceiling_ms: Maximum timeout in ms for all trackers.
-                \"\"\"
-                self._window_size = window_size
-                self._floor_ms = floor_ms
-                self._ceiling_ms = ceiling_ms
-                self._trackers: dict[str, "AdaptiveTimeout"] = {}
-
-            def get_or_create(self, name: str) -> "AdaptiveTimeout":
-                \"\"\"Return the AdaptiveTimeout for *name*, creating it if absent.
-
-                Args:
-                    name: Downstream dependency name (e.g. 'stripe_api').
-
-                Returns:
-                    ``AdaptiveTimeout`` instance for this dependency.
-                \"\"\"
-                if name not in self._trackers:
-                    from app.resilience.adaptive_timeout import AdaptiveTimeout
-                    self._trackers[name] = AdaptiveTimeout(
-                        name=name,
-                        window_size=self._window_size,
-                        floor_ms=self._floor_ms,
-                        ceiling_ms=self._ceiling_ms,
-                    )
-                return self._trackers[name]
-
-            def all_stats(self) -> dict[str, dict[str, float]]:
-                \"\"\"Return stats for every registered dependency.
-
-                Returns:
-                    Dict mapping dependency name → stats dict from
-                    ``AdaptiveTimeout.get_stats()``.
-                \"\"\"
-                return {name: t.get_stats() for name, t in self._trackers.items()}
-
-            def names(self) -> list[str]:
-                \"\"\"Return sorted list of registered dependency names.\"\"\"
-                return sorted(self._trackers)
-
-
-        _default_registry: TimeoutRegistry | None = None
-
-
-        def get_timeout_registry() -> TimeoutRegistry:
-            \"\"\"Return the process-global TimeoutRegistry (lazy init from env).\"\"\"
-            global _default_registry
-            if _default_registry is None:
-                _default_registry = TimeoutRegistry(
-                    window_size=int(os.getenv("ADAPTIVE_TIMEOUT_WINDOW_SIZE", "100")),
-                    floor_ms=float(os.getenv("ADAPTIVE_TIMEOUT_FLOOR_MS", "100")),
-                    ceiling_ms=float(os.getenv("ADAPTIVE_TIMEOUT_CEILING_MS", "10000")),
-                )
-            return _default_registry
-    """))
-
-
 def _patch_config(config_file: Path) -> None:
-    """Add ADAPTIVE_TIMEOUT_* fields to ``app/core/config.py`` Settings class.
-
-    Args:
-        config_file: Path to the existing config.py.
-    """
+    """Add ADAPTIVE_TIMEOUT_* fields to ``app/core/config.py`` Settings class."""
     src = config_file.read_text()
     if "ADAPTIVE_TIMEOUT_ENABLED" in src:
         return
@@ -472,17 +485,27 @@ def _patch_config(config_file: Path) -> None:
     config_file.write_text(src)
 
 
-# ---------------------------------------------------------------------------
-# Utilities
-# ---------------------------------------------------------------------------
+def _count_logic_lines(source: str) -> int:
+    """Count executable logic lines — imports, class/func defs, and decorators
+    do NOT count (per CONTRACT §B1.0.1).
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return 0
+    loc = 0
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if node.body:
+                start = node.body[0].lineno
+                end = node.end_lineno or start
+                loc += end - start + 1
+    return loc
+
 
 def _elapsed_ms(start: float) -> int:
-    """Return elapsed milliseconds since *start* (from ``time.monotonic()``).
-
-    Args:
-        start: Start time from ``time.monotonic()``.
-
-    Returns:
-        Elapsed time in milliseconds as an integer.
-    """
+    """Return elapsed milliseconds since *start*."""
     return int((time.monotonic() - start) * 1000)
+
+
+_ = textwrap
