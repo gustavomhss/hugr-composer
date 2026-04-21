@@ -123,6 +123,23 @@ def test_mode_adapter_reuse_on_exact_match(tmp_path: Path) -> None:
     assert "WebhookReceiverAdapter" in r["result"]["composition_source"]
 
 
+def test_mode_tool_delegate_when_tool_emits_exact_set(tmp_path: Path) -> None:
+    """If a catalog tool already emits this exact primitive set, compose
+    must delegate to it rather than duplicate output. AuditEvent +
+    TamperEvidentAuditLog is covered by fastapi_data_add_audit_log and
+    by no FastAPI adapter — so tool_delegate wins."""
+    r = fastapi_meta_compose(
+        output_dir=str(tmp_path),
+        primitives=["AuditEvent", "TamperEvidentAuditLog"],
+        dry_run=True,
+    )
+    assert r["ok"] is True
+    assert r["result"]["mode"] == "tool_delegate"
+    assert r["result"]["delegate_tool"] == "fastapi_data_add_audit_log"
+    assert r["result"]["files_written"] == []
+    assert r["result"]["validation_report"]["mode_quality"] == "HIGH"
+
+
 def test_mode_recipe_template_on_recipe_match(tmp_path: Path) -> None:
     r = fastapi_meta_compose(
         output_dir=str(tmp_path),
