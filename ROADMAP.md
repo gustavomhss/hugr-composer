@@ -27,11 +27,12 @@ reconcile against INVENTORY.md — drift = audit bug.
 | Adapt tools | 126 | 100 extend / 8 evolve / 8 operate / 6 verify / 3 contracts / 1 proactive |
 | Generators | 56 | auth, database, deployment, endpoints, infra, middleware, observability, schemas, testing, tools |
 | Module packages | 28 | auth, background_jobs, caching, database, deployment, observability, payments, security, websockets |
-| Registered primitives | 122 | `core/venous/<ns>/<Name>/` with contract.json + tests + TLA+ specs |
+| Registered primitives | 124 | `core/venous/<ns>/<Name>/` with contract.json + tests + TLA+ specs |
 | FastAPI adapters | 17 | Production-wired in `core/venous/_adapters/fastapi/` |
-| Staged primitives | 179 | PascalCase subset of `_extracted/`, surfaced in catalog as `status="staged"` |
-| Quarantined primitives | 45 | Rejected by extraction gate, hidden from catalog |
-| Recipes | 385 | Parsed from primitive `.md` `## Compose with:` sections |
+| Provider adapters | 2 | `_adapters/redis/PubSubAdapter.py` + `_adapters/stripe/BillingAdapter.py` |
+| Staged primitives | 176 | PascalCase subset of `_extracted/`, surfaced in catalog as `status="staged"` |
+| Quarantined primitives | 42 | Rejected by extraction gate, hidden from catalog |
+| Recipes | 393 | Parsed from primitive `.md` `## Compose with:` sections |
 | Benchmark specs | 20 | 5 baseline + 10 mid + 5 adversarial |
 | Contract rules passing | 36/36 | Machine-verified by `engine.audit.contract_check` |
 

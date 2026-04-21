@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "24476ae",
-  "generated_at": "2026-04-21T23:01:46+00:00",
+  "kit_commit": "85fdd79",
+  "generated_at": "2026-04-21T23:08:15+00:00",
   "verbs": [
     "add",
     "generate",
@@ -4344,15 +4344,6 @@
       "status": "stable"
     },
     {
-      "name": "PubSubManager",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_extracted/api/PubSubManager/",
-      "status": "staged"
-    },
-    {
       "name": "QueryBus",
       "namespace": "api",
       "concern": "api",
@@ -4373,15 +4364,6 @@
       "purpose": "**Status:** extracted-staged (needs human review).",
       "compose_with": [],
       "module_path": "core/venous/_extracted/api/ReadReplicaSession/",
-      "status": "staged"
-    },
-    {
-      "name": "RedisPubSubBackend",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_extracted/api/RedisPubSubBackend/",
       "status": "staged"
     },
     {
@@ -7226,15 +7208,6 @@
       "purpose": "**Status:** extracted-staged (needs human review).",
       "compose_with": [],
       "module_path": "core/venous/_extracted/resiliency/StorageConfig/",
-      "status": "staged"
-    },
-    {
-      "name": "StripeBilling",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_extracted/resiliency/StripeBilling/",
       "status": "staged"
     },
     {
@@ -11799,8 +11772,8 @@
   ],
   "counts": {
     "tools": 201,
-    "primitives": 302,
+    "primitives": 299,
     "recipes": 393
   },
-  "stable_hash": "29f711367e602e2c4f3668d97dc141204333cf0cfc5f53a7c2dc2b4ff5f45c1e"
+  "stable_hash": "cc8b7ef58a7d6e9327d39d6c25153780253d704f1d6136330b789cbd7d6f190c"
 }

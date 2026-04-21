@@ -30,13 +30,19 @@ tool / primitive renames going forward (CONTRACT §A10).
     - 201 catalog tools (`engine/index/catalog.json`)
     - 7 tier-1 meta tools (`mcp_tools/tier1.py` + `mcp_tools/compose.py`)
     - 9 tree dispatchers (`mcp_tools/tree/`)
-- **122 registered primitives** (full shell: contract + protocol + tests +
-  TLA+ + dashboard + invariants + observability).
+- **124 registered primitives** (full shell: contract + protocol + tests +
+  TLA+ + dashboard + invariants + observability). Wave 1.5 promoted
+  `events.PubSub` and `billing.Billing` out of the staged pool (see
+  FREEZE §1.6.5).
 - **17 FastAPI adapters** (`core/venous/_adapters/fastapi/`). The 17th,
   `BulkheadAdapter`, landed in the Wave-1 pre-freeze sprint (see
   FREEZE §1.6) along with motor extension `InMemoryBulkhead.acquire()`.
-- **179 staged primitives** (`_extracted/`, `status="staged"`) — discoverable,
-  not promoted.
+- **2 provider adapters** beyond fastapi/: `_adapters/redis/PubSubAdapter.py`
+  + `_adapters/stripe/BillingAdapter.py`. Both ship with lazy SDK
+  imports and hermetic behavioural test suites (13 Redis + 22 Stripe).
+- **176 staged primitives** (`_extracted/`, `status="staged"`) —
+  discoverable, not promoted. Wave 1.5 deleted 3 (+3 quarantined
+  copies) that the new motor+adapter pair replaced.
 - **20 complete examples** at `/examples/` (5 baseline + 10 mid + 5 adversarial).
 - **36/36 CONTRACT rules green.** (34 pre-freeze + §B4.6 VERSION
   triplet sync + §B4.7 canonical counts sync, both added as

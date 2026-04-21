@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-04-21T22:08:38+00:00",
+  "generated_at": "2026-04-21T23:06:26+00:00",
   "classifier_version": "1.0",
-  "total_staged": 180,
-  "total_quarantined": 45,
+  "total_staged": 177,
+  "total_quarantined": 42,
   "entries": [
     {
       "primitive": "AdaptiveThrottleMiddleware",
@@ -1074,46 +1074,6 @@
       "classifier_version": "1.0"
     },
     {
-      "primitive": "PubSubManager",
-      "namespace": "api",
-      "verdict": "needs_review",
-      "tier": "none",
-      "rationale": "Quarantined (extraction gate rejected it for an unrecorded reason) but no framework coupling detected. Needs human inspection: either waive the rejection reason, re-extract, or mark as keep-with-reason.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/api_design/add_graphql_subscriptions.py",
-          "detail": "Primitive was extracted from `adapt/extend/api_design/add_graphql_subscriptions.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [
-        "Resolve 7 REPLACE_ME marker(s) across the primitive tree (invariant text, stub tests).",
-        "Implement the three invariant tests (confirms / prevents / under_failure) with real assertions."
-      ],
-      "state": {
-        "name": "PubSubManager",
-        "namespace": "api",
-        "is_quarantined": true,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 62,
-        "primitive_score": 85200,
-        "origin_tool": "api_design/add_graphql_subscriptions.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [],
-        "duplicate_of_registered": null,
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": "Physically quarantined with non-framework reason. Human inspection needed before any promotion path can be chosen.",
-      "delete_reason": null,
-      "promotion_target": null,
-      "classifier_version": "1.0"
-    },
-    {
       "primitive": "ReadReplicaSession",
       "namespace": "api",
       "verdict": "extract_motor_pair",
@@ -1188,46 +1148,6 @@
         "invariants_stubbed": true
       },
       "staging_reason": null,
-      "delete_reason": null,
-      "promotion_target": null,
-      "classifier_version": "1.0"
-    },
-    {
-      "primitive": "RedisPubSubBackend",
-      "namespace": "api",
-      "verdict": "needs_review",
-      "tier": "none",
-      "rationale": "Quarantined (extraction gate rejected it for an unrecorded reason) but no framework coupling detected. Needs human inspection: either waive the rejection reason, re-extract, or mark as keep-with-reason.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/api_design/add_graphql_subscriptions.py",
-          "detail": "Primitive was extracted from `adapt/extend/api_design/add_graphql_subscriptions.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [
-        "Resolve 7 REPLACE_ME marker(s) across the primitive tree (invariant text, stub tests).",
-        "Implement the three invariant tests (confirms / prevents / under_failure) with real assertions."
-      ],
-      "state": {
-        "name": "RedisPubSubBackend",
-        "namespace": "api",
-        "is_quarantined": true,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": true,
-        "loc": 62,
-        "primitive_score": 123776,
-        "origin_tool": "api_design/add_graphql_subscriptions.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [],
-        "duplicate_of_registered": null,
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": "Physically quarantined with non-framework reason. Human inspection needed before any promotion path can be chosen.",
       "delete_reason": null,
       "promotion_target": null,
       "classifier_version": "1.0"
@@ -1506,46 +1426,6 @@
         "invariants_stubbed": true
       },
       "staging_reason": null,
-      "delete_reason": null,
-      "promotion_target": null,
-      "classifier_version": "1.0"
-    },
-    {
-      "primitive": "StripeBilling",
-      "namespace": "resiliency",
-      "verdict": "needs_review",
-      "tier": "none",
-      "rationale": "Quarantined (extraction gate rejected it for an unrecorded reason) but no framework coupling detected. Needs human inspection: either waive the rejection reason, re-extract, or mark as keep-with-reason.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_stripe_subscription.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_stripe_subscription.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [
-        "Resolve 7 REPLACE_ME marker(s) across the primitive tree (invariant text, stub tests).",
-        "Implement the three invariant tests (confirms / prevents / under_failure) with real assertions."
-      ],
-      "state": {
-        "name": "StripeBilling",
-        "namespace": "resiliency",
-        "is_quarantined": true,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 96,
-        "primitive_score": 85656,
-        "origin_tool": "infrastructure/add_stripe_subscription.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [],
-        "duplicate_of_registered": null,
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": "Physically quarantined with non-framework reason. Human inspection needed before any promotion path can be chosen.",
       "delete_reason": null,
       "promotion_target": null,
       "classifier_version": "1.0"
@@ -1910,45 +1790,6 @@
       "classifier_version": "1.0"
     },
     {
-      "primitive": "PubSubManager",
-      "namespace": "api",
-      "verdict": "needs_caller",
-      "tier": "none",
-      "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/api_design/add_graphql_subscriptions.py",
-          "detail": "Primitive was extracted from `adapt/extend/api_design/add_graphql_subscriptions.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "PubSubManager",
-        "namespace": "api",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 62,
-        "primitive_score": 85200,
-        "origin_tool": "api_design/add_graphql_subscriptions.py",
-        "quarantine_reason": "domain_coupled",
-        "forbidden_modules": [
-          "redis.asyncio"
-        ],
-        "framework_imports": [],
-        "duplicate_of_registered": null,
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": "No \u00a7A12(b) signal yet. Primitive was extracted from `api_design/add_graphql_subscriptions.py` but no current caller declares it. Re-evaluate on the next triage pass.",
-      "delete_reason": null,
-      "promotion_target": null,
-      "classifier_version": "1.0"
-    },
-    {
       "primitive": "ReadReplicaSession",
       "namespace": "api",
       "verdict": "extract_motor_pair",
@@ -1985,45 +1826,6 @@
         "invariants_stubbed": true
       },
       "staging_reason": null,
-      "delete_reason": null,
-      "promotion_target": null,
-      "classifier_version": "1.0"
-    },
-    {
-      "primitive": "RedisPubSubBackend",
-      "namespace": "api",
-      "verdict": "needs_caller",
-      "tier": "none",
-      "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/api_design/add_graphql_subscriptions.py",
-          "detail": "Primitive was extracted from `adapt/extend/api_design/add_graphql_subscriptions.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "RedisPubSubBackend",
-        "namespace": "api",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": true,
-        "loc": 62,
-        "primitive_score": 123776,
-        "origin_tool": "api_design/add_graphql_subscriptions.py",
-        "quarantine_reason": "domain_coupled",
-        "forbidden_modules": [
-          "redis.asyncio"
-        ],
-        "framework_imports": [],
-        "duplicate_of_registered": null,
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": "No \u00a7A12(b) signal yet. Primitive was extracted from `api_design/add_graphql_subscriptions.py` but no current caller declares it. Re-evaluate on the next triage pass.",
       "delete_reason": null,
       "promotion_target": null,
       "classifier_version": "1.0"
@@ -8258,45 +8060,6 @@
         "invariants_stubbed": true
       },
       "staging_reason": "No \u00a7A12(b) signal yet. Primitive was extracted from `infrastructure/add_s3_storage.py` but no current caller declares it. Re-evaluate on the next triage pass.",
-      "delete_reason": null,
-      "promotion_target": null,
-      "classifier_version": "1.0"
-    },
-    {
-      "primitive": "StripeBilling",
-      "namespace": "resiliency",
-      "verdict": "needs_caller",
-      "tier": "none",
-      "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_stripe_subscription.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_stripe_subscription.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "StripeBilling",
-        "namespace": "resiliency",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 96,
-        "primitive_score": 85656,
-        "origin_tool": "infrastructure/add_stripe_subscription.py",
-        "quarantine_reason": "domain_coupled",
-        "forbidden_modules": [
-          "stripe"
-        ],
-        "framework_imports": [],
-        "duplicate_of_registered": null,
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": "No \u00a7A12(b) signal yet. Primitive was extracted from `infrastructure/add_stripe_subscription.py` but no current caller declares it. Re-evaluate on the next triage pass.",
       "delete_reason": null,
       "promotion_target": null,
       "classifier_version": "1.0"

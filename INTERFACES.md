@@ -106,19 +106,24 @@ requires a MINOR bump + a new dispatcher.
 Authoritative list (registered): **`engine/primitives_by_concern.yaml`**
 (schema in `engine/index/schemas.py`, `PrimitiveEntry`).
 
-- **122 registered primitives** at v1.0.0, each with full shell
+- **124 registered primitives** at v1.0.0, each with full shell
   (contract.json + protocol + md + tests + TLA+ + dashboard + invariants).
   `tier` field: `"full"` for all v1.0.0 registered primitives;
   `"lite"` is defined in §B1.8 but no v1.0.0 primitive ships at that
-  tier (reserved for post-v1.0).
-- **179 staged primitives** discoverable via `fastapi_meta_search`
+  tier (reserved for post-v1.0). Wave 1.5 added `events.PubSub` and
+  `billing.Billing` (see FREEZE §1.6.5).
+- **176 staged primitives** discoverable via `fastapi_meta_search`
   with `status="staged"` — usable as reference, NOT production-ready.
   Distributed across `_extracted/<namespace>/` (134) and
-  `_extracted/_quarantine/` (45 PascalCase). Lowercase function
-  extractions have been cleaned up.
+  `_extracted/_quarantine/` (42 PascalCase). Lowercase function
+  extractions + the 3 Wave-1.5-redundant entries cleaned up.
 - **17 FastAPI adapters** under `core/venous/_adapters/fastapi/`
-  (the 17th, `BulkheadAdapter`, landed in Wave 1 pre-freeze;
-  earlier drafts of this doc listed 16 — see FREEZE §1.6).
+  (the 17th, `BulkheadAdapter`, landed in Wave 1 pre-freeze — see
+  FREEZE §1.6). Plus **2 provider adapters** beyond fastapi/:
+  `_adapters/redis/PubSubAdapter.py` and
+  `_adapters/stripe/BillingAdapter.py` (see FREEZE §1.6.5). Provider
+  adapters are framework-isolated: consumers only opt in to the
+  dependency when they select the matching backend.
 
 **Stability guarantees:**
 - Registered primitive names + namespaces frozen at v1.0.0 (MAJOR

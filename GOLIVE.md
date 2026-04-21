@@ -71,7 +71,7 @@ claim.
 | 5.1 | INVENTORY.md matches disk | `engine.inventory` writes INVENTORY.md; `git diff INVENTORY.md` is empty | Claude |
 | 5.2 | catalog.json `stable_hash` persisted + cited | `jq -r .stable_hash engine/index/catalog.json` returns 64-char hex; same value appears in CHANGELOG [1.0.0] block | Claude |
 | 5.3 | VERSION bumped to `1.0.0` | `cat VERSION` == `1.0.0` (exact) | Claude |
-| 5.4 | CHANGELOG.md `[1.0.0]` block complete | Cites: plan score, code score, 20/20 coverage, `stable_hash`, 122 primitives, 17 adapters, 201 catalog tools, 20 examples, 36/36 contract | Claude |
+| 5.4 | CHANGELOG.md `[1.0.0]` block complete | Cites: plan score, code score, 20/20 coverage, `stable_hash`, 124 primitives, 17 FastAPI + 2 provider adapters, 201 catalog tools, 20 examples, 36/36 contract | Claude |
 | 5.5 | README.md current (score line + phase badge) | Score cited (100 plan / 100 code); phase badge shows `v1.0.0` | Claude |
 | 5.6 | SKILL.md v2 current (no stale counts) | `python -m engine.audit.skillmd_counts` exits 0 | Claude |
 | 5.7 | `docs/decisions/0004-tier-lite.md` status flipped to "Ratified YYYY-MM-DD" | `grep -E "Status: *Ratified 20" docs/decisions/0004-tier-lite.md` matches | Claude |
@@ -104,9 +104,9 @@ Benchmark: plan 100.00 / code 100.00 on 20/20 specs.
 Stable_hash: <fill from `jq -r .stable_hash engine/index/catalog.json`>.
 
 Surface: 217 Maestro tools (201 catalog + 7 tier-1 + 9 tree),
-122 registered primitives, 17 FastAPI adapters, 179 staged
-primitives discoverable, 20 complete examples, 36/36 contract
-rules green.
+124 registered primitives, 17 FastAPI adapters + 2 provider adapters
+(redis PubSub + stripe Billing), 176 staged primitives discoverable,
+20 complete examples, 36/36 contract rules green.
 
 First stable release; tool/primitive names frozen (semver §A10).
 See CHANGELOG.md [1.0.0] + MIGRATION.md for details.

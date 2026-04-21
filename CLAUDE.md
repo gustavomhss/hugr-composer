@@ -33,7 +33,7 @@ HuGR_Skills/
 │       │   ├── contracts/              # 4 contract tools
 │       │   └── proactive/              # 1 proactive tool
 │       ├── modules/                    # 28 feature packages prontos
-│       ├── core/venous/                # 122 registered primitives + 17 FastAPI adapters + 179 staged em _extracted/ (+45 quarantined)
+│       ├── core/venous/                # 124 registered primitives + 17 FastAPI adapters (+1 redis, +1 stripe) + 176 staged em _extracted/ (+42 quarantined)
 │       ├── mcp_tools/                  # Tier-1 meta + tree dispatchers + auto-discovery
 │       │   ├── tier1.py + compose.py   # 7 meta tools (home/search/describe/scaffold/compose/audit/verify)
 │       │   └── tree/                   # 9 domain dispatchers (auth, data, api, realtime, resiliency, obs, compliance, deployment, testing)
@@ -74,11 +74,11 @@ A skill principal. Convention over Configuration para FastAPI.
 ```
 257  arquivos com MCP_TOOL      (superfície Maestro)
 201  tools indexados no catalog.json
-122  primitivos registrados      (core/venous/<ns>/<Name>/)
-179  primitivos staged           (PascalCase-filtered, +45 quarantined)
- 17  FastAPI adapters            (production-wired)
+124  primitivos registrados      (core/venous/<ns>/<Name>/)
+176  primitivos staged           (PascalCase-filtered, +42 quarantined)
+ 17  FastAPI adapters            (production-wired; +1 Redis, +1 Stripe adapter outside fastapi/)
 127  adapt tools                 (100 extend + 8 operate + 8 evolve + 6 verify + 4 contracts + 1 proactive)
- 22  extend add_* Rails-connected (§B1.3 floor = 22, non-regressive)
+ 24  extend add_* Rails-connected (§B1.3 floor = 22, non-regressive)
  56  generators
  28  modules/ packages           (auth, payments, caching, db, deployment, obs, security, background_jobs, websockets)
  20  examples/ apps completos    (5 baseline + 10 mid + 5 adversarial, repo-root /examples/)
@@ -91,9 +91,10 @@ A skill principal. Convention over Configuration para FastAPI.
 
 | Camada | Onde | Qtd | O que é |
 |---|---|---:|---|
-| Primitivos registrados | `core/venous/<ns>/<Name>/` | 122 | Peças framework-free |
-| Primitivos staged (PascalCase) | `core/venous/_extracted/` | 179 | HuGR-shelled mas com REPLACE_ME, +45 quarantined |
+| Primitivos registrados | `core/venous/<ns>/<Name>/` | 124 | Peças framework-free |
+| Primitivos staged (PascalCase) | `core/venous/_extracted/` | 176 | HuGR-shelled mas com REPLACE_ME, +42 quarantined |
 | Adapters FastAPI | `core/venous/_adapters/fastapi/` | 17 | Wiring production-grade |
+| Adapters Redis / Stripe | `core/venous/_adapters/{redis,stripe}/` | 2 | Provider glue sobre motores `events.PubSub` / `billing.Billing` |
 | EXTEND tools | `adapt/extend/` | 100 | Slice generators (add_*) |
 | Outros adapt | `adapt/{verify,operate,evolve,contracts,proactive}/` | 27 | Validação, ops, evolução |
 | Generators | `generators/` | 56 | Scaffolders de subsistemas (per `engine.inventory`; 60 .py files on disk incl. 3 top-level helpers + conftest) |

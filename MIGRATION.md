@@ -96,14 +96,25 @@ import. v1.0.0 introduces the adapter layer (ADR 0003): primitives are
 framework-free; FastAPI glue lives in
 `core/venous/_adapters/fastapi/<Name>Adapter.py`.
 
-Affected primitives at v1.0.0 (17 adapters): AuditLog, Bulkhead,
-CircuitBreaker, CostTracker, EventSourcedStore, FeatureToggle,
-GracefulShutdown, LoadShedder, OAuth2, RateLimiter, RequestGuard,
-RetryPolicy, Saga, TotpVerifier, UnitOfWork, WebhookReceiver, Workflow.
-`BulkheadAdapter` landed in the Wave-1 pre-freeze sprint (see
-FREEZE §1.6); its adapter API (`Bulkhead(BulkheadConfig(limits=...))`
-with `acquire(group)` + `status()`) is the canonical entry for FastAPI
-apps wiring bulkhead isolation.
+Affected primitives at v1.0.0 (17 fastapi adapters): AuditLog,
+Bulkhead, CircuitBreaker, CostTracker, EventSourcedStore,
+FeatureToggle, GracefulShutdown, LoadShedder, OAuth2, RateLimiter,
+RequestGuard, RetryPolicy, Saga, TotpVerifier, UnitOfWork,
+WebhookReceiver, Workflow. `BulkheadAdapter` landed in the Wave-1
+pre-freeze sprint (see FREEZE §1.6); its adapter API
+(`Bulkhead(BulkheadConfig(limits=...))` with `acquire(group)` +
+`status()`) is the canonical entry for FastAPI apps wiring bulkhead
+isolation.
+
+**Wave-1.5 addendum: provider adapters outside fastapi/.** v1.0.0
+introduces two additional provider-framework adapter dirs —
+`core/venous/_adapters/redis/PubSubAdapter.py` (satisfies the
+`events.PubSub` Protocol) and
+`core/venous/_adapters/stripe/BillingAdapter.py` (satisfies the
+`billing.Billing` Protocol). The framework-adapter layout is now
+plural: `_adapters/<framework>/<Name>Adapter.py`. Provider adapters
+lazy-import their SDK so opting in to Redis / Stripe doesn't couple
+every app to the dep. See FREEZE §1.6.5.
 
 **Fix:** generated code should import from the primitive AND from its
 adapter. Example (Bulkhead):

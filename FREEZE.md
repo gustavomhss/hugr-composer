@@ -24,7 +24,10 @@ do *today*, not what it could do. Anything not in §1 defers to §2.
 ### §1.1 — Surface (Maestro-facing)
 
 Total Maestro-visible tools at freeze: **217**
-(201 catalog + 7 tier-1 meta + 9 tree dispatchers).
+(201 catalog + 7 tier-1 meta + 9 tree dispatchers). Two `extend`
+tools (`add_graphql_subscriptions`, `add_stripe_subscription`) were
+Rails-connected in Wave 1.5 — same tool count, but
+`primitives_used` / `imports_adapters` now reflect the real graph.
 
 - **201 catalog tools** at canonical names `fastapi_<domain>_<verb>_<noun>`,
   indexed in `engine/index/catalog.json` (stable_hash pinned, see §1.5).
@@ -38,13 +41,17 @@ Total Maestro-visible tools at freeze: **217**
   see `mcp_tools/tree/`): `fastapi_auth`, `fastapi_data`, `fastapi_api`,
   `fastapi_realtime`, `fastapi_resiliency`, `fastapi_observability`,
   `fastapi_compliance`, `fastapi_deployment`, `fastapi_testing`.
-- **122 registered primitives** under `core/venous/<ns>/<Name>/` with
+- **124 registered primitives** under `core/venous/<ns>/<Name>/` with
   full shell (contract.json + protocol + md + tests + TLA+ + dashboard +
-  invariants + observability).
-- **17 FastAPI adapters** under `core/venous/_adapters/fastapi/`.
-  No new adapters in v1.0 (see §1.6 — scope is "stabilize what exists",
-  not "promote new surface").
-- **179 staged primitives** surfaced in catalog with `status="staged"`
+  invariants + observability). Includes the Wave-1.5 additions
+  `events.PubSub` and `billing.Billing` (see §1.6.5).
+- **17 FastAPI adapters** under `core/venous/_adapters/fastapi/`. No new
+  fastapi adapters in v1.0 beyond `BulkheadAdapter` (see §1.6).
+- **2 provider adapters** outside fastapi/ —
+  `core/venous/_adapters/redis/PubSubAdapter.py` +
+  `core/venous/_adapters/stripe/BillingAdapter.py` (see §1.6.5). Both
+  framework-isolated, lazy-SDK-imported, hermetically tested.
+- **176 staged primitives** surfaced in catalog with `status="staged"`
   (discoverable; not promoted; `_extracted/<ns>/` + `_extracted/_quarantine/`
   combined PascalCase items).
 - **56 generators** + **28 module packages** + **123 adapt tools**
@@ -132,6 +139,62 @@ What landed:
 
 v1.0 freeze ships **17 FastAPI adapters** (16 pre-freeze + the new
 `BulkheadAdapter`).
+
+### §1.6.5 — PubSub + Billing extraction (landed Wave 1.5, pre-freeze)
+
+Wave 1.5 closed the three NEEDS_REVIEW ledger entries (`PubSubManager`,
+`RedisPubSubBackend`, `StripeBilling`) by splitting each into a
+framework-free motor primitive + a thin provider adapter. Shipping
+v1.0 with inline pub/sub and inline Stripe SDK wrappers in the extend
+tools violated "SOTA, no débit" criteria once the scaffolding for
+motor+adapter pairs had landed; Wave 1.5 made the tools Rails-style.
+
+What landed:
+
+- **Motor `core/venous/events/PubSub/`** — Protocol + `InMemoryPubSub`
+  reference backend with 5 invariants (PS_INV_01 fanout, PS_INV_02
+  ordering, PS_INV_03 topic isolation, PS_INV_04 subscriber cleanup,
+  PS_INV_05 active-window). 17 tests (7 unit + 10 behavioural).
+  Registered in `primitives_by_concern.yaml` under the existing
+  `events` namespace (`TopicBus` nearby — PubSub.md spells out the
+  broker-vs-fanout disambiguation).
+- **Motor `core/venous/billing/Billing/`** — Protocol + `InMemoryBilling`
+  reference backend with 5 invariants (BILL_INV_01 HMAC webhook
+  verification, BILL_INV_02 lifecycle monotonicity, BILL_INV_03
+  plan-change id preservation, BILL_INV_04 opaque-id checking,
+  BILL_INV_05 no-PII errors). 25 tests (7 unit + 18 behavioural).
+  Introduces a new `billing` namespace — additive, no existing
+  primitive moves.
+- **Adapter `core/venous/_adapters/redis/PubSubAdapter.py`** — new
+  provider framework dir (first non-fastapi). Lazy `redis.asyncio`
+  import; JSON codec; 13 hermetic tests against a fake redis module
+  via `sys.modules` injection.
+- **Adapter `core/venous/_adapters/stripe/BillingAdapter.py`** —
+  second provider framework dir. Lazy `stripe` import; maps Stripe's
+  wider status set onto the motor's 4-value enum; translates
+  `SignatureVerificationError` / `InvalidRequestError` into motor
+  errors; 22 hermetic tests against a fake stripe module injected
+  via constructor kwarg.
+- **Rails-connect `add_graphql_subscriptions.py`**: `_write_pubsub`
+  glue shrunk ~200 LOC → ~40 LOC; imports the motor + adapter; ships
+  them into the generated project via `ensure_primitives()`;
+  idempotency guard accepts both `get_pubsub` (new) and
+  `PubSubManager` (legacy) fingerprints.
+- **Rails-connect `add_stripe_subscription.py`**: `_STRIPE_BILLING_TEMPLATE`
+  shrunk ~140 LOC → ~50 LOC; retains `StripeBilling()` compat alias so
+  legacy callers still work.
+- **Scaffolder defensive fix**: `generators/scaffold_venous.copy_adapter`
+  now ships each framework's source `__init__.py` (with attribution
+  footer) instead of overwriting it with a bare docstring — so
+  package-level re-exports survive the project copy. Matches the
+  primitive copy behaviour.
+- **Pool cleanup**: the 3 NEEDS_REVIEW ledger entries (and their
+  `_quarantine/` twins) deleted — staged went 179 → 176, quarantined
+  went 45 → 42, ledger entries went 225 → 219.
+
+v1.0 freeze ships **124 registered primitives** (122 pre-Wave-1.5 +
+`PubSub` + `Billing`) and **19 total adapters** (17 fastapi + 1 redis
++ 1 stripe).
 
 ---
 
