@@ -578,6 +578,15 @@ primitives:
   - TopicBus
   - EventStream
   - RequestGuard
+- name: PubSub
+  namespace: events
+  concern: events
+  purpose: In-process fanout pub/sub for real-time streams — publish delivers a payload to every active subscriber; no durability, replay, or ack/nack. Use TopicBus for broker-grade delivery.
+  compose_with:
+  - TopicBus
+  - IdempotentConsumer
+  - EventEnvelope
+  - RequestContext
 - name: TopicBus
   namespace: events
   concern: events
