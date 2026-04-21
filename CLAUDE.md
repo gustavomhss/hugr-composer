@@ -37,7 +37,7 @@ HuGR_Skills/
 │       ├── mcp_tools/                  # Tier-1 meta + tree dispatchers + auto-discovery
 │       │   ├── tier1.py + compose.py   # 7 meta tools (home/search/describe/scaffold/compose/audit/verify)
 │       │   └── tree/                   # 9 domain dispatchers (auth, data, api, realtime, resiliency, obs, compliance, deployment, testing)
-│       ├── engine/                     # audit, index, bench, docs, extraction, inventory
+│       ├── engine/                     # audit, index, bench, docs, extraction, inventory, promotion
 │       ├── specs/                      # 124 formal specifications
 │       # examples/ vive em /examples/ no repo root — 20 apps completos
 │       ├── tests/                      # Test infrastructure
@@ -138,6 +138,31 @@ PYTHONPATH=. .venv/bin/python tests/test_soak.py --duration 300
 Toda nova tool DEVE seguir:
 - `tests/contracts/AGENT_BRIEFING_TEMPLATE.md` — 9 anti-patterns, 18 CCs, 12 QS, DoD granular, 10 INVs
 - `tests/contracts/delivery_contract.py` — Pydantic contract inviolável
+
+### Promotion pipeline (Track B, 2026-04-21)
+
+`engine/promotion/` handles the staged→registered path without silently
+amending §A12. Core modules:
+
+- `classify.py` — emits `ledger.json` with per-primitive verdict
+  (promote_full / promote_lite / keep_staged / delete / needs_review).
+- `promote.py` — atomic executor, automatic rollback on failure,
+  refuses non-ready entries. Lite tier gated on `§B1.7 ratified` token
+  in CONTRACT.md §E.
+- `ledger.py` — renders `LEDGER.md` for approve/reject review.
+- `HANDOFF.md` — overnight triage summary.
+
+Run:
+
+```bash
+cd skills/SKILL-001-fastapi-production
+PYTHONPATH=. .venv/bin/python -m engine.promotion.classify    # regenerate ledger
+PYTHONPATH=. .venv/bin/python -m engine.promotion.ledger       # render Markdown
+PYTHONPATH=. .venv/bin/python -m engine.promotion.promote --from-ledger NAME
+PYTHONPATH=. .venv/bin/python -m engine.promotion.promote --delete NAME
+```
+
+Tier-lite proposal: `docs/decisions/0004-tier-lite.md`.
 
 ### Agent orchestration
 
