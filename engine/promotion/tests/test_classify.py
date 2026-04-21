@@ -1,7 +1,11 @@
 """Verdict logic tests — each of the 8 decision rules exercised."""
 from __future__ import annotations
 
-from engine.promotion.classify import _classify_single
+from engine.promotion.classify import (
+    _classify_single,
+    _motor_name,
+    _motor_is_registered,
+)
 from engine.promotion.schemas import (
     Signal,
     SignalKind,
@@ -85,6 +89,62 @@ def test_rule7_signal_clean_stateless_promotes_lite():
     verdict, tier, _, _, _ = _classify_single(state, [_sig()])
     assert verdict == Verdict.PROMOTE_LITE
     assert tier == "lite"
+
+
+def test_motor_name_strips_known_suffixes():
+    assert _motor_name("BulkheadMiddleware") == "Bulkhead"
+    assert _motor_name("AdminAuthBackend") == "AdminAuth"
+    assert _motor_name("FooAdapter") == "Foo"
+    assert _motor_name("WebhookDispatcher") == "Webhook"
+    assert _motor_name("SomeHandler") == "Some"
+
+
+def test_motor_name_returns_none_on_no_match():
+    assert _motor_name("Bulkhead") is None  # no suffix
+    assert _motor_name("Middleware") is None  # entire name == suffix
+    assert _motor_name("X") is None
+    assert _motor_name("Foo") is None
+
+
+def test_motor_is_registered_hits():
+    reg = {"Bulkhead", "Webhook"}
+    assert _motor_is_registered("BulkheadMiddleware", reg) == "Bulkhead"
+    assert _motor_is_registered("WebhookDispatcher", reg) == "Webhook"
+
+
+def test_motor_is_registered_misses():
+    reg = {"Bulkhead"}
+    assert _motor_is_registered("FooAdapter", reg) is None
+    assert _motor_is_registered("NoSuffix", reg) is None
+
+
+def test_rule2b_framework_coupled_motor_registered_deletes():
+    state = _s(name="BulkheadMiddleware", framework_imports=["starlette"])
+    verdict, _, rationale, _, delete_reason = _classify_single(
+        state, [], registered_names={"Bulkhead"}
+    )
+    assert verdict == Verdict.DELETE
+    assert "Bulkhead" in rationale
+    assert delete_reason is not None
+
+
+def test_rule2c_framework_coupled_no_motor_needs_decision():
+    state = _s(name="CORSConfigMiddleware", framework_imports=["starlette"])
+    verdict, _, rationale, _, _ = _classify_single(
+        state, [], registered_names={"Bulkhead"}  # no CORSConfig
+    )
+    assert verdict == Verdict.NEEDS_DECISION
+    assert "CORSConfig" in rationale or "motor" in rationale.lower()
+
+
+def test_rule2c_framework_coupled_weird_name_no_motor_hint():
+    """A framework-coupled primitive without a recognisable suffix."""
+    state = _s(name="FooBar", framework_imports=["fastapi"])
+    verdict, _, rationale, _, _ = _classify_single(
+        state, [], registered_names=set()
+    )
+    assert verdict == Verdict.NEEDS_DECISION
+    assert "No common framework suffix" in rationale
 
 
 def test_weak_signal_kind_does_not_count_as_strong():
