@@ -102,6 +102,14 @@ class StateFlags(BaseModel):
     )
     quarantine_reason: str = Field(default="")
     forbidden_modules: list[str] = Field(default_factory=list)
+    framework_imports: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Framework modules the primitive's primary .py imports. "
+            "Registered primitives may not import framework modules "
+            "(CONTRACT §B1.0.1); non-empty list is a hard blocker."
+        ),
+    )
     duplicate_of_registered: str | None = Field(
         default=None,
         description=(
