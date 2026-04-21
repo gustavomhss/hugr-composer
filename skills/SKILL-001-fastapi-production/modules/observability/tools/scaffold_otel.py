@@ -14,6 +14,14 @@ Generated files:
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_observability_generate_otel_stack',
+    'description': 'Generate production OpenTelemetry setup for FastAPI: TracerProvider, OTLP exporter, Prometheus RED metrics, structlog.',
+    'tags': ['observability', 'generator'],
+    'entry': 'generate_otel_setup',
+    'annotations': {'readOnlyHint': False, 'destructiveHint': False},
+}
+
 import sys
 import textwrap
 from pathlib import Path

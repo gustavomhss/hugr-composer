@@ -152,9 +152,27 @@ def collect() -> dict:
             pass
 
     # Examples + specs
-    examples = sum(1 for p in (R / "examples").iterdir() if p.is_dir() and not p.name.startswith((".", "_"))) if (R / "examples").exists() else 0
+    # Count only populated example directories — empty scaffolds don't count.
+    def _has_files(d: Path) -> bool:
+        return any(f.is_file() for f in d.rglob("*") if ".pycache" not in f.parts)
+
+    examples_dir = R / "examples"
+    examples_populated = 0
+    examples_empty = 0
+    if examples_dir.exists():
+        for p in examples_dir.iterdir():
+            if not (p.is_dir() and not p.name.startswith((".", "_"))):
+                continue
+            if _has_files(p):
+                examples_populated += 1
+            else:
+                examples_empty += 1
+    examples = examples_populated
     specs = sum(1 for p in (R / "specs").glob("*.md") if not p.name.startswith(("README", "RESUME")))
-    benchmark_specs = sum(1 for p in (R / "benchmarks" / "specs").glob("*.md") if p.name.upper() != "README.MD") if (R / "benchmarks" / "specs").exists() else 0
+    benchmark_specs = sum(
+        1 for p in (R / "benchmarks" / "specs").rglob("*.md")
+        if p.name.upper() != "README.MD"
+    ) if (R / "benchmarks" / "specs").exists() else 0
 
     return {
         "mcp_tools_total": _count_mcp_tools(),
@@ -173,6 +191,7 @@ def collect() -> dict:
         "extracted_staged_total": sum(v for k, v in extracted_ns.items() if k != "_quarantine"),
         "extracted_quarantined": extracted_ns.get("_quarantine", 0),
         "examples": examples,
+        "examples_empty": examples_empty,
         "specs": specs,
         "benchmark_specs": benchmark_specs,
     }
@@ -199,7 +218,7 @@ def render_markdown(inv: dict) -> str:
 - **{inv['extracted_staged_total']} staged primitives** in `_extracted/` (plus {inv['extracted_quarantined']} quarantined).
 - **{inv['adapters_fastapi']} FastAPI adapters** (production-wired).
 - **{inv['modules_total']} `modules/` packages** (pre-built feature bundles).
-- **{inv['examples']} examples, {inv['specs']} specs, {inv['benchmark_specs']} benchmark specs.**
+- **{inv['examples']} populated examples** ({inv['examples_empty']} empty scaffolds), {inv['specs']} specs, {inv['benchmark_specs']} benchmark specs.
 
 ---
 

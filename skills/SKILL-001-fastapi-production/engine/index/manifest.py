@@ -62,6 +62,7 @@ TOOL_SCAN_ROOTS: tuple[tuple[str, Path], ...] = (
     ("benchmark",  SKILL_ROOT / "benchmark"),
     ("meta",       SKILL_ROOT / "meta"),
     ("core_tools", SKILL_ROOT / "core" / "tools"),
+    ("discovery",  SKILL_ROOT / "engine" / "discovery"),
 )
 
 
@@ -140,6 +141,27 @@ _VERB_FROM_PREFIX = {
     "search_":    "search",
     "scaffold_":  "generate",       # scaffold_* is a generate synonym
 }
+
+
+def _parse_canonical_name(mcp_name: str) -> tuple[str | None, str | None]:
+    """Return (verb, domain) if mcp_name is already in canonical form.
+
+    Canonical = ``fastapi_<domain>_<verb>_<noun>`` with both drawn from
+    the closed vocabularies. Returns (None, None) otherwise.
+    """
+    if not mcp_name.startswith("fastapi_"):
+        return None, None
+    stripped = mcp_name[len("fastapi_"):]
+    # Longest-match domain first (meta, auth, data, api, ...).
+    for dom in sorted(DOMAINS, key=len, reverse=True):
+        prefix = f"{dom}_"
+        if not stripped.startswith(prefix):
+            continue
+        rest = stripped[len(prefix):]
+        for v in VERBS:
+            if rest.startswith(f"{v}_"):
+                return v, dom
+    return None, None
 
 
 def _infer_verb(mcp_name: str, module_stem: str) -> str:
@@ -412,8 +434,14 @@ def _tool_entries(raw_tools: list[dict], primitive_names: set[str]) -> list[Tool
     for meta in raw_tools:
         mcp_name = meta["name"]
         module_path = Path(meta["_path"])
-        verb = _infer_verb(mcp_name, module_path.stem)
-        domain = _infer_domain(module_path, mcp_name)
+        # Respect an explicit canonical name: `fastapi_<domain>_<verb>_<noun>`.
+        # If the author set it that way, trust it — don't re-infer and risk
+        # misclassifying (e.g. a file named `compose.py` whose keyword would
+        # otherwise resolve to "deployment").
+        verb, domain = _parse_canonical_name(mcp_name)
+        if verb is None:
+            verb = _infer_verb(mcp_name, module_path.stem)
+            domain = _infer_domain(module_path, mcp_name)
         tags = _infer_tags(mcp_name, module_path.stem)
 
         # Validate verb + domain (must be in closed vocab)

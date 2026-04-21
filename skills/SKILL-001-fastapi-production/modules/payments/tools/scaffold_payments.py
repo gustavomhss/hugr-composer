@@ -19,6 +19,14 @@ Generated files:
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_data_generate_payments',
+    'description': 'Generate production Stripe integration: Checkout Sessions, webhook signature verification, idempotency, subscriptions, refunds.',
+    'tags': ['payments', 'generator'],
+    'entry': 'generate_payment_module',
+    'annotations': {'readOnlyHint': False, 'destructiveHint': False},
+}
+
 import sys
 import textwrap
 from pathlib import Path

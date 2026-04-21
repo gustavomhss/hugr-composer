@@ -9,6 +9,14 @@ missing rate limiting, no logout endpoint, and unbounded password length.
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_auth_verify_config',
+    'description': 'AST-based static analysis of FastAPI auth code for 8 common security anti-patterns (hardcoded secrets, weak hashing, etc).',
+    'tags': ['auth', 'security', 'verify'],
+    'entry': 'verify_auth_config',
+    'annotations': {'readOnlyHint': True, 'destructiveHint': False},
+}
+
 import ast
 import os
 import re

@@ -14,6 +14,14 @@ Generated script can be run directly: k6 run loadtest.js
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_deployment_generate_k6',
+    'description': 'Generate k6 load test scripts with ramping stages, per-endpoint checks, p95/p99 thresholds, handleSummary JSON export.',
+    'tags': ['deployment', 'generator'],
+    'entry': 'generate_k6_script',
+    'annotations': {'readOnlyHint': False, 'destructiveHint': False},
+}
+
 import json
 import sys
 import textwrap

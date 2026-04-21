@@ -10,6 +10,14 @@ endpoint, and no event deduplication.
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_data_verify_payments',
+    'description': 'AST/regex analysis of FastAPI payment code for 8 anti-patterns: missing webhook sig, no idempotency, raw card data, etc.',
+    'tags': ['payments', 'verify'],
+    'entry': 'verify_payment_config',
+    'annotations': {'readOnlyHint': True, 'destructiveHint': False},
+}
+
 import ast
 import os
 import re

@@ -17,6 +17,14 @@ Generated files:
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_realtime_generate_ws',
+    'description': 'Generate production FastAPI WebSocket module: JWT auth on connect, rooms, Redis pub/sub, heartbeat, connection limiting.',
+    'tags': ['realtime', 'generator'],
+    'entry': 'generate_websocket_module',
+    'annotations': {'readOnlyHint': False, 'destructiveHint': False},
+}
+
 import sys
 import textwrap
 from pathlib import Path

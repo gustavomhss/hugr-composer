@@ -59,7 +59,7 @@ declared openly in the commit message and a new protocol version cut.
 > as being USED — Claude ignored the kit entirely and scored identically
 > to naked (38.46 vs 38.46, zero margin). The kit arm's prompt therefore
 > includes an explicit paragraph listing the MCP tool families
-> (`fastapi_find_primitive`, `fastapi_suggest_composition`,
+> (`fastapi_meta_search_primitive`, `fastapi_meta_search_composition`,
 > `fastapi_add_*`, `fastapi_generate_project`) so the agent knows they
 > exist. The BRIEF text is byte-identical across arms — the announcement
 > is a prompt-scaffolding delta, not a task-information delta. A
@@ -255,7 +255,7 @@ Aggregate over one run:
     "time_to_first_test_pass_s": 178, "time_to_best_score_s": 394
   },
   "kit_attribution": {
-    "mcp_tools_called": {"fastapi_add_rbac": 1, "fastapi_find_primitive": 3, ...},
+    "mcp_tools_called": {"fastapi_add_rbac": 1, "fastapi_meta_search_primitive": 3, ...},
     "primitives_imported": ["Repository","UnitOfWork","AuditEvent",...],
     "primitives_required_by_spec": ["UnitOfWork","OptimisticConcurrency","TransactionalOutbox","AuditEvent"],
     "coverage_of_required": 0.75,

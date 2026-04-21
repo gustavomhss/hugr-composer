@@ -16,6 +16,14 @@ Generated manifests:
 
 from __future__ import annotations
 
+MCP_TOOL = {
+    'name': 'fastapi_deployment_generate_k8s_bundle',
+    'description': 'Generate production Kubernetes manifests for FastAPI: Deployment, Service, HPA, PDB with rolling updates and probes.',
+    'tags': ['deployment', 'generator'],
+    'entry': 'generate_k8s_manifests',
+    'annotations': {'readOnlyHint': False, 'destructiveHint': False},
+}
+
 import sys
 import textwrap
 from pathlib import Path

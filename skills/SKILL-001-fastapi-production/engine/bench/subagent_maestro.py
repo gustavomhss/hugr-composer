@@ -232,8 +232,8 @@ def _load_tool_names() -> set[str]:
             for m in re.finditer(r"""['"]name['"]\s*:\s*['"]([a-z0-9_]+)['"]""", txt):
                 names.add(m.group(1))
     # discovery tools (registered inline in mcp_tools/discovery.py)
-    names.add("fastapi_find_primitive")
-    names.add("fastapi_suggest_composition")
+    names.add("fastapi_meta_search_primitive")
+    names.add("fastapi_meta_search_composition")
     return names
 
 

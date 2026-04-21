@@ -12,6 +12,21 @@ Pure retrieval — zero LLM, zero network. Deterministic.
 """
 from __future__ import annotations
 
+MCP_TOOL = {
+    "name": "fastapi_meta_search_composition",
+    "description": (
+        "BM25 retrieval over compose-with recipes. Given a natural-language "
+        "intent (e.g. 'webhook receiver with dedupe and audit'), returns a "
+        "ranked list of {primitives, rationale, score, source, name} dicts. "
+        "Pure retrieval, deterministic. Narrower than fastapi_meta_search "
+        "(which also covers tools); kept because CONTRACT §B2.2 quality "
+        "gates pin recipe-retrieval accuracy against this path."
+    ),
+    "tags": ["meta", "discovery", "composition", "retrieval"],
+    "annotations": {"readOnlyHint": True, "destructiveHint": False},
+    "entry": "suggest_composition",
+}
+
 import math
 import re
 import threading
