@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-21T13:42:52+00:00",
+  "generated_at": "2026-04-21T13:49:09+00:00",
   "classifier_version": "1.0",
   "total_staged": 182,
   "total_quarantined": 47,
@@ -7,9 +7,9 @@
     {
       "primitive": "AdaptiveThrottleMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `AdaptiveThrottle` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -39,16 +39,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "AdminAuthBackend",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. Likely motor name if re-extracted: `AdminAuth` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -77,16 +77,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "AnomalyMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Anomaly` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -116,16 +116,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "BulkheadMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "delete",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) AND its motor `Bulkhead` is already registered. This staged item is just the framework plugin \u2014 the registered motor already ships with its canonical adapter under _adapters/fastapi/. Redundant.",
       "signals": [
         {
           "kind": "generator_ref",
@@ -155,16 +155,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
-      "delete_reason": null,
+      "staging_reason": null,
+      "delete_reason": "Framework plugin whose motor `Bulkhead` is registered at core/venous/*/Bulkhead/. Staged copy adds no value.",
       "classifier_version": "1.0"
     },
     {
       "primitive": "CORSConfigMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (starlette) and no motor registered. Likely motor name if re-extracted: `CORSConfig` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -193,16 +193,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "CSRFMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `CSRF` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -232,16 +232,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "CedarAuthzMiddleware",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `CedarAuthz` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -271,16 +271,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "ChaosMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Chaos` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -310,16 +310,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "CostMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Cost` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -349,16 +349,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "CursorPaginator",
       "namespace": "data",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -387,16 +387,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "DLPMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `DLP` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -426,16 +426,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "DataSeeder",
       "namespace": "extras",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -464,16 +464,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "DeliveryTracker",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -502,16 +502,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "DependencyChecker",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -540,16 +540,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "DeprecationMiddleware",
       "namespace": "api",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Deprecation` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -579,16 +579,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "EventStore",
       "namespace": "data",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -617,16 +617,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "FeatureToggleService",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "delete",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) AND its motor `FeatureToggle` is already registered. This staged item is just the framework plugin \u2014 the registered motor already ships with its canonical adapter under _adapters/fastapi/. Redundant.",
       "signals": [
         {
           "kind": "generator_ref",
@@ -655,16 +655,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
-      "delete_reason": null,
+      "staging_reason": null,
+      "delete_reason": "Framework plugin whose motor `FeatureToggle` is registered at core/venous/*/FeatureToggle/. Staged copy adds no value.",
       "classifier_version": "1.0"
     },
     {
       "primitive": "FingerprintMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Fingerprint` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -694,16 +694,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "ImportProcessor",
       "namespace": "data",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -732,16 +732,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "LeakDetectorMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `LeakDetector` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -771,16 +771,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "LoadSheddingMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `LoadShedding` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -810,16 +810,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "MeteringMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Metering` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -849,16 +849,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "NotificationService",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. Likely motor name if re-extracted: `Notification` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -887,16 +887,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "OPAMiddleware",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `OPA` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -926,16 +926,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "OTELMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `OTEL` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -965,16 +965,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "OutboxService",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. Likely motor name if re-extracted: `Outbox` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1003,16 +1003,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "OwnershipVerifier",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1042,16 +1042,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "Projector",
       "namespace": "data",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1080,16 +1080,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "PrometheusMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Prometheus` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1119,7 +1119,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -1162,9 +1162,9 @@
     {
       "primitive": "ReadReplicaSession",
       "namespace": "api",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1193,16 +1193,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "RecorderMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Recorder` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1232,7 +1232,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -1275,9 +1275,9 @@
     {
       "primitive": "RegistryService",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. Likely motor name if re-extracted: `Registry` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1306,16 +1306,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "RequestSigningMiddleware",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `RequestSigning` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1345,16 +1345,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "ResponseArmorMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `ResponseArmor` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1384,16 +1384,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "SagaCoordinator",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1422,16 +1422,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "SanitizeMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Sanitize` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1461,16 +1461,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "SchemaEnforcerMiddleware",
       "namespace": "extras",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `SchemaEnforcer` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1500,16 +1500,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "ShutdownMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Shutdown` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1539,7 +1539,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -1582,9 +1582,9 @@
     {
       "primitive": "TenantIsolationFilter",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1613,16 +1613,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "TenantMiddleware",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, sqlalchemy, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, sqlalchemy, starlette) and no motor registered. Likely motor name if re-extracted: `Tenant` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1653,16 +1653,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, sqlalchemy, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "TracingMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Tracing` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1692,16 +1692,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "UploadSizeMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `UploadSize` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1731,16 +1731,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "VersionResolverMiddleware",
       "namespace": "api",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `VersionResolver` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1770,16 +1770,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "VersioningService",
       "namespace": "data",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. Likely motor name if re-extracted: `Versioning` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1808,16 +1808,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "DeprecationMiddleware",
       "namespace": "api",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Deprecation` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1849,16 +1849,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "GitHubVerifier",
       "namespace": "api",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1887,16 +1887,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "InternalVerifier",
       "namespace": "api",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -1925,7 +1925,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -1970,9 +1970,9 @@
     {
       "primitive": "ReadReplicaSession",
       "namespace": "api",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -2003,7 +2003,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -2084,9 +2084,9 @@
     {
       "primitive": "StripeVerifier",
       "namespace": "api",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -2115,7 +2115,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -2230,9 +2230,9 @@
     {
       "primitive": "UserPresence",
       "namespace": "api",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -2261,7 +2261,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -2376,9 +2376,9 @@
     {
       "primitive": "VersionResolverMiddleware",
       "namespace": "api",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `VersionResolver` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -2411,7 +2411,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -2454,9 +2454,9 @@
     {
       "primitive": "WebhookDelivery",
       "namespace": "api",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -2485,16 +2485,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "WebhookEndpoint",
       "namespace": "api",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. Likely motor name if re-extracted: `Webhook` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -2523,7 +2523,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -2602,9 +2602,9 @@
     {
       "primitive": "APIKey",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -2633,16 +2633,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "CedarEngine",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (starlette) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -2671,16 +2671,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "FeatureFlag",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -2709,16 +2709,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "FeatureFlagAudit",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -2747,7 +2747,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -2790,9 +2790,9 @@
     {
       "primitive": "FeatureToggleService",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "delete",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) AND its motor `FeatureToggle` is already registered. This staged item is just the framework plugin \u2014 the registered motor already ships with its canonical adapter under _adapters/fastapi/. Redundant.",
       "signals": [
         {
           "kind": "generator_ref",
@@ -2823,8 +2823,8 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
-      "delete_reason": null,
+      "staging_reason": null,
+      "delete_reason": "Framework plugin whose motor `FeatureToggle` is registered at core/venous/*/FeatureToggle/. Staged copy adds no value.",
       "classifier_version": "1.0"
     },
     {
@@ -2866,9 +2866,9 @@
     {
       "primitive": "MFADevice",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -2897,16 +2897,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "MFARecoveryCode",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -2935,16 +2935,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "OAuthAccount",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -2973,7 +2973,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -3088,9 +3088,9 @@
     {
       "primitive": "OPAMiddleware",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `OPA` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -3122,16 +3122,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "OtpCode",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -3160,16 +3160,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "Passkey",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -3198,16 +3198,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "Permission",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -3236,7 +3236,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -3351,9 +3351,9 @@
     {
       "primitive": "RolePermission",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -3382,7 +3382,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -3425,9 +3425,9 @@
     {
       "primitive": "SocialAccount",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -3456,7 +3456,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -3499,9 +3499,9 @@
     {
       "primitive": "TenantIsolationFilter",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -3532,16 +3532,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "TenantScopedMixin",
       "namespace": "auth",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -3570,16 +3570,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "AuditLog",
       "namespace": "data",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -3608,16 +3608,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "ContentVersion",
       "namespace": "data",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -3646,16 +3646,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "CursorPaginator",
       "namespace": "data",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -3687,16 +3687,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "Event",
       "namespace": "data",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -3730,16 +3730,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "EventStore",
       "namespace": "data",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -3771,16 +3771,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "ImportJob",
       "namespace": "data",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -3809,16 +3809,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "ImportProcessor",
       "namespace": "data",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -3849,7 +3849,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -3964,9 +3964,9 @@
     {
       "primitive": "SoftDeleteMixin",
       "namespace": "data",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -3995,7 +3995,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -4074,9 +4074,9 @@
     {
       "primitive": "VersioningService",
       "namespace": "data",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. Likely motor name if re-extracted: `Versioning` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -4108,7 +4108,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -4331,9 +4331,9 @@
     {
       "primitive": "DataSeeder",
       "namespace": "extras",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -4364,7 +4364,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -4587,9 +4587,9 @@
     {
       "primitive": "SchemaEnforcerMiddleware",
       "namespace": "extras",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `SchemaEnforcer` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -4621,7 +4621,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -4700,9 +4700,9 @@
     {
       "primitive": "AdaptiveThrottleMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `AdaptiveThrottle` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -4734,7 +4734,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -4777,9 +4777,9 @@
     {
       "primitive": "AdminAuthBackend",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. Likely motor name if re-extracted: `AdminAuth` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -4811,7 +4811,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -4890,9 +4890,9 @@
     {
       "primitive": "AnomalyMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Anomaly` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -4924,7 +4924,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -5039,9 +5039,9 @@
     {
       "primitive": "BulkheadMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "delete",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) AND its motor `Bulkhead` is already registered. This staged item is just the framework plugin \u2014 the registered motor already ships with its canonical adapter under _adapters/fastapi/. Redundant.",
       "signals": [
         {
           "kind": "generator_ref",
@@ -5073,16 +5073,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
-      "delete_reason": null,
+      "staging_reason": null,
+      "delete_reason": "Framework plugin whose motor `Bulkhead` is registered at core/venous/*/Bulkhead/. Staged copy adds no value.",
       "classifier_version": "1.0"
     },
     {
       "primitive": "CORSConfigMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (starlette) and no motor registered. Likely motor name if re-extracted: `CORSConfig` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -5113,16 +5113,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "CSRFMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `CSRF` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -5155,16 +5155,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "CSRFProtection",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -5193,7 +5193,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -5344,9 +5344,9 @@
     {
       "primitive": "ChaosMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Chaos` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -5378,7 +5378,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -5421,9 +5421,9 @@
     {
       "primitive": "ComplianceEvent",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -5452,7 +5452,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -5567,9 +5567,9 @@
     {
       "primitive": "CostMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Cost` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -5601,7 +5601,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -5716,9 +5716,9 @@
     {
       "primitive": "DLPMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `DLP` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -5751,7 +5751,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -5794,9 +5794,9 @@
     {
       "primitive": "DeliveryTracker",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -5828,16 +5828,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "DependencyChecker",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -5869,7 +5869,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -5912,9 +5912,9 @@
     {
       "primitive": "DeviceToken",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -5943,16 +5943,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "EmailEvent",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -5981,7 +5981,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -6060,9 +6060,9 @@
     {
       "primitive": "ErrorInjector",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -6091,7 +6091,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -6134,9 +6134,9 @@
     {
       "primitive": "FingerprintMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Fingerprint` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -6168,7 +6168,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -6319,9 +6319,9 @@
     {
       "primitive": "Job",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -6350,7 +6350,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -6429,9 +6429,9 @@
     {
       "primitive": "LeakDetectorMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `LeakDetector` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -6464,16 +6464,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "LoadSheddingMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `LoadShedding` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -6505,16 +6505,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "MLModel",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -6543,7 +6543,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -6658,9 +6658,9 @@
     {
       "primitive": "MeteringMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Metering` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -6692,16 +6692,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "Notification",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -6730,16 +6730,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "NotificationService",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. Likely motor name if re-extracted: `Notification` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -6770,16 +6770,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "OTELMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `OTEL` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -6811,7 +6811,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -6926,9 +6926,9 @@
     {
       "primitive": "OutboxDlq",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -6957,16 +6957,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "OutboxEvent",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -6995,16 +6995,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "OutboxService",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. Likely motor name if re-extracted: `Outbox` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -7035,16 +7035,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "PrometheusMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Prometheus` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -7076,7 +7076,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -7119,9 +7119,9 @@
     {
       "primitive": "RecorderMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Recorder` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -7154,16 +7154,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "Refund",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -7192,7 +7192,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -7235,9 +7235,9 @@
     {
       "primitive": "RegistryService",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. Likely motor name if re-extracted: `Registry` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -7268,7 +7268,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -7491,9 +7491,9 @@
     {
       "primitive": "ResponseArmorMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `ResponseArmor` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -7525,7 +7525,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -7676,9 +7676,9 @@
     {
       "primitive": "SagaCoordinator",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -7709,16 +7709,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "SagaInstance",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -7747,16 +7747,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "SagaStepExecution",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -7785,16 +7785,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "SanitizeMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Sanitize` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -7827,7 +7827,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -8086,9 +8086,9 @@
     {
       "primitive": "ShutdownHealthGate",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -8117,16 +8117,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "ShutdownMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Shutdown` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -8158,7 +8158,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
@@ -8419,9 +8419,9 @@
     {
       "primitive": "TracingMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `Tracing` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -8453,16 +8453,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "UploadSizeMiddleware",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (fastapi, starlette). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (fastapi, starlette) and no motor registered. Likely motor name if re-extracted: `UploadSize` (not currently registered). Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -8495,16 +8495,16 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports fastapi, starlette. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },
     {
       "primitive": "UsageRecord",
       "namespace": "resiliency",
-      "verdict": "keep_staged",
+      "verdict": "needs_decision",
       "tier": "none",
-      "rationale": "Primary .py imports framework module(s) (sqlalchemy). CONTRACT \u00a7B1.0.1 bars framework imports from registered primitives. Must be re-extracted as a framework-free primitive (with adapter under _adapters/fastapi/ if the FastAPI surface is needed) before promotion.",
+      "rationale": "Framework-coupled (sqlalchemy) and no motor registered. No common framework suffix to derive a motor name from. Decide: (a) re-extract into framework-free motor + adapter per \u00a7B1.0.1, or (b) delete as boilerplate (CORS config, trivial middleware, one-off wiring).",
       "signals": [
         {
           "kind": "generator_ref",
@@ -8533,7 +8533,7 @@
         "test_file_present": true,
         "invariants_stubbed": true
       },
-      "staging_reason": "Framework-coupled: imports sqlalchemy. Requires re-extraction with adapter pattern (CONTRACT \u00a7B1.0.1) before promotion.",
+      "staging_reason": null,
       "delete_reason": null,
       "classifier_version": "1.0"
     },

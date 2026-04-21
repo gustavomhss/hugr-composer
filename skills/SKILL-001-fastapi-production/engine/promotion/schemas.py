@@ -24,6 +24,9 @@ class Verdict(str, Enum):
     * delete     — redundant with an already-registered primitive,
       quarantined beyond repair, or superseded by design. Removed from
       `_extracted/` entirely.
+    * needs_decision — framework-coupled primitive whose "motor"
+      (framework-free core) is NOT yet registered. Human decides:
+      re-extract (split into motor + adapter) or delete as boilerplate.
     * needs_review — classifier could not decide safely; human must
       adjudicate. NEVER a default — only used when signals conflict.
     """
@@ -32,6 +35,7 @@ class Verdict(str, Enum):
     PROMOTE_LITE = "promote_lite"
     KEEP_STAGED = "keep_staged"
     DELETE = "delete"
+    NEEDS_DECISION = "needs_decision"
     NEEDS_REVIEW = "needs_review"
 
 

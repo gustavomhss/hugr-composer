@@ -26,6 +26,7 @@ def _bucket_header(verdict: Verdict, count: int) -> str:
         Verdict.PROMOTE_LITE: "Promote at lite tier (no TLA+)",
         Verdict.DELETE: "Delete (redundant or not salvageable)",
         Verdict.KEEP_STAGED: "Keep staged (awaiting signal or re-extraction)",
+        Verdict.NEEDS_DECISION: "Needs decision — re-extract or delete as boilerplate",
         Verdict.NEEDS_REVIEW: "Needs human review (ambiguous state)",
     }
     return f"## {titles[verdict]} — {count} primitive(s)"
@@ -63,6 +64,17 @@ def _bucket_preamble(verdict: Verdict) -> str:
             "requires re-extraction. Leave in `_extracted/` with the "
             "recorded staging_reason. Each entry's `staging_reason` "
             "line documents why the primitive stays put."
+        ),
+        Verdict.NEEDS_DECISION: (
+            "Framework-coupled primitives whose motor (framework-free core) "
+            "is NOT yet registered. For each, decide:\n"
+            "- (a) **re-extract** into (framework-free primitive + "
+            "FastAPI adapter under `_adapters/fastapi/`) per §B1.0.1, or\n"
+            "- (b) **delete** as boilerplate (trivial wiring, one-off "
+            "middleware, no reusable logic).\n\n"
+            "The rationale lines include a hint at the likely motor name "
+            "if the suffix is recognisable (Middleware/Adapter/Backend/…).\n"
+            "There is no one-shot command — these are judgment calls."
         ),
         Verdict.NEEDS_REVIEW: (
             "Classifier found strong signals but the shell is "
@@ -168,12 +180,14 @@ def render(ledger: Ledger) -> str:
         Verdict.PROMOTE_LITE: "Ratify §B1.7 first; then review + approve.",
         Verdict.DELETE: "Review + approve individually; executor removes each.",
         Verdict.KEEP_STAGED: "No action required. Revisit on next triage pass.",
+        Verdict.NEEDS_DECISION: "Human call: re-extract as motor+adapter, or delete.",
         Verdict.NEEDS_REVIEW: "Resolve blockers, then re-run classifier.",
     }
     for v in (
         Verdict.DELETE,
         Verdict.PROMOTE_FULL,
         Verdict.PROMOTE_LITE,
+        Verdict.NEEDS_DECISION,
         Verdict.NEEDS_REVIEW,
         Verdict.KEEP_STAGED,
     ):

@@ -53,6 +53,45 @@ _STRONG_KINDS = {
     SignalKind.BENCHMARK_REF,
 }
 
+# Framework-specific suffixes that, stripped from a staged primitive name,
+# reveal the "motor" (framework-free core) it wraps. Order matters: longer
+# suffixes first so `AuthBackend` → `Auth` wins over `Backend` → `` noise.
+_FRAMEWORK_SUFFIXES = (
+    "Middleware",
+    "Adapter",
+    "Dispatcher",
+    "Interceptor",
+    "Backend",
+    "Handler",
+    "Router",
+    "Service",
+    "Endpoint",
+    "Controller",
+    "Responder",
+)
+
+
+def _motor_name(staged_name: str) -> str | None:
+    """Return the likely framework-free motor name, or None if no suffix matches.
+
+    `BulkheadMiddleware` → `Bulkhead`; `AdminAuthBackend` → `AdminAuth`;
+    `CORSConfigMiddleware` → `CORSConfig`; `Foo` → None (no suffix to strip).
+    """
+    for suffix in _FRAMEWORK_SUFFIXES:
+        if staged_name.endswith(suffix) and len(staged_name) > len(suffix):
+            return staged_name[: -len(suffix)]
+    return None
+
+
+def _motor_is_registered(staged_name: str, registered: set[str]) -> str | None:
+    """If stripping a framework suffix yields a registered primitive, return it."""
+    motor = _motor_name(staged_name)
+    if motor is None:
+        return None
+    if motor in registered:
+        return motor
+    return None
+
 
 def _strong(signals: list[Signal]) -> list[Signal]:
     return [s for s in signals if s.kind in _STRONG_KINDS]
@@ -103,7 +142,9 @@ def _tla_required_reason(state: StateFlags) -> bool:
 
 
 def _classify_single(
-    state: StateFlags, signals: list[Signal]
+    state: StateFlags,
+    signals: list[Signal],
+    registered_names: set[str] | None = None,
 ) -> tuple[Verdict, str, str, str | None, str | None]:
     """Return (verdict, tier, rationale, staging_reason, delete_reason)."""
     strong = _strong(signals)
@@ -149,25 +190,51 @@ def _classify_single(
                 ),
             )
 
-    # Rule 2b: AST-detected framework imports in the primary .py.
-    # CONTRACT §B1.0.1 forbids framework imports in registered primitives.
-    # This catches items the extraction gate missed.
+    # Rule 2b: framework-coupled AND its motor is already registered.
+    # The staged item is just the framework plugin; the motor already ships
+    # with its own adapter. Redundant — delete.
+    if state.framework_imports and registered_names:
+        motor = _motor_is_registered(state.name, registered_names)
+        if motor is not None:
+            mods = ", ".join(state.framework_imports)
+            return (
+                Verdict.DELETE,
+                "none",
+                (
+                    f"Framework-coupled ({mods}) AND its motor `{motor}` is "
+                    "already registered. This staged item is just the framework "
+                    "plugin — the registered motor already ships with its "
+                    "canonical adapter under _adapters/fastapi/. Redundant."
+                ),
+                None,
+                (
+                    f"Framework plugin whose motor `{motor}` is registered at "
+                    f"core/venous/*/{motor}/. Staged copy adds no value."
+                ),
+            )
+
+    # Rule 2c: framework-coupled and no motor registered → needs decision.
+    # Human picks: re-extract as (framework-free motor + FastAPI adapter),
+    # or delete as boilerplate.
     if state.framework_imports:
         mods = ", ".join(state.framework_imports)
+        motor_hint = _motor_name(state.name)
+        hint_line = (
+            f" Likely motor name if re-extracted: `{motor_hint}` (not "
+            "currently registered)."
+            if motor_hint
+            else " No common framework suffix to derive a motor name from."
+        )
         return (
-            Verdict.KEEP_STAGED,
+            Verdict.NEEDS_DECISION,
             "none",
             (
-                f"Primary .py imports framework module(s) ({mods}). "
-                "CONTRACT §B1.0.1 bars framework imports from registered "
-                "primitives. Must be re-extracted as a framework-free "
-                "primitive (with adapter under _adapters/fastapi/ if the "
-                "FastAPI surface is needed) before promotion."
+                f"Framework-coupled ({mods}) and no motor registered.{hint_line} "
+                "Decide: (a) re-extract into framework-free motor + adapter "
+                "per §B1.0.1, or (b) delete as boilerplate (CORS config, "
+                "trivial middleware, one-off wiring)."
             ),
-            (
-                f"Framework-coupled: imports {mods}. Requires re-extraction "
-                "with adapter pattern (CONTRACT §B1.0.1) before promotion."
-            ),
+            None,
             None,
         )
 
@@ -279,7 +346,7 @@ def classify_primitive(
     state = measure(primitive_dir, name, namespace, is_quarantined, registered_names)
     signals = collect_signals(name, primitive_dir, catalog)
     verdict, tier, rationale, staging_reason, delete_reason = _classify_single(
-        state, signals
+        state, signals, registered_names
     )
     blockers = (
         _describe_blockers(state)
