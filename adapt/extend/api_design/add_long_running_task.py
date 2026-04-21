@@ -7,7 +7,7 @@ Follows the CONTRACT §B1.0 + §B1.0.1 pattern:
    ``core.venous.jobs.DurableTimer`` (workflow-scoped persistent sleep).
 2. Copy the FastAPI adapter ``WorkflowAdapter`` (attaches
    InMemoryWorkflowClient + InMemoryTimerService to ``app.state``).
-3. Emit ``app/tasks.py`` (≤ 20-line glue) + ``app/api/routes/tasks.py``
+3. Emit ``app/workflow.py`` (≤ 20-line glue) + ``app/api/routes/tasks.py``
    (POST 202 / GET status / DELETE cancel) calling ``WorkflowAdapter.install(app)``.
 
 Idempotent: a second run detects ``WorkflowAdapter`` in the glue file
@@ -26,7 +26,7 @@ MCP_TOOL = {
     "name": "fastapi_api_add_long_running_task",
     "description": (
         "Copy WorkflowRun + DurableTimer primitives + FastAPI WorkflowAdapter "
-        "into the project and wire a ≤20-line app/tasks.py caller plus task routes."
+        "into the project and wire a ≤20-line app/workflow.py caller plus task routes."
     ),
     "tags": ["extend", "api_design"],
     "entry": "add_long_running_task",
@@ -84,7 +84,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 
-from app.tasks import workflow_client_dep
+from app.workflow import workflow_client_dep
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -156,7 +156,11 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
 
     files_created: list[str] = list(scaffolded or [])
     app_dir = project / "app"
-    glue_file = app_dir / "tasks.py"
+    # Glue writes to `app/workflow.py` (not `app/tasks.py`) because
+    # `add_file_upload` owns the `app/tasks/` package for task handler
+    # modules — a file of the same name would be shadowed by Python's
+    # package import precedence. See e2e regression fixed 2026-04-22.
+    glue_file = app_dir / "workflow.py"
 
     if glue_file.exists() and "WorkflowAdapter" in glue_file.read_text():
         return ToolResult(
@@ -170,7 +174,7 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
             status="success",
             notes=[
                 "[dry_run] Would copy WorkflowRun + DurableTimer primitives + WorkflowAdapter "
-                "and write app/tasks.py + app/api/routes/tasks.py."
+                "and write app/workflow.py + app/api/routes/tasks.py."
             ],
             next_steps=["Re-run without dry_run=True to apply."],
             execution_time_ms=_elapsed_ms(start),
@@ -233,7 +237,7 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
         notes=[
             "Shipped primitives: core.venous.jobs.WorkflowRun + core.venous.jobs.DurableTimer.",
             "Shipped adapter: core.venous._adapters.fastapi.WorkflowAdapter.",
-            "Wrote app/tasks.py + app/api/routes/tasks.py (POST 202 / GET / DELETE).",
+            "Wrote app/workflow.py + app/api/routes/tasks.py (POST 202 / GET / DELETE).",
             "WorkflowRun enforces id-reuse policy (REJECT by default) and deterministic replay.",
         ],
         next_steps=[
