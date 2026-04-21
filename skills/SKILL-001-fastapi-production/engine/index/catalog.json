@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "48de937",
-  "generated_at": "2026-04-21T22:06:44+00:00",
+  "kit_commit": "fb0b62e",
+  "generated_at": "2026-04-21T22:38:52+00:00",
   "verbs": [
     "add",
     "generate",
@@ -5535,6 +5535,20 @@
       "status": "stable"
     },
     {
+      "name": "PubSub",
+      "namespace": "events",
+      "concern": "events",
+      "purpose": "In-process fanout pub/sub for real-time streams \u2014 publish delivers a payload to every active subscriber; no durability, replay, or ack/nack.",
+      "compose_with": [
+        "TopicBus",
+        "IdempotentConsumer",
+        "EventEnvelope",
+        "RequestContext"
+      ],
+      "module_path": "core/venous/events/PubSub/PubSub.py",
+      "status": "stable"
+    },
+    {
       "name": "SagaOrchestrator",
       "namespace": "events",
       "concern": "events",
@@ -10248,6 +10262,46 @@
       "tags": []
     },
     {
+      "id": "PubSub__01_topicbus-when-durability-ack-replay-are-",
+      "source_primitive": "PubSub",
+      "primitives": [
+        "TopicBus"
+      ],
+      "intent": "",
+      "description": "``TopicBus`` \u2014 when durability / ack / replay are required; PubSub is for live fanout, TopicBus is for durable event flow.",
+      "tags": []
+    },
+    {
+      "id": "PubSub__02_idempotentconsumer-downstream-of-a-pubsu",
+      "source_primitive": "PubSub",
+      "primitives": [
+        "IdempotentConsumer"
+      ],
+      "intent": "",
+      "description": "``IdempotentConsumer`` \u2014 downstream of a PubSub fanout when the same payload might arrive through multiple paths (e.g. Redis + in-process fallback) and the handler must still run only once per key.",
+      "tags": []
+    },
+    {
+      "id": "PubSub__03_eventenvelope-the-canonical-payload-shap",
+      "source_primitive": "PubSub",
+      "primitives": [
+        "EventEnvelope"
+      ],
+      "intent": "",
+      "description": "``EventEnvelope`` \u2014 the canonical payload shape when PubSub carries domain events (CloudEvents-compatible). Keeps payload discovery uniform across PubSub and TopicBus callers.",
+      "tags": []
+    },
+    {
+      "id": "PubSub__04_requestcontext-subscribers-often-need-th",
+      "source_primitive": "PubSub",
+      "primitives": [
+        "RequestContext"
+      ],
+      "intent": "",
+      "description": "``RequestContext`` \u2014 subscribers often need the originating request's correlation id / principal; ``RequestContext`` is the single source of truth for those fields when crossing a PubSub boundary.",
+      "tags": []
+    },
+    {
       "id": "QueryBus__01_commandqueryseparator-specification-quer",
       "source_primitive": "QueryBus",
       "primitives": [
@@ -11686,8 +11740,8 @@
   ],
   "counts": {
     "tools": 201,
-    "primitives": 300,
-    "recipes": 385
+    "primitives": 301,
+    "recipes": 389
   },
-  "stable_hash": "68b17f22b28c41f80608b45a276c80f8ffae6154eddb616d2ed109e4b8fc7825"
+  "stable_hash": "a5522bf5ec4dbad823f54a9671de49684c44aa10bf8456f4a5bc8fe42ac7e520"
 }
