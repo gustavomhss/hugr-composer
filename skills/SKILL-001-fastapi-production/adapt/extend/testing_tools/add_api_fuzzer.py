@@ -707,26 +707,16 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to ``app/core/config.py``.
     """
-    src = config_file.read_text()
-    if "FUZZ_ITERATIONS" in src:
-        return
+    from adapt.contracts.config_patcher import patch_settings_fields
 
-    fuzz_fields = (
-        "\n"
-        "    # API fuzzer settings — added by add_api_fuzzer tool\n"
-        "    FUZZ_ITERATIONS: int = 10\n"
-        "    FUZZ_TIMEOUT_S: int = 5\n"
-        '    FUZZ_EXCLUDE_PATHS: str = "/docs,/openapi.json,/redoc"\n'
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("FUZZ_ITERATIONS", "FUZZ_ITERATIONS: int = 10"),
+            ("FUZZ_TIMEOUT_S", "FUZZ_TIMEOUT_S: int = 5"),
+            ("FUZZ_EXCLUDE_PATHS", 'FUZZ_EXCLUDE_PATHS: str = "/docs,/openapi.json,/redoc"'),
+        ],
     )
-
-    if "settings = Settings()" in src:
-        src = src.replace(
-            "settings = Settings()",
-            fuzz_fields + "\n\nsettings = Settings()",
-        )
-    else:
-        src = src.rstrip("\n") + fuzz_fields
-    config_file.write_text(src)
 
 
 # ---------------------------------------------------------------------------

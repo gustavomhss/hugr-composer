@@ -543,25 +543,15 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to ``app/core/config.py``.
     """
-    src = config_file.read_text()
-    if "HEALTH_MAP_ENABLED" in src:
-        return
+    from adapt.contracts.config_patcher import patch_settings_fields
 
-    hmap_fields = (
-        "\n"
-        "    # Dependency health map — added by add_dependency_health_map tool\n"
-        "    HEALTH_MAP_ENABLED: bool = False\n"
-        "    HEALTH_MAP_CHECK_INTERVAL_S: int = 30\n"
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("HEALTH_MAP_ENABLED", "HEALTH_MAP_ENABLED: bool = False"),
+            ("HEALTH_MAP_CHECK_INTERVAL_S", "HEALTH_MAP_CHECK_INTERVAL_S: int = 30"),
+        ],
     )
-
-    if "settings = Settings()" in src:
-        src = src.replace(
-            "settings = Settings()",
-            hmap_fields + "\n\nsettings = Settings()",
-        )
-    else:
-        src = src.rstrip("\n") + hmap_fields
-    config_file.write_text(src)
 
 
 def _patch_main(main_file: Path) -> None:

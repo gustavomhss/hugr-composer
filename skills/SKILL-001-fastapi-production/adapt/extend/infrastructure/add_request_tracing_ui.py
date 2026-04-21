@@ -656,29 +656,16 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to ``app/core/config.py``.
     """
-    src = config_file.read_text()
-    if "TRACING_UI_ENABLED" in src:
-        return
+    from adapt.contracts.config_patcher import patch_settings_fields
 
-    tracing_fields = (
-        "\n"
-        "    # Request tracing UI — added by add_request_tracing_ui tool\n"
-        "    TRACING_UI_ENABLED: bool = False\n"
-        "    TRACING_UI_BUFFER_SIZE: int = 1000\n"
-        "    TRACING_UI_AUTH_REQUIRED: bool = False\n"
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("TRACING_UI_ENABLED", "TRACING_UI_ENABLED: bool = False"),
+            ("TRACING_UI_BUFFER_SIZE", "TRACING_UI_BUFFER_SIZE: int = 1000"),
+            ("TRACING_UI_AUTH_REQUIRED", "TRACING_UI_AUTH_REQUIRED: bool = False"),
+        ],
     )
-
-    # Insert as the last field group inside the Settings class body,
-    # just before the module-level ``settings = Settings()`` instantiation.
-    if "settings = Settings()" in src:
-        src = src.replace(
-            "settings = Settings()",
-            tracing_fields + "\n\nsettings = Settings()",
-        )
-    else:
-        # Fallback: append before the class closes (best-effort for unusual layouts)
-        src = src.rstrip("\n") + tracing_fields
-    config_file.write_text(src)
 
 
 def _patch_main(main_file: Path) -> None:

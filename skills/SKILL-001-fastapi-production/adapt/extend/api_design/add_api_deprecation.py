@@ -682,25 +682,14 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to the project's ``app/core/config.py``.
     """
-    content = config_file.read_text()
-    fields = [
-        "    DEPRECATION_WARN_DAYS_BEFORE_SUNSET: int = 30",
-    ]
-    new_lines: list[str] = []
-    for field in fields:
-        field_name = field.strip().split(":")[0]
-        if field_name not in content:
-            new_lines.append(field)
-    if not new_lines:
-        return
-    if "settings = Settings()" in content:
-        content = content.replace(
-            "settings = Settings()",
-            "\n".join(new_lines) + "\n\nsettings = Settings()",
-        )
-    else:
-        content = content.rstrip("\n") + "\n" + "\n".join(new_lines) + "\n"
-    config_file.write_text(content)
+    from adapt.contracts.config_patcher import patch_settings_fields
+
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("DEPRECATION_WARN_DAYS_BEFORE_SUNSET", "DEPRECATION_WARN_DAYS_BEFORE_SUNSET: int = 30"),
+        ],
+    )
 
 
 # ---------------------------------------------------------------------------

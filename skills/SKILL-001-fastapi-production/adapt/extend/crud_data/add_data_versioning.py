@@ -260,22 +260,14 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to the config module.
     """
-    src = config_file.read_text()
-    if "VERSIONING_MAX_DRAFTS" in src:
-        return
-    fields = (
-        "\n"
-        "    # Versioning settings\n"
-        "    VERSIONING_MAX_DRAFTS: int = 10\n"
+    from adapt.contracts.config_patcher import patch_settings_fields
+
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("VERSIONING_MAX_DRAFTS", "VERSIONING_MAX_DRAFTS: int = 10"),
+        ],
     )
-    if "settings = Settings()" in src:
-        src = src.replace(
-            "\nsettings = Settings()",
-            fields + "\nsettings = Settings()",
-        )
-    else:
-        src = src.rstrip("\n") + fields + "\n"
-    config_file.write_text(src)
 
 
 def _write_versioning_init(dest: Path) -> None:
