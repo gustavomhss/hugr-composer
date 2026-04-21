@@ -1,210 +1,228 @@
 ---
 name: fastapi-production
-description: HuGR SKILL-001 — scaffolds AND customizes production-grade FastAPI backends. Rails-style 3-layer kit (skill + slice tools + primitives) invokable via MCP.
-version: 0.1.0
+description: Scaffolds and customizes production-grade FastAPI backends in Python — canonical project tree (auth, CRUD, Stripe, jobs, observability, deployment) plus composable slices (RBAC, MFA, pagination, event sourcing, webhooks, rate limiting, sagas, SSE, WebSockets, audit). Use when the user asks to start, extend, audit, or harden a FastAPI project; mentions a Python backend / API / microservice; names FastAPI, SQLAlchemy, Pydantic, Alembic, Celery, Stripe, Redis; or asks for concrete capabilities (auth, payments, webhooks, realtime, jobs, compliance) on an existing FastAPI app. Also use when the user names a production concern (idempotency, transactional outbox, rate limit, circuit breaker, retry budget, graceful shutdown, saga, tamper-evident audit) in a Python web-API context. Do NOT use for non-Python backends (Node, Go, Rails, Django, Flask), frontend or mobile work, data-science notebooks, ML training, bare Python libraries without an HTTP surface, or document-manipulation tasks (PDF, Word, Excel).
+license: Apache-2.0
 ---
 
-# SKILL-001 — FastAPI Production
+# FastAPI Production
 
-> **Architecture, philosophy, and success criteria live in
-> [`/PRODUCT.md`](../../PRODUCT.md). Current state + roadmap live in
-> [`/ROADMAP.md`](../../ROADMAP.md). Binding execution rules live in
-> [`/CONTRACT.md`](../../CONTRACT.md). Contribution workflows live in
-> [`/CONTRIBUTING.md`](../../CONTRIBUTING.md).**
->
-> This file describes what THIS skill contains right now, verifiably.
-> Every number carries the shell command a reader can run to
-> reproduce it. CONTRACT §A8 binds us to a drift-of-zero.
+## Overview
 
-## Skill scope
+Turns a plain-English backend spec into a running, tested, production-grade FastAPI service. Emits idiomatic code that imports from a curated library of 122 framework-free primitives (the "venous system"), so generated output survives hand-editing. Ships 188 MCP tools behind 7 tier-1 meta tools + 1 domain-tree dispatcher — drive the skill exclusively through those, never by listing the full catalog.
 
-Production-grade FastAPI backend. The Maestro invokes this skill to
-scaffold a project tree, uses slice tools to add capabilities (auth,
-CRUD, payments, realtime, compliance, ...), and composes primitives
-directly when a capability doesn't match any slice tool. All three
-surfaces are MCP-registered and JIT-discoverable via
-`fastapi_find_primitive` and `fastapi_suggest_composition`.
+## When to use
 
-## On-disk counts (machine-verified)
+- User wants to start a new Python backend and mentions FastAPI, Python web API, Stripe + Python, or a SaaS backend.
+- User wants to add a named capability (auth, payments, rate limiting, RBAC, sagas, realtime, audit log) to an existing FastAPI repo.
+- User names a production-engineering concern (idempotency, outbox, graceful shutdown, retry budget, circuit breaker) in a Python context.
+- Repo already contains `pyproject.toml` with `fastapi` or `app/main.py` instantiating `FastAPI()`.
 
-| Surface | Count | Verify |
-|---|---:|---|
-| Slice tools under `adapt/extend/` | 100 | `find adapt/extend -name 'add_*.py' ! -name 'test_*' \| wc -l` |
-| Slice tools total (adapt/) | 103 | `find adapt -name 'add_*.py' ! -name 'test_*' \| wc -l` |
-| Generator files (`generators/`) | 60 | `find generators -name '*.py' ! -name '__init__.py' ! -name 'test_*' \| wc -l` |
-| MCP-registered tools (all surfaces) | 180 | `PYTHONPATH=. .venv/bin/python -c 'from mcp_tools.server import mcp; from mcp_tools.discovery import discover_and_register; print(discover_and_register(mcp))'` |
-| Production primitives (registered) | 122 | `grep -c '^- name:' engine/primitives_by_concern.yaml` |
-| Production primitive directories | 122 | `find core/venous -mindepth 2 -maxdepth 2 -type d ! -path '*_extracted*' ! -path '*_adapters*' ! -path '*__pycache__*' \| wc -l` |
-| Staged primitives (extracted pool) | 430+ | `find core/venous/_extracted -mindepth 2 -maxdepth 2 -type d \| wc -l` |
-| Benchmark specs (Phase 3) | 20 | `find benchmarks/specs -name '*.md' ! -name 'README.md' \| wc -l` |
-| Contract items green | 28/28 | `PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check` |
-| Benchmark score (plan-level, best-of ensemble) | 100.00 | `jq '.overall' benchmarks/latest_score.json` |
+## When NOT to use
 
-The 180 MCP tools decompose as: 100 `adapt/extend/` slice tools + 3
-other `adapt/` tools (extract, verify, evolve) + 74 MCP-registered
-generator and module tools + 2 discovery tools
-(`fastapi_find_primitive`, `fastapi_suggest_composition`) + 1 audit
-tool. All auto-discovered via `MCP_TOOL` metadata scan —
-CONTRACT §B1.5 forbids manual `@mcp_app.tool` decorators.
+- Non-Python backends (Node, Go, Rails, Django, Flask-only, Quart).
+- Frontend, mobile, or CLI work.
+- Data-science notebooks, ML training, or ETL without an HTTP surface.
+- Document-manipulation tasks (PDF, Word, Excel, Google Docs).
+- Bare Python libraries with no web surface.
 
-## Maestro workflow
+## Machine-readable metadata
 
-1. **Discovery.** MCP client lists tools via `tools/list`. JIT
-   retrieval via `fastapi_find_primitive(query, concern?)` +
-   `fastapi_suggest_composition(intent)` — BM25 + recipe index.
-   Latency <50 ms cold; top-1 accuracy 85% (primitives), 90% (recipes).
-2. **Scaffold.** Maestro calls a macro generator (e.g.
-   `fastapi_generate_project`) to lay down the project tree.
-3. **Capability adds.** Maestro invokes one or more slice tools
-   (`fastapi_add_stripe_webhook`, `fastapi_add_rbac`, …). 64 of the
-   103 slice tools emit code that imports from `core.venous.*` —
-   the Rails-analogy connection is fully operative (Phase 1 complete).
-4. **Customize.** Where no slice tool fits exactly, Maestro composes
-   primitives directly — `from core.venous.<ns>.<Name>` into the
-   generated code. Every production primitive carries a
-   "Compose with:" section citing ≥3 sibling pairings.
-
-## Tool categories (adapt/extend)
-
-| Folder | Count | Example tools |
-|---|---:|---|
-| `auth_access/` | 15 | `add_rbac`, `add_oauth2_provider`, `add_mfa`, `add_social_login` |
-| `crud_data/` | 12 | `add_cursor_pagination`, `add_event_sourcing`, `add_soft_delete`, `add_audit_log` |
-| `api_design/` | 9 | `add_api_versioning`, `add_graphql`, `add_long_running_task` |
-| `infrastructure/` | 38 | `add_stripe_webhook`, `add_rate_limiting`, `add_saga`, `add_retry_budget`, `add_graceful_shutdown` |
-| `realtime/` | 8 | `add_sse`, `add_websocket_chat`, `add_webhook_receiver`, `add_presence` |
-| `testing_tools/` | 9 | `add_data_seeder`, `add_schema_evolution_guard`, `add_api_fuzzer` |
-| `performance/` + `proactive/` + others | 9 | `add_bulkhead`, `add_capacity_planner`, `add_n_plus_one_guard` |
-
-Exact per-folder counts:
-```bash
-for d in adapt/extend/*/; do
-  echo "$d $(find "$d" -name 'add_*.py' ! -name 'test_*' | wc -l)"
-done
+```yaml
+hugr_skill_version: "1.0.0"
+spec_compat: ">=1.0.0,<2.0.0"
+kind: "framework-scaffold"
+domains: ["backend", "python", "fastapi", "web-api"]
+entry_tools:
+  - fastapi_meta_home
+  - fastapi_meta_search
+  - fastapi_meta_describe
+  - fastapi_meta_scaffold
+  - fastapi_meta_compose
+  - fastapi_meta_audit
+  - fastapi_meta_verify
+  - fastapi_auth
+catalog_path: "engine/index/catalog.json"
+phases: [orient, clarify, scaffold, compose, business, audit]
+invariants:
+  - "Tools emit ≤ 20 lines of glue; logic lives in imported primitives."
+  - "Generated code survives hand-editing (idempotent fingerprints)."
+  - "Every tool auto-registers via MCP_TOOL metadata (no manual decorators)."
+  - "Primitives are framework-free under core/venous/; adapters bridge to FastAPI."
 ```
 
-## Primitives (`core/venous/<concern>/<Name>/`)
+## Workflow phases
 
-16 concerns: `api, auth, cache, compliance, cost, data.modelling,
-data.persistence, data.schema, events, extras, flags, jobs, llm,
-observability, policy, resiliency, security`.
+1. **Orient.** Call `fastapi_meta_home` to get a situation brief (repo state + catalog counts + recent change summary). Always the first call; do not skip.
+2. **Clarify.** Ask at most three specific questions — each must offer 2–4 concrete answer branches. Never open-ended. Skip this phase only if the user's request is literally unambiguous.
+3. **Scaffold.** If the repo is empty or lacks `app/main.py`, call `fastapi_meta_scaffold(output_dir, name, models=..., owner_models=...)` once. Not idempotent across runs.
+4. **Compose.** For each requested capability: `fastapi_meta_search(query)` → `fastapi_meta_describe(id)` → `fastapi_meta_compose(primitives=...)`. Prefer `fastapi_auth(action=...)` for any auth branch instead of hunting individual slice tools.
+5. **Business.** Add domain-specific routes, models, and rules. Business logic (Aggregate + Specification) is authored by the Maestro, NOT by compose — compose refuses domain-shaped primitives by design.
+6. **Audit.** Call `fastapi_meta_audit`, fix every finding. Close with `fastapi_meta_verify`. Only report "done" after this pair returns green.
 
-Each production primitive directory contains:
-- `<Name>.py` — framework-free reference impl (no `fastapi` /
-  `sqlalchemy` imports — §A1 enforced)
-- `<Name>.protocol.py` — typed Protocol; the public interface
-- `<Name>.md` — narrative spec with invariants + "Compose with:"
-- `<Name>.contract.json` — machine-readable contract + T0-T9 tier record
-- `test_<Name>.py` — ≥ 1 test per declared invariant
-- `__init__.py` — exports Protocol + impl
-- `_provenance.json` — OSS origin + license (or `"origin": "native"`)
+## Tier-1 tool index
 
-Several primitives additionally carry `observability_schema.json`,
-`dashboard.json`, `persona_reviews.json` (audit trail), and
-TLA+ specs (`.tla` + `.cfg`) for state-machine primitives.
+| Tool | Purpose | When to call |
+|---|---|---|
+| `fastapi_meta_home` | Situation brief — repo + catalog state + 10-domain landscape. | First call of every session. |
+| `fastapi_meta_search` | BM25 over catalog (tools + primitives + recipes). | Know what you need, not the exact name. |
+| `fastapi_meta_describe` | Full spec + examples for one catalog id. | After `search`, before invoking. |
+| `fastapi_meta_scaffold` | Emit a production FastAPI project tree. | Scaffold phase, once per session. |
+| `fastapi_meta_compose` | Wire primitives into `app/compositions/<slug>.py` exporting `install(app)`. | Compose phase, when no slice fits exactly. |
+| `fastapi_meta_audit` | Run the contract audit; return structured findings. | End of audit phase. |
+| `fastapi_meta_verify` | Meta-audit — verify the audit itself is sound. | Immediately after `audit`. |
+| `fastapi_auth` | Tree dispatcher for 15 auth slice tools (bundle / slice / primitive granularities). | Any auth-related request. |
 
-Registry + recipe index are machine-readable:
+All other tools (~180) are discovered on demand via `fastapi_meta_search`.
 
-```bash
-# By concern
-cat engine/primitives_by_concern.yaml
+## Few-shot transcripts
 
-# Reference docs site (deterministic static HTML)
-PYTHONPATH=. .venv/bin/python -m engine.docs.build --verify
-open docs_site/index.html
+Three compressed tool-call traces that demonstrate the correct phase sequence. The Maestro pattern-matches these more strongly than prose.
+
+### Transcript A — Fresh scaffold
+
+```
+USER: Build me a SaaS backend with email auth and Stripe subscriptions.
+
+STEP 1  → orient
+TOOL    fastapi_meta_home()
+RESULT  {repo: "empty", catalog: {tools: 188, primitives: 122, recipes: 385}}
+
+STEP 2  → clarify
+ASSISTANT  "Two quick questions before I scaffold:
+            1. Do you need RBAC (roles + permissions), or is one user tier OK?
+            2. Stripe: subscriptions only, or also one-off purchases?"
+USER       "RBAC with admin/user roles. Subscriptions only."
+
+STEP 3  → scaffold
+TOOL    fastapi_meta_scaffold(
+            output_dir="/workspace/myapp", name="myapp",
+            models={"User":{"email":"str","role":"str"},
+                    "Subscription":{"stripe_sub_id":"str","status":"str"}},
+            owner_models={"Subscription":"user"},
+        )
+RESULT  {files: 47, app/main.py booted OK}
+
+STEP 4  → compose (auth)
+TOOL    fastapi_auth(action="bundle",
+                     params={"output_dir":"/workspace/myapp"})
+RESULT  {installed: [add_oauth2, add_rbac, add_mfa, ...], 8 slices}
+
+STEP 5  → compose (stripe)
+TOOL    fastapi_meta_search(query="stripe subscription webhook idempotent", k=5)
+RESULT  top hit: fastapi_add_stripe_billing (primitives: IdempotentConsumer + AuditEvent)
+TOOL    fastapi_meta_compose(output_dir="/workspace/myapp",
+                              primitives=["IdempotentConsumer","AuditEvent"],
+                              name="stripe_webhook", mount_path="/stripe/webhook")
+RESULT  {mode: "recipe_template", files: ["app/compositions/stripe_webhook.py"]}
+
+STEP 6  → audit
+TOOL    fastapi_meta_audit()
+RESULT  {32/32 green}
+
+ASSISTANT  "Done. http://localhost:8000/health returns 200.
+            Login at /auth/login (admin@myapp / setup_password).
+            Stripe webhook at /stripe/webhook (configure endpoint with
+            STRIPE_WEBHOOK_SECRET). Call me back to add more features."
 ```
 
-## Benchmark (Phase 3)
+### Transcript B — Extend existing repo
 
-20 plain-English product specs under `benchmarks/specs/`:
-- 5 **baseline** (crud, auth-only, webhook sink, rate-limited, multi-tenant)
-- 10 **mid** (Stripe SaaS, realtime chat, event-sourced orders, RBAC+audit,
-  LLM agent, mobile backend, compliance log, GraphQL, workflow, BI export)
-- 5 **adversarial** (exactly-once on weak broker, stateless-but-session,
-  lock-free AND serializable, ML inference pool, innocent counter)
+```
+USER: Add rate limiting and idempotency to my /api/orders endpoint.
 
-Each run scored on a 4-dimension rubric (25% each):
-scaffold_completeness · test_suite_pass · primitive_gate_pass ·
-hand_editability.
+STEP 1  → orient
+TOOL    fastapi_meta_home()
+RESULT  {repo: "fastapi project at /workspace/store, app/main.py present",
+         existing_routes: ["/api/orders", "/api/products", ...]}
 
-Current score (methodology `plan_level_v3_best_of_ensemble`):
+STEP 2  → clarify (skipped — request is specific)
 
-```json
-{ "overall": 100.00,
-  "by_tier": {"baseline": 100, "mid": 100, "adversarial": 100} }
+STEP 3  → scaffold (skipped — repo already has one)
+
+STEP 4  → compose (rate limit + idempotency)
+TOOL    fastapi_meta_search(query="rate limit per api key", k=3)
+RESULT  top hit: fastapi_add_rate_limiting (primitive: RateLimiter + Bulkhead)
+TOOL    fastapi_meta_search(query="exactly-once idempotent api endpoint", k=3)
+RESULT  top hit: IdempotentConsumer + IdempotencyStore
+TOOL    fastapi_meta_compose(output_dir="/workspace/store",
+                              primitives=["RateLimiter","Bulkhead",
+                                          "IdempotentConsumer","IdempotencyStore"],
+                              name="orders_guards", mount_path="/api/orders")
+RESULT  {mode: "ad_hoc",
+         warning: "no canonical recipe — review the emitted wiring"}
+
+STEP 5  → business (Maestro review)
+ASSISTANT  "Ad-hoc composition. Reviewing emitted code…" (reads file)
+ASSISTANT  "Adjusting the rate-limit window from the default 60s to your
+            stated 1000/min = 1000/60s. Updating…" (edits composition)
+
+STEP 6  → audit
+TOOL    fastapi_meta_audit()
+RESULT  {32/32 green}
+
+ASSISTANT  "/api/orders now enforces 1000 req/min per X-API-Key + rejects
+            duplicate Idempotency-Key. Tested locally; ready."
 ```
 
-**Known limitation (see `/CHANGELOG.md` v0.1.0):** this is *plan-level* —
-it scores the Maestro's requirement→primitive/tool map, not the
-executable behaviour of the emitted code. Code-level evaluation is
-Phase 5 work (tracked by a dedicated CONTRACT item added this sprint).
+### Transcript C — Ambiguous request
 
-## Running the MCP server
+```
+USER: Make it secure.
 
-```bash
-cd skills/SKILL-001-fastapi-production
-python3.12 -m venv .venv
-.venv/bin/pip install -r requirements-mcp.txt
-PYTHONPATH=. .venv/bin/python -m mcp_tools.server
+STEP 1  → orient
+TOOL    fastapi_meta_home()
+RESULT  {repo: "fastapi project, app/main.py + 12 routes, no auth wired}"
+
+STEP 2  → clarify (MANDATORY — "secure" is too broad)
+ASSISTANT  "'Secure' can mean a few things — which do you want first?
+            1. Require login (email+password or OAuth/Google)?
+            2. Block brute-force on login (rate limiting, account lockout)?
+            3. Add RBAC so only certain users can hit certain routes?
+            4. Encrypt data at rest + in transit (TLS + field encryption)?
+            5. Audit trail (who-did-what, tamper-evident)?
+            Pick one or two to start — others we add as follow-ups."
+USER       "Login + audit trail."
+
+STEP 3  → scaffold (skipped — repo exists)
+
+STEP 4  → compose
+TOOL    fastapi_auth(action="list")
+TOOL    fastapi_auth(action="add_oauth2",
+                     params={"output_dir":"/workspace/app",
+                             "providers":["google"]})
+TOOL    fastapi_meta_compose(output_dir="/workspace/app",
+                              primitives=["TamperEvidentAuditLog","AuditEvent"],
+                              name="audit_trail")
+RESULT  {mode: "recipe_template", recipe: "AccessLog__01"}
+
+STEP 5  → business (Maestro adds audit calls inside existing handlers)
+
+STEP 6  → audit
+TOOL    fastapi_meta_audit()
+RESULT  {32/32 green}
+
+ASSISTANT  "Login via Google OAuth at /auth/login; every route now
+            appends to a tamper-evident audit log. Want me to add the
+            other items (rate limiting, RBAC, field encryption)?"
 ```
 
-Or use the hermetic one-liner that installs system-wide into
-`~/.hugr-skills/`:
+## Anti-patterns
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/humangr-labs/HuGR_Skills/main/install.sh | bash
-```
+- Do not skip `fastapi_meta_home`. Without it you will hallucinate repo state.
+- Do not call `fastapi_meta_scaffold` twice in one session. Not idempotent.
+- Do not list all 15 auth tools. Always go through `fastapi_auth`.
+- Do not write business-logic code inline that duplicates a primitive — always `describe` first to check.
+- Do not mark a session "done" before `fastapi_meta_verify` returns green.
+- Do not ask more than three clarify questions. If three are not enough, scaffold with sensible defaults and let the user redirect.
+- Do not emit domain logic via `fastapi_meta_compose` — compose is infrastructure only. Domain rules (Aggregate + Specification) are hand-authored.
 
-Validated nightly in a fresh `python:3.12-slim` container —
-`.github/workflows/install-docker.yml`.
+## Reference files
 
-## Contract enforcement
-
-```bash
-# Run the full 28-rule check
-PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check
-
-# Run a single phase (for PR work targeting one phase)
-PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check --phase 4
-
-# Run a specific item (e.g. after a targeted fix)
-PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check --item B1.1
-```
-
-Exits 0 iff every machine-checkable CONTRACT.md item passes. CI
-wires this into every push + PR under
-`.github/workflows/skill-001-ci.yml`.
-
-## Tests
-
-| Suite | Count (current green run) | Runner |
-|---|---:|---|
-| Unit (`adapt/**/test_*.py`) | 3168 passed, 1 skipped | `PYTHONPATH=. .venv/bin/python -m pytest adapt/ -q` |
-| Engine (`engine/tests/`) | 133 passed, 7 skipped | `PYTHONPATH=. .venv/bin/python -m pytest engine/tests/ -q` |
-| Boot (every tool imports + basic run) | 100/100 | `PYTHONPATH=. .venv/bin/python tests/test_boot.py` |
-| Property (8 properties × ~55 tools) | green | `PYTHONPATH=. .venv/bin/python tests/property_tests.py` |
-| SQLite E2E (12 scenarios) | green | `PYTHONPATH=. .venv/bin/python tests/test_e2e_hardcore.py` |
-| Postgres E2E (8 scenarios) | green (needs local PG) | `./ci.sh` (auto-starts PG via Docker) |
-| Behaviour (12 domains) | green (needs PG) | `PYTHONPATH=. .venv/bin/python tests/test_behavior_scenarios.py` |
-| Cross-composition (200+ scenarios) | green | `PYTHONPATH=. .venv/bin/python tests/test_cross_composition.py` |
-| Primitive tests (`core/venous/**/test_*.py`) | green | `PYTHONPATH=. .venv/bin/python -m pytest core/venous/ -q` |
-
-Local full CI (replicates GitHub Actions):
-
-```bash
-./ci.sh              # with PostgreSQL (Docker)
-./ci.sh --no-pg      # without PostgreSQL (skips PG-dependent suites)
-```
-
-## Examples
-
-Five real Maestro-built examples live under `/examples/`, each
-tied to a benchmark spec and passing pytest end-to-end
-(24/24 tests green). See `/examples/*/MAESTRO_SESSION.md` for
-the plan-level transcript the Maestro used to build them.
+- `STATUS.md` — machine-verified counts, test matrix, benchmark score (human-audience).
+- `/docs/research/SKILL_META_FORMAT.md` — the design doc this SKILL.md ships against.
+- `/docs/research/COMPOSE_TOOL_DESIGN.md` — `fastapi_meta_compose` design.
+- `/docs/research/DUAL_INDEX_DESIGN.md` — overall tier-1/tier-2 architecture.
 
 ---
 
-Signed: Gustavo Schneiter — v0.1.0 release (Phase 4 complete).
-Every claim above is machine-verifiable via the commands shown.
-Drift from this file is a §A8 bug to fix same-day.
+*version: 1.0.0 · spec_compat: >=1.0.0,<2.0.0 · kit: SKILL-001-fastapi-production*
