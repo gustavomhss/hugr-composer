@@ -7,9 +7,9 @@
 ## Headline
 
 - **251 files carry `MCP_TOOL` metadata** (Maestro-visible surface).
-- **Catalog:** 201 tools + 122 primitives + 385 recipes.
+- **Catalog:** 201 tools + 302 primitives + 385 recipes.
 - **122 registered primitives** (`core/venous/<ns>/<Name>/`).
-- **426 staged primitives** in `_extracted/` (plus 121 quarantined).
+- **194 staged primitives** in `_extracted/` (plus 121 quarantined).
 - **16 FastAPI adapters** (production-wired).
 - **28 `modules/` packages** (pre-built feature bundles).
 - **0 populated examples** (5 empty scaffolds), 124 specs, 20 benchmark specs.
@@ -89,16 +89,16 @@
 
 Plus **16 FastAPI adapters** under `core/venous/_adapters/fastapi/`.
 
-## 5. core/venous/_extracted — staged primitives (426 + 121 quarantined)
+## 5. core/venous/_extracted — staged primitives (194 + 121 quarantined)
 
 | namespace | count |
 |---|---:|
 | `_quarantine` | 121 |
-| `api` | 48 |
-| `auth` | 71 |
-| `data` | 52 |
-| `extras` | 40 |
-| `resiliency` | 215 |
+| `api` | 21 |
+| `auth` | 28 |
+| `data` | 14 |
+| `extras` | 15 |
+| `resiliency` | 116 |
 
 Staged primitives have HuGR shell (contract.json, protocol, md, tests,
 dashboard) but carry `REPLACE_ME` stubs — promote via extraction pipeline

@@ -21,7 +21,13 @@ from engine.index.schemas import DOMAINS, TAG_VOCABULARY, VERBS
 def test_build_succeeds_and_produces_expected_counts() -> None:
     m = build()
     assert m.counts["tools"] >= 150, f"too few tools: {m.counts['tools']}"
-    assert m.counts["primitives"] == 122, m.counts
+    # 122 stable-registered primitives + ~400 staged (pre-audited under
+    # core/venous/_extracted/, PascalCase-filtered, deduped vs stable).
+    stable = sum(1 for p in m.primitives if p.status == "stable")
+    staged = sum(1 for p in m.primitives if p.status == "staged")
+    assert stable == 122, f"stable-registered primitives drifted: {stable}"
+    assert staged >= 150, f"staged primitive surface collapsed: {staged}"
+    assert m.counts["primitives"] == stable + staged
     assert m.counts["recipes"] >= 250
     assert m.schema_version == "2"
 
