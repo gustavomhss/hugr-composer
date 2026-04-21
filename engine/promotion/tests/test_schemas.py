@@ -44,21 +44,34 @@ def test_ledger_entry_requires_rationale_min_length():
         LedgerEntry(
             primitive="X",
             namespace="api",
-            verdict=Verdict.KEEP_STAGED,
+            verdict=Verdict.NEEDS_CALLER,
             tier="none",
             rationale="short",  # < 10 chars
             state=_state(),
         )
 
 
-def test_ready_to_execute_true_for_promote_with_no_blockers():
+def test_ready_to_execute_true_for_promote_as_primitive_lite():
     e = LedgerEntry(
         primitive="X",
         namespace="api",
-        verdict=Verdict.PROMOTE_LITE,
+        verdict=Verdict.PROMOTE_AS_PRIMITIVE,
         tier="lite",
-        rationale="stateless pure middleware ready to ship",
+        rationale="stateless pure middleware ready to ship now",
         state=_state(),
+    )
+    assert e.is_ready_to_execute() is True
+
+
+def test_ready_to_execute_true_for_promote_as_adapter():
+    e = LedgerEntry(
+        primitive="BulkheadMiddleware",
+        namespace="resiliency",
+        verdict=Verdict.PROMOTE_AS_ADAPTER,
+        tier="adapter",
+        rationale="motor Bulkhead registered; BulkheadAdapter.py missing",
+        promotion_target="core/venous/_adapters/fastapi/BulkheadAdapter.py",
+        state=_state(name="BulkheadMiddleware"),
     )
     assert e.is_ready_to_execute() is True
 
@@ -67,20 +80,20 @@ def test_ready_to_execute_false_when_blockers_present():
     e = LedgerEntry(
         primitive="X",
         namespace="api",
-        verdict=Verdict.PROMOTE_FULL,
+        verdict=Verdict.PROMOTE_AS_PRIMITIVE,
         tier="full",
-        rationale="strong signal but shell is incomplete at present",
+        rationale="signal present but shell incomplete at time of classify",
         blockers=["Resolve 3 REPLACE_ME markers."],
         state=_state(replace_me_count=3),
     )
     assert e.is_ready_to_execute() is False
 
 
-def test_ready_to_execute_false_for_keep_staged():
+def test_ready_to_execute_false_for_needs_caller():
     e = LedgerEntry(
         primitive="X",
         namespace="api",
-        verdict=Verdict.KEEP_STAGED,
+        verdict=Verdict.NEEDS_CALLER,
         tier="none",
         rationale="no caller identified; awaiting benchmark signal per A12",
         staging_reason="no caller; will revisit",
@@ -89,13 +102,27 @@ def test_ready_to_execute_false_for_keep_staged():
     assert e.is_ready_to_execute() is False
 
 
+def test_ready_to_execute_false_for_redundant():
+    """REDUNDANT is technically removable but never auto-executed."""
+    e = LedgerEntry(
+        primitive="X",
+        namespace="api",
+        verdict=Verdict.REDUNDANT,
+        tier="none",
+        rationale="motor and adapter both registered — staged is redundant",
+        delete_reason="canonical version already ships",
+        state=_state(duplicate_of_registered="X"),
+    )
+    assert e.is_ready_to_execute() is False
+
+
 def test_ledger_round_trip_preserves_all_fields():
     e1 = LedgerEntry(
         primitive="Foo",
         namespace="api",
-        verdict=Verdict.DELETE,
+        verdict=Verdict.REDUNDANT,
         tier="none",
-        rationale="duplicate of a registered primitive",
+        rationale="duplicate of a registered primitive reference",
         delete_reason="registered version Foo is canonical",
         signals=[
             Signal(
@@ -123,16 +150,16 @@ def test_by_verdict_filters_correctly():
             primitive=str(i),
             namespace="api",
             verdict=v,
-            tier="none" if v != Verdict.PROMOTE_LITE else "lite",
+            tier="lite" if v == Verdict.PROMOTE_AS_PRIMITIVE else "none",
             rationale=f"rationale entry index {i} detail long enough",
             state=_state(name=str(i)),
         )
         for i, v in enumerate(
             [
-                Verdict.DELETE,
-                Verdict.DELETE,
-                Verdict.KEEP_STAGED,
-                Verdict.PROMOTE_LITE,
+                Verdict.REDUNDANT,
+                Verdict.REDUNDANT,
+                Verdict.NEEDS_CALLER,
+                Verdict.PROMOTE_AS_PRIMITIVE,
             ]
         )
     ]
@@ -142,6 +169,6 @@ def test_by_verdict_filters_correctly():
         total_quarantined=0,
         entries=entries,
     )
-    assert len(l.by_verdict(Verdict.DELETE)) == 2
-    assert len(l.by_verdict(Verdict.KEEP_STAGED)) == 1
-    assert len(l.by_verdict(Verdict.PROMOTE_LITE)) == 1
+    assert len(l.by_verdict(Verdict.REDUNDANT)) == 2
+    assert len(l.by_verdict(Verdict.NEEDS_CALLER)) == 1
+    assert len(l.by_verdict(Verdict.PROMOTE_AS_PRIMITIVE)) == 1

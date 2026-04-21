@@ -1,4 +1,4 @@
-"""Verdict logic tests — each of the 8 decision rules exercised."""
+"""Verdict logic tests — each decision rule exercised."""
 from __future__ import annotations
 
 from engine.promotion.classify import (
@@ -35,60 +35,106 @@ def _sig(kind: SignalKind = SignalKind.TOOL_IMPORT) -> Signal:
     return Signal(kind=kind, source="adapt/tool.py", detail="x")
 
 
-def test_rule1_duplicate_of_registered_deletes():
+def _unpack(result):
+    """Adapter for 6-tuple return."""
+    return result[0], result[1], result[2], result[3], result[4], result[5]
+
+
+def test_rule1_duplicate_is_redundant():
     state = _s(duplicate_of_registered="Bulkhead")
-    verdict, tier, _, _, delete_reason = _classify_single(state, [])
-    assert verdict == Verdict.DELETE
-    assert tier == "none"
+    v, _, rat, _, delete_reason, _ = _unpack(_classify_single(state, []))
+    assert v == Verdict.REDUNDANT
+    assert "Bulkhead" in rat
     assert delete_reason is not None
-    assert "Bulkhead" in delete_reason
 
 
-def test_rule2_quarantined_framework_coupled_deletes():
-    state = _s(
-        is_quarantined=True,
-        forbidden_modules=["starlette.middleware.base"],
-        quarantine_reason="domain_coupled",
+def test_rule2_framework_coupled_motor_and_adapter_both_registered_is_redundant(
+    monkeypatch,
+):
+    """When both motor and adapter exist, staged item is redundant."""
+    import engine.promotion.classify as m
+
+    monkeypatch.setattr(m, "_adapter_exists", lambda _: True)
+    state = _s(name="BulkheadMiddleware", framework_imports=["starlette"])
+    v, _, rat, _, delete_reason, _ = _unpack(
+        _classify_single(state, [], registered_names={"Bulkhead"})
     )
-    verdict, _, _, _, delete_reason = _classify_single(state, [])
-    assert verdict == Verdict.DELETE
+    assert v == Verdict.REDUNDANT
+    assert "Bulkhead" in rat
     assert delete_reason is not None
-    assert "starlette" in delete_reason
 
 
-def test_rule3_quarantined_other_keep_staged():
+def test_rule3_framework_coupled_motor_registered_adapter_missing_promotes_as_adapter(
+    monkeypatch,
+):
+    """Motor registered but adapter missing → promote staged as adapter."""
+    import engine.promotion.classify as m
+
+    monkeypatch.setattr(m, "_adapter_exists", lambda _: False)
+    state = _s(name="BulkheadMiddleware", framework_imports=["starlette"])
+    v, tier, rat, _, _, target = _unpack(
+        _classify_single(state, [], registered_names={"Bulkhead"})
+    )
+    assert v == Verdict.PROMOTE_AS_ADAPTER
+    assert tier == "adapter"
+    assert target == "core/venous/_adapters/fastapi/BulkheadAdapter.py"
+    assert "BulkheadAdapter" in rat
+
+
+def test_rule4_framework_coupled_no_motor_registers_extract_motor_pair():
+    state = _s(name="CORSConfigMiddleware", framework_imports=["starlette"])
+    v, _, rat, _, _, _ = _unpack(
+        _classify_single(state, [], registered_names={"Bulkhead"})
+    )
+    assert v == Verdict.EXTRACT_MOTOR_PAIR
+    assert "CORSConfig" in rat or "motor" in rat.lower()
+
+
+def test_rule4_no_suffix_extract_motor_pair_still_valid():
+    state = _s(name="FooBar", framework_imports=["fastapi"])
+    v, _, rat, _, _, _ = _unpack(
+        _classify_single(state, [], registered_names=set())
+    )
+    assert v == Verdict.EXTRACT_MOTOR_PAIR
+    assert "manually" in rat or "No common framework suffix" in rat
+
+
+def test_rule5_quarantined_non_framework_needs_review():
     state = _s(is_quarantined=True, quarantine_reason="too_small")
-    verdict, _, _, staging_reason, _ = _classify_single(state, [])
-    assert verdict == Verdict.KEEP_STAGED
+    v, _, _, staging_reason, _, _ = _unpack(_classify_single(state, []))
+    assert v == Verdict.NEEDS_REVIEW
     assert staging_reason is not None
 
 
-def test_rule4_no_signal_keep_staged():
+def test_rule6_no_signal_needs_caller():
     state = _s(origin_tool="some/tool.py")
-    verdict, _, _, staging_reason, _ = _classify_single(state, [])
-    assert verdict == Verdict.KEEP_STAGED
+    v, _, _, staging_reason, _, _ = _unpack(_classify_single(state, []))
+    assert v == Verdict.NEEDS_CALLER
     assert staging_reason is not None
-    assert "§A12" in staging_reason or "benchmark" in staging_reason.lower()
+    assert "§A12" in staging_reason or "caller" in staging_reason.lower()
 
 
-def test_rule5_signal_but_shell_incomplete_needs_review():
+def test_rule7_signal_but_shell_incomplete_fill_and_promote():
     state = _s(replace_me_count=5, invariants_stubbed=True)
-    verdict, _, _, _, _ = _classify_single(state, [_sig()])
-    assert verdict == Verdict.NEEDS_REVIEW
+    v, _, rat, _, _, _ = _unpack(_classify_single(state, [_sig()]))
+    assert v == Verdict.FILL_AND_PROMOTE
+    assert "REPLACE_ME" in rat or "shell" in rat.lower()
 
 
-def test_rule6_signal_clean_concurrent_promotes_full():
-    state = _s(has_concurrency=True)
-    verdict, tier, _, _, _ = _classify_single(state, [_sig()])
-    assert verdict == Verdict.PROMOTE_FULL
+def test_rule8_signal_clean_concurrent_promotes_primitive_full():
+    state = _s(has_concurrency=True, namespace="resiliency", name="Foo")
+    v, tier, _, _, _, target = _unpack(_classify_single(state, [_sig()]))
+    assert v == Verdict.PROMOTE_AS_PRIMITIVE
     assert tier == "full"
+    assert target == "core/venous/resiliency/Foo/"
 
 
-def test_rule7_signal_clean_stateless_promotes_lite():
-    state = _s()  # all defaults: stateless, no concurrency, clean shell
-    verdict, tier, _, _, _ = _classify_single(state, [_sig()])
-    assert verdict == Verdict.PROMOTE_LITE
+def test_rule9_signal_clean_stateless_promotes_primitive_lite():
+    state = _s(namespace="api", name="Bar")
+    v, tier, _, _, _, target = _unpack(_classify_single(state, [_sig()]))
+    assert v == Verdict.PROMOTE_AS_PRIMITIVE
     assert tier == "lite"
+    assert target == "core/venous/api/Bar/"
 
 
 def test_motor_name_strips_known_suffixes():
@@ -100,8 +146,8 @@ def test_motor_name_strips_known_suffixes():
 
 
 def test_motor_name_returns_none_on_no_match():
-    assert _motor_name("Bulkhead") is None  # no suffix
-    assert _motor_name("Middleware") is None  # entire name == suffix
+    assert _motor_name("Bulkhead") is None
+    assert _motor_name("Middleware") is None
     assert _motor_name("X") is None
     assert _motor_name("Foo") is None
 
@@ -118,39 +164,9 @@ def test_motor_is_registered_misses():
     assert _motor_is_registered("NoSuffix", reg) is None
 
 
-def test_rule2b_framework_coupled_motor_registered_deletes():
-    state = _s(name="BulkheadMiddleware", framework_imports=["starlette"])
-    verdict, _, rationale, _, delete_reason = _classify_single(
-        state, [], registered_names={"Bulkhead"}
-    )
-    assert verdict == Verdict.DELETE
-    assert "Bulkhead" in rationale
-    assert delete_reason is not None
-
-
-def test_rule2c_framework_coupled_no_motor_needs_decision():
-    state = _s(name="CORSConfigMiddleware", framework_imports=["starlette"])
-    verdict, _, rationale, _, _ = _classify_single(
-        state, [], registered_names={"Bulkhead"}  # no CORSConfig
-    )
-    assert verdict == Verdict.NEEDS_DECISION
-    assert "CORSConfig" in rationale or "motor" in rationale.lower()
-
-
-def test_rule2c_framework_coupled_weird_name_no_motor_hint():
-    """A framework-coupled primitive without a recognisable suffix."""
-    state = _s(name="FooBar", framework_imports=["fastapi"])
-    verdict, _, rationale, _, _ = _classify_single(
-        state, [], registered_names=set()
-    )
-    assert verdict == Verdict.NEEDS_DECISION
-    assert "No common framework suffix" in rationale
-
-
 def test_weak_signal_kind_does_not_count_as_strong():
-    # Only GENERATOR_REF signal present — should be treated as no-signal.
     state = _s()
     weak = Signal(kind=SignalKind.GENERATOR_REF, source="adapt/tool.py", detail="")
-    verdict, _, _, staging_reason, _ = _classify_single(state, [weak])
-    assert verdict == Verdict.KEEP_STAGED
+    v, _, _, staging_reason, _, _ = _unpack(_classify_single(state, [weak]))
+    assert v == Verdict.NEEDS_CALLER
     assert staging_reason is not None

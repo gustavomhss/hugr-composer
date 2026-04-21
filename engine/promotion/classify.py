@@ -1,28 +1,46 @@
-"""Classify every staged primitive into a verdict.
+"""Classify every staged primitive into an action-focused verdict.
+
+Default stance: **make it work, don't delete**. Every verdict except
+REDUNDANT points to a concrete path-to-functionality (promote it, fill
+its shell, extract the motor/adapter pair, or wait for a caller).
+REDUNDANT is reserved for items where both motor and adapter already
+ship — the user may still choose to keep them as reference copies.
 
 Decision tree (evaluated in order — first match wins):
 
-1. `duplicate_of_registered` is set
-       → DELETE (redundant with an already-registered primitive).
-2. `is_quarantined` AND `forbidden_modules` non-empty AND quarantine
-   reason is non-fixable (domain_coupled on framework modules)
-       → DELETE (or KEEP_STAGED if the fix path is obvious).
-3. `is_quarantined` with a fixable reason (e.g. REPLACE_ME-only)
-       → KEEP_STAGED with reason.
-4. No strong signal (TOOL_IMPORT / MODULE_REF / BENCHMARK_REF)
-       → KEEP_STAGED with reason ("no registered caller yet —
-         awaiting benchmark signal per §A12").
-5. Strong signal + REPLACE_ME > 0 + invariants stubbed
-       → NEEDS_REVIEW (caller exists but shell incomplete).
-6. Strong signal + REPLACE_ME == 0 + eligibility fails (concurrency,
-   mutable state, etc.) → PROMOTE_FULL.
-7. Strong signal + REPLACE_ME == 0 + lite-eligible
-       → PROMOTE_LITE (awaiting ratification of 0004-tier-lite).
-8. Anything else → NEEDS_REVIEW.
+1. `duplicate_of_registered` set → REDUNDANT
+   (same name as a registered primitive; staged copy adds no value).
+
+2. Framework-coupled AND motor registered AND adapter exists
+       → REDUNDANT.
+
+3. Framework-coupled AND motor registered AND adapter missing
+       → PROMOTE_AS_ADAPTER
+       (the staged item can become `_adapters/fastapi/<Motor>Adapter.py`).
+
+4. Framework-coupled AND motor NOT registered
+       → EXTRACT_MOTOR_PAIR
+       (needs splitting into framework-free primitive + adapter).
+
+5. Physically quarantined (non-framework-coupled)
+       → FILL_AND_PROMOTE or NEEDS_CALLER depending on signal/shell.
+
+6. No §A12(b) signal → NEEDS_CALLER.
+
+7. Signal + shell incomplete (REPLACE_ME or stub tests)
+       → FILL_AND_PROMOTE (with blockers listing what to fill).
+
+8. Signal + clean shell + (concurrency OR mutable state)
+       → PROMOTE_AS_PRIMITIVE (tier=full; requires .tla spec).
+
+9. Signal + clean shell + lite-eligible
+       → PROMOTE_AS_PRIMITIVE (tier=lite; requires §B1.7 ratification).
+
+10. Fallthrough → NEEDS_REVIEW.
 
 Every verdict carries a `blockers` list: preconditions the executor must
-see resolved before it runs. A non-empty blockers list means the verdict
-is documentation, not an executable instruction.
+see resolved before it runs. Non-empty blockers = documentation, not yet
+executable.
 """
 from __future__ import annotations
 
@@ -93,6 +111,18 @@ def _motor_is_registered(staged_name: str, registered: set[str]) -> str | None:
     return None
 
 
+def _adapter_exists(motor: str) -> bool:
+    """True if `core/venous/_adapters/fastapi/<Motor>Adapter.py` exists."""
+    return (
+        SKILL_ROOT
+        / "core"
+        / "venous"
+        / "_adapters"
+        / "fastapi"
+        / f"{motor}Adapter.py"
+    ).exists()
+
+
 def _strong(signals: list[Signal]) -> list[Signal]:
     return [s for s in signals if s.kind in _STRONG_KINDS]
 
@@ -145,184 +175,189 @@ def _classify_single(
     state: StateFlags,
     signals: list[Signal],
     registered_names: set[str] | None = None,
-) -> tuple[Verdict, str, str, str | None, str | None]:
-    """Return (verdict, tier, rationale, staging_reason, delete_reason)."""
+) -> tuple[Verdict, str, str, str | None, str | None, str | None]:
+    """Return (verdict, tier, rationale, staging_reason, delete_reason, promotion_target)."""
     strong = _strong(signals)
+    registered_names = registered_names or set()
 
     # Rule 1: duplicate of a registered primitive.
     if state.duplicate_of_registered:
         return (
-            Verdict.DELETE,
+            Verdict.REDUNDANT,
             "none",
             (
                 f"Duplicate of registered primitive "
                 f"`{state.duplicate_of_registered}`. Staged copy adds no "
-                "value; registered canonical version already ships."
+                "value; registered canonical version already ships. "
+                "User may keep as reference or remove — not automatic."
             ),
             None,
             (
-                f"Redundant with core/venous/*/{state.duplicate_of_registered}/ "
-                "(same name; registered version is canonical)."
+                f"Same name as core/venous/*/{state.duplicate_of_registered}/ "
+                "(registered version is canonical)."
             ),
+            None,
         )
 
-    # Rule 2a: quarantined with framework coupling — delete unless fixable.
-    if state.is_quarantined and state.forbidden_modules:
-        mods = sorted(set(state.forbidden_modules))
-        framework_mods = any(
-            m.startswith(("fastapi", "starlette", "sqlalchemy", "pydantic"))
-            for m in mods
-        )
-        if framework_mods:
-            return (
-                Verdict.DELETE,
-                "none",
-                (
-                    f"Quarantined for framework coupling ({', '.join(mods)}). "
-                    "Registered primitives may not import framework modules "
-                    "(CONTRACT §B1.0.1); fixing means re-extracting from the "
-                    "tool, not shipping as-is."
-                ),
-                None,
-                (
-                    f"Quarantined + forbidden_modules={mods}. Not salvageable "
-                    "as a registered primitive without re-extraction."
-                ),
-            )
-
-    # Rule 2b: framework-coupled AND its motor is already registered.
-    # The staged item is just the framework plugin; the motor already ships
-    # with its own adapter. Redundant — delete.
-    if state.framework_imports and registered_names:
+    # Rule 2: framework-coupled AND motor registered AND adapter exists.
+    if state.framework_imports:
         motor = _motor_is_registered(state.name, registered_names)
-        if motor is not None:
+        if motor is not None and _adapter_exists(motor):
             mods = ", ".join(state.framework_imports)
             return (
-                Verdict.DELETE,
+                Verdict.REDUNDANT,
                 "none",
                 (
-                    f"Framework-coupled ({mods}) AND its motor `{motor}` is "
-                    "already registered. This staged item is just the framework "
-                    "plugin — the registered motor already ships with its "
-                    "canonical adapter under _adapters/fastapi/. Redundant."
+                    f"Framework-coupled ({mods}). Motor `{motor}` registered, "
+                    f"AND `{motor}Adapter.py` already ships under "
+                    "_adapters/fastapi/. Both halves of the pair exist — "
+                    "staged copy is pure redundancy."
                 ),
                 None,
                 (
-                    f"Framework plugin whose motor `{motor}` is registered at "
-                    f"core/venous/*/{motor}/. Staged copy adds no value."
+                    f"Motor `{motor}` + `{motor}Adapter.py` both registered. "
+                    f"Staged `{state.name}` duplicates shipped code."
                 ),
+                None,
             )
 
-    # Rule 2c: framework-coupled and no motor registered → needs decision.
-    # Human picks: re-extract as (framework-free motor + FastAPI adapter),
-    # or delete as boilerplate.
+    # Rule 3: framework-coupled + motor registered but adapter MISSING.
+    # This is a PROMOTE opportunity: the staged item can become the
+    # missing adapter.
+    if state.framework_imports:
+        motor = _motor_is_registered(state.name, registered_names)
+        if motor is not None and not _adapter_exists(motor):
+            mods = ", ".join(state.framework_imports)
+            target = f"core/venous/_adapters/fastapi/{motor}Adapter.py"
+            return (
+                Verdict.PROMOTE_AS_ADAPTER,
+                "adapter",
+                (
+                    f"Framework-coupled ({mods}). Motor `{motor}` registered "
+                    f"but `{motor}Adapter.py` is MISSING. Promote this staged "
+                    f"item as `{target}` — completes the motor+adapter pair."
+                ),
+                None,
+                None,
+                target,
+            )
+
+    # Rule 4: framework-coupled with no motor registered — split required.
     if state.framework_imports:
         mods = ", ".join(state.framework_imports)
         motor_hint = _motor_name(state.name)
         hint_line = (
-            f" Likely motor name if re-extracted: `{motor_hint}` (not "
-            "currently registered)."
+            f" Suggested motor name: `{motor_hint}`."
             if motor_hint
-            else " No common framework suffix to derive a motor name from."
+            else " No common framework suffix; motor name must be chosen manually."
         )
         return (
-            Verdict.NEEDS_DECISION,
+            Verdict.EXTRACT_MOTOR_PAIR,
             "none",
             (
-                f"Framework-coupled ({mods}) and no motor registered.{hint_line} "
-                "Decide: (a) re-extract into framework-free motor + adapter "
-                "per §B1.0.1, or (b) delete as boilerplate (CORS config, "
-                "trivial middleware, one-off wiring)."
+                f"Framework-coupled ({mods}) with no registered motor. "
+                f"Requires re-extraction into (framework-free motor primitive "
+                f"+ FastAPI adapter) per §B1.0.1.{hint_line}"
             ),
+            None,
             None,
             None,
         )
 
-    # Rule 3: quarantined (physically in _quarantine/) — keep staged with reason.
+    # Rule 5: physically quarantined (no framework imports detected).
+    # Not a duplicate, not framework-coupled — still rejected by extraction
+    # gate for some other reason. Defer to signal-based classification.
     if state.is_quarantined:
         reason_text = state.quarantine_reason or (
-            "no explicit reason recorded; physical location in _quarantine/ "
-            "indicates extraction-gate rejection"
+            "extraction gate rejected it for an unrecorded reason"
         )
-        return (
-            Verdict.KEEP_STAGED,
-            "none",
-            (
-                f"Quarantined ({reason_text}). Not immediately promotable; "
-                "requires re-extraction from the origin tool OR an explicit "
-                "extraction-gate rule waiver before it can advance."
-            ),
-            (
-                f"Physically quarantined under _extracted/_quarantine/. "
-                f"Extracted from `{state.origin_tool or 'unknown tool'}`. "
-                "Re-extract or waive the gate rule that rejected it."
-            ),
-            None,
-        )
-
-    # Rule 4: no strong signal at all — keep staged per §A12(b) discipline.
-    if not strong:
-        return (
-            Verdict.KEEP_STAGED,
-            "none",
-            (
-                "No registered tool / module / benchmark spec currently "
-                "imports or references this primitive. §A12(b) gate not met; "
-                "leave staged until a caller appears."
-            ),
-            (
-                "No §A12(b) signal yet. Primitive was extracted from a tool "
-                f"(`{state.origin_tool}`) but no current caller declares it "
-                "in imports_primitives or imports from core.venous. Will re-"
-                "evaluate on the next triage pass."
-            ),
-            None,
-        )
-
-    # Rule 5: signal present but shell incomplete.
-    if state.replace_me_count > 0 or state.invariants_stubbed:
         return (
             Verdict.NEEDS_REVIEW,
             "none",
             (
-                f"Caller exists ({len(strong)} signal(s)), but shell "
-                f"incomplete: {state.replace_me_count} REPLACE_ME marker(s) + "
-                f"{'stubbed' if state.invariants_stubbed else 'complete'} "
-                "invariants. Fill placeholders and write real invariant tests "
-                "before promotion."
+                f"Quarantined ({reason_text}) but no framework coupling "
+                "detected. Needs human inspection: either waive the "
+                "rejection reason, re-extract, or mark as keep-with-reason."
+            ),
+            (
+                "Physically quarantined with non-framework reason. Human "
+                "inspection needed before any promotion path can be chosen."
             ),
             None,
             None,
         )
 
-    # Rule 6/7: signal + clean shell — pick tier.
-    if _tla_required_reason(state):
+    # Rule 6: no §A12(b) signal — wait for caller.
+    if not strong:
         return (
-            Verdict.PROMOTE_FULL,
+            Verdict.NEEDS_CALLER,
+            "none",
+            (
+                "No registered tool / module / benchmark spec currently "
+                "imports or references this primitive. §A12(b) gate not "
+                "met; leave staged until a caller appears."
+            ),
+            (
+                "No §A12(b) signal yet. Primitive was extracted from "
+                f"`{state.origin_tool}` but no current caller declares it. "
+                "Re-evaluate on the next triage pass."
+            ),
+            None,
+            None,
+        )
+
+    # Rule 7: signal present but shell incomplete.
+    if state.replace_me_count > 0 or state.invariants_stubbed:
+        return (
+            Verdict.FILL_AND_PROMOTE,
+            "none",
+            (
+                f"Caller exists ({len(strong)} signal(s)), shell incomplete: "
+                f"{state.replace_me_count} REPLACE_ME marker(s)"
+                + (" + stubbed invariants" if state.invariants_stubbed else "")
+                + ". Fill placeholders + implement invariant tests, then "
+                "promote (primitive or adapter depending on coupling)."
+            ),
+            None,
+            None,
+            None,
+        )
+
+    # Rule 8: signal + clean shell + concurrency/mutable → promote full tier.
+    if _tla_required_reason(state):
+        ns = state.namespace or "extras"
+        target = f"core/venous/{ns}/{state.name}/"
+        return (
+            Verdict.PROMOTE_AS_PRIMITIVE,
             "full",
             (
-                f"{len(strong)} §A12(b) signal(s) + REPLACE_ME=0 + concurrent "
-                "or mutable state requires formal TLA+ verification. Promote "
-                "at full tier; ship .tla spec with the promotion PR."
+                f"{len(strong)} §A12(b) signal(s) + clean shell + "
+                "concurrent/mutable state. Promote at full tier (TLA+ "
+                f"required) to `{target}`."
             ),
             None,
             None,
+            target,
         )
 
+    # Rule 9: signal + clean shell + lite-eligible.
     if _lite_eligible(state):
+        ns = state.namespace or "extras"
+        target = f"core/venous/{ns}/{state.name}/"
         return (
-            Verdict.PROMOTE_LITE,
+            Verdict.PROMOTE_AS_PRIMITIVE,
             "lite",
             (
-                f"{len(strong)} §A12(b) signal(s) + REPLACE_ME=0 + stateless + "
-                "no concurrency + no ordering invariants. Eligible for lite "
-                "tier per 0004-tier-lite.md §2.1 (awaiting ratification)."
+                f"{len(strong)} §A12(b) signal(s) + clean shell + stateless. "
+                f"Eligible for lite tier. Target: `{target}` "
+                "(requires §B1.7 ratification)."
             ),
             None,
             None,
+            target,
         )
 
-    # Rule 8: fallthrough.
+    # Rule 10: fallthrough.
     return (
         Verdict.NEEDS_REVIEW,
         "none",
@@ -330,6 +365,7 @@ def _classify_single(
             "Signals present and shell complete, but eligibility heuristics "
             "disagreed. Human must adjudicate tier."
         ),
+        None,
         None,
         None,
     )
@@ -345,14 +381,27 @@ def classify_primitive(
 ) -> LedgerEntry:
     state = measure(primitive_dir, name, namespace, is_quarantined, registered_names)
     signals = collect_signals(name, primitive_dir, catalog)
-    verdict, tier, rationale, staging_reason, delete_reason = _classify_single(
-        state, signals, registered_names
-    )
-    blockers = (
-        _describe_blockers(state)
-        if verdict in (Verdict.PROMOTE_FULL, Verdict.PROMOTE_LITE, Verdict.NEEDS_REVIEW)
-        else []
-    )
+    (
+        verdict,
+        tier,
+        rationale,
+        staging_reason,
+        delete_reason,
+        promotion_target,
+    ) = _classify_single(state, signals, registered_names)
+    # Adapter promotions only copy the primary `.py` to the adapters tree;
+    # REPLACE_ME markers in invariant_bindings.json / tests do NOT block an
+    # adapter copy (they only matter for full primitive promotion).
+    if verdict == Verdict.PROMOTE_AS_ADAPTER:
+        blockers: list[str] = []
+    elif verdict in (
+        Verdict.PROMOTE_AS_PRIMITIVE,
+        Verdict.FILL_AND_PROMOTE,
+        Verdict.NEEDS_REVIEW,
+    ):
+        blockers = _describe_blockers(state)
+    else:
+        blockers = []
     return LedgerEntry(
         primitive=name,
         namespace=namespace,
@@ -364,6 +413,7 @@ def classify_primitive(
         state=state,
         staging_reason=staging_reason,
         delete_reason=delete_reason,
+        promotion_target=promotion_target,
         classifier_version=_CLASSIFIER_VERSION,
     )
 

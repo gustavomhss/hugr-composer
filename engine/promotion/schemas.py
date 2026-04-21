@@ -13,29 +13,41 @@ from pydantic import BaseModel, Field
 
 
 class Verdict(str, Enum):
-    """Terminal classification for a staged primitive.
+    """Action-focused classification for a staged primitive.
 
-    * promote_full — ship to `core/venous/<ns>/<Name>/` at full tier
-      (TLA+ required).
-    * promote_lite — ship at lite tier (no TLA+). Requires ratified
-      tier-lite amendment (docs/decisions/0004-tier-lite.md).
-    * keep_staged — remains in `_extracted/`; `staging_reason` must
-      accompany.
-    * delete     — redundant with an already-registered primitive,
-      quarantined beyond repair, or superseded by design. Removed from
-      `_extracted/` entirely.
-    * needs_decision — framework-coupled primitive whose "motor"
-      (framework-free core) is NOT yet registered. Human decides:
-      re-extract (split into motor + adapter) or delete as boilerplate.
+    Default stance: **make it work**, not delete. Every verdict except
+    REDUNDANT corresponds to a concrete path-to-functionality.
+
+    * promote_as_adapter — motor already registered at
+      `core/venous/<ns>/<Motor>/` but `_adapters/fastapi/<Motor>Adapter.py`
+      is missing. The staged item is viable as that adapter; promote it
+      to `_adapters/fastapi/<Motor>Adapter.py`.
+    * promote_as_primitive — stateless, framework-free, registered-lite
+      eligible. Fill REPLACE_ME (if any) + promote to
+      `core/venous/<ns>/<Name>/` with `tier: "lite"`. Requires §B1.7
+      ratification for lite; otherwise full tier.
+    * extract_motor_pair — framework-coupled with NO motor registered.
+      Requires splitting into (framework-free motor primitive + FastAPI
+      adapter) per §B1.0.1. Substantial work per item.
+    * fill_and_promote — has §A12(b) signal but shell is incomplete:
+      REPLACE_ME markers or stub invariant tests. Fill the shell, then
+      promote (adapter or primitive depending on framework coupling).
+    * redundant — motor AND adapter both already ship registered.
+      Staged copy adds no value. Default: leave in place (user may
+      choose to delete or archive — not automatic).
+    * needs_caller — no §A12(b) signal yet. Wait for a registered tool /
+      module / benchmark spec to reference this primitive before
+      promoting. §A12 discipline.
     * needs_review — classifier could not decide safely; human must
-      adjudicate. NEVER a default — only used when signals conflict.
+      adjudicate. NEVER a default — only when heuristics conflict.
     """
 
-    PROMOTE_FULL = "promote_full"
-    PROMOTE_LITE = "promote_lite"
-    KEEP_STAGED = "keep_staged"
-    DELETE = "delete"
-    NEEDS_DECISION = "needs_decision"
+    PROMOTE_AS_ADAPTER = "promote_as_adapter"
+    PROMOTE_AS_PRIMITIVE = "promote_as_primitive"
+    EXTRACT_MOTOR_PAIR = "extract_motor_pair"
+    FILL_AND_PROMOTE = "fill_and_promote"
+    REDUNDANT = "redundant"
+    NEEDS_CALLER = "needs_caller"
     NEEDS_REVIEW = "needs_review"
 
 
@@ -140,10 +152,11 @@ class LedgerEntry(BaseModel):
     primitive: str
     namespace: str
     verdict: Verdict
-    tier: Literal["full", "lite", "none"] = Field(
+    tier: Literal["full", "lite", "adapter", "none"] = Field(
         description=(
-            "Only meaningful when verdict is PROMOTE_*. 'none' for "
-            "keep_staged / delete / needs_review."
+            "Target registration tier. 'adapter' for promote_as_adapter; "
+            "'lite' / 'full' for promote_as_primitive (lite requires "
+            "§B1.7 ratification). 'none' for non-promotion verdicts."
         ),
     )
     rationale: str = Field(
@@ -162,20 +175,42 @@ class LedgerEntry(BaseModel):
     state: StateFlags
     staging_reason: str | None = Field(
         default=None,
-        description="Required when verdict=keep_staged, otherwise None.",
+        description=(
+            "Required when verdict indicates the primitive stays in "
+            "_extracted/ (NEEDS_CALLER / NEEDS_REVIEW / REDUNDANT)."
+        ),
     )
     delete_reason: str | None = Field(
         default=None,
-        description="Required when verdict=delete, otherwise None.",
+        description=(
+            "Filled when REDUNDANT. Explains why the staged copy adds "
+            "no value — user may use it as justification if they choose "
+            "to delete, but delete is not automatic."
+        ),
+    )
+    promotion_target: str | None = Field(
+        default=None,
+        description=(
+            "Destination path for PROMOTE_* verdicts. E.g. "
+            "`core/venous/_adapters/fastapi/BulkheadAdapter.py` for "
+            "promote_as_adapter, or `core/venous/<ns>/<Name>/` for "
+            "promote_as_primitive."
+        ),
     )
     classifier_version: str = Field(default="1.0")
 
     def is_ready_to_execute(self) -> bool:
-        """True iff this entry has zero blockers and a terminal verdict."""
+        """True iff this entry has zero blockers and an actionable verdict.
+
+        Actionable = the executor can run it today. REDUNDANT is
+        technically executable-as-delete but not default policy; the
+        ready flag excludes it so `promote --from-ledger` never picks
+        a REDUNDANT item by accident.
+        """
         return (
             not self.blockers
             and self.verdict
-            in (Verdict.PROMOTE_FULL, Verdict.PROMOTE_LITE, Verdict.DELETE)
+            in (Verdict.PROMOTE_AS_ADAPTER, Verdict.PROMOTE_AS_PRIMITIVE)
         )
 
 
