@@ -96,19 +96,41 @@ def discover_and_register(mcp_app) -> int:
 
 
 def register_tree_tools(mcp_app) -> int:
-    """Register the domain-tree dispatchers (Phase 6 tree variant POC).
+    """Register the domain-tree dispatchers (Phase 6 tree variant).
 
     One MCP tool per domain, each with an `action` param that routes
-    to bundle / slices / primitives. Currently ships `fastapi_auth`
-    as the proof-of-concept; on live-run success the remaining 9
-    domains follow the same template.
+    to bundle / slices / primitives. Ships the full set of 9 domain
+    dispatchers: auth, data, api, realtime, resiliency, observability,
+    compliance, deployment, testing. All mirror the canonical
+    `mcp_tools/tree/auth.py` template.
     """
     from mcp_tools.tree.auth import fastapi_auth, MCP_TOOL as AUTH_META
-    mcp_app.tool(
-        name=AUTH_META["name"],
-        tags=set(AUTH_META.get("tags", [])),
-    )(fastapi_auth)
-    return 1
+    from mcp_tools.tree.data import fastapi_data, MCP_TOOL as DATA_META
+    from mcp_tools.tree.api import fastapi_api, MCP_TOOL as API_META
+    from mcp_tools.tree.realtime import fastapi_realtime, MCP_TOOL as REALTIME_META
+    from mcp_tools.tree.resiliency import fastapi_resiliency, MCP_TOOL as RESILIENCY_META
+    from mcp_tools.tree.observability import fastapi_observability, MCP_TOOL as OBSERVABILITY_META
+    from mcp_tools.tree.compliance import fastapi_compliance, MCP_TOOL as COMPLIANCE_META
+    from mcp_tools.tree.deployment import fastapi_deployment, MCP_TOOL as DEPLOYMENT_META
+    from mcp_tools.tree.testing import fastapi_testing, MCP_TOOL as TESTING_META
+
+    dispatchers = (
+        (fastapi_auth,          AUTH_META),
+        (fastapi_data,          DATA_META),
+        (fastapi_api,           API_META),
+        (fastapi_realtime,      REALTIME_META),
+        (fastapi_resiliency,    RESILIENCY_META),
+        (fastapi_observability, OBSERVABILITY_META),
+        (fastapi_compliance,    COMPLIANCE_META),
+        (fastapi_deployment,    DEPLOYMENT_META),
+        (fastapi_testing,       TESTING_META),
+    )
+    for fn, meta in dispatchers:
+        mcp_app.tool(
+            name=meta["name"],
+            tags=set(meta.get("tags", [])),
+        )(fn)
+    return len(dispatchers)
 
 
 def register_tier1_tools(mcp_app) -> int:
