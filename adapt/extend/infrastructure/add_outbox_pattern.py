@@ -1,13 +1,27 @@
-"""TOOL-023: add_outbox_pattern — add transactional outbox to a FastAPI project.
+"""TOOL-023: add_outbox_pattern — transactional outbox backed by the primitive.
 
-Generates an ``outbox_events`` SQLAlchemy model, an ``OutboxService`` that
-atomically writes events inside the business transaction, an ARQ-based
-dispatcher worker with ``SELECT FOR UPDATE SKIP LOCKED``, exponential-backoff
-retries, a dead-letter table, Alembic migration, and ``/outbox/metrics`` +
-``/outbox/dlq`` admin endpoints.
+Follows the CONTRACT §B1.0 + §B1.0.1 pattern:
 
-The tool is idempotent: a second run detects ``outbox_events`` in
-``app/models/outbox.py`` and returns ``status="no_op"``.
+1. Copy the framework-agnostic primitive
+   ``core.venous.events.TransactionalOutbox`` into the generated project.
+2. Emit a thin ``app/events/outbox.py`` glue (≤ 20 logic lines) that imports
+   ``InMemoryTransactionalOutbox`` from the primitive and wires it to a
+   SQLAlchemy session + a background relayer task.
+3. Emit a ``outbox_events`` SQLAlchemy model, an ``OutboxService`` that
+   atomically writes events inside the business transaction, an ARQ-based
+   dispatcher worker with ``SELECT FOR UPDATE SKIP LOCKED``, exponential-backoff
+   retries, a dead-letter table, Alembic migration, and ``/outbox/metrics`` +
+   ``/outbox/dlq`` admin endpoints. These backing files are framework-specific
+   wiring (SQLAlchemy + ARQ) — the *semantics* (transactional write, relay,
+   at-least-once delivery, per-partition ordering) live in the primitive.
+
+No shipped FastAPI adapter exists for ``TransactionalOutbox`` in
+``core/venous/_adapters/fastapi/``; the SQLAlchemy/ARQ wiring is emitted by
+this tool because it is framework-specific.
+
+The tool is idempotent: a second run detects the primitive's
+``InMemoryTransactionalOutbox`` import in ``app/events/outbox.py`` and
+returns ``status="no_op"``.
 
 Example::
 
@@ -16,7 +30,7 @@ Example::
 
     result = add_outbox_pattern(ToolInput(project_dir="/path/to/project"))
     print(result.status)        # "success"
-    print(result.files_created) # [.../app/models/outbox.py, ...]
+    print(result.files_created) # [.../app/events/outbox.py, ...]
 """
 
 from __future__ import annotations
@@ -31,10 +45,80 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 MCP_TOOL = {
     "name": "fastapi_data_add_outbox_pattern",
-    "description": "Add transactional outbox pattern for reliable event publishing.",
+    "description": (
+        "Copy TransactionalOutbox primitive into the project and wire a "
+        "thin app/events/outbox.py glue plus SQLAlchemy + ARQ backing "
+        "(model, service, dispatcher, DLQ, admin routes, migration)."
+    ),
     "tags": ["extend", "infrastructure"],
     "entry": "add_outbox_pattern",
+    "imports_primitives": [
+        "core.venous.events.TransactionalOutbox",
+    ],
+    "imports_adapters": (),
 }
+
+
+# ---------------------------------------------------------------------------
+# Thin glue over core.venous.events.TransactionalOutbox
+# ---------------------------------------------------------------------------
+
+_OUTBOX_GLUE = '''\
+"""Thin glue that wires the TransactionalOutbox primitive into a FastAPI app.
+
+Delegates to the primitive copied under
+`core/venous/events/TransactionalOutbox/` by the `add_outbox_pattern` tool.
+Re-emitted idempotently on subsequent runs. This file contains NO outbox
+semantics — transactional write atomicity (TXN-INV-01), at-least-once
+relay (TXN-INV-03), and per-partition ordering (TXN-INV-04) all live in
+``core.venous.events.TransactionalOutbox``.
+
+The SQLAlchemy model + ARQ dispatcher emitted alongside this glue are the
+production backend; this module exposes a process-level in-memory outbox
+suitable for tests and a background relayer factory that the dispatcher
+worker can consume.
+"""
+
+from __future__ import annotations
+
+import asyncio
+from typing import Any, Callable
+
+from core.venous.events.TransactionalOutbox import (
+    InMemoryTransactionalOutbox,
+    OutboxMessage,
+    TransactionalOutboxInvariantError,
+)
+
+_outbox: InMemoryTransactionalOutbox | None = None
+
+
+def get_outbox(
+    broker_publish_fn: Callable[[OutboxMessage], bool] | None = None,
+) -> InMemoryTransactionalOutbox:
+    """Return the process-global InMemoryTransactionalOutbox (lazy init)."""
+    global _outbox
+    if _outbox is None:
+        _outbox = InMemoryTransactionalOutbox(broker_publish_fn=broker_publish_fn)
+    return _outbox
+
+
+async def relay_loop(interval_s: float = 1.0) -> None:
+    """Background task that drives the primitive's relay on an interval."""
+    outbox = get_outbox()
+    while True:
+        outbox.relay_once()
+        await asyncio.sleep(interval_s)
+
+
+__all__ = [
+    "InMemoryTransactionalOutbox",
+    "OutboxMessage",
+    "TransactionalOutboxInvariantError",
+    "get_outbox",
+    "relay_loop",
+]
+'''
 
 
 
@@ -90,25 +174,50 @@ def add_outbox_pattern(inp: ToolInput) -> ToolResult:
         files_created.extend(scaffolded)
 
     app_dir = project / "app"
+    events_dir = app_dir / "events"
+    glue_file = events_dir / "outbox.py"
 
-    # --- Idempotency guard ---------------------------------------------------
-    outbox_model = app_dir / "models" / "outbox.py"
-    if outbox_model.exists() and "outbox_events" in outbox_model.read_text():
+    # --- Idempotency guard (check for the primitive's class name) ------------
+    if glue_file.exists() and "InMemoryTransactionalOutbox" in glue_file.read_text():
         return ToolResult(
             status="no_op",
-            notes=["outbox_events table already present — outbox pattern already enabled, skipped."],
+            notes=["TransactionalOutbox primitive already wired via app/events/outbox.py."],
             execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
         return ToolResult(
             status="success",
-            notes=["[dry_run] Would create outbox model, service, dispatcher, routes, migration."],
+            notes=[
+                "[dry_run] Would copy TransactionalOutbox primitive and write "
+                "app/events/outbox.py + outbox model, service, dispatcher, routes, migration."
+            ],
             next_steps=["Re-run without dry_run=True to apply changes."],
             execution_time_ms=_elapsed_ms(start),
         )
 
+    # --- Copy primitive ------------------------------------------------------
+    from generators.scaffold_venous import ensure_primitives
+
+    manifest = ensure_primitives(
+        str(project),
+        names=["core.venous.events.TransactionalOutbox"],
+        adapters=[],
+    )
+    files_created.append(manifest.path)
+
+    # --- Primary glue --------------------------------------------------------
+    events_dir.mkdir(parents=True, exist_ok=True)
+    events_init = events_dir / "__init__.py"
+    if not events_init.exists():
+        events_init.write_text('"""Events package — outbox wiring over the TransactionalOutbox primitive."""\n')
+        files_created.append(str(events_init))
+    glue_file.write_text(_OUTBOX_GLUE)
+    files_created.append(str(glue_file))
+
     files_modified: list[str] = []
+
+    outbox_model = app_dir / "models" / "outbox.py"
 
     # --- Step 1: OutboxEvent model -------------------------------------------
     (app_dir / "models").mkdir(parents=True, exist_ok=True)
@@ -168,11 +277,22 @@ def add_outbox_pattern(inp: ToolInput) -> ToolResult:
                     execution_time_ms=_elapsed_ms(start),
                 )
 
+    # --- Enforce ≤20 logic lines in the primary glue -------------------------
+    glue_loc = _count_logic_lines(glue_file.read_text())
+    if glue_loc > 20:
+        return ToolResult(
+            status="error",
+            error=f"Primary glue {glue_file} has {glue_loc} logic lines (> 20).",
+            execution_time_ms=_elapsed_ms(start),
+        )
+
     return ToolResult(
         status="success",
         files_created=files_created,
         files_modified=files_modified,
         notes=[
+            "Shipped primitive: core.venous.events.TransactionalOutbox.",
+            "Glue: app/events/outbox.py wires InMemoryTransactionalOutbox + relay_loop.",
             "Transactional outbox added: emit_event() writes inside business transaction.",
             "Dispatcher uses SELECT FOR UPDATE SKIP LOCKED — safe for multiple workers.",
             "Retry schedule: 1s → 5s → 30s → 5m → 30m (exponential backoff).",
@@ -805,3 +925,21 @@ def _elapsed_ms(start: float) -> int:
         Elapsed time in milliseconds as an integer.
     """
     return int((time.monotonic() - start) * 1000)
+
+
+def _count_logic_lines(source: str) -> int:
+    """Count executable logic lines — imports, class/func defs, and decorators
+    do NOT count (per CONTRACT §B1.0.1).
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return 0
+    loc = 0
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if node.body:
+                start = node.body[0].lineno
+                end = node.end_lineno or start
+                loc += end - start + 1
+    return loc

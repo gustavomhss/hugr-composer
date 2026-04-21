@@ -18,8 +18,10 @@ import ast
 import sys
 from pathlib import Path
 
+import json
+
 from adapt.contracts import ToolInput
-from adapt.extend.infrastructure.add_adaptive_timeouts import add_adaptive_timeouts
+from adapt.extend.infrastructure.add_adaptive_timeouts import MCP_TOOL, add_adaptive_timeouts
 from tests.common.fixture_factory import create_fixture_project
 
 
@@ -355,6 +357,63 @@ def test_get_stats_returns_percentiles() -> None:
 
 
 # ---------------------------------------------------------------------------
+# CONTRACT §B1.0 + §B1.0.1 — primitive copy + thin glue
+# ---------------------------------------------------------------------------
+
+def test_primitive_copied() -> None:
+    """CONTRACT §B1.0: the TimeoutBudget primitive is copied into the project."""
+    project_dir = create_fixture_project(name="at_t23")
+    add_adaptive_timeouts(ToolInput(project_dir=str(project_dir)))
+    p = project_dir / "core" / "venous" / "resiliency" / "TimeoutBudget" / "TimeoutBudget.py"
+    assert p.exists(), f"primitive not copied: {p}"
+    body = p.read_text()
+    assert "MonotonicTimeoutBudget" in body
+    assert "Copied from HuGR SkillKit" in body
+
+
+def test_manifest_records_primitive() -> None:
+    """CONTRACT §B1.0: .venous_manifest.json records the copied primitive."""
+    project_dir = create_fixture_project(name="at_t24")
+    add_adaptive_timeouts(ToolInput(project_dir=str(project_dir)))
+    manifest = json.loads((project_dir / ".venous_manifest.json").read_text())
+    assert "core.venous.resiliency.TimeoutBudget" in {
+        p["qualified_name"] for p in manifest["primitives"]
+    }
+
+
+def test_glue_imports_primitive() -> None:
+    """CONTRACT §B1.0.1: glue file imports from core.venous.resiliency.TimeoutBudget."""
+    project_dir = create_fixture_project(name="at_t25")
+    add_adaptive_timeouts(ToolInput(project_dir=str(project_dir)))
+    glue = project_dir / "app" / "resilience" / "timeouts.py"
+    body = glue.read_text()
+    assert "from core.venous.resiliency.TimeoutBudget import" in body
+    assert "MonotonicTimeoutBudget" in body
+    assert "asyncio.wait_for" in body
+
+
+def test_glue_body_under_20_loc() -> None:
+    """CONTRACT §B1.0.1: primary glue body stays below 20 executable lines."""
+    project_dir = create_fixture_project(name="at_t26")
+    add_adaptive_timeouts(ToolInput(project_dir=str(project_dir)))
+    tree = ast.parse((project_dir / "app" / "resilience" / "timeouts.py").read_text())
+    body_lines = 0
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            start = node.body[0].lineno
+            end = node.end_lineno or start
+            body_lines += end - start + 1
+    assert body_lines <= 20, body_lines
+
+
+def test_mcp_tool_metadata() -> None:
+    """MCP_TOOL declares imports_primitives per CONTRACT §B1.0."""
+    assert MCP_TOOL["entry"] == "add_adaptive_timeouts"
+    assert "core.venous.resiliency.TimeoutBudget" in MCP_TOOL["imports_primitives"]
+    assert tuple(MCP_TOOL["imports_adapters"]) == ()
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
 
@@ -382,6 +441,11 @@ if __name__ == "__main__":
         test_idempotent_project_still_parses,
         test_all_four_config_fields_present,
         test_get_stats_returns_percentiles,
+        test_primitive_copied,
+        test_manifest_records_primitive,
+        test_glue_imports_primitive,
+        test_glue_body_under_20_loc,
+        test_mcp_tool_metadata,
     ]
 
     passed = failed = 0
