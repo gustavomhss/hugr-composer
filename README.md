@@ -20,8 +20,8 @@ scaffold (skill) + slice generators (tools) + reusable building blocks
 Phase:      v1.0.0-rc.1 (golive frozen, awaiting ratification)
 Skills:      1   (SKILL-001-fastapi-production)
 Tools:     217   (201 catalog + 7 tier-1 + 9 tree dispatchers)
-Primitives: 122  (production, 16-FastAPI-adapter-wired, 10-tier gate)
-Staged:    181   (core/venous/_extracted/, +47 quarantined, pre-audited pool)
+Primitives: 122  (production, 17-FastAPI-adapter-wired, 10-tier gate)
+Staged:    179   (core/venous/_extracted/, +45 quarantined, pre-audited pool)
 Benchmark: 100.00 plan · 100.00 code-level (20/20 specs × 100%)
 Contract:  36/36 green
 Examples:   20   (full spec coverage; /examples/01-20)
@@ -48,7 +48,7 @@ HuGR_Skills/
         ├── INVENTORY.md          # machine-verified on-disk counts
         ├── adapt/                # 127 tools (100 extend + 27 other)
         ├── generators/           # 60 macro scaffold helpers
-        ├── core/venous/          # 122 primitives + 16 FastAPI adapters + 181 staged
+        ├── core/venous/          # 122 primitives + 17 FastAPI adapters + 179 staged
         ├── mcp_tools/            # MCP server + tier-1 meta + tree dispatchers
         └── engine/               # audit + index + bench + promotion + extraction
 ```

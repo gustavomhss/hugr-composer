@@ -41,10 +41,10 @@ Total Maestro-visible tools at freeze: **217**
 - **122 registered primitives** under `core/venous/<ns>/<Name>/` with
   full shell (contract.json + protocol + md + tests + TLA+ + dashboard +
   invariants + observability).
-- **16 FastAPI adapters** under `core/venous/_adapters/fastapi/`.
+- **17 FastAPI adapters** under `core/venous/_adapters/fastapi/`.
   No new adapters in v1.0 (see §1.6 — scope is "stabilize what exists",
   not "promote new surface").
-- **181 staged primitives** surfaced in catalog with `status="staged"`
+- **179 staged primitives** surfaced in catalog with `status="staged"`
   (discoverable; not promoted; `_extracted/<ns>/` + `_extracted/_quarantine/`
   combined PascalCase items).
 - **56 generators** + **28 module packages** + **123 adapt tools**
@@ -100,35 +100,38 @@ Total Maestro-visible tools at freeze: **217**
 - VERSION file bumped to `1.0.0`.
 - Release notes referencing this FREEZE doc.
 
-### §1.6 — Specific in-scope promotions: NONE
+### §1.6 — BulkheadAdapter promotion (landed Wave 1, pre-freeze)
 
-v1.0 scope is **stabilize what exists, not promote new surface**.
-Zero staged items are promoted as part of this freeze.
+The originally-deferred `BulkheadAdapter.py` promotion was brought
+forward into the pre-freeze Wave-1 sprint because the alternative
+(shipping v1.0 with 16 adapters + 2 pre-existing bulkhead test
+failures + tool inlining the adapter wrapper) violated "SOTA, no
+debt" ratification criteria.
 
-Rationale for dropping the previously-proposed `BulkheadAdapter.py`
-promotion (originally planned here):
+What landed:
 
-- Motor `Bulkhead` is registered at `core/venous/resiliency/Bulkhead/`
-  with full shell.
-- Existing tool `adapt/extend/infrastructure/add_bulkhead_isolation.py`
-  already works: it's Rails-connected (`imports_primitives` declares
-  `core.venous.resiliency.Bulkhead`) and emits its own inline
-  `BulkheadMiddleware` as part of the generated project.
-- The tool's `imports_adapters` is empty — it does NOT consume an
-  adapter today. Promoting a new `BulkheadAdapter.py` without a
-  registered caller violates §A12(b): "imported by a registered tool
-  or module". The adapter would sit unused, violating the §A12
-  no-speculative-promotion discipline the freeze ratifies.
-- The honest path: refactor `add_bulkhead_isolation.py` to consume
-  an adapter AND promote the adapter in the same change, so both
-  halves land with a real caller. That refactor is ~3h of careful
-  work and is deferred to a post-v1.0 sprint where adapter-pattern
-  refactors are batched (see `FREEZE.md §2.4`).
+- Motor `core/venous/resiliency/Bulkhead/Bulkhead.py` extended with a
+  public `async with bh.acquire():` context manager (additive; the
+  existing `submit(fn)` now delegates to `acquire`). 5 new behavioral
+  tests cover the new surface; the 15 pre-existing tests remained
+  green.
+- `core/venous/_adapters/fastapi/BulkheadAdapter.py` newly promoted
+  (17th adapter): exports `Bulkhead` (multi-partition facade),
+  `BulkheadConfig`, `BulkheadFullError`, `BulkheadMiddleware`. 16
+  behavioral tests validate every claim (config validation, acquire
+  semantics, partition isolation, middleware 503-with-X-Bulkhead-
+  Group, status() shape).
+- `adapt/extend/infrastructure/add_bulkhead_isolation.py` refactored
+  to import the adapter instead of inlining the wrapper — restores
+  Rails-style wiring (`imports_adapters` now declares the adapter).
+- The 2 previously-deferred bulkhead behavior tests
+  (`test_b02_bulkhead_rejects_when_full`, `test_b04_bulkhead_status`)
+  now pass against the adapter API — originally listed in §2.8.
+- The 2 `BulkheadMiddleware` ledger entries (staged + quarantined)
+  were deleted as REDUNDANT after the adapter landed.
 
-v1.0 freeze ships the existing 16 adapters unchanged. The 2 staged
-`BulkheadMiddleware` ledger entries (staged + quarantined) remain in
-`_extracted/` with `verdict="promote_as_adapter"` — they become
-executable targets once the matching tool refactor is planned.
+v1.0 freeze ships **17 FastAPI adapters** (16 pre-freeze + the new
+`BulkheadAdapter`).
 
 ---
 
@@ -173,29 +176,27 @@ Django/Next.js/agent-backend skill. Post-v1.0 work per ROADMAP Phase 6.
 
 ROADMAP Phase 7 items. Post-v1.0.
 
-### §2.8 — Known pre-existing test failures
+### §2.8 — Known pre-existing test failures (CLOSED Wave 1)
 
-Two tests in `test_add_bulkhead_isolation_behavior.py` fail on v1.0:
+**Resolved pre-freeze.** The two tests originally flagged here
+(`test_b02_bulkhead_rejects_when_full`, `test_b04_bulkhead_status`)
+were the symptom of missing adapter-layer wiring. Wave 1 of the
+staged-primitive close-out sprint shipped:
 
-- `test_b02_bulkhead_rejects_when_full`
-- `test_b04_bulkhead_status`
+- Motor extension: `InMemoryBulkhead.acquire()` async context manager
+  (additive — `submit` now sugar over `acquire`).
+- `core/venous/_adapters/fastapi/BulkheadAdapter.py` — the 17th
+  shipped adapter, exposing `Bulkhead(BulkheadConfig(limits=...))` +
+  `acquire(group)` + `status()` directly matching the test contract.
+- Generator `add_bulkhead_isolation.py` refactored to import the
+  adapter instead of inlining its wrapper.
 
-Root cause: the test expects `Bulkhead(BulkheadConfig(limits={...}))`
-+ `bulkhead.acquire(group_name)` API; the current primitive
-`InMemoryBulkhead` has a different signature (`name: str, *,
-max_concurrent_calls: int, max_wait_duration_ms: int`) with
-`await .call(fn, *args)` instead of an `acquire()` context manager.
+All 10 behavioral tests in `test_add_bulkhead_isolation_behavior.py`
+now pass; the adapter itself has 16 dedicated behavioral tests; the
+motor has 20 tests including 5 new for `acquire()`. See FREEZE §1.6
+for the detailed ledger.
 
-The divergence predates this sprint. Fixing it means either refactoring
-the primitive (API-breaking — v2.x MAJOR) or writing a compatibility
-wrapper that emits the old-API surface. Both belong to the same
-post-v1.0 sprint that also promotes `BulkheadAdapter.py` (FREEZE §1.6).
-
-Remediation: when the adapter promotion lands, rewrite the two tests
-to use the unified primitive + adapter API. Track in the post-v1.0
-ROADMAP under "bulkhead API alignment".
-
-No other pre-existing test failures at v1.0.
+No pre-existing test failures remain at v1.0.
 
 ---
 

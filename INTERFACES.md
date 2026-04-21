@@ -111,14 +111,14 @@ Authoritative list (registered): **`engine/primitives_by_concern.yaml`**
   `tier` field: `"full"` for all v1.0.0 registered primitives;
   `"lite"` is defined in §B1.8 but no v1.0.0 primitive ships at that
   tier (reserved for post-v1.0).
-- **181 staged primitives** discoverable via `fastapi_meta_search`
+- **179 staged primitives** discoverable via `fastapi_meta_search`
   with `status="staged"` — usable as reference, NOT production-ready.
   Distributed across `_extracted/<namespace>/` (134) and
-  `_extracted/_quarantine/` (47 PascalCase). Lowercase function
+  `_extracted/_quarantine/` (45 PascalCase). Lowercase function
   extractions have been cleaned up.
-- **16 FastAPI adapters** under `core/venous/_adapters/fastapi/`.
-  `BulkheadAdapter` is deferred to post-v1.0 per FREEZE §1.6
-  (would be the 17th); do not rely on its existence at v1.0.0.
+- **17 FastAPI adapters** under `core/venous/_adapters/fastapi/`
+  (the 17th, `BulkheadAdapter`, landed in Wave 1 pre-freeze;
+  earlier drafts of this doc listed 16 — see FREEZE §1.6).
 
 **Stability guarantees:**
 - Registered primitive names + namespaces frozen at v1.0.0 (MAJOR

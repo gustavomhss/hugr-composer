@@ -31,14 +31,14 @@ surfaces are MCP-registered and JIT-discoverable via
 |---|---:|---|
 | Slice tools under `adapt/extend/` | 100 | `find adapt/extend -name 'add_*.py' ! -name 'test_*' \| wc -l` |
 | Total tools in `adapt/` (all verbs + categories) | 127 | `find adapt -name '*.py' ! -name '__init__.py' ! -name 'test_*' \| wc -l` |
-| FastAPI adapters (`core/venous/_adapters/fastapi/`) | 16 | `find core/venous/_adapters/fastapi -maxdepth 1 -name '*Adapter.py' ! -name 'test_*' \| wc -l` |
+| FastAPI adapters (`core/venous/_adapters/fastapi/`) | 17 | `find core/venous/_adapters/fastapi -maxdepth 1 -name '*Adapter.py' ! -name 'test_*' \| wc -l` |
 | Generator files (`generators/`) | 60 | `find generators -name '*.py' ! -name '__init__.py' ! -name 'test_*' \| wc -l` |
 | MCP-registered tools (catalog) | 201 | `jq '.tools \| length' engine/index/catalog.json` |
 | Maestro-visible surface (catalog + tier-1 + tree) | 217 | 201 catalog + 7 tier-1 + 9 tree dispatchers |
 | Production primitives (registered) | 122 | `grep -c '^- name:' engine/primitives_by_concern.yaml` |
 | Production primitive directories | 122 | `find core/venous -mindepth 2 -maxdepth 2 -type d ! -path '*_extracted*' ! -path '*_adapters*' ! -path '*__pycache__*' \| wc -l` |
-| Staged primitives (PascalCase, promotable) | 181 | `jq '[.primitives[] \| select(.status=="staged")] \| length' engine/index/catalog.json` |
-| Quarantined primitives (rejected by extraction gate) | 47 | `find core/venous/_extracted/_quarantine -mindepth 2 -maxdepth 2 -type d \| wc -l` |
+| Staged primitives (PascalCase, promotable) | 179 | `jq '[.primitives[] \| select(.status=="staged")] \| length' engine/index/catalog.json` |
+| Quarantined primitives (rejected by extraction gate) | 45 | `find core/venous/_extracted/_quarantine -mindepth 2 -maxdepth 2 -type d \| wc -l` |
 | Benchmark specs (Phase 3) | 20 | `find benchmarks/specs -name '*.md' ! -name 'README.md' \| wc -l` |
 | Contract items green | 36/36 | `PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check` |
 | Extend tools primitive-connected | 22/100 | `jq '[.tools[] \| select(.verb=="add" and (.module_path \| startswith("adapt/extend/")) and (.primitives_used \| length > 0))] \| length' engine/index/catalog.json` |

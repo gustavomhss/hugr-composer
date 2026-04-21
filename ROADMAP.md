@@ -28,9 +28,9 @@ reconcile against INVENTORY.md — drift = audit bug.
 | Generators | 56 | auth, database, deployment, endpoints, infra, middleware, observability, schemas, testing, tools |
 | Module packages | 28 | auth, background_jobs, caching, database, deployment, observability, payments, security, websockets |
 | Registered primitives | 122 | `core/venous/<ns>/<Name>/` with contract.json + tests + TLA+ specs |
-| FastAPI adapters | 16 | Production-wired in `core/venous/_adapters/fastapi/` |
-| Staged primitives | 181 | PascalCase subset of `_extracted/`, surfaced in catalog as `status="staged"` |
-| Quarantined primitives | 47 | Rejected by extraction gate, hidden from catalog |
+| FastAPI adapters | 17 | Production-wired in `core/venous/_adapters/fastapi/` |
+| Staged primitives | 179 | PascalCase subset of `_extracted/`, surfaced in catalog as `status="staged"` |
+| Quarantined primitives | 45 | Rejected by extraction gate, hidden from catalog |
 | Recipes | 385 | Parsed from primitive `.md` `## Compose with:` sections |
 | Benchmark specs | 20 | 5 baseline + 10 mid + 5 adversarial |
 | Contract rules passing | 36/36 | Machine-verified by `engine.audit.contract_check` |

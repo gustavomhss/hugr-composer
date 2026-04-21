@@ -32,9 +32,10 @@ tool / primitive renames going forward (CONTRACT §A10).
     - 9 tree dispatchers (`mcp_tools/tree/`)
 - **122 registered primitives** (full shell: contract + protocol + tests +
   TLA+ + dashboard + invariants + observability).
-- **16 FastAPI adapters** (`core/venous/_adapters/fastapi/`). No new
-  adapters in v1.0 per FREEZE §1.6 (scope is "stabilize what exists").
-- **181 staged primitives** (`_extracted/`, `status="staged"`) — discoverable,
+- **17 FastAPI adapters** (`core/venous/_adapters/fastapi/`). The 17th,
+  `BulkheadAdapter`, landed in the Wave-1 pre-freeze sprint (see
+  FREEZE §1.6) along with motor extension `InMemoryBulkhead.acquire()`.
+- **179 staged primitives** (`_extracted/`, `status="staged"`) — discoverable,
   not promoted.
 - **20 complete examples** at `/examples/` (5 baseline + 10 mid + 5 adversarial).
 - **36/36 CONTRACT rules green.** (34 pre-freeze + §B4.6 VERSION
@@ -118,7 +119,7 @@ bumps (v2.0+) may rename or remove; v1.x will only add.
 > fed into [1.0.0]. Each intermediate claim below (contract counts,
 > verdict names, staged totals) was accurate **at the moment of that
 > sprint's commit**. The consolidated final state — 36/36 contract,
-> action-focused verdict taxonomy, 181 staged + 47 quarantined, 16
+> action-focused verdict taxonomy, 179 staged + 45 quarantined, 17
 > FastAPI adapters — is canonical in the [1.0.0] block above.
 > Intermediate discrepancies are preserved for audit provenance, not
 > for consumption by release readers.

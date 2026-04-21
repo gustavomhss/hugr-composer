@@ -33,7 +33,7 @@ HuGR_Skills/
 │       │   ├── contracts/              # 4 contract tools
 │       │   └── proactive/              # 1 proactive tool
 │       ├── modules/                    # 28 feature packages prontos
-│       ├── core/venous/                # 122 registered primitives + 16 FastAPI adapters + 181 staged em _extracted/ (+47 quarantined)
+│       ├── core/venous/                # 122 registered primitives + 17 FastAPI adapters + 179 staged em _extracted/ (+45 quarantined)
 │       ├── mcp_tools/                  # Tier-1 meta + tree dispatchers + auto-discovery
 │       │   ├── tier1.py + compose.py   # 7 meta tools (home/search/describe/scaffold/compose/audit/verify)
 │       │   └── tree/                   # 9 domain dispatchers (auth, data, api, realtime, resiliency, obs, compliance, deployment, testing)
@@ -75,8 +75,8 @@ A skill principal. Convention over Configuration para FastAPI.
 257  arquivos com MCP_TOOL      (superfície Maestro)
 201  tools indexados no catalog.json
 122  primitivos registrados      (core/venous/<ns>/<Name>/)
-181  primitivos staged           (PascalCase-filtered, +47 quarantined)
- 16  FastAPI adapters            (production-wired)
+179  primitivos staged           (PascalCase-filtered, +45 quarantined)
+ 17  FastAPI adapters            (production-wired)
 127  adapt tools                 (100 extend + 8 operate + 8 evolve + 6 verify + 4 contracts + 1 proactive)
  22  extend add_* Rails-connected (§B1.3 floor = 22, non-regressive)
  56  generators
@@ -92,8 +92,8 @@ A skill principal. Convention over Configuration para FastAPI.
 | Camada | Onde | Qtd | O que é |
 |---|---|---:|---|
 | Primitivos registrados | `core/venous/<ns>/<Name>/` | 122 | Peças framework-free |
-| Primitivos staged (PascalCase) | `core/venous/_extracted/` | 181 | HuGR-shelled mas com REPLACE_ME, +47 quarantined |
-| Adapters FastAPI | `core/venous/_adapters/fastapi/` | 16 | Wiring production-grade |
+| Primitivos staged (PascalCase) | `core/venous/_extracted/` | 179 | HuGR-shelled mas com REPLACE_ME, +45 quarantined |
+| Adapters FastAPI | `core/venous/_adapters/fastapi/` | 17 | Wiring production-grade |
 | EXTEND tools | `adapt/extend/` | 100 | Slice generators (add_*) |
 | Outros adapt | `adapt/{verify,operate,evolve,contracts,proactive}/` | 27 | Validação, ops, evolução |
 | Generators | `generators/` | 56 | Scaffolders de subsistemas (per `engine.inventory`; 60 .py files on disk incl. 3 top-level helpers + conftest) |
