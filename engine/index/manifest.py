@@ -60,6 +60,8 @@ TOOL_SCAN_ROOTS: tuple[tuple[str, Path], ...] = (
     ("generators", SKILL_ROOT / "generators"),
     ("modules",    SKILL_ROOT / "modules"),
     ("benchmark",  SKILL_ROOT / "benchmark"),
+    ("meta",       SKILL_ROOT / "meta"),
+    ("core_tools", SKILL_ROOT / "core" / "tools"),
 )
 
 
@@ -191,12 +193,18 @@ def _canonical_tool_name(verb: str, domain: str, mcp_name: str) -> str:
     `legacy_name` when they differ. No actual MCP registration renaming
     happens until the dedicated rename commit.
     """
-    # Remove any leading "fastapi_" / verb prefix.
-    stripped = mcp_name
-    for p in ("fastapi_", ):
-        if stripped.startswith(p):
-            stripped = stripped[len(p):]
-    # Find + strip the verb prefix from the start.
+    # If the name already follows the canonical form, return as-is
+    # (prevents double-prefix when the name was rewritten in a prior pass).
+    canonical_prefix = f"fastapi_{domain}_{verb}_"
+    if mcp_name.startswith(canonical_prefix):
+        return mcp_name
+
+    # Remove leading "fastapi_".
+    stripped = mcp_name.removeprefix("fastapi_")
+    # Strip leading "<domain>_" if present (historical names often embed it).
+    if stripped.startswith(f"{domain}_"):
+        stripped = stripped[len(domain) + 1:]
+    # Strip the verb prefix from the start.
     for prefix, v in _VERB_FROM_PREFIX.items():
         if v == verb and stripped.startswith(prefix):
             stripped = stripped[len(prefix):]
@@ -257,8 +265,17 @@ def _scan_tools() -> list[dict]:
         if not root.exists():
             continue
         for py in sorted(root.rglob("*.py")):
-            if "__pycache__" in py.parts or py.name.startswith("test_"):
+            if "__pycache__" in py.parts:
                 continue
+            # Skip test files UNLESS they declare MCP_TOOL (rare, but some
+            # tool files legitimately start with `test_` — e.g. a tool that
+            # emits test scaffolding).
+            if py.name.startswith("test_"):
+                try:
+                    if "MCP_TOOL" not in py.read_text(encoding="utf-8"):
+                        continue
+                except (OSError, UnicodeDecodeError):
+                    continue
             meta = _load_mcp_tool_from_source(py)
             if not meta:
                 continue

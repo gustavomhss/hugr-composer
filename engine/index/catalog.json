@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "476cff5",
-  "generated_at": "2026-04-21T01:51:56+00:00",
+  "kit_commit": "9ac8a0e",
+  "generated_at": "2026-04-21T02:41:54+00:00",
   "verbs": [
     "add",
     "generate",
@@ -84,8 +84,8 @@
   ],
   "tools": [
     {
-      "name": "fastapi_api_add_api_add_api_deprecation",
-      "legacy_name": "fastapi_api_add_api_deprecation",
+      "name": "fastapi_api_add_api_deprecation",
+      "legacy_name": null,
       "verb": "add",
       "domain": "api",
       "synopsis": "Add endpoint lifecycle management with RFC 8594 Sunset headers, usage tracking, and @deprecated deco",
@@ -106,8 +106,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_api_add_api_add_api_versioning",
-      "legacy_name": "fastapi_api_add_api_versioning",
+      "name": "fastapi_api_add_api_versioning",
+      "legacy_name": null,
       "verb": "add",
       "domain": "api",
       "synopsis": "Add URL-based API versioning (/api/v1, /api/v2) with deprecation headers",
@@ -128,8 +128,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_api_add_api_add_batch_endpoint",
-      "legacy_name": "fastapi_api_add_batch_endpoint",
+      "name": "fastapi_api_add_batch_endpoint",
+      "legacy_name": null,
       "verb": "add",
       "domain": "api",
       "synopsis": "Add a generic batch request endpoint that fans out to multiple sub-requests",
@@ -150,8 +150,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_api_add_api_add_cqrs",
-      "legacy_name": "fastapi_api_add_cqrs",
+      "name": "fastapi_api_add_cqrs",
+      "legacy_name": null,
       "verb": "add",
       "domain": "api",
       "synopsis": "Add a production-grade CQRS layer with CommandBus, QueryBus, read-replica session routing, and HTTP ",
@@ -172,8 +172,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_api_add_api_add_graphql",
-      "legacy_name": "fastapi_api_add_graphql",
+      "name": "fastapi_api_add_graphql",
+      "legacy_name": null,
       "verb": "add",
       "domain": "api",
       "synopsis": "Add GraphQL endpoint (Strawberry) alongside the existing REST API",
@@ -194,8 +194,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_api_add_api_add_graphql_subscriptions",
-      "legacy_name": "fastapi_api_add_graphql_subscriptions",
+      "name": "fastapi_api_add_graphql_subscriptions",
+      "legacy_name": null,
       "verb": "add",
       "domain": "api",
       "synopsis": "Add WebSocket GraphQL subscriptions (graphql-ws protocol) to a FastAPI project, extending the existi",
@@ -216,8 +216,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_api_add_api_add_long_running_task",
-      "legacy_name": "fastapi_api_add_long_running_task",
+      "name": "fastapi_api_add_long_running_task",
+      "legacy_name": null,
       "verb": "add",
       "domain": "api",
       "synopsis": "Copy WorkflowRun + DurableTimer primitives + FastAPI WorkflowAdapter into the project and wire a \u226420",
@@ -236,7 +236,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_api_analyze_api_generate_crud_routes",
+      "name": "fastapi_api_analyze_generate_crud_routes",
       "legacy_name": "fastapi_api_generate_crud_routes",
       "verb": "analyze",
       "domain": "api",
@@ -256,7 +256,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_api_analyze_api_generate_errors",
+      "name": "fastapi_api_analyze_generate_errors",
       "legacy_name": "fastapi_api_generate_errors",
       "verb": "analyze",
       "domain": "api",
@@ -274,7 +274,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_api_analyze_api_generate_health",
+      "name": "fastapi_api_analyze_generate_health",
       "legacy_name": "fastapi_api_generate_health",
       "verb": "analyze",
       "domain": "api",
@@ -292,7 +292,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_api_analyze_api_generate_schemas",
+      "name": "fastapi_api_analyze_generate_schemas",
       "legacy_name": "fastapi_api_generate_schemas",
       "verb": "analyze",
       "domain": "api",
@@ -310,7 +310,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_api_analyze_api_generate_user_routes",
+      "name": "fastapi_api_analyze_generate_user_routes",
       "legacy_name": "fastapi_api_generate_user_routes",
       "verb": "analyze",
       "domain": "api",
@@ -328,8 +328,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_auth_add_auth_add_api_key_auth",
-      "legacy_name": "fastapi_auth_add_api_key_auth",
+      "name": "fastapi_auth_add_api_key_auth",
+      "legacy_name": null,
       "verb": "add",
       "domain": "auth",
       "synopsis": "Add API key authentication alongside the existing JWT auth",
@@ -348,8 +348,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_auth_add_auth_add_bola_guard",
-      "legacy_name": "fastapi_auth_add_bola_guard",
+      "name": "fastapi_auth_add_bola_guard",
+      "legacy_name": null,
       "verb": "add",
       "domain": "auth",
       "synopsis": "Add object-level authorization (BOLA/IDOR protection) with ownership verification, multi-tenant isol",
@@ -368,8 +368,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_auth_add_auth_add_cedar_policies",
-      "legacy_name": "fastapi_auth_add_cedar_policies",
+      "name": "fastapi_auth_add_cedar_policies",
+      "legacy_name": null,
       "verb": "add",
       "domain": "auth",
       "synopsis": "Add AWS Cedar policy-as-code ABAC authorization to a FastAPI project. Generates CedarEngine, middlew",
@@ -390,8 +390,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_auth_add_auth_add_dpop_tokens",
-      "legacy_name": "fastapi_auth_add_dpop_tokens",
+      "name": "fastapi_auth_add_dpop_tokens",
+      "legacy_name": null,
       "verb": "add",
       "domain": "auth",
       "synopsis": "Add RFC 9449 DPoP (Demonstrating Proof of Possession) with proof verification middleware, server-sid",
@@ -410,8 +410,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_auth_add_auth_add_feature_flags",
-      "legacy_name": "fastapi_auth_add_feature_flags",
+      "name": "fastapi_auth_add_feature_flags",
+      "legacy_name": null,
       "verb": "add",
       "domain": "auth",
       "synopsis": "Add feature flag system with per-user, per-tenant, and global toggles",
@@ -430,8 +430,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_auth_add_auth_add_feature_toggles_api",
-      "legacy_name": "fastapi_auth_add_feature_toggles_api",
+      "name": "fastapi_auth_add_feature_toggles_api",
+      "legacy_name": null,
       "verb": "add",
       "domain": "auth",
       "synopsis": "Copy FeatureToggle primitive + FastAPI adapter into the project and wire a \u226420-line app/feature_togg",
@@ -450,8 +450,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_auth_add_auth_add_mfa",
-      "legacy_name": "fastapi_auth_add_mfa",
+      "name": "fastapi_auth_add_mfa",
+      "legacy_name": null,
       "verb": "add",
       "domain": "auth",
       "synopsis": "Copy TotpVerifier primitive + FastAPI adapter into the project and wire a \u226420-line app/mfa.py caller",
@@ -472,8 +472,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_auth_add_auth_add_multi_tenancy",
-      "legacy_name": "fastapi_auth_add_multi_tenancy",
+      "name": "fastapi_auth_add_multi_tenancy",
+      "legacy_name": null,
       "verb": "add",
       "domain": "auth",
       "synopsis": "Add multi-tenancy support with schema-per-tenant or row-level isolation",
@@ -492,8 +492,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_auth_add_auth_add_oauth2_provider",
-      "legacy_name": "fastapi_auth_add_oauth2_provider",
+      "name": "fastapi_auth_add_oauth2_provider",
+      "legacy_name": null,
       "verb": "add",
       "domain": "auth",
       "synopsis": "Copy TokenIntrospector + SessionStore primitives + FastAPI adapter into the project and wire a \u226420-l",
@@ -514,8 +514,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_auth_add_auth_add_opa_integration",
-      "legacy_name": "fastapi_auth_add_opa_integration",
+      "name": "fastapi_auth_add_opa_integration",
+      "legacy_name": null,
       "verb": "add",
       "domain": "auth",
       "synopsis": "Add Open Policy Agent (OPA) integration with circuit breaker, middleware, example Rego policies, and",
@@ -534,8 +534,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_auth_add_auth_add_passkey_auth",
-      "legacy_name": "fastapi_auth_add_passkey_auth",
+      "name": "fastapi_auth_add_passkey_auth",
+      "legacy_name": null,
       "verb": "add",
       "domain": "auth",
       "synopsis": "Add WebAuthn/FIDO2 passwordless passkey authentication to a FastAPI project",
@@ -554,8 +554,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_auth_add_auth_add_rbac",
-      "legacy_name": "fastapi_auth_add_rbac",
+      "name": "fastapi_auth_add_rbac",
+      "legacy_name": null,
       "verb": "add",
       "domain": "auth",
       "synopsis": "Copy RequestGuard + CurrentPrincipal primitives + FastAPI adapter into the project and wire a \u226420-li",
@@ -576,8 +576,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_auth_add_auth_add_request_signing",
-      "legacy_name": "fastapi_auth_add_request_signing",
+      "name": "fastapi_auth_add_request_signing",
+      "legacy_name": null,
       "verb": "add",
       "domain": "auth",
       "synopsis": "Add HMAC request signing (Stripe/AWS Sig V4 pattern) with canonical string construction, timestamp w",
@@ -596,8 +596,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_auth_add_auth_add_sms_otp",
-      "legacy_name": "fastapi_auth_add_sms_otp",
+      "name": "fastapi_auth_add_sms_otp",
+      "legacy_name": null,
       "verb": "add",
       "domain": "auth",
       "synopsis": "Add SMS OTP authentication via Twilio/Vonage with rate limiting to a FastAPI project",
@@ -616,8 +616,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_auth_add_auth_add_social_login",
-      "legacy_name": "fastapi_auth_add_social_login",
+      "name": "fastapi_auth_add_social_login",
+      "legacy_name": null,
       "verb": "add",
       "domain": "auth",
       "synopsis": "Add Google/GitHub/Apple OAuth2 social login with account linking to a FastAPI project",
@@ -638,7 +638,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_auth_analyze_auth_generate_auth",
+      "name": "fastapi_auth_analyze_generate_auth",
       "legacy_name": "fastapi_auth_generate_auth",
       "verb": "analyze",
       "domain": "auth",
@@ -656,8 +656,28 @@
       "example_output": null
     },
     {
-      "name": "fastapi_compliance_analyze_compliance_analyze_dependency_audit",
-      "legacy_name": "fastapi_compliance_analyze_dependency_audit",
+      "name": "fastapi_compliance_analyze_audit_tool",
+      "legacy_name": "fastapi_audit_tool",
+      "verb": "analyze",
+      "domain": "compliance",
+      "synopsis": "Run 20 automated quality checks on any SKILL-001 adapt tool",
+      "when_to_call": "Run 20 automated quality checks on any SKILL-001 adapt tool.",
+      "when_not_to_call": "",
+      "tags": [
+        "audit"
+      ],
+      "tier": 2,
+      "status": "stable",
+      "since": "",
+      "module_path": "meta/audit_tool.py",
+      "test_paths": [],
+      "primitives_used": [],
+      "example_input": null,
+      "example_output": null
+    },
+    {
+      "name": "fastapi_compliance_analyze_dependency_audit",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "compliance",
       "synopsis": "Audit Python dependencies for vulnerabilities and outdated packages",
@@ -678,8 +698,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_add_data_add_audit_log",
-      "legacy_name": "fastapi_data_add_audit_log",
+      "name": "fastapi_data_add_audit_log",
+      "legacy_name": null,
       "verb": "add",
       "domain": "data",
       "synopsis": "Copy AuditEvent + TamperEvidentAuditLog primitives and the AuditLogAdapter into the project, then wi",
@@ -700,8 +720,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_add_data_add_bulk_operations",
-      "legacy_name": "fastapi_data_add_bulk_operations",
+      "name": "fastapi_data_add_bulk_operations",
+      "legacy_name": null,
       "verb": "add",
       "domain": "data",
       "synopsis": "Add bulk create/update/delete endpoints for all models",
@@ -720,8 +740,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_add_data_add_cursor_pagination",
-      "legacy_name": "fastapi_data_add_cursor_pagination",
+      "name": "fastapi_data_add_cursor_pagination",
+      "legacy_name": null,
       "verb": "add",
       "domain": "data",
       "synopsis": "Replace offset pagination with cursor-based pagination across all list endpoints",
@@ -742,8 +762,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_add_data_add_data_export",
-      "legacy_name": "fastapi_data_add_data_export",
+      "name": "fastapi_data_add_data_export",
+      "legacy_name": null,
       "verb": "add",
       "domain": "data",
       "synopsis": "Add CSV/XLSX data export endpoints for all major resources",
@@ -762,8 +782,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_add_data_add_data_import",
-      "legacy_name": "fastapi_data_add_data_import",
+      "name": "fastapi_data_add_data_import",
+      "legacy_name": null,
       "verb": "add",
       "domain": "data",
       "synopsis": "Add CSV/Excel upload with async processing, validation and error reporting",
@@ -782,8 +802,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_add_data_add_data_versioning",
-      "legacy_name": "fastapi_data_add_data_versioning",
+      "name": "fastapi_data_add_data_versioning",
+      "legacy_name": null,
       "verb": "add",
       "domain": "data",
       "synopsis": "Add draft/published/archived lifecycle with diff to any content type",
@@ -804,8 +824,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_add_data_add_event_driven",
-      "legacy_name": "fastapi_data_add_event_driven",
+      "name": "fastapi_data_add_event_driven",
+      "legacy_name": null,
       "verb": "add",
       "domain": "data",
       "synopsis": "Add event-driven architecture with domain events and async handlers",
@@ -824,8 +844,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_add_data_add_event_sourcing",
-      "legacy_name": "fastapi_data_add_event_sourcing",
+      "name": "fastapi_data_add_event_sourcing",
+      "legacy_name": null,
       "verb": "add",
       "domain": "data",
       "synopsis": "Copy EventSourcedStore + DomainEvent primitives and the EventSourcedStoreAdapter into the project, t",
@@ -847,8 +867,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_add_data_add_file_upload",
-      "legacy_name": "fastapi_data_add_file_upload",
+      "name": "fastapi_data_add_file_upload",
+      "legacy_name": null,
       "verb": "add",
       "domain": "data",
       "synopsis": "Add file upload support (multipart/form-data) with S3-compatible storage backend",
@@ -867,8 +887,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_add_data_add_outbox_pattern",
-      "legacy_name": "fastapi_data_add_outbox_pattern",
+      "name": "fastapi_data_add_outbox_pattern",
+      "legacy_name": null,
       "verb": "add",
       "domain": "data",
       "synopsis": "Add transactional outbox pattern for reliable event publishing",
@@ -889,8 +909,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_add_data_add_saga",
-      "legacy_name": "fastapi_data_add_saga",
+      "name": "fastapi_data_add_saga",
+      "legacy_name": null,
       "verb": "add",
       "domain": "data",
       "synopsis": "Copy SagaOrchestrator primitive + SagaAdapter into the project and wire a \u226420-line app/saga.py calle",
@@ -909,8 +929,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_add_data_add_search",
-      "legacy_name": "fastapi_data_add_search",
+      "name": "fastapi_data_add_search",
+      "legacy_name": null,
       "verb": "add",
       "domain": "data",
       "synopsis": "Add full-text search endpoints backed by PostgreSQL tsvector or Elasticsearch",
@@ -929,8 +949,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_add_data_add_soft_delete",
-      "legacy_name": "fastapi_data_add_soft_delete",
+      "name": "fastapi_data_add_soft_delete",
+      "legacy_name": null,
       "verb": "add",
       "domain": "data",
       "synopsis": "Copy UnitOfWork primitive + FastAPI adapter into the project and wire a \u226420-line app/soft_delete.py ",
@@ -951,7 +971,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_analyze_data_generate_alembic",
+      "name": "fastapi_data_analyze_generate_alembic",
       "legacy_name": "fastapi_data_generate_alembic",
       "verb": "analyze",
       "domain": "data",
@@ -969,7 +989,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_analyze_data_generate_crud",
+      "name": "fastapi_data_analyze_generate_crud",
       "legacy_name": "fastapi_data_generate_crud",
       "verb": "analyze",
       "domain": "data",
@@ -989,7 +1009,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_analyze_data_generate_engine",
+      "name": "fastapi_data_analyze_generate_engine",
       "legacy_name": "fastapi_data_generate_engine",
       "verb": "analyze",
       "domain": "data",
@@ -1007,7 +1027,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_analyze_data_generate_model",
+      "name": "fastapi_data_analyze_generate_model",
       "legacy_name": "fastapi_data_generate_model",
       "verb": "analyze",
       "domain": "data",
@@ -1025,7 +1045,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_analyze_data_generate_rls",
+      "name": "fastapi_data_analyze_generate_rls",
       "legacy_name": "fastapi_data_generate_rls",
       "verb": "analyze",
       "domain": "data",
@@ -1043,7 +1063,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_data_analyze_data_generate_session",
+      "name": "fastapi_data_analyze_generate_session",
       "legacy_name": "fastapi_data_generate_session",
       "verb": "analyze",
       "domain": "data",
@@ -1063,8 +1083,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_deployment_add_deployment_add_docker_production",
-      "legacy_name": "fastapi_deployment_add_docker_production",
+      "name": "fastapi_deployment_add_docker_production",
+      "legacy_name": null,
       "verb": "add",
       "domain": "deployment",
       "synopsis": "Add a multi-stage production Dockerfile, .dockerignore, docker-compose.prod.yml, and docker-entrypoi",
@@ -1085,8 +1105,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_deployment_add_deployment_add_request_tracing_ui",
-      "legacy_name": "fastapi_deployment_add_request_tracing_ui",
+      "name": "fastapi_deployment_add_request_tracing_ui",
+      "legacy_name": null,
       "verb": "add",
       "domain": "deployment",
       "synopsis": "Add an embedded request tracing dashboard: TracingBuffer ring buffer (last 1000 requests), TimingCol",
@@ -1108,7 +1128,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_deployment_analyze_deployment_generate_app",
+      "name": "fastapi_deployment_analyze_generate_app",
       "legacy_name": "fastapi_deployment_generate_app",
       "verb": "analyze",
       "domain": "deployment",
@@ -1126,7 +1146,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_deployment_analyze_deployment_generate_ci",
+      "name": "fastapi_deployment_analyze_generate_ci",
       "legacy_name": "fastapi_deployment_generate_ci",
       "verb": "analyze",
       "domain": "deployment",
@@ -1146,7 +1166,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_deployment_analyze_deployment_generate_config",
+      "name": "fastapi_deployment_analyze_generate_config",
       "legacy_name": "fastapi_deployment_generate_config",
       "verb": "analyze",
       "domain": "deployment",
@@ -1164,7 +1184,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_deployment_analyze_deployment_generate_docker_compose",
+      "name": "fastapi_deployment_analyze_generate_docker_compose",
       "legacy_name": "fastapi_deployment_generate_docker_compose",
       "verb": "analyze",
       "domain": "deployment",
@@ -1185,7 +1205,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_deployment_analyze_deployment_generate_dockerfile",
+      "name": "fastapi_deployment_analyze_generate_dockerfile",
       "legacy_name": "fastapi_deployment_generate_dockerfile",
       "verb": "analyze",
       "domain": "deployment",
@@ -1205,7 +1225,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_deployment_analyze_deployment_generate_dockerfile_lint_config",
+      "name": "fastapi_deployment_analyze_generate_dockerfile_lint_config",
       "legacy_name": "fastapi_deployment_generate_dockerfile_lint_config",
       "verb": "analyze",
       "domain": "deployment",
@@ -1225,7 +1245,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_deployment_analyze_deployment_generate_email",
+      "name": "fastapi_deployment_analyze_generate_email",
       "legacy_name": "fastapi_deployment_generate_email",
       "verb": "analyze",
       "domain": "deployment",
@@ -1243,7 +1263,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_deployment_analyze_deployment_generate_env_example",
+      "name": "fastapi_deployment_analyze_generate_env_example",
       "legacy_name": "fastapi_deployment_generate_env_example",
       "verb": "analyze",
       "domain": "deployment",
@@ -1261,7 +1281,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_deployment_analyze_deployment_generate_gitignore",
+      "name": "fastapi_deployment_analyze_generate_gitignore",
       "legacy_name": "fastapi_deployment_generate_gitignore",
       "verb": "analyze",
       "domain": "deployment",
@@ -1279,7 +1299,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_deployment_analyze_deployment_generate_initial_data",
+      "name": "fastapi_deployment_analyze_generate_initial_data",
       "legacy_name": "fastapi_deployment_generate_initial_data",
       "verb": "analyze",
       "domain": "deployment",
@@ -1297,7 +1317,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_deployment_analyze_deployment_generate_k8s",
+      "name": "fastapi_deployment_analyze_generate_k8s",
       "legacy_name": "fastapi_deployment_generate_k8s",
       "verb": "analyze",
       "domain": "deployment",
@@ -1315,7 +1335,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_deployment_analyze_deployment_generate_loadtest",
+      "name": "fastapi_deployment_analyze_generate_loadtest",
       "legacy_name": "fastapi_deployment_generate_loadtest",
       "verb": "analyze",
       "domain": "deployment",
@@ -1333,7 +1353,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_deployment_analyze_deployment_generate_precommit",
+      "name": "fastapi_deployment_analyze_generate_precommit",
       "legacy_name": "fastapi_deployment_generate_precommit",
       "verb": "analyze",
       "domain": "deployment",
@@ -1351,7 +1371,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_deployment_analyze_deployment_generate_prestart",
+      "name": "fastapi_deployment_analyze_generate_prestart",
       "legacy_name": "fastapi_deployment_generate_prestart",
       "verb": "analyze",
       "domain": "deployment",
@@ -1371,7 +1391,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_deployment_analyze_deployment_generate_readme",
+      "name": "fastapi_deployment_analyze_generate_readme",
       "legacy_name": "fastapi_deployment_generate_readme",
       "verb": "analyze",
       "domain": "deployment",
@@ -1389,8 +1409,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_meta_add_meta_add_background_job",
-      "legacy_name": "fastapi_meta_add_background_job",
+      "name": "fastapi_meta_add_background_job",
+      "legacy_name": null,
       "verb": "add",
       "domain": "meta",
       "synopsis": "Add a background job using ARQ (async Redis queue)",
@@ -1407,8 +1427,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_meta_add_meta_add_endpoint",
-      "legacy_name": "fastapi_meta_add_endpoint",
+      "name": "fastapi_meta_add_endpoint",
+      "legacy_name": null,
       "verb": "add",
       "domain": "meta",
       "synopsis": "Add a custom endpoint to an existing route file",
@@ -1425,8 +1445,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_meta_add_meta_add_integration",
-      "legacy_name": "fastapi_meta_add_integration",
+      "name": "fastapi_meta_add_integration",
+      "legacy_name": null,
       "verb": "add",
       "domain": "meta",
       "synopsis": "Add external service integration (Stripe, S3, SendGrid, Redis cache)",
@@ -1443,8 +1463,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_meta_add_meta_add_middleware",
-      "legacy_name": "fastapi_meta_add_middleware",
+      "name": "fastapi_meta_add_middleware",
+      "legacy_name": null,
       "verb": "add",
       "domain": "meta",
       "synopsis": "Add custom middleware to the stack at the correct position",
@@ -1461,8 +1481,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_meta_add_meta_add_model",
-      "legacy_name": "fastapi_meta_add_model",
+      "name": "fastapi_meta_add_model",
+      "legacy_name": null,
       "verb": "add",
       "domain": "meta",
       "synopsis": "Add a complete model to an EXISTING project",
@@ -1479,8 +1499,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_meta_add_meta_add_websocket",
-      "legacy_name": "fastapi_meta_add_websocket",
+      "name": "fastapi_meta_add_websocket",
+      "legacy_name": null,
       "verb": "add",
       "domain": "meta",
       "synopsis": "Add a WebSocket endpoint with connection manager, rooms, heartbeat, and optional JWT auth",
@@ -1499,8 +1519,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_meta_analyze_meta_analyze_db_bloat",
-      "legacy_name": "fastapi_meta_analyze_db_bloat",
+      "name": "fastapi_meta_analyze_db_bloat",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "meta",
       "synopsis": "Check table bloat -- identifies tables that need VACUUM",
@@ -1517,8 +1537,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_meta_analyze_meta_analyze_db_explain",
-      "legacy_name": "fastapi_meta_analyze_db_explain",
+      "name": "fastapi_meta_analyze_db_explain",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "meta",
       "synopsis": "Run EXPLAIN ANALYZE on a query and interpret the execution plan",
@@ -1535,8 +1555,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_meta_analyze_meta_analyze_db_slow_queries",
-      "legacy_name": "fastapi_meta_analyze_db_slow_queries",
+      "name": "fastapi_meta_analyze_db_slow_queries",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "meta",
       "synopsis": "Find slow queries from pg_stat_statements. Requires pg_stat_statements extension",
@@ -1553,8 +1573,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_meta_analyze_meta_analyze_db_suggest_indexes",
-      "legacy_name": "fastapi_meta_analyze_db_suggest_indexes",
+      "name": "fastapi_meta_analyze_db_suggest_indexes",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "meta",
       "synopsis": "Suggest missing indexes based on sequential scan patterns",
@@ -1571,8 +1591,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_meta_analyze_meta_analyze_fix_findings",
-      "legacy_name": "fastapi_meta_analyze_fix_findings",
+      "name": "fastapi_meta_analyze_fix_findings",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "meta",
       "synopsis": "Auto-fix production readiness findings in an existing project",
@@ -1589,8 +1609,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_meta_analyze_meta_analyze_migrate_db",
-      "legacy_name": "fastapi_meta_analyze_migrate_db",
+      "name": "fastapi_meta_analyze_migrate_db",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "meta",
       "synopsis": "Generate Alembic migration script and helper commands",
@@ -1607,8 +1627,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_meta_analyze_meta_analyze_pentest",
-      "legacy_name": "fastapi_meta_analyze_pentest",
+      "name": "fastapi_meta_analyze_pentest",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "meta",
       "synopsis": "Run security penetration tests against a running FastAPI instance",
@@ -1625,8 +1645,62 @@
       "example_output": null
     },
     {
-      "name": "fastapi_meta_generate_meta_generate_db_module",
-      "legacy_name": "fastapi_meta_generate_db_module",
+      "name": "fastapi_meta_analyze_project_v2",
+      "legacy_name": "fastapi_analyze_project_v2",
+      "verb": "analyze",
+      "domain": "meta",
+      "synopsis": "[Legacy v2] AST-based analysis of 8 core patterns. Use fastapi_analyze for the 35-check v3 audit",
+      "when_to_call": "[Legacy v2] AST-based analysis of 8 core patterns. Use fastapi_analyze for the 35-check v3 audit.",
+      "when_not_to_call": "",
+      "tags": [],
+      "tier": 1,
+      "status": "stable",
+      "since": "",
+      "module_path": "core/tools/analyze.py",
+      "test_paths": [],
+      "primitives_used": [],
+      "example_input": null,
+      "example_output": null
+    },
+    {
+      "name": "fastapi_meta_check_headers",
+      "legacy_name": "fastapi_check_headers",
+      "verb": "check",
+      "domain": "meta",
+      "synopsis": "Check security headers and CORS of a running instance",
+      "when_to_call": "Check security headers and CORS of a running instance.",
+      "when_not_to_call": "",
+      "tags": [],
+      "tier": 1,
+      "status": "stable",
+      "since": "",
+      "module_path": "core/tools/mcp_check_headers.py",
+      "test_paths": [],
+      "primitives_used": [],
+      "example_input": null,
+      "example_output": null
+    },
+    {
+      "name": "fastapi_meta_check_health",
+      "legacy_name": "fastapi_check_health",
+      "verb": "check",
+      "domain": "meta",
+      "synopsis": "Check 3-level health endpoints (/healthz, /readyz, /startupz) of a running instance",
+      "when_to_call": "Check 3-level health endpoints (/healthz, /readyz, /startupz) of a running instance.",
+      "when_not_to_call": "",
+      "tags": [],
+      "tier": 1,
+      "status": "stable",
+      "since": "",
+      "module_path": "core/tools/runtime.py",
+      "test_paths": [],
+      "primitives_used": [],
+      "example_input": null,
+      "example_output": null
+    },
+    {
+      "name": "fastapi_meta_generate_db_module",
+      "legacy_name": null,
       "verb": "generate",
       "domain": "meta",
       "synopsis": "Scaffold the full database module (models, session, migrations, optional RLS) for a new project",
@@ -1643,8 +1717,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_meta_generate_meta_generate_security_middleware",
-      "legacy_name": "fastapi_meta_generate_security_middleware",
+      "name": "fastapi_meta_generate_security_middleware",
+      "legacy_name": null,
       "verb": "generate",
       "domain": "meta",
       "synopsis": "Scaffold the full security middleware stack (CSP, CSRF, rate limiting, headers) for a new project",
@@ -1661,8 +1735,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_meta_operate_meta_operate_db_health",
-      "legacy_name": "fastapi_meta_operate_db_health",
+      "name": "fastapi_meta_operate_db_health",
+      "legacy_name": null,
       "verb": "operate",
       "domain": "meta",
       "synopsis": "Check PostgreSQL connection pool health: active/idle/waiting connections, pool utilization",
@@ -1679,8 +1753,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_observability_add_observability_add_opentelemetry",
-      "legacy_name": "fastapi_observability_add_opentelemetry",
+      "name": "fastapi_observability_add_opentelemetry",
+      "legacy_name": null,
       "verb": "add",
       "domain": "observability",
       "synopsis": "Add OpenTelemetry traces, metrics, and logs with lazy SDK imports, OTELMiddleware for request tracin",
@@ -1699,8 +1773,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_observability_add_observability_add_prometheus_metrics",
-      "legacy_name": "fastapi_observability_add_prometheus_metrics",
+      "name": "fastapi_observability_add_prometheus_metrics",
+      "legacy_name": null,
       "verb": "add",
       "domain": "observability",
       "synopsis": "Add Prometheus RED metrics (request_total, request_duration_seconds, request_errors_total) with lazy",
@@ -1722,8 +1796,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_observability_add_observability_add_structured_logging",
-      "legacy_name": "fastapi_observability_add_structured_logging",
+      "name": "fastapi_observability_add_structured_logging",
+      "legacy_name": null,
       "verb": "add",
       "domain": "observability",
       "synopsis": "Upgrade to structlog with JSON renderer, correlation ID binding, per-request context, and PII redact",
@@ -1744,8 +1818,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_observability_analyze_observability_analyze_api_changelog",
-      "legacy_name": "fastapi_observability_analyze_api_changelog",
+      "name": "fastapi_observability_analyze_api_changelog",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "observability",
       "synopsis": "Generate a human-readable API changelog by diffing OpenAPI specs across git history",
@@ -1764,7 +1838,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_observability_analyze_observability_generate_alerting",
+      "name": "fastapi_observability_analyze_generate_alerting",
       "legacy_name": "fastapi_observability_generate_alerting",
       "verb": "analyze",
       "domain": "observability",
@@ -1782,7 +1856,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_observability_analyze_observability_generate_otel",
+      "name": "fastapi_observability_analyze_generate_otel",
       "legacy_name": "fastapi_observability_generate_otel",
       "verb": "analyze",
       "domain": "observability",
@@ -1802,7 +1876,7 @@
       "example_output": null
     },
     {
-      "name": "fastapi_observability_analyze_observability_generate_prometheus",
+      "name": "fastapi_observability_analyze_generate_prometheus",
       "legacy_name": "fastapi_observability_generate_prometheus",
       "verb": "analyze",
       "domain": "observability",
@@ -1822,8 +1896,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_realtime_add_realtime_add_sse",
-      "legacy_name": "fastapi_realtime_add_sse",
+      "name": "fastapi_realtime_add_sse",
+      "legacy_name": null,
       "verb": "add",
       "domain": "realtime",
       "synopsis": "Add Server-Sent Events (SSE) endpoints for real-time push to browser clients",
@@ -1844,8 +1918,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_realtime_add_realtime_add_webhook_receiver",
-      "legacy_name": "fastapi_realtime_add_webhook_receiver",
+      "name": "fastapi_realtime_add_webhook_receiver",
+      "legacy_name": null,
       "verb": "add",
       "domain": "realtime",
       "synopsis": "Copy SignatureVerifier+IdempotentConsumer+AuditEvent primitives and the WebhookReceiverAdapter into ",
@@ -1866,8 +1940,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_realtime_add_realtime_add_webhook_sender",
-      "legacy_name": "fastapi_realtime_add_webhook_sender",
+      "name": "fastapi_realtime_add_webhook_sender",
+      "legacy_name": null,
       "verb": "add",
       "domain": "realtime",
       "synopsis": "Add outbound webhook delivery system with retry, signature, and delivery log",
@@ -1888,8 +1962,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_realtime_add_realtime_add_websocket_chat",
-      "legacy_name": "fastapi_realtime_add_websocket_chat",
+      "name": "fastapi_realtime_add_websocket_chat",
+      "legacy_name": null,
       "verb": "add",
       "domain": "realtime",
       "synopsis": "Add production-grade WebSocket chat with JWT auth, Redis pub/sub, rooms, and message history",
@@ -1910,8 +1984,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_realtime_add_realtime_add_websocket_presence",
-      "legacy_name": "fastapi_realtime_add_websocket_presence",
+      "name": "fastapi_realtime_add_websocket_presence",
+      "legacy_name": null,
       "verb": "add",
       "domain": "realtime",
       "synopsis": "Add production-grade WebSocket presence tracking with JWT auth, Redis pub/sub, heartbeat TTL, multi-",
@@ -1933,8 +2007,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_adaptive_throttle",
-      "legacy_name": "fastapi_resiliency_add_adaptive_throttle",
+      "name": "fastapi_resiliency_add_adaptive_throttle",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add multi-dimensional adaptive rate limiting: cost-based quota, behavioral fingerprinting, adaptive ",
@@ -1953,8 +2027,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_adaptive_timeouts",
-      "legacy_name": "fastapi_resiliency_add_adaptive_timeouts",
+      "name": "fastapi_resiliency_add_adaptive_timeouts",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add self-adjusting timeouts that learn from observed downstream latency, auto-calibrating to p99 * 1",
@@ -1973,8 +2047,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_anomaly_detector",
-      "legacy_name": "fastapi_resiliency_add_anomaly_detector",
+      "name": "fastapi_resiliency_add_anomaly_detector",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add statistical anomaly detection: Z-score + EMA on sliding windows for request rate, error rate, la",
@@ -1993,8 +2067,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_api_monetization",
-      "legacy_name": "fastapi_resiliency_add_api_monetization",
+      "name": "fastapi_resiliency_add_api_monetization",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add usage-metered billing with Stripe Billing Meters v2: MeteringMiddleware, metering rules DSL, Str",
@@ -2013,8 +2087,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_api_replay_debugger",
-      "legacy_name": "fastapi_resiliency_add_api_replay_debugger",
+      "name": "fastapi_resiliency_add_api_replay_debugger",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add time-travel API replay debugger: Redis ring buffer captures full req/resp, replayer re-executes ",
@@ -2033,8 +2107,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_arq_worker",
-      "legacy_name": "fastapi_resiliency_add_arq_worker",
+      "name": "fastapi_resiliency_add_arq_worker",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add an arq (Redis-backed async) job queue with worker, task registry, and HTTP status routes",
@@ -2053,8 +2127,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_bulkhead_isolation",
-      "legacy_name": "fastapi_resiliency_add_bulkhead_isolation",
+      "name": "fastapi_resiliency_add_bulkhead_isolation",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add bulkhead isolation with separate semaphore pools per endpoint group, preventing one slow endpoin",
@@ -2075,8 +2149,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_cache_layer",
-      "legacy_name": "fastapi_resiliency_add_cache_layer",
+      "name": "fastapi_resiliency_add_cache_layer",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add Redis caching layer with decorator, invalidation strategy, and TTL management",
@@ -2095,8 +2169,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_canary_tokens",
-      "legacy_name": "fastapi_resiliency_add_canary_tokens",
+      "name": "fastapi_resiliency_add_canary_tokens",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add canary token infrastructure: honeypot endpoints, fake credentials, and decoy DB records that ale",
@@ -2115,8 +2189,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_celery_beat",
-      "legacy_name": "fastapi_resiliency_add_celery_beat",
+      "name": "fastapi_resiliency_add_celery_beat",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add Celery Beat scheduled tasks to a FastAPI project: celery app factory, task registry, beat schedu",
@@ -2135,8 +2209,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_circuit_breaker",
-      "legacy_name": "fastapi_resiliency_add_circuit_breaker",
+      "name": "fastapi_resiliency_add_circuit_breaker",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Copy CircuitBreaker primitive + FastAPI adapter into the project and wire a \u226420-line app/circuit_bre",
@@ -2158,8 +2232,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_compliance_engine",
-      "legacy_name": "fastapi_resiliency_add_compliance_engine",
+      "name": "fastapi_resiliency_add_compliance_engine",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add declarative data-governance at ORM level: PII detection, retention enforcer, right-to-erasure en",
@@ -2178,8 +2252,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_cors_config",
-      "legacy_name": "fastapi_resiliency_add_cors_config",
+      "name": "fastapi_resiliency_add_cors_config",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Upgrade CORS middleware with env-var configurable origins, wildcard warnings, preflight cache, and a",
@@ -2198,8 +2272,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_cost_tracker",
-      "legacy_name": "fastapi_resiliency_add_cost_tracker",
+      "name": "fastapi_resiliency_add_cost_tracker",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Copy CostTracker primitive + FastAPI adapter into the project and wire a \u226420-line app/cost_tracker.p",
@@ -2218,8 +2292,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_csrf_protection",
-      "legacy_name": "fastapi_resiliency_add_csrf_protection",
+      "name": "fastapi_resiliency_add_csrf_protection",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add CSRF token protection with double-submit cookie pattern to FastAPI",
@@ -2238,8 +2312,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_dependency_health_map",
-      "legacy_name": "fastapi_resiliency_add_dependency_health_map",
+      "name": "fastapi_resiliency_add_dependency_health_map",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add a visual dependency health map: HealthMapBuilder discovers all deps from config (DB, Redis, S3, ",
@@ -2258,8 +2332,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_dlp_shield",
-      "legacy_name": "fastapi_resiliency_add_dlp_shield",
+      "name": "fastapi_resiliency_add_dlp_shield",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add DLP (Data Loss Prevention) response middleware with regex PII/PHI/PCI detection, decorator-based",
@@ -2278,8 +2352,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_email_templates",
-      "legacy_name": "fastapi_resiliency_add_email_templates",
+      "name": "fastapi_resiliency_add_email_templates",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add a production-grade transactional email layer with Jinja2 templates, pluggable providers (Resend/",
@@ -2298,8 +2372,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_excel_export",
-      "legacy_name": "fastapi_resiliency_add_excel_export",
+      "name": "fastapi_resiliency_add_excel_export",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add a production-grade Excel export layer with OpenPyXL streaming for large datasets, cell formattin",
@@ -2318,8 +2392,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_graceful_shutdown",
-      "legacy_name": "fastapi_resiliency_add_graceful_shutdown",
+      "name": "fastapi_resiliency_add_graceful_shutdown",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Copy GracefulShutdown primitive + FastAPI adapter into the project and wire a \u226420-line app/shutdown.",
@@ -2340,8 +2414,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_health_deep",
-      "legacy_name": "fastapi_resiliency_add_health_deep",
+      "name": "fastapi_resiliency_add_health_deep",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Upgrade to production-grade deep health checks with HealthRegistry, dependency matrix, per-check lat",
@@ -2360,8 +2434,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_i18n",
-      "legacy_name": "fastapi_resiliency_add_i18n",
+      "name": "fastapi_resiliency_add_i18n",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add internationalization (i18n) support with locale detection and message catalogs",
@@ -2380,8 +2454,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_input_sanitization",
-      "legacy_name": "fastapi_resiliency_add_input_sanitization",
+      "name": "fastapi_resiliency_add_input_sanitization",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add HTML sanitization and XSS prevention middleware to FastAPI",
@@ -2400,8 +2474,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_kubernetes_manifests",
-      "legacy_name": "fastapi_resiliency_add_kubernetes_manifests",
+      "name": "fastapi_resiliency_add_kubernetes_manifests",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Generate production-ready Kubernetes manifests: Deployment, Service, HPA, PDB, ConfigMap, Secret, an",
@@ -2422,8 +2496,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_load_shedding",
-      "legacy_name": "fastapi_resiliency_add_load_shedding",
+      "name": "fastapi_resiliency_add_load_shedding",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Copy LoadShedder primitive + LoadShedderAdapter into the project and wire a \u226420-line app/load_sheddi",
@@ -2444,8 +2518,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_migration_data",
-      "legacy_name": "fastapi_resiliency_add_migration_data",
+      "name": "fastapi_resiliency_add_migration_data",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add data migration support alongside schema migrations in Alembic",
@@ -2464,8 +2538,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_ml_gpu_inference",
-      "legacy_name": "fastapi_resiliency_add_ml_gpu_inference",
+      "name": "fastapi_resiliency_add_ml_gpu_inference",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Upgrade a FastAPI project with GPU-optimised inference: DeviceManager, GPUPredictor (mixed precision",
@@ -2486,8 +2560,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_ml_model_registry",
-      "legacy_name": "fastapi_resiliency_add_ml_model_registry",
+      "name": "fastapi_resiliency_add_ml_model_registry",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add a production-grade ML model registry with versioned artefacts, promote/rollback lifecycle, A/B s",
@@ -2508,8 +2582,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_ml_model_server",
-      "legacy_name": "fastapi_resiliency_add_ml_model_server",
+      "name": "fastapi_resiliency_add_ml_model_server",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add a framework-agnostic ML inference layer with ModelRegistry, Predictor, batch prediction, and hea",
@@ -2530,8 +2604,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_notifications",
-      "legacy_name": "fastapi_resiliency_add_notifications",
+      "name": "fastapi_resiliency_add_notifications",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add a production-grade in-app notification layer with channel dispatch (in_app, push FCM stub, email",
@@ -2550,8 +2624,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_pdf_reports",
-      "legacy_name": "fastapi_resiliency_add_pdf_reports",
+      "name": "fastapi_resiliency_add_pdf_reports",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add a production-grade PDF report generation layer with WeasyPrint lazy import, Jinja2 templates, as",
@@ -2570,8 +2644,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_push_notifications_native",
-      "legacy_name": "fastapi_resiliency_add_push_notifications_native",
+      "name": "fastapi_resiliency_add_push_notifications_native",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add production APNs + FCM push notifications with PushService, DeviceToken model, CRUD helpers, and ",
@@ -2590,8 +2664,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_rate_limiting",
-      "legacy_name": "fastapi_resiliency_add_rate_limiting",
+      "name": "fastapi_resiliency_add_rate_limiting",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Copy RateLimiter primitive + FastAPI adapter into the project and wire a \u226420-line app/rate_limit.py ",
@@ -2612,8 +2686,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_request_fingerprint",
-      "legacy_name": "fastapi_resiliency_add_request_fingerprint",
+      "name": "fastapi_resiliency_add_request_fingerprint",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add automatic request deduplication: SHA-256 fingerprint of user+method+path+body. Returns cached re",
@@ -2632,8 +2706,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_response_armor",
-      "legacy_name": "fastapi_resiliency_add_response_armor",
+      "name": "fastapi_resiliency_add_response_armor",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add five-layer response hardening: error sanitization (generic to client, full to logs), constant-ti",
@@ -2652,8 +2726,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_retry_budget",
-      "legacy_name": "fastapi_resiliency_add_retry_budget",
+      "name": "fastapi_resiliency_add_retry_budget",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Copy RetryPolicy primitive + FastAPI adapter into the project and wire a \u226420-line app/retry.py calle",
@@ -2674,8 +2748,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_runtime_sentinel",
-      "legacy_name": "fastapi_resiliency_add_runtime_sentinel",
+      "name": "fastapi_resiliency_add_runtime_sentinel",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add RASP middleware with SQL/command/SSRF injection detection, attack pattern registry, and learning",
@@ -2694,8 +2768,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_s3_storage",
-      "legacy_name": "fastapi_resiliency_add_s3_storage",
+      "name": "fastapi_resiliency_add_s3_storage",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add production-grade S3/MinIO object storage with presigned URL upload/download, content-type valida",
@@ -2714,8 +2788,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_scheduled_tasks",
-      "legacy_name": "fastapi_resiliency_add_scheduled_tasks",
+      "name": "fastapi_resiliency_add_scheduled_tasks",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add APScheduler-based cron jobs with Redis job store, decorator registry, and FastAPI lifespan integ",
@@ -2734,8 +2808,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_secret_rotation",
-      "legacy_name": "fastapi_resiliency_add_secret_rotation",
+      "name": "fastapi_resiliency_add_secret_rotation",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add a secret manager abstraction (Vault/AWS SM/env), auto-rotation with dual-key windows, log-based ",
@@ -2754,8 +2828,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_sqladmin",
-      "legacy_name": "fastapi_resiliency_add_sqladmin",
+      "name": "fastapi_resiliency_add_sqladmin",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add a production-grade admin panel (SQLAdmin) with superuser-only auth and auto-generated model view",
@@ -2774,8 +2848,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_stripe_checkout",
-      "legacy_name": "fastapi_resiliency_add_stripe_checkout",
+      "name": "fastapi_resiliency_add_stripe_checkout",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add a production-grade Stripe Checkout flow with Payment model, webhook receiver, and idempotent eve",
@@ -2794,8 +2868,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_stripe_refund_flow",
-      "legacy_name": "fastapi_resiliency_add_stripe_refund_flow",
+      "name": "fastapi_resiliency_add_stripe_refund_flow",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add a production-grade Stripe refund flow with Refund model, PII-safe schemas, async CRUD, REST rout",
@@ -2814,8 +2888,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_stripe_subscription",
-      "legacy_name": "fastapi_resiliency_add_stripe_subscription",
+      "name": "fastapi_resiliency_add_stripe_subscription",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add production-grade Stripe subscription billing with Subscription model, webhook receiver, proratio",
@@ -2834,8 +2908,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_temporal_workflow",
-      "legacy_name": "fastapi_resiliency_add_temporal_workflow",
+      "name": "fastapi_resiliency_add_temporal_workflow",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add a Temporal.io durable workflow engine with order-processing example, compensation pattern, signa",
@@ -2856,8 +2930,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_tenant_onboarding",
-      "legacy_name": "fastapi_resiliency_add_tenant_onboarding",
+      "name": "fastapi_resiliency_add_tenant_onboarding",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add wizard orchestrator for tenant onboarding: OnboardingOrchestrator with atomic+compensatable step",
@@ -2876,8 +2950,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_add_resiliency_add_transactional_email",
-      "legacy_name": "fastapi_resiliency_add_transactional_email",
+      "name": "fastapi_resiliency_add_transactional_email",
+      "legacy_name": null,
       "verb": "add",
       "domain": "resiliency",
       "synopsis": "Add Resend/Postmark/SendGrid email adapters with delivery tracking (sent/delivered/bounced/complaine",
@@ -2896,8 +2970,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_analyze_resiliency_analyze_analyze",
-      "legacy_name": "fastapi_resiliency_analyze_analyze",
+      "name": "fastapi_resiliency_analyze_analyze",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "resiliency",
       "synopsis": "Audit a FastAPI project against 35 production-readiness checks",
@@ -2914,8 +2988,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_analyze_resiliency_analyze_api_spec_compliance",
-      "legacy_name": "fastapi_resiliency_analyze_api_spec_compliance",
+      "name": "fastapi_resiliency_analyze_api_spec_compliance",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "resiliency",
       "synopsis": "Check that the running API conforms to its own OpenAPI specification",
@@ -2934,8 +3008,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_analyze_resiliency_analyze_blast_radius",
-      "legacy_name": "fastapi_resiliency_analyze_blast_radius",
+      "name": "fastapi_resiliency_analyze_blast_radius",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "resiliency",
       "synopsis": "Estimate the blast radius of a change by mapping module dependencies",
@@ -2954,8 +3028,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_analyze_resiliency_analyze_connection_pool_monitor",
-      "legacy_name": "fastapi_resiliency_analyze_connection_pool_monitor",
+      "name": "fastapi_resiliency_analyze_connection_pool_monitor",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "resiliency",
       "synopsis": "Monitor SQLAlchemy connection pool utilization and detect pool exhaustion risk",
@@ -2974,8 +3048,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_analyze_resiliency_analyze_dead_code_finder",
-      "legacy_name": "fastapi_resiliency_analyze_dead_code_finder",
+      "name": "fastapi_resiliency_analyze_dead_code_finder",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "resiliency",
       "synopsis": "Find unreachable routes, unused dependencies, and dead models",
@@ -2994,8 +3068,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_analyze_resiliency_analyze_dependency_graph",
-      "legacy_name": "fastapi_resiliency_analyze_dependency_graph",
+      "name": "fastapi_resiliency_analyze_dependency_graph",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "resiliency",
       "synopsis": "Render the FastAPI dependency injection graph as a Mermaid diagram",
@@ -3014,8 +3088,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_analyze_resiliency_analyze_detect_n_plus_one",
-      "legacy_name": "fastapi_resiliency_analyze_detect_n_plus_one",
+      "name": "fastapi_resiliency_analyze_detect_n_plus_one",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "resiliency",
       "synopsis": "Detect N+1 query patterns in SQLAlchemy ORM code",
@@ -3034,8 +3108,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_analyze_resiliency_analyze_doctor",
-      "legacy_name": "fastapi_resiliency_analyze_doctor",
+      "name": "fastapi_resiliency_analyze_doctor",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "resiliency",
       "synopsis": "Holistic FastAPI health-check and audit engine",
@@ -3054,8 +3128,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_analyze_resiliency_analyze_error_rate_analyzer",
-      "legacy_name": "fastapi_resiliency_analyze_error_rate_analyzer",
+      "name": "fastapi_resiliency_analyze_error_rate_analyzer",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "resiliency",
       "synopsis": "Analyze application error rates from structured logs or Prometheus metrics",
@@ -3074,8 +3148,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_analyze_resiliency_analyze_extract_service",
-      "legacy_name": "fastapi_resiliency_analyze_extract_service",
+      "name": "fastapi_resiliency_analyze_extract_service",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "resiliency",
       "synopsis": "Extract business logic from route handlers into a dedicated service layer",
@@ -3094,8 +3168,44 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_analyze_resiliency_analyze_migration_diff",
-      "legacy_name": "fastapi_resiliency_analyze_migration_diff",
+      "name": "fastapi_resiliency_analyze_generate_middleware",
+      "legacy_name": "fastapi_resiliency_generate_middleware",
+      "verb": "analyze",
+      "domain": "resiliency",
+      "synopsis": "Generate full middleware stack: CORS, security headers (7), correlation ID, request logging",
+      "when_to_call": "Generate full middleware stack: CORS, security headers (7), correlation ID, request logging.",
+      "when_not_to_call": "",
+      "tags": [],
+      "tier": 2,
+      "status": "stable",
+      "since": "",
+      "module_path": "generators/middleware/stack.py",
+      "test_paths": [],
+      "primitives_used": [],
+      "example_input": null,
+      "example_output": null
+    },
+    {
+      "name": "fastapi_resiliency_analyze_generate_project",
+      "legacy_name": "fastapi_resiliency_generate_project",
+      "verb": "analyze",
+      "domain": "resiliency",
+      "synopsis": "Generate a complete production-ready FastAPI project",
+      "when_to_call": "Generate a complete production-ready FastAPI project.",
+      "when_not_to_call": "",
+      "tags": [],
+      "tier": 2,
+      "status": "stable",
+      "since": "",
+      "module_path": "generators/orchestrator.py",
+      "test_paths": [],
+      "primitives_used": [],
+      "example_input": null,
+      "example_output": null
+    },
+    {
+      "name": "fastapi_resiliency_analyze_migration_diff",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "resiliency",
       "synopsis": "Compare pending Alembic migrations against the current database schema",
@@ -3114,8 +3224,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_analyze_resiliency_analyze_performance_baseline",
-      "legacy_name": "fastapi_resiliency_analyze_performance_baseline",
+      "name": "fastapi_resiliency_analyze_performance_baseline",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "resiliency",
       "synopsis": "Establish a performance baseline by profiling key endpoints",
@@ -3134,8 +3244,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_analyze_resiliency_analyze_refactor_model",
-      "legacy_name": "fastapi_resiliency_analyze_refactor_model",
+      "name": "fastapi_resiliency_analyze_refactor_model",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "resiliency",
       "synopsis": "Refactor a SQLAlchemy model: rename fields, split tables, or add/remove columns",
@@ -3154,8 +3264,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_analyze_resiliency_analyze_schema_coverage",
-      "legacy_name": "fastapi_resiliency_analyze_schema_coverage",
+      "name": "fastapi_resiliency_analyze_schema_coverage",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "resiliency",
       "synopsis": "Measure how well the OpenAPI schema covers all routes and models",
@@ -3176,8 +3286,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_analyze_resiliency_analyze_security_scan",
-      "legacy_name": "fastapi_resiliency_analyze_security_scan",
+      "name": "fastapi_resiliency_analyze_security_scan",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "resiliency",
       "synopsis": "Run security-focused static analysis on the FastAPI project",
@@ -3196,8 +3306,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_analyze_resiliency_analyze_sla_reporter",
-      "legacy_name": "fastapi_resiliency_analyze_sla_reporter",
+      "name": "fastapi_resiliency_analyze_sla_reporter",
+      "legacy_name": null,
       "verb": "analyze",
       "domain": "resiliency",
       "synopsis": "Generate SLA compliance report from Prometheus or log data",
@@ -3216,44 +3326,30 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_analyze_resiliency_generate_middleware",
-      "legacy_name": "fastapi_resiliency_generate_middleware",
+      "name": "fastapi_resiliency_analyze_test_coverage_gaps",
+      "legacy_name": "fastapi_test_coverage_gaps",
       "verb": "analyze",
       "domain": "resiliency",
-      "synopsis": "Generate full middleware stack: CORS, security headers (7), correlation ID, request logging",
-      "when_to_call": "Generate full middleware stack: CORS, security headers (7), correlation ID, request logging.",
+      "synopsis": "Identify test coverage gaps with risk-weighted analysis",
+      "when_to_call": "Identify test coverage gaps with risk-weighted analysis.",
       "when_not_to_call": "",
-      "tags": [],
+      "tags": [
+        "coverage"
+      ],
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "generators/middleware/stack.py",
-      "test_paths": [],
+      "module_path": "adapt/verify/test_coverage_gaps.py",
+      "test_paths": [
+        "adapt/verify/test_test_coverage_gaps.py"
+      ],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_analyze_resiliency_generate_project",
-      "legacy_name": "fastapi_resiliency_generate_project",
-      "verb": "analyze",
-      "domain": "resiliency",
-      "synopsis": "Generate a complete production-ready FastAPI project",
-      "when_to_call": "Generate a complete production-ready FastAPI project.",
-      "when_not_to_call": "",
-      "tags": [],
-      "tier": 2,
-      "status": "stable",
-      "since": "",
-      "module_path": "generators/orchestrator.py",
-      "test_paths": [],
-      "primitives_used": [],
-      "example_input": null,
-      "example_output": null
-    },
-    {
-      "name": "fastapi_resiliency_generate_resiliency_generate_admin_panel",
-      "legacy_name": "fastapi_resiliency_generate_admin_panel",
+      "name": "fastapi_resiliency_generate_admin_panel",
+      "legacy_name": null,
       "verb": "generate",
       "domain": "resiliency",
       "synopsis": "Generate an admin panel (SQLAdmin or Starlette-admin) wired to all models",
@@ -3272,8 +3368,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_generate_resiliency_generate_docs",
-      "legacy_name": "fastapi_resiliency_generate_docs",
+      "name": "fastapi_resiliency_generate_docs",
+      "legacy_name": null,
       "verb": "generate",
       "domain": "resiliency",
       "synopsis": "Generate developer documentation from the project's code and OpenAPI spec",
@@ -3292,8 +3388,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_generate_resiliency_generate_sdk",
-      "legacy_name": "fastapi_resiliency_generate_sdk",
+      "name": "fastapi_resiliency_generate_sdk",
+      "legacy_name": null,
       "verb": "generate",
       "domain": "resiliency",
       "synopsis": "Generate a typed Python SDK client from the project's OpenAPI spec",
@@ -3312,8 +3408,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_resiliency_generate_resiliency_generate_venous",
-      "legacy_name": "fastapi_resiliency_generate_venous",
+      "name": "fastapi_resiliency_generate_venous",
+      "legacy_name": null,
       "verb": "generate",
       "domain": "resiliency",
       "synopsis": "Idempotently copy core.venous primitives (and optional adapters) into a generated project, recording",
@@ -3330,8 +3426,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_testing_add_testing_add_api_fuzzer",
-      "legacy_name": "fastapi_testing_add_api_fuzzer",
+      "name": "fastapi_testing_add_api_fuzzer",
+      "legacy_name": null,
       "verb": "add",
       "domain": "testing",
       "synopsis": "Add schema-aware API fuzzing: APIFuzzer reads OpenAPI schema, generates adversarial inputs per field",
@@ -3352,8 +3448,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_testing_add_testing_add_chaos_testing",
-      "legacy_name": "fastapi_testing_add_chaos_testing",
+      "name": "fastapi_testing_add_chaos_testing",
+      "legacy_name": null,
       "verb": "add",
       "domain": "testing",
       "synopsis": "Add chaos engineering fault injection for dev/staging. Hardcoded guard: NEVER active in production (",
@@ -3374,8 +3470,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_testing_add_testing_add_contract_tests",
-      "legacy_name": "fastapi_testing_add_contract_tests",
+      "name": "fastapi_testing_add_contract_tests",
+      "legacy_name": null,
       "verb": "add",
       "domain": "testing",
       "synopsis": "Add consumer-driven contract tests using Pact or Schemathesis",
@@ -3394,8 +3490,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_testing_add_testing_add_data_seeder",
-      "legacy_name": "fastapi_testing_add_data_seeder",
+      "name": "fastapi_testing_add_data_seeder",
+      "legacy_name": null,
       "verb": "add",
       "domain": "testing",
       "synopsis": "Add a smart test data seeder that respects FK relationships via topological sort",
@@ -3414,8 +3510,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_testing_add_testing_add_database_migrations_ci",
-      "legacy_name": "fastapi_testing_add_database_migrations_ci",
+      "name": "fastapi_testing_add_database_migrations_ci",
+      "legacy_name": null,
       "verb": "add",
       "domain": "testing",
       "synopsis": "Add Alembic CI runner with rollback safety and schema diff to FastAPI",
@@ -3436,8 +3532,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_testing_add_testing_add_e2e_test_suite",
-      "legacy_name": "fastapi_testing_add_e2e_test_suite",
+      "name": "fastapi_testing_add_e2e_test_suite",
+      "legacy_name": null,
       "verb": "add",
       "domain": "testing",
       "synopsis": "Scaffold an async E2E test suite with httpx: conftest fixtures, auth flow, CRUD flow, and error-hand",
@@ -3456,8 +3552,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_testing_add_testing_add_factory",
-      "legacy_name": "fastapi_testing_add_factory",
+      "name": "fastapi_testing_add_factory",
+      "legacy_name": null,
       "verb": "add",
       "domain": "testing",
       "synopsis": "Add factory_boy fixtures for all models to accelerate test authoring",
@@ -3476,8 +3572,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_testing_add_testing_add_load_profile",
-      "legacy_name": "fastapi_testing_add_load_profile",
+      "name": "fastapi_testing_add_load_profile",
+      "legacy_name": null,
       "verb": "add",
       "domain": "testing",
       "synopsis": "Add k6 load test profiles (smoke, load, stress, soak) for the project's endpoints",
@@ -3496,8 +3592,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_testing_add_testing_add_sbom_guardian",
-      "legacy_name": "fastapi_testing_add_sbom_guardian",
+      "name": "fastapi_testing_add_sbom_guardian",
+      "legacy_name": null,
       "verb": "add",
       "domain": "testing",
       "synopsis": "Add CycloneDX SBOM generation, lockfile integrity verification, dependency confusion detection, and ",
@@ -3516,8 +3612,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_testing_add_testing_add_schema_enforcer",
-      "legacy_name": "fastapi_testing_add_schema_enforcer",
+      "name": "fastapi_testing_add_schema_enforcer",
+      "legacy_name": null,
       "verb": "add",
       "domain": "testing",
       "synopsis": "Add OpenAPI schema enforcement middleware: validates every req/resp against the spec (rejects extra ",
@@ -3536,8 +3632,8 @@
       "example_output": null
     },
     {
-      "name": "fastapi_testing_add_testing_add_schema_evolution_guard",
-      "legacy_name": "fastapi_testing_add_schema_evolution_guard",
+      "name": "fastapi_testing_add_schema_evolution_guard",
+      "legacy_name": null,
       "verb": "add",
       "domain": "testing",
       "synopsis": "Add CI OpenAPI schema compatibility checker that detects breaking changes",
@@ -3551,6 +3647,24 @@
       "test_paths": [
         "adapt/extend/testing_tools/test_add_schema_evolution_guard.py"
       ],
+      "primitives_used": [],
+      "example_input": null,
+      "example_output": null
+    },
+    {
+      "name": "fastapi_testing_generate_tests",
+      "legacy_name": "fastapi_generate_tests",
+      "verb": "generate",
+      "domain": "testing",
+      "synopsis": "Generate complete test infrastructure + test suite",
+      "when_to_call": "Generate complete test infrastructure + test suite.",
+      "when_not_to_call": "",
+      "tags": [],
+      "tier": 2,
+      "status": "stable",
+      "since": "",
+      "module_path": "generators/testing/test_suite.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -9508,7 +9622,7 @@
     }
   ],
   "counts": {
-    "tools": 173,
+    "tools": 179,
     "primitives": 122,
     "recipes": 385
   }
