@@ -21,16 +21,25 @@ HuGR_Skills/
 ├── QUICK_START.md         # Setup rápido
 ├── skills/
 │   └── SKILL-001-fastapi-production/   # FastAPI production skill
-│       ├── SKILL.md                    # Entry point da skill
-│       ├── EXPANSION_ROADMAP.md        # Roadmap de expansão
-│       ├── generators/                 # 34 code generators
-│       ├── adapt/                      # 100 EXTEND + 23 other adapt tools
-│       │   ├── extend/                 # Feature tools (crud, auth, infra, realtime, api, testing)
-│       │   ├── verify/                 # Validation tools
-│       │   ├── operate/                # Operations tools
-│       │   ├── evolve/                 # Evolution tools
-│       │   └── proactive/              # Proactive tools
-│       ├── specs/                      # 64 formal specifications (16 sections each)
+│       ├── SKILL.md                    # Entry point da skill (Anthropic Agent Skills format)
+│       ├── STATUS.md                   # Counts humanos + test matrix
+│       ├── INVENTORY.md                # Machine-verified counts (fonte única)
+│       ├── generators/                 # 56 code generators
+│       ├── adapt/                      # 126 tools (100 extend + 26 outros)
+│       │   ├── extend/                 # 100 feature tools (api_design, auth_access, crud_data, infrastructure, realtime, testing_tools)
+│       │   ├── verify/                 # 6 validation tools
+│       │   ├── operate/                # 8 operations tools
+│       │   ├── evolve/                 # 8 evolution tools
+│       │   ├── contracts/              # 3 contract tools
+│       │   └── proactive/              # 1 proactive tool
+│       ├── modules/                    # 28 feature packages prontos
+│       ├── core/venous/                # 122 registered primitives + 16 FastAPI adapters + 426 staged em _extracted/
+│       ├── mcp_tools/                  # Tier-1 meta + tree dispatchers + auto-discovery
+│       │   ├── tier1.py + compose.py   # 7 meta tools (home/search/describe/scaffold/compose/audit/verify)
+│       │   └── tree/                   # 9 domain dispatchers (auth, data, api, realtime, resiliency, obs, compliance, deployment, testing)
+│       ├── engine/                     # audit, index, bench, docs, extraction, inventory
+│       ├── examples/                   # 5 apps completos de referência
+│       ├── specs/                      # 124 formal specifications
 │       ├── tests/                      # Test infrastructure
 │       │   ├── common/                 # Fixture factory
 │       │   ├── contracts/              # Pydantic delivery contract + agent briefing
@@ -56,18 +65,40 @@ HuGR_Skills/
 
 A skill principal. Convention over Configuration para FastAPI.
 
-### Números atuais
+### Números atuais (machine-verified por `engine.inventory`)
+
+> **Fonte única de verdade:** `skills/SKILL-001-fastapi-production/INVENTORY.md`.
+> Regenerar com `PYTHONPATH=. .venv/bin/python -m engine.inventory`.
+> Drift entre este bloco e INVENTORY.md = bug de audit.
 
 ```
-100 EXTEND tools
-123 adapt tools total (100 extend + 6 verify + 8 operate + 8 evolve + 1 proactive)
-52 generators
-175 MCP tools total
-73 formal specs (16 sections each)
-~3000+ tests (unit + behavior + E2E)
-984 property checks (123 × 8 properties)
-32 behavior scenarios (288 assertions)
+229  arquivos com MCP_TOOL      (superfície Maestro)
+173  tools indexados no catalog.json
+122  primitivos registrados      (core/venous/<ns>/<Name>/)
+426  primitivos staged           (core/venous/_extracted/, +121 quarantined)
+ 16  FastAPI adapters            (production-wired)
+126  adapt tools                 (100 extend + 8 operate + 8 evolve + 6 verify + 3 contracts + 1 proactive)
+ 56  generators
+ 28  modules/ packages           (auth, payments, caching, db, deployment, obs, security, background_jobs, websockets)
+  5  examples/ apps completos    (saas, multi-tenant, stripe, event-sourced, llm-agent)
+124  specs formais
+ 33  contract rules (33/33 green)
 ```
+
+### Camadas do skill (arquitetura Rails-style)
+
+| Camada | Onde | Qtd | O que é |
+|---|---|---:|---|
+| Primitivos registrados | `core/venous/<ns>/<Name>/` | 122 | Peças framework-free |
+| Primitivos staged | `core/venous/_extracted/` | 426 | HuGR-shelled mas com REPLACE_ME |
+| Adapters FastAPI | `core/venous/_adapters/fastapi/` | 16 | Wiring production-grade |
+| EXTEND tools | `adapt/extend/` | 100 | Slice generators (add_*) |
+| Outros adapt | `adapt/{verify,operate,evolve,contracts,proactive}/` | 26 | Validação, ops, evolução |
+| Generators | `generators/` | 56 | Scaffolders de subsistemas |
+| Modules | `modules/` | 28 | Feature packages prontos |
+| Tier-1 meta | `mcp_tools/tier1.py` + `compose.py` | 7 | home/search/describe/scaffold/compose/audit/verify |
+| Tree dispatchers | `mcp_tools/tree/` | 9 | auth, data, api, realtime, resiliency, obs, compliance, deployment, testing |
+| Examples | `examples/` | 5 | Apps completos de referência |
 
 ### Comandos
 
