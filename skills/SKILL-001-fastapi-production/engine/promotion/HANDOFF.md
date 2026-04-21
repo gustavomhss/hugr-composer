@@ -18,12 +18,12 @@ was not silently amended. Everything is ready for your review.
 
 | Artefact | Location | Lines | Purpose |
 |---|---|---:|---|
-| Decision doc | `docs/decisions/0004-tier-lite.md` | 150 | Proposes §A12 amendment + new §B1.7 tier-lite. Awaits ratification. |
+| Decision doc | `docs/decisions/0004-tier-lite.md` | 150 | Proposes §A12 amendment + new §B1.8 tier-lite. Awaits ratification. |
 | Schemas | `engine/promotion/schemas.py` | 195 | Pydantic contracts (Verdict, Signal, StateFlags, LedgerEntry, Ledger). |
 | State inspector | `engine/promotion/state.py` | 230 | Deterministic file-based state: REPLACE_ME count, TLA+ presence, concurrency, mutable state, framework coupling, duplicate detection. |
 | Signal detector | `engine/promotion/signals.py` | 160 | §A12(b) signals: TOOL_IMPORT, MODULE_REF, BENCHMARK_REF, GENERATOR_REF. |
 | Classifier | `engine/promotion/classify.py` | 260 | 8-rule decision tree, first-match-wins. Emits `ledger.json`. |
-| Executor | `engine/promotion/promote.py` | 260 | Atomic promote/delete with rollback; refuses non-ready entries; lite gated on §B1.7 ratification. |
+| Executor | `engine/promotion/promote.py` | 260 | Atomic promote/delete with rollback; refuses non-ready entries; lite gated on §B1.8 ratification. |
 | Ledger renderer | `engine/promotion/ledger.py` | 175 | `ledger.json` → `LEDGER.md` with approve/reject checkboxes. |
 | Tests | `engine/promotion/tests/` | 240 | 23 unit tests, all pass. |
 
@@ -34,7 +34,7 @@ delete         13   (duplicates of already-registered primitives)
 keep_staged   229   (no signal yet, OR framework-coupled, OR quarantined)
 needs_review    0
 promote_full    0
-promote_lite    0   (blocked anyway — §B1.7 not yet ratified)
+promote_lite    0   (blocked anyway — §B1.8 not yet ratified in CONTRACT §E)
 ```
 
 **Zero primitives are currently promotable.** This is the honest output,
@@ -83,21 +83,23 @@ The executor will:
 - Run contract_check.
 - On ANY failure: rollback automatically.
 
-### Step 3 — Decide on §B1.7 ratification (optional)
+### Step 3 — Decide on §B1.8 ratification (optional)
 
 If you agree with the tier-lite proposal, append a block to
 `/CONTRACT.md` §E:
 
 ```
 ### Ratified 2026-04-22 by Gustavo
-- §B1.7 tier-lite added. §A12 amended to allow triage-pass promotion.
+- §B1.8 tier-lite added. §A12 amended to allow triage-pass promotion.
 - tier-lite ratified.
 ```
 
 That flips the `_lite_ratified()` check in `promote.py` from False to
 True. But it doesn't unlock any promotions by itself — you'd still need
-primitives with PROMOTE_LITE verdicts + zero blockers, and today there
-are none (all candidates are either framework-coupled or without signal).
+primitives with PROMOTE_AS_PRIMITIVE verdicts (tier=lite target) plus
+zero blockers, and today there are none (all candidates are either
+framework-coupled, which resolves to EXTRACT_MOTOR_PAIR, or without
+§A12(b) signal, which resolves to NEEDS_CALLER).
 
 ### Step 4 — Strategic decisions for Phase 5 #30 closeout
 
