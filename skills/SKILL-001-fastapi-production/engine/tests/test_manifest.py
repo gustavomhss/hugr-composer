@@ -186,8 +186,8 @@ def test_manifest_error_raised_on_duplicate_mcp_name(tmp_path: Path, monkeypatch
 # ---------------------------------------------------------------------------
 
 def test_tier1_home_returns_landscape_envelope() -> None:
-    from mcp_tools.tier1 import fastapi_meta_search_home
-    r = fastapi_meta_search_home()
+    from mcp_tools.tier1 import fastapi_meta_home
+    r = fastapi_meta_home()
     assert r["ok"] is True
     assert r["elapsed_ms"] >= 0
     assert len(r["result"]["landscape"]) == 10  # 10 domains
@@ -196,8 +196,8 @@ def test_tier1_home_returns_landscape_envelope() -> None:
 
 
 def test_tier1_search_finds_tamper_evident_chain() -> None:
-    from mcp_tools.tier1 import fastapi_meta_search_search
-    r = fastapi_meta_search_search("tamper evident audit chain", k=5)
+    from mcp_tools.tier1 import fastapi_meta_search
+    r = fastapi_meta_search("tamper evident audit chain", k=5)
     assert r["ok"] is True
     hits = r["result"]["hits"]
     assert hits, "expected at least one hit"
@@ -206,31 +206,31 @@ def test_tier1_search_finds_tamper_evident_chain() -> None:
 
 
 def test_tier1_search_respects_domain_filter() -> None:
-    from mcp_tools.tier1 import fastapi_meta_search_search
-    r = fastapi_meta_search_search("rate limit", domain="resiliency", k=5)
+    from mcp_tools.tier1 import fastapi_meta_search
+    r = fastapi_meta_search("rate limit", domain="resiliency", k=5)
     assert r["ok"] is True
     for h in r["result"]["hits"]:
         assert h["domain"] == "resiliency", h
 
 
 def test_tier1_search_empty_query_returns_ok_false() -> None:
-    from mcp_tools.tier1 import fastapi_meta_search_search
-    r = fastapi_meta_search_search("", k=5)
+    from mcp_tools.tier1 import fastapi_meta_search
+    r = fastapi_meta_search("", k=5)
     assert r["ok"] is False
     assert r["result"]["hits"] == []
 
 
 def test_tier1_describe_primitive() -> None:
-    from mcp_tools.tier1 import fastapi_meta_search_describe
-    r = fastapi_meta_search_describe("CausalReorderBuffer")
+    from mcp_tools.tier1 import fastapi_meta_describe
+    r = fastapi_meta_describe("CausalReorderBuffer")
     assert r["ok"] is True
     assert r["result"]["kind"] == "primitive"
     assert r["result"]["name"] == "CausalReorderBuffer"
 
 
 def test_tier1_describe_unknown_returns_ok_false_with_hint() -> None:
-    from mcp_tools.tier1 import fastapi_meta_search_describe
-    r = fastapi_meta_search_describe("does-not-exist-xyz")
+    from mcp_tools.tier1 import fastapi_meta_describe
+    r = fastapi_meta_describe("does-not-exist-xyz")
     assert r["ok"] is False
     assert any("search" in step.lower() for step in r["next_steps"])
 
@@ -238,14 +238,14 @@ def test_tier1_describe_unknown_returns_ok_false_with_hint() -> None:
 def test_tier1_envelope_shape_uniform() -> None:
     """Every tier-1 return must conform to the same envelope."""
     from mcp_tools.tier1 import (
-        fastapi_meta_search_home, fastapi_meta_search_search,
-        fastapi_meta_search_describe,
+        fastapi_meta_home, fastapi_meta_search,
+        fastapi_meta_describe,
     )
     required_keys = {"ok", "what_happened", "result", "next_steps", "elapsed_ms"}
     for fn_call in (
-        lambda: fastapi_meta_search_home(),
-        lambda: fastapi_meta_search_search("anything", k=3),
-        lambda: fastapi_meta_search_describe("SessionCache"),
+        lambda: fastapi_meta_home(),
+        lambda: fastapi_meta_search("anything", k=3),
+        lambda: fastapi_meta_describe("SessionCache"),
     ):
         r = fn_call()
         missing = required_keys - r.keys()
@@ -256,11 +256,11 @@ def test_tier1_envelope_shape_uniform() -> None:
 
 def test_tier1_home_breadcrumbs_reference_other_tier1_tools() -> None:
     """The whole point of next_steps is to form a workflow graph."""
-    from mcp_tools.tier1 import fastapi_meta_search_home
-    r = fastapi_meta_search_home()
+    from mcp_tools.tier1 import fastapi_meta_home
+    r = fastapi_meta_home()
     joined = " ".join(r["next_steps"])
-    assert "fastapi_meta_search_search" in joined
-    assert "fastapi_meta_generate_scaffold" in joined
+    assert "fastapi_meta_search" in joined
+    assert "fastapi_meta_scaffold" in joined
 
 
 def test_tier1_registered_as_mcp_tools() -> None:
@@ -271,12 +271,12 @@ def test_tier1_registered_as_mcp_tools() -> None:
     discover_and_register(_mcp)
     names = {t.name for t in asyncio.run(_mcp.list_tools())}
     expected = {
-        "fastapi_meta_search_home",
-        "fastapi_meta_search_search",
-        "fastapi_meta_search_describe",
-        "fastapi_meta_generate_scaffold",
-        "fastapi_meta_check_audit",
-        "fastapi_meta_verify_verify",
+        "fastapi_meta_home",
+        "fastapi_meta_search",
+        "fastapi_meta_describe",
+        "fastapi_meta_scaffold",
+        "fastapi_meta_audit",
+        "fastapi_meta_verify",
     }
     missing = expected - names
     assert not missing, f"tier-1 tools not registered: {missing}"

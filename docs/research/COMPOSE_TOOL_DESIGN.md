@@ -1,6 +1,6 @@
 # `fastapi_meta_compose` — Design Document (v1, 2026-04-20)
 
-> Mission: close the "last mile" between `fastapi_meta_search_search` (find
+> Mission: close the "last mile" between `fastapi_meta_search` (find
 > primitives) and running code (primitives wired into a FastAPI app). Today
 > Maestro must hand-write the glue — `fastapi_meta_compose` emits it.
 
@@ -8,7 +8,7 @@
 
 1. **Hybrid input; primacy to `recipe_id`.** Accept `recipe_id` OR
    `primitives: list[str]`; reject `capability: str` at this tier
-   (that's what `fastapi_meta_search_search` already does — do not duplicate).
+   (that's what `fastapi_meta_search` already does — do not duplicate).
    If both are passed, `recipe_id` wins and `primitives` is treated as a
    subset-assertion. Precedent: LlamaIndex `ObjectIndex` is the discovery
    tier; `ToolSpec` bundles are the composition tier — they are deliberately
@@ -74,7 +74,7 @@ def fastapi_meta_compose(
   recipe id is handy, take the list. The tool then reverse-matches against
   `catalog.recipes[*].primitives` to pick the best recipe; on no match,
   falls through to `ad_hoc` mode.
-- **No `capability: str` param** — duplicates `fastapi_meta_search_search`.
+- **No `capability: str` param** — duplicates `fastapi_meta_search`.
   Orthogonality principle (Anthropic tool-writing guide, Oct 2025): "tools
   should do one thing."
 - **`mount_path` instead of router name** — FastAPI idiomatic knob
@@ -127,7 +127,7 @@ Uses the tier-1 envelope (`mcp_tools/tier1.py:43-52`):
   },
   "next_steps": [
       "In app/main.py: from app.compositions.webhook_sink import install; install(app)",
-      "Call fastapi_meta_check_audit() to verify contract drift.",
+      "Call fastapi_meta_audit() to verify contract drift.",
       "Run the emitted test_webhook_sink.py to validate the wiring end-to-end.",
   ],
   "elapsed_ms": int,
@@ -309,15 +309,15 @@ All failures return `ok=False` with an actionable `next_steps`. Closed list:
 
 | Failure | Shape of error | `next_steps` breadcrumb |
 |---|---|---|
-| Unknown primitive name | `what_happened="unknown primitive 'Foo'"` + `result.suggestions=[3 closest]` | `["fastapi_meta_search_search(query='Foo') to find the correct name."]` |
-| Unknown `recipe_id` | `what_happened="no recipe with id '<id>'"` | `["Call fastapi_meta_search_describe('<id>') — maybe a stale id."]` |
+| Unknown primitive name | `what_happened="unknown primitive 'Foo'"` + `result.suggestions=[3 closest]` | `["fastapi_meta_search(query='Foo') to find the correct name."]` |
+| Unknown `recipe_id` | `what_happened="no recipe with id '<id>'"` | `["Call fastapi_meta_describe('<id>') — maybe a stale id."]` |
 | `primitives` disagrees with `recipe_id` contents | `what_happened="recipe <id> requires [A,B,C]; you passed [A,B,D]"` | `["Drop the 'primitives' arg and keep only recipe_id.", "Or drop recipe_id and let compose match from primitives."]` |
 | Incompatible signatures (rare — adapter mode only) | `what_happened="cannot wire X.output (A) into Y.input (B) — type mismatch"` | `["Add a translating primitive (AntiCorruptionLayer) between X and Y."]` |
 | Duplicate primitive in list | Deduplicate silently; log in `what_happened` | `[]` |
 | Target file exists + `force=False` | `what_happened="app/compositions/<slug>.py exists; pass force=True to overwrite"` | `["Re-call with force=True to overwrite, or choose a different name='<slug2>'."]` |
 | Generated code has syntax error | Self-abort, return `ok=False`, DO NOT write | `["File an issue with the recipe_id; this is a template bug."]` (internal corruption — should never happen; if it does, template needs fixing, not caller) |
 | Domain-concern primitive requested (`Aggregate`, `Specification`, `DomainEvent`) | `what_happened="compose is infra-only; <Primitive> is a domain building block"` | `["Author Aggregate + Specification yourself in app/domain/.", "Compose handles verify/dedupe/audit/retry/ratelimit."]` |
-| Scaffold not yet run (`<output_dir>/app` absent) | `what_happened="no app/ directory at <output_dir>"` | `["Call fastapi_meta_generate_scaffold first."]` |
+| Scaffold not yet run (`<output_dir>/app` absent) | `what_happened="no app/ directory at <output_dir>"` | `["Call fastapi_meta_scaffold first."]` |
 
 Note: **no partial writes** — either all `files_written` succeed or none
 do. Atomic write pattern: write to `<slug>.py.tmp`, fsync, rename.
@@ -331,17 +331,17 @@ Maestro                                                    Kit
   │                                                         │
   │  user: "build me a webhook endpoint with HMAC + dedup"  │
   │                                                         │
-  │─────── fastapi_meta_search_home() ─────────────────────►│  landscape
+  │─────── fastapi_meta_home() ─────────────────────►│  landscape
   │◄────── (domains, counts, workflow) ─────────────────────│
   │                                                         │
-  │─────── fastapi_meta_search_search("webhook HMAC") ─────►│  BM25
+  │─────── fastapi_meta_search("webhook HMAC") ─────►│  BM25
   │◄────── hits: SignatureVerifier, IdempotentConsumer,     │
   │        TamperEvidentAuditLog, recipe:Webhook__01_...    │
   │                                                         │
-  │─────── fastapi_meta_search_describe("recipe:...") ─────►│
+  │─────── fastapi_meta_describe("recipe:...") ─────►│
   │◄────── full recipe + primitive list ────────────────────│
   │                                                         │
-  │─────── fastapi_meta_generate_scaffold(output_dir) ─────►│  new project
+  │─────── fastapi_meta_scaffold(output_dir) ─────►│  new project
   │◄────── files_created: [app/main.py, ...] ───────────────│
   │                                                         │
   │─────── fastapi_auth(action='primitive',                 │  copy primitives
@@ -356,13 +356,13 @@ Maestro                                                    Kit
   │          app/compositions/test_webhook_sink.py],        │
   │        next_steps: [import install() in main.py, ...]   │
   │                                                         │
-  │─────── fastapi_meta_check_audit() ────────────────────►│   verify contract
+  │─────── fastapi_meta_audit() ────────────────────►│   verify contract
   │◄────── ok=True ────────────────────────────────────────│
 ```
 
 ### Boundaries with adjacent tools
 
-- **vs `fastapi_meta_generate_scaffold`** — scaffold is project-level
+- **vs `fastapi_meta_scaffold`** — scaffold is project-level
   (emits ~60 files: main, db, auth, docker, CI). Compose is slice-level
   (emits 1-2 files). Compose assumes scaffold already ran; refuses
   otherwise (see §7 "Scaffold not yet run").
@@ -373,7 +373,7 @@ Maestro                                                    Kit
   deliberately separate: auth-domain has 15 hand-crafted slice
   generators (`mcp_tools/tree/auth.py:40-57`) whose output quality is
   higher than anything compose can derive from raw primitives.
-- **vs `fastapi_meta_search_search`** — search returns NAMES; compose
+- **vs `fastapi_meta_search`** — search returns NAMES; compose
   consumes names. No overlap. Compose NEVER does NL matching.
 
 ---
@@ -536,7 +536,7 @@ The `next_steps` returned:
 [
   "In app/main.py: from app.compositions.webhook_sink import install; install(app, hmac_key=os.environ['WEBHOOK_SECRET'].encode())",
   "Run the emitted test_webhook_sink.py: pytest app/compositions/test_webhook_sink.py",
-  "Call fastapi_meta_check_audit() to verify contract drift.",
+  "Call fastapi_meta_audit() to verify contract drift.",
 ]
 ```
 

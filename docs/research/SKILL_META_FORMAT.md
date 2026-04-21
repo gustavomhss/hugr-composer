@@ -244,13 +244,13 @@ spec_compat: ">=1.0.0,<2.0.0"     # Maestro versions that speak this
 kind: "framework-scaffold"         # enum: framework-scaffold | library-adapter | workflow
 domains: ["backend", "python", "fastapi", "web-api"]
 entry_tools:                        # Tier-1 MCP tools — always available
-  - fastapi_meta_search_home
+  - fastapi_meta_home
   - fastapi_meta_search
   - fastapi_meta_describe
-  - fastapi_meta_generate_scaffold
+  - fastapi_meta_scaffold
   - fastapi_meta_compose
-  - fastapi_meta_check_audit
-  - fastapi_meta_verify_verify
+  - fastapi_meta_audit
+  - fastapi_meta_verify
   - fastapi_auth                    # tree dispatcher
 catalog_path: "engine/index/catalog.json"
 phases: [orient, clarify, scaffold, compose, business, audit]
@@ -387,19 +387,19 @@ LLM:
 > ## Workflow phases
 >
 > 1. **Orient.** Establish what the user wants and what's already in the
->    repo. Entry tool: `fastapi_meta_search_home`. Reads the repo root +
+>    repo. Entry tool: `fastapi_meta_home`. Reads the repo root +
 >    catalog, returns a situation brief.
 > 2. **Clarify.** Resolve ambiguity by short, cheap questions — never
 >    more than 3. Entry tool: none (Maestro uses its own reasoning).
 > 3. **Scaffold.** Lay down the canonical project tree. Entry tool:
->    `fastapi_meta_generate_scaffold`.
+>    `fastapi_meta_scaffold`.
 > 4. **Compose.** Wire tier-2 (slice) and tier-3 (primitive) pieces to
 >    cover the user's capability list. Entry tool:
 >    `fastapi_meta_compose`.
 > 5. **Business.** Add domain-specific endpoints, models, rules. Entry
 >    tool: `fastapi_meta_search` (to find the right slice tool).
 > 6. **Audit.** Run contract checks and fix any regressions. Entry tool:
->    `fastapi_meta_check_audit` + `fastapi_meta_verify_verify`.
+>    `fastapi_meta_audit` + `fastapi_meta_verify`.
 
 ### 6.3 Why encode phases at all
 
@@ -435,13 +435,13 @@ via `ToolSearch`). Cited in our `TOOL_UX_ANTHROPIC.md` §4.
 ```markdown
 | Tool | Purpose | When to call |
 |---|---|---|
-| `fastapi_meta_search_home` | Get a situation brief (repo + catalog state). | First call of every session. |
+| `fastapi_meta_home` | Get a situation brief (repo + catalog state). | First call of every session. |
 | `fastapi_meta_search` | BM25 search across catalog.json (tools + primitives + recipes). | When you need a capability and don't know the exact tool name. |
 | `fastapi_meta_describe` | Return the full spec + examples for one catalog id. | After `search`, before you commit to using the thing. |
-| `fastapi_meta_generate_scaffold` | Emit a production-grade FastAPI project tree. | Scaffold phase. |
+| `fastapi_meta_scaffold` | Emit a production-grade FastAPI project tree. | Scaffold phase. |
 | `fastapi_meta_compose` | Emit a wired composition of primitives for one capability. | Compose phase, when no slice tool fits exactly. |
-| `fastapi_meta_check_audit` | Run the contract audit and return structured findings. | Audit phase, and after any structural change. |
-| `fastapi_meta_verify_verify` | Meta-audit: verify that the audit itself is sound. | End of audit phase. |
+| `fastapi_meta_audit` | Run the contract audit and return structured findings. | Audit phase, and after any structural change. |
+| `fastapi_meta_verify` | Meta-audit: verify that the audit itself is sound. | End of audit phase. |
 | `fastapi_auth` | Tree dispatcher that collapses 15 auth slice tools into one. | Auth-related requests. |
 ```
 
@@ -648,13 +648,13 @@ spec_compat: ">=1.0.0,<2.0.0"
 kind: "framework-scaffold"
 domains: ["backend", "python", "fastapi", "web-api"]
 entry_tools:
-  - fastapi_meta_search_home
+  - fastapi_meta_home
   - fastapi_meta_search
   - fastapi_meta_describe
-  - fastapi_meta_generate_scaffold
+  - fastapi_meta_scaffold
   - fastapi_meta_compose
-  - fastapi_meta_check_audit
-  - fastapi_meta_verify_verify
+  - fastapi_meta_audit
+  - fastapi_meta_verify
   - fastapi_auth
 catalog_path: "engine/index/catalog.json"
 phases: [orient, clarify, scaffold, compose, business, audit]
@@ -666,14 +666,14 @@ invariants:
 
 ## Workflow phases
 <!-- ~420 tok -->
-1. **Orient.** Call `fastapi_meta_search_home` to get a situation brief
+1. **Orient.** Call `fastapi_meta_home` to get a situation brief
    (repo state + catalog counts + recent change summary). This is always
    the first call; do not skip it.
 2. **Clarify.** Ask at most three specific questions — each must offer 2–4
    concrete answer branches. Never open-ended. Skip this phase only if
    the user's request is literally unambiguous.
 3. **Scaffold.** If the repo is empty or lacks `app/main.py`, call
-   `fastapi_meta_generate_scaffold(project_name, capabilities=[...])`
+   `fastapi_meta_scaffold(project_name, capabilities=[...])`
    once. Do not call it a second time — it is not idempotent across
    runs.
 4. **Compose.** For each requested capability: first
@@ -684,21 +684,21 @@ invariants:
 5. **Business.** Add domain-specific routes, models, and rules. Use
    `fastapi_auth(action="...")` for any auth branch instead of listing
    15 auth slice tools.
-6. **Audit.** Call `fastapi_meta_check_audit` and fix every finding.
-   Close with `fastapi_meta_verify_verify` to confirm the audit itself
+6. **Audit.** Call `fastapi_meta_audit` and fix every finding.
+   Close with `fastapi_meta_verify` to confirm the audit itself
    is clean. Only report "done" after this pair returns green.
 
 ## Tier-1 tool index
 <!-- ~250 tok -->
 | Tool | Purpose | When to call |
 |---|---|---|
-| `fastapi_meta_search_home` | Situation brief — repo + catalog state. | First call of every session. |
+| `fastapi_meta_home` | Situation brief — repo + catalog state. | First call of every session. |
 | `fastapi_meta_search` | BM25 over catalog (tools + primitives + recipes). | When you need a capability and don't know the exact id. |
 | `fastapi_meta_describe` | Full spec + examples for one catalog id. | After `search`, before committing to the thing. |
-| `fastapi_meta_generate_scaffold` | Emit a production FastAPI project tree. | Scaffold phase, once per session. |
+| `fastapi_meta_scaffold` | Emit a production FastAPI project tree. | Scaffold phase, once per session. |
 | `fastapi_meta_compose` | Emit a wired composition of primitives for one capability. | Compose phase, when no slice fits. |
-| `fastapi_meta_check_audit` | Run the contract audit; return structured findings. | End of audit phase. |
-| `fastapi_meta_verify_verify` | Meta-audit — verify the audit is sound. | Immediately after `check_audit`. |
+| `fastapi_meta_audit` | Run the contract audit; return structured findings. | End of audit phase. |
+| `fastapi_meta_verify` | Meta-audit — verify the audit is sound. | Immediately after `check_audit`. |
 | `fastapi_auth` | Tree dispatcher for 15 auth slice tools. | Any auth-related request (login, mfa, rbac, social, oauth2). |
 
 All other tools (~165) are discovered on demand via

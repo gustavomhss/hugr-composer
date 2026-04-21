@@ -118,22 +118,22 @@ def register_tier1_tools(mcp_app) -> int:
     `/docs/research/DUAL_INDEX_DESIGN.md` §4.1.
     """
     from mcp_tools.tier1 import (
-        fastapi_meta_search_home,
-        fastapi_meta_search_search,
-        fastapi_meta_search_describe,
-        fastapi_meta_generate_scaffold,
-        fastapi_meta_check_audit,
-        fastapi_meta_verify_verify,
+        fastapi_meta_home,
+        fastapi_meta_search,
+        fastapi_meta_describe,
+        fastapi_meta_scaffold,
+        fastapi_meta_audit,
+        fastapi_meta_verify,
         MCP_TOOL_HOME, MCP_TOOL_SEARCH, MCP_TOOL_DESCRIBE,
         MCP_TOOL_SCAFFOLD, MCP_TOOL_AUDIT, MCP_TOOL_VERIFY,
     )
     for fn, meta in (
-        (fastapi_meta_search_home,     MCP_TOOL_HOME),
-        (fastapi_meta_search_search,   MCP_TOOL_SEARCH),
-        (fastapi_meta_search_describe, MCP_TOOL_DESCRIBE),
-        (fastapi_meta_generate_scaffold, MCP_TOOL_SCAFFOLD),
-        (fastapi_meta_check_audit,     MCP_TOOL_AUDIT),
-        (fastapi_meta_verify_verify,   MCP_TOOL_VERIFY),
+        (fastapi_meta_home,     MCP_TOOL_HOME),
+        (fastapi_meta_search,   MCP_TOOL_SEARCH),
+        (fastapi_meta_describe, MCP_TOOL_DESCRIBE),
+        (fastapi_meta_scaffold, MCP_TOOL_SCAFFOLD),
+        (fastapi_meta_audit,     MCP_TOOL_AUDIT),
+        (fastapi_meta_verify,   MCP_TOOL_VERIFY),
     ):
         mcp_app.tool(
             name=meta["name"],

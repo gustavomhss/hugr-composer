@@ -61,7 +61,7 @@ def _load_catalog() -> dict:
 # ---------------------------------------------------------------------------
 
 MCP_TOOL = {
-    "name": "fastapi_meta_search_home",
+    "name": "fastapi_meta_home",
     "description": (
         "ALWAYS CALL FIRST when asked to build / extend / deploy a FastAPI "
         "backend. Returns a compact map of the HuGR SkillKit: 10 domains "
@@ -69,15 +69,15 @@ MCP_TOOL = {
         "deployment, testing, meta), per-domain tool counts, top-3 "
         "canonical tools per domain, primitive count, recipe count, and "
         "workflow breadcrumbs. One 1200-token call replaces flat 180-tool "
-        "introspection. After this, narrow with fastapi_meta_search_search "
-        "or jump straight into fastapi_meta_generate_scaffold."
+        "introspection. After this, narrow with fastapi_meta_search "
+        "or jump straight into fastapi_meta_scaffold."
     ),
     "tags": ["generator", "meta", "discovery"],
     "annotations": {"readOnlyHint": True, "destructiveHint": False},
 }
 
 
-def fastapi_meta_search_home() -> dict:
+def fastapi_meta_home() -> dict:
     """Return the landscape map. See MCP_TOOL description for intent."""
     t0 = time.perf_counter()
     catalog = _load_catalog()
@@ -109,11 +109,11 @@ def fastapi_meta_search_home() -> dict:
         "domains": list(catalog["domains"]),
         "landscape": landscape,
         "workflow": [
-            "1. fastapi_meta_generate_scaffold(models={...}, owner_models={...}) — scaffold a fresh project",
-            "2. fastapi_meta_search_search(query=\"...\") — find a capability in the 180 catalog",
+            "1. fastapi_meta_scaffold(models={...}, owner_models={...}) — scaffold a fresh project",
+            "2. fastapi_meta_search(query=\"...\") — find a capability in the 180 catalog",
             "3. <one of the returned fastapi_<domain>_add_*> — emit the slice",
-            "4. fastapi_meta_check_audit() — verify the contract",
-            "5. fastapi_meta_verify_verify() — run the 10-tier gate on emitted primitives",
+            "4. fastapi_meta_audit() — verify the contract",
+            "5. fastapi_meta_verify() — run the 10-tier gate on emitted primitives",
         ],
     }
     return _envelope(
@@ -122,9 +122,9 @@ def fastapi_meta_search_home() -> dict:
              f"{len(primitives)} primitives, {len(recipes)} recipes",
         result=result,
         next_steps=[
-            "Call fastapi_meta_generate_scaffold if you're starting a fresh project.",
-            "Call fastapi_meta_search_search(query) to find a specific capability by natural language.",
-            "Call fastapi_meta_search_describe(name) for the full schema of any tool / primitive / recipe.",
+            "Call fastapi_meta_scaffold if you're starting a fresh project.",
+            "Call fastapi_meta_search(query) to find a specific capability by natural language.",
+            "Call fastapi_meta_describe(name) for the full schema of any tool / primitive / recipe.",
         ],
         t0=t0,
     )
@@ -207,7 +207,7 @@ def _bm25_score(query_tokens: list[str], doc: dict, idx: dict,
 
 
 MCP_TOOL_SEARCH = {
-    "name": "fastapi_meta_search_search",
+    "name": "fastapi_meta_search",
     "description": (
         "Search the HuGR FastAPI catalog (180 tools + 122 primitives) by "
         "natural language. Returns the top-K matching entries with synopsis, "
@@ -222,7 +222,7 @@ MCP_TOOL_SEARCH = {
 }
 
 
-def fastapi_meta_search_search(
+def fastapi_meta_search(
     query: str,
     *,
     domain: str | None = None,
@@ -267,12 +267,12 @@ def fastapi_meta_search_search(
             next_steps.append(f"Call {first['name']}(...) with the inputs required by its schema.")
         else:
             next_steps.append(
-                f"Compose with primitive {first['name']} — call fastapi_meta_search_describe('{first['name']}') for its Protocol + invariants."
+                f"Compose with primitive {first['name']} — call fastapi_meta_describe('{first['name']}') for its Protocol + invariants."
             )
-        next_steps.append("Need more detail on any hit? call fastapi_meta_search_describe(name).")
+        next_steps.append("Need more detail on any hit? call fastapi_meta_describe(name).")
     else:
         next_steps.append("No hits — try a broader query or drop the domain/verb filter.")
-        next_steps.append("Call fastapi_meta_search_home() for the landscape.")
+        next_steps.append("Call fastapi_meta_home() for the landscape.")
     return _envelope(
         ok=True,
         what=f"{len(hits)} hit(s) for query {query!r}"
@@ -289,13 +289,13 @@ def fastapi_meta_search_search(
 # ---------------------------------------------------------------------------
 
 MCP_TOOL_DESCRIBE = {
-    "name": "fastapi_meta_search_describe",
+    "name": "fastapi_meta_describe",
     "description": (
         "Return the FULL catalog entry for a specific tool, primitive, or "
         "recipe. Accepts the canonical name (e.g. 'fastapi_auth_add_oauth2' "
         "or 'OptimisticConcurrency' or a recipe id). Returns: schema, "
         "when-to-call, when-NOT-to-call, primitives composed, test paths, "
-        "example inputs/outputs. Use after fastapi_meta_search_search when "
+        "example inputs/outputs. Use after fastapi_meta_search when "
         "you have a name and need the exact invocation shape."
     ),
     "tags": ["meta", "discovery"],
@@ -303,7 +303,7 @@ MCP_TOOL_DESCRIBE = {
 }
 
 
-def fastapi_meta_search_describe(name: str) -> dict:
+def fastapi_meta_describe(name: str) -> dict:
     t0 = time.perf_counter()
     catalog = _load_catalog()
     for t in catalog["tools"]:
@@ -313,7 +313,7 @@ def fastapi_meta_search_describe(name: str) -> dict:
                 result={"kind": "tool", **t},
                 next_steps=[
                     f"Call {t['name']}(...) with the appropriate arguments.",
-                    "Call fastapi_meta_search_home() to zoom back out.",
+                    "Call fastapi_meta_home() to zoom back out.",
                 ],
                 t0=t0,
             )
@@ -324,7 +324,7 @@ def fastapi_meta_search_describe(name: str) -> dict:
                 result={"kind": "primitive", **p},
                 next_steps=[
                     f"Import with: from core.venous.{p['namespace']}.{p['name']} import {p['name']}",
-                    f"Search for recipes composing {p['name']} via fastapi_meta_search_search(query='{p['name']}').",
+                    f"Search for recipes composing {p['name']} via fastapi_meta_search(query='{p['name']}').",
                 ],
                 t0=t0,
             )
@@ -335,7 +335,7 @@ def fastapi_meta_search_describe(name: str) -> dict:
                 result={"kind": "recipe", **r},
                 next_steps=[
                     f"Compose primitives: {', '.join(r['primitives'])}",
-                    "Call fastapi_meta_search_describe(<primitive>) on each to see its Protocol.",
+                    "Call fastapi_meta_describe(<primitive>) on each to see its Protocol.",
                 ],
                 t0=t0,
             )
@@ -343,8 +343,8 @@ def fastapi_meta_search_describe(name: str) -> dict:
         ok=False, what=f"no match for {name!r}",
         result={"kind": None},
         next_steps=[
-            f"Call fastapi_meta_search_search(query='{name}') — the name may have legacy form.",
-            "Call fastapi_meta_search_home() to browse the landscape.",
+            f"Call fastapi_meta_search(query='{name}') — the name may have legacy form.",
+            "Call fastapi_meta_home() to browse the landscape.",
         ],
         t0=t0,
     )
@@ -355,7 +355,7 @@ def fastapi_meta_search_describe(name: str) -> dict:
 # ---------------------------------------------------------------------------
 
 MCP_TOOL_SCAFFOLD = {
-    "name": "fastapi_meta_generate_scaffold",
+    "name": "fastapi_meta_scaffold",
     "description": (
         "Rails-for-LLMs macro scaffold. Pass `name` + `models` (dict of "
         "model_name → field_spec) + `owner_models` (dict of "
@@ -374,7 +374,7 @@ MCP_TOOL_SCAFFOLD = {
 }
 
 
-def fastapi_meta_generate_scaffold(
+def fastapi_meta_scaffold(
     output_dir: str,
     name: str = "app",
     models: dict[str, dict[str, str]] | None = None,
@@ -406,7 +406,7 @@ def fastapi_meta_generate_scaffold(
             ok=False, what=f"scaffold failed: {exc}",
             result={}, next_steps=[
                 "Check that `models` is a dict of model_name → field-type map.",
-                "Call fastapi_meta_search_home() for the expected signature.",
+                "Call fastapi_meta_home() for the expected signature.",
             ], t0=t0,
         )
     files = res.get("files_created") if isinstance(res, dict) else None
@@ -415,8 +415,8 @@ def fastapi_meta_generate_scaffold(
         f"Boot: python -m uvicorn app.main:app --port 8000 then GET /health.",
         f"For auth (signup/login/MFA/RBAC/sessions) → CALL fastapi_auth(action='bundle', params={{'output_dir':'{output_dir}'}}).",
         f"For ONE auth feature only → fastapi_auth(action='<slice>', params={{...}}); use action='list' to see the tree.",
-        f"For exactly-once / idempotency / webhooks / rate-limit → fastapi_meta_search_search(query='<need>', k=5).",
-        f"When done, fastapi_meta_check_audit() validates the structural contract.",
+        f"For exactly-once / idempotency / webhooks / rate-limit → fastapi_meta_search(query='<need>', k=5).",
+        f"When done, fastapi_meta_audit() validates the structural contract.",
     ]
     return _envelope(
         ok=True, what=f"scaffold emitted {files_count} files at {output_dir}",
@@ -430,7 +430,7 @@ def fastapi_meta_generate_scaffold(
 # ---------------------------------------------------------------------------
 
 MCP_TOOL_AUDIT = {
-    "name": "fastapi_meta_check_audit",
+    "name": "fastapi_meta_audit",
     "description": (
         "Run the full contract audit (engine.audit.contract_check — 32+ "
         "machine-checkable rules spanning Phases 0-6) against the current "
@@ -445,7 +445,7 @@ MCP_TOOL_AUDIT = {
 }
 
 
-def fastapi_meta_check_audit() -> dict:
+def fastapi_meta_audit() -> dict:
     t0 = time.perf_counter()
     import subprocess, sys
     out = subprocess.run(
@@ -464,7 +464,7 @@ def fastapi_meta_check_audit() -> dict:
     else:
         for f in failures[:3]:
             next_steps.append(f"Fix: {f.strip()}")
-        next_steps.append("Rerun fastapi_meta_check_audit() after each fix.")
+        next_steps.append("Rerun fastapi_meta_audit() after each fix.")
     return _envelope(
         ok=ok,
         what=summary or ("audit passed" if ok else f"audit exited {out.returncode}"),
@@ -479,13 +479,13 @@ def fastapi_meta_check_audit() -> dict:
 # ---------------------------------------------------------------------------
 
 MCP_TOOL_VERIFY = {
-    "name": "fastapi_meta_verify_verify",
+    "name": "fastapi_meta_verify",
     "description": (
         "Run the 10-tier quality gate (T0 compile → T9 provenance) on a "
         "single primitive or the full primitive registry. Returns per-tier "
         "pass/fail + which primitives failed which tier. Use after adding "
         "a new primitive or refactoring an existing one; a CI-grade sanity "
-        "check that is stricter than `fastapi_meta_check_audit`. Pass "
+        "check that is stricter than `fastapi_meta_audit`. Pass "
         "`primitive=<Name>` for a single primitive, or omit for all 122."
     ),
     "tags": ["meta", "testing"],
@@ -493,7 +493,7 @@ MCP_TOOL_VERIFY = {
 }
 
 
-def fastapi_meta_verify_verify(primitive: str | None = None) -> dict:
+def fastapi_meta_verify(primitive: str | None = None) -> dict:
     t0 = time.perf_counter()
     import subprocess, sys
     cmd = [sys.executable, "-m", "engine.check_primitive"]
@@ -523,15 +523,15 @@ def fastapi_meta_verify_verify(primitive: str | None = None) -> dict:
 # each one with a unique suffix is enough to register all six.
 # ---------------------------------------------------------------------------
 
-# (MCP_TOOL for fastapi_meta_search_home is defined above as the canonical name.)
+# (MCP_TOOL for fastapi_meta_home is defined above as the canonical name.)
 MCP_TOOL_HOME = MCP_TOOL          # alias so the pattern is uniform
 # MCP_TOOL_SEARCH / _DESCRIBE / _SCAFFOLD / _AUDIT / _VERIFY — already assigned above.
 
 # Wire each MCP_TOOL_<X> to the matching entry function — the discovery
 # loop needs to know which callable to register for each metadata dict.
-MCP_TOOL_HOME["entry"]      = "fastapi_meta_search_home"
-MCP_TOOL_SEARCH["entry"]    = "fastapi_meta_search_search"
-MCP_TOOL_DESCRIBE["entry"]  = "fastapi_meta_search_describe"
-MCP_TOOL_SCAFFOLD["entry"]  = "fastapi_meta_generate_scaffold"
-MCP_TOOL_AUDIT["entry"]     = "fastapi_meta_check_audit"
-MCP_TOOL_VERIFY["entry"]    = "fastapi_meta_verify_verify"
+MCP_TOOL_HOME["entry"]      = "fastapi_meta_home"
+MCP_TOOL_SEARCH["entry"]    = "fastapi_meta_search"
+MCP_TOOL_DESCRIBE["entry"]  = "fastapi_meta_describe"
+MCP_TOOL_SCAFFOLD["entry"]  = "fastapi_meta_scaffold"
+MCP_TOOL_AUDIT["entry"]     = "fastapi_meta_audit"
+MCP_TOOL_VERIFY["entry"]    = "fastapi_meta_verify"
