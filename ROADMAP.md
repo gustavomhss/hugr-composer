@@ -181,6 +181,27 @@ must justify itself against behavioural evidence.
 | 27 | Close Phase-1 item #9 (15+ extend tools import primitives) | pending |
 | 28 | ~~Close Phase-4 #20~~ | ✅ done — 20 examples populated |
 | 29 | Target score: ≥ 70% on the code-level rubric by v1.0 | ✅ met — 100.00 (headroom: 30 points) |
+| 30 | **Staged/quarantined triage — close the backlog, leave nothing behind** | pending — 180 staged + 121 quarantined, zero decisioned |
+
+**Phase-5 #30 — Staged/quarantined triage (added 2026-04-21):**
+The 180 `_extracted/` staged primitives + 121 `_quarantine/` items are
+a pool, not a graveyard. Each must receive an explicit decision so
+nothing sits unaudited:
+
+- **Promote** — benchmark gap or recurring recipe demand justifies
+  moving to `core/venous/<ns>/<Name>/` with full HuGR shell
+  (contract.json + protocol + tests + TLA+ + dashboard).
+- **Keep staged with rationale** — useful but no current caller;
+  record a one-line `staging_reason` in `_extracted/<Name>/STAGING.md`
+  so future-us knows why it's still here.
+- **Deprecate + delete** — redundant with an already-registered
+  primitive, or design superseded. Removes from catalog entirely.
+
+Triage runs in batches (≈20 primitives/week) driven by the Phase-5 #26
+signal. Exit criteria: zero primitives in `_extracted/` or
+`_quarantine/` without an explicit decision recorded. Tracked in a
+new contract rule §B1.4 (non-regression: any newly staged primitive
+must ship with its `staging_reason`).
 
 **Exit criteria for v1.0:** code-level rubric ≥ 70% — ALREADY MET at
 100.00. The remaining v1.0 blocker is Phase-1 #9 long-tail (19/100
