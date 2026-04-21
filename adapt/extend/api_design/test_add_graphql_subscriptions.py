@@ -88,24 +88,41 @@ def test_t03_files_modified_exist_on_disk() -> None:
 
 
 def test_t04_pubsub_file_created() -> None:
-    """CC-04: app/graphql/pubsub.py exists with PubSubManager."""
+    """CC-04: app/graphql/pubsub.py exists with ``get_pubsub`` factory
+    (post-Rails: the facade is thin glue over the shipped PubSub motor)."""
     project_dir = create_fixture_project(name="gws_t04")
     add_graphql_subscriptions(ToolInput(project_dir=str(project_dir)))
     pubsub_file = project_dir / "app" / "graphql" / "pubsub.py"
     assert pubsub_file.exists(), "pubsub.py not created"
     content = pubsub_file.read_text()
-    assert "PubSubManager" in content
-    assert "get_pubsub_manager" in content
+    assert "def get_pubsub" in content
+    # Must import the HuGR-shipped motor (Rails wiring)
+    assert "from core.venous.events.PubSub import" in content
 
 
 def test_t05_pubsub_has_memory_and_redis_backends() -> None:
-    """CC-05: PubSub has memory backend (default) and Redis backend (lazy)."""
+    """CC-05: PubSub has memory backend (default) and Redis backend (lazy).
+
+    Post-Rails: the memory backend is the shipped ``InMemoryPubSub`` motor
+    and the Redis backend is the shipped ``RedisPubSubBackend`` adapter.
+    """
     project_dir = create_fixture_project(name="gws_t05")
     add_graphql_subscriptions(ToolInput(project_dir=str(project_dir)))
     content = (project_dir / "app" / "graphql" / "pubsub.py").read_text()
-    assert "MemoryPubSubBackend" in content
+    # In-memory motor reference.
+    assert "InMemoryPubSub" in content
+    # Redis adapter reference (lazy — inside _build()).
     assert "RedisPubSubBackend" in content
-    assert "asyncio.Queue" in content
+    # The motor module must actually be on disk (ensure_primitives ran).
+    motor_file = (
+        project_dir / "core" / "venous" / "events" / "PubSub" / "PubSub.py"
+    )
+    assert motor_file.exists(), "PubSub motor not shipped into project"
+    adapter_file = (
+        project_dir / "core" / "venous" / "_adapters" / "redis"
+        / "PubSubAdapter.py"
+    )
+    assert adapter_file.exists(), "Redis PubSub adapter not shipped into project"
 
 
 def test_t06_redis_import_is_lazy() -> None:
@@ -289,12 +306,24 @@ def test_t22_next_steps_mention_graphql_ws() -> None:
 
 
 def test_t23_pubsub_has_publish_and_subscribe() -> None:
-    """CC-11: PubSubManager exposes publish() and subscribe()."""
+    """CC-11: The generated pubsub.py exposes ``publish()`` and — via the
+    returned motor — ``subscribe()``.
+
+    Post-Rails the facade is thin: it re-exports ``publish`` and defers
+    ``subscribe`` to the motor returned by ``get_pubsub()``. Witnessing
+    both the facade shortcut AND the motor API is enough.
+    """
     project_dir = create_fixture_project(name="gws_t23")
     add_graphql_subscriptions(ToolInput(project_dir=str(project_dir)))
     content = (project_dir / "app" / "graphql" / "pubsub.py").read_text()
+    # Facade shortcut.
     assert "async def publish" in content
-    assert "async def subscribe" in content
+    # Motor must expose subscribe — check it on disk.
+    motor = (
+        project_dir / "core" / "venous" / "events" / "PubSub" / "PubSub.py"
+    ).read_text()
+    assert "async def subscribe" in motor
+    assert "async def publish" in motor
 
 
 def test_t24_subscriptions_use_async_generator() -> None:

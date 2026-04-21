@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "fb0b62e",
-  "generated_at": "2026-04-21T22:38:52+00:00",
+  "kit_commit": "43d5eaf",
+  "generated_at": "2026-04-21T22:47:17+00:00",
   "verbs": [
     "add",
     "generate",
@@ -211,7 +211,9 @@
       "test_paths": [
         "adapt/extend/api_design/test_add_graphql_subscriptions.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "PubSub"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -11743,5 +11745,5 @@
     "primitives": 301,
     "recipes": 389
   },
-  "stable_hash": "a5522bf5ec4dbad823f54a9671de49684c44aa10bf8456f4a5bc8fe42ac7e520"
+  "stable_hash": "04ea14e1cba4e65a05c27e455f578cb371a40ee6d4741e673751f64373728cb3"
 }
