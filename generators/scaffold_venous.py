@@ -397,17 +397,37 @@ def copy_adapter(project_dir: str, qualified_name: str) -> CopyResult:
         )
 
     written: list[Path] = []
+    # Only create a placeholder __init__.py for chain ancestors that lack one.
+    # The framework-specific __init__.py is copied from source below (if
+    # present) so adapter package-level re-exports travel with the adapter.
     for nested, doc in (
         (project / "core", "Top-level package for HuGR-shipped primitives."),
         (project / "core" / "venous", "Framework-agnostic primitives copied from HuGR SkillKit."),
         (project / "core" / "venous" / "_adapters", "Framework adapters over framework-agnostic primitives."),
-        (project / "core" / "venous" / "_adapters" / framework, f"{framework} adapters."),
     ):
         created = _ensure_namespace_init(nested, doc)
         if created:
             written.append(created)
 
     commit = _source_commit()
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    # Ship the framework's __init__.py from source so package-level imports
+    # like `from core.venous._adapters.stripe import StripeBillingAdapter`
+    # resolve. If the source has no __init__.py, fall back to the bare
+    # docstring placeholder (matches the pre-Rails behaviour).
+    framework_init_dst = dest_dir / "__init__.py"
+    if not framework_init_dst.exists():
+        framework_init_src = SOURCE_VENOUS / "_adapters" / framework / "__init__.py"
+        if framework_init_src.is_file():
+            init_body = framework_init_src.read_text()
+            init_rel = f"core/venous/_adapters/{framework}/__init__.py"
+            init_body += _attribution_footer(init_rel, commit)
+            framework_init_dst.write_text(init_body)
+        else:
+            framework_init_dst.write_text(f'"""{framework} adapters."""\n')
+        written.append(framework_init_dst)
+
     body = src_file.read_text()
     source_rel = f"core/venous/_adapters/{framework}/{module}.py"
     body += _attribution_footer(source_rel, commit)

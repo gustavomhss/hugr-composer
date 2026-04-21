@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "88351b2",
-  "generated_at": "2026-04-21T22:55:35+00:00",
+  "kit_commit": "24476ae",
+  "generated_at": "2026-04-21T23:01:46+00:00",
   "verbs": [
     "add",
     "generate",
@@ -3294,7 +3294,9 @@
       "test_paths": [
         "adapt/extend/infrastructure/test_add_stripe_subscription.py"
       ],
-      "primitives_used": [],
+      "primitives_used": [
+        "Billing"
+      ],
       "example_input": null,
       "example_output": null
     },
@@ -11800,5 +11802,5 @@
     "primitives": 302,
     "recipes": 393
   },
-  "stable_hash": "c2e13014a3cd6e8d4c1340f34bf1b7198cfd2ee0153179a6f6f17c7c72d36756"
+  "stable_hash": "29f711367e602e2c4f3668d97dc141204333cf0cfc5f53a7c2dc2b4ff5f45c1e"
 }
