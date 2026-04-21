@@ -9,13 +9,13 @@ so a reader can tell — in one glance — whether to upgrade.
 
 ---
 
-## [1.0.0] — YYYY-MM-DD (template — fill at freeze commit)
+## [1.0.0] — YYYY-MM-DD (template — fill in YYYY-MM-DD at freeze commit)
 
-> **This block is a template pre-populated with the values we know to
-> be correct at freeze-prep time. On the freeze day, fill `YYYY-MM-DD`,
-> replace `<stable_hash>` with `jq -r .stable_hash engine/index/catalog.json`,
-> re-verify every count against `engine.inventory`, then remove this
-> note and move the block above the `[Unreleased]` section.**
+> **This block is release-ready** except the `YYYY-MM-DD` placeholder
+> which Gustavo fills on the freeze day. Every count below is
+> machine-verified (2026-04-21 audit) and `stable_hash` is the literal
+> hash at HEAD. Re-verify with `engine.inventory` + `jq -r .stable_hash
+> engine/index/catalog.json` before tagging.
 
 ### Summary
 
@@ -38,8 +38,10 @@ tool / primitive renames going forward (CONTRACT §A10).
   not promoted.
 - **20 complete examples** at `/examples/` (5 baseline + 10 mid + 5 adversarial).
 - **34/34 CONTRACT rules green.**
-- **Catalog `stable_hash`: `<stable_hash>`** — consumers pin this for session
-  reproducibility.
+- **Catalog `stable_hash`: `50338fa37aa2...`** (full 64-char value in
+  `engine/index/catalog.json`) — consumers pin this for session
+  reproducibility. Verify with `jq -r .stable_hash
+  skills/SKILL-001-fastapi-production/engine/index/catalog.json`.
 
 ### Added
 
@@ -85,7 +87,15 @@ check staged primitives via `status="staged"` filter.
 
 ### Known issues
 
-None blocking v1.0.0. Post-v1.0 items tracked in
+- **2 pre-existing bulkhead API divergence tests** fail in
+  `test_add_bulkhead_isolation_behavior.py` (B-02 and B-04). Root
+  cause: test assumes a `Bulkhead(BulkheadConfig)` constructor that
+  predates the current `InMemoryBulkhead(name, *, max_concurrent_calls,
+  max_wait_duration_ms)` API. Not caused by v1.0 work; will be fixed
+  alongside the deferred `BulkheadAdapter.py` promotion sprint.
+  Documented in `FREEZE.md §2.8`.
+
+All other v1.0 gates green. Post-v1.0 items tracked in
 `FREEZE.md §2` (explicitly deferred) and `ROADMAP.md` (phase plan).
 
 ### Breaking changes

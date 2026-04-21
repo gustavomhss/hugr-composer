@@ -1,6 +1,8 @@
 # 0004 — Tier-lite for stateless primitives
 
-> **Status:** Proposed, awaiting Gustavo ratification.
+> **Status:** Approved pre-ratification — machine check (§B1.8) already
+> landed and green; awaits Gustavo's formal signature in CONTRACT.md §E
+> on freeze day (see GOLIVE.md §1.2 / §1.4).
 > **Author:** Claude (overnight 2026-04-21 / 2026-04-22).
 > **Depends on:** Amendment to CONTRACT §A12 and addition of §B1.8.
 > **Scope:** Defines a second valid promotion target ("registered-lite")

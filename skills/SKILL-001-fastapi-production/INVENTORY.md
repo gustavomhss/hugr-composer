@@ -16,7 +16,7 @@
 
 ---
 
-## 1. adapt/ — 126 tools
+## 1. adapt/ — 127 tools
 
 | bucket | count |
 |---|---:|
@@ -25,7 +25,7 @@
 | `operate` | 8 |
 | `evolve` | 8 |
 | `proactive` | 1 |
-| `contracts` | 3 |
+| `contracts` | 4 |
 
 ### adapt/extend/ sub-domains (100 tools)
 
