@@ -18,8 +18,10 @@ import ast
 import sys
 from pathlib import Path
 
+import json
+
 from adapt.contracts import ToolInput
-from adapt.extend.infrastructure.add_cache_layer import add_cache_layer
+from adapt.extend.infrastructure.add_cache_layer import MCP_TOOL, add_cache_layer
 from tests.common.fixture_factory import create_fixture_project
 
 
@@ -265,6 +267,73 @@ def test_cache_delete_pattern_uses_scan() -> None:
 
 
 # ---------------------------------------------------------------------------
+# CONTRACT §B1.0 + §B1.0.1 — primitive copy + thin glue
+# ---------------------------------------------------------------------------
+
+def test_primitives_copied() -> None:
+    """CONTRACT §B1.0: KeyValueBucket + SessionCache + DistributedLock copied."""
+    project_dir = create_fixture_project(name="cl_b10_prim")
+    add_cache_layer(ToolInput(project_dir=str(project_dir)))
+    for ns, name, cls in [
+        ("cache", "KeyValueBucket", "InMemoryKeyValueBucket"),
+        ("cache", "SessionCache", "InMemorySessionCache"),
+        ("cache", "DistributedLock", "InMemoryDistributedLock"),
+    ]:
+        p = project_dir / "core" / "venous" / ns / name / f"{name}.py"
+        assert p.exists(), f"primitive not copied: {p}"
+        assert cls in p.read_text()
+
+
+def test_manifest_records_primitives() -> None:
+    """CONTRACT §B1.0: .venous_manifest.json records all three primitives."""
+    project_dir = create_fixture_project(name="cl_b10_manifest")
+    add_cache_layer(ToolInput(project_dir=str(project_dir)))
+    manifest = json.loads((project_dir / ".venous_manifest.json").read_text())
+    qnames = {p["qualified_name"] for p in manifest["primitives"]}
+    assert "core.venous.cache.KeyValueBucket" in qnames
+    assert "core.venous.cache.SessionCache" in qnames
+    assert "core.venous.cache.DistributedLock" in qnames
+
+
+def test_glue_imports_primitives() -> None:
+    """CONTRACT §B1.0.1: glue imports all three primitives."""
+    project_dir = create_fixture_project(name="cl_b10_imports")
+    add_cache_layer(ToolInput(project_dir=str(project_dir)))
+    glue = project_dir / "app" / "cache" / "primitives.py"
+    assert glue.exists()
+    body = glue.read_text()
+    assert "from core.venous.cache.KeyValueBucket" in body
+    assert "from core.venous.cache.SessionCache" in body
+    assert "from core.venous.cache.DistributedLock" in body
+
+
+def test_glue_body_under_20_loc() -> None:
+    """CONTRACT §B1.0.1: glue body stays below 20 executable lines."""
+    project_dir = create_fixture_project(name="cl_b10_loc")
+    add_cache_layer(ToolInput(project_dir=str(project_dir)))
+    tree = ast.parse((project_dir / "app" / "cache" / "primitives.py").read_text())
+    body_lines = 0
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            start = node.body[0].lineno
+            end = node.end_lineno or start
+            body_lines += end - start + 1
+    assert body_lines <= 20, body_lines
+
+
+def test_mcp_tool_metadata() -> None:
+    """MCP_TOOL declares imports_primitives per CONTRACT §B1.0."""
+    assert MCP_TOOL["entry"] == "add_cache_layer"
+    for qn in (
+        "core.venous.cache.KeyValueBucket",
+        "core.venous.cache.SessionCache",
+        "core.venous.cache.DistributedLock",
+    ):
+        assert qn in MCP_TOOL["imports_primitives"]
+    assert tuple(MCP_TOOL["imports_adapters"]) == ()
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
 
@@ -292,6 +361,11 @@ if __name__ == "__main__":
         test_next_steps_mention_redis_and_pip,
         test_notes_mention_msgpack_and_ttl,
         test_cache_delete_pattern_uses_scan,
+        test_primitives_copied,
+        test_manifest_records_primitives,
+        test_glue_imports_primitives,
+        test_glue_body_under_20_loc,
+        test_mcp_tool_metadata,
     ]
 
     passed = failed = 0

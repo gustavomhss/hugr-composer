@@ -263,7 +263,7 @@ def _r_tools_import_primitives() -> tuple[bool, str]:
     this rule (verified by the tightened scan in
     `engine.index.manifest._extract_primitive_imports`).
 
-    The current floor (19) is a non-regression guarantee: no PR may
+    The current floor (22) is a non-regression guarantee: no PR may
     reduce the count below this without updating the CONTRACT.
     """
     catalog_path = SKILL_ROOT / "engine" / "index" / "catalog.json"
@@ -279,7 +279,7 @@ def _r_tools_import_primitives() -> tuple[bool, str]:
         and t.get("module_path", "").startswith("adapt/extend/")
         and t.get("primitives_used")
     ]
-    FLOOR = 19
+    FLOOR = 22
     if len(connected) < FLOOR:
         return False, (
             f"only {len(connected)}/100 extend add_* tools import primitives "

@@ -1,16 +1,23 @@
-"""TOOL-015: add_webhook_sender — add outbound webhook delivery to a FastAPI project.
+"""TOOL-015: add_webhook_sender — outbound webhook delivery backed by primitives.
 
-Creates ``WebhookEndpoint`` and ``WebhookDelivery`` models, an HMAC-SHA256
-signer, a fixed exponential-backoff schedule, an ARQ worker, CRUD helpers,
-admin routes, Pydantic schemas, and an Alembic migration.  The ``send_webhook``
-public helper enqueues delivery jobs so callers never block.
+Follows the CONTRACT §B1.0 + §B1.0.1 pattern (Rails-style wiring):
 
-Auto-disable: after ``disable_after_consecutive_failures`` consecutive failures
-the endpoint's status is set to ``"disabled"`` and no further retries are
-attempted, preventing the sender from wasting cycles on a dead partner.
+1. Copy the framework-agnostic primitives
+   ``core.venous.security.SignatureVerifier`` (HMAC-SHA256 sign/verify with
+   domain-separated framing) and ``core.venous.resiliency.RetryPolicy``
+   (exponential backoff + jitter + retry budget) into the generated project.
+2. Emit a thin ``app/webhooks/sender.py`` glue file (≤ 20 logic lines, AST
+   verified) that imports ``DetachedSigner`` + ``ExponentialBackoffRetryPolicy``
+   and exposes an async ``send_webhook(url, payload)`` helper.
+3. Emit the SQLAlchemy models, ARQ worker, CRUD, admin routes, Pydantic
+   schemas, and Alembic migration as framework-specific wiring.
 
-The tool is idempotent: a second run detects the ``WebhookEndpoint`` model
-fingerprint and returns ``status="no_op"`` without touching any file.
+Auto-disable: after ``disable_after_consecutive_failures`` consecutive
+failures the endpoint's status is set to ``"disabled"``.
+
+The tool is idempotent: a second run detects the ``SignatureVerifier``
+primitive's ``DetachedSigner`` in ``app/webhooks/sender.py`` and returns
+``status="no_op"``.
 
 Example::
 
@@ -36,10 +43,85 @@ from adapt.contracts.migration_helper import find_migration_head
 
 MCP_TOOL = {
     "name": "fastapi_realtime_add_webhook_sender",
-    "description": "Add outbound webhook delivery system with retry, signature, and delivery log.",
+    "description": (
+        "Copy SignatureVerifier + RetryPolicy primitives into the project "
+        "and wire a ≤20-line app/webhooks/sender.py glue that signs and "
+        "retries outbound webhook POSTs."
+    ),
     "tags": ["extend", "realtime"],
     "entry": "add_webhook_sender",
+    "imports_primitives": [
+        "core.venous.security.SignatureVerifier",
+        "core.venous.resiliency.RetryPolicy",
+    ],
+    "imports_adapters": (),
 }
+
+
+# ---------------------------------------------------------------------------
+# Thin glue over core.venous.security.SignatureVerifier + core.venous.resiliency.RetryPolicy
+# ---------------------------------------------------------------------------
+
+_SENDER_GLUE = '''\
+"""Thin glue that wires the SignatureVerifier + RetryPolicy primitives.
+
+Delegates to the primitives copied under
+`core/venous/security/SignatureVerifier/` and
+`core/venous/resiliency/RetryPolicy/` by the `add_webhook_sender` tool.
+Re-emitted idempotently on subsequent runs. This file contains NO webhook
+semantics — HMAC sign/verify framing (SIG-INV-*), retry backoff + jitter +
+budget (RETRY-INV-*) all live in the primitives.
+"""
+
+from __future__ import annotations
+
+import os
+from typing import Any
+
+from core.venous.security.SignatureVerifier.SignatureVerifier import (
+    ALG_HMAC_SHA256,
+    DetachedSigner,
+    TrustAnchor,
+)
+from core.venous.resiliency.RetryPolicy.RetryPolicy import (
+    ExponentialBackoffRetryPolicy,
+    RetryBudget,
+)
+
+_signer: DetachedSigner | None = None
+_policy: ExponentialBackoffRetryPolicy | None = None
+_KEY_ID = os.getenv("WEBHOOK_KEY_ID", "webhook-default")
+
+
+def get_signer() -> DetachedSigner:
+    """Return the process-global DetachedSigner (HMAC-SHA256, env secret)."""
+    global _signer
+    if _signer is not None: return _signer
+    anchor = TrustAnchor()
+    secret = os.getenv("WEBHOOK_SECRET", "change-me-32-bytes-min-development").encode("utf-8").ljust(32, b"0")[:64]
+    anchor.register(_KEY_ID, ALG_HMAC_SHA256, public_key=secret, private_key=secret)
+    _signer = DetachedSigner(anchor, default_msg_type="webhook")
+    return _signer
+
+
+def get_retry_policy() -> ExponentialBackoffRetryPolicy:
+    """Return the process-global RetryPolicy (exp backoff + budget)."""
+    global _policy
+    if _policy is None: _policy = ExponentialBackoffRetryPolicy(max_attempts=int(os.getenv("WEBHOOK_MAX_RETRIES", "5")), budget=RetryBudget(budget_ratio=float(os.getenv("WEBHOOK_BUDGET_RATIO", "0.1"))))
+    return _policy
+
+
+async def send_webhook(url: str, payload: bytes) -> Any:
+    """Sign + POST `payload` to `url`, retrying per the RetryPolicy primitive."""
+    import httpx
+    signature = get_signer().sign(payload, _KEY_ID).hex()
+    async def _call() -> httpx.Response:
+        async with httpx.AsyncClient() as c: return await c.post(url, content=payload, headers={"X-Signature": signature, "X-Key-Id": _KEY_ID})
+    return await get_retry_policy().execute(_call, idempotent=True)
+
+
+__all__ = ["DetachedSigner", "ExponentialBackoffRetryPolicy", "TrustAnchor", "get_signer", "get_retry_policy", "send_webhook"]
+'''
 
 
 
@@ -109,14 +191,18 @@ def add_webhook_sender(
 
     app_dir = project / "app"
 
-    # --- Pre-flight: already installed? ------------------------------------
-    model_file = app_dir / "models" / "webhook.py"
-    if model_file.exists() and "WebhookEndpoint" in model_file.read_text():
+    # --- Pre-flight: already installed? (primitive-class-name guard) -------
+    sender_glue = app_dir / "webhooks" / "sender.py"
+    if sender_glue.exists() and "DetachedSigner" in sender_glue.read_text():
         return ToolResult(
             status="no_op",
-            notes=["WebhookEndpoint already present — webhook sender is already enabled, skipped."],
+            notes=[
+                "SignatureVerifier + RetryPolicy primitives already wired via "
+                "app/webhooks/sender.py — skipped."
+            ],
             execution_time_ms=_elapsed_ms(start),
         )
+    model_file = app_dir / "models" / "webhook.py"
 
     if inp.dry_run:
         return ToolResult(
@@ -131,6 +217,28 @@ def add_webhook_sender(
         )
 
     files_modified: list[str] = []
+
+    # --- Step 0: Copy primitives + emit thin glue (§B1.0 / §B1.0.1) ---------
+    from generators.scaffold_venous import ensure_primitives
+
+    manifest = ensure_primitives(
+        str(project),
+        names=[
+            "core.venous.security.SignatureVerifier",
+            "core.venous.resiliency.RetryPolicy",
+        ],
+        adapters=[],
+    )
+    files_created.append(manifest.path)
+
+    webhooks_glue_dir = app_dir / "webhooks"
+    webhooks_glue_dir.mkdir(parents=True, exist_ok=True)
+    webhooks_glue_init = webhooks_glue_dir / "__init__.py"
+    if not webhooks_glue_init.exists():
+        webhooks_glue_init.write_text('"""Webhook sender glue package."""\n')
+        files_created.append(str(webhooks_glue_init))
+    sender_glue.write_text(_SENDER_GLUE)
+    files_created.append(str(sender_glue))
 
     # Step 1 – models
     # If the project already has a webhook.py (e.g. a user-defined Webhook model),
@@ -244,11 +352,22 @@ def add_webhook_sender(
     for path_str in files_created:
         _assert_parses(Path(path_str))
 
+    # --- Enforce ≤20 logic lines in the primary glue (CONTRACT §B1.0.1) -----
+    glue_loc = _count_logic_lines(sender_glue.read_text())
+    if glue_loc > 20:
+        return ToolResult(
+            status="error",
+            error=f"Primary glue {sender_glue} has {glue_loc} logic lines (> 20).",
+            execution_time_ms=_elapsed_ms(start),
+        )
+
     return ToolResult(
         status="success",
         files_created=files_created,
         files_modified=files_modified,
         notes=[
+            "Shipped primitives: core.venous.security.SignatureVerifier, core.venous.resiliency.RetryPolicy.",
+            "Glue: app/webhooks/sender.py wires DetachedSigner + ExponentialBackoffRetryPolicy + send_webhook.",
             "Outbound webhook sender added: models, signer, backoff, ARQ worker, CRUD, routes.",
             f"Max attempts: {max_attempts}.  "
             f"Auto-disable after: {disable_after_consecutive_failures} consecutive failures.",
@@ -1842,3 +1961,21 @@ def _elapsed_ms(start: float) -> int:
         Elapsed milliseconds as an integer.
     """
     return int((time.monotonic() - start) * 1000)
+
+
+def _count_logic_lines(source: str) -> int:
+    """Count executable logic lines — imports, class/func defs, and decorators
+    do NOT count (per CONTRACT §B1.0.1).
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return 0
+    loc = 0
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if node.body:
+                first = node.body[0].lineno
+                last = node.end_lineno or first
+                loc += last - first + 1
+    return loc

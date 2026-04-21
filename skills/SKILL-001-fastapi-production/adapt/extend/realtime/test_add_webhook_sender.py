@@ -18,8 +18,10 @@ import ast
 import sys
 from pathlib import Path
 
+import json
+
 from adapt.contracts import ToolInput
-from adapt.extend.realtime.add_webhook_sender import add_webhook_sender
+from adapt.extend.realtime.add_webhook_sender import MCP_TOOL, add_webhook_sender
 from tests.common.fixture_factory import create_fixture_project
 
 
@@ -354,6 +356,66 @@ def test_payload_deterministic_serialization() -> None:
 
 
 # ---------------------------------------------------------------------------
+# CONTRACT §B1.0 + §B1.0.1 — primitive copy + thin glue
+# ---------------------------------------------------------------------------
+
+def test_primitives_copied() -> None:
+    """CONTRACT §B1.0: SignatureVerifier + RetryPolicy copied into project."""
+    project_dir = create_fixture_project(name="whs_b10_prim")
+    add_webhook_sender(ToolInput(project_dir=str(project_dir)))
+    sv = project_dir / "core" / "venous" / "security" / "SignatureVerifier" / "SignatureVerifier.py"
+    rp = project_dir / "core" / "venous" / "resiliency" / "RetryPolicy" / "RetryPolicy.py"
+    assert sv.exists() and rp.exists()
+    assert "class DetachedSigner" in sv.read_text()
+    assert "class ExponentialBackoffRetryPolicy" in rp.read_text()
+
+
+def test_manifest_records_primitives() -> None:
+    """CONTRACT §B1.0: .venous_manifest.json records both primitives."""
+    project_dir = create_fixture_project(name="whs_b10_manifest")
+    add_webhook_sender(ToolInput(project_dir=str(project_dir)))
+    manifest = json.loads((project_dir / ".venous_manifest.json").read_text())
+    qnames = {p["qualified_name"] for p in manifest["primitives"]}
+    assert "core.venous.security.SignatureVerifier" in qnames
+    assert "core.venous.resiliency.RetryPolicy" in qnames
+
+
+def test_glue_imports_primitives() -> None:
+    """CONTRACT §B1.0.1: glue imports DetachedSigner + ExponentialBackoffRetryPolicy."""
+    project_dir = create_fixture_project(name="whs_b10_glue")
+    add_webhook_sender(ToolInput(project_dir=str(project_dir)))
+    glue = project_dir / "app" / "webhooks" / "sender.py"
+    assert glue.exists()
+    body = glue.read_text()
+    assert "from core.venous.security.SignatureVerifier" in body
+    assert "from core.venous.resiliency.RetryPolicy" in body
+    assert "DetachedSigner" in body
+    assert "ExponentialBackoffRetryPolicy" in body
+
+
+def test_glue_body_under_20_loc() -> None:
+    """CONTRACT §B1.0.1: glue body stays below 20 executable lines."""
+    project_dir = create_fixture_project(name="whs_b10_loc")
+    add_webhook_sender(ToolInput(project_dir=str(project_dir)))
+    tree = ast.parse((project_dir / "app" / "webhooks" / "sender.py").read_text())
+    body_lines = 0
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            start = node.body[0].lineno
+            end = node.end_lineno or start
+            body_lines += end - start + 1
+    assert body_lines <= 20, body_lines
+
+
+def test_mcp_tool_metadata() -> None:
+    """MCP_TOOL declares imports_primitives per CONTRACT §B1.0."""
+    assert MCP_TOOL["entry"] == "add_webhook_sender"
+    assert "core.venous.security.SignatureVerifier" in MCP_TOOL["imports_primitives"]
+    assert "core.venous.resiliency.RetryPolicy" in MCP_TOOL["imports_primitives"]
+    assert tuple(MCP_TOOL["imports_adapters"]) == ()
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
 
@@ -388,6 +450,11 @@ if __name__ == "__main__":
         test_next_steps_present,
         test_custom_max_attempts_respected,
         test_payload_deterministic_serialization,
+        test_primitives_copied,
+        test_manifest_records_primitives,
+        test_glue_imports_primitives,
+        test_glue_body_under_20_loc,
+        test_mcp_tool_metadata,
     ]
 
     passed = 0
