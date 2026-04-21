@@ -5,14 +5,16 @@ Usage:
     python -m engine.promotion.promote --delete NAME [--dry-run]
 
 Invariants:
-    - Refuses to promote unless the ledger entry says PROMOTE_FULL /
-      PROMOTE_LITE AND has zero blockers.
-    - PROMOTE_LITE requires the ratification line "§B1.8 ratified"
+    - Refuses to promote unless the ledger entry carries an actionable
+      verdict (PROMOTE_AS_ADAPTER, PROMOTE_AS_PRIMITIVE, FILL_AND_PROMOTE)
+      AND has zero blockers.
+    - Lite-tier promotions (PROMOTE_AS_PRIMITIVE with registry
+      `tier: "lite"`) require the ratification token "§B1.8 ratified"
       in CONTRACT.md §E. Without it, the executor refuses (§A12 intact).
     - Every action is fully reversible: a pre-flight copy of the
       affected trees is written to a temp dir; on any failure, the
       original state is restored.
-    - Contract must stay 33/33 green. A post-flight contract_check
+    - Contract must stay 36/36 green. A post-flight contract_check
       failure triggers automatic rollback.
     - Every promotion is one atomic commit — never batched.
 """
