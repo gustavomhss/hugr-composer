@@ -661,6 +661,195 @@ def _r_bench_specs() -> tuple[bool, str]:
     return True, f"20 specs present (5/10/5) with all 4 required sections"
 
 
+def _r_skill_md_contract() -> tuple[bool, str]:
+    """B2.5 — SKILL.md follows the Agent Skills contract for Maestro consumption.
+
+    Enforces the 20 rules from `docs/research/SKILL_META_FORMAT.md` §13.
+    Every rule is cheap (file parse + regex). Fails fast on the first
+    violation with line numbers so authors can fix.
+    """
+    skill_md = SKILL_ROOT / "SKILL.md"
+    if not skill_md.exists():
+        return False, "missing: skills/SKILL-001-fastapi-production/SKILL.md"
+    raw = skill_md.read_text(encoding="utf-8")
+
+    # 1. Frontmatter fence pair
+    if not raw.startswith("---\n"):
+        return False, "SKILL.md must open with '---' YAML frontmatter fence"
+    end_fence = raw.find("\n---\n", 4)
+    if end_fence < 0:
+        return False, "SKILL.md frontmatter not closed with '---' fence"
+    fm_text = raw[4:end_fence]
+    body = raw[end_fence + 5:]
+
+    # 2. Frontmatter YAML parses
+    try:
+        import yaml
+        fm = yaml.safe_load(fm_text) or {}
+    except Exception as exc:  # noqa: BLE001
+        return False, f"SKILL.md frontmatter YAML invalid: {exc}"
+
+    # 3. `name` field (Anthropic spec)
+    name = fm.get("name")
+    if not isinstance(name, str) or not name:
+        return False, "SKILL.md frontmatter missing `name` (non-empty string)"
+    if len(name) > 64:
+        return False, f"SKILL.md name too long ({len(name)}>64)"
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", name):
+        return False, f"SKILL.md name must match ^[a-z0-9-]+$; got {name!r}"
+    if name in {"anthropic", "claude"}:
+        return False, f"SKILL.md name uses reserved word: {name!r}"
+
+    # 4. `description` field (Anthropic spec)
+    desc = fm.get("description")
+    if not isinstance(desc, str) or not desc.strip():
+        return False, "SKILL.md frontmatter missing `description`"
+    if len(desc) > 1024:
+        return False, f"SKILL.md description too long ({len(desc)}>1024 chars)"
+    if "<" in desc or ">" in desc:
+        return False, "SKILL.md description cannot contain XML tags (`<`/`>`)"
+    first_word = desc.strip().split(None, 1)[0].lower()
+    if first_word in {"i", "you", "we"}:
+        return False, (
+            f"SKILL.md description must be third-person "
+            f"(starts with {first_word!r})"
+        )
+
+    # 5. Trigger + anti-trigger phrases
+    desc_low = desc.lower()
+    if not any(kw in desc_low for kw in ("use when", "trigger when")):
+        return False, "SKILL.md description lacks a 'use when' positive-trigger clause"
+    if not any(kw in desc_low for kw in ("do not", "not use", "avoid")):
+        return False, "SKILL.md description lacks a 'do not' anti-trigger clause"
+
+    # 6. Body budget (lines + token estimate)
+    body_lines = body.splitlines()
+    if len(body_lines) > 500:
+        return False, f"SKILL.md body >500 lines ({len(body_lines)}) — split references"
+    if len(body) // 4 > 5000:
+        return False, f"SKILL.md body >5000 tokens (estimate {len(body)//4})"
+
+    # 7. Required H2 sections
+    required_sections = (
+        "## Overview", "## When to use", "## When NOT to use",
+        "## Machine-readable metadata", "## Workflow phases",
+        "## Tier-1 tool index", "## Few-shot transcripts",
+        "## Anti-patterns", "## Reference files",
+    )
+    missing_sections = [s for s in required_sections if s not in body]
+    if missing_sections:
+        return False, f"SKILL.md missing required sections: {missing_sections[:3]}"
+
+    # 8. Machine-readable metadata fenced YAML
+    meta_block = re.search(r"## Machine-readable metadata\s*\n\s*```yaml\n(.*?)\n```",
+                           body, re.DOTALL)
+    if not meta_block:
+        return False, "SKILL.md missing fenced ```yaml block under 'Machine-readable metadata'"
+    try:
+        meta = yaml.safe_load(meta_block.group(1)) or {}
+    except Exception as exc:  # noqa: BLE001
+        return False, f"SKILL.md machine-readable metadata YAML invalid: {exc}"
+    for required_key in ("hugr_skill_version", "spec_compat", "kind",
+                          "domains", "entry_tools", "catalog_path",
+                          "phases", "invariants"):
+        if required_key not in meta:
+            return False, f"SKILL.md machine-readable metadata missing `{required_key}`"
+
+    # 9. `hugr_skill_version` semver
+    if not re.fullmatch(r"\d+\.\d+\.\d+", str(meta["hugr_skill_version"])):
+        return False, (
+            f"hugr_skill_version must be semver (e.g. '1.0.0'); "
+            f"got {meta['hugr_skill_version']!r}"
+        )
+
+    # 10. catalog_path exists + valid JSON with expected keys
+    cat = SKILL_ROOT / str(meta["catalog_path"])
+    if not cat.exists():
+        return False, f"catalog_path does not exist: {cat.relative_to(SKILL_ROOT)}"
+    try:
+        cat_data = json.loads(cat.read_text())
+    except (json.JSONDecodeError, OSError) as exc:
+        return False, f"catalog_path file malformed: {exc}"
+    for k in ("schema_version", "tools", "primitives", "recipes", "counts"):
+        if k not in cat_data:
+            return False, f"catalog.json missing top-level key {k!r}"
+
+    # 11. Every entry_tool exists in the registered MCP tool surface
+    #     (we match against the catalog's tool names + the known
+    #     tier-1 meta-tool names registered via register_tier1_tools +
+    #     the fastapi_auth tree dispatcher)
+    cat_tool_names = {t.get("name") for t in cat_data.get("tools", [])}
+    known_non_catalog = {
+        "fastapi_meta_home", "fastapi_meta_search", "fastapi_meta_describe",
+        "fastapi_meta_scaffold", "fastapi_meta_compose",
+        "fastapi_meta_audit", "fastapi_meta_verify",
+        "fastapi_auth", "fastapi_find_primitive", "fastapi_suggest_composition",
+    }
+    valid_tool_names = cat_tool_names | known_non_catalog
+    missing_tools = [
+        t for t in meta.get("entry_tools", [])
+        if t not in valid_tool_names
+    ]
+    if missing_tools:
+        return False, (
+            f"SKILL.md entry_tools reference unknown tools: {missing_tools[:3]}"
+        )
+
+    # 12. Few-shot transcripts ≥ 2, ≤ 3 (fenced code blocks under the section)
+    transcripts_section = re.search(
+        r"## Few-shot transcripts(.+?)(?=\n## )", body, re.DOTALL,
+    )
+    if not transcripts_section:
+        return False, "SKILL.md 'Few-shot transcripts' section missing body"
+    transcripts = re.findall(r"```[^\n]*\n(.*?)```", transcripts_section.group(1), re.DOTALL)
+    if not (2 <= len(transcripts) <= 3):
+        return False, (
+            f"SKILL.md must include 2-3 few-shot transcripts; got {len(transcripts)}"
+        )
+
+    # 13. No forbidden drift heuristics (STATUS/ROADMAP territory)
+    forbidden = ("benchmark score", "test count", "sprint", "Phase 4 complete")
+    hits = [f for f in forbidden if f.lower() in body.lower()]
+    if hits:
+        return False, (
+            f"SKILL.md contains forbidden drift-prone phrases: {hits}. "
+            f"Move these to STATUS.md."
+        )
+
+    # 14. No XML tags in the body (excluding backticked code / placeholders)
+    body_stripped = re.sub(r"```.*?```", "", body, flags=re.DOTALL)
+    body_stripped = re.sub(r"`[^`]*`", "", body_stripped)
+    # Real XML tags have a closing `>` with letters inside, or a `/` prefix.
+    # `<slug>` placeholder style is ambiguous; we focus on unambiguous XML.
+    if re.search(r"</[A-Za-z][A-Za-z0-9]*\s*>|<[A-Za-z][A-Za-z0-9]*\s+[a-z][a-z-]*=",
+                 body_stripped):
+        return False, "SKILL.md body contains XML tags; remove them"
+
+    # 15. Reference files listed exist on disk
+    ref_section = re.search(r"## Reference files(.+?)(?=\n---|\Z)", body, re.DOTALL)
+    if ref_section:
+        # Paths live inside backticks on each bullet line.
+        for m in re.finditer(r"^\s*-\s+`([^`]+)`", ref_section.group(1), re.MULTILINE):
+            ref = m.group(1).strip()
+            # Absolute (repo-root-relative, starts with /) vs sibling
+            if ref.startswith("/"):
+                p = REPO_ROOT / ref.lstrip("/")
+            else:
+                p = SKILL_ROOT / ref
+            if not p.exists():
+                return False, f"SKILL.md references missing file: {ref}"
+
+    # 16. Versioning footer
+    if not re.search(r"\*version:\s*\d+\.\d+\.\d+", body):
+        return False, "SKILL.md missing versioning footer (*version: X.Y.Z ...*)"
+
+    return True, (
+        f"SKILL.md v{meta['hugr_skill_version']}: "
+        f"{len(desc)}-char desc, {len(body_lines)}-line body, "
+        f"{len(transcripts)} transcripts, {len(meta['entry_tools'])} entry tools"
+    )
+
+
 def _r_index_manifest() -> tuple[bool, str]:
     """B2.4 — engine/index/catalog.json is synced with the on-disk sources.
 
@@ -977,6 +1166,7 @@ RULES: list[Rule] = [
     Rule("B2.2", 2, "suggest_composition MCP tool + recipe quality gate", _r_suggest_composition),
     Rule("B2.3", 2, "reference docs site idempotent build", _r_docs_site),
     Rule("B2.4", 2, "index catalog manifest synced + deterministic", _r_index_manifest),
+    Rule("B2.5", 2, "SKILL.md Agent Skills contract (Maestro-facing)", _r_skill_md_contract),
     Rule("B3.1", 3, "20 benchmark specs (5 baseline / 10 mid / 5 adversarial)", _r_bench_specs),
     Rule("B3.2", 3, "scoring rubric implemented + tested", _r_bench_rubric_runner),
     Rule("B3.3", 3, "benchmark runner + stub Maestro + report JSON", _r_bench_rubric_runner),
