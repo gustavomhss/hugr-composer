@@ -11,7 +11,58 @@ so a reader can tell — in one glance — whether to upgrade.
 
 ## [Unreleased] — v0.3.0-dev
 
-Two parallel tracks in development:
+Three parallel tracks in development:
+
+### Track B — Promotion pipeline for the staged pool (2026-04-21 overnight)
+
+Tooling to triage and selectively promote the 315 staged+quarantined
+primitives in `core/venous/_extracted/` without silently amending §A12
+(the inviolable rule: promote only when benchmark gap demands).
+
+**Ships:**
+
+- **`docs/decisions/0004-tier-lite.md`** — formal proposal for a
+  second registered tier ("lite") that skips the `.tla` specification
+  for stateless primitives where TLA+ adds zero verification value
+  (pure middleware, value objects, format validators). Includes the
+  §A12 amendment text recognising a ratified triage-pass as §A12(c).
+  Status: awaiting Gustavo ratification.
+- **`engine/promotion/`** module (7 files + 23 unit tests):
+  - `schemas.py` — Pydantic contracts for Verdict / Signal / StateFlags /
+    LedgerEntry / Ledger; self-validating, round-trip safe.
+  - `state.py` — deterministic file-based inspection: REPLACE_ME count,
+    TLA+ presence, concurrency detection (AST walk), mutable state
+    detection (AST walk), framework-coupling detection (explicit imports
+    + implicit tokens like `Mapped[`, `APIRouter(`, etc.), duplicate-of-
+    registered detection.
+  - `signals.py` — §A12(b) signal detection: scans catalog.json for
+    `primitives_used` matches, walks source trees for `from core.venous`
+    imports, reads benchmark specs for name mentions.
+  - `classify.py` — 8-rule decision tree, first-match-wins:
+    duplicate → DELETE; framework-coupled → KEEP_STAGED(re-extract);
+    quarantined → KEEP_STAGED; no signal → KEEP_STAGED; signal + stub
+    shell → NEEDS_REVIEW; signal + concurrent → PROMOTE_FULL; signal
+    + lite-eligible → PROMOTE_LITE; fallthrough → NEEDS_REVIEW.
+  - `promote.py` — atomic executor with automatic rollback. Refuses
+    non-ready entries and §B1.7-unratified lite promotions. Rebuilds
+    catalog + runs contract gate per promotion; any failure triggers
+    snapshot restore. Dry-run verified against refusal paths.
+  - `ledger.py` — `ledger.json` → `LEDGER.md` (242 entries, 1751 lines)
+    with approve/reject checkboxes and copy-paste run commands.
+  - `tests/` — 23 unit tests covering schema validation, state
+    inspection AST walkers (threading/asyncio/mutable detection),
+    each of the 8 classifier rules, and the weak-signal negative case.
+- **`engine/promotion/HANDOFF.md`** — overnight summary for the
+  ratifying session: current ledger split (13 DELETE / 229 KEEP_STAGED /
+  0 PROMOTE_*), what to do in the morning, and the honest finding that
+  zero primitives are currently promotable without either re-extraction
+  or new benchmark signals.
+
+**Discipline:**
+
+- Zero primitives promoted. Tree clean at handoff.
+- Contract 33/33 green across every commit in the track.
+- No §A12 amendment merged — only a proposal doc awaiting signature.
 
 ### Track A — Catalog wiring + Rails-connection discipline (2026-04-21 sprint)
 
