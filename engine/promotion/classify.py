@@ -125,7 +125,7 @@ def _classify_single(
             ),
         )
 
-    # Rule 2: quarantined with framework coupling — delete unless fixable.
+    # Rule 2a: quarantined with framework coupling — delete unless fixable.
     if state.is_quarantined and state.forbidden_modules:
         mods = sorted(set(state.forbidden_modules))
         framework_mods = any(
@@ -148,6 +148,28 @@ def _classify_single(
                     "as a registered primitive without re-extraction."
                 ),
             )
+
+    # Rule 2b: AST-detected framework imports in the primary .py.
+    # CONTRACT §B1.0.1 forbids framework imports in registered primitives.
+    # This catches items the extraction gate missed.
+    if state.framework_imports:
+        mods = ", ".join(state.framework_imports)
+        return (
+            Verdict.KEEP_STAGED,
+            "none",
+            (
+                f"Primary .py imports framework module(s) ({mods}). "
+                "CONTRACT §B1.0.1 bars framework imports from registered "
+                "primitives. Must be re-extracted as a framework-free "
+                "primitive (with adapter under _adapters/fastapi/ if the "
+                "FastAPI surface is needed) before promotion."
+            ),
+            (
+                f"Framework-coupled: imports {mods}. Requires re-extraction "
+                "with adapter pattern (CONTRACT §B1.0.1) before promotion."
+            ),
+            None,
+        )
 
     # Rule 3: quarantined (physically in _quarantine/) — keep staged with reason.
     if state.is_quarantined:

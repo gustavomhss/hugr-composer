@@ -40,6 +40,19 @@ def _primary_py(primitive_dir: Path, name: str) -> Path | None:
 _CONCURRENCY_MODULES = {"threading", "multiprocessing", "asyncio"}
 _CONCURRENCY_NAMES = {"Lock", "RLock", "Semaphore", "Event", "Queue", "Condition"}
 
+# Registered primitives may not import these (CONTRACT §B1.0.1).
+_FRAMEWORK_MODULES = {
+    "fastapi",
+    "starlette",
+    "sqlalchemy",
+    "sqlmodel",
+    "pydantic",
+    "django",
+    "flask",
+    "tornado",
+    "aiohttp",
+}
+
 
 def _detect_concurrency(py_path: Path | None) -> bool:
     """True if the primitive's primary .py imports or uses concurrency."""
@@ -104,6 +117,62 @@ def _detect_mutable_class_state(py_path: Path | None) -> bool:
         if mutations_outside_init > 0:
             return True
     return False
+
+
+# Implicit framework signatures: names that strongly imply framework
+# coupling even when the file lacks the import (an extraction bug we
+# inherit — the registered-primitive rule still applies).
+_IMPLICIT_FRAMEWORK_TOKENS = {
+    # SQLAlchemy 2.0 ORM
+    "Mapped[": "sqlalchemy",
+    "mapped_column(": "sqlalchemy",
+    "DeclarativeBase": "sqlalchemy",
+    "class Base(": "sqlalchemy",
+    "(Base)": "sqlalchemy",
+    # FastAPI / Starlette
+    "APIRouter(": "fastapi",
+    "Depends(": "fastapi",
+    "FastAPI(": "fastapi",
+    "Request(": "starlette",
+    "BaseHTTPMiddleware": "starlette",
+    # Pydantic v2 hints
+    "class Config:\n": "pydantic",
+}
+
+
+def _detect_framework_imports(py_path: Path | None) -> list[str]:
+    """Framework imports (explicit or implicit) in the primitive's primary .py.
+
+    Explicit: AST-detected imports of known framework modules.
+    Implicit: textual tokens like `Mapped[`, `APIRouter(`, etc. that
+    appear without the corresponding import — strong signal the
+    primitive was extracted incompletely and isn't framework-free.
+
+    Registered primitives are framework-agnostic (CONTRACT §B1.0.1).
+    Any match here is a hard blocker for promotion.
+    """
+    if py_path is None or not py_path.exists():
+        return []
+    try:
+        text = py_path.read_text(encoding="utf-8", errors="ignore")
+        tree = ast.parse(text)
+    except (OSError, SyntaxError):
+        return []
+    found: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                top = alias.name.split(".")[0]
+                if top in _FRAMEWORK_MODULES:
+                    found.add(top)
+        elif isinstance(node, ast.ImportFrom):
+            top = (node.module or "").split(".")[0]
+            if top in _FRAMEWORK_MODULES:
+                found.add(top)
+    for token, label in _IMPLICIT_FRAMEWORK_TOKENS.items():
+        if token in text:
+            found.add(label)
+    return sorted(found)
 
 
 def _count_loc(py_path: Path | None) -> int:
@@ -213,4 +282,5 @@ def measure(
         duplicate_of_registered=duplicate,
         test_file_present=(primitive_dir / f"test_{name}.py").exists(),
         invariants_stubbed=_invariants_stubbed(primitive_dir, name),
+        framework_imports=_detect_framework_imports(primary),
     )
