@@ -44,7 +44,7 @@ from adapt.contracts.migration_helper import find_migration_head
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_stripe_subscription",
+    "name": "fastapi_resiliency_add_stripe_subscription",
     "description": (
         "Add production-grade Stripe subscription billing with Subscription model, "
         "webhook receiver, proration on plan change, and idempotent event processing."

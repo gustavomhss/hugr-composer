@@ -32,7 +32,7 @@ from adapt.contracts.migration_helper import find_migration_head
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_multi_tenancy",
+    "name": "fastapi_auth_add_multi_tenancy",
     "description": "Add multi-tenancy support with schema-per-tenant or row-level isolation.",
     "tags": ["extend", "auth_access"],
     "entry": "add_multi_tenancy",

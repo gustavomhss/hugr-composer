@@ -48,7 +48,7 @@ from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_ml_gpu_inference",
+    "name": "fastapi_resiliency_add_ml_gpu_inference",
     "description": (
         "Upgrade a FastAPI project with GPU-optimised inference: DeviceManager, "
         "GPUPredictor (mixed precision), MemoryGuard, and GET /ml/gpu/status endpoint. "

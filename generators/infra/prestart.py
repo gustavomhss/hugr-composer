@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_generate_prestart',
+    'name': 'fastapi_deployment_generate_prestart',
     'description': 'Generate backend_pre_start.py -- waits for database readiness with exponential backoff.',
     'tags': ['generator', 'infra'],
     'entry': 'generate_prestart',

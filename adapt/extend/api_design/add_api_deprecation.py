@@ -37,7 +37,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_api_deprecation",
+    "name": "fastapi_api_add_api_deprecation",
     "description": "Add endpoint lifecycle management with RFC 8594 Sunset headers, usage tracking, and @deprecated decorator.",
     "tags": ["extend", "api_design"],
     "entry": "add_api_deprecation",

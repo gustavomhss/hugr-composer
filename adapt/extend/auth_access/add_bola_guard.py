@@ -35,7 +35,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_bola_guard",
+    "name": "fastapi_auth_add_bola_guard",
     "description": (
         "Add object-level authorization (BOLA/IDOR protection) with ownership "
         "verification, multi-tenant isolation, and auto-generated test cases."

@@ -31,7 +31,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_sse",
+    "name": "fastapi_realtime_add_sse",
     "description": "Add Server-Sent Events (SSE) endpoints for real-time push to browser clients.",
     "tags": ["extend", "realtime"],
     "entry": "add_sse",

@@ -56,7 +56,7 @@ class DeadSymbol:
 
 
 MCP_TOOL = {
-    "name": "fastapi_dead_code_finder",
+    "name": "fastapi_resiliency_analyze_dead_code_finder",
     "description": "Find unreachable routes, unused dependencies, and dead models.",
     "tags": ["operate"],
     "entry": "dead_code_finder",

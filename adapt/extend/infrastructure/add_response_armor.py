@@ -41,7 +41,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_response_armor",
+    "name": "fastapi_resiliency_add_response_armor",
     "description": (
         "Add five-layer response hardening: error sanitization (generic to client, "
         "full to logs), constant-time auth comparisons (hmac.compare_digest), "

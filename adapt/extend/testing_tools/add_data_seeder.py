@@ -30,7 +30,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_data_seeder",
+    "name": "fastapi_testing_add_data_seeder",
     "description": "Add a smart test data seeder that respects FK relationships via topological sort.",
     "tags": ["extend", "testing_tools"],
     "entry": "add_data_seeder",

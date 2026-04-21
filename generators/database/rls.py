@@ -14,7 +14,7 @@ import textwrap
 from pathlib import Path
 
 MCP_TOOL = {
-    "name": "fastapi_generate_rls",
+    "name": "fastapi_data_generate_rls",
     "description": "Generate PostgreSQL Row-Level Security policies for multi-tenant table isolation.",
     "tags": ["database", "security", "generator"],
     "entry": "generate_rls",

@@ -60,7 +60,7 @@ from adapt.contracts.migration_helper import find_migration_head
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_arq_worker",
+    "name": "fastapi_resiliency_add_arq_worker",
     "description": "Add an arq (Redis-backed async) job queue with worker, task registry, and HTTP status routes.",
     "tags": ["extend", "infrastructure"],
     "entry": "add_arq_worker",

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_generate_initial_data',
+    'name': 'fastapi_deployment_generate_initial_data',
     'description': 'Generate initial_data.py -- idempotent superuser seeding script for first boot.',
     'tags': ['generator', 'infra'],
     'entry': 'generate_initial_data',

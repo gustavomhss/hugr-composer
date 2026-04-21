@@ -5,7 +5,7 @@ from modules.database.tools.operate_db import find_slow_queries
 
 
 MCP_TOOL = {
-    "name": "fastapi_db_slow_queries",
+    "name": "fastapi_meta_analyze_db_slow_queries",
     "description": "Find slow queries from pg_stat_statements. Requires pg_stat_statements extension.",
     "tags": ["database", "operate"],
     "entry": "entry",

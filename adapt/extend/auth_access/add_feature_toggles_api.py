@@ -19,7 +19,7 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 MCP_TOOL = {
-    "name": "fastapi_add_feature_toggles_api",
+    "name": "fastapi_auth_add_feature_toggles_api",
     "description": (
         "Copy FeatureToggle primitive + FastAPI adapter into the project and "
         "wire a ≤20-line app/feature_toggles.py caller."

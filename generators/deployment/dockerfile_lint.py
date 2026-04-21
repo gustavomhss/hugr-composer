@@ -443,7 +443,7 @@ _HADOLINT_YAML = textwrap.dedent("""\
 
 
 MCP_TOOL = {
-    "name": "fastapi_generate_dockerfile_lint_config",
+    "name": "fastapi_deployment_generate_dockerfile_lint_config",
     "description": "Generate .hadolint.yaml with HuGR's 7 Dockerfile security rules and pre-commit wiring.",
     "tags": ["deployment", "security", "generator"],
     "entry": "generate_dockerfile_lint_config",

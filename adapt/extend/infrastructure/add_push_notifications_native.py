@@ -55,7 +55,7 @@ from adapt.contracts.migration_helper import find_migration_head
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_push_notifications_native",
+    "name": "fastapi_resiliency_add_push_notifications_native",
     "description": (
         "Add production APNs + FCM push notifications with PushService, "
         "DeviceToken model, CRUD helpers, and REST routes. All SDKs lazy-imported."

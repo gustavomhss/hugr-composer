@@ -28,7 +28,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_request_tracing_ui",
+    "name": "fastapi_deployment_add_request_tracing_ui",
     "description": (
         "Add an embedded request tracing dashboard: TracingBuffer ring buffer (last 1000 "
         "requests), TimingCollector per-middleware/DB/external timing, GET /tracing/requests, "

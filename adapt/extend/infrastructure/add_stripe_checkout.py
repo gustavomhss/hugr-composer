@@ -75,7 +75,7 @@ from adapt.contracts.migration_helper import find_migration_head
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_stripe_checkout",
+    "name": "fastapi_resiliency_add_stripe_checkout",
     "description": "Add a production-grade Stripe Checkout flow with Payment model, webhook receiver, and idempotent event processing.",
     "tags": ["extend", "infrastructure"],
     "entry": "add_stripe_checkout",

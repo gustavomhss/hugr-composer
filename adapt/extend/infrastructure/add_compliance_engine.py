@@ -45,7 +45,7 @@ from adapt.contracts.migration_helper import find_migration_head
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_compliance_engine",
+    "name": "fastapi_resiliency_add_compliance_engine",
     "description": (
         "Add declarative data-governance at ORM level: PII detection, retention "
         "enforcer, right-to-erasure endpoint, Fernet field encryption, access "

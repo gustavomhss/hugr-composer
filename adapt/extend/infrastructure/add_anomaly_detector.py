@@ -29,7 +29,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_anomaly_detector",
+    "name": "fastapi_resiliency_add_anomaly_detector",
     "description": (
         "Add statistical anomaly detection: Z-score + EMA on sliding windows for "
         "request rate, error rate, latency, and payload size. Alerts via webhook or log."

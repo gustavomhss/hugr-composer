@@ -40,7 +40,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_scheduled_tasks",
+    "name": "fastapi_resiliency_add_scheduled_tasks",
     "description": (
         "Add APScheduler-based cron jobs with Redis job store, decorator "
         "registry, and FastAPI lifespan integration."

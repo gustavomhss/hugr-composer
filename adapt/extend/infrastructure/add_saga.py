@@ -22,7 +22,7 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 MCP_TOOL = {
-    "name": "fastapi_add_saga",
+    "name": "fastapi_data_add_saga",
     "description": (
         "Copy SagaOrchestrator primitive + SagaAdapter into the project and "
         "wire a ≤20-line app/saga.py caller."

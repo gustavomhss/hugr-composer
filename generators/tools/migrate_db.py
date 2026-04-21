@@ -18,7 +18,7 @@ Usage::
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_migrate_db',
+    'name': 'fastapi_meta_analyze_migrate_db',
     'description': 'Generate Alembic migration script and helper commands.',
     'tags': ['adapt', 'database'],
     'entry': 'generate_migration',

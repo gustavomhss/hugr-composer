@@ -42,7 +42,7 @@ _RTL_LOCALES = frozenset({"ar", "he", "fa", "ur", "ar_SA", "ar_EG", "he_IL"})
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_i18n",
+    "name": "fastapi_resiliency_add_i18n",
     "description": "Add internationalization (i18n) support with locale detection and message catalogs.",
     "tags": ["evolve"],
     "entry": "add_i18n",

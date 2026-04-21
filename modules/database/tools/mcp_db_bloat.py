@@ -5,7 +5,7 @@ from modules.database.tools.operate_db import check_table_bloat
 
 
 MCP_TOOL = {
-    "name": "fastapi_db_bloat",
+    "name": "fastapi_meta_analyze_db_bloat",
     "description": "Check table bloat -- identifies tables that need VACUUM.",
     "tags": ["database", "operate"],
     "entry": "entry",

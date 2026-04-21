@@ -42,7 +42,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_canary_tokens",
+    "name": "fastapi_resiliency_add_canary_tokens",
     "description": (
         "Add canary token infrastructure: honeypot endpoints, fake credentials, "
         "and decoy DB records that alert on access without blocking the attacker."

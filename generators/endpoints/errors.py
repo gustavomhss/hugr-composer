@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_generate_errors',
+    'name': 'fastapi_api_generate_errors',
     'description': 'Generate error handlers: HTTPException, RequestValidationError, unhandled Exception.',
     'tags': ['endpoints', 'generator'],
     'entry': 'generate_error_handlers',

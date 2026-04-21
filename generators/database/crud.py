@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_generate_crud',
+    'name': 'fastapi_data_generate_crud',
     'description': 'Generate CRUD layer (create/read/update/delete/list) with pagination and optional owner filtering.',
     'tags': ['database', 'generator'],
     'entry': 'generate_crud',

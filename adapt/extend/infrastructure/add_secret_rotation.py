@@ -42,7 +42,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_secret_rotation",
+    "name": "fastapi_resiliency_add_secret_rotation",
     "description": (
         "Add a secret manager abstraction (Vault/AWS SM/env), auto-rotation with "
         "dual-key windows, log-based leak detection, and startup validation."

@@ -42,7 +42,7 @@ from adapt.contracts.migration_helper import find_migration_head
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_search",
+    "name": "fastapi_data_add_search",
     "description": "Add full-text search endpoints backed by PostgreSQL tsvector or Elasticsearch.",
     "tags": ["extend", "crud_data"],
     "entry": "add_search",

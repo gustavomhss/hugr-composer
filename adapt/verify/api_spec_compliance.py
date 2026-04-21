@@ -30,7 +30,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_api_spec_compliance",
+    "name": "fastapi_resiliency_analyze_api_spec_compliance",
     "description": "Check that the running API conforms to its own OpenAPI specification.",
     "tags": ["verify"],
     "entry": "api_spec_compliance",

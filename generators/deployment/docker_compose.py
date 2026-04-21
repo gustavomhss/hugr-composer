@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_generate_docker_compose',
+    'name': 'fastapi_deployment_generate_docker_compose',
     'description': 'Generate docker-compose.yml with app, postgres, and optional redis services.',
     'tags': ['deployment', 'generator'],
     'entry': 'generate_docker_compose',

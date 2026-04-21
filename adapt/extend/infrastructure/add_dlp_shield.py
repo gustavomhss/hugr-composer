@@ -42,7 +42,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_dlp_shield",
+    "name": "fastapi_resiliency_add_dlp_shield",
     "description": (
         "Add DLP (Data Loss Prevention) response middleware with regex PII/PHI/PCI detection, "
         "decorator-based sensitivity tagging, and configurable redaction modes."

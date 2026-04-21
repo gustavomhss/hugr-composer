@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_generate_auth',
+    'name': 'fastapi_auth_generate_auth',
     'description': 'Generate complete auth stack: argon2id hasher, PyJWT tokens, OAuth2 deps, login routes.',
     'tags': ['auth', 'generator'],
     'entry': 'generate_auth',

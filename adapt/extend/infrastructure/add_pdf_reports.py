@@ -57,7 +57,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_pdf_reports",
+    "name": "fastapi_resiliency_add_pdf_reports",
     "description": (
         "Add a production-grade PDF report generation layer with WeasyPrint "
         "lazy import, Jinja2 templates, async generation via run_in_executor, "

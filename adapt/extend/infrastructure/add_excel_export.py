@@ -50,7 +50,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_excel_export",
+    "name": "fastapi_resiliency_add_excel_export",
     "description": (
         "Add a production-grade Excel export layer with OpenPyXL streaming for "
         "large datasets, cell formatting, auto-width columns, and "

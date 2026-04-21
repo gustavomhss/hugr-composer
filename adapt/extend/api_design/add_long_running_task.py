@@ -23,7 +23,7 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 MCP_TOOL = {
-    "name": "fastapi_add_long_running_task",
+    "name": "fastapi_api_add_long_running_task",
     "description": (
         "Copy WorkflowRun + DurableTimer primitives + FastAPI WorkflowAdapter "
         "into the project and wire a ≤20-line app/tasks.py caller plus task routes."

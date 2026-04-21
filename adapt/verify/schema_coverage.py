@@ -29,7 +29,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_schema_coverage",
+    "name": "fastapi_resiliency_analyze_schema_coverage",
     "description": "Measure how well the OpenAPI schema covers all routes and models.",
     "tags": ["verify"],
     "entry": "schema_coverage",

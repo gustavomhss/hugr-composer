@@ -41,7 +41,7 @@ from adapt.contracts.migration_helper import find_migration_head
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_api_monetization",
+    "name": "fastapi_resiliency_add_api_monetization",
     "description": (
         "Add usage-metered billing with Stripe Billing Meters v2: MeteringMiddleware, "
         "metering rules DSL, Stripe Meter sync with batching+retry, usage dashboard, "

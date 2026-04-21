@@ -24,7 +24,7 @@ Usage::
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_add_integration',
+    'name': 'fastapi_meta_add_integration',
     'description': 'Add external service integration (Stripe, S3, SendGrid, Redis cache).',
     'tags': ['adapt'],
     'entry': 'add_integration',

@@ -35,7 +35,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_runtime_sentinel",
+    "name": "fastapi_resiliency_add_runtime_sentinel",
     "description": (
         "Add RASP middleware with SQL/command/SSRF injection detection, "
         "attack pattern registry, and learning→enforcing mode transition."

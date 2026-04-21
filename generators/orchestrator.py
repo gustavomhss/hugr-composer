@@ -22,7 +22,7 @@ Usage:
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_generate_project',
+    'name': 'fastapi_resiliency_generate_project',
     'description': 'Generate a complete production-ready FastAPI project.',
     'tags': ['generator', 'orchestrator'],
     'entry': 'generate_project',

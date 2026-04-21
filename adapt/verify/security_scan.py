@@ -30,7 +30,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_security_scan",
+    "name": "fastapi_resiliency_analyze_security_scan",
     "description": "Run security-focused static analysis on the FastAPI project.",
     "tags": ["verify", "security"],
     "entry": "security_scan",

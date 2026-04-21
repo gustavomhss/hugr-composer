@@ -39,7 +39,7 @@ _VALID_DEPLOY_TARGETS = frozenset({"none", "github_pages", "s3", "netlify"})
 
 
 MCP_TOOL = {
-    "name": "fastapi_generate_docs",
+    "name": "fastapi_resiliency_generate_docs",
     "description": "Generate developer documentation from the project's code and OpenAPI spec.",
     "tags": ["evolve"],
     "entry": "generate_docs",

@@ -29,7 +29,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_cors_config",
+    "name": "fastapi_resiliency_add_cors_config",
     "description": (
         "Upgrade CORS middleware with env-var configurable origins, wildcard warnings, "
         "preflight cache, and a /cors/config debug endpoint."

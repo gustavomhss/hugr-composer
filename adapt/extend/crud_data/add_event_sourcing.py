@@ -19,7 +19,7 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 MCP_TOOL = {
-    "name": "fastapi_add_event_sourcing",
+    "name": "fastapi_data_add_event_sourcing",
     "description": (
         "Copy EventSourcedStore + DomainEvent primitives and the "
         "EventSourcedStoreAdapter into the project, then wire a ≤20-line "

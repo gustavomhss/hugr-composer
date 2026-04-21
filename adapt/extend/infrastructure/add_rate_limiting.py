@@ -29,7 +29,7 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 MCP_TOOL = {
-    "name": "fastapi_add_rate_limiting",
+    "name": "fastapi_resiliency_add_rate_limiting",
     "description": (
         "Copy RateLimiter primitive + FastAPI adapter into the project and "
         "wire a ≤20-line app/rate_limit.py caller."

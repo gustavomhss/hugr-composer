@@ -42,7 +42,7 @@ _DEPRECATED = "DEPRECATED"
 
 
 MCP_TOOL = {
-    "name": "fastapi_api_changelog",
+    "name": "fastapi_observability_analyze_api_changelog",
     "description": "Generate a human-readable API changelog by diffing OpenAPI specs across git history.",
     "tags": ["operate"],
     "entry": "api_changelog",

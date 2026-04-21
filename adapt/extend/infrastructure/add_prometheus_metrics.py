@@ -30,7 +30,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_prometheus_metrics",
+    "name": "fastapi_observability_add_prometheus_metrics",
     "description": (
         "Add Prometheus RED metrics (request_total, request_duration_seconds, "
         "request_errors_total) with lazy prometheus_client, middleware, "

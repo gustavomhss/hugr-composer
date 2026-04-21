@@ -34,7 +34,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_migration_data",
+    "name": "fastapi_resiliency_add_migration_data",
     "description": "Add data migration support alongside schema migrations in Alembic.",
     "tags": ["evolve"],
     "entry": "add_migration_data",

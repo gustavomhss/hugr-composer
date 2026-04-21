@@ -41,7 +41,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_schema_enforcer",
+    "name": "fastapi_testing_add_schema_enforcer",
     "description": (
         "Add OpenAPI schema enforcement middleware: validates every req/resp "
         "against the spec (rejects extra fields), detects shadow/zombie APIs "

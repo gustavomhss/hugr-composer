@@ -20,7 +20,7 @@ Usage::
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_add_background_job',
+    'name': 'fastapi_meta_add_background_job',
     'description': 'Add a background job using ARQ (async Redis queue).',
     'tags': ['adapt'],
     'entry': 'add_background_job',

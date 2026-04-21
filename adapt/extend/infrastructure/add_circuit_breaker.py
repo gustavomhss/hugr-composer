@@ -20,7 +20,7 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 MCP_TOOL = {
-    "name": "fastapi_add_circuit_breaker",
+    "name": "fastapi_resiliency_add_circuit_breaker",
     "description": (
         "Copy CircuitBreaker primitive + FastAPI adapter into the project and "
         "wire a ≤20-line app/circuit_breaker.py caller."

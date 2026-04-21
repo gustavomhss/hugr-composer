@@ -18,7 +18,7 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 MCP_TOOL = {
-    "name": "fastapi_add_load_shedding",
+    "name": "fastapi_resiliency_add_load_shedding",
     "description": (
         "Copy LoadShedder primitive + LoadShedderAdapter into the project and "
         "wire a ≤20-line app/load_shedding.py caller."

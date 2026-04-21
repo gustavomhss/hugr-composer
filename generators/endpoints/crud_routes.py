@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_generate_crud_routes',
+    'name': 'fastapi_api_generate_crud_routes',
     'description': 'Generate complete CRUD routes for a model with auth and owner-based access control.',
     'tags': ['endpoints', 'generator'],
     'entry': 'generate_crud_routes',

@@ -32,7 +32,7 @@ from adapt.contracts.migration_helper import find_migration_head
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_data_import",
+    "name": "fastapi_data_add_data_import",
     "description": "Add CSV/Excel upload with async processing, validation and error reporting.",
     "tags": ["extend", "crud_data"],
     "entry": "add_data_import",

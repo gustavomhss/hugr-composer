@@ -19,7 +19,7 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 MCP_TOOL = {
-    "name": "fastapi_add_audit_log",
+    "name": "fastapi_data_add_audit_log",
     "description": (
         "Copy AuditEvent + TamperEvidentAuditLog primitives and the "
         "AuditLogAdapter into the project, then wire a ≤20-line "

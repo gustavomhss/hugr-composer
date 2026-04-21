@@ -51,7 +51,7 @@ from adapt.contracts.migration_helper import find_migration_head
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_transactional_email",
+    "name": "fastapi_resiliency_add_transactional_email",
     "description": (
         "Add Resend/Postmark/SendGrid email adapters with delivery tracking "
         "(sent/delivered/bounced/complained events), PII-safe audit model, "
