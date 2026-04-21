@@ -112,10 +112,10 @@ def register_tree_tools(mcp_app) -> int:
 
 
 def register_tier1_tools(mcp_app) -> int:
-    """Register the 6 tier-1 meta tools (Phase 6 dual-index design).
+    """Register the 7 tier-1 meta tools (Phase 6 dual-index design).
 
     Always-loaded; primacy position. See `mcp_tools/tier1.py` +
-    `/docs/research/DUAL_INDEX_DESIGN.md` §4.1.
+    `mcp_tools/compose.py` + `/docs/research/DUAL_INDEX_DESIGN.md` §4.1.
     """
     from mcp_tools.tier1 import (
         fastapi_meta_home,
@@ -127,19 +127,22 @@ def register_tier1_tools(mcp_app) -> int:
         MCP_TOOL_HOME, MCP_TOOL_SEARCH, MCP_TOOL_DESCRIBE,
         MCP_TOOL_SCAFFOLD, MCP_TOOL_AUDIT, MCP_TOOL_VERIFY,
     )
+    from mcp_tools.compose import fastapi_meta_compose
+    from mcp_tools.compose import MCP_TOOL as MCP_TOOL_COMPOSE
     for fn, meta in (
         (fastapi_meta_home,     MCP_TOOL_HOME),
         (fastapi_meta_search,   MCP_TOOL_SEARCH),
         (fastapi_meta_describe, MCP_TOOL_DESCRIBE),
         (fastapi_meta_scaffold, MCP_TOOL_SCAFFOLD),
-        (fastapi_meta_audit,     MCP_TOOL_AUDIT),
+        (fastapi_meta_compose,  MCP_TOOL_COMPOSE),
+        (fastapi_meta_audit,    MCP_TOOL_AUDIT),
         (fastapi_meta_verify,   MCP_TOOL_VERIFY),
     ):
         mcp_app.tool(
             name=meta["name"],
             tags=set(meta.get("tags", [])),
         )(fn)
-    return 6
+    return 7
 
 
 def register_discovery_tools(mcp_app) -> int:
