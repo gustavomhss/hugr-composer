@@ -22,11 +22,12 @@ _LEDGER_MD = SKILL_ROOT / "engine" / "promotion" / "LEDGER.md"
 
 def _bucket_header(verdict: Verdict, count: int) -> str:
     titles = {
-        Verdict.PROMOTE_FULL: "Promote at full tier (TLA+ required)",
-        Verdict.PROMOTE_LITE: "Promote at lite tier (no TLA+)",
-        Verdict.DELETE: "Delete (redundant or not salvageable)",
-        Verdict.KEEP_STAGED: "Keep staged (awaiting signal or re-extraction)",
-        Verdict.NEEDS_DECISION: "Needs decision — re-extract or delete as boilerplate",
+        Verdict.PROMOTE_AS_ADAPTER: "Promote as FastAPI adapter",
+        Verdict.PROMOTE_AS_PRIMITIVE: "Promote as registered primitive",
+        Verdict.EXTRACT_MOTOR_PAIR: "Extract motor+adapter pair (re-factor required)",
+        Verdict.FILL_AND_PROMOTE: "Fill shell, then promote",
+        Verdict.REDUNDANT: "Redundant (motor+adapter already ship)",
+        Verdict.NEEDS_CALLER: "Wait for §A12(b) caller signal",
         Verdict.NEEDS_REVIEW: "Needs human review (ambiguous state)",
     }
     return f"## {titles[verdict]} — {count} primitive(s)"
@@ -34,53 +35,57 @@ def _bucket_header(verdict: Verdict, count: int) -> str:
 
 def _bucket_preamble(verdict: Verdict) -> str:
     preambles = {
-        Verdict.PROMOTE_FULL: (
-            "These primitives have a §A12(b) signal (registered tool / "
-            "module / benchmark references them), a complete shell "
-            "(REPLACE_ME=0, invariants implemented), and require full-"
-            "tier promotion because they carry concurrent state, "
-            "ordering invariants, or mutable behaviour that only TLA+ "
-            "can verify exhaustively. Approve to run:\n\n"
+        Verdict.PROMOTE_AS_ADAPTER: (
+            "Each item's motor is already registered under "
+            "`core/venous/<ns>/<Motor>/` but the matching "
+            "`_adapters/fastapi/<Motor>Adapter.py` is missing. The staged "
+            "code can become that adapter. `promotion_target` gives the "
+            "exact destination path. Approve to run:\n\n"
             "```\nPYTHONPATH=. .venv/bin/python -m engine.promotion.promote "
             "--from-ledger <NAME>\n```"
         ),
-        Verdict.PROMOTE_LITE: (
-            "Stateless, no concurrent invariants, shell complete. "
-            "**Blocked on ratification of §B1.7 in CONTRACT.md §E** "
-            "(see `docs/decisions/0004-tier-lite.md`). Once ratified:"
-            "\n\n"
+        Verdict.PROMOTE_AS_PRIMITIVE: (
+            "Each item has a §A12(b) signal, clean shell, and fits either "
+            "lite or full tier (see `tier` field). Lite promotion requires "
+            "§B1.7 ratification first (see `docs/decisions/0004-tier-lite.md`). "
+            "`promotion_target` gives the exact destination path. Approve:\n\n"
             "```\nPYTHONPATH=. .venv/bin/python -m engine.promotion.promote "
             "--from-ledger <NAME>\n```"
         ),
-        Verdict.DELETE: (
-            "Either duplicates of a registered primitive (registered "
-            "version is canonical), or quarantined with non-fixable "
-            "framework coupling. Approve to run:\n\n"
+        Verdict.EXTRACT_MOTOR_PAIR: (
+            "Framework-coupled with no motor registered. Cannot be "
+            "promoted as-is (§B1.0.1 bars framework imports in registered "
+            "primitives). Required work per item: split into "
+            "(framework-free motor primitive under `core/venous/<ns>/<Motor>/`) "
+            "+ (FastAPI adapter under `_adapters/fastapi/<Motor>Adapter.py`). "
+            "~2-4h per item depending on complexity. No one-shot command — "
+            "this is a refactoring sprint, not an executor call."
+        ),
+        Verdict.FILL_AND_PROMOTE: (
+            "Has §A12(b) signal but shell is incomplete (REPLACE_ME markers "
+            "or stub invariant tests). Work required: fill placeholders + "
+            "implement the three invariant tests (confirms / prevents / "
+            "under_failure) with real assertions. After that the classifier "
+            "re-evaluates to PROMOTE_AS_ADAPTER or PROMOTE_AS_PRIMITIVE."
+        ),
+        Verdict.REDUNDANT: (
+            "Motor and adapter (or the registered primitive itself) "
+            "already ship. Staged copy adds no unique value. Default: "
+            "leave in place as reference. If you want to remove, run:\n\n"
             "```\nPYTHONPATH=. .venv/bin/python -m engine.promotion.promote "
-            "--delete <NAME>\n```"
+            "--delete <NAME>\n```\n\n"
+            "Delete is opt-in, never automatic."
         ),
-        Verdict.KEEP_STAGED: (
-            "No current §A12(b) signal, OR signal present but the shell "
-            "requires re-extraction. Leave in `_extracted/` with the "
-            "recorded staging_reason. Each entry's `staging_reason` "
-            "line documents why the primitive stays put."
-        ),
-        Verdict.NEEDS_DECISION: (
-            "Framework-coupled primitives whose motor (framework-free core) "
-            "is NOT yet registered. For each, decide:\n"
-            "- (a) **re-extract** into (framework-free primitive + "
-            "FastAPI adapter under `_adapters/fastapi/`) per §B1.0.1, or\n"
-            "- (b) **delete** as boilerplate (trivial wiring, one-off "
-            "middleware, no reusable logic).\n\n"
-            "The rationale lines include a hint at the likely motor name "
-            "if the suffix is recognisable (Middleware/Adapter/Backend/…).\n"
-            "There is no one-shot command — these are judgment calls."
+        Verdict.NEEDS_CALLER: (
+            "No current §A12(b) signal — no registered tool, module, or "
+            "benchmark spec references this primitive. §A12 discipline "
+            "says: wait for a caller to appear before promoting. Leave "
+            "in `_extracted/` with the recorded staging_reason."
         ),
         Verdict.NEEDS_REVIEW: (
-            "Classifier found strong signals but the shell is "
-            "incomplete (REPLACE_ME markers or stub tests). Each entry "
-            "lists blockers that a human must resolve before the "
-            "classifier can upgrade the verdict to PROMOTE_*."
+            "Classifier heuristics disagreed or quarantine reason unclear. "
+            "Each entry lists what the reviewer must adjudicate. Not "
+            "executable until manually reclassified."
         ),
     }
     return preambles.get(verdict, "")
@@ -141,13 +146,20 @@ def _entry_md(entry: LedgerEntry, n: int) -> str:
     blockers = _blocker_block(entry)
     if blockers:
         lines.append(blockers)
-    if entry.verdict == Verdict.DELETE:
+    if entry.promotion_target:
+        lines.append(f"  - **Target:** `{entry.promotion_target}`")
+    if entry.verdict == Verdict.REDUNDANT:
         lines.append(
-            f"  - **Run:** `python -m engine.promotion.promote --delete {entry.primitive}`"
+            f"  - **Run (opt-in):** "
+            f"`python -m engine.promotion.promote --delete {entry.primitive}`"
         )
-    elif entry.verdict in (Verdict.PROMOTE_FULL, Verdict.PROMOTE_LITE):
+    elif entry.verdict in (
+        Verdict.PROMOTE_AS_ADAPTER,
+        Verdict.PROMOTE_AS_PRIMITIVE,
+    ):
         lines.append(
-            f"  - **Run:** `python -m engine.promotion.promote --from-ledger {entry.primitive}`"
+            f"  - **Run:** `python -m engine.promotion.promote "
+            f"--from-ledger {entry.primitive}`"
         )
     lines.append("")
     return "\n".join(lines)
@@ -163,12 +175,12 @@ def render(ledger: Ledger) -> str:
         f"**Total:** {len(ledger.entries)} "
         f"({ledger.total_staged} staged + {ledger.total_quarantined} quarantined)",
         "",
-        "> **How to use this ledger.** Each entry is a proposed verdict, not a",
-        "> decided action. Tick the checkbox of an entry to mark it approved;",
-        "> un-ticked = not yet approved. The `Run:` line gives the exact",
-        "> command to execute an approved entry. §A12 discipline is intact —",
-        "> the executor refuses any entry whose verdict isn't PROMOTE_* or",
-        "> DELETE, or which still has unresolved blockers.",
+        "> **How to use this ledger.** Each entry proposes a path to",
+        "> functionality. Tick the checkbox to mark it approved; un-ticked =",
+        "> not yet approved. PROMOTE_* entries have a copy-paste `Run:`",
+        "> command. Default stance is **make it work, not delete** —",
+        "> REDUNDANT entries stay in place unless you explicitly opt-in to",
+        "> remove them. §A12 discipline is intact.",
         "",
         "## Summary",
         "",
@@ -176,33 +188,30 @@ def render(ledger: Ledger) -> str:
         "|---|---:|---|",
     ]
     next_steps = {
-        Verdict.PROMOTE_FULL: "Review + approve individually; executor runs each.",
-        Verdict.PROMOTE_LITE: "Ratify §B1.7 first; then review + approve.",
-        Verdict.DELETE: "Review + approve individually; executor removes each.",
-        Verdict.KEEP_STAGED: "No action required. Revisit on next triage pass.",
-        Verdict.NEEDS_DECISION: "Human call: re-extract as motor+adapter, or delete.",
-        Verdict.NEEDS_REVIEW: "Resolve blockers, then re-run classifier.",
+        Verdict.PROMOTE_AS_ADAPTER: "Review + approve individually; executor ships each.",
+        Verdict.PROMOTE_AS_PRIMITIVE: "Ratify §B1.7 (for lite) → review + approve.",
+        Verdict.EXTRACT_MOTOR_PAIR: "Refactoring sprint — ~2-4h per item.",
+        Verdict.FILL_AND_PROMOTE: "Fill REPLACE_ME + invariant tests; reclassify.",
+        Verdict.REDUNDANT: "Leave in place, or opt-in delete for cleanup.",
+        Verdict.NEEDS_CALLER: "No action. Revisit when a caller appears.",
+        Verdict.NEEDS_REVIEW: "Adjudicate manually; reclassify.",
     }
-    for v in (
-        Verdict.DELETE,
-        Verdict.PROMOTE_FULL,
-        Verdict.PROMOTE_LITE,
-        Verdict.NEEDS_DECISION,
+    bucket_order = (
+        Verdict.PROMOTE_AS_ADAPTER,
+        Verdict.PROMOTE_AS_PRIMITIVE,
+        Verdict.FILL_AND_PROMOTE,
+        Verdict.EXTRACT_MOTOR_PAIR,
         Verdict.NEEDS_REVIEW,
-        Verdict.KEEP_STAGED,
-    ):
+        Verdict.REDUNDANT,
+        Verdict.NEEDS_CALLER,
+    )
+    for v in bucket_order:
         cnt = len(ledger.by_verdict(v))
         head.append(f"| {v.value} | {cnt} | {next_steps[v]} |")
     head.append("")
 
     body: list[str] = []
-    for verdict in (
-        Verdict.DELETE,
-        Verdict.PROMOTE_FULL,
-        Verdict.PROMOTE_LITE,
-        Verdict.NEEDS_REVIEW,
-        Verdict.KEEP_STAGED,
-    ):
+    for verdict in bucket_order:
         bucket = ledger.by_verdict(verdict)
         if not bucket:
             continue

@@ -121,7 +121,10 @@ def plan(name: str) -> PromotionPlan:
         raise SystemExit(f"No ledger entry for primitive `{name}`.")
     entry = matches[0]
 
-    if entry.verdict not in (Verdict.PROMOTE_FULL, Verdict.PROMOTE_LITE):
+    if entry.verdict not in (
+        Verdict.PROMOTE_AS_ADAPTER,
+        Verdict.PROMOTE_AS_PRIMITIVE,
+    ):
         raise SystemExit(
             f"Ledger verdict for `{name}` is {entry.verdict.value}, not a "
             "promotion. Executor refuses (§A12 discipline)."
@@ -134,7 +137,9 @@ def plan(name: str) -> PromotionPlan:
             "Resolve blockers and re-run the classifier before promoting."
         )
 
-    is_lite = entry.verdict == Verdict.PROMOTE_LITE
+    is_adapter = entry.verdict == Verdict.PROMOTE_AS_ADAPTER
+    is_lite = entry.verdict == Verdict.PROMOTE_AS_PRIMITIVE and entry.tier == "lite"
+
     if is_lite and not _lite_ratified():
         raise SystemExit(
             f"Refusing to promote `{name}` at lite tier: §B1.7 not ratified "
@@ -145,14 +150,25 @@ def plan(name: str) -> PromotionPlan:
     if not source.exists():
         raise SystemExit(f"Source tree missing: {source}")
 
-    target = SKILL_ROOT / "core" / "venous" / entry.namespace / entry.primitive
+    if is_adapter:
+        if not entry.promotion_target:
+            raise SystemExit(
+                f"PROMOTE_AS_ADAPTER entry for `{name}` is missing "
+                "promotion_target. Re-run classifier."
+            )
+        target = SKILL_ROOT / entry.promotion_target
+    else:
+        target = SKILL_ROOT / "core" / "venous" / entry.namespace / entry.primitive
+
     if target.exists():
         raise SystemExit(
             f"Target already exists: {target.relative_to(SKILL_ROOT)}. "
             "Refusing to overwrite — resolve manually."
         )
 
-    reg_entry = _build_registry_entry(entry, is_lite)
+    reg_entry = (
+        {} if is_adapter else _build_registry_entry(entry, is_lite)
+    )
     return PromotionPlan(
         entry=entry,
         source_dir=source,
@@ -226,6 +242,50 @@ def _env() -> dict:
     return {k: v for k, v in os.environ.items()}
 
 
+def _execute_adapter(p: PromotionPlan, backup_root: Path) -> str:
+    """Copy `<Name>.py` → `<Motor>Adapter.py`. Non-destructive to staged tree."""
+    source_py = p.source_dir / f"{p.entry.primitive}.py"
+    if not source_py.exists():
+        raise RuntimeError(f"Adapter source missing: {source_py}")
+    p.target_dir.parent.mkdir(parents=True, exist_ok=True)
+    # Backup target parent (not source — adapter promotion is non-destructive).
+    _backup(p.target_dir.parent, backup_root)
+    shutil.copy2(source_py, p.target_dir)
+    return (
+        f"Adapter promoted: {source_py.relative_to(SKILL_ROOT)} → "
+        f"{p.target_dir.relative_to(SKILL_ROOT)}"
+    )
+
+
+def _execute_primitive(p: PromotionPlan, backup_root: Path) -> str:
+    """Move staged tree into registered, update registry YAML."""
+    _backup(p.source_dir, backup_root)
+    _backup(p.target_dir.parent, backup_root)
+    _backup(_REGISTRY_PATH, backup_root)
+
+    p.target_dir.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(p.source_dir, p.target_dir)
+    for meta in ("_origin.json", "_provenance.json", "_quarantined.json"):
+        m = p.target_dir / meta
+        if m.exists():
+            m.unlink()
+
+    reg_data = yaml.safe_load(_REGISTRY_PATH.read_text(encoding="utf-8"))
+    existing_names = {entry["name"] for entry in reg_data["primitives"]}
+    if p.entry.primitive in existing_names:
+        raise RuntimeError(
+            f"Registry already contains `{p.entry.primitive}` — abort."
+        )
+    reg_data["primitives"].append(p.registry_entry)
+    reg_data["primitives"].sort(key=lambda e: (e.get("namespace", ""), e["name"]))
+    _REGISTRY_PATH.write_text(
+        yaml.dump(reg_data, sort_keys=False, allow_unicode=True), encoding="utf-8"
+    )
+
+    shutil.rmtree(p.source_dir)
+    return f"Primitive promoted: {p.entry.primitive} → {p.target_dir.relative_to(SKILL_ROOT)}"
+
+
 def execute(name: str, *, dry_run: bool = False) -> int:
     """Execute the promotion — with automatic rollback on any failure."""
     p = plan(name)
@@ -237,44 +297,19 @@ def execute(name: str, *, dry_run: bool = False) -> int:
 
     backup_root = Path(tempfile.mkdtemp(prefix="promotion_backup_"))
     print(f"\nBackup root: {backup_root}")
+    is_adapter = p.entry.verdict == Verdict.PROMOTE_AS_ADAPTER
     try:
-        # Snapshot state we will touch.
-        _backup(p.source_dir, backup_root)
-        _backup(p.target_dir.parent, backup_root)
-        _backup(_REGISTRY_PATH, backup_root)
+        if is_adapter:
+            msg = _execute_adapter(p, backup_root)
+        else:
+            msg = _execute_primitive(p, backup_root)
 
-        # 1) move tree
-        p.target_dir.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(p.source_dir, p.target_dir)
-        # Scrub _extraction metadata — not appropriate for registered tree.
-        for meta in ("_origin.json", "_provenance.json", "_quarantined.json"):
-            m = p.target_dir / meta
-            if m.exists():
-                m.unlink()
-
-        # 2) update registry YAML (append, re-sort by namespace then name)
-        reg_data = yaml.safe_load(_REGISTRY_PATH.read_text(encoding="utf-8"))
-        existing_names = {entry["name"] for entry in reg_data["primitives"]}
-        if p.entry.primitive in existing_names:
-            raise RuntimeError(
-                f"Registry already contains `{p.entry.primitive}` — abort."
-            )
-        reg_data["primitives"].append(p.registry_entry)
-        reg_data["primitives"].sort(key=lambda e: (e.get("namespace", ""), e["name"]))
-        _REGISTRY_PATH.write_text(
-            yaml.dump(reg_data, sort_keys=False, allow_unicode=True), encoding="utf-8"
-        )
-
-        # 3) remove source tree
-        shutil.rmtree(p.source_dir)
-
-        # 4) rebuild catalog + audit
-        ok, msg = _rebuild_catalog_and_audit()
+        ok, audit_msg = _rebuild_catalog_and_audit()
         if not ok:
-            raise RuntimeError(msg)
+            raise RuntimeError(audit_msg)
 
-        print("\n" + msg)
-        print(f"Promoted: {p.entry.primitive} → {p.target_dir.relative_to(SKILL_ROOT)}")
+        print("\n" + audit_msg)
+        print(msg)
         shutil.rmtree(backup_root, ignore_errors=True)
         return 0
 
@@ -289,15 +324,19 @@ def execute(name: str, *, dry_run: bool = False) -> int:
 
 
 def execute_delete(name: str, *, dry_run: bool = False) -> int:
-    """Remove a staged primitive marked DELETE in the ledger."""
+    """Remove a staged primitive marked REDUNDANT in the ledger.
+
+    REDUNDANT deletion is explicit opt-in — default stance is leave in place.
+    """
     ledger = _load_ledger()
     matches = [e for e in ledger.entries if e.primitive == name]
     if not matches:
         raise SystemExit(f"No ledger entry for primitive `{name}`.")
     entry = matches[0]
-    if entry.verdict != Verdict.DELETE:
+    if entry.verdict != Verdict.REDUNDANT:
         raise SystemExit(
-            f"Ledger verdict for `{name}` is {entry.verdict.value}, not delete."
+            f"Ledger verdict for `{name}` is {entry.verdict.value}, not redundant. "
+            "Delete is only offered for REDUNDANT entries."
         )
     source = _find_source(entry)
     if not source.exists():
