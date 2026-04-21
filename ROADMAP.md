@@ -53,7 +53,10 @@ reconcile against INVENTORY.md — drift = audit bug.
 ### What's still open
 
 - ⚠️ **Rails-vs-Yeoman rule (PRODUCT.md §6.1)** — only 19/100 `adapt/extend/` tools import from `core.venous.*`. The other 81 emit inline logic. ROADMAP Phase-1 item #9 remains open.
-- ⚠️ **`/examples/`** — 5 directories, all empty. ROADMAP Phase-4 item #20 remains open.
+- ✅ ~~`/examples/`~~ — 20 populated at repo-root (`/examples/`), each with
+  README + MAESTRO_SESSION + cross-link tables. Phase-4 #20 is done.
+  Legacy `skills/SKILL-001-fastapi-production/examples/` (5 empty
+  scaffolds) was deleted as duplicate noise.
 - ⚠️ **Code-level benchmark** — current baseline is plan-level. ROADMAP Phase-5 needs an executable-run rubric (does `curl /health` actually return 200 from the emitted code?).
 - ⚠️ **Extraction promotion queue** — 180 staged primitives visible but the promotion pipeline isn't triggered by benchmark signals yet. Phase-5 item #25 still open.
 
@@ -64,8 +67,8 @@ slice generators (adapt + generators + modules), a primitive catalogue
 (`primitives_by_concern.yaml` + 385 recipes), discoverability
 (`fastapi_meta_search`), and LLM-first composition
 (`fastapi_meta_compose`). The remaining work is integration discipline
-(81 tools still emit inline logic, violating §6.1), concrete examples
-(5 empty dirs), and code-level behavioural scoring.
+(81 tools still emit inline logic, violating §6.1) and code-level
+behavioural scoring.
 
 Infrastructure: **~98% complete**. Integration discipline: **~20%
 complete** (19/100 extend tools wire primitives).
@@ -152,24 +155,15 @@ server actually pass behavioural tests?) moves to Phase 5.
 | # | Item | Status |
 |---|---|---|
 | 19 | `install.sh` + Docker CI | ✅ nightly green |
-| 20 | **`/examples/` populated with 5 real apps** | ⚠️ **5 empty dirs — open** |
+| 20 | `/examples/` populated with 5 real apps | ✅ done — 20 populated at repo-root |
 | 21 | Docs site v1 | ✅ `engine/docs/build.py` |
 | 22 | Semantic versioning + changelog | ✅ v0.1.0 shipped |
 | 23 | Contribution guide | ✅ `CONTRIBUTING.md` |
 
-**Open work for Phase 4 closeout (#20):**
-Populate the 5 example directories with Maestro-built apps tied to
-benchmark specs:
-
-- `examples/06-auth-saas/` — `benchmarks/specs/baseline/02_auth_only_saas.md`
-- `examples/07-multi-tenant-admin/` — `baseline/05_multi_tenant_admin.md`
-- `examples/08-stripe-billing/` — `mid/01_saas_with_stripe_billing.md`
-- `examples/09-event-sourced-orders/` — `mid/03_event_sourced_orders.md`
-- `examples/10-llm-agent/` — `mid/05_llm_agent_backend.md`
-
-Each example: MAESTRO_SESSION.md (plan-level transcript) + a working
-FastAPI project + `pytest` green on E2E tests. Examples double as
-regression fixtures for the code-level benchmark in Phase 5.
+**Phase 4 #20 closed** — 20 populated examples at `/examples/` (repo root,
+NOT skill-internal). Each carries README + MAESTRO_SESSION + cross-link
+tables. Contract §B4.2 enforces this going forward. These 20 examples
+now double as regression fixtures for the code-level benchmark in Phase 5.
 
 ### Phase 5 — Code-level benchmark + surgical gap fills (current phase)
 
@@ -182,7 +176,7 @@ must justify itself against behavioural evidence.
 | 25 | Code-level scoring rubric — run emitted server, hit endpoints, assert behaviour | pending |
 | 26 | Surgical primitive promotion from `_extracted/` when benchmark asks | pending — 180 candidates visible in catalog |
 | 27 | Close Phase-1 item #9 (15+ extend tools import primitives) | pending |
-| 28 | Close Phase-4 item #20 (populate 5 examples) | pending |
+| 28 | ~~Close Phase-4 #20~~ | ✅ done — 20 examples populated |
 | 29 | Target score: ≥ 70% on the code-level rubric by v1.0 | pending |
 
 **Exit criteria:** v1.0 ships when the code-level rubric hits ≥ 70% on
@@ -236,7 +230,7 @@ Only after SKILL-001 hits 70% code-level benchmark.
 1. **Close Phase-1 #9** — refactor 15 top-value extend tools to import
    `core.venous.*`. Adds a contract rule enforcing
    `primitives_used` non-empty on every tier-1 + tier-2 `add_*` tool.
-2. **Close Phase-4 #20** — populate 5 example apps tied to benchmark
+2. ~~**Close Phase-4 #20**~~ — already done (20 examples at repo root).
    specs, with `pytest` green.
 3. **Design Phase-5 #25** — code-level rubric spec doc + reference
    implementation that runs emitted server in a sandbox and scores

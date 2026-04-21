@@ -160,7 +160,9 @@ def collect() -> dict:
     def _has_files(d: Path) -> bool:
         return any(f.is_file() for f in d.rglob("*") if ".pycache" not in f.parts)
 
-    examples_dir = R / "examples"
+    # Examples live at repo root (canonical location, per CONTRACT §B4.2),
+    # not inside the skill tree. We resolve to `<repo_root>/examples/`.
+    examples_dir = R.parent.parent / "examples"
     examples_populated = 0
     examples_empty = 0
     if examples_dir.exists():
