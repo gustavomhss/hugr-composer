@@ -129,19 +129,17 @@ def add_cost_tracker(inp: ToolInput) -> ToolResult:
     files_modified: list[str] = []
     config_file = app_dir / "core" / "config.py"
     if config_file.exists() and "COST_DB_QUERY_RATE" not in config_file.read_text():
-        src = config_file.read_text()
-        fields = (
-            "\n    # Cost tracker (TOOL-120)\n"
-            "    COST_TRACKING_ENABLED: bool = False\n"
-            "    COST_DB_QUERY_RATE: float = 0.00001\n"
-            "    COST_S3_PER_GB: float = 0.023\n"
-            "    COST_API_CALL_RATE: float = 0.0001\n"
+        from adapt.contracts.config_patcher import patch_settings_fields
+
+        patch_settings_fields(
+            config_file,
+            fields=[
+                ("COST_TRACKING_ENABLED", "COST_TRACKING_ENABLED: bool = False"),
+                ("COST_DB_QUERY_RATE", "COST_DB_QUERY_RATE: float = 0.00001"),
+                ("COST_S3_PER_GB", "COST_S3_PER_GB: float = 0.023"),
+                ("COST_API_CALL_RATE", "COST_API_CALL_RATE: float = 0.0001"),
+            ],
         )
-        if "settings = Settings()" in src:
-            src = src.replace("settings = Settings()", fields + "\nsettings = Settings()")
-        else:
-            src = src.rstrip("\n") + "\n" + fields
-        config_file.write_text(src)
         files_modified.append(str(config_file))
 
     for path_str in files_created:

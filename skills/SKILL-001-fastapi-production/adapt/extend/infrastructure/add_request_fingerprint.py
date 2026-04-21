@@ -548,25 +548,16 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to ``app/core/config.py``.
     """
-    src = config_file.read_text()
-    if "FINGERPRINT_ENABLED" in src:
-        return
+    from adapt.contracts.config_patcher import patch_settings_fields
 
-    # 4-space-indented block to inject inside the Settings class body
-    injection = (
-        "\n"
-        "    # Request fingerprinting — added by add_request_fingerprint tool\n"
-        "    FINGERPRINT_ENABLED: bool = False\n"
-        "    FINGERPRINT_TTL_S: int = 60\n"
-        "    FINGERPRINT_METHODS: str = \"POST,PUT,PATCH\"\n"
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("FINGERPRINT_ENABLED", "FINGERPRINT_ENABLED: bool = False"),
+            ("FINGERPRINT_TTL_S", "FINGERPRINT_TTL_S: int = 60"),
+            ("FINGERPRINT_METHODS", 'FINGERPRINT_METHODS: str = "POST,PUT,PATCH"'),
+        ],
     )
-
-    if "settings = Settings()" in src:
-        src = src.replace("settings = Settings()", injection + "\nsettings = Settings()")
-    else:
-        src = src.rstrip("\n") + "\n" + injection
-
-    config_file.write_text(src)
 
 
 # ---------------------------------------------------------------------------

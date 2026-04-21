@@ -695,23 +695,15 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to the existing config.py.
     """
-    src = config_file.read_text()
-    if "BOLA_GUARD_ENABLED" in src:
-        return
+    from adapt.contracts.config_patcher import patch_settings_fields
 
-    # 4-space-indented fields to insert inside Settings class body
-    fields = (
-        "\n"
-        "    # --- BOLA Guard settings (add_bola_guard) ---\n"
-        "    BOLA_GUARD_ENABLED: bool = True\n"
-        "    BOLA_GUARD_STRICT_MODE: bool = False\n"
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("BOLA_GUARD_ENABLED", "BOLA_GUARD_ENABLED: bool = True"),
+            ("BOLA_GUARD_STRICT_MODE", "BOLA_GUARD_STRICT_MODE: bool = False"),
+        ],
     )
-
-    if "settings = Settings()" in src:
-        src = src.replace("settings = Settings()", fields + "\nsettings = Settings()")
-    else:
-        src = src.rstrip("\n") + fields + "\n"
-    config_file.write_text(src)
 
 
 # ---------------------------------------------------------------------------

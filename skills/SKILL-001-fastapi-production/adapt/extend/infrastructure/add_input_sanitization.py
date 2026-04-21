@@ -544,22 +544,16 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to ``app/core/config.py``.
     """
-    src = config_file.read_text()
-    if "SANITIZE_ENABLED" in src:
-        return
-    # 4-space-indented so they land inside class Settings body.
-    addition = (
-        "\n"
-        "    # --- Input Sanitization (added by add_input_sanitization tool) ---\n"
-        "    SANITIZE_ENABLED: bool = True\n"
-        "    SANITIZE_ALLOWED_TAGS: list[str] = []\n"
-        "    SANITIZE_MAX_DEPTH: int = 5\n"
+    from adapt.contracts.config_patcher import patch_settings_fields
+
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("SANITIZE_ENABLED", "SANITIZE_ENABLED: bool = True"),
+            ("SANITIZE_ALLOWED_TAGS", "SANITIZE_ALLOWED_TAGS: list[str] = []"),
+            ("SANITIZE_MAX_DEPTH", "SANITIZE_MAX_DEPTH: int = 5"),
+        ],
     )
-    if "settings = Settings()" in src:
-        src = src.replace("settings = Settings()", addition + "\nsettings = Settings()")
-    else:
-        src = src.rstrip("\n") + "\n" + addition + "\n"
-    config_file.write_text(src)
 
 
 # ---------------------------------------------------------------------------

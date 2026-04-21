@@ -408,24 +408,17 @@ def add_bulkhead_isolation(inp: ToolInput) -> ToolResult:
 
 def _patch_config(config_file: Path) -> None:
     """Add BULKHEAD_* fields to ``app/core/config.py`` Settings class."""
-    src = config_file.read_text()
-    if "BULKHEAD_ENABLED" in src:
-        return
+    from adapt.contracts.config_patcher import patch_settings_fields
 
-    fields = (
-        "\n    # Bulkhead isolation\n"
-        "    BULKHEAD_ENABLED: bool = False\n"
-        "    BULKHEAD_PAYMENTS_MAX: int = 10\n"
-        "    BULKHEAD_CRUD_MAX: int = 50\n"
-        "    BULKHEAD_ANALYTICS_MAX: int = 20\n"
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("BULKHEAD_ENABLED", "BULKHEAD_ENABLED: bool = False"),
+            ("BULKHEAD_PAYMENTS_MAX", "BULKHEAD_PAYMENTS_MAX: int = 10"),
+            ("BULKHEAD_CRUD_MAX", "BULKHEAD_CRUD_MAX: int = 50"),
+            ("BULKHEAD_ANALYTICS_MAX", "BULKHEAD_ANALYTICS_MAX: int = 20"),
+        ],
     )
-
-    if "settings = Settings()" in src:
-        src = src.replace("settings = Settings()", fields + "\nsettings = Settings()")
-    else:
-        src = src.rstrip("\n") + "\n" + fields + "\n"
-
-    config_file.write_text(src)
 
 
 def _patch_main(main_file: Path) -> None:

@@ -603,24 +603,16 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to the existing config.py.
     """
-    src = config_file.read_text()
-    if "SENTINEL_ENABLED" in src:
-        return
+    from adapt.contracts.config_patcher import patch_settings_fields
 
-    # 4-space-indented fields to insert inside Settings class body
-    fields = (
-        "\n"
-        "    # --- Runtime Sentinel settings (add_runtime_sentinel) ---\n"
-        "    SENTINEL_ENABLED: bool = True\n"
-        '    SENTINEL_MODE: str = "learning"\n'
-        '    SENTINEL_ALLOWED_HOSTS: str = ""\n'
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("SENTINEL_ENABLED", "SENTINEL_ENABLED: bool = True"),
+            ("SENTINEL_MODE", 'SENTINEL_MODE: str = "learning"'),
+            ("SENTINEL_ALLOWED_HOSTS", 'SENTINEL_ALLOWED_HOSTS: str = ""'),
+        ],
     )
-
-    if "settings = Settings()" in src:
-        src = src.replace("settings = Settings()", fields + "\nsettings = Settings()")
-    else:
-        src = src.rstrip("\n") + fields + "\n"
-    config_file.write_text(src)
 
 
 # ---------------------------------------------------------------------------

@@ -794,24 +794,16 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to ``app/core/config.py``.
     """
-    src = config_file.read_text()
-    if "HEALTH_CHECK_TIMEOUT_MS" in src:
-        return
+    from adapt.contracts.config_patcher import patch_settings_fields
 
-    health_fields = textwrap.dedent("""\
-
-        # Health check tuning — added by add_health_deep tool
-        HEALTH_CHECK_TIMEOUT_MS: int = 5000
-        HEALTH_DISK_THRESHOLD_PCT: int = 90
-        HEALTH_MEMORY_THRESHOLD_MB: int = 512
-    """)
-
-    # Insert before the closing of the Settings class or at the end of the class body
-    if "settings = Settings()" in src:
-        src = src.replace("settings = Settings()", health_fields + "\n\nsettings = Settings()")
-    else:
-        src = src.rstrip("\n") + health_fields
-    config_file.write_text(src)
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("HEALTH_CHECK_TIMEOUT_MS", "HEALTH_CHECK_TIMEOUT_MS: int = 5000"),
+            ("HEALTH_DISK_THRESHOLD_PCT", "HEALTH_DISK_THRESHOLD_PCT: int = 90"),
+            ("HEALTH_MEMORY_THRESHOLD_MB", "HEALTH_MEMORY_THRESHOLD_MB: int = 512"),
+        ],
+    )
 
 
 def _patch_main(main_file: Path) -> None:

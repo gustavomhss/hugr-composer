@@ -514,24 +514,15 @@ def _patch_config(config_file: Path) -> None:
     Args:
         config_file: Path to the existing config.py.
     """
-    src = config_file.read_text()
-    if "SBOM_FAIL_ON_CRITICAL" in src:
-        return
+    from adapt.contracts.config_patcher import patch_settings_fields
 
-    # 4-space-indented fields to insert inside Settings class body
-    fields = (
-        "\n"
-        "    # --- SBOM Guardian settings (add_sbom_guardian) ---\n"
-        "    SBOM_FAIL_ON_CRITICAL: bool = True\n"
-        '    SBOM_LOCKFILE_PATH: str = "requirements.txt"\n'
+    patch_settings_fields(
+        config_file,
+        fields=[
+            ("SBOM_FAIL_ON_CRITICAL", "SBOM_FAIL_ON_CRITICAL: bool = True"),
+            ("SBOM_LOCKFILE_PATH", 'SBOM_LOCKFILE_PATH: str = "requirements.txt"'),
+        ],
     )
-
-    # Insert just before `settings = Settings()` (module-level, outside class)
-    if "settings = Settings()" in src:
-        src = src.replace("settings = Settings()", fields + "\nsettings = Settings()")
-    else:
-        src = src.rstrip("\n") + fields + "\n"
-    config_file.write_text(src)
 
 
 # ---------------------------------------------------------------------------

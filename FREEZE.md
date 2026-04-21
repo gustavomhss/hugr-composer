@@ -173,6 +173,30 @@ Django/Next.js/agent-backend skill. Post-v1.0 work per ROADMAP Phase 6.
 
 ROADMAP Phase 7 items. Post-v1.0.
 
+### §2.8 — Known pre-existing test failures
+
+Two tests in `test_add_bulkhead_isolation_behavior.py` fail on v1.0:
+
+- `test_b02_bulkhead_rejects_when_full`
+- `test_b04_bulkhead_status`
+
+Root cause: the test expects `Bulkhead(BulkheadConfig(limits={...}))`
++ `bulkhead.acquire(group_name)` API; the current primitive
+`InMemoryBulkhead` has a different signature (`name: str, *,
+max_concurrent_calls: int, max_wait_duration_ms: int`) with
+`await .call(fn, *args)` instead of an `acquire()` context manager.
+
+The divergence predates this sprint. Fixing it means either refactoring
+the primitive (API-breaking — v2.x MAJOR) or writing a compatibility
+wrapper that emits the old-API surface. Both belong to the same
+post-v1.0 sprint that also promotes `BulkheadAdapter.py` (FREEZE §1.6).
+
+Remediation: when the adapter promotion lands, rewrite the two tests
+to use the unified primitive + adapter API. Track in the post-v1.0
+ROADMAP under "bulkhead API alignment".
+
+No other pre-existing test failures at v1.0.
+
 ---
 
 ## §3 — Hard invariants for freeze
