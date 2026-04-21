@@ -44,6 +44,13 @@ Tier = Literal[1, 2]          # 1 = always-loaded; 2 = defer_loading
 
 ToolStatus = Literal["experimental", "stable", "deprecated"]
 
+# Primitive-only status. Adds "staged" for pre-audited primitives that live
+# under `core/venous/_extracted/` but still carry REPLACE_ME stubs. Staged
+# primitives are surfaced in the catalog so the Maestro can see them, but
+# they are NOT ready for production composition — promote through the
+# extraction pipeline before relying on them.
+PrimitiveStatus = Literal["experimental", "staged", "stable", "deprecated"]
+
 
 # ---------------------------------------------------------------------------
 # Entry types
@@ -86,7 +93,7 @@ class PrimitiveEntry(BaseModel):
     purpose: str                               # one-line, <140 chars
     compose_with: tuple[str, ...] = ()
     module_path: str                           # repo-relative
-    status: ToolStatus = "stable"
+    status: PrimitiveStatus = "stable"
 
 
 class RecipeEntry(BaseModel):

@@ -358,8 +358,74 @@ def _load_primitives() -> list[PrimitiveEntry]:
             module_path=str(module_path.relative_to(SKILL_ROOT))
                 if module_path.exists() else f"core/venous/{ns}/{name}/",
         ))
+    # Append staged primitives from _extracted/ (excluding _quarantine), then
+    # globally sort so BM25 and byte-stable hashing see a single ordered list.
+    out.extend(_load_staged_primitives(registered_names={p.name for p in out}))
     out.sort(key=lambda p: (p.namespace, p.name))
     return out
+
+
+def _load_staged_primitives(*, registered_names: set[str]) -> list[PrimitiveEntry]:
+    """Surface every pre-audited staged primitive as `status="staged"`.
+
+    The staging area (`core/venous/_extracted/<ns>/<Name>/`) carries full
+    HuGR shell (contract.json, protocol, md, tests) but `REPLACE_ME`
+    stubs in the impl. We index them so the Maestro can discover them
+    via `fastapi_meta_search` and decide when a benchmark gap justifies
+    promotion — but the `staged` status flags them as non-production.
+    Quarantined primitives are skipped.
+    """
+    root = VENOUS_ROOT / "_extracted"
+    if not root.exists():
+        return []
+    out: list[PrimitiveEntry] = []
+    seen: set[str] = set()
+    for ns_dir in sorted(root.iterdir()):
+        if not ns_dir.is_dir() or ns_dir.name.startswith("_"):
+            continue
+        ns = ns_dir.name
+        for prim_dir in sorted(ns_dir.iterdir()):
+            if not prim_dir.is_dir():
+                continue
+            name = prim_dir.name
+            # Require PascalCase naming — excludes helper snake_case dirs like
+            # `check_rate_limit` that crept into the staging pool.
+            if not (name[:1].isupper() and "_" not in name):
+                continue
+            # A staged primitive must have its own <Name>.py.
+            if not (prim_dir / f"{name}.py").exists():
+                continue
+            if name in registered_names or name in seen:
+                # Do not duplicate a primitive that already lives in the
+                # production registry, nor a same-named primitive from a
+                # different _extracted namespace.
+                continue
+            seen.add(name)
+            purpose = _first_doc_line(prim_dir / f"{name}.md")[:140]
+            out.append(PrimitiveEntry(
+                name=name, namespace=ns,
+                concern=ns,
+                purpose=purpose or f"Staged primitive; promote via engine/extraction before use.",
+                compose_with=(),
+                module_path=str(prim_dir.relative_to(SKILL_ROOT)) + "/",
+                status="staged",
+            ))
+    return sorted(out, key=lambda p: (p.namespace, p.name))
+
+
+def _first_doc_line(md_path: Path) -> str:
+    """Return the first non-empty, non-heading line from a primitive .md."""
+    if not md_path.exists():
+        return ""
+    try:
+        for line in md_path.read_text(encoding="utf-8").splitlines():
+            s = line.strip()
+            if not s or s.startswith("#") or s.startswith("---"):
+                continue
+            return re.sub(r"\s+", " ", s)
+    except (OSError, UnicodeDecodeError):
+        pass
+    return ""
 
 
 _RECIPE_BULLET_RE = re.compile(

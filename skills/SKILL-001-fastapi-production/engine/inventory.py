@@ -64,7 +64,7 @@ def _count_registered_primitives() -> int:
     return sum(1 for line in p.read_text().splitlines() if line.startswith("- name:"))
 
 
-def _count_primitive_dirs(root: Path, exclude: set[str] | None = None) -> int:
+def _count_primitive_dirs(root: Path, exclude: set[str] | None = None, *, pascal_only: bool = False) -> int:
     exclude = exclude or set()
     if not root.exists():
         return 0
@@ -75,6 +75,8 @@ def _count_primitive_dirs(root: Path, exclude: set[str] | None = None) -> int:
         if any(part in exclude or part.startswith("_") for part in p.relative_to(root).parts[:-1]):
             continue
         if p.name.startswith(("_", ".")):
+            continue
+        if pascal_only and not (p.name[:1].isupper() and "_" not in p.name):
             continue
         # A "primitive dir" has a <Name>.py matching its directory name
         if (p / f"{p.name}.py").exists():
@@ -132,13 +134,15 @@ def collect() -> dict:
             if not p.name.startswith(("_", "test_"))
         )
 
-    # _extracted staged
+    # _extracted staged — count only valid PascalCase dirs (the subset that
+    # makes it into the catalog as `status="staged"`).
     extracted_ns: dict[str, int] = {}
     ext_staged = R / "core" / "venous" / "_extracted"
     if ext_staged.exists():
         for p in sorted(ext_staged.iterdir()):
             if p.is_dir():
-                extracted_ns[p.name] = _count_primitive_dirs(p)
+                pascal_only = p.name != "_quarantine"
+                extracted_ns[p.name] = _count_primitive_dirs(p, pascal_only=pascal_only)
 
     # catalog.json counts
     catalog_path = R / "engine" / "index" / "catalog.json"
