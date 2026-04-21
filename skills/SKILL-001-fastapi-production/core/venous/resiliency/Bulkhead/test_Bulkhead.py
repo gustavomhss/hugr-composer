@@ -400,3 +400,128 @@ def test_inv_rejection_metric_under_failure() -> None:
     _run(drive())
     labels = {e.partition for e in meter.events}
     assert labels == {"a", "b"}
+
+
+# ---------------------------------------------------------------------------
+# Public ``acquire()`` context manager — same invariants as ``submit``
+# ---------------------------------------------------------------------------
+def test_acquire_holds_permit_for_body_and_releases() -> None:
+    """``async with acquire()`` increments in_flight for the body, decrements on exit."""
+    bh = InMemoryBulkhead("q", max_concurrent_calls=2, max_wait_duration_ms=0)
+
+    async def drive() -> None:
+        assert bh.in_flight() == 0
+        async with bh.acquire():
+            assert bh.in_flight() == 1
+            async with bh.acquire():
+                assert bh.in_flight() == 2
+            assert bh.in_flight() == 1
+        assert bh.in_flight() == 0
+
+    _run(drive())
+    # Both permits were accounted.
+    assert bh.total_admitted() == 2
+    assert bh.total_rejected() == 0
+
+
+def test_acquire_rejects_at_capacity_with_zero_wait() -> None:
+    """Second concurrent acquire on a cap-1 partition with wait=0 MUST raise BulkheadFull."""
+    bh = InMemoryBulkhead("q", max_concurrent_calls=1, max_wait_duration_ms=0)
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    async def hold_one() -> None:
+        async with bh.acquire():
+            started.set()
+            await release.wait()
+
+    async def drive() -> None:
+        t = asyncio.create_task(hold_one())
+        await started.wait()
+        with pytest.raises(BulkheadFull):
+            async with bh.acquire():
+                raise AssertionError("body entered despite BulkheadFull expected")
+        release.set()
+        await t
+
+    _run(drive())
+    assert bh.total_rejected() == 1
+
+
+def test_acquire_releases_permit_on_body_exception() -> None:
+    """Exception inside the ``async with`` body MUST NOT leak the permit."""
+    bh = InMemoryBulkhead("q", max_concurrent_calls=1, max_wait_duration_ms=0)
+
+    async def drive() -> None:
+        with pytest.raises(ValueError):
+            async with bh.acquire():
+                assert bh.in_flight() == 1
+                raise ValueError("boom")
+        assert bh.in_flight() == 0
+        # Subsequent acquire succeeds — proves the permit was returned.
+        async with bh.acquire():
+            assert bh.in_flight() == 1
+
+    _run(drive())
+    assert bh.total_admitted() == 2
+
+
+def test_acquire_honours_request_ledger_anti_retry() -> None:
+    """Once a (request_id, partition) is rejected, further acquires for that request MUST fail fast."""
+    ledger = RequestRejectionLedger()
+    bh = InMemoryBulkhead(
+        "q",
+        max_concurrent_calls=1,
+        max_wait_duration_ms=0,
+        ledger=ledger,
+    )
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    async def hold() -> None:
+        async with bh.acquire():
+            started.set()
+            await release.wait()
+
+    async def drive() -> None:
+        t = asyncio.create_task(hold())
+        await started.wait()
+        # First attempt — capacity rejection records in ledger (wait_timeout).
+        with pytest.raises(BulkheadFull):
+            async with bh.acquire(request_id="req-42"):
+                raise AssertionError("body entered despite BulkheadFull")
+        # Now the partition is free again…
+        release.set()
+        await t
+        assert bh.in_flight() == 0
+        # …but the SAME request_id MUST still be rejected (BH_INV_03).
+        with pytest.raises(BulkheadFull) as excinfo:
+            async with bh.acquire(request_id="req-42"):
+                raise AssertionError("retry should not have been admitted")
+        assert "intra-request retry is FORBIDDEN" in str(excinfo.value)
+
+    _run(drive())
+    # One wait_timeout + one retry_forbidden = 2 recorded rejections.
+    assert bh.total_rejected() == 2
+
+
+def test_submit_is_sugar_over_acquire() -> None:
+    """``submit(fn)`` must be observationally indistinguishable from ``async with acquire(): fn()``."""
+    bh = InMemoryBulkhead("q", max_concurrent_calls=5, max_wait_duration_ms=0)
+
+    sentinel = object()
+
+    async def fn_a() -> object:
+        return sentinel
+
+    async def fn_b() -> object:
+        async with bh.acquire():
+            return sentinel
+
+    async def drive() -> None:
+        assert await bh.submit(fn_a) is sentinel
+        assert await fn_b() is sentinel
+        # Both paths incremented total_admitted once.
+        assert bh.total_admitted() == 2
+
+    _run(drive())
