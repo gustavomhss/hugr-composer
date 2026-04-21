@@ -22,15 +22,17 @@
 | 1.4 | §E ratification block appended with today's date | `grep -E "Ratified 20[0-9]{2}-[0-9]{2}-[0-9]{2} by Gustavo" CONTRACT.md \| tail -1` shows current date | Gustavo |
 | 1.5 | `docs/decisions/0004-tier-lite.md` status flipped from "Proposed" to "Ratified" | `grep "Status: Ratified" docs/decisions/0004-tier-lite.md` | Claude (after 1.4) |
 
-## §2 — Promotion pipeline — execute the in-scope promotions (§1.6 of FREEZE)
+## §2 — Promotion pipeline — no in-scope promotions (§1.6 of FREEZE)
+
+Per FREEZE §1.6, v1.0 ships with zero new promotions. The only
+required §2 action is verifying the ledger matches the frozen-state
+claim.
 
 | # | Item | Done check | Owner |
 |---|---|---|---|
-| 2.1 | Promote `BulkheadMiddleware --staged` → `BulkheadAdapter.py` | `test -f core/venous/_adapters/fastapi/BulkheadAdapter.py` | Claude |
-| 2.2 | Add basic test `test_BulkheadAdapter.py` to match the 16 sibling adapters' test pattern | `test -f core/venous/_adapters/fastapi/test_BulkheadAdapter.py` + pytest passes | Claude |
-| 2.3 | Re-run classifier; verify the staged sibling is now classified differently | `engine.promotion.classify` exits 0; `promote_as_adapter` count dropped by ≥1 | Claude |
-| 2.4 | Re-generate LEDGER.md | `engine.promotion.ledger` exits 0; file mtime is recent | Claude |
-| 2.5 | Leave all other staged items as classified (§A12 discipline); verify counts didn't drift | Ledger `extract_motor_pair / needs_caller / redundant / needs_review` match FREEZE expectations (delta only from promoted BulkheadMiddleware sibling reclassification) | Claude |
+| 2.1 | Classifier output matches FREEZE §1.1 | `engine.promotion.classify` prints `promote_as_adapter=2, needs_caller=104, extract_motor_pair=118, redundant=2, needs_review=3`. Any drift = investigate; do not ignore. | Claude |
+| 2.2 | LEDGER.md regenerated and committed | `engine.promotion.ledger` exits 0; `git diff engine/promotion/LEDGER.md` non-empty only if the file itself drifted | Claude |
+| 2.3 | No ledger entry with `PROMOTE_AS_*` + zero blockers left unactioned | Invariant 12 of FREEZE §3: for each such entry, either it's executed OR listed in FREEZE §2 deferrals. Today: `BulkheadMiddleware (×2)` ledger rows carry the deferral per FREEZE §1.6. | Claude |
 
 ## §3 — Quality gates — full test pass
 

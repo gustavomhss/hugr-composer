@@ -32,8 +32,8 @@ tool / primitive renames going forward (CONTRACT §A10).
     - 9 tree dispatchers (`mcp_tools/tree/`)
 - **122 registered primitives** (full shell: contract + protocol + tests +
   TLA+ + dashboard + invariants + observability).
-- **17 FastAPI adapters** (`core/venous/_adapters/fastapi/`) including the
-  new `BulkheadAdapter.py` landed during freeze.
+- **16 FastAPI adapters** (`core/venous/_adapters/fastapi/`). No new
+  adapters in v1.0 per FREEZE §1.6 (scope is "stabilize what exists").
 - **181 staged primitives** (`_extracted/`, `status="staged"`) — discoverable,
   not promoted.
 - **20 complete examples** at `/examples/` (5 baseline + 10 mid + 5 adversarial).
@@ -51,7 +51,6 @@ tool / primitive renames going forward (CONTRACT §A10).
   (`--staged` / `--quarantined`). 38 unit tests.
 - **Catalog `stable_hash`** now embedded in `engine/index/catalog.json`
   (was stdout-only in v0.x).
-- **`BulkheadAdapter.py`** — completes the Bulkhead motor+adapter pair.
 - **`LICENSE`** — proprietary (HumanGR Labs).
 - **`SECURITY.md`** — disclosure policy + SLA tiers.
 - **`MIGRATION.md`** — v0.x → v1.0 breaking changes.

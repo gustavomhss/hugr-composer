@@ -41,8 +41,9 @@ Total Maestro-visible tools at freeze: **217**
 - **122 registered primitives** under `core/venous/<ns>/<Name>/` with
   full shell (contract.json + protocol + md + tests + TLA+ + dashboard +
   invariants + observability).
-- **17 FastAPI adapters** under `core/venous/_adapters/fastapi/`
-  (16 pre-freeze + `BulkheadAdapter.py` promoted per §1.6).
+- **16 FastAPI adapters** under `core/venous/_adapters/fastapi/`.
+  No new adapters in v1.0 (see §1.6 — scope is "stabilize what exists",
+  not "promote new surface").
 - **181 staged primitives** surfaced in catalog with `status="staged"`
   (discoverable; not promoted; `_extracted/<ns>/` + `_extracted/_quarantine/`
   combined PascalCase items).
@@ -99,18 +100,35 @@ Total Maestro-visible tools at freeze: **217**
 - VERSION file bumped to `1.0.0`.
 - Release notes referencing this FREEZE doc.
 
-### §1.6 — Specific in-scope promotions
+### §1.6 — Specific in-scope promotions: NONE
 
-The only staged → registered promotions IN v1.0:
+v1.0 scope is **stabilize what exists, not promote new surface**.
+Zero staged items are promoted as part of this freeze.
 
-- **`BulkheadMiddleware` → `core/venous/_adapters/fastapi/BulkheadAdapter.py`**.
-  Motor `Bulkhead` is registered; adapter missing; staged item fills
-  the gap. Completes the pair. Tests updated; contract stays 34/34
-  green. Source picked is `_extracted/resiliency/BulkheadMiddleware/`
-  (via `--staged` disambiguator; the `_quarantine/BulkheadMiddleware/`
-  sibling will fall to the post-v1.0 triage per `LEDGER.md` update).
+Rationale for dropping the previously-proposed `BulkheadAdapter.py`
+promotion (originally planned here):
 
-No other staged item is promoted in v1.0. (See §2.3 for why.)
+- Motor `Bulkhead` is registered at `core/venous/resiliency/Bulkhead/`
+  with full shell.
+- Existing tool `adapt/extend/infrastructure/add_bulkhead_isolation.py`
+  already works: it's Rails-connected (`imports_primitives` declares
+  `core.venous.resiliency.Bulkhead`) and emits its own inline
+  `BulkheadMiddleware` as part of the generated project.
+- The tool's `imports_adapters` is empty — it does NOT consume an
+  adapter today. Promoting a new `BulkheadAdapter.py` without a
+  registered caller violates §A12(b): "imported by a registered tool
+  or module". The adapter would sit unused, violating the §A12
+  no-speculative-promotion discipline the freeze ratifies.
+- The honest path: refactor `add_bulkhead_isolation.py` to consume
+  an adapter AND promote the adapter in the same change, so both
+  halves land with a real caller. That refactor is ~3h of careful
+  work and is deferred to a post-v1.0 sprint where adapter-pattern
+  refactors are batched (see `FREEZE.md §2.4`).
+
+v1.0 freeze ships the existing 16 adapters unchanged. The 2 staged
+`BulkheadMiddleware` ledger entries (staged + quarantined) remain in
+`_extracted/` with `verdict="promote_as_adapter"` — they become
+executable targets once the matching tool refactor is planned.
 
 ---
 
