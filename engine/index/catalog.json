@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "a61908e",
-  "generated_at": "2026-04-21T13:40:58+00:00",
+  "kit_commit": "0f8fb15",
+  "generated_at": "2026-04-21T14:34:28+00:00",
   "verbs": [
     "add",
     "generate",
@@ -11706,5 +11706,6 @@
     "tools": 201,
     "primitives": 302,
     "recipes": 385
-  }
+  },
+  "stable_hash": "638cba3e05bb93556df0d97d8d4291f02cc5fe7b2327c48c0c091f2af3eaa129"
 }

@@ -47,7 +47,7 @@ def _bucket_preamble(verdict: Verdict) -> str:
         Verdict.PROMOTE_AS_PRIMITIVE: (
             "Each item has a §A12(b) signal, clean shell, and fits either "
             "lite or full tier (see `tier` field). Lite promotion requires "
-            "§B1.7 ratification first (see `docs/decisions/0004-tier-lite.md`). "
+            "§B1.8 ratification first (see `docs/decisions/0004-tier-lite.md`). "
             "`promotion_target` gives the exact destination path. Approve:\n\n"
             "```\nPYTHONPATH=. .venv/bin/python -m engine.promotion.promote "
             "--from-ledger <NAME>\n```"
@@ -189,7 +189,7 @@ def render(ledger: Ledger) -> str:
     ]
     next_steps = {
         Verdict.PROMOTE_AS_ADAPTER: "Review + approve individually; executor ships each.",
-        Verdict.PROMOTE_AS_PRIMITIVE: "Ratify §B1.7 (for lite) → review + approve.",
+        Verdict.PROMOTE_AS_PRIMITIVE: "Ratify §B1.8 (for lite) → review + approve.",
         Verdict.EXTRACT_MOTOR_PAIR: "Refactoring sprint — ~2-4h per item.",
         Verdict.FILL_AND_PROMOTE: "Fill REPLACE_ME + invariant tests; reclassify.",
         Verdict.REDUNDANT: "Leave in place, or opt-in delete for cleanup.",
