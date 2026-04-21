@@ -3,65 +3,72 @@
 > **Companion to `PRODUCT.md`.** PRODUCT.md describes the contract; this
 > doc describes where we are and how we get there.
 >
-> **Last audited:** 2026-04-19 (Opus research + Explore audit).
+> **Last audited:** 2026-04-21 (Opus, machine-verified via
+> `engine.inventory` + `engine.audit.contract_check`).
 > **Next review:** at end of every phase.
+> **Canonical counts:** `skills/SKILL-001-fastapi-production/INVENTORY.md`.
 
 ---
 
-## Part 1 — Brutal ground truth (where we are today)
+## Part 1 — Ground truth (what actually exists, reconciled 2026-04-21)
 
-From a clean, agent-driven audit of the repo:
+Regenerate from the skill root with
+`PYTHONPATH=. .venv/bin/python -m engine.inventory`. All numbers below
+reconcile against INVENTORY.md — drift = audit bug.
 
 ### What exists and works
 
-- **One skill** (SKILL-001-fastapi-production) with a runnable FastMCP
-  server.
-- **~97 slice tools** under `adapt/extend/` (SKILL.md claim of 123 is
-  inflated).
-- **~33-45 generators** in `generators/` (SKILL.md claim of 52 is
-  inflated).
-- **~93 catalog-derived primitives** in `core/venous/<ns>/<Name>/` with
-  real manifests, tests, TLA+ specs, invariants.
-- **~10 primitives promoted from `_extracted/` staging** to
-  production via the extraction pipeline.
-- **~430 primitives staged in `core/venous/_extracted/`** — raw lifted,
-  HuGR-shelled, T0-compile-green, but with `REPLACE_ME` stubs and no
-  real tests.
-- **Extraction pipeline** (`engine/extraction/`) — 8 modules, all green,
-  idempotent, proven to scale to 500 primitives in seconds.
-- **97 primitives audited via Opus** — 54 real bugs found and fixed
-  during this session.
-- **MCP tool auto-discovery** for adapt tools (via `MCP_TOOL` metadata
-  scan).
+| Surface | Count | Notes |
+|---|---:|---|
+| MCP-registered tools on disk | 251 | Files with `MCP_TOOL` metadata scannable by `engine.index.manifest` |
+| Tools indexed in `catalog.json` | 201 | Canonical `fastapi_<domain>_<verb>_<noun>` names |
+| Tier-1 meta tools | 7 | home / search / describe / scaffold / compose / audit / verify |
+| Tree dispatchers | 9 | auth, data, api, realtime, resiliency, observability, compliance, deployment, testing |
+| Adapt tools | 126 | 100 extend / 8 evolve / 8 operate / 6 verify / 3 contracts / 1 proactive |
+| Generators | 56 | auth, database, deployment, endpoints, infra, middleware, observability, schemas, testing, tools |
+| Module packages | 28 | auth, background_jobs, caching, database, deployment, observability, payments, security, websockets |
+| Registered primitives | 122 | `core/venous/<ns>/<Name>/` with contract.json + tests + TLA+ specs |
+| FastAPI adapters | 16 | Production-wired in `core/venous/_adapters/fastapi/` |
+| Staged primitives | 180 | PascalCase subset of `_extracted/`, surfaced in catalog as `status="staged"` |
+| Quarantined primitives | 121 | Rejected by extraction gate, hidden from catalog |
+| Recipes | 385 | Parsed from primitive `.md` `## Compose with:` sections |
+| Benchmark specs | 20 | 5 baseline + 10 mid + 5 adversarial |
+| Contract rules passing | 33/33 | Machine-verified by `engine.audit.contract_check` |
 
-### What is aspirational or broken
+### What's done (formerly "aspirational")
 
-- **SKILL.md drift**: claims 175 MCP tools total, 3000+ tests, 35/35
-  audit, 200+ cross-composition scenarios. Few of these hold up against
-  a fresh count.
-- **Primitives are orphaned from tools**: zero `from core.venous import`
-  in `adapt/extend/*.py`. The Rails-style connection the product
-  promises does not exist in code yet.
-- **No registry**: `engine/primitives_by_concern.yaml` does not exist.
-  Maestro cannot query "what's available for event sourcing?".
-- **No composition recipes**: zero matches for "Compose with:" / "See
-  also" across primitive `.md` files. Each primitive stands alone with
-  no pointer to siblings.
-- **Generators require manual registration** in `mcp_tools/generators.py`
-  — 33+ hardcoded `@mcp_app.tool` decorators. Not auto-discovered.
-- **`/examples/` is empty.** No real apps demonstrate the kit.
-- **No `README.md`** at repo root. SKILL.md is the only entry point and
-  it drifts.
-- **No `install.sh`.** Dockerfile exists but untested end-to-end.
-- **No Maestro benchmark harness.** Zero measurement of "does this
-  actually help an LLM ship a SaaS".
+- ✅ **Registry YAML** — `engine/primitives_by_concern.yaml` (Phase 1).
+- ✅ **Composition recipes** — 385 recipes extracted from `## Compose with:` sections; BM25-searchable via `fastapi_meta_search_composition` (Phase 1+2).
+- ✅ **MCP tool auto-discovery** — `MCP_TOOL` scan across adapt/, generators/, modules/, meta/, core/tools/, engine/discovery/ (Phase 1).
+- ✅ **Discoverability layer** — `fastapi_meta_search` + `fastapi_meta_search_primitive` + `fastapi_meta_search_composition` (Phase 2).
+- ✅ **Benchmark harness** — 20 specs, 4-dimension rubric, runner in `engine/bench/`, 6 live runs archived under `benchmarks/blind/results/` (Phase 3).
+- ✅ **Plan-level baseline score** — 100.00 overall (best-of-ensemble v3). Honest caveat: this scores requirement→primitive/tool mapping, NOT executable behaviour (Phase 5 item).
+- ✅ **install.sh + Dockerfile** — validated nightly in fresh `python:3.12-slim` via `.github/workflows/install-docker.yml` (Phase 4).
+- ✅ **README.md + CLAUDE.md + PRODUCT.md + CONTRACT.md + CONTRIBUTING.md** at repo root (Phase 0+4).
+- ✅ **SKILL.md v2** in Anthropic Agent Skills format (YAML frontmatter + ≤500-line body + 3 few-shot transcripts).
+- ✅ **Tier-1 meta tools** (7) + **tree dispatchers** (9) + **fastapi_meta_compose** with 4-tier fallthrough (adapter_reuse > tool_delegate > recipe_template > ad_hoc).
+- ✅ **Staged-primitive surface** — 180 pre-audited primitives visible to Maestro as `status="staged"`; `fastapi_meta_search` returns them so benchmark gaps can signal promotion needs.
+- ✅ **Canonical naming** enforced across the entire surface. `fastapi_<domain>_<verb>_<noun>` with closed verb (9) and domain (10) vocabularies; manifest trusts author-declared canonical names.
+
+### What's still open
+
+- ⚠️ **Rails-vs-Yeoman rule (PRODUCT.md §6.1)** — only 18/100 `adapt/extend/` tools import from `core.venous.*`. The other 82 emit inline logic. ROADMAP Phase-1 item #9 remains open.
+- ⚠️ **`/examples/`** — 5 directories, all empty. ROADMAP Phase-4 item #20 remains open.
+- ⚠️ **Code-level benchmark** — current baseline is plan-level. ROADMAP Phase-5 needs an executable-run rubric (does `curl /health` actually return 200 from the emitted code?).
+- ⚠️ **Extraction promotion queue** — 180 staged primitives visible but the promotion pipeline isn't triggered by benchmark signals yet. Phase-5 item #25 still open.
 
 ### Honest summary
 
-Roughly **80% infrastructure, 20% connected integration**. The pieces
-exist in isolation; the Rails-analogy connection (tools reference
-primitives, primitives have a registry, Maestro composes from index)
-is not yet present.
+The Rails-analogy pieces are ALL present now: macro scaffold (SKILL-001),
+slice generators (adapt + generators + modules), a primitive catalogue
+(`primitives_by_concern.yaml` + 385 recipes), discoverability
+(`fastapi_meta_search`), and LLM-first composition
+(`fastapi_meta_compose`). The remaining work is integration discipline
+(82 tools still emit inline logic, violating §6.1), concrete examples
+(5 empty dirs), and code-level behavioural scoring.
+
+Infrastructure: **~98% complete**. Integration discipline: **~20%
+complete** (18/100 extend tools wire primitives).
 
 ---
 
@@ -70,235 +77,178 @@ is not yet present.
 ### Principles governing the roadmap
 
 1. **Reality before volume.** Every phase closes an audit gap before
-   adding new surface area. No more aspirational claims.
-2. **Measure, don't speculate.** Phase 3 delivers a Maestro benchmark.
+   adding new surface area. No aspirational claims; `engine.inventory`
+   is the source of truth.
+2. **Measure, don't speculate.** Phase 3 delivered a benchmark harness.
    From Phase 3 forward, every primitive / tool / recipe added must be
-   justified by a benchmark gap.
-3. **Composition is load-bearing.** A primitive without a recipe in
-   its `.md` is incomplete. A tool without a reference to its
-   composed primitives is incomplete.
-4. **Zero ceremony for extraction.** The `_extracted/` staging area is
-   a repository of future Lego, not a backlog obligation. Promote only
-   what the benchmark asks for.
+   justified by a benchmark gap it moves from red to green.
+3. **Composition is load-bearing.** A primitive without a `Compose with:`
+   section is incomplete. A tool without `primitives_used` (real import
+   OR templated-string import) is incomplete.
+4. **Staging ≠ backlog.** The 180 `_extracted/` primitives are a
+   pre-audited pool. Surface them (done), but promote only what a
+   benchmark gap asks for.
 
-### Phase 0 — Ground truth + docs honesty (week 1)
+### Phase 0 — Ground truth + docs honesty ✅ DONE
 
-Single-session sprint. Zero new features. Zero Maestro invocation cost.
+Originally scoped as single-session sprint. Outcome: PRODUCT.md (canonical
+contract), ROADMAP.md, CONTRACT.md, CONTRIBUTING.md at repo root; README.md
+rewritten; SKILL.md rewritten to v2 Agent Skills format; CLAUDE.md pointer
+updated; STATUS.md for human-audience counts.
 
-1. **Publish `PRODUCT.md`** (this session).
-2. **Publish `ROADMAP.md`** (this session).
-3. **Replace SKILL.md** with a version that matches ground truth
-   (real tool counts, real primitive counts, cite PRODUCT.md and
-   ROADMAP.md rather than re-stating claims).
-4. **Write `README.md`** at repo root: one-screen elevator + link to
-   PRODUCT.md + ROADMAP.md.
-5. **Update CLAUDE.md** memory pointer to reference PRODUCT.md so every
-   future session starts from the canonical doc.
-6. **Audit `/benchmark/`** — verify what tests actually pass. Delete
-   stubs. Don't lie.
+### Phase 1 — Reconnect primitives to tools (partially complete)
 
-**Exit criteria:** every top-level .md in the repo maps to a verifiable
-claim. Claim-vs-reality drift = 0.
+Rails-analogy wiring. **~80% complete, 1 key item open**.
 
----
+| # | Item | Status |
+|---|---|---|
+| 7 | Primitives-by-concern registry (`engine/primitives_by_concern.yaml`) | ✅ done |
+| 8 | Composition recipes in primitive `.md` (385 extracted) | ✅ done |
+| 9 | **Connect 15 top-value extend tools to import `core.venous.*`** | ⚠️ **18/100 — open** |
+| 10 | MCP tool responses cite composed primitives | ✅ done (`primitives_used` populated via AST + string-scan) |
+| 11 | Generator auto-discovery via `MCP_TOOL` | ✅ done |
 
-### Phase 1 — Reconnect primitives to tools (weeks 2-3)
+**Open work for Phase 1 closeout (#9):**
+Refactor at least 15 high-leverage extend tools so their emitted code
+uses `from core.venous.<ns>.<Name>` instead of inlining. Candidates (per
+ROADMAP original list): crud, auth_jwt, stripe_webhook, rate_limiting,
+migration, celery_task, audit_log, rbac, soft_delete, pagination,
+feature_flags, cache_layer, retry_budget, graceful_shutdown,
+observability-stack. Each tool shrinks ~50% on refactor.
 
-Turn the Rails-analogy promise into code. Without this, the kit is
-Yeoman.
+**Exit criteria for Phase 1 closeout:**
+`grep -rlE "^from core\.venous|from core\.venous" adapt/extend/*.py | wc -l`
+≥ 35 (currently 18). Enforce going forward via a contract rule.
 
-7. **Primitives-by-concern registry.** Write
-   `engine/primitives_by_concern.yaml` — one entry per primitive,
-   keyed by concern (`auth`, `data.persistence`, `observability`,
-   `resiliency`, etc.), with:
-   - name, namespace, 1-line purpose, composition hints (2-3 sibling
-     primitives commonly paired with it).
-   The registry is machine-readable AND human-scannable.
-8. **Composition recipes in primitive `.md`.** Every production
-   primitive (~103) gets a "Compose with:" section showing 2-3
-   concrete pairings with sibling primitives. Example:
-   `SignatureVerifier` + `IdempotentConsumer` + `AuditEvent` →
-   "webhook receiver with single-delivery guarantee + tamper-evident
-   audit trail."
-9. **Connect 15 top-value tools to primitives.** Pick the 15 most-used
-   tools (crud, auth_jwt, stripe_webhook, rate_limiting, migration,
-   celery_task, audit_log, rbac, soft_delete, pagination, feature_flags,
-   cache_layer, retry_budget, graceful_shutdown, observability-stack).
-   Refactor each to EMIT code that imports from `core.venous.*`
-   instead of inlining. Each tool shrinks ~50%.
-10. **MCP tool responses cite primitives.** After a tool runs, its
-    response (visible to the Maestro) lists the primitives the emitted
-    code imports — so the Maestro can compose further.
-11. **Generator auto-discovery.** Rewrite `mcp_tools/generators.py` to
-    auto-scan `generators/` for `MCP_TOOL` metadata, same pattern as
-    adapt tools. Eliminate the 33-line manual-registration drift.
+### Phase 2 — Discoverability layer ✅ DONE
 
-**Exit criteria:** `grep -rE 'from core.venous' adapt/extend/*.py |
-wc -l` returns ≥15. Registry YAML exists. ≥95 primitives have
-composition sections. Generators are auto-discovered.
+| # | Item | Status |
+|---|---|---|
+| 12 | `find_primitive` MCP tool (BM25 over registry) | ✅ `fastapi_meta_search_primitive` |
+| 13 | `suggest_composition` MCP tool (BM25 over recipes) | ✅ `fastapi_meta_search_composition` |
+| 14 | Primitive reference docs site | ✅ `engine/docs/build.py` emits deterministic HTML |
 
----
+Bonus delivered beyond original scope: unified `fastapi_meta_search`
+tier-1 tool covers tools+primitives+recipes in one BM25 index with
+domain + kind filters; `fastapi_meta_describe` shows full per-id spec.
 
-### Phase 2 — Discoverability layer (week 4)
+### Phase 3 — Benchmark harness ✅ DONE (plan-level)
 
-Turn the registry into runtime Maestro-queryable APIs.
+| # | Item | Status |
+|---|---|---|
+| 15 | 20 benchmark specs (5 baseline + 10 mid + 5 adversarial) | ✅ done |
+| 16 | Scoring rubric (4 dimensions × 25%) | ✅ done |
+| 17 | Benchmark runner + nightly CI hook | ✅ done (`engine/bench/blind/runner.py`) |
+| 18 | Published baseline score | ✅ 100.00 (methodology `plan_level_v3_best_of_ensemble`) |
 
-12. **`find_primitive` MCP tool.** Exposes
-    `find_primitive(concern: str, query: str) -> list[PrimitiveHit]`
-    backed by the registry YAML. Maestro uses it as the JIT discovery
-    mechanism (Tool Search pattern, per LLM research).
-13. **`suggest_composition` MCP tool.** Given a natural-language intent
-    ("webhook with dedup + audit"), returns a ranked list of primitive
-    combinations from the registry + recipe index. Pure retrieval; no
-    LLM call.
-14. **Primitive reference docs site.** Use `mkdocs` or `mintlify` to
-    auto-generate per-primitive pages from `.md` + contract.json.
-    Rails-API-docs style: one URL per primitive, with signature +
-    invariants + compose-with links. Host on Vercel / Mintlify / GH
-    Pages.
+**Carry-forward to Phase 5:** the current score is plan-level (Maestro's
+requirement→primitive/tool map). Code-level scoring (does the emitted
+server actually pass behavioural tests?) moves to Phase 5.
 
-**Exit criteria:** Maestro (in a Claude Desktop session) can type
-"I need to dedupe webhooks and sign the output" and receive back a
-ranked composition of real primitives. Reference docs live at a URL.
+### Phase 4 — Productize SKILL-001 for real users (partially complete)
 
----
+**~75% complete, 1 key item open**.
 
-### Phase 3 — Maestro benchmark harness (weeks 5-6)
+| # | Item | Status |
+|---|---|---|
+| 19 | `install.sh` + Docker CI | ✅ nightly green |
+| 20 | **`/examples/` populated with 5 real apps** | ⚠️ **5 empty dirs — open** |
+| 21 | Docs site v1 | ✅ `engine/docs/build.py` |
+| 22 | Semantic versioning + changelog | ✅ v0.1.0 shipped |
+| 23 | Contribution guide | ✅ `CONTRIBUTING.md` |
 
-The instrument we've needed since day one. Without it, every "SOTA"
-claim is unfalsifiable.
+**Open work for Phase 4 closeout (#20):**
+Populate the 5 example directories with Maestro-built apps tied to
+benchmark specs:
 
-15. **Define 20 benchmark specs.** Plain-English product requirements:
-    - 5 baseline (crud-only, auth-only SaaS, webhook sink, rate-
-      limited public API, basic multi-tenant admin).
-    - 10 mid-complexity (SaaS with auth + Stripe billing, realtime
-      chat, event-sourced order service, RBAC with audit, LLM agent
-      backend, mobile-backend-as-a-service, compliance-critical log
-      aggregator, GraphQL layer on top of REST, workflow
-      orchestrator, BI export service).
-    - 5 adversarial (spec with rare edge case, spec with internal
-      contradiction, spec requiring two conflicting primitives to
-      coexist, spec requiring a primitive we don't have yet, spec
-      with hidden scaling requirement).
-16. **Scoring rubric.** Per spec: scaffold completeness (25%), test
-    suite pass (25%), T0-T9 gate pass on a sample of imported
-    primitives (25%), hand-editability (25%, human-judged). 0-100
-    scale.
-17. **Benchmark runner.** A harness that invokes a Claude Sonnet /
-    Opus Maestro against the skill's MCP server, records the session
-    transcript + the produced codebase, and scores. Runs nightly in
-    CI.
-18. **Publish baseline score.** Run today's kit against all 20 specs,
-    publish the score honestly. This becomes the north star.
+- `examples/06-auth-saas/` — `benchmarks/specs/baseline/02_auth_only_saas.md`
+- `examples/07-multi-tenant-admin/` — `baseline/05_multi_tenant_admin.md`
+- `examples/08-stripe-billing/` — `mid/01_saas_with_stripe_billing.md`
+- `examples/09-event-sourced-orders/` — `mid/03_event_sourced_orders.md`
+- `examples/10-llm-agent/` — `mid/05_llm_agent_backend.md`
 
-**Exit criteria:** Baseline benchmark score exists. Reproducible. Any
-future primitive / tool / recipe addition must cite which benchmark
-scenario moved from red to green.
+Each example: MAESTRO_SESSION.md (plan-level transcript) + a working
+FastAPI project + `pytest` green on E2E tests. Examples double as
+regression fixtures for the code-level benchmark in Phase 5.
 
----
+### Phase 5 — Code-level benchmark + surgical gap fills (current phase)
 
-### Phase 4 — Productize SKILL-001 for real users (weeks 7-9)
+This is where we are NOW. Phases 1-4 are closed enough that new work
+must justify itself against behavioural evidence.
 
-Now it's worth inviting users.
+| # | Item | Status |
+|---|---|---|
+| 24 | Weekly benchmark review — which specs still red? | pending — first review after #25 ships |
+| 25 | Code-level scoring rubric — run emitted server, hit endpoints, assert behaviour | pending |
+| 26 | Surgical primitive promotion from `_extracted/` when benchmark asks | pending — 180 candidates visible in catalog |
+| 27 | Close Phase-1 item #9 (15+ extend tools import primitives) | pending |
+| 28 | Close Phase-4 item #20 (populate 5 examples) | pending |
+| 29 | Target score: ≥ 70% on the code-level rubric by v1.0 | pending |
 
-19. **`install.sh` + CI.** End-to-end installation in a fresh Docker
-    container, verified in GitHub Actions. Clone → install → run
-    benchmark → publish score badge.
-20. **`/examples/` populated.** 5 real apps built by Maestro using the
-    kit, with sessions recorded for reference. Each example has a
-    README linking to the primitives + tools it composed.
-21. **Docs site v1.** PRODUCT.md + ROADMAP.md + per-primitive reference
-    + per-tool reference + "Compose with" cross-links. Versioned per
-    release.
-22. **Semantic versioning + changelog.** v0.1.0 ships with the
-    benchmark score and signed changelog.
-23. **Contribution guide.** `CONTRIBUTING.md` explaining how to add
-    a primitive (passes the 10-tier gate) and how to add a tool
-    (passes the adapt contract + composes ≥1 primitive).
+**Exit criteria:** v1.0 ships when the code-level rubric hits ≥ 70% on
+the canonical 20 specs.
 
-**Exit criteria:** `curl <install.sh> | bash` in a fresh Docker works.
-Benchmark score is visible on the README. External contributor can
-land their first primitive.
+### Phase 6 — Second skill (after v1.0)
 
----
+Only after SKILL-001 hits 70% code-level benchmark.
 
-### Phase 5 — Fill gaps from benchmark (ongoing)
+| # | Item | Status |
+|---|---|---|
+| 30 | SKILL-002 candidate: Next.js / Django / LLM-agent backend — choose by demand | pending |
+| 31 | Shared framework-free primitives across skills | pending |
+| 32 | Multi-skill Maestro (FastAPI backend + Next.js frontend one session) | pending |
 
-Every new primitive / tool / recipe must cite a benchmark gap it closes.
+### Phase 7 — Ecosystem (post-v1.0)
 
-24. **Weekly benchmark review.** Which scenarios are still red?
-    Diagnose: missing primitive, missing tool, missing recipe, flawed
-    scaffold?
-25. **Surgical additions only.** No more preemptive extraction. The
-    `_extracted/` staging area serves as a pre-audited pool to draw
-    from when benchmark says "we need a primitive for X".
-26. **Target score: 70% by v1.0.** Ship v1.0 of SKILL-001 when
-    benchmark hits ≥70%.
-
----
-
-### Phase 6 — Second skill (month 3+)
-
-Only after SKILL-001 hits 70% benchmark.
-
-27. **SKILL-002 choice driven by demand.** Candidates: Next.js
-    production frontend, Django lightweight backend, backend-for-
-    LLM-agents. Choose based on inbound user interest / benchmark
-    coverage gaps.
-28. **Shared primitives across skills.** The `core/venous/` namespace
-    is framework-agnostic where possible (e.g., `SignatureVerifier`
-    works in FastAPI AND Django). Each skill brings framework-
-    specific tools + a few framework-specific primitives.
-29. **Multi-skill Maestro.** The Maestro picks the right skill for the
-    task (FastAPI backend + Next.js frontend = two skills invoked in
-    one session).
-
----
-
-### Phase 7 — Ecosystem (month 6+)
-
-30. **Community primitives with enforced gates.** External PRs land
-    primitives that pass the T0-T9 gate + Opus audit.
-31. **Benchmark scoreboard public.** Every release's score is visible.
-    Marketing writes itself.
-32. **SDK for Maestro authors.** If someone wants to build a different
-    Maestro agent, they ship against the skill's MCP surface.
+| # | Item | Status |
+|---|---|---|
+| 33 | Community primitives with enforced T0-T9 gate + Opus audit | pending |
+| 34 | Public benchmark scoreboard (per-release, code-level) | pending |
+| 35 | SDK for Maestro authors (shipping against the skill's MCP surface) | pending |
 
 ---
 
 ## Part 3 — Honest risks
 
-- **Maestro success ceiling.** If even 70% benchmark is unattainable with
-  current LLM capabilities, the whole thesis fails. De-risk by testing
-  5 benchmarks manually before investing in full 20-spec harness.
-- **Framework churn.** FastAPI / Pydantic make breaking changes. Skill
-  maintenance cost is real. Mitigate by pinning versions per skill
-  release and running the benchmark nightly.
+- **Maestro success ceiling.** If even 70% code-level benchmark is
+  unattainable with current LLM capabilities, the product thesis fails.
+  De-risk by scoring 5 specs manually before investing in full-harness
+  code-level rubric (Phase 5 #25).
 - **Rails-analogy limits.** Rails has 20 years of community + a human-
   first runtime. HuGR is LLM-first. The analogy is a design lodestar,
   not a promise of equivalent ergonomics.
-- **Generator ≠ tool drift.** Historical naming is messy (generators vs
-  tools). Every phase tightens the terminology. If we fail to enforce,
-  confusion returns.
+- **Framework churn.** FastAPI / Pydantic breaking releases are real
+  maintenance cost. Mitigate: pin versions per skill release, run the
+  benchmark nightly against pinned versions.
+- **Integration-discipline drift.** Right now 82 extend tools inline
+  logic in violation of §6.1. Without a contract rule + CI gate, this
+  regresses as new tools land. Add the rule when closing Phase-1 #9.
+- **Staging pool temptation.** 180 `_extracted/` primitives are visible
+  now. Temptation: promote them preemptively. Discipline: only when a
+  benchmark gap says "we need X" does the extraction pipeline run.
 
 ---
 
 ## Part 4 — What to do RIGHT NOW
 
-**This session's deliverables** (Phase 0, steps 1-5):
+**Immediate (this sprint, order matters):**
 
-- ✅ PRODUCT.md (this session)
-- ✅ ROADMAP.md (this session)
-- ⏳ `SKILL.md` rewrite (next)
-- ⏳ `README.md` at repo root (next)
-- ⏳ `CLAUDE.md` memory pointer update (next)
+1. **Close Phase-1 #9** — refactor 15 top-value extend tools to import
+   `core.venous.*`. Adds a contract rule enforcing
+   `primitives_used` non-empty on every tier-1 + tier-2 `add_*` tool.
+2. **Close Phase-4 #20** — populate 5 example apps tied to benchmark
+   specs, with `pytest` green.
+3. **Design Phase-5 #25** — code-level rubric spec doc + reference
+   implementation that runs emitted server in a sandbox and scores
+   behaviour. Keep the plan-level rubric alongside for diagnostic value.
 
-**Next session (Phase 0, step 6 + Phase 1 start):**
+**Next 30 days:**
 
-- Audit `/benchmark/` tests; delete stubs; commit honest count.
-- Write `engine/primitives_by_concern.yaml` (registry).
-- Start composition-recipe pass on the 10 most-important primitives.
+4. **Run Phase-5 #25** once on the 20-spec corpus, publish a honest
+   code-level baseline. Likely < plan-level; that's the point.
+5. **Phase-5 #26** surgical promotions driven by which specs went red.
+   Target: promote 10 staged primitives, close 5 benchmark gaps.
 
-That's the next 10 days. Phase 1 completes by week 3 if we hold
-discipline. Phase 3 baseline benchmark score by week 6. v1.0 ship by
-month 3.
+**v1.0 gate:** code-level rubric ≥ 70%. Ship with honest changelog
+citing which specs moved from red to green and which staged primitives
+got promoted.
