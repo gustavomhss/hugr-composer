@@ -899,7 +899,7 @@ class DoctorOrchestrator:
 
 
 MCP_TOOL = {
-    "name": "fastapi_doctor",
+    "name": "fastapi_resiliency_analyze_doctor",
     "description": "Holistic FastAPI health-check and audit engine.",
     "tags": ["proactive"],
     "entry": "fastapi_doctor",

@@ -41,7 +41,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_adaptive_throttle",
+    "name": "fastapi_resiliency_add_adaptive_throttle",
     "description": (
         "Add multi-dimensional adaptive rate limiting: cost-based quota, "
         "behavioral fingerprinting, adaptive thresholds, and cascading "

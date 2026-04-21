@@ -42,7 +42,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_kubernetes_manifests",
+    "name": "fastapi_resiliency_add_kubernetes_manifests",
     "description": (
         "Generate production-ready Kubernetes manifests: Deployment, Service, HPA, "
         "PDB, ConfigMap, Secret, and Ingress YAML files."

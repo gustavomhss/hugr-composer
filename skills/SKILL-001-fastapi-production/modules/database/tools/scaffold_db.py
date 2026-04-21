@@ -543,7 +543,7 @@ TenantSession = Annotated[AsyncSession, Depends(get_session_with_tenant)]
 
 
 MCP_TOOL = {
-    "name": "fastapi_generate_db_module",
+    "name": "fastapi_meta_generate_db_module",
     "description": "Scaffold the full database module (models, session, migrations, optional RLS) for a new project.",
     "tags": ["database", "generator", "scaffold"],
     "entry": "generate_db_module",

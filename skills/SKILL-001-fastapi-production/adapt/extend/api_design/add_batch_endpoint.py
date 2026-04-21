@@ -34,7 +34,7 @@ _DEFAULT_TIMEOUT_MS: int = 5000
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_batch_endpoint",
+    "name": "fastapi_api_add_batch_endpoint",
     "description": "Add a generic batch request endpoint that fans out to multiple sub-requests.",
     "tags": ["extend", "api_design"],
     "entry": "add_batch_endpoint",

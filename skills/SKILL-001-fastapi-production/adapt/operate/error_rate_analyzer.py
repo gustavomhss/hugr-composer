@@ -27,7 +27,7 @@ from adapt.contracts import ToolInput, ToolResult
 
 
 MCP_TOOL = {
-    "name": "fastapi_error_rate_analyzer",
+    "name": "fastapi_resiliency_analyze_error_rate_analyzer",
     "description": "Analyze application error rates from structured logs or Prometheus metrics.",
     "tags": ["operate"],
     "entry": "error_rate_analyzer",

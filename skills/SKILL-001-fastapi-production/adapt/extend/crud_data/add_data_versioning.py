@@ -33,7 +33,7 @@ from adapt.contracts.migration_helper import find_migration_head
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_data_versioning",
+    "name": "fastapi_data_add_data_versioning",
     "description": "Add draft/published/archived lifecycle with diff to any content type.",
     "tags": ["extend", "crud_data"],
     "entry": "add_data_versioning",

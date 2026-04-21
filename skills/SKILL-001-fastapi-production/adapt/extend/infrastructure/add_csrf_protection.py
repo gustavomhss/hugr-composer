@@ -35,7 +35,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_csrf_protection",
+    "name": "fastapi_resiliency_add_csrf_protection",
     "description": "Add CSRF token protection with double-submit cookie pattern to FastAPI.",
     "tags": ["extend", "infrastructure"],
     "entry": "add_csrf_protection",

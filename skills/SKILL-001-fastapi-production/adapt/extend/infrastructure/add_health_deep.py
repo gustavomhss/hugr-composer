@@ -31,7 +31,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_health_deep",
+    "name": "fastapi_resiliency_add_health_deep",
     "description": (
         "Upgrade to production-grade deep health checks with HealthRegistry, "
         "dependency matrix, per-check latency, circuit-breaker degraded state, "

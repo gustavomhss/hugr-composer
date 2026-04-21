@@ -39,7 +39,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_load_profile",
+    "name": "fastapi_testing_add_load_profile",
     "description": "Add k6 load test profiles (smoke, load, stress, soak) for the project's endpoints.",
     "tags": ["extend", "testing"],
     "entry": "add_load_profile",

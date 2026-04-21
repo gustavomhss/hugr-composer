@@ -34,7 +34,7 @@ DEFAULT_MAX_BATCH: int = 1000
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_bulk_operations",
+    "name": "fastapi_data_add_bulk_operations",
     "description": "Add bulk create/update/delete endpoints for all models.",
     "tags": ["extend", "crud_data"],
     "entry": "add_bulk_operations",

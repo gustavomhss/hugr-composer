@@ -29,7 +29,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_request_fingerprint",
+    "name": "fastapi_resiliency_add_request_fingerprint",
     "description": (
         "Add automatic request deduplication: SHA-256 fingerprint of user+method+path+body. "
         "Returns cached response on duplicate with Idempotent-Replayed header. "

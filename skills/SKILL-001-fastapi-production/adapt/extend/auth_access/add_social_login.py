@@ -35,7 +35,7 @@ from adapt.contracts.migration_helper import find_migration_head
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_social_login",
+    "name": "fastapi_auth_add_social_login",
     "description": (
         "Add Google/GitHub/Apple OAuth2 social login with account linking to a FastAPI project."
     ),

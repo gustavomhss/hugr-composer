@@ -34,7 +34,7 @@ from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_opa_integration",
+    "name": "fastapi_auth_add_opa_integration",
     "description": (
         "Add Open Policy Agent (OPA) integration with circuit breaker, "
         "middleware, example Rego policies, and management endpoints."

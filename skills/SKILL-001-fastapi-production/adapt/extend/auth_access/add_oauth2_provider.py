@@ -20,7 +20,7 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 MCP_TOOL = {
-    "name": "fastapi_add_oauth2_provider",
+    "name": "fastapi_auth_add_oauth2_provider",
     "description": (
         "Copy TokenIntrospector + SessionStore primitives + FastAPI adapter "
         "into the project and wire a ≤20-line app/oauth2.py caller."

@@ -57,7 +57,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_celery_beat",
+    "name": "fastapi_resiliency_add_celery_beat",
     "description": (
         "Add Celery Beat scheduled tasks to a FastAPI project: "
         "celery app factory, task registry, beat schedule, status route, "

@@ -343,7 +343,7 @@ def _init_py() -> str:
 
 
 MCP_TOOL = {
-    "name": "fastapi_generate_security_middleware",
+    "name": "fastapi_meta_generate_security_middleware",
     "description": "Scaffold the full security middleware stack (CSP, CSRF, rate limiting, headers) for a new project.",
     "tags": ["security", "generator", "scaffold"],
     "entry": "generate_security_middleware",

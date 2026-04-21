@@ -29,7 +29,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_bulkhead_isolation",
+    "name": "fastapi_resiliency_add_bulkhead_isolation",
     "description": (
         "Add bulkhead isolation with separate semaphore pools per endpoint group, "
         "preventing one slow endpoint from exhausting the entire service."

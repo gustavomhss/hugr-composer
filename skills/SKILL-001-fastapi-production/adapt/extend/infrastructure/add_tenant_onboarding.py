@@ -38,7 +38,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_tenant_onboarding",
+    "name": "fastapi_resiliency_add_tenant_onboarding",
     "description": (
         "Add wizard orchestrator for tenant onboarding: OnboardingOrchestrator "
         "with atomic+compensatable steps (tenant→user→seed→billing→email), "

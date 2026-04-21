@@ -78,7 +78,7 @@ from adapt.contracts.migration_helper import find_migration_head
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_email_templates",
+    "name": "fastapi_resiliency_add_email_templates",
     "description": "Add a production-grade transactional email layer with Jinja2 templates, pluggable providers (Resend/Postmark/SMTP), and delivery audit.",
     "tags": ["extend", "infrastructure"],
     "entry": "add_email_templates",

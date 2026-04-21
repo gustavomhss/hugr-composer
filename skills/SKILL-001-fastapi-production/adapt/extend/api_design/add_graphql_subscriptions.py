@@ -56,7 +56,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_graphql_subscriptions",
+    "name": "fastapi_api_add_graphql_subscriptions",
     "description": (
         "Add WebSocket GraphQL subscriptions (graphql-ws protocol) to a FastAPI project, "
         "extending the existing Strawberry GraphQL setup with real-time pub/sub."

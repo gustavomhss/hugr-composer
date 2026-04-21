@@ -52,7 +52,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_dpop_tokens",
+    "name": "fastapi_auth_add_dpop_tokens",
     "description": (
         "Add RFC 9449 DPoP (Demonstrating Proof of Possession) with proof verification "
         "middleware, server-side nonce, token binding, and JWK key management. "

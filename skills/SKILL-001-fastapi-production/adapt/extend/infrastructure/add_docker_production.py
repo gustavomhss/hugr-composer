@@ -41,7 +41,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_docker_production",
+    "name": "fastapi_deployment_add_docker_production",
     "description": (
         "Add a multi-stage production Dockerfile, .dockerignore, docker-compose.prod.yml, "
         "and docker-entrypoint.sh to a FastAPI project."

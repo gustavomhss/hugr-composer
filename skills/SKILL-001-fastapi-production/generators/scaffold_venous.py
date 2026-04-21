@@ -50,7 +50,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 MCP_TOOL = {
-    "name": "fastapi_scaffold_venous",
+    "name": "fastapi_resiliency_generate_venous",
     "description": (
         "Idempotently copy core.venous primitives (and optional adapters) "
         "into a generated project, recording provenance."

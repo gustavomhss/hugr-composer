@@ -33,7 +33,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_chaos_testing",
+    "name": "fastapi_testing_add_chaos_testing",
     "description": (
         "Add chaos engineering fault injection for dev/staging. "
         "Hardcoded guard: NEVER active in production (ENVIRONMENT=production)."

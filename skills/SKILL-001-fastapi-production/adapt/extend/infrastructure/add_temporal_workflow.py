@@ -54,7 +54,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_temporal_workflow",
+    "name": "fastapi_resiliency_add_temporal_workflow",
     "description": (
         "Add a Temporal.io durable workflow engine with order-processing example, "
         "compensation pattern, signal support, and REST companion routes."

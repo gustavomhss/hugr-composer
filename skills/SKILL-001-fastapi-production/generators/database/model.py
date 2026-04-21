@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_generate_model',
+    'name': 'fastapi_data_generate_model',
     'description': 'Generate a SQLAlchemy ORM model with UUID PK, typed columns, and optional timestamps/soft-delete.',
     'tags': ['database', 'generator'],
     'entry': 'generate_model',

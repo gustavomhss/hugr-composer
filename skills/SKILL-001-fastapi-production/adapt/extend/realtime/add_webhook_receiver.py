@@ -25,7 +25,7 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 MCP_TOOL = {
-    "name": "fastapi_add_webhook_receiver",
+    "name": "fastapi_realtime_add_webhook_receiver",
     "description": (
         "Copy SignatureVerifier+IdempotentConsumer+AuditEvent primitives and "
         "the WebhookReceiverAdapter into the project, then wire a ≤20-line "

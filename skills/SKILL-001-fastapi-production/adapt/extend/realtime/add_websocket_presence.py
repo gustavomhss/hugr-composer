@@ -40,7 +40,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_websocket_presence",
+    "name": "fastapi_realtime_add_websocket_presence",
     "description": (
         "Add production-grade WebSocket presence tracking with JWT auth, "
         "Redis pub/sub, heartbeat TTL, multi-device support, and REST companion routes."

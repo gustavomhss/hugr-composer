@@ -30,7 +30,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_sbom_guardian",
+    "name": "fastapi_testing_add_sbom_guardian",
     "description": (
         "Add CycloneDX SBOM generation, lockfile integrity verification, "
         "dependency confusion detection, and OSV/NVD vulnerability scanning."

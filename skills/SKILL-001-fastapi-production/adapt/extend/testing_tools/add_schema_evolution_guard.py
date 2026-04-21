@@ -37,7 +37,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_schema_evolution_guard",
+    "name": "fastapi_testing_add_schema_evolution_guard",
     "description": "Add CI OpenAPI schema compatibility checker that detects breaking changes.",
     "tags": ["extend", "testing_tools"],
     "entry": "add_schema_evolution_guard",

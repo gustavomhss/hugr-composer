@@ -22,7 +22,7 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 MCP_TOOL = {
-    "name": "fastapi_add_cost_tracker",
+    "name": "fastapi_resiliency_add_cost_tracker",
     "description": (
         "Copy CostTracker primitive + FastAPI adapter into the project and "
         "wire a ≤20-line app/cost_tracker.py caller."

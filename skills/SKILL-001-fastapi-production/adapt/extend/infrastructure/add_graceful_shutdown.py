@@ -31,7 +31,7 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 MCP_TOOL = {
-    "name": "fastapi_add_graceful_shutdown",
+    "name": "fastapi_resiliency_add_graceful_shutdown",
     "description": (
         "Copy GracefulShutdown primitive + FastAPI adapter into the project and "
         "wire a ≤20-line app/shutdown.py caller."

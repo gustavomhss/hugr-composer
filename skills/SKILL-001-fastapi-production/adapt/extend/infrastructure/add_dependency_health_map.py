@@ -31,7 +31,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_dependency_health_map",
+    "name": "fastapi_resiliency_add_dependency_health_map",
     "description": (
         "Add a visual dependency health map: HealthMapBuilder discovers all deps from config "
         "(DB, Redis, S3, Stripe), DependencyChecker async health check per dep with latency+status, "

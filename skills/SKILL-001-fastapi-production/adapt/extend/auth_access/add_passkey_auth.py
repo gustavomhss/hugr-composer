@@ -35,7 +35,7 @@ from adapt.contracts.migration_helper import find_migration_head
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_passkey_auth",
+    "name": "fastapi_auth_add_passkey_auth",
     "description": (
         "Add WebAuthn/FIDO2 passwordless passkey authentication to a FastAPI project."
     ),

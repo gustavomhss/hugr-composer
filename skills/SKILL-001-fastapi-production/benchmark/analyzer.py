@@ -7,7 +7,7 @@ No bias — either the code has it or it doesn't.
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_analyze',
+    'name': 'fastapi_resiliency_analyze_analyze',
     'description': 'Audit a FastAPI project against 35 production-readiness checks.',
     'tags': ['audit', 'verify'],
     'entry': 'mcp_fastapi_analyze',

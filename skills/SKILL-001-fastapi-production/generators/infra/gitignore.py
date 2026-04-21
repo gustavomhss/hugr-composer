@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_generate_gitignore',
+    'name': 'fastapi_deployment_generate_gitignore',
     'description': 'Generate .gitignore with Python, virtualenv, IDE, .env, database, testing, Docker exclusions.',
     'tags': ['generator', 'infra'],
     'entry': 'generate_gitignore',

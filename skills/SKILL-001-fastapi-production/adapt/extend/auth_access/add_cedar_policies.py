@@ -33,7 +33,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 MCP_TOOL = {
-    "name": "fastapi_add_cedar_policies",
+    "name": "fastapi_auth_add_cedar_policies",
     "description": (
         "Add AWS Cedar policy-as-code ABAC authorization to a FastAPI project. "
         "Generates CedarEngine, middleware, example .cedar policies, and /authz endpoints."

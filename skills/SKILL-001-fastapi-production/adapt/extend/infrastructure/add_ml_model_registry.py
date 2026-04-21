@@ -50,7 +50,7 @@ from adapt.contracts.migration_helper import find_migration_head
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_ml_model_registry",
+    "name": "fastapi_resiliency_add_ml_model_registry",
     "description": (
         "Add a production-grade ML model registry with versioned artefacts, "
         "promote/rollback lifecycle, A/B split, and a compare endpoint. "

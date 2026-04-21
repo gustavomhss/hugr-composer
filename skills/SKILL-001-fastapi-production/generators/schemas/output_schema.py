@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_generate_schemas',
+    'name': 'fastapi_api_generate_schemas',
     'description': 'Generate input (Create/Update), output (Public), and list ({data, count}) schemas for a model.',
     'tags': ['generator', 'schemas'],
     'entry': 'generate_schemas',

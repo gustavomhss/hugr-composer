@@ -20,7 +20,7 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 MCP_TOOL = {
-    "name": "fastapi_add_retry_budget",
+    "name": "fastapi_resiliency_add_retry_budget",
     "description": (
         "Copy RetryPolicy primitive + FastAPI adapter into the project and "
         "wire a ≤20-line app/retry.py caller."

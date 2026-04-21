@@ -36,7 +36,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_input_sanitization",
+    "name": "fastapi_resiliency_add_input_sanitization",
     "description": "Add HTML sanitization and XSS prevention middleware to FastAPI.",
     "tags": ["extend", "infrastructure"],
     "entry": "add_input_sanitization",

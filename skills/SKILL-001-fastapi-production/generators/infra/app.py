@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_generate_app',
+    'name': 'fastapi_deployment_generate_app',
     'description': 'Generate main.py with asynccontextmanager lifespan, middleware registration, and router setup.',
     'tags': ['generator', 'infra'],
     'entry': 'generate_app',

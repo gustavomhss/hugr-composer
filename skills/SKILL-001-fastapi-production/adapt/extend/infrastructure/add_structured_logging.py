@@ -29,7 +29,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_structured_logging",
+    "name": "fastapi_observability_add_structured_logging",
     "description": (
         "Upgrade to structlog with JSON renderer, correlation ID binding, "
         "per-request context, and PII redaction for emails, phones, cards, API keys."

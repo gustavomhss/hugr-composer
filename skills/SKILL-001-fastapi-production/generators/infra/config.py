@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_generate_config',
+    'name': 'fastapi_deployment_generate_config',
     'description': 'Generate config.py with pydantic-settings, env parsing, and fail-fast validation.',
     'tags': ['generator', 'infra'],
     'entry': 'generate_config',

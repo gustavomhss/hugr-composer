@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_generate_dockerfile',
+    'name': 'fastapi_deployment_generate_dockerfile',
     'description': 'Generate multi-stage Dockerfile with non-root user and HEALTHCHECK.',
     'tags': ['generator', 'infra'],
     'entry': 'generate_dockerfile',

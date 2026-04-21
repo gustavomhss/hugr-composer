@@ -58,7 +58,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_s3_storage",
+    "name": "fastapi_resiliency_add_s3_storage",
     "description": (
         "Add production-grade S3/MinIO object storage with presigned URL upload/download, "
         "content-type validation, upload-size middleware, and REST routes."

@@ -29,7 +29,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_api_fuzzer",
+    "name": "fastapi_testing_add_api_fuzzer",
     "description": (
         "Add schema-aware API fuzzing: APIFuzzer reads OpenAPI schema, generates adversarial "
         "inputs per field type (boundary ints, unicode, SQL payloads, XSS vectors, empty/null/"

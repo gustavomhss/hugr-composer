@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_generate_email',
+    'name': 'fastapi_deployment_generate_email',
     'description': 'Generate email utilities: SMTP sender, password reset email, welcome email with HTML templates.',
     'tags': ['generator', 'infra'],
     'entry': 'generate_email_utils',

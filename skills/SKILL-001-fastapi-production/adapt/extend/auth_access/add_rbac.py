@@ -33,7 +33,7 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 MCP_TOOL = {
-    "name": "fastapi_add_rbac",
+    "name": "fastapi_auth_add_rbac",
     "description": (
         "Copy RequestGuard + CurrentPrincipal primitives + FastAPI adapter "
         "into the project and wire a ≤20-line app/rbac.py caller."

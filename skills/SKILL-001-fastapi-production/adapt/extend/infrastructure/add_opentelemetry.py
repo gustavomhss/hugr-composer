@@ -53,7 +53,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_opentelemetry",
+    "name": "fastapi_observability_add_opentelemetry",
     "description": (
         "Add OpenTelemetry traces, metrics, and logs with lazy SDK imports, "
         "OTELMiddleware for request tracing, metric counters, and structlog "

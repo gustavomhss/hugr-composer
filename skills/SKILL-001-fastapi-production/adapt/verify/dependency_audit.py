@@ -32,7 +32,7 @@ _DEFAULT_LICENSES = ["MIT", "BSD", "BSD-2-Clause", "BSD-3-Clause", "Apache-2.0",
 
 
 MCP_TOOL = {
-    "name": "fastapi_dependency_audit",
+    "name": "fastapi_compliance_analyze_dependency_audit",
     "description": "Audit Python dependencies for vulnerabilities and outdated packages.",
     "tags": ["verify"],
     "entry": "dependency_audit",

@@ -83,7 +83,7 @@ class SLOResult:
 
 
 MCP_TOOL = {
-    "name": "fastapi_sla_reporter",
+    "name": "fastapi_resiliency_analyze_sla_reporter",
     "description": "Generate SLA compliance report from Prometheus or log data.",
     "tags": ["operate"],
     "entry": "sla_reporter",

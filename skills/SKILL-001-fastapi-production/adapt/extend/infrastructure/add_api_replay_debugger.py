@@ -32,7 +32,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_api_replay_debugger",
+    "name": "fastapi_resiliency_add_api_replay_debugger",
     "description": (
         "Add time-travel API replay debugger: Redis ring buffer captures full "
         "req/resp, replayer re-executes + diffs, admin endpoints for listing and "

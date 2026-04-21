@@ -41,7 +41,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_e2e_test_suite",
+    "name": "fastapi_testing_add_e2e_test_suite",
     "description": (
         "Scaffold an async E2E test suite with httpx: conftest fixtures, auth flow, "
         "CRUD flow, and error-handling tests."

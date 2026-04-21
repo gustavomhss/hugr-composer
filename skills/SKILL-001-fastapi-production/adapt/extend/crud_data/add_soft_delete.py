@@ -27,7 +27,7 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 MCP_TOOL = {
-    "name": "fastapi_add_soft_delete",
+    "name": "fastapi_data_add_soft_delete",
     "description": (
         "Copy UnitOfWork primitive + FastAPI adapter into the project and "
         "wire a ≤20-line app/soft_delete.py caller."

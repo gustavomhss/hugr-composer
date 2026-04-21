@@ -19,7 +19,7 @@ from pathlib import Path
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 MCP_TOOL = {
-    "name": "fastapi_add_mfa",
+    "name": "fastapi_auth_add_mfa",
     "description": (
         "Copy TotpVerifier primitive + FastAPI adapter into the project and "
         "wire a ≤20-line app/mfa.py caller."

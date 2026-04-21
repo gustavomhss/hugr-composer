@@ -51,7 +51,7 @@ from adapt.contracts.migration_helper import find_migration_head
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_notifications",
+    "name": "fastapi_resiliency_add_notifications",
     "description": (
         "Add a production-grade in-app notification layer with channel dispatch "
         "(in_app, push FCM stub, email bridge), unread badge, and bulk mark-read."

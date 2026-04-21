@@ -36,7 +36,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_request_signing",
+    "name": "fastapi_auth_add_request_signing",
     "description": (
         "Add HMAC request signing (Stripe/AWS Sig V4 pattern) with canonical string "
         "construction, timestamp window, nonce replay prevention, and a FastAPI "

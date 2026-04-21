@@ -36,7 +36,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_database_migrations_ci",
+    "name": "fastapi_testing_add_database_migrations_ci",
     "description": "Add Alembic CI runner with rollback safety and schema diff to FastAPI.",
     "tags": ["extend", "testing_tools"],
     "entry": "add_database_migrations_ci",

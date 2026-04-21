@@ -51,7 +51,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_cqrs",
+    "name": "fastapi_api_add_cqrs",
     "description": (
         "Add a production-grade CQRS layer with CommandBus, QueryBus, "
         "read-replica session routing, and HTTP routes for both buses."

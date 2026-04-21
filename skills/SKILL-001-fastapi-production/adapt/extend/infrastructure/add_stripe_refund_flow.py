@@ -57,7 +57,7 @@ from adapt.contracts.migration_helper import find_migration_head
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_stripe_refund_flow",
+    "name": "fastapi_resiliency_add_stripe_refund_flow",
     "description": (
         "Add a production-grade Stripe refund flow with Refund model, "
         "PII-safe schemas, async CRUD, REST routes, and a signature-verified "

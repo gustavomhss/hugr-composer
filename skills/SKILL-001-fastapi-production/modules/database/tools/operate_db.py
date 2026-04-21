@@ -19,7 +19,7 @@ run from CLI or MCP, not inside the async FastAPI event loop.
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_db_health',
+    'name': 'fastapi_meta_operate_db_health',
     'description': 'Check PostgreSQL connection pool health: active/idle/waiting connections, pool utilization.',
     'tags': ['database', 'operate'],
     'entry': 'check_pool_health',

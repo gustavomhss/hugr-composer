@@ -29,7 +29,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_adaptive_timeouts",
+    "name": "fastapi_resiliency_add_adaptive_timeouts",
     "description": (
         "Add self-adjusting timeouts that learn from observed downstream latency, "
         "auto-calibrating to p99 * 1.5 with configurable floor and ceiling."

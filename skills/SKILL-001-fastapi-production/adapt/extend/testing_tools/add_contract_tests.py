@@ -38,7 +38,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_contract_tests",
+    "name": "fastapi_testing_add_contract_tests",
     "description": "Add consumer-driven contract tests using Pact or Schemathesis.",
     "tags": ["extend", "testing"],
     "entry": "add_contract_tests",

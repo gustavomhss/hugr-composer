@@ -31,7 +31,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_performance_baseline",
+    "name": "fastapi_resiliency_analyze_performance_baseline",
     "description": "Establish a performance baseline by profiling key endpoints.",
     "tags": ["verify"],
     "entry": "performance_baseline",

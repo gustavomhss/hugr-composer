@@ -20,7 +20,7 @@ Usage::
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_add_model',
+    'name': 'fastapi_meta_add_model',
     'description': 'Add a complete model to an EXISTING project.',
     'tags': ['adapt', 'operate'],
     'entry': 'add_model',

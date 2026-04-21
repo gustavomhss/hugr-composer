@@ -31,7 +31,7 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_factory",
+    "name": "fastapi_testing_add_factory",
     "description": "Add factory_boy fixtures for all models to accelerate test authoring.",
     "tags": ["extend", "testing"],
     "entry": "add_factory",

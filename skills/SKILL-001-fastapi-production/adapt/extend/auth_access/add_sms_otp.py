@@ -36,7 +36,7 @@ from adapt.contracts.migration_helper import find_migration_head
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_sms_otp",
+    "name": "fastapi_auth_add_sms_otp",
     "description": (
         "Add SMS OTP authentication via Twilio/Vonage with rate limiting to a FastAPI project."
     ),

@@ -42,7 +42,7 @@ _SUPPORTED_OPERATIONS = frozenset(
 
 
 MCP_TOOL = {
-    "name": "fastapi_refactor_model",
+    "name": "fastapi_resiliency_analyze_refactor_model",
     "description": "Refactor a SQLAlchemy model: rename fields, split tables, or add/remove columns.",
     "tags": ["evolve"],
     "entry": "refactor_model",

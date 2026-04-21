@@ -45,7 +45,7 @@ from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 
 MCP_TOOL = {
-    "name": "fastapi_add_ml_model_server",
+    "name": "fastapi_resiliency_add_ml_model_server",
     "description": (
         "Add a framework-agnostic ML inference layer with ModelRegistry, Predictor, "
         "batch prediction, and health endpoints.  Zero new pip dependencies — "

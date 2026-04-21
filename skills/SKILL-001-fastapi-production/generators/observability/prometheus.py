@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_generate_prometheus',
+    'name': 'fastapi_observability_generate_prometheus',
     'description': 'Generate Prometheus RED metrics (Rate/Errors/Duration) with middleware and /metrics endpoint.',
     'tags': ['generator', 'observability'],
     'entry': 'generate_prometheus_metrics',

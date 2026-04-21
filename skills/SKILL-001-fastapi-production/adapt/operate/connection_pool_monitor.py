@@ -29,7 +29,7 @@ from adapt.contracts import ToolInput, ToolResult
 
 
 MCP_TOOL = {
-    "name": "fastapi_connection_pool_monitor",
+    "name": "fastapi_resiliency_analyze_connection_pool_monitor",
     "description": "Monitor SQLAlchemy connection pool utilization and detect pool exhaustion risk.",
     "tags": ["operate"],
     "entry": "connection_pool_monitor",
