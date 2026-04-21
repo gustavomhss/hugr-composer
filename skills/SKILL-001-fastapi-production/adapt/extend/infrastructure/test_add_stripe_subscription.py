@@ -184,16 +184,46 @@ def test_routes_registered() -> None:
 # ---------------------------------------------------------------------------
 
 def test_stripe_billing_created() -> None:
-    """CC-11: app/core/stripe_billing.py exists with StripeBilling class and lazy import."""
+    """CC-11: app/core/stripe_billing.py exists with StripeBilling factory
+    and the lazy-stripe-import is inherited from the shipped adapter.
+
+    Post-Rails: the glue imports the framework-free ``Billing`` Protocol
+    and the Stripe-specific ``StripeBillingAdapter``; the adapter module
+    lives on disk AND imports ``stripe`` lazily inside ``_get_stripe``.
+    """
     project_dir = create_fixture_project(name="sub_t11")
     add_stripe_subscription(ToolInput(project_dir=str(project_dir)))
     billing_file = project_dir / "app" / "core" / "stripe_billing.py"
     assert billing_file.exists(), "stripe_billing.py not created"
     content = billing_file.read_text()
-    assert "StripeBilling" in content, "StripeBilling class not found"
-    assert "get_stripe_billing" in content, "get_stripe_billing function not found"
-    # Verify the import is lazy (inside a function body, not module-level)
-    assert "import stripe" in content, "Lazy stripe import not found"
+    # Rails wiring: facade imports the shipped motor + adapter.
+    # Direct module imports are used (robust against bare __init__.py
+    # placeholders that the scaffolder may have written on older builds).
+    assert "core.venous.billing.Billing" in content
+    assert "core.venous._adapters.stripe" in content
+    assert "StripeBillingAdapter" in content
+    assert "get_stripe_billing" in content, "get_stripe_billing factory missing"
+
+    # The adapter itself MUST have been shipped into the project's
+    # core/venous tree and its ``import stripe`` is lazy (inside a
+    # function body).
+    adapter_file = (
+        project_dir / "core" / "venous" / "_adapters" / "stripe"
+        / "BillingAdapter.py"
+    )
+    assert adapter_file.exists(), "StripeBillingAdapter not shipped"
+    adapter_content = adapter_file.read_text()
+    assert "import stripe" in adapter_content, "Lazy stripe import missing"
+    # Reject module-level import by checking indentation: the real lazy
+    # import is inside ``_get_stripe`` and therefore indented.
+    module_level_imports = [
+        line for line in adapter_content.splitlines()
+        if line.startswith("import stripe") or line.startswith("from stripe ")
+    ]
+    assert not module_level_imports, (
+        "stripe must be imported lazily inside a function body, not at "
+        f"module level; found: {module_level_imports!r}"
+    )
 
 
 def test_subscription_model_created() -> None:

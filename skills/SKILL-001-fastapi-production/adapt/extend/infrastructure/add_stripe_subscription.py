@@ -18,7 +18,8 @@ Design decisions:
 * **Proration on plan change** — ``subscription_proration_behavior='create_prorations'``
   is passed to Stripe so mid-cycle upgrades / downgrades are automatically billed.
 * **PII safety** — ``SubscriptionPublic`` omits ``stripe_customer_id``.
-* **Idempotency** — a second run detects the ``StripeBilling`` fingerprint in
+* **Idempotency** — a second run detects the ``StripeBilling`` fingerprint
+  (legacy or the compat alias emitted by the Rails-connected glue) in
   ``app/core/stripe_billing.py`` and returns ``status="no_op"``.
 
 Example::
@@ -51,6 +52,8 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "infrastructure"],
     "entry": "add_stripe_subscription",
+    "imports_primitives": ["core.venous.billing.Billing"],
+    "imports_adapters": ["core.venous._adapters.stripe.BillingAdapter"],
 }
 
 
@@ -137,7 +140,18 @@ def add_stripe_subscription(inp: ToolInput) -> ToolResult:
 
     files_modified: list[str] = []
 
-    # Step 1 — Stripe billing helper (lazy import so app boots without stripe)
+    # Step 0 — ship the Billing motor + Stripe adapter into the project tree
+    # so the generated stripe_billing.py glue can import from
+    # core.venous.billing.Billing + core.venous._adapters.stripe.
+    from generators.scaffold_venous import ensure_primitives
+    manifest = ensure_primitives(
+        str(project),
+        names=["core.venous.billing.Billing"],
+        adapters=["core.venous._adapters.stripe.BillingAdapter"],
+    )
+    files_created.append(manifest.path)
+
+    # Step 1 — Stripe billing glue (thin wrapper around the shipped adapter)
     _write_stripe_billing(billing_file)
     files_created.append(str(billing_file))
 
@@ -221,8 +235,10 @@ def add_stripe_subscription(inp: ToolInput) -> ToolResult:
             "POST /subscriptions/webhook/stripe (signature-verified via "
             "stripe.Webhook.construct_event).",
             "Alembic migration for `subscriptions` table.",
-            "Stripe SDK imported lazily inside StripeBilling methods — app boots "
-            "cleanly without `stripe` installed (tool still adds it to requirements.txt).",
+            "Billing motor + StripeBillingAdapter shipped into core/venous/; "
+            "stripe_billing.py is thin glue. `stripe` is imported lazily inside "
+            "the adapter — app boots cleanly without the SDK installed (tool "
+            "still adds it to requirements.txt).",
             "Proration enabled on plan change (create_prorations).",
         ],
         next_steps=[
@@ -481,141 +497,61 @@ def _elapsed_ms(start: float) -> int:
 # ---------------------------------------------------------------------------
 
 _STRIPE_BILLING_TEMPLATE = textwrap.dedent("""\
-    \"\"\"Stripe billing helper — lazy SDK import so the app boots without `stripe` installed.
+    \"\"\"Stripe billing helper — thin glue over the HuGR-shipped Billing motor.
 
-    The Stripe Python library is imported lazily INSIDE every method that
-    needs it.  This lets ``app.main`` be imported (and health-checked) on
-    machines where the ``stripe`` package has not yet been pip-installed.
+    The heavy lifting (lifecycle invariants, webhook verification,
+    provider-error translation, lazy SDK import) lives in:
+
+    - ``core.venous.billing.Billing.Billing`` — the motor Protocol,
+      ``Customer`` / ``Subscription`` / ``Event`` value types, and
+      domain errors (``InvalidWebhookSignature``, ``UnknownCustomer``,
+      ``UnknownSubscription``, ``LifecycleInvariantError``).
+    - ``core.venous._adapters.stripe.BillingAdapter`` —
+      ``StripeBillingAdapter`` implements the Protocol over the Stripe
+      SDK with lazy ``stripe`` import (no SDK needed at module import).
+
+    This module is Rails-style app wiring only: build one adapter from
+    settings at first call, return the same instance to every caller.
     \"\"\"
     from __future__ import annotations
 
     import logging
-    from typing import Any
 
     from app.core.config import settings
+    # Import directly from the adapter module (not the package) because the
+    # scaffolder writes a bare ``_adapters/stripe/__init__.py`` on first
+    # copy — re-exports from the source package are not preserved.
+    from core.venous._adapters.stripe.BillingAdapter import StripeBillingAdapter
+    from core.venous.billing.Billing.Billing import Billing
 
     logger = logging.getLogger(__name__)
 
 
-    class StripeBilling:
-        \"\"\"Thin wrapper around the Stripe SDK for subscription operations.
+    _adapter: Billing | None = None
 
-        All methods import the ``stripe`` module lazily inside their bodies
-        so ``app.main`` can boot without the SDK installed.
 
-        Attributes:
-            None — stateless; API key is set on each SDK call.
+    def get_stripe_billing() -> Billing:
+        \"\"\"Return the shared ``StripeBillingAdapter`` instance.
+
+        The adapter implements the framework-free ``Billing`` Protocol,
+        so call-sites type to ``Billing`` (not the concrete adapter) for
+        easier testing and swappable providers.
         \"\"\"
-
-        def _get_stripe(self) -> Any:
-            \"\"\"Return the configured ``stripe`` module (lazy import).
-
-            Returns:
-                The ``stripe`` module with ``api_key`` set from settings.
-            \"\"\"
-            import stripe  # local import — keeps app.main importable without stripe
-
-            stripe.api_key = settings.STRIPE_SECRET_KEY
-            return stripe
-
-        def create_customer(self, email: str, metadata: dict[str, str] | None = None) -> Any:
-            \"\"\"Create a Stripe Customer object.
-
-            Args:
-                email: Customer email address.
-                metadata: Optional metadata dict to attach.
-
-            Returns:
-                Stripe Customer object.
-            \"\"\"
-            stripe = self._get_stripe()
-            return stripe.Customer.create(email=email, metadata=metadata or {})
-
-        def create_subscription(
-            self,
-            customer_id: str,
-            price_id: str,
-            trial_period_days: int | None = None,
-        ) -> Any:
-            \"\"\"Create a Stripe Subscription for the given customer and price.
-
-            Args:
-                customer_id: Stripe Customer id.
-                price_id: Stripe Price id.
-                trial_period_days: Optional trial period in days.
-
-            Returns:
-                Stripe Subscription object.
-            \"\"\"
-            stripe = self._get_stripe()
-            params: dict[str, Any] = {
-                "customer": customer_id,
-                "items": [{"price": price_id}],
-            }
-            if trial_period_days:
-                params["trial_period_days"] = trial_period_days
-            return stripe.Subscription.create(**params)
-
-        def cancel_subscription(self, stripe_subscription_id: str) -> Any:
-            \"\"\"Cancel a Stripe Subscription at period end.
-
-            Args:
-                stripe_subscription_id: Stripe Subscription id.
-
-            Returns:
-                Updated Stripe Subscription object.
-            \"\"\"
-            stripe = self._get_stripe()
-            return stripe.Subscription.modify(
-                stripe_subscription_id,
-                cancel_at_period_end=True,
+        global _adapter
+        if _adapter is None:
+            _adapter = StripeBillingAdapter(
+                api_key=settings.STRIPE_SECRET_KEY,
+                webhook_secret=settings.STRIPE_WEBHOOK_SECRET,
             )
-
-        def change_plan(self, stripe_subscription_id: str, new_price_id: str) -> Any:
-            \"\"\"Change the plan for an existing subscription with proration.
-
-            Args:
-                stripe_subscription_id: Stripe Subscription id.
-                new_price_id: New Stripe Price id.
-
-            Returns:
-                Updated Stripe Subscription object.
-            \"\"\"
-            stripe = self._get_stripe()
-            sub = stripe.Subscription.retrieve(stripe_subscription_id)
-            item_id = sub["items"]["data"][0]["id"]
-            return stripe.Subscription.modify(
-                stripe_subscription_id,
-                items=[{"id": item_id, "price": new_price_id}],
-                proration_behavior="create_prorations",
-            )
-
-        def construct_webhook_event(self, payload: bytes, sig_header: str) -> Any:
-            \"\"\"Verify and construct a Stripe webhook event.
-
-            Args:
-                payload: Raw request body bytes.
-                sig_header: Value of the ``Stripe-Signature`` header.
-
-            Returns:
-                Verified Stripe Event object.
-
-            Raises:
-                Exception: If signature verification fails.
-            \"\"\"
-            stripe = self._get_stripe()
-            return stripe.Webhook.construct_event(
-                payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
-            )
+        return _adapter
 
 
-    def get_stripe_billing() -> StripeBilling:
-        \"\"\"Return a shared ``StripeBilling`` instance.
-
-        Returns:
-            A ``StripeBilling`` instance ready for use.
-        \"\"\"
-        return StripeBilling()
+    # Backward-compatible alias — pre-Rails callers imported ``StripeBilling``
+    # and instantiated it with no args. Keep the name callable so those
+    # sites still work without a simultaneous caller refactor.
+    def StripeBilling() -> Billing:  # noqa: N802 — compat alias
+        \"\"\"Deprecated: use ``get_stripe_billing()`` instead.\"\"\"
+        return get_stripe_billing()
 """)
 
 
