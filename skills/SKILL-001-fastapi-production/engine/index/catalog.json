@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "a3d32a4",
-  "generated_at": "2026-04-21T18:41:18+00:00",
+  "kit_commit": "48de937",
+  "generated_at": "2026-04-21T22:06:44+00:00",
   "verbs": [
     "add",
     "generate",
@@ -4645,15 +4645,6 @@
       "status": "staged"
     },
     {
-      "name": "FeatureToggleService",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_extracted/auth/FeatureToggleService/",
-      "status": "staged"
-    },
-    {
       "name": "FlagContext",
       "namespace": "auth",
       "concern": "auth",
@@ -6312,15 +6303,6 @@
       "purpose": "**Status:** extracted-staged (needs human review).",
       "compose_with": [],
       "module_path": "core/venous/_extracted/resiliency/BulkheadConfig/",
-      "status": "staged"
-    },
-    {
-      "name": "BulkheadMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_extracted/resiliency/BulkheadMiddleware/",
       "status": "staged"
     },
     {
@@ -11704,8 +11686,8 @@
   ],
   "counts": {
     "tools": 201,
-    "primitives": 302,
+    "primitives": 300,
     "recipes": 385
   },
-  "stable_hash": "50338fa37aa2dc5cdefe7fa3b1e99cdc2b32298eca5480953d53b1421c5d1b5f"
+  "stable_hash": "68b17f22b28c41f80608b45a276c80f8ffae6154eddb616d2ed109e4b8fc7825"
 }
