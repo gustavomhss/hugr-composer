@@ -231,6 +231,15 @@ primitives:
   - SessionStore
   - SecretsVault
   - AuditEvent
+- name: Billing
+  namespace: billing
+  concern: billing
+  purpose: Provider-agnostic billing gateway covering Customer and Subscription lifecycle plus mandatory HMAC webhook verification; reference backend is InMemoryBilling, real apps wire the Stripe/Paddle/Chargebee adapter.
+  compose_with:
+  - SignatureVerifier
+  - InboxDeduplicator
+  - AuditEvent
+  - WebhookReceiver
 - name: DistributedLock
   namespace: cache
   concern: cache

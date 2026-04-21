@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "43d5eaf",
-  "generated_at": "2026-04-21T22:47:17+00:00",
+  "kit_commit": "88351b2",
+  "generated_at": "2026-04-21T22:55:35+00:00",
   "verbs": [
     "add",
     "generate",
@@ -4897,6 +4897,20 @@
       "status": "stable"
     },
     {
+      "name": "Billing",
+      "namespace": "billing",
+      "concern": "billing",
+      "purpose": "Provider-agnostic billing gateway covering Customer and Subscription lifecycle plus mandatory HMAC webhook verification; reference backend i",
+      "compose_with": [
+        "SignatureVerifier",
+        "InboxDeduplicator",
+        "AuditEvent",
+        "WebhookReceiver"
+      ],
+      "module_path": "core/venous/billing/Billing/Billing.py",
+      "status": "stable"
+    },
+    {
       "name": "DistributedLock",
       "namespace": "cache",
       "concern": "cache",
@@ -7693,6 +7707,47 @@
       ],
       "intent": "`UnitOfWork` + `TransactionalOutbox` Failure stops processing; UoW rolls back; the outbox never emits events for items t",
       "description": "**All-or-nothing transactional batch** \u2192 `UnitOfWork` + `TransactionalOutbox` Failure stops processing; UoW rolls back; the outbox never emits events for items that didn't commit \u2014 downstream consumers see a coherent batch or no batch.",
+      "tags": []
+    },
+    {
+      "id": "Billing__01_signatureverifier-the-lower-level-hmac-v",
+      "source_primitive": "Billing",
+      "primitives": [
+        "Billing",
+        "SignatureVerifier"
+      ],
+      "intent": "",
+      "description": "``SignatureVerifier`` \u2014 the lower-level HMAC verifier that every billing adapter reuses for webhook authenticity. ``Billing`` wraps it into a full event envelope.",
+      "tags": []
+    },
+    {
+      "id": "Billing__02_inboxdeduplicator-stripe-paddle-retry-we",
+      "source_primitive": "Billing",
+      "primitives": [
+        "InboxDeduplicator"
+      ],
+      "intent": "",
+      "description": "``InboxDeduplicator`` \u2014 stripe + paddle retry webhooks on transient failures. Deduplicate by ``event.id`` so downstream handlers run exactly once per verified event.",
+      "tags": []
+    },
+    {
+      "id": "Billing__03_auditevent-every-lifecycle-transition-ou",
+      "source_primitive": "Billing",
+      "primitives": [
+        "AuditEvent"
+      ],
+      "intent": "",
+      "description": "``AuditEvent`` \u2014 every lifecycle transition ought to land in the audit trail (``subscription.created``, ``plan.changed``, ``subscription.canceled``) for compliance.",
+      "tags": []
+    },
+    {
+      "id": "Billing__04_webhookreceiver-billing-is-often-called-",
+      "source_primitive": "Billing",
+      "primitives": [
+        "WebhookReceiver"
+      ],
+      "intent": "",
+      "description": "``WebhookReceiver`` \u2014 Billing is often called from inside a WebhookReceiver route. Keep the signature-verification boundary at the Billing primitive even if WebhookReceiver also enforces one \u2014 defence in depth for PII-sensitive state.",
       "tags": []
     },
     {
@@ -11742,8 +11797,8 @@
   ],
   "counts": {
     "tools": 201,
-    "primitives": 301,
-    "recipes": 389
+    "primitives": 302,
+    "recipes": 393
   },
-  "stable_hash": "04ea14e1cba4e65a05c27e455f578cb371a40ee6d4741e673751f64373728cb3"
+  "stable_hash": "c2e13014a3cd6e8d4c1340f34bf1b7198cfd2ee0153179a6f6f17c7c72d36756"
 }
