@@ -89,9 +89,26 @@ def discover_and_register(mcp_app) -> int:
     count += register_generators(mcp_app)
     count += register_discovery_tools(mcp_app)
     count += register_tier1_tools(mcp_app)
+    count += register_tree_tools(mcp_app)
 
     logger.info("registered %d MCP tools total", count)
     return count
+
+
+def register_tree_tools(mcp_app) -> int:
+    """Register the domain-tree dispatchers (Phase 6 tree variant POC).
+
+    One MCP tool per domain, each with an `action` param that routes
+    to bundle / slices / primitives. Currently ships `fastapi_auth`
+    as the proof-of-concept; on live-run success the remaining 9
+    domains follow the same template.
+    """
+    from mcp_tools.tree.auth import fastapi_auth, MCP_TOOL as AUTH_META
+    mcp_app.tool(
+        name=AUTH_META["name"],
+        tags=set(AUTH_META.get("tags", [])),
+    )(fastapi_auth)
+    return 1
 
 
 def register_tier1_tools(mcp_app) -> int:
