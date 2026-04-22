@@ -95,53 +95,140 @@ where possible; reviewer-enforced where not).
 
 ### §2.1 — CONTRACT §A — inviolables (12 rules)
 
-Full text in `skills/SKILL-001-fastapi-production/CONTRACT.md §A`. Named summary:
+> **Mirror, not summary.** Each row below quotes the rule headline from
+> `/CONTRACT.md §A` verbatim. If CONTRACT.md drifts from this table,
+> CONTRACT.md wins and this table is wrong. Raise a §B4.7-class drift
+> bug.
 
-| ID | Summary |
+| ID | Rule (headline from CONTRACT.md §A) |
 |---|---|
-| §A1 | Every primitive ships a framework-free motor. Framework glue is in an adapter. |
-| §A2 | Every Maestro-facing tool has `MCP_TOOL` metadata + tests + behavioural test. |
-| §A3 | Tool names follow `fastapi_<domain>_<verb>_<noun>` (closed vocab: 10 domains × 9 verbs). |
-| §A4 | Every primitive namespace is locked (api, auth, billing, cache, compliance, cost, data, events, extras, flags, jobs, llm, obs, policy, resiliency, security). |
-| §A5 | Every primitive `.md` has ≥3 `## Compose with:` bullets. |
-| §A6 | No hardcoded `@mcp_app.tool` decorators — auto-discovery only. |
-| §A7 | Lazy imports for optional SDKs (stripe, redis, celery, boto3, …). |
-| §A8 | INVENTORY.md is canonical; narrative docs reconcile against it. |
-| §A9 | `primitives_used` in `MCP_TOOL` reflects real imports (AST-verified). |
-| §A10 | Semver 2.0.0 commitment from v1.0.0 onwards. |
-| §A11 | No manual counts in CLAUDE.md / STATUS.md / ROADMAP.md / CHANGELOG.md — all reconcile against INVENTORY. |
-| §A12 | Pool discipline — `_extracted/` items promote ONLY when a benchmark gap OR registered-tool import OR ratified triage pass demands it. |
+| §A1 | **Tools emit ≤ 20 lines of glue per capability.** Measured excluding imports + docstrings. Violating tool fails adapt contract gate. |
+| §A2 | **Generated code imports from `core/venous/*`.** Every file a tool writes includes ≥1 `from core.venous.<ns> import ...`. Tools producing zero such imports are rejected. |
+| §A3 | **Primitives are orthogonal.** Each does one thing; no primitive depends on mutating another at runtime. Surfaces in the T4 metamorphic gate. |
+| §A4 | **Running a tool twice does not clobber user edits.** Fingerprints + `dry_run` + idempotency. Non-negotiable. |
+| §A5 | **Every primitive has ≥3 composition examples in its `.md`.** `grep -L "## Compose with:" core/venous/*/*/*.md` returns empty. |
+| §A6 | **Every tool has an `MCP_TOOL` metadata block.** Auto-discovery mandatory; manual MCP registration forbidden Phase 1+. |
+| §A7 | **Registry is single source of truth for discoverability.** `engine/primitives_by_concern.yaml` indexes every production primitive. Missing from registry = doesn't exist. |
+| §A8 | **No claim in any doc without code on disk.** Drift = audit bug to fix SAME DAY as discovery. |
+| §A9 | **Benchmark is arbiter Phase 3+.** No surface merged without citing a benchmark scenario it moves red→green. |
+| §A10 | **Terminology lock (PRODUCT.md §8) is sacred.** Casual renaming is a bug, not a style preference. |
+| §A11 | **Opus for correctness-critical audit, not Sonnet.** Sonnet hallucinated a race condition; Opus caught 30 real bugs Sonnet missed. |
+| §A12 | **`_extracted/` is a pool, not a backlog.** Promote only when benchmark gap demands. No preemptive triage. Amended: benchmark gap **OR** registered-tool import **OR** ratified triage pass (this ROADMAP + `docs/decisions/0004-tier-lite.md §3`). |
 
-### §2.2 — CONTRACT §B — machine-checked gates (36 rules)
+**Cross-cutting implications (derived from §A, not part of §A):**
 
-Full list at `PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check`.
-Key gates:
+- §A2 + §A7 → Rails-style wiring. Every new `add_*` tool declares
+  `imports_primitives` in its `MCP_TOOL`, and §B1.3 counts compliance.
+- §A4 → every tool has an idempotency fingerprint documented in the
+  module docstring.
+- §A5 + §A7 → every primitive has ≥3 `compose_with` bullets in the
+  registry YAML AND ≥3 `## Compose with:` bullets in `<Name>.md`.
+- §A8 → CLAUDE.md / STATUS.md / ROADMAP.md / CHANGELOG.md MUST NOT
+  carry hand-maintained counts; §B4.7 machine-checks reconciliation
+  against `INVENTORY.md`.
+- §A10 → the vocabularies in §2.4 are LOCKED. Renames require a MAJOR
+  semver bump.
+- §A11 → audit agents use Opus; spec authoring / bulk refactors may
+  use Sonnet.
 
-| ID | What it guards |
-|---|---|
-| §B1.0 | `core.venous` copy-in distribution works (scaffold a project, import a primitive). |
-| §B1.0.1 | Adapter layer + framework-free primitives (ADR-0003). |
-| §B1.1 | Registry synced with disk; no half-extracted dirs. |
-| §B1.2 | Every primitive `.md` has `## Compose with:` with ≥3 bullets. |
-| §B1.3 | ≥ 22 extend `add_*` tools import a registered primitive (Rails-style). |
-| §B1.5 | No hardcoded `@mcp_app.tool` decorators. |
-| §B1.6 | No orphan generators (`generate_*` is either MCP_TOOL or internal helper). |
-| §B1.7 | Every FastAPI adapter has `test_<Name>Adapter.py` + maps to a registered primitive. Floor ≥ 15. |
-| §B1.8 | Tier-lite eligibility (stateless, framework-free, no REPLACE_ME). |
-| §B2.1 | `fastapi_meta_search_primitive` quality gate (BM25 top-1 ≥ 80%). |
-| §B2.2 | `fastapi_meta_search_composition` quality gate (BM25 top-1 ≥ 70%). |
-| §B2.3 | Docs site build is idempotent (same inputs → same hash). |
-| §B2.4 | Catalog manifest synced + deterministic (`stable_hash` idempotent across two builds). |
-| §B2.5 | SKILL.md v2 Anthropic Agent Skills format. |
-| §B3.1 | 20 benchmark specs (5 baseline / 10 mid / 5 adversarial). |
-| §B3.5 | Plan-level benchmark ≥ 90 on 20/20 specs. |
-| §B3.6 | Code-level benchmark ≥ 70 on ≥ 25% covered specs. |
-| §B4.1 | `install.sh` + fresh-Docker CI green. |
-| §B4.2 | `/examples/` has ≥ 5 populated (README + MAESTRO_SESSION + cross-link). |
-| §B4.3 | Docs site v1 (top-level + per-tool pages). |
-| §B4.4 | CHANGELOG + VERSION semver cite benchmark score. |
-| §B4.6 | VERSION triplet sync (repo-root + skill + STATUS.md frontmatter). |
-| §B4.7 | Canonical counts in INVENTORY reconcile against CLAUDE/STATUS/ROADMAP/CHANGELOG. |
+### §2.2 — CONTRACT §B — execution checklist (38 items spec'd; 36 machine-checked)
+
+> **Drift note.** CONTRACT.md §B lists **38 items** across phases 0-7.
+> `engine.audit.contract_check` runs **36 machine checks** (covers §B0 +
+> §B1 + §B2 + §B3 + §B4 but NOT §B5-§B7 — those close post-v1.0).
+> Some rule *text* in CONTRACT.md also drifted from the current
+> machine-check threshold (e.g. §B1.3 reads "15 top-value tools" but
+> the check's floor is 22 non-regression). Treat `contract_check.py`
+> as authoritative for CURRENT thresholds; CONTRACT.md §B is the
+> human-reviewable spec that must be re-ratified when thresholds move.
+
+#### §2.2.1 — Phase 0: Ground truth + docs honesty (8 items)
+
+| ID | What it guards | Machine check? |
+|---|---|---|
+| §B0.1 | `PRODUCT.md` canonical (§1-§9, terminology lock, 3-layer arch) | ✅ |
+| §B0.2 | `ROADMAP.md` honest + phased (this doc; Part 1 ground truth + Part 2 phases + risks + actions) | ✅ |
+| §B0.3 | `CONTRACT.md` (§A 12 rules + §B DoD/Inv/Compl/QS per item + §C-§E) | ✅ |
+| §B0.4 | `SKILL.md` v2 in Anthropic Agent Skills format | ✅ |
+| §B0.5 | `README.md` at repo root (≤80 lines + links) | ✅ |
+| §B0.6 | CLAUDE memory pointer | ✅ |
+| §B0.7 | `/benchmark/` audited — no stub tests | ✅ |
+| §B0.8 | `.gitignore` covers machine-generated artefacts | ✅ |
+
+#### §2.2.2 — Phase 1: Rails-style wiring (11 items)
+
+| ID | What it guards | Machine check? |
+|---|---|---|
+| §B1.0 | `core.venous` copy-in distribution works | ✅ |
+| §B1.0.1 | Adapter layer + framework-free primitives (ADR-0003) | ✅ |
+| §B1.1 | `primitives_by_concern.yaml` registry synced with disk; no half-extracted dirs | ✅ |
+| §B1.2 | Every primitive `.md` has `## Compose with:` with ≥3 bullets | ✅ |
+| §B1.3 | ≥15 extend `add_*` tools import a registered primitive (CONTRACT text; machine floor = 22 non-regression) | ✅ |
+| §B1.4 | MCP tool responses cite composed primitives (via `primitives_used`) | ✅ (covered by §B1.3 AST scan) |
+| §B1.5 | No hardcoded `@mcp_app.tool` decorators — auto-discovery only | ✅ |
+| §B1.6 | No orphan generators (`generate_*` / `scaffold_*` is MCP_TOOL OR internal helper) | ✅ |
+| §B1.7 | FastAPI adapter coverage (every `<Name>Adapter.py` has `test_<Name>Adapter.py` + maps to registry; floor = 15) | ✅ |
+| §B1.8 | Tier-lite eligibility (stateless, framework-free, no REPLACE_ME; vacuously green at 0 lite registered) | ✅ |
+
+#### §2.2.3 — Phase 2: Discoverability (3 items)
+
+| ID | What it guards | Machine check? |
+|---|---|---|
+| §B2.1 | `find_primitive` MCP tool + BM25 quality gate (top-1 ≥ 80%, P@3 ≥ 90%) | ✅ |
+| §B2.2 | `suggest_composition` MCP tool + recipe quality gate (top-1 ≥ 70%, P@3 ≥ 90%) | ✅ |
+| §B2.3 | Reference docs site idempotent build | ✅ |
+| §B2.4 | Catalog manifest synced + deterministic (`stable_hash` idempotent across two builds) | ✅ (added pre-freeze) |
+| §B2.5 | SKILL.md v2 Anthropic Agent Skills contract | ✅ (added pre-freeze) |
+
+#### §2.2.4 — Phase 3: Benchmark (5+2 items)
+
+| ID | What it guards | Machine check? |
+|---|---|---|
+| §B3.1 | 20 benchmark specs (5 baseline / 10 mid / 5 adversarial) with 4 sections each | ✅ |
+| §B3.2 | Scoring rubric implemented + tested | ✅ |
+| §B3.3 | Benchmark runner + stub Maestro + report JSON | ✅ |
+| §B3.4 | Nightly benchmark CI workflow | ✅ |
+| §B3.5 | Baseline score published; plan-level ≥ 90 on 20/20 (currently 100.00) | ✅ |
+| §B3.6 | Code-level harness perfect on covered, ≥25% coverage (currently 100.00 / 20/20) | ✅ (added pre-freeze) |
+| §B3.7 | Blind benchmark harness + specs + stub fixtures | ✅ (added pre-freeze) |
+
+#### §2.2.5 — Phase 4: Productisation (5+2 items)
+
+| ID | What it guards | Machine check? |
+|---|---|---|
+| §B4.1 | `install.sh` + fresh-Docker CI green | ✅ |
+| §B4.2 | `/examples/` populated (≥5 with README + MAESTRO_SESSION + cross-link; currently 20) | ✅ |
+| §B4.3 | Docs site v1 (top-level + per-tool pages) | ✅ |
+| §B4.4 | CHANGELOG + VERSION semver cite benchmark score | ✅ |
+| §B4.5 | `CONTRIBUTING.md` complete (primitive + tool + recipe + dev setup) | ✅ |
+| §B4.6 | VERSION triplet sync (repo-root + skill + STATUS.md frontmatter) | ✅ (added pre-freeze) |
+| §B4.7 | Canonical counts in INVENTORY reconcile against CLAUDE / STATUS / ROADMAP / CHANGELOG | ✅ (added pre-freeze) |
+
+#### §2.2.6 — Phases 5-7: Post-v1.0 (not machine-checked until activated)
+
+| ID | Intent | Status |
+|---|---|---|
+| §B5.1 | Code-level score ≥ 50% | ✅ met (100.00) |
+| §B5.2 | Code-level score ≥ 70% (v1.0 ship criterion) | ✅ met (100.00) |
+| §B6.1 | SKILL-002 choice by demand signal | Post-v1.0 (Phase 6) |
+| §B6.2 | ≥ 30 shared primitives across skills | Post-v1.0 (Phase 6) |
+| §B6.3 | Multi-skill Maestro example | Post-v1.0 (Phase 6) |
+| §B7.1 | External PR lands a primitive via gate | Post-v1.0 (Phase 7) |
+| §B7.2 | Public benchmark scoreboard | Post-v1.0 (Phase 7) |
+| §B7.3 | SDK docs for external Maestro authors | Post-v1.0 (Phase 7) |
+
+#### §2.2.7 — How §B items become machine rules
+
+New §B items require, in the SAME commit:
+
+1. DoD + Invariants + Completeness + Quality (SOTA) block in CONTRACT.md.
+2. `Rule(...)` entry added to `engine/audit/contract_check.py#RULES`.
+3. The rule function returns `(bool, str)` — exit-0 in CI requires `True`.
+4. Count in `engine.audit.contract_check` output goes up by 1 (e.g.
+   36 → 37).
+
+§C6 CI gate enforces this: merging to `main` without the corresponding
+`Rule(...)` fails CI.
 
 ### §2.3 — Pool discipline (§A12 + §A12(b))
 
@@ -170,24 +257,33 @@ Key gates:
 ### §2.5 — Per-primitive invariants (domain-specific)
 
 Every registered primitive declares its invariants in its `<Name>.py`
-module docstring with named IDs. Behavioural tests name the invariant
-they witness in the test function name (`test_inv_NN_*`).
-
-Examples at v1.0:
-
-- **Bulkhead (BH_INV_01..05):** capacity ceiling, wait-deadline,
-  anti-retry ledger, partition isolation, rejection metering.
-- **TopicBus (TB_INV_01..05):** at-least-once delivery, per-key
-  exclusive dispatch, nack-never-drops, partition-local ordering,
-  durable append before fanout.
-- **PubSub (PS_INV_01..05):** fanout correctness, per-subscriber
-  ordering, topic isolation, subscriber cleanup, active-window delivery.
-- **Billing (BILL_INV_01..05):** HMAC webhook verification mandatory,
-  lifecycle monotonicity, plan-change id preservation, opaque-id
-  checking, no-PII errors.
+module docstring with named IDs (`<PREFIX>_INV_NN`). Behavioural tests
+name the invariant they witness in the test function name
+(`test_inv_NN_*` inside `behavioral_<Name>.py`).
 
 **Invariant acceptance test (§4.1):** every new primitive MUST ship ≥3
-named invariants with ≥1 behavioural test each.
+named invariants with ≥1 behavioural-test witness each.
+
+**Enumerated invariant families at v1.0** (prefix → primitive):
+
+| Prefix | Primitive | Namespace | Count | Witnesses |
+|---|---|---|---:|---|
+| BH_INV_* | `Bulkhead` | resiliency | 5 | capacity ceiling, wait-deadline, anti-retry ledger, partition isolation, rejection metering |
+| TB_INV_* | `TopicBus` | events | 5 | at-least-once delivery, per-key exclusive dispatch, nack-never-drops, partition-local ordering, durable append before fanout |
+| PS_INV_* | `PubSub` | events | 5 | fanout correctness, per-subscriber ordering, topic isolation, subscriber cleanup, active-window delivery |
+| BILL_INV_* | `Billing` | billing | 5 | HMAC webhook mandatory, lifecycle monotonicity, plan-change id preservation, opaque-id checking, no-PII errors |
+
+**Pending documentation** (registered primitives whose invariant family
+prefix isn't yet enumerated in this table): the remaining 120
+registered primitives carry invariants in their `<Name>.py` module
+docstrings (machine-verifiable — every motor module has at least one
+`INV_` block per §4.1 DoD). A tracking task lives as a process item
+in §6.1 Wave 2: while promoting tier-lite candidates, backfill this
+table with their INV prefixes.
+
+**Rule:** this table MUST be updated in the SAME commit that promotes
+a new primitive whose invariant family prefix is not yet listed.
+Checklist §7.A step 14 enforces this at commit time.
 
 ### §2.6 — Adapter isolation
 
@@ -224,14 +320,116 @@ fail at runtime. Delivery contract fields:
 - `error`: str | None (present iff `status == "error"`)
 - `execution_time_ms`: int (on EVERY return path)
 
-### §2.9 — Commit hygiene
+### §2.8b — Tool input contract (ToolInput Pydantic shape)
+
+Counterpart to §2.8 — every extend/verify/operate/evolve tool accepts
+a single `ToolInput` argument:
+
+- `project_dir: str` — absolute path (validated by `validate_project_dir`).
+- `dry_run: bool = False` — if True, return before any write.
+- Extra fields are tool-specific and defined in the tool's module;
+  the base `ToolInput` is the MINIMUM contract.
+
+Tools reject:
+- Relative paths — `validate_project_dir` returns an error.
+- Paths outside the project root — enforced per-tool.
+- Missing prerequisites — `ensure_prerequisites()` returns actionable
+  errors listing the missing files / config keys.
+
+### §2.9 — Commit hygiene + PR discipline
+
+**Per-commit invariants:**
 
 - Every commit leaves the tree CONTRACT 36/36 green.
-- Pre-commit hook (`.githooks/pre-commit`) runs `engine.audit.contract_check`.
+- Every commit leaves the tree pytest-green for the primitives it
+  touches (motor + adapter + tool).
 - Commit messages: imperative mood, ≤70-char subject, body explains
   WHY not WHAT.
 - Co-authored-by Claude Opus 4.7 (1M context) when AI-assisted.
-- Never `--no-verify`. Never `--amend` a pushed commit.
+- Never `--no-verify`. Never `--amend` a pushed commit. Never
+  `--no-gpg-sign` unless Gustavo explicitly asks.
+- Thematic slices: one concern per commit. Don't batch unrelated fixes.
+
+**Pre-commit hook (`.githooks/pre-commit`):**
+
+Activate once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+The hook runs:
+
+```bash
+cd skills/SKILL-001-fastapi-production
+PYTHONPATH=. python3 -m engine.audit.contract_check
+```
+
+Hook failure = commit rejected. Fix the underlying issue, don't bypass.
+
+**PR discipline (per CONTRACT §C2):** every PR description MUST include
+six blocks:
+
+1. `Phase: N.K` — which §B item this closes.
+2. `§A compliance:` — list of §A rules touched and verified.
+3. `DoD:` — copy of the DoD block from CONTRACT §B.N.K; each item
+   marked ✓ or N/A with reason.
+4. `Invariants:` — same shape.
+5. `Completeness:` — same.
+6. `Quality (SOTA):` — same.
+
+PRs missing any of the six = **REJECTED** (not "fix on review" — the
+author MUST self-audit before opening the PR).
+
+### §2.10 — CONTRACT §C / §D / §E — what they are
+
+This ROADMAP summarizes §A + §B. The remaining CONTRACT sections live
+at `/CONTRACT.md` and govern:
+
+- **§C — Enforcement (C1-C7):** how the rules bind. C1 session-opening
+  audit, C2 PR discipline (above), C3 quarterly ratification by
+  Gustavo, C4 amendment log format, C5 machine-check on every commit,
+  C6 phase-gate CI, C7 pre-commit hook sample.
+- **§D — Explicit non-promises:** HuGR does NOT promise Maestro
+  success rates > 70% (target, not guarantee). Does NOT commit
+  SKILL-003/004 timelines. Does NOT forbid experiments (branches
+  only). Does NOT replace PRODUCT.md. Does NOT tolerate "temporary"
+  §A violations.
+- **§E — Amendment log:** only place ratification blocks land. Format:
+  `### Ratified YYYY-MM-DD by Gustavo` + bullet list of what changed.
+
+### §2.11 — Audit agent policy (§A11 derived)
+
+- **Opus** — correctness-critical audits, architecture decisions,
+  review of generated code, catching subtle bugs. Full-context (1M)
+  Opus 4.7 is the default for audits on this repo.
+- **Sonnet** — bulk spec authoring, mechanical refactors with clear
+  specs, parallelizable searches. Never delegate architecture
+  judgement to Sonnet.
+- **Evidence:** early Sonnet runs hallucinated a race condition (a
+  false positive that would have caused wasted refactoring); Opus
+  caught 30 real bugs in the same session.
+- **Rule of thumb:** if the question is "is this right?", use Opus.
+  If the question is "implement this spec", Sonnet is fine.
+
+### §2.12 — stable_hash protocol (consumer-facing)
+
+`engine/index/catalog.json` carries a top-level `stable_hash` field —
+SHA-256 hash of the catalog's deterministic content (sorted keys,
+canonical JSON, no timestamps). Purpose: let Maestro consumers pin a
+session to a specific catalog version.
+
+- **Producer (us):** `engine.index.manifest build` re-computes the
+  hash; §B2.4 requires idempotence (same disk → same hash).
+- **Consumer (Maestro):** on session open, read `stable_hash`; pin
+  the session's tool catalog to it. If the hash changes during a
+  session, prompt the user (or abort — caller's choice).
+- **CHANGELOG cite:** every `[X.Y.Z]` block cites the `stable_hash`
+  at release — consumers that don't have real-time access to the
+  catalog can verify the version they're serving matches the
+  release notes.
+- **Never manually edit `stable_hash`.** It's regenerated; editing
+  by hand fails §B2.4 on the next CI run.
 
 ---
 
