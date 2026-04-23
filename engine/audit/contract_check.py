@@ -783,9 +783,35 @@ def _r_no_orphan_generators() -> tuple[bool, str]:
     generators/ and modules/**/tools/ is either MCP_TOOL-wrapped OR
     called by another module (internal helper). Prevents the Phase 2
     drift where generator files quietly shipped as non-discoverable code.
+
+    Implementation: one walk of SKILL_ROOT builds a `{path: contents}`
+    map, then each candidate function does an O(1) cached-dict scan
+    for callers. Previously spawned one `grep -rl` subprocess per
+    candidate (~60 of them), which dominated `_r_*` runtime.
     """
     bases = ("generators", "core/tools", "modules/database/tools",
              "modules/security/tools", "benchmark")
+
+    # One-pass corpus of every .py file in the skill tree. Populated
+    # lazily — only if the base contains at least one candidate.
+    _corpus: dict[Path, str] | None = None
+
+    def _load_corpus() -> dict[Path, str]:
+        nonlocal _corpus
+        if _corpus is not None:
+            return _corpus
+        out: dict[Path, str] = {}
+        for py in SKILL_ROOT.rglob("*.py"):
+            parts = py.parts
+            if ".venv" in parts or "__pycache__" in parts:
+                continue
+            try:
+                out[py] = py.read_text(errors="ignore")
+            except OSError:
+                continue
+        _corpus = out
+        return out
+
     orphans: list[str] = []
     for base in bases:
         d = SKILL_ROOT / base
@@ -802,12 +828,8 @@ def _r_no_orphan_generators() -> tuple[bool, str]:
                 continue
             fn = m.group(1)
             # quick call-graph: ≥1 caller elsewhere in-tree → internal helper
-            out = subprocess.run(
-                ["grep", "-rl", fn, str(SKILL_ROOT),
-                 "--include=*.py", "--exclude-dir=.venv", "--exclude-dir=__pycache__"],
-                capture_output=True, text=True, check=False,
-            )
-            callers = [c for c in out.stdout.splitlines() if c and c != str(py)]
+            corpus = _load_corpus()
+            callers = [p for p, c in corpus.items() if p != py and fn in c]
             if not callers:
                 orphans.append(f"{py.relative_to(SKILL_ROOT)} ({fn})")
     if orphans:
