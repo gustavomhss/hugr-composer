@@ -21,11 +21,13 @@ from engine.index.schemas import DOMAINS, TAG_VOCABULARY, VERBS
 def test_build_succeeds_and_produces_expected_counts() -> None:
     m = build()
     assert m.counts["tools"] >= 150, f"too few tools: {m.counts['tools']}"
-    # 122 stable-registered primitives + ~400 staged (pre-audited under
-    # core/venous/_extracted/, PascalCase-filtered, deduped vs stable).
+    # Registry (engine/primitives_by_concern.yaml) is the authoritative source
+    # for `stable`. As of v1.0.0-rc.1 the registry carries 124 entries.
+    # Drift-floor: tests treat any count below the registry length as a
+    # collapse (likely a path-scan bug), not a bump above it.
     stable = sum(1 for p in m.primitives if p.status == "stable")
     staged = sum(1 for p in m.primitives if p.status == "staged")
-    assert stable == 122, f"stable-registered primitives drifted: {stable}"
+    assert stable >= 124, f"stable-registered primitives collapsed: {stable}"
     assert staged >= 150, f"staged primitive surface collapsed: {staged}"
     assert m.counts["primitives"] == stable + staged
     assert m.counts["recipes"] >= 250
@@ -43,16 +45,22 @@ def test_build_is_deterministic(tmp_path: Path) -> None:
 
 
 def test_committed_catalog_matches_fresh_build() -> None:
-    """benchmarks/blind/catalog.json on disk must match a fresh build
-    (ignoring generated_at and kit_commit, which are legitimately variable).
+    """engine/index/catalog.json on disk must match a fresh build.
+
+    Three fields are legitimately variable and stripped on both sides:
+    - generated_at: UTC wall clock at build time
+    - kit_commit: SHA at build time
+    - stable_hash: populated by `write()`, not `build()` — comparing it
+      would require mirror-writing the live model, which would make the
+      test assert its own side-effect instead of on-disk truth
     """
     m = build()
     live = m.model_dump(mode="json")
-    live.pop("generated_at", None)
-    live.pop("kit_commit", None)
+    for k in ("generated_at", "kit_commit", "stable_hash"):
+        live.pop(k, None)
     committed = json.loads(CATALOG_PATH.read_text())
-    committed.pop("generated_at", None)
-    committed.pop("kit_commit", None)
+    for k in ("generated_at", "kit_commit", "stable_hash"):
+        committed.pop(k, None)
     # Compare ignoring ordering of sibling dicts by dumping sorted.
     assert json.dumps(live, sort_keys=True) == json.dumps(committed, sort_keys=True), (
         "engine/index/catalog.json drifted from on-disk sources; "

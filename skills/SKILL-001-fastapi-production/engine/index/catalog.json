@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "50daf5f",
-  "generated_at": "2026-04-23T20:20:38+00:00",
+  "kit_commit": "a0f2373",
+  "generated_at": "2026-04-23T21:03:17+00:00",
   "verbs": [
     "add",
     "generate",
@@ -4888,8 +4888,7 @@
       "compose_with": [
         "SignatureVerifier",
         "InboxDeduplicator",
-        "AuditEvent",
-        "WebhookReceiver"
+        "AuditEvent"
       ],
       "module_path": "core/venous/billing/Billing/Billing.py",
       "status": "stable"
@@ -7713,16 +7712,6 @@
       ],
       "intent": "",
       "description": "``AuditEvent`` \u2014 every lifecycle transition ought to land in the audit trail (``subscription.created``, ``plan.changed``, ``subscription.canceled``) for compliance.",
-      "tags": []
-    },
-    {
-      "id": "Billing__04_webhookreceiver-billing-is-often-called-",
-      "source_primitive": "Billing",
-      "primitives": [
-        "WebhookReceiver"
-      ],
-      "intent": "",
-      "description": "``WebhookReceiver`` \u2014 Billing is often called from inside a WebhookReceiver route. Keep the signature-verification boundary at the Billing primitive even if WebhookReceiver also enforces one \u2014 defence in depth for PII-sensitive state.",
       "tags": []
     },
     {
@@ -11773,7 +11762,7 @@
   "counts": {
     "tools": 201,
     "primitives": 299,
-    "recipes": 393
+    "recipes": 392
   },
-  "stable_hash": "cc8b7ef58a7d6e9327d39d6c25153780253d704f1d6136330b789cbd7d6f190c"
+  "stable_hash": "00cefc4cc477618e737dbbddd375f8fb6cb0e3cecc3e63491685fa860c16f192"
 }

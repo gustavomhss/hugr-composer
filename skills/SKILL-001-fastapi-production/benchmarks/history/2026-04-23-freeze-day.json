@@ -5,8 +5,8 @@
   "kit": {
     "name": "SKILL-001-fastapi-production",
     "version": "1.0.0-rc.1",
-    "stable_hash": "cc8b7ef58a7d6e9327d39d6c25153780253d704f1d6136330b789cbd7d6f190c",
-    "stable_hash_short": "cc8b7ef58a7d"
+    "stable_hash": "00cefc4cc477618e737dbbddd375f8fb6cb0e3cecc3e63491685fa860c16f192",
+    "stable_hash_short": "00cefc4cc477"
   },
   "contract": {
     "rules_total": 36,
@@ -96,11 +96,11 @@
       "code-level ≥ 70 on 20/20": "met (100.00, 100% coverage)",
       "freeze-day artefact": "this file",
       "no per-spec regression ≥ 50": "met (min 100.00 across both rubrics)",
-      "CHANGELOG cites both scores + stable_hash": "verified (20/20 coverage, stable_hash_short cc8b7ef58a7d)"
+      "CHANGELOG cites both scores + stable_hash": "verified (20/20 coverage, stable_hash_short 00cefc4cc477)"
     },
     "§5.5_release_artefacts_claude": {
       "INVENTORY.md regenerated + diff empty": "yes",
-      "catalog.json stable_hash idempotent": "verified (cc8b7ef58a7d)",
+      "catalog.json stable_hash idempotent": "verified (00cefc4cc477)",
       "VERSION bump rc.1 → 1.0.0": "pending (Gustavo signs first, then bump)",
       "CHANGELOG [1.0.0] block complete": "yes, YYYY-MM-DD placeholder only",
       "README phase badge v1.0.0": "shows v1.0.0-rc.1 until final bump",

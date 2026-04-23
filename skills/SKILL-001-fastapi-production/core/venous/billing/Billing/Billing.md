@@ -84,10 +84,6 @@ event = gw.construct_webhook_event(payload, sig_header)
 - ``AuditEvent`` — every lifecycle transition ought to land in the
   audit trail (``subscription.created``, ``plan.changed``,
   ``subscription.canceled``) for compliance.
-- ``WebhookReceiver`` — Billing is often called from inside a
-  WebhookReceiver route. Keep the signature-verification boundary at
-  the Billing primitive even if WebhookReceiver also enforces one —
-  defence in depth for PII-sensitive state.
 
 ## Not in scope
 
