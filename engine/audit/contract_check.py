@@ -78,15 +78,37 @@ def _r_roadmap_md() -> tuple[bool, str]:
 
 
 def _r_contract_md() -> tuple[bool, str]:
+    """B0.3 — CONTRACT.md present AND each of §A1..§A12 carries a named
+    inviolable-rule heading.
+
+    Pre-audit this rule only validated that `§A` / `§B` / `§C` string
+    labels were present AND that `- [ ] **A1` existed. That was too
+    loose: if a future edit silently drops any §A2..§A12 heading the
+    audit would pass, defeating §A's "inviolable" guarantee (Codex
+    HIGH #7). We now enumerate every §A rule ID and fail if any is
+    missing. §A5 and §A8 also carry cross-doc semantic invariants
+    (Compose-with ≥3 + no-hand-maintained-counts) that other rules
+    enforce in detail; here we just verify the headings exist.
+    """
     ok, msg = _exists(REPO_ROOT / "CONTRACT.md", min_bytes=5000)
     if not ok:
         return ok, msg
     body = (REPO_ROOT / "CONTRACT.md").read_text()
-    if "§A" not in body or "§B" not in body or "§C" not in body:
-        return False, "CONTRACT.md missing §A / §B / §C sections"
-    if "- [ ] **A1" not in body:
-        return False, "CONTRACT.md missing A1 inviolable rule"
-    return True, "CONTRACT.md present with §A/§B/§C structure"
+    for section in ("§A", "§B", "§C", "§D", "§E"):
+        if section not in body:
+            return False, f"CONTRACT.md missing {section} section"
+    missing_a: list[str] = []
+    for i in range(1, 13):
+        if f"- [ ] **A{i} " not in body and f"- [ ] **A{i}\u2005" not in body:
+            missing_a.append(f"A{i}")
+    if missing_a:
+        return False, (
+            f"CONTRACT.md §A is missing rule heading(s): {missing_a}. "
+            "§A rules are inviolable — every headline must be present "
+            "verbatim (`- [ ] **A<N> — …**`). Silent removal defeats "
+            "the `A<N>` citation discipline in every other rule."
+        )
+    return True, "CONTRACT.md present; §A1..§A12 + §B/§C/§D/§E all present"
 
 
 def _r_readme_md() -> tuple[bool, str]:

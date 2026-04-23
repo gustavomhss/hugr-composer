@@ -60,7 +60,7 @@
     "headroom_points": 30.0
   },
   "ship_gate_state": {
-    "note": "ROADMAP §5 itemised status at this snapshot. Claude-side items all executed; Gustavo-side ratifications pending signature.",
+    "note": "ROADMAP §5 itemised status at this snapshot. Claude-side items split: executed-locally vs. CI-deferred (E2E PostgreSQL + behavior scenarios + soak + mutation require services / wall-time that only nightly CI runs before the tag). Property-test RUFF_CRITICAL_CLEAN was 7/8 at this snapshot (pre-existing emitted-template style issue, Wave-2 follow-up); remaining pre-freeze hardening is tracked in the Codex-audit commits landed under BLOCKER + HIGH + MEDIUM tags. Gustavo-side ratifications still pending signature — they do NOT block test execution, only the tag cut.",
     "§5.1_ratifications_gustavo": {
       "FREEZE.md §4 signed": "pending (Gustavo)",
       "CONTRACT.md §A12 amended": "drafted in commit d78d4b2",
@@ -74,21 +74,22 @@
       "unactioned PROMOTE_AS_* with zero blockers": "none"
     },
     "§5.3_full_test_pass_claude": {
-      "unit tests (adapt/ full sweep)": "3170 passed, 1 skipped, 0 failed post-fix",
-      "promotion module tests": "38/38",
-      "boot test (100-tool smoke)": "100/100",
-      "boot chain tests": "covered by boot test + stress test; see note",
-      "E2E hardcore (SQLite, 12 scenarios)": "12/12",
-      "E2E PostgreSQL": "skipped locally — nightly CI covers",
-      "behavior scenarios": "skipped locally — nightly CI covers",
-      "cross-composition (200+)": "ALL-PASSED (1230s)",
-      "property tests": "7/8 passed (RUFF_CRITICAL_CLEAN property fails on emitted-template style: F401 unused imports + F541 empty f-strings in 119/123 tools; pre-existing; tracked as Wave-2 template-cleanup work)",
-      "stress test (20-model + 27 tools)": "3/3 post fixture-collision fixes (commit 85010d4)",
-      "soak test (5 min)": "skipped locally — run on CI before final cut",
-      "mutation runner": "not run locally — CI-scheduled",
-      "examples pytest": "20/20 individual suites were green at last run",
-      "performance baseline": "5/5 (54s full run)",
-      "install-docker nightly": "gated on CI; 48h window enforced by ROADMAP §5.7"
+      "__legend__": "Status values: 'executed-local-green', 'executed-local-known-failure', 'ci-deferred' (runs only in nightly / on-demand CI before tag), 'requires-services' (needs PostgreSQL / Docker stack). The ship gate requires every row to reach green BEFORE the tag — this artefact records the pre-tag snapshot, not a green-light summary.",
+      "unit tests (adapt/ full sweep)": "executed-local-green (3170 passed, 1 skipped, 0 failed post-fix)",
+      "promotion module tests": "executed-local-green (38/38)",
+      "boot test (100-tool smoke)": "executed-local-green (100/100)",
+      "boot chain tests": "covered-by-boot-test-plus-stress (no separate runner; forward/reverse semantics witnessed by boot + stress)",
+      "E2E hardcore (SQLite, 12 scenarios)": "executed-local-green (12/12)",
+      "E2E PostgreSQL": "requires-services (nightly CI covers; tag-gate requires CI-green run within 48h pre-tag)",
+      "behavior scenarios (12 domain archetypes)": "requires-services (PostgreSQL; nightly CI covers; same tag-gate window)",
+      "cross-composition (200+)": "executed-local-green (1230s wall)",
+      "property tests": "executed-local-known-failure (7/8 — RUFF_CRITICAL_CLEAN property fails on emitted-template style: F401 unused imports + F541 empty f-strings; pre-existing; NOT a correctness bug; tracked as Wave-2 template-cleanup work per ROADMAP §6.1; §8.2 R4 flags this class)",
+      "stress test (20-model + 27 tools)": "executed-local-green (3/3 post fixture-collision fixes, commit 85010d4)",
+      "soak test (5 min, 10 concurrent)": "ci-deferred (intentional — 5-min wall inflates local iteration; nightly CI owns it)",
+      "mutation runner (≥10-module sample)": "ci-deferred (CI-scheduled; not a commit-gate check)",
+      "examples pytest (20 suites)": "executed-local-green-last-run (20/20 at last sweep; rerun pre-tag)",
+      "performance baseline": "executed-local-green (5/5, 95s full run)",
+      "install-docker nightly": "ci-deferred (48h window enforced by ROADMAP §5.7 — 2 consecutive nightly runs green before tag)"
     },
     "§5.4_benchmark_gate_claude": {
       "plan-level ≥ 90": "met (100.00)",
