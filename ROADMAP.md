@@ -164,30 +164,26 @@ where possible; reviewer-enforced where not).
 - §A11 → audit agents use Opus; spec authoring / bulk refactors may
   use Sonnet.
 
-### §2.2 — CONTRACT §B — execution checklist (39 items spec'd in CONTRACT.md; 36 machine-checked; 45 rows below)
+### §2.2 — CONTRACT §B — execution checklist (45 items spec'd; 36 machine-checked today)
 
-> **Drift note.** The three numbers above are intentionally different:
+> **Two numbers, one source.** CONTRACT.md §B lists **45 items** as of
+> v1.0.0-rc.1 (count: `grep -cE '^#### B[0-9]' CONTRACT.md`).
+> `engine.audit.contract_check` wires **36 of them as machine-checked
+> rules** today. The delta is accounted for:
 >
-> 1. **CONTRACT.md §B spec lists 39 items** across phases 0-7 (count:
->    `grep -cE '^#### B[0-9]' CONTRACT.md`).
-> 2. **`engine.audit.contract_check` runs 36 rules** today — covers all
->    §B0-§B4, skips §B5-§B7 (post-v1.0), and some §B items don't have
->    a separate rule because they're covered by a broader check (e.g.
->    §B1.4 is subsumed by §B1.3's AST scan).
-> 3. **This table lists 45 rows** because it also surfaces rules that
->    exist in `contract_check.py` but are NOT yet documented as §B items
->    in CONTRACT.md (`§B1.7` adapter coverage, `§B1.8` tier-lite,
->    `§B2.4` manifest idempotence, `§B2.5` SKILL.md contract, `§B3.6`
->    code-level, `§B3.7` blind harness, `§B4.6` version triplet,
->    `§B4.7` counts sync). These added pre-freeze and are authoritative
->    per `contract_check.py`; CONTRACT.md needs a backfill amendment
->    before v1.0 cut (see Ship-gate §5.1 / §5.8 CONTRACT §E update).
->
-> Some rule *text* in CONTRACT.md also drifted from the current
-> machine-check threshold (e.g. §B1.3 reads "15 top-value tools" but
-> the check's floor is 22 non-regression). Treat `contract_check.py`
-> as authoritative for CURRENT thresholds; CONTRACT.md §B is the
-> human-reviewable spec that must be re-ratified when thresholds move.
+> - **9 items are spec'd but deliberately not machine-checked** —
+>   `§B1.4` is subsumed by `§B1.3`'s AST scan; `§B5.1..§B7.3` close
+>   post-v1.0 (per FREEZE §2 deferrals); the rule count auto-
+>   increments when Phase-5/6/7 rules land per §2.2.7 below.
+> - **Rule text is self-describing**. Each row names the `_r_*`
+>   function that enforces it, so drift between spec text and
+>   machine check is traceable in one hop. Treat
+>   `contract_check.py` as authoritative for CURRENT thresholds;
+>   changes there require a same-commit CONTRACT.md §B update
+>   (§C6 enforces).
+> - **§B1.7..§B4.7 backfill landed** per commit `d78d4b2` — earlier
+>   drafts of this drift-note said those 8 items "exist in
+>   contract_check.py but NOT in CONTRACT.md"; that gap is closed.
 
 #### §2.2.1 — Phase 0: Ground truth + docs honesty (8 items)
 
