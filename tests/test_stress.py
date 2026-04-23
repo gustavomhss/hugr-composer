@@ -52,20 +52,30 @@ _MODELS_20: dict[str, dict[str, str]] = {
     # Renamed from "Payment" to avoid crud/payment.py collision with
     # add_stripe_checkout, which reserves that module for its own CRUD.
     "Charge":    {"invoice_ref": "str", "amount_cents": "int", "method": "str", "status": "str"},
-    "Subscription": {"customer_id": "UUID", "plan": "str", "status": "str", "renews_at": "datetime"},
+    # Renamed from "Subscription" to avoid crud/subscription.py collision
+    # with add_stripe_subscription (which owns the stripe-sub DTOs).
+    "MembershipPlan": {"customer_id": "UUID", "plan": "str", "status": "str", "renews_at": "datetime"},
     "Ticket":    {"customer_id": "UUID", "subject": "str", "priority": "str", "status": "str"},
     "Comment":   {"ticket_id": "UUID", "author_id": "UUID", "body": "str"},
     "Category":  {"name": "str", "parent_id": "UUID", "sort_order": "int"},
     "Tag":       {"name": "str", "color": "str"},
-    "Notification": {"user_id": "UUID", "title": "str", "body": "str", "read_at": "datetime"},
+    # Renamed from "Notification" to avoid model-name collision with
+    # add_notifications, which claims `crud/notification.py` as its own
+    # service-layer module (create_notification / list_unread / etc.).
+    "UserAlert": {"user_id": "UUID", "title": "str", "body": "str", "read_at": "datetime"},
     "AuditEntry": {"actor_id": "UUID", "action": "str", "resource_type": "str", "resource_id": "UUID"},
     "Setting":   {"key": "str", "value": "str", "scope": "str"},
     "ApiToken":  {"user_id": "UUID", "token_hash": "str", "expires_at": "datetime"},
     # Renamed from "Webhook" to avoid schemas/webhook.py collision with
-    # add_webhook_sender, which reserves that module for its own schemas.
-    "Notification": {"url": "str", "events": "str", "is_active": "bool"},
+    # add_webhook_sender (which reserves that module for its own schemas).
+    # Also renamed from a clashing "Notification" key that collided with
+    # the user-notification model above — `add_notifications` reserves
+    # `crud.notification` for its own `create(...)` signature.
+    "OutboundHook": {"url": "str", "events": "str", "is_active": "bool"},
     "Campaign":  {"name": "str", "start_date": "date", "end_date": "date", "budget_cents": "int"},
-    "Report":    {"name": "str", "generated_at": "datetime", "file_key": "str"},
+    # Renamed from "Report" to avoid schemas/report.py collision with
+    # add_pdf_reports (which reserves that module for its own DTOs).
+    "AnalyticsRun": {"name": "str", "generated_at": "datetime", "file_key": "str"},
     # Renamed from "Role" to "AppRole" to avoid table-name collision with
     # add_rbac, which reserves the "roles" tablename for its own RBAC model.
     "AppRole":   {"name": "str", "permissions": "str"},
@@ -109,12 +119,12 @@ _ALL_TOOLS: list[tuple[str, str]] = [
     ("add_celery_beat",      "adapt.extend.infrastructure.add_celery_beat"),
     ("add_s3_storage",       "adapt.extend.infrastructure.add_s3_storage"),
     ("add_health_deep",      "adapt.extend.infrastructure.add_health_deep"),
-    ("add_stripe_subscription","adapt.extend.infrastructure.add_stripe_subscription","add_stripe_subscription"),
-    ("add_stripe_refund_flow","adapt.extend.infrastructure.add_stripe_refund_flow","add_stripe_refund_flow"),
-    ("add_temporal_workflow","adapt.extend.infrastructure.add_temporal_workflow","add_temporal_workflow"),
-    ("add_ml_model_server","adapt.extend.infrastructure.add_ml_model_server","add_ml_model_server"),
-    ("add_ml_gpu_inference","adapt.extend.infrastructure.add_ml_gpu_inference","add_ml_gpu_inference"),
-    ("add_ml_model_registry","adapt.extend.infrastructure.add_ml_model_registry","add_ml_model_registry"),
+    ("add_stripe_subscription","adapt.extend.infrastructure.add_stripe_subscription"),
+    ("add_stripe_refund_flow","adapt.extend.infrastructure.add_stripe_refund_flow"),
+    ("add_temporal_workflow","adapt.extend.infrastructure.add_temporal_workflow"),
+    ("add_ml_model_server","adapt.extend.infrastructure.add_ml_model_server"),
+    ("add_ml_gpu_inference","adapt.extend.infrastructure.add_ml_gpu_inference"),
+    ("add_ml_model_registry","adapt.extend.infrastructure.add_ml_model_registry"),
     ("add_notifications",    "adapt.extend.infrastructure.add_notifications"),
     # realtime (5)
     ("add_sse",              "adapt.extend.realtime.add_sse"),
