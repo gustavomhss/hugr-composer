@@ -5,12 +5,15 @@ surface as test failures instead of silent slowdowns. Numbers are
 generous (≥ 2x observed median) to avoid flakiness while still catching
 order-of-magnitude regressions.
 
-Measured paths:
-    1. Catalog load + parse         → upper bound 500ms.
-    2. Classifier run over pool     → upper bound 15s (was ~3s observed).
-    3. Ledger Markdown render       → upper bound 2s.
-    4. Contract check full run      → upper bound 10s (was ~2s observed).
-    5. Catalog manifest verify idempotent → upper bound 20s (two full builds).
+Measured paths (bounds are the `BOUND_*` constants below —
+mirror with the constants, not the docstring; constants win on
+drift):
+
+    1. Catalog load + parse                → BOUND_CATALOG_LOAD      (1.0s)
+    2. Classifier run over pool            → BOUND_CLASSIFIER_RUN    (60.0s)
+    3. Ledger Markdown render              → BOUND_LEDGER_RENDER     (5.0s)
+    4. Contract check full run             → BOUND_CONTRACT_CHECK    (90.0s)
+    5. Catalog manifest verify idempotent  → BOUND_MANIFEST_VERIFY   (30.0s)
 
 If a real regression surfaces, the remedy is to either
     (a) find the slow path and fix it, OR
@@ -117,7 +120,7 @@ def test_ledger_render_under_bound():
 
 
 def test_contract_check_under_bound():
-    """Full 34-rule contract check."""
+    """Full contract-check harness run (all rules in RULES tuple)."""
     elapsed = _time_subprocess(
         [_python_bin(), "-m", "engine.audit.contract_check"]
     )
