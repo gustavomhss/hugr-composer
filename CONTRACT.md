@@ -121,8 +121,14 @@ for the next 50 violations.
   - Every number has a `$(command)` comment showing how to verify
   - Cites PRODUCT.md + ROADMAP.md + CONTRACT.md; does NOT re-state
     architectural claims inline.
-- **Invariants:** Numbers in SKILL.md MUST regenerate via a script
-  `engine/audit/skillmd_counts.py` that diff's against disk. Drift = CI fail.
+- **Invariants:** Numbers in SKILL.md MUST reconcile against
+  `engine/index/catalog.json` + the machine-generated
+  `INVENTORY.md`. Today the reconciliation is reviewer-enforced;
+  §B4.7 (`_r_counts_sync` in `engine/audit/contract_check.py`) covers
+  the narrative-doc set (CLAUDE / STATUS / ROADMAP / CHANGELOG) and
+  will be extended to SKILL.md in the Phase-1 follow-up commit that
+  closes the Codex audit's SKILL-drift finding. Drift = CI fail
+  going forward.
 - **Completeness:** All claimed metrics have a verification command.
   All architectural sections replaced by a link to canonical doc.
 - **Quality (SOTA):** Reads as operational reference, not marketing.
@@ -190,9 +196,13 @@ for the next 50 violations.
 ```
 test -f PRODUCT.md && test -f ROADMAP.md && test -f CONTRACT.md \
   && test -f README.md \
-  && python -m engine.audit.skillmd_counts \
-  && test ! -f engine/extraction/tools_latent_primitives.json  # gitignored
+  && PYTHONPATH=. python -m engine.audit.contract_check \
+  && test ! -f skills/SKILL-001-fastapi-production/engine/extraction/tools_latent_primitives.json  # gitignored
 ```
+(`engine.audit.contract_check` enforces `§B0.1..§B0.8` and every
+later phase's `§B*` items registered in `RULES`. There is no separate
+`engine.audit.skillmd_counts` — §B2.5's `_r_skill_md_contract` +
+§B4.7's `_r_counts_sync` carry that work.)
 
 ---
 
@@ -255,7 +265,9 @@ test -f PRODUCT.md && test -f ROADMAP.md && test -f CONTRACT.md \
   - Each entry keys: `name`, `namespace`, `concern` (from fixed
     taxonomy), `purpose` (max 120 chars), `compose_with` (≥ 2, ≤ 5
     sibling primitive names that all exist in the YAML).
-  - Script `engine/registry_check.py` exits 0 verifying above.
+  - Rule `_r_registry_exists` in `engine/audit/contract_check.py`
+    exits 0 verifying the above (there is no separate
+    `engine/registry_check.py` — the contract-check harness subsumes it).
 - **Invariants:** Every new production primitive merged adds a registry
   entry in the same PR. CI check mandatory. Broken `compose_with`
   references fail CI.
@@ -423,14 +435,30 @@ test -f PRODUCT.md && test -f ROADMAP.md && test -f CONTRACT.md \
   until the ratification token `§B1.8 ratified` appears in
   CONTRACT.md §E.
 
-**Phase 1 exit criterion:**
+**Phase 1 exit criterion (every item covered by a single command):**
 ```
-python -m engine.registry_check                                # B1.1
-[ $(grep -L "^## Compose with:" core/venous/*/*/*.md | wc -l) -eq 0 ]  # B1.2
-python -m engine.audit.tool_import_audit --require 15          # B1.3 + B1.6
-python -m engine.audit.tool_payload_schema                     # B1.4
-[ $(grep -c '@mcp_app.tool' mcp_tools/generators.py) -eq 0 ]   # B1.5
-python -m engine.audit.contract_check                          # B1.7 + B1.8
+cd skills/SKILL-001-fastapi-production && PYTHONPATH=. \
+  python -m engine.audit.contract_check
+# ↑ enforces:
+#   • B1.0 / B1.0.1   _r_core_venous_distribution + _r_adapter_layer_invariant
+#   • B1.1            _r_registry_exists (replaces fictional engine.registry_check)
+#   • B1.2            _r_compose_with_coverage
+#   • B1.3            _r_tools_import_primitives (replaces fictional tool_import_audit)
+#   • B1.4            covered by B1.3's AST-import scan; MCP-tool payload
+#                     shape is validated at catalog build time by
+#                     `engine.index.manifest build` (no separate
+#                     `engine.audit.tool_payload_schema` command — that
+#                     label was historical; the check is real and lives
+#                     inside manifest.build).
+#   • B1.5            _r_no_manual_mcp_tool_decorator
+#   • B1.6            _r_no_orphan_generators
+#   • B1.7            _r_adapter_coverage
+#   • B1.8            _r_tier_lite_eligibility
+```
+Catalog determinism (part of §B1.4 / §B2.4) is verified with:
+```
+cd skills/SKILL-001-fastapi-production && PYTHONPATH=. \
+  python -m engine.index.manifest verify
 ```
 
 ---

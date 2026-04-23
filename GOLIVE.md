@@ -73,7 +73,7 @@ claim.
 | 5.3 | VERSION bumped to `1.0.0` | `cat VERSION` == `1.0.0` (exact) | Claude |
 | 5.4 | CHANGELOG.md `[1.0.0]` block complete | Cites: plan score, code score, 20/20 coverage, `stable_hash`, 124 primitives, 17 FastAPI + 2 provider adapters, 201 catalog tools, 20 examples, 36/36 contract | Claude |
 | 5.5 | README.md current (score line + phase badge) | Score cited (100 plan / 100 code); phase badge shows `v1.0.0` | Claude |
-| 5.6 | SKILL.md v2 current (no stale counts) | `python -m engine.audit.skillmd_counts` exits 0 | Claude |
+| 5.6 | SKILL.md v2 current (no stale counts) | `PYTHONPATH=. python -m engine.audit.contract_check` reports §B2.5 green AND a manual diff of SKILL.md's overview-paragraph counts against `INVENTORY.md` headline shows no drift. (There is no separate `engine.audit.skillmd_counts` command — §B2.5's `_r_skill_md_contract` covers the shape; the SKILL.md count tokens themselves are being added to §B4.7's `_r_counts_sync` as a pre-freeze follow-up.) | Claude |
 | 5.7 | `docs/decisions/0004-tier-lite.md` status flipped to "Ratified YYYY-MM-DD" | `grep -E "Status: *Ratified 20" docs/decisions/0004-tier-lite.md` matches | Claude |
 | 5.8 | CONTRACT.md §E amendment log updated | Last block in §E cites: v1.0 ratification, §A12 amendment, §B1.8 addition, date | Claude (body) + Gustavo (sign) |
 | 5.9 | HANDOFF.md + session_handoff memory updated | Reflects v1.0 cut + points next session at post-v1.0 work | Claude |
