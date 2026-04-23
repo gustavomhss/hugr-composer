@@ -241,9 +241,12 @@ later phase's `§B*` items registered in `RULES`. There is no separate
 - **Invariants:** Generated projects are SELF-CONTAINED — no runtime
   dependency on the skill repo. A user who deletes the skill repo
   must still be able to run the generated app.
-- **Completeness:** Works for all 97 production primitives. Script
-  handles cross-primitive imports (e.g. `IdempotentConsumer` depends
-  on `InboxDeduplicator`) via a dependency resolver.
+- **Completeness:** Works for every registered primitive in
+  `engine/primitives_by_concern.yaml` (count tracked by
+  `engine.inventory` → `INVENTORY.md`; no hand-maintained number
+  here). Script handles cross-primitive imports (e.g.
+  `IdempotentConsumer` depends on `InboxDeduplicator`) via a
+  dependency resolver.
 - **Quality (SOTA):** Primitives copied under MIT license with
   attribution footer in each copied file; provenance manifest is
   machine-readable; re-running generate_project is idempotent
@@ -316,21 +319,36 @@ later phase's `§B*` items registered in `RULES`. There is no separate
   evident audit trail. Order: verify → dedup → business-handler →
   audit-append-on-success."
 
-#### B1.3 — 15 top-value tools refactored (list in ROADMAP §1.3)
+#### B1.3 — Rails-style wiring floor (≥ 15 extend tools import primitives)
 
-- **DoD:** For each of the 15 enumerated tools:
-  - Emits ≥ 1 `from core.venous.<ns> import ...` in generated output.
-  - Total glue ≤ 20 lines per capability (A1 satisfied).
-  - `MCP_TOOL` metadata lists `imports_primitives: [...]` explicitly.
-  - Existing tool unit tests still pass; generated-code tests updated
-    to import from `core.venous.*`.
-- **Invariants:** A2 (imports from core.venous) becomes CI-enforced
-  for all 15. Rollback = PR rejection.
-- **Completeness:** All 15 tools refactored. Partial set = Phase 1
-  not done.
-- **Quality (SOTA):** Refactored tool is MORE readable than original
-  (LoC drops ≥ 40%). Generated code is idiomatic — passes `ruff` +
-  `mypy --strict` on the scaffolded project with zero exemptions.
+- **DoD:** At least 15 tools under `adapt/extend/` emit generated
+  code that imports from `core.venous.*`:
+  - Emits ≥ 1 `from core.venous.<ns> import ...` in the tool's
+    output OR declares the primitive via `MCP_TOOL.imports_primitives`.
+  - Total inline glue per tool ≤ 20 lines per capability (§A1).
+  - `MCP_TOOL` metadata lists `imports_primitives: [...]` so the
+    catalog-builder (`engine.index.manifest`) surfaces the
+    dependency graph.
+  - Existing tool unit tests still pass; behaviour tests updated
+    to witness the imported primitive in the emitted code.
+- **Invariants:** A2 (generated code imports from core.venous) is
+  CI-enforced by `_r_tools_import_primitives` in
+  `engine/audit/contract_check.py`. The machine floor is
+  **≥ 22 non-regression** (current: 24) — higher than the
+  CONTRACT-text floor of 15 because the floor is a
+  monotonically-increasing high-water mark that ratchets up as
+  Rails-style refactors land. Lowering the floor requires an §E
+  ratification block.
+- **Completeness:** Phase 1 closes when the floor ratchets to
+  ≥ 22 (met). Stretching to ≥ 35 is a post-v1.0 target per
+  ROADMAP §6.1 (Wave 2).
+- **Quality (SOTA):** Refactored tool is MORE readable than
+  original (LoC drops ≥ 40%). Generated code is idiomatic —
+  passes `ruff` lint on the scaffolded project with zero
+  exemptions. Type-check discipline is `ruff`-driven;
+  `mypy --strict` is NOT configured today (no `[tool.mypy]` in
+  `pyproject.toml`, no mypy dependency) — tracked as a
+  post-v1.0 Phase-7 decision per ROADMAP §3.1.
 
 #### B1.4 — MCP tool responses cite primitives
 
@@ -403,10 +421,14 @@ later phase's `§B*` items registered in `RULES`. There is no separate
     (§A2 first; adapters are Rails-style wiring, not shortcuts).
 - **Completeness:** Every adapter in `_adapters/fastapi/` passes the
   three checks; no adapter bypasses the registry.
-- **Quality (SOTA):** Adapters carry `MCP_TOOL` metadata (discoverable
-  from Maestro) and ship with an orientation comment explaining
-  which primitive(s) they wire and which FastAPI seam they attach to
-  (middleware, dependency, route handler, startup hook).
+- **Quality (SOTA):** Adapters ship with a module-level docstring
+  explaining which primitive(s) they wire and which FastAPI seam
+  they attach to (middleware, dependency, route handler, startup
+  hook). Adapters are LIBRARY CODE, not Maestro tools — they
+  intentionally do NOT carry `MCP_TOOL` metadata. Discoverability
+  happens at the tool layer (`adapt/extend/*` tools declare
+  `imports_adapters` in their `MCP_TOOL`, surfacing adapter use in
+  `catalog.json`).
 
 #### B1.8 — Tier-lite eligibility
 

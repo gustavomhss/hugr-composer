@@ -231,7 +231,7 @@ where possible; reviewer-enforced where not).
 
 | ID | What it guards | Machine check? |
 |---|---|---|
-| §B3.1 | 20 benchmark specs (5 baseline / 10 mid / 5 adversarial) with 4 sections each | ✅ |
+| §B3.1 | 20 benchmark specs (5 baseline / 10 mid / 5 adversarial) — `# title` + `## Requirements` + `## Acceptance criteria` + `## Non-requirements` | ✅ |
 | §B3.2 | Scoring rubric implemented + tested | ✅ |
 | §B3.3 | Benchmark runner + stub Maestro + report JSON | ✅ |
 | §B3.4 | Nightly benchmark CI workflow | ✅ |
@@ -932,14 +932,29 @@ Location: `/examples/<NN>-<name>/` (repo-root, NOT skill-internal)
 
 ### §4.9 — Benchmark spec DoD
 
-Location: `benchmarks/specs/SPEC-<NNN>-<slug>.md`
+Location: `benchmarks/specs/<tier>/<NN>_<slug>.md` where `<tier>` ∈
+`{baseline, mid, adversarial}` and `<NN>` is zero-padded (01..20
+across tiers).
 
-- [ ] 4 required sections: Scenario, Requirements, Expected primitives,
-      Expected tools.
-- [ ] Category marker in filename: `baseline` / `mid` / `adversarial`.
-- [ ] Exists in both plan-level and code-level rubrics.
-- [ ] Code-level: has a matching fixture app + pytest suite under
-      `benchmarks/code_level/<NNN>/` that scores the tool-generated output.
+- [ ] `# <title>` top-level heading naming the scenario.
+- [ ] `## Requirements` — bulleted functional requirements the
+      scaffold must satisfy. Plain English, NO primitive / tool
+      name hints (§B3.1 Invariant).
+- [ ] `## Acceptance criteria` — bulleted testable outcomes (status
+      codes, request shapes, concurrency claims, …). Each bullet
+      must be verifiable against a running app.
+- [ ] `## Non-requirements` — explicit scope exclusions so the
+      Maestro doesn't over-build. "Out of scope" > "undefined".
+- [ ] Tier directory matches the `<tier>` filename component
+      (`baseline/`, `mid/`, `adversarial/`).
+- [ ] Spec surfaces in both plan-level and code-level rubrics
+      (referenced in `benchmarks/latest_score.json` +
+      `benchmarks/code_level_score.json`).
+- [ ] Code-level coverage: spec has a matching fixture app +
+      pytest suite under `benchmarks/code_level/<tier>/<NN>_<slug>/`
+      that scores the tool-generated output.
+- [ ] `_r_bench_specs` (§B3.1) validates every bullet above in
+      machine form.
 
 ---
 
