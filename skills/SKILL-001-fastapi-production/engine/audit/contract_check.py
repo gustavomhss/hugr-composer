@@ -153,20 +153,53 @@ def _r_gitignore_artefacts() -> tuple[bool, str]:
 
 
 def _r_benchmark_no_stubs() -> tuple[bool, str]:
+    """B0.7 — zero trivial-stub test functions anywhere in the skill.
+
+    Scans three roots: ``benchmark/``, ``benchmarks/``, and the
+    production primitive tree ``core/venous/`` (excluding
+    ``_extracted/`` because that's the staging pool; stub tests there
+    are by design until a primitive is promoted). A test function is
+    flagged when its body reduces to exactly ``assert True`` — a
+    mechanical no-op that passes without exercising any code path.
+
+    Pre-audit this rule only scanned benchmark/ and flagged WHOLE
+    files where EVERY function was ``assert True``. Mixed files with
+    three stub-functions + one real-test slipped through. Codex
+    2026-04-23 audit (HIGH #8) found 8 registered primitives with
+    pure stub test suites in `core/venous/api/*`. The scan now
+    inspects each function individually and lists each offender.
+    """
     stubs: list[str] = []
-    for name in ("benchmark", "benchmarks"):
-        d = SKILL_ROOT / name
-        if not d.exists():
+    scan_roots = [SKILL_ROOT / "benchmark", SKILL_ROOT / "benchmarks",
+                  SKILL_ROOT / "core" / "venous"]
+    _stub_body_re = re.compile(
+        r"^def (test_\w+)\([^)]*\)(?:\s*->\s*[^:]+)?:\n"
+        r"(?:    \"\"\"(?:[^\"]|\"[^\"])*?\"\"\"\n)?"  # optional docstring
+        r"    assert True\s*(?:\n|$)",
+        re.MULTILINE,
+    )
+    for root in scan_roots:
+        if not root.exists():
             continue
-        for py in d.rglob("test_*.py"):
+        for py in root.rglob("test_*.py"):
+            # Skip the staged/quarantined pool — stub tests there are
+            # by design until a primitive is promoted.
+            if "_extracted" in py.parts:
+                continue
             body = py.read_text()
-            # A test file is a stub if EVERY test function body is `assert True`.
-            funcs = re.findall(r"def (test_\w+)\([^)]*\):\s*(?:\"[^\"]*\"\s*)?([^\n]+)\n", body)
-            if funcs and all(line.strip() == "assert True" for _, line in funcs):
-                stubs.append(str(py.relative_to(REPO_ROOT)))
+            for m in _stub_body_re.finditer(body):
+                fn_name = m.group(1)
+                stubs.append(
+                    f"{py.relative_to(REPO_ROOT)}::{fn_name}"
+                )
     if stubs:
-        return False, f"{len(stubs)} stub test files (every test is `assert True`): {stubs[:3]}..."
-    return True, "no trivial-stub test files under benchmark/"
+        sample = "\n    - ".join(stubs[:5])
+        return False, (
+            f"{len(stubs)} stub test function(s) with pure `assert True` body:\n"
+            f"    - {sample}"
+            + ("\n    …" if len(stubs) > 5 else "")
+        )
+    return True, "no trivial-stub test functions under benchmark/ or core/venous/"
 
 
 def _r_registry_exists() -> tuple[bool, str]:

@@ -160,22 +160,40 @@ for the next 50 violations.
 - **Quality (SOTA):** Reader-of-the-memory-alone would know where to go
   in one click.
 
-#### B0.7 — `/benchmark/` audited + stubs deleted
+#### B0.7 — Zero trivial-stub test functions
 
 - **DoD:**
-  - Every test file under `/benchmark/` and `/benchmarks/` either
-    passes `pytest` or is deleted
-  - A file `benchmark/STATUS.md` enumerates real test count +
-    pass/fail breakdown + last-run timestamp
-  - Stub files identified by `grep -l 'assert True' | grep -v REPLACE_ME`
-    removed
-  - SKILL.md references updated to match real count (drives B0.4).
-- **Invariants:** From this point, no stub tests merged. Every test
-  has ≥ 1 real assertion on ≥ 1 real code path.
-- **Completeness:** 100% of benchmark directory reviewed. No "maybe
-  flaky, skip for now".
-- **Quality (SOTA):** Each surviving test has a one-line docstring
-  explaining what it proves. Zero dead tests.
+  - Every `test_*.py` under `/benchmark/`, `/benchmarks/`, and
+    `core/venous/` (excluding `_extracted/`) has every test
+    function execute a real code path. A test whose body reduces
+    to exactly ``assert True`` is a stub.
+  - Rule `_r_benchmark_no_stubs` in
+    `engine/audit/contract_check.py` scans the three roots above,
+    flags each stub function by ``<file>::<function>`` identifier,
+    and fails CI with a per-function list. The rule inspects each
+    function independently; mixed files with three stubs + one
+    real test are rejected (pre-audit it only caught fully-stub
+    files — that gap is closed).
+  - Tests in `core/venous/_extracted/` are exempt; that tree is
+    the staging pool by design. Promotion via §A12 requires
+    replacing the stubs with real tests before the primitive
+    lands in `primitives_by_concern.yaml`.
+  - Gaps identified by `grep -l 'assert True' | grep -v REPLACE_ME`
+    removed (historical wording preserved for reference).
+- **Invariants:** From this point, no stub tests merged. Every
+  shipped test function has ≥ 1 real assertion on ≥ 1 real code
+  path. SKILL.md / INVENTORY counts that drive §B0.4 are
+  machine-checked independently by §B4.7 `_r_counts_sync`; no
+  separate STATUS.md is maintained.
+- **Completeness:** 100% of benchmark directory AND
+  `core/venous/` reviewed (modulo `_extracted/`). No "maybe flaky,
+  skip for now".
+- **Quality (SOTA):** Each surviving test has a one-line
+  docstring explaining what it proves; per-function invariant
+  IDs (e.g. ``CB_INV_01``, ``IS_INV_03``) are cited in the test's
+  docstring or file-level module docstring so a reader tracing a
+  failing witness to the named invariant finds the hit in one
+  jump. Zero dead tests.
 
 #### B0.8 — Machine-generated artefacts `.gitignore`d
 
