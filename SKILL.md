@@ -8,7 +8,7 @@ license: Apache-2.0
 
 ## Overview
 
-Turns a plain-English backend spec into a running, tested, production-grade FastAPI service. Emits idiomatic code that imports from a curated library of 122 registered + 180 staged framework-free primitives (the "venous system"), so generated output survives hand-editing. Ships 201 MCP tools behind 7 tier-1 meta tools + 9 domain-tree dispatchers — drive the skill exclusively through those, never by listing the full catalog.
+Turns a plain-English backend spec into a running, tested, production-grade FastAPI service. Emits idiomatic code that imports from a curated library of 124 registered + 176 staged framework-free primitives (the "venous system"), so generated output survives hand-editing. Ships 201 MCP tools behind 7 tier-1 meta tools + 9 domain-tree dispatchers — drive the skill exclusively through those, never by listing the full catalog.
 
 ## When to use
 

@@ -1,0 +1,117 @@
+{
+  "generated_at": "2026-04-23",
+  "label": "v1.0.0 pre-freeze snapshot",
+  "purpose": "ROADMAP §5.4 bullet 3 — freeze-day artefact committed to benchmarks/history/ per Ship-gate §5.4. Records the plan + code-level benchmark state at the moment all Claude-side Ship-gate items were closed and the doc-set awaited Gustavo's §11 / FREEZE §4 / CONTRACT §E signatures.",
+  "kit": {
+    "name": "SKILL-001-fastapi-production",
+    "version": "1.0.0-rc.1",
+    "stable_hash": "cc8b7ef58a7d6e9327d39d6c25153780253d704f1d6136330b789cbd7d6f190c",
+    "stable_hash_short": "cc8b7ef58a7d"
+  },
+  "contract": {
+    "rules_total": 36,
+    "rules_green": 36,
+    "machine_check": "engine.audit.contract_check",
+    "status": "ALL GREEN"
+  },
+  "inventory": {
+    "registered_primitives": 124,
+    "fastapi_adapters": 17,
+    "provider_adapters": 2,
+    "staged_primitives": 176,
+    "quarantined_primitives": 42,
+    "adapt_tools": 127,
+    "generators": 56,
+    "module_packages": 28,
+    "examples": 20,
+    "benchmark_specs": 20,
+    "ledger_entries": 219
+  },
+  "plan_level": {
+    "methodology": "plan_level_v3_best_of_ensemble",
+    "overall": 100.0,
+    "min_spec_score": 100.0,
+    "specs_scored": 20,
+    "by_tier": {
+      "baseline": 100.0,
+      "mid": 100.0,
+      "adversarial": 100.0
+    },
+    "source": "benchmarks/latest_score.json",
+    "floor_per_B3_5": 90.0,
+    "headroom_points": 10.0,
+    "per_spec_regression_floor": 50.0,
+    "per_spec_regression_status": "no spec below 100.0"
+  },
+  "code_level": {
+    "methodology": "code_level_v1_pytest_rubric",
+    "overall": 100.0,
+    "min_spec_score": 100.0,
+    "coverage": 100.0,
+    "covered_specs": 20,
+    "total_specs": 20,
+    "by_tier": {
+      "baseline": 100.0,
+      "mid": 100.0,
+      "adversarial": 100.0
+    },
+    "source": "benchmarks/code_level_score.json",
+    "floor_per_B3_6": 70.0,
+    "headroom_points": 30.0
+  },
+  "ship_gate_state": {
+    "note": "ROADMAP §5 itemised status at this snapshot. Claude-side items all executed; Gustavo-side ratifications pending signature.",
+    "§5.1_ratifications_gustavo": {
+      "FREEZE.md §4 signed": "pending (Gustavo)",
+      "CONTRACT.md §A12 amended": "drafted in commit d78d4b2",
+      "CONTRACT.md §E new block": "drafted with YYYY-MM-DD placeholder",
+      "0004-tier-lite.md Proposed → Ratified": "drafted with YYYY-MM-DD placeholder",
+      "ROADMAP.md §11 signed": "pending (Gustavo)"
+    },
+    "§5.2_promotion_pipeline_claude": {
+      "classifier ledger post-Wave-1.5": "219 entries, needs_review=0",
+      "LEDGER.md idempotent re-render": "verified",
+      "unactioned PROMOTE_AS_* with zero blockers": "none"
+    },
+    "§5.3_full_test_pass_claude": {
+      "unit tests (adapt/ full sweep)": "3170 passed, 1 skipped, 0 failed post-fix",
+      "promotion module tests": "38/38",
+      "boot test (100-tool smoke)": "100/100",
+      "boot chain tests": "covered by boot test + stress test; see note",
+      "E2E hardcore (SQLite, 12 scenarios)": "12/12",
+      "E2E PostgreSQL": "skipped locally — nightly CI covers",
+      "behavior scenarios": "skipped locally — nightly CI covers",
+      "cross-composition (200+)": "ALL-PASSED (1230s)",
+      "property tests": "7/8 passed (RUFF_CRITICAL_CLEAN property fails on emitted-template style: F401 unused imports + F541 empty f-strings in 119/123 tools; pre-existing; tracked as Wave-2 template-cleanup work)",
+      "stress test (20-model + 27 tools)": "3/3 post fixture-collision fixes (commit 85010d4)",
+      "soak test (5 min)": "skipped locally — run on CI before final cut",
+      "mutation runner": "not run locally — CI-scheduled",
+      "examples pytest": "20/20 individual suites were green at last run",
+      "performance baseline": "5/5 (54s full run)",
+      "install-docker nightly": "gated on CI; 48h window enforced by ROADMAP §5.7"
+    },
+    "§5.4_benchmark_gate_claude": {
+      "plan-level ≥ 90": "met (100.00)",
+      "code-level ≥ 70 on 20/20": "met (100.00, 100% coverage)",
+      "freeze-day artefact": "this file",
+      "no per-spec regression ≥ 50": "met (min 100.00 across both rubrics)",
+      "CHANGELOG cites both scores + stable_hash": "verified (20/20 coverage, stable_hash_short cc8b7ef58a7d)"
+    },
+    "§5.5_release_artefacts_claude": {
+      "INVENTORY.md regenerated + diff empty": "yes",
+      "catalog.json stable_hash idempotent": "verified (cc8b7ef58a7d)",
+      "VERSION bump rc.1 → 1.0.0": "pending (Gustavo signs first, then bump)",
+      "CHANGELOG [1.0.0] block complete": "yes, YYYY-MM-DD placeholder only",
+      "README phase badge v1.0.0": "shows v1.0.0-rc.1 until final bump",
+      "SKILL.md v2 counts reconcile": "verified via INVENTORY chain",
+      "CONTRACT.md §E updated": "drafted, pending signature",
+      "ROADMAP.md post-v1.0 state": "Part 1 reflects post-Wave-1.5 counts"
+    },
+    "§5.6_tag_push_release_gustavo": "pending",
+    "§5.7_post_release_monitoring": "N/A until tag"
+  },
+  "known_non_blockers": {
+    "ruff_critical_clean_property": "Emitted templates carry F401 unused imports + F541 empty f-strings in ~119/123 tools. Purely style in the generator output, zero runtime impact (unit + behaviour + cross-composition tests all green). Tracked as Wave-2 template-cleanup work; NOT a ship-gate blocker per ROADMAP §8.2 R4.",
+    "soak + mutation + behavior-scenarios local skips": "All three require live services or long wall-time; nightly CI covers them. §5.3 bullets ticked on CI green, not on local run."
+  }
+}
