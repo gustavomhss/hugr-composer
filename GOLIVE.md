@@ -7,8 +7,9 @@
 > **Cut line:** when all §1-§5 items are ✅, we tag `v1.0.0`, push,
 > release. §6 is post-freeze.
 >
-> **Current HEAD:** `c853a22` (2026-04-22, promotion pipeline
-> action-focused verdicts).
+> **HEAD:** check `git log --oneline -1` before acting on this
+> document. Hard-coded HEAD pins drift the instant a new commit
+> lands; they belong in release-tag messages, not living checklists.
 
 ---
 

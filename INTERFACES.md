@@ -20,8 +20,14 @@ consume it, neither owns it.
 
 Installation surface:
 - **Path install** (copy directory) — `install.sh` at repo root.
-- **Docker** — `Dockerfile` lives next to `install.sh`; validated
-  nightly by `.github/workflows/install-docker.yml`.
+- **Docker smoke** — `.github/workflows/install-docker.yml` runs
+  `install.sh` inside the stock `python:3.12-slim` container image
+  (declared via `container: image: python:3.12-slim` in the
+  workflow). There is NO repo-level `Dockerfile`; the workflow is
+  the only gate, which keeps the install flow single-sourced and
+  removes a Dockerfile-vs-install.sh drift risk. Validated nightly
+  + on any change to `install.sh`, `pyproject.toml`, `VERSION`, or
+  `requirements-mcp.txt`.
 - **PyPI** — *not* shipped in v1.0. Install from git ref for now.
 
 File that identifies the skill to a host:
