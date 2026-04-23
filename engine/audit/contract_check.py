@@ -947,10 +947,18 @@ def _r_bench_specs() -> tuple[bool, str]:
         if spec_file.name == "README.md":
             continue
         txt = spec_file.read_text()
+        # Title — `# <h1>` at top — is required per the B3.1 Completeness
+        # bullet in CONTRACT.md. Each spec should open with a single
+        # `# ` line naming the scenario.
+        if not re.search(r"^#\s+\S", txt, re.MULTILINE):
+            return False, f"{spec_file.name} missing top-level `# <title>` heading"
         for section in required:
             if section not in txt:
                 return False, f"{spec_file.name} missing {section}"
-    return True, f"20 specs present (5/10/5) with all 4 required sections"
+    return True, (
+        "20 specs present (5/10/5) with `# title` + 3 required sections "
+        "(Requirements / Acceptance criteria / Non-requirements)"
+    )
 
 
 def _r_skill_md_contract() -> tuple[bool, str]:
