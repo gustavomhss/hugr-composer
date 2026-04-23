@@ -54,7 +54,19 @@ for the next 50 violations.
       Sonnet hallucinated a race condition this session; Opus caught
       30 real bugs Sonnet missed.
 - [ ] **A12 — `_extracted/` is a pool, not a backlog.** Promote only
-      when benchmark gap demands. No preemptive triage.
+      when ONE of:
+      (a) a benchmark gap demands it;
+      (b) the primitive is imported by a registered tool or module
+          (i.e. a caller already exists in the skill surface);
+      (c) the primitive is in-scope for a **triage pass** explicitly
+          ratified in §E, where the pass classifies every item under
+          review into promote / keep-staged-with-reason / delete.
+          Triage passes are one-shot (start and end commit named in
+          §E); they are NOT a recurring license for speculative
+          promotion.
+      "No preemptive triage" still forbids speculative promotion of
+      individual primitives without one of (a), (b), (c). See
+      `docs/decisions/0004-tier-lite.md §3` for rationale.
 
 ---
 
@@ -476,6 +488,70 @@ python -m engine.audit.contract_check                          # B1.7 + B1.8
   every primitive reachable in ≤ 2 clicks from landing page. Search
   functional. Mobile-readable. Load time < 1 s.
 
+#### B2.4 — Index catalog manifest: synced + deterministic
+
+> The catalog (`engine/index/catalog.json`) is the single machine-
+> readable view of every Maestro-visible surface. It MUST reflect
+> on-disk reality AND MUST produce the same bytes (and therefore the
+> same `stable_hash`) for the same disk state — otherwise consumers
+> that pin to `stable_hash` see phantom drift.
+
+- **DoD:**
+  - `engine/index/catalog.json` exists with: tools[], primitives[],
+    recipes[], and top-level `stable_hash` (SHA-256 over canonical
+    content — sorted keys, no timestamps).
+  - `engine.audit.contract_check._r_index_manifest` runs
+    `engine.index.manifest build` twice against the same disk and
+    asserts the `stable_hash` is byte-identical between runs.
+  - Build output also satisfies: every MCP_TOOL on disk has a
+    catalog entry, every primitive directory has an entry, every
+    `## Compose with:` bullet is parsed into a recipe.
+- **Invariants:**
+  - Non-deterministic content (file-system iteration order, locale-
+    sensitive sort, timestamps, random ids) is FORBIDDEN in the
+    catalog emitter. Any drift between two builds on the same disk
+    = regression, rejected at CI.
+  - Editing `catalog.json` by hand is forbidden — the next `verify`
+    run will catch the drift and fail.
+- **Completeness:** All `TOOL_SCAN_ROOTS` in `engine/index/manifest.py`
+  are visited; no scan root silently skipped.
+- **Quality (SOTA):** `stable_hash` is cited verbatim (first 12 hex
+  chars) in every `CHANGELOG.md [X.Y.Z]` block at release, so
+  consumers without real-time catalog access can verify the version
+  they serve matches the release notes. The emitter prints the hash
+  on every `build` for ops visibility.
+
+#### B2.5 — `SKILL.md` v2 Anthropic Agent Skills contract
+
+> `SKILL.md` is the Maestro-facing entry document: the skill's
+> "README for LLM consumers". v2 format aligns with Anthropic Agent
+> Skills (YAML frontmatter + ≤500-line body + ≥3 few-shot transcripts).
+
+- **DoD:**
+  - `skills/SKILL-001-fastapi-production/SKILL.md` starts with YAML
+    frontmatter containing: `name`, `description` (800-1200 chars),
+    `version`, `entry_tools` (list of tier-1 tool names).
+  - Body: one purpose section + one architecture pointer + ≥3
+    few-shot transcripts (real prompts + real responses) + tool
+    index that cross-references catalog entries.
+  - Rule `_r_skill_md_contract` in
+    `engine/audit/contract_check.py` parses the frontmatter and
+    validates the above shape; failing any piece = CI fail.
+- **Invariants:**
+  - Frontmatter `version` matches `VERSION` file (§B4.6 triplet
+    sync, machine-checked independently).
+  - Few-shot transcripts reference only registered primitives and
+    catalog tools — no aspirational surface.
+  - No stale counts in body; any claimed number has a command
+    comment showing how to verify.
+- **Completeness:** Every `entry_tool` in frontmatter exists in
+  `catalog.json`; every transcript's tool invocations resolve.
+- **Quality (SOTA):** The doc reads as operational reference for an
+  LLM that has never seen this codebase. Every architectural claim
+  links to its canonical source (PRODUCT.md / this CONTRACT / the
+  code) rather than restating. A first-time reader can produce a
+  valid tool invocation without leaving SKILL.md.
+
 **Phase 2 exit criterion:**
 ```
 curl -s $DOCS_URL/primitives | grep -q "<primitive-count>"
@@ -557,10 +633,60 @@ python -m engine.discovery.quality_bench --min-precision-3 0.9
 - **Quality (SOTA):** Score publicly reproducible — external reviewer
   can re-run with the same seed and get within ± 5 points.
 
+#### B3.6 — Code-level benchmark harness
+
+> Plan-level benchmark (B3.5) scores the mapping from requirement →
+> primitive/tool. Code-level goes further: it runs the tool, generates
+> the project, then scores an executable pytest suite over the output.
+> This is the gate that catches "the plan was right but the emitted
+> code is broken".
+
+- **DoD:**
+  - `benchmarks/code_level_latest.json` exists; schema covers per-
+    spec `score`, aggregate `overall`, `coverage` (fraction of the
+    20 specs with a runnable code-level fixture).
+  - Coverage ≥ 25% at v1.0; overall ≥ 70 on the covered subset.
+  - `_r_code_level_benchmark` in `engine/audit/contract_check.py`
+    enforces both thresholds.
+- **Invariants:**
+  - A covered spec scoring below 70 at two consecutive releases =
+    treated as regression, investigated before the next cut.
+  - Coverage monotonically non-decreasing across releases (you can
+    add covered specs, you can't silently drop them).
+- **Completeness:** Every covered spec has a fixture app under
+  `benchmarks/code_level/<NNN>/` that `pytest -q` can execute
+  without external services (or with gracefully-skipped ones).
+- **Quality (SOTA):** Same run reproducibility bar as B3.5 — same
+  seed, same disk state, same score (± 5 points).
+
+#### B3.7 — Blind benchmark harness
+
+> Blind harness runs pinned stub fixtures without the benchmark
+> spec's `Expected primitives` / `Expected tools` sections visible
+> to the scoring LLM. Measures what Maestro would do "cold", without
+> the spec steering it.
+
+- **DoD:**
+  - `benchmarks/blind/results/` holds ≥ 1 archived run per release.
+  - `_r_blind_benchmark_harness` verifies ≥ 15 blind specs authored
+    with a stub fixture + a `blind_expected.json` oracle.
+  - Nightly dispatch + explicit `workflow_dispatch` supported.
+- **Invariants:**
+  - Blind specs NEVER reveal the oracle to the scoring LLM. Cross-
+    contamination (e.g. grep for `Expected primitives` in the prompt
+    assembly step) = CI fail.
+  - Results are reproducible given the same model + seed.
+- **Completeness:** Every blind spec has both the stub fixture and
+  the `blind_expected.json` oracle committed.
+- **Quality (SOTA):** The blind score is published alongside plan +
+  code scores in each release CHANGELOG entry — a three-number
+  vector so consumers see honest capability across surfaces.
+
 **Phase 3 exit criterion:**
 ```
 test -f benchmarks/latest_score.json
 [ $(jq '.overall_average' benchmarks/latest_score.json) -ge 30 ]
+test -f benchmarks/code_level_latest.json
 ```
 
 ---
@@ -630,6 +756,67 @@ test -f benchmarks/latest_score.json
 - **Quality (SOTA):** Time-to-first-PR < 1 hour for someone who has
   never seen the repo.
 
+#### B4.6 — VERSION triplet sync
+
+> The repo ships THREE authoritative version files: repo-root
+> `VERSION`, skill-dir `VERSION`, and `STATUS.md` frontmatter
+> `version:` field. If they diverge, tooling picks up different
+> numbers depending on where it starts reading — a real drift bug
+> we've already hit. §B4.6 catches it at CI.
+
+- **DoD:**
+  - `/VERSION` exists (repo root).
+  - `skills/SKILL-001-fastapi-production/VERSION` exists.
+  - `skills/SKILL-001-fastapi-production/STATUS.md` YAML frontmatter
+    carries a `version: "X.Y.Z"` field.
+  - Rule `_r_version_sync` in `engine/audit/contract_check.py` reads
+    all three and asserts string equality (post-normalisation —
+    trimmed whitespace; no semver-parse, just equality).
+- **Invariants:**
+  - Bumping VERSION MUST touch all three files in the same commit.
+  - Pre-release suffixes (`-rc.N`, `-beta.N`, `-alpha.N`) allowed
+    and MUST be identical across the triplet.
+- **Completeness:** No fourth VERSION-like file is allowed — if a
+  new location is introduced, it joins the triplet check OR the PR
+  is rejected.
+- **Quality (SOTA):** The rule's error message names all three
+  paths + their current values on failure so the fix is copy-
+  pasteable.
+
+#### B4.7 — Canonical counts sync
+
+> Narrative docs (CLAUDE / STATUS / ROADMAP / CHANGELOG) carry
+> counts that MUST reconcile against the machine-generated
+> `INVENTORY.md`. Pre-freeze we had CLAUDE.md saying "194 staged",
+> INVENTORY saying "181 staged" — the kind of drift that destroys
+> trust in every other number in the doc. §B4.7 makes hand-
+> maintained counts CI-rejected.
+
+- **DoD:**
+  - `skills/SKILL-001-fastapi-production/INVENTORY.md` is machine-
+    generated; headline cites four canonical counts:
+    `N registered primitives`, `N staged primitives`,
+    `plus N quarantined`, `N FastAPI adapters`.
+  - Rule `_r_counts_sync` parses those four numbers from INVENTORY
+    AND searches for four specific token patterns in each of
+    `CLAUDE.md`, `STATUS.md`, `ROADMAP.md`,
+    `CHANGELOG.md [1.0.0]`.
+  - Any mismatch = CI fail with a precise list of `expected {tok}`
+    lines per missing doc.
+- **Invariants:**
+  - Counts are NEVER hand-edited in the four narrative docs;
+    regenerate INVENTORY via `python -m engine.inventory` and
+    update the narrative docs via the token-replacement patterns
+    §4.7 enforces.
+  - Adding a new canonical count (e.g. "provider adapters") =
+    schema change: must be added to INVENTORY emitter AND to
+    `_r_counts_sync` AND to every narrative doc, all in one commit.
+- **Completeness:** Four canonical counts covered at v1.0; the rule
+  is extensible (token list driven by `canonical_tokens` dict).
+- **Quality (SOTA):** The rule's error message shows the exact
+  expected token verbatim, including whitespace — so doc authors
+  can find-and-replace without guessing syntax.
+
 **Phase 4 exit criterion:**
 ```
 curl -sL $INSTALL_URL | bash                      # B4.1
@@ -637,6 +824,8 @@ test -d examples && [ $(ls examples | wc -l) -ge 5 ]  # B4.2
 curl -sf $DOCS_URL                                # B4.3
 test -f CHANGELOG.md && git tag --list | grep -q v0.1 # B4.4
 test -f CONTRIBUTING.md                           # B4.5
+diff <(cat VERSION) <(cat skills/SKILL-001-fastapi-production/VERSION) # B4.6
+python -m engine.audit.contract_check             # all 36 green — B4.7 included
 ```
 
 ---
@@ -804,6 +993,76 @@ example green.
 - Initial contract issued. 12 inviolable rules. 40+ micro-step checklist.
 - DoD / Invariants / Completeness / Quality blocks mandatory per §B item.
 - PR discipline §C2 enforced.
+
+### Ratified YYYY-MM-DD by Gustavo (v1.0.0 pre-freeze)
+
+Proposed + drafted by Claude; awaiting Gustavo's date + signature
+alongside `FREEZE.md §4` and `ROADMAP.md §11`.
+
+**§A amendments:**
+
+- **§A12 amended.** The "pool, not backlog" discipline now admits
+  three ratified promotion triggers:
+  (a) benchmark gap demands it;
+  (b) the primitive is imported by a registered tool or module;
+  (c) the primitive is in-scope for a one-shot ratified triage pass
+      (start and end commits cited in this §E block).
+  Rationale: operational cleanup passes like Wave 1.5 (PubSub +
+  Billing extraction; 3 staged + 3 quarantined items cleared)
+  required a controlled escape hatch without weakening the rule
+  against speculative promotion. See `docs/decisions/0004-tier-lite.md §3`.
+- **§A12 token appears here** so the promotion executor
+  (`engine/promotion/promote.py`) accepts `tier="lite"` work.
+
+**§B additions** (all already landed + machine-checked via
+`engine/audit/contract_check.py` pre-freeze; this block records
+formal ratification):
+
+- **§B1.7 — FastAPI adapter coverage** (ratified). Every
+  `_adapters/fastapi/<Name>Adapter.py` has `test_<Name>Adapter.py`
+  AND resolves to a registered primitive by the three-rule
+  resolution scheme (literal strip, family map, substring match).
+  Floor ≥ 15; currently 17 adapters, 100% covered.
+- **§B1.8 — Tier-lite eligibility** (ratified). Registered-lite
+  tier unlocked per ADR 0004. Machine check validates zero
+  REPLACE_ME, no framework imports, no concurrency imports for
+  every `tier: "lite"` entry. Vacuously green at 0 lite registered.
+  `§B1.8 ratified` token appears here — `engine/promotion/promote.py`
+  now accepts lite promotions.
+- **§B2.4 — Index catalog manifest: synced + deterministic**
+  (ratified). `stable_hash` idempotent across two consecutive
+  builds; catalog reflects on-disk reality. Consumer pinning
+  protocol documented in ROADMAP.md §2.12.
+- **§B2.5 — SKILL.md v2 Anthropic Agent Skills contract**
+  (ratified). `_r_skill_md_contract` parses frontmatter +
+  validates ≥3 few-shot transcripts + ≥1 entry_tools list + body
+  ≤ 500 lines (with Maestro-facing exceptions documented).
+- **§B3.6 — Code-level benchmark harness** (ratified). Covers
+  ≥ 25% of the 20-spec corpus with ≥ 70 average on covered.
+  Currently 100.00 across 20/20 (100% coverage, 30-point
+  headroom).
+- **§B3.7 — Blind benchmark harness** (ratified). ≥ 15 blind
+  specs authored with stub fixtures + `blind_expected.json`
+  oracles. Nightly + workflow_dispatch.
+- **§B4.6 — VERSION triplet sync** (ratified). Repo-root VERSION,
+  skill-dir VERSION, STATUS.md frontmatter `version:` MUST agree
+  string-equality. Machine-checked on every commit.
+- **§B4.7 — Canonical counts sync** (ratified). INVENTORY.md is
+  the source; CLAUDE / STATUS / ROADMAP / CHANGELOG reconcile via
+  token-match. Hand-edited counts rejected at CI.
+
+**Other:**
+
+- **ADR 0004 (tier-lite) moves Proposed → Ratified.** Status
+  flipped in `docs/decisions/0004-tier-lite.md` in the same
+  commit as this block.
+- **Wave 1.5 triage pass** recorded as the first §A12(c) triage
+  under the new clause. Start commit: `f6bbf79`
+  (`feat(SKILL-001/resiliency): add async acquire() …`). End
+  commit: `d4cc4a9` (`chore(SKILL-001): delete 3 staged+quarantined …`).
+  Scope: PubSub + Billing motor/adapter extraction; 3
+  NEEDS_REVIEW ledger entries cleared. Ratified in retrospect
+  alongside this block.
 
 ---
 

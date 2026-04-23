@@ -1,10 +1,15 @@
 # 0004 — Tier-lite for stateless primitives
 
-> **Status:** Approved pre-ratification — machine check (§B1.8) already
-> landed and green; awaits Gustavo's formal signature in CONTRACT.md §E
-> on freeze day (see GOLIVE.md §1.2 / §1.4).
+> **Status:** Ratified YYYY-MM-DD by Gustavo (v1.0.0 pre-freeze block
+> in `/CONTRACT.md §E`). Until Gustavo fills the date + signs §E, this
+> ADR remains in "Proposed" state for binding purposes. Machine check
+> (`_r_tier_lite_eligibility`) has been in place + vacuously green
+> since Wave-1 pre-freeze.
+>
 > **Author:** Claude (overnight 2026-04-21 / 2026-04-22).
-> **Depends on:** Amendment to CONTRACT §A12 and addition of §B1.8.
+> **Amendments depended-on:** CONTRACT §A12 amended per §3 below;
+> CONTRACT §B1.8 added per §4 below. Both land in the same commit as
+> this status flip.
 > **Scope:** Defines a second valid promotion target ("registered-lite")
 > so the staged pool can drain without forcing TLA+ on primitives where
 > it adds zero value.
@@ -126,28 +131,54 @@ with a clear decision per item. The original discipline is preserved
 — the amendment only adds a controlled escape hatch for operational
 cleanup.
 
-## 4. §B1.8 proposal (new contract item)
+## 4. §B1.8 addition (as landed in CONTRACT.md)
+
+> Earlier drafts of this ADR numbered the new rule §B1.7; in the
+> actual landing, §B1.7 was taken by the FastAPI adapter coverage
+> check, so tier-lite eligibility shipped as §B1.8. The text below
+> mirrors what's in CONTRACT.md §B1.8 today (authoritative copy).
 
 ```
-#### B1.7 — Registered-lite tier
+#### B1.8 — Tier-lite eligibility
 
 - **DoD:**
   - `engine/primitives_by_concern.yaml` schema accepts
-    `tier: "lite" | "full"`; default "full".
-  - `engine/audit/contract_check.py` rule `_r_lite_eligibility`:
-    for every `tier: "lite"` entry, verify: zero REPLACE_ME in
-    `core/venous/<ns>/<Name>/`, no concurrency imports, test
-    coverage ≥ 90%, no unregistered primitive imports.
-  - Lite primitives indexed in catalog.json with `tier="lite"`.
-- **Invariants:** A lite primitive found to violate any eligibility
-  rule at audit time is demoted back to staged (tooling:
-  `engine/promotion/demote.py`). Silent drift rejected at CI.
+    `tier: "lite" | "full"`; default is "full"
+    (backwards-compatible — all v0.x primitives retain `full`
+    semantics).
+  - For every registry entry with `tier == "lite"`,
+    `_r_tier_lite_eligibility` in
+    `engine/audit/contract_check.py` verifies ALL of:
+    1. `core/venous/<ns>/<Name>/<Name>.py` exists and is readable.
+    2. Zero `REPLACE_ME` markers in that file.
+    3. No framework imports (`fastapi`, `starlette`, `sqlalchemy`,
+       `sqlmodel`, `pydantic`, `django`, `flask`, `tornado`,
+       `aiohttp`) AND no implicit framework tokens (`Mapped[`,
+       `APIRouter(`, `Depends(`, `class Base(`) detected by the
+       AST helpers in `engine/promotion/state.py`.
+    4. No concurrency imports or primitives (`threading`,
+       `asyncio`, `multiprocessing`, `Lock`, `Semaphore`,
+       `Queue`, …).
+  - Lite primitives indexed in `engine/index/catalog.json` with
+    `tier="lite"`; consumers can filter by tier.
+- **Invariants:** A lite primitive found to violate any
+  eligibility check at audit time fails B1.8 — silent drift
+  rejected at CI. Upgrading lite → full requires adding the
+  `.tla` spec and flipping the registry field in a single PR;
+  the primitive's public API MUST NOT change across the upgrade
+  (§A10). Lite primitives cannot depend on unregistered staged
+  primitives (dependency closure must be fully registered).
 - **Completeness:** All existing registered primitives keep
-  `tier: "full"`; any new lite primitive ships with eligibility
-  proof in its PR description.
-- **Quality (SOTA):** A lite primitive's `.md` MUST document why it
-  qualifies for lite — one-paragraph justification naming which of
-  the seven eligibility bullets apply.
+  `tier: "full"` at the v1.0 cut; any new lite primitive ships
+  with an eligibility proof in its PR description (maps each of
+  the four machine checks + three human-review bullets from §2.1
+  above).
+- **Quality (SOTA):** A lite primitive's `.md` documents WHY it
+  qualifies for lite in a one-paragraph justification naming
+  which of the seven §2.1 bullets apply. Promotion executor
+  (`engine/promotion/promote.py`) refuses `tier="lite"` until
+  the ratification token `§B1.8 ratified` appears in CONTRACT.md
+  §E.
 ```
 
 ## 5. Risks
@@ -182,3 +213,28 @@ CONTRACT §C4 ratification block. Until ratified, the promotion
 executor (`engine/promotion/promote.py`) refuses to promote with
 `tier="lite"` by default — requires explicit `--unratified-preview`
 flag which writes a dry-run plan only.
+
+## 8. Ratification status (v1.0.0 pre-freeze)
+
+**Drafted + landed:**
+
+- §A12 amended in `/CONTRACT.md` per §3 above (three promotion
+  triggers; triage-pass clause documented).
+- §B1.8 added in `/CONTRACT.md` per §4 above (tier-lite eligibility
+  machine-checked via `_r_tier_lite_eligibility`).
+- New `§E` block drafted in `/CONTRACT.md` citing both amendments.
+- This ADR's status field flipped from "Approved pre-ratification"
+  to "Ratified YYYY-MM-DD" (date placeholder for Gustavo's sitting).
+
+**What's left for Gustavo:**
+
+- Fill the `YYYY-MM-DD` in the `/CONTRACT.md §E` new block with the
+  ratification date.
+- Fill the same date in this ADR's Status line (top of file).
+- Sign-off in `/FREEZE.md §4` + `/ROADMAP.md §11` per the ship-gate
+  ratification items.
+
+After Gustavo's sign-off commit lands, the `§B1.8 ratified` token
+appears in CONTRACT.md §E and `engine/promotion/promote.py` accepts
+`tier="lite"` promotions without the `--unratified-preview` flag.
+Wave 2 (§6.1 of ROADMAP) starts on the next commit.
