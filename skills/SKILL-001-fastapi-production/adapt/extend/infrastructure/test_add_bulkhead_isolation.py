@@ -182,12 +182,23 @@ def test_bulkhead_file_created() -> None:
 # ---------------------------------------------------------------------------
 
 def test_semaphore_based_control() -> None:
-    """CC-10: Bulkhead uses asyncio.Semaphore for concurrency control."""
+    """CC-10: Bulkhead concurrency control uses asyncio.Semaphore.
+
+    Post-Wave-1: the Semaphore lives in the motor
+    (`core/venous/resiliency/Bulkhead/Bulkhead.py` → `InMemoryBulkhead`).
+    The glue file re-exports the adapter's `Bulkhead` facade — the
+    Semaphore is one indirection deeper. Assert it's present in the
+    shipped motor rather than in the glue.
+    """
     project_dir = create_fixture_project(name="bh_t10")
     add_bulkhead_isolation(ToolInput(project_dir=str(project_dir)))
-    bulkhead_file = project_dir / "app" / "resilience" / "bulkhead.py"
-    content = bulkhead_file.read_text()
-    assert "Semaphore" in content, "Bulkhead must use asyncio.Semaphore"
+    motor_file = (
+        project_dir / "core" / "venous" / "resiliency" / "Bulkhead" / "Bulkhead.py"
+    )
+    assert motor_file.exists(), "Bulkhead motor not shipped into project"
+    assert "Semaphore" in motor_file.read_text(), (
+        "Bulkhead motor must use asyncio.Semaphore"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -238,12 +249,24 @@ def test_middleware_file_created() -> None:
 # ---------------------------------------------------------------------------
 
 def test_middleware_returns_503_when_full() -> None:
-    """CC-14: BulkheadMiddleware returns 503 when pool is full."""
+    """CC-14: BulkheadMiddleware returns 503 when pool is full.
+
+    Post-Wave-1: the 503 literal lives in the shipped adapter
+    (`core/venous/_adapters/fastapi/BulkheadAdapter.py`). The glue file
+    only re-exports + installs the middleware behind the
+    `BULKHEAD_ENABLED` env guard. Assert the 503 is in the adapter.
+    """
     project_dir = create_fixture_project(name="bh_t14")
     add_bulkhead_isolation(ToolInput(project_dir=str(project_dir)))
-    mw_file = project_dir / "app" / "middleware" / "bulkhead.py"
-    content = mw_file.read_text()
-    assert "503" in content, "Middleware must return 503 when bulkhead pool is full"
+    adapter_file = (
+        project_dir / "core" / "venous" / "_adapters" / "fastapi"
+        / "BulkheadAdapter.py"
+    )
+    assert adapter_file.exists(), "BulkheadAdapter not shipped into project"
+    content = adapter_file.read_text()
+    assert "503" in content, (
+        "BulkheadAdapter must return 503 when bulkhead pool is full"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -278,12 +301,22 @@ def test_bulkhead_full_error_defined() -> None:
 # ---------------------------------------------------------------------------
 
 def test_x_bulkhead_group_header() -> None:
-    """CC-17: Middleware includes X-Bulkhead-Group header in 503 response."""
+    """CC-17: Middleware includes X-Bulkhead-Group header in 503 response.
+
+    Post-Wave-1: the header lives in the shipped adapter. Assert it's
+    there; the glue file is thin Rails-style wiring.
+    """
     project_dir = create_fixture_project(name="bh_t17")
     add_bulkhead_isolation(ToolInput(project_dir=str(project_dir)))
-    mw_file = project_dir / "app" / "middleware" / "bulkhead.py"
-    content = mw_file.read_text()
-    assert "X-Bulkhead-Group" in content, "Middleware must add X-Bulkhead-Group header"
+    adapter_file = (
+        project_dir / "core" / "venous" / "_adapters" / "fastapi"
+        / "BulkheadAdapter.py"
+    )
+    assert adapter_file.exists(), "BulkheadAdapter not shipped into project"
+    content = adapter_file.read_text()
+    assert "X-Bulkhead-Group" in content, (
+        "BulkheadAdapter must add X-Bulkhead-Group header"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -382,13 +415,36 @@ def test_manifest_records_primitive() -> None:
 
 
 def test_glue_imports_primitive() -> None:
-    """CONTRACT §B1.0.1: glue file imports from core.venous.resiliency.Bulkhead."""
+    """CONTRACT §B1.0.1: glue chain reaches the registered motor.
+
+    Post-Wave-1: the app-side glue imports `Bulkhead` from the FastAPI
+    adapter (thin wiring). The adapter itself imports from
+    `core.venous.resiliency.Bulkhead`. The §B1.0.1 requirement is that
+    the glue chain ultimately terminates at the registered motor — we
+    witness this by inspecting both layers.
+    """
     project_dir = create_fixture_project(name="bh_t25")
     add_bulkhead_isolation(ToolInput(project_dir=str(project_dir)))
     glue = project_dir / "app" / "resilience" / "bulkhead.py"
-    body = glue.read_text()
-    assert "from core.venous.resiliency.Bulkhead import" in body
-    assert "InMemoryBulkhead" in body
+    glue_body = glue.read_text()
+    assert "from core.venous._adapters.fastapi.BulkheadAdapter import" in glue_body, (
+        "Glue must import the Bulkhead adapter (Rails-style wiring)."
+    )
+    adapter = (
+        project_dir / "core" / "venous" / "_adapters" / "fastapi"
+        / "BulkheadAdapter.py"
+    )
+    assert adapter.exists(), "BulkheadAdapter not shipped into project"
+    adapter_body = adapter.read_text()
+    assert "from core.venous.resiliency.Bulkhead" in adapter_body, (
+        "Adapter must import from the registered motor primitive."
+    )
+    motor = (
+        project_dir / "core" / "venous" / "resiliency" / "Bulkhead" / "Bulkhead.py"
+    )
+    assert motor.exists() and "InMemoryBulkhead" in motor.read_text(), (
+        "Bulkhead motor must ship with InMemoryBulkhead reference backend."
+    )
 
 
 def test_glue_body_under_20_loc() -> None:
@@ -406,10 +462,16 @@ def test_glue_body_under_20_loc() -> None:
 
 
 def test_mcp_tool_metadata() -> None:
-    """MCP_TOOL declares imports_primitives per CONTRACT §B1.0."""
+    """MCP_TOOL declares imports_primitives + imports_adapters per
+    CONTRACT §B1.0 and §B1.0.1 (ADR 0003 adapter layer).
+
+    Post-Wave-1 promotion: the tool ships both the resiliency.Bulkhead
+    motor AND its FastAPI adapter into the generated project tree via
+    `ensure_primitives`. Rails wiring from day one.
+    """
     assert MCP_TOOL["entry"] == "add_bulkhead_isolation"
     assert "core.venous.resiliency.Bulkhead" in MCP_TOOL["imports_primitives"]
-    assert tuple(MCP_TOOL["imports_adapters"]) == ()
+    assert "core.venous._adapters.fastapi.BulkheadAdapter" in MCP_TOOL["imports_adapters"]
 
 
 # ---------------------------------------------------------------------------
