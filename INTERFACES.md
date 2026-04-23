@@ -188,10 +188,25 @@ loads the skill and exposes it to the running Maestro.
 
 - Forge must treat `skills/SKILL-001-fastapi-production/SKILL.md` as
   the canonical entry point for the skill.
-- The YAML frontmatter of SKILL.md declares: `version`, `tools_count`,
-  `primitives_count`, `benchmark_score`, `entry_points`.
-- Forge reads frontmatter to register the skill in its UI and to
-  filter session tool availability.
+- SKILL.md follows the **Anthropic Agent Skills format**: the YAML
+  frontmatter declares exactly three keys — `name`, `description`,
+  `license` — nothing else. `description` is the Maestro-facing
+  one-paragraph When-to-use (800-1200 chars, ≥3 transcripts in the
+  body; machine-verified by `_r_skill_md_contract` — CONTRACT §B2.5).
+- Canonical counts + entry-tool list + phase model + invariants are
+  **body metadata**, not frontmatter. They live in a
+  `## Machine-readable metadata` fenced YAML block containing:
+  `hugr_skill_version` (semver), `spec_compat` (HuGR spec range),
+  `kind`, `domains`, `entry_tools` (the 8 tier-1 tool names Forge
+  surfaces first), `catalog_path` (`engine/index/catalog.json`),
+  `phases`, `invariants`. Forge reads the YAML block for tool
+  registration + session filtering.
+- Counts (tools / registered / staged / adapters / recipes / ledger)
+  are NOT in SKILL.md — they live in `INVENTORY.md` (machine-
+  generated from disk) and the `counts` object inside
+  `engine/index/catalog.json`. Cite those — never SKILL.md — for
+  runtime numbers, since SKILL.md is prose + must stay stable
+  across minor count drifts.
 
 ### §3.2 — MCP server lifecycle
 
@@ -224,9 +239,14 @@ loads the skill and exposes it to the running Maestro.
 
 ### §3.4 — Audit surface
 
-- `engine/audit/contract_check.py` — **34 machine-check rules at v1.0**
-  (includes §B1.8 tier-lite eligibility). Exit 0 = green; any
-  non-zero exit on `main` is a CI block.
+- `engine/audit/contract_check.py` — **36 machine-check rules at
+  v1.0** (§B0.1..§B4.7; includes §B1.8 tier-lite, §B2.5 SKILL.md
+  Agent Skills contract, §B3.6 code-level harness, §B3.7 blind
+  harness, §B4.6 VERSION triplet, §B4.7 counts sync w/ recipes +
+  ledger). Exit 0 = green; any non-zero exit on `main` is a CI
+  block. The CONTRACT.md §B bullet list is the binding spec; the
+  rule count above reconciles to the length of the `RULES` tuple in
+  `contract_check.py`.
 - `engine/inventory.py` — regenerates `INVENTORY.md` from disk;
   byte-stable output.
 - `engine/bench/blind/runner.py` — runs blind plan-level benchmark;
