@@ -7,7 +7,7 @@
 ## Headline
 
 - **257 files carry `MCP_TOOL` metadata** (Maestro-visible surface).
-- **Catalog:** 201 tools + 299 primitives + 393 recipes.
+- **Catalog:** 201 tools + 299 primitives + 392 recipes.
 - **124 registered primitives** (`core/venous/<ns>/<Name>/`).
 - **176 staged primitives** in `_extracted/` (plus 42 quarantined).
 - **17 FastAPI adapters** (production-wired).
