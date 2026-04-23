@@ -115,7 +115,6 @@ def generate_config(
 
         from __future__ import annotations
 
-        import warnings
         from enum import Enum
         from typing import Annotated
 
@@ -129,6 +128,35 @@ def generate_config(
             PRODUCTION = "production"
 
 
+        # Known-weak secret / password values that MUST NOT appear in a running
+        # settings object. Matched case-insensitively. The set is small because
+        # a real credential is indistinguishable from noise; its entropy is
+        # what defends you, not the dictionary below. This is a defence-in-
+        # depth catch for copy-paste accidents like leaving `changethis` from
+        # the .env.example template in place.
+        _WEAK_CREDENTIALS: frozenset[str] = frozenset({{
+            "",
+            "changethis",
+            "change-me",
+            "changeme",
+            "password",
+            "password123",
+            "admin",
+            "admin123",
+            "secret",
+            "12345678",
+            "qwertyui",
+        }})
+
+        # Minimum entropy for SECRET_KEY. 32 bytes = 256 bits, the standard
+        # for HMAC-SHA256 session signing.
+        _SECRET_KEY_MIN_LEN: int = 32
+
+        # Minimum length for FIRST_SUPERUSER_PASSWORD. 12 chars with mixed
+        # classes is a pragmatic baseline; anything real should be longer.
+        _SUPERUSER_PASSWORD_MIN_LEN: int = 12
+
+
         def _parse_cors(v: str | list[str]) -> list[str]:
             \"\"\"Accept a comma-separated string or a list for CORS origins.\"\"\"
             if isinstance(v, str):
@@ -140,6 +168,15 @@ def generate_config(
             \"\"\"Application settings.
 
             Values are read from environment variables and/or a ``.env`` file.
+
+            Security contract:
+              * ``SECRET_KEY`` MUST be set (≥ 32 chars) in every environment,
+                including LOCAL. Empty / short / known-weak values raise at
+                boot. Generate with: ``openssl rand -hex 32``.
+              * ``FIRST_SUPERUSER_EMAIL`` and ``FIRST_SUPERUSER_PASSWORD`` are
+                optional: leave both empty to skip superuser seeding. If
+                either is set, both MUST be set, the password MUST be
+                ≥ 12 chars, and MUST NOT match any known-weak value.
             \"\"\"
 
             model_config = SettingsConfigDict(
@@ -156,7 +193,10 @@ def generate_config(
             DEBUG: bool = False
 
             # --- Security ---
-            SECRET_KEY: str = "changethis"
+            # SECRET_KEY has NO Python default: an unset env var surfaces as
+            # "" and the validator rejects it. This keeps known-weak strings
+            # like "changethis" out of the source tree entirely.
+            SECRET_KEY: str = ""
             ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
             # --- CORS ---
@@ -165,9 +205,9 @@ def generate_config(
                 BeforeValidator(_parse_cors),
             ] = []
 
-            # --- First Superuser ---
-            FIRST_SUPERUSER_EMAIL: str = "admin@example.com"
-            FIRST_SUPERUSER_PASSWORD: str = "changethis"
+            # --- First Superuser (opt-in; leave empty to skip seeding) ---
+            FIRST_SUPERUSER_EMAIL: str = ""
+            FIRST_SUPERUSER_PASSWORD: str = ""
 
             # --- Rate Limiting ---
             # Disable in tests to avoid 429s from sequential test runs.
@@ -177,22 +217,46 @@ def generate_config(
             FRONTEND_URL: str = "http://localhost:3000"
         {db_section}{redis_section}{smtp_section}
             @model_validator(mode="after")
-            def _validate_secret_key(self) -> "Settings":
-                # Use length check instead of == to avoid timing side-channels.
-                # A real SECRET_KEY must be at least 32 chars; "changethis" is 10.
-                _key_is_default = len(self.SECRET_KEY) < 32
-                if self.ENVIRONMENT != Environment.LOCAL and _key_is_default:
+            def _enforce_security_contract(self) -> "Settings":
+                # SECRET_KEY — fail-fast in every environment. Warn-only in
+                # LOCAL used to be "safe" but historically leaks to prod when
+                # devs copy their .env pattern. The fix is trivial
+                # (one openssl command); there is no legitimate reason to
+                # boot with a weak / empty SECRET_KEY.
+                secret = self.SECRET_KEY or ""
+                if (
+                    len(secret) < _SECRET_KEY_MIN_LEN
+                    or secret.strip().lower() in _WEAK_CREDENTIALS
+                ):
                     raise ValueError(
-                        "SECRET_KEY must be at least 32 characters in non-local environments. "
-                        "Generate one with: openssl rand -hex 32"
+                        "SECRET_KEY is empty, too short, or matches a known-weak "
+                        f"value (min length {{_SECRET_KEY_MIN_LEN}} chars). "
+                        "Generate a real key once and write it to .env:\\n"
+                        '    echo "SECRET_KEY=$(openssl rand -hex 32)" >> .env'
                     )
-                if _key_is_default:
-                    warnings.warn(
-                        "SECRET_KEY is too short (< 32 chars). "
-                        "Generate a proper key with: openssl rand -hex 32",
-                        UserWarning,
-                        stacklevel=1,
+
+                # Superuser pair — both-or-neither. Treat missing values as
+                # "no seed"; reject weak passwords explicitly.
+                email = (self.FIRST_SUPERUSER_EMAIL or "").strip()
+                password = self.FIRST_SUPERUSER_PASSWORD or ""
+                if bool(email) ^ bool(password):
+                    raise ValueError(
+                        "FIRST_SUPERUSER_EMAIL and FIRST_SUPERUSER_PASSWORD "
+                        "must be set together (or both left empty to skip "
+                        "seeding). Got one set and one empty."
                     )
+                if password:
+                    if len(password) < _SUPERUSER_PASSWORD_MIN_LEN:
+                        raise ValueError(
+                            "FIRST_SUPERUSER_PASSWORD MUST be at least "
+                            f"{{_SUPERUSER_PASSWORD_MIN_LEN}} characters."
+                        )
+                    if password.strip().lower() in _WEAK_CREDENTIALS:
+                        raise ValueError(
+                            "FIRST_SUPERUSER_PASSWORD matches a known-weak "
+                            "value. Choose a real password (≥ 12 chars, mixed "
+                            "classes) and update .env."
+                        )
                 return self
 
 

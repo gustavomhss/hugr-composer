@@ -91,11 +91,17 @@ def generate_readme(
 
         | Variable | Required | Description |
         |----------|----------|-------------|
-        | `SECRET_KEY` | Yes | JWT signing key (`openssl rand -hex 32`) |
+        | `SECRET_KEY` | **Yes** | JWT signing key — **must be ≥ 32 chars in every environment**, fail-fast at boot. Generate once: `openssl rand -hex 32` |
         | `ENVIRONMENT` | No | `local` / `staging` / `production` (default: `local`) |
         | `POSTGRES_*` | Yes | Database connection parameters |
-        | `FIRST_SUPERUSER_EMAIL` | Yes | Email for the initial admin account |
-        | `FIRST_SUPERUSER_PASSWORD` | Yes | Password for the initial admin account |
+        | `FIRST_SUPERUSER_EMAIL` | Opt-in | Email for the initial admin. Leave empty to skip seeding. If set, `FIRST_SUPERUSER_PASSWORD` must also be set. |
+        | `FIRST_SUPERUSER_PASSWORD` | Opt-in | Must be ≥ 12 chars and not a known-weak value (`changethis`, `admin`, `password`, …). |
+
+        **Security contract.** `app/core/config.py` refuses to boot when
+        `SECRET_KEY` is empty, shorter than 32 chars, or matches a
+        known-weak value — in every environment including `local`.
+        Superuser seeding is opt-in: leave both `FIRST_SUPERUSER_*`
+        empty to skip. Setting only one raises at boot.
 
         ## API Documentation
 

@@ -35,17 +35,38 @@ def generate_env_example(
 
     sections: list[str] = []
 
+    # --- Header ---
+    sections.append(textwrap.dedent("""\
+        # =============================================================================
+        # .env.example — TEMPLATE; NEVER commit a copy named .env
+        # =============================================================================
+        # Every value marked REPLACE_WITH_* is a placeholder. The generated
+        # config.py REFUSES to boot while any REPLACE_WITH_* value is still
+        # in place (known-weak credential check). Fill each one before first
+        # run.
+        #
+        # Quick-start for local dev (generates a real SECRET_KEY):
+        #     cp .env.example .env
+        #     sed -i '' "s/REPLACE_WITH_openssl_rand_hex_32/$(openssl rand -hex 32)/" .env
+        #     # then set POSTGRES_PASSWORD + (optionally) FIRST_SUPERUSER_*
+        #
+        # The first superuser is OPT-IN: leave both FIRST_SUPERUSER_* empty
+        # to skip seeding. If set, password must be ≥ 12 chars and not a
+        # known-weak value.
+    """))
+
     # --- Application ---
     sections.append(textwrap.dedent("""\
         # =============================================================================
         # Application
         # =============================================================================
-        # Secret key for JWT signing and CSRF. MUST be changed in production.
-        # Generate with: openssl rand -hex 32
-        SECRET_KEY=changethis-generate-with-openssl-rand-hex-32
+        # Secret key for JWT signing and CSRF. Required in every environment
+        # (config.py fails fast if empty, < 32 chars, or matches a known-
+        # weak value). Generate with: openssl rand -hex 32
+        SECRET_KEY=REPLACE_WITH_openssl_rand_hex_32
 
         # Environment: local | staging | production
-        # Controls debug mode, CORS strictness, and secret-key validation.
+        # Controls debug mode, CORS strictness, and cookie flags.
         ENVIRONMENT=local
 
         # Display name used in API docs and email templates.
@@ -67,7 +88,7 @@ def generate_env_example(
             # These are combined into:
             #   postgresql+asyncpg://POSTGRES_USER:POSTGRES_PASSWORD@POSTGRES_SERVER:POSTGRES_PORT/POSTGRES_DB
             POSTGRES_USER=postgres
-            POSTGRES_PASSWORD=changethis
+            POSTGRES_PASSWORD=REPLACE_WITH_strong_db_password
             POSTGRES_SERVER=localhost
             POSTGRES_PORT=5432
             POSTGRES_DB=app
@@ -102,10 +123,14 @@ def generate_env_example(
     # --- First Superuser ---
     sections.append(textwrap.dedent("""\
         # =============================================================================
-        # First Superuser (created on initial startup)
+        # First Superuser (OPT-IN — leave both empty to skip seeding)
         # =============================================================================
-        FIRST_SUPERUSER_EMAIL=admin@example.com
-        FIRST_SUPERUSER_PASSWORD=changethis
+        # When SET: the startup script `python -m app.initial_data` creates
+        # the superuser if they don't exist. Both must be set together;
+        # password must be ≥ 12 chars and not a known-weak value.
+        # When EMPTY: seeding is skipped with a warning log line.
+        FIRST_SUPERUSER_EMAIL=
+        FIRST_SUPERUSER_PASSWORD=
     """))
 
     # --- Redis ---
