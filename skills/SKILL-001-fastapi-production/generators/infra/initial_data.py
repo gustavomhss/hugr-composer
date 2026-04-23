@@ -86,14 +86,23 @@ def generate_initial_data(output_dir: str) -> dict:
 
 
         async def _create_first_superuser(session: AsyncSession) -> None:
-            """Create the first superuser if it does not already exist."""
+            """Create the first superuser if it does not already exist.
+
+            Input validation — empty / weak / too-short credentials — lives
+            in ``app.core.config.Settings._enforce_security_contract``. By
+            the time this function runs, the settings object has either:
+              * both fields empty  → opt-out, we skip with a log line, OR
+              * both fields set to strong values  → we seed.
+            No weak-password path reaches this function; the validator
+            raises at import time.
+            """
             email = settings.FIRST_SUPERUSER_EMAIL
             password = settings.FIRST_SUPERUSER_PASSWORD
 
             if not email or not password:
-                logger.warning(
-                    "FIRST_SUPERUSER_EMAIL or FIRST_SUPERUSER_PASSWORD not set — "
-                    "skipping superuser creation."
+                logger.info(
+                    "FIRST_SUPERUSER_EMAIL / FIRST_SUPERUSER_PASSWORD not set — "
+                    "skipping superuser seed (opt-out path).",
                 )
                 return
 

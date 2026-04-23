@@ -247,10 +247,18 @@ def generate_k8s_manifests(
             app: {app_name}
         type: Opaque
         stringData:
-          # IMPORTANT: Replace these placeholders before applying.
-          # In production, use sealed-secrets, external-secrets, or Vault.
-          SECRET_KEY: "changethis-generate-with-openssl-rand-hex-32"
-          DATABASE_URL: "postgresql+asyncpg://postgres:changethis@postgres:5432/app"
+          # IMPORTANT: These REPLACE_WITH_* placeholders are NOT valid
+          # credentials. The application refuses to boot while they are
+          # in place (known-weak credential check in app/core/config.py).
+          #
+          # Fill in real values before `kubectl apply`. In production,
+          # prefer sealed-secrets, external-secrets, or Vault instead of
+          # committing secrets to source control.
+          #
+          # Generate SECRET_KEY once:
+          #     openssl rand -hex 32
+          SECRET_KEY: "REPLACE_WITH_openssl_rand_hex_32"
+          DATABASE_URL: "postgresql+asyncpg://postgres:REPLACE_WITH_strong_db_password@postgres:5432/app"
     """)
 
     p = out / "secret.yaml"
