@@ -1,7 +1,7 @@
 {
   "generated_at": "2026-04-23",
   "label": "v1.0.0 pre-freeze snapshot",
-  "purpose": "ROADMAP §5.4 bullet 3 — freeze-day artefact committed to benchmarks/history/ per Ship-gate §5.4. Records the plan + code-level benchmark state at the moment all Claude-side Ship-gate items were closed and the doc-set awaited Gustavo's §11 / FREEZE §4 / CONTRACT §E signatures.",
+  "purpose": "ROADMAP §5.4 bullet 3 — freeze-day artefact committed to benchmarks/history/ per Ship-gate §5.4. Records the plan + code-level benchmark state at the point where Claude-side work was ready for Gustavo's §11 / FREEZE §4 / CONTRACT §E signatures. NOT a 'green on every gate' summary — §5.3 below enumerates what is local-green vs. ci-deferred vs. requires-services vs. known-failure. Specifically: property tests are 7/8 (RUFF_CRITICAL_CLEAN emitted-template style issue, non-blocker per ROADMAP §8.2 R4); soak + mutation + E2E-Postgres + behavior-scenarios + install-docker are CI-owned (ship gate requires ≤48h green CI before tag per §5.7). Tag-cut is predicated on those CI gates going green AND Gustavo's ratifications — neither of which this artefact attests to; it attests only to local Claude-side status at HEAD.",
   "kit": {
     "name": "SKILL-001-fastapi-production",
     "version": "1.0.0-rc.1",

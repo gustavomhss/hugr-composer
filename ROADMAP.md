@@ -94,7 +94,7 @@ the command says 125, the doc is wrong, not the command.
 | Provider adapters | 2 | `_adapters/redis/PubSubAdapter.py` + `_adapters/stripe/BillingAdapter.py` |
 | Staged primitives | 176 | `_extracted/<ns>/`, surfaced as `status="staged"` |
 | Quarantined primitives | 42 | `_extracted/_quarantine/`, hidden from catalog |
-| Recipes | 393 | Parsed from primitive `.md` `## Compose with:` sections |
+| Recipes | 392 | Parsed from primitive `.md` `## Compose with:` sections |
 | Benchmark specs | 20 | 5 baseline / 10 mid / 5 adversarial |
 | Ledger entries | 219 | Post-Wave-1.5 triage state |
 | Contract rules passing | 36/36 | Machine-verified by `engine.audit.contract_check` |
