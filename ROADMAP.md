@@ -1,8 +1,8 @@
 # ROADMAP — HuGR SkillKit
 
-> **Status:** PROPOSED (awaits ratification — see §9).
+> **Status:** PROPOSED (awaits ratification — see §11).
 > **Post-ratification, this document is read-only.** Amendments require a
-> new dated ratification line at the bottom of §9.
+> new dated ratification line at the bottom of §11.
 >
 > **Purpose:** single source of truth for what HuGR is, how we measure
 > "done", and where we're going. Consolidates the pre-freeze scattered
@@ -164,11 +164,25 @@ where possible; reviewer-enforced where not).
 - §A11 → audit agents use Opus; spec authoring / bulk refactors may
   use Sonnet.
 
-### §2.2 — CONTRACT §B — execution checklist (38 items spec'd; 36 machine-checked)
+### §2.2 — CONTRACT §B — execution checklist (39 items spec'd in CONTRACT.md; 36 machine-checked; 45 rows below)
 
-> **Drift note.** CONTRACT.md §B lists **38 items** across phases 0-7.
-> `engine.audit.contract_check` runs **36 machine checks** (covers §B0 +
-> §B1 + §B2 + §B3 + §B4 but NOT §B5-§B7 — those close post-v1.0).
+> **Drift note.** The three numbers above are intentionally different:
+>
+> 1. **CONTRACT.md §B spec lists 39 items** across phases 0-7 (count:
+>    `grep -cE '^#### B[0-9]' CONTRACT.md`).
+> 2. **`engine.audit.contract_check` runs 36 rules** today — covers all
+>    §B0-§B4, skips §B5-§B7 (post-v1.0), and some §B items don't have
+>    a separate rule because they're covered by a broader check (e.g.
+>    §B1.4 is subsumed by §B1.3's AST scan).
+> 3. **This table lists 45 rows** because it also surfaces rules that
+>    exist in `contract_check.py` but are NOT yet documented as §B items
+>    in CONTRACT.md (`§B1.7` adapter coverage, `§B1.8` tier-lite,
+>    `§B2.4` manifest idempotence, `§B2.5` SKILL.md contract, `§B3.6`
+>    code-level, `§B3.7` blind harness, `§B4.6` version triplet,
+>    `§B4.7` counts sync). These added pre-freeze and are authoritative
+>    per `contract_check.py`; CONTRACT.md needs a backfill amendment
+>    before v1.0 cut (see Ship-gate §5.1 / §5.8 CONTRACT §E update).
+>
 > Some rule *text* in CONTRACT.md also drifted from the current
 > machine-check threshold (e.g. §B1.3 reads "15 top-value tools" but
 > the check's floor is 22 non-regression). Treat `contract_check.py`
@@ -188,7 +202,7 @@ where possible; reviewer-enforced where not).
 | §B0.7 | `/benchmark/` audited — no stub tests | ✅ |
 | §B0.8 | `.gitignore` covers machine-generated artefacts | ✅ |
 
-#### §2.2.2 — Phase 1: Rails-style wiring (11 items)
+#### §2.2.2 — Phase 1: Rails-style wiring (10 items)
 
 | ID | What it guards | Machine check? |
 |---|---|---|
@@ -203,7 +217,7 @@ where possible; reviewer-enforced where not).
 | §B1.7 | FastAPI adapter coverage (every `<Name>Adapter.py` has `test_<Name>Adapter.py` + maps to registry; floor = 15) | ✅ |
 | §B1.8 | Tier-lite eligibility (stateless, framework-free, no REPLACE_ME; vacuously green at 0 lite registered) | ✅ |
 
-#### §2.2.3 — Phase 2: Discoverability (3 items)
+#### §2.2.3 — Phase 2: Discoverability (5 items: 3 CONTRACT.md + 2 added pre-freeze)
 
 | ID | What it guards | Machine check? |
 |---|---|---|
@@ -275,17 +289,35 @@ New §B items require, in the SAME commit:
 - **No silent upgrade.** A staged item that looks ready but has no §A12
   trigger stays staged. The ledger tracks the blocker.
 
-### §2.4 — Namespace canonicity
+### §2.4 — Namespace canonicity (vs. Domain canonicity)
 
-- 16 closed namespaces (alphabetical):
-  `api, auth, billing, cache, compliance, cost, data, events, extras,
-  flags, jobs, llm, obs, policy, resiliency, security`.
-- Adding a new namespace = additive schema change, allowed, but must
-  update:
-  - `engine/primitives_by_concern.yaml` (a primitive entry exists).
-  - `engine/index/schemas.py#DOMAINS` (if Maestro-facing tools need it).
-  - This doc's §2.4 list.
-- Removing a namespace = MAJOR semver bump (v2.0.0+).
+**Namespace ≠ Domain.** These are two overlapping-but-distinct locked sets:
+
+- **Namespace** = directory under `core/venous/<ns>/`. Home of registered
+  primitives. 16 closed values; full list in §9.1.
+- **Domain** = the `<domain>` slot in a canonical tool name
+  `fastapi_<domain>_<verb>_<noun>`. 10 closed values; full list in §9.2.
+
+A namespace may or may not appear as a domain (e.g. `billing` is a
+namespace but not a domain; `auth` is both).
+
+**Adding a new namespace** = additive schema change, allowed at MINOR
+bump, must update in SAME commit:
+
+1. `engine/primitives_by_concern.yaml` (at least one primitive entry
+   exists under the new namespace, or CI rejects).
+2. This doc's §9.1 namespace list.
+3. `/PRODUCT.md §8` terminology lock (if the namespace name ships as
+   user-facing vocab).
+
+**Adding a new domain** (tool naming slot) = additive, must update:
+
+1. `engine/index/schemas.py#DOMAINS` (the authoritative tuple).
+2. This doc's §9.2 domain list.
+3. At least one Maestro-facing tool that uses the new domain slot
+   (orphan domains are rejected).
+
+**Removing** a namespace OR domain = MAJOR semver bump (v2.0.0+).
 
 ### §2.5 — Per-primitive invariants (domain-specific)
 
@@ -373,7 +405,8 @@ Tools reject:
 
 **Per-commit invariants:**
 
-- Every commit leaves the tree CONTRACT 36/36 green.
+- Every commit leaves the tree CONTRACT ALL GREEN (rule count bumps
+  whenever a new §B rule lands per §2.2.7).
 - Every commit leaves the tree pytest-green for the primitives it
   touches (motor + adapter + tool).
 - Commit messages: imperative mood, ≤70-char subject, body explains
@@ -470,9 +503,17 @@ session to a specific catalog version.
 
 ### §3.1 — Code style
 
-- **Python target:** 3.11+ (3.11 / 3.12 / 3.13 supported per `pyproject.toml`).
-- **Formatting:** ruff + black (configured in `pyproject.toml`).
-- **Type hints:** required on all public surface; `mypy --strict` clean.
+- **Python target:** 3.11+ (3.11 / 3.12 / 3.13 supported per `pyproject.toml`
+  classifiers). 3.11 is the MIN — PEP 604 union syntax and `dict[...]`
+  generics are used throughout.
+- **Formatter + linter:** `ruff` is the single tool — formatter and
+  linter both, configured in `pyproject.toml` `[tool.ruff]` /
+  `[tool.ruff.lint]` / `[tool.ruff.lint.per-file-ignores]`. No `black`,
+  no `flake8`, no `isort` (ruff subsumes all three).
+- **Type hints:** required on all public surface. Type-checking is
+  enforced by `ruff` lint rules + runtime `isinstance` guards in
+  constructors; there is no `mypy --strict` gate today (revisit in
+  Phase 7 if needed).
 - **Imports:**
   - `from __future__ import annotations` at top of every `.py` file
     (avoids runtime eval of string annotations).
@@ -601,35 +642,62 @@ session to a specific catalog version.
 
 ### §3.9 — CI/CD pipeline overview
 
-All workflows live in `.github/workflows/`. Minimum set:
+All workflows live in `.github/workflows/`. Current set (verified on
+disk via `ls .github/workflows/`):
 
 | Workflow | Trigger | What it runs |
 |---|---|---|
-| `ci.yml` | Every push / PR | Full contract check + full pytest + property tests |
+| `skill-001-ci.yml` | Every push / PR touching `skills/SKILL-001-*` | Full contract check + full pytest + property tests |
 | `install-docker.yml` | Nightly + on `pyproject.toml` / `VERSION` / `requirements-mcp.txt` change | Fresh `python:3.12-slim` Docker; `install.sh`; smoke every tool |
 | `benchmark-nightly.yml` | Nightly (cron) + workflow_dispatch | `engine.bench.plan_level --publish` + `engine.bench.code_level --publish`; upload artefacts |
-| `bench-blind.yml` | On demand | Blind benchmark harness against pinned stub fixtures |
-| `release.yml` (post-v1.0) | On `v*` tag push | Publish GitHub release with CHANGELOG body + attach install.sh tarball |
+| `blind-bench-stub.yml` | On demand + scheduled | Blind benchmark harness against pinned stub fixtures |
+| `docs-site.yml` | On main-branch push that touches docs | Rebuilds `engine/docs/build.py` output; deploys docs site |
 
-Branch strategy: trunk-based on `main`. Feature branches allowed but
-short-lived. No long-lived release branches — hotfixes cut from tags
-(see POST_RELEASE.md §2a).
+**Future workflow (post-v1.0):** `release.yml` on `v*` tag push —
+publishes GitHub release with CHANGELOG body + attaches `install.sh`
+tarball. Not shipped at v1.0 (Gustavo cuts releases manually per
+GOLIVE §6).
+
+**Branch strategy:** trunk-based on `main`. Feature branches allowed
+but short-lived. No long-lived release branches — hotfixes cut from
+tags (see POST_RELEASE.md §2a). Never force-push `main`.
 
 ### §3.10 — Performance SLOs
 
-Machine-enforced via `tests/test_performance_baseline.py` (§B3 family).
+Machine-enforced via `tests/test_performance_baseline.py` (5 tests).
+Bounds are the `BOUND_*` constants in that file; this table is a
+read-only mirror — the file wins on drift.
 
-| Surface | SLO | Enforcement |
+| Surface | SLO (upper bound) | Source constant |
 |---|---|---|
-| `fastapi_meta_search` single-query | < 50 ms p95 | perf baseline test |
-| `fastapi_meta_describe` single-id | < 20 ms p95 | perf baseline test |
-| `engine.audit.contract_check` full run | < 400 ms | perf baseline test |
-| Any `adapt/extend/add_*` tool on fixture project | < 5 s wall | behaviour test `elapsed_ms` check |
-| `engine.index.manifest build` full run | < 2 s | perf baseline test |
-| Soak test (5 min, 10 concurrent) | zero memory-growth regressions | `tests/test_soak.py` |
+| `engine.index.manifest build` — catalog load + parse | < 1.0 s | `BOUND_CATALOG_LOAD` |
+| `engine.promotion.classify` — full classifier run | < 60.0 s | `BOUND_CLASSIFIER_RUN` |
+| `engine.promotion.ledger` — LEDGER.md render | < 5.0 s | `BOUND_LEDGER_RENDER` |
+| `engine.audit.contract_check` — full run | < 90.0 s | `BOUND_CONTRACT_CHECK` |
+| `engine.index.manifest verify` — idempotent rebuild | < 30.0 s | `BOUND_MANIFEST_VERIFY` |
 
-Regressions ≥ 20% over baseline gate the commit. Baselines live in
-`benchmarks/perf_baselines.json` and are re-pinned per release.
+**Per-tool SLO** (enforced by each tool's behaviour test):
+
+- Every `adapt/extend/add_*` tool completes on a fixture project in
+  < 5 s wall clock. `execution_time_ms` is emitted on every
+  `ToolResult` return path (§A4 + §2.8); the behaviour test asserts
+  it's ≥ 0 and below a per-tool ceiling when one is declared.
+- `tests/test_soak.py` — 5-minute sustained load with 10 concurrent
+  tool invocations. Asserts zero memory-growth regressions vs the
+  baseline snapshot.
+
+**Drift rule:** bumping a `BOUND_*` constant requires same-commit
+justification in the test file + CHANGELOG note. Lowering a bound =
+free; raising = architecture review (signals perf regression).
+
+**Surfaces NOT yet SLO-gated** (tracked for Wave-2 hardening):
+
+- `fastapi_meta_search` query latency.
+- `fastapi_meta_describe` single-id lookup latency.
+- `fastapi_meta_compose` plan-generation latency.
+
+These have real p95 budgets conceptually but no enforcement test yet.
+Wave 2 will add `tests/test_meta_latency_baseline.py` to close the gap.
 
 ### §3.11 — Security posture
 
@@ -680,6 +748,24 @@ No dashboards yet; GitHub Actions status pages + `engine.audit.*`
 command outputs are the current surface. Adding a minimal dashboard
 is a Phase 7 item (§6.5).
 
+### §3.14 — Disaster recovery (named scenarios)
+
+These are rare events with binding runbooks; review quarterly.
+
+| Scenario | First action | Authority |
+|---|---|---|
+| **Compromised CI credentials** (secrets leak from workflow run) | Rotate all GitHub Action secrets; force-expire any tokens referenced in the last 90 days of workflow runs; investigate root cause in a private issue. | Gustavo |
+| **Lost / corrupted release tag** | Do NOT re-tag under the same name (§3.7 MAJOR rules forbid it). Instead cut a PATCH bump (`vX.Y.Z+1`) whose CHANGELOG cites the recovery + explains the loss. | Gustavo |
+| **Lost main branch** (force-push by mistake) | Recover from a signed tag + every contributor's fork/clone. `git reflog` on Gustavo's local clone is authoritative if remote is gone. Force-push restored state; open a post-mortem ADR. | Gustavo |
+| **CHANGELOG or VERSION drift vs released tag** | Treat as a §B4.6 drift bug; ship a PATCH with a `docs(release-drift): …` commit that reconciles the files to the tag. | Claude (driver) + Gustavo (tag) |
+| **`stable_hash` collision** (extremely unlikely SHA-256 collision) | Regenerate via `manifest build`; if collision persists, investigate non-deterministic input to the hash function (clock, order). Open a `drift:` commit; file a §B2.4 amendment if the fix changes invariants. | Claude (driver) + Gustavo |
+| **Silent ledger corruption** (classifier output disagrees with disk) | Delete `engine/promotion/ledger.json`, rerun `engine.promotion.classify` from scratch, diff old vs new, commit both with the diff in the commit body for audit. | Claude |
+| **Benchmark regression > 10 points in a single commit** | Auto-triage: revert the offending commit, open an issue, root-cause on a branch. Re-merge only when benchmark returns to baseline. | Claude (detection) + Gustavo (merge gate) |
+
+**Recovery SLO:** any of the above gets a first response within 24h,
+full runbook execution within 72h. Longer requires a POST_RELEASE
+amendment.
+
 ---
 
 ## Part 4 — Definitions of Done (per surface)
@@ -704,7 +790,8 @@ Location: `core/venous/<ns>/<Name>/`
       `compose_with` bullets.
 - [ ] `engine.index.manifest build` passes; catalog reflects the new
       primitive.
-- [ ] `engine.audit.contract_check` 36/36 green.
+- [ ] `engine.audit.contract_check` ALL GREEN (count currently 36; floor
+      bumps on each new §B rule per §2.2.7).
 
 Optional (Wave 2+):
 - [ ] `<Name>.contract.json` — JSON spec for external consumers.
@@ -797,9 +884,22 @@ Same as §4.4 except:
 
 Location: `generators/<category>/<name>.py`
 
-- [ ] Stateless scaffolder — emits files from templates.
-- [ ] `MCP_TOOL` metadata same as §4.4.
-- [ ] `test_<name>.py` — runs the generator, asserts emitted files AST-parse.
+- [ ] Stateless scaffolder — emits files from templates; no hidden
+      state between calls.
+- [ ] `MCP_TOOL` metadata same as §4.4 (name, description, tags,
+      entry, imports_primitives, imports_adapters).
+- [ ] Entry function returns `ToolResult` (§2.8) with
+      `execution_time_ms` on every return path.
+- [ ] Input validation — reject invalid `output_dir` / missing required
+      params with a clear `status="error"` + actionable message.
+- [ ] Idempotency — rerun against a populated target is a `no_op`
+      OR a deterministic overwrite (documented per-generator).
+- [ ] `dry_run` branch — returns before any write.
+- [ ] `ast.parse` validation loop on every created `.py` file.
+- [ ] Lazy imports for optional SDKs inside emitted templates (§A7).
+- [ ] `test_<name>.py` — unit tests: runs the generator, asserts
+      emitted files AST-parse, idempotency, dry_run, error paths.
+- [ ] No orphan `generate_*` / `scaffold_*` function (§B1.6 machine-check).
 
 ### §4.7 — Module package DoD
 
@@ -813,13 +913,22 @@ Location: `modules/<category>/<name>/`
 
 Location: `/examples/<NN>-<name>/` (repo-root, NOT skill-internal)
 
+- [ ] Named `<NN>-<kebab-case-name>` with two-digit NN (01-99).
 - [ ] `README.md` — purpose + maestro prompt summary + file tree.
-- [ ] `MAESTRO_SESSION.md` — the actual prompt + the actual response transcript.
-- [ ] `app/` — working FastAPI project.
-- [ ] `tests/` — pytest suite; `pytest -q` passes.
-- [ ] Cross-link table: which primitives + adapters + tools this example
-      exercises.
-- [ ] Listed in `/examples/README.md` index.
+- [ ] `MAESTRO_SESSION.md` — the actual prompt + the actual response
+      transcript (one complete turn minimum).
+- [ ] `app/` — working FastAPI project; `python -m app.main` imports
+      cleanly.
+- [ ] `tests/` — pytest suite; `pytest -q` passes with 0 failures.
+- [ ] Cross-link table in README: which primitives + adapters + tools
+      this example exercises (linked by name to the registry).
+- [ ] If the example maps to a benchmark spec: the spec's
+      `expected_primitives` + `expected_tools` match the cross-link
+      table.
+- [ ] Listed in `/examples/README.md` index (title + one-line summary).
+- [ ] `requirements.txt` pins exactly what `app/main.py` imports — no
+      unused deps, no missing deps.
+- [ ] No `.env` / secrets committed; `.env.example` only.
 
 ### §4.9 — Benchmark spec DoD
 
@@ -849,7 +958,7 @@ each item are in `/GOLIVE.md §1-§6`.
       coverage.
 - [ ] `docs/decisions/0004-tier-lite.md` status flipped from "Proposed"
       to "Ratified YYYY-MM-DD".
-- [ ] This ROADMAP.md §9 signed (see §9 below).
+- [ ] This ROADMAP.md §11 signed (see §11 below).
 
 ### §5.2 — Promotion pipeline verify (Claude) — 3 items
 
@@ -877,12 +986,13 @@ each item are in `/GOLIVE.md §1-§6`.
 - [ ] Mutation runner (≥10-module sample).
 - [ ] All `/examples/*/` pass `pytest -q` — 20/20 clean.
 - [ ] Performance baseline: `pytest tests/test_performance_baseline.py` — 5/5.
-- [ ] Install-Docker workflow green ≥3 consecutive nights pre-freeze.
+- [ ] Install-Docker workflow green for the 48h pre-freeze window
+      (2 consecutive nightly runs green, per POST_RELEASE.md §1).
 
 ### §5.4 — Benchmark gate (Claude) — 5 items
 
-- [ ] Plan-level benchmark ≥ 70 (current 100.00).
-- [ ] Code-level benchmark ≥ 70 on 20/20 covered specs (current 100.00).
+- [ ] Plan-level benchmark ≥ 90 (§B3.5 machine-check threshold; current 100.00).
+- [ ] Code-level benchmark ≥ 70 on 20/20 covered specs (§B3.6 machine-check; current 100.00).
 - [ ] Freeze-day benchmark artefacts committed to
       `benchmarks/history/YYYY-MM-DD.json`.
 - [ ] No per-spec regression — every spec scored ≥ 50.
@@ -895,7 +1005,10 @@ each item are in `/GOLIVE.md §1-§6`.
 - [ ] `VERSION` bumped to `1.0.0` (both repo-root + skill-dir + STATUS.md frontmatter).
 - [ ] CHANGELOG [1.0.0] block complete per §5.4 bullet 5.
 - [ ] README.md score line + phase badge show `v1.0.0`.
-- [ ] SKILL.md v2 no stale counts (`engine.audit.skillmd_counts` exits 0).
+- [ ] SKILL.md v2 counts reconcile against INVENTORY.md (manual audit;
+      §B2.5 machine-check asserts the doc's shape but not its numbers
+      — counts propagate via the INVENTORY → narrative-docs chain that
+      §B4.7 enforces).
 - [ ] CONTRACT.md §E updated per §5.1 bullet 3.
 - [ ] This ROADMAP.md post-v1.0 state reflected (Phase 5 ✅, waves scheduled).
 
@@ -1089,7 +1202,7 @@ read the rest of this doc to use one.
         — 0 failures.
 12. [ ] Run `PYTHONPATH=. .venv/bin/python -m engine.index.manifest build`.
 13. [ ] Run `PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check`
-        — 36/36 green.
+        — all rules green (output ends with `N/N ALL GREEN`).
 14. [ ] Commit with `feat(SKILL-001/<ns>): promote <Motor> motor primitive`.
 
 ### §7.B — Checklist: Promoting a FastAPI adapter
@@ -1109,7 +1222,7 @@ read the rest of this doc to use one.
        IF adapter name doesn't match a registered primitive (rare).
 9. [ ] If the motor just got its adapter: update affected
        `adapt/extend/*.py` to declare `imports_adapters` (see §7.D).
-10. [ ] Contract check 36/36 green.
+10. [ ] Contract check all rules green.
 11. [ ] Commit `feat(SKILL-001): promote <Motor>Adapter (Nth FastAPI adapter)`.
 
 ### §7.C — Checklist: Promoting a provider adapter (new framework dir)
@@ -1173,7 +1286,7 @@ primitive + adapter could replace.
      so the project-local copy loads.
    - Drive the fanout / billing call through the new factory
      (`get_<thing>()`).
-10. [ ] Contract check 36/36 green; §B1.3 count goes up by 1.
+10. [ ] Contract check all rules green; §B1.3 Rails-wiring count goes up by 1.
 11. [ ] Commit `feat(SKILL-001): Rails-connect add_<feature>`.
 
 ### §7.E — Checklist: Adding a new extend tool
@@ -1239,7 +1352,7 @@ registered tier-lite primitive.
 6. [ ] Delete the `_extracted/<ns>/<Name>/` + quarantined twin.
 7. [ ] Regenerate LEDGER; staged count goes down by 1-2 (depending on
        if there's a quarantined twin).
-8. [ ] Contract check 36/36 green.
+8. [ ] Contract check all rules green.
 9. [ ] Update this ROADMAP §1.1 counts when batch completes (every
        10-20 items).
 
@@ -1265,14 +1378,14 @@ registered tier-lite primitive.
 
 1. [ ] Verify tree is clean: `git status` shows nothing.
 2. [ ] On `main` branch, up to date with `origin/main`.
-3. [ ] Run §5.1-§5.5 checklists (all 31 items) green.
+3. [ ] Run §5.1-§5.5 checklists — all 36 items (5 + 3 + 15 + 5 + 8) green.
 4. [ ] `cat VERSION` == target version (e.g. `1.0.0`).
 5. [ ] `jq -r .stable_hash engine/index/catalog.json` cited in CHANGELOG.
 6. [ ] CHANGELOG block header has real date (not `YYYY-MM-DD`).
 7. [ ] `PYTHONPATH=. .venv/bin/python -m engine.index.manifest verify`
        exits 0 (idempotent stable_hash).
 8. [ ] `PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check`
-       36/36 green.
+       reports `N/N ALL GREEN` (N is the current §B rule count).
 9. [ ] Rehearsal tag in a throwaway branch; verify tag message renders.
 10. [ ] On final commit, `git tag -s <version> -F .git/TAG_MSG`.
 11. [ ] `git push origin main <version>`.
@@ -1329,11 +1442,11 @@ Preserved + expanded from the old ROADMAP Part 3.
 | R4 | **Integration-discipline drift.** §B1.3 floor (currently 22; 24 Rails-connected) regresses if new tools ignore the rule. | Contract §B1.3 non-regression + §C6 phase-gate CI. |
 | R5 | **Staging pool temptation.** 176 staged primitives tempt preemptive promotion. | §A12 discipline + ledger classifier + §7.H/§7.G checklists. Wave-1.5 set the precedent: promote only on signal. |
 | R6 | **Drift between this doc and reality.** The doc becomes aspirational; the code is truth. | §B4.7 machine-check + §8.3 drift-fighting protocol. This doc freezes on ratification — amendments go through §8.5. |
-| R7 | **Per-primitive invariant drift.** §2.5 table can't keep up with 124 primitives. | §7.A step 14 gate; §B rule proposal to scan all `<Name>.py` for `INV_` prefix and auto-reconcile against §2.5 table (Wave 2 follow-up). |
+| R7 | **Per-primitive invariant drift.** §2.5 table can't keep up with 124 primitives. | Per-commit gate (checklist §7.A); proposed §B rule to AST-scan every `core/venous/*/*.py` for `INV_` prefix + diff against §2.5 — Wave-2 follow-up. Until that rule lands, §2.5 is a best-effort index of the 4 fully-documented families. |
 | R8 | **Dependency supply-chain compromise.** Lazy imports don't fully mitigate if a user installs the SDK. | Pin minor versions in `pyproject.toml`; security-alerts gate releases (§3.11). |
 | R9 | **Single-person bus factor (Gustavo).** All ratifications currently go through one person. | Accept for v1.0-v1.x; delegation protocol is a Phase 7 item. |
 | R10 | **Benchmark overfit.** 100.00 on 20 specs doesn't guarantee 100.00 on spec 21. | Blind benchmark harness (§B3.7) + new specs with every major use-case. |
-| R11 | **Stale stable_hash in consumers.** Maestro sessions pin a hash that a patched release invalidates. | CHANGELOG cites `stable_hash` every release; §2.12 consumer protocol is explicit. |
+| R11 | **Stale stable_hash in consumers.** Maestro sessions pin a hash that a patched release invalidates. | CHANGELOG cites `stable_hash` every release. §2.12 consumer protocol says: abort the session on hash change AND surface the new hash to the user with a pointer to the CHANGELOG entry. PATCH releases that change `stable_hash` MUST document the change explicitly in the `[X.Y.Z]` block (semver §3.7: PATCHes shouldn't surface-change, but bug-fix code edits regenerate the hash even when the tool catalog shape is identical). |
 | R12 | **Wave fatigue.** 118 + 101 = 219 post-v1.0 items is a marathon. | Batch per-wave commits (20/week); accept that "done" for post-v1.0 waves is months not weeks. |
 
 ### §8.3 — Drift-fighting protocol
@@ -1435,6 +1548,22 @@ When external contributions open:
 Until Phase 7 activates, this section is aspirational but binding
 once the first external PR lands.
 
+### §8.7 — Code of Conduct (Phase 7 activation)
+
+When external contributions open, `/CODE_OF_CONDUCT.md` ships based on
+the Contributor Covenant v2.1 (https://www.contributor-covenant.org/).
+Placeholder here so the obligation is not forgotten:
+
+- Enforcement contact: `conduct@humangr.com` (TBD — align with
+  SECURITY.md disclosure channel if practical).
+- Scope: every repo under `humangr-labs/`.
+- Escalation: Gustavo has final authority on permanent bans.
+- Transparency: enforcement actions logged in a private ledger; public
+  summary in the first MAJOR release after any action.
+
+Not binding pre-Phase-7, but MUST land in the commit that opens the
+first external PR.
+
 ---
 
 ## Part 9 — Locked vocabularies
@@ -1460,26 +1589,53 @@ api, auth, compliance, data, deployment, meta, observability,
 realtime, resiliency, testing
 ```
 
-### §9.3 — Verbs (9)
+### §9.3 — Verbs (9) — tool name slot `fastapi_<domain>_<verb>_<noun>`
 
-Canonical list in `engine/index/schemas.py#VERBS`:
+Canonical tuple in `engine/index/schemas.py#VERBS` (order matches
+source; list is a mirror — schemas.py wins):
 
 ```
-add, audit, compose, describe, home, scaffold, search, validate, verify
+add, generate, verify, operate, evolve, proactive, check, analyze, search
 ```
+
+Not the same as `adapt/<verb>/` directory names (those categorize
+tool files on disk: `extend/`, `verify/`, `operate/`, `evolve/`,
+`contracts/`, `proactive/` — 6 categories). A single adapt-tool can
+ship with a `verb` slot (§9.3) different from its `adapt/<category>/`
+home.
 
 ### §9.4 — Tag vocabulary
 
-Canonical list in `engine/index/schemas.py#TAG_VOCABULARY`. Top-level
-tags used on `MCP_TOOL.tags`:
+Canonical frozenset in `engine/index/schemas.py#TAG_VOCABULARY`.
+These are semantic tags (not tool categories) attached to each
+`MCP_TOOL.tags` for searchability. Grouped by area:
 
 ```
-extend, verify, operate, evolve, contracts, proactive, meta,
-auth_access, api_design, crud_data, infrastructure, realtime,
-testing_tools, generator, module
+identity + access:     oauth, jwt, rbac, mfa, session, password
+data shape + patterns: crud, pagination, soft-delete, audit,
+                       event-sourcing, idempotency, optimistic-lock,
+                       outbox
+api style:             graphql, rest, versioning, batch, cqrs,
+                       deprecation
+realtime:              websocket, sse, webhook, presence
+resiliency:            rate-limit, bulkhead, circuit-breaker, retry,
+                       graceful-shutdown, load-shedding,
+                       causal-reorder
+observability:         otel, prometheus, logging, tracing, metrics
+compliance:            hash-chain, retention, consent, gdpr,
+                       tamper-evident
+infra / deployment:    docker, kubernetes, ci, compose, load-test
+testing:               coverage, fuzz, property, soak, chaos
+experimental / misc:   experimental, federated-identity, ml, workflow
 ```
 
-Adding a tag = additive, MINOR bump.
+Adding a tag = additive, MINOR bump + same-commit `TAG_VOCABULARY`
+update.
+
+**Don't confuse with tool-category tags.** Earlier drafts of this
+table listed `extend`, `verify`, `operate`, `evolve`, `contracts`,
+`proactive` as tags — those are `adapt/<verb>/` CATEGORIES, NOT
+values of `TAG_VOCABULARY`. The two namespaces are disjoint.
 
 ### §9.5 — Primitive verdict taxonomy (promotion ledger)
 
@@ -1582,7 +1738,16 @@ none  # staged / quarantined (not registered)
   `core/venous/_adapters/<framework>/`. Thin glue; zero invariant logic.
 - **Venous:** the HuGR term for the framework-free primitive layer
   (`core/venous/`). Named for how it carries domain concepts into any
-  framework bloodstream.
+  framework bloodstream. Originates from the biological analogy: the
+  venous system feeds every organ without being specific to any one.
+- **Concern:** the top-level domain grouping used in
+  `engine/primitives_by_concern.yaml` — synonym for namespace in most
+  contexts. Every primitive entry carries a `concern:` field matching
+  its namespace.
+- **Slice:** one feature's worth of code added by a single extend
+  tool (e.g. an `auth` slice = models + schemas + CRUD + routes +
+  migration for authentication). Extend tools produce slices;
+  generators produce entire subsystems.
 
 **Tools:**
 
@@ -1628,7 +1793,19 @@ none  # staged / quarantined (not registered)
   detect "already installed" state (idempotency anchor per §A4).
 - **Prerequisite:** a `Prereq.*` enum value passed to
   `ensure_prerequisites()`; documents what the tool needs the project
-  to already have.
+  to already have. Canonical enum in
+  `adapt/contracts/prerequisites.py#Prereq`. Values include
+  `BASE_MODEL`, `MODELS_INIT`, `CONFIG_SETTINGS`, `ROUTES_INIT`,
+  `ALEMBIC_VERSIONS`, `REQUIREMENTS_TXT`, and so on. Every tool
+  declares its prereqs explicitly; `ensure_prerequisites` returns
+  the list of failures so the tool can stop before any write.
+- **`manifest build` vs `manifest verify`:** the build command
+  (`engine.index.manifest build`) regenerates `catalog.json` from disk
+  — writes the file + computes a fresh `stable_hash`. The verify
+  command (`engine.index.manifest verify`) runs build TWICE and
+  asserts the hashes are identical, catching non-determinism in the
+  scan order or content. CI runs `verify`; developers run `build` to
+  update after adding a primitive/tool.
 
 **Pool + promotion:**
 
@@ -1637,7 +1814,7 @@ none  # staged / quarantined (not registered)
 - **Quarantined primitive:** `_extracted/_quarantine/<Name>/` — rejected
   by extraction gate; not surfaced in catalog.
 - **Ledger entry:** row in `engine/promotion/ledger.json` with verdict
-  (see §9.5). Rendered human-readably in `engine/promotion/LEDGER.md`.
+  (see §11.5). Rendered human-readably in `engine/promotion/LEDGER.md`.
 - **Verdict:** the classifier's decision per ledger entry (§9.5).
 - **Signal:** evidence backing a verdict (§9.6).
 - **Blocker:** a reason an otherwise-promotable entry can't land
@@ -1716,10 +1893,18 @@ ratification, all amendments follow §8.5.
 - [ ] §A12 amendment + §B1.7 + §B1.8 formally ratified here as well
       (mirrors CONTRACT.md §E).
 
-**How to sign:** replace `YYYY-MM-DD` above with today's ISO date
-(e.g. `2026-04-21`). Do NOT delete the checkbox list; tick each `[ ]`
-to `[x]` only for blocks you've actually re-read. Partial signing is
-allowed (a `[x]` you didn't read is worse than `[ ]`).
+**How to sign.** Replace `YYYY-MM-DD` above with today's ISO date.
+Then tick each `[ ]` to `[x]` only for blocks you have personally
+re-read in the current sitting. Partial signing is allowed: an
+honestly unchecked `[ ]` is worth more than a performatively ticked
+`[x]` you didn't actually review. The sign-off counts as complete
+when every checkbox is `[x]`.
+
+**Semantics after ratification.** Once this block is dated + signed,
+the checkboxes stop representing to-dos and start representing a
+permanent audit trail ("I, Gustavo, confirmed §N on this date").
+Future amendments do NOT uncheck these boxes; they append a new
+dated block to the amendment log below.
 
 ### Amendment log
 
