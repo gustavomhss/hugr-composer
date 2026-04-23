@@ -85,7 +85,7 @@ USER: Build me a SaaS backend with email auth and Stripe subscriptions.
 
 STEP 1  → orient
 TOOL    fastapi_meta_home()
-RESULT  {repo: "empty", catalog: {tools: 201, primitives: 302, recipes: 385}}
+RESULT  {repo: "empty", catalog: {tools: 201, primitives: 299, recipes: 393}}
 
 STEP 2  → clarify
 ASSISTANT  "Two quick questions before I scaffold:
@@ -117,7 +117,7 @@ RESULT  {mode: "recipe_template", files: ["app/compositions/stripe_webhook.py"]}
 
 STEP 6  → audit
 TOOL    fastapi_meta_audit()
-RESULT  {32/32 green}
+RESULT  {36/36 green}
 
 ASSISTANT  "Done. http://localhost:8000/health returns 200.
             Login at /auth/login (admin@myapp / setup_password).
@@ -158,7 +158,7 @@ ASSISTANT  "Adjusting the rate-limit window from the default 60s to your
 
 STEP 6  → audit
 TOOL    fastapi_meta_audit()
-RESULT  {32/32 green}
+RESULT  {36/36 green}
 
 ASSISTANT  "/api/orders now enforces 1000 req/min per X-API-Key + rejects
             duplicate Idempotency-Key. Tested locally; ready."
@@ -199,7 +199,7 @@ STEP 5  → business (Maestro adds audit calls inside existing handlers)
 
 STEP 6  → audit
 TOOL    fastapi_meta_audit()
-RESULT  {32/32 green}
+RESULT  {36/36 green}
 
 ASSISTANT  "Login via Google OAuth at /auth/login; every route now
             appends to a tamper-evident audit log. Want me to add the

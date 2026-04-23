@@ -123,12 +123,12 @@ for the next 50 violations.
     architectural claims inline.
 - **Invariants:** Numbers in SKILL.md MUST reconcile against
   `engine/index/catalog.json` + the machine-generated
-  `INVENTORY.md`. Today the reconciliation is reviewer-enforced;
-  §B4.7 (`_r_counts_sync` in `engine/audit/contract_check.py`) covers
-  the narrative-doc set (CLAUDE / STATUS / ROADMAP / CHANGELOG) and
-  will be extended to SKILL.md in the Phase-1 follow-up commit that
-  closes the Codex audit's SKILL-drift finding. Drift = CI fail
-  going forward.
+  `INVENTORY.md`. §B4.7 (`_r_counts_sync` in
+  `engine/audit/contract_check.py`) covers the narrative-doc set —
+  CLAUDE / STATUS / ROADMAP / CHANGELOG / **SKILL.md[Overview]** —
+  and fails CI on any drift. The SKILL.md[Overview] scope is the
+  paragraph under `## Overview` only; few-shot transcript counts are
+  illustrative snapshots and deliberately not rule-checked.
 - **Completeness:** All claimed metrics have a verification command.
   All architectural sections replaced by a link to canonical doc.
 - **Quality (SOTA):** Reads as operational reference, not marketing.
@@ -552,26 +552,59 @@ cd skills/SKILL-001-fastapi-production && PYTHONPATH=. \
 #### B2.5 — `SKILL.md` v2 Anthropic Agent Skills contract
 
 > `SKILL.md` is the Maestro-facing entry document: the skill's
-> "README for LLM consumers". v2 format aligns with Anthropic Agent
-> Skills (YAML frontmatter + ≤500-line body + ≥3 few-shot transcripts).
+> "README for LLM consumers". v2 format has TWO YAML blocks:
+> (a) Anthropic-spec frontmatter at the top (`name` / `description`
+>     / optional `license`), and
+> (b) a fenced ``` ```yaml ``` block inside the body under an
+>     `## Machine-readable metadata` section carrying HuGR-specific
+>     fields (`hugr_skill_version`, `spec_compat`, `kind`, `domains`,
+>     `entry_tools`, `catalog_path`, `phases`, `invariants`).
+> The split matches Anthropic's skill contract (which LLM hosts
+> parse by the frontmatter) + HuGR's richer metadata (which our own
+> catalog + Maestro drivers parse from the body). Do not conflate
+> the two — putting HuGR fields in the frontmatter breaks
+> Anthropic parsers, and putting Anthropic fields in the body
+> block breaks the hosts.
 
 - **DoD:**
-  - `skills/SKILL-001-fastapi-production/SKILL.md` starts with YAML
-    frontmatter containing: `name`, `description` (800-1200 chars),
-    `version`, `entry_tools` (list of tier-1 tool names).
-  - Body: one purpose section + one architecture pointer + ≥3
-    few-shot transcripts (real prompts + real responses) + tool
-    index that cross-references catalog entries.
+  - `skills/SKILL-001-fastapi-production/SKILL.md` starts with
+    Anthropic-spec YAML frontmatter containing: `name` (kebab-case,
+    ≤ 64 chars), `description` (800-1200 chars, third-person,
+    carrying both a "use when" trigger and a "do not" anti-trigger
+    clause). `license` is optional but MUST be a valid SPDX
+    identifier when present.
+  - Body carries every section required by the machine check:
+    `## Overview`, `## When to use`, `## When NOT to use`,
+    `## Machine-readable metadata`, `## Workflow phases`,
+    `## Tier-1 tool index`, `## Few-shot transcripts`,
+    `## Anti-patterns`, `## Reference files`.
+  - `## Machine-readable metadata` fenced ```yaml``` block contains
+    all eight required keys (`hugr_skill_version`, `spec_compat`,
+    `kind`, `domains`, `entry_tools`, `catalog_path`, `phases`,
+    `invariants`).
+  - Body ≤ 500 lines and ≤ 5000 tokens (estimate = `len(body)//4`).
+  - ≥ 3 few-shot transcripts under `## Few-shot transcripts`.
+  - `hugr_skill_version` is semver-shaped AND matches the `VERSION`
+    file (§B4.6 triplet sync validates the latter independently).
+  - `catalog_path` resolves to a JSON file carrying
+    `schema_version`, `tools`, `primitives`, `recipes`, `counts`.
+  - Every `entry_tools` entry resolves to a registered tool in
+    `catalog.json` OR is a tree dispatcher / tier-1 meta name.
   - Rule `_r_skill_md_contract` in
-    `engine/audit/contract_check.py` parses the frontmatter and
-    validates the above shape; failing any piece = CI fail.
+    `engine/audit/contract_check.py` enforces every bullet above;
+    failing any piece = CI fail.
 - **Invariants:**
-  - Frontmatter `version` matches `VERSION` file (§B4.6 triplet
-    sync, machine-checked independently).
+  - Body-block `hugr_skill_version` matches the skill-dir `VERSION`
+    file (§B4.6 triplet sync covers skill-dir VERSION independently;
+    the SKILL.md body value is the one Maestro consumes).
   - Few-shot transcripts reference only registered primitives and
     catalog tools — no aspirational surface.
-  - No stale counts in body; any claimed number has a command
-    comment showing how to verify.
+  - No stale counts in body; the `## Overview` paragraph is
+    machine-validated by §B4.7's `_r_counts_sync`. Counts that
+    appear in few-shot transcripts are snapshots-for-illustration
+    and NOT rule-checked (transcripts freeze a past release on
+    purpose so readers can compare eras without every example
+    churning per release).
 - **Completeness:** Every `entry_tool` in frontmatter exists in
   `catalog.json`; every transcript's tool invocations resolve.
 - **Quality (SOTA):** The doc reads as operational reference for an

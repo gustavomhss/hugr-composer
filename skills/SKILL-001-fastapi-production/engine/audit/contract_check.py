@@ -437,6 +437,12 @@ def _r_counts_sync() -> tuple[bool, str]:
         "STATUS.md": SKILL_ROOT / "STATUS.md",
         "ROADMAP.md": REPO_ROOT / "ROADMAP.md",
         "CHANGELOG.md[1.0.0]": REPO_ROOT / "CHANGELOG.md",
+        # SKILL.md added here post-Codex-audit (BLOCKER #2).
+        # The overview paragraph is Maestro's first read — it MUST carry
+        # the current canonical counts, not pre-Wave-1.5 values. The check
+        # only looks at the single paragraph under `## Overview` (not the
+        # few-shot transcript counts, which are illustrative).
+        "SKILL.md[Overview]": SKILL_ROOT / "SKILL.md",
     }
     required_tokens: dict[str, list[str]] = {
         "CLAUDE.md": [
@@ -462,6 +468,14 @@ def _r_counts_sync() -> tuple[bool, str]:
             f"**{canon['adapters']} FastAPI adapters**",
             f"**{canon['staged']} staged primitives**",
         ],
+        "SKILL.md[Overview]": [
+            # Overview-paragraph shape: "… 124 registered + 176 staged
+            # framework-free primitives …". Covers registered + staged;
+            # quarantined + adapters are not cited in the overview by
+            # convention (the overview stays human-readable; detail lives
+            # in INVENTORY.md + the tier-1 tool index below).
+            f"{canon['registered']} registered + {canon['staged']} staged",
+        ],
     }
     missing: list[str] = []
     for doc, path in narrative_docs.items():
@@ -476,6 +490,21 @@ def _r_counts_sync() -> tuple[bool, str]:
                 missing.append(f"{doc}: [1.0.0] section header not found")
                 continue
             body = m.group(0)
+        elif doc == "SKILL.md[Overview]":
+            # Scope to the `## Overview` paragraph — everything between
+            # the `## Overview` heading and the next `##` heading. Keeps
+            # the check from leaking into the few-shot transcripts (which
+            # intentionally freeze example counts from a past release and
+            # should not co-evolve with INVENTORY).
+            m = re.search(
+                r"^## Overview\s*\n(.*?)(?=^## )",
+                body,
+                re.MULTILINE | re.DOTALL,
+            )
+            if not m:
+                missing.append(f"{doc}: `## Overview` section not found")
+                continue
+            body = m.group(1)
         for tok in required_tokens[doc]:
             if tok not in body:
                 missing.append(f"{doc}: expected {tok!r}")
@@ -486,9 +515,9 @@ def _r_counts_sync() -> tuple[bool, str]:
             "Re-run `python -m engine.inventory` then sync narrative docs."
         )
     return True, (
-        f"narrative docs match INVENTORY: {canon['registered']} reg / "
-        f"{canon['staged']} staged / {canon['quarantined']} qtn / "
-        f"{canon['adapters']} adapters"
+        f"narrative docs (incl. SKILL.md Overview) match INVENTORY: "
+        f"{canon['registered']} reg / {canon['staged']} staged / "
+        f"{canon['quarantined']} qtn / {canon['adapters']} adapters"
     )
 
 
