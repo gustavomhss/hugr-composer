@@ -47,8 +47,9 @@ tool / primitive renames going forward (CONTRACT §A10).
 - **36/36 CONTRACT rules green.** (34 pre-freeze + §B4.6 VERSION
   triplet sync + §B4.7 canonical counts sync, both added as
   drift-guard rules during the pre-freeze rigor audit.)
-- **Catalog `stable_hash`: `50338fa37aa2...`** (full 64-char value in
-  `engine/index/catalog.json`) — consumers pin this for session
+- **Catalog `stable_hash`: `cc8b7ef58a7d...`** (full 64-char value:
+  `cc8b7ef58a7d6e9327d39d6c25153780253d704f1d6136330b789cbd7d6f190c`,
+  in `engine/index/catalog.json`) — consumers pin this for session
   reproducibility. Verify with `jq -r .stable_hash
   skills/SKILL-001-fastapi-production/engine/index/catalog.json`.
 
