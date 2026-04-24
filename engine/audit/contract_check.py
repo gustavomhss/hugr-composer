@@ -1072,12 +1072,18 @@ def _r_skill_md_contract() -> tuple[bool, str]:
     if name in {"anthropic", "claude"}:
         return False, f"SKILL.md name uses reserved word: {name!r}"
 
-    # 4. `description` field (Anthropic spec)
+    # 4. `description` field (Anthropic spec + CONTRACT §B2.5 DoD)
+    #    DoD says 800-1200 chars. Lower floor matters: a too-short
+    #    description ends up as a bare tagline without the "use when"
+    #    triggers + "do not" anti-triggers the Maestro needs to route.
     desc = fm.get("description")
     if not isinstance(desc, str) or not desc.strip():
         return False, "SKILL.md frontmatter missing `description`"
-    if len(desc) > 1024:
-        return False, f"SKILL.md description too long ({len(desc)}>1024 chars)"
+    if not (800 <= len(desc) <= 1200):
+        return False, (
+            f"SKILL.md description length {len(desc)} outside "
+            "CONTRACT §B2.5 DoD range (800-1200 chars)"
+        )
     if "<" in desc or ">" in desc:
         return False, "SKILL.md description cannot contain XML tags (`<`/`>`)"
     first_word = desc.strip().split(None, 1)[0].lower()
@@ -1167,16 +1173,19 @@ def _r_skill_md_contract() -> tuple[bool, str]:
             f"SKILL.md entry_tools reference unknown tools: {missing_tools[:3]}"
         )
 
-    # 12. Few-shot transcripts ≥ 2, ≤ 3 (fenced code blocks under the section)
+    # 12. Few-shot transcripts ≥ 3 (CONTRACT §B2.5 DoD: "≥ 3 few-shot
+    #     transcripts under `## Few-shot transcripts`"). No upper bound —
+    #     more transcripts = better Maestro grounding, not worse.
     transcripts_section = re.search(
         r"## Few-shot transcripts(.+?)(?=\n## )", body, re.DOTALL,
     )
     if not transcripts_section:
         return False, "SKILL.md 'Few-shot transcripts' section missing body"
     transcripts = re.findall(r"```[^\n]*\n(.*?)```", transcripts_section.group(1), re.DOTALL)
-    if not (2 <= len(transcripts) <= 3):
+    if len(transcripts) < 3:
         return False, (
-            f"SKILL.md must include 2-3 few-shot transcripts; got {len(transcripts)}"
+            f"SKILL.md must include ≥3 few-shot transcripts per CONTRACT "
+            f"§B2.5 DoD; got {len(transcripts)}"
         )
 
     # 13. No forbidden drift heuristics (STATUS/ROADMAP territory)
