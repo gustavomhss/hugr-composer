@@ -141,12 +141,23 @@ def _r_claude_memory() -> tuple[bool, str]:
 
 
 def _r_skillmd_honest() -> tuple[bool, str]:
+    """§B0.4 — SKILL.md body-prose counts reconcile against disk.
+
+    Scope (post-Codex-v3 B1 rewrite): this rule is a narrow drift-
+    detector on body-prose count claims — specifically, the
+    "N adapt tools" pattern that has historically drifted across
+    sprints. The full SKILL.md shape (Anthropic frontmatter,
+    body-metadata YAML, transcripts, entry_tools validity) is
+    enforced by `_r_skill_md_contract` (§B2.5). Overview-paragraph
+    counts are enforced by `_r_counts_sync` (§B4.7, SKILL.md[Overview]
+    scope). §B0.4 sits alongside those two — cheap sanity check, not
+    a schema validator.
+    """
     path = SKILL_ROOT / "SKILL.md"
     ok, msg = _exists(path, min_bytes=500)
     if not ok:
         return ok, msg
     body = path.read_text()
-    # Any claim numbers MUST be within 10% of reality on disk.
     tool_count = len(list((SKILL_ROOT / "adapt" / "extend").rglob("add_*.py")))
     m = re.search(r"(\d+)\s*(?:adapt|extend|EXTEND)\s*tools?", body)
     if m:
