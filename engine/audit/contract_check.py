@@ -507,6 +507,24 @@ def _r_counts_sync() -> tuple[bool, str]:
         return False, "LEDGER.md first line missing `**Total:** N` headline"
     canon["ledger"] = int(m.group(1))
 
+    # Verdict subtotals come from engine/promotion/ledger.json so narrative
+    # docs citing e.g. "104 NEEDS_CALLER" are held to the classifier's
+    # own count, not a frozen pre-freeze number. Codex v3 H5 flagged the
+    # drift — FREEZE §2.5 said 104, reality was 101 after Wave 1.5.
+    ledger_json = SKILL_ROOT / "engine" / "promotion" / "ledger.json"
+    if not ledger_json.exists():
+        return False, "engine/promotion/ledger.json missing — run `python -m engine.promotion.classify`"
+    try:
+        _data = json.loads(ledger_json.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return False, f"ledger.json malformed: {exc}"
+    _verdicts: dict[str, int] = {}
+    for _e in _data.get("entries", []):
+        _v = _e.get("verdict", "")
+        _verdicts[_v] = _verdicts.get(_v, 0) + 1
+    canon["needs_caller"] = _verdicts.get("needs_caller", 0)
+    canon["extract_motor_pair"] = _verdicts.get("extract_motor_pair", 0)
+
     narrative_docs = {
         "CLAUDE.md": REPO_ROOT / "CLAUDE.md",
         "STATUS.md": SKILL_ROOT / "STATUS.md",
@@ -520,8 +538,14 @@ def _r_counts_sync() -> tuple[bool, str]:
         "SKILL.md[Overview]": SKILL_ROOT / "SKILL.md",
         # FREEZE.md §1.3 documents the ledger size as part of the frozen
         # release-surface claim. A count drift here means the freeze
-        # artefact disagrees with what LEDGER.md actually ships.
+        # artefact disagrees with what LEDGER.md actually ships. §2.5
+        # cites the NEEDS_CALLER verdict subtotal — held to ledger.json.
         "FREEZE.md": REPO_ROOT / "FREEZE.md",
+        # INTERFACES.md §2.3 cites the recipe count in the Forge/Maestro
+        # consumer contract. Codex v3 H5 caught this drifting to 385
+        # while catalog + ROADMAP were at 392 — a host impl against the
+        # doc would mis-size its search index.
+        "INTERFACES.md": REPO_ROOT / "INTERFACES.md",
     }
     required_tokens: dict[str, list[str]] = {
         "CLAUDE.md": [
@@ -560,6 +584,13 @@ def _r_counts_sync() -> tuple[bool, str]:
         "FREEZE.md": [
             # Shape: "LEDGER.md — 219-entry triage ledger …".
             f"{canon['ledger']}-entry triage ledger",
+            # Shape: "### §2.5 — 101 NEEDS_CALLER items". Subtotal must
+            # match the classifier's own ledger.json output (Codex v3 H5).
+            f"{canon['needs_caller']} NEEDS_CALLER items",
+        ],
+        "INTERFACES.md": [
+            # Shape: "**392 recipes** parsed from primitive `.md` …".
+            f"**{canon['recipes']} recipes**",
         ],
     }
     missing: list[str] = []
@@ -600,11 +631,13 @@ def _r_counts_sync() -> tuple[bool, str]:
             "Re-run `python -m engine.inventory` then sync narrative docs."
         )
     return True, (
-        f"narrative docs (incl. SKILL.md Overview + FREEZE.md) match "
-        f"INVENTORY + LEDGER: {canon['registered']} reg / "
-        f"{canon['staged']} staged / {canon['quarantined']} qtn / "
-        f"{canon['adapters']} adapters / {canon['recipes']} recipes / "
-        f"{canon['ledger']} ledger"
+        f"narrative docs (incl. SKILL.md Overview + FREEZE.md + "
+        f"INTERFACES.md) match INVENTORY + LEDGER: "
+        f"{canon['registered']} reg / {canon['staged']} staged / "
+        f"{canon['quarantined']} qtn / {canon['adapters']} adapters / "
+        f"{canon['recipes']} recipes / {canon['ledger']} ledger "
+        f"({canon['needs_caller']} needs_caller, "
+        f"{canon['extract_motor_pair']} extract_motor_pair)"
     )
 
 
