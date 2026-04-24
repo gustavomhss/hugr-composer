@@ -287,76 +287,150 @@ stochastic; "SOTA" is measured, not decreed.
 
 - **Timing:** Immediately post-tag (day 1).
 - **Audience:** 5-10 devs personally known to Gustavo. Not strangers from Twitter.
-- **Distribution:** Direct invite (DM / email). No public announcement.
-- **Feedback channel:** Dedicated Slack/Discord thread OR direct GitHub issues on a private fork.
-- **Success instrumentation:**
-  - Each alpha user runs `./evidence/reproduce.sh` on their machine AND reports any divergence.
-  - Each alpha user attempts at least one novel scaffold (their own spec, not from the benchmark corpus) AND reports: time to boot, tests pass / fail, subjective quality.
-  - Failure modes tracked in a shared doc.
-- **Exit criteria (all three must hold):**
-  - ≥3 alpha users successfully scaffolded + booted an emitted app on their own hardware.
-  - Zero unresolved CRITICAL bugs (install fails / scaffold produces uncompilable code / data loss in primitive).
-  - Catastrophic-bug rate trending downward (≤1 new CRITICAL per week for 2 consecutive weeks).
-- **Duration:** 2-4 weeks. If exit criteria not met by week 4, do not advance — diagnose + fix.
+- **Distribution:** Direct invite (DM / email), one-per-user invite
+  token (HuGR-issued UUID) used to tie every alpha report back to a
+  specific onboarding session — no anonymous reporting.
+- **Feedback channel:** Dedicated Slack/Discord thread + required
+  `alpha_report.md` template per invite token (closed-loop: no
+  report = not counted toward exit criteria).
+- **Platform matrix (required coverage before exit):**
+  - ≥2 OS families (at least one of: macOS Intel, macOS Apple Silicon;
+    AND at least one of: Linux x86_64, Linux ARM, Windows + WSL).
+  - ≥2 Python minor versions among the supported set
+    (3.12, 3.13).
+- **Success instrumentation (closed-loop, not telemetry-opt-in):**
+  - Each alpha user runs `./evidence/reproduce.sh --verify` on their
+    machine AND reports PASS/FAIL + any divergence.
+  - Each alpha user attempts at least one novel scaffold (their own
+    spec, not from the benchmark corpus) AND fills
+    `alpha_report.md`: install time, time-to-boot, tests pass/fail,
+    a 1-sentence subjective quality note, any bug with a
+    minimal-repro.
+  - Failure modes tracked in `/docs/alpha/failure_modes.md` (shared
+    doc; one row per incident).
+- **Exit criteria (all four must hold):**
+  - **≥5 alpha users** completed successful end-to-end runs
+    (scaffold → boot → emitted pytest green on their own hardware).
+  - Platform matrix above covered: ≥2 OS families AND ≥2 Python
+    minors represented in the ≥5 successful runs.
+  - Zero unresolved CRITICAL bugs per POST_RELEASE.md §3 severity
+    ladder (auth-bypass / SQL injection / shell injection /
+    secrets leak / scaffold-emits-uncompilable-code / data-loss
+    in primitive / unbootable release).
+  - Median CRITICAL MTTR <7 days over the alpha window; zero
+    CRITICAL aged >14 days at exit.
+- **Duration:** 2-4 weeks. If exit criteria not met by week 4, do
+  not advance — diagnose + fix.
 
 ### §3.2 — Phase B: Closed beta
 
 - **Timing:** After Phase A exit.
-- **Audience:** 25-100 devs via invite-only. Public waitlist form; issue invites in batches of 10.
-- **Distribution:** Landing page at `hugr.dev` (or equivalent) with waitlist. No HN / Product Hunt post yet.
-- **Feedback channel:** Public GitHub issues on `HuGR_Skills` repo, with a "beta" label.
+- **Audience:** 25-100 devs via invite-only. Public waitlist form;
+  issue invites in batches of 10.
+- **Distribution:** Landing page at `hugr.dev` (or equivalent) with
+  waitlist. Invite token per user (same system as alpha); every
+  download of `install.sh` carries a run-ID that the installer
+  echoes in its final line. No HN / Product Hunt post yet.
+- **Feedback channel:** Public GitHub issues on `HuGR_Skills` repo
+  with a `beta` label + invite-token field in issue template
+  (closed-loop: token links the report to the download cohort,
+  denominator for "success rate" is the cohort size, not the
+  reporter count).
 - **Success instrumentation:**
-  - GitHub issue velocity + bug severity distribution tracked weekly.
-  - Install failure rate measured (opt-in phone-home from `install.sh`: OS + Python version + success/fail).
-  - Benchmark FNF score re-run monthly on latest `main` to detect regression.
-- **Exit criteria (all three must hold):**
-  - ≥50 beta users have successfully onboarded (scaffold + first extend tool).
-  - ≥10 emitted apps deployed to real production (self-reported; track via issue template).
-  - Critical bug fix rate ≥2 per week over the last 4 weeks AND zero unresolved CRITICAL bugs aged >14 days.
-  - Install failure rate <5% across all reported platforms.
+  - GitHub issue velocity + bug severity distribution tracked
+    weekly (MTTR + backlog per severity).
+  - Install completion rate = `(install.sh exit-0 reports) /
+    (invites issued)` — binding only when the run-ID instrumentation
+    is shipped (it is a Wave-2 delivery; if not shipped by Phase B
+    open, this metric is CONTEXT-only, not gating).
+  - Onboarding completion rate = `(users who ran ≥1 extend tool
+    successfully) / (invites issued)` — same closed-loop
+    denominator as install completion.
+  - Benchmark FNF score re-run monthly on latest `main` to detect
+    regression.
+- **Exit criteria (all four must hold):**
+  - **≥50 beta invites activated** with successful onboarding
+    (scaffold + ≥1 extend tool completed per closed-loop report).
+  - **Median CRITICAL MTTR <7 days** over the last 4 weeks AND zero
+    unresolved CRITICAL aged >14 days.
+  - **Critical-incidence rate:** <1 new CRITICAL per 100 activated
+    invites over last 4 weeks (this is the CORRECT direction of
+    optimization; the earlier "bug fix rate ≥2/week" gate was
+    backwards and rewarded churn).
+  - **Install completion rate ≥90%** across reported platforms
+    (BINDING only if run-ID instrumentation shipped; otherwise
+    CONTEXT; see §5 gating-versus-context distinction).
 - **Duration:** 4-8 weeks.
 
 ### §3.3 — Phase C: Public launch
 
 - **Timing:** After Phase B exit.
 - **Audience:** Unlimited.
-- **Distribution:** HN Show post + Product Hunt + Twitter launch thread + blog post explaining the thesis.
+- **Distribution:** HN Show post + Product Hunt + Twitter launch
+  thread + blog post explaining the thesis.
 - **Feedback channel:** GitHub issues + Discord/forum.
 - **Prerequisites (all):**
   - Phase A + B cleared per their exit criteria.
   - FNF Test score ≥80% on fresh run at the launch HEAD.
   - `install-docker.yml` nightly green for ≥30 consecutive days.
-  - Rollback protocol exercised at least once (dry-run OR real) in Phase A+B.
-  - Post-launch response team on-call: Gustavo + 1 backup (even if the backup is "Claude Opus 4.X with commit access," explicitly named in POST_RELEASE.md).
+  - Rollback protocol exercised at least once (dry-run OR real)
+    in Phase A+B.
+  - **Named-human on-call coverage.** Gustavo + 1 real human backup
+    with: commit access, release secrets, paging responsibility,
+    authority to yank. An LLM is NOT an acceptable backup on-call.
+    Until a second human is named + briefed, Phase C cannot open;
+    for Phase A (tight, private, trusted cohort) solo on-call is
+    acceptable with the explicit acknowledgement in
+    `POST_RELEASE.md` that bus-factor-1 is the stated risk.
 
 ### §3.4 — Launch-phase transition checklist
 
-A dedicated checklist at `/checklists/launch_phase_transition.md` SHOULD be used before each phase transition. This LAUNCH.md owns the high-level discipline; the checklist owns the row-by-row verification.
+A dedicated checklist at `/checklists/launch_phase_transition.md`
+SHOULD be used before each phase transition. This LAUNCH.md owns
+the high-level discipline; the checklist owns the row-by-row
+verification.
 
 ---
 
 ## §4 — Rollback-ready ops
 
-(Consolidates with ROADMAP §5.7, ROADMAP §5.8, and POST_RELEASE.md §2.)
+Severity taxonomy + yank/hotfix mechanics live in `POST_RELEASE.md`
+(§2 mechanics + §3 severity ladder). LAUNCH.md does NOT maintain a
+parallel severity list — Codex v6 LAUNCH review (B4) correctly
+flagged that two overlapping incident taxonomies leave ops staff
+arguing at 3am whether a specific bug is a yank or a hotfix.
 
-### §4.1 — Yank criteria (drops v1.0.0 from distribution)
+### §4.1 — Severity + response class (canonical: POST_RELEASE §3)
 
-Any of the following triggers an immediate yank:
+| Severity (POST_RELEASE §3) | Response class | Owner |
+|---|---|---|
+| **Critical** — auth bypass, SQL injection, shell injection, secrets leak, scaffold emits uncompilable code, data loss in primitive write path, unbootable release, supply-chain compromise, license / legal violation | YANK if no same-day fix (POST_RELEASE §2b); else HOTFIX same business day (POST_RELEASE §2a) | Gustavo (final call); on-call may cut hotfix + defer yank decision |
+| **High** — known-bad crypto defaults in emitted code, incorrect auth config, perf regression >50% in emitted scaffold boot | HOTFIX ≤1 business day | Gustavo |
+| **Medium** — generator bug affecting edge-case prompts, doc drift after a counts change | Next MINOR | Claude + Gustavo review |
+| **Low** — cosmetic, typo, example polish | Any MINOR | Claude |
 
-- Data loss bug in any primitive (write path emits corrupted data silently).
-- Auth bypass in any emitted-project auth flow.
-- Supply-chain compromise (dependency pulled from registry is malicious).
-- License / legal violation (unknowingly shipped GPL code under proprietary claim, etc.).
+Yank mechanics (when Critical + no same-day fix): POST_RELEASE §2b.
+Hotfix mechanics: POST_RELEASE §2a. Emergency revert: POST_RELEASE
+§2c. LAUNCH.md does not duplicate those procedures — it points at
+them, so a single edit in POST_RELEASE.md updates the launch
+rollback contract too.
 
-Yank mechanics: per POST_RELEASE.md §2b. Tag is NEVER deleted (git contract); instead, marked pre-release + "DO NOT INSTALL" banner + `v1.0.1` shipped with the fix.
+### §4.2 — When LAUNCH.md adds to POST_RELEASE (and only then)
 
-### §4.2 — Hotfix criteria (branches to v1.0.1 without yank)
+This doc narrows POST_RELEASE in two places only, BOTH are about
+the first 72h post-tag launch window specifically:
 
-- Bug is security-High or below AND fix lands ≤1 day.
-- Issue is reproducible by ≥2 independent reporters.
-- Primitive contract not violated (fix lives in adapter layer OR generator OR tool).
-
-Hotfix mechanics: per POST_RELEASE.md §2a.
+- **Paging escalation** — see §4.3 below. POST_RELEASE.md §3
+  currently names Gustavo as final call + "on-call engineer in
+  emergencies"; §4.3 below locks that down to a named human
+  before Phase C opens (pre-Wave-F POST_RELEASE.md had on-call
+  coverage TBD; keeping it TBD through public launch is
+  unacceptable).
+- **Automatic yank-consideration trigger** — two consecutive
+  `install-docker.yml` nightly failures post-tag = yank-consideration
+  (per §4.3). POST_RELEASE.md §1 monitoring table tracks this as a
+  watch line, but does not auto-escalate; LAUNCH.md raises it to
+  a trigger during the post-tag window.
 
 ### §4.3 — Monitoring SLAs (first 72h post-tag)
 
@@ -371,22 +445,66 @@ Per CONTRACT §2.12 and ROADMAP §2.12: every Maestro session pins a `stable_has
 
 ---
 
-## §5 — Success metrics (what "didn't pass vergonha" actually measures)
+## §5 — Success metrics
 
-Track through Phase C first 3 months:
+Codex v6 LAUNCH review (M1) flagged the first draft's metric list
+as vanity/silence-sensitive — metrics like "0 critical CVEs
+reported" improve when users fail to report, "≥10 emitted apps in
+prod (self-reported)" is fabricable, "reviewer-majority YES" begs
+the question of who chooses the reviewers. A zero-risk launch
+needs falsifiable operational numbers for GATING and acknowledges
+the vanity-adjacent ones as CONTEXT.
 
-| Metric | Target | Unacceptable |
-|---|---|---|
-| First-week install failure rate | <5% | >10% |
-| Time from `install.sh` to first emitted scaffold booting | <10 min median | >30 min |
-| FNF Test score on fresh run | ≥80% | <60% |
-| Critical CVEs reported | 0 | ≥1 |
-| Emitted apps reaching real production (self-reported) | ≥10 in first 3 months | 0 |
-| First-shot scaffold success rate in public telemetry | ≥80% | <60% |
-| Maestro token cost to ship first feature (auth + 1 CRUD) | <50k tokens | >200k tokens |
-| External-reviewer verdict on `/evidence/` | ≥2 of 3 YES | <2 of 3 YES |
+### §5.1 — Gating metrics (binding; phase transitions blocked if any is unacceptable)
 
-Each metric is a public number shipped in the quarterly `STATUS.md` update.
+Closed-loop: every metric below has a denominator tied to a
+HuGR-issued invite token (Phase A) or run-ID (Phase B+). Opt-in
+telemetry is NOT the denominator.
+
+| Metric | Target | Unacceptable (blocks transition) | Window |
+|---|---|---|---|
+| Alpha platform-matrix coverage | ≥2 OS families × ≥2 Python minors | <2 on either axis | Phase A exit |
+| Alpha successful end-to-end runs | ≥5 | <5 | Phase A exit |
+| Median CRITICAL MTTR | <7 days | >14 days | rolling 4 weeks |
+| Unresolved CRITICAL aged >14 days | 0 | ≥1 | any point |
+| Critical incidence rate | <1 per 100 activated invites | ≥3 per 100 | rolling 4 weeks, Phase B+ |
+| FNF Test score on fresh HEAD | ≥80% | <60% | Phase C prereq; quarterly re-run |
+| `install-docker.yml` nightly streak pre-Phase-C | ≥30 consecutive days green | <14 days | Phase C prereq |
+| Named-human on-call (not LLM) for Phase C | Gustavo + 1 named human | any other shape | Phase C prereq |
+| External reviewer independent sign-off | 2-of-3 YES on the canonical sign-off prompt | <2-of-3 | pre-tag only (Wave G already satisfied this) |
+
+### §5.2 — Context metrics (tracked, reported, NOT gating)
+
+These numbers are published quarterly in `STATUS.md` for
+transparency. They are NOT gates — every one has a known
+gameability vector or a silence-sensitive denominator. They inform
+strategy, do not block rollout.
+
+| Metric | Note |
+|---|---|
+| Install-completion rate (telemetry-derived) | Binding only when the run-ID phone-home instrumentation ships in Wave 2. Until then: CONTEXT. Opt-in denominator; use with caution. |
+| First-shot scaffold success rate (telemetry) | Same caveat as install-completion. BINDING only post-Wave-2 telemetry. |
+| Median time-to-first-emitted-scaffold-boot | CONTEXT. Self-selected population, different hardware/network. |
+| Maestro token cost for "auth + 1 CRUD" feature | CONTEXT. Provider prices + model choice dominate; useful as a delta vs counterfactual baseline, not as absolute. |
+| Emitted apps reaching real production (self-reported) | CONTEXT. Self-report is un-falsifiable; track to see trend, do not gate. |
+| Critical CVEs reported | CONTEXT. Silence-sensitive — low count may mean "no bugs" or "no one reported." Pair with pentest rate + SECURITY.md disclosure activity. |
+| GitHub stars / forks / external contributors | CONTEXT. Vanity unless coupled to signed commits + reviewed PRs. |
+
+### §5.3 — Why this split
+
+The gating column only contains metrics that FALSIFY something
+concrete: a user who did or didn't complete onboarding via a
+closed-loop token, an MTTR measured from issue-created to
+issue-closed on labeled incidents, a benchmark score re-run from
+the same specs. Each is auditable from git log + GitHub issue
+history + benchmark output. Each can prove itself wrong; a bad
+denominator cannot hide the problem.
+
+Context metrics are where vanity lives. They matter for strategy
+(are we growing? are users self-reporting success?) but NONE of
+them can be treated as proof of shipping safely. Codex v6 M1 was
+right: if the launch protocol gates on numbers that improve when
+users fail to report, the protocol is a ceremony, not a safety net.
 
 ---
 
