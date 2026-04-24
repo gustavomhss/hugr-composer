@@ -124,6 +124,71 @@ def _external_eval_status(subdir: str) -> dict:
     }
 
 
+def _per_surface_passed(name: str) -> dict:
+    d = _read_json(DET / f"{name}.json")
+    s = d.get("summary", {})
+    # Different probes use different key conventions for "did all checks pass":
+    #   passed (most), overall_passed (per_tool_pattern_audit)
+    passed = s.get("passed")
+    if passed is None:
+        passed = s.get("overall_passed", False)
+    return {
+        "passed": passed,
+        "total": s.get("total")
+            or s.get("primitives_scanned")
+            or s.get("examples_scanned")
+            or s.get("total_modules")
+            or s.get("per_spec_count")
+            or d.get("primitives_scanned")
+            or d.get("adapters_scanned")
+            or d.get("modules_scanned")
+            or d.get("tools_scanned")
+            or d.get("examples_scanned"),
+    }
+
+
+def _emitted_glue() -> dict:
+    d = _read_json(DET / "emitted_glue_loc.json")
+    s = d.get("summary", {})
+    pa = s.get("product_alignment", {})
+    return {
+        "probe_passed": s.get("passed"),
+        "tools_invoked_successfully": s.get("tools_invoked_successfully"),
+        "p95_loc_per_handler": s.get("loc_per_handler_p95"),
+        "tools_with_venous_imports": s.get("tools_with_venous_imports"),
+        "aligns_with_product_§6_1": pa.get("aligns_with_product_§6_1"),
+        "aligns_with_product_§A2": pa.get("aligns_with_product_§A2"),
+    }
+
+
+def _generator_idempotence() -> dict:
+    d = _read_json(DET / "generator_idempotence.json")
+    s = d.get("summary", {})
+    return {
+        "profiles_idempotent": s.get("profiles_idempotent"),
+        "total_profiles": s.get("total_profiles"),
+        "passed": s.get("passed"),
+    }
+
+
+def _framework_free_runtime() -> dict:
+    d = _read_json(DET / "framework_free_runtime.json")
+    s = d.get("summary", {})
+    return {
+        "imported_clean": s.get("imported_clean"),
+        "blocked_framework_imports": s.get("blocked_framework_imports"),
+        "passed": s.get("passed"),
+    }
+
+
+def _suite_log_summary(name: str) -> dict:
+    t = _read_text(DET / "test_suites" / f"{name}.log")
+    if not t:
+        return {"present": False}
+    last = t.strip().splitlines()[-1] if t.strip() else ""
+    return {"present": True, "summary_line": last[:160]}
+
+
 def main() -> None:
     commit = _git("rev-parse", "HEAD")
     tree = _git("rev-parse", "HEAD^{tree}")
@@ -139,10 +204,28 @@ def main() -> None:
             "pytest_full_sweep": _pytest(),
             "manifest_idempotence": _manifest_idempotence(),
             "framework_free_proof": _framework_free(),
+            "framework_free_runtime": _framework_free_runtime(),
             "loc_budget_stats": _loc_budget(),
+            "emitted_glue_loc": _emitted_glue(),
+            "generator_idempotence": _generator_idempotence(),
             "bandit_scan": _scan_summary("bandit_scan", "high"),
             "semgrep_scan": _scan_summary("semgrep_scan", "error"),
             "install_docker_run": _install_docker(),
+            "per_surface_attestations": {
+                "per_tool_pattern_audit": _per_surface_passed("per_tool_pattern_audit"),
+                "per_primitive_attestation": _per_surface_passed("per_primitive_attestation"),
+                "fastapi_adapter_matrix": _per_surface_passed("fastapi_adapter_matrix"),
+                "module_integration_matrix": _per_surface_passed("module_integration_matrix"),
+                "per_example_pytest_matrix": _per_surface_passed("per_example_pytest_matrix"),
+                "benchmark_scores": _per_surface_passed("benchmark_scores"),
+            },
+            "test_suites": {
+                "boot_test": _suite_log_summary("boot_test"),
+                "property_tests": _suite_log_summary("property_tests"),
+                "e2e_sqlite": _suite_log_summary("e2e_sqlite"),
+                "stress_test": _suite_log_summary("stress_test"),
+                "cross_composition": _suite_log_summary("cross_composition"),
+            },
         },
         "external_eval": {
             "single_shot_benchmark": _external_eval_status("single_shot_benchmark"),
