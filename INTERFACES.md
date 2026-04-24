@@ -92,8 +92,16 @@ Always stable; the first tool Maestro calls in a session:
 - `fastapi_meta_scaffold` — invokes `generate_project` with provenance.
 - `fastapi_meta_compose` — 4-tier fallthrough
   (adapter_reuse > tool_delegate > recipe_template > ad_hoc).
-- `fastapi_meta_audit` — runs skill self-audit.
-- `fastapi_meta_verify` — validates a generated project.
+- `fastapi_meta_audit` — runs `engine.audit.contract_check` on the
+  SKILL tree itself (§A + §B rules). Skill-kit integrity ONLY.
+- `fastapi_meta_verify` — runs the 10-tier primitive quality gate
+  (`engine.check_primitive`) on the registered primitive surface
+  of the skill tree. Skill-kit integrity ONLY.
+- Emitted-project validation is intentionally out of scope for the
+  meta surface; the scaffold ships its own `tests/` directory and
+  pre-commit config — run `pytest` inside the emitted project for
+  project-level validation. See SKILL.md §Workflow step 6 for the
+  two-layer split.
 
 ### §2.1.3 — Tree dispatchers (9)
 
