@@ -1,7 +1,7 @@
 ---
 name: fastapi-production
 description: Scaffolds and customizes production-grade FastAPI backends in Python — canonical project tree (auth, CRUD, Stripe, jobs, observability, deployment) plus composable slices (RBAC, MFA, pagination, event sourcing, webhooks, rate limiting, sagas, SSE, WebSockets, audit). Use when the user asks to start, extend, audit, or harden a FastAPI project; mentions a Python backend / API / microservice; names FastAPI, SQLAlchemy, Pydantic, Alembic, Celery, Stripe, Redis; or asks for concrete capabilities (auth, payments, webhooks, realtime, jobs, compliance) on an existing FastAPI app. Also use when the user names a production concern (idempotency, transactional outbox, rate limit, circuit breaker, retry budget, graceful shutdown, saga, tamper-evident audit) in a Python web-API context. Do NOT use for non-Python backends (Node, Go, Rails, Django, Flask), frontend or mobile work, data-science notebooks, ML training, bare Python libraries without an HTTP surface, or document-manipulation tasks (PDF, Word, Excel).
-license: Apache-2.0
+license: Proprietary
 ---
 
 # FastAPI Production
