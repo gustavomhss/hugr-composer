@@ -231,7 +231,7 @@ work; deferred to post-v1.0 operational cleanup sprints. The
 classifier has them documented; they stay in `_extracted/` until
 someone picks one up and refactors.
 
-### §2.5 — 104 NEEDS_CALLER items
+### §2.5 — 101 NEEDS_CALLER items
 
 Staged primitives without §A12(b) signal. §A12 discipline preserved
 — they wait for a tool/module/benchmark to reference them.

@@ -141,7 +141,7 @@ Authoritative list (registered): **`engine/primitives_by_concern.yaml`**
 
 ### §2.3 — Composition recipes
 
-- **385 recipes** parsed from primitive `.md` `## Compose with:`
+- **392 recipes** parsed from primitive `.md` `## Compose with:`
   sections.
 - Searchable via `fastapi_meta_search_composition`.
 - Every recipe names ≥ 2 sibling primitives + the invariant their
