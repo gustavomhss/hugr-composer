@@ -111,8 +111,10 @@
     "§5.6_tag_push_release_gustavo": "pending",
     "§5.7_post_release_monitoring": "N/A until tag"
   },
+  "known_blockers": {
+    "ruff_critical_clean_property": "Emitted templates carry F401 unused imports + F541 empty f-strings in ~119/123 tools. Purely style in the generator output, zero RUNTIME impact (unit + behaviour + cross-composition tests all green). Tracked as Wave-2 template-cleanup work per ROADMAP §6.1. GOLIVE §3.9 requires `python tests/property_tests.py` to exit 0; this row does NOT satisfy that gate, so it IS a tag-gate blocker unless either (a) the style failures are fixed before tag or (b) Gustavo ratifies an explicit §3.9 carve-out in CONTRACT §E. Neither has happened yet. Prior revisions of this artefact filed this row under `known_non_blockers` — that framing was wrong (Codex v4 H3 + v5 H2); the key is now `known_blockers` so automated consumers parsing the JSON structure classify it correctly."
+  },
   "known_non_blockers": {
-    "ruff_critical_clean_property": "Emitted templates carry F401 unused imports + F541 empty f-strings in ~119/123 tools. Purely style in the generator output, zero RUNTIME impact (unit + behaviour + cross-composition tests all green). Tracked as Wave-2 template-cleanup work per ROADMAP §6.1. NOTE: the known_non_blockers framing in earlier revisions of this artefact was wrong — GOLIVE §3.9 requires `python tests/property_tests.py` to exit 0, so this row IS a tag-gate blocker unless either (a) the style failures are fixed before tag or (b) Gustavo ratifies an explicit §3.9 carve-out in CONTRACT §E. Neither has happened yet; the row is listed here to document the residual gate, not to exempt it.",
-    "soak + mutation + behavior-scenarios local skips": "All three require live services or long wall-time; nightly CI covers them. §5.3 bullets ticked on CI green, not on local run."
+    "soak + mutation + behavior-scenarios local skips": "All three require live services or long wall-time; nightly CI covers them. §5.3 bullets ticked on CI green, not on local run. Genuinely non-blocking for the tag cut itself — they run elsewhere and the tag-gate is predicated on the CI green, not a local run."
   }
 }
