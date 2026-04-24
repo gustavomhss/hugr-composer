@@ -1098,6 +1098,25 @@ def _r_skill_md_contract() -> tuple[bool, str]:
     except Exception as exc:  # noqa: BLE001
         return False, f"SKILL.md frontmatter YAML invalid: {exc}"
 
+    # 2a. Frontmatter key-set is EXACTLY the Anthropic Agent Skills
+    #     shape. INTERFACES §3.1 promises "exactly three keys — `name`,
+    #     `description`, `license` — nothing else" and says the check
+    #     is machine-verified here. `license` is optional; `name` +
+    #     `description` are required. Any unknown key (e.g. legacy
+    #     `version`, `tools_count`) must be rejected — those belong in
+    #     the body `## Machine-readable metadata` YAML block, not the
+    #     frontmatter. Codex v3 H6 flagged the claim/impl gap.
+    _allowed_fm_keys = {"name", "description", "license"}
+    _actual_fm_keys = set(fm.keys())
+    _unknown = _actual_fm_keys - _allowed_fm_keys
+    if _unknown:
+        return False, (
+            f"SKILL.md frontmatter has unexpected keys {sorted(_unknown)}; "
+            "only {name, description, license} allowed per INTERFACES §3.1. "
+            "HuGR metadata (version, entry_tools, etc.) belongs in the body "
+            "`## Machine-readable metadata` YAML block."
+        )
+
     # 3. `name` field (Anthropic spec)
     name = fm.get("name")
     if not isinstance(name, str) or not name:
@@ -1108,6 +1127,33 @@ def _r_skill_md_contract() -> tuple[bool, str]:
         return False, f"SKILL.md name must match ^[a-z0-9-]+$; got {name!r}"
     if name in {"anthropic", "claude"}:
         return False, f"SKILL.md name uses reserved word: {name!r}"
+
+    # 3a. `license` MUST be a valid SPDX identifier when present
+    #     (CONTRACT §B2.5 DoD). Supporting the common-case set below
+    #     covers >95% of real usage; if a skill needs something exotic,
+    #     it can be added here rather than silently accepted. Codex v3
+    #     H6 flagged the missing check.
+    _SPDX_KNOWN = frozenset({
+        "Apache-2.0", "MIT", "BSD-2-Clause", "BSD-3-Clause",
+        "ISC", "MPL-2.0", "Unlicense", "CC0-1.0",
+        "GPL-2.0-only", "GPL-2.0-or-later",
+        "GPL-3.0-only", "GPL-3.0-or-later",
+        "LGPL-2.1-only", "LGPL-2.1-or-later",
+        "LGPL-3.0-only", "LGPL-3.0-or-later",
+        "AGPL-3.0-only", "AGPL-3.0-or-later",
+        "Proprietary",
+    })
+    license_val = fm.get("license")
+    if license_val is not None:
+        if not isinstance(license_val, str) or not license_val.strip():
+            return False, "SKILL.md frontmatter `license` must be a non-empty string when present"
+        if license_val not in _SPDX_KNOWN:
+            return False, (
+                f"SKILL.md license {license_val!r} is not in the supported "
+                f"SPDX identifier set. Use one of {sorted(_SPDX_KNOWN)}, or "
+                "extend `_SPDX_KNOWN` in contract_check.py if the target "
+                "is genuinely new."
+            )
 
     # 4. `description` field (Anthropic spec + CONTRACT §B2.5 DoD)
     #    DoD says 800-1200 chars. Lower floor matters: a too-short
