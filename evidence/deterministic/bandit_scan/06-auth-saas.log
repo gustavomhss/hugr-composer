@@ -1,0 +1,166 @@
+[main]	INFO	profile include tests: None
+[main]	INFO	profile exclude tests: None
+[main]	INFO	cli include tests: None
+[main]	INFO	cli exclude tests: None
+[main]	INFO	running on Python 3.14.3
+Run started:2026-04-24 19:56:04.011276+00:00
+
+Test results:
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/06-auth-saas/test_app.py:22:4
+21	    stored = hash_password("correct-horse-battery-staple")
+22	    assert verify_password("correct-horse-battery-staple", stored) is True
+23	    assert verify_password("wrong-password", stored) is False
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/06-auth-saas/test_app.py:23:4
+22	    assert verify_password("correct-horse-battery-staple", stored) is True
+23	    assert verify_password("wrong-password", stored) is False
+24	    # Plaintext recovery impossible — stored must not contain the password.
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/06-auth-saas/test_app.py:25:4
+24	    # Plaintext recovery impossible — stored must not contain the password.
+25	    assert "correct-horse-battery-staple" not in stored
+26	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/06-auth-saas/test_app.py:31:4
+30	    token = store.issue("alice@example.com")
+31	    assert store.resolve(token) == "alice@example.com"
+32	    store.revoke(token)
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/06-auth-saas/test_app.py:33:4
+32	    store.revoke(token)
+33	    assert store.resolve(token) is None  # 401 in the real API
+34	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/06-auth-saas/test_app.py:39:4
+38	    token = reg.issue("bob@example.com", now=1000.0)
+39	    assert reg.consume(token, now=1100.0) == "bob@example.com"
+40	    # Second use returns None (API returns 400).
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/06-auth-saas/test_app.py:41:4
+40	    # Second use returns None (API returns 400).
+41	    assert reg.consume(token, now=1200.0) is None
+42	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/06-auth-saas/test_app.py:47:4
+46	    token = reg.issue("bob@example.com", now=1000.0)
+47	    assert reg.consume(token, now=2000.0) is None
+48	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/06-auth-saas/test_app.py:62:8
+61	        code, _ = svc.login("alice@example.com", "WRONG", ip="1.2.3.4", now=1000.0 + i)
+62	        assert code == 401
+63	    code, _ = svc.login("alice@example.com", "WRONG", ip="1.2.3.4", now=1005.0)
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/06-auth-saas/test_app.py:64:4
+63	    code, _ = svc.login("alice@example.com", "WRONG", ip="1.2.3.4", now=1005.0)
+64	    assert code == 429
+65	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/06-auth-saas/test_app.py:84:4
+83	
+84	    assert code_unknown == 401 and code_wrong == 401
+85	    # Both paths ran scrypt — latencies must be same order of magnitude.
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/06-auth-saas/test_app.py:88:4
+87	    # would be 100x+.
+88	    assert 0.33 < t_unknown / t_wrong < 3.0, (t_unknown, t_wrong)
+89	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/06-auth-saas/test_app.py:101:4
+100	    code, token = svc.login("alice@example.com", "right", ip="1.1.1.1", now=1000.0)
+101	    assert code == 200
+102	    assert token and len(token) >= 32
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/06-auth-saas/test_app.py:102:4
+101	    assert code == 200
+102	    assert token and len(token) >= 32
+103	
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 210
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 14
+		Medium: 0
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 0
+		Medium: 0
+		High: 14
+Files skipped (0):

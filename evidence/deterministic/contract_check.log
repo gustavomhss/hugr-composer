@@ -1,0 +1,47 @@
+# contract_check.log
+# command:  PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check
+# cwd:      skills/SKILL-001-fastapi-production
+# commit:   80cf12c7a56571765cb9ec1510035ab63d745f8a
+# tree:     a13073884a613888d7a3471e565f9bf2bf950ddb
+# generated: 2026-04-24T19:54:36Z
+# grading:  binary — expect '37/37 contract items satisfied — ALL GREEN'
+# ---
+  ✓    B0.1  PRODUCT.md canonical                                  PRODUCT.md present with all 8 required sections
+  ✓    B0.2  ROADMAP.md honest + phased                            ok: ROADMAP.md
+  ✓    B0.3  CONTRACT.md (this)                                    CONTRACT.md present; §A1..§A12 + §B/§C/§D/§E all present
+  ✓    B0.4  SKILL.md ground-truth honest                          SKILL.md honest (100 adapt tools on disk)
+  ✓    B0.5  README.md ≤100 lines + links                          README.md present, 79 lines, links to canonical docs, surface counts match INVENTORY (generators=56, adapt=127, primitives=124, staged=176)
+  ✓    B0.6  CLAUDE memory pointer                                 memory ok at /Users/gustavoschneiter/.claude/projects/-Users-gustavoschneiter-Documents-HuGR-HuGR-Skills/memory/venous_architecture.md
+  ✓    B0.7  No stub tests under /benchmark/                       no trivial-stub test functions under benchmark/ or core/venous/
+  ✓    B0.8  .gitignore covers artefacts                           .gitignore covers all machine-generated artefacts
+  ✓    B1.0  core.venous copy-in distribution                      sample project imports copied primitive cleanly
+  ✓  B1.0.1  adapter layer + framework-free primitives             primitives framework-agnostic; reference adapter present
+  ✓    B1.1  primitives_by_concern.yaml registry                   registry synced: 124 entries match disk (no half-extracted dirs)
+  ✓    B1.2  Compose-with in every primitive .md                   100% of 124 primitives have ≥3 Compose-with bullets
+  ✓    B1.3  ≥15 tools import core.venous                          24/100 extend add_* tools primitive-connected (floor=22, §B1.3 Rails-style wiring)
+  ✓    B1.5  no hardcoded @mcp_app.tool decorators                 no hardcoded @mcp_app.tool decorators
+  ✓    B1.6  no orphan generators (every generate_* is tool or internal)  every generate_*/scaffold_* function is either MCP_TOOL or internal helper
+  ✓    B1.7  fastapi adapter coverage (tested + maps to registry)  17 fastapi adapters, 100% tested + map to registry
+  ✓    B1.8  tier-lite eligibility (stateless, framework-free, no REPLACE_ME)  §B1.8 vacuously satisfied (0 lite primitives registered)
+  ✓    B2.1  find_primitive MCP tool + BM25 quality gate           find_primitive registered; quality gate (top-1≥80%, P@3≥90%) passing
+  ✓    B2.2  suggest_composition MCP tool + recipe quality gate    suggest_composition registered; quality gate (top-1≥70%, P@3≥90%) passing
+  ✓    B2.3  reference docs site idempotent build                  docs site generator green; 234 pages, idempotent hash
+  ✓    B2.4  index catalog manifest synced + deterministic         catalog synced: 201 tools, 299 primitives, 392 recipes
+  ✓    B2.5  SKILL.md Agent Skills contract (Maestro-facing)       SKILL.md v1.0.0-rc.1: 1012-char desc, 243-line body, 3 transcripts, 8 entry tools
+  ✓    B2.6  tier1 runtime strings match catalog + scope-disclaim  tier1 runtime strings cite current catalog (201 tools, 299 primitives) + scope-disclaim audit/verify
+  ✓    B3.1  20 benchmark specs (5 baseline / 10 mid / 5 adversarial)  20 specs present (5/10/5) with `# title` + 3 required sections (Requirements / Acceptance criteria / Non-requirements)
+  ✓    B3.2  scoring rubric implemented + tested                   rubric + runner green (13 bench tests passing)
+  ✓    B3.3  benchmark runner + stub Maestro + report JSON         rubric + runner green (13 bench tests passing)
+  ✓    B3.4  nightly benchmark CI workflow                         benchmark-nightly.yml present with schedule + claude dispatch + score upload
+  ✓    B3.5  baseline benchmark score published                    baseline score 100.00 ≥ floor 90.00 (plan_level_v3_best_of_ensemble)
+  ✓    B3.6  code-level harness published (perfect on covered, ≥25% coverage)  code-level: 100.00 across 20/20 covered specs (100.0% coverage)
+  ✓    B3.7  blind benchmark harness + specs + stub fixtures       blind harness present · 15 spec(s) authored · stub fixtures complete
+  ✓    B4.1  install.sh + fresh-Docker CI                          install.sh + install-docker.yml validated in python:3.12-slim
+  ✓    B4.2  /examples/ populated (≥5 with README + MAESTRO_SESSION + cross-link)  20 examples present with README + MAESTRO_SESSION + cross-link tables
+  ✓    B4.3  docs site v1 (top-level docs + per-tool pages)        docs site v1: 124 primitives + 103 tools + 5 top-level docs
+  ✓    B4.4  CHANGELOG + VERSION semver cite score                 CHANGELOG.md + VERSION=1.0.0-rc.1 with v0.1.0 entry citing score
+  ✓    B4.5  CONTRIBUTING.md complete                              CONTRIBUTING.md complete (primitive + tool + recipe + dev setup)
+  ✓    B4.6  VERSION triplet sync (repo-root + skill + STATUS.md)  triplet synced at 1.0.0-rc.1 (root + skill + STATUS.md)
+  ✓    B4.7  canonical counts sync (INVENTORY vs CLAUDE/STATUS/ROADMAP/CHANGELOG)  narrative docs (incl. SKILL.md Overview + FREEZE.md + INTERFACES.md) match INVENTORY + LEDGER: 124 reg / 176 staged / 42 qtn / 17 adapters / 392 recipes / 219 ledger (101 needs_caller, 118 extract_motor_pair)
+
+37/37 contract items satisfied — ALL GREEN

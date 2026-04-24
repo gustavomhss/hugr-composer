@@ -1,0 +1,23 @@
+# install_docker_run.log
+# command:  evidence/_harness/install_docker_run.sh
+# cwd:      repo root
+# commit:   80cf12c7a56571765cb9ec1510035ab63d745f8a
+# tree:     a13073884a613888d7a3471e565f9bf2bf950ddb
+# generated: 2026-04-24T19:34:48Z
+# grading:  expect install.sh exit 0 + MCP discover ≥100 + contract_check exit 0 + benchmark overall ≥30
+# ---
+SKIPPED-LOCALLY: docker daemon not reachable at this host.
+
+Canonical evidence source: .github/workflows/install-docker.yml
+  - runs on: python:3.12-slim container on GitHub Actions
+  - schedule: nightly 04:23 UTC
+  - trigger:  push/PR affecting install.sh / requirements / VERSION
+  - tag-gate: 2 consecutive nightly greens in the 48h pre-tag window
+             (ROADMAP §5.7 / LAUNCH.md §1.2)
+
+Steps the workflow runs (replicated by this harness when docker is available):
+  1. apt-get install -y git ca-certificates
+  2. bash install.sh  (clones into /opt/hugr-skills + creates venv)
+  3. python -c 'discover_and_register(mcp); assert n >= 100'
+  4. .venv/bin/python -m engine.audit.contract_check --quiet
+  5. assert benchmarks/latest_score.json.overall >= 30

@@ -1,0 +1,24 @@
+{
+  "commit": "80cf12c7a56571765cb9ec1510035ab63d745f8a",
+  "tree": "a13073884a613888d7a3471e565f9bf2bf950ddb",
+  "stable_hash": "00cefc4cc477618e737dbbddd375f8fb6cb0e3cecc3e63491685fa860c16f192",
+  "model": {
+    "id": "",
+    "pinned_at": "",
+    "params": {
+      "temperature": 0,
+      "top_p": 1,
+      "seed": null
+    }
+  },
+  "prompt_bundle_hash": "aaae3acddbdc43f055fbf672539a7296e781ffec38b17c6d0afa8cc24f5b4011",
+  "tool_manifest_hash": "",
+  "run_started": "",
+  "run_completed": "",
+  "cost_usd_estimate": 0.0,
+  "results_file": "./results.json",
+  "transcripts_dir": "./transcripts/",
+  "grader_version": "32bdfcf6a972b11a28fabcccbf1baf4ffae073406db61fee898ef73844908324",
+  "judge_notes": "",
+  "_status": "empty-at-wave-H"
+}

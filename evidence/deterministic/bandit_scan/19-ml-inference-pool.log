@@ -1,0 +1,76 @@
+[main]	INFO	profile include tests: None
+[main]	INFO	profile exclude tests: None
+[main]	INFO	cli include tests: None
+[main]	INFO	cli exclude tests: None
+[main]	INFO	running on Python 3.14.3
+Run started:2026-04-24 19:56:14.799970+00:00
+
+Test results:
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/19-ml-inference-pool/test_app.py:27:4
+26	    median = statistics.median(depths)
+27	    assert max(depths) <= 1.5 * median, depths
+28	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/19-ml-inference-pool/test_app.py:49:4
+48	    # gpu-1 should hold ≤ 20% of traffic (losing ≥ 80%).
+49	    assert assigned.get("gpu-1", 0) <= 20, assigned
+50	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/19-ml-inference-pool/test_app.py:56:4
+55	    second = pool.route(model_family="llama", session_id="sess-1")
+56	    assert first.id == second.id  # sticky
+57	    # The sticky worker dies.
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/19-ml-inference-pool/test_app.py:60:4
+59	    third = pool.route(model_family="llama", session_id="sess-1")
+60	    assert third.id != first.id  # failover within one request
+61	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/19-ml-inference-pool/test_app.py:67:8
+66	        w = pool.route(model_family="cpu_only_model")
+67	        assert w.kind == "cpu"
+68	
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 117
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 5
+		Medium: 0
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 0
+		Medium: 0
+		High: 5
+Files skipped (0):

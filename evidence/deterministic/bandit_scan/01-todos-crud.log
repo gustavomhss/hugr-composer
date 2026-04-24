@@ -1,0 +1,106 @@
+[main]	INFO	profile include tests: None
+[main]	INFO	profile exclude tests: None
+[main]	INFO	cli include tests: None
+[main]	INFO	cli exclude tests: None
+[main]	INFO	running on Python 3.14.3
+Run started:2026-04-24 19:56:00.094846+00:00
+
+Test results:
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/01-todos-crud/test_app.py:14:4
+13	    status, row = owner_scoped_patch(repo, "bob", alice.id, done=True)
+14	    assert status == 404
+15	    assert row is None
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/01-todos-crud/test_app.py:15:4
+14	    assert status == 404
+15	    assert row is None
+16	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/01-todos-crud/test_app.py:22:4
+21	    status, row = owner_scoped_patch(repo, "alice", t.id, done=True)
+22	    assert status == 200
+23	    assert row is not None and row.done is True
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/01-todos-crud/test_app.py:23:4
+22	    assert status == 200
+23	    assert row is not None and row.done is True
+24	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/01-todos-crud/test_app.py:46:4
+45	    # Invariant: every alice id seen exactly once.
+46	    assert sorted(seen) == sorted({t.id for t in repo._rows.values() if t.owner_id == "alice"})
+47	    assert len(seen) == len(set(seen)), "duplicates in paginated view"
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/01-todos-crud/test_app.py:47:4
+46	    assert sorted(seen) == sorted({t.id for t in repo._rows.values() if t.owner_id == "alice"})
+47	    assert len(seen) == len(set(seen)), "duplicates in paginated view"
+48	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/01-todos-crud/test_app.py:55:4
+54	    page, _ = repo.list_page("alice", cursor=None, size=100)
+55	    assert all(t.owner_id == "alice" for t in page)
+56	    assert len(page) == 1
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/01-todos-crud/test_app.py:56:4
+55	    assert all(t.owner_id == "alice" for t in page)
+56	    assert len(page) == 1
+57	
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 129
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 8
+		Medium: 0
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 0
+		Medium: 0
+		High: 8
+Files skipped (0):

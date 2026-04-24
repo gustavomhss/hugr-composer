@@ -1,0 +1,185 @@
+{
+  "_meta": {
+    "command": ".venv/bin/python evidence/_harness/loc_budget_probe.py",
+    "commit": "80cf12c7a56571765cb9ec1510035ab63d745f8a",
+    "cwd": "repo root",
+    "generated": "2026-04-24T19:55:58Z",
+    "grading": "p95 app_loc_per_handler <= 20 per PRODUCT \u00a76.1",
+    "tree": "a13073884a613888d7a3471e565f9bf2bf950ddb"
+  },
+  "per_example": [
+    {
+      "app_loc": 85,
+      "app_loc_per_handler": 12.14,
+      "handlers": 7,
+      "name": "01-todos-crud",
+      "test_loc": 41,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 59,
+      "app_loc_per_handler": 14.75,
+      "handlers": 4,
+      "name": "02-webhook-sink",
+      "test_loc": 53,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 81,
+      "app_loc_per_handler": 10.12,
+      "handlers": 8,
+      "name": "03-rate-limited-api",
+      "test_loc": 43,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 86,
+      "app_loc_per_handler": 6.62,
+      "handlers": 13,
+      "name": "04-realtime-chat",
+      "test_loc": 42,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 101,
+      "app_loc_per_handler": 10.1,
+      "handlers": 10,
+      "name": "05-rbac-audit",
+      "test_loc": 51,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 128,
+      "app_loc_per_handler": 9.85,
+      "handlers": 13,
+      "name": "06-auth-saas",
+      "test_loc": 79,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 105,
+      "app_loc_per_handler": 9.55,
+      "handlers": 11,
+      "name": "07-multi-tenant-admin",
+      "test_loc": 56,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 119,
+      "app_loc_per_handler": 9.15,
+      "handlers": 13,
+      "name": "08-stripe-billing",
+      "test_loc": 57,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 107,
+      "app_loc_per_handler": 8.92,
+      "handlers": 12,
+      "name": "09-event-sourced-orders",
+      "test_loc": 70,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 102,
+      "app_loc_per_handler": 8.5,
+      "handlers": 12,
+      "name": "10-llm-agent",
+      "test_loc": 55,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 102,
+      "app_loc_per_handler": 9.27,
+      "handlers": 11,
+      "name": "11-mobile-backend",
+      "test_loc": 60,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 101,
+      "app_loc_per_handler": 11.22,
+      "handlers": 9,
+      "name": "12-compliance-log-aggregator",
+      "test_loc": 51,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 111,
+      "app_loc_per_handler": 9.25,
+      "handlers": 12,
+      "name": "13-graphql-over-rest",
+      "test_loc": 69,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 89,
+      "app_loc_per_handler": 12.71,
+      "handlers": 7,
+      "name": "14-workflow-orchestrator",
+      "test_loc": 56,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 87,
+      "app_loc_per_handler": 12.43,
+      "handlers": 7,
+      "name": "15-bi-export-service",
+      "test_loc": 62,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 80,
+      "app_loc_per_handler": 13.33,
+      "handlers": 6,
+      "name": "16-exactly-once-weak-broker",
+      "test_loc": 47,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 75,
+      "app_loc_per_handler": 5.0,
+      "handlers": 15,
+      "name": "17-stateless-session-aware",
+      "test_loc": 41,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 38,
+      "app_loc_per_handler": 9.5,
+      "handlers": 4,
+      "name": "18-lockfree-serializable",
+      "test_loc": 74,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 65,
+      "app_loc_per_handler": 7.22,
+      "handlers": 9,
+      "name": "19-ml-inference-pool",
+      "test_loc": 49,
+      "venous_imports": 0
+    },
+    {
+      "app_loc": 39,
+      "app_loc_per_handler": 6.5,
+      "handlers": 6,
+      "name": "20-innocent-counter",
+      "test_loc": 38,
+      "venous_imports": 0
+    }
+  ],
+  "summary": {
+    "app_loc_per_handler": {
+      "max": 14.75,
+      "min": 5.0,
+      "p50": 9.55,
+      "p95": 13.33
+    },
+    "examples_scanned": 20,
+    "note": "Examples are PEDAGOGICAL reference implementations \u2014 self-contained for readability, not direct proof of generator-emitted glue. Fresh-emit LoC is measured in external-eval/single_shot_benchmark/ per LAUNCH.md \u00a72.0.",
+    "total_app_loc": 1760,
+    "total_handlers": 189,
+    "total_venous_imports": 0
+  }
+}

@@ -1,0 +1,136 @@
+[main]	INFO	profile include tests: None
+[main]	INFO	profile exclude tests: None
+[main]	INFO	cli include tests: None
+[main]	INFO	cli exclude tests: None
+[main]	INFO	running on Python 3.14.3
+Run started:2026-04-24 19:56:07.291483+00:00
+
+Test results:
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/10-llm-agent/test_app.py:17:4
+16	    )
+17	    assert code == 400
+18	    assert len(svc.blocked_log) == 1 and svc.blocked_log[0][0] == "t1"
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/10-llm-agent/test_app.py:18:4
+17	    assert code == 400
+18	    assert len(svc.blocked_log) == 1 and svc.blocked_log[0][0] == "t1"
+19	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/10-llm-agent/test_app.py:29:4
+28	    )
+29	    assert code == 200
+30	    assert "sk-abcdefghijklmnop" not in chunks[0]
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/10-llm-agent/test_app.py:30:4
+29	    assert code == 200
+30	    assert "sk-abcdefghijklmnop" not in chunks[0]
+31	    assert "[REDACTED]" in chunks[0]
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/10-llm-agent/test_app.py:31:4
+30	    assert "sk-abcdefghijklmnop" not in chunks[0]
+31	    assert "[REDACTED]" in chunks[0]
+32	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/10-llm-agent/test_app.py:43:4
+42	                         now_end=1.5, input_tokens=1, output_tokens=1)
+43	    assert code == 402
+44	    assert svc.tracker.total("t1") == 115
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/10-llm-agent/test_app.py:44:4
+43	    assert code == 402
+44	    assert svc.tracker.total("t1") == 115
+45	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/10-llm-agent/test_app.py:55:4
+54	                         now_end=1.5, input_tokens=1, output_tokens=1)
+55	    assert code == 200
+56	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/10-llm-agent/test_app.py:64:4
+63	    m = svc.metrics[-1]
+64	    assert abs(m.ttft_s - 0.2) < 1e-6
+65	    assert abs(m.total_s - 1.0) < 1e-6
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/10-llm-agent/test_app.py:65:4
+64	    assert abs(m.ttft_s - 0.2) < 1e-6
+65	    assert abs(m.total_s - 1.0) < 1e-6
+66	    assert m.ttft_s < m.total_s
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/10-llm-agent/test_app.py:66:4
+65	    assert abs(m.total_s - 1.0) < 1e-6
+66	    assert m.ttft_s < m.total_s
+67	
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 160
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 11
+		Medium: 0
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 0
+		Medium: 0
+		High: 11
+Files skipped (0):

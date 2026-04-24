@@ -1,0 +1,106 @@
+[main]	INFO	profile include tests: None
+[main]	INFO	profile exclude tests: None
+[main]	INFO	cli include tests: None
+[main]	INFO	cli exclude tests: None
+[main]	INFO	running on Python 3.14.3
+Run started:2026-04-24 19:56:03.207880+00:00
+
+Test results:
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/05-rbac-audit/test_app.py:21:4
+20	    d, _ = guard.check(user="alice", user_roles={"admin"}, resource="billing", required_role="admin")
+21	    assert d == "allow"
+22	    d, _ = guard.check(user="bob", user_roles={"viewer"}, resource="billing", required_role="admin")
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/05-rbac-audit/test_app.py:23:4
+22	    d, _ = guard.check(user="bob", user_roles={"viewer"}, resource="billing", required_role="admin")
+23	    assert d == "deny"
+24	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/05-rbac-audit/test_app.py:26:4
+25	    decisions = [r.decision for r in log.records()]
+26	    assert decisions == ["allow", "deny"]
+27	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/05-rbac-audit/test_app.py:34:4
+33	        guard.check(user=f"u{i}", user_roles={"viewer"}, resource="x", required_role="admin")
+34	    assert log.verify() is True
+35	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/05-rbac-audit/test_app.py:49:4
+48	    ]
+49	    assert log.verify(tampered) is False
+50	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/05-rbac-audit/test_app.py:55:4
+54	    bg.grant("on-call-1", reason="incident-1234", now=0.0, ttl_s=900.0)
+55	    assert bg.active_role("on-call-1", now=100.0) == "break_glass_admin"
+56	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/05-rbac-audit/test_app.py:62:4
+61	    # After expiry — role is gone.
+62	    assert bg.active_role("on-call-1", now=901.0) is None
+63	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/05-rbac-audit/test_app.py:66:4
+65	    new = bg.grant("on-call-1", reason="incident-9999", now=1000.0, ttl_s=900.0)
+66	    assert new.reason == "incident-9999"
+67	
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 155
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 8
+		Medium: 0
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 0
+		Medium: 0
+		High: 8
+Files skipped (0):

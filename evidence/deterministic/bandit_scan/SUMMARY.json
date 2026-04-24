@@ -1,0 +1,32 @@
+{
+  "_meta": {
+    "command": "evidence/_harness/bandit_scan.sh",
+    "cwd": "repo root",
+    "commit": "80cf12c7a56571765cb9ec1510035ab63d745f8a",
+    "tree": "a13073884a613888d7a3471e565f9bf2bf950ddb",
+    "generated": "2026-04-24T19:56:16Z",
+    "grading": "expect High==0 and Medium==0 across all 20 examples"
+  },
+  "per_example": [
+    {"example": "01-todos-crud", "high": 0, "medium": 0, "low": 8},
+    {"example": "02-webhook-sink", "high": 0, "medium": 0, "low": 5},
+    {"example": "03-rate-limited-api", "high": 0, "medium": 0, "low": 15},
+    {"example": "04-realtime-chat", "high": 0, "medium": 0, "low": 13},
+    {"example": "05-rbac-audit", "high": 0, "medium": 0, "low": 8},
+    {"example": "06-auth-saas", "high": 0, "medium": 0, "low": 14},
+    {"example": "07-multi-tenant-admin", "high": 0, "medium": 0, "low": 12},
+    {"example": "08-stripe-billing", "high": 0, "medium": 0, "low": 11},
+    {"example": "09-event-sourced-orders", "high": 0, "medium": 0, "low": 12},
+    {"example": "10-llm-agent", "high": 0, "medium": 0, "low": 11},
+    {"example": "11-mobile-backend", "high": 0, "medium": 0, "low": 14},
+    {"example": "12-compliance-log-aggregator", "high": 0, "medium": 0, "low": 9},
+    {"example": "13-graphql-over-rest", "high": 0, "medium": 0, "low": 10},
+    {"example": "14-workflow-orchestrator", "high": 0, "medium": 0, "low": 9},
+    {"example": "15-bi-export-service", "high": 0, "medium": 0, "low": 8},
+    {"example": "16-exactly-once-weak-broker", "high": 0, "medium": 0, "low": 8},
+    {"example": "17-stateless-session-aware", "high": 0, "medium": 0, "low": 7},
+    {"example": "18-lockfree-serializable", "high": 0, "medium": 0, "low": 6},
+    {"example": "19-ml-inference-pool", "high": 0, "medium": 0, "low": 5},
+    {"example": "20-innocent-counter", "high": 0, "medium": 0, "low": 6}
+  ]
+}

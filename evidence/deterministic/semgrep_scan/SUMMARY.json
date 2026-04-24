@@ -1,0 +1,33 @@
+{
+  "_meta": {
+    "command": "evidence/_harness/semgrep_scan.sh",
+    "cwd": "repo root",
+    "commit": "80cf12c7a56571765cb9ec1510035ab63d745f8a",
+    "tree": "a13073884a613888d7a3471e565f9bf2bf950ddb",
+    "generated": "2026-04-24T19:42:24Z",
+    "configs": ["p/python", "p/security-audit", "p/owasp-top-ten"],
+    "grading": "expect ERROR==0 across all 20 examples"
+  },
+  "per_example": [
+    {"example": "01-todos-crud", "error": 0, "warning": 0, "info": 0},
+    {"example": "02-webhook-sink", "error": 0, "warning": 0, "info": 0},
+    {"example": "03-rate-limited-api", "error": 0, "warning": 0, "info": 0},
+    {"example": "04-realtime-chat", "error": 0, "warning": 0, "info": 0},
+    {"example": "05-rbac-audit", "error": 0, "warning": 0, "info": 0},
+    {"example": "06-auth-saas", "error": 0, "warning": 0, "info": 0},
+    {"example": "07-multi-tenant-admin", "error": 0, "warning": 0, "info": 0},
+    {"example": "08-stripe-billing", "error": 0, "warning": 0, "info": 0},
+    {"example": "09-event-sourced-orders", "error": 0, "warning": 0, "info": 0},
+    {"example": "10-llm-agent", "error": 0, "warning": 0, "info": 0},
+    {"example": "11-mobile-backend", "error": 0, "warning": 0, "info": 0},
+    {"example": "12-compliance-log-aggregator", "error": 0, "warning": 0, "info": 0},
+    {"example": "13-graphql-over-rest", "error": 0, "warning": 0, "info": 0},
+    {"example": "14-workflow-orchestrator", "error": 0, "warning": 0, "info": 0},
+    {"example": "15-bi-export-service", "error": 0, "warning": 0, "info": 0},
+    {"example": "16-exactly-once-weak-broker", "error": 0, "warning": 0, "info": 0},
+    {"example": "17-stateless-session-aware", "error": 0, "warning": 0, "info": 0},
+    {"example": "18-lockfree-serializable", "error": 0, "warning": 0, "info": 0},
+    {"example": "19-ml-inference-pool", "error": 0, "warning": 0, "info": 0},
+    {"example": "20-innocent-counter", "error": 0, "warning": 0, "info": 0}
+  ]
+}

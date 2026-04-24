@@ -1,0 +1,116 @@
+[main]	INFO	profile include tests: None
+[main]	INFO	profile exclude tests: None
+[main]	INFO	cli include tests: None
+[main]	INFO	cli exclude tests: None
+[main]	INFO	running on Python 3.14.3
+Run started:2026-04-24 19:56:10.648527+00:00
+
+Test results:
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/14-workflow-orchestrator/test_app.py:33:4
+32	        orch.run("wf-1", steps, crash_at_step=3)
+33	    assert effects == ["step-1", "step-2"]
+34	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/14-workflow-orchestrator/test_app.py:37:4
+36	    orch.run("wf-1", steps)
+37	    assert effects == ["step-1", "step-2", "step-3", "step-4", "step-5"]
+38	    assert store.get("wf-1").status == "completed"
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/14-workflow-orchestrator/test_app.py:38:4
+37	    assert effects == ["step-1", "step-2", "step-3", "step-4", "step-5"]
+38	    assert store.get("wf-1").status == "completed"
+39	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/14-workflow-orchestrator/test_app.py:49:4
+48	    # First call fires; retry with same key is a no-op.
+49	    assert orch.idempotent_call("wf-1", "charge-1", lambda: fired.append("$")) is True
+50	    assert orch.idempotent_call("wf-1", "charge-1", lambda: fired.append("$")) is False
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/14-workflow-orchestrator/test_app.py:50:4
+49	    assert orch.idempotent_call("wf-1", "charge-1", lambda: fired.append("$")) is True
+50	    assert orch.idempotent_call("wf-1", "charge-1", lambda: fired.append("$")) is False
+51	    assert fired == ["$"]
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/14-workflow-orchestrator/test_app.py:51:4
+50	    assert orch.idempotent_call("wf-1", "charge-1", lambda: fired.append("$")) is False
+51	    assert fired == ["$"]
+52	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/14-workflow-orchestrator/test_app.py:62:4
+61	    run = orch.run("wf-timeout", steps, timeout_at_step=3)
+62	    assert run.status == "compensated"
+63	    assert effects == ["step-1", "step-2"]
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/14-workflow-orchestrator/test_app.py:63:4
+62	    assert run.status == "compensated"
+63	    assert effects == ["step-1", "step-2"]
+64	    assert comps == ["step-2", "step-1"]  # reverse order
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/14-workflow-orchestrator/test_app.py:64:4
+63	    assert effects == ["step-1", "step-2"]
+64	    assert comps == ["step-2", "step-1"]  # reverse order
+65	
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 148
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 9
+		Medium: 0
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 0
+		Medium: 0
+		High: 9
+Files skipped (0):

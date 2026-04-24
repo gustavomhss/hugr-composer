@@ -1,0 +1,156 @@
+[main]	INFO	profile include tests: None
+[main]	INFO	profile exclude tests: None
+[main]	INFO	cli include tests: None
+[main]	INFO	cli exclude tests: None
+[main]	INFO	running on Python 3.14.3
+Run started:2026-04-24 19:56:02.403182+00:00
+
+Test results:
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/04-realtime-chat/test_app.py:14:4
+13	    b1 = s.publish("beta", "u3", "first")
+14	    assert a1.offset == 1 and a2.offset == 2 and b1.offset == 1
+15	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/04-realtime-chat/test_app.py:31:4
+30	    last = cache.get("conn-1", now=105.0)
+31	    assert last == 1
+32	    missed = s.replay("alpha", since=last)
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/04-realtime-chat/test_app.py:33:4
+32	    missed = s.replay("alpha", since=last)
+33	    assert [m.offset for m in missed] == [m2.offset, m3.offset]  # strict order
+34	    assert len(set(m.offset for m in missed)) == len(missed)      # no dup
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/04-realtime-chat/test_app.py:34:4
+33	    assert [m.offset for m in missed] == [m2.offset, m3.offset]  # strict order
+34	    assert len(set(m.offset for m in missed)) == len(missed)      # no dup
+35	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/04-realtime-chat/test_app.py:40:4
+39	    cache.set("conn-1", 42, now=100.0)
+40	    assert cache.get("conn-1", now=129.0) == 42  # within TTL
+41	    assert cache.get("conn-1", now=131.0) is None  # expired
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/04-realtime-chat/test_app.py:41:4
+40	    assert cache.get("conn-1", now=129.0) == 42  # within TTL
+41	    assert cache.get("conn-1", now=131.0) is None  # expired
+42	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/04-realtime-chat/test_app.py:46:4
+45	    bh = ConnectionBulkhead(max_per_room=3)
+46	    assert all(bh.open("alice", "general") for _ in range(3))
+47	    assert bh.open("alice", "general") is False        # 4th refused
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/04-realtime-chat/test_app.py:47:4
+46	    assert all(bh.open("alice", "general") for _ in range(3))
+47	    assert bh.open("alice", "general") is False        # 4th refused
+48	    assert bh.open("alice", "random") is True          # different room ok
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/04-realtime-chat/test_app.py:48:4
+47	    assert bh.open("alice", "general") is False        # 4th refused
+48	    assert bh.open("alice", "random") is True          # different room ok
+49	    assert bh.open("bob", "general") is True           # different user ok
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/04-realtime-chat/test_app.py:49:4
+48	    assert bh.open("alice", "random") is True          # different room ok
+49	    assert bh.open("bob", "general") is True           # different user ok
+50	    bh.close("alice", "general")
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/04-realtime-chat/test_app.py:51:4
+50	    bh.close("alice", "general")
+51	    assert bh.open("alice", "general") is True         # slot freed
+52	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/04-realtime-chat/test_app.py:57:4
+56	    d.begin_drain(["c1", "c2", "c3"])
+57	    assert d.draining is True
+58	    assert d.drained_hints() == ["c1", "c2", "c3"]
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/04-realtime-chat/test_app.py:58:4
+57	    assert d.draining is True
+58	    assert d.drained_hints() == ["c1", "c2", "c3"]
+59	
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 131
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 13
+		Medium: 0
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 0
+		Medium: 0
+		High: 13
+Files skipped (0):

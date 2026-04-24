@@ -1,0 +1,69 @@
+{
+  "_meta": {
+    "commit": "80cf12c7a56571765cb9ec1510035ab63d745f8a",
+    "generated": "2026-04-24T19:56:46Z",
+    "source": "evidence/_harness/metrics_summary.py",
+    "tree": "a13073884a613888d7a3471e565f9bf2bf950ddb"
+  },
+  "deterministic": {
+    "bandit_scan": {
+      "clean": true,
+      "examples": 20,
+      "worst_high_or_error": 0
+    },
+    "contract_check": {
+      "all_green": true,
+      "passed": 37,
+      "summary_line": "37/37 contract items satisfied \u2014 ALL GREEN",
+      "total": 37
+    },
+    "framework_free_proof": {
+      "framework_imports_found": 0,
+      "pass": true,
+      "registered_primitives": 124
+    },
+    "install_docker_run": {
+      "status": "skipped-locally"
+    },
+    "loc_budget_stats": {
+      "app_loc_per_handler_p95": 13.33,
+      "examples_scanned": 20,
+      "total_handlers": 189
+    },
+    "manifest_idempotence": {
+      "idempotent": true,
+      "stable_hash": "00cefc4cc477"
+    },
+    "pytest_full_sweep": {
+      "failed": 0,
+      "passed": 5387,
+      "skipped": 8,
+      "summary_line": "5387 passed, 8 skipped, 284 warnings in 1622.00s (0:27:01)"
+    },
+    "semgrep_scan": {
+      "clean": true,
+      "examples": 20,
+      "worst_high_or_error": 0
+    }
+  },
+  "external_eval": {
+    "counterfactual": {
+      "manifest_present": false,
+      "status": "not-yet-run"
+    },
+    "cross_model_fnf": {
+      "manifest_present": false,
+      "status": "not-yet-run"
+    },
+    "reviewer_signoffs": {
+      "signoffs_present": 3,
+      "target": "2-of-3 YES per LAUNCH.md \u00a75.1"
+    },
+    "single_shot_benchmark": {
+      "commit_pinned": "80cf12c7a56571765cb9ec1510035ab63d745f8a",
+      "manifest_present": true,
+      "model_id": "",
+      "status": "empty-at-wave-H"
+    }
+  }
+}

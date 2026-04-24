@@ -1,0 +1,246 @@
+# pytest_full_sweep.log
+# command:  PYTHONPATH=. .venv/bin/python -m pytest adapt/ core/venous/ engine/ -q --tb=line
+# cwd:      skills/SKILL-001-fastapi-production
+# commit:   80cf12c7a56571765cb9ec1510035ab63d745f8a
+# tree:     a13073884a613888d7a3471e565f9bf2bf950ddb
+# generated: 2026-04-24T19:26:08Z
+# grading:  expect '5387 passed' + '0 failed' on the summary line
+# ---
+........................................................................ [  1%]
+........................................................................ [  2%]
+........................................................................ [  4%]
+........................................................................ [  5%]
+........................................................................ [  6%]
+........................................................................ [  8%]
+........................................................................ [  9%]
+........................................................................ [ 10%]
+........................................................................ [ 12%]
+........................................................................ [ 13%]
+........................................................................ [ 14%]
+........................................................................ [ 16%]
+........................................................................ [ 17%]
+........................................................................ [ 18%]
+........................................................................ [ 20%]
+........................................................................ [ 21%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 25%]
+........................................................................ [ 26%]
+........................................................................ [ 28%]
+....................................................s................... [ 29%]
+........................................................................ [ 30%]
+........................................................................ [ 32%]
+........................................................................ [ 33%]
+........................................................................ [ 34%]
+........................................................................ [ 36%]
+........................................................................ [ 37%]
+........................................................................ [ 38%]
+........................................................................ [ 40%]
+........................................................................ [ 41%]
+........................................................................ [ 42%]
+........................................................................ [ 44%]
+........................................................................ [ 45%]
+........................................................................ [ 46%]
+........................................................................ [ 48%]
+........................................................................ [ 49%]
+........................................................................ [ 50%]
+........................................................................ [ 52%]
+........................................................................ [ 53%]
+........................................................................ [ 54%]
+........................................................................ [ 56%]
+........................................................................ [ 57%]
+........................................................................ [ 58%]
+........................................................................ [ 60%]
+........................................................................ [ 61%]
+........................................................................ [ 62%]
+........................................................................ [ 64%]
+........................................................................ [ 65%]
+........................................................................ [ 66%]
+........................................................................ [ 68%]
+........................................................................ [ 69%]
+........................................................................ [ 70%]
+........................................................................ [ 72%]
+........................................................................ [ 73%]
+........................................................................ [ 74%]
+........................................................................ [ 76%]
+........................................................................ [ 77%]
+........................................................................ [ 78%]
+........................................................................ [ 80%]
+........................................................................ [ 81%]
+........................................................................ [ 82%]
+........................................................................ [ 84%]
+........................................................................ [ 85%]
+........................................................................ [ 86%]
+........................................................................ [ 88%]
+........................................................................ [ 89%]
+........................................................................ [ 90%]
+........................................................................ [ 92%]
+........................................................................ [ 93%]
+........................................................................ [ 94%]
+........................................................................ [ 96%]
+........................................................................ [ 97%]
+........sssssss......................................................... [ 98%]
+...................................................................      [100%]
+=============================== warnings summary ===============================
+engine/tests/test_integration.py:46
+  /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/engine/tests/test_integration.py:46: PytestUnknownMarkWarning: Unknown pytest.mark.order - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.order(1)
+
+engine/tests/test_integration.py:51
+  /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/engine/tests/test_integration.py:51: PytestUnknownMarkWarning: Unknown pytest.mark.order - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.order(2)
+
+engine/tests/test_integration.py:63
+  /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/engine/tests/test_integration.py:63: PytestUnknownMarkWarning: Unknown pytest.mark.order - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.order(3)
+
+engine/tests/test_integration.py:80
+  /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/engine/tests/test_integration.py:80: PytestUnknownMarkWarning: Unknown pytest.mark.order - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.order(4)
+
+engine/tests/test_integration.py:91
+  /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/engine/tests/test_integration.py:91: PytestUnknownMarkWarning: Unknown pytest.mark.order - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.order(5)
+
+engine/tests/test_integration.py:102
+  /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/engine/tests/test_integration.py:102: PytestUnknownMarkWarning: Unknown pytest.mark.order - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.order(6)
+
+engine/tests/test_integration.py:122
+  /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/engine/tests/test_integration.py:122: PytestUnknownMarkWarning: Unknown pytest.mark.order - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.order(7)
+
+adapt/extend/api_design/test_add_api_deprecation_behavior.py: 3 warnings
+adapt/extend/api_design/test_add_graphql_subscriptions_behavior.py: 3 warnings
+adapt/extend/auth_access/test_add_bola_guard_behavior.py: 3 warnings
+adapt/extend/auth_access/test_add_cedar_policies_behavior.py: 18 warnings
+adapt/extend/auth_access/test_add_dpop_tokens_behavior.py: 3 warnings
+adapt/extend/auth_access/test_add_opa_integration_behavior.py: 39 warnings
+adapt/extend/auth_access/test_add_passkey_auth_behavior.py: 18 warnings
+adapt/extend/auth_access/test_add_sms_otp_behavior.py: 18 warnings
+adapt/extend/auth_access/test_add_social_login_behavior.py: 18 warnings
+adapt/extend/infrastructure/test_add_adaptive_throttle_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_adaptive_timeouts_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_anomaly_detector_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_api_monetization_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_api_replay_debugger_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_bulkhead_isolation_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_celery_beat_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_chaos_testing_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_compliance_engine_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_cors_config_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_docker_production_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_excel_export_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_graceful_shutdown_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_health_deep_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_kubernetes_manifests_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_ml_gpu_inference_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_ml_model_registry_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_ml_model_server_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_notifications_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_opentelemetry_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_pdf_reports_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_prometheus_metrics_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_request_fingerprint_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_response_armor_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_runtime_sentinel_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_s3_storage_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_secret_rotation_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_stripe_refund_flow_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_stripe_subscription_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_structured_logging_behavior.py: 3 warnings
+adapt/extend/infrastructure/test_add_temporal_workflow_behavior.py: 6 warnings
+adapt/extend/infrastructure/test_add_tenant_onboarding_behavior.py: 3 warnings
+adapt/extend/realtime/test_add_websocket_presence_behavior.py: 3 warnings
+adapt/extend/testing_tools/test_add_data_seeder_behavior.py: 3 warnings
+adapt/extend/testing_tools/test_add_e2e_test_suite_behavior.py: 3 warnings
+adapt/extend/testing_tools/test_add_sbom_guardian_behavior.py: 3 warnings
+adapt/extend/testing_tools/test_add_schema_enforcer_behavior.py: 3 warnings
+adapt/extend/testing_tools/test_add_schema_evolution_guard_behavior.py: 3 warnings
+adapt/verify/test_api_spec_compliance.py: 3 warnings
+  /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/.venv/lib/python3.14/site-packages/slowapi/extension.py:717: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+core/venous/_adapters/fastapi/test_GracefulShutdownAdapter.py::test_install_registers_shutdown_handler
+core/venous/_adapters/fastapi/test_GracefulShutdownAdapter.py::test_drain_middleware_tracks_in_flight
+core/venous/_adapters/fastapi/test_GracefulShutdownAdapter.py::test_middleware_returns_503_while_draining
+  /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/GracefulShutdownAdapter.py:30: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+core/venous/_adapters/fastapi/test_GracefulShutdownAdapter.py::test_install_registers_shutdown_handler
+core/venous/_adapters/fastapi/test_GracefulShutdownAdapter.py::test_install_registers_shutdown_handler
+core/venous/_adapters/fastapi/test_GracefulShutdownAdapter.py::test_drain_middleware_tracks_in_flight
+core/venous/_adapters/fastapi/test_GracefulShutdownAdapter.py::test_drain_middleware_tracks_in_flight
+core/venous/_adapters/fastapi/test_GracefulShutdownAdapter.py::test_middleware_returns_503_while_draining
+core/venous/_adapters/fastapi/test_GracefulShutdownAdapter.py::test_middleware_returns_503_while_draining
+  /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/.venv/lib/python3.14/site-packages/fastapi/applications.py:4656: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+core/venous/_adapters/fastapi/test_GracefulShutdownAdapter.py::test_install_registers_shutdown_handler
+core/venous/_adapters/fastapi/test_GracefulShutdownAdapter.py::test_drain_middleware_tracks_in_flight
+core/venous/_adapters/fastapi/test_GracefulShutdownAdapter.py::test_middleware_returns_503_while_draining
+  /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/GracefulShutdownAdapter.py:47: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("shutdown")
+
+core/venous/data/AntiCorruptionLayer/test_AntiCorruptionLayer.py::test_inv_no_foreign_leak_confirms
+core/venous/data/AntiCorruptionLayer/test_AntiCorruptionLayer.py::test_inv_no_foreign_leak_under_failure
+core/venous/data/AntiCorruptionLayer/test_AntiCorruptionLayer.py::test_inv_guard_rejects_invalid_confirms
+core/venous/data/AntiCorruptionLayer/test_AntiCorruptionLayer.py::test_inv_guard_rejects_invalid_prevents
+core/venous/data/AntiCorruptionLayer/test_AntiCorruptionLayer.py::test_inv_guard_rejects_invalid_under_failure
+core/venous/data/AntiCorruptionLayer/test_AntiCorruptionLayer.py::test_inv_stateless_translation_confirms
+core/venous/data/AntiCorruptionLayer/test_AntiCorruptionLayer.py::test_inv_explicit_version_under_failure
+  /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/core/venous/data/AntiCorruptionLayer/AntiCorruptionLayer.py:385: RuntimeWarning: AntiCorruptionLayer initialised with empty `foreign_types=()`. ACL-INV-01 ('foreign types MUST NEVER cross the boundary') is ENFORCED ONLY for `ForeignPayload` envelopes in this mode. Declare the concrete foreign types your upstream emits to close the gap.
+    super().__init__(default_version=v)
+
+core/venous/data/AntiCorruptionLayer/test_AntiCorruptionLayer.py::test_inv_stateless_translation_prevents
+  /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/core/venous/data/AntiCorruptionLayer/test_AntiCorruptionLayer.py:118: RuntimeWarning: AntiCorruptionLayer initialised with empty `foreign_types=()`. ACL-INV-01 ('foreign types MUST NEVER cross the boundary') is ENFORCED ONLY for `ForeignPayload` envelopes in this mode. Declare the concrete foreign types your upstream emits to close the gap.
+    acl: VersionedAntiCorruptionLayer[object, object] = VersionedAntiCorruptionLayer(
+
+core/venous/data/AntiCorruptionLayer/test_AntiCorruptionLayer.py::test_inv_stateless_translation_under_failure
+  /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/core/venous/data/AntiCorruptionLayer/test_AntiCorruptionLayer.py:139: RuntimeWarning: AntiCorruptionLayer initialised with empty `foreign_types=()`. ACL-INV-01 ('foreign types MUST NEVER cross the boundary') is ENFORCED ONLY for `ForeignPayload` envelopes in this mode. Declare the concrete foreign types your upstream emits to close the gap.
+    acl: VersionedAntiCorruptionLayer[object, object] = VersionedAntiCorruptionLayer(
+
+core/venous/data/AntiCorruptionLayer/test_AntiCorruptionLayer.py::test_inv_explicit_version_confirms
+  /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/core/venous/data/AntiCorruptionLayer/test_AntiCorruptionLayer.py:169: RuntimeWarning: AntiCorruptionLayer initialised with empty `foreign_types=()`. ACL-INV-01 ('foreign types MUST NEVER cross the boundary') is ENFORCED ONLY for `ForeignPayload` envelopes in this mode. Declare the concrete foreign types your upstream emits to close the gap.
+    acl: VersionedAntiCorruptionLayer[object, object] = VersionedAntiCorruptionLayer(
+
+engine/tests/test_compose.py: 1 warning
+engine/tests/test_manifest.py: 1 warning
+engine/tests/test_tree_api.py: 1 warning
+engine/tests/test_tree_auth.py: 1 warning
+engine/tests/test_tree_compliance.py: 1 warning
+engine/tests/test_tree_data.py: 1 warning
+engine/tests/test_tree_deployment.py: 1 warning
+engine/tests/test_tree_observability.py: 1 warning
+engine/tests/test_tree_realtime.py: 1 warning
+engine/tests/test_tree_resiliency.py: 1 warning
+engine/tests/test_tree_testing.py: 1 warning
+  /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/.venv/lib/python3.14/site-packages/pydantic/json_schema.py:2466: PydanticJsonSchemaWarning: Default value <object object at 0x108c3e730> is not JSON serializable; excluding default from JSON schema [non-serializable-default]
+    warnings.warn(message, PydanticJsonSchemaWarning)
+
+engine/tests/test_manifest.py::test_build_succeeds_and_produces_expected_counts
+  /usr/local/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/ast.py:46: RuntimeWarning: coroutine '_echo_exec' was never awaited
+    return compile(source, filename, mode, flags,
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] adapt/extend/infrastructure/test_add_excel_export_behavior.py:222: openpyxl not installed — cannot test Excel generation
+SKIPPED [7] engine/tests/test_integration.py:42: MANIFEST.json not yet produced at /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/core/venous/MANIFEST.json. Run `engine.merge` first.
+5387 passed, 8 skipped, 284 warnings in 1622.00s (0:27:01)
