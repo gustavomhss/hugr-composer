@@ -43,9 +43,22 @@ Before `v1.0.0` can be cut from HEAD, every box below MUST be checked. Order is 
 
 ### §1.3 — Evidence package committed (see §2 below)
 
-- [ ] `/evidence/` directory exists at HEAD being tagged.
-- [ ] Every claim in PRODUCT.md §1-§3 maps to an artefact under `/evidence/artifacts/`.
-- [ ] `/evidence/reproduce.sh` runs clean on a fresh Docker container and regenerates all artefacts with identical hashes.
+- [ ] `/evidence/` directory exists at HEAD being tagged, with the
+      deterministic/external-eval split per §2.0.
+- [ ] Every PRODUCT.md §1-§6 claim is either (a) mapped to an
+      artefact in §2.2's tables OR (b) listed in
+      `/evidence/not-yet-covered.md` with an honest reason. No
+      claim goes unaccounted for.
+- [ ] `/evidence/reproduce.sh --verify` runs clean (≤15min) on a
+      fresh Docker container — deterministic artefacts
+      byte-identical to committed (modulo timestamp).
+- [ ] `/evidence/reproduce.sh --deterministic` runs clean (≤1h) on a
+      fresh Docker container and regenerates `/evidence/deterministic/**`
+      byte-for-byte.
+- [ ] `/evidence/external-eval/**` carries ≥1 complete run manifest
+      for each external-eval artefact (single_shot / cross_model_fnf /
+      counterfactual / reviewer_signoffs). External-eval results are
+      NOT byte-reproducible; they ARE archived in full.
 
 ### §1.4 — Gustavo ratifications (human gates)
 
@@ -64,71 +77,207 @@ Before `v1.0.0` can be cut from HEAD, every box below MUST be checked. Order is 
 
 ## §2 — Evidence package (`/evidence/`)
 
+### §2.0 — Deterministic vs external-eval split
+
+Evidence divides into two classes with different reproducibility
+guarantees. Codex v6 LAUNCH review (B1) correctly flagged that the
+earlier "byte-identical reproducible in Docker" claim was theatrical
+— cross-model LLM evals + counterfactual runs + human-graded
+dimensions cannot be deterministic. We split the package so each
+class is held to its honest standard:
+
+- **Deterministic artefacts** — reproducible byte-for-byte modulo
+  timestamps (hash-after-normalize matches). Live under
+  `/evidence/deterministic/`. A fresh `reproduce.sh --deterministic`
+  run on the same git commit MUST produce identical content.
+- **External-eval artefacts** — results depend on live LLM
+  inference, provider availability, stochastic output, and
+  (for hand-editability) human judgment. Live under
+  `/evidence/external-eval/`. We archive the full input-output
+  bundle (model IDs, prompt hashes, transcripts, cost, timestamps,
+  judge notes) so the run is AUDITABLE, not replayable bit-for-bit.
+
+The top-level `EVIDENCE.md` verdict cites both classes with the
+honest grading for each.
+
 ### §2.1 — Structure
 
 ```
 evidence/
-├── EVIDENCE.md                       # human-readable index + verdict
-├── reproduce.sh                      # single-command regeneration
-├── metrics_summary.json              # dashboard of all numbers
-└── artifacts/
-    ├── contract_check.log            # 37/37 green (engine.audit.contract_check --quiet)
-    ├── pytest_full_sweep.log         # 5387/0/8 (adapt/ + core/venous/ + engine/)
-    ├── manifest_idempotence.log      # stable_hash across 2 builds
-    ├── loc_budget_stats.json         # LOC per emitted file + primitive-import ratio
-    ├── framework_free_proof.log      # primitives tested without FastAPI installed
-    ├── bandit_scan/                  # per-example security static scan
-    │   └── example_01.log ... example_20.log
-    ├── semgrep_scan/                 # per-example OWASP ruleset
-    │   └── example_01.log ... example_20.log
-    ├── single_shot_benchmark.json    # 10 fresh specs × single-shot × objective grade
-    ├── cross_model_fnf.json          # FNF Test: Claude vs GPT vs Gemini, same specs
-    ├── counterfactual.json           # same spec WITHOUT HuGR — baseline comparison
-    ├── install_docker_run.log        # Docker fresh → install.sh → scaffold → boot
-    ├── freshness_proof.log           # git commit SHA + tree hash at evidence gen time
-    └── reviewer_signoffs/
-        ├── codex_v6.md               # Wave G external audit verdict
-        ├── sonnet.md                 # parallel Sonnet audit verdict
-        └── opus.md                   # independent Opus sign-off
+├── EVIDENCE.md                       # human-readable verdict: deterministic + external-eval separately graded
+├── reproduce.sh                      # runs both by default; flags: --deterministic | --external-eval
+├── metrics_summary.json              # dashboard (deterministic numbers) + (external-eval numbers w/ run-id refs)
+├── deterministic/                    # ← byte-for-byte reproducible on fresh Docker, same commit
+│   ├── contract_check.log            # 37/37 green (engine.audit.contract_check --quiet)
+│   ├── pytest_full_sweep.log         # 5387/0/8 (adapt/ + core/venous/ + engine/)
+│   ├── manifest_idempotence.log      # stable_hash across 2 builds
+│   ├── loc_budget_stats.json         # LOC per emitted file + primitive-import ratio across 20 examples
+│   ├── framework_free_proof.log      # 124 registered primitives boot without FastAPI installed
+│   ├── bandit_scan/                  # per-example security static scan
+│   │   └── example_01.log ... example_20.log
+│   ├── semgrep_scan/                 # per-example OWASP ruleset
+│   │   └── example_01.log ... example_20.log
+│   ├── install_docker_run.log        # Docker fresh → install.sh → scaffold → boot
+│   └── freshness_proof.log           # git commit SHA + tree hash at evidence gen time
+├── external-eval/                    # ← auditable, NOT byte-reproducible
+│   ├── single_shot_benchmark/
+│   │   ├── results.json              # 10 fresh specs × single-shot × objective grade
+│   │   ├── specs/                    # the 10 blind specs (archived; not part of benchmark corpus)
+│   │   ├── transcripts/              # full tool-call traces per spec
+│   │   └── run_manifest.json         # model_id, prompt_bundle_hash, tool_manifest_hash, commit, stable_hash, cost
+│   ├── cross_model_fnf/
+│   │   ├── results.json              # 10 specs × 3 models = 30 runs; per-run verdict
+│   │   ├── transcripts/              # 30 full traces
+│   │   ├── variance_report.json      # cross-model variance (target ≤10% = kit-carries-weight)
+│   │   └── run_manifest.json         # one per model column (Claude / GPT / Gemini)
+│   ├── counterfactual/
+│   │   ├── results.json              # same 10 specs, same model, NO HuGR access
+│   │   ├── transcripts/              # 10 baseline traces
+│   │   └── run_manifest.json         # model_id, prompt (the "from-scratch" baseline prompt)
+│   └── reviewer_signoffs/
+│       ├── codex_v6.md               # Wave G external audit verdict
+│       ├── sonnet.md                 # parallel Sonnet audit verdict
+│       └── opus.md                   # independent Opus sign-off
+└── not-yet-covered.md                # honest log of PRODUCT claims NOT YET evidenced
+                                      # (e.g. "MCP server against Cursor / Zed" — manual verification only)
 ```
 
-### §2.2 — Claim → Evidence mapping (PRODUCT.md → `/evidence/artifacts/`)
+### §2.2 — Claim → Evidence mapping
 
-| Claim | Artefact | Grading |
-|---|---|---|
-| "Contract discipline — 37 machine-checkable rules" | `contract_check.log` | binary pass/fail |
-| "5000+ tests, all green" | `pytest_full_sweep.log` | count + pass ratio |
-| "Catalog deterministic — `stable_hash` idempotent" | `manifest_idempotence.log` | hash-match |
-| "Code as SEED, not CAGE — ≤N LOC glue per emitted file" | `loc_budget_stats.json` | histogram + 95th percentile |
-| "Framework-free motors — primitives work standalone" | `framework_free_proof.log` | all 124 pass without FastAPI |
-| "Production-grade security" | `bandit_scan/*` + `semgrep_scan/*` | 0 HIGH / 0 CRITICAL across 20 examples |
-| "Single-shot success on unseen specs" | `single_shot_benchmark.json` | X / 10 |
-| "Maestro-agnostic across frontier models" | `cross_model_fnf.json` | N / 30 (10 specs × 3 models); variance ≤ 10% |
-| "Cheaper than hand-coded" | `counterfactual.json` | token count + time + LOC ratio |
-| "Fresh install path works" | `install_docker_run.log` | time-to-boot + exit code 0 |
-| "Independent external review" | `reviewer_signoffs/*.md` | 3 verdicts, majority YES |
+Each PRODUCT.md claim is mapped to a specific artefact and a grading
+method. Where §1-§6 of PRODUCT.md makes a claim we cannot evidence
+at v1.0.0, it is listed in `/evidence/not-yet-covered.md` with the
+reason + milestone that would enable evidence (NOT hidden).
 
-### §2.3 — Reproduction
+**PRODUCT §1 — "library of executable knowledge, invokable by Maestro":**
+
+| Claim | Artefact | Grading | Class |
+|---|---|---|---|
+| Fresh install path works end-to-end | `install_docker_run.log` | time-to-boot + exit 0 | deterministic |
+| Catalog deterministic (`stable_hash` idempotent) | `manifest_idempotence.log` | hash-match across rebuilds | deterministic |
+| 37 machine-checked invariants (drift impossible) | `contract_check.log` | binary 37/37 | deterministic |
+| Full test sweep green | `pytest_full_sweep.log` | pass/fail ratio + count | deterministic |
+
+**PRODUCT §2 — "three-layer Rails architecture" + "code as SEED not CAGE":**
+
+| Claim | Artefact | Grading | Class |
+|---|---|---|---|
+| Tools emit ≤20 LOC glue; logic in primitives | `loc_budget_stats.json` | histogram; 95th percentile ≤ §A1 budget | deterministic |
+| Primitives are framework-free motors | `framework_free_proof.log` | 124/124 boot without FastAPI | deterministic |
+
+**PRODUCT §3 — "primary user is Maestro":**
+
+| Claim | Artefact | Grading | Class |
+|---|---|---|---|
+| Maestro discovers skill via MCP metadata (~100 tokens) | `single_shot_benchmark/run_manifest.json` | prompt-bundle token count | external-eval |
+| Maestro loads SKILL.md (~5k tokens) | `single_shot_benchmark/run_manifest.json` | file token count | external-eval |
+| Maestro composes primitives when tools don't fit | `single_shot_benchmark/transcripts/` | presence of `fastapi_meta_compose` call | external-eval |
+
+**PRODUCT §4 — "Maestro produces running, tested, production-grade backend single-session":**
+
+| Claim | Artefact | Grading | Class |
+|---|---|---|---|
+| Single-shot success rate on unseen specs | `single_shot_benchmark/results.json` | X / 10 with boot + tests + security scan | external-eval |
+| ≥70% benchmark target for "SOTA" | `single_shot_benchmark/results.json` + `cross_model_fnf/variance_report.json` | overall ≥70% per PRODUCT §4 | external-eval |
+| No human-authored code in emitted project | `single_shot_benchmark/transcripts/` | zero manual edits in trace | external-eval |
+
+**PRODUCT §5 — non-goals (validated by absence):**
+
+| Claim | Artefact | Grading | Class |
+|---|---|---|---|
+| Generated code is idiomatic + boring (hand-editable) | `external-eval/reviewer_signoffs/*.md` | 2-of-3 reviewers call the emitted code idiomatic | external-eval |
+
+**PRODUCT §6 — design invariants:**
+
+| Claim | Artefact | Grading | Class |
+|---|---|---|---|
+| Tools emit ≤20 LOC glue (§6.1) | `loc_budget_stats.json` | 95th percentile ≤ budget | deterministic |
+| Primitives are orthogonal (§6.2) | covered via `framework_free_proof.log` + per-primitive unit tests in `pytest_full_sweep.log` | unit tests per primitive pass | deterministic |
+| Generated code survives hand-editing (§6.3) | tracked in `/evidence/not-yet-covered.md` — requires a soak-edit harness that does not yet exist | N/A at v1.0.0 | not-yet-covered |
+| Every tool has MCP metadata (§6.5) | subset of `contract_check.log` (§B1.5 rule) | 37/37 implies present | deterministic |
+| Semantic registry indexes every primitive (§6.6) | `contract_check.log` §B1.1 rule | 37/37 implies present | deterministic |
+
+**Post-launch + security scans** (beyond §1-§6 but material for "production-grade"):
+
+| Claim | Artefact | Grading | Class |
+|---|---|---|---|
+| Emitted code passes bandit + semgrep (OWASP ruleset) | `bandit_scan/*` + `semgrep_scan/*` | 0 HIGH / 0 CRITICAL across 20 examples | deterministic |
+| Kit is model-agnostic (same result across frontier LLMs) | `cross_model_fnf/results.json` + `variance_report.json` | cross-model variance ≤ 10% | external-eval |
+| External reviewer concurrence | `external-eval/reviewer_signoffs/*.md` | 2-of-3 YES on sign-off question | external-eval |
+
+### §2.3 — What is NOT yet covered
+
+`/evidence/not-yet-covered.md` lists every PRODUCT claim that lacks
+an evidence artefact at v1.0.0, with an honest reason + milestone.
+At v1.0.0 it covers at minimum:
+
+- **"MCP server locally against Claude Desktop / Cursor / Zed"**
+  (PRODUCT §3 secondary). Manual verification only; automated IDE-
+  invocation harness is a v1.1+ item.
+- **"Generated code survives hand-editing" idempotency** (PRODUCT
+  §6.3). The `_r_generator_*` rules assert idempotency at
+  emit-time; longitudinal soak-edit coverage (apply tool, hand-
+  edit, re-apply tool) is a v1.1+ item.
+- **"Cheaper than hand-coded"** as an absolute claim. The
+  `counterfactual/` artefact shows token + time + LOC ratio
+  vs. a same-model no-HuGR baseline; "cheaper for real teams with
+  real specs" is post-launch telemetry (v1.2+).
+
+Hiding these gaps behind confident language is exactly the failure
+mode Codex v6 B2 caught in the first LAUNCH.md draft. They are
+listed explicitly so the evidence package is honest about what it
+DOESN'T prove, not only what it does.
+
+### §2.4 — Reproduction
 
 `./evidence/reproduce.sh` MUST:
 
-- Run on a fresh Docker container (no local assumption) in under 3 hours.
-- Regenerate every file under `/evidence/artifacts/` with the same content modulo timestamp + cost metadata.
-- Exit non-zero if any artefact diverges from the committed version (detects silent drift in the kit that wasn't caught by §1.1-§1.2 gates).
+- For `--deterministic` subcommand: regenerate `/evidence/deterministic/**`
+  byte-identical modulo timestamps (normalise timestamps, then hash —
+  must match committed). Runs on a fresh Docker container in ≤1h.
+  Exit non-zero if any file diverges.
+- For `--external-eval` subcommand: run the live LLM evals + archive
+  transcripts + write new `run_manifest.json` with fresh timestamps,
+  model IDs, and cost. Results are NEW (non-replayable), but the
+  archiving shape is deterministic — input prompts, model pins,
+  graders. Typical runtime: ~2-3h + ~$200-500 in provider cost.
+- For `--all` (default): runs both; external-eval results inform the
+  verdict but do not gate reproduction of deterministic artefacts.
+- For `--verify`: regenerate deterministic only + diff against
+  committed; non-zero on any drift. Fast CI gate (<15min).
 
-### §2.4 — Zero-trust verification
+### §2.5 — Zero-trust verification
 
-A reader who trusts nothing:
+A reader who trusts nothing runs:
 
 ```bash
 git clone https://github.com/humangr-labs/HuGR_Skills --branch v1.0.0
 cd HuGR_Skills
-./evidence/reproduce.sh          # ~2-3h
-cat evidence/EVIDENCE.md          # human-readable verdict
-jq . evidence/metrics_summary.json  # machine-readable numbers
+
+# Fast: just confirm the kit is the kit they think it is.
+./evidence/reproduce.sh --verify          # ~15min
+                                          # exit 0 = deterministic artefacts match commit
+
+# Full: regenerate deterministic from scratch.
+./evidence/reproduce.sh --deterministic   # ~1h
+                                          # exit 0 = byte-identical reproduction confirmed
+
+# Optional: run the external-eval again (needs LLM API keys).
+export ANTHROPIC_API_KEY=...
+export OPENAI_API_KEY=...
+export GOOGLE_API_KEY=...
+./evidence/reproduce.sh --external-eval   # ~2-3h, ~$200-500
+                                          # produces new run_manifest.json files;
+                                          # archive shape identical, results may vary
+
+cat evidence/EVIDENCE.md                  # human-readable verdict
+jq . evidence/metrics_summary.json         # machine-readable numbers
 ```
 
-Every claim is either reproducible or it's not. There is no "trust me."
+Deterministic claims are either reproducible or they're not — no
+"trust me." External-eval claims are auditable (every run fully
+archived) but acknowledge the underlying reality: LLM inference is
+stochastic; "SOTA" is measured, not decreed.
 
 ---
 
