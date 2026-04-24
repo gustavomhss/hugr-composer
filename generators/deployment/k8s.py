@@ -217,6 +217,12 @@ def generate_k8s_manifests(
     files_created.append(str(p))
 
     # --- configmap.yaml ---
+    # Non-secret POSTGRES_* fields live in the ConfigMap; only
+    # POSTGRES_PASSWORD belongs in the Secret. This matches the emitted
+    # `app/core/config.py` contract — it reads POSTGRES_SERVER/PORT/
+    # USER/PASSWORD/DB and builds SQLALCHEMY_DATABASE_URI from them.
+    # Emitting DATABASE_URL here would be silently ignored and the
+    # deployment would fall back to the `localhost` default.
     configmap = textwrap.dedent(f"""\
         apiVersion: v1
         kind: ConfigMap
@@ -230,6 +236,14 @@ def generate_k8s_manifests(
           PROJECT_NAME: "{app_name}"
           ENVIRONMENT: "production"
           LOG_LEVEL: "info"
+          # Database wiring — password is in the Secret. The in-cluster
+          # PostgreSQL Service is assumed to be reachable at `postgres`;
+          # override POSTGRES_SERVER if you use an external managed DB
+          # (RDS, Cloud SQL, Neon, etc.).
+          POSTGRES_SERVER: "postgres"
+          POSTGRES_PORT: "5432"
+          POSTGRES_USER: "postgres"
+          POSTGRES_DB: "{app_name}"
     """)
 
     p = out / "configmap.yaml"
@@ -248,8 +262,9 @@ def generate_k8s_manifests(
         type: Opaque
         stringData:
           # IMPORTANT: These REPLACE_WITH_* placeholders are NOT valid
-          # credentials. The application refuses to boot while they are
-          # in place (known-weak credential check in app/core/config.py).
+          # credentials. The application refuses to boot while any
+          # setting value starts with `REPLACE_WITH_` (fail-fast check
+          # in app/core/config.py — `_enforce_security_contract`).
           #
           # Fill in real values before `kubectl apply`. In production,
           # prefer sealed-secrets, external-secrets, or Vault instead of
@@ -257,8 +272,15 @@ def generate_k8s_manifests(
           #
           # Generate SECRET_KEY once:
           #     openssl rand -hex 32
+          #
+          # POSTGRES_PASSWORD is the ONLY DB field in the Secret; the
+          # non-secret POSTGRES_SERVER / PORT / USER / DB live in the
+          # ConfigMap. The emitted config.py builds the DB URI from the
+          # five POSTGRES_* env vars. A pre-built URI here would be
+          # ignored by the pydantic-settings loader and the pod would
+          # silently fall back to the localhost default.
           SECRET_KEY: "REPLACE_WITH_openssl_rand_hex_32"
-          DATABASE_URL: "postgresql+asyncpg://postgres:REPLACE_WITH_strong_db_password@postgres:5432/app"
+          POSTGRES_PASSWORD: "REPLACE_WITH_strong_db_password"
     """)
 
     p = out / "secret.yaml"

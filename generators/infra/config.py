@@ -177,6 +177,12 @@ def generate_config(
                 optional: leave both empty to skip superuser seeding. If
                 either is set, both MUST be set, the password MUST be
                 ≥ 12 chars, and MUST NOT match any known-weak value.
+              * ANY setting whose value starts with ``REPLACE_WITH_`` raises
+                at boot. This covers every placeholder emitted by the
+                scaffold (``.env.example``, the K8s Secret, the Dockerfile
+                comments) — so a deployment that forgot to substitute a
+                real value fails fast at container start instead of
+                silently booting with a placeholder credential.
             \"\"\"
 
             model_config = SettingsConfigDict(
@@ -218,11 +224,13 @@ def generate_config(
         {db_section}{redis_section}{smtp_section}
             @model_validator(mode="after")
             def _enforce_security_contract(self) -> "Settings":
-                # SECRET_KEY — fail-fast in every environment. Warn-only in
-                # LOCAL used to be "safe" but historically leaks to prod when
-                # devs copy their .env pattern. The fix is trivial
-                # (one openssl command); there is no legitimate reason to
-                # boot with a weak / empty SECRET_KEY.
+                for _f in type(self).model_fields:
+                    _v = getattr(self, _f, None)
+                    if isinstance(_v, str) and _v.startswith("REPLACE_WITH_"):
+                        raise ValueError(
+                            f"{{_f}} still carries scaffold placeholder '{{_v}}'. "
+                            "Replace before boot (.env / k8s Secret / Dockerfile)."
+                        )
                 secret = self.SECRET_KEY or ""
                 if (
                     len(secret) < _SECRET_KEY_MIN_LEN
@@ -234,16 +242,12 @@ def generate_config(
                         "Generate a real key once and write it to .env:\\n"
                         '    echo "SECRET_KEY=$(openssl rand -hex 32)" >> .env'
                     )
-
-                # Superuser pair — both-or-neither. Treat missing values as
-                # "no seed"; reject weak passwords explicitly.
                 email = (self.FIRST_SUPERUSER_EMAIL or "").strip()
                 password = self.FIRST_SUPERUSER_PASSWORD or ""
                 if bool(email) ^ bool(password):
                     raise ValueError(
                         "FIRST_SUPERUSER_EMAIL and FIRST_SUPERUSER_PASSWORD "
-                        "must be set together (or both left empty to skip "
-                        "seeding). Got one set and one empty."
+                        "must be set together (or both empty to skip seeding)."
                     )
                 if password:
                     if len(password) < _SUPERUSER_PASSWORD_MIN_LEN:
@@ -254,8 +258,7 @@ def generate_config(
                     if password.strip().lower() in _WEAK_CREDENTIALS:
                         raise ValueError(
                             "FIRST_SUPERUSER_PASSWORD matches a known-weak "
-                            "value. Choose a real password (≥ 12 chars, mixed "
-                            "classes) and update .env."
+                            "value. Choose a real password (≥12 chars)."
                         )
                 return self
 
