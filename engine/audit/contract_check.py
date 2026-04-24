@@ -126,7 +126,79 @@ def _r_readme_md() -> tuple[bool, str]:
     for link in ("PRODUCT.md", "ROADMAP.md", "CONTRACT.md"):
         if link not in body:
             return False, f"README.md missing link to {link}"
-    return True, f"README.md present, {lines} lines, links to canonical docs"
+
+    # Surface-count guards (post-Codex-v4 M1). The README is the entry
+    # doc — Codex v4 flagged it carrying `generators/ # 60 macro
+    # scaffold helpers` while INVENTORY said 56. The §B4.7 counts-sync
+    # rule scopes its checks to the seven narrative docs it owns; the
+    # repo-root README was not among them, so drift here was invisible.
+    # We parse INVENTORY for the canonical primitive / adapter / staged
+    # / quarantined / generators totals, then assert each appears in
+    # README at the specific drift-prone shape.
+    inv_path = SKILL_ROOT / "INVENTORY.md"
+    if not inv_path.exists():
+        return False, "INVENTORY.md missing — run `python -m engine.inventory`"
+    inv = inv_path.read_text(encoding="utf-8")
+    patterns = {
+        "registered": r"\*\*(\d+) registered primitives\*\*",
+        "staged": r"\*\*(\d+) staged primitives\*\*",
+        "quarantined": r"staged primitives\*\* in `_extracted/` \(plus (\d+) quarantined\)",
+        "adapters": r"\*\*(\d+) FastAPI adapters\*\*",
+        "generators": r"## 2\. generators/ — (\d+) tools",
+        "adapt_total": r"## 1\. adapt/ — (\d+) tools",
+    }
+    canon: dict[str, int] = {}
+    for label, pat in patterns.items():
+        m = re.search(pat, inv)
+        if not m:
+            return False, (
+                f"INVENTORY.md missing `{label}` headline "
+                f"(pattern `{pat}`) — regenerate via `python -m engine.inventory`"
+            )
+        canon[label] = int(m.group(1))
+
+    required_tokens = [
+        # `├── generators/           # 56 macro scaffold helpers`
+        (f"# {canon['generators']} macro scaffold helpers",
+         "architecture-tree `generators/` comment"),
+        # `├── adapt/                # 127 tools (…)`
+        (f"# {canon['adapt_total']} tools ",
+         "architecture-tree `adapt/` comment"),
+        # Status-block line: `Primitives: 124  (…)`
+        (f"Primitives: {canon['registered']} ",
+         "'Current status' `Primitives:` line"),
+        # Status-block line: `Staged:    176   (…, +42 quarantined, …)`
+        (f"Staged:    {canon['staged']}",
+         "'Current status' `Staged:` line"),
+        (f"+{canon['quarantined']} quarantined",
+         "'Current status' quarantined subtotal"),
+        # Architecture tree summary:
+        # `core/venous/          # 124 primitives + 17 FastAPI adapters (…) + 176 staged`
+        (f"# {canon['registered']} primitives + {canon['adapters']} FastAPI adapters",
+         "architecture-tree `core/venous/` comment"),
+    ]
+    missing: list[str] = []
+    for tok, label in required_tokens:
+        if tok not in body:
+            missing.append(f"expected `{tok}`  ({label})")
+    if missing:
+        return False, (
+            "README.md surface counts do not match INVENTORY.md:\n  "
+            + "\n  ".join(missing)
+        )
+
+    # Install stub must be present — B0.5 requires README to point at
+    # the fresh-clone path; regression would land people in a
+    # doc that lists canonical-doc links but no way to actually install.
+    if "install.sh" not in body:
+        return False, "README.md missing reference to `install.sh` (fresh-clone path)"
+
+    return True, (
+        f"README.md present, {lines} lines, links to canonical docs, "
+        f"surface counts match INVENTORY "
+        f"(generators={canon['generators']}, adapt={canon['adapt_total']}, "
+        f"primitives={canon['registered']}, staged={canon['staged']})"
+    )
 
 
 def _r_claude_memory() -> tuple[bool, str]:
