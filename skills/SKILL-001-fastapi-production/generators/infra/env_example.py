@@ -95,13 +95,19 @@ def generate_env_example(
         """))
 
     # --- CORS ---
+    # Field name must match `Settings.BACKEND_CORS_ORIGINS` in
+    # app/core/config.py; the middleware reads it via
+    # `settings.BACKEND_CORS_ORIGINS`. Emitting `CORS_ORIGINS` here
+    # (the pre-fix name) would silently leave the setting unset and
+    # the allow-list empty at runtime.
     sections.append(textwrap.dedent("""\
         # =============================================================================
         # CORS
         # =============================================================================
         # Comma-separated list of allowed origins, or JSON array.
         # Example: http://localhost:3000,http://localhost:8080
-        CORS_ORIGINS=["http://localhost:3000"]
+        # Matches Settings.BACKEND_CORS_ORIGINS (app/core/config.py).
+        BACKEND_CORS_ORIGINS=["http://localhost:3000"]
     """))
 
     # --- SMTP ---
