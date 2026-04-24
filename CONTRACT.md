@@ -147,7 +147,7 @@ for the next 50 violations.
 
 #### B0.5 — `README.md` at repo root
 
-- **DoD:** `/README.md` exists, ≤ 80 lines, containing:
+- **DoD:** `/README.md` exists, ≤ 100 lines, containing:
   - One-paragraph elevator pitch (mirrors PRODUCT.md §1)
   - Link to PRODUCT.md / ROADMAP.md / CONTRACT.md
   - Install command stub (placeholder until Phase 4)
@@ -157,8 +157,14 @@ for the next 50 violations.
 - **Invariants:** README.md is NOT duplicating product docs — it's a
   pointer. Maintenance: phase badge updates with every phase transition.
 - **Completeness:** One-screen (mobile-readable). All claims verifiable.
-- **Quality (SOTA):** Respects a reader's time. No bullet soup. The 80-
-  line budget is a hard limit.
+- **Quality (SOTA):** Respects a reader's time. No bullet soup. The 100-
+  line budget is a hard limit; the pre-v1.0 limit was 80, but Wave-E
+  added machine-verified surface-count tokens to the Current-status
+  block (~5 lines the rule asserts), consuming budget the narrative
+  prose needed. Sonnet flagged the README sitting at 79/80 with no
+  headroom (Wave-F M3); 100 gives ~20 lines of honest margin for
+  future status additions without turning a one-line edit into a
+  structural rewrite.
 
 #### B0.6 — `CLAUDE.md` memory pointer ✅ Done
 
