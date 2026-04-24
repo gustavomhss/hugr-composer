@@ -1,7 +1,7 @@
 {
   "generated_at": "2026-04-23",
   "label": "v1.0.0 pre-freeze snapshot",
-  "purpose": "ROADMAP §5.4 bullet 3 — freeze-day artefact committed to benchmarks/history/ per Ship-gate §5.4. Records the plan + code-level benchmark state at the point where Claude-side work was ready for Gustavo's §11 / FREEZE §4 / CONTRACT §E signatures. NOT a 'green on every gate' summary — §5.3 below enumerates what is local-green vs. ci-deferred vs. requires-services vs. known-failure. Specifically: property tests are 7/8 (RUFF_CRITICAL_CLEAN emitted-template style issue, non-blocker per ROADMAP §8.2 R4); soak + mutation + E2E-Postgres + behavior-scenarios + install-docker are CI-owned (ship gate requires ≤48h green CI before tag per §5.7). Tag-cut is predicated on those CI gates going green AND Gustavo's ratifications — neither of which this artefact attests to; it attests only to local Claude-side status at HEAD.",
+  "purpose": "ROADMAP §5.4 bullet 3 — freeze-day artefact committed to benchmarks/history/ per Ship-gate §5.4. Records the plan + code-level benchmark state at the point where Claude-side work was ready for Gustavo's §11 / FREEZE §4 / CONTRACT §E signatures. NOT a 'green on every gate' summary — §5.3 below enumerates what is local-green vs. ci-deferred vs. requires-services vs. known-failure. Specifically: property tests are 7/8 at snapshot time (RUFF_CRITICAL_CLEAN fails on emitted-template style; this row currently FAILS its GOLIVE §3.9 exit-0 requirement and is therefore a tag-gate blocker unless Gustavo ratifies an explicit exemption — no such exemption exists today); soak + mutation + E2E-Postgres + behavior-scenarios + install-docker are CI-owned (ship gate requires ≤48h green CI before tag per §5.7). Tag-cut is predicated on those CI gates going green, on the property-test failure being fixed or ratified-exempt, AND on Gustavo's ratifications — none of which this artefact attests to; it attests only to local Claude-side status at HEAD.",
   "kit": {
     "name": "SKILL-001-fastapi-production",
     "version": "1.0.0-rc.1",
@@ -83,7 +83,7 @@
       "E2E PostgreSQL": "requires-services (nightly CI covers; tag-gate requires CI-green run within 48h pre-tag)",
       "behavior scenarios (12 domain archetypes)": "requires-services (PostgreSQL; nightly CI covers; same tag-gate window)",
       "cross-composition (200+)": "executed-local-green (1678s wall; slower than prior 1230s due to CPU contention with parallel perf run — acceptable, not a regression)",
-      "property tests": "executed-local-known-failure (7/8 — RUFF_CRITICAL_CLEAN property fails on emitted-template style: F401 unused imports + F541 empty f-strings; pre-existing; NOT a correctness bug; tracked as Wave-2 template-cleanup work per ROADMAP §6.1; §8.2 R4 flags this class)",
+      "property tests": "executed-local-known-failure (7/8 — RUFF_CRITICAL_CLEAN property fails on emitted-template style: F401 unused imports + F541 empty f-strings; pre-existing; Wave-2 template-cleanup scope per ROADMAP §6.1). GOLIVE §3.9 requires `python tests/property_tests.py` to exit 0 — this row currently does NOT satisfy that gate, so it blocks the tag unless Gustavo ratifies an explicit exemption carve-out. No such exemption exists in CONTRACT §E at snapshot time.",
       "stress test (20-model + 27 tools)": "executed-local-green (3/3 post SECRET_KEY-fixture fix, commit e44c568)",
       "soak test (5 min, 10 concurrent)": "ci-deferred (intentional — 5-min wall inflates local iteration; nightly CI owns it)",
       "mutation runner (≥10-module sample)": "ci-deferred (CI-scheduled; not a commit-gate check)",
@@ -112,7 +112,7 @@
     "§5.7_post_release_monitoring": "N/A until tag"
   },
   "known_non_blockers": {
-    "ruff_critical_clean_property": "Emitted templates carry F401 unused imports + F541 empty f-strings in ~119/123 tools. Purely style in the generator output, zero runtime impact (unit + behaviour + cross-composition tests all green). Tracked as Wave-2 template-cleanup work; NOT a ship-gate blocker per ROADMAP §8.2 R4.",
+    "ruff_critical_clean_property": "Emitted templates carry F401 unused imports + F541 empty f-strings in ~119/123 tools. Purely style in the generator output, zero RUNTIME impact (unit + behaviour + cross-composition tests all green). Tracked as Wave-2 template-cleanup work per ROADMAP §6.1. NOTE: the known_non_blockers framing in earlier revisions of this artefact was wrong — GOLIVE §3.9 requires `python tests/property_tests.py` to exit 0, so this row IS a tag-gate blocker unless either (a) the style failures are fixed before tag or (b) Gustavo ratifies an explicit §3.9 carve-out in CONTRACT §E. Neither has happened yet; the row is listed here to document the residual gate, not to exempt it.",
     "soak + mutation + behavior-scenarios local skips": "All three require live services or long wall-time; nightly CI covers them. §5.3 bullets ticked on CI green, not on local run."
   }
 }
