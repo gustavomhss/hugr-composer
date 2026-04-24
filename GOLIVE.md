@@ -31,9 +31,9 @@ claim.
 
 | # | Item | Done check | Owner |
 |---|---|---|---|
-| 2.1 | Classifier output matches FREEZE §1.1 | `engine.promotion.classify` prints `promote_as_adapter=2, needs_caller=104, extract_motor_pair=118, redundant=2, needs_review=3`. Any drift = investigate; do not ignore. | Claude |
+| 2.1 | Classifier output matches FREEZE §1.1 | `engine.promotion.classify` prints `extract_motor_pair=118, needs_caller=101` (post-Wave-1.5: the 2 `promote_as_adapter`, 2 `redundant`, and 3 `needs_review` entries cited in pre-freeze drafts were all resolved — adapters shipped, redundants deleted, needs-review promoted). Any drift = investigate; do not ignore. | Claude |
 | 2.2 | LEDGER.md regenerated and committed | `engine.promotion.ledger` exits 0; `git diff engine/promotion/LEDGER.md` non-empty only if the file itself drifted | Claude |
-| 2.3 | No ledger entry with `PROMOTE_AS_*` + zero blockers left unactioned | Invariant 12 of FREEZE §3: for each such entry, either it's executed OR listed in FREEZE §2 deferrals. Today: `BulkheadMiddleware (×2)` ledger rows carry the deferral per FREEZE §1.6. | Claude |
+| 2.3 | No ledger entry with `PROMOTE_AS_*` + zero blockers left unactioned | Invariant 12 of FREEZE §3: for each such entry, either it's executed OR listed in FREEZE §2 deferrals. Today (post-Wave-1.5): zero unactioned `PROMOTE_AS_*` rows. The two `BulkheadMiddleware` entries cited in earlier drafts were deleted as REDUNDANT when the bulkhead adapter shipped (FREEZE §1.6). | Claude |
 
 ## §3 — Quality gates — full test pass
 
@@ -129,7 +129,8 @@ fix, retry.
 
 1. §1.1 (you ratify FREEZE.md) — **blocks** everything else.
 2. §1.3 + §1.4 (write §B1.8 machine-check + CONTRACT amendments) — after 1.1.
-3. §2.1 → §2.3 (promote BulkheadMiddleware, re-run classifier) — after 1.3.
+3. §2.1 → §2.3 (verify classifier + ledger match FREEZE §1.1; no promotions
+   in-scope per FREEZE §1.6) — after 1.3.
 4. §3.1 → §3.10 (full test pass) — after §2.
 5. §4.1 → §4.4 (benchmark gate) — parallel with §3 where independent.
 6. §5.1 → §5.9 (release artefacts) — after §3 + §4 all green.
@@ -157,7 +158,7 @@ If any gate fails mid-run:
 | Block | Work | ETA |
 |---|---|---|
 | §1 ratifications | Gustavo 10 min (sign FREEZE + amend CONTRACT §E); §B1.8 code already landed | 10 min |
-| §2 promotion | Claude 20 min (promote + adapter test + reclassify + ledger regen) | 20 min |
+| §2 promotion verification | Claude ≤5 min (classifier + ledger idempotent re-render; no actual promotions per FREEZE §1.6) | 5 min |
 | §3 full tests | Most runnable in parallel; slowest is soak (5 min real-time) + PostgreSQL E2E (needs Docker ~2 min) | 25-40 min |
 | §4 benchmark | Re-run both benches + publish artefacts | 15 min |
 | §5 release artefacts | Write CHANGELOG + update INVENTORY/ROADMAP/SKILL.md + sign-off | 40 min |
