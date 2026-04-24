@@ -647,8 +647,15 @@ cd skills/SKILL-001-fastapi-production && PYTHONPATH=. \
   - Body-block `hugr_skill_version` matches the skill-dir `VERSION`
     file (§B4.6 triplet sync covers skill-dir VERSION independently;
     the SKILL.md body value is the one Maestro consumes).
-  - Few-shot transcripts reference only registered primitives and
-    catalog tools — no aspirational surface.
+  - Few-shot transcripts reference only registered primitives,
+    catalog tools, tier-1 meta tools, and tree dispatchers — no
+    aspirational surface. Machine-checked by `_r_skill_md_contract`
+    check #12b, which walks the transcripts section and asserts every
+    `fastapi_*` token resolves against
+    `catalog.json tool names ∪ tier-1 meta ∪ tree dispatchers`
+    (the tree-dispatcher set is derived at check time by scanning
+    `mcp_tools/tree/*.py`, so adding a new tree module auto-extends
+    the allowlist).
   - No stale counts in body; the `## Overview` paragraph is
     machine-validated by §B4.7's `_r_counts_sync`. Counts that
     appear in few-shot transcripts are snapshots-for-illustration
