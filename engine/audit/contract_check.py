@@ -1376,17 +1376,32 @@ def _r_skill_md_contract() -> tuple[bool, str]:
         if k not in cat_data:
             return False, f"catalog.json missing top-level key {k!r}"
 
-    # 11. Every entry_tool exists in the registered MCP tool surface
-    #     (we match against the catalog's tool names + the known
-    #     tier-1 meta-tool names registered via register_tier1_tools +
-    #     the fastapi_auth tree dispatcher)
+    # 11. Every entry_tool exists in the registered MCP tool surface.
+    #     The non-catalog tool surface = tier-1 meta tools +
+    #     domain-tree dispatchers. Codex v5 H1 caught the earlier
+    #     hardcoded set missing 8 of the 9 dispatchers — transcripts
+    #     or entry_tools using e.g. `fastapi_data` / `fastapi_resiliency`
+    #     would have been rejected as "unknown". We now derive the
+    #     dispatcher surface from `mcp_tools/tree/*.py` at check time
+    #     so adding a new tree module auto-extends the allowlist.
     cat_tool_names = {t.get("name") for t in cat_data.get("tools", [])}
-    known_non_catalog = {
+    tier1_meta = {
         "fastapi_meta_home", "fastapi_meta_search", "fastapi_meta_describe",
         "fastapi_meta_scaffold", "fastapi_meta_compose",
         "fastapi_meta_audit", "fastapi_meta_verify",
-        "fastapi_auth", "fastapi_meta_search_primitive", "fastapi_meta_search_composition",
+        "fastapi_meta_search_primitive", "fastapi_meta_search_composition",
     }
+    tree_dir = SKILL_ROOT / "mcp_tools" / "tree"
+    tree_dispatcher_names: set[str] = set()
+    if tree_dir.is_dir():
+        _name_re = re.compile(r"""['"]name['"]\s*:\s*['"]([A-Za-z0-9_]+)['"]""")
+        for py_file in tree_dir.glob("*.py"):
+            if py_file.name.startswith("_"):
+                continue
+            for m in _name_re.finditer(py_file.read_text(encoding="utf-8")):
+                if m.group(1).startswith("fastapi_"):
+                    tree_dispatcher_names.add(m.group(1))
+    known_non_catalog = tier1_meta | tree_dispatcher_names
     valid_tool_names = cat_tool_names | known_non_catalog
     missing_tools = [
         t for t in meta.get("entry_tools", [])
