@@ -77,8 +77,9 @@ def generate_readme(
         # 4. Make sure PostgreSQL is running, then apply migrations
         alembic upgrade head
 
-        # 5. Seed the first superuser
-        python initial_data.py
+        # 5. Seed the first superuser (opt-in; skipped if
+        #    FIRST_SUPERUSER_EMAIL/PASSWORD are empty in .env)
+        python -m app.initial_data
 
         # 6. Start the development server
         uvicorn app.main:app --reload
@@ -111,8 +112,9 @@ def generate_readme(
         |-----|-------------|
         | [`/docs`](http://localhost:8000/docs) | Swagger UI (interactive) |
         | [`/redoc`](http://localhost:8000/redoc) | ReDoc (read-only) |
-        | [`/healthz`](http://localhost:8000/healthz) | Health check |
-        | [`/healthz/ready`](http://localhost:8000/healthz/ready) | Readiness probe (includes DB) |
+        | [`/healthz`](http://localhost:8000/healthz) | Liveness probe (app booted) |
+        | [`/readyz`](http://localhost:8000/readyz) | Readiness probe (DB reachable) |
+        | [`/startupz`](http://localhost:8000/startupz) | Startup probe (k8s-style) |
 
         ## Project Structure
 
@@ -132,10 +134,11 @@ def generate_readme(
         │   │   └── routes/           # Route modules
         │   ├── routes/               # Route assembly (api_router)
         │   └── middleware/           # CORS, security headers, logging
+        ├── app/
+        │   ├── initial_data.py       # Superuser seeder (run: python -m app.initial_data)
+        │   └── backend_pre_start.py  # DB readiness check (run: python -m app.backend_pre_start)
         ├── alembic/                  # Database migrations
         ├── tests/                    # Test suite
-        ├── initial_data.py           # Superuser seeder
-        ├── backend_pre_start.py      # DB readiness check
         ├── Dockerfile                # Multi-stage production image
         ├── docker-compose.yml        # Local development stack
         ├── .env.example              # Environment variable template
@@ -194,8 +197,10 @@ def generate_readme(
 
         - Set `ENVIRONMENT=production` and a strong `SECRET_KEY`.
         - Use the `/healthz` endpoint for liveness probes.
-        - Use `/healthz/ready` for readiness probes.
-        - Run `alembic upgrade head` as an init container.
+        - Use `/readyz` for readiness probes (returns 503 until DB reachable).
+        - Use `/startupz` for startup probes (slow-boot tolerance).
+        - Run `python -m app.backend_pre_start && alembic upgrade head`
+          as an init container — matches the Docker CMD sequence.
 
         ---
 

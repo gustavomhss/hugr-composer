@@ -14,15 +14,19 @@ from pathlib import Path
 
 
 def generate_initial_data(output_dir: str) -> dict:
-    """Generate initial_data.py that seeds the first superuser from env vars.
+    """Generate app/initial_data.py that seeds the first superuser from env vars.
 
-    Creates two files:
-    - ``initial_data.py`` — idempotent script that creates the superuser
-      if it does not already exist.  Called from the app lifespan or
-      as a standalone ``python initial_data.py``.
+    Writes one file:
+    - ``app/initial_data.py`` — idempotent script that creates the
+      superuser if it does not already exist.  Called from the app
+      lifespan or as a standalone ``python -m app.initial_data``
+      (the orchestrator writes it into the ``app/`` package, so it's
+      importable as ``app.initial_data`` — running it as a top-level
+      script is not supported and not documented).
 
     Args:
-        output_dir: Directory where initial_data.py will be written.
+        output_dir: Directory where app/initial_data.py will be written
+            (the caller passes the project's ``app/`` dir).
 
     Returns:
         Dict with files_created and notes.
@@ -38,10 +42,10 @@ def generate_initial_data(output_dir: str) -> dict:
 
         Usage:
             # As standalone script (e.g. in Docker entrypoint):
-            python initial_data.py
+            python -m app.initial_data
 
             # Or called programmatically from the app lifespan:
-            from initial_data import init_db
+            from app.initial_data import init_db
             await init_db()
         """
 
@@ -144,6 +148,6 @@ def generate_initial_data(output_dir: str) -> dict:
         "notes": [
             "Generated initial_data.py — idempotent superuser seeding script.",
             "Checks for existing superuser by email before creating.",
-            "Can be called from lifespan or as standalone: python initial_data.py.",
+            "Can be called from lifespan or as standalone: python -m app.initial_data.",
         ],
     }
