@@ -47,6 +47,7 @@
 | `/ROADMAP.md` (this) | Strategy + invariants + DoDs + checklists |
 | `/FREEZE.md` | v1.0 scope lock + ratification block |
 | `/GOLIVE.md` | Operational commands for the cut |
+| `/LAUNCH.md` | Zero-risk launch protocol (evidence + phased rollout + rollback) |
 | `/POST_RELEASE.md` | 72h runbook + rollback protocol |
 | `/MIGRATION.md` | v0.x → v1.0 breaking changes |
 | `/SECURITY.md` | Disclosure + SLA ladder |
@@ -116,6 +117,15 @@ the command says 125, the doc is wrong, not the command.
 ### §1.3 — What's open
 
 - **Ship gate** (§5 below) — Claude-side ops + Gustavo-side ratifications.
+- **Wave H — evidence package** (`/evidence/`) — documented + reproducible
+  artefact mapping each PRODUCT.md claim to a runnable proof. Pre-tag
+  requirement per `/LAUNCH.md §1.3` + §2.
+- **Property test §3.9 resolution** — RUFF_CRITICAL_CLEAN 7/8 must go
+  green OR receive an explicit carve-out in CONTRACT §E.
+- **CI 48h window** — E2E Postgres + behavior scenarios + soak +
+  mutation + install-docker green for 48h pre-tag per §5.7 / LAUNCH §1.2.
+- **Phased rollout** (`/LAUNCH.md §3`) — post-tag alpha → beta → public,
+  NOT executed pre-tag.
 - **Wave 2 / 3 / 4** — post-v1.0 deferrals per §6.
 
 ---
@@ -1058,6 +1068,14 @@ Full runbook at `/POST_RELEASE.md §2`. Decision path:
 
 **Ship gate total: 5 + 3 + 15 + 5 + 8 + 3 + 6 = 45 items.**
 
+> **The ship gate above cuts the tag. The tag alone does NOT launch
+> the product.** Post-tag, the public rollout follows `LAUNCH.md` —
+> the zero-risk launch protocol (belt + suspenders + tailored
+> pants: evidence package + phased rollout + rollback-ready ops).
+> That is a SEPARATE doc binding at the same tag cut; see `/LAUNCH.md`
+> for evidence-package requirements, the alpha → beta → public
+> phase ladder, and launch-phase exit criteria.
+
 ### §5.9 — What a "stable v1.0.0" call looks like
 
 Day 7 post-tag: if all §5.7 items stayed green AND no `v1.0.1` or
@@ -1501,7 +1519,8 @@ trends toward zero between ratifications.
 | Machine-checked rules | `/CONTRACT.md` §A + §B | ROADMAP.md §2, GOLIVE.md §3 |
 | v1.0 scope lock | `/FREEZE.md` §1 | ROADMAP.md §5, CHANGELOG.md [1.0.0] |
 | Operational commands for the cut | `/GOLIVE.md` | ROADMAP.md §5 |
-| 72h runbook + rollback | `/POST_RELEASE.md` | ROADMAP.md §5.7/§5.8 |
+| Zero-risk launch protocol (evidence + phased rollout) | `/LAUNCH.md` | ROADMAP.md §5, FREEZE.md §2, POST_RELEASE.md §2 |
+| 72h runbook + rollback | `/POST_RELEASE.md` | ROADMAP.md §5.7/§5.8, LAUNCH.md §4 |
 | v0.x → v1.0 breaking changes | `/MIGRATION.md` | CHANGELOG.md, CONTRIBUTING.md |
 | Security disclosure + SLA | `/SECURITY.md` | ROADMAP.md §3.11, POST_RELEASE.md §3 |
 | Maestro / Forge consumer contracts | `/INTERFACES.md` | PRODUCT.md §2, ROADMAP.md §2.12 |
