@@ -174,30 +174,44 @@ def _r_readme_md() -> tuple[bool, str]:
             )
         canon[label] = int(m.group(1))
 
-    required_tokens = [
+    # Sonnet parallel audit (Wave-F L1) flagged earlier tokens that
+    # depended on trailing whitespace (`"# 127 tools "`, `"Primitives:
+    # 124 "`) — a single reformat that collapses a space would
+    # silently fail the check. Every token is now a regex tolerating
+    # whitespace variation; the user-facing `expected` message is
+    # built from a shape hint rather than the raw pattern, so
+    # maintenance stays readable.
+    required_tokens: list[tuple[str, str, str]] = [
+        # (regex, shape-hint-for-error-message, label)
         # `├── generators/           # 56 macro scaffold helpers`
-        (f"# {canon['generators']} macro scaffold helpers",
+        (rf"#\s+{canon['generators']}\s+macro\s+scaffold\s+helpers",
+         f"# {canon['generators']} macro scaffold helpers",
          "architecture-tree `generators/` comment"),
-        # `├── adapt/                # 127 tools (…)`
-        (f"# {canon['adapt_total']} tools ",
+        # `├── adapt/                # 127 tools (100 extend + 27 other)`
+        (rf"#\s+{canon['adapt_total']}\s+tools(?:[\s(]|$)",
+         f"# {canon['adapt_total']} tools (…)",
          "architecture-tree `adapt/` comment"),
         # Status-block line: `Primitives: 124  (…)`
-        (f"Primitives: {canon['registered']} ",
+        (rf"Primitives:\s+{canon['registered']}(?:[\s(]|$)",
+         f"Primitives: {canon['registered']} (…)",
          "'Current status' `Primitives:` line"),
         # Status-block line: `Staged:    176   (…, +42 quarantined, …)`
-        (f"Staged:    {canon['staged']}",
+        (rf"Staged:\s+{canon['staged']}(?:[\s(]|$)",
+         f"Staged: {canon['staged']} (…)",
          "'Current status' `Staged:` line"),
-        (f"+{canon['quarantined']} quarantined",
+        (rf"\+{canon['quarantined']}\s+quarantined",
+         f"+{canon['quarantined']} quarantined",
          "'Current status' quarantined subtotal"),
         # Architecture tree summary:
         # `core/venous/          # 124 primitives + 17 FastAPI adapters (…) + 176 staged`
-        (f"# {canon['registered']} primitives + {canon['adapters']} FastAPI adapters",
+        (rf"#\s+{canon['registered']}\s+primitives\s+\+\s+{canon['adapters']}\s+FastAPI\s+adapters",
+         f"# {canon['registered']} primitives + {canon['adapters']} FastAPI adapters",
          "architecture-tree `core/venous/` comment"),
     ]
     missing: list[str] = []
-    for tok, label in required_tokens:
-        if tok not in body:
-            missing.append(f"expected `{tok}`  ({label})")
+    for pattern, hint, label in required_tokens:
+        if not re.search(pattern, body):
+            missing.append(f"expected `{hint}`  ({label})")
     if missing:
         return False, (
             "README.md surface counts do not match INVENTORY.md:\n  "
