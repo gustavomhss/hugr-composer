@@ -28,7 +28,7 @@ Turns a plain-English backend spec into a running, tested, production-grade Fast
 ## Machine-readable metadata
 
 ```yaml
-hugr_skill_version: "1.0.0"
+hugr_skill_version: "1.0.0-rc.1"
 spec_compat: ">=1.0.0,<2.0.0"
 kind: "framework-scaffold"
 domains: ["backend", "python", "fastapi", "web-api"]
@@ -225,4 +225,4 @@ ASSISTANT  "Login via Google OAuth at /auth/login; every route now
 
 ---
 
-*version: 1.0.0 · spec_compat: >=1.0.0,<2.0.0 · kit: SKILL-001-fastapi-production*
+*version: 1.0.0-rc.1 · spec_compat: >=1.0.0,<2.0.0 · kit: SKILL-001-fastapi-production*

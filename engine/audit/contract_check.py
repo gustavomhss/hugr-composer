@@ -1227,11 +1227,28 @@ def _r_skill_md_contract() -> tuple[bool, str]:
         if required_key not in meta:
             return False, f"SKILL.md machine-readable metadata missing `{required_key}`"
 
-    # 9. `hugr_skill_version` semver
-    if not re.fullmatch(r"\d+\.\d+\.\d+", str(meta["hugr_skill_version"])):
+    # 9. `hugr_skill_version` semver + equality with VERSION file.
+    #    VERSION is the canonical pin (§B4.6 triplet). SKILL.md is the
+    #    Maestro-facing entry doc — if they diverge, the entry doc is
+    #    lying about what shipped. Accepts pre-release suffixes
+    #    (e.g. `1.0.0-rc.1`) because the tree is still rc-tagged
+    #    until Gustavo signs the §4 ratifications.
+    semver_re = r"\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?"
+    meta_version = str(meta["hugr_skill_version"])
+    if not re.fullmatch(semver_re, meta_version):
         return False, (
-            f"hugr_skill_version must be semver (e.g. '1.0.0'); "
-            f"got {meta['hugr_skill_version']!r}"
+            f"hugr_skill_version must be semver (e.g. '1.0.0' or "
+            f"'1.0.0-rc.1'); got {meta_version!r}"
+        )
+    version_file = SKILL_ROOT / "VERSION"
+    if not version_file.exists():
+        return False, "VERSION file missing at skill root"
+    canonical_version = version_file.read_text().strip()
+    if meta_version != canonical_version:
+        return False, (
+            f"SKILL.md hugr_skill_version ({meta_version!r}) does not match "
+            f"VERSION file ({canonical_version!r}); the entry doc is "
+            f"advertising a version that has not been cut"
         )
 
     # 10. catalog_path exists + valid JSON with expected keys
@@ -1314,9 +1331,23 @@ def _r_skill_md_contract() -> tuple[bool, str]:
             if not p.exists():
                 return False, f"SKILL.md references missing file: {ref}"
 
-    # 16. Versioning footer
-    if not re.search(r"\*version:\s*\d+\.\d+\.\d+", body):
-        return False, "SKILL.md missing versioning footer (*version: X.Y.Z ...*)"
+    # 16. Versioning footer — must equal VERSION file (same invariant
+    #     as check #9, applied to the prose footer so neither surface
+    #     can drift independently).
+    footer_match = re.search(
+        rf"\*version:\s*({semver_re})\b", body,
+    )
+    if not footer_match:
+        return False, (
+            "SKILL.md missing versioning footer "
+            "(*version: X.Y.Z[-suffix] ...*)"
+        )
+    footer_version = footer_match.group(1)
+    if footer_version != canonical_version:
+        return False, (
+            f"SKILL.md footer version ({footer_version!r}) does not match "
+            f"VERSION file ({canonical_version!r})"
+        )
 
     return True, (
         f"SKILL.md v{meta['hugr_skill_version']}: "
