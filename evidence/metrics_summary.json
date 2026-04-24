@@ -1,9 +1,9 @@
 {
   "_meta": {
-    "commit": "80cf12c7a56571765cb9ec1510035ab63d745f8a",
-    "generated": "2026-04-24T19:56:46Z",
+    "commit": "ccaba8068e3829042405bee0a45b4d91f809bb72",
+    "generated": "2026-04-24T20:03:56Z",
     "source": "evidence/_harness/metrics_summary.py",
-    "tree": "a13073884a613888d7a3471e565f9bf2bf950ddb"
+    "tree": "101b7e80d08ba64d0e5bc33806117a02d70e399d"
   },
   "deterministic": {
     "bandit_scan": {
