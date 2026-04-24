@@ -743,7 +743,7 @@ python -m engine.discovery.quality_bench --min-precision-3 0.9
 > code is broken".
 
 - **DoD:**
-  - `benchmarks/code_level_latest.json` exists; schema covers per-
+  - `benchmarks/code_level_score.json` exists; schema covers per-
     spec `score`, aggregate `overall`, `coverage` (fraction of the
     20 specs with a runnable code-level fixture).
   - Coverage ≥ 25% at v1.0; overall ≥ 70 on the covered subset.
@@ -787,7 +787,7 @@ python -m engine.discovery.quality_bench --min-precision-3 0.9
 ```
 test -f benchmarks/latest_score.json
 [ $(jq '.overall_average' benchmarks/latest_score.json) -ge 30 ]
-test -f benchmarks/code_level_latest.json
+test -f benchmarks/code_level_score.json
 ```
 
 ---
