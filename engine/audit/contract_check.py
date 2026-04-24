@@ -117,7 +117,11 @@ def _r_readme_md() -> tuple[bool, str]:
         return ok, msg
     body = (REPO_ROOT / "README.md").read_text()
     lines = body.count("\n")
-    if lines > 120:
+    # CONTRACT §B0.5 says 80 is a hard limit. Prior rule threshold of
+    # 120 let the checker pass a README the DoD would reject —
+    # Codex v3 M2 flagged the drift. Keep the rule and the contract
+    # in lockstep; README is currently 79 lines so this is safe.
+    if lines > 80:
         return False, f"README.md exceeds 80-line hard budget ({lines} lines)"
     for link in ("PRODUCT.md", "ROADMAP.md", "CONTRACT.md"):
         if link not in body:
