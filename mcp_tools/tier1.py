@@ -1,15 +1,15 @@
 """Tier-1 meta-tools — the "awakening" surface the Maestro always sees.
 
-Design per `/docs/research/DUAL_INDEX_DESIGN.md` §4.1. These are the six
-MCP tools always loaded into the Claude session (primacy position 1).
-Everything else in the 180-tool catalog becomes tier-2 (deferred)
-reachable via `fastapi_search`.
+Design per `/docs/research/DUAL_INDEX_DESIGN.md` §4.1. These are the
+seven MCP tools always loaded into the Claude session (primacy
+position 1). Everything else in the 201-tool catalog becomes tier-2
+(deferred) reachable via `fastapi_meta_search`.
 
 DO NOT add a seventh tier-1 tool without a protocol-version bump. The
 cognition research (cap ≤ 8) + Anthropic's 30–50-tool degradation
 threshold are the load-bearing constraints.
 
-All six return a uniform envelope:
+All seven return a uniform envelope:
 
     {
       "ok": bool,
@@ -68,8 +68,10 @@ MCP_TOOL = {
         "(auth, data, api, realtime, resiliency, observability, compliance, "
         "deployment, testing, meta), per-domain tool counts, top-3 "
         "canonical tools per domain, primitive count, recipe count, and "
-        "workflow breadcrumbs. One 1200-token call replaces flat 180-tool "
-        "introspection. After this, narrow with fastapi_meta_search "
+        "workflow breadcrumbs. One 1200-token call replaces flat 201-tool "
+        "catalog introspection. Returns CATALOG state only — it does NOT "
+        "read your repo; inspect the working directory yourself to decide "
+        "whether to scaffold. After this, narrow with fastapi_meta_search "
         "or jump straight into fastapi_meta_scaffold."
     ),
     "tags": ["generator", "meta", "discovery"],
@@ -109,11 +111,11 @@ def fastapi_meta_home() -> dict:
         "domains": list(catalog["domains"]),
         "landscape": landscape,
         "workflow": [
-            "1. fastapi_meta_scaffold(models={...}, owner_models={...}) — scaffold a fresh project",
-            "2. fastapi_meta_search(query=\"...\") — find a capability in the 180 catalog",
+            "1. fastapi_meta_scaffold(models={...}, owner_models={...}) — scaffold a fresh project (inspect your working directory first; the catalog map this tool returns does NOT include repo state)",
+            "2. fastapi_meta_search(query=\"...\") — find a capability in the 201-tool catalog",
             "3. <one of the returned fastapi_<domain>_add_*> — emit the slice",
-            "4. fastapi_meta_audit() — verify the contract",
-            "5. fastapi_meta_verify() — run the 10-tier gate on emitted primitives",
+            "4. fastapi_meta_audit() — verify the SKILL-KIT contract (not the emitted project; run pytest inside the scaffold for project-level validation)",
+            "5. fastapi_meta_verify() — 10-tier quality gate on the skill's primitive registry (also skill-kit scoped)",
         ],
     }
     return _envelope(
@@ -209,13 +211,14 @@ def _bm25_score(query_tokens: list[str], doc: dict, idx: dict,
 MCP_TOOL_SEARCH = {
     "name": "fastapi_meta_search",
     "description": (
-        "Search the HuGR FastAPI catalog (180 tools + 122 primitives) by "
-        "natural language. Returns the top-K matching entries with synopsis, "
-        "domain, verb, and next-step breadcrumbs. Use this when you know "
-        "WHAT you need (e.g. 'exactly-once webhook', 'tamper-evident audit', "
-        "'priority rate limiting') but NOT the exact tool name. Do NOT call "
-        "on every turn — prefer direct tool invocation once you know the name. "
-        "Accepts optional `domain` and `verb` filters to narrow."
+        "Search the HuGR FastAPI catalog (201 tools + 299 primitives + "
+        "392 recipes) by natural language. Returns the top-K matching "
+        "entries with synopsis, domain, verb, and next-step breadcrumbs. "
+        "Use this when you know WHAT you need (e.g. 'exactly-once webhook', "
+        "'tamper-evident audit', 'priority rate limiting') but NOT the "
+        "exact tool name. Do NOT call on every turn — prefer direct tool "
+        "invocation once you know the name. Accepts optional `domain` and "
+        "`verb` filters to narrow."
     ),
     "tags": ["meta", "discovery"],
     "annotations": {"readOnlyHint": True, "destructiveHint": False},
@@ -432,12 +435,14 @@ def fastapi_meta_scaffold(
 MCP_TOOL_AUDIT = {
     "name": "fastapi_meta_audit",
     "description": (
-        "Run the full contract audit (engine.audit.contract_check — 32+ "
+        "Run the full contract audit (engine.audit.contract_check — 36 "
         "machine-checkable rules spanning Phases 0-6) against the current "
-        "skill tree. Returns rule-by-rule verdict + which rules failed + a "
-        "one-line remediation per failing rule. Use after scaffolding + "
-        "editing to catch structural drift (primitives missing from the "
-        "registry, tools without MCP metadata, stale README numbers, etc). "
+        "SKILL-KIT tree (cwd=SKILL_ROOT). Returns rule-by-rule verdict + "
+        "which rules failed + a one-line remediation per failing rule. "
+        "Use after scaffolding + editing the kit itself (new primitive, "
+        "new tool, doc update) to catch structural drift. Skill-kit "
+        "integrity ONLY — this does NOT validate an emitted project; "
+        "for project-level validation, run `pytest` inside the scaffold. "
         "Cheap — completes in ≤ 10 seconds."
     ),
     "tags": ["meta", "testing"],
@@ -482,11 +487,14 @@ MCP_TOOL_VERIFY = {
     "name": "fastapi_meta_verify",
     "description": (
         "Run the 10-tier quality gate (T0 compile → T9 provenance) on a "
-        "single primitive or the full primitive registry. Returns per-tier "
+        "single primitive or the full primitive registry of the SKILL KIT "
+        "(cwd=SKILL_ROOT, not an emitted project). Returns per-tier "
         "pass/fail + which primitives failed which tier. Use after adding "
         "a new primitive or refactoring an existing one; a CI-grade sanity "
-        "check that is stricter than `fastapi_meta_audit`. Pass "
-        "`primitive=<Name>` for a single primitive, or omit for all 122."
+        "check stricter than `fastapi_meta_audit`. Skill-kit integrity "
+        "ONLY — for emitted-project validation, run `pytest` inside the "
+        "scaffold. Pass `primitive=<Name>` for a single primitive, or "
+        "omit for all 124 registered."
     ),
     "tags": ["meta", "testing"],
     "annotations": {"readOnlyHint": True, "destructiveHint": False},
@@ -517,10 +525,10 @@ def fastapi_meta_verify(primitive: str | None = None) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# MCP_TOOL aliases so the discovery loop registers all six.
+# MCP_TOOL aliases so the discovery loop registers all seven.
 # The discovery scanner at mcp_tools/discovery.py picks up ANY module-level
 # variable that starts with "MCP_TOOL" and has a dict value — so publishing
-# each one with a unique suffix is enough to register all six.
+# each one with a unique suffix is enough to register all seven.
 # ---------------------------------------------------------------------------
 
 # (MCP_TOOL for fastapi_meta_home is defined above as the canonical name.)
