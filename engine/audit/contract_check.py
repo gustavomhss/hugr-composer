@@ -1299,6 +1299,22 @@ def _r_skill_md_contract() -> tuple[bool, str]:
             f"§B2.5 DoD; got {len(transcripts)}"
         )
 
+    # 12b. Every `fastapi_*` token cited inside transcripts must resolve
+    #      against the real catalog surface (or the known meta/dispatcher
+    #      set). Prevents regressing to stale tool names like
+    #      `fastapi_add_stripe_billing` that no longer exist — transcripts
+    #      are the highest-weight Maestro steering examples.
+    transcript_body = transcripts_section.group(1)
+    cited = set(re.findall(r"\bfastapi_[a-zA-Z0-9_]+", transcript_body))
+    unknown = sorted(cited - valid_tool_names)
+    if unknown:
+        return False, (
+            f"SKILL.md transcripts cite unknown fastapi_* tool(s): "
+            f"{unknown[:3]}. Every `fastapi_*` token in a transcript "
+            f"must resolve against catalog.json or the known meta/tree "
+            f"dispatcher set."
+        )
+
     # 13. No forbidden drift heuristics (STATUS/ROADMAP territory)
     forbidden = ("benchmark score", "test count", "sprint", "Phase 4 complete")
     hits = [f for f in forbidden if f.lower() in body.lower()]
