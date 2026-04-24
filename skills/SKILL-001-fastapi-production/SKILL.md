@@ -52,24 +52,26 @@ invariants:
 
 ## Workflow phases
 
-1. **Orient.** Call `fastapi_meta_home` to get a situation brief (repo state + catalog counts + recent change summary). Always the first call; do not skip.
+1. **Orient.** Call `fastapi_meta_home` to load the catalog landscape — catalog counts (tools / primitives / recipes), the 10 domains, and the top-3 canonical tools per domain. The result does NOT include repo state; inspect the working directory yourself (ls / Read) to learn whether an `app/main.py` already exists.
 2. **Clarify.** Ask at most three specific questions — each must offer 2–4 concrete answer branches. Never open-ended. Skip this phase only if the user's request is literally unambiguous.
-3. **Scaffold.** If the repo is empty or lacks `app/main.py`, call `fastapi_meta_scaffold(output_dir, name, models=..., owner_models=...)` once. Not idempotent across runs.
+3. **Scaffold.** After confirming the working directory is empty (or lacks `app/main.py`) via your own file inspection, call `fastapi_meta_scaffold(output_dir, name, models=..., owner_models=...)` once. Not idempotent across runs.
 4. **Compose.** For each requested capability: `fastapi_meta_search(query)` → `fastapi_meta_describe(id)` → `fastapi_meta_compose(primitives=...)`. Prefer `fastapi_auth(action=...)` for any auth branch instead of hunting individual slice tools.
 5. **Business.** Add domain-specific routes, models, and rules. Business logic (Aggregate + Specification) is authored by the Maestro, NOT by compose — compose refuses domain-shaped primitives by design.
-6. **Audit.** Call `fastapi_meta_audit`, fix every finding. Close with `fastapi_meta_verify`. Only report "done" after this pair returns green.
+6. **Audit.** Two layers — do NOT conflate them:
+   - **Skill-kit integrity:** `fastapi_meta_audit` runs `engine.audit.contract_check` against the *skill tree itself* (the 36 binding rules in CONTRACT §A/§B). Close with `fastapi_meta_verify` which runs the 10-tier primitive gate. These validate that the HuGR kit is intact on disk; they do NOT validate the project you just emitted.
+   - **Emitted-project integrity:** the generated project ships its own `tests/` directory + pre-commit config. Run `pytest` inside the emitted project (or instruct the Maestro to) to validate runtime behaviour of the scaffold. This is out of scope for the meta tools by design.
 
 ## Tier-1 tool index
 
 | Tool | Purpose | When to call |
 |---|---|---|
-| `fastapi_meta_home` | Situation brief — repo + catalog state + 10-domain landscape. | First call of every session. |
+| `fastapi_meta_home` | Catalog landscape — counts, verbs, domains, top-3 per domain, workflow hint. Does NOT read the caller's repo. | First call of every session. |
 | `fastapi_meta_search` | BM25 over catalog (tools + primitives + recipes). | Know what you need, not the exact name. |
 | `fastapi_meta_describe` | Full spec + examples for one catalog id. | After `search`, before invoking. |
 | `fastapi_meta_scaffold` | Emit a production FastAPI project tree. | Scaffold phase, once per session. |
 | `fastapi_meta_compose` | Wire primitives into `app/compositions/<slug>.py` exporting `install(app)`. | Compose phase, when no slice fits exactly. |
-| `fastapi_meta_audit` | Run the contract audit; return structured findings. | End of audit phase. |
-| `fastapi_meta_verify` | Meta-audit — verify the audit itself is sound. | Immediately after `audit`. |
+| `fastapi_meta_audit` | Run `engine.audit.contract_check` on the skill tree (36 §A/§B rules). Skill-kit integrity ONLY; does not validate emitted projects. | Before declaring the kit sound; NOT as the sole gate on a generated project. |
+| `fastapi_meta_verify` | 10-tier primitive quality gate on the registry. Skill-kit integrity ONLY. | After adding / editing a primitive in the kit. |
 | `fastapi_auth` | Tree dispatcher for 15 auth slice tools (bundle / slice / primitive granularities). | Any auth-related request. |
 
 All other tools (~185) are discovered on demand via `fastapi_meta_search`.
@@ -85,7 +87,10 @@ USER: Build me a SaaS backend with email auth and Stripe subscriptions.
 
 STEP 1  → orient
 TOOL    fastapi_meta_home()
-RESULT  {repo: "empty", catalog: {tools: 201, primitives: 299, recipes: 393}}
+RESULT  {counts: {tools: 201, primitives: 299, recipes: 392},
+         domains: 10, landscape: [...]}
+# Maestro then inspects the working directory itself (Read / ls);
+# confirms /workspace/myapp is empty → scaffold is needed.
 
 STEP 2  → clarify
 ASSISTANT  "Two quick questions before I scaffold:
@@ -116,8 +121,11 @@ TOOL    fastapi_meta_compose(output_dir="/workspace/myapp",
 RESULT  {mode: "recipe_template", files: ["app/compositions/stripe_webhook.py"]}
 
 STEP 6  → audit
-TOOL    fastapi_meta_audit()
+TOOL    fastapi_meta_audit()        # skill-kit integrity
 RESULT  {36/36 green}
+# Emitted-project integrity — run the generated pytest suite:
+SHELL   cd /workspace/myapp && pytest -q
+RESULT  passed
 
 ASSISTANT  "Done. http://localhost:8000/health returns 200.
             Login at /auth/login (admin@myapp / setup_password).
@@ -132,12 +140,14 @@ USER: Add rate limiting and idempotency to my /api/orders endpoint.
 
 STEP 1  → orient
 TOOL    fastapi_meta_home()
-RESULT  {repo: "fastapi project at /workspace/store, app/main.py present",
-         existing_routes: ["/api/orders", "/api/products", ...]}
+RESULT  {counts: {tools: 201, primitives: 299, recipes: 392},
+         domains: 10, landscape: [...]}
+# Maestro inspects /workspace/store: app/main.py + app/routes/ present
+# → existing fastapi repo, scaffold will be skipped.
 
 STEP 2  → clarify (skipped — request is specific)
 
-STEP 3  → scaffold (skipped — repo already has one)
+STEP 3  → scaffold (skipped — repo already has one, confirmed by file inspection)
 
 STEP 4  → compose (rate limit + idempotency)
 TOOL    fastapi_meta_search(query="rate limit per api key", k=3)
@@ -157,8 +167,11 @@ ASSISTANT  "Adjusting the rate-limit window from the default 60s to your
             stated 1000/min = 1000/60s. Updating…" (edits composition)
 
 STEP 6  → audit
-TOOL    fastapi_meta_audit()
+TOOL    fastapi_meta_audit()        # skill-kit integrity
 RESULT  {36/36 green}
+# Emitted-project integrity — rerun the project's test suite:
+SHELL   cd /workspace/store && pytest -q
+RESULT  passed
 
 ASSISTANT  "/api/orders now enforces 1000 req/min per X-API-Key + rejects
             duplicate Idempotency-Key. Tested locally; ready."
@@ -171,7 +184,10 @@ USER: Make it secure.
 
 STEP 1  → orient
 TOOL    fastapi_meta_home()
-RESULT  {repo: "fastapi project, app/main.py + 12 routes, no auth wired}"
+RESULT  {counts: {tools: 201, primitives: 299, recipes: 392},
+         domains: 10, landscape: [...]}
+# Maestro inspects /workspace/app: app/main.py + 12 route modules,
+# no `app/api/routes/auth.py` → no auth is wired yet.
 
 STEP 2  → clarify (MANDATORY — "secure" is too broad)
 ASSISTANT  "'Secure' can mean a few things — which do you want first?
@@ -183,7 +199,7 @@ ASSISTANT  "'Secure' can mean a few things — which do you want first?
             Pick one or two to start — others we add as follow-ups."
 USER       "Login + audit trail."
 
-STEP 3  → scaffold (skipped — repo exists)
+STEP 3  → scaffold (skipped — repo exists, confirmed by file inspection)
 
 STEP 4  → compose
 TOOL    fastapi_auth(action="list")
@@ -198,8 +214,11 @@ RESULT  {mode: "recipe_template", recipe: "AccessLog__01"}
 STEP 5  → business (Maestro adds audit calls inside existing handlers)
 
 STEP 6  → audit
-TOOL    fastapi_meta_audit()
+TOOL    fastapi_meta_audit()        # skill-kit integrity
 RESULT  {36/36 green}
+# Emitted-project integrity — rerun the project's test suite:
+SHELL   cd /workspace/app && pytest -q
+RESULT  passed
 
 ASSISTANT  "Login via Google OAuth at /auth/login; every route now
             appends to a tamper-evident audit log. Want me to add the
@@ -208,7 +227,8 @@ ASSISTANT  "Login via Google OAuth at /auth/login; every route now
 
 ## Anti-patterns
 
-- Do not skip `fastapi_meta_home`. Without it you will hallucinate repo state.
+- Do not skip `fastapi_meta_home`. It's the catalog map the rest of the workflow steers from.
+- Do not treat `fastapi_meta_audit` as validation of the generated project. It audits the skill kit's own tree (§A/§B rules). For emitted-project validation, run `pytest` inside the output directory.
 - Do not call `fastapi_meta_scaffold` twice in one session. Not idempotent.
 - Do not list all 15 auth tools. Always go through `fastapi_auth`.
 - Do not write business-logic code inline that duplicates a primitive — always `describe` first to check.
