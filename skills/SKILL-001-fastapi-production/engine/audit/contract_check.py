@@ -1817,6 +1817,151 @@ def _r_changelog_semver() -> tuple[bool, str]:
     return True, f"CHANGELOG.md + VERSION={ver} with v0.1.0 entry citing score"
 
 
+def _r_tier1_surface_truth() -> tuple[bool, str]:
+    """B2.6 — tier-1 runtime strings tell the truth about the catalog.
+
+    The tier-1 meta tools (mcp_tools/tier1.py) ship three Maestro-visible
+    runtime surfaces: the module docstring, each MCP_TOOL description,
+    and the workflow breadcrumb list inside `fastapi_meta_home()`'s
+    return envelope. Prior audits read SKILL.md (the prose contract)
+    but never diffed these literal runtime strings against the catalog
+    they describe. Codex v6 + Opus sign-off both caught the residual
+    drift: tier1.py kept advertising the pre-freeze `180 tools` / `122
+    primitives` counts long after catalog.json moved to 201 / 299, and
+    Wave F B2's SKILL.md skill-kit-vs-emitted-project split never
+    propagated to the `fastapi_meta_home` workflow steps.
+
+    This rule fails CI on:
+      - any mention of a pre-freeze stale count (`180 tool(s|-tool)`,
+        `122 primitive(s)`) anywhere in tier1.py
+      - missing qualifier text in `fastapi_meta_audit` /
+        `fastapi_meta_verify` descriptions: both MUST state the tool
+        operates on the skill kit itself (not an emitted project)
+      - missing current canonical count: tier1.py MUST cite the live
+        catalog tool count somewhere (we search for `N tool`/`N-tool`
+        where N = catalog.counts.tools) so a subsequent count bump
+        forces this file to be updated deliberately.
+    """
+    tier1 = SKILL_ROOT / "mcp_tools" / "tier1.py"
+    if not tier1.exists():
+        return False, "missing: mcp_tools/tier1.py"
+    src = tier1.read_text(encoding="utf-8")
+
+    # Canonical counts from catalog.json (the machine source).
+    catalog_path = SKILL_ROOT / "engine" / "index" / "catalog.json"
+    if not catalog_path.exists():
+        return False, "missing: engine/index/catalog.json"
+    try:
+        cat = json.loads(catalog_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return False, f"catalog.json malformed: {exc}"
+    tool_count = int(cat.get("counts", {}).get("tools", 0))
+    primitive_count = int(cat.get("counts", {}).get("primitives", 0))
+    if tool_count <= 0 or primitive_count <= 0:
+        return False, (
+            "catalog.json counts.tools / counts.primitives missing or "
+            "zero — cannot validate tier1 surface truth"
+        )
+
+    # Stale-count detector — SCOPED to Maestro-visible runtime strings
+    # only. Matches on:
+    #   - `"description": ( ... )` blocks inside MCP_TOOL* dicts
+    #   - the `"workflow": [ ... ]` list inside fastapi_meta_home's
+    #     return envelope (the strings the Maestro reads at runtime)
+    # Module docstrings, comments, and research citations like
+    # "30–50-tool degradation threshold" are deliberately excluded —
+    # they are internal commentary, not runtime surface.
+    maestro_visible_blobs: list[str] = []
+    for m in re.finditer(
+        r'"description":\s*\(\s*((?:[^()]|\([^)]*\))*?)\s*\),',
+        src, re.DOTALL,
+    ):
+        maestro_visible_blobs.append(m.group(1))
+    wf_match = re.search(
+        r'"workflow":\s*\[(.*?)\],', src, re.DOTALL,
+    )
+    if wf_match:
+        maestro_visible_blobs.append(wf_match.group(1))
+    scoped_src = "\n".join(maestro_visible_blobs)
+    if not scoped_src:
+        return False, (
+            "could not extract MCP_TOOL descriptions + workflow from "
+            "mcp_tools/tier1.py — file shape changed?"
+        )
+
+    tool_claims = set(
+        int(m) for m in re.findall(r"\b(\d+)[\s-]+tool(?:s|-catalog)?\b", scoped_src)
+    )
+    primitive_claims = set(
+        int(m) for m in re.findall(r"\b(\d+)\s+primitive(?:s)?\b", scoped_src)
+    )
+    # Any claim in Maestro-visible text that isn't the canonical count
+    # AND isn't a small structural literal (≤20) is stale.
+    stale_tool_claims = sorted(
+        n for n in tool_claims if n != tool_count and n > 20
+    )
+    stale_primitive_claims = sorted(
+        n for n in primitive_claims if n != primitive_count and n > 20
+    )
+    if stale_tool_claims:
+        return False, (
+            f"mcp_tools/tier1.py Maestro-visible text carries stale "
+            f"tool-count claims {stale_tool_claims} — current catalog "
+            f"has {tool_count} tools. Update the MCP_TOOL descriptions "
+            f"+ workflow strings."
+        )
+    if stale_primitive_claims:
+        return False, (
+            f"mcp_tools/tier1.py Maestro-visible text carries stale "
+            f"primitive-count claims {stale_primitive_claims} — current "
+            f"registry has {primitive_count} primitives."
+        )
+    if tool_count not in tool_claims:
+        return False, (
+            f"mcp_tools/tier1.py MCP_TOOL descriptions + workflow do "
+            f"not cite the current catalog tool count ({tool_count}) "
+            f"anywhere. The Maestro reads these strings; they must "
+            f"advertise the real surface size."
+        )
+
+    # Skill-kit scope qualifier — _audit and _verify MUST say what they
+    # operate on (Wave F B2 lesson: agents took "audit" to mean
+    # emitted-project validation; both descriptions must now disclaim).
+    audit_match = re.search(
+        r"MCP_TOOL_AUDIT\s*=\s*\{.*?\}", src, re.DOTALL,
+    )
+    verify_match = re.search(
+        r"MCP_TOOL_VERIFY\s*=\s*\{.*?\}", src, re.DOTALL,
+    )
+    if not audit_match or not verify_match:
+        return False, (
+            "mcp_tools/tier1.py missing MCP_TOOL_AUDIT / MCP_TOOL_VERIFY "
+            "block — expected at module level"
+        )
+    for label, block in (("MCP_TOOL_AUDIT", audit_match.group(0)),
+                         ("MCP_TOOL_VERIFY", verify_match.group(0))):
+        blob = block.lower()
+        has_scope_note = (
+            "skill-kit" in blob or "skill_root" in blob
+            or "not an emitted project" in blob
+            or "not the emitted project" in blob
+            or "not validate an emitted project" in blob
+        )
+        if not has_scope_note:
+            return False, (
+                f"{label} description missing skill-kit-vs-emitted-"
+                f"project scope note. Wave F B2 requires both meta "
+                f"audit tools to disclaim: they operate on the skill "
+                f"kit itself, NOT an emitted project."
+            )
+
+    return True, (
+        f"tier1 runtime strings cite current catalog ({tool_count} "
+        f"tools, {primitive_count} primitives) + scope-disclaim audit/"
+        f"verify"
+    )
+
+
 def _r_contributing_md() -> tuple[bool, str]:
     """B4.5 — CONTRIBUTING.md covers primitive / tool / recipe surfaces + dev setup."""
     f = REPO_ROOT / "CONTRIBUTING.md"
@@ -1860,6 +2005,7 @@ RULES: list[Rule] = [
     Rule("B2.3", 2, "reference docs site idempotent build", _r_docs_site),
     Rule("B2.4", 2, "index catalog manifest synced + deterministic", _r_index_manifest),
     Rule("B2.5", 2, "SKILL.md Agent Skills contract (Maestro-facing)", _r_skill_md_contract),
+    Rule("B2.6", 2, "tier1 runtime strings match catalog + scope-disclaim", _r_tier1_surface_truth),
     Rule("B3.1", 3, "20 benchmark specs (5 baseline / 10 mid / 5 adversarial)", _r_bench_specs),
     Rule("B3.2", 3, "scoring rubric implemented + tested", _r_bench_rubric_runner),
     Rule("B3.3", 3, "benchmark runner + stub Maestro + report JSON", _r_bench_rubric_runner),
