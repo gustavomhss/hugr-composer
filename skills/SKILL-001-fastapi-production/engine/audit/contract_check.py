@@ -1237,6 +1237,47 @@ def _r_skill_md_contract() -> tuple[bool, str]:
                 "extend `_SPDX_KNOWN` in contract_check.py if the target "
                 "is genuinely new."
             )
+        # 3b. License MUST be consistent with the repo-root LICENSE file.
+        #     Codex v5 B1 caught the Maestro-facing SKILL.md advertising
+        #     `Apache-2.0` while the shipped LICENSE is proprietary —
+        #     a legal/compliance drift, not a cosmetic one. This map
+        #     links each SPDX identifier to a signature we can detect in
+        #     the LICENSE file header. Unknown licenses here skip the
+        #     signature check (the SPDX-set gate above still catches them).
+        _license_signatures: dict[str, callable] = {
+            "Proprietary": lambda t: "proprietary" in t.lower()[:400],
+            "Apache-2.0": lambda t: (
+                "apache license" in t.lower() and "version 2.0" in t.lower()[:500]
+            ),
+            "MIT": lambda t: "mit license" in t.lower()[:400],
+            "BSD-2-Clause": lambda t: (
+                "redistribution and use" in t.lower()
+                and "bsd" in t.lower()[:400]
+            ),
+            "BSD-3-Clause": lambda t: (
+                "redistribution and use" in t.lower()
+                and "bsd" in t.lower()[:400]
+            ),
+            "ISC": lambda t: "isc license" in t.lower()[:400],
+            "MPL-2.0": lambda t: "mozilla public license" in t.lower()[:400],
+            "Unlicense": lambda t: "unlicense" in t.lower()[:400],
+            "CC0-1.0": lambda t: "cc0" in t.lower()[:400],
+        }
+        license_file = REPO_ROOT / "LICENSE"
+        if not license_file.exists():
+            return False, (
+                "repo-root LICENSE file missing — cannot validate SKILL.md "
+                "`license` field against the real license text"
+            )
+        license_text = license_file.read_text(encoding="utf-8")
+        sig = _license_signatures.get(license_val)
+        if sig is not None and not sig(license_text):
+            return False, (
+                f"SKILL.md license {license_val!r} does not match the repo-root "
+                f"LICENSE file header; the entry doc is advertising a license "
+                f"the repo does not ship. Align SKILL.md with LICENSE or update "
+                f"both together."
+            )
 
     # 4. `description` field (Anthropic spec + CONTRACT §B2.5 DoD)
     #    DoD says 800-1200 chars. Lower floor matters: a too-short
