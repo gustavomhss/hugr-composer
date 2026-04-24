@@ -298,6 +298,7 @@ def generate_project(
         output_dir=str(app_dir),
         with_db=True,
         with_redis=with_redis,
+        with_sentry=with_sentry,
     ))
     _run("logging_setup", generate_logging_setup(output_dir=str(app_dir)))
 
@@ -632,6 +633,7 @@ def generate_project(
     # Root-level project files (not Python source)
     _run("env_example", generate_env_example(
         output_dir=str(out), with_db=True, with_redis=with_redis,
+        with_sentry=with_sentry,
     ))
     _run("readme", generate_readme(
         output_dir=str(out), name=name, prefix=prefix,

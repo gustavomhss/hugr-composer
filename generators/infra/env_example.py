@@ -18,6 +18,7 @@ def generate_env_example(
     with_db: bool = True,
     with_redis: bool = False,
     with_smtp: bool = True,
+    with_sentry: bool = False,
 ) -> dict:
     """Generate a .env.example showing all required env vars with safe placeholders.
 
@@ -26,6 +27,10 @@ def generate_env_example(
         with_db: Include database connection variables.
         with_redis: Include Redis URL variable.
         with_smtp: Include SMTP email variables.
+        with_sentry: Include optional `SENTRY_DSN=` row. Must match
+            the `with_sentry` flag on ``generate_config`` —
+            otherwise the emitted Settings class and env template
+            disagree on whether SENTRY_DSN is a real field.
 
     Returns:
         Dict with files_created and notes.
@@ -147,6 +152,16 @@ def generate_env_example(
             # =============================================================================
             REDIS_URL=redis://localhost:6379/0
         """))
+    # --- Sentry ---
+    if with_sentry:
+        sections.append(textwrap.dedent("""\
+            # =============================================================================
+            # Sentry (opt-in — leave empty to disable error tracking)
+            # =============================================================================
+            # Set to a real Sentry DSN to enable; app/main.py initialises
+            # the SDK only when this value is non-empty.
+            SENTRY_DSN=
+        """))
 
     content = "\n".join(sections)
 
@@ -161,5 +176,7 @@ def generate_env_example(
         notes.append("SMTP variables included (blank = disabled).")
     if with_redis:
         notes.append("Redis URL included.")
+    if with_sentry:
+        notes.append("SENTRY_DSN row included (blank = disabled).")
 
     return {"files_created": files, "notes": notes}
