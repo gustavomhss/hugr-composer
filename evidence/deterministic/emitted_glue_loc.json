@@ -1,0 +1,1486 @@
+{
+  "_meta": {
+    "command": ".venv/bin/python evidence/_harness/emitted_glue_loc.py",
+    "commit": "c0363e135ad3abcd3c45efd3b3d8c226c335dc1e",
+    "cwd": "repo root",
+    "generated": "2026-04-24T22:23:11Z",
+    "grading": "exit 0 iff probe ran cleanly (every tool invokable). Alignment with PRODUCT \u00a76.1/\u00a7A2 reported informatively under summary.product_alignment.",
+    "tree": "f2556ae40e2873f0c6352f1fe8370027e2515bdc"
+  },
+  "per_tool": [
+    {
+      "delta_files": [
+        {
+          "category": "added",
+          "handlers": 2,
+          "path": "app/api/routes/cqrs.py",
+          "sloc": 83,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "app/cqrs/__init__.py",
+          "sloc": 9,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 6,
+          "path": "app/cqrs/bus.py",
+          "sloc": 66,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "app/cqrs/commands.py",
+          "sloc": 26,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "app/cqrs/queries.py",
+          "sloc": 25,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 2,
+          "path": "app/cqrs/read_replica.py",
+          "sloc": 55,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 5,
+          "path": "app/core/config.py",
+          "sloc": 150,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 0,
+          "path": "app/routes/__init__.py",
+          "sloc": 13,
+          "venous_imports": 0
+        }
+      ],
+      "files_added": [
+        "app/api/routes/cqrs.py",
+        "app/cqrs/__init__.py",
+        "app/cqrs/bus.py",
+        "app/cqrs/commands.py",
+        "app/cqrs/queries.py",
+        "app/cqrs/read_replica.py"
+      ],
+      "files_modified": [
+        "app/core/config.py",
+        "app/routes/__init__.py"
+      ],
+      "handlers_added": 15,
+      "lines_added": 427,
+      "loc_per_handler": 28.47,
+      "log_tail": "",
+      "modpath": "adapt.extend.api_design.add_cqrs.add_cqrs",
+      "ok": true,
+      "tool": "add_cqrs",
+      "venous_imports_added": 0
+    },
+    {
+      "delta_files": [
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "app/api/v1/__init__.py",
+          "sloc": 8,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "app/api/v1/item.py",
+          "sloc": 9,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "app/api/v2/__init__.py",
+          "sloc": 8,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "app/api/v2/item.py",
+          "sloc": 9,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 7,
+          "path": "app/core/version_registry.py",
+          "sloc": 93,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 3,
+          "path": "app/middleware/version_resolver.py",
+          "sloc": 72,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "app/schemas/v1/__init__.py",
+          "sloc": 7,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "app/schemas/v2/__init__.py",
+          "sloc": 7,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 2,
+          "path": "app/main.py",
+          "sloc": 56,
+          "venous_imports": 0
+        }
+      ],
+      "files_added": [
+        "app/api/v1/__init__.py",
+        "app/api/v1/item.py",
+        "app/api/v2/__init__.py",
+        "app/api/v2/item.py",
+        "app/core/version_registry.py",
+        "app/middleware/version_resolver.py",
+        "app/schemas/v1/__init__.py",
+        "app/schemas/v2/__init__.py"
+      ],
+      "files_modified": [
+        "app/main.py"
+      ],
+      "handlers_added": 12,
+      "lines_added": 269,
+      "loc_per_handler": 22.42,
+      "log_tail": "",
+      "modpath": "adapt.extend.api_design.add_api_versioning.add_api_versioning",
+      "ok": true,
+      "tool": "add_api_versioning",
+      "venous_imports_added": 0
+    },
+    {
+      "delta_files": [
+        {
+          "category": "added",
+          "handlers": 1,
+          "path": "app/oauth2.py",
+          "sloc": 16,
+          "venous_imports": 2
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/_adapters/__init__.py",
+          "sloc": 1,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 3,
+          "path": "core/venous/_adapters/fastapi/OAuth2Adapter.py",
+          "sloc": 39,
+          "venous_imports": 2
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/_adapters/fastapi/__init__.py",
+          "sloc": 1,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/SessionStore/SessionStore.contract.json",
+          "sloc": 33,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/SessionStore/SessionStore.manifest.json",
+          "sloc": 814,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/SessionStore/SessionStore.md",
+          "sloc": 120,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 23,
+          "path": "core/venous/auth/SessionStore/SessionStore.py",
+          "sloc": 373,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/SessionStore/__init__.py",
+          "sloc": 0,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/SessionStore/invariant_bindings.json",
+          "sloc": 46,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/TokenIntrospector/TokenIntrospector.contract.json",
+          "sloc": 37,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/TokenIntrospector/TokenIntrospector.manifest.json",
+          "sloc": 838,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/TokenIntrospector/TokenIntrospector.md",
+          "sloc": 118,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 37,
+          "path": "core/venous/auth/TokenIntrospector/TokenIntrospector.py",
+          "sloc": 612,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/TokenIntrospector/__init__.py",
+          "sloc": 0,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/TokenIntrospector/invariant_bindings.json",
+          "sloc": 46,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/__init__.py",
+          "sloc": 1,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 0,
+          "path": ".venous_manifest.json",
+          "sloc": 32,
+          "venous_imports": 0
+        }
+      ],
+      "files_added": [
+        "app/oauth2.py",
+        "core/venous/_adapters/__init__.py",
+        "core/venous/_adapters/fastapi/OAuth2Adapter.py",
+        "core/venous/_adapters/fastapi/__init__.py",
+        "core/venous/auth/SessionStore/SessionStore.contract.json",
+        "core/venous/auth/SessionStore/SessionStore.manifest.json",
+        "core/venous/auth/SessionStore/SessionStore.md",
+        "core/venous/auth/SessionStore/SessionStore.py",
+        "core/venous/auth/SessionStore/__init__.py",
+        "core/venous/auth/SessionStore/invariant_bindings.json",
+        "core/venous/auth/TokenIntrospector/TokenIntrospector.contract.json",
+        "core/venous/auth/TokenIntrospector/TokenIntrospector.manifest.json",
+        "core/venous/auth/TokenIntrospector/TokenIntrospector.md",
+        "core/venous/auth/TokenIntrospector/TokenIntrospector.py",
+        "core/venous/auth/TokenIntrospector/__init__.py",
+        "core/venous/auth/TokenIntrospector/invariant_bindings.json",
+        "core/venous/auth/__init__.py"
+      ],
+      "files_modified": [
+        ".venous_manifest.json"
+      ],
+      "handlers_added": 64,
+      "lines_added": 3127,
+      "loc_per_handler": 48.86,
+      "log_tail": "",
+      "modpath": "adapt.extend.auth_access.add_oauth2_provider.add_oauth2_provider",
+      "ok": true,
+      "tool": "add_oauth2_provider",
+      "venous_imports_added": 4
+    },
+    {
+      "delta_files": [
+        {
+          "category": "added",
+          "handlers": 2,
+          "path": "app/rbac.py",
+          "sloc": 17,
+          "venous_imports": 3
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/_adapters/__init__.py",
+          "sloc": 1,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 3,
+          "path": "core/venous/_adapters/fastapi/RequestGuardAdapter.py",
+          "sloc": 48,
+          "venous_imports": 2
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/_adapters/fastapi/__init__.py",
+          "sloc": 1,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/CurrentPrincipal/CurrentPrincipal.contract.json",
+          "sloc": 36,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/CurrentPrincipal/CurrentPrincipal.manifest.json",
+          "sloc": 720,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/CurrentPrincipal/CurrentPrincipal.md",
+          "sloc": 112,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 22,
+          "path": "core/venous/auth/CurrentPrincipal/CurrentPrincipal.py",
+          "sloc": 310,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/CurrentPrincipal/__init__.py",
+          "sloc": 0,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/CurrentPrincipal/invariant_bindings.json",
+          "sloc": 39,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/RequestGuard/RequestGuard.contract.json",
+          "sloc": 32,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/RequestGuard/RequestGuard.manifest.json",
+          "sloc": 648,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/RequestGuard/RequestGuard.md",
+          "sloc": 109,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 24,
+          "path": "core/venous/auth/RequestGuard/RequestGuard.py",
+          "sloc": 419,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/RequestGuard/__init__.py",
+          "sloc": 0,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/RequestGuard/invariant_bindings.json",
+          "sloc": 39,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/auth/__init__.py",
+          "sloc": 1,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 0,
+          "path": ".venous_manifest.json",
+          "sloc": 32,
+          "venous_imports": 0
+        }
+      ],
+      "files_added": [
+        "app/rbac.py",
+        "core/venous/_adapters/__init__.py",
+        "core/venous/_adapters/fastapi/RequestGuardAdapter.py",
+        "core/venous/_adapters/fastapi/__init__.py",
+        "core/venous/auth/CurrentPrincipal/CurrentPrincipal.contract.json",
+        "core/venous/auth/CurrentPrincipal/CurrentPrincipal.manifest.json",
+        "core/venous/auth/CurrentPrincipal/CurrentPrincipal.md",
+        "core/venous/auth/CurrentPrincipal/CurrentPrincipal.py",
+        "core/venous/auth/CurrentPrincipal/__init__.py",
+        "core/venous/auth/CurrentPrincipal/invariant_bindings.json",
+        "core/venous/auth/RequestGuard/RequestGuard.contract.json",
+        "core/venous/auth/RequestGuard/RequestGuard.manifest.json",
+        "core/venous/auth/RequestGuard/RequestGuard.md",
+        "core/venous/auth/RequestGuard/RequestGuard.py",
+        "core/venous/auth/RequestGuard/__init__.py",
+        "core/venous/auth/RequestGuard/invariant_bindings.json",
+        "core/venous/auth/__init__.py"
+      ],
+      "files_modified": [
+        ".venous_manifest.json"
+      ],
+      "handlers_added": 51,
+      "lines_added": 2564,
+      "loc_per_handler": 50.27,
+      "log_tail": "",
+      "modpath": "adapt.extend.auth_access.add_rbac.add_rbac",
+      "ok": true,
+      "tool": "add_rbac",
+      "venous_imports_added": 5
+    },
+    {
+      "delta_files": [
+        {
+          "category": "added",
+          "handlers": 2,
+          "path": "alembic/versions/cursor_idx_items.py",
+          "sloc": 30,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 2,
+          "path": "app/core/cursor.py",
+          "sloc": 63,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 6,
+          "path": "app/core/cursor_paginator.py",
+          "sloc": 133,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 6,
+          "path": "app/api/routes/item.py",
+          "sloc": 143,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 1,
+          "path": "app/crud/item.py",
+          "sloc": 41,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 0,
+          "path": "app/schemas/item.py",
+          "sloc": 32,
+          "venous_imports": 0
+        }
+      ],
+      "files_added": [
+        "alembic/versions/cursor_idx_items.py",
+        "app/core/cursor.py",
+        "app/core/cursor_paginator.py"
+      ],
+      "files_modified": [
+        "app/api/routes/item.py",
+        "app/crud/item.py",
+        "app/schemas/item.py"
+      ],
+      "handlers_added": 17,
+      "lines_added": 442,
+      "loc_per_handler": 26.0,
+      "log_tail": "",
+      "modpath": "adapt.extend.crud_data.add_cursor_pagination.add_cursor_pagination",
+      "ok": true,
+      "tool": "add_cursor_pagination",
+      "venous_imports_added": 0
+    },
+    {
+      "delta_files": [
+        {
+          "category": "added",
+          "handlers": 1,
+          "path": "app/audit_log.py",
+          "sloc": 17,
+          "venous_imports": 1
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/_adapters/__init__.py",
+          "sloc": 1,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 4,
+          "path": "core/venous/_adapters/fastapi/AuditLogAdapter.py",
+          "sloc": 37,
+          "venous_imports": 1
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/_adapters/fastapi/__init__.py",
+          "sloc": 1,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/compliance/AuditEvent/AuditEvent.contract.json",
+          "sloc": 37,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/compliance/AuditEvent/AuditEvent.manifest.json",
+          "sloc": 753,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/compliance/AuditEvent/AuditEvent.md",
+          "sloc": 124,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 12,
+          "path": "core/venous/compliance/AuditEvent/AuditEvent.py",
+          "sloc": 234,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/compliance/AuditEvent/__init__.py",
+          "sloc": 0,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/compliance/AuditEvent/invariant_bindings.json",
+          "sloc": 46,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/compliance/TamperEvidentAuditLog/TamperEvidentAuditLog.contract.json",
+          "sloc": 28,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/compliance/TamperEvidentAuditLog/TamperEvidentAuditLog.manifest.json",
+          "sloc": 707,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/compliance/TamperEvidentAuditLog/TamperEvidentAuditLog.md",
+          "sloc": 97,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 20,
+          "path": "core/venous/compliance/TamperEvidentAuditLog/TamperEvidentAuditLog.py",
+          "sloc": 291,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/compliance/TamperEvidentAuditLog/__init__.py",
+          "sloc": 0,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/compliance/TamperEvidentAuditLog/invariant_bindings.json",
+          "sloc": 46,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/compliance/__init__.py",
+          "sloc": 1,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 0,
+          "path": ".venous_manifest.json",
+          "sloc": 32,
+          "venous_imports": 0
+        }
+      ],
+      "files_added": [
+        "app/audit_log.py",
+        "core/venous/_adapters/__init__.py",
+        "core/venous/_adapters/fastapi/AuditLogAdapter.py",
+        "core/venous/_adapters/fastapi/__init__.py",
+        "core/venous/compliance/AuditEvent/AuditEvent.contract.json",
+        "core/venous/compliance/AuditEvent/AuditEvent.manifest.json",
+        "core/venous/compliance/AuditEvent/AuditEvent.md",
+        "core/venous/compliance/AuditEvent/AuditEvent.py",
+        "core/venous/compliance/AuditEvent/__init__.py",
+        "core/venous/compliance/AuditEvent/invariant_bindings.json",
+        "core/venous/compliance/TamperEvidentAuditLog/TamperEvidentAuditLog.contract.json",
+        "core/venous/compliance/TamperEvidentAuditLog/TamperEvidentAuditLog.manifest.json",
+        "core/venous/compliance/TamperEvidentAuditLog/TamperEvidentAuditLog.md",
+        "core/venous/compliance/TamperEvidentAuditLog/TamperEvidentAuditLog.py",
+        "core/venous/compliance/TamperEvidentAuditLog/__init__.py",
+        "core/venous/compliance/TamperEvidentAuditLog/invariant_bindings.json",
+        "core/venous/compliance/__init__.py"
+      ],
+      "files_modified": [
+        ".venous_manifest.json"
+      ],
+      "handlers_added": 37,
+      "lines_added": 2452,
+      "loc_per_handler": 66.27,
+      "log_tail": "",
+      "modpath": "adapt.extend.crud_data.add_audit_log.add_audit_log",
+      "ok": true,
+      "tool": "add_audit_log",
+      "venous_imports_added": 2
+    },
+    {
+      "delta_files": [
+        {
+          "category": "added",
+          "handlers": 1,
+          "path": "app/api/routes/cache_stats.py",
+          "sloc": 21,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "app/cache/__init__.py",
+          "sloc": 15,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 9,
+          "path": "app/cache/core.py",
+          "sloc": 97,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 6,
+          "path": "app/cache/decorator.py",
+          "sloc": 70,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 3,
+          "path": "app/cache/invalidation.py",
+          "sloc": 67,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 5,
+          "path": "app/cache/keys.py",
+          "sloc": 63,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 4,
+          "path": "app/cache/primitives.py",
+          "sloc": 50,
+          "venous_imports": 3
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/cache/DistributedLock/DistributedLock.contract.json",
+          "sloc": 27,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/cache/DistributedLock/DistributedLock.manifest.json",
+          "sloc": 649,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/cache/DistributedLock/DistributedLock.md",
+          "sloc": 80,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 15,
+          "path": "core/venous/cache/DistributedLock/DistributedLock.py",
+          "sloc": 179,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/cache/DistributedLock/__init__.py",
+          "sloc": 0,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/cache/DistributedLock/invariant_bindings.json",
+          "sloc": 39,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/cache/KeyValueBucket/KeyValueBucket.contract.json",
+          "sloc": 27,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/cache/KeyValueBucket/KeyValueBucket.manifest.json",
+          "sloc": 627,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/cache/KeyValueBucket/KeyValueBucket.md",
+          "sloc": 72,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 19,
+          "path": "core/venous/cache/KeyValueBucket/KeyValueBucket.py",
+          "sloc": 182,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/cache/KeyValueBucket/__init__.py",
+          "sloc": 0,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/cache/KeyValueBucket/invariant_bindings.json",
+          "sloc": 39,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/cache/SessionCache/SessionCache.contract.json",
+          "sloc": 26,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/cache/SessionCache/SessionCache.md",
+          "sloc": 97,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 3,
+          "path": "core/venous/cache/SessionCache/SessionCache.protocol.py",
+          "sloc": 9,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 11,
+          "path": "core/venous/cache/SessionCache/SessionCache.py",
+          "sloc": 111,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/cache/SessionCache/__init__.py",
+          "sloc": 13,
+          "venous_imports": 1
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/cache/__init__.py",
+          "sloc": 1,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 0,
+          "path": ".venous_manifest.json",
+          "sloc": 31,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 2,
+          "path": "app/main.py",
+          "sloc": 54,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 0,
+          "path": "requirements.txt",
+          "sloc": 19,
+          "venous_imports": 0
+        }
+      ],
+      "files_added": [
+        "app/api/routes/cache_stats.py",
+        "app/cache/__init__.py",
+        "app/cache/core.py",
+        "app/cache/decorator.py",
+        "app/cache/invalidation.py",
+        "app/cache/keys.py",
+        "app/cache/primitives.py",
+        "core/venous/cache/DistributedLock/DistributedLock.contract.json",
+        "core/venous/cache/DistributedLock/DistributedLock.manifest.json",
+        "core/venous/cache/DistributedLock/DistributedLock.md",
+        "core/venous/cache/DistributedLock/DistributedLock.py",
+        "core/venous/cache/DistributedLock/__init__.py",
+        "core/venous/cache/DistributedLock/invariant_bindings.json",
+        "core/venous/cache/KeyValueBucket/KeyValueBucket.contract.json",
+        "core/venous/cache/KeyValueBucket/KeyValueBucket.manifest.json",
+        "core/venous/cache/KeyValueBucket/KeyValueBucket.md",
+        "core/venous/cache/KeyValueBucket/KeyValueBucket.py",
+        "core/venous/cache/KeyValueBucket/__init__.py",
+        "core/venous/cache/KeyValueBucket/invariant_bindings.json",
+        "core/venous/cache/SessionCache/SessionCache.contract.json",
+        "core/venous/cache/SessionCache/SessionCache.md",
+        "core/venous/cache/SessionCache/SessionCache.protocol.py",
+        "core/venous/cache/SessionCache/SessionCache.py",
+        "core/venous/cache/SessionCache/__init__.py",
+        "core/venous/cache/__init__.py"
+      ],
+      "files_modified": [
+        ".venous_manifest.json",
+        "app/main.py",
+        "requirements.txt"
+      ],
+      "handlers_added": 78,
+      "lines_added": 2665,
+      "loc_per_handler": 34.17,
+      "log_tail": "",
+      "modpath": "adapt.extend.infrastructure.add_cache_layer.add_cache_layer",
+      "ok": true,
+      "tool": "add_cache_layer",
+      "venous_imports_added": 4
+    },
+    {
+      "delta_files": [
+        {
+          "category": "added",
+          "handlers": 1,
+          "path": "app/api/routes/bulkhead_status.py",
+          "sloc": 12,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 1,
+          "path": "app/middleware/bulkhead.py",
+          "sloc": 25,
+          "venous_imports": 1
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "app/resilience/__init__.py",
+          "sloc": 1,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 1,
+          "path": "app/resilience/bulkhead.py",
+          "sloc": 24,
+          "venous_imports": 1
+        },
+        {
+          "category": "added",
+          "handlers": 2,
+          "path": "app/resilience/pool_config.py",
+          "sloc": 30,
+          "venous_imports": 1
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/_adapters/__init__.py",
+          "sloc": 1,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 12,
+          "path": "core/venous/_adapters/fastapi/BulkheadAdapter.py",
+          "sloc": 210,
+          "venous_imports": 1
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/_adapters/fastapi/__init__.py",
+          "sloc": 1,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/resiliency/Bulkhead/Bulkhead.contract.json",
+          "sloc": 32,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/resiliency/Bulkhead/Bulkhead.manifest.json",
+          "sloc": 746,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/resiliency/Bulkhead/Bulkhead.md",
+          "sloc": 107,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 35,
+          "path": "core/venous/resiliency/Bulkhead/Bulkhead.py",
+          "sloc": 431,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/resiliency/Bulkhead/__init__.py",
+          "sloc": 36,
+          "venous_imports": 1
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "core/venous/resiliency/Bulkhead/invariant_bindings.json",
+          "sloc": 39,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 0,
+          "path": ".venous_manifest.json",
+          "sloc": 26,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 5,
+          "path": "app/core/config.py",
+          "sloc": 152,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 2,
+          "path": "app/main.py",
+          "sloc": 50,
+          "venous_imports": 0
+        }
+      ],
+      "files_added": [
+        "app/api/routes/bulkhead_status.py",
+        "app/middleware/bulkhead.py",
+        "app/resilience/__init__.py",
+        "app/resilience/bulkhead.py",
+        "app/resilience/pool_config.py",
+        "core/venous/_adapters/__init__.py",
+        "core/venous/_adapters/fastapi/BulkheadAdapter.py",
+        "core/venous/_adapters/fastapi/__init__.py",
+        "core/venous/resiliency/Bulkhead/Bulkhead.contract.json",
+        "core/venous/resiliency/Bulkhead/Bulkhead.manifest.json",
+        "core/venous/resiliency/Bulkhead/Bulkhead.md",
+        "core/venous/resiliency/Bulkhead/Bulkhead.py",
+        "core/venous/resiliency/Bulkhead/__init__.py",
+        "core/venous/resiliency/Bulkhead/invariant_bindings.json"
+      ],
+      "files_modified": [
+        ".venous_manifest.json",
+        "app/core/config.py",
+        "app/main.py"
+      ],
+      "handlers_added": 59,
+      "lines_added": 1923,
+      "loc_per_handler": 32.59,
+      "log_tail": "",
+      "modpath": "adapt.extend.infrastructure.add_bulkhead_isolation.add_bulkhead_isolation",
+      "ok": true,
+      "tool": "add_bulkhead_isolation",
+      "venous_imports_added": 5
+    },
+    {
+      "delta_files": [
+        {
+          "category": "added",
+          "handlers": 1,
+          "path": "app/api/routes/events.py",
+          "sloc": 41,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 1,
+          "path": "app/core/redis.py",
+          "sloc": 15,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "app/core/sse/__init__.py",
+          "sloc": 1,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 1,
+          "path": "app/core/sse/access.py",
+          "sloc": 45,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 4,
+          "path": "app/core/sse/connection_registry.py",
+          "sloc": 62,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 2,
+          "path": "app/core/sse/formatter.py",
+          "sloc": 53,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 7,
+          "path": "app/core/sse/manager.py",
+          "sloc": 164,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 1,
+          "path": "app/core/sse/publisher.py",
+          "sloc": 57,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 6,
+          "path": "app/core/sse/rate_limiter.py",
+          "sloc": 75,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 5,
+          "path": "app/core/config.py",
+          "sloc": 153,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 0,
+          "path": "app/routes/__init__.py",
+          "sloc": 13,
+          "venous_imports": 0
+        }
+      ],
+      "files_added": [
+        "app/api/routes/events.py",
+        "app/core/redis.py",
+        "app/core/sse/__init__.py",
+        "app/core/sse/access.py",
+        "app/core/sse/connection_registry.py",
+        "app/core/sse/formatter.py",
+        "app/core/sse/manager.py",
+        "app/core/sse/publisher.py",
+        "app/core/sse/rate_limiter.py"
+      ],
+      "files_modified": [
+        "app/core/config.py",
+        "app/routes/__init__.py"
+      ],
+      "handlers_added": 28,
+      "lines_added": 679,
+      "loc_per_handler": 24.25,
+      "log_tail": "",
+      "modpath": "adapt.extend.realtime.add_sse.add_sse",
+      "ok": true,
+      "tool": "add_sse",
+      "venous_imports_added": 0
+    },
+    {
+      "delta_files": [
+        {
+          "category": "added",
+          "handlers": 2,
+          "path": "alembic/versions/0017_add_websocket_chat.py",
+          "sloc": 83,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 3,
+          "path": "app/api/routes/chat.py",
+          "sloc": 109,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 1,
+          "path": "app/core/redis.py",
+          "sloc": 15,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 6,
+          "path": "app/crud/chat.py",
+          "sloc": 138,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "app/models/chat.py",
+          "sloc": 101,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "app/schemas/chat.py",
+          "sloc": 54,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "app/ws/__init__.py",
+          "sloc": 1,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 8,
+          "path": "app/ws/chat.py",
+          "sloc": 234,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 6,
+          "path": "app/ws/connection_manager.py",
+          "sloc": 142,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 5,
+          "path": "app/core/config.py",
+          "sloc": 151,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 2,
+          "path": "app/main.py",
+          "sloc": 52,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 0,
+          "path": "app/models/__init__.py",
+          "sloc": 5,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 0,
+          "path": "app/routes/__init__.py",
+          "sloc": 13,
+          "venous_imports": 0
+        }
+      ],
+      "files_added": [
+        "alembic/versions/0017_add_websocket_chat.py",
+        "app/api/routes/chat.py",
+        "app/core/redis.py",
+        "app/crud/chat.py",
+        "app/models/chat.py",
+        "app/schemas/chat.py",
+        "app/ws/__init__.py",
+        "app/ws/chat.py",
+        "app/ws/connection_manager.py"
+      ],
+      "files_modified": [
+        "app/core/config.py",
+        "app/main.py",
+        "app/models/__init__.py",
+        "app/routes/__init__.py"
+      ],
+      "handlers_added": 33,
+      "lines_added": 1098,
+      "loc_per_handler": 33.27,
+      "log_tail": "",
+      "modpath": "adapt.extend.realtime.add_websocket_chat.add_websocket_chat",
+      "ok": true,
+      "tool": "add_websocket_chat",
+      "venous_imports_added": 0
+    },
+    {
+      "delta_files": [
+        {
+          "category": "added",
+          "handlers": 1,
+          "path": "tests/factories/__init__.py",
+          "sloc": 34,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 2,
+          "path": "tests/factories/item_factory.py",
+          "sloc": 49,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 2,
+          "path": "tests/factories/user_factory.py",
+          "sloc": 49,
+          "venous_imports": 0
+        },
+        {
+          "category": "modified",
+          "handlers": 11,
+          "path": "tests/conftest.py",
+          "sloc": 156,
+          "venous_imports": 0
+        }
+      ],
+      "files_added": [
+        "tests/factories/__init__.py",
+        "tests/factories/item_factory.py",
+        "tests/factories/user_factory.py"
+      ],
+      "files_modified": [
+        "tests/conftest.py"
+      ],
+      "handlers_added": 16,
+      "lines_added": 288,
+      "loc_per_handler": 18.0,
+      "log_tail": "",
+      "modpath": "adapt.extend.testing_tools.add_factory.add_factory",
+      "ok": true,
+      "tool": "add_factory",
+      "venous_imports_added": 0
+    },
+    {
+      "delta_files": [
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": ".github/workflows/contract-tests.yml",
+          "sloc": 32,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": ".schemathesis-exclude.yaml",
+          "sloc": 4,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 0,
+          "path": "tests/contracts/__init__.py",
+          "sloc": 1,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 3,
+          "path": "tests/contracts/conftest.py",
+          "sloc": 41,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 2,
+          "path": "tests/contracts/custom_checks.py",
+          "sloc": 35,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 2,
+          "path": "tests/contracts/test_api_schema.py",
+          "sloc": 45,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 2,
+          "path": "tests/contracts/test_pact_stubs.py",
+          "sloc": 40,
+          "venous_imports": 0
+        },
+        {
+          "category": "added",
+          "handlers": 1,
+          "path": "tests/contracts/test_stateful.py",
+          "sloc": 24,
+          "venous_imports": 0
+        }
+      ],
+      "files_added": [
+        ".github/workflows/contract-tests.yml",
+        ".schemathesis-exclude.yaml",
+        "tests/contracts/__init__.py",
+        "tests/contracts/conftest.py",
+        "tests/contracts/custom_checks.py",
+        "tests/contracts/test_api_schema.py",
+        "tests/contracts/test_pact_stubs.py",
+        "tests/contracts/test_stateful.py"
+      ],
+      "files_modified": [],
+      "handlers_added": 10,
+      "lines_added": 222,
+      "loc_per_handler": 22.2,
+      "log_tail": "",
+      "modpath": "adapt.extend.testing_tools.add_contract_tests.add_contract_tests",
+      "ok": true,
+      "tool": "add_contract_tests",
+      "venous_imports_added": 0
+    }
+  ],
+  "sample_tools_count": 12,
+  "summary": {
+    "loc_per_handler_max": 66.27,
+    "loc_per_handler_p50": 32.59,
+    "loc_per_handler_p95": 50.27,
+    "passed": true,
+    "product_alignment": {
+      "aligns_with_product_\u00a76_1": false,
+      "aligns_with_product_\u00a7A2": false,
+      "aspirational_loc_per_handler": 20,
+      "aspirational_per_tool_venous_imports": "\u22651",
+      "note": "PRODUCT.md \u00a76.1 claims \u226420 LOC glue per slice and \u00a7A2 claims every tool emits \u22651 venous import. Observed reality at this commit is stricter on neither: p95=50.27, 5/12 tools emit venous. Tracked in /evidence/not-yet-covered.md.",
+      "observed_p95_loc_per_handler": 50.27,
+      "observed_tools_with_venous_pct": 41.7
+    },
+    "tools_invoked_successfully": 12,
+    "tools_with_venous_imports": 5,
+    "total_lines_added_across_sample": 16156
+  }
+}

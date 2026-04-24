@@ -1,0 +1,901 @@
+{
+  "_meta": {
+    "command": ".venv/bin/python evidence/_harness/framework_free_runtime.py",
+    "commit": "c0363e135ad3abcd3c45efd3b3d8c226c335dc1e",
+    "cwd": "repo root",
+    "frameworks_blocked": [
+      "fastapi",
+      "starlette",
+      "uvicorn",
+      "flask",
+      "django",
+      "tornado",
+      "sanic",
+      "bottle",
+      "aiohttp",
+      "quart",
+      "falcon",
+      "hypercorn"
+    ],
+    "generated": "2026-04-24T22:18:04Z",
+    "grading": "exit 0 iff zero primitives trigger a blocked-framework import",
+    "tree": "f2556ae40e2873f0c6352f1fe8370027e2515bdc"
+  },
+  "per_primitive": [
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "BatchCore",
+      "ns": "api"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "CommandBus",
+      "ns": "api"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "CommandQuerySeparator",
+      "ns": "api"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "ContextMap",
+      "ns": "api"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "DataLoader",
+      "ns": "api"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "DeprecationEntry",
+      "ns": "api"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "DeprecationRegistry",
+      "ns": "api"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "DeprecationReporter",
+      "ns": "api"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "IdempotencyStore",
+      "ns": "api"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "InboundVerifier",
+      "ns": "api"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "MemoryPubSubBackend",
+      "ns": "api"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "MiddlewarePipeline",
+      "ns": "api"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "PersistedQueryRegistry",
+      "ns": "api"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "QueryBus",
+      "ns": "api"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "RequestContext",
+      "ns": "api"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "RouterPipeline",
+      "ns": "api"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "ValueTransform",
+      "ns": "api"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "AuthorizationCodeFlow",
+      "ns": "auth"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "CurrentPrincipal",
+      "ns": "auth"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "FeatureFlagCache",
+      "ns": "auth"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "RequestGuard",
+      "ns": "auth"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "SessionStore",
+      "ns": "auth"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "TokenIntrospector",
+      "ns": "auth"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "TotpVerifier",
+      "ns": "auth"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "WebAuthnAuthenticator",
+      "ns": "auth"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "Billing",
+      "ns": "billing"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "DistributedLock",
+      "ns": "cache"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "KeyValueBucket",
+      "ns": "cache"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "SessionCache",
+      "ns": "cache"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "AuditEvent",
+      "ns": "compliance"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "BreachNotificationQueue",
+      "ns": "compliance"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "ConsentLedger",
+      "ns": "compliance"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "DataSubjectRequest",
+      "ns": "compliance"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "ProcessingRecord",
+      "ns": "compliance"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "RetentionPolicy",
+      "ns": "compliance"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "TamperEvidentAuditLog",
+      "ns": "compliance"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "Aggregate",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "AntiCorruptionLayer",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "BoundedContext",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "ChangeDataCapture",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "ConfigBinding",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "DataMapper",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "DiContainer",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "IdentityMap",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "LegalHold",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "LifetimeScope",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "MaterializedView",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "OptimisticConcurrency",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "PiiClassification",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "Repository",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "ShardedCounter",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "Specification",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "TransactionalBatch",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "UnitOfWork",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "ValueObject",
+      "ns": "data"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "CausalReorderBuffer",
+      "ns": "events"
+    },
+    {
+      "blocked_framework": null,
+      "error": "ImportError: No module named 'EventEnvelope'",
+      "import_ok": false,
+      "name": "DeadLetterRoute",
+      "ns": "events"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "DomainEvent",
+      "ns": "events"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "EventEnvelope",
+      "ns": "events"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "EventSourcedStore",
+      "ns": "events"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "EventStream",
+      "ns": "events"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "IdempotentConsumer",
+      "ns": "events"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "InboxDeduplicator",
+      "ns": "events"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "PubSub",
+      "ns": "events"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "SagaOrchestrator",
+      "ns": "events"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "StreamSubject",
+      "ns": "events"
+    },
+    {
+      "blocked_framework": null,
+      "error": "ImportError: No module named 'EventEnvelope'",
+      "import_ok": false,
+      "name": "TopicBus",
+      "ns": "events"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "TransactionalOutbox",
+      "ns": "events"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "OutboundBinding",
+      "ns": "extras"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "RequestShape",
+      "ns": "extras"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "RpcInterceptor",
+      "ns": "extras"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "SchemaComparator",
+      "ns": "extras"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "VirtualActor",
+      "ns": "extras"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "FeatureToggle",
+      "ns": "flags"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "ActivityCall",
+      "ns": "jobs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "DurableTimer",
+      "ns": "jobs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "WorkflowRun",
+      "ns": "jobs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "InputGuardrail",
+      "ns": "llm"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "OutputGuardrail",
+      "ns": "llm"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "PromptInjectionFilter",
+      "ns": "llm"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "PromptTemplate",
+      "ns": "llm"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "AccessLog",
+      "ns": "obs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "CardinalityGuard",
+      "ns": "obs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "CorrelationContext",
+      "ns": "obs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "CorrelationId",
+      "ns": "obs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "ErrorSink",
+      "ns": "obs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "EventBus",
+      "ns": "obs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "HealthProbe",
+      "ns": "obs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "HistogramBuckets",
+      "ns": "obs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "LifecycleHook",
+      "ns": "obs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "LlmTrace",
+      "ns": "obs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "MetricMeter",
+      "ns": "obs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "ResourceDescriptor",
+      "ns": "obs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "SamplingPolicy",
+      "ns": "obs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "SemanticAttributes",
+      "ns": "obs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "StructuredLogger",
+      "ns": "obs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "TelemetryExporter",
+      "ns": "obs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "Tracer",
+      "ns": "obs"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "CorsPolicy",
+      "ns": "policy"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "DataResidencyPolicy",
+      "ns": "policy"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "EncryptionPolicy",
+      "ns": "policy"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "KeyRotationSchedule",
+      "ns": "policy"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "Bulkhead",
+      "ns": "resiliency"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "CircuitBreaker",
+      "ns": "resiliency"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "CostTracker",
+      "ns": "resiliency"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "ExcelExporter",
+      "ns": "resiliency"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "GracefulShutdown",
+      "ns": "resiliency"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "HeterogeneousWorkerPool",
+      "ns": "resiliency"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "LoadShedder",
+      "ns": "resiliency"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "ModelRegistry",
+      "ns": "resiliency"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "RateLimiter",
+      "ns": "resiliency"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "Redactor",
+      "ns": "resiliency"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "RetryBudget",
+      "ns": "resiliency"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "RetryPolicy",
+      "ns": "resiliency"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "TimeoutBudget",
+      "ns": "resiliency"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "TracingBuffer",
+      "ns": "resiliency"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "ContentSecurityPolicy",
+      "ns": "security"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "CryptoEnvelope",
+      "ns": "security"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "CsrfGuard",
+      "ns": "security"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "InputValidator",
+      "ns": "security"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "OutputEncoder",
+      "ns": "security"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "PasswordHasher",
+      "ns": "security"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "SecretsVault",
+      "ns": "security"
+    },
+    {
+      "blocked_framework": null,
+      "error": null,
+      "import_ok": true,
+      "name": "SignatureVerifier",
+      "ns": "security"
+    }
+  ],
+  "primitives_scanned": 124,
+  "summary": {
+    "blocked_framework_imports": 0,
+    "imported_clean": 122,
+    "non_framework_errors": 2,
+    "passed": true
+  }
+}

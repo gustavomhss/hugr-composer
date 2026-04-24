@@ -1,0 +1,38 @@
+# boot_test.log
+# command:  PYTHONPATH=. .venv/bin/python tests/test_boot.py
+# cwd:      skills/SKILL-001-fastapi-production
+# commit:   c0363e135ad3abcd3c45efd3b3d8c226c335dc1e
+# tree:     f2556ae40e2873f0c6352f1fe8370027e2515bdc
+# generated: 2026-04-24T22:18:28Z
+# grading:  100/100 tools boot cleanly
+# ---
+  PASS  add_api_fuzzer
+  PASS  add_api_monetization
+  PASS  add_api_replay_debugger
+  PASS  add_bola_guard
+  PASS  add_bulkhead_isolation
+  PASS  add_canary_tokens
+  PASS  add_chaos_testing
+  PASS  add_compliance_engine
+  PASS  add_cost_tracker
+  PASS  add_data_seeder
+  PASS  add_dependency_health_map
+  PASS  add_dlp_shield
+  PASS  add_dpop_tokens
+  PASS  add_graceful_shutdown
+  PASS  add_load_shedding
+  PASS  add_request_fingerprint
+  PASS  add_request_signing
+  PASS  add_request_tracing_ui
+  PASS  add_response_armor
+  PASS  add_retry_budget
+  PASS  add_runtime_sentinel
+  PASS  add_sbom_guardian
+  PASS  add_schema_enforcer
+  PASS  add_schema_evolution_guard
+  PASS  add_secret_rotation
+  PASS  add_tenant_onboarding
+
+============================================================
+Boot test result: 100/100 tools boot cleanly
+All tools boot cleanly.
