@@ -102,16 +102,13 @@ check staged primitives via `status="staged"` filter.
 
 ### Known issues
 
-- **2 pre-existing bulkhead API divergence tests** fail in
-  `test_add_bulkhead_isolation_behavior.py` (B-02 and B-04). Root
-  cause: test assumes a `Bulkhead(BulkheadConfig)` constructor that
-  predates the current `InMemoryBulkhead(name, *, max_concurrent_calls,
-  max_wait_duration_ms)` API. Not caused by v1.0 work; will be fixed
-  alongside the deferred `BulkheadAdapter.py` promotion sprint.
-  Documented in `FREEZE.md §2.8`.
-
-All other v1.0 gates green. Post-v1.0 items tracked in
-`FREEZE.md §2` (explicitly deferred) and `ROADMAP.md` (phase plan).
+- None at the v1.0 tag. The two bulkhead-behavior tests
+  (`test_b02_bulkhead_rejects_when_full`, `test_b04_bulkhead_status`)
+  that were a "Known issues" blocker in pre-freeze drafts now pass
+  against the `BulkheadAdapter` API promoted in Wave 1 — see
+  `FREEZE.md §1.6`.
+- Post-v1.0 items tracked in `FREEZE.md §2` (explicitly deferred)
+  and `ROADMAP.md` (phase plan).
 
 ### Breaking changes
 

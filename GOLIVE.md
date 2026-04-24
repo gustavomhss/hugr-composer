@@ -23,11 +23,19 @@
 | 1.4 | §E ratification block appended with today's date | `grep -E "Ratified 20[0-9]{2}-[0-9]{2}-[0-9]{2} by Gustavo" CONTRACT.md \| tail -1` shows current date | Gustavo |
 | 1.5 | `docs/decisions/0004-tier-lite.md` status flipped from "Proposed" to "Ratified" | `grep "Status: Ratified" docs/decisions/0004-tier-lite.md` | Claude (after 1.4) |
 
-## §2 — Promotion pipeline — no in-scope promotions (§1.6 of FREEZE)
+## §2 — Promotion pipeline — no tag-cut promotions
 
-Per FREEZE §1.6, v1.0 ships with zero new promotions. The only
-required §2 action is verifying the ledger matches the frozen-state
-claim.
+Scope note: "no promotions" here means "no new promotion work
+runs DURING the tag-cut sprint". The pre-freeze Wave 1 and Wave
+1.5 sprints landed several promotions (BulkheadAdapter +
+PubSub/InMemoryPubSub/Redis adapter + Billing/InMemoryBilling/
+Stripe adapter — see `FREEZE.md §1.6` + `§1.6.5`). Those are
+already committed and in-catalog at the point §2 runs; §2 only
+verifies the classifier output still matches the frozen claim.
+
+The only required §2 action is verifying the ledger matches the
+frozen-state claim — no new promote/classify/ledger regen
+runs.
 
 | # | Item | Done check | Owner |
 |---|---|---|---|
