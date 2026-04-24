@@ -84,7 +84,7 @@ A skill principal. Convention over Configuration para FastAPI.
  20  examples/ apps completos    (5 baseline + 10 mid + 5 adversarial, repo-root /examples/)
  20  benchmark specs             (plan 100.00, code 100.00)
 124  specs formais
- 36  contract rules (36/36 green)
+ 37  contract rules (37/37 green)
 ```
 
 ### Camadas do skill (arquitetura Rails-style)

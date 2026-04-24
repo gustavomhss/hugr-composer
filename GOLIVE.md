@@ -19,7 +19,7 @@
 |---|---|---|---|
 | 1.1 | FREEZE.md signed by Gustavo | `grep "Ratified.*by Gustavo" FREEZE.md` returns a real date (non-placeholder) | Gustavo |
 | 1.2 | §A12 amended in CONTRACT.md per 0004-tier-lite §3 (triage-pass clause) | `grep -q "triage pass" CONTRACT.md` + diff shows A12 text updated | Gustavo |
-| 1.3 | §B1.8 rule `_r_tier_lite_eligibility` wired into `engine/audit/contract_check.py` | `python -m engine.audit.contract_check` reports 36/36 green (§B1.7 + §B1.8 formally defined in CONTRACT; §B4.6 + §B4.7 drift-guard rules added pre-freeze) | Claude (landed) |
+| 1.3 | §B1.8 rule `_r_tier_lite_eligibility` wired into `engine/audit/contract_check.py` | `python -m engine.audit.contract_check` reports 37/37 green (§B1.7 + §B1.8 + §B2.6 + §B4.6 + §B4.7 all formally defined in CONTRACT; drift-guard rules added pre-freeze across Waves D-G) | Claude (landed) |
 | 1.4 | §E ratification block appended with today's date | `grep -E "Ratified 20[0-9]{2}-[0-9]{2}-[0-9]{2} by Gustavo" CONTRACT.md \| tail -1` shows current date | Gustavo |
 | 1.5 | `docs/decisions/0004-tier-lite.md` status flipped from "Proposed" to "Ratified" | `grep "Status: Ratified" docs/decisions/0004-tier-lite.md` | Claude (after 1.4) |
 
@@ -80,7 +80,7 @@ runs.
 | 5.1 | INVENTORY.md matches disk | `engine.inventory` writes INVENTORY.md; `git diff INVENTORY.md` is empty | Claude |
 | 5.2 | catalog.json `stable_hash` persisted + cited | `jq -r .stable_hash engine/index/catalog.json` returns 64-char hex; same value appears in CHANGELOG [1.0.0] block | Claude |
 | 5.3 | VERSION bumped to `1.0.0` | `cat VERSION` == `1.0.0` (exact) | Claude |
-| 5.4 | CHANGELOG.md `[1.0.0]` block complete | Cites: plan score, code score, 20/20 coverage, `stable_hash`, 124 primitives, 17 FastAPI + 2 provider adapters, 201 catalog tools, 20 examples, 36/36 contract | Claude |
+| 5.4 | CHANGELOG.md `[1.0.0]` block complete | Cites: plan score, code score, 20/20 coverage, `stable_hash`, 124 primitives, 17 FastAPI + 2 provider adapters, 201 catalog tools, 20 examples, 37/37 contract | Claude |
 | 5.5 | README.md current (score line + phase badge) | Score cited (100 plan / 100 code); phase badge shows `v1.0.0` | Claude |
 | 5.6 | SKILL.md v2 current (no stale counts) | `PYTHONPATH=. python -m engine.audit.contract_check` reports §B2.5 (shape) AND §B4.7 (counts) both green. There is no separate `engine.audit.skillmd_counts` command — §B2.5's `_r_skill_md_contract` enforces the shape contract; §B4.7's `_r_counts_sync` enforces the `## Overview` paragraph counts reconcile against `INVENTORY.md`. | Claude |
 | 5.7 | `docs/decisions/0004-tier-lite.md` status flipped to "Ratified YYYY-MM-DD" | `grep -E "Status: *Ratified 20" docs/decisions/0004-tier-lite.md` matches | Claude |
@@ -115,7 +115,7 @@ Stable_hash: <fill from `jq -r .stable_hash engine/index/catalog.json`>.
 Surface: 217 Maestro tools (201 catalog + 7 tier-1 + 9 tree),
 124 registered primitives, 17 FastAPI adapters + 2 provider adapters
 (redis PubSub + stripe Billing), 176 staged primitives discoverable,
-20 complete examples, 36/36 contract rules green.
+20 complete examples, 37/37 contract rules green.
 
 First stable release; tool/primitive names frozen (semver §A10).
 See CHANGELOG.md [1.0.0] + MIGRATION.md for details.
@@ -153,7 +153,7 @@ If any gate fails mid-run:
 1. Stop. Don't land a "partial pass" commit.
 2. Identify root cause: classifier regression? test flake? benchmark
    drop? Real bug in promotion?
-3. Fix at the level of the bug, not the test. Contract stays 36/36
+3. Fix at the level of the bug, not the test. Contract stays 37/37
    green; tests get real assertions, not skips.
 4. Re-run the failing gate. Only advance after it passes.
 5. If the fix requires deferring a scope item, that's a FREEZE.md

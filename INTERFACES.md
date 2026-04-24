@@ -247,10 +247,11 @@ loads the skill and exposes it to the running Maestro.
 
 ### §3.4 — Audit surface
 
-- `engine/audit/contract_check.py` — **36 machine-check rules at
+- `engine/audit/contract_check.py` — **37 machine-check rules at
   v1.0** (§B0.1..§B4.7; includes §B1.8 tier-lite, §B2.5 SKILL.md
-  Agent Skills contract, §B3.6 code-level harness, §B3.7 blind
-  harness, §B4.6 VERSION triplet, §B4.7 counts sync w/ recipes +
+  Agent Skills contract, §B2.6 tier1 runtime strings, §B3.6 code-
+  level harness, §B3.7 blind harness, §B4.6 VERSION triplet, §B4.7
+  counts sync w/ recipes +
   ledger). Exit 0 = green; any non-zero exit on `main` is a CI
   block. The CONTRACT.md §B bullet list is the binding spec; the
   rule count above reconciles to the length of the `RULES` tuple in

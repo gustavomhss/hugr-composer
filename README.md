@@ -23,7 +23,7 @@ Tools:     217   (201 catalog + 7 tier-1 + 9 tree dispatchers)
 Primitives: 124  (production, 17-FastAPI + 1-Redis + 1-Stripe adapters, 10-tier gate)
 Staged:    176   (core/venous/_extracted/, +42 quarantined, pre-audited pool)
 Benchmark: 100.00 plan · 100.00 code-level (20/20 specs × 100%)
-Contract:  36/36 green
+Contract:  37/37 green
 Examples:   20   (full spec coverage; /examples/01-20)
 ```
 

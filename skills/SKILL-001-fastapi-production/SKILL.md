@@ -58,7 +58,7 @@ invariants:
 4. **Compose.** For each requested capability: `fastapi_meta_search(query)` → `fastapi_meta_describe(id)` → `fastapi_meta_compose(primitives=...)`. Prefer `fastapi_auth(action=...)` for any auth branch instead of hunting individual slice tools.
 5. **Business.** Add domain-specific routes, models, and rules. Business logic (Aggregate + Specification) is authored by the Maestro, NOT by compose — compose refuses domain-shaped primitives by design.
 6. **Audit.** Two layers — do NOT conflate them:
-   - **Skill-kit integrity:** `fastapi_meta_audit` runs `engine.audit.contract_check` against the *skill tree itself* (the 36 binding rules in CONTRACT §A/§B). Close with `fastapi_meta_verify` which runs the 10-tier primitive gate. These validate that the HuGR kit is intact on disk; they do NOT validate the project you just emitted.
+   - **Skill-kit integrity:** `fastapi_meta_audit` runs `engine.audit.contract_check` against the *skill tree itself* (the 37 binding rules in CONTRACT §A/§B). Close with `fastapi_meta_verify` which runs the 10-tier primitive gate. These validate that the HuGR kit is intact on disk; they do NOT validate the project you just emitted.
    - **Emitted-project integrity:** the generated project ships its own `tests/` directory + pre-commit config. Run `pytest` inside the emitted project (or instruct the Maestro to) to validate runtime behaviour of the scaffold. This is out of scope for the meta tools by design.
 
 ## Tier-1 tool index
@@ -70,7 +70,7 @@ invariants:
 | `fastapi_meta_describe` | Full spec + examples for one catalog id. | After `search`, before invoking. |
 | `fastapi_meta_scaffold` | Emit a production FastAPI project tree. | Scaffold phase, once per session. |
 | `fastapi_meta_compose` | Wire primitives into `app/compositions/<slug>.py` exporting `install(app)`. | Compose phase, when no slice fits exactly. |
-| `fastapi_meta_audit` | Run `engine.audit.contract_check` on the skill tree (36 §A/§B rules). Skill-kit integrity ONLY; does not validate emitted projects. | Before declaring the kit sound; NOT as the sole gate on a generated project. |
+| `fastapi_meta_audit` | Run `engine.audit.contract_check` on the skill tree (37 §A/§B rules). Skill-kit integrity ONLY; does not validate emitted projects. | Before declaring the kit sound; NOT as the sole gate on a generated project. |
 | `fastapi_meta_verify` | 10-tier primitive quality gate on the registry. Skill-kit integrity ONLY. | After adding / editing a primitive in the kit. |
 | `fastapi_auth` | Tree dispatcher for 15 auth slice tools (bundle / slice / primitive granularities). | Any auth-related request. |
 
@@ -122,7 +122,7 @@ RESULT  {mode: "recipe_template", files: ["app/compositions/stripe_webhook.py"]}
 
 STEP 6  → audit
 TOOL    fastapi_meta_audit()        # skill-kit integrity
-RESULT  {36/36 green}
+RESULT  {37/37 green}
 # Emitted-project integrity — run the generated pytest suite:
 SHELL   cd /workspace/myapp && pytest -q
 RESULT  passed
@@ -168,7 +168,7 @@ ASSISTANT  "Adjusting the rate-limit window from the default 60s to your
 
 STEP 6  → audit
 TOOL    fastapi_meta_audit()        # skill-kit integrity
-RESULT  {36/36 green}
+RESULT  {37/37 green}
 # Emitted-project integrity — rerun the project's test suite:
 SHELL   cd /workspace/store && pytest -q
 RESULT  passed
@@ -215,7 +215,7 @@ STEP 5  → business (Maestro adds audit calls inside existing handlers)
 
 STEP 6  → audit
 TOOL    fastapi_meta_audit()        # skill-kit integrity
-RESULT  {36/36 green}
+RESULT  {37/37 green}
 # Emitted-project integrity — rerun the project's test suite:
 SHELL   cd /workspace/app && pytest -q
 RESULT  passed

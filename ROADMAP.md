@@ -98,7 +98,7 @@ the command says 125, the doc is wrong, not the command.
 | Recipes | 392 | Parsed from primitive `.md` `## Compose with:` sections |
 | Benchmark specs | 20 | 5 baseline / 10 mid / 5 adversarial |
 | Ledger entries | 219 | Post-Wave-1.5 triage state |
-| Contract rules passing | 36/36 | Machine-verified by `engine.audit.contract_check` |
+| Contract rules passing | 37/37 | Machine-verified by `engine.audit.contract_check` |
 | Plan-level benchmark | 100.00 | 20/20 specs, v3 best-of-ensemble |
 | Code-level benchmark | 100.00 | 20/20 specs, executable pytest rubric |
 | Rails-connected extend tools | 24/100 | Floor = 22 (§B1.3 non-regression) |
@@ -174,7 +174,7 @@ where possible; reviewer-enforced where not).
 - §A11 → audit agents use Opus; spec authoring / bulk refactors may
   use Sonnet.
 
-### §2.2 — CONTRACT §B — execution checklist (45 items spec'd; 36 machine-checked today)
+### §2.2 — CONTRACT §B — execution checklist (45 items spec'd; 37 machine-checked today)
 
 > **Two numbers, one source.** CONTRACT.md §B lists **45 items** as of
 > v1.0.0-rc.1 (count: `grep -cE '^#### B[0-9]' CONTRACT.md`).
@@ -1049,7 +1049,7 @@ each item are in `/GOLIVE.md §1-§6`.
 - [ ] No benchmark regression < 95 on any spec within 12h post-tag.
 - [ ] No unresolved `security@humangr.com` message within 24h (per
       SECURITY.md §Response SLA).
-- [ ] No `36/36 ALL GREEN` regression on `main` within 72h.
+- [ ] No `37/37 ALL GREEN` regression on `main` within 72h.
 
 ### §5.8 — Rollback decision tree (if critical surfaces)
 

@@ -9,8 +9,8 @@
     "stable_hash_short": "00cefc4cc477"
   },
   "contract": {
-    "rules_total": 36,
-    "rules_green": 36,
+    "rules_total": 37,
+    "rules_green": 37,
     "machine_check": "engine.audit.contract_check",
     "status": "ALL GREEN"
   },

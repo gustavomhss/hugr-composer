@@ -63,9 +63,9 @@ Rails-connected in Wave 1.5 — same tool count, but
 ### §1.2 — Quality gates (all machine-verifiable)
 
 - CONTRACT §A (12 inviolable rules, §A1..§A12) + §B (45 items
-  across Phases 0-7; 36 machine-checked today, the remainder are
+  across Phases 0-7; 37 machine-checked today, the remainder are
   §B5-§B7 post-v1.0 deferrals + §B1.4 subsumed by §B1.3's AST
-  scan) all green on every commit. Rule count cited: `36/36` at
+  scan) all green on every commit. Rule count cited: `37/37` at
   v1.0-rc.1; ratchets up as Phase-5/6/7 rules land per ROADMAP
   §2.2.7.
 - Plan-level benchmark: ≥ 70% overall on 20/20 specs. Current: 100.00.
@@ -273,7 +273,7 @@ No pre-existing test failures remain at v1.0.
 These MUST be true at the freeze commit:
 
 1. Git tree clean.
-2. CONTRACT **36/36 items green** (§B1.7 FastAPI adapter coverage +
+2. CONTRACT **37/37 items green** (§B1.7 FastAPI adapter coverage +
    §B1.8 tier-lite eligibility formally defined in §B; §B4.6 VERSION
    triplet sync + §B4.7 canonical counts sync added as part of the
    pre-freeze rigor audit).

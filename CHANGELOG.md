@@ -44,9 +44,10 @@ tool / primitive renames going forward (CONTRACT §A10).
   discoverable, not promoted. Wave 1.5 deleted 3 (+3 quarantined
   copies) that the new motor+adapter pair replaced.
 - **20 complete examples** at `/examples/` (5 baseline + 10 mid + 5 adversarial).
-- **36/36 CONTRACT rules green.** (34 pre-freeze + §B4.6 VERSION
-  triplet sync + §B4.7 canonical counts sync, both added as
-  drift-guard rules during the pre-freeze rigor audit.)
+- **37/37 CONTRACT rules green.** (34 pre-freeze + §B4.6 VERSION
+  triplet sync + §B4.7 canonical counts sync + §B2.6 tier1 runtime
+  strings — all added as drift-guard rules during the pre-freeze
+  rigor audits.)
 - **Catalog `stable_hash`: `00cefc4cc477...`** (full 64-char value:
   `00cefc4cc477618e737dbbddd375f8fb6cb0e3cecc3e63491685fa860c16f192`,
   in `engine/index/catalog.json`) — consumers pin this for session
@@ -122,8 +123,8 @@ bumps (v2.0+) may rename or remove; v1.x will only add.
 > This block is the engineering narrative for the three sprints that
 > fed into [1.0.0]. Each intermediate claim below (contract counts,
 > verdict names, staged totals) was accurate **at the moment of that
-> sprint's commit**. The consolidated final state — 36/36 contract,
-> action-focused verdict taxonomy, 179 staged + 45 quarantined, 17
+> sprint's commit**. The consolidated final state — 37/37 contract,
+> action-focused verdict taxonomy, 176 staged + 42 quarantined, 17
 > FastAPI adapters — is canonical in the [1.0.0] block above.
 > Intermediate discrepancies are preserved for audit provenance, not
 > for consumption by release readers.

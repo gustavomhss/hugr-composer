@@ -17,7 +17,7 @@
 | 0-12h | Benchmark nightly (both plan + code) | < 95 on any spec | Investigate regression; gate next commit behind root cause |
 | 0-24h | `SECURITY.md` email inbox | Any message | Acknowledge per SLA in `SECURITY.md` §Response SLA |
 | 0-48h | Install.sh on fresh Docker | Fail 2 nights in a row | Treat as hotfix-blocker |
-| 0-72h | Contract drift — any CI failure on `main` | Any `36/36 ALL GREEN` regression | Revert the offending commit immediately |
+| 0-72h | Contract drift — any CI failure on `main` | Any `37/37 ALL GREEN` regression | Revert the offending commit immediately |
 | 0-72h | User-reported scaffold errors (generated projects don't compile) | ≥ 3 reports of the same root cause | Hotfix-blocker |
 
 **Every morning during the 72h window:**
@@ -25,7 +25,7 @@
 ```bash
 # from repo root
 cd skills/SKILL-001-fastapi-production
-PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check   # must be 36/36
+PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check   # must be 37/37
 PYTHONPATH=. .venv/bin/python -m engine.index.manifest verify   # stable_hash unchanged
 PYTHONPATH=. .venv/bin/python -m engine.promotion.classify      # ledger sane
 ```
@@ -46,7 +46,7 @@ rewrite history. We ship a remediation tag.
    ```
    git checkout -b hotfix/v1.0.1 v1.0.0
    ```
-2. Fix the bug with minimum surface area. Contract MUST stay 36/36.
+2. Fix the bug with minimum surface area. Contract MUST stay 37/37.
 3. Update:
    - `VERSION` (skill dir) + `VERSION` (repo root) → `1.0.1`.
    - `CHANGELOG.md`: add `[1.0.1]` block under `### Fixed` with CVE

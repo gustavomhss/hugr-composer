@@ -14,7 +14,7 @@ Invariants:
     - Every action is fully reversible: a pre-flight copy of the
       affected trees is written to a temp dir; on any failure, the
       original state is restored.
-    - Contract must stay 36/36 green. A post-flight contract_check
+    - Contract must stay 37/37 green. A post-flight contract_check
       failure triggers automatic rollback.
     - Every promotion is one atomic commit — never batched.
 """

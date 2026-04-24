@@ -41,7 +41,7 @@ surfaces are MCP-registered and JIT-discoverable via
 | Quarantined primitives (rejected by extraction gate) | 42 | `find core/venous/_extracted/_quarantine -mindepth 2 -maxdepth 2 -type d \| wc -l` |
 | Provider adapters (`_adapters/{redis,stripe}/`) | 2 | `find core/venous/_adapters -maxdepth 2 -name '*Adapter.py' ! -path '*fastapi*' ! -name 'test_*' \| wc -l` |
 | Benchmark specs (Phase 3) | 20 | `find benchmarks/specs -name '*.md' ! -name 'README.md' \| wc -l` |
-| Contract items green | 36/36 | `PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check` |
+| Contract items green | 37/37 | `PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check` |
 | Extend tools primitive-connected | 24/100 | `jq '[.tools[] \| select(.verb=="add" and (.module_path \| startswith("adapt/extend/")) and (.primitives_used \| length > 0))] \| length' engine/index/catalog.json` |
 | Benchmark score (plan-level, best-of ensemble) | 100.00 | `jq '.overall' benchmarks/latest_score.json` |
 | Benchmark score (code-level, 20/20 specs) | 100.00 | `jq '.overall' benchmarks/code_level_latest.json` |
