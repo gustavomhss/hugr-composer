@@ -1,0 +1,406 @@
+{
+  "_meta": {
+    "command": ".venv/bin/python evidence/_harness/per_example_pytest_matrix.py",
+    "commit": "26e1cfe299940b16c439969eaf3ecd0ad16f2753",
+    "cwd": "repo root",
+    "generated": "2026-04-24T21:20:53Z",
+    "grading": "exit 0 iff 20 examples pass all 4 checks AND zero pytest failures",
+    "tree": "228d7181af5adb9688a9729ae542f5b4a3843809"
+  },
+  "checks": [
+    "app_py_present",
+    "test_py_present",
+    "app_imports_ok",
+    "pytest_passes"
+  ],
+  "examples_scanned": 20,
+  "per_example": [
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "01-todos-crud",
+      "pytest": {
+        "duration_s": 1.18,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 4,
+        "skipped": 0,
+        "summary_line": "4 passed in 0.29s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "02-webhook-sink",
+      "pytest": {
+        "duration_s": 1.1,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 5,
+        "skipped": 0,
+        "summary_line": "5 passed in 0.36s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "03-rate-limited-api",
+      "pytest": {
+        "duration_s": 0.99,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 5,
+        "skipped": 0,
+        "summary_line": "5 passed in 0.27s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "04-realtime-chat",
+      "pytest": {
+        "duration_s": 0.96,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 5,
+        "skipped": 0,
+        "summary_line": "5 passed in 0.25s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "05-rbac-audit",
+      "pytest": {
+        "duration_s": 1.05,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 5,
+        "skipped": 0,
+        "summary_line": "5 passed in 0.29s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "06-auth-saas",
+      "pytest": {
+        "duration_s": 2.08,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 7,
+        "skipped": 0,
+        "summary_line": "7 passed in 1.28s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "07-multi-tenant-admin",
+      "pytest": {
+        "duration_s": 1.05,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 5,
+        "skipped": 0,
+        "summary_line": "5 passed in 0.27s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "08-stripe-billing",
+      "pytest": {
+        "duration_s": 1.0,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 5,
+        "skipped": 0,
+        "summary_line": "5 passed in 0.26s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "09-event-sourced-orders",
+      "pytest": {
+        "duration_s": 0.98,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 5,
+        "skipped": 0,
+        "summary_line": "5 passed in 0.26s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "10-llm-agent",
+      "pytest": {
+        "duration_s": 0.99,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 5,
+        "skipped": 0,
+        "summary_line": "5 passed in 0.25s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "11-mobile-backend",
+      "pytest": {
+        "duration_s": 0.96,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 5,
+        "skipped": 0,
+        "summary_line": "5 passed in 0.25s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "12-compliance-log-aggregator",
+      "pytest": {
+        "duration_s": 1.07,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 5,
+        "skipped": 0,
+        "summary_line": "5 passed in 0.27s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "13-graphql-over-rest",
+      "pytest": {
+        "duration_s": 1.23,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 5,
+        "skipped": 0,
+        "summary_line": "5 passed in 0.36s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "14-workflow-orchestrator",
+      "pytest": {
+        "duration_s": 1.14,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 4,
+        "skipped": 0,
+        "summary_line": "4 passed in 0.33s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "15-bi-export-service",
+      "pytest": {
+        "duration_s": 1.01,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 4,
+        "skipped": 0,
+        "summary_line": "4 passed in 0.26s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "16-exactly-once-weak-broker",
+      "pytest": {
+        "duration_s": 1.01,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 4,
+        "skipped": 0,
+        "summary_line": "4 passed in 0.25s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "17-stateless-session-aware",
+      "pytest": {
+        "duration_s": 1.01,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 4,
+        "skipped": 0,
+        "summary_line": "4 passed in 0.25s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "18-lockfree-serializable",
+      "pytest": {
+        "duration_s": 1.12,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 4,
+        "skipped": 0,
+        "summary_line": "4 passed in 0.37s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "19-ml-inference-pool",
+      "pytest": {
+        "duration_s": 1.1,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 4,
+        "skipped": 0,
+        "summary_line": "4 passed in 0.32s"
+      }
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "app_imports_ok": true,
+        "app_py_present": true,
+        "pytest_passes": true,
+        "test_py_present": true
+      },
+      "import_note": "ok",
+      "name": "20-innocent-counter",
+      "pytest": {
+        "duration_s": 1.06,
+        "exit_code": 0,
+        "failed": 0,
+        "passed": 4,
+        "skipped": 0,
+        "summary_line": "4 passed in 0.28s"
+      }
+    }
+  ],
+  "summary": {
+    "examples_pass": 20,
+    "passed": true,
+    "total_examples": 20,
+    "total_tests_failed": 0,
+    "total_tests_passed": 94
+  }
+}

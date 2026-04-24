@@ -1,0 +1,87 @@
+{
+  "_meta": {
+    "command": ".venv/bin/python evidence/_harness/generator_idempotence.py",
+    "commit": "26e1cfe299940b16c439969eaf3ecd0ad16f2753",
+    "cwd": "repo root",
+    "excluded_from_diff": [
+      ".venous_manifest.json",
+      "__pycache__"
+    ],
+    "excluded_from_diff_reason": ".venous_manifest.json records `copied_at` host timestamp; known non-determinism reported under /evidence/not-yet-covered.md",
+    "generated": "2026-04-24T21:26:00Z",
+    "grading": "exit 0 iff every profile yields byte-identical trees across two orchestrator runs (excluding host-time files listed below)",
+    "tree": "228d7181af5adb9688a9729ae542f5b4a3843809"
+  },
+  "per_profile": [
+    {
+      "byte_identical": true,
+      "diff_count": 0,
+      "first_diffs": [],
+      "profile": "minimal",
+      "run_a": {
+        "duration_s": 0.28,
+        "files_hashed": 41,
+        "files_on_disk": 56,
+        "stderr_tail": "es_Item\": {\"files\": 1, \"status\": \"done\"}, \"app\": {\"files\": 1, \"status\": \"done\"}, \"env_example\": {\"files\": 1, \"status\": \"done\"}, \"readme\": {\"files\": 1, \"status\": \"done\"}, \"gitignore\": {\"files\": 1, \"status\": \"done\"}, \"prestart\": {\"files\": 1, \"status\": \"done\"}, \"requirements\": {\"files\": 1, \"status\": \"done\"}, \"scaffold_venous\": {\"files\": 1, \"status\": \"done\"}}, \"total_files\": 26, \"profile\": \"minimal\", \"profile_description\": \"Bare minimum: 1+ models, health check, no auth, no middleware. ~15 files.\"}\n",
+        "tree_sha256": "03674f8c5021071c59e93524af47ca27a336555d3c8e29c3e442e03652501752"
+      },
+      "run_b": {
+        "duration_s": 0.25,
+        "files_hashed": 41,
+        "files_on_disk": 56,
+        "stderr_tail": "es_Item\": {\"files\": 1, \"status\": \"done\"}, \"app\": {\"files\": 1, \"status\": \"done\"}, \"env_example\": {\"files\": 1, \"status\": \"done\"}, \"readme\": {\"files\": 1, \"status\": \"done\"}, \"gitignore\": {\"files\": 1, \"status\": \"done\"}, \"prestart\": {\"files\": 1, \"status\": \"done\"}, \"requirements\": {\"files\": 1, \"status\": \"done\"}, \"scaffold_venous\": {\"files\": 1, \"status\": \"done\"}}, \"total_files\": 26, \"profile\": \"minimal\", \"profile_description\": \"Bare minimum: 1+ models, health check, no auth, no middleware. ~15 files.\"}\n",
+        "tree_sha256": "03674f8c5021071c59e93524af47ca27a336555d3c8e29c3e442e03652501752"
+      }
+    },
+    {
+      "byte_identical": true,
+      "diff_count": 0,
+      "first_diffs": [],
+      "profile": "api",
+      "run_a": {
+        "duration_s": 0.28,
+        "files_hashed": 67,
+        "files_on_disk": 86,
+        "stderr_tail": "tus\": \"done\"}, \"gitignore\": {\"files\": 1, \"status\": \"done\"}, \"initial_data\": {\"files\": 1, \"status\": \"done\"}, \"prestart\": {\"files\": 1, \"status\": \"done\"}, \"requirements\": {\"files\": 1, \"status\": \"done\"}, \"test_infra\": {\"files\": 2, \"status\": \"done\"}, \"test_suite\": {\"files\": 5, \"status\": \"done\"}, \"scaffold_venous\": {\"files\": 1, \"status\": \"done\"}}, \"total_files\": 53, \"profile\": \"api\", \"profile_description\": \"Production API: models + auth + middleware + health. ~50 files. No deployment/observability.\"}\n",
+        "tree_sha256": "e9f0ca411a51eb9e22fb0682fb5e76a3acf59447569fb7c127cb576045dac0d6"
+      },
+      "run_b": {
+        "duration_s": 0.25,
+        "files_hashed": 67,
+        "files_on_disk": 86,
+        "stderr_tail": "tus\": \"done\"}, \"gitignore\": {\"files\": 1, \"status\": \"done\"}, \"initial_data\": {\"files\": 1, \"status\": \"done\"}, \"prestart\": {\"files\": 1, \"status\": \"done\"}, \"requirements\": {\"files\": 1, \"status\": \"done\"}, \"test_infra\": {\"files\": 2, \"status\": \"done\"}, \"test_suite\": {\"files\": 5, \"status\": \"done\"}, \"scaffold_venous\": {\"files\": 1, \"status\": \"done\"}}, \"total_files\": 53, \"profile\": \"api\", \"profile_description\": \"Production API: models + auth + middleware + health. ~50 files. No deployment/observability.\"}\n",
+        "tree_sha256": "e9f0ca411a51eb9e22fb0682fb5e76a3acf59447569fb7c127cb576045dac0d6"
+      }
+    },
+    {
+      "byte_identical": true,
+      "diff_count": 0,
+      "first_diffs": [],
+      "profile": "full",
+      "run_a": {
+        "duration_s": 0.3,
+        "files_hashed": 79,
+        "files_on_disk": 102,
+        "stderr_tail": ": 1, \"status\": \"done\"}, \"email_utils\": {\"files\": 2, \"status\": \"done\"}, \"initial_data\": {\"files\": 1, \"status\": \"done\"}, \"prestart\": {\"files\": 1, \"status\": \"done\"}, \"requirements\": {\"files\": 1, \"status\": \"done\"}, \"test_infra\": {\"files\": 2, \"status\": \"done\"}, \"test_suite\": {\"files\": 5, \"status\": \"done\"}, \"scaffold_venous\": {\"files\": 1, \"status\": \"done\"}}, \"total_files\": 65, \"profile\": \"full\", \"profile_description\": \"Everything: auth + middleware + deployment + observability + testing. ~80 files.\"}\n",
+        "tree_sha256": "7763c4144de892bb648b397acfccb8209bc6cbb77c9def91f119ddc75d620180"
+      },
+      "run_b": {
+        "duration_s": 0.26,
+        "files_hashed": 79,
+        "files_on_disk": 102,
+        "stderr_tail": ": 1, \"status\": \"done\"}, \"email_utils\": {\"files\": 2, \"status\": \"done\"}, \"initial_data\": {\"files\": 1, \"status\": \"done\"}, \"prestart\": {\"files\": 1, \"status\": \"done\"}, \"requirements\": {\"files\": 1, \"status\": \"done\"}, \"test_infra\": {\"files\": 2, \"status\": \"done\"}, \"test_suite\": {\"files\": 5, \"status\": \"done\"}, \"scaffold_venous\": {\"files\": 1, \"status\": \"done\"}}, \"total_files\": 65, \"profile\": \"full\", \"profile_description\": \"Everything: auth + middleware + deployment + observability + testing. ~80 files.\"}\n",
+        "tree_sha256": "7763c4144de892bb648b397acfccb8209bc6cbb77c9def91f119ddc75d620180"
+      }
+    }
+  ],
+  "profiles_tested": [
+    "minimal",
+    "api",
+    "full"
+  ],
+  "summary": {
+    "passed": true,
+    "profiles_idempotent": 3,
+    "total_profiles": 3
+  }
+}
