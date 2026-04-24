@@ -133,12 +133,13 @@ def _r_readme_md() -> tuple[bool, str]:
         return ok, msg
     body = (REPO_ROOT / "README.md").read_text()
     lines = body.count("\n")
-    # CONTRACT §B0.5 says 80 is a hard limit. Prior rule threshold of
-    # 120 let the checker pass a README the DoD would reject —
-    # Codex v3 M2 flagged the drift. Keep the rule and the contract
-    # in lockstep; README is currently 79 lines so this is safe.
-    if lines > 80:
-        return False, f"README.md exceeds 80-line hard budget ({lines} lines)"
+    # CONTRACT §B0.5 hard limit. Pre-v1.0 was 80; Wave-F M3 raised to
+    # 100 because Wave-E added 5 machine-asserted surface-count lines
+    # to the Current-status block, leaving the README sitting at 79/80
+    # with no headroom (Sonnet parallel audit). The rule and the
+    # contract move together — 100 matches CONTRACT §B0.5 Quality note.
+    if lines > 100:
+        return False, f"README.md exceeds 100-line hard budget ({lines} lines)"
     for link in ("PRODUCT.md", "ROADMAP.md", "CONTRACT.md"):
         if link not in body:
             return False, f"README.md missing link to {link}"
@@ -1827,7 +1828,7 @@ RULES: list[Rule] = [
     Rule("B0.2", 0, "ROADMAP.md honest + phased", _r_roadmap_md),
     Rule("B0.3", 0, "CONTRACT.md (this)", _r_contract_md),
     Rule("B0.4", 0, "SKILL.md ground-truth honest", _r_skillmd_honest),
-    Rule("B0.5", 0, "README.md ≤80 lines + links", _r_readme_md),
+    Rule("B0.5", 0, "README.md ≤100 lines + links", _r_readme_md),
     Rule("B0.6", 0, "CLAUDE memory pointer", _r_claude_memory),
     Rule("B0.7", 0, "No stub tests under /benchmark/", _r_benchmark_no_stubs),
     Rule("B0.8", 0, ".gitignore covers artefacts", _r_gitignore_artefacts),
