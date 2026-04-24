@@ -137,10 +137,12 @@ def generate_app(
 
 
         # Disable Swagger UI and OpenAPI schema in production (SEC-08).
+        # Docs paths follow settings.API_V1_STR so a runtime prefix
+        # change (via .env) moves them consistently.
         _is_prod = settings.ENVIRONMENT == "production"
-        _openapi_url = None if _is_prod else f"{prefix}/openapi.json"
-        _docs_url = None if _is_prod else f"{prefix}/docs"
-        _redoc_url = None if _is_prod else f"{prefix}/redoc"
+        _openapi_url = None if _is_prod else f"{{settings.API_V1_STR}}/openapi.json"
+        _docs_url = None if _is_prod else f"{{settings.API_V1_STR}}/docs"
+        _redoc_url = None if _is_prod else f"{{settings.API_V1_STR}}/redoc"
 
         app = FastAPI(
             title="{name}",
@@ -162,7 +164,11 @@ def generate_app(
         app.include_router(health_router, tags=["health"])
 
         # --- API routes under prefix ---
-        app.include_router(api_router, prefix="{prefix}")
+        # Reads settings.API_V1_STR so the prefix can be changed via
+        # .env / env vars at runtime without regenerating. The
+        # emit-time `prefix` arg controls the DEFAULT value (written
+        # into generated config.py), not the only-supported value.
+        app.include_router(api_router, prefix=settings.API_V1_STR)
     """).format(
         sentry_import=sentry_import,
         sentry_init=sentry_init,

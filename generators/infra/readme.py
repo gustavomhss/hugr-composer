@@ -57,8 +57,8 @@ def generate_readme(
         # 3. Run database migrations
         docker compose exec app alembic upgrade head
 
-        # 4. Open API docs
-        open http://localhost:8000/docs
+        # 4. Open API docs (under your configured API prefix)
+        open http://localhost:8000{prefix}/docs
         ```
 
         ### Without Docker
@@ -110,8 +110,8 @@ def generate_readme(
 
         | URL | Description |
         |-----|-------------|
-        | [`/docs`](http://localhost:8000/docs) | Swagger UI (interactive) |
-        | [`/redoc`](http://localhost:8000/redoc) | ReDoc (read-only) |
+        | [`{prefix}/docs`](http://localhost:8000{prefix}/docs) | Swagger UI (interactive) |
+        | [`{prefix}/redoc`](http://localhost:8000{prefix}/redoc) | ReDoc (read-only) |
         | [`/healthz`](http://localhost:8000/healthz) | Liveness probe (app booted) |
         | [`/readyz`](http://localhost:8000/readyz) | Readiness probe (DB reachable) |
         | [`/startupz`](http://localhost:8000/startupz) | Startup probe (k8s-style) |

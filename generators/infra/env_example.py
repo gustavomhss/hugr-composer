@@ -19,6 +19,7 @@ def generate_env_example(
     with_redis: bool = False,
     with_smtp: bool = True,
     with_sentry: bool = False,
+    prefix: str = "/api/v1",
 ) -> dict:
     """Generate a .env.example showing all required env vars with safe placeholders.
 
@@ -61,7 +62,7 @@ def generate_env_example(
     """))
 
     # --- Application ---
-    sections.append(textwrap.dedent("""\
+    sections.append(textwrap.dedent(f"""\
         # =============================================================================
         # Application
         # =============================================================================
@@ -77,8 +78,10 @@ def generate_env_example(
         # Display name used in API docs and email templates.
         PROJECT_NAME=my-app
 
-        # URL prefix for all API routes.
-        API_V1_STR=/api/v1
+        # URL prefix for all API routes. Matches the `prefix` arg
+        # threaded through generate_project(...); runtime-adjustable
+        # by editing this value — main.py reads settings.API_V1_STR.
+        API_V1_STR={prefix}
 
         # Enable debug mode (never true in production).
         DEBUG=false
