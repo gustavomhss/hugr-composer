@@ -896,37 +896,63 @@ test -f benchmarks/code_level_score.json
 
 #### B4.7 — Canonical counts sync
 
-> Narrative docs (CLAUDE / STATUS / ROADMAP / CHANGELOG) carry
-> counts that MUST reconcile against the machine-generated
-> `INVENTORY.md`. Pre-freeze we had CLAUDE.md saying "194 staged",
-> INVENTORY saying "181 staged" — the kind of drift that destroys
-> trust in every other number in the doc. §B4.7 makes hand-
-> maintained counts CI-rejected.
+> Narrative docs across the repo carry counts that MUST reconcile
+> against the machine-generated `INVENTORY.md` + `ledger.json`.
+> Pre-freeze we had CLAUDE.md saying "194 staged", INVENTORY saying
+> "181 staged" — the kind of drift that destroys trust in every other
+> number in the doc. §B4.7 makes hand-maintained counts CI-rejected.
+> Wave-D H5 expanded the rule to cover FREEZE and INTERFACES after
+> the recipe count drifted to 385 in INTERFACES while the catalog
+> + ROADMAP were at 392; Wave-E H2 reconciled this prose to match.
 
 - **DoD:**
   - `skills/SKILL-001-fastapi-production/INVENTORY.md` is machine-
-    generated; headline cites four canonical counts:
-    `N registered primitives`, `N staged primitives`,
-    `plus N quarantined`, `N FastAPI adapters`.
-  - Rule `_r_counts_sync` parses those four numbers from INVENTORY
-    AND searches for four specific token patterns in each of
-    `CLAUDE.md`, `STATUS.md`, `ROADMAP.md`,
-    `CHANGELOG.md [1.0.0]`.
+    generated; it is the canonical source for registered / staged /
+    quarantined / adapter / recipe / generator counts. The
+    classifier's `ledger.json` is the canonical source for the
+    ledger-size total plus per-verdict subtotals
+    (`NEEDS_CALLER`, `EXTRACT_MOTOR_PAIR`, …).
+  - Rule `_r_counts_sync` parses INVENTORY + `ledger.json`, then
+    searches for specific token patterns in **seven** narrative
+    docs:
+      1. `CLAUDE.md` — 4 tokens (registered / staged / quarantined /
+         adapters).
+      2. `STATUS.md` — 4 tokens (same four counts, table row shape).
+      3. `ROADMAP.md` — 6 tokens (prior four + `Recipes` +
+         `Ledger entries`).
+      4. `CHANGELOG.md` **inside the `[1.0.0]` section body** —
+         3 tokens (registered / adapters / staged).
+      5. `SKILL.md` **inside the `## Overview` paragraph only** —
+         1 combined token (`{registered} registered + {staged}
+         staged`); transcripts deliberately not rule-checked.
+      6. `FREEZE.md` — 2 tokens (`{ledger}-entry triage ledger`,
+         `{needs_caller} NEEDS_CALLER items`).
+      7. `INTERFACES.md` — 1 token (`**{recipes} recipes**`).
   - Any mismatch = CI fail with a precise list of `expected {tok}`
-    lines per missing doc.
+    lines per missing doc. The error message shows the exact token
+    verbatim so authors can find-and-replace without guessing.
 - **Invariants:**
-  - Counts are NEVER hand-edited in the four narrative docs;
-    regenerate INVENTORY via `python -m engine.inventory` and
+  - Counts are NEVER hand-edited in the seven narrative docs;
+    regenerate INVENTORY via `python -m engine.inventory`, regenerate
+    `ledger.json` via `python -m engine.promotion.classify`, then
     update the narrative docs via the token-replacement patterns
-    §4.7 enforces.
-  - Adding a new canonical count (e.g. "provider adapters") =
-    schema change: must be added to INVENTORY emitter AND to
-    `_r_counts_sync` AND to every narrative doc, all in one commit.
-- **Completeness:** Four canonical counts covered at v1.0; the rule
-  is extensible (token list driven by `canonical_tokens` dict).
+    `_r_counts_sync` enforces.
+  - Adding a new canonical count (e.g. "provider adapters" in the
+    Overview) = schema change: add it to the INVENTORY emitter (or
+    `ledger.json` if verdict-derived) AND to `_r_counts_sync`'s
+    `required_tokens` dict AND to every narrative doc the new count
+    belongs in, all in one commit.
+  - `_r_counts_sync` is the single check that binds the seven
+    narrative surfaces; §B0.4 handles body-prose tool-count drift
+    inside SKILL.md only, and §B2.5 handles SKILL.md shape.
+- **Completeness:** All eight count dimensions (registered / staged /
+  quarantined / adapters / recipes / ledger / NEEDS_CALLER /
+  EXTRACT_MOTOR_PAIR) flow from a machine source to exactly the
+  narrative surfaces listed above; the rule is extensible — add a
+  key to `required_tokens` to cover a new surface.
 - **Quality (SOTA):** The rule's error message shows the exact
-  expected token verbatim, including whitespace — so doc authors
-  can find-and-replace without guessing syntax.
+  expected token verbatim, including whitespace and punctuation —
+  so doc authors can find-and-replace without guessing syntax.
 
 **Phase 4 exit criterion:**
 ```
