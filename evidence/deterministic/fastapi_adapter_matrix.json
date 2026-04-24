@@ -1,0 +1,311 @@
+{
+  "_meta": {
+    "command": ".venv/bin/python evidence/_harness/fastapi_adapter_matrix.py",
+    "commit": "3f98703247dfc73d211588b6b3ae57a36337c0b4",
+    "cwd": "repo root",
+    "generated": "2026-04-24T21:16:10Z",
+    "grading": "exit 0 iff 17 adapters pass the 4 REQUIRED checks (imports_fastapi is informative only)",
+    "tree": "f65bb03b3a71832495501beb3491c5ead229ca3c"
+  },
+  "adapters_scanned": 17,
+  "checks": [
+    "adapter_py_present",
+    "has_di_entry",
+    "has_test_file",
+    "wires_registered_primitive",
+    "imports_fastapi"
+  ],
+  "per_adapter": [
+    {
+      "all_required_pass": true,
+      "checks": {
+        "adapter_py_present": true,
+        "has_di_entry": true,
+        "has_test_file": true,
+        "imports_fastapi": true,
+        "wires_registered_primitive": true
+      },
+      "install_signature": "install(app)",
+      "name": "AuditLogAdapter",
+      "test_file_path": "skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/test_AuditLogAdapter.py",
+      "wrapped_primitives": [
+        "compliance.TamperEvidentAuditLog"
+      ]
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "adapter_py_present": true,
+        "has_di_entry": true,
+        "has_test_file": true,
+        "imports_fastapi": true,
+        "wires_registered_primitive": true
+      },
+      "install_signature": "class BulkheadMiddleware(BaseHTTPMiddleware)",
+      "name": "BulkheadAdapter",
+      "test_file_path": "skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/test_BulkheadAdapter.py",
+      "wrapped_primitives": [
+        "resiliency.Bulkhead"
+      ]
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "adapter_py_present": true,
+        "has_di_entry": true,
+        "has_test_file": true,
+        "imports_fastapi": true,
+        "wires_registered_primitive": true
+      },
+      "install_signature": "install(app)",
+      "name": "CircuitBreakerAdapter",
+      "test_file_path": "skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/test_CircuitBreakerAdapter.py",
+      "wrapped_primitives": [
+        "resiliency.CircuitBreaker"
+      ]
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "adapter_py_present": true,
+        "has_di_entry": true,
+        "has_test_file": true,
+        "imports_fastapi": true,
+        "wires_registered_primitive": true
+      },
+      "install_signature": "install(app)",
+      "name": "CostTrackerAdapter",
+      "test_file_path": "skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/test_CostTrackerAdapter.py",
+      "wrapped_primitives": [
+        "resiliency.CostTracker"
+      ]
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "adapter_py_present": true,
+        "has_di_entry": true,
+        "has_test_file": true,
+        "imports_fastapi": true,
+        "wires_registered_primitive": true
+      },
+      "install_signature": "install(app)",
+      "name": "EventSourcedStoreAdapter",
+      "test_file_path": "skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/test_EventSourcedStoreAdapter.py",
+      "wrapped_primitives": [
+        "events.EventSourcedStore"
+      ]
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "adapter_py_present": true,
+        "has_di_entry": true,
+        "has_test_file": true,
+        "imports_fastapi": true,
+        "wires_registered_primitive": true
+      },
+      "install_signature": "install(app)",
+      "name": "FeatureToggleAdapter",
+      "test_file_path": "skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/test_FeatureToggleAdapter.py",
+      "wrapped_primitives": [
+        "flags.FeatureToggle"
+      ]
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "adapter_py_present": true,
+        "has_di_entry": true,
+        "has_test_file": true,
+        "imports_fastapi": true,
+        "wires_registered_primitive": true
+      },
+      "install_signature": "install(app)",
+      "name": "GracefulShutdownAdapter",
+      "test_file_path": "skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/test_GracefulShutdownAdapter.py",
+      "wrapped_primitives": [
+        "resiliency.GracefulShutdown"
+      ]
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "adapter_py_present": true,
+        "has_di_entry": true,
+        "has_test_file": true,
+        "imports_fastapi": true,
+        "wires_registered_primitive": true
+      },
+      "install_signature": "install(app)",
+      "name": "LoadShedderAdapter",
+      "test_file_path": "skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/test_LoadShedderAdapter.py",
+      "wrapped_primitives": [
+        "resiliency.LoadShedder"
+      ]
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "adapter_py_present": true,
+        "has_di_entry": true,
+        "has_test_file": true,
+        "imports_fastapi": true,
+        "wires_registered_primitive": true
+      },
+      "install_signature": "install(app)",
+      "name": "OAuth2Adapter",
+      "test_file_path": "skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/test_OAuth2Adapter.py",
+      "wrapped_primitives": [
+        "auth.SessionStore",
+        "auth.TokenIntrospector"
+      ]
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "adapter_py_present": true,
+        "has_di_entry": true,
+        "has_test_file": true,
+        "imports_fastapi": true,
+        "wires_registered_primitive": true
+      },
+      "install_signature": "install(app)",
+      "name": "RateLimiterAdapter",
+      "test_file_path": "skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/test_RateLimiterAdapter.py",
+      "wrapped_primitives": [
+        "resiliency.RateLimiter"
+      ]
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "adapter_py_present": true,
+        "has_di_entry": true,
+        "has_test_file": true,
+        "imports_fastapi": true,
+        "wires_registered_primitive": true
+      },
+      "install_signature": null,
+      "name": "RequestGuardAdapter",
+      "test_file_path": "skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/test_RequestGuardAdapter.py",
+      "wrapped_primitives": [
+        "auth.CurrentPrincipal",
+        "auth.RequestGuard"
+      ]
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "adapter_py_present": true,
+        "has_di_entry": true,
+        "has_test_file": true,
+        "imports_fastapi": true,
+        "wires_registered_primitive": true
+      },
+      "install_signature": "install(app)",
+      "name": "RetryPolicyAdapter",
+      "test_file_path": "skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/test_RetryPolicyAdapter.py",
+      "wrapped_primitives": [
+        "resiliency.RetryPolicy"
+      ]
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "adapter_py_present": true,
+        "has_di_entry": true,
+        "has_test_file": true,
+        "imports_fastapi": true,
+        "wires_registered_primitive": true
+      },
+      "install_signature": "install(app)",
+      "name": "SagaAdapter",
+      "test_file_path": "skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/test_SagaAdapter.py",
+      "wrapped_primitives": [
+        "events.SagaOrchestrator"
+      ]
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "adapter_py_present": true,
+        "has_di_entry": true,
+        "has_test_file": true,
+        "imports_fastapi": true,
+        "wires_registered_primitive": true
+      },
+      "install_signature": "install(app)",
+      "name": "TotpVerifierAdapter",
+      "test_file_path": "skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/test_TotpVerifierAdapter.py",
+      "wrapped_primitives": [
+        "auth.TotpVerifier"
+      ]
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "adapter_py_present": true,
+        "has_di_entry": true,
+        "has_test_file": true,
+        "imports_fastapi": false,
+        "wires_registered_primitive": true
+      },
+      "install_signature": null,
+      "name": "UnitOfWorkAdapter",
+      "test_file_path": "skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/test_UnitOfWorkAdapter.py",
+      "wrapped_primitives": [
+        "data.UnitOfWork"
+      ]
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "adapter_py_present": true,
+        "has_di_entry": true,
+        "has_test_file": true,
+        "imports_fastapi": true,
+        "wires_registered_primitive": true
+      },
+      "install_signature": "install(app)",
+      "name": "WebhookReceiverAdapter",
+      "test_file_path": "skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/test_WebhookReceiverAdapter.py",
+      "wrapped_primitives": [
+        "compliance.AuditEvent",
+        "events.IdempotentConsumer",
+        "events.InboxDeduplicator",
+        "events.TransactionalOutbox",
+        "security.SignatureVerifier"
+      ]
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "adapter_py_present": true,
+        "has_di_entry": true,
+        "has_test_file": true,
+        "imports_fastapi": true,
+        "wires_registered_primitive": true
+      },
+      "install_signature": "install(app)",
+      "name": "WorkflowAdapter",
+      "test_file_path": "skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/test_WorkflowAdapter.py",
+      "wrapped_primitives": [
+        "jobs.DurableTimer",
+        "jobs.WorkflowRun"
+      ]
+    }
+  ],
+  "summary": {
+    "all_pass": 17,
+    "check_coverage_pct": {
+      "adapter_py_present": 100.0,
+      "has_di_entry": 100.0,
+      "has_test_file": 100.0,
+      "imports_fastapi": 94.12,
+      "wires_registered_primitive": 100.0
+    },
+    "passed": true,
+    "total": 17
+  }
+}

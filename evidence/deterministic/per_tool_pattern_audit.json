@@ -1,0 +1,2162 @@
+{
+  "_meta": {
+    "command": ".venv/bin/python evidence/_harness/per_tool_pattern_audit.py",
+    "commit": "3f98703247dfc73d211588b6b3ae57a36337c0b4",
+    "cwd": "repo root",
+    "generated": "2026-04-24T21:12:31Z",
+    "grading": "exit 0 iff every tool satisfies its category's REQUIRED patterns",
+    "tree": "f65bb03b3a71832495501beb3491c5ead229ca3c"
+  },
+  "patterns": [
+    "mcp_tool_dict",
+    "entry_function",
+    "validate_project_dir",
+    "ensure_prerequisites",
+    "dry_run_path",
+    "fingerprint_noop",
+    "ast_parse_validation",
+    "elapsed_ms",
+    "lazy_imports"
+  ],
+  "per_category_requirements": {
+    "evolve": [
+      "dry_run_path",
+      "elapsed_ms",
+      "ensure_prerequisites",
+      "entry_function",
+      "fingerprint_noop",
+      "lazy_imports",
+      "mcp_tool_dict",
+      "validate_project_dir"
+    ],
+    "extend": [
+      "ast_parse_validation",
+      "dry_run_path",
+      "elapsed_ms",
+      "ensure_prerequisites",
+      "entry_function",
+      "fingerprint_noop",
+      "lazy_imports",
+      "mcp_tool_dict",
+      "validate_project_dir"
+    ],
+    "operate": [
+      "elapsed_ms",
+      "entry_function",
+      "lazy_imports",
+      "mcp_tool_dict"
+    ],
+    "proactive": [
+      "elapsed_ms",
+      "entry_function",
+      "lazy_imports",
+      "mcp_tool_dict"
+    ],
+    "verify": [
+      "elapsed_ms",
+      "entry_function",
+      "lazy_imports",
+      "mcp_tool_dict"
+    ]
+  },
+  "per_tool": [
+    {
+      "category": "evolve",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": false,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/evolve/add_event_driven.py"
+    },
+    {
+      "category": "evolve",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": false,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/evolve/add_i18n.py"
+    },
+    {
+      "category": "evolve",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": false,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/evolve/add_migration_data.py"
+    },
+    {
+      "category": "evolve",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/evolve/extract_service.py"
+    },
+    {
+      "category": "evolve",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": false,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/evolve/generate_admin_panel.py"
+    },
+    {
+      "category": "evolve",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/evolve/generate_docs.py"
+    },
+    {
+      "category": "evolve",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": false,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/evolve/generate_sdk.py"
+    },
+    {
+      "category": "evolve",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/evolve/refactor_model.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/api_design/add_api_deprecation.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/api_design/add_api_versioning.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/api_design/add_batch_endpoint.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/api_design/add_cqrs.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/api_design/add_graphql.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/api_design/add_graphql_subscriptions.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/api_design/add_long_running_task.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/auth_access/add_api_key_auth.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/auth_access/add_bola_guard.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/auth_access/add_cedar_policies.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/auth_access/add_dpop_tokens.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/auth_access/add_feature_flags.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/auth_access/add_feature_toggles_api.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/auth_access/add_mfa.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/auth_access/add_multi_tenancy.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/auth_access/add_oauth2_provider.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/auth_access/add_opa_integration.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/auth_access/add_passkey_auth.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/auth_access/add_rbac.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/auth_access/add_request_signing.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/auth_access/add_sms_otp.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/auth_access/add_social_login.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/crud_data/add_audit_log.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/crud_data/add_bulk_operations.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/crud_data/add_cursor_pagination.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/crud_data/add_data_export.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/crud_data/add_data_import.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/crud_data/add_data_versioning.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/crud_data/add_event_sourcing.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/crud_data/add_file_upload.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/crud_data/add_search.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/crud_data/add_soft_delete.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_adaptive_throttle.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_adaptive_timeouts.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_anomaly_detector.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_api_monetization.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_api_replay_debugger.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_arq_worker.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_bulkhead_isolation.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_cache_layer.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_canary_tokens.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_celery_beat.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_chaos_testing.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_circuit_breaker.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_compliance_engine.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_cors_config.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_cost_tracker.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_csrf_protection.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_dependency_health_map.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_dlp_shield.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_docker_production.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_email_templates.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_excel_export.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_graceful_shutdown.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_health_deep.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_input_sanitization.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_kubernetes_manifests.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_load_shedding.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_ml_gpu_inference.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_ml_model_registry.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_ml_model_server.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_notifications.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_opentelemetry.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_outbox_pattern.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_pdf_reports.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_prometheus_metrics.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_push_notifications_native.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_rate_limiting.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_request_fingerprint.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_request_tracing_ui.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_response_armor.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_retry_budget.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_runtime_sentinel.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_s3_storage.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_saga.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_scheduled_tasks.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_secret_rotation.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_sqladmin.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_stripe_checkout.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_stripe_refund_flow.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_stripe_subscription.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_structured_logging.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_temporal_workflow.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_tenant_onboarding.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/infrastructure/add_transactional_email.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/realtime/add_sse.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/realtime/add_webhook_receiver.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/realtime/add_webhook_sender.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/realtime/add_websocket_chat.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/realtime/add_websocket_presence.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/testing_tools/add_api_fuzzer.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/testing_tools/add_contract_tests.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/testing_tools/add_data_seeder.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/testing_tools/add_database_migrations_ci.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/testing_tools/add_e2e_test_suite.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/testing_tools/add_factory.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/testing_tools/add_load_profile.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/testing_tools/add_sbom_guardian.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/testing_tools/add_schema_enforcer.py"
+    },
+    {
+      "category": "extend",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": true,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/extend/testing_tools/add_schema_evolution_guard.py"
+    },
+    {
+      "category": "operate",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": false,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": false,
+        "entry_function": true,
+        "fingerprint_noop": false,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": false
+      },
+      "tool": "adapt/operate/api_changelog.py"
+    },
+    {
+      "category": "operate",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": false,
+        "entry_function": true,
+        "fingerprint_noop": false,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": false
+      },
+      "tool": "adapt/operate/blast_radius.py"
+    },
+    {
+      "category": "operate",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": false,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": false,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": false
+      },
+      "tool": "adapt/operate/connection_pool_monitor.py"
+    },
+    {
+      "category": "operate",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": false,
+        "entry_function": true,
+        "fingerprint_noop": false,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": false
+      },
+      "tool": "adapt/operate/dead_code_finder.py"
+    },
+    {
+      "category": "operate",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": false,
+        "entry_function": true,
+        "fingerprint_noop": false,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": false
+      },
+      "tool": "adapt/operate/dependency_graph.py"
+    },
+    {
+      "category": "operate",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": false,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": false,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": false
+      },
+      "tool": "adapt/operate/error_rate_analyzer.py"
+    },
+    {
+      "category": "operate",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": false,
+        "entry_function": true,
+        "fingerprint_noop": false,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": false
+      },
+      "tool": "adapt/operate/migration_diff.py"
+    },
+    {
+      "category": "operate",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": false,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": false,
+        "entry_function": true,
+        "fingerprint_noop": false,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": false
+      },
+      "tool": "adapt/operate/sla_reporter.py"
+    },
+    {
+      "category": "proactive",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": false,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": false
+      },
+      "tool": "adapt/proactive/fastapi_doctor.py"
+    },
+    {
+      "category": "verify",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": false,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": false,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/verify/api_spec_compliance.py"
+    },
+    {
+      "category": "verify",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": false,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": false,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/verify/dependency_audit.py"
+    },
+    {
+      "category": "verify",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": false,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": false,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/verify/detect_n_plus_one.py"
+    },
+    {
+      "category": "verify",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": false,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": false,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/verify/performance_baseline.py"
+    },
+    {
+      "category": "verify",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": true,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": false,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/verify/schema_coverage.py"
+    },
+    {
+      "category": "verify",
+      "missing_required": [],
+      "patterns": {
+        "ast_parse_validation": false,
+        "dry_run_path": true,
+        "elapsed_ms": true,
+        "ensure_prerequisites": false,
+        "entry_function": true,
+        "fingerprint_noop": true,
+        "lazy_imports": true,
+        "mcp_tool_dict": true,
+        "validate_project_dir": true
+      },
+      "tool": "adapt/verify/security_scan.py"
+    }
+  ],
+  "summary": {
+    "overall_passed": true,
+    "per_category": {
+      "evolve": {
+        "compliance_rate_pct": 100.0,
+        "compliant": 8,
+        "noncompliant_tools": [],
+        "pattern_hits": {
+          "ast_parse_validation": 3,
+          "dry_run_path": 8,
+          "elapsed_ms": 8,
+          "ensure_prerequisites": 8,
+          "entry_function": 8,
+          "fingerprint_noop": 8,
+          "lazy_imports": 8,
+          "mcp_tool_dict": 8,
+          "validate_project_dir": 8
+        },
+        "required_patterns": [
+          "dry_run_path",
+          "elapsed_ms",
+          "ensure_prerequisites",
+          "entry_function",
+          "fingerprint_noop",
+          "lazy_imports",
+          "mcp_tool_dict",
+          "validate_project_dir"
+        ],
+        "total": 8
+      },
+      "extend": {
+        "compliance_rate_pct": 100.0,
+        "compliant": 100,
+        "noncompliant_tools": [],
+        "pattern_hits": {
+          "ast_parse_validation": 100,
+          "dry_run_path": 100,
+          "elapsed_ms": 100,
+          "ensure_prerequisites": 100,
+          "entry_function": 100,
+          "fingerprint_noop": 100,
+          "lazy_imports": 100,
+          "mcp_tool_dict": 100,
+          "validate_project_dir": 100
+        },
+        "required_patterns": [
+          "ast_parse_validation",
+          "dry_run_path",
+          "elapsed_ms",
+          "ensure_prerequisites",
+          "entry_function",
+          "fingerprint_noop",
+          "lazy_imports",
+          "mcp_tool_dict",
+          "validate_project_dir"
+        ],
+        "total": 100
+      },
+      "operate": {
+        "compliance_rate_pct": 100.0,
+        "compliant": 8,
+        "noncompliant_tools": [],
+        "pattern_hits": {
+          "ast_parse_validation": 4,
+          "dry_run_path": 8,
+          "elapsed_ms": 8,
+          "ensure_prerequisites": 0,
+          "entry_function": 8,
+          "fingerprint_noop": 2,
+          "lazy_imports": 8,
+          "mcp_tool_dict": 8,
+          "validate_project_dir": 0
+        },
+        "required_patterns": [
+          "elapsed_ms",
+          "entry_function",
+          "lazy_imports",
+          "mcp_tool_dict"
+        ],
+        "total": 8
+      },
+      "proactive": {
+        "compliance_rate_pct": 100.0,
+        "compliant": 1,
+        "noncompliant_tools": [],
+        "pattern_hits": {
+          "ast_parse_validation": 1,
+          "dry_run_path": 1,
+          "elapsed_ms": 1,
+          "ensure_prerequisites": 0,
+          "entry_function": 1,
+          "fingerprint_noop": 1,
+          "lazy_imports": 1,
+          "mcp_tool_dict": 1,
+          "validate_project_dir": 0
+        },
+        "required_patterns": [
+          "elapsed_ms",
+          "entry_function",
+          "lazy_imports",
+          "mcp_tool_dict"
+        ],
+        "total": 1
+      },
+      "verify": {
+        "compliance_rate_pct": 100.0,
+        "compliant": 6,
+        "noncompliant_tools": [],
+        "pattern_hits": {
+          "ast_parse_validation": 1,
+          "dry_run_path": 6,
+          "elapsed_ms": 6,
+          "ensure_prerequisites": 0,
+          "entry_function": 6,
+          "fingerprint_noop": 6,
+          "lazy_imports": 6,
+          "mcp_tool_dict": 6,
+          "validate_project_dir": 6
+        },
+        "required_patterns": [
+          "elapsed_ms",
+          "entry_function",
+          "lazy_imports",
+          "mcp_tool_dict"
+        ],
+        "total": 6
+      }
+    }
+  },
+  "tools_scanned": 123
+}

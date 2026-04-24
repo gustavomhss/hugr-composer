@@ -1,0 +1,1777 @@
+{
+  "_meta": {
+    "command": ".venv/bin/python evidence/_harness/per_primitive_attestation.py",
+    "commit": "3f98703247dfc73d211588b6b3ae57a36337c0b4",
+    "cwd": "repo root",
+    "generated": "2026-04-24T21:13:37Z",
+    "grading": "exit 0 iff every primitive passes all 6 checks AND registry aligned",
+    "tree": "f65bb03b3a71832495501beb3491c5ead229ca3c"
+  },
+  "checks": [
+    "motor_py_present",
+    "spec_md_present",
+    "test_file_present",
+    "compose_section_present",
+    "compose_bullets_ge_3",
+    "no_replace_me"
+  ],
+  "per_primitive": [
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "BatchCore",
+      "namespace": "api"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "CommandBus",
+      "namespace": "api"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "CommandQuerySeparator",
+      "namespace": "api"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "ContextMap",
+      "namespace": "api"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "DataLoader",
+      "namespace": "api"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "DeprecationEntry",
+      "namespace": "api"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "DeprecationRegistry",
+      "namespace": "api"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "DeprecationReporter",
+      "namespace": "api"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "IdempotencyStore",
+      "namespace": "api"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "InboundVerifier",
+      "namespace": "api"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "MemoryPubSubBackend",
+      "namespace": "api"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "MiddlewarePipeline",
+      "namespace": "api"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "PersistedQueryRegistry",
+      "namespace": "api"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "QueryBus",
+      "namespace": "api"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 5,
+      "name": "RequestContext",
+      "namespace": "api"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 4,
+      "name": "RouterPipeline",
+      "namespace": "api"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "ValueTransform",
+      "namespace": "api"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "AuthorizationCodeFlow",
+      "namespace": "auth"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "CurrentPrincipal",
+      "namespace": "auth"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "FeatureFlagCache",
+      "namespace": "auth"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 4,
+      "name": "RequestGuard",
+      "namespace": "auth"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "SessionStore",
+      "namespace": "auth"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "TokenIntrospector",
+      "namespace": "auth"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "TotpVerifier",
+      "namespace": "auth"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "WebAuthnAuthenticator",
+      "namespace": "auth"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "Billing",
+      "namespace": "billing"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 4,
+      "name": "DistributedLock",
+      "namespace": "cache"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 4,
+      "name": "KeyValueBucket",
+      "namespace": "cache"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "SessionCache",
+      "namespace": "cache"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 4,
+      "name": "AuditEvent",
+      "namespace": "compliance"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "BreachNotificationQueue",
+      "namespace": "compliance"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "ConsentLedger",
+      "namespace": "compliance"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "DataSubjectRequest",
+      "namespace": "compliance"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "ProcessingRecord",
+      "namespace": "compliance"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "RetentionPolicy",
+      "namespace": "compliance"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "TamperEvidentAuditLog",
+      "namespace": "compliance"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "Aggregate",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "AntiCorruptionLayer",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "BoundedContext",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "ChangeDataCapture",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "ConfigBinding",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "DataMapper",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "DiContainer",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "IdentityMap",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "LegalHold",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "LifetimeScope",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "MaterializedView",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "OptimisticConcurrency",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "PiiClassification",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "Repository",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "ShardedCounter",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "Specification",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "TransactionalBatch",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 4,
+      "name": "UnitOfWork",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "ValueObject",
+      "namespace": "data"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "CausalReorderBuffer",
+      "namespace": "events"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 4,
+      "name": "DeadLetterRoute",
+      "namespace": "events"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "DomainEvent",
+      "namespace": "events"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "EventEnvelope",
+      "namespace": "events"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "EventSourcedStore",
+      "namespace": "events"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "EventStream",
+      "namespace": "events"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 4,
+      "name": "IdempotentConsumer",
+      "namespace": "events"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "InboxDeduplicator",
+      "namespace": "events"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 4,
+      "name": "PubSub",
+      "namespace": "events"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "SagaOrchestrator",
+      "namespace": "events"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "StreamSubject",
+      "namespace": "events"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "TopicBus",
+      "namespace": "events"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "TransactionalOutbox",
+      "namespace": "events"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "OutboundBinding",
+      "namespace": "extras"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "RequestShape",
+      "namespace": "extras"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "RpcInterceptor",
+      "namespace": "extras"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "SchemaComparator",
+      "namespace": "extras"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "VirtualActor",
+      "namespace": "extras"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 4,
+      "name": "FeatureToggle",
+      "namespace": "flags"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "ActivityCall",
+      "namespace": "jobs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "DurableTimer",
+      "namespace": "jobs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "WorkflowRun",
+      "namespace": "jobs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "InputGuardrail",
+      "namespace": "llm"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "OutputGuardrail",
+      "namespace": "llm"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "PromptInjectionFilter",
+      "namespace": "llm"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "PromptTemplate",
+      "namespace": "llm"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "AccessLog",
+      "namespace": "obs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "CardinalityGuard",
+      "namespace": "obs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 4,
+      "name": "CorrelationContext",
+      "namespace": "obs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "CorrelationId",
+      "namespace": "obs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "ErrorSink",
+      "namespace": "obs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 4,
+      "name": "EventBus",
+      "namespace": "obs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "HealthProbe",
+      "namespace": "obs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "HistogramBuckets",
+      "namespace": "obs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "LifecycleHook",
+      "namespace": "obs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "LlmTrace",
+      "namespace": "obs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 4,
+      "name": "MetricMeter",
+      "namespace": "obs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "ResourceDescriptor",
+      "namespace": "obs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "SamplingPolicy",
+      "namespace": "obs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "SemanticAttributes",
+      "namespace": "obs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "StructuredLogger",
+      "namespace": "obs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "TelemetryExporter",
+      "namespace": "obs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "Tracer",
+      "namespace": "obs"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "CorsPolicy",
+      "namespace": "policy"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "DataResidencyPolicy",
+      "namespace": "policy"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "EncryptionPolicy",
+      "namespace": "policy"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "KeyRotationSchedule",
+      "namespace": "policy"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 4,
+      "name": "Bulkhead",
+      "namespace": "resiliency"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 4,
+      "name": "CircuitBreaker",
+      "namespace": "resiliency"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "CostTracker",
+      "namespace": "resiliency"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "ExcelExporter",
+      "namespace": "resiliency"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "GracefulShutdown",
+      "namespace": "resiliency"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "HeterogeneousWorkerPool",
+      "namespace": "resiliency"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "LoadShedder",
+      "namespace": "resiliency"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "ModelRegistry",
+      "namespace": "resiliency"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "RateLimiter",
+      "namespace": "resiliency"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "Redactor",
+      "namespace": "resiliency"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "RetryBudget",
+      "namespace": "resiliency"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 4,
+      "name": "RetryPolicy",
+      "namespace": "resiliency"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 4,
+      "name": "TimeoutBudget",
+      "namespace": "resiliency"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "TracingBuffer",
+      "namespace": "resiliency"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "ContentSecurityPolicy",
+      "namespace": "security"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "CryptoEnvelope",
+      "namespace": "security"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "CsrfGuard",
+      "namespace": "security"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 4,
+      "name": "InputValidator",
+      "namespace": "security"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "OutputEncoder",
+      "namespace": "security"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "PasswordHasher",
+      "namespace": "security"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "SecretsVault",
+      "namespace": "security"
+    },
+    {
+      "all_pass": true,
+      "checks": {
+        "compose_bullets_ge_3": true,
+        "compose_section_present": true,
+        "motor_py_present": true,
+        "no_replace_me": true,
+        "spec_md_present": true,
+        "test_file_present": true
+      },
+      "compose_bullets": 3,
+      "name": "SignatureVerifier",
+      "namespace": "security"
+    }
+  ],
+  "primitives_scanned": 124,
+  "registry_coverage": {
+    "extra_in_registry_unused": [],
+    "in_registry": 124,
+    "missing_from_registry": [],
+    "on_disk": 124
+  },
+  "summary": {
+    "all_pass": 124,
+    "any_check_fail": 0,
+    "check_coverage_pct": {
+      "compose_bullets_ge_3": 100.0,
+      "compose_section_present": 100.0,
+      "motor_py_present": 100.0,
+      "no_replace_me": 100.0,
+      "spec_md_present": 100.0,
+      "test_file_present": 100.0
+    },
+    "passed": true,
+    "registry_aligned": true
+  }
+}

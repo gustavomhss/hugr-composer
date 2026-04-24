@@ -1,0 +1,266 @@
+{
+  "_meta": {
+    "command": ".venv/bin/python evidence/_harness/benchmark_scores_snapshot.py",
+    "commit": "3f98703247dfc73d211588b6b3ae57a36337c0b4",
+    "cwd": "repo root",
+    "generated": "2026-04-24T21:17:30Z",
+    "grading": "exit 0 iff plan_overall \u2265 plan_floor AND code_overall \u2265 code_floor",
+    "source_files": {
+      "code": "skills/SKILL-001-fastapi-production/benchmarks/code_level_score.json",
+      "floor": "skills/SKILL-001-fastapi-production/benchmarks/baseline_floor.json",
+      "plan": "skills/SKILL-001-fastapi-production/benchmarks/latest_score.json"
+    },
+    "tree": "f65bb03b3a71832495501beb3491c5ead229ca3c"
+  },
+  "code_level": {
+    "by_tier": {
+      "adversarial": {
+        "covered": 5,
+        "score": 100.0,
+        "total": 5
+      },
+      "baseline": {
+        "covered": 5,
+        "score": 100.0,
+        "total": 5
+      },
+      "mid": {
+        "covered": 10,
+        "score": 100.0,
+        "total": 10
+      }
+    },
+    "coverage": 100.0,
+    "covered_specs": 20,
+    "generated_at": "2026-04-21T18:36:55+00:00",
+    "kit_version": "a3d32a4",
+    "maestro_model": null,
+    "overall": 100.0
+  },
+  "floors": {
+    "code_level": 70.0,
+    "plan_level": 90.0
+  },
+  "per_spec": [
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 4,
+      "code_tests_total": 4,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "adversarial/01_rare_edge_exactly_once_weak_broker",
+      "tier": "adversarial"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 4,
+      "code_tests_total": 4,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "adversarial/02_contradiction_stateless_but_session_aware",
+      "tier": "adversarial"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 4,
+      "code_tests_total": 4,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "adversarial/03_conflicting_primitives_lockfree_serializable",
+      "tier": "adversarial"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 4,
+      "code_tests_total": 4,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "adversarial/04_missing_primitive_ml_inference_pool",
+      "tier": "adversarial"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 4,
+      "code_tests_total": 4,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "adversarial/05_hidden_scaling_innocent_counter",
+      "tier": "adversarial"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 4,
+      "code_tests_total": 4,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "baseline/01_crud_todos",
+      "tier": "baseline"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 7,
+      "code_tests_total": 7,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "baseline/02_auth_only_saas",
+      "tier": "baseline"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 5,
+      "code_tests_total": 5,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "baseline/03_webhook_sink",
+      "tier": "baseline"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 5,
+      "code_tests_total": 5,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "baseline/04_rate_limited_api",
+      "tier": "baseline"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 5,
+      "code_tests_total": 5,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "baseline/05_multi_tenant_admin",
+      "tier": "baseline"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 5,
+      "code_tests_total": 5,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "mid/01_saas_with_stripe_billing",
+      "tier": "mid"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 5,
+      "code_tests_total": 5,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "mid/02_realtime_chat",
+      "tier": "mid"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 5,
+      "code_tests_total": 5,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "mid/03_event_sourced_orders",
+      "tier": "mid"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 5,
+      "code_tests_total": 5,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "mid/04_rbac_with_audit",
+      "tier": "mid"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 5,
+      "code_tests_total": 5,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "mid/05_llm_agent_backend",
+      "tier": "mid"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 5,
+      "code_tests_total": 5,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "mid/06_mobile_backend",
+      "tier": "mid"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 5,
+      "code_tests_total": 5,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "mid/07_compliance_log_aggregator",
+      "tier": "mid"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 5,
+      "code_tests_total": 5,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "mid/08_graphql_over_rest",
+      "tier": "mid"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 4,
+      "code_tests_total": 4,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "mid/09_workflow_orchestrator",
+      "tier": "mid"
+    },
+    {
+      "code_score": 100.0,
+      "code_tests_passed": 4,
+      "code_tests_total": 4,
+      "covered_by_code": true,
+      "covered_by_plan": true,
+      "plan_score": 100.0,
+      "spec_id": "mid/10_bi_export_service",
+      "tier": "mid"
+    }
+  ],
+  "plan_level": {
+    "by_tier": {
+      "adversarial": 100.0,
+      "baseline": 100.0,
+      "mid": 100.0
+    },
+    "generated_at": "2026-04-20T15:01:12+00:00",
+    "kit_version": "af83fad",
+    "maestro_model": "cli-subagent-ensemble-best-of",
+    "overall": 100.0,
+    "specs_count": 20
+  },
+  "summary": {
+    "code_headroom": 30.0,
+    "code_overall": 100.0,
+    "passed": true,
+    "per_spec_count": 20,
+    "plan_headroom": 10.0,
+    "plan_overall": 100.0
+  }
+}

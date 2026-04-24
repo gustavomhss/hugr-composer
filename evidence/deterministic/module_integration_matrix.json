@@ -1,0 +1,264 @@
+{
+  "_meta": {
+    "command": ".venv/bin/python evidence/_harness/module_integration_matrix.py",
+    "commit": "3f98703247dfc73d211588b6b3ae57a36337c0b4",
+    "cwd": "repo root",
+    "generated": "2026-04-24T21:18:50Z",
+    "grading": "exit 0 iff 9 modules pass all 5 checks AND total tools \u2265 28 (INVENTORY.md claim)",
+    "tree": "f65bb03b3a71832495501beb3491c5ead229ca3c"
+  },
+  "checks": [
+    "has_knowledge_md",
+    "has_tools_subdir",
+    "tools_count_ge_1",
+    "has_producer_verb",
+    "has_inspector_verb"
+  ],
+  "modules_scanned": 9,
+  "per_module": [
+    {
+      "all_required_pass": true,
+      "checks": {
+        "has_inspector_verb": true,
+        "has_knowledge_md": true,
+        "has_producer_verb": true,
+        "has_tools_subdir": true,
+        "tools_count_ge_1": true
+      },
+      "name": "auth",
+      "tools": [
+        "pentest_auth.py",
+        "scaffold_auth.py",
+        "verify_auth.py"
+      ],
+      "tools_count": 3,
+      "verbs": {
+        "inspector": [
+          "pentest_auth.py",
+          "verify_auth.py"
+        ],
+        "producer": [
+          "scaffold_auth.py"
+        ]
+      }
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "has_inspector_verb": true,
+        "has_knowledge_md": true,
+        "has_producer_verb": true,
+        "has_tools_subdir": true,
+        "tools_count_ge_1": true
+      },
+      "name": "background_jobs",
+      "tools": [
+        "scaffold_jobs.py",
+        "verify_jobs.py"
+      ],
+      "tools_count": 2,
+      "verbs": {
+        "inspector": [
+          "verify_jobs.py"
+        ],
+        "producer": [
+          "scaffold_jobs.py"
+        ]
+      }
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "has_inspector_verb": true,
+        "has_knowledge_md": true,
+        "has_producer_verb": true,
+        "has_tools_subdir": true,
+        "tools_count_ge_1": true
+      },
+      "name": "caching",
+      "tools": [
+        "operate_cache.py",
+        "scaffold_cache.py"
+      ],
+      "tools_count": 2,
+      "verbs": {
+        "inspector": [
+          "operate_cache.py"
+        ],
+        "producer": [
+          "scaffold_cache.py"
+        ]
+      }
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "has_inspector_verb": true,
+        "has_knowledge_md": true,
+        "has_producer_verb": true,
+        "has_tools_subdir": true,
+        "tools_count_ge_1": true
+      },
+      "name": "database",
+      "tools": [
+        "mcp_db_bloat.py",
+        "mcp_db_explain.py",
+        "mcp_db_slow_queries.py",
+        "mcp_db_suggest_indexes.py",
+        "operate_db.py",
+        "scaffold_db.py",
+        "verify_db.py"
+      ],
+      "tools_count": 7,
+      "verbs": {
+        "inspector": [
+          "operate_db.py",
+          "verify_db.py"
+        ],
+        "producer": [
+          "scaffold_db.py"
+        ]
+      }
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "has_inspector_verb": false,
+        "has_knowledge_md": true,
+        "has_producer_verb": true,
+        "has_tools_subdir": true,
+        "tools_count_ge_1": true
+      },
+      "name": "deployment",
+      "tools": [
+        "generate_ci.py",
+        "generate_docker.py",
+        "generate_k6.py",
+        "generate_k8s.py"
+      ],
+      "tools_count": 4,
+      "verbs": {
+        "inspector": [],
+        "producer": [
+          "generate_ci.py",
+          "generate_docker.py",
+          "generate_k6.py",
+          "generate_k8s.py"
+        ]
+      }
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "has_inspector_verb": true,
+        "has_knowledge_md": true,
+        "has_producer_verb": true,
+        "has_tools_subdir": true,
+        "tools_count_ge_1": true
+      },
+      "name": "observability",
+      "tools": [
+        "generate_alerts.py",
+        "scaffold_otel.py",
+        "verify_traces.py"
+      ],
+      "tools_count": 3,
+      "verbs": {
+        "inspector": [
+          "verify_traces.py"
+        ],
+        "producer": [
+          "generate_alerts.py",
+          "scaffold_otel.py"
+        ]
+      }
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "has_inspector_verb": true,
+        "has_knowledge_md": true,
+        "has_producer_verb": true,
+        "has_tools_subdir": true,
+        "tools_count_ge_1": true
+      },
+      "name": "payments",
+      "tools": [
+        "scaffold_payments.py",
+        "verify_payments.py"
+      ],
+      "tools_count": 2,
+      "verbs": {
+        "inspector": [
+          "verify_payments.py"
+        ],
+        "producer": [
+          "scaffold_payments.py"
+        ]
+      }
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "has_inspector_verb": true,
+        "has_knowledge_md": true,
+        "has_producer_verb": true,
+        "has_tools_subdir": true,
+        "tools_count_ge_1": true
+      },
+      "name": "security",
+      "tools": [
+        "pentest_api.py",
+        "scaffold_security.py",
+        "verify_security.py"
+      ],
+      "tools_count": 3,
+      "verbs": {
+        "inspector": [
+          "pentest_api.py",
+          "verify_security.py"
+        ],
+        "producer": [
+          "scaffold_security.py"
+        ]
+      }
+    },
+    {
+      "all_required_pass": true,
+      "checks": {
+        "has_inspector_verb": true,
+        "has_knowledge_md": true,
+        "has_producer_verb": true,
+        "has_tools_subdir": true,
+        "tools_count_ge_1": true
+      },
+      "name": "websockets",
+      "tools": [
+        "scaffold_ws.py",
+        "verify_ws.py"
+      ],
+      "tools_count": 2,
+      "verbs": {
+        "inspector": [
+          "verify_ws.py"
+        ],
+        "producer": [
+          "scaffold_ws.py"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "check_coverage_pct": {
+      "has_inspector_verb": 88.89,
+      "has_knowledge_md": 100.0,
+      "has_producer_verb": 100.0,
+      "has_tools_subdir": 100.0,
+      "tools_count_ge_1": 100.0
+    },
+    "modules_pass": 9,
+    "passed": true,
+    "total_modules": 9,
+    "total_tools_across_modules": 28
+  }
+}
