@@ -1273,8 +1273,34 @@ def _r_skill_md_contract() -> tuple[bool, str]:
         #     `Apache-2.0` while the shipped LICENSE is proprietary —
         #     a legal/compliance drift, not a cosmetic one. This map
         #     links each SPDX identifier to a signature we can detect in
-        #     the LICENSE file header. Unknown licenses here skip the
-        #     signature check (the SPDX-set gate above still catches them).
+        #     the LICENSE file header. Sonnet v6 parallel audit (L1)
+        #     flagged that the initial Wave-F coverage only handled 9
+        #     of the 19 SPDX identifiers — the 10 GPL/LGPL/AGPL
+        #     variants silently passed the signature check. Wave G
+        #     closes the coverage gap below. Unknown licenses (any SPDX
+        #     identifier NOT in this map) still fail the SPDX-set gate
+        #     above; they never reach the signature check.
+
+        def _gnu_sig(family: str, version: str, or_later: bool):
+            """Build a signature lambda for GPL/LGPL/AGPL variants.
+
+            `family` is the license family header text (e.g.
+            "gnu general public license"). `version` is the version
+            string ("version 2", "version 3", "version 2.1"). The
+            `or_later` flag distinguishes `-only` from `-or-later` —
+            "or-later" LICENSE headers cite "(at your option) any
+            later version"; "only" variants do not.
+            """
+            def check(t: str) -> bool:
+                tl = t.lower()
+                if family not in tl:
+                    return False
+                if version not in tl[:800]:
+                    return False
+                has_or_later = "any later version" in tl[:2000]
+                return has_or_later if or_later else not has_or_later
+            return check
+
         _license_signatures: dict[str, callable] = {
             "Proprietary": lambda t: "proprietary" in t.lower()[:400],
             "Apache-2.0": lambda t: (
@@ -1293,7 +1319,33 @@ def _r_skill_md_contract() -> tuple[bool, str]:
             "MPL-2.0": lambda t: "mozilla public license" in t.lower()[:400],
             "Unlicense": lambda t: "unlicense" in t.lower()[:400],
             "CC0-1.0": lambda t: "cc0" in t.lower()[:400],
+            # GPL family (4 variants)
+            "GPL-2.0-only":        _gnu_sig("gnu general public license",        "version 2",   or_later=False),
+            "GPL-2.0-or-later":    _gnu_sig("gnu general public license",        "version 2",   or_later=True),
+            "GPL-3.0-only":        _gnu_sig("gnu general public license",        "version 3",   or_later=False),
+            "GPL-3.0-or-later":    _gnu_sig("gnu general public license",        "version 3",   or_later=True),
+            # LGPL family (4 variants)
+            "LGPL-2.1-only":       _gnu_sig("gnu lesser general public license", "version 2.1", or_later=False),
+            "LGPL-2.1-or-later":   _gnu_sig("gnu lesser general public license", "version 2.1", or_later=True),
+            "LGPL-3.0-only":       _gnu_sig("gnu lesser general public license", "version 3",   or_later=False),
+            "LGPL-3.0-or-later":   _gnu_sig("gnu lesser general public license", "version 3",   or_later=True),
+            # AGPL family (2 variants)
+            "AGPL-3.0-only":       _gnu_sig("gnu affero general public license", "version 3",   or_later=False),
+            "AGPL-3.0-or-later":   _gnu_sig("gnu affero general public license", "version 3",   or_later=True),
         }
+        # Invariant: every SPDX identifier in _SPDX_KNOWN MUST have a
+        # signature lambda. Skipping coverage would let a future
+        # SKILL.md carry `license: GPL-3.0-only` against a proprietary
+        # LICENSE with no detection — the exact B1 class we closed.
+        _uncovered_spdx = _SPDX_KNOWN - _license_signatures.keys()
+        if _uncovered_spdx:
+            return False, (
+                f"_license_signatures missing coverage for SPDX "
+                f"identifier(s) {sorted(_uncovered_spdx)} — every "
+                f"identifier in _SPDX_KNOWN must have a signature "
+                f"lambda, otherwise the LICENSE-match gate silently "
+                f"skips for those licenses."
+            )
         license_file = REPO_ROOT / "LICENSE"
         if not license_file.exists():
             return False, (
@@ -1301,8 +1353,13 @@ def _r_skill_md_contract() -> tuple[bool, str]:
                 "`license` field against the real license text"
             )
         license_text = license_file.read_text(encoding="utf-8")
-        sig = _license_signatures.get(license_val)
-        if sig is not None and not sig(license_text):
+        # Post-Wave-G: coverage gate above guarantees sig is not None
+        # for any `license_val` that passed the SPDX-set check. We
+        # still defensively default-check to handle the hypothetical
+        # case of someone adding to `_SPDX_KNOWN` without updating the
+        # signatures — though the coverage gate should fire first.
+        sig = _license_signatures[license_val]
+        if not sig(license_text):
             return False, (
                 f"SKILL.md license {license_val!r} does not match the repo-root "
                 f"LICENSE file header; the entry doc is advertising a license "
@@ -1427,10 +1484,20 @@ def _r_skill_md_contract() -> tuple[bool, str]:
     tree_dispatcher_names: set[str] = set()
     if tree_dir.is_dir():
         _name_re = re.compile(r"""['"]name['"]\s*:\s*['"]([A-Za-z0-9_]+)['"]""")
+        # Sonnet parallel audit (Wave-F M1) flagged that the raw-text
+        # scan would over-include: a Python comment containing
+        # `'name': 'fastapi_fake'` would seed the allowlist with a
+        # phantom tool. Strip line comments (# ...) before scanning so
+        # commented-out examples / doctest fixtures can't leak in.
+        # Docstrings are not stripped — we rely on the fact that
+        # MCP_TOOL dict literals are never written inside docstrings in
+        # this codebase (and the §B2.6 rule would catch it if they were).
+        _line_comment_re = re.compile(r"#.*$", re.MULTILINE)
         for py_file in tree_dir.glob("*.py"):
             if py_file.name.startswith("_"):
                 continue
-            for m in _name_re.finditer(py_file.read_text(encoding="utf-8")):
+            text = _line_comment_re.sub("", py_file.read_text(encoding="utf-8"))
+            for m in _name_re.finditer(text):
                 if m.group(1).startswith("fastapi_"):
                     tree_dispatcher_names.add(m.group(1))
     known_non_catalog = tier1_meta | tree_dispatcher_names
