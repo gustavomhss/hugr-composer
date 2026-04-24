@@ -656,7 +656,9 @@ def generate_project(
     # ---------------------------------------------------------------
     # Phase 10: requirements.txt (must come BEFORE test_infra which appends to it)
     # ---------------------------------------------------------------
-    _generate_requirements(out, with_auth, with_redis, with_otel, with_prometheus)
+    _generate_requirements(
+        out, with_auth, with_redis, with_otel, with_prometheus, with_sentry,
+    )
     all_files.append(str(out / "requirements.txt"))
     phases["requirements"] = {"files": 1, "status": "done"}
 
@@ -711,8 +713,14 @@ def _generate_requirements(
     with_redis: bool,
     with_otel: bool,
     with_prometheus: bool,
+    with_sentry: bool = False,
 ) -> None:
-    """Write requirements.txt with pinned, production-grade dependencies."""
+    """Write requirements.txt with pinned, production-grade dependencies.
+
+    When ``with_sentry`` is True, ``sentry-sdk`` MUST be present — the
+    emitted ``main.py`` imports it unconditionally under that flag and
+    the app would ``ModuleNotFoundError`` at boot without the pin.
+    """
     deps = [
         "fastapi>=0.115.0",
         "uvicorn[standard]>=0.32.0",
@@ -747,6 +755,8 @@ def _generate_requirements(
         deps.extend([
             "prometheus-client>=0.21.0",
         ])
+    if with_sentry:
+        deps.append("sentry-sdk>=2.18.0")
     (out / "requirements.txt").write_text("\n".join(sorted(deps)) + "\n")
 
 
