@@ -31,6 +31,22 @@ REPO_ROOT = Path(__file__).resolve().parents[3].parent
 # /Users/…/HuGR_Skills (one level above skills/)
 SKILL_ROOT = REPO_ROOT / "skills" / "SKILL-001-fastapi-production"
 
+# Official semver 2.0.0 regex body (no anchors).
+# Source: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+# Rejects leading zeros (01.0.0), trailing dots (1.0.0-rc..1), empty
+# identifiers (1.0.0-), and other malformed shapes that the looser
+# Wave-E pattern admitted. Accepts pre-release suffixes (1.0.0-rc.1)
+# AND build metadata (1.0.0+build.1). Module-level so every rule
+# that touches a version string consumes the same definition —
+# Codex v5 M2 flagged the drift between the canonical regex here and
+# a looser per-rule copy.
+_SEMVER_RE = (
+    r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)"
+    r"(?:-(?:(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)"
+    r"(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?"
+    r"(?:\+[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*)?"
+)
+
 
 @dataclass(frozen=True)
 class Rule:
@@ -1344,14 +1360,15 @@ def _r_skill_md_contract() -> tuple[bool, str]:
     #    VERSION is the canonical pin (§B4.6 triplet). SKILL.md is the
     #    Maestro-facing entry doc — if they diverge, the entry doc is
     #    lying about what shipped. Accepts pre-release suffixes
-    #    (e.g. `1.0.0-rc.1`) because the tree is still rc-tagged
-    #    until Gustavo signs the §4 ratifications.
-    semver_re = r"\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?"
+    #    (e.g. `1.0.0-rc.1`) + build metadata (`+build.1`). Uses the
+    #    module-level _SEMVER_RE (official semver.org spec) so Wave-E's
+    #    looser pattern that accepted invalid strings like `01.0.0` and
+    #    `1.0.0-rc..1` (Codex v5 M2) cannot recur.
     meta_version = str(meta["hugr_skill_version"])
-    if not re.fullmatch(semver_re, meta_version):
+    if not re.fullmatch(_SEMVER_RE, meta_version):
         return False, (
-            f"hugr_skill_version must be semver (e.g. '1.0.0' or "
-            f"'1.0.0-rc.1'); got {meta_version!r}"
+            f"hugr_skill_version must be semver per semver.org "
+            f"(e.g. '1.0.0' or '1.0.0-rc.1'); got {meta_version!r}"
         )
     version_file = SKILL_ROOT / "VERSION"
     if not version_file.exists():
@@ -1477,9 +1494,11 @@ def _r_skill_md_contract() -> tuple[bool, str]:
 
     # 16. Versioning footer — must equal VERSION file (same invariant
     #     as check #9, applied to the prose footer so neither surface
-    #     can drift independently).
+    #     can drift independently). Reuses the module-level _SEMVER_RE
+    #     (Codex v5 M2) so the footer is held to real semver, not the
+    #     loose Wave-E approximation.
     footer_match = re.search(
-        rf"\*version:\s*({semver_re})\b", body,
+        rf"\*version:\s*({_SEMVER_RE})\b", body,
     )
     if not footer_match:
         return False, (
@@ -1773,15 +1792,8 @@ def _r_changelog_semver() -> tuple[bool, str]:
     if not version.exists():
         return False, "missing: VERSION"
     ver = version.read_text(encoding="utf-8").strip()
-    # Official semver 2.0.0 regex (anchored); accepts pre-release + build
-    # metadata suffixes. Source: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
-    semver_re = (
-        r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
-        r"(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)"
-        r"(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?"
-        r"(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"
-    )
-    if not re.match(semver_re, ver):
+    # Uses the module-level _SEMVER_RE (official semver.org spec).
+    if not re.fullmatch(_SEMVER_RE, ver):
         return False, f"VERSION not semver: {ver!r}"
     cl = changelog.read_text(encoding="utf-8")
     for required in ("[0.1.0]", "Benchmark", "primitives", "tools"):
