@@ -299,6 +299,7 @@ def generate_project(
         with_db=True,
         with_redis=with_redis,
         with_sentry=with_sentry,
+        prefix=prefix,
     ))
     _run("logging_setup", generate_logging_setup(output_dir=str(app_dir)))
 
@@ -570,6 +571,7 @@ def generate_project(
             _run("k8s", generate_k8s_manifests(
                 output_dir=str(out),
                 app_name=name,
+                prefix=prefix,
             ))
         except ImportError:
             phases["k8s"] = {"files": 0, "status": "skipped (generator not built yet)"}
@@ -633,7 +635,7 @@ def generate_project(
     # Root-level project files (not Python source)
     _run("env_example", generate_env_example(
         output_dir=str(out), with_db=True, with_redis=with_redis,
-        with_sentry=with_sentry,
+        with_sentry=with_sentry, prefix=prefix,
     ))
     _run("readme", generate_readme(
         output_dir=str(out), name=name, prefix=prefix,

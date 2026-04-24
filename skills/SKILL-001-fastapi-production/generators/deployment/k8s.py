@@ -20,6 +20,7 @@ def generate_k8s_manifests(
     replicas: int = 2,
     cpu_request: str = "100m",
     memory_request: str = "256Mi",
+    prefix: str = "/api/v1",
 ) -> dict:
     """Generate a complete set of Kubernetes manifests for production.
 
@@ -232,7 +233,7 @@ def generate_k8s_manifests(
           labels:
             app: {app_name}
         data:
-          API_V1_STR: "/api/v1"
+          API_V1_STR: "{prefix}"
           PROJECT_NAME: "{app_name}"
           ENVIRONMENT: "production"
           LOG_LEVEL: "info"

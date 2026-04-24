@@ -19,6 +19,7 @@ def generate_config(
     with_redis: bool = False,
     with_smtp: bool = True,
     with_sentry: bool = False,
+    prefix: str = "/api/v1",
 ) -> dict:
     """Generate a production-grade pydantic-settings config module.
 
@@ -33,6 +34,14 @@ def generate_config(
             reference ``settings.SENTRY_DSN`` on a Settings class
             that doesn't declare it, and boot would fail with
             ``AttributeError``.
+        prefix: Initial value for ``Settings.API_V1_STR`` (the
+            runtime-adjustable API prefix). Defaults to ``/api/v1``;
+            other generators (orchestrator, k8s, env_example,
+            readme) thread the same value so the scaffold's
+            emit-time prefix is internally consistent. Downstream
+            code reads ``settings.API_V1_STR`` at runtime, so the
+            prefix can still be changed via .env without
+            regenerating.
 
     Returns:
         Dict with files_created and notes.
@@ -214,7 +223,7 @@ def generate_config(
             # --- General ---
             ENVIRONMENT: Environment = Environment.LOCAL
             PROJECT_NAME: str = "app"
-            API_V1_STR: str = "/api/v1"
+            API_V1_STR: str = "{api_v1_str}"
             DEBUG: bool = False
 
             # --- Security ---
@@ -290,6 +299,7 @@ def generate_config(
         redis_section=redis_section,
         smtp_section=smtp_section,
         sentry_section=sentry_section,
+        api_v1_str=prefix,
     )
 
     file_path = out / "config.py"
