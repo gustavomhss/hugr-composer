@@ -47,7 +47,7 @@ HuGR_Skills/
         ├── SKILL.md              # skill manifest (Anthropic Agent Skills format)
         ├── INVENTORY.md          # machine-verified on-disk counts
         ├── adapt/                # 127 tools (100 extend + 27 other)
-        ├── generators/           # 60 macro scaffold helpers
+        ├── generators/           # 56 macro scaffold helpers
         ├── core/venous/          # 124 primitives + 17 FastAPI adapters (+2 provider) + 176 staged
         ├── mcp_tools/            # MCP server + tier-1 meta + tree dispatchers
         └── engine/               # audit + index + bench + promotion + extraction
