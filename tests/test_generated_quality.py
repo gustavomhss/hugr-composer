@@ -429,3 +429,36 @@ class TestRequirementsCompleteness:
                 pytest.fail(
                     f"SyntaxError in {py_file.relative_to(project_dir)} after tools: {exc}"
                 )
+
+    def test_with_sentry_pins_sdk_in_requirements(self, tmp_path: Path) -> None:
+        """with_sentry=True must add sentry-sdk to requirements.txt.
+
+        Regression for Wave-E B1 (Codex v4): commit 51c9a32 wired
+        SENTRY_DSN through config.py + env_example + app.py but the
+        requirements generator was not threaded with_sentry, so an
+        app generated with ``with_sentry=True`` boot-crashed with
+        ``ModuleNotFoundError: sentry_sdk``.
+        """
+        sys.path.insert(0, str(_SKILL_ROOT))
+        from generators.orchestrator import generate_project  # noqa: PLC0415
+
+        project_dir = tmp_path / "sentry_app"
+        generate_project(
+            output_dir=str(project_dir),
+            name="sentry_app",
+            models={"Item": {"name": "str"}},
+            owner_models={"Item": "user"},
+            with_sentry=True,
+        )
+
+        req_content = (project_dir / "requirements.txt").read_text()
+        main_py = (project_dir / "app" / "main.py").read_text()
+
+        assert "import sentry_sdk" in main_py, (
+            "Expected main.py to import sentry_sdk under with_sentry=True"
+        )
+        assert "sentry-sdk" in req_content, (
+            "with_sentry=True emits `import sentry_sdk` in main.py but "
+            "sentry-sdk is missing from requirements.txt — the scaffold "
+            "would ModuleNotFoundError at boot."
+        )
