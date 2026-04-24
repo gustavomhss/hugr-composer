@@ -112,25 +112,35 @@ for the next 50 violations.
   mechanical correctness — SOTA demands the "excellent" standard, not
   merely "compliant".
 
-#### B0.4 — `SKILL.md` rewritten to match ground truth
+#### B0.4 — `SKILL.md` body counts reconcile against disk
 
-- **DoD:** `/skills/SKILL-001-fastapi-production/SKILL.md` updated:
-  - Tool count matches `find adapt/extend -name 'add_*.py' | wc -l`
-  - Primitive count matches `find core/venous -name '*.manifest.json' | wc -l`
-  - Test count matches actual CI pass (not claims)
-  - Every number has a `$(command)` comment showing how to verify
-  - Cites PRODUCT.md + ROADMAP.md + CONTRACT.md; does NOT re-state
-    architectural claims inline.
+> SKILL.md's **shape** is defined in §B2.5 (Anthropic Agent Skills
+> frontmatter + HuGR body-metadata block, machine-checked by
+> `_r_skill_md_contract`). §B0.4 is scoped narrower: it checks that
+> any **narrative body claim about counts** (e.g. "N adapt tools"
+> in a prose paragraph) is not drifting beyond 10% of disk reality.
+> Quick drift-detector, not a shape validator.
+
+- **DoD:** `skills/SKILL-001-fastapi-production/SKILL.md`:
+  - Any count claim in the body prose (not the few-shot transcripts,
+    which freeze illustrative snapshots per §B2.5) is within 10% of
+    the corresponding disk count.
+  - `_r_skillmd_honest` in `engine/audit/contract_check.py`
+    implements the check on the `adapt/extend/add_*.py` count
+    specifically — the only claim that has historically drifted.
+    Additional body-prose claims are covered by `_r_counts_sync`
+    (§B4.7, SKILL.md[Overview] scope).
 - **Invariants:** Numbers in SKILL.md MUST reconcile against
   `engine/index/catalog.json` + the machine-generated
-  `INVENTORY.md`. §B4.7 (`_r_counts_sync` in
-  `engine/audit/contract_check.py`) covers the narrative-doc set —
-  CLAUDE / STATUS / ROADMAP / CHANGELOG / **SKILL.md[Overview]** —
-  and fails CI on any drift. The SKILL.md[Overview] scope is the
-  paragraph under `## Overview` only; few-shot transcript counts are
-  illustrative snapshots and deliberately not rule-checked.
-- **Completeness:** All claimed metrics have a verification command.
-  All architectural sections replaced by a link to canonical doc.
+  `INVENTORY.md`. §B4.7 covers the narrative-doc set —
+  CLAUDE / STATUS / ROADMAP / CHANGELOG / **SKILL.md[Overview]** /
+  FREEZE / INTERFACES — and fails CI on any drift. The
+  SKILL.md[Overview] scope is the paragraph under `## Overview` only;
+  few-shot transcript counts are illustrative snapshots and
+  deliberately not rule-checked.
+- **Completeness:** See §B2.5 for required sections / frontmatter
+  shape / license / transcripts. §B0.4 only checks body-prose
+  counts.
 - **Quality (SOTA):** Reads as operational reference, not marketing.
   Every section answers "what CAN the caller do NOW?" not "what WILL
   this someday be?"
