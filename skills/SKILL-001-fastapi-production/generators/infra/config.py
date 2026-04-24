@@ -18,6 +18,7 @@ def generate_config(
     with_db: bool = True,
     with_redis: bool = False,
     with_smtp: bool = True,
+    with_sentry: bool = False,
 ) -> dict:
     """Generate a production-grade pydantic-settings config module.
 
@@ -26,6 +27,12 @@ def generate_config(
         with_db: Include database URL settings.
         with_redis: Include Redis URL setting.
         with_smtp: Include SMTP email settings.
+        with_sentry: Include optional SENTRY_DSN setting. MUST be
+            passed through when ``generate_app(with_sentry=True)``
+            is also set — otherwise the emitted ``main.py`` would
+            reference ``settings.SENTRY_DSN`` on a Settings class
+            that doesn't declare it, and boot would fail with
+            ``AttributeError``.
 
     Returns:
         Dict with files_created and notes.
@@ -77,6 +84,18 @@ def generate_config(
             REDIS_URL: str = "redis://localhost:6379/0"
         """)
         redis_section = textwrap.indent(redis_section, "    ")
+
+    sentry_section = ""
+    if with_sentry:
+        # Sentry DSN is opt-in: empty = Sentry disabled, a real URL
+        # = init the SDK in app/main.py. No REPLACE_WITH_ placeholder
+        # because empty-is-valid here; the app/main.py init path
+        # reads `if settings.SENTRY_DSN: sentry_sdk.init(...)`.
+        sentry_section = "\n" + textwrap.dedent("""\
+            # --- Sentry (opt-in; leave empty to disable) ---
+            SENTRY_DSN: str | None = None
+        """)
+        sentry_section = textwrap.indent(sentry_section, "    ")
 
     smtp_section = ""
     if with_smtp:
@@ -221,7 +240,7 @@ def generate_config(
 
             # --- Frontend (used by password reset email links) ---
             FRONTEND_URL: str = "http://localhost:3000"
-        {db_section}{redis_section}{smtp_section}
+        {db_section}{redis_section}{smtp_section}{sentry_section}
             @model_validator(mode="after")
             def _enforce_security_contract(self) -> "Settings":
                 for _f in type(self).model_fields:
@@ -270,6 +289,7 @@ def generate_config(
         db_section=db_section,
         redis_section=redis_section,
         smtp_section=smtp_section,
+        sentry_section=sentry_section,
     )
 
     file_path = out / "config.py"
@@ -283,5 +303,7 @@ def generate_config(
         notes.append("Redis URL setting included.")
     if with_smtp:
         notes.append("SMTP settings included with emails_enabled computed field.")
+    if with_sentry:
+        notes.append("SENTRY_DSN setting included (opt-in; empty = disabled).")
 
     return {"files_created": files, "notes": notes}
