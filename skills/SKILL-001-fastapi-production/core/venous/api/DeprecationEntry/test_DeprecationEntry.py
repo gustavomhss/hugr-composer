@@ -80,12 +80,18 @@ def test_to_dict_is_json_safe_and_complete() -> None:
     entry = _make(
         path="/api/v1/users", method="POST", days_from_today=90,
         replacement="/api/v2/users", description="Use /api/v2/users",
+        warn_days_before_sunset=45,
     )
     payload = entry.to_dict()
     assert set(payload.keys()) == {
         "path", "method", "sunset", "replacement", "description",
-        "days_until_sunset", "warn",
-    }
+        "warn_days_before_sunset", "days_until_sunset", "warn",
+    }, "to_dict must carry every public field (DE_INV_05)"
+    # The serialized warn window must round-trip — it's a public
+    # constructor kwarg, so consumers reconstructing the entry from
+    # its dict have to get back the same warning behaviour they
+    # configured.
+    assert payload["warn_days_before_sunset"] == 45
     json.dumps(payload)  # raises if any value isn't JSON-safe
 
 
