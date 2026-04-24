@@ -109,7 +109,7 @@ RESULT  {installed: [add_oauth2, add_rbac, add_mfa, ...], 8 slices}
 
 STEP 5  → compose (stripe)
 TOOL    fastapi_meta_search(query="stripe subscription webhook idempotent", k=5)
-RESULT  top hit: fastapi_add_stripe_billing (primitives: IdempotentConsumer + AuditEvent)
+RESULT  top hit: fastapi_resiliency_add_stripe_subscription (primitives: IdempotentConsumer + AuditEvent)
 TOOL    fastapi_meta_compose(output_dir="/workspace/myapp",
                               primitives=["IdempotentConsumer","AuditEvent"],
                               name="stripe_webhook", mount_path="/stripe/webhook")
@@ -141,7 +141,7 @@ STEP 3  → scaffold (skipped — repo already has one)
 
 STEP 4  → compose (rate limit + idempotency)
 TOOL    fastapi_meta_search(query="rate limit per api key", k=3)
-RESULT  top hit: fastapi_add_rate_limiting (primitive: RateLimiter + Bulkhead)
+RESULT  top hit: fastapi_resiliency_add_rate_limiting (primitive: RateLimiter + Bulkhead)
 TOOL    fastapi_meta_search(query="exactly-once idempotent api endpoint", k=3)
 RESULT  top hit: IdempotentConsumer + IdempotencyStore
 TOOL    fastapi_meta_compose(output_dir="/workspace/store",
