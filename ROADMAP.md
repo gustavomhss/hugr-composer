@@ -53,7 +53,7 @@
 | `/CHANGELOG.md` | Per-release notes + benchmark history |
 | `/INTERFACES.md` | Maestro + Forge consumer contracts |
 | `/CONTRIBUTING.md` | Contributor onboarding |
-| `/README.md` | ≤80-line entry with links |
+| `/README.md` | ≤100-line entry with links |
 | `skills/SKILL-001-fastapi-production/INVENTORY.md` | Machine-generated canonical counts |
 | `skills/SKILL-001-fastapi-production/STATUS.md` | Human-readable surface counts |
 | `skills/SKILL-001-fastapi-production/SKILL.md` | Skill contract (Maestro-facing) |
@@ -193,7 +193,7 @@ where possible; reviewer-enforced where not).
 | §B0.2 | `ROADMAP.md` honest + phased (this doc; Part 1 ground truth + Part 2 phases + risks + actions) | ✅ |
 | §B0.3 | `CONTRACT.md` (§A 12 rules + §B DoD/Inv/Compl/QS per item + §C-§E) | ✅ |
 | §B0.4 | `SKILL.md` v2 in Anthropic Agent Skills format | ✅ |
-| §B0.5 | `README.md` at repo root (≤80 lines + links) | ✅ |
+| §B0.5 | `README.md` at repo root (≤100 lines + links) | ✅ |
 | §B0.6 | CLAUDE memory pointer | ✅ |
 | §B0.7 | `/benchmark/` audited — no stub tests | ✅ |
 | §B0.8 | `.gitignore` covers machine-generated artefacts | ✅ |
