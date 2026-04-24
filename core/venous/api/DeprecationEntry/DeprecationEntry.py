@@ -81,13 +81,20 @@ class DeprecationEntry:
         return self.days_until_sunset <= self.warn_days_before_sunset
 
     def to_dict(self) -> dict[str, Any]:
-        """Serialise entry to a JSON-safe dict."""
+        """Serialise entry to a JSON-safe dict.
+
+        Carries every public field (DE_INV_05): the six constructor
+        inputs (path, method, sunset, replacement, description,
+        warn_days_before_sunset) plus the two derived values consumers
+        care about (days_until_sunset, warn).
+        """
         return {
             "path": self.path,
             "method": self.method,
             "sunset": self.sunset_date.isoformat(),
             "replacement": self.replacement,
             "description": self.description,
+            "warn_days_before_sunset": self.warn_days_before_sunset,
             "days_until_sunset": self.days_until_sunset,
             "warn": self.should_warn,
         }
