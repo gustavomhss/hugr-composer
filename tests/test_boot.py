@@ -183,7 +183,10 @@ def _run_tool_boot_test(
                 cwd=str(project_dir),
                 capture_output=True,
                 text=True,
-                timeout=30,
+                timeout=60,  # 30 → 60 to absorb CPU contention when run in parallel
+                            # with pytest_full_sweep + cross_composition (Wave I-1.R
+                            # observed flakiness on add_event_sourcing + add_e2e_test_suite
+                            # under load). Solo runs finish in <5s per tool typically.
             )
             if "BOOT OK" in r.stdout:
                 return True, ""
@@ -201,7 +204,7 @@ def _run_tool_boot_test(
             return False, f"returncode={r.returncode}, no error line found"
 
     except subprocess.TimeoutExpired:
-        return False, "Boot subprocess timed out (>30s)"
+        return False, "Boot subprocess timed out (>60s)"
     except Exception as exc:
         return False, f"Unexpected exception: {exc}"
 
