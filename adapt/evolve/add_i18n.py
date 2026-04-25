@@ -199,6 +199,21 @@ def add_i18n(
         _patch_makefile(makefile, translation_dir)
         files_modified.append(str(makefile))
 
+    # Validate every emitted .py file parses cleanly. CLAUDE.md pattern #7.
+    # Wave I-1.N closure of Codex v8 HIGH (per_tool_pattern_audit broad exemption).
+    import ast
+    for path_str in files_created:
+        from pathlib import Path as _Path
+        p = _Path(path_str)
+        if p.suffix == ".py" and p.exists():
+            try:
+                ast.parse(p.read_text())
+            except SyntaxError as exc:
+                return ToolResult(
+                    status="error",
+                    error=f"emitted file failed ast.parse: {p} :: {exc}",
+                )
+
     return ToolResult(
         status="success",
         files_created=files_created,

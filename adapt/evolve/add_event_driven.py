@@ -204,6 +204,22 @@ def add_event_driven(
         _patch_main_outbox(main_file)
         files_modified.append(str(main_file))
 
+    # Validate every emitted .py file parses cleanly. Per CLAUDE.md
+    # Padrões obrigatórios pattern #7 — ast.parse validation before
+    # returning success. Codex v8 HIGH closure (Wave I-1.N).
+    import ast
+    for path_str in files_created:
+        path = Path(path_str)
+        if path.suffix == ".py" and path.exists():
+            try:
+                ast.parse(path.read_text())
+            except SyntaxError as exc:
+                return ToolResult(
+                    status="error",
+                    error=f"emitted file failed ast.parse: {path} :: {exc}",
+                    execution_time_ms=_elapsed_ms(start),
+                )
+
     return ToolResult(
         status="success",
         files_created=files_created,
