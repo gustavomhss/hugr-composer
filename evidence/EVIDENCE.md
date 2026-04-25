@@ -90,12 +90,11 @@ External-eval artefacts require live LLM inference; cost ~$200-500 per full run.
 | Single-shot success ≥70% on unseen specs (§4) | `single_shot_benchmark/` | `_harness/` complete; `specs/01-*.md … 10-*.md` STUBS authored (bodies pending Gustavo Wave I-2); empty `run_manifest.json` |
 | Model-agnostic (cross-model variance ≤10%) | `cross_model_fnf/` | `_harness/run.py` + `variance.py` authored; manifests empty |
 | Cheaper than counterfactual (no-HuGR baseline) | `counterfactual/` | `_harness/baseline_prompt.md` + `run.py` + `compare.py` authored; manifests empty |
-| External reviewer 2-of-3 sign-off | `reviewer_signoffs/transcripts/` | **PARTIALLY SATISFIED** — Codex v7 + Opus v7 raw verdicts archived (Wave I-1.J commit `06263c7`); Codex v8 + Opus v8 re-audits on post-Wave-I-1 HEAD `d84e94b` archived (Wave I-1.M+N). Both v8 reviewers issued NO with conditions; closing those conditions (atomic regen + this very EVIDENCE.md cleanup) flips both to YES. Status converges to SATISFIED on the next atomic commit if v8 conditions hold closed. |
+| External reviewer 2-of-3 sign-off | `reviewer_signoffs/transcripts/` | **NOT SATISFIED** at v9. 6 raw transcripts archived (Codex v7/v8/v9 + Opus v7/v8/v9). The Codex v9 + Opus v9 verdicts on HEAD `bb407ef` are NO with conditions (grading_check header-line false-positive, freshness pin not enforced, EVIDENCE/README contradiction). Wave I-1.R closes those at source; re-audit at v10 determines SATISFIED. Single source of truth: `reviewer_signoffs/README.md` §5.1 status timeline. |
 
-The reviewer_signoffs row tracks LAUNCH.md §5.1; today it is on the
-verge of SATISFIED — Wave I-1.N's atomic regen + EVIDENCE/contract
-cleanup closes the v8 NO-conditions. The other three rows require
-the pre-tag paid run.
+The reviewer_signoffs row tracks LAUNCH.md §5.1; today it is **NOT
+SATISFIED** at v9. Wave I-1.R closes the v9 NO-conditions; v10 verifies.
+The other three rows require the pre-tag paid run.
 
 ---
 
@@ -107,7 +106,7 @@ See `not-yet-covered.md` for the full list (12 numbered gaps). Top-of-mind:
 2. **CONTRACT §A2 ≥1 venous import per tool NOT met today** (observed 41.7% — see not-yet-covered §5)
 3. ~~Property-test §3.9 RUFF_CRITICAL_CLEAN 7/8~~ — **CLOSED in Wave I-1.L (commit b0080a9); 984/984 tool-checks pass.** Retained-as-historical at not-yet-covered §6.
 4. **install-docker.yml nightly streak** evidence absent — required pre-Phase-C (not-yet-covered §7)
-5. **Reviewer 2-of-3 §5.1 PARTIALLY satisfied** — Codex v7+v8 + Opus v7+v8 raw transcripts archived. Both v8 reviewers issued conditional NO (1 BLOCKER from Codex + 2 trivial conditions from Opus); the conditions are closed by Wave I-1.N (this commit family). Re-confirmation comes from running `--verify` post-N: if green, §5.1 transitions to SATISFIED. Tracked not-yet-covered §8.
+5. **Reviewer 2-of-3 §5.1 NOT satisfied at v9.** 6 raw transcripts archived (Codex v7/v8/v9 + Opus v7/v8/v9). Both v9 reviewers issued NO on HEAD `bb407ef`. Wave I-1.R closes the v9 BLOCKERs at source (grading_check anchored, head_pin_check added, doc reconciliation); v10 re-audit verifies. Authoritative status at `reviewer_signoffs/README.md` §5.1.
 6. **Named-human on-call** for Phase C still not assigned (not-yet-covered §9)
 7. **MCP server vs Cursor/Zed**, **hand-edit soak**, **absolute cost claim**, **cross-framework SOTA**, **token-count fields in run_manifest**, **pentest beyond static** — all listed and milestoned in not-yet-covered.
 

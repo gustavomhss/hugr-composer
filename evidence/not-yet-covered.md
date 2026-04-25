@@ -114,15 +114,17 @@ deleted, so the Wave-H/I-1 evidence-package history stays legible.
 
 ---
 
-## §8 — Independent reviewer 2-of-3 sign-off — LAUNCH.md §5.1 NOT satisfied
+## §8 — Independent reviewer 2-of-3 sign-off — LAUNCH.md §5.1 NOT satisfied (status updated post-v9)
 
 **LAUNCH.md §5.1 gating metric**: external reviewer 2-of-3 YES on the canonical sign-off question.
 
-**Observed reality (`evidence/external-eval/reviewer_signoffs/`)**: the three verdict files (codex_v6.md, sonnet.md, opus.md) are SUMMARIES authored by Claude (the evidence-package author). `opus.md:31` confesses author-reviewer identity overlap. Raw transcripts are not archived.
+**Status timeline single source of truth**: `evidence/external-eval/reviewer_signoffs/README.md` §5.1 status timeline. EVIDENCE.md §3 + this section reference it; if any disagreement between the three, README.md wins (Codex v9 C8.Q2.8 closure).
+
+**Observed reality at v9**: 6 raw transcripts archived (Codex v7+v8+v9 + Opus v7+v8+v9). Codex v9 + Opus v9 verdicts on HEAD `bb407ef` are NO with conditions. Wave I-1.R closes those at source; v10 re-audit verifies.
 
 This means the §5.1 gate IS NOT actually satisfied at Wave I-1.
 
-**Milestone to close:** before tag — run three independent reviewer passes against the v1.0.0-rc.1 HEAD with raw transcripts archived in `external-eval/reviewer_signoffs/transcripts/`. The Codex v7 audit (run via `codex exec` on this HEAD; verdict at `/tmp/codex-audit-wave-h-verdict.md`) and the Opus v7 audit (verdict at `/tmp/opus-audit-wave-h-verdict.md`) are GENUINE independent passes; copying their raw transcripts into the package satisfies §5.1.
+**Milestone to close:** v10 re-audit on the post-Wave-I-1.R + R-closure HEAD. Both v9 verdicts must flip to YES (or YES-conditional with conditions structurally closed pre-tag). README.md §5.1 timeline is authoritative; this row mirrors.
 
 ---
 

@@ -89,11 +89,17 @@ def _all_keys_present() -> bool:
 
 
 def main() -> int:
+    # Codex v9 closure: was fail-open when keys missing. Now requires
+    # --shape-only flag for schema-verification-only mode.
+    shape_only = "--shape-only" in sys.argv
     if not _all_keys_present():
         missing = [m["env"] for m in MODELS if not os.environ.get(m["env"])]
-        print(f"Missing API keys: {missing} — writing EMPTY run_manifest for shape verification.")
-        _write_manifest(empty=True)
-        return 0
+        if shape_only:
+            print(f"--shape-only: missing keys {missing}; writing EMPTY run_manifest.")
+            _write_manifest(empty=True)
+            return 0
+        print(f"FATAL: missing API keys: {missing}. Pass --shape-only for schema verification only.", file=sys.stderr)
+        return 2
 
     TRANSCRIPTS.mkdir(parents=True, exist_ok=True)
     specs = sorted(SPECS_DIR.glob("[0-9][0-9]-*.md"))

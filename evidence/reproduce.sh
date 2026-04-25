@@ -355,16 +355,28 @@ normalize_for_diff() {
 # the byte-diff for these was already broken in the prior iteration; this
 # replaces it with a grading check that's actually meaningful.
 grading_check() {
+    # Match the pattern ONLY in the body of the artefact (after the `# ---`
+    # header separator). The header carries the EXPECTED grading message in
+    # a comment ("# grading: 8/8 properties...") which would false-positive
+    # the check before the test even runs. Codex v9 BLOCKER + Opus v9 N1
+    # both flagged this. Fix: anchor below the separator.
     local file="$1" pattern="$2" name="$3"
     if [[ ! -f "${file}" ]]; then
         fail "missing: ${name}"
         return 1
     fi
-    if grep -qE "${pattern}" "${file}"; then
+    # Extract body: lines after the first `# ---` separator. If no separator
+    # is present (e.g., suite log written without our header), use whole file.
+    local body
+    body=$(awk 'started{print} /^# ---$/{started=1}' "${file}")
+    if [[ -z "${body}" ]]; then
+        body=$(cat "${file}")
+    fi
+    if echo "${body}" | grep -qE "${pattern}"; then
         ok "grading match: ${name}"
         return 0
     fi
-    fail "grading mismatch: ${name} (expected pattern: ${pattern})"
+    fail "grading mismatch: ${name} (expected pattern: ${pattern}; checked BODY only, header excluded)"
     return 1
 }
 
@@ -396,12 +408,51 @@ do_verify_fast() {
     regen_all_lightweight
     DET_DIR="${DET_DIR_SAVED}"
     drift=0
+    # NEW: head-pin atomicity check (Codex v9 BLOCKER closure).
+    head_pin_check || drift=1
     for n in "${LIGHTWEIGHT_ARTEFACTS[@]}"; do
         diff_artefact "${DET_DIR}/${n}" "${tmp}/${n}" "${n}" || drift=1
     done
     rm -rf "${tmp}"
     [[ "${drift}" -eq 0 ]] || { fail "--verify-fast FAIL: lightweight subset drifted"; return 1; }
     ok "--verify-fast PASS: lightweight deterministic subset matches"
+    return 0
+}
+
+head_pin_check() {
+    # Codex v9 BLOCKER: normalize_for_diff strips commit/tree from
+    # freshness_proof.log so a green --verify does NOT prove the package
+    # is pinned to current HEAD. This separate check bypasses normalization
+    # and asserts the COMMIT line in freshness_proof.log matches `git
+    # rev-parse HEAD`. Also asserts every per-artefact `_meta.commit` /
+    # `# commit:` value across deterministic/ pins to the SAME SHA.
+    local current_head expected pinned_shas
+    current_head=$(git rev-parse HEAD)
+    expected=$(grep -E "^# commit:" "${DET_DIR}/freshness_proof.log" | head -1 | awk '{print $3}')
+    if [[ -z "${expected}" || "${expected}" != "${current_head}" ]]; then
+        fail "head-pin FAIL: freshness_proof.log commit (${expected:-NONE}) != git HEAD (${current_head})"
+        return 1
+    fi
+    # Every artefact must pin to the same SHA — atomicity check.
+    pinned_shas=$(
+        {
+            grep -hE '^# commit:' "${DET_DIR}"/*.log 2>/dev/null
+            grep -hE '"commit":[[:space:]]*"[0-9a-f]{40}"' "${DET_DIR}"/*.json 2>/dev/null
+            grep -hE '"commit":[[:space:]]*"[0-9a-f]{40}"' "${DET_DIR}"/*/SUMMARY.json 2>/dev/null
+        } | grep -oE '[0-9a-f]{40}' | sort -u
+    )
+    local n_unique
+    n_unique=$(echo "${pinned_shas}" | wc -l | tr -d ' ')
+    if [[ "${n_unique}" -ne 1 ]]; then
+        fail "atomicity FAIL: artefacts pin to ${n_unique} different SHAs:"
+        echo "${pinned_shas}" | sed 's/^/      /' >&2
+        return 1
+    fi
+    if [[ "${pinned_shas}" != "${current_head}" ]]; then
+        fail "atomicity FAIL: all artefacts pin to ${pinned_shas} (single SHA, atomic) but git HEAD is ${current_head}"
+        return 1
+    fi
+    ok "head-pin: every artefact's commit field == git HEAD (${current_head:0:12})"
     return 0
 }
 
@@ -419,6 +470,8 @@ do_verify() {
     DET_DIR="${DET_DIR_SAVED}"
 
     drift=0
+    # NEW: head-pin atomicity check (Codex v9 BLOCKER closure).
+    head_pin_check || drift=1
     for n in "${LIGHTWEIGHT_ARTEFACTS[@]}" "${HEAVY_ARTEFACTS[@]}"; do
         diff_artefact "${DET_DIR}/${n}" "${tmp}/${n}" "${n}" || drift=1
     done
@@ -541,6 +594,15 @@ case "${MODE}" in
         ;;
     --all)
         do_deterministic
-        do_external_eval || true   # external-eval is gracefully optional in --all only
+        # Codex v9 closure: --all no longer swallows external-eval failures.
+        # If external-eval is invoked under --all without keys, it returns 2
+        # (missing keys); we treat that as "skipped, not a failure" but
+        # propagate any OTHER non-zero (rc != 2 → real failure).
+        do_external_eval
+        rc=$?
+        if [[ "${rc}" -ne 0 && "${rc}" -ne 2 ]]; then
+            fail "--all FAIL: external-eval returned ${rc}"
+            exit "${rc}"
+        fi
         ;;
 esac

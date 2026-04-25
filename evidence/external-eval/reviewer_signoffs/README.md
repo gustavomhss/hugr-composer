@@ -96,7 +96,12 @@ post-N HEAD returns exit 0.
 - `wave-i-1__closure_log_v8.md` — maps every Codex v8 + Opus v8
   finding → Wave-I-1.N commit that closes it.
 
-## §5.1 status timeline
+## §5.1 status timeline (Codex v9 + Opus v9 corrected)
+
+The pre-v9 timeline was authored by the I-1.N implementer in the same
+commit family being audited (Codex v8 C8.Q2.8 + Opus v9 N2 flagged this
+author-self-attestation). The corrected version below uses ONLY the
+external reviewer verdicts as the authority for each phase's status.
 
 - **Wave-H**: NOT SATISFIED (author-summaries only)
 - **Wave-I-1.J**: PARTIAL — Category 2 transcripts archived (genuine
@@ -104,9 +109,24 @@ post-N HEAD returns exit 0.
 - **Wave-I-1.M**: PARTIAL — Category 3 v8 re-audits archived (closure
   verified for 16/18 Opus + 4/4 Codex BLOCKERs; HEAD-drift regression
   + EVIDENCE staleness flagged)
-- **Wave-I-1.N**: SATISFIED — atomic regen + EVIDENCE/contract
-  cleanup closes v8 conditions. `verify` returns exit 0 on post-N
-  HEAD; both v8 reviewers' conditional NOs are now structurally
-  invalid (their conditions met).
+- **Wave-I-1.N (v9 verdict)**: NOT SATISFIED. Both Codex v9 + Opus v9
+  re-audited bb407ef and issued NO. Codex flagged 2 NEW BLOCKERs +
+  3 HIGHs (grading_check matches header line, freshness pin not
+  enforced by --verify, §5.1 contradiction across docs); Opus
+  flagged NO with 3 conditions converging on the same defects.
+  See `transcripts/wave-i-1__codex_v9__verdict.md` +
+  `transcripts/wave-i-1__opus_v9__verdict.md`.
+- **Wave-I-1.R (in-flight)**: closing the v9 BLOCKERs at source
+  (grading_check anchored below header separator, head_pin_check
+  added, EVIDENCE.md ↔ README.md status reconciled, ext-eval
+  sub-runners fail-loud). Re-audit at v10 will determine SATISFIED
+  status. Until v10 concurrence, §5.1 = NOT SATISFIED.
 
-This file is updated each time a category gains content.
+This file is the single source of truth for §5.1 status; EVIDENCE.md
+§3 and not-yet-covered.md §8 reference this section verbatim. Codex
+v9 C8.Q2.8 closure: any drift between this file's verdict and the
+others is a structural defect that must be fixed at this file first
+and propagated.
+
+This file is updated each time a category gains content or a
+reviewer round completes.

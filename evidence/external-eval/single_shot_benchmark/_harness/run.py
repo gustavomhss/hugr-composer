@@ -65,10 +65,20 @@ def _drive_session(spec_path: pathlib.Path, transcript_path: pathlib.Path) -> pa
 
 
 def main() -> int:
+    # Codex v9 closure: this runner used to write an empty manifest +
+    # return 0 when the API key was absent. That was fail-open: a CI
+    # caller without the key would see green even though no run actually
+    # happened. The fail-loud path: when invoked via reproduce.sh
+    # --external-eval the key is verified up-front. When invoked direct
+    # for shape verification, a separate flag must be passed (--shape-only).
+    shape_only = "--shape-only" in sys.argv
     if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("ANTHROPIC_API_KEY not set — writing EMPTY run_manifest for shape verification.")
-        _write_manifest(empty=True)
-        return 0
+        if shape_only:
+            print("--shape-only: writing EMPTY run_manifest for schema verification.")
+            _write_manifest(empty=True)
+            return 0
+        print("FATAL: ANTHROPIC_API_KEY not set. Pass --shape-only for schema verification only.", file=sys.stderr)
+        return 2
 
     TRANSCRIPT_DIR.mkdir(parents=True, exist_ok=True)
     specs = sorted(SPECS_DIR.glob("[0-9][0-9]-*.md"))

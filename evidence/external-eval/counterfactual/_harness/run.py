@@ -68,10 +68,16 @@ def _iso_now() -> str:
 
 
 def main() -> int:
+    # Codex v9 closure: was fail-open when key missing. Now requires
+    # --shape-only flag for schema-verification-only mode.
+    shape_only = "--shape-only" in sys.argv
     if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("ANTHROPIC_API_KEY not set — writing EMPTY run_manifest for shape verification.")
-        _write_manifest(empty=True)
-        return 0
+        if shape_only:
+            print("--shape-only: ANTHROPIC_API_KEY missing; writing EMPTY run_manifest.")
+            _write_manifest(empty=True)
+            return 0
+        print("FATAL: ANTHROPIC_API_KEY not set. Pass --shape-only for schema verification only.", file=sys.stderr)
+        return 2
 
     TRANSCRIPTS.mkdir(parents=True, exist_ok=True)
     specs = sorted(SPECS_DIR.glob("[0-9][0-9]-*.md"))
