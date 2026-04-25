@@ -15,23 +15,28 @@ is transitive proof of per-sub-generator idempotence.
 Across profiles (minimal + api + full) for coverage. Profile set is the
 canonical one from generators.orchestrator.PROFILES.
 
-Known non-determinism handled explicitly:
+Wave-I-1 update: both pre-existing generator non-determinisms have
+been fixed at source (commits in Wave I-1 K-batch). The probe NO
+LONGER requires PYTHONHASHSEED=0 to pass; it sets it anyway for
+defence-in-depth. The probe also keeps the EXCLUDED_FROM_DIFF
+list as a safety net for any future-introduced non-determinism.
 
-  1. `.venous_manifest.json` records `copied_at` host timestamp.
-     Excluded from diff (see EXCLUDED_FROM_DIFF). Logged in output.
-     Fix: pin `copied_at` to the commit SHA instead of now().
+Closed in Wave I-1:
 
-  2. `generators/middleware/request_logging.py` emits
-     `_REDACT_HEADERS = {repr({'authorization','cookie','x-api-key'})}`.
-     Python's hash randomization gives different set iteration order
-     across Python invocations → different repr → different emitted
-     bytes. The probe sets `PYTHONHASHSEED=0` in its subprocess
-     environment to pin iteration order. Fix: sort the set before
-     repr-ing in the generator source.
+  1. `.venous_manifest.json copied_at` was host-clock timestamp →
+     pinned to source-commit author ISO time
+     (generators/scaffold_venous.py::_source_commit_iso_time).
+     Closes evidence/not-yet-covered.md §2 bullet 3.
 
-Both non-determinisms are real generator-source limitations, not probe
-bugs. They are tracked in /evidence/not-yet-covered.md so a future tag
-tightens the emitter to eliminate them.
+  2. `generators/middleware/request_logging.py` was emitting
+     `repr({...set...})` → set iteration order non-deterministic
+     across Python invocations. Now emits sorted-then-repr'd
+     items so output is identical regardless of PYTHONHASHSEED.
+     Closes not-yet-covered.md §2 bullet 2.
+
+Both fixes verified: running the probe with PYTHONHASHSEED unset +
+2-second wait between the two regen runs produces zero diffs across
+all 3 profiles.
 
 Output:
     evidence/deterministic/generator_idempotence.json

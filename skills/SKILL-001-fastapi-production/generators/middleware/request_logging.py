@@ -26,7 +26,11 @@ def generate_request_logging(
     if redact_headers is None:
         redact_headers = ["authorization", "cookie", "x-api-key"]
 
-    redact_repr = repr({h.lower() for h in redact_headers})
+    # Build deterministic repr — sort the lowered set so `repr(set)` output
+    # is stable across Python invocations regardless of hash randomization
+    # (PYTHONHASHSEED). Fixes evidence/_harness/generator_idempotence.py
+    # finding without requiring downstream callers to set PYTHONHASHSEED=0.
+    redact_repr = "{" + ", ".join(repr(h) for h in sorted({h.lower() for h in redact_headers})) + "}"
 
     content = textwrap.dedent(f'''\
         """Request logging middleware.
