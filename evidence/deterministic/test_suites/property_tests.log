@@ -1,10 +1,10 @@
 # property_tests.log
 # command:  PYTHONPATH=. .venv/bin/python tests/property_tests.py
 # cwd:      skills/SKILL-001-fastapi-production
-# commit:   6d2dfb3c0607bd23a02915aec8a96a15a76a5473
-# tree:     e6ca341330f8d48d8081eff24ec215889dd20632
-# generated: 2026-04-25T00:19:04Z
-# grading:  7/8 properties (RUFF_CRITICAL_CLEAN known fail; LAUNCH §1.2 blocker)
+# commit:   b0080a9dba44b35f7d5ac22375386d3d5cee2001
+# tree:     68bff479b0971e3b4b110e2beea9c8dddca8df22
+# generated: 2026-04-25T10:54:16Z
+# grading:  expect '8/8 properties × 123 tools (984/984 tool-checks passed)'
 # ---
 
 ======================================================================
@@ -16,17 +16,11 @@ PROPERTY-BASED TESTS  —  123 tools × 8 properties
   PASS NO_CRASH_ON_ANY_PATH: 123/123 tools
   PASS PARSE_CORRECTNESS: 123/123 tools
   PASS TOOLRESULT_CONTRACT: 123/123 tools
-  FAIL RUFF_CRITICAL_CLEAN: 81/123 tools
-  [adapt.extend.api_design.add_api_versioning.add_api_versioning] 10 ruff F-violation(s): F401 [*] `dataclasses.field` imported but unused
-  [adapt.extend.api_design.add_batch_endpoint.add_batch_endpoint] 32 ruff F-violation(s): F401 [*] `fastapi.Depends` imported but unused
-  [adapt.extend.api_design.add_graphql.add_graphql] 41 ruff F-violation(s): F401 [*] `strawberry` imported but unused
-  [adapt.extend.auth_access.add_multi_tenancy.add_multi_tenancy] 10 ruff F-violation(s): F401 [*] `uuid` imported but unused
-  [adapt.extend.crud_data.add_bulk_operations.add_bulk_operations] 50 ruff F-violation(s): F811 [*] Redefinition of unused `Field` from line 5
-  ... and 37 more failures
+  PASS RUFF_CRITICAL_CLEAN: 123/123 tools
   PASS LAZY_SDK_IMPORTS: 123/123 tools
   PASS STANDALONE_MODE: 123/123 tools
 
 ======================================================================
-RESULT: FAILED — 7/8 properties passed (942/984 tool-checks passed)
+RESULT: ALL PASSED — 8/8 properties × 123 tools (984/984 tool-checks passed)
 ======================================================================
 

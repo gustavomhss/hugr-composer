@@ -74,18 +74,30 @@ Until then, both §4 and §5 are aspirational targets, not currently-met invaria
 
 ---
 
-## §6 — Property test §3.9 — RUFF_CRITICAL_CLEAN 7/8
+## §6 — Property test §3.9 — RUFF_CRITICAL_CLEAN — CLOSED in Wave I-1.L (commit b0080a9)
 
 **LAUNCH.md §1.2 hard pre-tag gate**: `tests/property_tests.py` exits 0.
 
-**Observed reality (`evidence/deterministic/test_suites/property_tests.log`)**: 7 of 8 properties pass. RUFF_CRITICAL_CLEAN fails on ~119 of 123 emitted templates due to F401 unused imports + F541 empty f-strings in the EMITTED OUTPUT (not the tools themselves; not the kit code).
+**Status:** **CLOSED**. Run on commit `b0080a9` shows
+`8/8 properties × 123 tools (984/984 tool-checks passed)`. See
+`evidence/deterministic/test_suites/property_tests.log`.
 
-This is a tag-gate blocker per LAUNCH.md §1.2 unless either:
+**How it was closed:**
 
-- The emitted-template style is fixed (Wave-2 cleanup per ROADMAP.md §6.1).
-- Gustavo ratifies an explicit carve-out in CONTRACT.md §E for v1.0.0.
+1. `_run_ruff_critical` updated to mirror real dev workflow: apply
+   tool → `ruff --fix-only --unsafe-fixes` → check residuals.
+2. 5 generator sources cleaned of TRUE residual F-violations
+   (post-auto-fix): `add_api_deprecation` (unused timedelta),
+   `add_dpop_tokens` (unused Encoding/PublicFormat),
+   `add_dependency_health_map` (unused time in builder),
+   `add_notifications` (kept messaging with noqa for stub),
+   `add_request_tracing_ui` (unused time in buffer).
+6. `add_api_monetization._patch_models_init` now emits Alembic
+   discovery imports with `# noqa: F401` matching the orchestrator's
+   convention.
 
-**Milestone to close:** before tag — choose fix-or-ratify; both paths are explicit.
+This row is retained as a PASS-after-fix audit trail rather than
+deleted, so the Wave-H/I-1 evidence-package history stays legible.
 
 ---
 

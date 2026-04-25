@@ -1,11 +1,11 @@
 {
   "_meta": {
     "command": ".venv/bin/python evidence/_harness/emitted_glue_loc.py",
-    "commit": "06263c78b44ec04facc06e7e4624cd880b115faf",
+    "commit": "b0080a9dba44b35f7d5ac22375386d3d5cee2001",
     "cwd": "repo root",
-    "generated": "2026-04-25T10:11:58Z",
+    "generated": "2026-04-25T10:54:39Z",
     "grading": "exit 0 iff probe ran cleanly (every tool invokable). Alignment with PRODUCT \u00a76.1/\u00a7A2 reported informatively under summary.product_alignment.",
-    "tree": "e152ff40080e79bf08460e54c897d0cbe6b189bf"
+    "tree": "68bff479b0971e3b4b110e2beea9c8dddca8df22"
   },
   "per_tool": [
     {

@@ -1,9 +1,9 @@
 {
   "_meta": {
-    "commit": "6d2dfb3c0607bd23a02915aec8a96a15a76a5473",
-    "generated": "2026-04-25T01:34:16Z",
+    "commit": "b0080a9dba44b35f7d5ac22375386d3d5cee2001",
+    "generated": "2026-04-25T10:55:05Z",
     "source": "evidence/_harness/metrics_summary.py",
-    "tree": "e6ca341330f8d48d8081eff24ec215889dd20632"
+    "tree": "68bff479b0971e3b4b110e2beea9c8dddca8df22"
   },
   "deterministic": {
     "bandit_scan": {
@@ -122,7 +122,7 @@
       "status": "not-yet-run"
     },
     "reviewer_signoffs": {
-      "signoffs_present": 3,
+      "signoffs_present": 4,
       "target": "2-of-3 YES per LAUNCH.md \u00a75.1"
     },
     "single_shot_benchmark": {
