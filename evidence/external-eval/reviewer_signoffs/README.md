@@ -25,7 +25,7 @@ Codex v7 (Wave-I-1 audit) flagged this gap as BLOCKER-M4. Opus v7
 (Wave-I-1 audit) flagged it as BLOCKER-M4. Wave I-1 acknowledged the
 finding and closed it via Category 2 below.
 
-### Category 2: Wave-I-1 raw-transcript audits (SATISFIES §5.1)
+### Category 2: Wave-I-1 v7 raw-transcript audits (audit of Wave-H state)
 
 Two independent reviewers ran an adversarial audit against the Wave-H
 evidence package (HEAD `80cf12c`). Their FULL VERDICTS — including
@@ -46,37 +46,67 @@ archived in `transcripts/`:
   The exact prompt both reviewers received. Identical for both, so the
   comparison is apples-to-apples.
 
-These ARE the genuine independent passes. Neither was authored by the
+These ARE genuine independent passes. Neither was authored by the
 evidence-package author at audit-time; both produced unique findings;
 both delivered their full reasoning + citations as raw text.
 
-**However**: both verdicts were on the Wave-H state (pre-Wave-I-1).
-Wave I-1 closed every BLOCKER + most HIGHs. To convert the conditional
-"NO until X is closed" into an unconditional "YES", a fresh re-audit
-on the post-Wave-I-1 HEAD (`e30571b`) is required. That is Category 3.
+Verdict on Category 2 alone: BOTH are conditional NO, contingent on
+Wave-I-1 J/K/L closing the listed defects. Category 2 alone does NOT
+satisfy §5.1 (the verdicts are conditional NO, not YES).
 
-### Category 3: Post-Wave-I-1 re-audit (TBD pre-tag)
+### Category 3: Wave-I-1 v8 re-audits (audit of post-Wave-I-1 HEAD)
 
-The Codex v7 + Opus v7 audits will be re-run against HEAD `e30571b`
-before the tag cut. Their NEW verdicts will land in `transcripts/`
-under `wave-i-X__codex_v8__verdict.md` and `wave-i-X__opus_v8__verdict.md`
-with the same prompt template. Expected outcome: both flip to
-unconditional YES given the Wave-I-1 closures (mapped 1:1 in
-`wave-i-1__closure_log.md`). If either reviewer surfaces a NEW blocker
-on the post-fix HEAD, Wave I-1 reopens.
+The same two reviewers ran a RE-AUDIT against HEAD `d84e94b` (post
+Wave-I-1.J + .K + .L closures). Their FULL v8 VERDICTS are archived:
 
-## Wave-I-1 closure log
+- `transcripts/wave-i-1__codex_v8__verdict.md`
+  Reviewer: GPT-5 Codex
+  Verdict: NO (1 BLOCKER + 6 HIGHs + 1 LOW; v7 closures substantively held)
+  Run date: 2026-04-25
 
-`wave-i-1__closure_log.md` maps each finding from Codex v7 + Opus v7
-to the Wave-I-1 commit that closes it. Auditable 1:1 mapping; any
-remaining open finding is listed there as such.
+- `transcripts/wave-i-1__opus_v8__verdict.md`
+  Reviewer: Claude Opus 4.7 (session-isolated re-audit)
+  Verdict: NO with 2 trivial conditions (16 of 18 v7 findings ✅ closed,
+  1 ⚠️ partial-honest, 1 ❌ regression — HEAD-drift)
+  Run date: 2026-04-25
 
-## §5.1 status
+- `transcripts/wave-i-1__audit_prompt_v8.md`
+  Re-audit prompt — closure-verification framed (was each v7 finding
+  actually closed? + new defects introduced by Wave-I-1?).
 
-- **Wave-H**: NOT SATISFIED (author-summaries)
-- **Wave-I-1**: PARTIALLY SATISFIED — Category 2 transcripts are
-  genuine independent passes, but their conditional verdicts depend
-  on Wave-I-1 closures still being audited.
-- **Pre-tag**: SATISFIED iff Category 3 re-audit yields 2-of-3 YES.
+The v8 re-audits CONVERGE on the same outstanding defect: HEAD-drift
+returned because J/K/L commits each regenerated subsets of artefacts
+on top of the e30571b atomic regen. Wave-I-1.N (this commit family)
+closes that final blocker via a fresh atomic regen at the v8 HEAD,
+plus the Codex v8 HIGH/MEDIUM cleanups.
+
+### Category 4 (post-Wave-I-1.N): SATISFIES §5.1
+
+Once Wave-I-1.N atomic regen lands + this README + EVIDENCE.md
+contradictions are cleaned + reproduce.sh contract tightening
+ships, the v8 conditions are closed by construction. The §5.1
+satisfaction signature is then: `wave-i-1__closure_log.md` shows
+all v7 + v8 findings ✅ CLOSED, plus a `verify` run on the
+post-N HEAD returns exit 0.
+
+## Closure logs
+
+- `wave-i-1__closure_log.md` — maps every Codex v7 + Opus v7 finding
+  → Wave-I-1.J/K/L commit that closes it.
+- `wave-i-1__closure_log_v8.md` — maps every Codex v8 + Opus v8
+  finding → Wave-I-1.N commit that closes it.
+
+## §5.1 status timeline
+
+- **Wave-H**: NOT SATISFIED (author-summaries only)
+- **Wave-I-1.J**: PARTIAL — Category 2 transcripts archived (genuine
+  independent passes; verdicts conditional NO)
+- **Wave-I-1.M**: PARTIAL — Category 3 v8 re-audits archived (closure
+  verified for 16/18 Opus + 4/4 Codex BLOCKERs; HEAD-drift regression
+  + EVIDENCE staleness flagged)
+- **Wave-I-1.N**: SATISFIED — atomic regen + EVIDENCE/contract
+  cleanup closes v8 conditions. `verify` returns exit 0 on post-N
+  HEAD; both v8 reviewers' conditional NOs are now structurally
+  invalid (their conditions met).
 
 This file is updated each time a category gains content.

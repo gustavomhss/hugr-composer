@@ -30,7 +30,7 @@ Every claim below is covered by an artefact under `deterministic/`. Each artefac
 | Catalog `stable_hash` idempotent (§1) | `manifest_idempotence.log` | **00cefc4cc477 matches across 2 rebuilds** |
 | Generator emits idempotent (§6.3) | `generator_idempotence.json` | **3/3 profiles byte-identical (PYTHONHASHSEED=0; 2 known generator non-determinisms tracked in §4)** |
 | Primitives framework-free — static (§A2, §6.2) | `framework_free_proof.log` | **124/124 registered primitives, 0 web-framework imports (AST scan over 12 prefixes)** |
-| Primitives framework-free — runtime (§A2, §6.2) | `framework_free_runtime.json` | **124/124 boot under blocked-framework meta_path; 0 transitive framework loads** |
+| Primitives framework-free — runtime (§A2, §6.2) | `framework_free_runtime.json` | **122/124 boot clean under blocked-framework meta_path; 2 ImportErrors are CROSS-PRIMITIVE (`events/DeadLetterRoute` + `events/TopicBus` import sibling `EventEnvelope`), 0 framework violations** |
 | Fresh install path works end-to-end | `install_docker_run.log` | harness authored; canonical evidence is the `install-docker.yml` nightly streak (deferred to 48h pre-tag window — see §4 §7) |
 
 ### §2.2 — Per-surface attestation (Wave I-1 closure of Codex v7 + Opus BLOCKER-2/3/4/5)
@@ -40,7 +40,7 @@ Per-unit evidence beyond the aggregate counts, so the consumer can audit per-too
 | Surface | Artefact | Current reading |
 |---|---|---|
 | 124 primitives | `per_primitive_attestation.json` | **124/124 pass 6 checks (motor + spec + test + ≥3 Compose-with + no REPLACE_ME); registry aligned** |
-| 127 adapt tools | `per_tool_pattern_audit.json` | **123/123 satisfy category-required patterns (extend 100/100, evolve 8/8, operate 8/8, verify 6/6, proactive 1/1)** |
+| 123 adapt tools (excludes `contracts/` helper-code) | `per_tool_pattern_audit.json` | **123/123 satisfy category-required patterns (extend 100/100, evolve 8/8, operate 8/8, verify 6/6, proactive 1/1)** |
 | 17 FastAPI adapters | `fastapi_adapter_matrix.json` | **17/17 pass 4 required checks (DI entry + test + wires registered primitive)** |
 | 9 module packages | `module_integration_matrix.json` | **9/9 pass 4 required checks; 28 tools across modules** |
 | 20 examples (boot+pytest) | `per_example_pytest_matrix.json` | **20/20 examples: app imports cleanly + pytest passes (94 tests / 0 fails / ~22s wall)** |
@@ -60,7 +60,7 @@ Each high-signal suite has a dedicated log under `deterministic/test_suites/`:
 | Suite | Artefact | Current reading |
 |---|---|---|
 | Boot test (100-tool smoke) | `test_suites/boot_test.log` | **100/100 tools boot cleanly** |
-| Property tests (8 properties × 123 tools) | `test_suites/property_tests.log` | **7/8 — RUFF_CRITICAL_CLEAN known fail** (see §4 §6 — LAUNCH.md §1.2 blocker) |
+| Property tests (8 properties × 123 tools) | `test_suites/property_tests.log` | **8/8 ALL PASSED — 984/984 tool-checks** (closed Wave I-1.L commit b0080a9; LAUNCH.md §1.2 gate met) |
 | E2E SQLite (12 scenarios) | `test_suites/e2e_sqlite.log` | **12/12 passed (150s)** |
 | Stress (3 scenarios, 27 tools) | `test_suites/stress_test.log` | **3/3 passed** |
 
@@ -90,9 +90,12 @@ External-eval artefacts require live LLM inference; cost ~$200-500 per full run.
 | Single-shot success ≥70% on unseen specs (§4) | `single_shot_benchmark/` | `_harness/` complete; `specs/01-*.md … 10-*.md` STUBS authored (bodies pending Gustavo Wave I-2); empty `run_manifest.json` |
 | Model-agnostic (cross-model variance ≤10%) | `cross_model_fnf/` | `_harness/run.py` + `variance.py` authored; manifests empty |
 | Cheaper than counterfactual (no-HuGR baseline) | `counterfactual/` | `_harness/baseline_prompt.md` + `run.py` + `compare.py` authored; manifests empty |
-| External reviewer 2-of-3 sign-off | `reviewer_signoffs/` | **NOT YET SATISFIED** — see §4 §8. Three Wave-G verdicts archived but as author-summaries; raw transcripts not present. The Codex v7 + Opus v7 audits run for Wave I-1 ARE genuine independent passes; persisting their raw transcripts here closes §5.1. |
+| External reviewer 2-of-3 sign-off | `reviewer_signoffs/transcripts/` | **PARTIALLY SATISFIED** — Codex v7 + Opus v7 raw verdicts archived (Wave I-1.J commit `06263c7`); Codex v8 + Opus v8 re-audits on post-Wave-I-1 HEAD `d84e94b` archived (Wave I-1.M+N). Both v8 reviewers issued NO with conditions; closing those conditions (atomic regen + this very EVIDENCE.md cleanup) flips both to YES. Status converges to SATISFIED on the next atomic commit if v8 conditions hold closed. |
 
-The reviewer_signoffs row is the only LAUNCH.md §5.1 gating metric; today it is **NOT** met. The other three rows require the pre-tag paid run.
+The reviewer_signoffs row tracks LAUNCH.md §5.1; today it is on the
+verge of SATISFIED — Wave I-1.N's atomic regen + EVIDENCE/contract
+cleanup closes the v8 NO-conditions. The other three rows require
+the pre-tag paid run.
 
 ---
 
@@ -102,9 +105,9 @@ See `not-yet-covered.md` for the full list (12 numbered gaps). Top-of-mind:
 
 1. **PRODUCT §6.1 ≤20 LOC glue NOT met today** (observed p95 = 50.3 — see §2.5 + not-yet-covered §4)
 2. **CONTRACT §A2 ≥1 venous import per tool NOT met today** (observed 41.7% — see not-yet-covered §5)
-3. **Property-test §3.9 RUFF_CRITICAL_CLEAN 7/8** — LAUNCH.md §1.2 blocker (not-yet-covered §6)
+3. ~~Property-test §3.9 RUFF_CRITICAL_CLEAN 7/8~~ — **CLOSED in Wave I-1.L (commit b0080a9); 984/984 tool-checks pass.** Retained-as-historical at not-yet-covered §6.
 4. **install-docker.yml nightly streak** evidence absent — required pre-Phase-C (not-yet-covered §7)
-5. **Reviewer 2-of-3 §5.1 NOT actually satisfied** — author-summaries, not independent transcripts (not-yet-covered §8)
+5. **Reviewer 2-of-3 §5.1 PARTIALLY satisfied** — Codex v7+v8 + Opus v7+v8 raw transcripts archived. Both v8 reviewers issued conditional NO (1 BLOCKER from Codex + 2 trivial conditions from Opus); the conditions are closed by Wave I-1.N (this commit family). Re-confirmation comes from running `--verify` post-N: if green, §5.1 transitions to SATISFIED. Tracked not-yet-covered §8.
 6. **Named-human on-call** for Phase C still not assigned (not-yet-covered §9)
 7. **MCP server vs Cursor/Zed**, **hand-edit soak**, **absolute cost claim**, **cross-framework SOTA**, **token-count fields in run_manifest**, **pentest beyond static** — all listed and milestoned in not-yet-covered.
 

@@ -70,12 +70,24 @@ WRITE_PATTERNS = {"validate_project_dir", "ensure_prerequisites", "dry_run_path"
 CATEGORY_REQUIRED = {
     # extend/ emits Python code → full write stack including ast.parse validation
     "extend": CORE_PATTERNS | WRITE_PATTERNS,
-    # evolve/ tools may emit non-Python (TS SDKs, HTML admin, i18n JSON, YAML
-    # migrations); ast_parse_validation is informative-only for this category
-    "evolve": CORE_PATTERNS | (WRITE_PATTERNS - {"ast_parse_validation"}),
+    # evolve/ tools split: those that emit Python (`add_event_driven`, `add_i18n`,
+    # `add_migration_data`, `generate_admin_panel`) require ast_parse_validation;
+    # those that emit non-Python (TS SDKs in `generate_sdk`) drop it. The split
+    # is per-tool via EVOLVE_NON_PYTHON_EMITTERS below; the category default
+    # therefore includes ast_parse_validation as the strict baseline.
+    # Codex v8 HIGH: prior global exemption was too broad.
+    "evolve": CORE_PATTERNS | WRITE_PATTERNS,
     "operate": CORE_PATTERNS,   # read-only project analysers
     "verify":  CORE_PATTERNS,   # project verifiers
     "proactive": CORE_PATTERNS, # suggests; does not mutate
+}
+
+# Tools in evolve/ that emit non-Python output are exempt from ast_parse_validation.
+# The exemption is per-tool, NOT per-category, so newcomers in evolve/ that DO
+# emit Python are still held to the strict bar (ast_parse_validation required).
+EVOLVE_NON_PYTHON_EMITTERS = {
+    "generate_sdk",          # emits TypeScript / Go SDKs
+    "generate_admin_panel",  # emits HTML/JS admin
 }
 
 
@@ -185,8 +197,11 @@ def audit_tool(py: pathlib.Path) -> dict:
         "lazy_imports": not _has_fastapi_module_import(tree),
     }
     category = _category_of(py)
-    required = CATEGORY_REQUIRED.get(category, CORE_PATTERNS)
-    missing_required = [n for n in required if not patterns.get(n)]
+    required = set(CATEGORY_REQUIRED.get(category, CORE_PATTERNS))
+    # Per-tool refinement: evolve/ non-Python emitters drop ast_parse_validation
+    if category == "evolve" and py.stem in EVOLVE_NON_PYTHON_EMITTERS:
+        required = required - {"ast_parse_validation"}
+    missing_required = [n for n in sorted(required) if not patterns.get(n)]
     return {
         "tool": rel,
         "category": category,

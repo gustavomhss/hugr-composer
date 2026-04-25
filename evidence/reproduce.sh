@@ -251,14 +251,16 @@ regen_test_suites() {
     local sha tree iso
     sha=$(git rev-parse HEAD); tree=$(git rev-parse 'HEAD^{tree}'); iso=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-    # Each suite re-run + captured. Suites that legitimately fail (property)
-    # are captured as-is; the artefact attests CURRENT STATE, not pass/fail.
-    for SUITE in boot_test property_tests e2e_sqlite stress_test; do
+    # Each suite re-run + captured. Cross-composition included in regen so
+    # --verify covers it (Codex v8 finding: was excluded). cross_composition
+    # is the long pole at ~36 min; budget for full --deterministic accordingly.
+    for SUITE in boot_test property_tests e2e_sqlite stress_test cross_composition; do
         case "${SUITE}" in
             boot_test) cmd_file="tests/test_boot.py" ; grade="100/100 tools boot cleanly";;
-            property_tests) cmd_file="tests/property_tests.py" ; grade="7/8 properties (RUFF_CRITICAL_CLEAN known fail; LAUNCH §1.2 blocker)";;
+            property_tests) cmd_file="tests/property_tests.py" ; grade="8/8 properties (LAUNCH §1.2 met after Wave I-1.L)";;
             e2e_sqlite) cmd_file="tests/test_e2e_hardcore.py" ; grade="12/12 scenarios passed";;
             stress_test) cmd_file="tests/test_stress.py" ; grade="3/3 stress scenarios passed";;
+            cross_composition) cmd_file="tests/test_cross_composition.py" ; grade="200+ scenarios ALL PASSED (~36min)";;
         esac
         local out="${DET_DIR}/test_suites/${SUITE}.log"
         {
@@ -396,15 +398,19 @@ do_verify() {
     for n in "${LIGHTWEIGHT_ARTEFACTS[@]}" "${HEAVY_ARTEFACTS[@]}"; do
         diff_artefact "${DET_DIR}/${n}" "${tmp}/${n}" "${n}" || drift=1
     done
-    # Also diff scan summaries (per-example logs are timestamp-noisy; skip)
+    # Diff scan summaries (per-example logs are timestamp-noisy; skip individual rows).
     diff_artefact "${DET_DIR}/bandit_scan/SUMMARY.json" "${tmp}/bandit_scan/SUMMARY.json" "bandit_scan/SUMMARY.json" || drift=1
     diff_artefact "${DET_DIR}/semgrep_scan/SUMMARY.json" "${tmp}/semgrep_scan/SUMMARY.json" "semgrep_scan/SUMMARY.json" || drift=1
-    # Suite logs and pytest log are timestamp-rich (test durations vary); diff
-    # the SUMMARY-LINE only by grep'ing the grading-line region.
-    for SUITE in boot_test property_tests e2e_sqlite stress_test; do
-        diff_artefact "${DET_DIR}/test_suites/${SUITE}.log" "${tmp}/test_suites/${SUITE}.log" "test_suites/${SUITE}.log" || drift=1
+    # Suite logs (timestamp-rich; normalize_for_diff strips duration_s + summary_line).
+    for SUITE in boot_test property_tests e2e_sqlite stress_test cross_composition; do
+        if [[ -f "${DET_DIR}/test_suites/${SUITE}.log" ]]; then
+            diff_artefact "${DET_DIR}/test_suites/${SUITE}.log" "${tmp}/test_suites/${SUITE}.log" "test_suites/${SUITE}.log" || drift=1
+        fi
     done
     diff_artefact "${DET_DIR}/pytest_full_sweep.log" "${tmp}/pytest_full_sweep.log" "pytest_full_sweep.log" || drift=1
+    # install_docker_run.log: SKIPPED-LOCALLY mode is timestamp-only diff;
+    # full-run mode is normalize-tolerant. Either way, include in --verify.
+    diff_artefact "${DET_DIR}/install_docker_run.log" "${tmp}/install_docker_run.log" "install_docker_run.log" || drift=1
 
     rm -rf "${tmp}"
     [[ "${drift}" -eq 0 ]] || { fail "--verify FAIL: at least one deterministic artefact drifted"; return 1; }
@@ -434,6 +440,18 @@ do_deterministic() {
     for n in "${LIGHTWEIGHT_ARTEFACTS[@]}" "${HEAVY_ARTEFACTS[@]}"; do
         diff_artefact "${DET_DIR}/${n}" "${tmp}/${n}" "${n}" || drift=1
     done
+    # Wave-I-1.N hardening: --deterministic 2nd-pass diff now covers the full
+    # surface, matching --verify. Codex v8 caught that scan summaries, suite
+    # logs, install-docker, and pytest were excluded from the 2nd-pass diff.
+    diff_artefact "${DET_DIR}/bandit_scan/SUMMARY.json" "${tmp}/bandit_scan/SUMMARY.json" "bandit_scan/SUMMARY.json" || drift=1
+    diff_artefact "${DET_DIR}/semgrep_scan/SUMMARY.json" "${tmp}/semgrep_scan/SUMMARY.json" "semgrep_scan/SUMMARY.json" || drift=1
+    for SUITE in boot_test property_tests e2e_sqlite stress_test cross_composition; do
+        if [[ -f "${DET_DIR}/test_suites/${SUITE}.log" ]]; then
+            diff_artefact "${DET_DIR}/test_suites/${SUITE}.log" "${tmp}/test_suites/${SUITE}.log" "test_suites/${SUITE}.log" || drift=1
+        fi
+    done
+    diff_artefact "${DET_DIR}/install_docker_run.log" "${tmp}/install_docker_run.log" "install_docker_run.log" || drift=1
+    diff_artefact "${DET_DIR}/pytest_full_sweep.log" "${tmp}/pytest_full_sweep.log" "pytest_full_sweep.log" || drift=1
     rm -rf "${tmp}"
     [[ "${drift}" -eq 0 ]] || { fail "--deterministic FAIL: regen non-idempotent"; return 1; }
     ok "--deterministic PASS: full set regenerated AND byte-stable on rerun"
@@ -446,9 +464,19 @@ do_deterministic() {
 ###############################################################################
 
 do_external_eval() {
-    if [[ -z "${ANTHROPIC_API_KEY:-}" && -z "${OPENAI_API_KEY:-}" && -z "${GOOGLE_API_KEY:-}" ]]; then
-        fail "--external-eval: no API keys set. Export ANTHROPIC_API_KEY / OPENAI_API_KEY / GOOGLE_API_KEY."
-        note "This step costs ~\$200-500; aborting to avoid accidental no-op run."
+    # Wave-I-1.N hardening: require ALL provider keys (was: any single key).
+    # Codex v8 caught: with only one key set, single_shot would run on Claude
+    # but cross_model_fnf would silently emit empty manifests for GPT + Gemini
+    # and return 0 — fail-open with PARTIAL credentials. Tag-gate runs require
+    # the FULL three-model triangulation, so demand all three.
+    local missing=()
+    [[ -z "${ANTHROPIC_API_KEY:-}" ]] && missing+=("ANTHROPIC_API_KEY")
+    [[ -z "${OPENAI_API_KEY:-}" ]] && missing+=("OPENAI_API_KEY")
+    [[ -z "${GOOGLE_API_KEY:-}" ]] && missing+=("GOOGLE_API_KEY")
+    if [[ "${#missing[@]}" -gt 0 ]]; then
+        fail "--external-eval: missing API keys: ${missing[*]}"
+        note "Tag-gate runs require ALL THREE keys (Anthropic + OpenAI + Google)"
+        note "to drive the cross_model_fnf 3-way comparison. Aborting."
         return 2
     fi
     local errs=0

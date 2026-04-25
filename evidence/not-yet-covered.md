@@ -24,15 +24,18 @@ What we do NOT have at v1.0.0:
 
 ## §2 — Generated code survives hand-editing (longitudinal soak)
 
-**PRODUCT §6.3 claim.** Emit-time idempotency IS covered: the orchestrator-twice probe (`evidence/deterministic/generator_idempotence.json`) proves byte-identical re-emission across `minimal`, `api`, and `full` profiles when `PYTHONHASHSEED=0` is pinned.
+**PRODUCT §6.3 claim.** Emit-time idempotency IS covered: the orchestrator-twice probe (`evidence/deterministic/generator_idempotence.json`) proves byte-identical re-emission across `minimal`, `api`, and `full` profiles WITHOUT PYTHONHASHSEED pinning (Wave I-1.K closure of the two pre-existing source non-determinisms).
 
 What this does NOT prove:
 
 - **Longitudinal soak:** "apply tool → hand-edit → apply tool → hand-edit → apply tool" over N cycles, across many projects and edit styles, without divergence.
-- **Hash-randomization-independent reproduction:** `generators/middleware/request_logging.py` uses `repr({'authorization', 'cookie', 'x-api-key'})` directly on a set; without `PYTHONHASHSEED=0` the iteration order is non-deterministic. Fix: sort the set before repr-ing in the generator source.
-- **Timestamp-independent reproduction:** `core/venous/.../_origin.json` records `copied_at` host timestamp under the orchestrator's project-emit shape. Excluded from the diff today; pin to commit SHA or build-time env var to remove.
 
-**Milestone to close:** v1.1+ — soak-edit harness + remove the two known generator non-determinisms (request_logging set, copied_at timestamp).
+What used to be here but is now CLOSED (kept as audit trail):
+
+- ~~Hash-randomization-independent reproduction~~ — **CLOSED Wave I-1.K (commit `90218ec`).** `generators/middleware/request_logging.py` now sorts the lowered set before repr-ing; output is identical regardless of PYTHONHASHSEED.
+- ~~Timestamp-independent reproduction~~ — **CLOSED Wave I-1.K (commit `90218ec`).** `generators/scaffold_venous.py` now pins `manifest.copied_at` to the source commit's author timestamp (`git log -1 --format=%aI`) instead of host wall-clock.
+
+**Milestone to close (remaining):** v1.1+ — soak-edit harness for the longitudinal claim.
 
 ---
 

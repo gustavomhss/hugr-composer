@@ -182,11 +182,26 @@ def _framework_free_runtime() -> dict:
 
 
 def _suite_log_summary(name: str) -> dict:
+    """Find the most-meaningful summary line in a suite log.
+
+    Skips trailing separator lines (---- / ==== / blank) that the test
+    runners append after the result. Walks lines from the end backwards
+    until it finds one that contains a digit/letter sequence reading
+    like a real result.
+    """
     t = _read_text(DET / "test_suites" / f"{name}.log")
     if not t:
         return {"present": False}
-    last = t.strip().splitlines()[-1] if t.strip() else ""
-    return {"present": True, "summary_line": last[:160]}
+    sep_chars = set("-=*_ \t")
+    candidates = [ln for ln in reversed(t.strip().splitlines()) if ln.strip()]
+    chosen = ""
+    for ln in candidates:
+        stripped = ln.strip()
+        if all(c in sep_chars for c in stripped):
+            continue
+        chosen = stripped
+        break
+    return {"present": True, "summary_line": chosen[:200]}
 
 
 def main() -> None:

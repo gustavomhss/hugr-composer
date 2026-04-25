@@ -1,11 +1,11 @@
 {
   "_meta": {
     "command": ".venv/bin/python evidence/_harness/per_tool_pattern_audit.py",
-    "commit": "6d2dfb3c0607bd23a02915aec8a96a15a76a5473",
+    "commit": "d84e94b2e6e01343af3dfcb933f6db5184bfa627",
     "cwd": "repo root",
-    "generated": "2026-04-25T00:05:56Z",
+    "generated": "2026-04-25T11:35:54Z",
     "grading": "exit 0 iff every tool satisfies its category's REQUIRED patterns",
-    "tree": "e6ca341330f8d48d8081eff24ec215889dd20632"
+    "tree": "a95bb98d98b89042553e2548155bf5e8bac5a9f7"
   },
   "patterns": [
     "mcp_tool_dict",
@@ -20,6 +20,7 @@
   ],
   "per_category_requirements": {
     "evolve": [
+      "ast_parse_validation",
       "dry_run_path",
       "elapsed_ms",
       "ensure_prerequisites",
@@ -64,7 +65,7 @@
       "category": "evolve",
       "missing_required": [],
       "patterns": {
-        "ast_parse_validation": false,
+        "ast_parse_validation": true,
         "dry_run_path": true,
         "elapsed_ms": true,
         "ensure_prerequisites": true,
@@ -80,7 +81,7 @@
       "category": "evolve",
       "missing_required": [],
       "patterns": {
-        "ast_parse_validation": false,
+        "ast_parse_validation": true,
         "dry_run_path": true,
         "elapsed_ms": true,
         "ensure_prerequisites": true,
@@ -96,7 +97,7 @@
       "category": "evolve",
       "missing_required": [],
       "patterns": {
-        "ast_parse_validation": false,
+        "ast_parse_validation": true,
         "dry_run_path": true,
         "elapsed_ms": true,
         "ensure_prerequisites": true,
@@ -2037,7 +2038,7 @@
         "compliant": 8,
         "noncompliant_tools": [],
         "pattern_hits": {
-          "ast_parse_validation": 3,
+          "ast_parse_validation": 6,
           "dry_run_path": 8,
           "elapsed_ms": 8,
           "ensure_prerequisites": 8,
@@ -2048,6 +2049,7 @@
           "validate_project_dir": 8
         },
         "required_patterns": [
+          "ast_parse_validation",
           "dry_run_path",
           "elapsed_ms",
           "ensure_prerequisites",
