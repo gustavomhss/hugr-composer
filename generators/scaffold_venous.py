@@ -160,6 +160,27 @@ def _source_commit() -> str:
         return "unknown"
 
 
+def _source_commit_iso_time() -> str:
+    """Return the source commit's author timestamp as ISO-8601, or ``"unknown"``.
+
+    Used as the deterministic value for ``Manifest.copied_at`` so re-running
+    the scaffold against the SAME source commit produces byte-identical
+    manifests across host clocks. (Wave I-1 generator non-determinism fix.)
+    """
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(SKILL_ROOT), "log", "-1", "--format=%aI", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=2,
+        )
+        iso = out.stdout.strip()
+        return iso if iso else "unknown"
+    except (FileNotFoundError, subprocess.SubprocessError):
+        return "unknown"
+
+
 def _parse_qualified_name(qualified_name: str) -> tuple[str, str]:
     """Split ``core.venous.<ns>.<Name>`` into ``(<ns>, <Name>)``.
 
@@ -521,7 +542,17 @@ def ensure_primitives(
             )
             existing_adapters.add(qualified)
 
-    manifest.copied_at = datetime.now(tz=timezone.utc).isoformat(timespec="seconds")
+    # Pin copied_at to the SOURCE COMMIT's author timestamp, not host wall-clock,
+    # so generator output is byte-deterministic for a fixed source commit.
+    # Wave I-1 fix for the .venous_manifest.json drift surfaced by
+    # evidence/_harness/generator_idempotence.py.
+    commit_iso = _source_commit_iso_time()
+    if commit_iso == "unknown":
+        # Fallback: use HEAD truncated SHA as a pseudo-timestamp seed
+        # so the field is still deterministic even outside a git checkout.
+        manifest.copied_at = f"commit:{_source_commit()[:12]}"
+    else:
+        manifest.copied_at = commit_iso
     manifest.copied = copied
     _write_manifest(manifest)
     return manifest
