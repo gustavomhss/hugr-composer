@@ -325,10 +325,20 @@ regen_all_heavy() {
 ###############################################################################
 
 normalize_for_diff() {
+    # Strip ephemeral fields that legitimately vary between runs:
+    #   - generated/commit/tree (regen metadata)
+    #   - head_iso/head_msg/clean (freshness_proof working-tree state)
+    #   - duration_s / stderr_tail (wall timing + crash logs)
+    #   - "summary_line" (pytest's "X passed in Y.YYs" — Y varies)
+    #   - "exit_code" (always 0 on pass; if non-zero, "passed" field flips)
     sed -E \
         -e '/^# (generated|commit|tree): /d' \
         -e '/^[[:space:]]*"(generated|commit|tree)": /d' \
         -e '/^(generated|commit|tree|head_iso|head_msg|clean): /d' \
+        -e '/^[[:space:]]*"duration_s":/d' \
+        -e '/^[[:space:]]*"stderr_tail":/d' \
+        -e '/^[[:space:]]*"summary_line":/d' \
+        -e '/^[[:space:]]*"exit_code":/d' \
         "$1"
 }
 

@@ -1,7 +1,7 @@
 {
   "_meta": {
     "command": ".venv/bin/python evidence/_harness/framework_free_runtime.py",
-    "commit": "c0363e135ad3abcd3c45efd3b3d8c226c335dc1e",
+    "commit": "6d2dfb3c0607bd23a02915aec8a96a15a76a5473",
     "cwd": "repo root",
     "frameworks_blocked": [
       "fastapi",
@@ -17,9 +17,9 @@
       "falcon",
       "hypercorn"
     ],
-    "generated": "2026-04-24T22:18:04Z",
+    "generated": "2026-04-25T00:06:45Z",
     "grading": "exit 0 iff zero primitives trigger a blocked-framework import",
-    "tree": "f2556ae40e2873f0c6352f1fe8370027e2515bdc"
+    "tree": "e6ca341330f8d48d8081eff24ec215889dd20632"
   },
   "per_primitive": [
     {

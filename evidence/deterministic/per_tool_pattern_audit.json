@@ -1,11 +1,11 @@
 {
   "_meta": {
     "command": ".venv/bin/python evidence/_harness/per_tool_pattern_audit.py",
-    "commit": "3f98703247dfc73d211588b6b3ae57a36337c0b4",
+    "commit": "6d2dfb3c0607bd23a02915aec8a96a15a76a5473",
     "cwd": "repo root",
-    "generated": "2026-04-24T21:12:31Z",
+    "generated": "2026-04-25T00:05:56Z",
     "grading": "exit 0 iff every tool satisfies its category's REQUIRED patterns",
-    "tree": "f65bb03b3a71832495501beb3491c5ead229ca3c"
+    "tree": "e6ca341330f8d48d8081eff24ec215889dd20632"
   },
   "patterns": [
     "mcp_tool_dict",

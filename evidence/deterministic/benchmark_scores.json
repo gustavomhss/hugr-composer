@@ -1,16 +1,16 @@
 {
   "_meta": {
     "command": ".venv/bin/python evidence/_harness/benchmark_scores_snapshot.py",
-    "commit": "3f98703247dfc73d211588b6b3ae57a36337c0b4",
+    "commit": "6d2dfb3c0607bd23a02915aec8a96a15a76a5473",
     "cwd": "repo root",
-    "generated": "2026-04-24T21:17:30Z",
+    "generated": "2026-04-25T00:06:44Z",
     "grading": "exit 0 iff plan_overall \u2265 plan_floor AND code_overall \u2265 code_floor",
     "source_files": {
       "code": "skills/SKILL-001-fastapi-production/benchmarks/code_level_score.json",
       "floor": "skills/SKILL-001-fastapi-production/benchmarks/baseline_floor.json",
       "plan": "skills/SKILL-001-fastapi-production/benchmarks/latest_score.json"
     },
-    "tree": "f65bb03b3a71832495501beb3491c5ead229ca3c"
+    "tree": "e6ca341330f8d48d8081eff24ec215889dd20632"
   },
   "code_level": {
     "by_tier": {

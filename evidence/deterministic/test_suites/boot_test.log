@@ -1,11 +1,87 @@
 # boot_test.log
 # command:  PYTHONPATH=. .venv/bin/python tests/test_boot.py
 # cwd:      skills/SKILL-001-fastapi-production
-# commit:   c0363e135ad3abcd3c45efd3b3d8c226c335dc1e
-# tree:     f2556ae40e2873f0c6352f1fe8370027e2515bdc
-# generated: 2026-04-24T22:18:28Z
+# commit:   6d2dfb3c0607bd23a02915aec8a96a15a76a5473
+# tree:     e6ca341330f8d48d8081eff24ec215889dd20632
+# generated: 2026-04-25T00:19:04Z
 # grading:  100/100 tools boot cleanly
 # ---
+Running boot tests for 100 adapt tools ...
+
+  PASS  add_api_versioning
+  PASS  add_batch_endpoint
+  PASS  add_graphql
+  PASS  add_graphql_subscriptions
+  PASS  add_long_running_task
+  PASS  add_api_key_auth
+  PASS  add_feature_flags
+  PASS  add_mfa
+  PASS  add_multi_tenancy
+  PASS  add_oauth2_provider
+  PASS  add_rbac
+  PASS  add_audit_log
+  PASS  add_bulk_operations
+  PASS  add_cursor_pagination
+  PASS  add_data_export
+  PASS  add_file_upload
+  PASS  add_search
+  PASS  add_soft_delete
+  PASS  add_cache_layer
+  PASS  add_circuit_breaker
+  PASS  add_outbox_pattern
+  PASS  add_saga
+  PASS  add_arq_worker
+  PASS  add_stripe_checkout
+  PASS  add_email_templates
+  PASS  add_rate_limiting
+  PASS  add_scheduled_tasks
+  PASS  add_sqladmin
+  PASS  add_celery_beat
+  PASS  add_s3_storage
+  PASS  add_health_deep
+  PASS  add_stripe_subscription
+  PASS  add_stripe_refund_flow
+  PASS  add_temporal_workflow
+  PASS  add_ml_model_server
+  PASS  add_ml_gpu_inference
+  PASS  add_ml_model_registry
+  PASS  add_notifications
+  PASS  add_feature_toggles_api
+  PASS  add_cedar_policies
+  PASS  add_opa_integration
+  PASS  add_sse
+  PASS  add_webhook_receiver
+  PASS  add_webhook_sender
+  PASS  add_websocket_chat
+  PASS  add_websocket_presence
+  PASS  add_contract_tests
+  PASS  add_factory
+  PASS  add_load_profile
+  PASS  add_cors_config
+  PASS  add_cqrs
+  PASS  add_csrf_protection
+  PASS  add_data_import
+  PASS  add_data_versioning
+  PASS  add_database_migrations_ci
+  PASS  add_docker_production
+  PASS  add_e2e_test_suite
+  PASS  add_event_sourcing
+  PASS  add_excel_export
+  PASS  add_input_sanitization
+  PASS  add_kubernetes_manifests
+  PASS  add_opentelemetry
+  PASS  add_passkey_auth
+  PASS  add_pdf_reports
+  PASS  add_prometheus_metrics
+  PASS  add_push_notifications_native
+  PASS  add_sms_otp
+  PASS  add_social_login
+  PASS  add_structured_logging
+  PASS  add_transactional_email
+  PASS  add_adaptive_throttle
+  PASS  add_adaptive_timeouts
+  PASS  add_anomaly_detector
+  PASS  add_api_deprecation
   PASS  add_api_fuzzer
   PASS  add_api_monetization
   PASS  add_api_replay_debugger

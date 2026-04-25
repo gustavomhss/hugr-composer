@@ -1,0 +1,32 @@
+# cross_composition.log
+# command:  PYTHONPATH=. .venv/bin/python tests/test_cross_composition.py
+# cwd:      skills/SKILL-001-fastapi-production
+# commit:   6d2dfb3c0607bd23a02915aec8a96a15a76a5473
+# tree:     e6ca341330f8d48d8081eff24ec215889dd20632
+# generated: 2026-04-24T22:55:06Z
+# grading:  expect 'CROSS-COMPOSITION: ALL PASSED' (200+ scenarios across random/reverse/permutation)
+# ---
+
+======================================================================
+CROSS-COMPOSITION TEST — 100 EXTEND tools
+======================================================================
+
+Test 1: Full stack (all 34 tools, canonical order)...
+  PASS: 34/34 applied, boot OK
+
+Test 2a: Config-patcher pairs (465 pairs)...
+  PASS: 465/465 pairs boot
+
+Test 2b: Main.py-patcher pairs (10 pairs)...
+  PASS: 10/10 pairs boot
+
+Test 3: Random 5-tool subsets (20 draws)...
+  PASS: 20/20 subsets boot
+
+Test 4: Reverse stack (all 34 tools, reverse order)...
+  PASS: 34/34 reversed, boot OK
+
+======================================================================
+CROSS-COMPOSITION: ALL PASSED (2172s)
+======================================================================
+

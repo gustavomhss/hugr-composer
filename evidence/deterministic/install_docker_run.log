@@ -1,9 +1,9 @@
 # install_docker_run.log
 # command:  evidence/_harness/install_docker_run.sh
 # cwd:      repo root
-# commit:   80cf12c7a56571765cb9ec1510035ab63d745f8a
-# tree:     a13073884a613888d7a3471e565f9bf2bf950ddb
-# generated: 2026-04-24T19:34:48Z
+# commit:   6d2dfb3c0607bd23a02915aec8a96a15a76a5473
+# tree:     e6ca341330f8d48d8081eff24ec215889dd20632
+# generated: 2026-04-25T01:05:43Z
 # grading:  expect install.sh exit 0 + MCP discover ≥100 + contract_check exit 0 + benchmark overall ≥30
 # ---
 SKIPPED-LOCALLY: docker daemon not reachable at this host.

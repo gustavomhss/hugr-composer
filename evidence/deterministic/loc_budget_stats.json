@@ -1,11 +1,11 @@
 {
   "_meta": {
     "command": ".venv/bin/python evidence/_harness/loc_budget_probe.py",
-    "commit": "80cf12c7a56571765cb9ec1510035ab63d745f8a",
+    "commit": "6d2dfb3c0607bd23a02915aec8a96a15a76a5473",
     "cwd": "repo root",
-    "generated": "2026-04-24T19:55:58Z",
+    "generated": "2026-04-25T00:05:51Z",
     "grading": "p95 app_loc_per_handler <= 20 per PRODUCT \u00a76.1",
-    "tree": "a13073884a613888d7a3471e565f9bf2bf950ddb"
+    "tree": "e6ca341330f8d48d8081eff24ec215889dd20632"
   },
   "per_example": [
     {

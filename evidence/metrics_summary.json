@@ -1,9 +1,9 @@
 {
   "_meta": {
-    "commit": "ccaba8068e3829042405bee0a45b4d91f809bb72",
-    "generated": "2026-04-24T20:03:56Z",
+    "commit": "6d2dfb3c0607bd23a02915aec8a96a15a76a5473",
+    "generated": "2026-04-25T01:34:16Z",
     "source": "evidence/_harness/metrics_summary.py",
-    "tree": "101b7e80d08ba64d0e5bc33806117a02d70e399d"
+    "tree": "e6ca341330f8d48d8081eff24ec215889dd20632"
   },
   "deterministic": {
     "bandit_scan": {
@@ -17,10 +17,28 @@
       "summary_line": "37/37 contract items satisfied \u2014 ALL GREEN",
       "total": 37
     },
+    "emitted_glue_loc": {
+      "aligns_with_product_\u00a76_1": false,
+      "aligns_with_product_\u00a7A2": false,
+      "p95_loc_per_handler": 50.27,
+      "probe_passed": true,
+      "tools_invoked_successfully": 12,
+      "tools_with_venous_imports": 5
+    },
     "framework_free_proof": {
       "framework_imports_found": 0,
       "pass": true,
       "registered_primitives": 124
+    },
+    "framework_free_runtime": {
+      "blocked_framework_imports": 0,
+      "imported_clean": 122,
+      "passed": true
+    },
+    "generator_idempotence": {
+      "passed": true,
+      "profiles_idempotent": 3,
+      "total_profiles": 3
     },
     "install_docker_run": {
       "status": "skipped-locally"
@@ -34,16 +52,64 @@
       "idempotent": true,
       "stable_hash": "00cefc4cc477"
     },
+    "per_surface_attestations": {
+      "benchmark_scores": {
+        "passed": true,
+        "total": 20
+      },
+      "fastapi_adapter_matrix": {
+        "passed": true,
+        "total": 17
+      },
+      "module_integration_matrix": {
+        "passed": true,
+        "total": 9
+      },
+      "per_example_pytest_matrix": {
+        "passed": true,
+        "total": 20
+      },
+      "per_primitive_attestation": {
+        "passed": true,
+        "total": 124
+      },
+      "per_tool_pattern_audit": {
+        "passed": true,
+        "total": 123
+      }
+    },
     "pytest_full_sweep": {
       "failed": 0,
       "passed": 5387,
       "skipped": 8,
-      "summary_line": "5387 passed, 8 skipped, 284 warnings in 1622.00s (0:27:01)"
+      "summary_line": "5387 passed, 8 skipped, 284 warnings in 1089.04s (0:18:09)"
     },
     "semgrep_scan": {
       "clean": true,
       "examples": 20,
       "worst_high_or_error": 0
+    },
+    "test_suites": {
+      "boot_test": {
+        "present": true,
+        "summary_line": "All tools boot cleanly."
+      },
+      "cross_composition": {
+        "present": true,
+        "summary_line": "======================================================================"
+      },
+      "e2e_sqlite": {
+        "present": true,
+        "summary_line": "----------------------------------------------------------------------"
+      },
+      "property_tests": {
+        "present": true,
+        "summary_line": "======================================================================"
+      },
+      "stress_test": {
+        "present": true,
+        "summary_line": "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+      }
     }
   },
   "external_eval": {

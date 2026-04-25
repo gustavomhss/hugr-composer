@@ -1,9 +1,9 @@
 # framework_free_proof.log
 # command:  .venv/bin/python evidence/_harness/framework_free_probe.py
 # cwd:      repo root
-# commit:   80cf12c7a56571765cb9ec1510035ab63d745f8a
-# tree:     a13073884a613888d7a3471e565f9bf2bf950ddb
-# generated: 2026-04-24T19:55:56Z
+# commit:   6d2dfb3c0607bd23a02915aec8a96a15a76a5473
+# tree:     e6ca341330f8d48d8081eff24ec215889dd20632
+# generated: 2026-04-25T00:05:49Z
 # grading:  expect 124 registered primitives + 0 web-framework imports + exit 0
 # ---
 registered_primitives: 124
