@@ -585,7 +585,7 @@ _NOTIFICATIONS_CHANNELS_STUB = textwrap.dedent("""\
         \"\"\"
         try:
             import firebase_admin  # noqa: F401 — lazy optional dependency
-            from firebase_admin import messaging
+            from firebase_admin import messaging  # noqa: F401 — held for future stub fill-in
         except ImportError:
             logger.warning(
                 "firebase_admin not installed — push notification skipped. "
@@ -593,7 +593,8 @@ _NOTIFICATIONS_CHANNELS_STUB = textwrap.dedent("""\
             )
             return
 
-        # Stub: real FCM send would go here.
+        # Stub: real FCM send would go here. `messaging` is imported above for
+        # the future fill-in (e.g. messaging.Message(...)) and held with noqa.
         logger.info("FCM push stub — would send to user_id=%s", getattr(notification, "user_id", "?"))
 """)
 

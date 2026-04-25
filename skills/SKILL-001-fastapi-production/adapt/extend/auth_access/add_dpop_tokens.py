@@ -527,7 +527,6 @@ _DPOP_CORE_TEMPLATE = textwrap.dedent("""\
             ValueError: When the JWK cannot be parsed.
         \"\"\"
         try:
-            from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
             from jwt.algorithms import ECAlgorithm, RSAAlgorithm
             import json
             kty = jwk_data.get("kty", "")

@@ -194,7 +194,6 @@ def _write_health_map_init(dest: Path) -> None:
         import asyncio
         import logging
         import os
-        import time
         from typing import Any
 
         logger = logging.getLogger(__name__)

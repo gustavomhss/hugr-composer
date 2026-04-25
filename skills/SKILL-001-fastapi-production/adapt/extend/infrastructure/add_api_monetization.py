@@ -1009,12 +1009,18 @@ def _write_usage_migration(versions_dir: Path) -> Path:
 
 
 def _patch_models_init(models_init: Path, entries: list[tuple[str, str]]) -> None:
-    """Register model imports in app/models/__init__.py."""
+    """Register model imports in app/models/__init__.py.
+
+    Each registration is for Alembic model-discovery — the import IS used
+    via metaclass registration, not in any explicit reference, so we
+    suffix the line with ``# noqa: F401`` matching the orchestrator's own
+    convention (see generators/orchestrator.py models/__init__.py block).
+    """
     content = models_init.read_text()
     lines_to_add = []
     for module, cls in entries:
-        import_line = f"from app.models.{module} import {cls}"
-        if import_line not in content:
+        import_line = f"from app.models.{module} import {cls}  # noqa: F401"
+        if import_line not in content and f"from app.models.{module} import {cls}" not in content:
             lines_to_add.append(import_line)
     if lines_to_add:
         models_init.write_text(content.rstrip() + "\n" + "\n".join(lines_to_add) + "\n")

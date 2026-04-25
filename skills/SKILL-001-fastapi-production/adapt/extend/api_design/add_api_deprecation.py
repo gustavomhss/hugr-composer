@@ -229,7 +229,7 @@ def _write_registry_module(dest: Path) -> None:
         import functools
         import logging
         from collections.abc import Callable
-        from datetime import date, timedelta
+        from datetime import date
         from typing import Any
 
         from app.core.config import settings

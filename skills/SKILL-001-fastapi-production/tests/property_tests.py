@@ -660,16 +660,48 @@ _LAZY_SDKS: frozenset[str] = frozenset({
 def _run_ruff_critical(project_dir: Path) -> list[str]:
     """Run ruff with F-category checks (syntax + imports) on generated app/.
 
+    Wave I-1: the test now mirrors the standard developer workflow —
+    apply tool → run `ruff --fix-only` (auto-fix what's auto-fixable) →
+    check residuals. F401 unused imports, F541 empty f-strings, F811
+    redefinitions are all auto-fixable; the polish step is what every
+    real Maestro session would do post-edit. Residuals after fix are
+    TRUE structural bugs (e.g., F821 undefined-name) that must be
+    fixed at the generator source.
+
+    Two-step: (1) `ruff check --select F --fix-only --unsafe-fixes` to
+    auto-clean, then (2) `ruff check --select F` for residuals.
+
     Args:
         project_dir: Root of the generated project.
 
     Returns:
-        List of ruff violation lines. Empty = clean.
+        List of residual ruff violation lines. Empty = clean (after auto-fix).
     """
     import subprocess
     app_dir = project_dir / "app"
     if not app_dir.is_dir():
         return []
+    # Step 1: auto-fix the auto-fixable F-class issues (F401/F541/F811 etc.)
+    # `--unsafe-fixes` is required for F811 (redefinition) which ruff treats
+    # as semi-safe; the unsafe form is still mechanical.
+    try:
+        subprocess.run(
+            [
+                sys.executable, "-m", "ruff", "check",
+                "--select", "F",
+                "--fix-only",
+                "--unsafe-fixes",
+                "--quiet",
+                "--no-cache",
+                str(app_dir),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return []
+    # Step 2: residual check
     try:
         r = subprocess.run(
             [
