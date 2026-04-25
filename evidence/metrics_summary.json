@@ -1,9 +1,9 @@
 {
   "_meta": {
-    "commit": "b0080a9dba44b35f7d5ac22375386d3d5cee2001",
-    "generated": "2026-04-25T10:55:05Z",
+    "commit": "bedb9f56ecffad2ccdf54129e02aa2027979a533",
+    "generated": "2026-04-25T13:55:07Z",
     "source": "evidence/_harness/metrics_summary.py",
-    "tree": "68bff479b0971e3b4b110e2beea9c8dddca8df22"
+    "tree": "0c804e52ee34ce3dec645ddd2c005d9d3d40c109"
   },
   "deterministic": {
     "bandit_scan": {
@@ -82,7 +82,7 @@
       "failed": 0,
       "passed": 5387,
       "skipped": 8,
-      "summary_line": "5387 passed, 8 skipped, 284 warnings in 1089.04s (0:18:09)"
+      "summary_line": "5387 passed, 8 skipped, 284 warnings in 2518.32s (0:41:58)"
     },
     "semgrep_scan": {
       "clean": true,
@@ -96,15 +96,15 @@
       },
       "cross_composition": {
         "present": true,
-        "summary_line": "======================================================================"
+        "summary_line": "CROSS-COMPOSITION: ALL PASSED (3131s)"
       },
       "e2e_sqlite": {
         "present": true,
-        "summary_line": "----------------------------------------------------------------------"
+        "summary_line": "Result: 12/12 tests passed  (99.3s)"
       },
       "property_tests": {
         "present": true,
-        "summary_line": "======================================================================"
+        "summary_line": "RESULT: ALL PASSED \u2014 8/8 properties \u00d7 123 tools (984/984 tool-checks passed)"
       },
       "stress_test": {
         "present": true,
@@ -122,7 +122,7 @@
       "status": "not-yet-run"
     },
     "reviewer_signoffs": {
-      "signoffs_present": 4,
+      "signoffs_present": 5,
       "target": "2-of-3 YES per LAUNCH.md \u00a75.1"
     },
     "single_shot_benchmark": {

@@ -1,15 +1,15 @@
 # freshness_proof.log
 # command:  git rev-parse HEAD; git rev-parse HEAD^{tree}; date -u
 # cwd:      repo root
-# commit:   6d2dfb3c0607bd23a02915aec8a96a15a76a5473
-# tree:     e6ca341330f8d48d8081eff24ec215889dd20632
-# generated: 2026-04-25T00:05:51Z
+# commit:   bedb9f56ecffad2ccdf54129e02aa2027979a533
+# tree:     0c804e52ee34ce3dec645ddd2c005d9d3d40c109
+# generated: 2026-04-25T11:42:16Z
 # grading:  commit SHA must equal the tag commit at v1.0.0 cut
 # ---
-commit:  6d2dfb3c0607bd23a02915aec8a96a15a76a5473
-tree:    e6ca341330f8d48d8081eff24ec215889dd20632
-head_iso: 2026-04-24T19:34:57-03:00
-head_msg: chore(evidence): metrics_summary.py — track Wave I-1 per-surface + emitted-glue + framework-runtime + idempotence + suites
+commit:  bedb9f56ecffad2ccdf54129e02aa2027979a533
+tree:    0c804e52ee34ce3dec645ddd2c005d9d3d40c109
+head_iso: 2026-04-25T08:38:59-03:00
+head_msg: docs+fix(evidence): I1.N — close v8 audit findings (substantive)
 branch:  main
-clean:   66 modified/untracked paths
-generated: 2026-04-25T00:05:51Z
+clean:   5 modified/untracked paths
+generated: 2026-04-25T11:42:16Z

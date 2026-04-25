@@ -1,10 +1,10 @@
 # cross_composition.log
 # command:  PYTHONPATH=. .venv/bin/python tests/test_cross_composition.py
 # cwd:      skills/SKILL-001-fastapi-production
-# commit:   6d2dfb3c0607bd23a02915aec8a96a15a76a5473
-# tree:     e6ca341330f8d48d8081eff24ec215889dd20632
-# generated: 2026-04-24T22:55:06Z
-# grading:  expect 'CROSS-COMPOSITION: ALL PASSED' (200+ scenarios across random/reverse/permutation)
+# commit:   bedb9f56ecffad2ccdf54129e02aa2027979a533
+# tree:     0c804e52ee34ce3dec645ddd2c005d9d3d40c109
+# generated: 2026-04-25T11:59:05Z
+# grading:  200+ scenarios ALL PASSED (~36min)
 # ---
 
 ======================================================================
@@ -27,6 +27,6 @@ Test 4: Reverse stack (all 34 tools, reverse order)...
   PASS: 34/34 reversed, boot OK
 
 ======================================================================
-CROSS-COMPOSITION: ALL PASSED (2172s)
+CROSS-COMPOSITION: ALL PASSED (3131s)
 ======================================================================
 

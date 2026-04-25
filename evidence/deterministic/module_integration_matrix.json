@@ -1,11 +1,11 @@
 {
   "_meta": {
     "command": ".venv/bin/python evidence/_harness/module_integration_matrix.py",
-    "commit": "6d2dfb3c0607bd23a02915aec8a96a15a76a5473",
+    "commit": "bedb9f56ecffad2ccdf54129e02aa2027979a533",
     "cwd": "repo root",
-    "generated": "2026-04-25T00:05:58Z",
+    "generated": "2026-04-25T11:42:42Z",
     "grading": "exit 0 iff 9 modules pass all 5 checks AND total tools \u2265 28 (INVENTORY.md claim)",
-    "tree": "e6ca341330f8d48d8081eff24ec215889dd20632"
+    "tree": "0c804e52ee34ce3dec645ddd2c005d9d3d40c109"
   },
   "checks": [
     "has_knowledge_md",

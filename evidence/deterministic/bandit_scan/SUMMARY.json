@@ -2,9 +2,9 @@
   "_meta": {
     "command": "evidence/_harness/bandit_scan.sh",
     "cwd": "repo root",
-    "commit": "6d2dfb3c0607bd23a02915aec8a96a15a76a5473",
-    "tree": "e6ca341330f8d48d8081eff24ec215889dd20632",
-    "generated": "2026-04-25T01:01:55Z",
+    "commit": "bedb9f56ecffad2ccdf54129e02aa2027979a533",
+    "tree": "0c804e52ee34ce3dec645ddd2c005d9d3d40c109",
+    "generated": "2026-04-25T15:13:46Z",
     "grading": "expect High==0 and Medium==0 across all 20 examples"
   },
   "per_example": [

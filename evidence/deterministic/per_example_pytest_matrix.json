@@ -1,11 +1,11 @@
 {
   "_meta": {
     "command": ".venv/bin/python evidence/_harness/per_example_pytest_matrix.py",
-    "commit": "6d2dfb3c0607bd23a02915aec8a96a15a76a5473",
+    "commit": "bedb9f56ecffad2ccdf54129e02aa2027979a533",
     "cwd": "repo root",
-    "generated": "2026-04-25T00:06:44Z",
+    "generated": "2026-04-25T11:44:04Z",
     "grading": "exit 0 iff 20 examples pass all 4 checks AND zero pytest failures",
-    "tree": "e6ca341330f8d48d8081eff24ec215889dd20632"
+    "tree": "0c804e52ee34ce3dec645ddd2c005d9d3d40c109"
   },
   "checks": [
     "app_py_present",
@@ -26,12 +26,12 @@
       "import_note": "ok",
       "name": "01-todos-crud",
       "pytest": {
-        "duration_s": 1.97,
+        "duration_s": 5.85,
         "exit_code": 0,
         "failed": 0,
         "passed": 4,
         "skipped": 0,
-        "summary_line": "4 passed in 0.52s"
+        "summary_line": "4 passed in 1.45s"
       }
     },
     {
@@ -45,12 +45,12 @@
       "import_note": "ok",
       "name": "02-webhook-sink",
       "pytest": {
-        "duration_s": 1.79,
+        "duration_s": 4.23,
         "exit_code": 0,
         "failed": 0,
         "passed": 5,
         "skipped": 0,
-        "summary_line": "5 passed in 0.50s"
+        "summary_line": "5 passed in 1.07s"
       }
     },
     {
@@ -64,12 +64,12 @@
       "import_note": "ok",
       "name": "03-rate-limited-api",
       "pytest": {
-        "duration_s": 3.14,
+        "duration_s": 4.88,
         "exit_code": 0,
         "failed": 0,
         "passed": 5,
         "skipped": 0,
-        "summary_line": "5 passed in 0.77s"
+        "summary_line": "5 passed in 1.23s"
       }
     },
     {
@@ -83,12 +83,12 @@
       "import_note": "ok",
       "name": "04-realtime-chat",
       "pytest": {
-        "duration_s": 2.11,
+        "duration_s": 7.31,
         "exit_code": 0,
         "failed": 0,
         "passed": 5,
         "skipped": 0,
-        "summary_line": "5 passed in 0.54s"
+        "summary_line": "5 passed in 2.21s"
       }
     },
     {
@@ -102,12 +102,12 @@
       "import_note": "ok",
       "name": "05-rbac-audit",
       "pytest": {
-        "duration_s": 2.08,
+        "duration_s": 5.0,
         "exit_code": 0,
         "failed": 0,
         "passed": 5,
         "skipped": 0,
-        "summary_line": "5 passed in 0.47s"
+        "summary_line": "5 passed in 1.31s"
       }
     },
     {
@@ -121,12 +121,12 @@
       "import_note": "ok",
       "name": "06-auth-saas",
       "pytest": {
-        "duration_s": 3.02,
+        "duration_s": 7.99,
         "exit_code": 0,
         "failed": 0,
         "passed": 7,
         "skipped": 0,
-        "summary_line": "7 passed in 1.78s"
+        "summary_line": "7 passed in 4.35s"
       }
     },
     {
@@ -140,12 +140,12 @@
       "import_note": "ok",
       "name": "07-multi-tenant-admin",
       "pytest": {
-        "duration_s": 1.41,
+        "duration_s": 4.37,
         "exit_code": 0,
         "failed": 0,
         "passed": 5,
         "skipped": 0,
-        "summary_line": "5 passed in 0.39s"
+        "summary_line": "5 passed in 1.30s"
       }
     },
     {
@@ -159,12 +159,12 @@
       "import_note": "ok",
       "name": "08-stripe-billing",
       "pytest": {
-        "duration_s": 1.39,
+        "duration_s": 4.06,
         "exit_code": 0,
         "failed": 0,
         "passed": 5,
         "skipped": 0,
-        "summary_line": "5 passed in 0.40s"
+        "summary_line": "5 passed in 0.89s"
       }
     },
     {
@@ -178,12 +178,12 @@
       "import_note": "ok",
       "name": "09-event-sourced-orders",
       "pytest": {
-        "duration_s": 1.82,
+        "duration_s": 3.03,
         "exit_code": 0,
         "failed": 0,
         "passed": 5,
         "skipped": 0,
-        "summary_line": "5 passed in 0.44s"
+        "summary_line": "5 passed in 0.75s"
       }
     },
     {
@@ -197,12 +197,12 @@
       "import_note": "ok",
       "name": "10-llm-agent",
       "pytest": {
-        "duration_s": 1.44,
+        "duration_s": 2.26,
         "exit_code": 0,
         "failed": 0,
         "passed": 5,
         "skipped": 0,
-        "summary_line": "5 passed in 0.38s"
+        "summary_line": "5 passed in 0.61s"
       }
     },
     {
@@ -216,12 +216,12 @@
       "import_note": "ok",
       "name": "11-mobile-backend",
       "pytest": {
-        "duration_s": 1.73,
+        "duration_s": 2.27,
         "exit_code": 0,
         "failed": 0,
         "passed": 5,
         "skipped": 0,
-        "summary_line": "5 passed in 0.51s"
+        "summary_line": "5 passed in 0.58s"
       }
     },
     {
@@ -235,12 +235,12 @@
       "import_note": "ok",
       "name": "12-compliance-log-aggregator",
       "pytest": {
-        "duration_s": 1.55,
+        "duration_s": 2.29,
         "exit_code": 0,
         "failed": 0,
         "passed": 5,
         "skipped": 0,
-        "summary_line": "5 passed in 0.42s"
+        "summary_line": "5 passed in 0.58s"
       }
     },
     {
@@ -254,12 +254,12 @@
       "import_note": "ok",
       "name": "13-graphql-over-rest",
       "pytest": {
-        "duration_s": 1.79,
+        "duration_s": 2.24,
         "exit_code": 0,
         "failed": 0,
         "passed": 5,
         "skipped": 0,
-        "summary_line": "5 passed in 0.49s"
+        "summary_line": "5 passed in 0.59s"
       }
     },
     {
@@ -273,12 +273,12 @@
       "import_note": "ok",
       "name": "14-workflow-orchestrator",
       "pytest": {
-        "duration_s": 1.73,
+        "duration_s": 2.34,
         "exit_code": 0,
         "failed": 0,
         "passed": 4,
         "skipped": 0,
-        "summary_line": "4 passed in 0.46s"
+        "summary_line": "4 passed in 0.68s"
       }
     },
     {
@@ -292,12 +292,12 @@
       "import_note": "ok",
       "name": "15-bi-export-service",
       "pytest": {
-        "duration_s": 2.75,
+        "duration_s": 2.3,
         "exit_code": 0,
         "failed": 0,
         "passed": 4,
         "skipped": 0,
-        "summary_line": "4 passed in 0.77s"
+        "summary_line": "4 passed in 0.59s"
       }
     },
     {
@@ -311,12 +311,12 @@
       "import_note": "ok",
       "name": "16-exactly-once-weak-broker",
       "pytest": {
-        "duration_s": 2.59,
+        "duration_s": 6.74,
         "exit_code": 0,
         "failed": 0,
         "passed": 4,
         "skipped": 0,
-        "summary_line": "4 passed in 0.87s"
+        "summary_line": "4 passed in 1.43s"
       }
     },
     {
@@ -330,12 +330,12 @@
       "import_note": "ok",
       "name": "17-stateless-session-aware",
       "pytest": {
-        "duration_s": 2.88,
+        "duration_s": 2.68,
         "exit_code": 0,
         "failed": 0,
         "passed": 4,
         "skipped": 0,
-        "summary_line": "4 passed in 0.85s"
+        "summary_line": "4 passed in 0.61s"
       }
     },
     {
@@ -349,12 +349,12 @@
       "import_note": "ok",
       "name": "18-lockfree-serializable",
       "pytest": {
-        "duration_s": 2.47,
+        "duration_s": 2.44,
         "exit_code": 0,
         "failed": 0,
         "passed": 4,
         "skipped": 0,
-        "summary_line": "4 passed in 0.63s"
+        "summary_line": "4 passed in 0.70s"
       }
     },
     {
@@ -368,12 +368,12 @@
       "import_note": "ok",
       "name": "19-ml-inference-pool",
       "pytest": {
-        "duration_s": 2.36,
+        "duration_s": 2.14,
         "exit_code": 0,
         "failed": 0,
         "passed": 4,
         "skipped": 0,
-        "summary_line": "4 passed in 0.55s"
+        "summary_line": "4 passed in 0.53s"
       }
     },
     {
@@ -387,12 +387,12 @@
       "import_note": "ok",
       "name": "20-innocent-counter",
       "pytest": {
-        "duration_s": 2.05,
+        "duration_s": 2.38,
         "exit_code": 0,
         "failed": 0,
         "passed": 4,
         "skipped": 0,
-        "summary_line": "4 passed in 0.66s"
+        "summary_line": "4 passed in 0.63s"
       }
     }
   ],

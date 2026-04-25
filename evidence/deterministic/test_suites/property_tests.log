@@ -1,10 +1,10 @@
 # property_tests.log
 # command:  PYTHONPATH=. .venv/bin/python tests/property_tests.py
 # cwd:      skills/SKILL-001-fastapi-production
-# commit:   b0080a9dba44b35f7d5ac22375386d3d5cee2001
-# tree:     68bff479b0971e3b4b110e2beea9c8dddca8df22
-# generated: 2026-04-25T10:54:16Z
-# grading:  expect '8/8 properties × 123 tools (984/984 tool-checks passed)'
+# commit:   bedb9f56ecffad2ccdf54129e02aa2027979a533
+# tree:     0c804e52ee34ce3dec645ddd2c005d9d3d40c109
+# generated: 2026-04-25T11:59:05Z
+# grading:  8/8 properties (LAUNCH §1.2 met after Wave I-1.L)
 # ---
 
 ======================================================================
