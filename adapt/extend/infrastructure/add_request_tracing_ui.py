@@ -201,7 +201,6 @@ def _write_tracing_init(dest: Path) -> None:
         from __future__ import annotations
 
         import threading
-        import time
         import uuid
         from collections import deque
         from typing import Any
