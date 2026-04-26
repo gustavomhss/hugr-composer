@@ -1,9 +1,9 @@
 # pytest_full_sweep.log
 # command:  PYTHONPATH=. .venv/bin/python -m pytest adapt/ core/venous/ engine/ -q --tb=line
 # cwd:      skills/SKILL-001-fastapi-production
-# commit:   bedb9f56ecffad2ccdf54129e02aa2027979a533
-# tree:     0c804e52ee34ce3dec645ddd2c005d9d3d40c109
-# generated: 2026-04-25T13:12:34Z
+# commit:   bc25022f37628f49619fd2c8fc822329fcea79c1
+# tree:     0f26becfcd04c635e6c681783cdd0fedb5ae9402
+# generated: 2026-04-26T01:13:23Z
 # grading:  expect '5387 passed' + '0 failed' on the summary line
 # ---
 ........................................................................ [  1%]
@@ -230,7 +230,7 @@ engine/tests/test_tree_observability.py: 1 warning
 engine/tests/test_tree_realtime.py: 1 warning
 engine/tests/test_tree_resiliency.py: 1 warning
 engine/tests/test_tree_testing.py: 1 warning
-  /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/.venv/lib/python3.14/site-packages/pydantic/json_schema.py:2466: PydanticJsonSchemaWarning: Default value <object object at 0x104b36730> is not JSON serializable; excluding default from JSON schema [non-serializable-default]
+  /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/.venv/lib/python3.14/site-packages/pydantic/json_schema.py:2466: PydanticJsonSchemaWarning: Default value <object object at 0x10c5e2730> is not JSON serializable; excluding default from JSON schema [non-serializable-default]
     warnings.warn(message, PydanticJsonSchemaWarning)
 
 engine/tests/test_manifest.py::test_build_succeeds_and_produces_expected_counts
@@ -243,4 +243,4 @@ engine/tests/test_manifest.py::test_build_succeeds_and_produces_expected_counts
 =========================== short test summary info ============================
 SKIPPED [1] adapt/extend/infrastructure/test_add_excel_export_behavior.py:222: openpyxl not installed — cannot test Excel generation
 SKIPPED [7] engine/tests/test_integration.py:42: MANIFEST.json not yet produced at /Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/core/venous/MANIFEST.json. Run `engine.merge` first.
-5387 passed, 8 skipped, 284 warnings in 2518.32s (0:41:58)
+5387 passed, 8 skipped, 284 warnings in 1661.68s (0:27:41)

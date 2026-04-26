@@ -1,15 +1,15 @@
 # freshness_proof.log
 # command:  git rev-parse HEAD; git rev-parse HEAD^{tree}; date -u
 # cwd:      repo root
-# commit:   bedb9f56ecffad2ccdf54129e02aa2027979a533
-# tree:     0c804e52ee34ce3dec645ddd2c005d9d3d40c109
-# generated: 2026-04-25T11:42:16Z
+# commit:   bc25022f37628f49619fd2c8fc822329fcea79c1
+# tree:     0f26becfcd04c635e6c681783cdd0fedb5ae9402
+# generated: 2026-04-25T23:46:39Z
 # grading:  commit SHA must equal the tag commit at v1.0.0 cut
 # ---
-commit:  bedb9f56ecffad2ccdf54129e02aa2027979a533
-tree:    0c804e52ee34ce3dec645ddd2c005d9d3d40c109
-head_iso: 2026-04-25T08:38:59-03:00
-head_msg: docs+fix(evidence): I1.N — close v8 audit findings (substantive)
+commit:  bc25022f37628f49619fd2c8fc822329fcea79c1
+tree:    0f26becfcd04c635e6c681783cdd0fedb5ae9402
+head_iso: 2026-04-25T20:39:47-03:00
+head_msg: fix(test): I1.S — bump boot test subprocess timeout 30s → 60s
 branch:  main
 clean:   5 modified/untracked paths
-generated: 2026-04-25T11:42:16Z
+generated: 2026-04-25T23:46:39Z

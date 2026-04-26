@@ -1,9 +1,9 @@
 # manifest_idempotence.log
 # command:  PYTHONPATH=. .venv/bin/python -m engine.index.manifest verify
 # cwd:      skills/SKILL-001-fastapi-production
-# commit:   bedb9f56ecffad2ccdf54129e02aa2027979a533
-# tree:     0c804e52ee34ce3dec645ddd2c005d9d3d40c109
-# generated: 2026-04-25T11:41:39Z
+# commit:   bc25022f37628f49619fd2c8fc822329fcea79c1
+# tree:     0f26becfcd04c635e6c681783cdd0fedb5ae9402
+# generated: 2026-04-25T23:46:10Z
 # grading:  expect 'idempotent: stable hash matches across two builds' + exit 0
 # ---
 tools=201  primitives=299  recipes=392

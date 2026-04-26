@@ -1,16 +1,16 @@
 {
   "_meta": {
     "command": ".venv/bin/python evidence/_harness/generator_idempotence.py",
-    "commit": "bedb9f56ecffad2ccdf54129e02aa2027979a533",
+    "commit": "bc25022f37628f49619fd2c8fc822329fcea79c1",
     "cwd": "repo root",
     "excluded_from_diff": [
       ".venous_manifest.json",
       "__pycache__"
     ],
     "excluded_from_diff_reason": ".venous_manifest.json records `copied_at` host timestamp; known non-determinism reported under /evidence/not-yet-covered.md",
-    "generated": "2026-04-25T11:44:26Z",
+    "generated": "2026-04-25T23:49:28Z",
     "grading": "exit 0 iff every profile yields byte-identical trees across two orchestrator runs (excluding host-time files listed below)",
-    "tree": "0c804e52ee34ce3dec645ddd2c005d9d3d40c109"
+    "tree": "0f26becfcd04c635e6c681783cdd0fedb5ae9402"
   },
   "per_profile": [
     {
@@ -19,18 +19,18 @@
       "first_diffs": [],
       "profile": "minimal",
       "run_a": {
-        "duration_s": 0.45,
+        "duration_s": 1.03,
         "files_hashed": 41,
         "files_on_disk": 56,
         "stderr_tail": "es_Item\": {\"files\": 1, \"status\": \"done\"}, \"app\": {\"files\": 1, \"status\": \"done\"}, \"env_example\": {\"files\": 1, \"status\": \"done\"}, \"readme\": {\"files\": 1, \"status\": \"done\"}, \"gitignore\": {\"files\": 1, \"status\": \"done\"}, \"prestart\": {\"files\": 1, \"status\": \"done\"}, \"requirements\": {\"files\": 1, \"status\": \"done\"}, \"scaffold_venous\": {\"files\": 1, \"status\": \"done\"}}, \"total_files\": 26, \"profile\": \"minimal\", \"profile_description\": \"Bare minimum: 1+ models, health check, no auth, no middleware. ~15 files.\"}\n",
-        "tree_sha256": "994194662e9800d4c565dc98a6ef8865bc9be53789c2ab0e4680840ca542f3c4"
+        "tree_sha256": "313beac080ded7fbf3c14992953b0dd8457d86ba133c99158a1f7efdefa247a9"
       },
       "run_b": {
-        "duration_s": 0.51,
+        "duration_s": 1.2,
         "files_hashed": 41,
         "files_on_disk": 56,
         "stderr_tail": "es_Item\": {\"files\": 1, \"status\": \"done\"}, \"app\": {\"files\": 1, \"status\": \"done\"}, \"env_example\": {\"files\": 1, \"status\": \"done\"}, \"readme\": {\"files\": 1, \"status\": \"done\"}, \"gitignore\": {\"files\": 1, \"status\": \"done\"}, \"prestart\": {\"files\": 1, \"status\": \"done\"}, \"requirements\": {\"files\": 1, \"status\": \"done\"}, \"scaffold_venous\": {\"files\": 1, \"status\": \"done\"}}, \"total_files\": 26, \"profile\": \"minimal\", \"profile_description\": \"Bare minimum: 1+ models, health check, no auth, no middleware. ~15 files.\"}\n",
-        "tree_sha256": "994194662e9800d4c565dc98a6ef8865bc9be53789c2ab0e4680840ca542f3c4"
+        "tree_sha256": "313beac080ded7fbf3c14992953b0dd8457d86ba133c99158a1f7efdefa247a9"
       }
     },
     {
@@ -39,18 +39,18 @@
       "first_diffs": [],
       "profile": "api",
       "run_a": {
-        "duration_s": 0.54,
+        "duration_s": 1.03,
         "files_hashed": 67,
         "files_on_disk": 86,
         "stderr_tail": "tus\": \"done\"}, \"gitignore\": {\"files\": 1, \"status\": \"done\"}, \"initial_data\": {\"files\": 1, \"status\": \"done\"}, \"prestart\": {\"files\": 1, \"status\": \"done\"}, \"requirements\": {\"files\": 1, \"status\": \"done\"}, \"test_infra\": {\"files\": 2, \"status\": \"done\"}, \"test_suite\": {\"files\": 5, \"status\": \"done\"}, \"scaffold_venous\": {\"files\": 1, \"status\": \"done\"}}, \"total_files\": 53, \"profile\": \"api\", \"profile_description\": \"Production API: models + auth + middleware + health. ~50 files. No deployment/observability.\"}\n",
-        "tree_sha256": "9cb5f56509f8109cb2502d490499a6941b9a5710a9dd6fd0ca8a4d3735992cc2"
+        "tree_sha256": "7562235d3a5f05b368b8687355bab3a40d08be11c3220f3c0ffbe406892efa5d"
       },
       "run_b": {
-        "duration_s": 1.15,
+        "duration_s": 1.02,
         "files_hashed": 67,
         "files_on_disk": 86,
         "stderr_tail": "tus\": \"done\"}, \"gitignore\": {\"files\": 1, \"status\": \"done\"}, \"initial_data\": {\"files\": 1, \"status\": \"done\"}, \"prestart\": {\"files\": 1, \"status\": \"done\"}, \"requirements\": {\"files\": 1, \"status\": \"done\"}, \"test_infra\": {\"files\": 2, \"status\": \"done\"}, \"test_suite\": {\"files\": 5, \"status\": \"done\"}, \"scaffold_venous\": {\"files\": 1, \"status\": \"done\"}}, \"total_files\": 53, \"profile\": \"api\", \"profile_description\": \"Production API: models + auth + middleware + health. ~50 files. No deployment/observability.\"}\n",
-        "tree_sha256": "9cb5f56509f8109cb2502d490499a6941b9a5710a9dd6fd0ca8a4d3735992cc2"
+        "tree_sha256": "7562235d3a5f05b368b8687355bab3a40d08be11c3220f3c0ffbe406892efa5d"
       }
     },
     {
@@ -59,18 +59,18 @@
       "first_diffs": [],
       "profile": "full",
       "run_a": {
-        "duration_s": 0.68,
+        "duration_s": 1.09,
         "files_hashed": 79,
         "files_on_disk": 102,
         "stderr_tail": ": 1, \"status\": \"done\"}, \"email_utils\": {\"files\": 2, \"status\": \"done\"}, \"initial_data\": {\"files\": 1, \"status\": \"done\"}, \"prestart\": {\"files\": 1, \"status\": \"done\"}, \"requirements\": {\"files\": 1, \"status\": \"done\"}, \"test_infra\": {\"files\": 2, \"status\": \"done\"}, \"test_suite\": {\"files\": 5, \"status\": \"done\"}, \"scaffold_venous\": {\"files\": 1, \"status\": \"done\"}}, \"total_files\": 65, \"profile\": \"full\", \"profile_description\": \"Everything: auth + middleware + deployment + observability + testing. ~80 files.\"}\n",
-        "tree_sha256": "a779b6c68c6d3cb54e5921459e98f6f040097934815c6da0701af9e87ea3e5a9"
+        "tree_sha256": "9f2d7b94d3831102c555fb17d552288617e2c4c050dd949f659414d4f6b8f6f8"
       },
       "run_b": {
-        "duration_s": 0.5,
+        "duration_s": 0.95,
         "files_hashed": 79,
         "files_on_disk": 102,
         "stderr_tail": ": 1, \"status\": \"done\"}, \"email_utils\": {\"files\": 2, \"status\": \"done\"}, \"initial_data\": {\"files\": 1, \"status\": \"done\"}, \"prestart\": {\"files\": 1, \"status\": \"done\"}, \"requirements\": {\"files\": 1, \"status\": \"done\"}, \"test_infra\": {\"files\": 2, \"status\": \"done\"}, \"test_suite\": {\"files\": 5, \"status\": \"done\"}, \"scaffold_venous\": {\"files\": 1, \"status\": \"done\"}}, \"total_files\": 65, \"profile\": \"full\", \"profile_description\": \"Everything: auth + middleware + deployment + observability + testing. ~80 files.\"}\n",
-        "tree_sha256": "a779b6c68c6d3cb54e5921459e98f6f040097934815c6da0701af9e87ea3e5a9"
+        "tree_sha256": "9f2d7b94d3831102c555fb17d552288617e2c4c050dd949f659414d4f6b8f6f8"
       }
     }
   ],

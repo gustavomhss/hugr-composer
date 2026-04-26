@@ -1,9 +1,9 @@
 # stress_test.log
 # command:  PYTHONPATH=. .venv/bin/python tests/test_stress.py
 # cwd:      skills/SKILL-001-fastapi-production
-# commit:   bedb9f56ecffad2ccdf54129e02aa2027979a533
-# tree:     0c804e52ee34ce3dec645ddd2c005d9d3d40c109
-# generated: 2026-04-25T11:59:05Z
+# commit:   bc25022f37628f49619fd2c8fc822329fcea79c1
+# tree:     0f26becfcd04c635e6c681783cdd0fedb5ae9402
+# generated: 2026-04-26T00:06:15Z
 # grading:  3/3 stress scenarios passed
 # ---
 ════════════════════════════════════════════════════════════════════════
@@ -11,13 +11,13 @@
 ════════════════════════════════════════════════════════════════════════
 
 Running Test 1 …
-  [PASS]  TEST 1 [20-model + 27 tools]: PASS — 27/27 tools OK | 840 .py files | 10.94s | RSS Δ=12MB  (48.39s)
+  [PASS]  TEST 1 [20-model + 27 tools]: PASS — 27/27 tools OK | 840 .py files | 10.85s | RSS Δ=9MB  (41.73s)
 
 Running Test 2 …
-  [PASS]  TEST 2 [generated tests after 5 tools]: PASS — 16 passed, 3 failed, 0 errors (of ~19 generated tests)  (21.29s)
+  [PASS]  TEST 2 [generated tests after 5 tools]: PASS — 16 passed, 3 failed, 0 errors (of ~19 generated tests)  (20.09s)
 
 Running Test 3 …
-  [PASS]  TEST 3 [OpenAPI consistency after 5 tools]: PASS — 38 endpoints, 0 dup operationIds, 0 missing descriptions, 0 body-schema gaps  (9.10s)
+  [PASS]  TEST 3 [OpenAPI consistency after 5 tools]: PASS — 38 endpoints, 0 dup operationIds, 0 missing descriptions, 0 body-schema gaps  (17.70s)
 
 ────────────────────────────────────────────────────────────────────────
   Result: 3/3 tests passed

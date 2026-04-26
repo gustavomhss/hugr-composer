@@ -1,9 +1,9 @@
 {
   "_meta": {
-    "commit": "be2e7b9a9043300d6c04093a15e0a2ec1a5eedcd",
-    "generated": "2026-04-25T21:42:56Z",
+    "commit": "bc25022f37628f49619fd2c8fc822329fcea79c1",
+    "generated": "2026-04-26T01:41:16Z",
     "source": "evidence/_harness/metrics_summary.py",
-    "tree": "6795ad72851d3c92a5386d898da1b68d6d50cb2d"
+    "tree": "0f26becfcd04c635e6c681783cdd0fedb5ae9402"
   },
   "deterministic": {
     "bandit_scan": {
@@ -82,7 +82,7 @@
       "failed": 0,
       "passed": 5387,
       "skipped": 8,
-      "summary_line": "5387 passed, 8 skipped, 284 warnings in 1636.17s (0:27:16)"
+      "summary_line": "5387 passed, 8 skipped, 284 warnings in 1661.68s (0:27:41)"
     },
     "semgrep_scan": {
       "clean": true,
@@ -92,15 +92,15 @@
     "test_suites": {
       "boot_test": {
         "present": true,
-        "summary_line": "add_event_sourcing: Boot subprocess timed out (>30s)"
+        "summary_line": "All tools boot cleanly."
       },
       "cross_composition": {
         "present": true,
-        "summary_line": "CROSS-COMPOSITION: ALL PASSED (4895s)"
+        "summary_line": "CROSS-COMPOSITION: ALL PASSED (2650s)"
       },
       "e2e_sqlite": {
         "present": true,
-        "summary_line": "Result: 12/12 tests passed  (91.6s)"
+        "summary_line": "Result: 12/12 tests passed  (70.2s)"
       },
       "property_tests": {
         "present": true,
