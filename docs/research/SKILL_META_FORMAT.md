@@ -2,7 +2,7 @@
 
 > Research + design doc · v1 · 2026-04-20 · author: Claude Opus 4.7 (1M) for Gustavo
 >
-> **Scope.** Define the file-format contract between a HuGR SkillKit skill and
+> **Scope.** Define the file-format contract between a HuGR Smith skill and
 > the HuGR Maestro (the LLM orchestrator running inside HuGR Forge). The
 > concrete example is `SKILL-001-fastapi-production`; the format itself is
 > generic and reusable.

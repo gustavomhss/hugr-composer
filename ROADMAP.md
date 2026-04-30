@@ -1,4 +1,4 @@
-# ROADMAP — HuGR SkillKit
+# ROADMAP — HuGR Smith
 
 > **Status:** PROPOSED (awaits ratification — see §11).
 > **Post-ratification, this document is read-only.** Amendments require a

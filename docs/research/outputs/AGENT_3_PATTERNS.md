@@ -1,6 +1,6 @@
 # AGENT 3 — PATTERNS
 
-Research cohort output for the HuGR SkillKit venous-system catalog.
+Research cohort output for the HuGR Smith venous-system catalog.
 
 - Agent: 3 (`PATTERNS`)
 - Namespaces owned: `data`, `events`, `api`

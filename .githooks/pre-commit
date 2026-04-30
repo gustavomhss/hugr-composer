@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# HuGR SkillKit pre-commit gate.
+# HuGR Smith pre-commit gate.
 #
 # Runs CONTRACT §C5 machine-check on every commit, blocking the commit
 # if any rule regresses. Checked into the repo at `.githooks/pre-commit`

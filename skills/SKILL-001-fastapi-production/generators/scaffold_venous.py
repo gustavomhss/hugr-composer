@@ -256,7 +256,7 @@ def _attribution_footer(source_rel: str, commit: str) -> str:
     """Return the MIT attribution footer to append to copied ``.py`` files."""
     return (
         "\n\n# ---------------------------------------------------------------------------\n"
-        f"# Copied from HuGR SkillKit {commit} under {LICENSE} license.\n"
+        f"# Copied from HuGR Smith {commit} under {LICENSE} license.\n"
         f"# Source: skills/{SOURCE_SKILL_NAME}/{source_rel}\n"
         "# Do not hand-edit — regenerate via the scaffold_venous mechanism.\n"
         "# ---------------------------------------------------------------------------\n"
@@ -353,7 +353,7 @@ def copy_primitive(project_dir: str, qualified_name: str) -> CopyResult:
     written: list[Path] = []
     for nested, doc in (
         (project / "core", "Top-level package for HuGR-shipped primitives."),
-        (project / "core" / "venous", "Framework-agnostic primitives copied from HuGR SkillKit."),
+        (project / "core" / "venous", "Framework-agnostic primitives copied from HuGR Smith."),
         (project / "core" / "venous" / ns, f"Primitives in the `{ns}` concern namespace."),
     ):
         created = _ensure_namespace_init(nested, doc)
@@ -423,7 +423,7 @@ def copy_adapter(project_dir: str, qualified_name: str) -> CopyResult:
     # present) so adapter package-level re-exports travel with the adapter.
     for nested, doc in (
         (project / "core", "Top-level package for HuGR-shipped primitives."),
-        (project / "core" / "venous", "Framework-agnostic primitives copied from HuGR SkillKit."),
+        (project / "core" / "venous", "Framework-agnostic primitives copied from HuGR Smith."),
         (project / "core" / "venous" / "_adapters", "Framework adapters over framework-agnostic primitives."),
     ):
         created = _ensure_namespace_init(nested, doc)

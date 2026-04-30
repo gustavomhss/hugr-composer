@@ -1,7 +1,7 @@
 # Research Findings — Production Agent Tool Patterns (v1, 2026-04-20)
 
 > Mission: benchmark how top agent frameworks organize + expose tool surfaces at scale,
-> and extract patterns for HuGR SkillKit (currently 180 flat MCP tools, empirically
+> and extract patterns for HuGR Smith (currently 180 flat MCP tools, empirically
 > under-used by Claude). Sources span 2024-2026 with most evidence from late 2025/2026.
 
 ## TLDR (7 bullets)
@@ -179,7 +179,7 @@ big for a flat list — both for humans (scrollbar fatigue) and for LLMs (contex
   The emerging norm (RAG-MCP, Toolshed, Anthropic Tool Search Tool) is **MCP at the
   transport layer + retrieval tier in front**. HuGR should keep MCP and add retrieval.
 
-## 7. Recommendations for HuGR SkillKit
+## 7. Recommendations for HuGR Smith
 
 Grounded in precedent, priority-ordered:
 

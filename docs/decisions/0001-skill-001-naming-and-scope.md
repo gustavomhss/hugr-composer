@@ -11,7 +11,7 @@ Supersedes: none
 
 ## Context
 
-HuGR SkillKit's first skill had to answer two questions before any code
+HuGR Smith's first skill had to answer two questions before any code
 landed:
 
 1. **What framework / stack does SKILL-001 target?** The Maestro-facing

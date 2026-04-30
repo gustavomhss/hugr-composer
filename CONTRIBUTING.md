@@ -1,4 +1,4 @@
-# Contributing to HuGR SkillKit
+# Contributing to HuGR Smith
 
 > **Scope:** this guide teaches a first-time contributor how to land a
 > primitive, a tool, or a composition recipe without maintainer

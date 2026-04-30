@@ -307,10 +307,10 @@ def _shell(title: str, body: str, *, depth: int = 0) -> str:
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{html.escape(title)} — HuGR SkillKit</title>
+<title>{html.escape(title)} — HuGR Smith</title>
 <link rel="stylesheet" href="{prefix}style.css">
 </head><body><div class="wrap">
-<p class="breadcrumb"><a href="{prefix}index.html">HuGR SkillKit</a> / {html.escape(title)}</p>
+<p class="breadcrumb"><a href="{prefix}index.html">HuGR Smith</a> / {html.escape(title)}</p>
 {body}
 </div></body></html>
 """
@@ -405,7 +405,7 @@ def _render_landing(primitives: list[dict], tools: list[ToolMeta]) -> str:
         if (REPO_ROOT / _src).exists()
     )
 
-    body = f"""<h1>HuGR SkillKit — Reference</h1>
+    body = f"""<h1>HuGR Smith — Reference</h1>
 <p class="meta">{len(primitives)} primitives · {len(tools)} tools · Rails-analogy 3-layer architecture</p>
 <input class="searchbox" id="q" type="search" placeholder="Search primitives, tools, intents…" autocomplete="off">
 <ul id="search-results"></ul>

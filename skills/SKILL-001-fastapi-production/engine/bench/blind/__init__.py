@@ -1,4 +1,4 @@
-"""Blind benchmark harness for HuGR SkillKit.
+"""Blind benchmark harness for HuGR Smith.
 
 See `benchmarks/blind/PROTOCOL.md` for the pre-registered design. Do NOT
 change the public surface of any module here without bumping the protocol

@@ -60,7 +60,7 @@ def extract_acceptance(spec_md: str) -> list[str]:
 
 
 PROMPT_TEMPLATE = """\
-You are the HuGR SkillKit Maestro. A product spec is below. Your job is to
+You are the HuGR Smith Maestro. A product spec is below. Your job is to
 read it, use the SKILL's discovery tools to identify the right primitives
 and adapt tools for each requirement, and produce two artifact files in
 the workdir: `plan.json` and `scaffold_plan.md`.

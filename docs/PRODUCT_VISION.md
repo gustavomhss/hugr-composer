@@ -1,11 +1,11 @@
-# HuGR SkillKit — Product Vision
+# HuGR Smith — Product Vision
 
 > Biblioteca proprietária de componentes de código battle-tested que servem
 > como peças de LEGO para o HuGR Maestro (coding agent powered by Claude).
 
 ## O Produto
 
-**HuGR SkillKit** é uma biblioteca de componentes de código (peças de LEGO)
+**HuGR Smith** é uma biblioteca de componentes de código (peças de LEGO)
 que o HuGR Maestro usa para montar projetos completos. O LLM não gera código
 do zero — seleciona, compõe e adapta peças prontas e testadas.
 

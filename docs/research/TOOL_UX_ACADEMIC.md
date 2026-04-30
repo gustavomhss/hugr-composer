@@ -105,7 +105,7 @@ Confirmed by the literature:
 
 ---
 
-## 8. Recommendations for HuGR SkillKit
+## 8. Recommendations for HuGR Smith
 
 Each recommendation cites its grounding. Uncertainties are called out.
 

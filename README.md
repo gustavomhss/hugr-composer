@@ -1,4 +1,4 @@
-# HuGR SkillKit
+# HuGR Smith
 
 **Executable knowledge a Maestro LLM invokes to scaffold AND customize
 production backend apps.** Rails-style 3-layer architecture: macro
