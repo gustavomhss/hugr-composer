@@ -424,7 +424,7 @@ First public release. All five phases 0-4 green per `CONTRACT.md`.
 
 ### Quality
 
-- 28/28 machine-enforced contract items green
+- 37/37 machine-enforced contract items green
   (`engine/audit/contract_check.py`).
 - Nightly benchmark CI publishing `benchmarks/latest_score.json`.
 - Docker-validated `install.sh` flow.

@@ -1,11 +1,11 @@
 # Research Findings — Anthropic & MCP Design (v1, 2026-04-20)
 
-Scope: how Anthropic officially recommends surfacing many tools to Claude, with specific implications for the HuGR Smith 180-tool catalog problem.
+Scope: how Anthropic officially recommends surfacing many tools to Claude, with specific implications for the HuGR Smith 201-tool catalog problem.
 
 ## TLDR (5 bullets, actionable)
 
-- **Anthropic publishes a hard threshold**: "Claude's ability to correctly pick the right tool degrades significantly once you exceed 30–50 available tools" (Tool Search docs). A flat 180-tool catalog is officially above this line; the ignore-behavior HuGR is seeing is the documented failure mode, not a prompt bug.
-- **The officially sanctioned fix is Tool Search + `defer_loading: true`**, not bigger prompts. Anthropic ships a server-side `tool_search_tool_bm25_20251119` / `_regex_20251119` that lets you register all 180 tools but only expose 3–5 by default; Claude searches the rest on demand. Claimed "~85% reduction in context" while keeping selection accuracy high.
+- **Anthropic publishes a hard threshold**: "Claude's ability to correctly pick the right tool degrades significantly once you exceed 30–50 available tools" (Tool Search docs). A flat 201-tool catalog is officially above this line; the ignore-behavior HuGR is seeing is the documented failure mode, not a prompt bug.
+- **The officially sanctioned fix is Tool Search + `defer_loading: true`**, not bigger prompts. Anthropic ships a server-side `tool_search_tool_bm25_20251119` / `_regex_20251119` that lets you register all 201 tools but only expose 3–5 by default; Claude searches the rest on demand. Claimed "~85% reduction in context" while keeping selection accuracy high.
 - **Agent Skills are the higher-level packaging primitive Anthropic is pushing** (Oct 2025 launch). A Skill = folder with `SKILL.md` frontmatter (name + description) that loads progressively: metadata always, body on trigger, bundled files only when referenced. This is exactly the shape HuGR Smith already claims to be — but HuGR is currently exposing the *atomic tools* to the Maestro instead of a Skill-shaped entry point.
 - **Consolidate tools, don't multiply them.** The canonical Anthropic guidance ("Writing effective tools for agents", Sep 2025) says "More tools don't always lead to better outcomes"; recommends replacing `get_customer_by_id` + `list_transactions` + `list_notes` with a single `get_customer_context`. HuGR's 100 EXTEND tools almost certainly collapse into ~15–25 workflow tools.
 - **Namespacing is mandatory past ~dozens of tools.** Anthropic recommends `service_resource_action` prefixes (e.g. `asana_projects_search`). HuGR's current flat `add_*` naming gives Claude no grouping signal.
@@ -68,7 +68,7 @@ Claude Code's own tool surface (observable from the environment the user is runn
 - Descriptions in this very prompt average ~200–2000 tokens per tool (see the Bash tool description alone: ~1.5k tokens of when-to-call / examples / anti-patterns / git protocol). This is consistent with "3-4 sentences minimum, more for complex tools."
 - Tools are grouped by *purpose*: filesystem (Read/Write/Edit), search (Grep/Glob), shell (Bash), automation (Cron*, Schedule, Monitor), notebooks, web, MCP-namespaced third-party.
 
-**Why Claude Code doesn't ship 180 tools**: it uses `Skill` and `ToolSearch` as the scaling primitive. The 180-equivalent lives as skills + deferred tools, not as a flat tool list.
+**Why Claude Code doesn't ship 201 tools**: it uses `Skill` and `ToolSearch` as the scaling primitive. The 180-equivalent lives as skills + deferred tools, not as a flat tool list.
 
 ## 5. Hierarchical / JIT tool exposure patterns
 

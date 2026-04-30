@@ -6,7 +6,7 @@
 
 ## TLDR
 
-- **Flat tool exposure degrades well before 180 tools.** Gorilla (Patil et al. 2023, arxiv 2305.15334) explicitly motivates retrieval because LLMs cannot hold 1,600+ API signatures in-context; ToolLLM (Qin et al. 2023, arxiv 2307.16789) retrieves top-k≈5 from 16,464 APIs rather than exposing them flat. No paper we reviewed exposes >~50 tools flat and reports good accuracy.
+- **Flat tool exposure degrades well before 201 tools.** Gorilla (Patil et al. 2023, arxiv 2305.15334) explicitly motivates retrieval because LLMs cannot hold 1,600+ API signatures in-context; ToolLLM (Qin et al. 2023, arxiv 2307.16789) retrieves top-k≈5 from 16,464 APIs rather than exposing them flat. No paper we reviewed exposes >~50 tools flat and reports good accuracy.
 - **Retrieval-over-tools beats flat exposure once N exceeds roughly the low tens.** ToolLLM's DFSDT+retriever pipeline and Gorilla's retrieval-aware training both report large gains vs. a zero-shot flat baseline (Gorilla: hallucination rate drops from ~52% zero-shot GPT-4 to ~14% with retrieval on TorchHub/HuggingFace APIs; Gorilla paper Table 4, approx.).
 - **Hierarchical / category organization is used as infrastructure (ToolBench's 49 RapidAPI categories, MetaTool's 199 tools across categories) but there is no clean published ablation isolating "hierarchy vs flat-same-N" as of my knowledge cutoff.** The dominant published pattern is *retrieval*, not *hierarchy*. This is a real gap HuGR could document empirically.
 - **Known failure modes at scale are confirmed:** tool hallucination (Gorilla's central metric), confusion between similar tools (ToolLLM's "similar API" splits; MetaTool's "tool-selection" task), and failure to invoke any tool when one was needed (MetaTool's "tool-usage awareness" task — even GPT-4 scores well below ceiling).
@@ -101,7 +101,7 @@ Confirmed by the literature:
 - **SWE-agent** (Yang et al. 2024, arxiv 2405.15793). Hand-designed *agent-computer interface* (ACI) for software engineering — a small, carefully-chosen command set rather than raw shell. Reports large gains from *curating* the tool surface (SWE-agent §4). Direct evidence that **tool surface design matters more than tool count**.
 - **OS-Copilot / FRIDAY** (Wu et al. 2024, arxiv 2402.07456). Self-improving OS agent with learned skills; same pattern as Voyager in a different domain.
 
-**Lesson for HuGR.** The converging finding — Voyager, SWE-agent, CodeAct — is that **a small, well-curated, composable surface beats a large flat one**, and that **retrieval over a growing skill library is the published scaling pattern**. This is the most decision-relevant cluster of results for HuGR's 180-tool problem.
+**Lesson for HuGR.** The converging finding — Voyager, SWE-agent, CodeAct — is that **a small, well-curated, composable surface beats a large flat one**, and that **retrieval over a growing skill library is the published scaling pattern**. This is the most decision-relevant cluster of results for HuGR's 201-tool problem.
 
 ---
 
@@ -109,7 +109,7 @@ Confirmed by the literature:
 
 Each recommendation cites its grounding. Uncertainties are called out.
 
-1. **Do not expose 180 tools flat.** Gorilla and ToolLLM both treat flat exposure as infeasible at their N; the *direction* of this finding almost certainly transfers to Claude 4.7 even without a Claude-specific curve. (Gorilla arxiv 2305.15334; ToolLLM arxiv 2307.16789.)
+1. **Do not expose 201 tools flat.** Gorilla and ToolLLM both treat flat exposure as infeasible at their N; the *direction* of this finding almost certainly transfers to Claude 4.7 even without a Claude-specific curve. (Gorilla arxiv 2305.15334; ToolLLM arxiv 2307.16789.)
 
 2. **Introduce a two-level surface: a small "intent router" tool + retrieval over the 180.** This is SWE-agent's ACI pattern (small curated top layer) combined with ToolLLM/Gorilla retrieval underneath. The top layer is what Claude sees; the retrieval layer is what returns the right subset per intent. (SWE-agent arxiv 2405.15793; ToolLLM arxiv 2307.16789.)
 
@@ -121,7 +121,7 @@ Each recommendation cites its grounding. Uncertainties are called out.
 
 6. **Adopt a skill-library mental model, not a tool-catalog one.** Voyager's composed, stored, retrieved skills (arxiv 2305.16291) and CodeAct's code-as-composition (arxiv 2402.01030) are the 2023–2024 state-of-the-art for agents operating over many capabilities. HuGR's "Maestro assembles LEGO" framing aligns with this; flat MCP-tool listings do not.
 
-7. **Measure the knee yourself.** Since no published curve covers Claude 4.5/4.7 at 10/30/60/120/180 tools, run the ablation internally on HuGR's own benchmark (FinHealth). This would be a publishable contribution, not just product work.
+7. **Measure the knee yourself.** Since no published curve covers Claude 4.5/4.7 at 10/30/60/120/201 tools, run the ablation internally on HuGR's own benchmark (FinHealth). This would be a publishable contribution, not just product work.
 
 8. **Budget for known failure modes in evaluation.** Specifically measure: (a) hallucinated tool names (Gorilla metric), (b) similar-tool confusion (ToolLLM I2-Cat style), (c) tool-awareness errors (MetaTool metric), (d) parameter hallucination (API-Bank / BFCL metric). These four metrics are the published vocabulary for tool-use failure.
 

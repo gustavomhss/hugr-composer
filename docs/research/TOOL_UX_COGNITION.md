@@ -1,13 +1,13 @@
 # Research Findings — Catalog Navigation + Cognition (v1, 2026-04-20)
 
-Context: HuGR Smith exposes ~180 MCP tools to an LLM worker agent. We need an interface layer that is cognitively natural for both the model and a human reviewer. This document synthesizes empirical cognition research, UX design wisdom, CLI/command-palette precedent, and LLM-specific tool-selection literature into concrete design moves.
+Context: HuGR Smith exposes ~201 MCP tools to an LLM worker agent. We need an interface layer that is cognitively natural for both the model and a human reviewer. This document synthesizes empirical cognition research, UX design wisdom, CLI/command-palette precedent, and LLM-specific tool-selection literature into concrete design moves.
 
 ## TLDR (5 bullets)
 
-- **180 tools is past every known "scan" threshold.** Miller's 7±2 and Cowan's 4±1 describe working memory, not catalogs, but designers treat ~7–10 as the point at which a flat list stops being scannable. We must design for *search + categorize*, never *scan*.
+- **201 tools is past every known "scan" threshold.** Miller's 7±2 and Cowan's 4±1 describe working memory, not catalogs, but designers treat ~7–10 as the point at which a flat list stops being scannable. We must design for *search + categorize*, never *scan*.
 - **Humans switch from scan to search at ~20–30 items**; command palettes (VSCode, Raycast) assume search as the primary mode and sort by name for *stability* (muscle memory) rather than by fuzzy score. This translates directly to LLM UX: tool order must be stable across turns so the model builds a cache.
 - **LLMs have measurable position bias.** "Lost in the middle" (Liu et al., 2023) and primacy/recency work (Raimondi 2025; Guo 2024) show tool lists suffer U-shaped recall. Put the most-used and most-"start-here" tools first and last; never bury the index.
-- **Tool-RAG beats flat exposure past ~30–50 tools.** ToolLLM (16k APIs), ToolRet (43k tools), and Red Hat's 2025 tool-RAG writeup all show retrieval-based tool surfacing roughly *triples* selection accuracy vs. dumping the full list. At 180 tools we are squarely in tool-RAG territory.
+- **Tool-RAG beats flat exposure past ~30–50 tools.** ToolLLM (16k APIs), ToolRet (43k tools), and Red Hat's 2025 tool-RAG writeup all show retrieval-based tool surfacing roughly *triples* selection accuracy vs. dumping the full list. At 201 tools we are squarely in tool-RAG territory.
 - **Verb-noun hierarchy (kubectl / gh) scales to hundreds of subcommands** when the verb set is small (~7) and stable, and nouns are discoverable via a single index command (`kubectl api-resources`, `gh help`). Two levels is the sweet spot; three is where NN/g says users get lost.
 
 ## 1. Cognitive load limits
@@ -18,7 +18,7 @@ Context: HuGR Smith exposes ~180 MCP tools to an LLM worker agent. We need an in
 
 **Hick's Law (1952) — RT ∝ log₂(n+1).** Choice reaction time scales *logarithmically* with number of options (Hick 1952; Hyman 1953; Proctor & Schneider 2018 review). *Critical caveat from the Proctor review:* Hick's logarithm requires that users can *subdivide* the choice space (alphabetical order, categories). For *unordered* menus, scan time is **linear**, not log. Cited at Wikipedia's own Hick page: "scanning each word in a randomly ordered list requires linear time, so Hick's law does not apply."
 
-**Implication for a 180-tool catalog.** A flat unsorted list is O(n) to scan. A categorized or name-sorted list is O(log n) *if the user knows what they are looking for*. If they don't, categorization alone isn't enough — you need a search affordance.
+**Implication for a 201-tool catalog.** A flat unsorted list is O(n) to scan. A categorized or name-sorted list is O(log n) *if the user knows what they are looking for*. If they don't, categorization alone isn't enough — you need a search affordance.
 
 ## 2. Progressive disclosure patterns
 
@@ -68,13 +68,13 @@ Humans and LLMs differ in three ways that matter for this design:
 
 Key LLM-only findings:
 
-- **"Lost in the middle" (Liu et al. 2023).** U-shaped performance by position across 4K/16K/32K context windows. At 180 tools the middle ~100 are the danger zone — if they matter, they need to be retrieved, not listed.
+- **"Lost in the middle" (Liu et al. 2023).** U-shaped performance by position across 4K/16K/32K context windows. At 201 tools the middle ~100 are the danger zone — if they matter, they need to be retrieved, not listed.
 - **Primacy/recency bias (Raimondi 2025 arXiv 2507.13949; Guo et al. 2024 arXiv 2406.15981).** Llama-2 shows recency; GPT-class shows primacy; the effect is reliable but model-dependent. A "home" tool should appear at position 1 *and* be re-mentioned in the tail.
 - **Tool-RAG scales (ToolLLM; ToolRet benchmarks).** ToolLLM trained on 16,464 RapidAPI endpoints across 49 categories; retrieval became the only workable pattern past ~50 tools (Qin et al. 2023 arXiv 2307.16789).
 
 ## 6. Recommendations for HuGR Smith (interface layer)
 
-Goal: make 180 tools feel like ~7 to the model at any given moment, while preserving full coverage.
+Goal: make 201 tools feel like ~7 to the model at any given moment, while preserving full coverage.
 
 **Design moves (each with a precedent):**
 

@@ -20,11 +20,11 @@ python3.12 -m venv .venv
 .venv/bin/pip install -r requirements-mcp.txt
 .venv/bin/pip install pytest pytest-asyncio aiosqlite httpx
 
-# Verify the kit is healthy — 28/28 rules must pass before any PR.
+# Verify the kit is healthy — 37/37 rules must pass before any PR.
 PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check
 ```
 
-Expected output ends with `28/28 contract items satisfied — ALL GREEN`.
+Expected output ends with `37/37 contract items satisfied — ALL GREEN`.
 If not, stop and open an issue; do not land new work on a red tree.
 
 ---
@@ -221,7 +221,7 @@ Run the full local gate:
 cd skills/SKILL-001-fastapi-production
 ./ci.sh --no-pg                # ~5 min; all suites must pass
 PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check
-# 28/28 ALL GREEN
+# 37/37 ALL GREEN
 ```
 
 Then in the PR description, cite CONTRACT.md's six fields:

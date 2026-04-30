@@ -427,7 +427,7 @@ def _build_prompt(spec, workdir: Path, *, has_kit_mcp: bool) -> str:  # noqa: AN
 
 YOU HAVE A SKILL. SKILL-001 (HuGR) is the LLM-equivalent of `rails new`
 for FastAPI production backends. Six tier-1 "meta" tools are your
-entry surface; the remaining 180 tools live in a catalog the meta
+entry surface; the remaining 201 tools live in a catalog the meta
 tools navigate for you. You are NOT expected to read a library guide —
 you are an LLM and the skill speaks your language.
 
@@ -438,7 +438,7 @@ CANONICAL WORKFLOW (follow the breadcrumbs in every return's next_steps):
       mcp__fastapi-production__fastapi_meta_home()
 
     Returns the 10-domain landscape in ~1200 tokens. See the shape of
-    the skill before scanning 180 tool descriptions.
+    the skill before scanning 201 tool descriptions.
 
   TURN 2 — Scaffold. Call:
 

@@ -113,8 +113,9 @@ ${c_cyan}{
   }
 }${c_reset}
 
-After adding the stanza, restart your IDE.  The skill exposes ${c_bold}180 MCP tools${c_reset}
-(100 slice generators + 60 macro generators + 20 adapt/ops + 2 discovery
+After adding the stanza, restart your IDE.  The skill exposes ${c_bold}201 MCP tools${c_reset}
+(100 slice generators + 27 verify/operate/evolve/contracts/proactive
++ 56 macro generators + 7 Tier-1 meta + 9 domain dispatchers + 2 discovery
 tools) for generating production-grade FastAPI projects:
 
   fastapi_generate_project      — one call → 53-file production API

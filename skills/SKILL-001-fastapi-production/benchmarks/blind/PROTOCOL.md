@@ -52,7 +52,7 @@ declared openly in the commit message and a new protocol version cut.
 | Arm | Base | MCP tools available | Prompt |
 |---|---|---|---|
 | **naked** | Claude Opus/Sonnet via CLI subagent | none (no `--mcp-config`) | base brief |
-| **kit**   | Same model / temperature | SKILL-001 MCP (180 tools) | base brief + kit-tools announcement paragraph |
+| **kit**   | Same model / temperature | SKILL-001 MCP (201 tools) | base brief + kit-tools announcement paragraph |
 
 > **Prompt-parity exception (v1.1, 2026-04-20).** The first live run on
 > `hard/01` surfaced that an MCP surface being AVAILABLE is not the same

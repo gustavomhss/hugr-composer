@@ -25,7 +25,7 @@ HuGR_Smith/
 │       ├── STATUS.md                   # Counts humanos + test matrix
 │       ├── INVENTORY.md                # Machine-verified counts (fonte única)
 │       ├── generators/                 # 56 code generators
-│       ├── adapt/                      # 126 tools (100 extend + 26 outros)
+│       ├── adapt/                      # 127 tools (100 extend + 27 outros)
 │       │   ├── extend/                 # 100 feature tools (api_design, auth_access, crud_data, infrastructure, realtime, testing_tools)
 │       │   ├── verify/                 # 6 validation tools
 │       │   ├── operate/                # 8 operations tools
@@ -53,7 +53,6 @@ HuGR_Smith/
 │       │   ├── test_cross_composition.py   # 200+ composition scenarios
 │       │   ├── test_soak.py            # 5-min sustained load test
 │       │   └── mutation_runner.py      # AST-based mutation tester
-│       ├── mcp_tools/                  # MCP server + auto-discovery
 │       ├── ci.sh                       # Local CI (10 suites)
 │       └── benchmarks/                 # FinHealth benchmark
 ├── tools/                  # Shared tooling

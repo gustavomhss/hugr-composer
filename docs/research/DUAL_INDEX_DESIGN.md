@@ -114,7 +114,7 @@ Based on Anthropic Tool Search + Cognition report primacy/recency:
 | Position | Name | Role |
 |---|---|---|
 | 1 | `fastapi_home` | Entry point. Returns the landscape: 9 domains × ~20 tools/domain. 1200-token compact map. Agent calls this FIRST, always. |
-| 2 | `fastapi_search` | BM25 over 180-tool catalog. `search(query, domain?, verb?, k=10)`. Returns name + synopsis + next_steps. |
+| 2 | `fastapi_search` | BM25 over 201-tool catalog. `search(query, domain?, verb?, k=10)`. Returns name + synopsis + next_steps. |
 | 3 | `fastapi_scaffold` | Rails-for-LLMs entry point. Wraps `fastapi_generate_project` with opinionated defaults + auto-scaffolds common slices from spec mentions. |
 | 4 | `fastapi_describe` | Deep intro to a specific tool OR primitive OR recipe. `describe("fastapi_auth_add_oauth2")` returns full schema + example. |
 | 5 | `fastapi_audit` | Runs `contract_check` on the emitted workdir. Breadcrumbs to next fix. |
@@ -188,7 +188,7 @@ version: 0.3.0
 
 Anthropic loads the YAML frontmatter at session start (~100 tokens);
 the body activates when the skill is triggered. Bundled scripts (the
-180 tools) stay zero-context until invoked via Bash.
+201 tools) stay zero-context until invoked via Bash.
 
 ### 4.6 Tier-1 tool return shape (next_steps = the magic)
 
@@ -336,7 +336,7 @@ Rough estimate: 9-10 commits. Each reversible. Every step keeps
       entries, 122 primitive entries, 290 recipe entries.
 - [ ] Tier-1 MCP tool count ≤ 8. Tier-2 count ≥ 170 with defer_loading=True.
 - [ ] `fastapi_home()` response ≤ 1200 tokens.
-- [ ] `fastapi_search(query)` returns in ≤ 100 ms on the 180-tool corpus.
+- [ ] `fastapi_search(query)` returns in ≤ 100 ms on the 201-tool corpus.
 - [ ] `catalog.json` regenerated deterministically: same kit commit →
       identical SHA-256 (prompt-cache friendly).
 - [ ] Human index: every tool page, every primitive page, every recipe
@@ -352,7 +352,7 @@ Rough estimate: 9-10 commits. Each reversible. Every step keeps
 
 ## 8. What this does NOT do
 
-- Does NOT reduce the 180-tool capability surface. Every existing tool
+- Does NOT reduce the 201-tool capability surface. Every existing tool
   stays reachable (as tier-2 deferred). No capability regression.
 - Does NOT require retraining Claude. Uses Anthropic-native primitives
   (Tool Search, Agent Skills, deferred tools, resources, prompts).
