@@ -71,10 +71,10 @@ dev = [
 
 
 [project.urls]
-Homepage = "https://github.com/humangr-labs/HuGR_Skills"
-Repository = "https://github.com/humangr-labs/HuGR_Skills"
-Issues = "https://github.com/humangr-labs/HuGR_Skills/issues"
-Changelog = "https://github.com/humangr-labs/HuGR_Skills/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/humangr-labs/HuGR-Smith"
+Repository = "https://github.com/humangr-labs/HuGR-Smith"
+Issues = "https://github.com/humangr-labs/HuGR-Smith/issues"
+Changelog = "https://github.com/humangr-labs/HuGR-Smith/blob/main/CHANGELOG.md"
 
 
 [tool.hatch.version]

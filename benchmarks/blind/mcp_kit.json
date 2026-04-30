@@ -2,12 +2,12 @@
   "_comment": "MCP config loaded by the blind-benchmark KIT arm. See PROTOCOL.md §2 — this is how the kit condition exposes SKILL-001's 180 MCP tools to the Claude CLI subagent. Paths MUST be absolute. Regenerate via scripts/regenerate_mcp_kit.sh if the repo moves.",
   "mcpServers": {
     "fastapi-production": {
-      "command": "/Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/.venv/bin/python",
+      "command": "/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/skills/SKILL-001-fastapi-production/.venv/bin/python",
       "args": [
-        "/Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/mcp_server.py"
+        "/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/skills/SKILL-001-fastapi-production/mcp_server.py"
       ],
       "env": {
-        "PYTHONPATH": "/Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production"
+        "PYTHONPATH": "/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/skills/SKILL-001-fastapi-production"
       }
     }
   }
