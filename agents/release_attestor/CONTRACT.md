@@ -1,8 +1,8 @@
 # RELEASE ATTESTOR (RA) — INVIOLABLE CONTRACT v0.3
 
-# Release Attestor (RA) — Inviolable Contract v0.4
+# Release Attestor (RA) — Inviolable Contract v0.4.1
 
-> **Status**: Draft for ratification. Closes 100% of Codex v11 (DEFER) + Opus v11 (APPROVE WITH CHANGES) findings on v0.3.
+> **Status**: Draft for ratification. Closes 100% of Codex v11 (DEFER) + Opus v11 (APPROVE WITH CHANGES) findings on v0.3, plus Opus v12 HIGH findings F1 (RA-GOV-004 PENDING gate) and F3 (advisory SHA pinning). Codex v12 audit pending due to quota reset (May 5, 2026).
 
 ## §0 — Document classification
 
@@ -426,6 +426,11 @@ class Decision(BaseModel):
     refusal_artefact_ref: str | None = None                   # path to Refusal artefact (only when REFUSE)
     runtime_environment: "RuntimeEnvironment"                 # typed (was dict in v0.3)
     expires_at: datetime
+    # v0.4.1: cryptographic binding to optional ReviewerAdvisory artefact (Opus v12 finding F3).
+    # When a cross-backbone reviewer was invoked (§23 + RA-SCH-007), the SHA-256 of the advisory
+    # JSON file MUST be pinned here so the advisory cannot be substituted/forged post-hoc by
+    # an attacker with repo write access. None when no advisory was emitted.
+    advisory_sha256_optional: Sha256Hex | None = None
 
     @model_validator(mode="after")
     def cross_field_consistency(self) -> "Decision":
@@ -516,6 +521,13 @@ class FounderCommitmentVerification(BaseModel):
 # RA-SCH-007 — ReviewerAdvisory (NEW in v0.4)
 # Cross-backbone LLM reviewer opinion. NOT signed by RA. Stored alongside attestation
 # at attestations/<release-tag>.advisory.json. Verifiers MUST ignore for release decisions.
+#
+# v0.4.1 (Opus v12 F3): The advisory file is forgeable post-hoc by anyone with repo write
+# access. To prevent substitution attacks, when an advisory IS emitted, its SHA-256 MUST be
+# computed AT EMISSION TIME and stored in Decision.advisory_sha256_optional BEFORE the Decision
+# is signed. Verifiers consuming an advisory MUST recompute the SHA and reject if mismatched.
+# This makes the advisory's CONTENT cryptographically pinned even though the file ITSELF is
+# unsigned.
 class ReviewerAdvisory(BaseModel):
     schema_version: Literal["1.0"] = "1.0"
     invocation_id: str                                        # MUST match Decision.invocation_id
@@ -525,6 +537,9 @@ class ReviewerAdvisory(BaseModel):
     advisory_concerns: list[str]                              # itemized concerns; informational only
     timestamp_utc: datetime
     reviewer_runtime: dict                                    # for forensics; NOT signed
+    # Self-pin: SHA-256 of this entire artefact's canonical JSON serialization (computed AFTER
+    # all other fields are finalized, EXCLUDING this field). Pinned in Decision.advisory_sha256_optional.
+    self_sha256: Sha256Hex                                    # MUST equal sha256 of the JSON without this field
 
 # RA-SCH-008 — RuntimeEnvironment (NEW in v0.4 typed wrapper, was dict in v0.3)
 class RuntimeEnvironment(BaseModel):
@@ -715,7 +730,7 @@ Procedures for evolving this contract, rotating root identities, and revoking at
 | `RA-GOV-001` | **Contract amendment** (minor) | Founder | Drift between contract text and reality, or new requirement | New draft → Gustavo redline + signed approval commit → `contract_check.py` adapted → migration script for prior signatures (if affected) → ADR documenting rationale (per §30) |
 | `RA-GOV-002` | **Major version revocation** | Founder | Breaking semantics change (e.g., schema renaming, threat model overhaul) | Bump MAJOR (v1.0 → v2.0) in `predicateType`. All prior attestations flagged `expired-by-major-bump` via `contract_check.py --revalidate`. Attestations remain valid as historical record but are NOT re-trusted. |
 | `RA-GOV-003` | **Root-of-trust rotation** (planned) | Founder | Personnel change OR scheduled key rotation (recommended every 12 months) | PR landing changes to `agents/release_attestor/root_identities.json`: append `RotationLogEntry` (RA-SCH-009) with operation ∈ {ADD, ROTATE_OUT}; flip `FounderIdentity.status` accordingly. PR MUST be SSH-sig'd by an existing `ACTIVE` founder. |
-| `RA-GOV-004` | **Emergency root-of-trust rotation** (compromise) | Quorum (2-of-N backup identities, when available) OR Founder manually (when quorum doesn't exist yet) | Founder OIDC/SSH key suspected compromised | Append `RotationLogEntry` with `operation="REVOKE"` + `rationale` documenting compromise vector. Until backup-identity quorum is provisioned (TODO before v1.0.0), this is **manually announced** — RA REFUSES until `root_identities.json` is patched to `status="REVOKED"` for the compromised entry. Codex audit + Opus audit MUST review the rotation PR. |
+| `RA-GOV-004` | **Emergency root-of-trust rotation** (compromise). **STATUS = PENDING** until §28.10 backup identity provisioned. | Quorum of `ACTIVE` backup identities (target: 2-of-N once §28.10 closes). | Founder OIDC/SSH key suspected compromised | Append `RotationLogEntry` with `operation="REVOKE"` + `rationale`. **Until backup-identity quorum is provisioned (§28.10)**: this procedure is structurally unenforceable — a compromised primary has push rights and could patch `root_identities.json` to exclude the legitimate founder. RA acknowledges this as a residual single-point-of-failure for the v1.0.0 window and gates the procedure as `PENDING` in §25 (Opus v12 finding F1). When §28.10 closes (≥1 backup `ACTIVE` identity exists), this status flips to `ACTIVE` via amendment per RA-GOV-001. |
 | `RA-GOV-005` | **Pre-attestation revalidation** (after contract amendment) | RA itself | Any commit landing on `agents/release_attestor/CONTRACT.md` | `contract_check.py --revalidate-prior` re-runs all conformance gates against existing attestations. Attestations whose pinned `contract_sha` is older AND whose new contract has incompatible mandatory checks are flagged `revalidation-failed`. Verifiers downstream MUST treat such attestations as expired. |
 | `RA-GOV-006` | **Security incident SLA** | Founder | Reported vulnerability in RA implementation | Acknowledge within 72h. Triage to fix-or-defer within 7 days. CVSS ≥ 7.0 → emergency contract amendment (RA-GOV-001) within 14 days. CVSS ≥ 9.0 → major revocation (RA-GOV-002) within 7 days. |
 | `RA-GOV-007` | **`SPEC_ID_REGISTRY.md` regeneration** | RA | Any commit changing CONTRACT.md SPEC IDs | `contract_check.py --emit-registry` regenerates `agents/release_attestor/SPEC_ID_REGISTRY.md`. CI MUST `git diff --exit-code` this file (drift = pre-merge fail). |
@@ -780,6 +795,16 @@ Per `RA-T-008`, the cross-backbone reviewer is **normatively advisory**. RA MAY 
 **The advisory artefact is NEVER inside the signed Decision predicate.** RA's signed predicate (DSSE-wrapped in-toto Statement) contains deterministic gate evaluation evidence only. Verifiers consuming the attestation MUST NOT treat the advisory as authoritative for release decisions.
 
 The reviewer MUST NOT influence the verdict.
+
+### Cryptographic binding (v0.4.1 — Opus v12 F3)
+
+While the advisory artefact itself is unsigned (it is "content alongside" the signed Decision, not part of the signed payload), its **SHA-256 IS pinned inside the signed Decision** via `Decision.advisory_sha256_optional`. This means: an attacker with repo write access can drop a fabricated `<release-tag>.advisory.json` next to the signed attestation, but a verifier comparing `sha256(advisory.json)` against `Decision.advisory_sha256_optional` will detect the substitution.
+
+**Verifier MUST**:
+1. If `Decision.advisory_sha256_optional is not None` → fetch `<release-tag>.advisory.json`, compute SHA-256, compare; mismatch ⇒ reject the entire attestation as tampered.
+2. If `Decision.advisory_sha256_optional is None` → no advisory was emitted; presence of an unsigned advisory file beside the attestation is a tampering indicator (verifier MUST flag).
+
+**RA MUST** compute the advisory's `self_sha256` at emission time AFTER all other ReviewerAdvisory fields are finalized, EXCLUDING `self_sha256` itself, and pin it in `Decision.advisory_sha256_optional` BEFORE signing the Decision.
 
 A future contract version MAY introduce empirically-validated cross-backbone gates if Cohen's κ on a labeled close-call dataset shows independence; until that data exists, this stays advisory.
 
@@ -874,7 +899,7 @@ A future contract version MAY introduce empirically-validated cross-backbone gat
 | Completeness | RA-COMP-001..012 | 12 | machine + ci-gated |
 | Observability | RA-OBS-001..010 | **10** (NEW in v0.4) | machine (test_observability.py) |
 | Failure modes | RA-FM-001..012 | **12** (NEW in v0.4) | machine (test_failure_modes.py) |
-| Governance | RA-GOV-001..008 | **8** (NEW in v0.4) | manual-founder (mostly) + ci-gated (RA-GOV-007) |
+| Governance | RA-GOV-001..008 | **8** (NEW in v0.4) | manual-founder (mostly) + ci-gated (RA-GOV-007). **RA-GOV-004 is gated `PENDING` until §28.10 closes** (no backup identities exist; emergency rotation is structurally unenforceable until then — Opus v12 F1). |
 | Manual sign-offs | RA-MAN-001..004 | 4 | manual-founder |
 | DoD | RA-DOD-001..044 | **44** (was 35 — added 036..044 for v0.4 sections) | mix |
 | **TOTAL** | | **221** | — |
@@ -970,7 +995,7 @@ Per `RA-GOV-007`: CI MUST `git diff --exit-code SPEC_ID_REGISTRY.md` on every PR
 ### Open questions added in v0.4
 
 9. **Rekor outage policy** — RATIFIED in this same v0.4: REFUSE on Rekor unreachability after 3 retries; no local-only fallback. See `RA-T-009` + `RA-FM-001`. **Resolved.**
-10. **(open)** **Backup founder identity provisioning** — `RA-GOV-004` emergency rotation requires a quorum of `ACTIVE` identities to rotate out a compromised primary. Currently `root_identities.json` has 1 `ACTIVE` founder (Gustavo). Single-point-of-failure prone. Action item BEFORE v1.0.0: provision at least 1 backup `ACTIVE` identity (Gustavo's secondary device key OR designated quorum partner). Tracked in v0.4 as a known gap.
+10. **(open — security-critical)** **Backup founder identity provisioning** — `RA-GOV-004` emergency rotation requires a quorum of `ACTIVE` identities to rotate out a compromised primary. **Current state: ZERO backup identities. RA-GOV-004 is therefore structurally unenforceable** and gated as `PENDING` in §25 (per Opus v12 finding F1). The "Founder manually" branch acknowledged in earlier v0.4 drafts is the EXACT compromise vector RA-T-010 is supposed to defend: if Gustavo's primary key is compromised, the attacker has push rights and can patch `root_identities.json` to exclude the legitimate founder before any "manual announcement" propagates. Honest framing: **between v0.4 ratification and §28.10 closure, RA's defense against `RA-T-010` reduces to "the attacker hasn't yet realized they have full repo write access"**. Action item BEFORE v1.0.0 release tag: provision at least 1 backup `ACTIVE` identity (one or more of: Gustavo's secondary device SSH key, hardware token like YubiKey, or designated quorum partner). When this lands, RA-GOV-004 status flips PENDING → ACTIVE via amendment per RA-GOV-001.
 
 ---
 
@@ -1001,9 +1026,15 @@ Per `RA-GOV-007`: CI MUST `git diff --exit-code SPEC_ID_REGISTRY.md` on every PR
 
 ---
 
-**End of v0.4 LAPIDADO contract.**
+**End of v0.4.1 LAPIDADO contract.**
 
-**Length**: ~13,000 words. **221 SPEC IDs** (was 165 in v0.3). Every clause classified by enforcement class (machine / ci-gated / external-witness / manual-founder).
+**Length**: ~13,400 words. **221 SPEC IDs** (was 165 in v0.3). Every clause classified by enforcement class (machine / ci-gated / external-witness / manual-founder).
+
+**v0.4.1 changelog (close Opus v12 HIGH findings; Codex v12 deferred)**:
+- **F1**: `RA-GOV-004` (emergency root-of-trust rotation) gated as `PENDING` in §25 + §20 row + §28.10 honest framing — until §28.10 (backup founder identity provisioning) closes, the procedure is structurally unenforceable and v0.4.1 acknowledges this single-point-of-failure explicitly rather than papering over it.
+- **F3**: `Decision.advisory_sha256_optional: Sha256Hex | None` field added — pins SHA-256 of `ReviewerAdvisory` artefact inside the signed predicate. Advisory file remains unsigned but its content is now cryptographically tampered-detectable. RA-SCH-007 gains `self_sha256` field. §23 specifies verifier obligations.
+
+F2/F4/F5/F8 (MEDIUM/LOW) deferred to v0.5 — not blockers for build start. F6/F7/F9/F10/F11 acceptable as-is.
 
 **v0.4 changelog (close v11 audit findings)**:
 - **P0 (block-build, 6)**: RA-AUTH-208 carve-out for append-only attestations write path; `reviewer_advisory` MOVED OUT of signed Decision predicate (now RA-SCH-007 separate artefact); FPA residue cleaned (`ratify.py` + "FPA SHA"); §4 Glossary disambiguates "repo `CONTRACT.md`" vs "RA `CONTRACT.md`"; OIDC env vars added (`ACTIONS_ID_TOKEN_REQUEST_*` in RA-IN-ENV-006/007); RA-COMP-001 reconciled by adding RA-IN-021..024 for self-pinning + RA-IN-ENV-001..009 explicit env allow-list.
