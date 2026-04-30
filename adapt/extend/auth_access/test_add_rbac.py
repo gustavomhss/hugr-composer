@@ -73,7 +73,7 @@ def test_adapter_copied_into_project() -> None:
     assert adapter.exists()
     body = adapter.read_text()
     assert "def require(" in body
-    assert "Copied from HuGR SkillKit" in body
+    assert "Copied from HuGR Smith" in body
 
 
 def test_venous_manifest_records_provenance() -> None:

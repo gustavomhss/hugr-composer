@@ -64,7 +64,7 @@ MCP_TOOL = {
     "name": "fastapi_meta_home",
     "description": (
         "ALWAYS CALL FIRST when asked to build / extend / deploy a FastAPI "
-        "backend. Returns a compact map of the HuGR SkillKit: 10 domains "
+        "backend. Returns a compact map of the HuGR Smith: 10 domains "
         "(auth, data, api, realtime, resiliency, observability, compliance, "
         "deployment, testing, meta), per-domain tool counts, top-3 "
         "canonical tools per domain, primitive count, recipe count, and "

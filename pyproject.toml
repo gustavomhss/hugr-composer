@@ -1,4 +1,4 @@
-# HuGR SkillKit — SKILL-001 FastAPI Production
+# HuGR Smith — SKILL-001 FastAPI Production
 #
 # This file declares the skill as a Python project for tooling
 # compatibility (pytest discovery, `pip install -e`, type-checker
@@ -13,7 +13,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "hugr-skill-001-fastapi-production"
-description = "HuGR SkillKit SKILL-001 — Rails-style FastAPI production scaffolder"
+description = "HuGR Smith SKILL-001 — Rails-style FastAPI production scaffolder"
 readme = "SKILL.md"
 requires-python = ">=3.11"
 license = { text = "Proprietary — see /LICENSE at repo root" }
