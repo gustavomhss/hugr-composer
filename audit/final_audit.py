@@ -126,9 +126,9 @@ SUITES: list[tuple[str, list[str], str]] = [
         "overall >= 30",
     ),
     (
-        "Contract (28 rules)",
+        "Contract (37 rules)",
         [PYTHON, "-m", "engine.audit.contract_check", "--quiet"],
-        "28/28 green",
+        "37/37 green",
     ),
 ]
 
