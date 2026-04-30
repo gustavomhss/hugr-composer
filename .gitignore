@@ -58,3 +58,7 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# Primitive execution state dumps (filter-repo cleanup 2026-04-30, 2.7GB removed)
+**/states/**/*.st
+core/venous/**/states/
