@@ -585,15 +585,15 @@ The `next_steps` returned:
 
 ## Sources
 
-- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/WebhookReceiverAdapter.py` — canonical composition idiom, `install()` signature at line 38; the emitted code style guide.
-- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/mcp_tools/tier1.py` — envelope contract (lines 43-52), workflow breadcrumbs (lines 111-117).
-- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/mcp_tools/tree/auth.py` — tree-dispatcher precedent (lines 173-201); bundle-vs-slice-vs-primitive granularity model.
-- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/engine/index/catalog.json` — 295 tools, 122 primitives, 385 recipes; recipe schema at lines 5262-5339.
-- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/engine/index/schemas.py:92-100` — `RecipeEntry` pydantic contract.
-- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/core/venous/events/IdempotentConsumer/IdempotentConsumer.md:169-181` — canonical `## Compose with:` bullet format.
-- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/examples/02-webhook-sink/app.py` — the style guide for emitted compositions.
-- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/docs/research/TOOL_UX_PRODUCTION.md` §2 (patterns: ToolSpec bundles, Rails scaffold, retrieval-over-registry).
-- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/docs/research/DUAL_INDEX_DESIGN.md` — overall tier-1/tier-2 architecture.
+- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/WebhookReceiverAdapter.py` — canonical composition idiom, `install()` signature at line 38; the emitted code style guide.
+- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/skills/SKILL-001-fastapi-production/mcp_tools/tier1.py` — envelope contract (lines 43-52), workflow breadcrumbs (lines 111-117).
+- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/skills/SKILL-001-fastapi-production/mcp_tools/tree/auth.py` — tree-dispatcher precedent (lines 173-201); bundle-vs-slice-vs-primitive granularity model.
+- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/skills/SKILL-001-fastapi-production/engine/index/catalog.json` — 295 tools, 122 primitives, 385 recipes; recipe schema at lines 5262-5339.
+- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/skills/SKILL-001-fastapi-production/engine/index/schemas.py:92-100` — `RecipeEntry` pydantic contract.
+- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/skills/SKILL-001-fastapi-production/core/venous/events/IdempotentConsumer/IdempotentConsumer.md:169-181` — canonical `## Compose with:` bullet format.
+- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/examples/02-webhook-sink/app.py` — the style guide for emitted compositions.
+- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/docs/research/TOOL_UX_PRODUCTION.md` §2 (patterns: ToolSpec bundles, Rails scaffold, retrieval-over-registry).
+- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/docs/research/DUAL_INDEX_DESIGN.md` — overall tier-1/tier-2 architecture.
 - [FastAPI bigger applications](https://fastapi.tiangolo.com/tutorial/bigger-applications/) — `APIRouter` + `include_router` as the composition idiom.
 - [FastAPI dependencies](https://fastapi.tiangolo.com/tutorial/dependencies/) — `Annotated[T, Depends(...)]` as the sub-dependency pattern.
 - [Rails Guides — Command Line](https://guides.rubyonrails.org/command_line.html#rails-generate) — scaffold-as-meta-generator precedent.

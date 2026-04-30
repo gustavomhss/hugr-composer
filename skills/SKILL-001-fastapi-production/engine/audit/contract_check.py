@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Callable
 
 REPO_ROOT = Path(__file__).resolve().parents[3].parent
-# /Users/…/HuGR_Skills (one level above skills/)
+# /Users/…/HuGR_Smith (one level above skills/)
 SKILL_ROOT = REPO_ROOT / "skills" / "SKILL-001-fastapi-production"
 
 # Official semver 2.0.0 regex body (no anchors).

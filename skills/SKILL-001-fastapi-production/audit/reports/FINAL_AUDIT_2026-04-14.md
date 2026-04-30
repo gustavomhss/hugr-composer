@@ -94,7 +94,7 @@ BLIND SPOT A: Edge case model names
 
 ```
 (stderr_seq) if stderr_seq else None)
-subprocess.TimeoutExpired: Command '['/Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/.venv/bin/python3', '-c', "import sys; sys.path.insert(0, '.'); from app.main import app; print('BOOT_OK')"]' timed out after 15 seconds
+subprocess.TimeoutExpired: Command '['/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/skills/SKILL-001-fastapi-production/.venv/bin/python3', '-c', "import sys; sys.path.insert(0, '.'); from app.main import app; print('BOOT_OK')"]' timed out after 15 seconds
 
 ```
 

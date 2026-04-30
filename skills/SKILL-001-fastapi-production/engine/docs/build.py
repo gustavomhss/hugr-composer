@@ -50,7 +50,7 @@ _TOP_LEVEL_DOCS: tuple[tuple[str, str, str], ...] = (
     ("CHANGELOG.md",    "changelog",    "Changelog"),
 )
 
-_SOURCE_URL_BASE = "https://github.com/humangr-labs/HuGR_Skills/tree/main/skills/SKILL-001-fastapi-production"
+_SOURCE_URL_BASE = "https://github.com/humangr-labs/HuGR-Smith/tree/main/skills/SKILL-001-fastapi-production"
 
 
 @dataclass(frozen=True)

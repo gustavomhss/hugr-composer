@@ -824,10 +824,10 @@ SKILL.md surface.
 - Cursor `.cursor/rules`: <https://docs.cursor.com/context/rules-for-ai>
 
 **HuGR internal.**
-- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/docs/research/TOOL_UX_ANTHROPIC.md` — prior research; §4 (Claude Code as reference impl), §6 (MCP system-prompt injection), §Anti-patterns.
-- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/PRODUCT.md` — three-layer architecture; §6 (design invariants).
-- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/SKILL.md` — current file (written for humans; this doc supersedes it for the Maestro contract).
-- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Skills/skills/SKILL-001-fastapi-production/engine/index/catalog.json` — 358 KB inventory, loaded via meta tools not SKILL.md.
+- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/docs/research/TOOL_UX_ANTHROPIC.md` — prior research; §4 (Claude Code as reference impl), §6 (MCP system-prompt injection), §Anti-patterns.
+- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/PRODUCT.md` — three-layer architecture; §6 (design invariants).
+- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/skills/SKILL-001-fastapi-production/SKILL.md` — current file (written for humans; this doc supersedes it for the Maestro contract).
+- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/skills/SKILL-001-fastapi-production/engine/index/catalog.json` — 358 KB inventory, loaded via meta tools not SKILL.md.
 
 ---
 

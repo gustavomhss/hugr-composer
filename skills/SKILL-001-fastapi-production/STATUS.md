@@ -159,7 +159,7 @@ Or use the hermetic one-liner that installs system-wide into
 `~/.hugr-skills/`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/humangr-labs/HuGR_Skills/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/humangr-labs/HuGR-Smith/main/install.sh | bash
 ```
 
 Validated nightly in a fresh `python:3.12-slim` container —

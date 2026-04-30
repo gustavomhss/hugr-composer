@@ -251,8 +251,8 @@ DOESN'T prove, not only what it does.
 A reader who trusts nothing runs:
 
 ```bash
-git clone https://github.com/humangr-labs/HuGR_Skills --branch v1.0.0
-cd HuGR_Skills
+git clone https://github.com/humangr-labs/HuGR-Smith --branch v1.0.0
+cd HuGR_Smith
 
 # Fast: just confirm the kit is the kit they think it is.
 ./evidence/reproduce.sh --verify          # ~15min
@@ -331,7 +331,7 @@ stochastic; "SOTA" is measured, not decreed.
   waitlist. Invite token per user (same system as alpha); every
   download of `install.sh` carries a run-ID that the installer
   echoes in its final line. No HN / Product Hunt post yet.
-- **Feedback channel:** Public GitHub issues on `HuGR_Skills` repo
+- **Feedback channel:** Public GitHub issues on `HuGR_Smith` repo
   with a `beta` label + invite-token field in issue template
   (closed-loop: token links the report to the download cohort,
   denominator for "success rate" is the cohort size, not the
