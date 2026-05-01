@@ -1,555 +1,553 @@
 {
-  "kit_version": "af83fad",
-  "maestro_model": "cli-subagent-ensemble-best-of",
-  "generated_at": "2026-04-20T15:01:12+00:00",
-  "overall": 100.0,
+  "kit_version": "a9b8ad5",
+  "maestro_model": "stub",
+  "generated_at": "2026-05-01T06:22:46+00:00",
+  "overall": 0.0,
   "by_tier": {
-    "adversarial": 100.0,
-    "baseline": 100.0,
-    "mid": 100.0
+    "adversarial": 0.0,
+    "baseline": 0.0,
+    "mid": 0.0
   },
   "scores": [
     {
       "spec_id": "adversarial/01_rare_edge_exactly_once_weak_broker",
       "tier": "adversarial",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "4/4 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "3/3 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "7 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "adversarial/02_contradiction_stateless_but_session_aware",
       "tier": "adversarial",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "4/4 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "4/4 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "7 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "adversarial/03_conflicting_primitives_lockfree_serializable",
       "tier": "adversarial",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "5/5 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "4/4 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "7 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "adversarial/04_missing_primitive_ml_inference_pool",
       "tier": "adversarial",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "5/5 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "4/4 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "2 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "adversarial/05_hidden_scaling_innocent_counter",
       "tier": "adversarial",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "5/5 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "4/4 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "4 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "baseline/01_crud_todos",
       "tier": "baseline",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "4/4 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "5/5 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "9 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "baseline/02_auth_only_saas",
       "tier": "baseline",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "5/5 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "5/5 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "10 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "baseline/03_webhook_sink",
       "tier": "baseline",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "5/5 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "4/4 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "6 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "baseline/04_rate_limited_api",
       "tier": "baseline",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "5/5 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "4/4 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "10 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "baseline/05_multi_tenant_admin",
       "tier": "baseline",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "5/5 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "4/4 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "12 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "mid/01_saas_with_stripe_billing",
       "tier": "mid",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "5/5 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "5/5 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "7 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "mid/02_realtime_chat",
       "tier": "mid",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "5/5 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "4/4 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "13 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "mid/03_event_sourced_orders",
       "tier": "mid",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "5/5 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "4/4 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "10 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "mid/04_rbac_with_audit",
       "tier": "mid",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "5/5 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "4/4 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "8 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "mid/05_llm_agent_backend",
       "tier": "mid",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "5/5 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "4/4 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "15 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "mid/06_mobile_backend",
       "tier": "mid",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "5/5 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "4/4 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "11 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "mid/07_compliance_log_aggregator",
       "tier": "mid",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "5/5 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "4/4 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "10 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "mid/08_graphql_over_rest",
       "tier": "mid",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "5/5 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "4/4 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "4 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "mid/09_workflow_orchestrator",
       "tier": "mid",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "5/5 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "4/4 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "11 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     },
     {
       "spec_id": "mid/10_bi_export_service",
       "tier": "mid",
-      "total": 100.0,
+      "total": 0.0,
       "dimensions": [
         {
           "name": "scaffold_completeness",
-          "value": 100.0,
-          "evidence": "5/5 requirements covered"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "test_suite_pass",
-          "value": 100.0,
-          "evidence": "4/4 acceptance criteria addressed"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "primitive_gate_pass",
-          "value": 100.0,
-          "evidence": "16 primitives all valid"
+          "value": 0.0,
+          "evidence": ""
         },
         {
           "name": "hand_editability",
-          "value": 100.0,
-          "evidence": "heuristic score 100/100"
+          "value": 0.0,
+          "evidence": ""
         }
       ]
     }
-  ],
-  "methodology": "plan_level_v3_best_of_ensemble",
-  "methodology_notes": "Ensemble best-of across independent plan-level runs (v0 + v2 + v3 attempts). For each spec, the highest-scoring attempt is reported. Every attempt is a legitimate independent run by a fresh subagent Maestro using the kit's MCP discovery tools; no scoring was relaxed. This measures the kit's capability ceiling under realistic Maestro variance."
+  ]
 }
