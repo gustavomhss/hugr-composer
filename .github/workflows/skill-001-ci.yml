@@ -238,6 +238,34 @@ jobs:
       - name: Run contract_check (full 28-rule audit)
         run: PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check --quiet
 
+  emitted-project-audit:
+    name: Emitted-project audit (compose tools keep generated suite green)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --quiet -r requirements-mcp.txt
+          .venv/bin/pip install --quiet pytest pytest-asyncio aiosqlite httpx
+      - name: Run emitted-project audit
+        # Scaffolds with a non-"Item" model, applies each contract-touching
+        # compose tool, and asserts the GENERATED pytest suite stays green +
+        # the tool is idempotent. Regression net for the bug class the
+        # linkpocket cold run exposed (drop of `count` from list-response
+        # schema silently red-lined the emitted suite). Standalone mode
+        # exits 0/1.
+        run: PYTHONPATH=. .venv/bin/python tests/test_emitted_project_audit.py
+        env:
+          SECRET_KEY: ${{ env.CI_TEST_SECRET_KEY }}
+          RATE_LIMITING_ENABLED: 'false'
+          ENVIRONMENT: local
+
   mcp-discovery:
     name: MCP discovery (≥170 tools)
     runs-on: ubuntu-latest
