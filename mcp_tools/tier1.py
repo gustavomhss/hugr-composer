@@ -64,7 +64,7 @@ MCP_TOOL = {
     "name": "fastapi_meta_home",
     "description": (
         "ALWAYS CALL FIRST when asked to build / extend / deploy a FastAPI "
-        "backend. Returns a compact map of the HuGR Smith: 10 domains "
+        "backend. Returns a compact map of the HuGR Arsenal: 10 domains "
         "(auth, data, api, realtime, resiliency, observability, compliance, "
         "deployment, testing, meta), per-domain tool counts, top-3 "
         "canonical tools per domain, primitive count, recipe count, and "
@@ -369,7 +369,7 @@ MCP_TOOL_SCAFFOLD = {
         "After this call, use fastapi_<domain>_add_* tools to bolt on "
         "spec-specific capabilities (webhooks, rate limiting, RBAC, etc). "
         "This wraps generators.orchestrator.generate_project with "
-        "SkillKit-aware defaults and emits `next_steps` that point at the "
+        "Arsenal-aware defaults and emits `next_steps` that point at the "
         "exact add_* tools to call next given the requested models."
     ),
     "tags": ["generator", "meta"],

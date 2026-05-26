@@ -94,7 +94,7 @@ def test_primitive_copied_into_project() -> None:
     assert copied.exists(), f"primitive not copied: {copied}"
     body = copied.read_text()
     assert "class GracefulShutdown" in body
-    assert "Copied from HuGR Smith" in body  # attribution footer present
+    assert "Copied from HuGR Arsenal" in body  # attribution footer present
 
 
 def test_adapter_copied_into_project() -> None:
@@ -108,7 +108,7 @@ def test_adapter_copied_into_project() -> None:
     assert adapter.exists(), f"adapter not copied: {adapter}"
     body = adapter.read_text()
     assert "def install(" in body
-    assert "Copied from HuGR Smith" in body
+    assert "Copied from HuGR Arsenal" in body
 
 
 def test_venous_manifest_records_provenance() -> None:

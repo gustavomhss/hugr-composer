@@ -1,4 +1,4 @@
-# Blind Benchmark — HuGR Smith
+# Blind Benchmark — HuGR Arsenal
 
 > **Third-party-credible measurement** of whether the kit improves an
 > LLM agent's ability to produce a working backend from a plain-English

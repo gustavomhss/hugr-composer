@@ -50,7 +50,7 @@ _TOP_LEVEL_DOCS: tuple[tuple[str, str, str], ...] = (
     ("CHANGELOG.md",    "changelog",    "Changelog"),
 )
 
-_SOURCE_URL_BASE = "https://github.com/humangr-labs/HuGR-Smith/tree/main/skills/SKILL-001-fastapi-production"
+_SOURCE_URL_BASE = "https://github.com/humangr-labs/HuGR-Arsenal/tree/main/skills/SKILL-001-fastapi-production"
 
 
 @dataclass(frozen=True)
@@ -307,10 +307,10 @@ def _shell(title: str, body: str, *, depth: int = 0) -> str:
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{html.escape(title)} — HuGR Smith</title>
+<title>{html.escape(title)} — HuGR Arsenal</title>
 <link rel="stylesheet" href="{prefix}style.css">
 </head><body><div class="wrap">
-<p class="breadcrumb"><a href="{prefix}index.html">HuGR Smith</a> / {html.escape(title)}</p>
+<p class="breadcrumb"><a href="{prefix}index.html">HuGR Arsenal</a> / {html.escape(title)}</p>
 {body}
 </div></body></html>
 """
@@ -405,7 +405,7 @@ def _render_landing(primitives: list[dict], tools: list[ToolMeta]) -> str:
         if (REPO_ROOT / _src).exists()
     )
 
-    body = f"""<h1>HuGR Smith — Reference</h1>
+    body = f"""<h1>HuGR Arsenal — Reference</h1>
 <p class="meta">{len(primitives)} primitives · {len(tools)} tools · Rails-analogy 3-layer architecture</p>
 <input class="searchbox" id="q" type="search" placeholder="Search primitives, tools, intents…" autocomplete="off">
 <ul id="search-results"></ul>

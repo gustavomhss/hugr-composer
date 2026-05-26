@@ -292,7 +292,7 @@ def test_primitive_copied() -> None:
     assert p.exists(), f"primitive not copied: {p}"
     body = p.read_text()
     assert "InMemoryTransactionalOutbox" in body
-    assert "Copied from HuGR Smith" in body
+    assert "Copied from HuGR Arsenal" in body
 
 
 def test_manifest_records_primitive() -> None:
