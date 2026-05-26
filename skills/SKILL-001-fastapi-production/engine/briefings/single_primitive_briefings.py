@@ -236,7 +236,7 @@ writing ~30% novel code (HuGR shell) and ~70% informed-by-reference code
 wasted tokens.
 
 ## Working directory
-`cd /Users/gustavoschneiter/Documents/HuGR/HuGR_Smith`
+`cd /Users/gustavoschneiter/Documents/HuGR/HuGR_Arsenal`
 
 ## Deliverable artefacts (in order, to avoid mid-build halts)
 1. `__init__.py` in target dir, `<namespace>/`, `core/venous/`, and `core/` (idempotent touch — empty files)

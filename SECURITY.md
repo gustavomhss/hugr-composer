@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-HuGR Smith generates production backend code. A bug in a generator
+HuGR Arsenal generates production backend code. A bug in a generator
 or a primitive can propagate to every project scaffolded from it, so we
 treat security reports seriously.
 
@@ -69,4 +69,4 @@ the researcher:
 - Gives us a reasonable window (coordinated disclosure) before public
   discussion.
 
-Thank you for helping keep HuGR Smith safe.
+Thank you for helping keep HuGR Arsenal safe.

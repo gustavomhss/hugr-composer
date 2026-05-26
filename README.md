@@ -1,4 +1,4 @@
-# HuGR Smith
+# HuGR Arsenal
 
 **Executable knowledge a Maestro LLM invokes to scaffold AND customize
 production backend apps.** Rails-style 3-layer architecture: macro
@@ -35,7 +35,7 @@ manifest and `FREEZE.md` + `GOLIVE.md` for the v1.0 cut checklist.
 ## Quick orient
 
 ```
-HuGR_Smith/
+HuGR_Arsenal/
 ├── PRODUCT.md            # architecture contract
 ├── ROADMAP.md            # phased plan
 ├── CONTRACT.md           # execution rules
@@ -56,7 +56,7 @@ HuGR_Smith/
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/humangr-labs/HuGR-Smith/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/humangr-labs/HuGR-Arsenal/main/install.sh | bash
 ```
 
 Validated nightly in a fresh `python:3.12-slim` container — see

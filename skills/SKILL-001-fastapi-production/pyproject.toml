@@ -1,4 +1,4 @@
-# HuGR Smith — SKILL-001 FastAPI Production
+# HuGR Arsenal — SKILL-001 FastAPI Production
 #
 # This file declares the skill as a Python project for tooling
 # compatibility (pytest discovery, `pip install -e`, type-checker
@@ -13,7 +13,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "hugr-skill-001-fastapi-production"
-description = "HuGR Smith SKILL-001 — Rails-style FastAPI production scaffolder"
+description = "HuGR Arsenal SKILL-001 — Rails-style FastAPI production scaffolder"
 readme = "SKILL.md"
 requires-python = ">=3.11"
 license = { text = "Proprietary — see /LICENSE at repo root" }
@@ -71,10 +71,10 @@ dev = [
 
 
 [project.urls]
-Homepage = "https://github.com/humangr-labs/HuGR-Smith"
-Repository = "https://github.com/humangr-labs/HuGR-Smith"
-Issues = "https://github.com/humangr-labs/HuGR-Smith/issues"
-Changelog = "https://github.com/humangr-labs/HuGR-Smith/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/humangr-labs/HuGR-Arsenal"
+Repository = "https://github.com/humangr-labs/HuGR-Arsenal"
+Issues = "https://github.com/humangr-labs/HuGR-Arsenal/issues"
+Changelog = "https://github.com/humangr-labs/HuGR-Arsenal/blob/main/CHANGELOG.md"
 
 
 [tool.hatch.version]

@@ -1,21 +1,21 @@
-# CLAUDE.md — HuGR Smith
+# CLAUDE.md — HuGR Arsenal
 
-> Configuração para Claude Code no repo HuGR_Smith.
+> Configuração para Claude Code no repo HuGR_Arsenal.
 
 ## Projeto
 
 ```yaml
-projeto: "HuGR Smith"
+projeto: "HuGR Arsenal"
 descricao: "Executable knowledge skills for LLM worker agents"
 tipo: "MCP tools + code generators"
-repo: "humangr-labs/HuGR-Smith"
+repo: "humangr-labs/HuGR-Arsenal"
 visibilidade: "PRIVADO"
 ```
 
 ## Estrutura
 
 ```
-HuGR_Smith/
+HuGR_Arsenal/
 ├── CLAUDE.md              # Este arquivo
 ├── README.md              # Visão geral
 ├── QUICK_START.md         # Setup rápido

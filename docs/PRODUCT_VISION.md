@@ -1,11 +1,11 @@
-# HuGR Smith — Product Vision
+# HuGR Arsenal — Product Vision
 
 > Biblioteca proprietária de componentes de código battle-tested que servem
 > como peças de LEGO para o HuGR Maestro (coding agent powered by Claude).
 
 ## O Produto
 
-**HuGR Smith** é uma biblioteca de componentes de código (peças de LEGO)
+**HuGR Arsenal** é uma biblioteca de componentes de código (peças de LEGO)
 que o HuGR Maestro usa para montar projetos completos. O LLM não gera código
 do zero — seleciona, compõe e adapta peças prontas e testadas.
 
@@ -59,7 +59,7 @@ Layer 4: VALIDATION ($0-0.05, 5s)  → ruff + mypy + pytest
 ### Infra necessária
 - SkillEngine: orquestrador inteligente (Layer 0-4)
 - Pattern specs: 100+ patterns language-agnostic
-- Maestro: coding agent que consome o SkillKit
+- Maestro: coding agent que consome o Arsenal
 
 ## Flywheel
 
@@ -71,7 +71,7 @@ Mais peças → Maestro resolve mais → Mais usuários → Mais feedback → Ma
 
 1. Tempo: meses pra replicar qualidade + testes + composição
 2. Exclusividade: só Maestro acessa (não é open source)
-3. Calibração: Haiku + SkillKit > Opus naked (provado)
+3. Calibração: Haiku + Arsenal > Opus naked (provado)
 4. Composição: peças compõem entre si (200+ cenários testados)
 5. Crescimento: cada peça nova torna o sistema mais valioso
 

@@ -1,13 +1,13 @@
 # AGENT 5 — SECURITY
 
-> Research cohort: HuGR Smith venous-system research phase
+> Research cohort: HuGR Arsenal venous-system research phase
 > Namespaces owned: `security`, `auth`, `policy`
 > Primitives delivered: 15 (floor: 12)
 > Unique sources: 9 (floor: 6)
 
 ## Mission recap
 
-Extract the non-negotiable security surface every SkillKit target must
+Extract the non-negotiable security surface every Arsenal target must
 expose: authentication protocols, cryptographic facades, secrets handling,
 input/output hygiene, session management, MFA, passkeys. Sources root
 primarily in OWASP ASVS 4.0.3, OWASP Top 10 2021, the IETF OAuth stack

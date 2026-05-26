@@ -1,11 +1,11 @@
-# Quick Start — HuGR Smith
+# Quick Start — HuGR Arsenal
 
 Install and use SKILL-001 (FastAPI Production) in under 2 minutes.
 
 ## 1. Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/humangr-labs/HuGR-Smith/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/humangr-labs/HuGR-Arsenal/main/install.sh | bash
 ```
 
 This clones the repo to `~/.hugr-skills`, creates a Python venv, installs
@@ -59,7 +59,7 @@ Full catalog: see [`skills/SKILL-001-fastapi-production/SKILL.md`](skills/SKILL-
 ## 5. Upgrade
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/humangr-labs/HuGR-Smith/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/humangr-labs/HuGR-Arsenal/main/install.sh | bash
 ```
 
 Re-running the installer pulls the latest commits, keeps your venv,

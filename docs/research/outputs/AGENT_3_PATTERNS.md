@@ -1,6 +1,6 @@
 # AGENT 3 — PATTERNS
 
-Research cohort output for the HuGR Smith venous-system catalog.
+Research cohort output for the HuGR Arsenal venous-system catalog.
 
 - Agent: 3 (`PATTERNS`)
 - Namespaces owned: `data`, `events`, `api`
@@ -122,7 +122,7 @@ shared primitives:
 10. `AntiCorruptionLayer` to guard the domain from third-party SDK types.
 
 These gaps are the input set for the next phase: turning the catalog into
-SkillKit tools that materialize each primitive with the invariants above.
+Arsenal tools that materialize each primitive with the invariants above.
 
 ## Provenance
 

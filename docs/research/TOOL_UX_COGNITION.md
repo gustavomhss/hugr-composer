@@ -1,6 +1,6 @@
 # Research Findings — Catalog Navigation + Cognition (v1, 2026-04-20)
 
-Context: HuGR Smith exposes ~201 MCP tools to an LLM worker agent. We need an interface layer that is cognitively natural for both the model and a human reviewer. This document synthesizes empirical cognition research, UX design wisdom, CLI/command-palette precedent, and LLM-specific tool-selection literature into concrete design moves.
+Context: HuGR Arsenal exposes ~201 MCP tools to an LLM worker agent. We need an interface layer that is cognitively natural for both the model and a human reviewer. This document synthesizes empirical cognition research, UX design wisdom, CLI/command-palette precedent, and LLM-specific tool-selection literature into concrete design moves.
 
 ## TLDR (5 bullets)
 
@@ -72,7 +72,7 @@ Key LLM-only findings:
 - **Primacy/recency bias (Raimondi 2025 arXiv 2507.13949; Guo et al. 2024 arXiv 2406.15981).** Llama-2 shows recency; GPT-class shows primacy; the effect is reliable but model-dependent. A "home" tool should appear at position 1 *and* be re-mentioned in the tail.
 - **Tool-RAG scales (ToolLLM; ToolRet benchmarks).** ToolLLM trained on 16,464 RapidAPI endpoints across 49 categories; retrieval became the only workable pattern past ~50 tools (Qin et al. 2023 arXiv 2307.16789).
 
-## 6. Recommendations for HuGR Smith (interface layer)
+## 6. Recommendations for HuGR Arsenal (interface layer)
 
 Goal: make 201 tools feel like ~7 to the model at any given moment, while preserving full coverage.
 

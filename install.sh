@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# HuGR Smith installer — one-command setup for Claude Code / Cursor / Windsurf.
+# HuGR Arsenal installer — one-command setup for Claude Code / Cursor / Windsurf.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/humangr-labs/HuGR-Smith/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/humangr-labs/HuGR-Arsenal/main/install.sh | bash
 #   curl -fsSL .../install.sh | SKILL=fastapi-production bash
 #
 # Environment variables:
@@ -11,14 +11,14 @@
 #   SHELL_RC      Shell rc file to patch (default: auto-detect from $SHELL)
 #
 # What this script does:
-#   1. Clones HuGR_Smith into INSTALL_DIR (or pulls if already present)
+#   1. Clones HuGR_Arsenal into INSTALL_DIR (or pulls if already present)
 #   2. Creates a Python venv under {INSTALL_DIR}/{SKILL}/.venv
 #   3. Installs the skill's requirements-mcp.txt
 #   4. Prints the exact .mcp.json stanza to add to Claude Code / Cursor
 
 set -euo pipefail
 
-REPO_URL="${REPO_URL:-https://github.com/humangr-labs/HuGR-Smith.git}"
+REPO_URL="${REPO_URL:-https://github.com/humangr-labs/HuGR-Arsenal.git}"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/.hugr-skills}"
 SKILL="${SKILL:-fastapi-production}"
 SKILL_DIR="${INSTALL_DIR}/skills/SKILL-001-${SKILL}"
@@ -97,7 +97,7 @@ PY_PATH="${VENV}/bin/python"
 
 cat <<EOF
 
-${c_bold}${c_green}✓ HuGR Smith installed successfully${c_reset}
+${c_bold}${c_green}✓ HuGR Arsenal installed successfully${c_reset}
 
 Add this to your ${c_bold}.mcp.json${c_reset} (Claude Code) or ${c_bold}MCP settings${c_reset} (Cursor/Windsurf):
 

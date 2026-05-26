@@ -1,7 +1,7 @@
 # AGENT 6 — COMPLIANCE
 
 > Primitives extracted from SOC 2, HIPAA, GDPR, PCI-DSS, and NIST SP 800-53 so
-> every SkillKit target ships compliance surface by default.
+> every Arsenal target ships compliance surface by default.
 
 ## Scope recap
 

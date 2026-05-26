@@ -1,4 +1,4 @@
-# HuGR Smith — Inviolable Contract & Execution Checklist
+# HuGR Arsenal — Inviolable Contract & Execution Checklist
 
 > **This is the binding document.** Every future session, every commit,
 > every PR is judged against it. `PRODUCT.md` describes the product;

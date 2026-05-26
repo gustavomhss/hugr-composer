@@ -990,7 +990,7 @@ Per `RA-GOV-007`: CI MUST `git diff --exit-code SPEC_ID_REGISTRY.md` on every PR
 5. **(may-defer)** **Subprocess timeout defaults**: 60s/600s/1800s tier — accept or revise? → **TIERS ACCEPTED** for v0.4; ceiling raised to 7200s in `Gate.timeout_seconds` schema with per-gate justification required for any value > 1800.
 6. **(RATIFIED 2026-04-30)** **`RA-DOD-035` definition of "independent third-party"** = a **fresh** Codex (GPT-5.4) invocation with NO prior chat history given only the artefact + RA contract, AND a **fresh** Opus (Claude 4.x) invocation under the same constraint, in parallel. Codex auditing its own previous audit's outcome does NOT count.
 7. **(may-defer)** **Network egress in reviewer phase**: full block during gate-check + open during reviewer, OR tight egress allow-list? → **DEFERRED** to first attestation; v0.4 default is `RuntimeEnvironment.network_egress_policy = "block-all"` during gate-check phase, `--authorize-paid` flag opens egress for reviewer phase only.
-8. **(may-defer)** **License of release_attestor itself**: same as parent project OR more permissive? → **DEFERRED** to v1.0.0 release; until then, inherits parent `humangr-labs/HuGR-Smith` proprietary license.
+8. **(may-defer)** **License of release_attestor itself**: same as parent project OR more permissive? → **DEFERRED** to v1.0.0 release; until then, inherits parent `humangr-labs/HuGR-Arsenal` proprietary license.
 
 ### Open questions added in v0.4
 

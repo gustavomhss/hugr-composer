@@ -2,7 +2,7 @@
 
 > Research + design doc · v1 · 2026-04-20 · author: Claude Opus 4.7 (1M) for Gustavo
 >
-> **Scope.** Define the file-format contract between a HuGR Smith skill and
+> **Scope.** Define the file-format contract between a HuGR Arsenal skill and
 > the HuGR Maestro (the LLM orchestrator running inside HuGR Forge). The
 > concrete example is `SKILL-001-fastapi-production`; the format itself is
 > generic and reusable.
@@ -824,10 +824,10 @@ SKILL.md surface.
 - Cursor `.cursor/rules`: <https://docs.cursor.com/context/rules-for-ai>
 
 **HuGR internal.**
-- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/docs/research/TOOL_UX_ANTHROPIC.md` — prior research; §4 (Claude Code as reference impl), §6 (MCP system-prompt injection), §Anti-patterns.
-- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/PRODUCT.md` — three-layer architecture; §6 (design invariants).
-- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/skills/SKILL-001-fastapi-production/SKILL.md` — current file (written for humans; this doc supersedes it for the Maestro contract).
-- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Smith/skills/SKILL-001-fastapi-production/engine/index/catalog.json` — 358 KB inventory, loaded via meta tools not SKILL.md.
+- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Arsenal/docs/research/TOOL_UX_ANTHROPIC.md` — prior research; §4 (Claude Code as reference impl), §6 (MCP system-prompt injection), §Anti-patterns.
+- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Arsenal/PRODUCT.md` — three-layer architecture; §6 (design invariants).
+- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Arsenal/skills/SKILL-001-fastapi-production/SKILL.md` — current file (written for humans; this doc supersedes it for the Maestro contract).
+- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Arsenal/skills/SKILL-001-fastapi-production/engine/index/catalog.json` — 358 KB inventory, loaded via meta tools not SKILL.md.
 
 ---
 

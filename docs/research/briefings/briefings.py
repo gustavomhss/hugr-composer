@@ -90,7 +90,7 @@ AGENT_2_DISTRIBUTED = ResearchAgentBriefing(
         "Catalog distributed-systems building blocks — state, pub/sub, secrets, "
         "bindings, actors, workflows, observability, crypto — from Dapr, "
         "Temporal, Kafka, NATS, CloudEvents, and gRPC to define the runtime "
-        "primitives any SkillKit language target must expose."
+        "primitives any Arsenal language target must expose."
     ),
     sources_required=[
         "Dapr 1.14 Building Blocks Specification (all 10 blocks)",
@@ -207,7 +207,7 @@ AGENT_5_SECURITY = ResearchAgentBriefing(
         "Extract security primitives — auth protocols, crypto facades, secrets "
         "vault, input/output hygiene, session management, MFA, passkeys — from "
         "OWASP, IETF, and NIST to establish the non-negotiable security "
-        "surface every SkillKit target must expose."
+        "surface every Arsenal target must expose."
     ),
     sources_required=[
         "OWASP ASVS 4.0.3",
@@ -247,7 +247,7 @@ AGENT_6_COMPLIANCE = ResearchAgentBriefing(
         "Extract compliance-driven primitives — tamper-evident audit trail, "
         "retention, consent, DSAR/RTBF, PII tagging, encryption policies, "
         "access logging — from SOC 2, HIPAA, GDPR, PCI-DSS, and NIST so every "
-        "SkillKit target ships compliance surface by default, not as retrofit."
+        "Arsenal target ships compliance surface by default, not as retrofit."
     ),
     sources_required=[
         "AICPA SOC 2 Trust Services Criteria (2017, 2022 revision)",
@@ -285,7 +285,7 @@ AGENT_7_OBSERVABILITY = ResearchAgentBriefing(
     mission=(
         "Extract observability primitives — traces, metrics, structured logs, "
         "correlation, error tracking — unified under OpenTelemetry semantic "
-        "conventions so every SkillKit target emits interoperable telemetry "
+        "conventions so every Arsenal target emits interoperable telemetry "
         "without tool-by-tool drift."
     ),
     sources_required=[
@@ -325,7 +325,7 @@ AGENT_8_LLM_ERA = ResearchAgentBriefing(
     mission=(
         "Extract LLM-era primitives — prompt management, model registry, vector "
         "store, guardrails, HITL, eval pipelines, cost tracking, response cache, "
-        "model routing, tool use — so any SkillKit target that calls an LLM "
+        "model routing, tool use — so any Arsenal target that calls an LLM "
         "gets consistent, auditable AI surface out of the box."
     ),
     sources_required=[

@@ -2,7 +2,7 @@
 
 **Mission.** Extract observability primitives — traces, metrics, structured
 logs, correlation, error tracking — unified under OpenTelemetry semantic
-conventions so every SkillKit target emits interoperable telemetry without
+conventions so every Arsenal target emits interoperable telemetry without
 tool-by-tool drift.
 
 **Namespaces owned.** `obs`, `compliance`.

@@ -138,7 +138,7 @@
 
 ## Follow-up actions (for the SkillEngine build-out)
 
-1. **All 7 PROMOTE items** become new entries in the SkillKit runtime core, under the namespace directories implied (`core/audit.py`, `core/compliance.py`, `core/events.py`, `core/llm.py`, `core/security.py`).
+1. **All 7 PROMOTE items** become new entries in the Arsenal runtime core, under the namespace directories implied (`core/audit.py`, `core/compliance.py`, `core/events.py`, `core/llm.py`, `core/security.py`).
 2. **All 3 RENAME items** get a one-release deprecation shim (`OldName = NewName` + `warnings.warn`) so existing consumers keep working.
 3. **Update `VENOUS_SYSTEM_CATALOG.md`** — move these 10 primitives from "PARTIAL in SKILL-001" to "CANONICAL, to be implemented" status.
 4. **Tests** — each PROMOTE/RENAME ships with the `consumption_example` from its PrimitiveSpec as a sanity test.

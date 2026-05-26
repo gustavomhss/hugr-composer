@@ -1,5 +1,5 @@
 <!--
-HuGR Smith PR template — CONTRACT.md §C2 enforcement.
+HuGR Arsenal PR template — CONTRACT.md §C2 enforcement.
 
 All six fields below are MANDATORY. Missing any field = PR REJECTED.
 This is not optional. Read CONTRACT.md if unfamiliar.

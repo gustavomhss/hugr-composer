@@ -65,7 +65,7 @@ No deliverable with even one non-compliant citation is accepted.
 ## 2. PrimitiveSpec
 
 **Purpose.** The atomic unit of the venous system. A primitive is a named,
-namespaced, citable, verifiable contract that any SkillKit target must expose.
+namespaced, citable, verifiable contract that any Arsenal target must expose.
 
 ### Completeness Criteria
 

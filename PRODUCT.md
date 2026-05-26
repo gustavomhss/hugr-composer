@@ -1,4 +1,4 @@
-# HuGR Smith — Product Understanding
+# HuGR Arsenal — Product Understanding
 
 > **Status:** canonical v1 — 2026-04-19.
 > **Purpose:** the one document that answers "what are we actually building,
@@ -7,9 +7,9 @@
 
 ---
 
-## 1. What HuGR Smith IS, in one paragraph
+## 1. What HuGR Arsenal IS, in one paragraph
 
-HuGR Smith is a **library of executable knowledge** that an LLM agent
+HuGR Arsenal is a **library of executable knowledge** that an LLM agent
 (we call it the **Maestro**) can invoke to scaffold AND customize
 production backend applications. The kit is structured like Ruby on Rails
 — a macro scaffold, a catalogue of slice generators, and a curated library

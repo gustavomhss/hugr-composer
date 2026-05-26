@@ -5,7 +5,7 @@
 
 ## Goal
 
-Produce a SOTA catalog of primitives that will anchor the HuGR Smith venous
+Produce a SOTA catalog of primitives that will anchor the HuGR Arsenal venous
 system. Each primitive is backed by concrete sources (books, RFCs, framework
 references), carries verifiable invariants, and declares its maturity.
 

@@ -2,7 +2,7 @@
 
 > The SkillEngine is the intelligent orchestrator that turns a user request
 > into a production-grade project by composing venous-system primitives and
-> SkillKit templates. It is the missing layer between the research catalog
+> Arsenal templates. It is the missing layer between the research catalog
 > (`VENOUS_SYSTEM_CATALOG.md`) and the generated code SKILL-001 ships today.
 >
 > Paradigm: **Template + LLM hybrid**. 10–25× cheaper than pure-LLM generation,
@@ -40,7 +40,7 @@
 ┌─────────────────────────────┐  L1 Rules — $0, ~10 ms
 │ Keyword → Tool selection    │  → Matches request tokens (auth, stripe,
 │ (Spring Boot style          │     websocket, ml, cedar, ...) to
-│  @ConditionalOn*)           │     SkillKit tools + L1+ primitives
+│  @ConditionalOn*)           │     Arsenal tools + L1+ primitives
 └───────────────────────────────────────────┬────────────────────────────┘
                                             ▼
 ┌─────────────────────────────┐  L2 LLM — $0.02–$0.05, 3–5 s (ONE call)
@@ -51,7 +51,7 @@
                                             ▼
 ┌─────────────────────────────┐  L3 Templates — $0, ~500 ms
 │ Parameterized generation    │  → Runs each selected tool with the
-│ (SkillKit tools as          │     DomainModel as input; produces files
+│ (Arsenal tools as          │     DomainModel as input; produces files
 │  parameterized templates)   │     wired to venous-system primitives
 └───────────────────────────────────────────┬────────────────────────────┘
                                             ▼
@@ -197,7 +197,7 @@ catalog; emit a `ToolSelection`. Spring-Boot-style `@ConditionalOnClass` /
 
 ```python
 class Rule(BaseModel):
-    tool: str                 # SkillKit tool name
+    tool: str                 # Arsenal tool name
     triggers: list[str]       # keywords / phrases
     primitives: list[str]     # venous-system primitives this tool wires
     requires: list[str] = Field(default_factory=list)  # prerequisite tools

@@ -1,4 +1,4 @@
-# ROADMAP — HuGR Smith
+# ROADMAP — HuGR Arsenal
 
 > **Status:** PROPOSED (awaits ratification — see §11).
 > **Post-ratification, this document is read-only.** Amendments require a
@@ -1760,7 +1760,7 @@ none  # staged / quarantined (not registered)
 - **Skill:** a framework-specific kit (e.g. SKILL-001-fastapi-production)
   that plugs into Maestro (consumer) and Forge (host editor). One
   `SKILL.md` + catalog + primitives + adapters + tools.
-- **SkillKit:** the collection of skills + shared tooling at this repo.
+- **Arsenal:** the collection of skills + shared tooling at this repo.
 - **Primitive (motor):** framework-free implementation under
   `core/venous/<ns>/<Name>/`. Protocol + reference backend + named
   invariants.

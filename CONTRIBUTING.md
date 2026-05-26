@@ -1,4 +1,4 @@
-# Contributing to HuGR Smith
+# Contributing to HuGR Arsenal
 
 > **Scope:** this guide teaches a first-time contributor how to land a
 > primitive, a tool, or a composition recipe without maintainer
@@ -12,8 +12,8 @@
 ## 1. Local dev setup (5 min)
 
 ```bash
-git clone https://github.com/humangr-labs/HuGR-Smith.git
-cd HuGR_Smith/skills/SKILL-001-fastapi-production
+git clone https://github.com/humangr-labs/HuGR-Arsenal.git
+cd HuGR_Arsenal/skills/SKILL-001-fastapi-production
 
 python3.12 -m venv .venv
 .venv/bin/pip install --upgrade pip

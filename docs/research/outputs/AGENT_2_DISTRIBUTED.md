@@ -1,6 +1,6 @@
 # Agent 2 - DISTRIBUTED
 
-Research of distributed-systems runtime primitives extracted from Dapr 1.14, Temporal 1.24, Apache Kafka 3.x, NATS 2.10, CloudEvents 1.0.2, and gRPC core concepts. The primitives below define the runtime surface any SkillKit language target must expose across the namespaces `events`, `jobs`, `data`, `cache`, and `extras`.
+Research of distributed-systems runtime primitives extracted from Dapr 1.14, Temporal 1.24, Apache Kafka 3.x, NATS 2.10, CloudEvents 1.0.2, and gRPC core concepts. The primitives below define the runtime surface any Arsenal language target must expose across the namespaces `events`, `jobs`, `data`, `cache`, and `extras`.
 
 Machine-verified structured output: `docs/research/outputs/AGENT_2_DISTRIBUTED.json`.
 
