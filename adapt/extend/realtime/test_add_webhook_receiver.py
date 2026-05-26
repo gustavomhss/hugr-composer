@@ -2,7 +2,7 @@
 
 CONTRACT §B1.3 refactor: copies SignatureVerifier + IdempotentConsumer +
 AuditEvent primitives and the FastAPI WebhookReceiverAdapter into the
-project, then writes a ≤ 20-line ``app/webhooks.py`` caller.
+project, then writes a ≤ 20-line ``app/webhook_receiver.py`` caller.
 """
 
 from __future__ import annotations
@@ -83,7 +83,7 @@ def test_manifest_records_provenance() -> None:
 def test_glue_imports_adapter() -> None:
     project_dir = create_fixture_project(name="whr_t07")
     add_webhook_receiver(ToolInput(project_dir=str(project_dir)))
-    glue = project_dir / "app" / "webhooks.py"
+    glue = project_dir / "app" / "webhook_receiver.py"
     assert glue.exists()
     body = glue.read_text()
     assert "from core.venous._adapters.fastapi.WebhookReceiverAdapter import install" in body
@@ -93,7 +93,7 @@ def test_glue_imports_adapter() -> None:
 def test_glue_body_under_20_loc() -> None:
     project_dir = create_fixture_project(name="whr_t08")
     add_webhook_receiver(ToolInput(project_dir=str(project_dir)))
-    glue = project_dir / "app" / "webhooks.py"
+    glue = project_dir / "app" / "webhook_receiver.py"
     tree = ast.parse(glue.read_text())
     body_lines = 0
     for node in tree.body:

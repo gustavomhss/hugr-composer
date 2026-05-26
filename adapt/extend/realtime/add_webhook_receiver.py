@@ -3,8 +3,9 @@
 CONTRACT §B1.3 refactor — copies the framework-agnostic
 ``SignatureVerifier`` + ``IdempotentConsumer`` + ``AuditEvent`` primitives
 and the FastAPI ``WebhookReceiverAdapter`` into the generated project,
-then emits a ≤20-line glue module at ``app/webhooks.py`` that wires them
-via ``install(app, ...)``.
+then emits a ≤20-line glue module at ``app/webhook_receiver.py`` that wires
+them via ``install(app, ...)``. (Distinct from add_webhook_sender's
+``app/webhooks/`` package, which would otherwise shadow it on import.)
 
 Security guarantees (delivered by the primitives, NOT re-implemented here):
 
@@ -12,8 +13,8 @@ Security guarantees (delivered by the primitives, NOT re-implemented here):
 * Redeliveries are deduped by ``X-Event-Id`` header (``IdempotentConsumer``).
 * Every first delivery is recorded in a tamper-evident chain (``AuditEvent``).
 
-Idempotent: a second run detects the import chain in ``app/webhooks.py``
-and returns ``status="no_op"``.
+Idempotent: a second run detects the import chain in
+``app/webhook_receiver.py`` and returns ``status="no_op"``.
 """
 
 from __future__ import annotations
@@ -29,7 +30,7 @@ MCP_TOOL = {
     "description": (
         "Copy SignatureVerifier+IdempotentConsumer+AuditEvent primitives and "
         "the WebhookReceiverAdapter into the project, then wire a ≤20-line "
-        "app/webhooks.py caller."
+        "app/webhook_receiver.py caller."
     ),
     "tags": ["extend", "realtime"],
     "entry": "add_webhook_receiver",
@@ -100,7 +101,12 @@ def add_webhook_receiver(inp: ToolInput) -> ToolResult:
 
     files_created: list[str] = list(scaffolded or [])
     app_dir = project / "app"
-    glue_file = app_dir / "webhooks.py"
+    # NOTE: app/webhook_receiver.py, NOT app/webhooks.py. add_webhook_sender
+    # emits an app/webhooks/ PACKAGE; a sibling app/webhooks.py MODULE would be
+    # shadowed by that package on import (packages win), making
+    # install_webhook_receiver unreachable when both tools are applied. The
+    # distinct filename keeps send + receive composable.
+    glue_file = app_dir / "webhook_receiver.py"
 
     if glue_file.exists() and "WebhookReceiverAdapter" in glue_file.read_text():
         return ToolResult(
@@ -114,7 +120,7 @@ def add_webhook_receiver(inp: ToolInput) -> ToolResult:
             status="success",
             notes=[
                 "[dry_run] Would copy SignatureVerifier + IdempotentConsumer + "
-                "AuditEvent primitives + WebhookReceiverAdapter and write app/webhooks.py."
+                "AuditEvent primitives + WebhookReceiverAdapter and write app/webhook_receiver.py."
             ],
             next_steps=["Re-run without dry_run=True to apply."],
             execution_time_ms=_elapsed_ms(start),
@@ -151,7 +157,7 @@ def add_webhook_receiver(inp: ToolInput) -> ToolResult:
         notes=[
             "Shipped primitives: SignatureVerifier, IdempotentConsumer (+ Inbox/Outbox siblings), AuditEvent.",
             "Shipped adapter: WebhookReceiverAdapter.",
-            "Wrote app/webhooks.py — call install_webhook_receiver(app) from main.py.",
+            "Wrote app/webhook_receiver.py — call install_webhook_receiver(app) from main.py.",
         ],
         next_steps=[
             "Import install_webhook_receiver in app/main.py and invoke it after FastAPI() construction.",
