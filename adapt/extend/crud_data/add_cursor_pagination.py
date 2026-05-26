@@ -94,15 +94,6 @@ def add_cursor_pagination(inp: ToolInput) -> ToolResult:
 
     app_dir = project / "app"
 
-    # --- Pre-flight: already patched? -------------------------------------
-    crud_item = app_dir / "crud" / "item.py"
-    if crud_item.exists() and "get_multi_cursor" in crud_item.read_text():
-        return ToolResult(
-            status="no_op",
-            notes=["get_multi_cursor already present — cursor pagination already enabled, skipped."],
-            execution_time_ms=_elapsed_ms(start),
-        )
-
     # --- Discover target models -------------------------------------------
     model_pairs = _discover_models(app_dir)
     if not model_pairs:
@@ -112,6 +103,24 @@ def add_cursor_pagination(inp: ToolInput) -> ToolResult:
             execution_time_ms=_elapsed_ms(start),
         )
     model_names = [pascal for _stem, pascal in model_pairs]
+
+    # --- Pre-flight: already patched? -------------------------------------
+    # Fingerprint against the models actually present in THIS project (not a
+    # hardcoded "item" model that may not exist). no_op only when every
+    # discovered model's CRUD already carries get_multi_cursor.
+    crud_dir = app_dir / "crud"
+    patched = [
+        stem
+        for stem, _pascal in model_pairs
+        if (crud_dir / f"{stem}.py").exists()
+        and "get_multi_cursor" in (crud_dir / f"{stem}.py").read_text()
+    ]
+    if len(patched) == len(model_pairs):
+        return ToolResult(
+            status="no_op",
+            notes=["get_multi_cursor already present for all models — cursor pagination already enabled, skipped."],
+            execution_time_ms=_elapsed_ms(start),
+        )
 
     files_modified: list[str] = []
 
@@ -580,12 +589,17 @@ def _patch_schema(schema_file: Path, model_name: str) -> None:
     if plural_class not in src:
         return
 
-    # Insert the two new fields after the existing `count: int` field
+    # Insert the two new fields after the existing `count: int` field.
+    # NOTE: these lines MUST keep the 4-space class-body indentation —
+    # a dedented (column-0) block silently moves the fields to module
+    # scope, dropping `count` from the Pydantic model and breaking the
+    # backward-compatible offset endpoint.
     old_field = "    count: int"
-    new_fields = textwrap.dedent("""\
-            count: int
-            next_cursor: str | None = None
-            has_more: bool = False""")
+    new_fields = (
+        "    count: int\n"
+        "    next_cursor: str | None = None\n"
+        "    has_more: bool = False"
+    )
     src = src.replace(old_field, new_fields, 1)
     schema_file.write_text(src)
 
