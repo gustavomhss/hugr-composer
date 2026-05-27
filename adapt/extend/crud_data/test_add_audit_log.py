@@ -170,19 +170,21 @@ def test_glue_no_hardcoded_secret() -> None:
     )
 
 
-def test_glue_fails_closed_on_missing_secret() -> None:
-    """Regression: install_audit_log must raise RuntimeError when env var absent.
+def test_glue_secret_derives_from_settings_not_hardcoded() -> None:
+    """Regression: audit HMAC key is never hardcoded and never silently absent.
 
-    The fix replaces the silent fallback to a hardcoded secret with a
-    fail-closed RuntimeError so misconfigured deployments fail at startup.
+    The original bug fell back to a hardcoded "change-me" secret. The fix
+    resolves the key from an optional AUDIT_LOG_HMAC_SECRET env override, else
+    derives it (domain-separated) from the app's entropy-checked SECRET_KEY —
+    so the chain always has a real key AND the app still boots under the kit's
+    standard .env workflow (no RuntimeError that breaks .env-based startup).
     """
     project_dir = create_fixture_project(name="al_t14")
     add_audit_log(ToolInput(project_dir=str(project_dir)))
-    glue = project_dir / "app" / "audit_log.py"
-    content = glue.read_text()
-    assert "RuntimeError" in content, (
-        "install_audit_log must raise RuntimeError when AUDIT_LOG_HMAC_SECRET is absent"
-    )
+    content = (project_dir / "app" / "audit_log.py").read_text()
+    assert "change-me" not in content
+    assert "settings.SECRET_KEY" in content, "audit key must derive from SECRET_KEY"
+    assert "AUDIT_LOG_HMAC_SECRET" in content, "env override must still be honored"
 
 
 def test_idempotent_wiring() -> None:

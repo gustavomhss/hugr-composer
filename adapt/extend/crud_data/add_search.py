@@ -261,9 +261,14 @@ def _discover_models_with_fields(app_dir: Path) -> dict[tuple[str, str], list[st
                 for b in n.bases
             )
         ]
+        # Keep only the class canonical for THIS file (name.lower() == stem):
+        # preserves multiword models (vaccinelot.py → VaccineLot) while skipping
+        # multi-class files (chat.py holds ChatRoom + ChatMessage, neither ==
+        # "chat") that have no standard crud/route/schema module — which would
+        # otherwise emit broken `app.crud.<lower>` imports. Keeps lower == stem.
+        base_subclasses = [c for c in base_subclasses if c.lower() == stem]
         if not base_subclasses:
             continue
-        # Use the first (and normally only) Base subclass as the authoritative name
         pascal = base_subclasses[0]
         # Collect str / String / Text column names from mapped_column lines
         fields = _extract_text_fields(src)
@@ -725,17 +730,23 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
     if "async def search_" in src or "/search" in src:
         return
 
-    lower = model_name.lower()
+    # Module paths follow the FILE STEM, not model_name.lower(): a file may hold
+    # a multi-word class (vaccinelot.py → VaccineLot) or several classes
+    # (chat.py → ChatRoom, ChatMessage), so model_name.lower() ("chatroom")
+    # would point at a non-existent module while the real module is the stem
+    # ("chat"). Class names still use model_name (PascalCase).
+    stem = route_file.stem
+    lower = model_name.lower()  # used for route function names in the body below
 
     # Build import header — flat single-line imports to avoid duplicate
     # "from app.crud.X import (" opening lines when multiple tools patch the
     # same route file.  Only include lines not already present.
     import_header_lines = [
-        f"from app.crud.{lower} import search as _crud_search",
-        f"from app.crud.{lower} import autocomplete as _crud_autocomplete",
-        f"from app.schemas.{lower} import {model_name}_SearchResponse",
-        f"from app.schemas.{lower} import {model_name}_SearchResultItem",
-        f"from app.schemas.{lower} import {model_name}_AutocompleteResult",
+        f"from app.crud.{stem} import search as _crud_search",
+        f"from app.crud.{stem} import autocomplete as _crud_autocomplete",
+        f"from app.schemas.{stem} import {model_name}_SearchResponse",
+        f"from app.schemas.{stem} import {model_name}_SearchResultItem",
+        f"from app.schemas.{stem} import {model_name}_AutocompleteResult",
         "from fastapi import HTTPException",
         "from fastapi import Query as _SearchQuery",
     ]

@@ -241,6 +241,9 @@ def _discover_models(app_dir: Path) -> list[str]:
                 for b in n.bases
             )
         ]
+        # Only the class canonical for this file (name.lower() == stem): keeps
+        # multiword models, skips multi-class files lacking standard modules.
+        base_subclasses = [c for c in base_subclasses if c.lower() == stem]
         names.extend(base_subclasses)
     return names
 

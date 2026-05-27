@@ -46,28 +46,34 @@ by the `add_audit_log` tool. Re-emitted idempotently.
 
 from __future__ import annotations
 
+import hashlib
 import os
 
 from fastapi import FastAPI
 
+from app.core.config import settings
 from core.venous._adapters.fastapi.AuditLogAdapter import install
 
 
-def install_audit_log(app: FastAPI) -> None:
-    """Attach a tamper-evident audit log + /audit-logs router to *app*.
+def _audit_hmac_secret() -> bytes:
+    """Resolve the audit-log HMAC key — never hardcoded, never silently absent.
 
-    Requires AUDIT_LOG_HMAC_SECRET environment variable (≥16 bytes when
-    decoded). Raises RuntimeError at startup if the variable is absent or
-    empty — fail-closed so audit log is never silently inactive.
+    Precedence:
+      1. AUDIT_LOG_HMAC_SECRET env var (prod / KMS-managed), if set; else
+      2. a domain-separated key derived from the app's SECRET_KEY.
+    SECRET_KEY is required and entropy-checked by Settings (loaded from env or
+    .env), so the audit chain always has a real key and the app still boots in
+    the standard .env workflow — fail-closed, with no hardcoded placeholder.
     """
-    secret_str = os.getenv("AUDIT_LOG_HMAC_SECRET", "")
-    if not secret_str:
-        raise RuntimeError(
-            "AUDIT_LOG_HMAC_SECRET environment variable is required for the "
-            "audit log but was not set. Set it to a ≥16-byte random value "
-            "(e.g. `openssl rand -hex 32`) before starting the application."
-        )
-    install(app, hmac_secret=secret_str.encode())
+    override = os.getenv("AUDIT_LOG_HMAC_SECRET", "").strip()
+    if override:
+        return override.encode()
+    return hashlib.sha256(b"hugr-audit-log:" + settings.SECRET_KEY.encode()).digest()
+
+
+def install_audit_log(app: FastAPI) -> None:
+    """Attach a tamper-evident audit log + /audit-logs router to *app*."""
+    install(app, hmac_secret=_audit_hmac_secret())
 '''
 
 # Sentinel inserted into main.py so idempotency check works correctly.
@@ -179,7 +185,7 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
             "Audit log is active on startup — no manual wiring required.",
         ],
         next_steps=[
-            "Set AUDIT_LOG_HMAC_SECRET in .env (≥16 bytes, e.g. openssl rand -hex 32); rotate via KMS in prod.",
+            "Audit HMAC key derives from SECRET_KEY by default; set AUDIT_LOG_HMAC_SECRET to override (KMS-managed in prod).",
             "POST /audit-logs/ to append; POST /audit-logs/verify to assert chain integrity.",
         ],
         execution_time_ms=_elapsed_ms(start),
