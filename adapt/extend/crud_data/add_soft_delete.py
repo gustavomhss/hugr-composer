@@ -440,12 +440,15 @@ def _insert_after_future(src: str, line_to_insert: str) -> str:
 # ---------------------------------------------------------------------------
 
 def _patch_crud(crud_file: Path, model_name: str, stem: str) -> bool:
-    """Override delete() and patch get_multi() in the CRUD file.
+    """Override get(), get_multi() and delete() in the CRUD file.
 
-    Adds:
-    - ``delete()`` override that sets ``is_deleted=True`` and ``deleted_at=now()``.
-    - Comment above ``delete = crud.delete`` alias to make override visible.
-    - A ``_get_multi_active`` wrapper that filters ``is_deleted=True`` rows.
+    Adds module-level functions that shadow the ``get``/``get_multi``/``delete``
+    re-exports from CRUDBase (whose aliases are commented out), so every read and
+    delete path is is_deleted-aware:
+    - ``get()`` returns None for a soft-deleted row (route → 404).
+    - ``get_multi()`` excludes soft-deleted rows, same ``{"data", "count"}`` shape.
+    - ``delete()`` sets ``is_deleted=True`` + ``deleted_at=now()`` instead of
+      hard-deleting.
 
     Args:
         crud_file: Path to ``app/crud/{stem}.py``.
@@ -459,17 +462,56 @@ def _patch_crud(crud_file: Path, model_name: str, stem: str) -> bool:
     if "is_deleted" in src:
         return False
 
-    lower = model_name.lower()
-
     soft_delete_block = textwrap.dedent(f"""
 
         # ---------------------------------------------------------------------------
-        # Soft-delete override — added by add_soft_delete tool
+        # Soft-delete overrides — added by add_soft_delete tool
         # ---------------------------------------------------------------------------
+        # These shadow the `get`/`get_multi`/`delete` re-exports above (their
+        # aliases are neutralized) so that read and delete paths honour
+        # is_deleted: a soft-deleted row is invisible to GET-by-id and list, and
+        # DELETE flips the flag instead of physically removing the row.
         import uuid as _sd_uuid
         from datetime import datetime as _sd_datetime, timezone as _sd_timezone
-        from sqlalchemy import select as _sd_select
+        from sqlalchemy import func as _sd_func, select as _sd_select
         from sqlalchemy.ext.asyncio import AsyncSession as _SdSession
+
+
+        async def get(session: _SdSession, id: "_sd_uuid.UUID") -> {model_name} | None:
+            \"\"\"Fetch a single non-deleted {model_name} by primary key.
+
+            Returns None for a missing OR soft-deleted row, so the route layer
+            returns 404 once a {model_name} has been soft-deleted.
+            \"\"\"
+            stmt = _sd_select({model_name}).where(
+                {model_name}.id == id,
+                {model_name}.is_deleted == False,  # noqa: E712
+            )
+            result = await session.execute(stmt)
+            return result.scalar_one_or_none()
+
+
+        async def get_multi(
+            session: _SdSession,
+            *,
+            skip: int = 0,
+            limit: int = 20,
+            owner_id: "_sd_uuid.UUID | None" = None,
+        ) -> dict:
+            \"\"\"List {model_name} rows excluding soft-deleted ones.
+
+            Mirrors the base CRUDBase.get_multi return shape
+            (``{{"data": [...], "count": <total>}}``) so the existing route and
+            pagination code keep working unchanged.
+            \"\"\"
+            stmt = _sd_select({model_name}).where({model_name}.is_deleted == False)  # noqa: E712
+            if owner_id is not None and hasattr({model_name}, "owner_id"):
+                stmt = stmt.where({model_name}.owner_id == owner_id)
+            count_stmt = _sd_select(_sd_func.count()).select_from(stmt.subquery())
+            total = (await session.execute(count_stmt)).scalar_one()
+            stmt = stmt.order_by({model_name}.created_at.desc()).offset(skip).limit(limit)
+            result = await session.execute(stmt)
+            return {{"data": list(result.scalars().all()), "count": total}}
 
 
         async def delete(session: _SdSession, id: "_sd_uuid.UUID") -> {model_name} | None:
@@ -497,41 +539,15 @@ def _patch_crud(crud_file: Path, model_name: str, stem: str) -> bool:
             obj.deleted_at = _sd_datetime.now(_sd_timezone.utc)
             await session.flush()
             return obj
-
-
-        async def get_multi_active(
-            session: _SdSession,
-            *,
-            owner_id: "_sd_uuid.UUID | None" = None,
-            skip: int = 0,
-            limit: int = 100,
-        ) -> list[{model_name}]:
-            \"\"\"List {model_name} rows excluding soft-deleted ones.
-
-            Args:
-                session: Async SQLAlchemy session.
-                owner_id: If provided, filter by owner.
-                skip: Offset (for pagination).
-                limit: Maximum rows to return.
-
-            Returns:
-                List of active (not soft-deleted) {model_name} instances.
-            \"\"\"
-            stmt = _sd_select({model_name}).where({model_name}.is_deleted == False)  # noqa: E712
-            if owner_id is not None and hasattr({model_name}, "owner_id"):
-                stmt = stmt.where({model_name}.owner_id == owner_id)
-            stmt = stmt.offset(skip).limit(limit)
-            result = await session.execute(stmt)
-            return list(result.scalars().all())
     """)
 
-    # Neutralize the `delete = crud.delete` re-export alias so the soft-delete
-    # `async def delete` below is not an F811 redefinition of an unused name.
+    # Neutralize the `get`/`get_multi`/`delete = crud.<fn>` re-export aliases so
+    # the soft-delete functions below are not F811 redefinitions of unused names,
+    # and so reads/deletes actually route through the is_deleted-aware versions.
     src = re.sub(
-        r"^delete = crud\.delete\b.*$",
-        "# delete = crud.delete  # overridden by the soft-delete `delete` below",
+        r"^(get_multi|get|delete) = crud\.(?:get_multi|get|delete)\b.*$",
+        lambda m: f"# {m.group(0)}  # overridden by the soft-delete {m.group(1)}() below",
         src,
-        count=1,
         flags=re.MULTILINE,
     )
 
