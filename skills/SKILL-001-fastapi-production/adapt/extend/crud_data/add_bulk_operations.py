@@ -212,7 +212,7 @@ def _discover_models(app_dir: Path) -> list[str]:
     """
     models_dir = app_dir / "models"
     routes_dir = app_dir / "api" / "routes"
-    skip = {"base", "user", "mixins", "__init__"}
+    skip = {"base", "user", "mixins", "__init__", "tenant"}
     available_routes: set[str] = set()
     if routes_dir.exists():
         for r in routes_dir.glob("*.py"):

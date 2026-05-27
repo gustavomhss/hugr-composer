@@ -197,7 +197,7 @@ def _discover_models(app_dir: Path) -> list[str]:
     """
     models_dir = app_dir / "models"
     routes_dir = app_dir / "api" / "routes"
-    skip = {"base", "user", "mixins", "__init__"}
+    skip = {"base", "user", "mixins", "__init__", "tenant"}
     names: list[str] = []
     if not models_dir.exists():
         return names

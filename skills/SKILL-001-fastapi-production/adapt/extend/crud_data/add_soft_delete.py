@@ -252,7 +252,7 @@ def _soft_delete_already_installed(app_dir: Path) -> bool:
     if not models_dir.exists():
         return False
     for f in sorted(models_dir.glob("*.py")):
-        if f.stem in {"base", "user", "mixins", "__init__"}:
+        if f.stem in {"base", "user", "mixins", "__init__", "tenant"}:
             continue
         if "is_deleted" in f.read_text():
             return True
@@ -273,7 +273,7 @@ def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
     """
     models_dir = app_dir / "models"
     routes_dir = app_dir / "api" / "routes"
-    skip = {"base", "user", "mixins", "__init__"}
+    skip = {"base", "user", "mixins", "__init__", "tenant"}
     pairs: list[tuple[str, str]] = []
 
     available_routes: set[str] = set()

@@ -227,7 +227,7 @@ def _discover_models_with_fields(app_dir: Path) -> dict[tuple[str, str], list[st
     """
     models_dir = app_dir / "models"
     routes_dir = app_dir / "api" / "routes"
-    skip = {"base", "user", "mixins", "__init__"}
+    skip = {"base", "user", "mixins", "__init__", "tenant"}
     result: dict[tuple[str, str], list[str]] = {}
     available_routes: set[str] = set()
     if routes_dir.exists():
