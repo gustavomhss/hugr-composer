@@ -127,6 +127,10 @@ jobs:
         working-directory: .
         run: PYTHONPATH=. skills/SKILL-001-fastapi-production/.venv/bin/python hugr_auth/test_store.py
 
+      - name: HuGR license issuance (issue + lifecycle + CLI)
+        working-directory: .
+        run: PYTHONPATH=. skills/SKILL-001-fastapi-production/.venv/bin/python hugr_auth/test_issuance.py
+
       - name: E2E gate (real processes — no key→0 / valid→N / cancel→0)
         working-directory: .
         run: PYTHONPATH=. skills/SKILL-001-fastapi-production/.venv/bin/python hugr_auth/test_e2e_gate.py

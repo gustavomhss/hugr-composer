@@ -22,6 +22,7 @@ import os
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
+from hugr_auth.license import introspect_license, mint_license
 from hugr_auth.store import (
     FileSubscriptionStore,
     InMemorySubscriptionStore,
@@ -32,6 +33,21 @@ from hugr_auth.store import (
 
 class IntrospectRequest(BaseModel):
     key: str
+
+
+class IssueRequest(BaseModel):
+    seat: str
+    plan: str = "pro"
+    scopes: list[str] | None = None
+    ttl_days: int = 30
+
+
+class IssueResponse(BaseModel):
+    key: str
+    jti: str
+    seat: str
+    plan: str
+    expires_at: int
 
 
 class IntrospectResponse(BaseModel):
@@ -97,6 +113,33 @@ def introspect(req: IntrospectRequest) -> IntrospectResponse:
     if claims is None:
         return IntrospectResponse(active=False)
     return IntrospectResponse(active=True, claims=claims)
+
+
+@app.post("/admin/issue", response_model=IssueResponse)
+def admin_issue(req: IssueRequest, authorization: str | None = Header(default=None)) -> IssueResponse:
+    """Mint a license key for a seat — what the billing flow calls on subscribe.
+
+    Admin-guarded; fail-closed when no signing secret is configured.
+    """
+    _require_admin(authorization)
+    secret = _signing_secret()
+    if len(secret) < 32:
+        raise HTTPException(status_code=503, detail="signing secret not configured")
+    key = mint_license(
+        secret,
+        seat=req.seat,
+        plan=req.plan,
+        scopes=req.scopes,
+        ttl_seconds=req.ttl_days * 24 * 3600,
+    )
+    claims = introspect_license(secret, key) or {}
+    return IssueResponse(
+        key=key,
+        jti=claims.get("jti", ""),
+        seat=req.seat,
+        plan=req.plan,
+        expires_at=claims.get("expires_at", 0),
+    )
 
 
 @app.post("/admin/cancel_seat")
