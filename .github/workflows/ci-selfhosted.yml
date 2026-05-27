@@ -1,0 +1,148 @@
+name: SKILL-001 CI (self-hosted)
+
+# Runs the full SKILL-001 check suite on a self-hosted runner (Gustavo's mac),
+# free and unlimited, while GitHub-hosted Actions billing is unavailable. The
+# GitHub-hosted skill-001-ci.yml is kept as-is for when billing returns / the
+# repo goes public.
+#
+# Differences vs the hosted workflow, by necessity:
+#   - Python is pinned to 3.12 via setup-python (the hosted CI target), which
+#     also fixes the local 3.14 drift.
+#   - The two Postgres suites use a LOCAL Postgres on :5432 instead of a
+#     `services:` container (service containers are Linux-only; this runner is
+#     macOS). Provision once:
+#       psql postgres -c "CREATE USER skill WITH PASSWORD 'skill' CREATEDB;"
+#       psql postgres -c "CREATE DATABASE skill_e2e OWNER skill;"
+#       psql skill_e2e -c "ALTER SCHEMA public OWNER TO skill;"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'skills/SKILL-001-fastapi-production/**'
+      - '.github/workflows/ci-selfhosted.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'skills/SKILL-001-fastapi-production/**'
+      - '.github/workflows/ci-selfhosted.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: "ci-selfhosted-${{ github.ref }}"
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: skills/SKILL-001-fastapi-production
+
+jobs:
+  full-suite:
+    name: Full check suite (self-hosted)
+    runs-on: [self-hosted, macos, local]
+    timeout-minutes: 40
+    env:
+      SECRET_KEY: ci-test-secret-key-must-be-32-chars-long!!!
+      MFA_FERNET_KEY: L7gvXDh2v6syV65J0-iwLQMTYbVavNXO2vuXgntcFBo=
+      RATE_LIMITING_ENABLED: 'false'
+      ENVIRONMENT: local
+      PYTHONPATH: .
+      E2E_POSTGRES_URL: postgresql+asyncpg://skill:skill@localhost:5432/skill_e2e
+      POSTGRES_SERVER: localhost
+      POSTGRES_PORT: '5432'
+      POSTGRES_USER: skill
+      POSTGRES_PASSWORD: skill
+      POSTGRES_DB: skill_e2e
+    steps:
+      - uses: actions/checkout@v4
+
+      # Persistent runner housekeeping: the suite scaffolds thousands of throwaway
+      # projects via tempfile.mkdtemp and does not always clean them. On an
+      # ephemeral GitHub-hosted VM that is free; on this persistent runner they
+      # accumulate (~2 GB/run) and eventually fill the disk ("No space left on
+      # device"). Purge prior-run leftovers + pip cache before each run.
+      - name: Free disk space (purge prior-run scaffold tempdirs)
+        run: |
+          find "${TMPDIR:-/tmp}" -maxdepth 1 -type d -name 'tmp*' -exec rm -rf {} + 2>/dev/null || true
+          find "${TMPDIR:-/tmp}" -maxdepth 1 -type d \( -name '_skill001_audit_*' -o -name 'hugr_*' -o -name 'pytest-*' \) -exec rm -rf {} + 2>/dev/null || true
+          rm -rf ~/Library/Caches/pip/* 2>/dev/null || true
+          df -h /System/Volumes/Data | tail -1
+
+      # Use the runner host's pre-installed Python 3.12 directly. actions/
+      # setup-python is avoided on this self-hosted macOS runner: it tries to
+      # populate the GitHub-hosted tool cache at /Users/runner/... which is not
+      # writable here ("mkdir: /Users/runner: Permission denied"). The brew
+      # python@3.12 gives the same pinned 3.12 the hosted CI targets.
+      - name: Create venv (Python 3.12) + install deps
+        run: |
+          PYBIN="$(command -v python3.12 || echo /usr/local/bin/python3.12)"
+          echo "using $("$PYBIN" --version) at $PYBIN"
+          "$PYBIN" -m venv .venv
+          .venv/bin/pip install --quiet --upgrade pip
+          # Kit/MCP deps...
+          .venv/bin/pip install --quiet -r requirements-mcp.txt
+          # ...plus the generated-app runtime deps: the behavior/e2e tests boot
+          # real scaffolded apps, which import slowapi/structlog/pwdlib/etc.
+          # (mirrors a scaffolded project's requirements.txt).
+          .venv/bin/pip install --quiet \
+            PyJWT alembic asyncpg email-validator fastapi "pwdlib[argon2]" \
+            pydantic-settings pydantic python-multipart "redis[hiredis]==5.3.1" slowapi \
+            "sqlalchemy[asyncio]" structlog "uvicorn[standard]" \
+            pytest pytest-asyncio aiosqlite httpx
+          # Feature-tool runtime deps whose behavior tests boot real apps that
+          # import them hard (s3->boto3, tasks->arq, email->jinja2, graphql->
+          # strawberry, mfa->pyotp/qrcode, sse->sse-starlette, crypto). Tools
+          # whose deps are absent (openpyxl/stripe/reportlab/sqladmin) skip
+          # gracefully, so they are intentionally NOT installed.
+          # strawberry-graphql + redis are version-pinned: newer majors broke
+          # the generated add_graphql / add_cache_layer boot (strawberry.fastapi
+          # API + redis.asyncio). These are the versions the suite is green on.
+          .venv/bin/pip install --quiet \
+            boto3 arq jinja2 strawberry-graphql==0.314.3 qrcode sse-starlette cryptography pyotp \
+            aiodataloader msgpack
+
+      - name: Unit tests (pytest adapt/)
+        run: .venv/bin/python -m pytest adapt/ -q --tb=short
+
+      - name: Boot 100/100 tools
+        run: .venv/bin/python tests/test_boot.py
+
+      - name: Property tests
+        run: .venv/bin/python tests/property_tests.py
+
+      - name: SQLite E2E hardcore
+        run: .venv/bin/python tests/test_e2e_hardcore.py
+
+      - name: Emitted-project audit
+        run: .venv/bin/python tests/test_emitted_project_audit.py
+
+      - name: MCP discovery (>=170 tools)
+        run: |
+          .venv/bin/python - <<'PY'
+          import asyncio
+          from mcp_tools.server import mcp
+          from mcp_tools.discovery import discover_and_register
+          count = discover_and_register(mcp)
+          assert count >= 170, f"Expected >= 170 tools, got {count}"
+          tools = asyncio.run(mcp.list_tools())
+          assert len(tools) >= 170, f"list_tools returned {len(tools)}"
+          print(f"MCP discovery: {len(tools)} tools registered")
+          PY
+
+      - name: Benchmark score schema + contract_check
+        run: |
+          .venv/bin/python - <<'PY'
+          import json, pathlib
+          data = json.loads(pathlib.Path("benchmarks/latest_score.json").read_text())
+          required = {"overall", "by_tier", "methodology", "kit_version"}
+          assert not (required - data.keys()), required - data.keys()
+          assert float(data["overall"]) >= 30.0, data["overall"]
+          print(f"benchmark overall={float(data['overall']):.2f}")
+          PY
+          .venv/bin/python -m engine.audit.contract_check --quiet
+
+      - name: PostgreSQL E2E (local Postgres)
+        run: .venv/bin/python tests/test_e2e_postgres.py
+
+      - name: Behavior scenarios (local Postgres)
+        run: .venv/bin/python tests/test_behavior_scenarios.py
