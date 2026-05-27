@@ -315,6 +315,101 @@ def test_next_steps_present() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Regression tests for confirmed bugs
+# ---------------------------------------------------------------------------
+
+def test_multiword_model_is_covered() -> None:
+    """BUG B regression: multiword model (VaccineLot in vaccinelot.py) must be covered.
+
+    The old code did ``''.join(w.capitalize() for w in stem.split('_'))`` which
+    produces 'Vaccinelot' for file 'vaccinelot.py', not the real class 'VaccineLot'.
+    The fix reads the actual class name from the AST, so every Base subclass is
+    discovered regardless of file naming.
+    """
+    project_dir = create_fixture_project(
+        name="search_bug_b_multiword",
+        models={"VaccineLot": {"name": "str", "description": "str"}},
+    )
+    result = add_search(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success", (
+        f"Expected success for multiword model VaccineLot, got: {result.status} — {result.error}"
+    )
+    crud_file = project_dir / "app" / "crud" / "vaccinelot.py"
+    assert crud_file.exists(), "CRUD file for VaccineLot not found"
+    content = crud_file.read_text()
+    assert "async def search" in content, "search() not added to VaccineLot CRUD"
+    assert "VaccineLot" in content, "Real class name VaccineLot absent from emitted CRUD"
+
+
+def test_no_sqli_via_language_concat() -> None:
+    """BUG A regression: emitted CRUD must NOT concatenate language into _text().
+
+    The old code emitted ``_text(\"'\" + language + \"'\")`` which would allow SQL
+    injection if ``language`` were user-supplied.  The fix emits
+    ``_func.cast(language, _REGCONFIG)`` — a bound parameter cast to regconfig.
+    """
+    project_dir = create_fixture_project(name="search_bug_a_no_sqli")
+    add_search(ToolInput(project_dir=str(project_dir)))
+    crud_file = project_dir / "app" / "crud" / "item.py"
+    content = crud_file.read_text()
+    # Old unsafe pattern must be absent
+    assert "_text(\"'\" + language + \"'\")" not in content, (
+        "Emitted code still contains unsafe language string concatenation into _text()"
+    )
+    assert "_text(\"'\" + lang + \"'\")" not in content, (
+        "Emitted code still contains unsafe lang string concatenation into _text()"
+    )
+    # Safe REGCONFIG cast must be present
+    assert "_REGCONFIG" in content, (
+        "Emitted code must import and use REGCONFIG for safe language binding"
+    )
+    assert "_func.cast(language, _REGCONFIG)" in content or "_func.cast(lang, _REGCONFIG)" in content, (
+        "Emitted code must use _func.cast(language, _REGCONFIG) — not string concatenation"
+    )
+
+
+def test_regconfig_import_in_emitted_crud() -> None:
+    """BUG A regression: emitted CRUD must import REGCONFIG from sqlalchemy.dialects.postgresql."""
+    project_dir = create_fixture_project(name="search_bug_a_regconfig_import")
+    add_search(ToolInput(project_dir=str(project_dir)))
+    crud_file = project_dir / "app" / "crud" / "item.py"
+    content = crud_file.read_text()
+    assert "from sqlalchemy.dialects.postgresql import REGCONFIG" in content, (
+        "Emitted CRUD must import REGCONFIG from sqlalchemy.dialects.postgresql"
+    )
+
+
+def test_multiword_model_crud_parses() -> None:
+    """BUG B regression: emitted CRUD for multiword model must parse without SyntaxError."""
+    project_dir = create_fixture_project(
+        name="search_bug_b_parse",
+        models={"VaccineLot": {"name": "str", "description": "str"}},
+    )
+    add_search(ToolInput(project_dir=str(project_dir)))
+    _assert_parse(project_dir)
+
+
+def test_search_covers_all_models_in_multi_model_project() -> None:
+    """BUG B regression: all models with text fields must receive search(), not just the first.
+
+    Uses a project with two models (Item + Product) — both must get search added.
+    """
+    project_dir = create_fixture_project(
+        name="search_bug_b_all_models",
+        models={"Item": {"title": "str"}, "Product": {"name": "str", "description": "str"}},
+    )
+    result = add_search(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success"
+
+    for stem in ("item", "product"):
+        crud_file = project_dir / "app" / "crud" / f"{stem}.py"
+        assert crud_file.exists(), f"CRUD for {stem} not found"
+        assert "async def search" in crud_file.read_text(), (
+            f"search() not added to {stem} CRUD"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner (fallback when pytest is unavailable)
 # ---------------------------------------------------------------------------
 
@@ -346,6 +441,12 @@ if __name__ == "__main__":
         test_dry_run_writes_nothing,
         test_execution_time_recorded,
         test_next_steps_present,
+        # Regression tests
+        test_multiword_model_is_covered,
+        test_no_sqli_via_language_concat,
+        test_regconfig_import_in_emitted_crud,
+        test_multiword_model_crud_parses,
+        test_search_covers_all_models_in_multi_model_project,
     ]
 
     passed = 0
