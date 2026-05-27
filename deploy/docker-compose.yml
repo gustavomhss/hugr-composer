@@ -1,0 +1,103 @@
+# HuGR Arsenal — production gate stack.
+#
+#   db    : Postgres — the shared revocation authority (cancelled seats / revoked keys).
+#   auth  : HuGR Auth API — holds the signing secret, answers /introspect, mints keys.
+#   mcp   : the gated MCP server — serves the ~146 tools ONLY to a valid HuGR token.
+#
+# Gate guarantee: mcp runs with HUGR_GATE=1 and HUGR_AUTH_URL → every tool call
+# is bearer-token gated. No valid subscription token ⇒ FastMCP authenticates
+# nobody ⇒ the server exposes ZERO tools. The tool code lives only on this host.
+#
+# Build context for `auth` and `mcp` is the REPO ROOT (`..`), so the images can
+# COPY the hugr_auth package and the skill source respectively.
+#
+# Static validation only (NO build): `docker compose -f deploy/docker-compose.yml config`
+# First real build + smoke: see deploy/README.md.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+    volumes:
+      - hugr_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # pg_isready against the configured role/db; gate dependents on this.
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - hugr_net
+    # DB is internal-only; never publish 5432 to the host in production.
+
+  auth:
+    image: hugr-auth:latest
+    build:
+      context: ..
+      dockerfile: deploy/auth.Dockerfile
+    restart: unless-stopped
+    environment:
+      # MANDATORY — app fails closed (/introspect denies, /admin/issue → 503)
+      # when the signing secret is missing or < 32 bytes.
+      HUGR_LICENSE_SIGNING_SECRET: ${HUGR_LICENSE_SIGNING_SECRET:?set a >=32-byte hex secret in .env}
+      # MANDATORY — admin endpoints 403 unless this matches and is >= 16 chars.
+      HUGR_ADMIN_TOKEN: ${HUGR_ADMIN_TOKEN:?set a >=16-char admin token in .env}
+      # MANDATORY for prod — shared SQL revocation store. Without it the app
+      # would fall back to a process-local store that loses revocations.
+      HUGR_STORE_DSN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8079/healthz',timeout=4).status==200 else sys.exit(1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - hugr_net
+    # Publish only if you terminate TLS in front of it; here for the smoke test.
+    ports:
+      - "127.0.0.1:8079:8079"
+
+  mcp:
+    image: hugr-skill-fastapi:latest
+    build:
+      # The MCP image bundles the skill source; build from the skill dir using
+      # its existing production Dockerfile (we do NOT duplicate or edit it).
+      context: ../skills/SKILL-001-fastapi-production
+      dockerfile: infra/docker/Dockerfile
+    restart: unless-stopped
+    # Override the image's default stdio CMD: run the HTTP-gated entrypoint.
+    # mcp_server.py's __main__ switches to transport=http when HUGR_GATE is on.
+    command: ["python", "mcp_server.py"]
+    environment:
+      # Turn the subscription gate ON (off by default for local/OSS/stdio).
+      HUGR_GATE: "1"
+      HUGR_MCP_HOST: "0.0.0.0"
+      HUGR_MCP_PORT: "8080"
+      # Point the gate at the auth authority; every token is introspected here.
+      HUGR_AUTH_URL: "http://auth:8079"
+      # NOTE: do NOT set HUGR_DEV_LICENSE_KEYS in production — it bypasses the
+      # auth API with hard-coded keys. It exists only for local/CI.
+    depends_on:
+      auth:
+        condition: service_healthy
+    networks:
+      - hugr_net
+    # The only port a customer's MCP client connects to.
+    ports:
+      - "8080:8080"
+
+volumes:
+  hugr_pgdata:
+    driver: local
+
+networks:
+  hugr_net:
+    driver: bridge

@@ -75,7 +75,26 @@ def _signing_secret() -> bytes:
 
 
 def _build_store() -> SubscriptionStore:
-    """File-backed deny-list when HUGR_STORE_PATH is set, else in-memory."""
+    """Pick the revocation store from env, in precedence order.
+
+    1. ``HUGR_STORE_DSN`` — a SQLAlchemy URL (e.g. a Postgres DSN) → the shared
+       ``SqlSubscriptionStore``. This is the production backend: revocations
+       written by one auth replica are immediately visible to all others.
+       Fail-closed: if a DSN is configured but the SQL store cannot be
+       constructed (driver/module missing, DB unreachable), we raise rather
+       than silently degrade to a process-local store that would lose
+       revocations.
+    2. ``HUGR_STORE_PATH`` — a JSON file path → ``FileSubscriptionStore``
+       (single-instance durable; survives restart).
+    3. neither → ``InMemorySubscriptionStore`` (dev/test only; lost on restart).
+    """
+    dsn = os.getenv("HUGR_STORE_DSN", "").strip()
+    if dsn:
+        # Lazy import: store_sql (and its SQLAlchemy dep) is only needed for the
+        # production SQL backend, so the file/in-memory paths stay dependency-free.
+        from hugr_auth.store_sql import SqlSubscriptionStore  # noqa: PLC0415
+
+        return SqlSubscriptionStore(dsn)
     path = os.getenv("HUGR_STORE_PATH", "").strip()
     return FileSubscriptionStore(path) if path else InMemorySubscriptionStore()
 

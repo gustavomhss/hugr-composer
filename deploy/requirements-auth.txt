@@ -1,0 +1,19 @@
+# HuGR Auth API — production runtime dependencies (pinned ranges).
+#
+# Scope: ONLY what hugr_auth/{app,license,store,store_sql,cli}.py import at
+# runtime. The skill catalog (skills/) and its MCP deps are NOT here — the
+# gated MCP server is a separate image (see deploy/README.md).
+
+# ASGI app + server
+fastapi>=0.115.0,<1.0
+uvicorn[standard]>=0.30.0,<1.0
+
+# Request/response models (FastAPI dep, pinned explicitly for reproducibility)
+pydantic>=2.10.0,<3.0
+
+# Shared SQL revocation store (hugr_auth/store_sql.py: SqlSubscriptionStore)
+sqlalchemy>=2.0.36,<3.0
+
+# Postgres driver for the production DSN (postgresql+psycopg2://...).
+# *-binary ships wheels so no libpq/build toolchain is needed in the image.
+psycopg2-binary>=2.9.9,<3.0

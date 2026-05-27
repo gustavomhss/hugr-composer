@@ -32,10 +32,22 @@ def _secret() -> bytes:
         return raw.encode("utf-8")
 
 
-def _store() -> FileSubscriptionStore:
+def _store():
+    """Revocation store for cancel/revoke, matching the API's precedence.
+
+    ``HUGR_STORE_DSN`` (SQLAlchemy URL, e.g. Postgres) wins so the CLI writes to
+    the *same shared* deny-list the running API reads; else ``HUGR_STORE_PATH``
+    (JSON file). One of the two MUST be set — there is no in-memory CLI path
+    (it would mutate a throwaway store and silently no-op).
+    """
+    dsn = os.getenv("HUGR_STORE_DSN", "").strip()
+    if dsn:
+        from hugr_auth.store_sql import SqlSubscriptionStore  # noqa: PLC0415
+
+        return SqlSubscriptionStore(dsn)
     path = os.getenv("HUGR_STORE_PATH", "")
     if not path:
-        sys.exit("HUGR_STORE_PATH not set")
+        sys.exit("set HUGR_STORE_DSN (preferred) or HUGR_STORE_PATH")
     return FileSubscriptionStore(path)
 
 
