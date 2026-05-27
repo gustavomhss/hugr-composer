@@ -19,6 +19,30 @@ INVARIANTS
   compare; any mismatch → None).
 - LIC-INV-02: an expired token (exp <= now) MUST NOT verify.
 - LIC-INV-03: secrets are >= 32 bytes; minting/verifying never logs the secret.
+
+PLAN → SCOPE TIERS
+==================
+Each subscription plan maps to a fixed scope set that the MCP gate uses to
+restrict access to premium tools. The mapping is:
+
+  free        → ["hugr:tools:base"]
+                Base tier: access to the free subset of HuGR tools only.
+
+  pro         → ["hugr:tools"]
+                Standard tier: full access to the public HuGR tool catalogue.
+                Backward-compatible — this was the previous default scope.
+
+  team        → ["hugr:tools", "hugr:org"]
+                Adds org-level features: shared workspaces, team management.
+
+  enterprise  → ["hugr:tools", "hugr:org", "hugr:private"]
+                Adds private/on-prem tool registries and SSO-gated resources.
+
+Scope derivation rules:
+- mint_license(..., scopes=None)  → plan tier drives the scope list (default).
+- mint_license(..., scopes=[...]) → explicit list is used as-is (override).
+- Unknown plan → LicenseError (fail-closed). Do NOT silently fall back to a
+  wider scope; unknown plans must be an explicit mistake on the issuing side.
 """
 
 from __future__ import annotations
@@ -31,6 +55,21 @@ import time
 from hashlib import sha256
 
 _MIN_SECRET_BYTES = 32
+
+# ---------------------------------------------------------------------------
+# Plan → scope mapping (authoritative definition; gate reads scopes from JWT)
+# ---------------------------------------------------------------------------
+#
+# Add new plans here only; do NOT remove or rename existing keys because live
+# tokens carry the plan name verbatim and must round-trip through introspect.
+PLAN_SCOPES: dict[str, list[str]] = {
+    "free":       ["hugr:tools:base"],
+    "pro":        ["hugr:tools"],                              # backward-compat default
+    "team":       ["hugr:tools", "hugr:org"],
+    "enterprise": ["hugr:tools", "hugr:org", "hugr:private"],
+}
+
+KNOWN_PLANS: frozenset[str] = frozenset(PLAN_SCOPES)
 
 
 class LicenseError(ValueError):
@@ -66,15 +105,29 @@ def mint_license(
     ttl_seconds: int = 30 * 24 * 3600,
     now: float | None = None,
 ) -> str:
-    """Issue a signed license key for *seat*, valid for *ttl_seconds*."""
+    """Issue a signed license key for *seat*, valid for *ttl_seconds*.
+
+    Scope resolution (in priority order):
+    1. Explicit *scopes* list → used verbatim.
+    2. No *scopes* → derived from *plan* via PLAN_SCOPES.
+    3. Unknown *plan* with no *scopes* → LicenseError (fail-closed).
+    """
     _check_secret(secret)
     if not seat:
         raise LicenseError("seat must be non-empty")
+    if scopes is not None:
+        resolved_scopes = list(scopes)
+    else:
+        if plan not in KNOWN_PLANS:
+            raise LicenseError(
+                f"unknown plan {plan!r}; valid plans: {sorted(KNOWN_PLANS)}"
+            )
+        resolved_scopes = list(PLAN_SCOPES[plan])
     payload = {
         "jti": secrets.token_hex(8),  # unique key id, so a single key can be revoked
         "seat": seat,
         "plan": plan,
-        "scopes": list(scopes or ["hugr:tools"]),
+        "scopes": resolved_scopes,
         "exp": int((now if now is not None else time.time()) + ttl_seconds),
     }
     body = _b64u_encode(
