@@ -213,16 +213,40 @@ def generate_crud_routes(
         ])
     get_body_lines.append("    return obj")
 
+    # BUG-BOLA fix: docstring must truthfully describe the actual access policy.
+    # Owner-scoped models enforce per-object ownership.
+    # Auth-required but ownerless models only enforce authentication (any active
+    # user may read any row) — no per-object ownership check is performed.
+    if has_owner:
+        get_doc = (
+            f"Fetch a single {cls} by its UUID.\n\n"
+            "    Access policy: regular users may only fetch records they own;\n"
+            "    superusers have unrestricted access.\n\n"
+            "    Raises:\n"
+            f"        HTTPException 404: {cls} not found.\n"
+            "        HTTPException 403: Not authorized — caller does not own this record."
+        )
+    elif has_auth:
+        get_doc = (
+            f"Fetch a single {cls} by its UUID.\n\n"
+            "    Access policy: authentication required; any active user may read\n"
+            "    any record (no per-object ownership check is enforced).\n\n"
+            "    Raises:\n"
+            f"        HTTPException 404: {cls} not found."
+        )
+    else:
+        get_doc = (
+            f"Fetch a single {cls} by its UUID.\n\n"
+            "    Access policy: public — no authentication required.\n\n"
+            "    Raises:\n"
+            f"        HTTPException 404: {cls} not found."
+        )
+
     get_route = _build_route(
         method="get",
         path="/{id}",
         func_name=f"read_{lower}",
-        doc=(
-            f"Fetch a single {cls} by its UUID.\n\n"
-            "    Raises:\n"
-            f"        HTTPException 404: {cls} not found.\n"
-            "        HTTPException 403: Not authorized (owner check)."
-        ),
+        doc=get_doc,
         params=get_sig,
         return_type=f"{cls}Public",
         body_lines=get_body_lines,
@@ -332,16 +356,37 @@ def generate_crud_routes(
         f'    return Message(message="{cls} deleted")',
     ])
 
+    # BUG-BOLA fix: docstring must truthfully describe the actual access policy.
+    if has_owner:
+        delete_doc = (
+            f"Delete a {cls} by its UUID.\n\n"
+            "    Access policy: regular users may only delete records they own;\n"
+            "    superusers have unrestricted access.\n\n"
+            "    Raises:\n"
+            f"        HTTPException 404: {cls} not found.\n"
+            "        HTTPException 403: Not authorized — caller does not own this record."
+        )
+    elif has_auth:
+        delete_doc = (
+            f"Delete a {cls} by its UUID.\n\n"
+            "    Access policy: authentication required; any active user may delete\n"
+            "    any record (no per-object ownership check is enforced).\n\n"
+            "    Raises:\n"
+            f"        HTTPException 404: {cls} not found."
+        )
+    else:
+        delete_doc = (
+            f"Delete a {cls} by its UUID.\n\n"
+            "    Access policy: public — no authentication required.\n\n"
+            "    Raises:\n"
+            f"        HTTPException 404: {cls} not found."
+        )
+
     delete_route = _build_route(
         method="delete",
         path="/{id}",
         func_name=f"delete_{lower}",
-        doc=(
-            f"Delete a {cls} by its UUID.\n\n"
-            "    Raises:\n"
-            f"        HTTPException 404: {cls} not found.\n"
-            "        HTTPException 403: Not authorized (owner check)."
-        ),
+        doc=delete_doc,
         params=delete_sig,
         return_type="Message",
         body_lines=delete_body_lines,
