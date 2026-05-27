@@ -119,6 +119,10 @@ jobs:
       - name: Auth gate (HuGR subscription)
         run: .venv/bin/python tests/test_auth_gate.py
 
+      - name: HuGR auth API (license introspection)
+        working-directory: .
+        run: PYTHONPATH=. skills/SKILL-001-fastapi-production/.venv/bin/python hugr_auth/test_license.py
+
       - name: MCP discovery (>=170 tools)
         run: |
           .venv/bin/python - <<'PY'
