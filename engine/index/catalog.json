@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "b3711a1",
-  "generated_at": "2026-05-26T21:51:49+00:00",
+  "kit_commit": "60cc165",
+  "generated_at": "2026-05-27T16:10:57+00:00",
   "verbs": [
     "add",
     "generate",
@@ -574,7 +574,7 @@
       "verb": "add",
       "domain": "auth",
       "synopsis": "Copy RequestGuard + CurrentPrincipal primitives + FastAPI adapter into the project and wire a \u226420-li",
-      "when_to_call": "Copy RequestGuard + CurrentPrincipal primitives + FastAPI adapter into the project and wire a \u226420-line app/rbac.py caller.",
+      "when_to_call": "Copy RequestGuard + CurrentPrincipal primitives + FastAPI adapter into the project and wire a \u226420-line app/rbac.py caller backed by the project's existing get_current_user dependency.",
       "when_not_to_call": "",
       "tags": [
         "rbac"
@@ -11764,5 +11764,5 @@
     "primitives": 299,
     "recipes": 392
   },
-  "stable_hash": "bb6a1a9f4e2bc73ea493c1904384a02409b80623785b5b668fa39454bf9ae7f2"
+  "stable_hash": "ec2d9684bba6854cc995c0675b28a59a5efba9229503f29cbb4822bddf069663"
 }
