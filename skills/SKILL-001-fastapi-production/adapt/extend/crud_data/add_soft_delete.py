@@ -392,21 +392,29 @@ def _ensure_sa_imports(src: str, names: set[str]) -> str:
     Returns:
         Updated source text.
     """
-    # Find the first "from sqlalchemy import ..." line (not sqlalchemy.orm)
-    sa_import_re = re.compile(r"^(from sqlalchemy import )(.+)$", re.MULTILINE)
-    m = sa_import_re.search(src)
-    if m:
-        existing = {n.strip() for n in m.group(2).split(",")}
-        missing = names - existing
-        if not missing:
-            return src
-        new_imports = ", ".join(sorted(existing | missing))
-        src = src[:m.start()] + m.group(1) + new_imports + src[m.end():]
+    # Determine which names are ALREADY imported from sqlalchemy via AST so we
+    # correctly handle both single-line (`from sqlalchemy import A, B`) and
+    # parenthesized multi-line (`from sqlalchemy import (\n  A,\n  B,\n)`) forms.
+    # The old regex naively matched `from sqlalchemy import (` and treated "("
+    # as the import list, mangling multi-line blocks into invalid syntax.
+    try:
+        already: set[str] = set()
+        for node in ast.walk(ast.parse(src)):
+            if isinstance(node, ast.ImportFrom) and node.module == "sqlalchemy":
+                already |= {alias.name for alias in node.names}
+        missing = names - already
+    except SyntaxError:
+        missing = names  # best-effort if the source is already non-parseable
+    if not missing:
         return src
-    # No "from sqlalchemy import" line found — insert before "from sqlalchemy.orm"
-    insert = "from sqlalchemy import " + ", ".join(sorted(names)) + "\n"
-    src = re.sub(r"^(from sqlalchemy\.orm )", insert + r"\1", src, count=1, flags=re.MULTILINE)
-    return src
+    # Add the missing names as a SEPARATE, always-valid import line placed just
+    # before the first existing sqlalchemy import (a second from-import is fine).
+    insert = "from sqlalchemy import " + ", ".join(sorted(missing)) + "\n"
+    anchor = re.search(r"^from sqlalchemy import ", src, flags=re.MULTILINE) or \
+        re.search(r"^from sqlalchemy\.orm ", src, flags=re.MULTILINE)
+    if anchor:
+        return src[:anchor.start()] + insert + src[anchor.start():]
+    return insert + src
 
 
 def _insert_after_future(src: str, line_to_insert: str) -> str:

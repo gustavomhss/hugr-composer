@@ -321,8 +321,11 @@ def _discover_models(app_dir: Path) -> list[str]:
                 for b in n.bases
             )
         ]
-        # Add every Base subclass found in this file (there is typically one,
-        # but we don't assume that).
+        # Only the class canonical for this file (name.lower() == stem): keeps
+        # multiword models, skips multi-class files (e.g. websocket chat.py with
+        # ChatRoom + ChatMessage) whose stem matches no class — which would
+        # otherwise be patched inconsistently / with broken module paths.
+        base_subclasses = [c for c in base_subclasses if c.lower() == stem]
         names.extend(base_subclasses)
     return sorted(names)
 
