@@ -3,8 +3,16 @@ from __future__ import annotations
 
 from fastmcp import FastMCP
 
+from mcp_tools.auth_gate import HugrTokenVerifier, gate_enabled
+
+# Subscription gate: when HUGR_GATE is enabled the server requires a valid HuGR
+# license (bearer token) to expose any tool. Off by default → local stdio / OSS
+# / test flows are unchanged. See mcp_tools/auth_gate.py.
+_auth = HugrTokenVerifier() if gate_enabled() else None
+
 mcp = FastMCP(
     "hugr-skill-fastapi",
+    auth=_auth,
     instructions=(
         "FastAPI Production skill — generates SOTA production projects AND adapts existing ones.\n\n"
         "Convention over Configuration: generators deliver calibrated defaults "

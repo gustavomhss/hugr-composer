@@ -116,6 +116,9 @@ jobs:
       - name: Emitted-project audit
         run: .venv/bin/python tests/test_emitted_project_audit.py
 
+      - name: Auth gate (HuGR subscription)
+        run: .venv/bin/python tests/test_auth_gate.py
+
       - name: MCP discovery (>=170 tools)
         run: |
           .venv/bin/python - <<'PY'
