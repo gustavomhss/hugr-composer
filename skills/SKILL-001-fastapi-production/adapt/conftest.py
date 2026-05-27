@@ -95,3 +95,10 @@ def _isolate_app_core_modules():
             del sys.modules[name]
         sys.modules.update(saved_modules)
         sys.path[:] = saved_path
+        # Reclaim the throwaway scaffold dirs this module's tests created via
+        # create_fixture_project(tmp_dir=None). Module scope (not function) keeps
+        # module-cached fixture projects alive across their tests, while still
+        # bounding disk to ~one test-file's worth instead of the whole session.
+        from tests.common.fixture_factory import purge_tracked_dirs
+
+        purge_tracked_dirs()
