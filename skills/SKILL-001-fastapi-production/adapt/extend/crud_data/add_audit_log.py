@@ -176,7 +176,7 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
     return ToolResult(
         status="success",
         files_created=files_created,
-        files_modified=files_modified or None,
+        files_modified=files_modified,
         notes=[
             "Shipped primitives: AuditEvent, TamperEvidentAuditLog.",
             "Shipped adapter: AuditLogAdapter.",

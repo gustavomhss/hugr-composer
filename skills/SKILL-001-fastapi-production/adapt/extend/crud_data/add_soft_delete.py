@@ -525,6 +525,16 @@ def _patch_crud(crud_file: Path, model_name: str, stem: str) -> bool:
             return list(result.scalars().all())
     """)
 
+    # Neutralize the `delete = crud.delete` re-export alias so the soft-delete
+    # `async def delete` below is not an F811 redefinition of an unused name.
+    src = re.sub(
+        r"^delete = crud\.delete\b.*$",
+        "# delete = crud.delete  # overridden by the soft-delete `delete` below",
+        src,
+        count=1,
+        flags=re.MULTILINE,
+    )
+
     crud_file.write_text(src + soft_delete_block)
     return True
 
