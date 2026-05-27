@@ -188,6 +188,12 @@ def add_multi_tenancy(inp: ToolInput) -> ToolResult:
     _write_tenant_routes(tenant_routes_file)
     files_created.append(str(tenant_routes_file))
 
+    # --- Step 10b: Register tenant router in app/routes/__init__.py ---
+    routes_init_file = app_dir / "routes" / "__init__.py"
+    if routes_init_file.exists():
+        _patch_routes_init(routes_init_file)
+        files_modified.append(str(routes_init_file))
+
     # --- Step 11: Patch main.py to register middleware + filter import ---
     main_file = app_dir / "main.py"
     if main_file.exists():
@@ -263,8 +269,15 @@ def _discover_models(app_dir: Path) -> list[str]:
     """Return PascalCase business model names, excluding User/Base/Tenant/mixins.
 
     Only includes models where:
-    1. The file contains a class named ``{pascal}`` inheriting from ``Base``.
+    1. The file contains at least one class directly inheriting from ``Base``
+       (read from the AST — NOT derived from the filename).
     2. A matching route file ``app/api/routes/{stem}.py`` exists.
+
+    The class name is taken directly from the AST, so multiword models whose
+    file name is all-lowercase-no-underscore (e.g. ``vaccinelot.py`` →
+    class ``VaccineLot``) are discovered correctly.  The old approach of
+    guessing the PascalCase name from the stem (``"".join(w.capitalize() …)``)
+    was wrong for those cases and caused them to be silently skipped.
 
     This avoids patching infrastructure files like ``mfa.py``, ``api_key.py``,
     or ``feature_flag.py`` (route is ``feature_flags.py``, not ``feature_flag.py``).
@@ -273,7 +286,7 @@ def _discover_models(app_dir: Path) -> list[str]:
         app_dir: The ``app/`` package directory.
 
     Returns:
-        Sorted list of discovered model names (e.g. ``["Item"]``).
+        Sorted list of discovered model names (e.g. ``["Item", "VaccineLot"]``).
     """
     models_dir = app_dir / "models"
     routes_dir = app_dir / "api" / "routes"
@@ -290,9 +303,11 @@ def _discover_models(app_dir: Path) -> list[str]:
             continue
         if stem not in available_routes:
             continue
-        # Derive PascalCase class name: item -> Item, order_item -> OrderItem
-        pascal = "".join(w.capitalize() for w in stem.split("_"))
-        # Verify the file contains a class with exactly this name inheriting Base
+        # Read the ACTUAL class names from the AST instead of guessing from
+        # the filename stem.  Filename-guessing breaks for multiword models
+        # like VaccineLot (file: vaccinelot.py → stem: vaccinelot →
+        # guessed: "Vaccinelot" ≠ "VaccineLot") — those would be silently
+        # skipped, leaving them without tenant isolation (cross-tenant leak).
         try:
             tree = ast.parse(f.read_text())
         except SyntaxError:
@@ -306,9 +321,10 @@ def _discover_models(app_dir: Path) -> list[str]:
                 for b in n.bases
             )
         ]
-        if pascal in base_subclasses:
-            names.append(pascal)
-    return names
+        # Add every Base subclass found in this file (there is typically one,
+        # but we don't assume that).
+        names.extend(base_subclasses)
+    return sorted(names)
 
 
 def _write_mixin(dest: Path) -> None:
@@ -699,6 +715,12 @@ def _write_tenant_middleware(dest: Path) -> None:
 def _patch_model(model_file: Path, model_name: str) -> None:
     """Inject TenantScopedMixin into a model class and add composite index.
 
+    The composite index ``__table_args__`` is appended INSIDE the class body
+    (4-space indent) — NOT at module scope.  Previously ``textwrap.dedent``
+    stripped all leading whitespace from the appended block, causing
+    ``__table_args__`` to land at column 0 (module scope), which SQLAlchemy
+    silently ignores; the index was never registered on the model.
+
     Args:
         model_file: Path to the model ``.py`` file.
         model_name: PascalCase class name (e.g. ``"Item"``).
@@ -736,16 +758,61 @@ def _patch_model(model_file: Path, model_name: str) -> None:
         "class " + model_name + "(TenantScopedMixin, Base):",
     )
 
-    # Append composite index
-    index_block = textwrap.dedent("""\
+    # Append composite index INSIDE the class body (4-space indent).
+    # Do NOT use textwrap.dedent here — it would strip the leading whitespace
+    # and emit __table_args__ at module scope (column 0), where SQLAlchemy
+    # ignores it and the index is never registered on the model.
+    index_block = (
+        "\n"
+        "    __table_args__ = (\n"
+        f"        Index(\"ix_{table_name}_tenant_created\", \"tenant_id\", \"created_at\"),\n"
+        "    )\n"
+    )
 
-            __table_args__ = (
-                Index("ix_{table}_tenant_created", "tenant_id", "created_at"),
-            )
-        """).replace("{table}", table_name)
+    # Verify placement: AST-parse the candidate result and confirm
+    # __table_args__ lands inside the target class node.
+    candidate = src.rstrip("\n") + "\n" + index_block
+    _verify_table_args_in_class(candidate, model_name)
 
-    src = src.rstrip("\n") + "\n" + index_block
-    model_file.write_text(src)
+    model_file.write_text(candidate)
+
+
+def _verify_table_args_in_class(src: str, model_name: str) -> None:
+    """Assert that ``__table_args__`` is an attribute of *model_name*, not module-scope.
+
+    Parses *src* and walks the AST.  Raises ``RuntimeError`` if the attribute
+    is missing from the class body or is found at module level.
+
+    Args:
+        src: Python source code to check.
+        model_name: PascalCase class name that must own ``__table_args__``.
+
+    Raises:
+        RuntimeError: If ``__table_args__`` is at module scope or absent from
+            the class body.
+    """
+    tree = ast.parse(src)
+    # Check it is NOT at module scope
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            for t in node.targets:
+                if isinstance(t, ast.Name) and t.id == "__table_args__":
+                    raise RuntimeError(
+                        f"__table_args__ was emitted at MODULE scope in {model_name} model "
+                        f"— index would never be registered.  This is a tool bug."
+                    )
+    # Check it IS inside the target class
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef) and node.name == model_name:
+            for item in node.body:
+                if isinstance(item, ast.Assign):
+                    for t in item.targets:
+                        if isinstance(t, ast.Name) and t.id == "__table_args__":
+                            return  # found — all good
+    raise RuntimeError(
+        f"__table_args__ not found inside class {model_name} after patching — "
+        f"the composite tenant index was not registered."
+    )
 
 
 def _patch_crud(crud_file: Path, model_name: str) -> None:
@@ -1132,6 +1199,28 @@ def _patch_main(main_file: Path) -> None:
             src = src + "\napp.add_middleware(TenantMiddleware, resolver=\"header\")\n"
 
     main_file.write_text(src)
+
+
+def _patch_routes_init(routes_init: Path) -> None:
+    """Register the tenant router in ``app/routes/__init__.py``.
+
+    Appends an import and ``api_router.include_router(tenant_router)`` call
+    idempotently.  Without this the tenant CRUD endpoints (POST/GET/PATCH
+    ``/tenants``) are never reachable even though the route file exists.
+
+    Args:
+        routes_init: Path to ``app/routes/__init__.py``.
+    """
+    src = routes_init.read_text()
+    if "tenant_router" in src:
+        return
+    addition = (
+        "\n"
+        "# --- Tenant admin routes — added by add_multi_tenancy tool ---\n"
+        "from app.api.routes.tenant import router as tenant_router  # noqa: E402\n"
+        "api_router.include_router(tenant_router)\n"
+    )
+    routes_init.write_text(src.rstrip("\n") + "\n" + addition)
 
 
 def _write_migration(versions_dir: Path, model_names: list[str]) -> Path:

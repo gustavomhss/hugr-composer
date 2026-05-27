@@ -310,6 +310,159 @@ def test_execution_time_recorded() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Regression tests for confirmed bugs (fix/ee-tenancy)
+# ---------------------------------------------------------------------------
+
+_MULTIWORD_MODELS = {
+    "Warehouse": {"name": "str"},
+    "VaccineLot": {"lot": "str"},
+    "Shipment": {"code": "str"},
+}
+
+
+def test_multiword_model_all_patched() -> None:
+    """BUG-1 regression: ALL models must receive TenantScopedMixin, including
+    multiword names (e.g. VaccineLot in vaccinelot.py) whose filename-derived
+    PascalCase guess would have been 'Vaccinelot' ≠ 'VaccineLot'.
+
+    Before fix: only Shipment and Warehouse were patched; VaccineLot was
+    silently skipped → cross-tenant data leak vector.
+    After fix: every model file whose stem matches a route file and contains
+    a Base subclass is patched regardless of how its class name capitalises.
+    """
+    project_dir = create_fixture_project(name="mt26_multiword", models=_MULTIWORD_MODELS)
+    result = add_multi_tenancy(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success", f"Expected success: {result.error}"
+
+    models_dir = project_dir / "app" / "models"
+    skip = {"base", "user", "mixins", "tenant", "__init__"}
+    unpatched = []
+    for f in sorted(models_dir.glob("*.py")):
+        if f.stem in skip:
+            continue
+        content = f.read_text()
+        if "TenantScopedMixin" not in content:
+            unpatched.append(f.name)
+
+    assert not unpatched, (
+        f"Models NOT patched with TenantScopedMixin (cross-tenant leak): {unpatched}"
+    )
+
+
+def test_table_args_inside_class_scope() -> None:
+    """BUG-2 regression: __table_args__ must be an attribute of the model
+    CLASS, not a module-level assignment.
+
+    Before fix: textwrap.dedent stripped all indentation from the appended
+    block, emitting __table_args__ at column 0 (module scope), where
+    SQLAlchemy ignores it — the composite index was never created.
+    After fix: __table_args__ lands at 4-space indent inside the class body.
+    """
+    project_dir = create_fixture_project(name="mt27_class_scope", models=_MULTIWORD_MODELS)
+    add_multi_tenancy(ToolInput(project_dir=str(project_dir)))
+
+    models_dir = project_dir / "app" / "models"
+    skip = {"base", "user", "mixins", "tenant", "__init__"}
+    module_scope_violations = []
+    missing_class_scope = []
+
+    for f in sorted(models_dir.glob("*.py")):
+        if f.stem in skip:
+            continue
+        content = f.read_text()
+        if "TenantScopedMixin" not in content:
+            continue
+
+        tree = ast.parse(content)
+
+        # Must NOT be at module scope
+        for node in tree.body:
+            if isinstance(node, ast.Assign):
+                for t in node.targets:
+                    if isinstance(t, ast.Name) and t.id == "__table_args__":
+                        module_scope_violations.append(f.name)
+
+        # Must be inside a class that inherits TenantScopedMixin
+        found_in_class = False
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ClassDef):
+                continue
+            base_ids = [
+                b.id if isinstance(b, ast.Name) else (b.attr if isinstance(b, ast.Attribute) else "")
+                for b in node.bases
+            ]
+            if "TenantScopedMixin" not in base_ids:
+                continue
+            for item in node.body:
+                if isinstance(item, ast.Assign):
+                    for t in item.targets:
+                        if isinstance(t, ast.Name) and t.id == "__table_args__":
+                            found_in_class = True
+        if not found_in_class:
+            missing_class_scope.append(f.name)
+
+    assert not module_scope_violations, (
+        f"__table_args__ at MODULE scope (index not registered): {module_scope_violations}"
+    )
+    assert not missing_class_scope, (
+        f"__table_args__ missing from class body: {missing_class_scope}"
+    )
+
+
+def test_tenant_router_registered_in_routes_init() -> None:
+    """BUG-3 regression: tenant router must be registered in app/routes/__init__.py.
+
+    Before fix: app/api/routes/tenant.py was created but never included in
+    api_router → the /tenants endpoints were unreachable.
+    After fix: routes/__init__.py gains an include_router(tenant_router) call.
+    """
+    project_dir = create_fixture_project(name="mt28_routes_init")
+    add_multi_tenancy(ToolInput(project_dir=str(project_dir)))
+
+    routes_init = project_dir / "app" / "routes" / "__init__.py"
+    assert routes_init.exists(), "app/routes/__init__.py not found"
+    content = routes_init.read_text()
+    assert "tenant_router" in content, (
+        "tenant_router not imported in routes/__init__.py — /tenants endpoints unreachable"
+    )
+    assert "include_router(tenant_router)" in content, (
+        "api_router.include_router(tenant_router) not called — /tenants endpoints unreachable"
+    )
+
+
+def test_multiword_boot() -> None:
+    """BUG-1+2+3 integration: a project with multiword models must boot cleanly
+    after multi-tenancy is applied (from app.main import app succeeds).
+    """
+    import os
+    import subprocess
+
+    project_dir = create_fixture_project(name="mt29_multiword_boot", models=_MULTIWORD_MODELS)
+    result = add_multi_tenancy(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success"
+
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(project_dir)
+    env["SECRET_KEY"] = "ci-test-secret-key-must-be-32-chars-long!!!"
+    env["ENVIRONMENT"] = "local"
+    env["RATE_LIMITING_ENABLED"] = "false"
+
+    proc = subprocess.run(
+        [sys.executable, "-c", "from app.main import app; print('BOOT OK')"],
+        cwd=str(project_dir),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    assert proc.returncode == 0, (
+        f"Boot failed after multi-tenancy applied to multiword-model project.\n"
+        f"stdout: {proc.stdout}\nstderr: {proc.stderr[:1000]}"
+    )
+    assert "BOOT OK" in proc.stdout
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner (fallback when pytest is unavailable)
 # ---------------------------------------------------------------------------
 
@@ -340,6 +493,10 @@ if __name__ == "__main__":
         test_idempotent_project_still_parses,
         test_dry_run_writes_nothing,
         test_execution_time_recorded,
+        test_multiword_model_all_patched,
+        test_table_args_inside_class_scope,
+        test_tenant_router_registered_in_routes_init,
+        test_multiword_boot,
     ]
 
     passed = 0
