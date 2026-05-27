@@ -61,13 +61,25 @@ def generate_auth_deps(
             """Decode the JWT and return the active user.
 
             Returns a single generic 401 for ALL failure modes
-            (bad token, missing sub, malformed UUID, user not found,
-            inactive user) to prevent account-state enumeration.
+            (bad token, wrong token type, missing sub, malformed UUID,
+            user not found, inactive user) to prevent account-state enumeration.
+
+            Token-type enforcement: only tokens whose ``type`` claim equals
+            ``"access"`` are accepted.  Refresh tokens (``type="refresh"``)
+            and password-reset tokens (``type="password_reset"``) are rejected
+            with the same generic 401 — this prevents token-confusion attacks
+            where a long-lived refresh token is presented as a bearer credential.
             """
             try:
                 payload = decode_token(token)
                 token_data = TokenPayload(sub=payload.get("sub"))
             except jwt.InvalidTokenError:
+                raise _CREDENTIALS_ERROR
+
+            # Reject any token that is not explicitly typed as an access token.
+            # Refresh tokens and password-reset tokens must never authorise
+            # normal API requests.
+            if payload.get("type") != "access":
                 raise _CREDENTIALS_ERROR
 
             if token_data.sub is None:

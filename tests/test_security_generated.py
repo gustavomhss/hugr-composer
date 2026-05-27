@@ -763,6 +763,208 @@ class TestNoXssInErrors:
 
 
 # ---------------------------------------------------------------------------
+# SEC-16 — BOLA: ownerless model docstrings must not claim 403 owner check
+# Regression test for: generators/endpoints/crud_routes.py
+# Bug: GET/{id} and DELETE/{id} for non-owner-scoped models emitted
+#      "HTTPException 403: Not authorized (owner check)" in docstrings even
+#      though no such check existed, creating a lying contract.
+# ---------------------------------------------------------------------------
+
+class TestOwnerlessModelDocstringHonesty:
+    """SEC-16: Ownerless model routes must NOT claim a 403 owner check."""
+
+    def _generate_ownerless_routes(self, tmp_path: Path) -> str:
+        """Generate CRUD routes for an ownerless model and return the source."""
+        sys.path.insert(0, str(_SKILL_ROOT))
+        from generators.endpoints.crud_routes import generate_crud_routes  # noqa: PLC0415
+
+        result = generate_crud_routes(
+            output_dir=str(tmp_path),
+            model_name="MedicalRecord",
+            fields={"diagnosis": "str"},
+            auth="required",
+            owner_field=None,  # NOT owner-scoped
+        )
+        return Path(result["files_created"][0]).read_text()
+
+    def _generate_owner_scoped_routes(self, tmp_path: Path) -> str:
+        """Generate CRUD routes for an owner-scoped model and return the source."""
+        sys.path.insert(0, str(_SKILL_ROOT))
+        from generators.endpoints.crud_routes import generate_crud_routes  # noqa: PLC0415
+
+        result = generate_crud_routes(
+            output_dir=str(tmp_path),
+            model_name="Pet",
+            fields={"name": "str"},
+            auth="required",
+            owner_field="user",  # owner-scoped
+        )
+        return Path(result["files_created"][0]).read_text()
+
+    def test_ownerless_read_route_no_false_403_claim(
+        self, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        """GET/{id} for ownerless model must NOT claim 'HTTPException 403: Not authorized'.
+
+        Before the fix the docstring contained a literal '403: Not authorized (owner check)'
+        claim even though no ownership check was present in the generated code — a lying contract.
+        """
+        if isinstance(tmp_path, pytest.TempPathFactory):
+            base = tmp_path.mktemp("ownerless_read")
+        else:
+            base = tmp_path
+        src = self._generate_ownerless_routes(base)
+        # The route must not claim ownership-based 403
+        assert "Not authorized (owner check)" not in src, (
+            "SEC-16 FAIL — ownerless read route docstring falsely claims '403: Not authorized "
+            "(owner check)'. Fix: generate honest docstring that matches actual code policy."
+        )
+
+    def test_ownerless_delete_route_no_false_403_claim(
+        self, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        """DELETE/{id} for ownerless model must NOT claim 'HTTPException 403: Not authorized'.
+
+        Mirrors test_ownerless_read_route_no_false_403_claim for the DELETE endpoint.
+        """
+        if isinstance(tmp_path, pytest.TempPathFactory):
+            base = tmp_path.mktemp("ownerless_delete")
+        else:
+            base = tmp_path
+        src = self._generate_ownerless_routes(base)
+        assert "Not authorized (owner check)" not in src, (
+            "SEC-16 FAIL — ownerless delete route docstring falsely claims '403: Not authorized "
+            "(owner check)'. Fix: generate honest docstring that matches actual code policy."
+        )
+
+    def test_ownerless_route_docstring_states_actual_policy(
+        self, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        """Ownerless routes must declare the actual access policy in their docstring."""
+        if isinstance(tmp_path, pytest.TempPathFactory):
+            base = tmp_path.mktemp("ownerless_policy")
+        else:
+            base = tmp_path
+        src = self._generate_ownerless_routes(base)
+        # The generated docstring must explicitly state the real policy
+        assert "no per-object ownership check is enforced" in src, (
+            "SEC-16 FAIL — ownerless route docstring does not state that no per-object "
+            "ownership check is enforced. Consumers need honest documentation."
+        )
+
+    def test_owner_scoped_route_still_has_403_claim(
+        self, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        """Owner-scoped models MUST still document the 403 in their docstrings.
+
+        This is a non-regression check: the fix for ownerless models must not
+        accidentally remove the correct 403 documentation from owner-scoped models.
+        """
+        if isinstance(tmp_path, pytest.TempPathFactory):
+            base = tmp_path.mktemp("owner_scoped")
+        else:
+            base = tmp_path
+        src = self._generate_owner_scoped_routes(base)
+        assert "HTTPException 403" in src, (
+            "SEC-16 NON-REGRESSION FAIL — owner-scoped model routes lost the 403 documentation. "
+            "Owner-scoped routes must still document the ownership 403 check."
+        )
+        assert "does not own this record" in src, (
+            "SEC-16 NON-REGRESSION FAIL — owner-scoped model routes lost ownership language "
+            "in the 403 documentation."
+        )
+
+
+# ---------------------------------------------------------------------------
+# SEC-17 — Token-type confusion: get_current_user must reject non-access tokens
+# Regression test for: generators/auth/deps.py
+# Bug: generated get_current_user accepted refresh and password_reset tokens
+#      as bearer credentials because it never checked payload["type"].
+# ---------------------------------------------------------------------------
+
+class TestTokenTypeEnforcement:
+    """SEC-17: Generated get_current_user must reject non-access JWT tokens."""
+
+    def _generate_deps(self, tmp_path: Path) -> str:
+        """Generate api/deps.py and return its source."""
+        sys.path.insert(0, str(_SKILL_ROOT))
+        from generators.auth.deps import generate_auth_deps  # noqa: PLC0415
+
+        result = generate_auth_deps(output_dir=str(tmp_path))
+        return Path(result["files_created"][0]).read_text()
+
+    def test_get_current_user_checks_token_type(
+        self, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        """get_current_user must validate payload['type'] == 'access'.
+
+        Without this check a long-lived refresh token (type='refresh') is
+        silently accepted as a bearer credential on every protected endpoint,
+        bypassing the short-lived nature of access tokens.
+        """
+        if isinstance(tmp_path, pytest.TempPathFactory):
+            base = tmp_path.mktemp("deps_type_check")
+        else:
+            base = tmp_path
+        src = self._generate_deps(base)
+        # Check that type validation is present
+        assert 'payload.get("type")' in src or "payload.get('type')" in src, (
+            "SEC-17 FAIL — generated get_current_user does not check payload['type']. "
+            "Refresh and password-reset tokens will be accepted as bearer credentials."
+        )
+        assert '"access"' in src or "'access'" in src, (
+            "SEC-17 FAIL — generated get_current_user does not compare token type to 'access'. "
+            "Token-type confusion attack vector is open."
+        )
+
+    def test_get_current_user_rejects_refresh_token_at_source_level(
+        self, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        """The generated code must raise _CREDENTIALS_ERROR for type != 'access'.
+
+        This checks that the type comparison is tied to a 401 rejection path,
+        not just an unreachable assertion.
+        """
+        if isinstance(tmp_path, pytest.TempPathFactory):
+            base = tmp_path.mktemp("deps_reject_refresh")
+        else:
+            base = tmp_path
+        src = self._generate_deps(base)
+        # The rejection must follow the type check (both must appear in deps.py)
+        assert "_CREDENTIALS_ERROR" in src, (
+            "SEC-17 FAIL — _CREDENTIALS_ERROR constant missing from generated deps.py"
+        )
+        # Verify both the type check AND the credentials error appear in the same function
+        get_user_fn_start = src.find("async def get_current_user(")
+        get_user_fn_end = src.find("\nasync def ", get_user_fn_start + 1)
+        if get_user_fn_end == -1:
+            get_user_fn_end = src.find("\nCurrentUser", get_user_fn_start)
+        get_user_body = src[get_user_fn_start:get_user_fn_end] if get_user_fn_end > 0 else src[get_user_fn_start:]
+        assert ("type" in get_user_body and "access" in get_user_body), (
+            "SEC-17 FAIL — type/access check not found inside get_current_user body."
+        )
+        assert "_CREDENTIALS_ERROR" in get_user_body, (
+            "SEC-17 FAIL — _CREDENTIALS_ERROR not raised inside get_current_user body "
+            "on token type mismatch."
+        )
+
+    def test_generated_deps_parses_as_valid_python(
+        self, tmp_path: pytest.TempPathFactory
+    ) -> None:
+        """The generated deps.py must be syntactically valid Python after the fix."""
+        import ast as _ast  # noqa: PLC0415
+        if isinstance(tmp_path, pytest.TempPathFactory):
+            base = tmp_path.mktemp("deps_syntax")
+        else:
+            base = tmp_path
+        src = self._generate_deps(base)
+        try:
+            _ast.parse(src)
+        except SyntaxError as exc:
+            pytest.fail(f"SEC-17 FAIL — generated deps.py has syntax error: {exc}")
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner — produces the final score line
 # ---------------------------------------------------------------------------
 
