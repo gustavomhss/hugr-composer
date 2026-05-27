@@ -49,29 +49,53 @@ def _dev_license_keys() -> set[str]:
     return {k.strip() for k in raw.split(",") if k.strip()}
 
 
+def _introspect_remote(base_url: str, token: str) -> dict | None:
+    """POST the key to the HuGR auth service's /introspect; return claims or None.
+
+    Fail-closed: any transport error, non-200, or inactive verdict → None, so a
+    flaky/unreachable auth service denies rather than leaks. Factored out so the
+    HTTP edge is mockable in tests.
+    """
+    import httpx
+
+    try:
+        resp = httpx.post(
+            f"{base_url.rstrip('/')}/introspect",
+            json={"key": token},
+            timeout=5.0,
+        )
+    except httpx.HTTPError:
+        return None
+    if resp.status_code != 200:
+        return None
+    data = resp.json()
+    return data.get("claims") if data.get("active") else None
+
+
 def _validate_license(token: str) -> dict | None:
     """Validate a license key; return the seat's claims if active, else None.
 
-    SEAM — production replaces this body with a call to the HuGR auth API, e.g.::
-
-        resp = httpx.post(f"{HUGR_AUTH_URL}/introspect",
-                          json={"key": token}, timeout=5)
-        data = resp.json()
-        return data["claims"] if data.get("active") else None
-
-    Until that backend exists this is **fail-closed**: it accepts only keys
-    explicitly listed in HUGR_DEV_LICENSE_KEYS (for local dev / CI) and denies
-    everything else, so an enabled gate never leaks tools by accident.
+    Resolution order:
+    1. **HuGR auth API** (when ``HUGR_AUTH_URL`` is set) — the real authority:
+       POST the opaque key to ``/introspect``; only the service holds the
+       signing secret. This is the production path.
+    2. **Dev keys** (``HUGR_DEV_LICENSE_KEYS``) — local/CI shortcut when no auth
+       service is configured.
+    3. Otherwise **deny** — an enabled gate never leaks tools by accident.
     """
     if not token:
         return None
+
+    auth_url = os.getenv("HUGR_AUTH_URL", "").strip()
+    if auth_url:
+        return _introspect_remote(auth_url, token)
+
     if token in _dev_license_keys():
         return {
             "client_id": f"dev:{token[:8]}",
             "scopes": list(_DEFAULT_SCOPES),
             "plan": "dev",
         }
-    # TODO(hugr-auth): call the HuGR auth API here. Until then, deny.
     return None
 
 

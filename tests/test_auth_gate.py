@@ -68,6 +68,29 @@ def _checks() -> list[str]:
         if asyncio.run(v.verify_token("good-key-1")) is not None:
             failures.append("verify_token ignored an unmet required_scope")
 
+        # --- HUGR_AUTH_URL: the gate delegates to the auth API and ignores dev keys ---
+        import mcp_tools.auth_gate as ag
+
+        os.environ["HUGR_AUTH_URL"] = "http://auth.test"
+        _orig_remote = ag._introspect_remote
+        try:
+            ag._introspect_remote = lambda base, tok: (
+                {"client_id": "seat-remote", "scopes": ["hugr:tools"], "plan": "pro"}
+                if tok == "remote-good"
+                else None
+            )
+            tok = _verify("remote-good")
+            if tok is None or tok.client_id != "seat-remote":
+                failures.append(f"gate did not honour the auth-API claims: {tok}")
+            if _verify("remote-bad") is not None:
+                failures.append("gate accepted a key the auth API rejected")
+            # with HUGR_AUTH_URL set, a dev key is NOT a backdoor
+            if _verify("good-key-1") is not None:
+                failures.append("dev key bypassed the configured auth API")
+        finally:
+            ag._introspect_remote = _orig_remote
+            os.environ.pop("HUGR_AUTH_URL", None)
+
     finally:
         for k, v in saved.items():
             if v is None:
