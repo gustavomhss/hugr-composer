@@ -363,6 +363,33 @@ def test_no_models_returns_error() -> None:
 
 
 # ---------------------------------------------------------------------------
+# BUG B regression — multiword model discovery
+# ---------------------------------------------------------------------------
+
+def test_multiword_model_export_not_skipped() -> None:
+    """Regression: multiword model (VaccineLot in vaccinelot.py) must get export route.
+
+    Before the fix, _discover_models derived 'Vaccinelot' from the filename
+    which didn't match the actual class 'VaccineLot', silently skipping it.
+    """
+    project_dir = create_fixture_project(
+        name="export_multiword_model",
+        models={"Order": {"code": "str"}, "VaccineLot": {"lot": "str"}},
+    )
+    result = add_data_export(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success"
+    notes_combined = " ".join(result.notes or [])
+    assert "VaccineLot" in notes_combined, (
+        f"VaccineLot not in notes — multiword model was skipped. Notes: {result.notes}"
+    )
+    route_files = list((project_dir / "app" / "api" / "routes").glob("vaccinelot*.py"))
+    assert route_files, "No route file found for VaccineLot model"
+    assert "/export" in route_files[0].read_text(), (
+        "VaccineLot route file missing export endpoint — multiword model was skipped"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner (fallback when pytest is unavailable)
 # ---------------------------------------------------------------------------
 
