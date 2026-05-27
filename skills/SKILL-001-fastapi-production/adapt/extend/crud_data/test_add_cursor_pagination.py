@@ -377,6 +377,52 @@ def test_next_steps_present() -> None:
 
 
 # ---------------------------------------------------------------------------
+# BUG B regression — multiword model discovery
+# ---------------------------------------------------------------------------
+
+def test_multiword_model_not_skipped() -> None:
+    """Regression: a model whose filename is all-lowercase multiword (vaccinelot.py
+    containing class VaccineLot) must be discovered and patched, not silently skipped.
+
+    Before the fix, _discover_models derived the class name from the filename via
+    ``''.join(w.capitalize() for w in stem.split('_'))``, which produced
+    'Vaccinelot' != 'VaccineLot', causing the model to be silently excluded.
+    """
+    project_dir = create_fixture_project(
+        name="cp_multiword_model",
+        models={"Order": {"code": "str"}, "VaccineLot": {"lot": "str"}},
+    )
+    result = add_cursor_pagination(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success"
+    # Both models must appear in the success notes
+    notes_combined = " ".join(result.notes or [])
+    assert "VaccineLot" in notes_combined, (
+        f"VaccineLot not in notes — multiword model was skipped. Notes: {result.notes}"
+    )
+    # VaccineLot CRUD must have get_multi_cursor patched in
+    crud_files = list((project_dir / "app" / "crud").glob("vaccinelot*.py"))
+    assert crud_files, "No CRUD file found for VaccineLot model"
+    assert "get_multi_cursor" in crud_files[0].read_text(), (
+        "VaccineLot CRUD file missing get_multi_cursor — multiword model was skipped"
+    )
+
+
+def test_flat_model_still_discovered_alongside_multiword() -> None:
+    """Flat model (Order) must still be discovered when a multiword model coexists."""
+    project_dir = create_fixture_project(
+        name="cp_flat_alongside_multiword",
+        models={"Order": {"code": "str"}, "VaccineLot": {"lot": "str"}},
+    )
+    result = add_cursor_pagination(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success"
+    crud_order = project_dir / "app" / "crud" / "order.py"
+    assert crud_order.exists(), "crud/order.py not found"
+    assert "get_multi_cursor" in crud_order.read_text(), (
+        "Order CRUD missing get_multi_cursor"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner (fallback when pytest is unavailable)
 # ---------------------------------------------------------------------------
 

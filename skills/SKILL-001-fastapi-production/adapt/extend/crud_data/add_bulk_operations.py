@@ -225,11 +225,13 @@ def _discover_models(app_dir: Path) -> list[str]:
             continue
         if stem not in available_routes:
             continue
-        pascal = "".join(w.capitalize() for w in stem.split("_"))
         try:
             tree = ast.parse(f.read_text())
         except SyntaxError:
             continue
+        # Collect the real class names that inherit from Base — avoids the
+        # filename-capitalisation bug where e.g. vaccinelot.py → "Vaccinelot"
+        # misses the actual class "VaccineLot".
         base_subclasses = [
             n.name for n in ast.walk(tree)
             if isinstance(n, ast.ClassDef)
@@ -239,8 +241,7 @@ def _discover_models(app_dir: Path) -> list[str]:
                 for b in n.bases
             )
         ]
-        if pascal in base_subclasses:
-            names.append(pascal)
+        names.extend(base_subclasses)
     return names
 
 
