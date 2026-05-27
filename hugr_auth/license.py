@@ -26,6 +26,7 @@ from __future__ import annotations
 import base64
 import hmac
 import json
+import secrets
 import time
 from hashlib import sha256
 
@@ -70,6 +71,7 @@ def mint_license(
     if not seat:
         raise LicenseError("seat must be non-empty")
     payload = {
+        "jti": secrets.token_hex(8),  # unique key id, so a single key can be revoked
         "seat": seat,
         "plan": plan,
         "scopes": list(scopes or ["hugr:tools"]),
@@ -115,6 +117,8 @@ def introspect_license(
 
     return {
         "client_id": payload.get("seat", "hugr"),
+        "seat": payload.get("seat", "hugr"),
+        "jti": payload.get("jti", ""),
         "plan": payload.get("plan", "pro"),
         "scopes": list(payload.get("scopes", ["hugr:tools"])),
         "expires_at": exp,

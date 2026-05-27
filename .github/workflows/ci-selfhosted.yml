@@ -123,6 +123,10 @@ jobs:
         working-directory: .
         run: PYTHONPATH=. skills/SKILL-001-fastapi-production/.venv/bin/python hugr_auth/test_license.py
 
+      - name: HuGR auth store (real-time revocation)
+        working-directory: .
+        run: PYTHONPATH=. skills/SKILL-001-fastapi-production/.venv/bin/python hugr_auth/test_store.py
+
       - name: MCP discovery (>=170 tools)
         run: |
           .venv/bin/python - <<'PY'
