@@ -166,14 +166,30 @@ def test_crud_delete_soft_deletes_not_hard_deletes() -> None:
     )
 
 
-def test_crud_get_multi_active_filters_deleted() -> None:
-    """BUG C regression: CRUD must provide get_multi_active filtering is_deleted=True rows."""
-    p = create_fixture_project(name="sd_bugc_getmulti")
+def test_crud_reads_filter_deleted() -> None:
+    """e2e 02_crud_lifecycle regression: BOTH read paths must hide soft-deleted rows.
+
+    The first soft-delete rewrite overrode only delete() and added a dead
+    get_multi_active() no route called, so GET-by-id of a soft-deleted row still
+    returned 200 and list responses leaked soft-deleted rows.  The read paths the
+    routes actually import are get() and get_multi(); both must be shadowed under
+    those names (with the crud.<fn> aliases neutralized) and filter is_deleted.
+    """
+    p = create_fixture_project(name="sd_reads_filter")
     add_soft_delete(ToolInput(project_dir=str(p)))
     crud_file = p / "app" / "crud" / "item.py"
     content = crud_file.read_text()
-    assert "get_multi_active" in content, "CRUD must have get_multi_active() filtering soft-deleted rows"
-    assert "is_deleted == False" in content, "get_multi_active must filter is_deleted == False"
+
+    # Both read entry points the routes import must be overridden by name.
+    assert "async def get(" in content, "CRUD must override get() so GET-by-id of a soft-deleted row 404s"
+    assert "async def get_multi(" in content, "CRUD must override get_multi() to exclude soft-deleted rows"
+    assert content.count("is_deleted == False") >= 3, (
+        "get(), get_multi() and delete() must each filter is_deleted == False"
+    )
+    # The CRUDBase re-export aliases must be neutralized so the overrides win.
+    assert "# get = crud.get" in content, "get = crud.get alias must be neutralized"
+    assert "# get_multi = crud.get_multi" in content, "get_multi alias must be neutralized"
+    assert "# delete = crud.delete" in content, "delete = crud.delete alias must be neutralized"
 
 
 def test_model_file_still_parses_after_injection() -> None:
@@ -222,7 +238,7 @@ if __name__ == "__main__":
         test_is_deleted_column_injected_into_model,
         test_migration_added_for_is_deleted,
         test_crud_delete_soft_deletes_not_hard_deletes,
-        test_crud_get_multi_active_filters_deleted,
+        test_crud_reads_filter_deleted,
         test_model_file_still_parses_after_injection,
         test_soft_delete_works_on_multiword_model,
         test_migration_is_valid_python,
