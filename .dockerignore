@@ -1,0 +1,37 @@
+# Build-context trim for deploy/auth.Dockerfile (context = repo root).
+# The auth image needs ONLY the hugr_auth/ package + deploy/requirements-auth.txt.
+# Keep everything else out: smaller context, faster builds, no secret/source leak.
+
+# The whole skill catalog is a separate image (built from its own dir).
+skills/
+agents/
+examples/
+evidence/
+docs/
+tools/
+
+# Local secrets / state — must never enter an image layer.
+deploy/.env
+.env
+*.db
+*.sqlite
+subs.json
+
+# VCS / tooling / caches
+.git/
+.github/
+.githooks/
+.claude/
+**/__pycache__/
+**/*.pyc
+.venv/
+**/.venv/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# Docs at repo root (not needed at runtime)
+*.md
+LICENSE
+VERSION
+install.sh
