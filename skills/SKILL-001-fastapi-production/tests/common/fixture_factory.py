@@ -15,7 +15,9 @@ Typical usage inside a test::
 from __future__ import annotations
 
 import ast
+import atexit
 import secrets
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -27,6 +29,26 @@ from generators.orchestrator import generate_project
 # accepts it. Regenerating per-process keeps tests isolated from a
 # stale value baked into a previous run.
 _FIXTURE_SECRET_KEY: str = secrets.token_hex(32)
+
+# Throwaway project dirs this factory created with its own mkdtemp (i.e. when
+# the caller passed tmp_dir=None). The suite scaffolds thousands of these; if
+# never removed they leak GBs (≈2 GB/run) — fine on an ephemeral CI VM, but on a
+# persistent self-hosted runner they fill the disk. Callers don't own these
+# dirs, so the factory tracks them and `purge_tracked_dirs()` reclaims them.
+# An atexit hook is the backstop for standalone runs (audit_l1 / `python tests/
+# foo.py`); pytest runs also purge per test-module via conftest for a tighter
+# bound during the run.
+_TRACKED_DIRS: list[Path] = []
+
+
+def purge_tracked_dirs() -> None:
+    """Delete every factory-created mkdtemp dir tracked so far, then forget them."""
+    while _TRACKED_DIRS:
+        d = _TRACKED_DIRS.pop()
+        shutil.rmtree(d, ignore_errors=True)
+
+
+atexit.register(purge_tracked_dirs)
 
 
 def create_fixture_project(
@@ -67,7 +89,11 @@ def create_fixture_project(
         models = {"Item": {"title": "str", "description": "str"}}
 
     if tmp_dir is None:
-        output_dir = Path(tempfile.mkdtemp()) / name
+        # Factory owns this dir → track it for purge_tracked_dirs(). When the
+        # caller supplies tmp_dir they own its lifecycle, so we don't track it.
+        base = Path(tempfile.mkdtemp())
+        _TRACKED_DIRS.append(base)
+        output_dir = base / name
     else:
         output_dir = Path(tmp_dir) / name
 
