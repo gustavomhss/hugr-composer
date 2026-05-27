@@ -34,22 +34,46 @@ _SA_TYPE_MAP: dict[str, str] = {
 }
 
 
+def _resolve_fk_model_migration(stem: str, known_models: dict[str, dict] | None) -> str | None:
+    """Return the matching model name for a *_id field stem, or None.
+
+    Mirrors generators/database/model.py::_resolve_fk_model — kept as a local
+    copy so each module remains importable independently.
+    """
+    if not known_models:
+        return None
+    normalised = stem.lower().replace("_", "")
+    for model_name in known_models:
+        if model_name.lower().replace("_", "") == normalised:
+            return model_name
+    return None
+
+
 def _column_for(
     field_name: str,
     field_type: str,
     *,
     table_name: str = "",
+    known_models: dict[str, dict] | None = None,
 ) -> str:
     """Render a single ``sa.Column(...)`` entry for a migration upgrade block."""
-    # Foreign key: auto-detect *_id fields (matches generators/database/model.py).
+    # Foreign key: only emit ForeignKey when the stem matches a real model in
+    # known_models.  Without this guard, a plain ``tracking_id: "str"`` field
+    # would produce a FK to a non-existent ``trackings`` table and crash
+    # ``Base.metadata.create_all`` with NoReferencedTableError.
     if field_name.endswith("_id") and field_name != "id":
-        referenced = pluralize(field_name[:-3])
-        ondelete = "CASCADE"
-        return (
-            f'        sa.Column("{field_name}", sa.Uuid(), '
-            f'sa.ForeignKey("{referenced}.id", ondelete="{ondelete}"), '
-            f"nullable=False),"
-        )
+        stem = field_name[:-3]
+        matched_model = _resolve_fk_model_migration(stem, known_models)
+        if matched_model is not None:
+            # Derive table name identically to generate_model's __tablename__
+            referenced = pluralize(matched_model.lower())
+            ondelete = "CASCADE"
+            return (
+                f'        sa.Column("{field_name}", sa.Uuid(), '
+                f'sa.ForeignKey("{referenced}.id", ondelete="{ondelete}"), '
+                f"nullable=False),"
+            )
+        # else: fall through and emit a normal typed column
 
     sa_type = _SA_TYPE_MAP.get(field_type, "sa.String(length=255)")
 
@@ -85,6 +109,7 @@ def _table_block(
     *,
     with_owner: bool,
     with_timestamps: bool = True,
+    known_models: dict[str, dict] | None = None,
 ) -> str:
     """Render an ``op.create_table(...)`` block for a single model."""
     lines: list[str] = []
@@ -95,7 +120,7 @@ def _table_block(
     )
 
     for field_name, field_type in fields.items():
-        lines.append(_column_for(field_name, field_type, table_name=table_name))
+        lines.append(_column_for(field_name, field_type, table_name=table_name, known_models=known_models))
 
     if with_owner:
         lines.append(
@@ -186,14 +211,16 @@ def generate_baseline_migration(
         ))
 
     # Separate models by whether they have FK dependencies on other domain models
-    # to ensure creation order is topologically valid.
+    # to ensure creation order is topologically valid.  Use the same normalised
+    # matching as _resolve_fk_model_migration so multi-word models are handled
+    # correctly (``vaccine_lot_id`` → ``VaccineLot``, not ``Vaccine_lot``).
     independent: list[tuple[str, dict[str, str], bool]] = []
     dependent: list[tuple[str, dict[str, str], bool]] = []
     for model_name, fields in models.items():
         has_domain_fk = any(
             fname.endswith("_id")
             and fname != "id"
-            and fname[:-3].capitalize() in models
+            and _resolve_fk_model_migration(fname[:-3], models) is not None
             for fname in fields
         )
         owner = model_name in owner_models
@@ -210,7 +237,7 @@ def generate_baseline_migration(
 
     for table_name, model_name, fields, owner in tables_in_order:
         upgrade_blocks.append(
-            _table_block(table_name, model_name, fields, with_owner=owner)
+            _table_block(table_name, model_name, fields, with_owner=owner, known_models=models)
         )
 
     upgrade_body = "\n\n".join(upgrade_blocks) if upgrade_blocks else "    pass"

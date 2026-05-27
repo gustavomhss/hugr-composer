@@ -33,6 +33,27 @@ _TYPE_MAP: dict[str, tuple[str, str]] = {
 }
 
 
+def _resolve_fk_model(stem: str, known_models: dict[str, dict] | None) -> str | None:
+    """Return the matching model name for a *_id field stem, or None.
+
+    Compares *stem* (e.g. ``"vaccine_lot"``) against the keys of *known_models*
+    by normalising both sides to lowercase with all underscores removed
+    (``"vaccine_lot"`` → ``"vaccinelot"`` matches ``"VaccineLot"``).
+
+    Returns the *original* model name (preserving its capitalisation) so the
+    caller can derive the table name with the same ``pluralize(name.lower())``
+    call used when that model's own table is created — guaranteeing the FK
+    target always matches the real table name.
+    """
+    if not known_models:
+        return None
+    normalised = stem.lower().replace("_", "")
+    for model_name in known_models:
+        if model_name.lower().replace("_", "") == normalised:
+            return model_name
+    return None
+
+
 def generate_model(
     output_dir: str,
     name: str,
@@ -40,6 +61,7 @@ def generate_model(
     with_timestamps: bool = True,
     with_soft_delete: bool = False,
     owner_field: str | None = None,
+    known_models: dict[str, dict] | None = None,
 ) -> dict:
     """Generate a SQLAlchemy ORM model file.
 
@@ -51,6 +73,12 @@ def generate_model(
         with_soft_delete: Add is_deleted / deleted_at columns.
         owner_field: If set, adds an ``owner_id`` UUID FK pointing to the
             given table name (e.g. ``"user"``).
+        known_models: The full set of models in this project (passed from the
+            orchestrator).  A field ending in ``_id`` is ONLY turned into a
+            ForeignKey when its stem matches a model name in this dict.  If
+            *known_models* is ``None`` or the stem has no match, the field
+            keeps its declared type (e.g. ``tracking_id: "str"`` stays
+            ``String(255)``).
 
     Returns:
         Dict with files_created and notes.
@@ -74,7 +102,16 @@ def generate_model(
     class_name = name if name[0].isupper() else name.capitalize()
 
     # --- Detect FK fields (*_id auto-detection) ----------------------------
-    # A field named like ``product_id`` becomes a ForeignKey to ``products.id``.
+    # A field named like ``product_id`` becomes a ForeignKey ONLY when the
+    # stem (the part before "_id") matches a model that actually EXISTS in
+    # the same project (known_models).  This prevents phantom FKs for fields
+    # like ``tracking_id: "str"`` where there is no "Tracking" model.
+    #
+    # The referenced table name is derived from the *matched model's own name*
+    # via ``pluralize(model_name.lower())``, which is exactly how that model's
+    # ``__tablename__`` is set — so multi-word models like ``VaccineLot``
+    # produce ``vaccinelots`` on both sides and never mismatch.
+    #
     # ``owner_id`` is handled separately via the owner_field parameter so we
     # skip it here to avoid double-generation.
     fk_fields: dict[str, str] = {}
@@ -84,8 +121,13 @@ def generate_model(
             and field_name != "id"
             and field_name != "owner_id"
         ):
-            referenced_table = pluralize(field_name[:-3])
-            fk_fields[field_name] = referenced_table
+            stem = field_name[:-3]
+            matched_model = _resolve_fk_model(stem, known_models)
+            if matched_model is not None:
+                # Derive table name the same way the model's own __tablename__ is set
+                referenced_table = pluralize(matched_model.lower())
+                fk_fields[field_name] = referenced_table
+            # else: no matching model → field keeps its declared type (not a FK)
 
     # --- Detect CheckConstraint candidates (rating 1..5) -------------------
     has_rating_check = (
