@@ -208,8 +208,14 @@ def _discover_models_with_fields(app_dir: Path) -> dict[tuple[str, str], list[st
     """Return ``(snake_stem, PascalName)`` pairs mapped to their text field names.
 
     Only includes models where:
-    1. The file contains a class named ``{pascal}`` inheriting from ``Base``.
+    1. The file contains at least one class inheriting from ``Base``.
     2. A matching route file ``app/api/routes/{stem}.py`` exists.
+
+    The PascalCase class name is read from the AST directly — NOT derived from
+    the filename.  Filename-derived names are wrong for multi-word model names
+    whose file is stored without underscores (e.g. ``vaccinelot.py`` contains
+    class ``VaccineLot``).  Using the real class name prevents those models from
+    being silently skipped.
 
     Falls back to ``["title", "description"]`` if the model has no text fields.
 
@@ -221,7 +227,7 @@ def _discover_models_with_fields(app_dir: Path) -> dict[tuple[str, str], list[st
     """
     models_dir = app_dir / "models"
     routes_dir = app_dir / "api" / "routes"
-    skip = {"base", "user", "mixins", "__init__"}
+    skip = {"base", "user", "mixins", "__init__", "tenant"}
     result: dict[tuple[str, str], list[str]] = {}
     available_routes: set[str] = set()
     if routes_dir.exists():
@@ -235,12 +241,17 @@ def _discover_models_with_fields(app_dir: Path) -> dict[tuple[str, str], list[st
             continue
         if stem not in available_routes:
             continue
-        pascal = "".join(w.capitalize() for w in stem.split("_"))
         src = f.read_text()
         try:
             tree = ast.parse(src)
         except SyntaxError:
             continue
+        # BUG B FIX: use the ACTUAL class names parsed from the AST instead of
+        # deriving the name from the filename.  Filename-to-pascal conversion
+        # ("".join(w.capitalize() for w in stem.split("_"))) produces "Vaccinelot"
+        # for file "vaccinelot.py", but the real class may be "VaccineLot", so
+        # the old check `if pascal not in base_subclasses` always failed for such
+        # models and they were silently skipped.
         base_subclasses = [
             n.name for n in ast.walk(tree)
             if isinstance(n, ast.ClassDef)
@@ -250,8 +261,15 @@ def _discover_models_with_fields(app_dir: Path) -> dict[tuple[str, str], list[st
                 for b in n.bases
             )
         ]
-        if pascal not in base_subclasses:
+        # Keep only the class canonical for THIS file (name.lower() == stem):
+        # preserves multiword models (vaccinelot.py → VaccineLot) while skipping
+        # multi-class files (chat.py holds ChatRoom + ChatMessage, neither ==
+        # "chat") that have no standard crud/route/schema module — which would
+        # otherwise emit broken `app.crud.<lower>` imports. Keeps lower == stem.
+        base_subclasses = [c for c in base_subclasses if c.lower() == stem]
+        if not base_subclasses:
             continue
+        pascal = base_subclasses[0]
         # Collect str / String / Text column names from mapped_column lines
         fields = _extract_text_fields(src)
         result[(stem, pascal)] = fields if fields else ["title", "description"]
@@ -325,6 +343,7 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
         # ---------------------------------------------------------------------------
         import uuid as _search_uuid
         from sqlalchemy import func as _func, select as _select, text as _text, or_ as _or
+        from sqlalchemy.dialects.postgresql import REGCONFIG as _REGCONFIG
         from sqlalchemy.ext.asyncio import AsyncSession as _SearchSession
 
         # Columns used for search (same as tsvector fields, for LIKE fallback)
@@ -447,8 +466,12 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
             owner_id: "_search_uuid.UUID | None",
             language: str,
         ) -> dict:
-            \"\"\"PostgreSQL FTS path: tsvector + GIN + ts_rank_cd.\"\"\"
-            tsquery_expr = _func.websearch_to_tsquery(_text("'" + language + "'"), q)
+            \"\"\"PostgreSQL FTS path: tsvector + GIN + ts_rank_cd.
+
+            The ``language`` parameter is passed as a bound value cast to
+            ``regconfig`` — never string-concatenated into raw SQL.
+            \"\"\"
+            tsquery_expr = _func.websearch_to_tsquery(_func.cast(language, _REGCONFIG), q)
             tv = _build_search_tsvector(language)
             rank_expr = _func.ts_rank_cd(tv, tsquery_expr).label("rank")
             stmt = _select(MODEL_NAME_CLS, rank_expr).where(tv.op("@@")(tsquery_expr))
@@ -546,7 +569,7 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
 
             first_token = q.strip().split()[0]
             prefix_query = _func.to_tsquery(
-                _text("'" + language + "'"),
+                _func.cast(language, _REGCONFIG),
                 _text("'" + first_token + ":*'"),
             )
             tv = _build_search_tsvector(language)
@@ -568,12 +591,16 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
     # Weight labels must be wrapped as SQL string literals ('A', not A) —
     # PostgreSQL treats bare A as an identifier and raises "column 'a' does
     # not exist". _text(\"'A'\") produces the quoted literal in the emitted SQL.
+    #
+    # BUG A FIX: the language name is cast to regconfig via _func.cast(lang, _REGCONFIG)
+    # instead of string-concatenated into _text("'...'"). The cast form emits
+    # CAST(? AS regconfig) with a bound parameter — no SQL injection possible.
     field_vec_lines = []
     weight_labels_bare = ["A", "B", "C", "D"]
     for i, field in enumerate(text_fields[:4]):
         label = weight_labels_bare[i]
         field_vec_lines.append(
-            "    _func.setweight(_func.to_tsvector(_text(\"'\" + lang + \"'\"),"
+            "    _func.setweight(_func.to_tsvector(_func.cast(lang, _REGCONFIG),"
             + f" _func.coalesce({model_name}.{field}, '')), _text(\"'{label}'\")),"
         )
     field_vecs_block = "[\n" + "\n".join(field_vec_lines) + "\n    ]"
@@ -703,17 +730,23 @@ def _patch_routes(route_file: Path, model_name: str) -> None:
     if "async def search_" in src or "/search" in src:
         return
 
-    lower = model_name.lower()
+    # Module paths follow the FILE STEM, not model_name.lower(): a file may hold
+    # a multi-word class (vaccinelot.py → VaccineLot) or several classes
+    # (chat.py → ChatRoom, ChatMessage), so model_name.lower() ("chatroom")
+    # would point at a non-existent module while the real module is the stem
+    # ("chat"). Class names still use model_name (PascalCase).
+    stem = route_file.stem
+    lower = model_name.lower()  # used for route function names in the body below
 
     # Build import header — flat single-line imports to avoid duplicate
     # "from app.crud.X import (" opening lines when multiple tools patch the
     # same route file.  Only include lines not already present.
     import_header_lines = [
-        f"from app.crud.{lower} import search as _crud_search",
-        f"from app.crud.{lower} import autocomplete as _crud_autocomplete",
-        f"from app.schemas.{lower} import {model_name}_SearchResponse",
-        f"from app.schemas.{lower} import {model_name}_SearchResultItem",
-        f"from app.schemas.{lower} import {model_name}_AutocompleteResult",
+        f"from app.crud.{stem} import search as _crud_search",
+        f"from app.crud.{stem} import autocomplete as _crud_autocomplete",
+        f"from app.schemas.{stem} import {model_name}_SearchResponse",
+        f"from app.schemas.{stem} import {model_name}_SearchResultItem",
+        f"from app.schemas.{stem} import {model_name}_AutocompleteResult",
         "from fastapi import HTTPException",
         "from fastapi import Query as _SearchQuery",
     ]

@@ -230,7 +230,7 @@ def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
     """
     models_dir = app_dir / "models"
     routes_dir = app_dir / "api" / "routes"
-    skip = {"base", "user", "mixins", "__init__"}
+    skip = {"base", "user", "mixins", "__init__", "tenant"}
     pairs: list[tuple[str, str]] = []
     available_routes: set[str] = set()
     if routes_dir.exists():
@@ -243,11 +243,13 @@ def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
             continue
         if stem not in available_routes:
             continue
-        pascal = "".join(w.capitalize() for w in stem.split("_"))
         try:
             tree = ast.parse(f.read_text())
         except SyntaxError:
             continue
+        # Collect the real class names that inherit from Base — avoids the
+        # filename-capitalisation bug where e.g. vaccinelot.py → "Vaccinelot"
+        # misses the actual class "VaccineLot".
         base_subclasses = [
             n.name for n in ast.walk(tree)
             if isinstance(n, ast.ClassDef)
@@ -257,8 +259,11 @@ def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
                 for b in n.bases
             )
         ]
-        if pascal in base_subclasses:
-            pairs.append((stem, pascal))
+        # Only the class canonical for this file (name.lower() == stem): keeps
+        # multiword models, skips multi-class files lacking standard modules.
+        base_subclasses = [c for c in base_subclasses if c.lower() == stem]
+        for real_name in base_subclasses:
+            pairs.append((stem, real_name))
     return pairs
 
 

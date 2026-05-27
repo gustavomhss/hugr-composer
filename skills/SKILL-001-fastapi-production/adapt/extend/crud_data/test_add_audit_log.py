@@ -123,6 +123,96 @@ def test_execution_time_recorded() -> None:
     assert r.execution_time_ms > 0
 
 
+# ---------------------------------------------------------------------------
+# BUG A regression tests — audit log must be wired, not just copied
+# ---------------------------------------------------------------------------
+
+def test_main_py_calls_install_audit_log() -> None:
+    """Regression: app/main.py must call install_audit_log(app) after tool runs.
+
+    Before the fix the tool returned success but never wired the audit log
+    into main.py, making the feature silently inactive.
+    """
+    project_dir = create_fixture_project(name="al_t11")
+    add_audit_log(ToolInput(project_dir=str(project_dir)))
+    main = project_dir / "app" / "main.py"
+    assert main.exists(), "main.py missing from fixture project"
+    content = main.read_text()
+    assert "install_audit_log(app)" in content, (
+        "main.py must call install_audit_log(app) — audit log was not wired"
+    )
+
+
+def test_main_py_imports_install_audit_log() -> None:
+    """Regression: main.py must import install_audit_log from app.audit_log."""
+    project_dir = create_fixture_project(name="al_t12")
+    add_audit_log(ToolInput(project_dir=str(project_dir)))
+    main = project_dir / "app" / "main.py"
+    content = main.read_text()
+    assert "from app.audit_log import install_audit_log" in content, (
+        "main.py must import install_audit_log"
+    )
+
+
+def test_glue_no_hardcoded_secret() -> None:
+    """Regression: audit_log.py must NOT contain the 'change-me' placeholder secret.
+
+    The old implementation silently fell back to a hardcoded placeholder when
+    AUDIT_LOG_HMAC_SECRET was absent, undermining tamper-evidence guarantees.
+    """
+    project_dir = create_fixture_project(name="al_t13")
+    add_audit_log(ToolInput(project_dir=str(project_dir)))
+    glue = project_dir / "app" / "audit_log.py"
+    assert glue.exists()
+    content = glue.read_text()
+    assert "change-me" not in content, (
+        "audit_log.py must not contain 'change-me' placeholder secret"
+    )
+
+
+def test_glue_secret_derives_from_settings_not_hardcoded() -> None:
+    """Regression: audit HMAC key is never hardcoded and never silently absent.
+
+    The original bug fell back to a hardcoded "change-me" secret. The fix
+    resolves the key from an optional AUDIT_LOG_HMAC_SECRET env override, else
+    derives it (domain-separated) from the app's entropy-checked SECRET_KEY —
+    so the chain always has a real key AND the app still boots under the kit's
+    standard .env workflow (no RuntimeError that breaks .env-based startup).
+    """
+    project_dir = create_fixture_project(name="al_t14")
+    add_audit_log(ToolInput(project_dir=str(project_dir)))
+    content = (project_dir / "app" / "audit_log.py").read_text()
+    assert "change-me" not in content
+    assert "settings.SECRET_KEY" in content, "audit key must derive from SECRET_KEY"
+    assert "AUDIT_LOG_HMAC_SECRET" in content, "env override must still be honored"
+
+
+def test_idempotent_wiring() -> None:
+    """Regression: running the tool twice must not double-insert the wiring."""
+    project_dir = create_fixture_project(name="al_t15")
+    add_audit_log(ToolInput(project_dir=str(project_dir)))
+    add_audit_log(ToolInput(project_dir=str(project_dir)))
+    main = project_dir / "app" / "main.py"
+    content = main.read_text()
+    # install_audit_log(app) should appear exactly once
+    count = content.count("install_audit_log(app)")
+    assert count == 1, (
+        f"install_audit_log(app) appears {count} times in main.py; expected exactly 1"
+    )
+
+
+def test_files_modified_lists_main_py() -> None:
+    """Regression: files_modified must include main.py to report the wiring."""
+    project_dir = create_fixture_project(name="al_t16")
+    r = add_audit_log(ToolInput(project_dir=str(project_dir)))
+    assert r.status == "success"
+    assert r.files_modified, "files_modified should list main.py after wiring"
+    modified_names = [Path(p).name for p in r.files_modified]
+    assert "main.py" in modified_names, (
+        f"main.py missing from files_modified; got: {modified_names}"
+    )
+
+
 if __name__ == "__main__":
     tests = [v for k, v in list(globals().items()) if k.startswith("test_") and callable(v)]
     passed = failed = 0

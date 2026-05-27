@@ -387,6 +387,33 @@ def test_schema_bulk_response_has_config_dict() -> None:
 
 
 # ---------------------------------------------------------------------------
+# BUG B regression — multiword model discovery
+# ---------------------------------------------------------------------------
+
+def test_multiword_model_bulk_ops_not_skipped() -> None:
+    """Regression: multiword model (VaccineLot in vaccinelot.py) must be patched.
+
+    Before the fix, _discover_models derived 'Vaccinelot' from the filename
+    which didn't match the actual class 'VaccineLot', silently skipping it.
+    """
+    project_dir = create_fixture_project(
+        name="bulk_multiword_model",
+        models={"Order": {"code": "str"}, "VaccineLot": {"lot": "str"}},
+    )
+    result = add_bulk_operations(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success"
+    notes_combined = " ".join(result.notes or [])
+    assert "VaccineLot" in notes_combined, (
+        f"VaccineLot not in notes — multiword model was skipped. Notes: {result.notes}"
+    )
+    crud_files = list((project_dir / "app" / "crud").glob("vaccinelot*.py"))
+    assert crud_files, "No CRUD file found for VaccineLot model"
+    assert "bulk_create" in crud_files[0].read_text(), (
+        "VaccineLot CRUD missing bulk_create — multiword model was skipped"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner (fallback when pytest is unavailable)
 # ---------------------------------------------------------------------------
 
