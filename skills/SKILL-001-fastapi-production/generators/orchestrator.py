@@ -330,6 +330,9 @@ def generate_project(
                 name=model_name,
                 fields=fields,
                 owner_field=owner,
+                # Pass the full model registry so generate_model can distinguish
+                # real cross-model FKs from plain *_id scalar fields.
+                known_models=models,
             ))
 
     # User model (always generated when auth is enabled)
