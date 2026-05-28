@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "74207df",
-  "generated_at": "2026-05-28T16:03:00+00:00",
+  "kit_commit": "26ed4c4",
+  "generated_at": "2026-05-28T19:04:18+00:00",
   "verbs": [
     "add",
     "generate",
@@ -826,10 +826,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/crud_data/add_cursor_pagination.py",
-      "test_paths": [
-        "adapt/extend/crud_data/test_add_cursor_pagination.py"
-      ],
+      "module_path": "adapt/extend/crud_data/add_cursor_pagination/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -11764,5 +11762,5 @@
     "primitives": 299,
     "recipes": 392
   },
-  "stable_hash": "c9d1f67e7060f10123883940c2692d6b208417c3731c6254118aa84a3038d192"
+  "stable_hash": "e1a42b7cc29b09317801d6095a7023662332d271bfa01712ce8f724ad2d52643"
 }

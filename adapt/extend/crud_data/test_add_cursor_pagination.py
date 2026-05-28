@@ -18,16 +18,17 @@ import ast
 import base64
 import json
 import sys
+from datetime import UTC
 from pathlib import Path
 
 from adapt.contracts import ToolInput
 from adapt.extend.crud_data.add_cursor_pagination import add_cursor_pagination
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _all_py_files(root: Path) -> list[Path]:
     return sorted(root.rglob("*.py"))
@@ -45,6 +46,7 @@ def _assert_parse(root: Path) -> None:
 # ---------------------------------------------------------------------------
 # Test cases
 # ---------------------------------------------------------------------------
+
 
 def test_success_status() -> None:
     """T-01: Tool returns status='success' on a fresh project."""
@@ -96,17 +98,20 @@ def test_cursor_paginator_created() -> None:
 def test_encode_cursor_returns_urlsafe() -> None:
     """CC-02: encode_cursor returns URL-safe base64 — no +, /, or = characters."""
     import re
+
     project_dir = create_fixture_project(name="cp_t06_urlsafe")
     add_cursor_pagination(ToolInput(project_dir=str(project_dir)))
     cursor_file = project_dir / "app" / "core" / "cursor.py"
     assert cursor_file.exists()
     # Import and test the generated function directly
     import importlib.util
+
     spec = importlib.util.spec_from_file_location("cursor_mod", cursor_file)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    from datetime import datetime, timezone
-    encoded = mod.encode_cursor("created_at", datetime(2026, 1, 1, tzinfo=timezone.utc))
+    from datetime import datetime
+
+    encoded = mod.encode_cursor("created_at", datetime(2026, 1, 1, tzinfo=UTC))
     assert "+" not in encoded
     assert "/" not in encoded
     assert "=" not in encoded
@@ -119,11 +124,13 @@ def test_decode_cursor_round_trip() -> None:
     add_cursor_pagination(ToolInput(project_dir=str(project_dir)))
     cursor_file = project_dir / "app" / "core" / "cursor.py"
     import importlib.util
+
     spec = importlib.util.spec_from_file_location("cursor_mod2", cursor_file)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    from datetime import datetime, timezone
-    encoded = mod.encode_cursor("created_at", datetime(2026, 4, 1, tzinfo=timezone.utc))
+    from datetime import datetime
+
+    encoded = mod.encode_cursor("created_at", datetime(2026, 4, 1, tzinfo=UTC))
     decoded = mod.decode_cursor(encoded)
     assert decoded["field"] == "created_at"
     assert decoded["value"] is not None
@@ -135,6 +142,7 @@ def test_decode_cursor_rejects_malformed_base64() -> None:
     add_cursor_pagination(ToolInput(project_dir=str(project_dir)))
     cursor_file = project_dir / "app" / "core" / "cursor.py"
     import importlib.util
+
     spec = importlib.util.spec_from_file_location("cursor_mod3", cursor_file)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -152,6 +160,7 @@ def test_decode_cursor_rejects_invalid_json() -> None:
     add_cursor_pagination(ToolInput(project_dir=str(project_dir)))
     cursor_file = project_dir / "app" / "core" / "cursor.py"
     import importlib.util
+
     spec = importlib.util.spec_from_file_location("cursor_mod4", cursor_file)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -170,6 +179,7 @@ def test_decode_cursor_rejects_oversized() -> None:
     add_cursor_pagination(ToolInput(project_dir=str(project_dir)))
     cursor_file = project_dir / "app" / "core" / "cursor.py"
     import importlib.util
+
     spec = importlib.util.spec_from_file_location("cursor_mod5", cursor_file)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -189,12 +199,13 @@ def test_decode_cursor_rejects_missing_keys() -> None:
     add_cursor_pagination(ToolInput(project_dir=str(project_dir)))
     cursor_file = project_dir / "app" / "core" / "cursor.py"
     import importlib.util
+
     spec = importlib.util.spec_from_file_location("cursor_mod6", cursor_file)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    bad_payload = base64.urlsafe_b64encode(
-        json.dumps({"x": 1}).encode()
-    ).decode("ascii").rstrip("=")
+    bad_payload = (
+        base64.urlsafe_b64encode(json.dumps({"x": 1}).encode()).decode("ascii").rstrip("=")
+    )
     raised = False
     try:
         mod.decode_cursor(bad_payload)
@@ -380,6 +391,7 @@ def test_next_steps_present() -> None:
 # BUG B regression — multiword model discovery
 # ---------------------------------------------------------------------------
 
+
 def test_multiword_model_not_skipped() -> None:
     """Regression: a model whose filename is all-lowercase multiword (vaccinelot.py
     containing class VaccineLot) must be discovered and patched, not silently skipped.
@@ -417,9 +429,32 @@ def test_flat_model_still_discovered_alongside_multiword() -> None:
     assert result.status == "success"
     crud_order = project_dir / "app" / "crud" / "order.py"
     assert crud_order.exists(), "crud/order.py not found"
-    assert "get_multi_cursor" in crud_order.read_text(), (
-        "Order CRUD missing get_multi_cursor"
-    )
+    assert "get_multi_cursor" in crud_order.read_text(), "Order CRUD missing get_multi_cursor"
+
+
+# ---------------------------------------------------------------------------
+# WAVE0-F1 regression — new behaviour added by per-tool-dir migration
+# ---------------------------------------------------------------------------
+
+
+def test_emitted_test_file_created() -> None:
+    """WAVE0-F1: tool emits tests/test_cursor_pagination.py."""
+    project_dir = create_fixture_project(name="cp_emitted_test")
+    add_cursor_pagination(ToolInput(project_dir=str(project_dir)))
+    emitted = project_dir / "tests" / "test_cursor_pagination.py"
+    assert emitted.exists(), "tool must emit tests/test_cursor_pagination.py"
+    ast.parse(emitted.read_text())
+
+
+def test_idempotency_partial_state_does_not_skip() -> None:
+    """Regression: cursor.py present but CRUD not patched -> 2nd run must complete missing pieces, not no_op."""
+    project_dir = create_fixture_project(name="cp_partial_state")
+    core = project_dir / "app" / "core" / "cursor.py"
+    core.parent.mkdir(parents=True, exist_ok=True)
+    core.write_text("# stub\nencode_cursor = decode_cursor = None\n")
+    result = add_cursor_pagination(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success"
+    assert any("crud" in p for p in result.files_modified)
 
 
 # ---------------------------------------------------------------------------
@@ -456,6 +491,8 @@ if __name__ == "__main__":
         test_dry_run_writes_nothing,
         test_execution_time_recorded,
         test_next_steps_present,
+        test_emitted_test_file_created,
+        test_idempotency_partial_state_does_not_skip,
     ]
 
     passed = 0

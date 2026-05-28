@@ -1,0 +1,66 @@
+"""Cursor pagination tests — emitted by the add_cursor_pagination tool.
+
+Uses only stdlib + httpx + pytest (no new emitted-project dependencies).
+"""
+
+from __future__ import annotations
+
+import base64
+import json
+from datetime import datetime, timezone
+
+import pytest
+
+from app.core.cursor import decode_cursor, encode_cursor
+
+
+def test_encode_decode_round_trip() -> None:
+    when = datetime(2026, 4, 1, tzinfo=timezone.utc)
+    cursor = encode_cursor("created_at", when, "abc-123")
+    decoded = decode_cursor(cursor)
+    assert decoded["field"] == "created_at"
+    assert decoded["value"] is not None
+    assert decoded["id"] == "abc-123"
+
+
+def test_encode_cursor_is_urlsafe() -> None:
+    cursor = encode_cursor("created_at", datetime(2026, 1, 1, tzinfo=timezone.utc))
+    assert "+" not in cursor
+    assert "/" not in cursor
+    assert "=" not in cursor
+
+
+def test_decode_rejects_bad_base64() -> None:
+    with pytest.raises(ValueError):
+        decode_cursor("!@#garbage###")
+
+
+def test_decode_rejects_non_json_payload() -> None:
+    payload = base64.urlsafe_b64encode(b"not-json").decode("ascii").rstrip("=")
+    with pytest.raises(ValueError):
+        decode_cursor(payload)
+
+
+def test_decode_rejects_oversized() -> None:
+    with pytest.raises(ValueError, match="maximum size"):
+        decode_cursor("A" * 2000)
+
+
+def test_decode_rejects_missing_required_keys() -> None:
+    payload = (
+        base64.urlsafe_b64encode(json.dumps({"x": 1}).encode())
+        .decode("ascii")
+        .rstrip("=")
+    )
+    with pytest.raises(ValueError):
+        decode_cursor(payload)
+
+
+def test_schema_has_cursor_fields() -> None:
+    from app.schemas.$stem import ${model_name}sPublic
+
+    fields = ${model_name}sPublic.model_fields
+    assert "next_cursor" in fields, "next_cursor field missing"
+    assert "has_more" in fields, "has_more field missing"
+    assert "data" in fields, "data field must be preserved"
+    assert "count" in fields, "count field must be preserved"
