@@ -92,7 +92,7 @@ packages = [
     "modules",
 ]
 exclude = [
-    "core/venous/_extracted/**",
+    "core/venous/_staging/**",
     "core/venous/**/__pycache__/**",
     "**/test_*.py",
     "**/*.pyc",
@@ -133,7 +133,7 @@ norecursedirs = [
     # project-specific
     ".venv",
     "__pycache__",
-    "_extracted",
+    "_staging",
     "_quarantine",
     ".git",
 ]
@@ -143,7 +143,7 @@ norecursedirs = [
 target-version = "py311"
 line-length = 100
 extend-exclude = [
-    "core/venous/_extracted",
+    "core/venous/_staging",
     ".venv",
 ]
 

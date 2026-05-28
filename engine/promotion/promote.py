@@ -18,6 +18,7 @@ Invariants:
       failure triggers automatic rollback.
     - Every promotion is one atomic commit — never batched.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -69,9 +70,7 @@ class PromotionPlan:
 
 def _load_ledger() -> Ledger:
     if not _LEDGER_PATH.exists():
-        raise SystemExit(
-            "ledger.json not found — run `python -m engine.promotion.classify` first."
-        )
+        raise SystemExit("ledger.json not found — run `python -m engine.promotion.classify` first.")
     return Ledger.model_validate(json.loads(_LEDGER_PATH.read_text(encoding="utf-8")))
 
 
@@ -84,7 +83,7 @@ def _lite_ratified() -> bool:
 
 
 def _find_source(entry: LedgerEntry) -> Path:
-    base = SKILL_ROOT / "core" / "venous" / "_extracted"
+    base = SKILL_ROOT / "core" / "venous" / "_staging"
     if entry.state.is_quarantined:
         return base / "_quarantine" / entry.primitive
     return base / entry.namespace / entry.primitive
@@ -121,14 +120,12 @@ def _build_registry_entry(entry: LedgerEntry, is_lite: bool) -> dict:
     }
 
 
-def _resolve_match(
-    ledger: Ledger, name: str, is_quarantined: bool | None
-) -> LedgerEntry:
+def _resolve_match(ledger: Ledger, name: str, is_quarantined: bool | None) -> LedgerEntry:
     """Select one ledger entry unambiguously, or raise with context.
 
     Handles the common case where a staged primitive appears twice
-    (once under `_extracted/<ns>/<Name>/` and once under
-    `_extracted/_quarantine/<Name>/`). Callers disambiguate via the
+    (once under `_staging/<ns>/<Name>/` and once under
+    `_staging/_quarantine/<Name>/`). Callers disambiguate via the
     `is_quarantined` hint; if ambiguous without a hint, raise with
     both candidate paths so the user can re-invoke with the right one.
     """
@@ -138,10 +135,7 @@ def _resolve_match(
     if is_quarantined is None:
         if len(matches) == 1:
             return matches[0]
-        locations = [
-            "_quarantine" if e.state.is_quarantined else e.namespace
-            for e in matches
-        ]
+        locations = ["_quarantine" if e.state.is_quarantined else e.namespace for e in matches]
         raise SystemExit(
             f"Primitive `{name}` appears {len(matches)} times in the ledger "
             f"(locations: {locations}). Re-invoke with "
@@ -149,10 +143,7 @@ def _resolve_match(
         )
     filtered = [e for e in matches if e.state.is_quarantined == is_quarantined]
     if not filtered:
-        raise SystemExit(
-            f"No ledger entry for `{name}` matches "
-            f"is_quarantined={is_quarantined}."
-        )
+        raise SystemExit(f"No ledger entry for `{name}` matches is_quarantined={is_quarantined}.")
     return filtered[0]
 
 
@@ -206,9 +197,7 @@ def plan(name: str, is_quarantined: bool | None = None) -> PromotionPlan:
             "Refusing to overwrite — resolve manually."
         )
 
-    reg_entry = (
-        {} if is_adapter else _build_registry_entry(entry, is_lite)
-    )
+    reg_entry = {} if is_adapter else _build_registry_entry(entry, is_lite)
     return PromotionPlan(
         entry=entry,
         source_dir=source,
@@ -313,9 +302,7 @@ def _execute_primitive(p: PromotionPlan, backup_root: Path) -> str:
     reg_data = yaml.safe_load(_REGISTRY_PATH.read_text(encoding="utf-8"))
     existing_names = {entry["name"] for entry in reg_data["primitives"]}
     if p.entry.primitive in existing_names:
-        raise RuntimeError(
-            f"Registry already contains `{p.entry.primitive}` — abort."
-        )
+        raise RuntimeError(f"Registry already contains `{p.entry.primitive}` — abort.")
     reg_data["primitives"].append(p.registry_entry)
     reg_data["primitives"].sort(key=lambda e: (e.get("namespace", ""), e["name"]))
     _REGISTRY_PATH.write_text(
@@ -344,10 +331,7 @@ def execute(
     print(f"\nBackup root: {backup_root}")
     is_adapter = p.entry.verdict == Verdict.PROMOTE_AS_ADAPTER
     try:
-        if is_adapter:
-            msg = _execute_adapter(p, backup_root)
-        else:
-            msg = _execute_primitive(p, backup_root)
+        msg = _execute_adapter(p, backup_root) if is_adapter else _execute_primitive(p, backup_root)
 
         ok, audit_msg = _rebuild_catalog_and_audit()
         if not ok:
@@ -427,12 +411,12 @@ def main() -> int:
     group.add_argument(
         "--staged",
         action="store_true",
-        help="Target the copy under _extracted/<ns>/, not _quarantine/.",
+        help="Target the copy under _staging/<ns>/, not _quarantine/.",
     )
     group.add_argument(
         "--quarantined",
         action="store_true",
-        help="Target the copy under _extracted/_quarantine/.",
+        help="Target the copy under _staging/_quarantine/.",
     )
     args = ap.parse_args()
 

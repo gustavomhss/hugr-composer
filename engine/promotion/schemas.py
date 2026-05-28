@@ -4,15 +4,16 @@ Every ledger entry, signal, and verdict flows through these Pydantic
 models. Drift between code and ledger is impossible: the writer and the
 reader use the same schema.
 """
+
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
 
-class Verdict(str, Enum):
+class Verdict(StrEnum):
     """Action-focused classification for a staged primitive.
 
     Default stance: **make it work**, not delete. Every verdict except
@@ -51,7 +52,7 @@ class Verdict(str, Enum):
     NEEDS_REVIEW = "needs_review"
 
 
-class SignalKind(str, Enum):
+class SignalKind(StrEnum):
     """What evidence connects the primitive to a caller.
 
     §A12 recognises (a) benchmark gap, (b) registered-tool import, and
@@ -177,7 +178,7 @@ class LedgerEntry(BaseModel):
         default=None,
         description=(
             "Required when verdict indicates the primitive stays in "
-            "_extracted/ (NEEDS_CALLER / NEEDS_REVIEW / REDUNDANT)."
+            "_staging/ (NEEDS_CALLER / NEEDS_REVIEW / REDUNDANT)."
         ),
     )
     delete_reason: str | None = Field(
@@ -207,19 +208,16 @@ class LedgerEntry(BaseModel):
         ready flag excludes it so `promote --from-ledger` never picks
         a REDUNDANT item by accident.
         """
-        return (
-            not self.blockers
-            and self.verdict
-            in (Verdict.PROMOTE_AS_ADAPTER, Verdict.PROMOTE_AS_PRIMITIVE)
+        return not self.blockers and self.verdict in (
+            Verdict.PROMOTE_AS_ADAPTER,
+            Verdict.PROMOTE_AS_PRIMITIVE,
         )
 
 
 class Ledger(BaseModel):
     """The full triage output — one entry per staged+quarantined primitive."""
 
-    generated_at: str = Field(
-        description="ISO-8601 UTC timestamp at ledger generation."
-    )
+    generated_at: str = Field(description="ISO-8601 UTC timestamp at ledger generation.")
     classifier_version: str = Field(default="1.0")
     total_staged: int = Field(ge=0)
     total_quarantined: int = Field(ge=0)

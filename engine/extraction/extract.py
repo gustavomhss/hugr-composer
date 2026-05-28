@@ -3,7 +3,7 @@
 
 Reads `primitive_candidates_ranked.json` (produced by `classify.py`) and
 writes each qualifying candidate's raw source into
-`core/venous/_extracted/<TopicGuess>/<Name>/` — one directory per primitive.
+`core/venous/_staging/<TopicGuess>/<Name>/` — one directory per primitive.
 
 This is STAGE 1 of extraction: pure lifting, no HuGR shell yet. Human review
 happens here:
@@ -33,7 +33,7 @@ from typing import Any
 
 _RANKED_PATH = Path(__file__).resolve().parent / "primitive_candidates_ranked.json"
 _EXTEND_DIR = Path(__file__).resolve().parents[2] / "adapt" / "extend"
-_STAGE_DIR = Path(__file__).resolve().parents[2] / "core" / "venous" / "_extracted"
+_STAGE_DIR = Path(__file__).resolve().parents[2] / "core" / "venous" / "_staging"
 
 
 _FOLDER_TO_NAMESPACE: dict[str, str] = {
@@ -71,14 +71,18 @@ def _extract_source(tool_path: Path, candidate_name: str) -> str | None:
             except SyntaxError:
                 continue
             for node in inner.body:
-                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-                    if node.name == candidate_name:
-                        return ast.unparse(node)
+                if (
+                    isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+                    and node.name == candidate_name
+                ):
+                    return ast.unparse(node)
     # Fall back to tool-file top-level.
     for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            if node.name == candidate_name:
-                return ast.unparse(node)
+        if (
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+            and node.name == candidate_name
+        ):
+            return ast.unparse(node)
     return None
 
 
@@ -108,7 +112,7 @@ projects. Lifted here as raw Python source for review.
 
 ## When promoted
 
-Move the directory from `core/venous/_extracted/<Name>/` to
+Move the directory from `core/venous/_staging/<Name>/` to
 `core/venous/<namespace>/<Name>/`, add the HuGR shell, and run the minimal
 gate:
 
@@ -137,10 +141,15 @@ def _write_staged_primitive(cand: dict[str, Any]) -> Path:
     # README.md intentionally NOT written here — `wrap_shell.py` emits the
     # canonical `{name}.md` that includes provenance + review checklist.
     _ = _EXTRACT_NOTE_TEMPLATE  # kept for reference in case of standalone staging runs
-    (target / "_origin.json").write_text(json.dumps({
-        "tool": tool_rel,
-        "candidate": {k: v for k, v in cand.items() if k not in ("signals",)},
-    }, indent=2))
+    (target / "_origin.json").write_text(
+        json.dumps(
+            {
+                "tool": tool_rel,
+                "candidate": {k: v for k, v in cand.items() if k not in ("signals",)},
+            },
+            indent=2,
+        )
+    )
     return target
 
 
@@ -155,6 +164,7 @@ def run(top_n: int, *, force_clean: bool = False) -> list[Path]:
     # is preserved; human review is not destroyed.
     if force_clean:
         import shutil
+
         if _STAGE_DIR.exists():
             shutil.rmtree(_STAGE_DIR)
         _STAGE_DIR.mkdir(parents=True)
@@ -177,10 +187,12 @@ def run(top_n: int, *, force_clean: bool = False) -> list[Path]:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extract top-N primitives to staging.")
-    parser.add_argument("--top", type=int, default=50,
-                        help="How many top-ranked candidates to stage (default 50).")
-    parser.add_argument("--force-clean", action="store_true",
-                        help="Destroy _extracted/ first. DESTROYS human edits.")
+    parser.add_argument(
+        "--top", type=int, default=50, help="How many top-ranked candidates to stage (default 50)."
+    )
+    parser.add_argument(
+        "--force-clean", action="store_true", help="Destroy _staging/ first. DESTROYS human edits."
+    )
     args = parser.parse_args()
     paths = run(args.top, force_clean=args.force_clean)
     print(f"Staged {len(paths)} primitives under {_STAGE_DIR.relative_to(Path.cwd())}:")

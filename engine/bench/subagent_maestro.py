@@ -22,6 +22,7 @@ done — it does not invoke Claude itself. The orchestration (spawning
 subagents) happens outside this module, from the session that owns the
 CLI authentication.
 """
+
 from __future__ import annotations
 
 import json
@@ -29,8 +30,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from engine.bench.rubric import SpecScore, score_spec
-from engine.bench.runner import MaestroAdapter, RunResult
+from engine.bench.runner import RunResult
 
 SKILL_ROOT = Path(__file__).resolve().parents[2]
 SPECS_ROOT = SKILL_ROOT / "benchmarks" / "specs"
@@ -43,7 +43,7 @@ def extract_requirements(spec_md: str) -> list[str]:
     m = re.search(r"(?m)^##\s+Requirements\s*$", spec_md)
     if not m:
         return []
-    rest = spec_md[m.end():]
+    rest = spec_md[m.end() :]
     nxt = re.search(r"(?m)^##\s+", rest)
     section = rest[: nxt.start()] if nxt else rest
     return [b.strip() for b in _REQUIREMENT_BULLET.findall(section) if b.strip()]
@@ -53,7 +53,7 @@ def extract_acceptance(spec_md: str) -> list[str]:
     m = re.search(r"(?m)^##\s+Acceptance criteria\s*$", spec_md)
     if not m:
         return []
-    rest = spec_md[m.end():]
+    rest = spec_md[m.end() :]
     nxt = re.search(r"(?m)^##\s+", rest)
     section = rest[: nxt.start()] if nxt else rest
     return [b.strip() for b in _REQUIREMENT_BULLET.findall(section) if b.strip()]
@@ -145,6 +145,7 @@ def build_prompt(spec_path: Path, workdir: Path, python_bin: str) -> str:
 
 # ---------------------------------------------------------------- scoring
 
+
 def _bullet_similarity(a: str, b: str) -> float:
     """Loose token overlap — tolerant to paraphrase since subagent may
     normalize the bullet when copying it into plan.json."""
@@ -156,7 +157,9 @@ def _bullet_similarity(a: str, b: str) -> float:
     return len(inter) / max(1, len(ta | tb))
 
 
-def _match_bullets(claim_bullets: list[dict], spec_bullets: list[str], field: str) -> tuple[int, int]:
+def _match_bullets(
+    claim_bullets: list[dict], spec_bullets: list[str], field: str
+) -> tuple[int, int]:
     """Return (addressed, total). A spec bullet is addressed iff some
     claim's text overlaps it AND the claim's ``covered`` flag is True."""
     total = len(spec_bullets)
@@ -199,9 +202,7 @@ def _is_known_tool(name: str, tool_names: set[str]) -> bool:
     bare = _normalize_reference(name)
     if bare in tool_names:
         return True
-    if f"fastapi_{bare}" in tool_names:
-        return True
-    return False
+    return f"fastapi_{bare}" in tool_names
 
 
 def _load_tool_names() -> set[str]:
@@ -213,9 +214,13 @@ def _load_tool_names() -> set[str]:
             continue
         names.add(f"fastapi_{py.stem}")
     # generators with MCP_TOOL metadata
-    import importlib.util
-    for base in ("generators", "core/tools", "modules/database/tools",
-                 "modules/security/tools", "benchmark"):
+    for base in (
+        "generators",
+        "core/tools",
+        "modules/database/tools",
+        "modules/security/tools",
+        "benchmark",
+    ):
         base_dir = SKILL_ROOT / base
         if not base_dir.exists():
             continue
@@ -263,10 +268,14 @@ class SubagentMaestro:
         if not plan_path.exists():
             evidence["scaffold_completeness"] = "plan.json missing"
             return RunResult(
-                spec_id=spec_id, tier=tier,
-                scaffold_completeness=0.0, test_suite_pass=0.0,
-                primitive_gate_pass=100.0, hand_editability=0.0,
-                evidence=evidence, transcript_path=None,
+                spec_id=spec_id,
+                tier=tier,
+                scaffold_completeness=0.0,
+                test_suite_pass=0.0,
+                primitive_gate_pass=100.0,
+                hand_editability=0.0,
+                evidence=evidence,
+                transcript_path=None,
             )
 
         try:
@@ -274,10 +283,14 @@ class SubagentMaestro:
         except json.JSONDecodeError as exc:
             evidence["scaffold_completeness"] = f"invalid plan.json: {exc}"
             return RunResult(
-                spec_id=spec_id, tier=tier,
-                scaffold_completeness=0.0, test_suite_pass=0.0,
-                primitive_gate_pass=100.0, hand_editability=0.0,
-                evidence=evidence, transcript_path=None,
+                spec_id=spec_id,
+                tier=tier,
+                scaffold_completeness=0.0,
+                test_suite_pass=0.0,
+                primitive_gate_pass=100.0,
+                hand_editability=0.0,
+                evidence=evidence,
+                transcript_path=None,
             )
 
         # 1. scaffold_completeness — coverage of '## Requirements' bullets.
@@ -294,15 +307,17 @@ class SubagentMaestro:
         evidence["test_suite_pass"] = f"{got_c}/{total_c} acceptance criteria addressed"
 
         # 3. primitive_gate_pass — every cited primitive exists + is not
-        #    from `_extracted/` staging. Hallucinations hurt the score.
+        #    from `_staging/` staging. Hallucinations hurt the score.
         cited_primitives: set[str] = set()
         for r in claim_reqs + claim_crits:
-            for p in (r.get("primitives") or []):
+            for p in r.get("primitives") or []:
                 cited_primitives.add(p)
-            for p in (r.get("addressed_by") or []):
+            for p in r.get("addressed_by") or []:
                 cited_primitives.add(p)
         known_tools = _load_tool_names()
-        valid = [p for p in cited_primitives if _primitive_exists(p) or _is_known_tool(p, known_tools)]
+        valid = [
+            p for p in cited_primitives if _primitive_exists(p) or _is_known_tool(p, known_tools)
+        ]
         invalid = sorted(cited_primitives - set(valid))
         if not cited_primitives:
             primitive_gate = 0.0
@@ -331,7 +346,8 @@ class SubagentMaestro:
         evidence["hand_editability"] = f"heuristic score {editability:.0f}/100"
 
         return RunResult(
-            spec_id=spec_id, tier=tier,
+            spec_id=spec_id,
+            tier=tier,
             scaffold_completeness=scaffold_completeness,
             test_suite_pass=test_suite_pass,
             primitive_gate_pass=primitive_gate,
@@ -343,6 +359,8 @@ class SubagentMaestro:
 
 # -- helper for orchestration side ------------------------------------------
 
+
 def iter_specs() -> list[Path]:
     from engine.bench.runner import _discover_specs
+
     return _discover_specs()

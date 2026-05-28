@@ -19,13 +19,14 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import re
 import subprocess
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 REPO_ROOT = Path(__file__).resolve().parents[3].parent
 # /Users/…/HuGR_Arsenal (one level above skills/)
@@ -50,9 +51,9 @@ _SEMVER_RE = (
 
 @dataclass(frozen=True)
 class Rule:
-    item: str                 # "B0.5"
-    phase: int                # 0..7
-    description: str          # short human label
+    item: str  # "B0.5"
+    phase: int  # 0..7
+    description: str  # short human label
     check: Callable[[], tuple[bool, str]]  # -> (ok, message)
 
 
@@ -76,6 +77,7 @@ def _grep_count(pattern: str, paths: list[Path]) -> int:
 # ---------------------------------------------------------------------------
 # Rules per §B item
 # ---------------------------------------------------------------------------
+
 
 def _r_product_md() -> tuple[bool, str]:
     ok, msg = _exists(REPO_ROOT / "PRODUCT.md", min_bytes=3000)
@@ -159,7 +161,7 @@ def _r_readme_md() -> tuple[bool, str]:
     patterns = {
         "registered": r"\*\*(\d+) registered primitives\*\*",
         "staged": r"\*\*(\d+) staged primitives\*\*",
-        "quarantined": r"staged primitives\*\* in `_extracted/` \(plus (\d+) quarantined\)",
+        "quarantined": r"staged primitives\*\* in `_staging/` \(plus (\d+) quarantined\)",
         "adapters": r"\*\*(\d+) FastAPI adapters\*\*",
         "generators": r"## 2\. generators/ — (\d+) tools",
         "adapt_total": r"## 1\. adapt/ — (\d+) tools",
@@ -184,29 +186,41 @@ def _r_readme_md() -> tuple[bool, str]:
     required_tokens: list[tuple[str, str, str]] = [
         # (regex, shape-hint-for-error-message, label)
         # `├── generators/           # 56 macro scaffold helpers`
-        (rf"#\s+{canon['generators']}\s+macro\s+scaffold\s+helpers",
-         f"# {canon['generators']} macro scaffold helpers",
-         "architecture-tree `generators/` comment"),
+        (
+            rf"#\s+{canon['generators']}\s+macro\s+scaffold\s+helpers",
+            f"# {canon['generators']} macro scaffold helpers",
+            "architecture-tree `generators/` comment",
+        ),
         # `├── adapt/                # 127 tools (100 extend + 27 other)`
-        (rf"#\s+{canon['adapt_total']}\s+tools(?:[\s(]|$)",
-         f"# {canon['adapt_total']} tools (…)",
-         "architecture-tree `adapt/` comment"),
+        (
+            rf"#\s+{canon['adapt_total']}\s+tools(?:[\s(]|$)",
+            f"# {canon['adapt_total']} tools (…)",
+            "architecture-tree `adapt/` comment",
+        ),
         # Status-block line: `Primitives: 124  (…)`
-        (rf"Primitives:\s+{canon['registered']}(?:[\s(]|$)",
-         f"Primitives: {canon['registered']} (…)",
-         "'Current status' `Primitives:` line"),
+        (
+            rf"Primitives:\s+{canon['registered']}(?:[\s(]|$)",
+            f"Primitives: {canon['registered']} (…)",
+            "'Current status' `Primitives:` line",
+        ),
         # Status-block line: `Staged:    176   (…, +42 quarantined, …)`
-        (rf"Staged:\s+{canon['staged']}(?:[\s(]|$)",
-         f"Staged: {canon['staged']} (…)",
-         "'Current status' `Staged:` line"),
-        (rf"\+{canon['quarantined']}\s+quarantined",
-         f"+{canon['quarantined']} quarantined",
-         "'Current status' quarantined subtotal"),
+        (
+            rf"Staged:\s+{canon['staged']}(?:[\s(]|$)",
+            f"Staged: {canon['staged']} (…)",
+            "'Current status' `Staged:` line",
+        ),
+        (
+            rf"\+{canon['quarantined']}\s+quarantined",
+            f"+{canon['quarantined']} quarantined",
+            "'Current status' quarantined subtotal",
+        ),
         # Architecture tree summary:
         # `core/venous/          # 124 primitives + 17 FastAPI adapters (…) + 176 staged`
-        (rf"#\s+{canon['registered']}\s+primitives\s+\+\s+{canon['adapters']}\s+FastAPI\s+adapters",
-         f"# {canon['registered']} primitives + {canon['adapters']} FastAPI adapters",
-         "architecture-tree `core/venous/` comment"),
+        (
+            rf"#\s+{canon['registered']}\s+primitives\s+\+\s+{canon['adapters']}\s+FastAPI\s+adapters",
+            f"# {canon['registered']} primitives + {canon['adapters']} FastAPI adapters",
+            "architecture-tree `core/venous/` comment",
+        ),
     ]
     missing: list[str] = []
     for pattern, hint, label in required_tokens:
@@ -214,8 +228,7 @@ def _r_readme_md() -> tuple[bool, str]:
             missing.append(f"expected `{hint}`  ({label})")
     if missing:
         return False, (
-            "README.md surface counts do not match INVENTORY.md:\n  "
-            + "\n  ".join(missing)
+            "README.md surface counts do not match INVENTORY.md:\n  " + "\n  ".join(missing)
         )
 
     # Install stub must be present — B0.5 requires README to point at
@@ -297,7 +310,7 @@ def _r_benchmark_no_stubs() -> tuple[bool, str]:
 
     Scans three roots: ``benchmark/``, ``benchmarks/``, and the
     production primitive tree ``core/venous/`` (excluding
-    ``_extracted/`` because that's the staging pool; stub tests there
+    ``_staging/`` because that's the staging pool; stub tests there
     are by design until a primitive is promoted). A test function is
     flagged when its body reduces to exactly ``assert True`` — a
     mechanical no-op that passes without exercising any code path.
@@ -310,8 +323,11 @@ def _r_benchmark_no_stubs() -> tuple[bool, str]:
     inspects each function individually and lists each offender.
     """
     stubs: list[str] = []
-    scan_roots = [SKILL_ROOT / "benchmark", SKILL_ROOT / "benchmarks",
-                  SKILL_ROOT / "core" / "venous"]
+    scan_roots = [
+        SKILL_ROOT / "benchmark",
+        SKILL_ROOT / "benchmarks",
+        SKILL_ROOT / "core" / "venous",
+    ]
     _stub_body_re = re.compile(
         r"^def (test_\w+)\([^)]*\)(?:\s*->\s*[^:]+)?:\n"
         r"(?:    \"\"\"(?:[^\"]|\"[^\"])*?\"\"\"\n)?"  # optional docstring
@@ -324,20 +340,17 @@ def _r_benchmark_no_stubs() -> tuple[bool, str]:
         for py in root.rglob("test_*.py"):
             # Skip the staged/quarantined pool — stub tests there are
             # by design until a primitive is promoted.
-            if "_extracted" in py.parts:
+            if "_staging" in py.parts:
                 continue
             body = py.read_text()
             for m in _stub_body_re.finditer(body):
                 fn_name = m.group(1)
-                stubs.append(
-                    f"{py.relative_to(REPO_ROOT)}::{fn_name}"
-                )
+                stubs.append(f"{py.relative_to(REPO_ROOT)}::{fn_name}")
     if stubs:
         sample = "\n    - ".join(stubs[:5])
         return False, (
             f"{len(stubs)} stub test function(s) with pure `assert True` body:\n"
-            f"    - {sample}"
-            + ("\n    …" if len(stubs) > 5 else "")
+            f"    - {sample}" + ("\n    …" if len(stubs) > 5 else "")
         )
     return True, "no trivial-stub test functions under benchmark/ or core/venous/"
 
@@ -356,6 +369,7 @@ def _r_registry_exists() -> tuple[bool, str]:
     if not ok:
         return ok, msg
     import yaml as _yaml
+
     data = _yaml.safe_load(reg.read_text()) or {}
     registered = {p["name"] for p in (data.get("primitives") or [])}
     venous = SKILL_ROOT / "core" / "venous"
@@ -365,7 +379,7 @@ def _r_registry_exists() -> tuple[bool, str]:
     for d in venous.glob("*/*"):
         if not d.is_dir():
             continue
-        if any(part in d.parts for part in ("_extracted", "_adapters", "__pycache__")):
+        if any(part in d.parts for part in ("_staging", "_adapters", "__pycache__")):
             continue
         all_leaf_dirs.add(d)
         md = d / f"{d.name}.md"
@@ -379,13 +393,12 @@ def _r_registry_exists() -> tuple[bool, str]:
     if extra:
         return False, f"{len(extra)} registered primitives have no .md on disk: {extra[:5]}"
     half_extracted = sorted(
-        str(d.relative_to(venous)) for d in all_leaf_dirs
-        if not (d / f"{d.name}.md").exists()
+        str(d.relative_to(venous)) for d in all_leaf_dirs if not (d / f"{d.name}.md").exists()
     )
     if half_extracted:
         return False, (
             f"{len(half_extracted)} half-extracted dirs under production namespaces "
-            f"(no matching .md) — move to _extracted/ or complete them: {half_extracted[:5]}"
+            f"(no matching .md) — move to _staging/ or complete them: {half_extracted[:5]}"
         )
     return True, f"registry synced: {len(registered)} entries match disk (no half-extracted dirs)"
 
@@ -398,6 +411,7 @@ def _r_compose_with_coverage() -> tuple[bool, str]:
     section presence AND bullet count. Previously it only checked presence.
     """
     import yaml as _yaml
+
     reg = _yaml.safe_load((SKILL_ROOT / "engine" / "primitives_by_concern.yaml").read_text())
     venous = SKILL_ROOT / "core" / "venous"
 
@@ -418,7 +432,10 @@ def _r_compose_with_coverage() -> tuple[bool, str]:
             under_three.append(f"{entry['namespace']}/{entry['name']} ({len(bullets)})")
 
     if missing_section:
-        return False, f"{len(missing_section)} primitives lack 'Compose with:' section: {missing_section[:3]}"
+        return (
+            False,
+            f"{len(missing_section)} primitives lack 'Compose with:' section: {missing_section[:3]}",
+        )
     if under_three:
         return False, (
             f"{len(under_three)} primitives have <3 Compose-with bullets "
@@ -447,20 +464,21 @@ def _r_tools_import_primitives() -> tuple[bool, str]:
     except json.JSONDecodeError as exc:
         return False, f"catalog.json unreadable: {exc}"
     connected = [
-        t for t in cat.get("tools", [])
+        t
+        for t in cat.get("tools", [])
         if t.get("verb") == "add"
         and t.get("module_path", "").startswith("adapt/extend/")
         and t.get("primitives_used")
     ]
-    FLOOR = 22
-    if len(connected) < FLOOR:
+    floor = 22
+    if len(connected) < floor:
         return False, (
             f"only {len(connected)}/100 extend add_* tools import primitives "
-            f"(floor={FLOOR}; regression bars PR)"
+            f"(floor={floor}; regression bars PR)"
         )
     return True, (
         f"{len(connected)}/100 extend add_* tools primitive-connected "
-        f"(floor={FLOOR}, §B1.3 Rails-style wiring)"
+        f"(floor={floor}, §B1.3 Rails-style wiring)"
     )
 
 
@@ -539,7 +557,7 @@ def _r_tier_lite_eligibility() -> tuple[bool, str]:
         joined = "\n    - ".join(offenders)
         return False, (
             f"§B1.8 lite eligibility violations ({len(offenders)}):\n    - {joined}\n"
-            "Demote violating primitives to `_extracted/` or promote at full tier."
+            "Demote violating primitives to `_staging/` or promote at full tier."
         )
     return True, f"§B1.8 satisfied ({len(lite)} lite primitive(s), all eligible)"
 
@@ -566,8 +584,7 @@ def _r_version_sync() -> tuple[bool, str]:
         return False, f"VERSION mismatch: /VERSION={root_v!r} vs skill/VERSION={skill_v!r}"
     if skill_v != status_v:
         return False, (
-            f"VERSION mismatch: skill/VERSION={skill_v!r} vs "
-            f"STATUS.md frontmatter={status_v!r}"
+            f"VERSION mismatch: skill/VERSION={skill_v!r} vs STATUS.md frontmatter={status_v!r}"
         )
     return True, f"triplet synced at {skill_v} (root + skill + STATUS.md)"
 
@@ -595,12 +612,17 @@ def _r_counts_sync() -> tuple[bool, str]:
     checks = [
         ("registered", r"\*\*(\d+) registered primitives\*\*"),
         ("staged", r"\*\*(\d+) staged primitives\*\*"),
-        ("quarantined", r"staged primitives\*\* in `_extracted/` \(plus (\d+) quarantined\)"),
+        ("quarantined", r"staged primitives\*\* in `_staging/` \(plus (\d+) quarantined\)"),
         ("adapters", r"\*\*(\d+) FastAPI adapters\*\*"),
         # Recipes come from the catalog manifest, not the primitive tree scan,
         # so INVENTORY.md is the authoritative count (e.g. the 393→392 drop
         # after the orphan `Billing → WebhookReceiver` recipe was removed).
         ("recipes", r"\*\*Catalog:\*\* \d+ tools \+ \d+ primitives \+ (\d+) recipes"),
+        # Also extract tools + primitives from the catalog headline — used
+        # below for the cross-check against catalog.json (added post-WAVE-0-F0
+        # audit; see comment block under the catalog.json cross-check).
+        ("cat_tools", r"\*\*Catalog:\*\* (\d+) tools"),
+        ("cat_primitives", r"\*\*Catalog:\*\* \d+ tools \+ (\d+) primitives"),
     ]
     canon: dict[str, int] = {}
     for label, pat in checks:
@@ -608,6 +630,40 @@ def _r_counts_sync() -> tuple[bool, str]:
         if err:
             return False, err
         canon[label] = value
+
+    # Cross-check: the INVENTORY.md `**Catalog:**` headline MUST match
+    # engine/index/catalog.json exactly. Drift between these was the failure
+    # mode the WAVE-0-F0 rename surfaced: catalog.json was regenerated against
+    # an incomplete path-string update and reported 124 primitives, while
+    # INVENTORY.md's headline read 299. Both passed their existing rules in
+    # isolation (B2.4 only checks the catalog hash; this rule only reads
+    # INVENTORY against itself), so a half-truth green was possible. Holding
+    # the two against each other closes the gap.
+    catalog_path = SKILL_ROOT / "engine" / "index" / "catalog.json"
+    if not catalog_path.exists():
+        return (
+            False,
+            "engine/index/catalog.json missing — run `python -m engine.index.manifest build`",
+        )
+    try:
+        _cat = json.loads(catalog_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return False, f"catalog.json malformed: {exc}"
+    _cat_counts = _cat.get("counts", {})
+    for inv_key, cat_key in (
+        ("cat_tools", "tools"),
+        ("cat_primitives", "primitives"),
+        ("recipes", "recipes"),
+    ):
+        inv_value = canon[inv_key]
+        cat_value = int(_cat_counts.get(cat_key, -1))
+        if inv_value != cat_value:
+            return False, (
+                f"INVENTORY.md `**Catalog:**` headline {cat_key}={inv_value} "
+                f"contradicts catalog.json counts.{cat_key}={cat_value} — "
+                "regenerate INVENTORY.md AFTER catalog.json: "
+                "`python -m engine.index.manifest build && python -m engine.inventory`"
+            )
 
     # Ledger total is machine-verified from LEDGER.md, not INVENTORY.md
     # (the ledger is generated by engine.promotion.ledger, not the inventory
@@ -627,7 +683,10 @@ def _r_counts_sync() -> tuple[bool, str]:
     # drift — FREEZE §2.5 said 104, reality was 101 after Wave 1.5.
     ledger_json = SKILL_ROOT / "engine" / "promotion" / "ledger.json"
     if not ledger_json.exists():
-        return False, "engine/promotion/ledger.json missing — run `python -m engine.promotion.classify`"
+        return (
+            False,
+            "engine/promotion/ledger.json missing — run `python -m engine.promotion.classify`",
+        )
     try:
         _data = json.loads(ledger_json.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
@@ -787,10 +846,8 @@ def _r_benchmark_score() -> tuple[bool, str]:
 
     floor = 30.0  # hard schema floor
     if floorfile.exists():
-        try:
+        with contextlib.suppress(json.JSONDecodeError, TypeError, ValueError):
             floor = max(floor, float(json.loads(floorfile.read_text()).get("floor", 30.0)))
-        except (json.JSONDecodeError, TypeError, ValueError):
-            pass
 
     if score < floor:
         return False, (
@@ -812,6 +869,7 @@ def _r_adapter_coverage() -> tuple[bool, str]:
     reference a primitive that exists in the registry.
     """
     import yaml as _yaml
+
     adapters_dir = SKILL_ROOT / "core" / "venous" / "_adapters" / "fastapi"
     if not adapters_dir.exists():
         return False, f"missing: {adapters_dir.relative_to(SKILL_ROOT)}"
@@ -819,10 +877,7 @@ def _r_adapter_coverage() -> tuple[bool, str]:
     reg = _yaml.safe_load((SKILL_ROOT / "engine" / "primitives_by_concern.yaml").read_text())
     registered = {p["name"] for p in reg.get("primitives", [])}
 
-    adapters = [
-        f for f in adapters_dir.glob("*.py")
-        if not f.name.startswith(("_", "test_"))
-    ]
+    adapters = [f for f in adapters_dir.glob("*.py") if not f.name.startswith(("_", "test_"))]
     if len(adapters) < 15:
         return False, f"only {len(adapters)} fastapi adapters (need ≥15)"
 
@@ -835,8 +890,7 @@ def _r_adapter_coverage() -> tuple[bool, str]:
         "Workflow": {"WorkflowRun", "ActivityCall", "DurableTimer"},
         "AuditLog": {"AuditEvent", "TamperEvidentAuditLog", "AccessLog"},
         "OAuth2": {"AuthorizationCodeFlow", "TokenIntrospector", "SessionStore"},
-        "WebhookReceiver": {"SignatureVerifier", "IdempotentConsumer",
-                            "InboxDeduplicator"},
+        "WebhookReceiver": {"SignatureVerifier", "IdempotentConsumer", "InboxDeduplicator"},
         "Saga": {"SagaOrchestrator", "DomainEvent"},
     }
 
@@ -905,7 +959,11 @@ def _r_core_venous_distribution() -> tuple[bool, str]:
             names=["core.venous.resiliency.GracefulShutdown"],
         )
         prim_file = (
-            Path(tmp) / "core" / "venous" / "resiliency" / "GracefulShutdown"
+            Path(tmp)
+            / "core"
+            / "venous"
+            / "resiliency"
+            / "GracefulShutdown"
             / "GracefulShutdown.py"
         )
         if not prim_file.exists():
@@ -941,14 +999,14 @@ def _r_adapter_layer_invariant() -> tuple[bool, str]:
         return False, f"missing reference adapter: {ref}"
 
     # grep equivalent — scan primitive .py files for FastAPI / Starlette / SQLAlchemy
-    # imports; ignore _adapters/ and _extracted/ which are out of scope.
+    # imports; ignore _adapters/ and _staging/ which are out of scope.
     # Match only real top-of-line imports (not strings / comments).
     pat = re.compile(r"^\s*(?:from|import)\s+(fastapi|starlette|sqlalchemy)\b", re.MULTILINE)
     leaks: list[str] = []
     venous = SKILL_ROOT / "core" / "venous"
     for py in venous.rglob("*.py"):
         parts = py.parts
-        if "_adapters" in parts or "_extracted" in parts or "__pycache__" in parts:
+        if "_adapters" in parts or "_staging" in parts or "__pycache__" in parts:
             continue
         if pat.search(py.read_text(errors="ignore")):
             leaks.append(str(py.relative_to(SKILL_ROOT)))
@@ -968,8 +1026,13 @@ def _r_no_orphan_generators() -> tuple[bool, str]:
     for callers. Previously spawned one `grep -rl` subprocess per
     candidate (~60 of them), which dominated `_r_*` runtime.
     """
-    bases = ("generators", "core/tools", "modules/database/tools",
-             "modules/security/tools", "benchmark")
+    bases = (
+        "generators",
+        "core/tools",
+        "modules/database/tools",
+        "modules/security/tools",
+        "benchmark",
+    )
 
     # One-pass corpus of every .py file in the skill tree. Populated
     # lazily — only if the base contains at least one candidate.
@@ -1085,18 +1148,28 @@ def _r_suggest_composition() -> tuple[bool, str]:
 
     env_pythonpath = str(SKILL_ROOT)
     cmd = [
-        sys.executable, "-m", "engine.discovery.compose_bench",
-        "--min-top-1", "0.70", "--min-p-at-3", "0.90",
+        sys.executable,
+        "-m",
+        "engine.discovery.compose_bench",
+        "--min-top-1",
+        "0.70",
+        "--min-p-at-3",
+        "0.90",
     ]
     out = subprocess.run(
-        cmd, cwd=SKILL_ROOT, capture_output=True, text=True, check=False,
+        cmd,
+        cwd=SKILL_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
         env={**__import__("os").environ, "PYTHONPATH": env_pythonpath},
     )
     if out.returncode != 0:
         return False, f"quality gate failed: {out.stdout.strip() or out.stderr.strip()}"
 
     cmd = [
-        sys.executable, "-c",
+        sys.executable,
+        "-c",
         (
             "from mcp_tools import mcp, discover_and_register; "
             "discover_and_register(mcp); "
@@ -1106,7 +1179,11 @@ def _r_suggest_composition() -> tuple[bool, str]:
         ),
     ]
     out = subprocess.run(
-        cmd, cwd=SKILL_ROOT, capture_output=True, text=True, check=False,
+        cmd,
+        cwd=SKILL_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
         env={**__import__("os").environ, "PYTHONPATH": env_pythonpath},
     )
     if out.returncode != 0 or "ok" not in out.stdout:
@@ -1126,11 +1203,19 @@ def _r_docs_site() -> tuple[bool, str]:
     env_pythonpath = str(SKILL_ROOT)
     with tempfile.TemporaryDirectory(prefix="hugr_docs_") as tmp:
         cmd = [
-            sys.executable, "-m", "engine.docs.build",
-            "--out", tmp, "--verify",
+            sys.executable,
+            "-m",
+            "engine.docs.build",
+            "--out",
+            tmp,
+            "--verify",
         ]
         out = subprocess.run(
-            cmd, cwd=SKILL_ROOT, capture_output=True, text=True, check=False,
+            cmd,
+            cwd=SKILL_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
             env={**__import__("os").environ, "PYTHONPATH": env_pythonpath},
         )
         if out.returncode != 0:
@@ -1139,14 +1224,19 @@ def _r_docs_site() -> tuple[bool, str]:
         if not manifest_path.exists():
             return False, "build_manifest.json not written"
         import json as _json
+
         manifest = _json.loads(manifest_path.read_text())
         if manifest["primitives"] < 97:
             return False, f"only {manifest['primitives']} primitive pages (need ≥97)"
         # Spot-check: every registry entry has an HTML page.
         import yaml as _yaml
-        registry = _yaml.safe_load((SKILL_ROOT / "engine" / "primitives_by_concern.yaml").read_text())
+
+        registry = _yaml.safe_load(
+            (SKILL_ROOT / "engine" / "primitives_by_concern.yaml").read_text()
+        )
         missing = [
-            e["name"] for e in registry["primitives"]
+            e["name"]
+            for e in registry["primitives"]
             if not (Path(tmp) / "primitive" / f"{e['name']}.html").is_file()
         ]
         if missing:
@@ -1203,11 +1293,12 @@ def _r_skill_md_contract() -> tuple[bool, str]:
     if end_fence < 0:
         return False, "SKILL.md frontmatter not closed with '---' fence"
     fm_text = raw[4:end_fence]
-    body = raw[end_fence + 5:]
+    body = raw[end_fence + 5 :]
 
     # 2. Frontmatter YAML parses
     try:
         import yaml
+
         fm = yaml.safe_load(fm_text) or {}
     except Exception as exc:  # noqa: BLE001
         return False, f"SKILL.md frontmatter YAML invalid: {exc}"
@@ -1247,25 +1338,38 @@ def _r_skill_md_contract() -> tuple[bool, str]:
     #     covers >95% of real usage; if a skill needs something exotic,
     #     it can be added here rather than silently accepted. Codex v3
     #     H6 flagged the missing check.
-    _SPDX_KNOWN = frozenset({
-        "Apache-2.0", "MIT", "BSD-2-Clause", "BSD-3-Clause",
-        "ISC", "MPL-2.0", "Unlicense", "CC0-1.0",
-        "GPL-2.0-only", "GPL-2.0-or-later",
-        "GPL-3.0-only", "GPL-3.0-or-later",
-        "LGPL-2.1-only", "LGPL-2.1-or-later",
-        "LGPL-3.0-only", "LGPL-3.0-or-later",
-        "AGPL-3.0-only", "AGPL-3.0-or-later",
-        "Proprietary",
-    })
+    _spdx_known = frozenset(
+        {
+            "Apache-2.0",
+            "MIT",
+            "BSD-2-Clause",
+            "BSD-3-Clause",
+            "ISC",
+            "MPL-2.0",
+            "Unlicense",
+            "CC0-1.0",
+            "GPL-2.0-only",
+            "GPL-2.0-or-later",
+            "GPL-3.0-only",
+            "GPL-3.0-or-later",
+            "LGPL-2.1-only",
+            "LGPL-2.1-or-later",
+            "LGPL-3.0-only",
+            "LGPL-3.0-or-later",
+            "AGPL-3.0-only",
+            "AGPL-3.0-or-later",
+            "Proprietary",
+        }
+    )
     license_val = fm.get("license")
     if license_val is not None:
         if not isinstance(license_val, str) or not license_val.strip():
             return False, "SKILL.md frontmatter `license` must be a non-empty string when present"
-        if license_val not in _SPDX_KNOWN:
+        if license_val not in _spdx_known:
             return False, (
                 f"SKILL.md license {license_val!r} is not in the supported "
-                f"SPDX identifier set. Use one of {sorted(_SPDX_KNOWN)}, or "
-                "extend `_SPDX_KNOWN` in contract_check.py if the target "
+                f"SPDX identifier set. Use one of {sorted(_spdx_known)}, or "
+                "extend `_spdx_known` in contract_check.py if the target "
                 "is genuinely new."
             )
         # 3b. License MUST be consistent with the repo-root LICENSE file.
@@ -1291,6 +1395,7 @@ def _r_skill_md_contract() -> tuple[bool, str]:
             "or-later" LICENSE headers cite "(at your option) any
             later version"; "only" variants do not.
             """
+
             def check(t: str) -> bool:
                 tl = t.lower()
                 if family not in tl:
@@ -1299,6 +1404,7 @@ def _r_skill_md_contract() -> tuple[bool, str]:
                     return False
                 has_or_later = "any later version" in tl[:2000]
                 return has_or_later if or_later else not has_or_later
+
             return check
 
         _license_signatures: dict[str, callable] = {
@@ -1308,41 +1414,51 @@ def _r_skill_md_contract() -> tuple[bool, str]:
             ),
             "MIT": lambda t: "mit license" in t.lower()[:400],
             "BSD-2-Clause": lambda t: (
-                "redistribution and use" in t.lower()
-                and "bsd" in t.lower()[:400]
+                "redistribution and use" in t.lower() and "bsd" in t.lower()[:400]
             ),
             "BSD-3-Clause": lambda t: (
-                "redistribution and use" in t.lower()
-                and "bsd" in t.lower()[:400]
+                "redistribution and use" in t.lower() and "bsd" in t.lower()[:400]
             ),
             "ISC": lambda t: "isc license" in t.lower()[:400],
             "MPL-2.0": lambda t: "mozilla public license" in t.lower()[:400],
             "Unlicense": lambda t: "unlicense" in t.lower()[:400],
             "CC0-1.0": lambda t: "cc0" in t.lower()[:400],
             # GPL family (4 variants)
-            "GPL-2.0-only":        _gnu_sig("gnu general public license",        "version 2",   or_later=False),
-            "GPL-2.0-or-later":    _gnu_sig("gnu general public license",        "version 2",   or_later=True),
-            "GPL-3.0-only":        _gnu_sig("gnu general public license",        "version 3",   or_later=False),
-            "GPL-3.0-or-later":    _gnu_sig("gnu general public license",        "version 3",   or_later=True),
+            "GPL-2.0-only": _gnu_sig("gnu general public license", "version 2", or_later=False),
+            "GPL-2.0-or-later": _gnu_sig("gnu general public license", "version 2", or_later=True),
+            "GPL-3.0-only": _gnu_sig("gnu general public license", "version 3", or_later=False),
+            "GPL-3.0-or-later": _gnu_sig("gnu general public license", "version 3", or_later=True),
             # LGPL family (4 variants)
-            "LGPL-2.1-only":       _gnu_sig("gnu lesser general public license", "version 2.1", or_later=False),
-            "LGPL-2.1-or-later":   _gnu_sig("gnu lesser general public license", "version 2.1", or_later=True),
-            "LGPL-3.0-only":       _gnu_sig("gnu lesser general public license", "version 3",   or_later=False),
-            "LGPL-3.0-or-later":   _gnu_sig("gnu lesser general public license", "version 3",   or_later=True),
+            "LGPL-2.1-only": _gnu_sig(
+                "gnu lesser general public license", "version 2.1", or_later=False
+            ),
+            "LGPL-2.1-or-later": _gnu_sig(
+                "gnu lesser general public license", "version 2.1", or_later=True
+            ),
+            "LGPL-3.0-only": _gnu_sig(
+                "gnu lesser general public license", "version 3", or_later=False
+            ),
+            "LGPL-3.0-or-later": _gnu_sig(
+                "gnu lesser general public license", "version 3", or_later=True
+            ),
             # AGPL family (2 variants)
-            "AGPL-3.0-only":       _gnu_sig("gnu affero general public license", "version 3",   or_later=False),
-            "AGPL-3.0-or-later":   _gnu_sig("gnu affero general public license", "version 3",   or_later=True),
+            "AGPL-3.0-only": _gnu_sig(
+                "gnu affero general public license", "version 3", or_later=False
+            ),
+            "AGPL-3.0-or-later": _gnu_sig(
+                "gnu affero general public license", "version 3", or_later=True
+            ),
         }
-        # Invariant: every SPDX identifier in _SPDX_KNOWN MUST have a
+        # Invariant: every SPDX identifier in _spdx_known MUST have a
         # signature lambda. Skipping coverage would let a future
         # SKILL.md carry `license: GPL-3.0-only` against a proprietary
         # LICENSE with no detection — the exact B1 class we closed.
-        _uncovered_spdx = _SPDX_KNOWN - _license_signatures.keys()
+        _uncovered_spdx = _spdx_known - _license_signatures.keys()
         if _uncovered_spdx:
             return False, (
                 f"_license_signatures missing coverage for SPDX "
                 f"identifier(s) {sorted(_uncovered_spdx)} — every "
-                f"identifier in _SPDX_KNOWN must have a signature "
+                f"identifier in _spdx_known must have a signature "
                 f"lambda, otherwise the LICENSE-match gate silently "
                 f"skips for those licenses."
             )
@@ -1356,7 +1472,7 @@ def _r_skill_md_contract() -> tuple[bool, str]:
         # Post-Wave-G: coverage gate above guarantees sig is not None
         # for any `license_val` that passed the SPDX-set check. We
         # still defensively default-check to handle the hypothetical
-        # case of someone adding to `_SPDX_KNOWN` without updating the
+        # case of someone adding to `_spdx_known` without updating the
         # signatures — though the coverage gate should fire first.
         sig = _license_signatures[license_val]
         if not sig(license_text):
@@ -1383,10 +1499,7 @@ def _r_skill_md_contract() -> tuple[bool, str]:
         return False, "SKILL.md description cannot contain XML tags (`<`/`>`)"
     first_word = desc.strip().split(None, 1)[0].lower()
     if first_word in {"i", "you", "we"}:
-        return False, (
-            f"SKILL.md description must be third-person "
-            f"(starts with {first_word!r})"
-        )
+        return False, (f"SKILL.md description must be third-person (starts with {first_word!r})")
 
     # 5. Trigger + anti-trigger phrases
     desc_low = desc.lower()
@@ -1400,31 +1513,44 @@ def _r_skill_md_contract() -> tuple[bool, str]:
     if len(body_lines) > 500:
         return False, f"SKILL.md body >500 lines ({len(body_lines)}) — split references"
     if len(body) // 4 > 5000:
-        return False, f"SKILL.md body >5000 tokens (estimate {len(body)//4})"
+        return False, f"SKILL.md body >5000 tokens (estimate {len(body) // 4})"
 
     # 7. Required H2 sections
     required_sections = (
-        "## Overview", "## When to use", "## When NOT to use",
-        "## Machine-readable metadata", "## Workflow phases",
-        "## Tier-1 tool index", "## Few-shot transcripts",
-        "## Anti-patterns", "## Reference files",
+        "## Overview",
+        "## When to use",
+        "## When NOT to use",
+        "## Machine-readable metadata",
+        "## Workflow phases",
+        "## Tier-1 tool index",
+        "## Few-shot transcripts",
+        "## Anti-patterns",
+        "## Reference files",
     )
     missing_sections = [s for s in required_sections if s not in body]
     if missing_sections:
         return False, f"SKILL.md missing required sections: {missing_sections[:3]}"
 
     # 8. Machine-readable metadata fenced YAML
-    meta_block = re.search(r"## Machine-readable metadata\s*\n\s*```yaml\n(.*?)\n```",
-                           body, re.DOTALL)
+    meta_block = re.search(
+        r"## Machine-readable metadata\s*\n\s*```yaml\n(.*?)\n```", body, re.DOTALL
+    )
     if not meta_block:
         return False, "SKILL.md missing fenced ```yaml block under 'Machine-readable metadata'"
     try:
         meta = yaml.safe_load(meta_block.group(1)) or {}
     except Exception as exc:  # noqa: BLE001
         return False, f"SKILL.md machine-readable metadata YAML invalid: {exc}"
-    for required_key in ("hugr_skill_version", "spec_compat", "kind",
-                          "domains", "entry_tools", "catalog_path",
-                          "phases", "invariants"):
+    for required_key in (
+        "hugr_skill_version",
+        "spec_compat",
+        "kind",
+        "domains",
+        "entry_tools",
+        "catalog_path",
+        "phases",
+        "invariants",
+    ):
         if required_key not in meta:
             return False, f"SKILL.md machine-readable metadata missing `{required_key}`"
 
@@ -1475,10 +1601,15 @@ def _r_skill_md_contract() -> tuple[bool, str]:
     #     so adding a new tree module auto-extends the allowlist.
     cat_tool_names = {t.get("name") for t in cat_data.get("tools", [])}
     tier1_meta = {
-        "fastapi_meta_home", "fastapi_meta_search", "fastapi_meta_describe",
-        "fastapi_meta_scaffold", "fastapi_meta_compose",
-        "fastapi_meta_audit", "fastapi_meta_verify",
-        "fastapi_meta_search_primitive", "fastapi_meta_search_composition",
+        "fastapi_meta_home",
+        "fastapi_meta_search",
+        "fastapi_meta_describe",
+        "fastapi_meta_scaffold",
+        "fastapi_meta_compose",
+        "fastapi_meta_audit",
+        "fastapi_meta_verify",
+        "fastapi_meta_search_primitive",
+        "fastapi_meta_search_composition",
     }
     tree_dir = SKILL_ROOT / "mcp_tools" / "tree"
     tree_dispatcher_names: set[str] = set()
@@ -1502,20 +1633,17 @@ def _r_skill_md_contract() -> tuple[bool, str]:
                     tree_dispatcher_names.add(m.group(1))
     known_non_catalog = tier1_meta | tree_dispatcher_names
     valid_tool_names = cat_tool_names | known_non_catalog
-    missing_tools = [
-        t for t in meta.get("entry_tools", [])
-        if t not in valid_tool_names
-    ]
+    missing_tools = [t for t in meta.get("entry_tools", []) if t not in valid_tool_names]
     if missing_tools:
-        return False, (
-            f"SKILL.md entry_tools reference unknown tools: {missing_tools[:3]}"
-        )
+        return False, (f"SKILL.md entry_tools reference unknown tools: {missing_tools[:3]}")
 
     # 12. Few-shot transcripts ≥ 3 (CONTRACT §B2.5 DoD: "≥ 3 few-shot
     #     transcripts under `## Few-shot transcripts`"). No upper bound —
     #     more transcripts = better Maestro grounding, not worse.
     transcripts_section = re.search(
-        r"## Few-shot transcripts(.+?)(?=\n## )", body, re.DOTALL,
+        r"## Few-shot transcripts(.+?)(?=\n## )",
+        body,
+        re.DOTALL,
     )
     if not transcripts_section:
         return False, "SKILL.md 'Few-shot transcripts' section missing body"
@@ -1547,8 +1675,7 @@ def _r_skill_md_contract() -> tuple[bool, str]:
     hits = [f for f in forbidden if f.lower() in body.lower()]
     if hits:
         return False, (
-            f"SKILL.md contains forbidden drift-prone phrases: {hits}. "
-            f"Move these to STATUS.md."
+            f"SKILL.md contains forbidden drift-prone phrases: {hits}. Move these to STATUS.md."
         )
 
     # 14. No XML tags in the body (excluding backticked code / placeholders)
@@ -1556,8 +1683,9 @@ def _r_skill_md_contract() -> tuple[bool, str]:
     body_stripped = re.sub(r"`[^`]*`", "", body_stripped)
     # Real XML tags have a closing `>` with letters inside, or a `/` prefix.
     # `<slug>` placeholder style is ambiguous; we focus on unambiguous XML.
-    if re.search(r"</[A-Za-z][A-Za-z0-9]*\s*>|<[A-Za-z][A-Za-z0-9]*\s+[a-z][a-z-]*=",
-                 body_stripped):
+    if re.search(
+        r"</[A-Za-z][A-Za-z0-9]*\s*>|<[A-Za-z][A-Za-z0-9]*\s+[a-z][a-z-]*=", body_stripped
+    ):
         return False, "SKILL.md body contains XML tags; remove them"
 
     # 15. Reference files listed exist on disk
@@ -1567,10 +1695,7 @@ def _r_skill_md_contract() -> tuple[bool, str]:
         for m in re.finditer(r"^\s*-\s+`([^`]+)`", ref_section.group(1), re.MULTILINE):
             ref = m.group(1).strip()
             # Absolute (repo-root-relative, starts with /) vs sibling
-            if ref.startswith("/"):
-                p = REPO_ROOT / ref.lstrip("/")
-            else:
-                p = SKILL_ROOT / ref
+            p = REPO_ROOT / ref.lstrip("/") if ref.startswith("/") else SKILL_ROOT / ref
             if not p.exists():
                 return False, f"SKILL.md references missing file: {ref}"
 
@@ -1580,13 +1705,11 @@ def _r_skill_md_contract() -> tuple[bool, str]:
     #     (Codex v5 M2) so the footer is held to real semver, not the
     #     loose Wave-E approximation.
     footer_match = re.search(
-        rf"\*version:\s*({_SEMVER_RE})\b", body,
+        rf"\*version:\s*({_SEMVER_RE})\b",
+        body,
     )
     if not footer_match:
-        return False, (
-            "SKILL.md missing versioning footer "
-            "(*version: X.Y.Z[-suffix] ...*)"
-        )
+        return False, ("SKILL.md missing versioning footer (*version: X.Y.Z[-suffix] ...*)")
     footer_version = footer_match.group(1)
     if footer_version != canonical_version:
         return False, (
@@ -1625,12 +1748,16 @@ def _r_index_manifest() -> tuple[bool, str]:
 
     # Determinism check — rebuild into a tempdir and compare stable hashes.
     import tempfile
+
     env_pythonpath = str(SKILL_ROOT)
     with tempfile.TemporaryDirectory(prefix="hugr_manifest_") as tmp:
         out_path = Path(tmp) / "catalog.json"
         proc = subprocess.run(
             [sys.executable, "-m", "engine.index.manifest", "verify", "--out", str(out_path)],
-            cwd=SKILL_ROOT, capture_output=True, text=True, check=False,
+            cwd=SKILL_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
             env={**__import__("os").environ, "PYTHONPATH": env_pythonpath},
         )
         if proc.returncode != 0:
@@ -1639,7 +1766,8 @@ def _r_index_manifest() -> tuple[bool, str]:
         live = json.loads(out_path.read_text())
         committed = json.loads(catalog.read_text())
         for f in ("generated_at", "kit_commit"):
-            live.pop(f, None); committed.pop(f, None)
+            live.pop(f, None)
+            committed.pop(f, None)
         if json.dumps(live, sort_keys=True) != json.dumps(committed, sort_keys=True):
             return False, (
                 "engine/index/catalog.json drifted from on-disk sources. "
@@ -1661,7 +1789,10 @@ def _r_bench_rubric_runner() -> tuple[bool, str]:
     env_pythonpath = str(SKILL_ROOT)
     out = subprocess.run(
         [sys.executable, "-m", "pytest", "engine/tests/test_bench.py", "-q"],
-        cwd=SKILL_ROOT, capture_output=True, text=True, check=False,
+        cwd=SKILL_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
         env={**__import__("os").environ, "PYTHONPATH": env_pythonpath},
     )
     if out.returncode != 0:
@@ -1675,7 +1806,13 @@ def _r_bench_nightly_workflow() -> tuple[bool, str]:
     if not wf.exists():
         return False, "missing: .github/workflows/benchmark-nightly.yml"
     txt = wf.read_text()
-    for required in ("schedule:", "cron:", "engine.bench", "ANTHROPIC_API_KEY", "latest_score.json"):
+    for required in (
+        "schedule:",
+        "cron:",
+        "engine.bench",
+        "ANTHROPIC_API_KEY",
+        "latest_score.json",
+    ):
         if required not in txt:
             return False, f"workflow missing {required}"
     return True, "benchmark-nightly.yml present with schedule + claude dispatch + score upload"
@@ -1716,13 +1853,13 @@ def _r_code_level_benchmark() -> tuple[bool, str]:
         return False, f"coverage {coverage:.1f}% < 25% floor"
     if score < 100.0:
         fails = [
-            s["spec_id"] for s in data.get("spec_results", [])
+            s["spec_id"]
+            for s in data.get("spec_results", [])
             if s.get("covered") and (s.get("score") or 0) < 100
         ]
         return False, f"covered specs not all at 100 ({score:.2f}): {fails[:3]}"
     return True, (
-        f"code-level: {score:.2f} across {covered}/{total} covered specs "
-        f"({coverage:.1f}% coverage)"
+        f"code-level: {score:.2f} across {covered}/{total} covered specs ({coverage:.1f}% coverage)"
     )
 
 
@@ -1749,15 +1886,24 @@ def _r_blind_benchmark_harness() -> tuple[bool, str]:
         return False, f"missing or undersized PROTOCOL.md: {protocol}"
 
     modules_dir = SKILL_ROOT / "engine" / "bench" / "blind"
-    expected = {"spec.py", "adapter.py", "judge.py", "runner.py",
-                "publish.py", "snapshots.py", "attribution.py",
-                "static_scan.py", "__init__.py"}
+    expected = {
+        "spec.py",
+        "adapter.py",
+        "judge.py",
+        "runner.py",
+        "publish.py",
+        "snapshots.py",
+        "attribution.py",
+        "static_scan.py",
+        "__init__.py",
+    }
     missing = [m for m in expected if not (modules_dir / m).exists()]
     if missing:
         return False, f"engine/bench/blind/ missing: {missing}"
 
     # Importability smoke
     import importlib
+
     try:
         importlib.import_module("engine.bench.blind.runner")
         importlib.import_module("engine.bench.blind.spec")
@@ -1767,6 +1913,7 @@ def _r_blind_benchmark_harness() -> tuple[bool, str]:
 
     # At least one spec + passes load_spec
     from engine.bench.blind.spec import discover_specs
+
     specs = discover_specs(bench_dir / "specs")
     if not specs:
         return False, "no specs under benchmarks/blind/specs/<tier>/"
@@ -1783,10 +1930,7 @@ def _r_blind_benchmark_harness() -> tuple[bool, str]:
     if missing_fx:
         return False, f"stub fixtures missing: {missing_fx[:3]}"
 
-    return True, (
-        f"blind harness present · {len(specs)} spec(s) authored · "
-        f"stub fixtures complete"
-    )
+    return True, (f"blind harness present · {len(specs)} spec(s) authored · stub fixtures complete")
 
 
 def _r_install_docker_ci() -> tuple[bool, str]:
@@ -1798,7 +1942,13 @@ def _r_install_docker_ci() -> tuple[bool, str]:
     if not workflow.exists():
         return False, "missing: .github/workflows/install-docker.yml"
     txt = workflow.read_text(encoding="utf-8")
-    for required in ("python:3.12-slim", "install.sh", "contract_check", "latest_score.json", "schedule:"):
+    for required in (
+        "python:3.12-slim",
+        "install.sh",
+        "contract_check",
+        "latest_score.json",
+        "schedule:",
+    ):
         if required not in txt:
             return False, f"install-docker.yml missing {required!r}"
     inst = installer.read_text(encoding="utf-8")
@@ -1824,18 +1974,29 @@ def _r_examples_populated() -> tuple[bool, str]:
         # cross-link table: must mention tools-used + primitives-imported
         readme = (sub / "README.md").read_text(encoding="utf-8")
         if "Tools used" not in readme or "Primitives imported" not in readme:
-            return False, f"{sub.name}/README.md missing cross-link table (Tools used / Primitives imported)"
-    return True, f"{len(subdirs)} examples present with README + MAESTRO_SESSION + cross-link tables"
+            return (
+                False,
+                f"{sub.name}/README.md missing cross-link table (Tools used / Primitives imported)",
+            )
+    return (
+        True,
+        f"{len(subdirs)} examples present with README + MAESTRO_SESSION + cross-link tables",
+    )
 
 
 def _r_docs_site_v1() -> tuple[bool, str]:
     """B4.3 — docs site includes top-level docs + per-tool pages."""
     import tempfile
+
     env_pythonpath = str(SKILL_ROOT)
     with tempfile.TemporaryDirectory(prefix="hugr_docs_v1_") as tmp:
         cmd = [sys.executable, "-m", "engine.docs.build", "--out", tmp, "--verify"]
         out = subprocess.run(
-            cmd, cwd=SKILL_ROOT, capture_output=True, text=True, check=False,
+            cmd,
+            cwd=SKILL_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
             env={**__import__("os").environ, "PYTHONPATH": env_pythonpath},
         )
         if out.returncode != 0:
@@ -1855,7 +2016,10 @@ def _r_docs_site_v1() -> tuple[bool, str]:
         n_prim_pages = sum(1 for _ in (root / "primitive").glob("*.html"))
         if n_prim_pages < 100:
             return False, f"only {n_prim_pages} primitive pages (need ≥100)"
-    return True, f"docs site v1: {n_prim_pages} primitives + {n_tool_pages} tools + 5 top-level docs"
+    return (
+        True,
+        f"docs site v1: {n_prim_pages} primitives + {n_tool_pages} tools + 5 top-level docs",
+    )
 
 
 def _r_changelog_semver() -> tuple[bool, str]:
@@ -1941,11 +2105,14 @@ def _r_tier1_surface_truth() -> tuple[bool, str]:
     maestro_visible_blobs: list[str] = []
     for m in re.finditer(
         r'"description":\s*\(\s*((?:[^()]|\([^)]*\))*?)\s*\),',
-        src, re.DOTALL,
+        src,
+        re.DOTALL,
     ):
         maestro_visible_blobs.append(m.group(1))
     wf_match = re.search(
-        r'"workflow":\s*\[(.*?)\],', src, re.DOTALL,
+        r'"workflow":\s*\[(.*?)\],',
+        src,
+        re.DOTALL,
     )
     if wf_match:
         maestro_visible_blobs.append(wf_match.group(1))
@@ -1956,20 +2123,12 @@ def _r_tier1_surface_truth() -> tuple[bool, str]:
             "mcp_tools/tier1.py — file shape changed?"
         )
 
-    tool_claims = set(
-        int(m) for m in re.findall(r"\b(\d+)[\s-]+tool(?:s|-catalog)?\b", scoped_src)
-    )
-    primitive_claims = set(
-        int(m) for m in re.findall(r"\b(\d+)\s+primitive(?:s)?\b", scoped_src)
-    )
+    tool_claims = set(int(m) for m in re.findall(r"\b(\d+)[\s-]+tool(?:s|-catalog)?\b", scoped_src))
+    primitive_claims = set(int(m) for m in re.findall(r"\b(\d+)\s+primitive(?:s)?\b", scoped_src))
     # Any claim in Maestro-visible text that isn't the canonical count
     # AND isn't a small structural literal (≤20) is stale.
-    stale_tool_claims = sorted(
-        n for n in tool_claims if n != tool_count and n > 20
-    )
-    stale_primitive_claims = sorted(
-        n for n in primitive_claims if n != primitive_count and n > 20
-    )
+    stale_tool_claims = sorted(n for n in tool_claims if n != tool_count and n > 20)
+    stale_primitive_claims = sorted(n for n in primitive_claims if n != primitive_count and n > 20)
     if stale_tool_claims:
         return False, (
             f"mcp_tools/tier1.py Maestro-visible text carries stale "
@@ -1995,21 +2154,28 @@ def _r_tier1_surface_truth() -> tuple[bool, str]:
     # operate on (Wave F B2 lesson: agents took "audit" to mean
     # emitted-project validation; both descriptions must now disclaim).
     audit_match = re.search(
-        r"MCP_TOOL_AUDIT\s*=\s*\{.*?\}", src, re.DOTALL,
+        r"MCP_TOOL_AUDIT\s*=\s*\{.*?\}",
+        src,
+        re.DOTALL,
     )
     verify_match = re.search(
-        r"MCP_TOOL_VERIFY\s*=\s*\{.*?\}", src, re.DOTALL,
+        r"MCP_TOOL_VERIFY\s*=\s*\{.*?\}",
+        src,
+        re.DOTALL,
     )
     if not audit_match or not verify_match:
         return False, (
             "mcp_tools/tier1.py missing MCP_TOOL_AUDIT / MCP_TOOL_VERIFY "
             "block — expected at module level"
         )
-    for label, block in (("MCP_TOOL_AUDIT", audit_match.group(0)),
-                         ("MCP_TOOL_VERIFY", verify_match.group(0))):
+    for label, block in (
+        ("MCP_TOOL_AUDIT", audit_match.group(0)),
+        ("MCP_TOOL_VERIFY", verify_match.group(0)),
+    ):
         blob = block.lower()
         has_scope_note = (
-            "skill-kit" in blob or "skill_root" in blob
+            "skill-kit" in blob
+            or "skill_root" in blob
             or "not an emitted project" in blob
             or "not the emitted project" in blob
             or "not validate an emitted project" in blob
@@ -2046,7 +2212,7 @@ def _r_contributing_md() -> tuple[bool, str]:
     missing = [s for s in required_sections if s not in txt]
     if missing:
         return False, f"CONTRIBUTING.md missing sections: {missing}"
-    return True, f"CONTRIBUTING.md complete (primitive + tool + recipe + dev setup)"
+    return True, "CONTRIBUTING.md complete (primitive + tool + recipe + dev setup)"
 
 
 RULES: list[Rule] = [
@@ -2064,9 +2230,19 @@ RULES: list[Rule] = [
     Rule("B1.2", 1, "Compose-with in every primitive .md", _r_compose_with_coverage),
     Rule("B1.3", 1, "≥15 tools import core.venous", _r_tools_import_primitives),
     Rule("B1.5", 1, "no hardcoded @mcp_app.tool decorators", _r_no_manual_mcp_tool_decorator),
-    Rule("B1.6", 1, "no orphan generators (every generate_* is tool or internal)", _r_no_orphan_generators),
+    Rule(
+        "B1.6",
+        1,
+        "no orphan generators (every generate_* is tool or internal)",
+        _r_no_orphan_generators,
+    ),
     Rule("B1.7", 1, "fastapi adapter coverage (tested + maps to registry)", _r_adapter_coverage),
-    Rule("B1.8", 1, "tier-lite eligibility (stateless, framework-free, no REPLACE_ME)", _r_tier_lite_eligibility),
+    Rule(
+        "B1.8",
+        1,
+        "tier-lite eligibility (stateless, framework-free, no REPLACE_ME)",
+        _r_tier_lite_eligibility,
+    ),
     Rule("B2.1", 2, "find_primitive MCP tool + BM25 quality gate", _r_find_primitive_discovery),
     Rule("B2.2", 2, "suggest_composition MCP tool + recipe quality gate", _r_suggest_composition),
     Rule("B2.3", 2, "reference docs site idempotent build", _r_docs_site),
@@ -2078,22 +2254,39 @@ RULES: list[Rule] = [
     Rule("B3.3", 3, "benchmark runner + stub Maestro + report JSON", _r_bench_rubric_runner),
     Rule("B3.4", 3, "nightly benchmark CI workflow", _r_bench_nightly_workflow),
     Rule("B3.5", 3, "baseline benchmark score published", _r_benchmark_score),
-    Rule("B3.6", 3, "code-level harness published (perfect on covered, ≥25% coverage)", _r_code_level_benchmark),
+    Rule(
+        "B3.6",
+        3,
+        "code-level harness published (perfect on covered, ≥25% coverage)",
+        _r_code_level_benchmark,
+    ),
     Rule("B3.7", 3, "blind benchmark harness + specs + stub fixtures", _r_blind_benchmark_harness),
     Rule("B4.1", 4, "install.sh + fresh-Docker CI", _r_install_docker_ci),
-    Rule("B4.2", 4, "/examples/ populated (≥5 with README + MAESTRO_SESSION + cross-link)", _r_examples_populated),
+    Rule(
+        "B4.2",
+        4,
+        "/examples/ populated (≥5 with README + MAESTRO_SESSION + cross-link)",
+        _r_examples_populated,
+    ),
     Rule("B4.3", 4, "docs site v1 (top-level docs + per-tool pages)", _r_docs_site_v1),
     Rule("B4.4", 4, "CHANGELOG + VERSION semver cite score", _r_changelog_semver),
     Rule("B4.5", 4, "CONTRIBUTING.md complete", _r_contributing_md),
     Rule("B4.6", 4, "VERSION triplet sync (repo-root + skill + STATUS.md)", _r_version_sync),
-    Rule("B4.7", 4, "canonical counts sync (INVENTORY vs CLAUDE/STATUS/ROADMAP/CHANGELOG)", _r_counts_sync),
+    Rule(
+        "B4.7",
+        4,
+        "canonical counts sync (INVENTORY vs CLAUDE/STATUS/ROADMAP/CHANGELOG)",
+        _r_counts_sync,
+    ),
 ]
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="CONTRACT.md machine enforcer.")
     parser.add_argument("--item", type=str, default=None, help="Run only this §B item (e.g. B1.1).")
-    parser.add_argument("--phase", type=int, default=None, help="Run all items in a phase (e.g. --phase 0).")
+    parser.add_argument(
+        "--phase", type=int, default=None, help="Run all items in a phase (e.g. --phase 0)."
+    )
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args()
 
@@ -2121,7 +2314,10 @@ def main() -> int:
             failed += 1
 
     passed = total - failed
-    print(f"\n{passed}/{total} contract items satisfied" + (" — ALL GREEN" if failed == 0 else f" — {failed} VIOLATIONS"))
+    print(
+        f"\n{passed}/{total} contract items satisfied"
+        + (" — ALL GREEN" if failed == 0 else f" — {failed} VIOLATIONS")
+    )
     return 0 if failed == 0 else 1
 
 

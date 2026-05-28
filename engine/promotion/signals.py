@@ -19,6 +19,7 @@ This module implements (a) and (b) via the following authoritative sources:
 
 All signal detection is read-only. No file write side effects.
 """
+
 from __future__ import annotations
 
 import json
@@ -58,7 +59,7 @@ def detect_tool_imports(primitive_name: str, catalog: dict) -> list[Signal]:
                     kind=SignalKind.TOOL_IMPORT,
                     source=tool.get("module_path", tool.get("name", "")),
                     detail=(
-                        f"Tool `{tool.get('name','')}` declares "
+                        f"Tool `{tool.get('name', '')}` declares "
                         f"imports_primitives including `{primitive_name}`."
                     ),
                 )
@@ -66,14 +67,12 @@ def detect_tool_imports(primitive_name: str, catalog: dict) -> list[Signal]:
     return out
 
 
-def detect_origin_tool(
-    primitive_dir: Path, catalog: dict
-) -> Signal | None:
+def detect_origin_tool(primitive_dir: Path, catalog: dict) -> Signal | None:
     """If the origin tool still lives in the catalog, that's a GENERATOR_REF."""
     origin = _load_origin(primitive_dir)
     if not origin:
         return None
-    origin_tool = (origin.get("tool") or origin.get("candidate", {}).get("tool") or "")
+    origin_tool = origin.get("tool") or origin.get("candidate", {}).get("tool") or ""
     if not origin_tool:
         return None
     # The origin path is tool-relative (e.g. "api_design/add_api_deprecation.py").
@@ -92,22 +91,18 @@ def detect_origin_tool(
     return None
 
 
-_SOURCE_IMPORT_RE = re.compile(
-    r"from\s+core\.venous\.[a-z_]+\.([A-Z][A-Za-z0-9_]+)"
-)
+_SOURCE_IMPORT_RE = re.compile(r"from\s+core\.venous\.[a-z_]+\.([A-Z][A-Za-z0-9_]+)")
 
 
 def detect_source_imports(primitive_name: str, roots: list[Path]) -> list[Signal]:
     """Scan .py trees for `from core.venous.<ns>.<primitive_name>` imports."""
     out: list[Signal] = []
-    pattern = re.compile(
-        rf"from\s+core\.venous\.[a-z_]+\.{re.escape(primitive_name)}\b"
-    )
+    pattern = re.compile(rf"from\s+core\.venous\.[a-z_]+\.{re.escape(primitive_name)}\b")
     for root in roots:
         if not root.exists():
             continue
         for py in root.rglob("*.py"):
-            if "__pycache__" in py.parts or "_extracted" in py.parts:
+            if "__pycache__" in py.parts or "_staging" in py.parts:
                 continue
             try:
                 text = py.read_text(encoding="utf-8", errors="ignore")
@@ -127,9 +122,7 @@ def detect_source_imports(primitive_name: str, roots: list[Path]) -> list[Signal
     return out
 
 
-def detect_benchmark_refs(
-    primitive_name: str, benchmark_dir: Path
-) -> list[Signal]:
+def detect_benchmark_refs(primitive_name: str, benchmark_dir: Path) -> list[Signal]:
     """Best-effort: name mentions in benchmark spec .md files."""
     if not benchmark_dir.exists():
         return []
@@ -155,9 +148,7 @@ def detect_benchmark_refs(
     return out
 
 
-def collect_signals(
-    primitive_name: str, primitive_dir: Path, catalog: dict
-) -> list[Signal]:
+def collect_signals(primitive_name: str, primitive_dir: Path, catalog: dict) -> list[Signal]:
     """One-shot signal collection for a single primitive."""
     out: list[Signal] = []
     out.extend(detect_tool_imports(primitive_name, catalog))

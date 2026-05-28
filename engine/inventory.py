@@ -6,6 +6,7 @@ memory, and the ROADMAP must reconcile against this script's output.
 Run:
     PYTHONPATH=. .venv/bin/python -m engine.inventory
 """
+
 from __future__ import annotations
 
 import json
@@ -40,14 +41,16 @@ def _count_dirs(root: Path, *, depth: int = 1) -> int:
         for p in root.rglob("*")
         if p.is_dir()
         and len(p.relative_to(root).parts) == depth
-        and not any(pt.startswith(("_quarantine", "__pycache__")) for pt in p.relative_to(root).parts[:-1])
+        and not any(
+            pt.startswith(("_quarantine", "__pycache__")) for pt in p.relative_to(root).parts[:-1]
+        )
     )
 
 
 def _count_mcp_tools() -> int:
     n = 0
     for py in SKILL_ROOT.rglob("*.py"):
-        if "__pycache__" in py.parts or "_extracted" in py.parts:
+        if "__pycache__" in py.parts or "_staging" in py.parts:
             continue
         try:
             if "MCP_TOOL" in py.read_text(encoding="utf-8"):
@@ -64,7 +67,9 @@ def _count_registered_primitives() -> int:
     return sum(1 for line in p.read_text().splitlines() if line.startswith("- name:"))
 
 
-def _count_primitive_dirs(root: Path, exclude: set[str] | None = None, *, pascal_only: bool = False) -> int:
+def _count_primitive_dirs(
+    root: Path, exclude: set[str] | None = None, *, pascal_only: bool = False
+) -> int:
     exclude = exclude or set()
     if not root.exists():
         return 0
@@ -85,17 +90,17 @@ def _count_primitive_dirs(root: Path, exclude: set[str] | None = None, *, pascal
 
 
 def collect() -> dict:
-    R = SKILL_ROOT
+    root = SKILL_ROOT
 
     # adapt/ breakdown
     adapt_subdirs = ["extend", "verify", "operate", "evolve", "proactive", "contracts"]
     adapt: dict[str, int] = {}
     for sub in adapt_subdirs:
-        adapt[sub] = _count_py(R / "adapt" / sub)
+        adapt[sub] = _count_py(root / "adapt" / sub)
 
     # adapt/extend/ subdomains
     extend_subdomains: dict[str, int] = {}
-    ext_root = R / "adapt" / "extend"
+    ext_root = root / "adapt" / "extend"
     if ext_root.exists():
         for p in sorted(ext_root.iterdir()):
             if p.is_dir() and not p.name.startswith(("_", ".")):
@@ -103,7 +108,7 @@ def collect() -> dict:
 
     # generators/
     generators: dict[str, int] = {}
-    gen_root = R / "generators"
+    gen_root = root / "generators"
     if gen_root.exists():
         for p in sorted(gen_root.iterdir()):
             if p.is_dir() and not p.name.startswith(("_", ".")):
@@ -111,15 +116,15 @@ def collect() -> dict:
 
     # modules/
     modules: dict[str, int] = {}
-    mod_root = R / "modules"
+    mod_root = root / "modules"
     if mod_root.exists():
         for p in sorted(mod_root.iterdir()):
             if p.is_dir() and not p.name.startswith(("_", ".")):
                 modules[p.name] = _count_py(p)
 
-    # core/venous — registered primitives per namespace (excluding _extracted, _adapters)
+    # core/venous — registered primitives per namespace (excluding _staging, _adapters)
     venous_ns: dict[str, int] = {}
-    venous_root = R / "core" / "venous"
+    venous_root = root / "core" / "venous"
     if venous_root.exists():
         for p in sorted(venous_root.iterdir()):
             if p.is_dir() and not p.name.startswith(("_", ".")):
@@ -127,17 +132,16 @@ def collect() -> dict:
 
     # Adapters
     adapter_count = 0
-    adapt_root = R / "core" / "venous" / "_adapters" / "fastapi"
+    adapt_root = root / "core" / "venous" / "_adapters" / "fastapi"
     if adapt_root.exists():
         adapter_count = sum(
-            1 for p in adapt_root.glob("*.py")
-            if not p.name.startswith(("_", "test_"))
+            1 for p in adapt_root.glob("*.py") if not p.name.startswith(("_", "test_"))
         )
 
-    # _extracted staged — count only valid PascalCase dirs (the subset that
+    # _staging staged — count only valid PascalCase dirs (the subset that
     # makes it into the catalog as `status="staged"`).
     extracted_ns: dict[str, int] = {}
-    ext_staged = R / "core" / "venous" / "_extracted"
+    ext_staged = root / "core" / "venous" / "_staging"
     if ext_staged.exists():
         for p in sorted(ext_staged.iterdir()):
             if p.is_dir():
@@ -145,7 +149,7 @@ def collect() -> dict:
                 extracted_ns[p.name] = _count_primitive_dirs(p, pascal_only=pascal_only)
 
     # catalog.json counts
-    catalog_path = R / "engine" / "index" / "catalog.json"
+    catalog_path = root / "engine" / "index" / "catalog.json"
     catalog_counts = {"tools": 0, "primitives": 0, "recipes": 0}
     if catalog_path.exists():
         try:
@@ -162,7 +166,7 @@ def collect() -> dict:
 
     # Examples live at repo root (canonical location, per CONTRACT §B4.2),
     # not inside the skill tree. We resolve to `<repo_root>/examples/`.
-    examples_dir = R.parent.parent / "examples"
+    examples_dir = root.parent.parent / "examples"
     examples_populated = 0
     examples_empty = 0
     if examples_dir.exists():
@@ -174,11 +178,18 @@ def collect() -> dict:
             else:
                 examples_empty += 1
     examples = examples_populated
-    specs = sum(1 for p in (R / "specs").glob("*.md") if not p.name.startswith(("README", "RESUME")))
-    benchmark_specs = sum(
-        1 for p in (R / "benchmarks" / "specs").rglob("*.md")
-        if p.name.upper() != "README.MD"
-    ) if (R / "benchmarks" / "specs").exists() else 0
+    specs = sum(
+        1 for p in (root / "specs").glob("*.md") if not p.name.startswith(("README", "RESUME"))
+    )
+    benchmark_specs = (
+        sum(
+            1
+            for p in (root / "benchmarks" / "specs").rglob("*.md")
+            if p.name.upper() != "README.MD"
+        )
+        if (root / "benchmarks" / "specs").exists()
+        else 0
+    )
 
     return {
         "mcp_tools_total": _count_mcp_tools(),
@@ -218,41 +229,41 @@ def render_markdown(inv: dict) -> str:
 
 ## Headline
 
-- **{inv['mcp_tools_total']} files carry `MCP_TOOL` metadata** (Maestro-visible surface).
-- **Catalog:** {inv['catalog']['tools']} tools + {inv['catalog']['primitives']} primitives + {inv['catalog']['recipes']} recipes.
-- **{inv['venous_registered_total']} registered primitives** (`core/venous/<ns>/<Name>/`).
-- **{inv['extracted_staged_total']} staged primitives** in `_extracted/` (plus {inv['extracted_quarantined']} quarantined).
-- **{inv['adapters_fastapi']} FastAPI adapters** (production-wired).
-- **{inv['modules_total']} `modules/` packages** (pre-built feature bundles).
-- **{inv['examples']} populated examples** ({inv['examples_empty']} empty scaffolds), {inv['specs']} specs, {inv['benchmark_specs']} benchmark specs.
+- **{inv["mcp_tools_total"]} files carry `MCP_TOOL` metadata** (Maestro-visible surface).
+- **Catalog:** {inv["catalog"]["tools"]} tools + {inv["catalog"]["primitives"]} primitives + {inv["catalog"]["recipes"]} recipes.
+- **{inv["venous_registered_total"]} registered primitives** (`core/venous/<ns>/<Name>/`).
+- **{inv["extracted_staged_total"]} staged primitives** in `_staging/` (plus {inv["extracted_quarantined"]} quarantined).
+- **{inv["adapters_fastapi"]} FastAPI adapters** (production-wired).
+- **{inv["modules_total"]} `modules/` packages** (pre-built feature bundles).
+- **{inv["examples"]} populated examples** ({inv["examples_empty"]} empty scaffolds), {inv["specs"]} specs, {inv["benchmark_specs"]} benchmark specs.
 
 ---
 
-## 1. adapt/ — {inv['adapt_total']} tools
+## 1. adapt/ — {inv["adapt_total"]} tools
 
-{_table(inv['adapt'], 'bucket')}
+{_table(inv["adapt"], "bucket")}
 
-### adapt/extend/ sub-domains ({sum(inv['extend_subdomains'].values())} tools)
+### adapt/extend/ sub-domains ({sum(inv["extend_subdomains"].values())} tools)
 
-{_table(inv['extend_subdomains'], 'domain')}
+{_table(inv["extend_subdomains"], "domain")}
 
-## 2. generators/ — {inv['generators_total']} tools
+## 2. generators/ — {inv["generators_total"]} tools
 
-{_table(inv['generators'], 'category')}
+{_table(inv["generators"], "category")}
 
-## 3. modules/ — {inv['modules_total']} modules
+## 3. modules/ — {inv["modules_total"]} modules
 
-{_table(inv['modules'], 'module')}
+{_table(inv["modules"], "module")}
 
-## 4. core/venous — registered primitives ({inv['venous_registered_total']})
+## 4. core/venous — registered primitives ({inv["venous_registered_total"]})
 
-{_table(inv['venous_registered'], 'namespace')}
+{_table(inv["venous_registered"], "namespace")}
 
-Plus **{inv['adapters_fastapi']} FastAPI adapters** under `core/venous/_adapters/fastapi/`.
+Plus **{inv["adapters_fastapi"]} FastAPI adapters** under `core/venous/_adapters/fastapi/`.
 
-## 5. core/venous/_extracted — staged primitives ({inv['extracted_staged_total']} + {inv['extracted_quarantined']} quarantined)
+## 5. core/venous/_staging — staged primitives ({inv["extracted_staged_total"]} + {inv["extracted_quarantined"]} quarantined)
 
-{_table(inv['extracted_staged'], 'namespace')}
+{_table(inv["extracted_staged"], "namespace")}
 
 Staged primitives have HuGR shell (contract.json, protocol, md, tests,
 dashboard) but carry `REPLACE_ME` stubs — promote via extraction pipeline
@@ -271,7 +282,9 @@ def main() -> None:
     print(f"wrote {out.relative_to(SKILL_ROOT.parent.parent)}")
     print(f"  MCP tools: {inv['mcp_tools_total']}")
     print(f"  registered primitives: {inv['venous_registered_total']}")
-    print(f"  staged primitives: {inv['extracted_staged_total']}  (+{inv['extracted_quarantined']} quarantined)")
+    print(
+        f"  staged primitives: {inv['extracted_staged_total']}  (+{inv['extracted_quarantined']} quarantined)"
+    )
 
 
 if __name__ == "__main__":

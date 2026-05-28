@@ -737,7 +737,7 @@ Framework-coupled with no motor registered. Cannot be promoted as-is (§B1.0.1 b
 
 ## Wait for §A12(b) caller signal — 101 primitive(s)
 
-No current §A12(b) signal — no registered tool, module, or benchmark spec references this primitive. §A12 discipline says: wait for a caller to appear before promoting. Leave in `_extracted/` with the recorded staging_reason.
+No current §A12(b) signal — no registered tool, module, or benchmark spec references this primitive. §A12 discipline says: wait for a caller to appear before promoting. Leave in `_staging/` with the recorded staging_reason.
 
 ### 1. [ ] `SignatureHeader` (api)
 

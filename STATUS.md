@@ -36,9 +36,9 @@ surfaces are MCP-registered and JIT-discoverable via
 | MCP-registered tools (catalog) | 201 | `jq '.tools \| length' engine/index/catalog.json` |
 | Maestro-visible surface (catalog + tier-1 + tree) | 217 | 201 catalog + 7 tier-1 + 9 tree dispatchers |
 | Production primitives (registered) | 124 | `grep -c '^- name:' engine/primitives_by_concern.yaml` |
-| Production primitive directories | 124 | `find core/venous -mindepth 2 -maxdepth 2 -type d ! -path '*_extracted*' ! -path '*_adapters*' ! -path '*__pycache__*' \| wc -l` |
+| Production primitive directories | 124 | `find core/venous -mindepth 2 -maxdepth 2 -type d ! -path '*_staging*' ! -path '*_adapters*' ! -path '*__pycache__*' \| wc -l` |
 | Staged primitives (PascalCase, promotable) | 176 | `jq '[.primitives[] \| select(.status=="staged")] \| length' engine/index/catalog.json` |
-| Quarantined primitives (rejected by extraction gate) | 42 | `find core/venous/_extracted/_quarantine -mindepth 2 -maxdepth 2 -type d \| wc -l` |
+| Quarantined primitives (rejected by extraction gate) | 42 | `find core/venous/_staging/_quarantine -mindepth 2 -maxdepth 2 -type d \| wc -l` |
 | Provider adapters (`_adapters/{redis,stripe}/`) | 2 | `find core/venous/_adapters -maxdepth 2 -name '*Adapter.py' ! -path '*fastapi*' ! -name 'test_*' \| wc -l` |
 | Benchmark specs (Phase 3) | 20 | `find benchmarks/specs -name '*.md' ! -name 'README.md' \| wc -l` |
 | Contract items green | 37/37 | `PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check` |

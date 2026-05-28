@@ -42,6 +42,7 @@ Every verdict carries a `blockers` list: preconditions the executor must
 see resolved before it runs. Non-empty blockers = documentation, not yet
 executable.
 """
+
 from __future__ import annotations
 
 import re
@@ -56,7 +57,7 @@ from engine.promotion.schemas import (
     StateFlags,
     Verdict,
 )
-from engine.promotion.signals import collect_signals, _load_catalog
+from engine.promotion.signals import _load_catalog, collect_signals
 from engine.promotion.state import (
     SKILL_ROOT,
     _registered_primitive_names,
@@ -114,12 +115,7 @@ def _motor_is_registered(staged_name: str, registered: set[str]) -> str | None:
 def _adapter_exists(motor: str) -> bool:
     """True if `core/venous/_adapters/fastapi/<Motor>Adapter.py` exists."""
     return (
-        SKILL_ROOT
-        / "core"
-        / "venous"
-        / "_adapters"
-        / "fastapi"
-        / f"{motor}Adapter.py"
+        SKILL_ROOT / "core" / "venous" / "_adapters" / "fastapi" / f"{motor}Adapter.py"
     ).exists()
 
 
@@ -419,7 +415,7 @@ def classify_primitive(
 
 
 def classify_all() -> Ledger:
-    root = SKILL_ROOT / "core" / "venous" / "_extracted"
+    root = SKILL_ROOT / "core" / "venous" / "_staging"
     registered_names = _registered_primitive_names()
     catalog = _load_catalog()
     entries: list[LedgerEntry] = []
@@ -488,8 +484,7 @@ def main() -> int:
     ledger = classify_all()
     out_json = SKILL_ROOT / "engine" / "promotion" / "ledger.json"
     out_json.write_text(
-        json.dumps(ledger.model_dump(mode="json"), indent=2, sort_keys=False)
-        + "\n",
+        json.dumps(ledger.model_dump(mode="json"), indent=2, sort_keys=False) + "\n",
         encoding="utf-8",
     )
     # Brief stdout summary.

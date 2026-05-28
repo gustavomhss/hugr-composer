@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Minimal T0 gate for extracted primitives: verify the .py compiles.
 
-Runs `py_compile` against every `<Name>.py` under `core/venous/_extracted/`.
+Runs `py_compile` against every `<Name>.py` under `core/venous/_staging/`.
 A compile failure does NOT delete the primitive — it records the failure in
 `_extraction_report.json` inside the primitive's directory, so the staged
 file becomes a self-documenting TODO for the reviewer.
@@ -23,7 +23,7 @@ import py_compile
 import tempfile
 from pathlib import Path
 
-_STAGE_DIR = Path(__file__).resolve().parents[2] / "core" / "venous" / "_extracted"
+_STAGE_DIR = Path(__file__).resolve().parents[2] / "core" / "venous" / "_staging"
 
 
 def _check_one(py_path: Path) -> dict[str, object]:
@@ -49,7 +49,7 @@ def _check_one(py_path: Path) -> dict[str, object]:
 
 def run() -> dict[str, object]:
     if not _STAGE_DIR.exists():
-        raise SystemExit("No _extracted/ directory.")
+        raise SystemExit("No _staging/ directory.")
     totals = {"ok": 0, "ast_syntax_error": 0, "compile_error": 0}
     failures: list[dict[str, object]] = []
     for ns_dir in sorted(_STAGE_DIR.iterdir()):
@@ -72,11 +72,13 @@ def run() -> dict[str, object]:
                 existing[py.name] = result
                 report_path.write_text(json.dumps(existing, indent=2))
                 if result["compile"] != "ok":
-                    failures.append({
-                        "primitive": f"{ns_dir.name}/{prim_dir.name}",
-                        "file": py.name,
-                        **result,
-                    })
+                    failures.append(
+                        {
+                            "primitive": f"{ns_dir.name}/{prim_dir.name}",
+                            "file": py.name,
+                            **result,
+                        }
+                    )
     return {"totals": totals, "failure_count": len(failures), "failures": failures}
 
 
