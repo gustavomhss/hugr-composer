@@ -7,10 +7,17 @@ Structural tests (CONTRACT §B1.0 + §B1.0.1):
 3. Write a ≤20-line `app/rbac.py` with `require_roles()` backed by
    `get_current_user` (NOT a silent-anonymous stub).
 
+Honesty regression tests (P0 fix — "reports success while enforcing NOTHING"):
+- The ToolResult MUST carry an all-caps NOT-ENFORCED warning as the FIRST
+  warning, using the exact prefix "⚠ RBAC IS NOT ENFORCED:".
+- The dry_run result must also carry the warning.
+- The example file app/api/routes/_rbac_example.py MUST be emitted and
+  contain a real @router.get() that uses Depends(require_roles(...)).
+- The warning constant must be explicit about mechanism vs policy.
+
 Behavioural regression tests (BUG FIX — "claims success but does nothing"):
 - The guard must ACTUALLY enforce roles: admin-role user admitted,
   non-admin denied 403, no token → 401 via get_current_user.
-- The ToolResult MUST carry warnings stating RBAC is NOT auto-enforced.
 - The glue file must NOT contain `resolve_principal` returning `anonymous()`
   unconditionally (the old silent-allow-all stub).
 - The glue file MUST wire `require_roles` through `get_current_user`.
@@ -152,19 +159,19 @@ def test_execution_time_recorded() -> None:
 # ---------------------------------------------------------------------------
 
 def test_result_warns_rbac_not_auto_enforced() -> None:
-    """ToolResult MUST carry a warning that RBAC is not auto-enforced.
+    """ToolResult MUST carry an all-caps NOT-ENFORCED warning as first entry.
 
     The old implementation returned status="success" with no warnings,
     letting callers assume RBAC was active on their routes.  This regression
-    test ensures the warning is always present in the result.
+    test ensures the warning is always present and uses the exact P0 prefix.
     """
     project_dir = create_fixture_project(name="rbac_t12")
     result = add_rbac(ToolInput(project_dir=str(project_dir)))
     assert result.status == "success"
     assert result.warnings, "ToolResult must carry at least one warning"
-    warning_text = " ".join(result.warnings).upper()
-    assert "NOT AUTO-ENFORCED" in warning_text or "NOT" in warning_text, (
-        f"Warning must state RBAC is not auto-enforced; got: {result.warnings}"
+    first_warning = result.warnings[0]
+    assert "RBAC IS NOT ENFORCED" in first_warning, (
+        f"First warning must contain 'RBAC IS NOT ENFORCED'; got: {first_warning!r}"
     )
 
 
@@ -177,15 +184,22 @@ def test_dry_run_result_also_warns() -> None:
 
 
 def test_warn_not_auto_enforced_constant_is_explicit() -> None:
-    """The warning constant exported from add_rbac must be explicit about enforcement.
+    """The warning constant must use the exact all-caps P0 prefix format.
 
     This prevents future changes from softening the warning text to something
-    that doesn't communicate the security risk.
+    that doesn't communicate the security risk clearly to LLM drivers.
     """
-    w = _WARN_NOT_AUTO_ENFORCED.upper()
-    assert "NOT" in w
-    assert "AUTO-ENFORCED" in w or "ENFORCED" in w
-    assert "ROUTE" in w or "ROUTES" in w
+    # Must start with the unmistakable symbol + all-caps phrase.
+    assert "⚠" in _WARN_NOT_AUTO_ENFORCED, (
+        "Warning must start with ⚠ so LLM parsers can't miss it"
+    )
+    assert "RBAC IS NOT ENFORCED" in _WARN_NOT_AUTO_ENFORCED, (
+        "Warning must contain 'RBAC IS NOT ENFORCED' verbatim"
+    )
+    # Must explain that the tool ships the mechanism, not the policy.
+    assert "mechanism" in _WARN_NOT_AUTO_ENFORCED.lower() or "policy" in _WARN_NOT_AUTO_ENFORCED.lower(), (
+        "Warning must explain mechanism vs policy distinction"
+    )
 
 
 def test_glue_does_not_contain_silent_anonymous_stub() -> None:
@@ -347,6 +361,76 @@ def test_user_to_principal_maps_superuser_to_admin_role() -> None:
     )
 
 
+# ---------------------------------------------------------------------------
+# Honesty P0 tests — example file must be emitted and be a real wired route
+# ---------------------------------------------------------------------------
+
+def test_rbac_example_file_is_emitted() -> None:
+    """add_rbac must emit app/api/routes/_rbac_example.py alongside app/rbac.py.
+
+    A warning alone is not enough: an LLM driver needs a concrete runnable
+    example to copy from, not just text saying "add Depends(require_roles(...))".
+    """
+    project_dir = create_fixture_project(name="rbac_t17")
+    result = add_rbac(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success"
+    example = project_dir / "app" / "api" / "routes" / "_rbac_example.py"
+    assert example.exists(), (
+        "add_rbac must emit app/api/routes/_rbac_example.py — "
+        "the concrete wired-example file was not found"
+    )
+
+
+def test_rbac_example_file_parses() -> None:
+    """The emitted example file must parse without errors."""
+    project_dir = create_fixture_project(name="rbac_t18")
+    add_rbac(ToolInput(project_dir=str(project_dir)))
+    example = project_dir / "app" / "api" / "routes" / "_rbac_example.py"
+    try:
+        ast.parse(example.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"_rbac_example.py has syntax error: {exc}") from exc
+
+
+def test_rbac_example_uses_require_roles_depends() -> None:
+    """The example file must contain a real @router route with Depends(require_roles(...)).
+
+    This ensures the example is a genuine wired usage, not a placeholder comment.
+    """
+    project_dir = create_fixture_project(name="rbac_t19")
+    add_rbac(ToolInput(project_dir=str(project_dir)))
+    example_text = (project_dir / "app" / "api" / "routes" / "_rbac_example.py").read_text()
+    assert "require_roles" in example_text, (
+        "_rbac_example.py must use require_roles"
+    )
+    assert "Depends" in example_text, (
+        "_rbac_example.py must use Depends(require_roles(...)) to wire the guard"
+    )
+    assert "@router." in example_text, (
+        "_rbac_example.py must contain a real @router route decorator"
+    )
+
+
+def test_rbac_example_in_files_created() -> None:
+    """The example file path must appear in ToolResult.files_created."""
+    project_dir = create_fixture_project(name="rbac_t20")
+    result = add_rbac(ToolInput(project_dir=str(project_dir)))
+    example_str = str(project_dir / "app" / "api" / "routes" / "_rbac_example.py")
+    assert any("_rbac_example.py" in f for f in (result.files_created or [])), (
+        f"_rbac_example.py not in files_created; got: {result.files_created}"
+    )
+
+
+def test_glue_docstring_mentions_example_file() -> None:
+    """app/rbac.py docstring must reference _rbac_example.py so it's discoverable."""
+    project_dir = create_fixture_project(name="rbac_t21")
+    add_rbac(ToolInput(project_dir=str(project_dir)))
+    glue_text = (project_dir / "app" / "rbac.py").read_text()
+    assert "_rbac_example.py" in glue_text, (
+        "app/rbac.py docstring must reference _rbac_example.py"
+    )
+
+
 if __name__ == "__main__":
     tests = [
         test_success_status,
@@ -371,6 +455,12 @@ if __name__ == "__main__":
         test_guard_denies_principal_without_required_role,
         test_guard_denies_anonymous_principal,
         test_user_to_principal_maps_superuser_to_admin_role,
+        # Honesty P0 tests — example file
+        test_rbac_example_file_is_emitted,
+        test_rbac_example_file_parses,
+        test_rbac_example_uses_require_roles_depends,
+        test_rbac_example_in_files_created,
+        test_glue_docstring_mentions_example_file,
     ]
     passed = failed = 0
     for fn in tests:
