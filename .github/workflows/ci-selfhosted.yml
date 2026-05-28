@@ -160,10 +160,11 @@ jobs:
           if [ -n "$MDF" ]; then python3 scripts/checks/md_location.py $MDF; fi
 
       - name: Unit tests (pytest adapt/)
-        # -n auto parallelizes the 3200+ tests across cores: ~15min -> ~4min.
-        # Tests are independent (each scaffolds its own tempdir), validated
-        # parallel-safe (3248 passed under -n auto).
-        run: .venv/bin/python -m pytest adapt/ -q --tb=short -n auto
+        # -n auto parallelizes the 3200+ tests across cores: ~15min -> ~3.5min.
+        # --dist loadfile keeps each file's tests on ONE worker: some behavior
+        # suites share module-scoped fixtures (a seeded DB/user) and assume
+        # in-file order, which the default per-test distribution breaks.
+        run: .venv/bin/python -m pytest adapt/ -q --tb=short -n auto --dist loadfile
 
       - name: Boot 100/100 tools
         run: .venv/bin/python tests/test_boot.py
