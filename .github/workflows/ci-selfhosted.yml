@@ -1,19 +1,15 @@
-name: SKILL-001 CI (self-hosted)
+name: SKILL-001 CI (self-hosted, parallel)
 
-# Runs the full SKILL-001 check suite on a self-hosted runner (Gustavo's mac),
-# free and unlimited, while GitHub-hosted Actions billing is unavailable. The
-# GitHub-hosted skill-001-ci.yml is kept as-is for when billing returns / the
-# repo goes public.
+# Parallel CI on self-hosted runners (Gustavo's mac). The old single serial job
+# was ~15min with 11/12 cores idle during non-parallel steps. This splits the
+# suite into independent JOBS that run concurrently across multiple runner
+# instances on the same mac → ~max(job) instead of sum(steps).
 #
-# Differences vs the hosted workflow, by necessity:
-#   - Python is pinned to 3.12 via setup-python (the hosted CI target), which
-#     also fixes the local 3.14 drift.
-#   - The two Postgres suites use a LOCAL Postgres on :5432 instead of a
-#     `services:` container (service containers are Linux-only; this runner is
-#     macOS). Provision once:
-#       psql postgres -c "CREATE USER skill WITH PASSWORD 'skill' CREATEDB;"
-#       psql postgres -c "CREATE DATABASE skill_e2e OWNER skill;"
-#       psql skill_e2e -c "ALTER SCHEMA public OWNER TO skill;"
+# Setup once: register extra runners with scripts/ci/setup-runners.sh (see
+# docs/guides/ci-runners.md). All runners share one venv at $HOME/.hugr-ci-venv
+# (built once by the `setup` job, reused — runners are persistent).
+#
+# Local Postgres on :5432 (user/pass/db = skill/skill/skill_e2e) for the pg jobs.
 
 on:
   push:
@@ -28,35 +24,159 @@ on:
       - '.github/**'
   pull_request:
     branches: [main]
-    paths:
-      - 'skills/SKILL-001-fastapi-production/**'
-      - 'hugr_auth/**'
-      - 'scripts/**'
-      - 'docs/**'
-      - '.pre-commit-config.yaml'
-      - 'Makefile'
-      - '.github/**'
   workflow_dispatch:
+  schedule:
+    - cron: '0 7 * * *'   # nightly full run (07:00 UTC)
 
 concurrency:
   group: "ci-selfhosted-${{ github.ref }}"
   cancel-in-progress: true
 
-defaults:
-  run:
-    working-directory: skills/SKILL-001-fastapi-production
+env:
+  VENV: /Users/gustavoschneiter/.hugr-ci-venv
+  KIT: skills/SKILL-001-fastapi-production
+  SECRET_KEY: ci-test-secret-key-must-be-32-chars-long!!!
+  MFA_FERNET_KEY: L7gvXDh2v6syV65J0-iwLQMTYbVavNXO2vuXgntcFBo=
+  RATE_LIMITING_ENABLED: 'false'
+  ENVIRONMENT: local
 
 jobs:
-  full-suite:
-    name: Full check suite (self-hosted)
+  # --- Shared venv build (idempotent; persistent runners reuse it) ----------
+  setup:
+    name: setup (shared venv)
     runs-on: [self-hosted, macos, local]
-    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Ensure shared venv
+        working-directory: ${{ env.KIT }}
+        run: |
+          set -euo pipefail
+          REQ_HASH=$(shasum requirements-mcp.txt 2>/dev/null | awk '{print $1}')
+          STAMP="${VENV}/.req_hash"
+          if [ ! -x "${VENV}/bin/python" ] || [ "$(cat "$STAMP" 2>/dev/null)" != "$REQ_HASH" ]; then
+            echo "Building shared venv at ${VENV}"
+            /usr/local/bin/python3.12 -m venv "${VENV}" || python3.12 -m venv "${VENV}"
+            "${VENV}/bin/pip" install --quiet --upgrade pip
+            "${VENV}/bin/pip" install --quiet -r requirements-mcp.txt
+            "${VENV}/bin/pip" install --quiet \
+              PyJWT alembic asyncpg email-validator fastapi "pwdlib[argon2]" \
+              pydantic-settings pydantic python-multipart "redis[hiredis]==5.3.1" slowapi \
+              "sqlalchemy[asyncio]" structlog "uvicorn[standard]" \
+              pytest pytest-asyncio pytest-xdist ruff aiosqlite httpx \
+              boto3 arq jinja2 strawberry-graphql==0.314.3 qrcode sse-starlette cryptography pyotp \
+              aiodataloader msgpack
+            echo "$REQ_HASH" > "$STAMP"
+          else
+            echo "Shared venv up to date (req hash $REQ_HASH)"
+          fi
+
+  # --- Lint + repo hygiene (fast) -------------------------------------------
+  lint:
+    name: lint
+    needs: setup
+    runs-on: [self-hosted, macos, local]
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Lint (ruff + hygiene, scoped to PR diff)
+        run: |
+          set -euo pipefail
+          TARGET="${GITHUB_BASE_REF:-main}"
+          git fetch -q --no-tags origin "+refs/heads/${TARGET}:refs/remotes/origin/${TARGET}" || true
+          BASE=$(git merge-base "origin/${TARGET}" HEAD 2>/dev/null || true)
+          if [ -z "$BASE" ] && [ "$(git rev-parse --is-shallow-repository 2>/dev/null)" = "true" ]; then
+            git fetch -q --no-tags --unshallow origin 2>/dev/null || true
+            git fetch -q --no-tags origin "+refs/heads/${TARGET}:refs/remotes/origin/${TARGET}" || true
+            BASE=$(git merge-base "origin/${TARGET}" HEAD 2>/dev/null || true)
+          fi
+          [ -z "$BASE" ] && { echo "::error::cannot determine diff base"; exit 1; }
+          CHANGED=$(git diff --name-only "$BASE" HEAD)
+          PYF=$(echo "$CHANGED" | grep '\.py$' | grep -vE '\.venv|/emitted/' || true)
+          MDF=$(echo "$CHANGED" | grep '\.md$' || true)
+          python3 scripts/checks/no_committed_venv.py
+          if [ -n "$PYF" ]; then
+            "${VENV}/bin/python" -m ruff check $PYF
+            "${VENV}/bin/python" -m ruff format --check $PYF
+            python3 scripts/checks/file_size.py $PYF || echo "::warning::file_size advisory"
+          fi
+          [ -n "$MDF" ] && python3 scripts/checks/md_location.py $MDF || true
+
+  # --- Unit suite (the long pole; internally parallel) ----------------------
+  unit:
+    name: unit (pytest adapt/)
+    needs: setup
+    runs-on: [self-hosted, macos, local]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit tests
+        working-directory: ${{ env.KIT }}
+        env: { PYTHONPATH: . }
+        # -n 6 (not auto/12): this job runs CONCURRENTLY with the other test jobs
+        # on the same 12-core mac; capping workers avoids CPU oversubscription that
+        # would reintroduce boot-timeout flakes across jobs.
+        run: "${VENV}/bin/python -m pytest adapt/ -q --tb=short -n 6 --dist loadfile"
+
+  # --- Composition gates (boot + the regression net) ------------------------
+  composition:
+    name: composition gates
+    needs: setup
+    runs-on: [self-hosted, macos, local]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Boot + chains + regression + property + contract
+        working-directory: ${{ env.KIT }}
+        env: { PYTHONPATH: . }
+        run: |
+          set -euo pipefail
+          "${VENV}/bin/python" tests/test_boot.py
+          "${VENV}/bin/python" tests/test_boot_chains.py
+          "${VENV}/bin/python" tests/test_p0_regression_gates.py
+          "${VENV}/bin/python" tests/property_tests.py
+          "${VENV}/bin/python" -m engine.audit.contract_check
+
+  # --- Integration: SQLite e2e + emitted-project audit ----------------------
+  integration:
+    name: integration (sqlite e2e)
+    needs: setup
+    runs-on: [self-hosted, macos, local]
+    steps:
+      - uses: actions/checkout@v4
+      - name: SQLite E2E + emitted audit
+        working-directory: ${{ env.KIT }}
+        env: { PYTHONPATH: . }
+        run: |
+          set -euo pipefail
+          "${VENV}/bin/python" tests/test_e2e_hardcore.py
+          "${VENV}/bin/python" tests/test_emitted_project_audit.py
+
+  # --- Gate: HuGR auth (license/store/issuance/e2e) + MCP discovery ---------
+  auth-mcp:
+    name: auth + mcp gate
+    needs: setup
+    runs-on: [self-hosted, macos, local]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Auth gate + license/store/issuance/e2e + MCP discovery
+        run: |
+          set -euo pipefail
+          cd "${{ github.workspace }}/${KIT}"
+          PYTHONPATH=. "${VENV}/bin/python" tests/test_auth_gate.py
+          cd "${{ github.workspace }}"
+          PYTHONPATH=. "${VENV}/bin/python" hugr_auth/test_license.py
+          PYTHONPATH=. "${VENV}/bin/python" hugr_auth/test_store.py
+          PYTHONPATH=. "${VENV}/bin/python" hugr_auth/test_issuance.py
+          PYTHONPATH=. "${VENV}/bin/python" hugr_auth/test_e2e_gate.py
+          cd "${{ github.workspace }}/${KIT}"
+          PYTHONPATH=. "${VENV}/bin/python" -c "import asyncio; from mcp_tools.server import mcp; from mcp_tools.discovery import discover_and_register; discover_and_register(mcp); n=len(asyncio.run(mcp.list_tools())); print(f'MCP discovery: {n} tools'); assert n>=170, f'expected >=170, got {n}'"
+
+  # --- Postgres-backed: pg e2e + behavior scenarios -------------------------
+  postgres-behavior:
+    name: postgres + behavior
+    needs: setup
+    runs-on: [self-hosted, macos, local]
     env:
-      SECRET_KEY: ci-test-secret-key-must-be-32-chars-long!!!
-      MFA_FERNET_KEY: L7gvXDh2v6syV65J0-iwLQMTYbVavNXO2vuXgntcFBo=
-      RATE_LIMITING_ENABLED: 'false'
-      ENVIRONMENT: local
-      PYTHONPATH: .
       E2E_POSTGRES_URL: postgresql+asyncpg://skill:skill@localhost:5432/skill_e2e
       POSTGRES_SERVER: localhost
       POSTGRES_PORT: '5432'
@@ -65,172 +185,10 @@ jobs:
       POSTGRES_DB: skill_e2e
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # full history so the lint step can compute the merge-base diff
-
-      # Persistent runner housekeeping: the suite scaffolds thousands of throwaway
-      # projects via tempfile.mkdtemp and does not always clean them. On an
-      # ephemeral GitHub-hosted VM that is free; on this persistent runner they
-      # accumulate (~2 GB/run) and eventually fill the disk ("No space left on
-      # device"). Purge prior-run leftovers + pip cache before each run.
-      - name: Free disk space (purge prior-run scaffold tempdirs)
+      - name: PostgreSQL E2E + behavior scenarios
+        working-directory: ${{ env.KIT }}
+        env: { PYTHONPATH: . }
         run: |
-          find "${TMPDIR:-/tmp}" -maxdepth 1 -type d -name 'tmp*' -exec rm -rf {} + 2>/dev/null || true
-          find "${TMPDIR:-/tmp}" -maxdepth 1 -type d \( -name '_skill001_audit_*' -o -name 'hugr_*' -o -name 'pytest-*' \) -exec rm -rf {} + 2>/dev/null || true
-          rm -rf ~/Library/Caches/pip/* 2>/dev/null || true
-          df -h /System/Volumes/Data | tail -1
-
-      # Use the runner host's pre-installed Python 3.12 directly. actions/
-      # setup-python is avoided on this self-hosted macOS runner: it tries to
-      # populate the GitHub-hosted tool cache at /Users/runner/... which is not
-      # writable here ("mkdir: /Users/runner: Permission denied"). The brew
-      # python@3.12 gives the same pinned 3.12 the hosted CI targets.
-      - name: Create venv (Python 3.12) + install deps
-        run: |
-          PYBIN="$(command -v python3.12 || echo /usr/local/bin/python3.12)"
-          echo "using $("$PYBIN" --version) at $PYBIN"
-          "$PYBIN" -m venv .venv
-          .venv/bin/pip install --quiet --upgrade pip
-          # Kit/MCP deps...
-          .venv/bin/pip install --quiet -r requirements-mcp.txt
-          # ...plus the generated-app runtime deps: the behavior/e2e tests boot
-          # real scaffolded apps, which import slowapi/structlog/pwdlib/etc.
-          # (mirrors a scaffolded project's requirements.txt).
-          .venv/bin/pip install --quiet \
-            PyJWT alembic asyncpg email-validator fastapi "pwdlib[argon2]" \
-            pydantic-settings pydantic python-multipart "redis[hiredis]==5.3.1" slowapi \
-            "sqlalchemy[asyncio]" structlog "uvicorn[standard]" \
-            pytest pytest-asyncio pytest-xdist aiosqlite httpx ruff
-          # Feature-tool runtime deps whose behavior tests boot real apps that
-          # import them hard (s3->boto3, tasks->arq, email->jinja2, graphql->
-          # strawberry, mfa->pyotp/qrcode, sse->sse-starlette, crypto). Tools
-          # whose deps are absent (openpyxl/stripe/reportlab/sqladmin) skip
-          # gracefully, so they are intentionally NOT installed.
-          # strawberry-graphql + redis are version-pinned: newer majors broke
-          # the generated add_graphql / add_cache_layer boot (strawberry.fastapi
-          # API + redis.asyncio). These are the versions the suite is green on.
-          .venv/bin/pip install --quiet \
-            boto3 arq jinja2 strawberry-graphql==0.314.3 qrcode sse-starlette cryptography pyotp \
-            aiodataloader msgpack
-
-      - name: Lint (ruff + repo hygiene — scoped to the PR diff)
-        # Enforce on CHANGED files only so the existing backlog (cleaned by the
-        # arch refactor) does not block; new debt IS blocked. no_committed_venv
-        # is whole-tree (an absolute invariant). file_size is advisory until the
-        # template-externalization refactor brings the superfiles under cap.
-        working-directory: ${{ github.workspace }}
-        shell: bash
-        run: |
-          set -euo pipefail   # any failure (incl. ruff) fails the step — never masked
-          cd ${{ github.workspace }}
-          PY=skills/SKILL-001-fastapi-production/.venv/bin/python
-          # Resolve the diff base against the PR target branch. Fetch main into an
-          # explicit remote-tracking ref so `origin/main` exists even on a fresh/
-          # shallow clone where it otherwise wouldn't. Try a PR-provided base ref
-          # too. FAIL CLOSED if no base resolves (a silent empty diff = no-op gate).
-          TARGET="${GITHUB_BASE_REF:-main}"
-          git fetch -q --no-tags origin "+refs/heads/${TARGET}:refs/remotes/origin/${TARGET}" || true
-          BASE=$(git merge-base "origin/${TARGET}" HEAD 2>/dev/null || true)
-          # If the clone is shallow and no common ancestor is reachable yet, fetch
-          # full history for ALL refs (HEAD + target) so merge-base can resolve.
-          if [ -z "$BASE" ] && [ "$(git rev-parse --is-shallow-repository 2>/dev/null)" = "true" ]; then
-            git fetch -q --no-tags --unshallow origin 2>/dev/null || git fetch -q --no-tags --deepen=2147483647 origin 2>/dev/null || true
-            git fetch -q --no-tags origin "+refs/heads/${TARGET}:refs/remotes/origin/${TARGET}" || true
-            BASE=$(git merge-base "origin/${TARGET}" HEAD 2>/dev/null || true)
-          fi
-          if [ -z "$BASE" ]; then
-            echo "::error::lint: could not determine diff base (origin/${TARGET}); refusing to pass on an empty diff"
-            exit 1
-          fi
-          CHANGED=$(git diff --name-only "$BASE" HEAD)
-          PYF=$(echo "$CHANGED" | grep '\.py$' | grep -vE '\.venv|/emitted/' || true)
-          MDF=$(echo "$CHANGED" | grep '\.md$' || true)
-          echo "diff base $BASE — changed py: $(echo "$PYF" | grep -c . ) | md: $(echo "$MDF" | grep -c . )"
-          # Absolute invariant — whole tree (must always be green):
-          python3 scripts/checks/no_committed_venv.py
-          # Scoped to changed files (block NEW debt, not the backlog):
-          if [ -n "$PYF" ]; then
-            $PY -m ruff check $PYF            # fails the step on any lint error (set -e)
-            $PY -m ruff format --check $PYF   # fails the step if unformatted
-            # file_size is advisory until the template-externalization refactor:
-            if ! python3 scripts/checks/file_size.py $PYF; then
-              echo "::warning::file_size soft/hard cap hit (advisory until refactor)"
-            fi
-          fi
-          if [ -n "$MDF" ]; then python3 scripts/checks/md_location.py $MDF; fi
-
-      - name: Unit tests (pytest adapt/)
-        # -n auto parallelizes the 3200+ tests across cores: ~15min -> ~3.5min.
-        # --dist loadfile keeps each file's tests on ONE worker: some behavior
-        # suites share module-scoped fixtures (a seeded DB/user) and assume
-        # in-file order, which the default per-test distribution breaks.
-        run: .venv/bin/python -m pytest adapt/ -q --tb=short -n auto --dist loadfile
-
-      - name: Boot 100/100 tools
-        run: .venv/bin/python tests/test_boot.py
-
-      - name: Boot chains (composition)
-        # The composition gate the docs promise (architecture.md, repo-standard.md).
-        run: .venv/bin/python tests/test_boot_chains.py
-
-      - name: P0 regression gates (composition-green + no raw-SQL interpolation)
-        run: .venv/bin/python tests/test_p0_regression_gates.py
-
-      - name: Property tests
-        run: .venv/bin/python tests/property_tests.py
-
-      - name: SQLite E2E hardcore
-        run: .venv/bin/python tests/test_e2e_hardcore.py
-
-      - name: Emitted-project audit
-        run: .venv/bin/python tests/test_emitted_project_audit.py
-
-      - name: Auth gate (HuGR subscription)
-        run: .venv/bin/python tests/test_auth_gate.py
-
-      - name: HuGR auth API (license introspection)
-        working-directory: .
-        run: PYTHONPATH=. skills/SKILL-001-fastapi-production/.venv/bin/python hugr_auth/test_license.py
-
-      - name: HuGR auth store (real-time revocation)
-        working-directory: .
-        run: PYTHONPATH=. skills/SKILL-001-fastapi-production/.venv/bin/python hugr_auth/test_store.py
-
-      - name: HuGR license issuance (issue + lifecycle + CLI)
-        working-directory: .
-        run: PYTHONPATH=. skills/SKILL-001-fastapi-production/.venv/bin/python hugr_auth/test_issuance.py
-
-      - name: E2E gate (real processes — no key→0 / valid→N / cancel→0)
-        working-directory: .
-        run: PYTHONPATH=. skills/SKILL-001-fastapi-production/.venv/bin/python hugr_auth/test_e2e_gate.py
-
-      - name: MCP discovery (>=170 tools)
-        run: |
-          .venv/bin/python - <<'PY'
-          import asyncio
-          from mcp_tools.server import mcp
-          from mcp_tools.discovery import discover_and_register
-          count = discover_and_register(mcp)
-          assert count >= 170, f"Expected >= 170 tools, got {count}"
-          tools = asyncio.run(mcp.list_tools())
-          assert len(tools) >= 170, f"list_tools returned {len(tools)}"
-          print(f"MCP discovery: {len(tools)} tools registered")
-          PY
-
-      - name: Benchmark score schema + contract_check
-        run: |
-          .venv/bin/python - <<'PY'
-          import json, pathlib
-          data = json.loads(pathlib.Path("benchmarks/latest_score.json").read_text())
-          required = {"overall", "by_tier", "methodology", "kit_version"}
-          assert not (required - data.keys()), required - data.keys()
-          assert float(data["overall"]) >= 30.0, data["overall"]
-          print(f"benchmark overall={float(data['overall']):.2f}")
-          PY
-          .venv/bin/python -m engine.audit.contract_check --quiet
-
-      - name: PostgreSQL E2E (local Postgres)
-        run: .venv/bin/python tests/test_e2e_postgres.py
-
-      - name: Behavior scenarios (local Postgres)
-        run: .venv/bin/python tests/test_behavior_scenarios.py
+          set -euo pipefail
+          "${VENV}/bin/python" tests/test_e2e_postgres.py
+          "${VENV}/bin/python" tests/test_behavior_scenarios.py
