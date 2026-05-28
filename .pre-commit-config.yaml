@@ -1,0 +1,49 @@
+# Repo hygiene gate. Start small, enforced on every commit (changed files only).
+# Run on the whole repo with: pre-commit run --all-files
+# Docs: docs/repo-standard.md
+minimum_pre_commit_version: "3.5.0"
+default_stages: [pre-commit]
+
+repos:
+  # --- Fast standard hygiene (pre-commit's own hooks) ---------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-added-large-files       # blocks >500KB blobs
+        args: ["--maxkb=500"]
+      - id: detect-private-key
+      - id: check-yaml
+      - id: check-toml
+      - id: check-ast                      # every .py must parse
+
+  # --- Lint + format (Ruff replaces black/flake8/isort) -------------------
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      - id: ruff                           # lint, autofix
+        args: ["--fix", "--show-fixes"]
+      - id: ruff-format                    # format
+
+  # --- Repo-specific rules (local, the teeth) -----------------------------
+  - repo: local
+    hooks:
+      - id: no-committed-venv
+        name: no committed venv/emitted/db
+        entry: python scripts/checks/no_committed_venv.py
+        language: system
+        pass_filenames: true
+        files: ".*"
+      - id: md-location
+        name: narrative markdown only in docs/
+        entry: python scripts/checks/md_location.py
+        language: system
+        types: [markdown]
+      - id: file-size
+        name: logic file size cap (templates exempt)
+        entry: python scripts/checks/file_size.py
+        language: system
+        types: [python]

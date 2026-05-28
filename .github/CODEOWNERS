@@ -1,0 +1,21 @@
+# Code ownership → automatic review requests. See docs/repo-standard.md §6.
+# Replace @humangr-labs/maintainers with real teams/handles as the team grows.
+
+# Default owner for everything.
+*                                   @humangr-labs/maintainers
+
+# The gate (license + MCP) — security-sensitive, requires owner review.
+/hugr_auth/                         @humangr-labs/maintainers
+/deploy/                            @humangr-labs/maintainers
+
+# The kit core: primitives (hexagon) + scaffold + audit engine.
+/skills/SKILL-001-fastapi-production/core/      @humangr-labs/maintainers
+/skills/SKILL-001-fastapi-production/engine/    @humangr-labs/maintainers
+/skills/SKILL-001-fastapi-production/generators/ @humangr-labs/maintainers
+
+# Governance + CI + standards — changes here change how everyone works.
+/.github/                           @humangr-labs/maintainers
+/.pre-commit-config.yaml            @humangr-labs/maintainers
+/scripts/                           @humangr-labs/maintainers
+/docs/repo-standard.md              @humangr-labs/maintainers
+/docs/adr/                          @humangr-labs/maintainers

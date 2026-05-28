@@ -20,12 +20,22 @@ on:
     branches: [main]
     paths:
       - 'skills/SKILL-001-fastapi-production/**'
-      - '.github/workflows/ci-selfhosted.yml'
+      - 'hugr_auth/**'
+      - 'scripts/**'
+      - 'docs/**'
+      - '.pre-commit-config.yaml'
+      - 'Makefile'
+      - '.github/**'
   pull_request:
     branches: [main]
     paths:
       - 'skills/SKILL-001-fastapi-production/**'
-      - '.github/workflows/ci-selfhosted.yml'
+      - 'hugr_auth/**'
+      - 'scripts/**'
+      - 'docs/**'
+      - '.pre-commit-config.yaml'
+      - 'Makefile'
+      - '.github/**'
   workflow_dispatch:
 
 concurrency:
@@ -55,6 +65,8 @@ jobs:
       POSTGRES_DB: skill_e2e
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so the lint step can compute the merge-base diff
 
       # Persistent runner housekeeping: the suite scaffolds thousands of throwaway
       # projects via tempfile.mkdtemp and does not always clean them. On an
@@ -88,7 +100,7 @@ jobs:
             PyJWT alembic asyncpg email-validator fastapi "pwdlib[argon2]" \
             pydantic-settings pydantic python-multipart "redis[hiredis]==5.3.1" slowapi \
             "sqlalchemy[asyncio]" structlog "uvicorn[standard]" \
-            pytest pytest-asyncio pytest-xdist aiosqlite httpx
+            pytest pytest-asyncio pytest-xdist aiosqlite httpx ruff
           # Feature-tool runtime deps whose behavior tests boot real apps that
           # import them hard (s3->boto3, tasks->arq, email->jinja2, graphql->
           # strawberry, mfa->pyotp/qrcode, sse->sse-starlette, crypto). Tools
@@ -101,6 +113,52 @@ jobs:
             boto3 arq jinja2 strawberry-graphql==0.314.3 qrcode sse-starlette cryptography pyotp \
             aiodataloader msgpack
 
+      - name: Lint (ruff + repo hygiene — scoped to the PR diff)
+        # Enforce on CHANGED files only so the existing backlog (cleaned by the
+        # arch refactor) does not block; new debt IS blocked. no_committed_venv
+        # is whole-tree (an absolute invariant). file_size is advisory until the
+        # template-externalization refactor brings the superfiles under cap.
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        run: |
+          set -euo pipefail   # any failure (incl. ruff) fails the step — never masked
+          cd ${{ github.workspace }}
+          PY=skills/SKILL-001-fastapi-production/.venv/bin/python
+          # Resolve the diff base against the PR target branch. Fetch main into an
+          # explicit remote-tracking ref so `origin/main` exists even on a fresh/
+          # shallow clone where it otherwise wouldn't. Try a PR-provided base ref
+          # too. FAIL CLOSED if no base resolves (a silent empty diff = no-op gate).
+          TARGET="${GITHUB_BASE_REF:-main}"
+          git fetch -q --no-tags origin "+refs/heads/${TARGET}:refs/remotes/origin/${TARGET}" || true
+          BASE=$(git merge-base "origin/${TARGET}" HEAD 2>/dev/null || true)
+          # If the clone is shallow and no common ancestor is reachable yet, fetch
+          # full history for ALL refs (HEAD + target) so merge-base can resolve.
+          if [ -z "$BASE" ] && [ "$(git rev-parse --is-shallow-repository 2>/dev/null)" = "true" ]; then
+            git fetch -q --no-tags --unshallow origin 2>/dev/null || git fetch -q --no-tags --deepen=2147483647 origin 2>/dev/null || true
+            git fetch -q --no-tags origin "+refs/heads/${TARGET}:refs/remotes/origin/${TARGET}" || true
+            BASE=$(git merge-base "origin/${TARGET}" HEAD 2>/dev/null || true)
+          fi
+          if [ -z "$BASE" ]; then
+            echo "::error::lint: could not determine diff base (origin/${TARGET}); refusing to pass on an empty diff"
+            exit 1
+          fi
+          CHANGED=$(git diff --name-only "$BASE" HEAD)
+          PYF=$(echo "$CHANGED" | grep '\.py$' | grep -vE '\.venv|/emitted/' || true)
+          MDF=$(echo "$CHANGED" | grep '\.md$' || true)
+          echo "diff base $BASE — changed py: $(echo "$PYF" | grep -c . ) | md: $(echo "$MDF" | grep -c . )"
+          # Absolute invariant — whole tree (must always be green):
+          python3 scripts/checks/no_committed_venv.py
+          # Scoped to changed files (block NEW debt, not the backlog):
+          if [ -n "$PYF" ]; then
+            $PY -m ruff check $PYF            # fails the step on any lint error (set -e)
+            $PY -m ruff format --check $PYF   # fails the step if unformatted
+            # file_size is advisory until the template-externalization refactor:
+            if ! python3 scripts/checks/file_size.py $PYF; then
+              echo "::warning::file_size soft/hard cap hit (advisory until refactor)"
+            fi
+          fi
+          if [ -n "$MDF" ]; then python3 scripts/checks/md_location.py $MDF; fi
+
       - name: Unit tests (pytest adapt/)
         # -n auto parallelizes the 3200+ tests across cores: ~15min -> ~4min.
         # Tests are independent (each scaffolds its own tempdir), validated
@@ -109,6 +167,13 @@ jobs:
 
       - name: Boot 100/100 tools
         run: .venv/bin/python tests/test_boot.py
+
+      - name: Boot chains (composition)
+        # The composition gate the docs promise (architecture.md, repo-standard.md).
+        run: .venv/bin/python tests/test_boot_chains.py
+
+      - name: P0 regression gates (composition-green + no raw-SQL interpolation)
+        run: .venv/bin/python tests/test_p0_regression_gates.py
 
       - name: Property tests
         run: .venv/bin/python tests/property_tests.py

@@ -74,6 +74,7 @@ def _write_env(project: Path) -> None:
 # GATE 2 — no raw-SQL interpolation of non-literal args into text()/_text()
 # ---------------------------------------------------------------------------
 
+
 def _text_violations(py_file: Path) -> list[str]:
     """Return offending lines where text()/_text() is called with a non-literal arg.
 
@@ -90,7 +91,11 @@ def _text_violations(py_file: Path) -> list[str]:
         if not isinstance(node, ast.Call):
             continue
         fn = node.func
-        fname = fn.id if isinstance(fn, ast.Name) else (fn.attr if isinstance(fn, ast.Attribute) else "")
+        fname = (
+            fn.id
+            if isinstance(fn, ast.Name)
+            else (fn.attr if isinstance(fn, ast.Attribute) else "")
+        )
         if fname not in {"text", "_text"}:
             continue
         for arg in node.args:
@@ -98,15 +103,17 @@ def _text_violations(py_file: Path) -> list[str]:
             if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
                 continue
             # Unsafe: concatenation, f-string, or any dynamic expression.
-            out.append(f"{py_file}:{node.lineno}: {fname}() called with non-literal arg ({type(arg).__name__})")
+            out.append(
+                f"{py_file}:{node.lineno}: {fname}() called with non-literal arg ({type(arg).__name__})"
+            )
     return out
 
 
 def gate_no_raw_sql_interpolation() -> list[str]:
     """GATE 2: scaffold + compose search-ish tools, scan emitted app/ for unsafe text()."""
     from adapt.contracts import ToolInput
-    from adapt.extend.crud_data.add_search import add_search
     from adapt.extend.crud_data.add_cursor_pagination import add_cursor_pagination
+    from adapt.extend.crud_data.add_search import add_search
 
     failures: list[str] = []
     with tempfile.TemporaryDirectory(prefix="gate_sqli_") as tmp:
@@ -123,10 +130,12 @@ def gate_no_raw_sql_interpolation() -> list[str]:
 # GATE 1 — contract-changing compose tools keep the emitted pytest green
 # ---------------------------------------------------------------------------
 
+
 def gate_composition_keeps_tests_green() -> list[str]:
     """GATE 1: for each contract-changing tool, scaffold→compose→run emitted pytest."""
-    from adapt.contracts import ToolInput
     import importlib
+
+    from adapt.contracts import ToolInput
 
     failures: list[str] = []
     for tool_name, module_path in _CONTRACT_CHANGING_TOOLS:
@@ -147,7 +156,11 @@ def gate_composition_keeps_tests_green() -> list[str]:
             env["DATABASE_URL"] = "sqlite+aiosqlite:///./gate.db"
             proc = subprocess.run(
                 [sys.executable, "-m", "pytest", "tests/", "-q", "-p", "no:cacheprovider"],
-                cwd=str(out), env=env, capture_output=True, text=True, timeout=600,
+                cwd=str(out),
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=600,
             )
             if proc.returncode != 0:
                 tail = "\n".join((proc.stdout + proc.stderr).splitlines()[-6:])
@@ -175,7 +188,9 @@ def main() -> int:
         for v in g1:
             print(f"    {v}")
     else:
-        print(f"  PASS GATE 1: emitted pytest stays green after {len(_CONTRACT_CHANGING_TOOLS)} contract-changing tools")
+        print(
+            f"  PASS GATE 1: emitted pytest stays green after {len(_CONTRACT_CHANGING_TOOLS)} contract-changing tools"
+        )
 
     print("RESULT:", "ALL GATES PASS" if rc == 0 else "GATES FAILED")
     return rc

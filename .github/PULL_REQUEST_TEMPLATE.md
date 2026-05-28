@@ -1,59 +1,26 @@
-<!--
-HuGR Arsenal PR template — CONTRACT.md §C2 enforcement.
+<!-- PR title MUST be a conventional commit (it becomes the squash commit on main). -->
 
-All six fields below are MANDATORY. Missing any field = PR REJECTED.
-This is not optional. Read CONTRACT.md if unfamiliar.
--->
+## What
+<!-- One-line summary of the change. -->
 
-## Phase
+## Why
+<!-- Context and motivation. Link the issue / WP / ADR. -->
 
-<!-- Which §B item does this PR close? Format: `Phase N.K`. Example: `Phase 1.3`. -->
+## How
+<!-- Implementation approach + key design decisions. Note anything out of scope. -->
 
-Phase:
-
-## §A compliance
-
-<!-- Which §A rules did this PR touch? For each, state how the rule remains satisfied after this change. At minimum list A1/A2/A5/A6/A7/A8 if any code / doc / primitive / tool was changed. -->
-
--
-
-## DoD
-
-<!-- Copy the Definition of Done block from the §B item, check each sub-item ✓ done or N/A with reason. -->
-
--
-
-## Invariants
-
-<!-- Copy the Invariants block; assert each still holds. -->
-
--
-
-## Completeness
-
-<!-- Copy the Completeness criteria; confirm scope boundary respected. -->
-
--
-
-## Quality (SOTA)
-
-<!-- Copy the Quality standards; describe how this PR meets each. Be specific. No "looks good" - show. -->
-
--
-
-## Machine check
-
-```bash
-cd skills/SKILL-001-fastapi-production \
-  && PYTHONPATH=. python3 -m engine.audit.contract_check
+## Testing
+<!-- Paste the verbatim tail of the gates you ran (verify.sh tier, regression gates, contract_check). -->
+```
+<gate output>
 ```
 
-Paste the tail of the output:
-
-```
-<paste here>
-```
-
-## Notes
-
-<!-- Anything else a reviewer should know. Keep terse. -->
+## Definition of Done
+- [ ] `scripts/verify.sh` green for the affected tier (output pasted above)
+- [ ] Regression gates pass (`tests/test_p0_regression_gates.py`)
+- [ ] No file outside the intended scope touched (`git diff --name-only`)
+- [ ] No new narrative markdown outside `docs/`; no committed venv/emitted/db
+- [ ] Logic files within the size cap (templates externalized)
+- [ ] Honest behavior: no tool reports success for something it doesn't enforce
+- [ ] ADR added/updated if this is an architectural decision
+- [ ] Self-reviewed the diff as an adversarial reviewer
