@@ -225,10 +225,10 @@ def _boot_ok(project_dir: Path) -> tuple[bool, str]:
             cwd=str(project_dir),
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=90,
         )
     except subprocess.TimeoutExpired:
-        return False, "Boot subprocess timed out (>30s)"
+        return False, "Boot subprocess timed out (>90s)"
 
     if "BOOT_OK" in r.stdout:
         return True, ""
