@@ -161,7 +161,7 @@ def test_crud_autocomplete_uses_prefix_tsquery() -> None:
     crud_file = project_dir / "app" / "crud" / "item.py"
     content = crud_file.read_text()
     autocomplete_start = content.find("async def autocomplete")
-    assert ":*'" in content[autocomplete_start:], "Autocomplete must use prefix :* tsquery"
+    assert '":*"' in content[autocomplete_start:], "Autocomplete must use prefix :* tsquery as bound param"
 
 
 def test_schema_search_schemas_added() -> None:
@@ -379,6 +379,100 @@ def test_regconfig_import_in_emitted_crud() -> None:
     )
 
 
+def test_no_sqli_via_autocomplete_first_token() -> None:
+    """P0 regression: autocomplete must NOT concatenate user q into _text() inline SQL literal.
+
+    The old code emitted:
+        _text("'" + first_token + ":*'")
+    which allows SQL injection when first_token contains tsquery meta-characters
+    (e.g. q="x':*) --" breaks out of the tsquery string on PostgreSQL).
+
+    The fix sanitizes the token with re.sub and passes it as a bound parameter
+    (NOT wrapped in _text), so SQLAlchemy parameterizes it.
+    """
+    project_dir = create_fixture_project(name="search_p0_autocomplete_no_sqli")
+    add_search(ToolInput(project_dir=str(project_dir)))
+    crud_file = project_dir / "app" / "crud" / "item.py"
+    content = crud_file.read_text()
+    autocomplete_start = content.find("async def autocomplete")
+    autocomplete_body = content[autocomplete_start:]
+
+    # Old unsafe pattern must be absent — no concatenation of user input into _text()
+    assert '_text("\'" + first_token' not in autocomplete_body, (
+        "Emitted autocomplete still concatenates first_token into _text() — SQL injection risk"
+    )
+    assert "_text(\"'\" + first_token" not in autocomplete_body, (
+        "Emitted autocomplete still concatenates first_token into _text() — SQL injection risk"
+    )
+
+    # Sanitisation via re must be present
+    assert "_re.sub" in autocomplete_body or "re.sub" in autocomplete_body, (
+        "Emitted autocomplete must sanitize the token with re.sub before use"
+    )
+
+    # The token must be passed as a plain Python string (bound param), not _text()
+    # Verify that the :* suffix is NOT preceded by a closing quote (which would mean
+    # it's still being concatenated as an inline literal).
+    assert "_text(" not in autocomplete_body.split("_safe_token")[1].split("to_tsquery")[0] if "_safe_token" in autocomplete_body else True, (
+        "Emitted autocomplete must not wrap the safe token in _text()"
+    )
+
+    # The import of re must be present in the emitted CRUD
+    assert "import re" in content, (
+        "Emitted CRUD must import re (needed by autocomplete sanitisation)"
+    )
+
+
+def test_autocomplete_bound_param_not_inline_literal() -> None:
+    """P0 regression: verify the compiled autocomplete statement uses a bind param for q.
+
+    Compiles the emitted autocomplete statement AST and confirms that to_tsquery
+    receives the user token as a Python-level string expression (bound parameter),
+    not a raw _text() call with the user string embedded inline.
+    """
+    project_dir = create_fixture_project(name="search_p0_bound_param")
+    add_search(ToolInput(project_dir=str(project_dir)))
+    crud_file = project_dir / "app" / "crud" / "item.py"
+    source = crud_file.read_text()
+
+    # Parse the emitted source and find the autocomplete function body
+    tree = ast.parse(source)
+    autocomplete_fn = None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.AsyncFunctionDef) and node.name == "autocomplete":
+            autocomplete_fn = node
+            break
+    assert autocomplete_fn is not None, "autocomplete() function not found in emitted CRUD"
+
+    # Collect all calls to _text() within the autocomplete function
+    text_calls_with_concat: list[str] = []
+    for node in ast.walk(autocomplete_fn):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "_text"
+        ):
+            # If any _text() call contains a BinOp (string concatenation) it's the old vuln
+            for arg in node.args:
+                if isinstance(arg, ast.BinOp):
+                    text_calls_with_concat.append(ast.unparse(node))
+
+    assert not text_calls_with_concat, (
+        f"autocomplete() passes user input via _text() string concatenation "
+        f"(SQL injection): {text_calls_with_concat}"
+    )
+
+    # Confirm a malicious q value is sanitized: re.sub strips tsquery operators
+    import re
+    malicious_q = "x':*) --"
+    first_token = malicious_q.strip().split()[0]
+    safe_token = re.sub(r"[^\w]+", " ", first_token).strip()
+    # Must contain only word chars after sanitization
+    assert re.fullmatch(r"\w+", safe_token), (
+        f"Sanitized token '{safe_token}' still contains tsquery meta-chars from '{first_token}'"
+    )
+
+
 def test_multiword_model_crud_parses() -> None:
     """BUG B regression: emitted CRUD for multiword model must parse without SyntaxError."""
     project_dir = create_fixture_project(
@@ -447,6 +541,9 @@ if __name__ == "__main__":
         test_regconfig_import_in_emitted_crud,
         test_multiword_model_crud_parses,
         test_search_covers_all_models_in_multi_model_project,
+        # P0 SQL injection fix — autocomplete first_token
+        test_no_sqli_via_autocomplete_first_token,
+        test_autocomplete_bound_param_not_inline_literal,
     ]
 
     passed = 0

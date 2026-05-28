@@ -341,6 +341,7 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
         # ---------------------------------------------------------------------------
         # Full-text search helpers — added by add_search tool
         # ---------------------------------------------------------------------------
+        import re as _re
         import uuid as _search_uuid
         from sqlalchemy import func as _func, select as _select, text as _text, or_ as _or
         from sqlalchemy.dialects.postgresql import REGCONFIG as _REGCONFIG
@@ -551,6 +552,9 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
             On PostgreSQL: uses to_tsquery('term:*') for sub-20ms p99 latency.
             On other databases: falls back to case-insensitive LIKE prefix match.
 
+            User input is always parameterized — the search token is stripped of
+            tsquery meta-characters and passed as a bound parameter to to_tsquery.
+
             Returns up to 5 suggestions.
 
             Args:
@@ -568,9 +572,14 @@ def _patch_crud(crud_file: Path, model_name: str, text_fields: list[str]) -> Non
                 return await _autocomplete_like(session, q, owner_id)
 
             first_token = q.strip().split()[0]
+            # Strip tsquery meta-characters (&, |, !, :, *, (, ), ') so the
+            # token cannot break out of the tsquery expression. Pass the
+            # sanitized token as a bound parameter (NOT wrapped in _text) so
+            # SQLAlchemy emits CAST($1 AS regconfig), $2 — no inline SQL literal.
+            _safe_token = _re.sub(r"[^\\w]+", " ", first_token).strip()
             prefix_query = _func.to_tsquery(
                 _func.cast(language, _REGCONFIG),
-                _text("'" + first_token + ":*'"),
+                _safe_token + ":*",
             )
             tv = _build_search_tsvector(language)
             stmt = (
