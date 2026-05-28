@@ -53,13 +53,13 @@ if [ "$mode" = "tier0" ]; then
   tools=$( { git diff --name-only "$base"; git diff --name-only; } \
     | grep -oE "adapt/extend/[^/]+/" | sort -u | sed 's#^skills/SKILL-001-fastapi-production/##' )
   [ -z "$tools" ] && tools="adapt/extend/"
-  run "tier0 unit tests ($tools)" $PY -m pytest $tools -q -p no:cacheprovider -n auto
+  run "tier0 unit tests ($tools)" $PY -m pytest $tools -q -p no:cacheprovider -n auto --dist loadfile
   exit $fail
 fi
 
 # --- Tier 2 adds the full unit suite on top of the composition gates ------
 if [ "$mode" = "tier2" ]; then
-  run "full unit suite (adapt/ -n auto)" $PY -m pytest adapt/ -q -p no:cacheprovider -n auto
+  run "full unit suite (adapt/ -n auto)" $PY -m pytest adapt/ -q -p no:cacheprovider -n auto --dist loadfile
 fi
 
 # --- Auto/tier1: also run the touched tools' own tests first (tier0 coverage) --
@@ -67,7 +67,7 @@ if [ "$mode" != "tier2" ]; then
   base=$(git merge-base HEAD main 2>/dev/null || echo HEAD)
   touched=$( { git diff --name-only "$base"; git diff --name-only; } \
     | grep -oE "adapt/extend/[^/]+/" | sort -u | sed 's#^skills/SKILL-001-fastapi-production/##' )
-  [ -n "$touched" ] && run "touched tools ($touched)" $PY -m pytest $touched -q -p no:cacheprovider -n auto
+  [ -n "$touched" ] && run "touched tools ($touched)" $PY -m pytest $touched -q -p no:cacheprovider -n auto --dist loadfile
 fi
 
 # --- Tier 1 (and tier2): composition gates — the real must-run ------------

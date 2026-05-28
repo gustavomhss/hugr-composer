@@ -453,7 +453,7 @@ def test_multiword_boot() -> None:
         env=env,
         capture_output=True,
         text=True,
-        timeout=15,
+        timeout=90,  # cold boot ~12s; headroom under -n auto CPU contention
     )
     assert proc.returncode == 0, (
         f"Boot failed after multi-tenancy applied to multiword-model project.\n"
