@@ -128,8 +128,8 @@ Authoritative list (registered): **`engine/primitives_by_concern.yaml`**
   `billing.Billing` (see FREEZE §1.6.5).
 - **176 staged primitives** discoverable via `fastapi_meta_search`
   with `status="staged"` — usable as reference, NOT production-ready.
-  Distributed across `_extracted/<namespace>/` (134) and
-  `_extracted/_quarantine/` (42 PascalCase). Lowercase function
+  Distributed across `_staging/<namespace>/` (134) and
+  `_staging/_quarantine/` (42 PascalCase). Lowercase function
   extractions + the 3 Wave-1.5-redundant entries cleaned up.
 - **17 FastAPI adapters** under `core/venous/_adapters/fastapi/`
   (the 17th, `BulkheadAdapter`, landed in Wave 1 pre-freeze — see

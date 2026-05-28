@@ -93,8 +93,8 @@ the command says 125, the doc is wrong, not the command.
 | Registered primitives | 124 | `core/venous/<ns>/<Name>/` — framework-free, full shell |
 | FastAPI adapters | 17 | Production-wired in `core/venous/_adapters/fastapi/` |
 | Provider adapters | 2 | `_adapters/redis/PubSubAdapter.py` + `_adapters/stripe/BillingAdapter.py` |
-| Staged primitives | 176 | `_extracted/<ns>/`, surfaced as `status="staged"` |
-| Quarantined primitives | 42 | `_extracted/_quarantine/`, hidden from catalog |
+| Staged primitives | 176 | `_staging/<ns>/`, surfaced as `status="staged"` |
+| Quarantined primitives | 42 | `_staging/_quarantine/`, hidden from catalog |
 | Recipes | 392 | Parsed from primitive `.md` `## Compose with:` sections |
 | Benchmark specs | 20 | 5 baseline / 10 mid / 5 adversarial |
 | Ledger entries | 219 | Post-Wave-1.5 triage state |
@@ -156,7 +156,7 @@ where possible; reviewer-enforced where not).
 | §A9 | **Benchmark is arbiter Phase 3+.** No surface merged without citing a benchmark scenario it moves red→green. |
 | §A10 | **Terminology lock (PRODUCT.md §8) is sacred.** Casual renaming is a bug, not a style preference. |
 | §A11 | **Opus for correctness-critical audit, not Sonnet.** Sonnet hallucinated a race condition; Opus caught 30 real bugs Sonnet missed. |
-| §A12 | **`_extracted/` is a pool, not a backlog.** Promote only when benchmark gap demands. No preemptive triage. Amended: benchmark gap **OR** registered-tool import **OR** ratified triage pass (this ROADMAP + `docs/decisions/0004-tier-lite.md §3`). |
+| §A12 | **`_staging/` is a pool, not a backlog.** Promote only when benchmark gap demands. No preemptive triage. Amended: benchmark gap **OR** registered-tool import **OR** ratified triage pass (this ROADMAP + `docs/decisions/0004-tier-lite.md §3`). |
 
 **Cross-cutting implications (derived from §A, not part of §A):**
 
@@ -285,8 +285,8 @@ New §B items require, in the SAME commit:
 
 ### §2.3 — Pool discipline (§A12 + §A12(b))
 
-- `_extracted/<ns>/<Name>/` — staged primitives surfaced with `status="staged"`.
-- `_extracted/_quarantine/<Name>/` — primitives rejected by extraction gate.
+- `_staging/<ns>/<Name>/` — staged primitives surfaced with `status="staged"`.
+- `_staging/_quarantine/<Name>/` — primitives rejected by extraction gate.
 - **Promotion trigger (§A12):** benchmark gap OR a registered tool's
   `imports_primitives` references the staged name OR a ratified triage
   pass (like Wave 1.5) explicitly approves the promotion.
@@ -1095,7 +1095,7 @@ wave adds to it.
 
 ### §6.1 — Wave 2 — Tier-lite middleware (pool harvest)
 
-- **Goal:** register ~40-60 stateless HTTP middleware from `_extracted/`
+- **Goal:** register ~40-60 stateless HTTP middleware from `_staging/`
   as tier-lite primitives (new tier per §B1.8).
 - **Source of truth:** `engine/promotion/LEDGER.md` — filter verdict
   `promote_lite` OR `promote_as_primitive` with `stateless` + `framework-free`
@@ -1170,7 +1170,7 @@ wave adds to it.
   3. Is it a clean duplicate of a registered primitive? If YES →
      `engine.promotion.promote --delete <Name>` (after reclassifying
      to REDUNDANT).
-  4. Else → write `_extracted/<ns>/<Name>/STAGING.md` with one-line
+  4. Else → write `_staging/<ns>/<Name>/STAGING.md` with one-line
      rationale (process item preserved from old ROADMAP Phase-5 #30).
 - **Numeric exit criteria:**
   - Ledger `needs_caller` verdict count: **101 → 0**.
@@ -1344,7 +1344,7 @@ primitive + adapter could replace.
 
 ### §7.F — Checklist: Wave 2 tier-lite candidate promotion
 
-**Use when:** promoting a stateless middleware from `_extracted/` to a
+**Use when:** promoting a stateless middleware from `_staging/` to a
 registered tier-lite primitive.
 
 1. [ ] Run `engine.promotion.classify`; confirm candidate verdict is
@@ -1352,7 +1352,7 @@ registered tier-lite primitive.
 2. [ ] Confirm §B1.8 criteria — no concurrency, no mutable class state,
        no REPLACE_ME, ≤30 LOC motor body.
 3. [ ] `mkdir core/venous/<ns>/<Name>/`
-4. [ ] Copy `<Name>.py` from `_extracted/<ns>/<Name>/<Name>.py`; scrub
+4. [ ] Copy `<Name>.py` from `_staging/<ns>/<Name>/<Name>.py`; scrub
        framework coupling (imports + types).
 5. [ ] Shrink to motor-only (lite tier doesn't need TLA+, dashboard, etc.).
 6. [ ] Write `<Name>.md` (≥3 compose_with).
@@ -1361,7 +1361,7 @@ registered tier-lite primitive.
 9. [ ] Add to `primitives_by_concern.yaml` with `tier: "lite"`.
 10. [ ] If a FastAPI adapter is useful → §7.B; else skip.
 11. [ ] Regenerate LEDGER via `engine.promotion.classify` + `ledger`.
-12. [ ] Delete the `_extracted/<ns>/<Name>/` + quarantined twin (if present).
+12. [ ] Delete the `_staging/<ns>/<Name>/` + quarantined twin (if present).
 13. [ ] Contract check green; `_r_tier_lite_eligibility` reports the
         new lite entry.
 14. [ ] Commit: `feat(SKILL-001/<ns>): promote <Name> tier-lite`.
@@ -1378,7 +1378,7 @@ registered tier-lite primitive.
 4. [ ] Follow §7.B to land the FastAPI adapter.
 5. [ ] Identify the caller tool(s) in `adapt/extend/`. Follow §7.D for
        each.
-6. [ ] Delete the `_extracted/<ns>/<Name>/` + quarantined twin.
+6. [ ] Delete the `_staging/<ns>/<Name>/` + quarantined twin.
 7. [ ] Regenerate LEDGER; staged count goes down by 1-2 (depending on
        if there's a quarantined twin).
 8. [ ] Contract check all rules green.
@@ -1396,7 +1396,7 @@ registered tier-lite primitive.
 3. [ ] Check: clean duplicate of a registered primitive?
    - YES → `engine.promotion.promote --delete <Name>` (after classifier
      marks it REDUNDANT).
-4. [ ] Else: write `_extracted/<ns>/<Name>/STAGING.md` with one-line
+4. [ ] Else: write `_staging/<ns>/<Name>/STAGING.md` with one-line
        rationale (process item from old ROADMAP Phase-5 #30).
 5. [ ] Regenerate LEDGER.
 6. [ ] Contract check green.
@@ -1736,8 +1736,8 @@ stable       # registered + production-ready
 beta         # registered + feature-complete + needs hardening
 deprecated   # registered + scheduled for removal in next MAJOR
 experimental # registered + explicitly non-stable API
-staged       # in `_extracted/` — discoverable, NOT production
-quarantined  # in `_extracted/_quarantine/` — hidden from catalog
+staged       # in `_staging/` — discoverable, NOT production
+quarantined  # in `_staging/_quarantine/` — hidden from catalog
 ```
 
 Only `stable` and `staged` are cited in v1.0 narrative docs. Other
@@ -1839,9 +1839,9 @@ none  # staged / quarantined (not registered)
 
 **Pool + promotion:**
 
-- **Staged primitive:** `_extracted/<ns>/<Name>/` — discoverable via
+- **Staged primitive:** `_staging/<ns>/<Name>/` — discoverable via
   `status="staged"` but not production-ready.
-- **Quarantined primitive:** `_extracted/_quarantine/<Name>/` — rejected
+- **Quarantined primitive:** `_staging/_quarantine/<Name>/` — rejected
   by extraction gate; not surfaced in catalog.
 - **Ledger entry:** row in `engine/promotion/ledger.json` with verdict
   (see §11.5). Rendered human-readably in `engine/promotion/LEDGER.md`.

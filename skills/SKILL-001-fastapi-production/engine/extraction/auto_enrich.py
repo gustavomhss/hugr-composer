@@ -2,7 +2,7 @@
 """Programmatic enrichment: harvest REAL invariants from extracted source.
 
 This is the assertive half of the extraction pipeline. For every primitive
-under `_extracted/<ns>/<Name>/` it does three things — each driven by
+under `_staging/<ns>/<Name>/` it does three things — each driven by
 objective AST signal, not LLM judgment:
 
 1. **Invariant mining from raise sites.** Scans every `raise <E>("<ID>: msg")`
@@ -14,7 +14,7 @@ objective AST signal, not LLM judgment:
 2. **Domain-coupling detection.** Walks the AST for `import X` / `from X import`
    where `X` matches a forbidden top-level module (SQLAlchemy ORM, Stripe SDK,
    Celery, etc.). Flags the primitive as `domain_coupled` and moves it to a
-   quarantine staging area (`_extracted/_quarantine/`) so the promoter skips
+   quarantine staging area (`_staging/_quarantine/`) so the promoter skips
    it without needing LLM review.
 
 3. **Purpose mining from docstrings.** The primitive class's first docstring
@@ -38,33 +38,35 @@ import re
 from pathlib import Path
 from typing import Any
 
-_STAGE_DIR = Path(__file__).resolve().parents[2] / "core" / "venous" / "_extracted"
+_STAGE_DIR = Path(__file__).resolve().parents[2] / "core" / "venous" / "_staging"
 _QUARANTINE = _STAGE_DIR / "_quarantine"
 _AMBIGUOUS_PATH = Path(__file__).resolve().parent / "ambiguous_primitives.json"
 
 
 # Top-level module names whose presence indicates tool-specific coupling.
-_FORBIDDEN_MODULES: frozenset[str] = frozenset({
-    # ORM / storage coupling — primitives MUST delegate storage to adapters.
-    "sqlalchemy",
-    "alembic",
-    "asyncpg",
-    "psycopg",
-    "psycopg2",
-    "pymongo",
-    "redis",
-    # Payment / e-commerce SDK coupling — marks code as domain-specific.
-    "stripe",
-    "shopify",
-    "paypalrestsdk",
-    # Task queue coupling — `WorkflowRun` etc. are the right abstraction.
-    "celery",
-    "rq",
-    "dramatiq",
-    # Framework-specific middleware that wraps FastAPI/Starlette directly —
-    # primitives should be framework-agnostic.
-    "starlette",
-})
+_FORBIDDEN_MODULES: frozenset[str] = frozenset(
+    {
+        # ORM / storage coupling — primitives MUST delegate storage to adapters.
+        "sqlalchemy",
+        "alembic",
+        "asyncpg",
+        "psycopg",
+        "psycopg2",
+        "pymongo",
+        "redis",
+        # Payment / e-commerce SDK coupling — marks code as domain-specific.
+        "stripe",
+        "shopify",
+        "paypalrestsdk",
+        # Task queue coupling — `WorkflowRun` etc. are the right abstraction.
+        "celery",
+        "rq",
+        "dramatiq",
+        # Framework-specific middleware that wraps FastAPI/Starlette directly —
+        # primitives should be framework-agnostic.
+        "starlette",
+    }
+)
 
 
 # Invariant-ID shapes seen across the catalog + extracted source. Match any of:
@@ -148,8 +150,7 @@ def _mine_invariants(source: str, primitive_name: str) -> list[dict[str, str]]:
     # `<PRIMITIVE>_INV_NN` where PRIMITIVE is the camelCase→SNAKE form.
     name_upper = _camel_to_snake_upper(primitive_name)
     invariants: list[dict[str, str]] = [
-        {"invariant_id": iid, "invariant_text": formal[iid]}
-        for iid in sorted(formal)
+        {"invariant_id": iid, "invariant_text": formal[iid]} for iid in sorted(formal)
     ]
     next_n = 1
     for msg in messages:
@@ -157,10 +158,12 @@ def _mine_invariants(source: str, primitive_name: str) -> list[dict[str, str]]:
         # meaningful content (e.g. HTTPException passthroughs).
         if len(msg) < 15:
             continue
-        invariants.append({
-            "invariant_id": f"{name_upper}_INV_{next_n:02d}",
-            "invariant_text": msg,
-        })
+        invariants.append(
+            {
+                "invariant_id": f"{name_upper}_INV_{next_n:02d}",
+                "invariant_text": msg,
+            }
+        )
         next_n += 1
     return invariants
 
@@ -232,10 +235,15 @@ def _enrich_one(primitive_dir: Path) -> dict[str, Any]:
                 dest.write_bytes(f.read_bytes())
         # Leave a breadcrumb in the original dir describing why.
         breadcrumb = primitive_dir / "_quarantined.json"
-        breadcrumb.write_text(json.dumps({
-            "reason": "domain_coupled",
-            "forbidden_modules": modules,
-        }, indent=2))
+        breadcrumb.write_text(
+            json.dumps(
+                {
+                    "reason": "domain_coupled",
+                    "forbidden_modules": modules,
+                },
+                indent=2,
+            )
+        )
         return {"name": name, "status": "quarantined", "modules": modules}
 
     # 2. Invariants from raise sites.
@@ -263,8 +271,7 @@ def _enrich_one(primitive_dir: Path) -> dict[str, Any]:
     contract = json.loads(contract_path.read_text())
     contract["purpose"] = purpose
     contract["invariants"] = [
-        f"{inv['invariant_id']}: {inv['invariant_text']}"
-        for inv in invariants
+        f"{inv['invariant_id']}: {inv['invariant_text']}" for inv in invariants
     ] or contract.get("invariants", [])
     contract["enrichment"] = {
         "invariants_mined": len(invariants),
@@ -295,7 +302,8 @@ def _enrich_one(primitive_dir: Path) -> dict[str, Any]:
         "status": "enriched",
         "invariants_mined": len(invariants),
         "ambiguous": ambiguous,
-        "purpose_from_docstring": primary is not None and not purpose.startswith(f"{name}: primitive extracted"),
+        "purpose_from_docstring": primary is not None
+        and not purpose.startswith(f"{name}: primitive extracted"),
     }
 
 
@@ -307,10 +315,12 @@ def _flag_ambiguous(primitive_dir: Path, *, reason: str) -> None:
     existing: list[dict[str, str]] = []
     if _AMBIGUOUS_PATH.exists():
         existing = json.loads(_AMBIGUOUS_PATH.read_text())
-    existing.append({
-        "primitive_dir": str(primitive_dir.relative_to(_STAGE_DIR.parent.parent.parent)),
-        "reason": reason,
-    })
+    existing.append(
+        {
+            "primitive_dir": str(primitive_dir.relative_to(_STAGE_DIR.parent.parent.parent)),
+            "reason": reason,
+        }
+    )
     _AMBIGUOUS_PATH.write_text(json.dumps(existing, indent=2))
 
 
@@ -318,7 +328,7 @@ def run() -> dict[str, Any]:
     if _AMBIGUOUS_PATH.exists():
         _AMBIGUOUS_PATH.unlink()
     if not _STAGE_DIR.exists():
-        raise SystemExit("No _extracted/ directory.")
+        raise SystemExit("No _staging/ directory.")
     totals: dict[str, int] = {"enriched": 0, "quarantined": 0, "ambiguous": 0, "missing_files": 0}
     results: list[dict[str, Any]] = []
     for ns_dir in sorted(_STAGE_DIR.iterdir()):

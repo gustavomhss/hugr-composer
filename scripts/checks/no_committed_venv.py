@@ -26,9 +26,22 @@ _VENV_RE = re.compile(r"^\.?venv[\d.]*$")
 # Exact file extensions that must never be tracked.
 FORBIDDEN_SUFFIXES = (".db", ".sqlite", ".sqlite3", ".pyc")
 
+# Path prefixes whose contents are EXEMPT from the `emitted` segment rule —
+# committed test DATA, not regenerated scratch. Mirrors the `.gitignore`
+# negation `!**/benchmarks/blind/_stub_fixtures/**` (contract B3.7).
+EXEMPT_PREFIXES = (
+    "skills/SKILL-001-fastapi-production/benchmarks/blind/_stub_fixtures/",
+)
+
 
 def _is_forbidden(path: str) -> bool:
-    p = PurePosixPath(path.replace("\\", "/"))
+    # Honour the same exemption the .gitignore carries — the stub fixtures
+    # legitimately contain `emitted/` subtrees as part of the B3.7 fixture
+    # contract; they are checked-in test data, not generator scratch.
+    p_norm = path.replace("\\", "/")
+    if p_norm.startswith(EXEMPT_PREFIXES):
+        return False
+    p = PurePosixPath(p_norm)
     for raw in p.parts:
         s = raw.lower()
         if s in FORBIDDEN_DIR_SEGMENTS or _VENV_RE.match(s):

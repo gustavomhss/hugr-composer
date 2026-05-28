@@ -8,10 +8,10 @@ Gustavo can copy-paste to execute.
 The Markdown ledger is the artefact Gustavo reviews to approve/reject
 each primitive individually.
 """
+
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 from engine.promotion.schemas import Ledger, LedgerEntry, Verdict
 from engine.promotion.state import SKILL_ROOT
@@ -80,7 +80,7 @@ def _bucket_preamble(verdict: Verdict) -> str:
             "No current §A12(b) signal — no registered tool, module, or "
             "benchmark spec references this primitive. §A12 discipline "
             "says: wait for a caller to appear before promoting. Leave "
-            "in `_extracted/` with the recorded staging_reason."
+            "in `_staging/` with the recorded staging_reason."
         ),
         Verdict.NEEDS_REVIEW: (
             "Classifier heuristics disagreed or quarantine reason unclear. "
@@ -150,16 +150,14 @@ def _entry_md(entry: LedgerEntry, n: int) -> str:
         lines.append(f"  - **Target:** `{entry.promotion_target}`")
     if entry.verdict == Verdict.REDUNDANT:
         lines.append(
-            f"  - **Run (opt-in):** "
-            f"`python -m engine.promotion.promote --delete {entry.primitive}`"
+            f"  - **Run (opt-in):** `python -m engine.promotion.promote --delete {entry.primitive}`"
         )
     elif entry.verdict in (
         Verdict.PROMOTE_AS_ADAPTER,
         Verdict.PROMOTE_AS_PRIMITIVE,
     ):
         lines.append(
-            f"  - **Run:** `python -m engine.promotion.promote "
-            f"--from-ledger {entry.primitive}`"
+            f"  - **Run:** `python -m engine.promotion.promote --from-ledger {entry.primitive}`"
         )
     lines.append("")
     return "\n".join(lines)
@@ -222,9 +220,7 @@ def render(ledger: Ledger) -> str:
             body.append(preamble)
             body.append("")
         # Sort within bucket: primitives with signals first, then by name.
-        bucket_sorted = sorted(
-            bucket, key=lambda e: (-len(e.signals), e.namespace, e.primitive)
-        )
+        bucket_sorted = sorted(bucket, key=lambda e: (-len(e.signals), e.namespace, e.primitive))
         for i, entry in enumerate(bucket_sorted, 1):
             body.append(_entry_md(entry, i))
         body.append("---")

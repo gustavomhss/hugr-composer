@@ -11,7 +11,7 @@ successful code generators (JHipster, Yeoman, OpenAPI Generator, Nx), not of the
 it emits. The current code already has good bones (a framework-agnostic `core/venous`
 primitive layer + `_adapters/fastapi`, a plugin set of 99 compose tools, a scaffold
 generator, an audit engine) but they are buried under: ~12 monolithic 1200–2100 LOC
-tool files (embedded code-as-strings), a 3000-file `_extracted/_quarantine` staging
+tool files (embedded code-as-strings), a 3000-file `_staging/_quarantine` staging
 graveyard in the main tree, 724 of 759 markdown files scattered through the code, and
 ad-hoc discovery/patching duplicated across tools (the source of repeated composition
 bugs found by external eval panels).
@@ -46,4 +46,4 @@ in the *emitted* apps). NOT microservices (over-engineering for a toolkit).
 - **Trade-offs:** a one-time large refactor (parallelized into Work Packages, see `docs/wp/`);
   more, smaller files.
 - **Follow-ups:** the WP waves (`docs/wp/`), file-size + structure checks (`scripts/checks/`),
-  relocate `_extracted` to `_staging/`, concentrate docs in `docs/`.
+  relocate `_staging` to `_staging/`, concentrate docs in `docs/`.

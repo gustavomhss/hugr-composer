@@ -9,7 +9,7 @@
 - **257 files carry `MCP_TOOL` metadata** (Maestro-visible surface).
 - **Catalog:** 201 tools + 299 primitives + 392 recipes.
 - **124 registered primitives** (`core/venous/<ns>/<Name>/`).
-- **176 staged primitives** in `_extracted/` (plus 42 quarantined).
+- **176 staged primitives** in `_staging/` (plus 42 quarantined).
 - **17 FastAPI adapters** (production-wired).
 - **28 `modules/` packages** (pre-built feature bundles).
 - **20 populated examples** (0 empty scaffolds), 124 specs, 20 benchmark specs.
@@ -90,7 +90,7 @@
 
 Plus **17 FastAPI adapters** under `core/venous/_adapters/fastapi/`.
 
-## 5. core/venous/_extracted — staged primitives (176 + 42 quarantined)
+## 5. core/venous/_staging — staged primitives (176 + 42 quarantined)
 
 | namespace | count |
 |---|---:|

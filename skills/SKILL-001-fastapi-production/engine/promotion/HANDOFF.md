@@ -78,7 +78,7 @@ PYTHONPATH=. .venv/bin/python -m engine.promotion.promote --delete NAME
 
 The executor will:
 - Back up the tree to a temp dir.
-- Remove `core/venous/_extracted/<ns>/NAME/`.
+- Remove `core/venous/_staging/<ns>/NAME/`.
 - Rebuild catalog.
 - Run contract_check.
 - On ANY failure: rollback automatically.
@@ -108,7 +108,7 @@ strategies:
 
 **Bucket A: framework-coupled (123 items).** These can't be promoted
 as-is. Options:
-- (a) Accept they'll live in `_extracted/` forever → batch-delete with a
+- (a) Accept they'll live in `_staging/` forever → batch-delete with a
       ratified waiver saying "extraction produced framework-coupled
       output; not salvageable".
 - (b) Invest in a re-extraction pass that splits each into (framework-

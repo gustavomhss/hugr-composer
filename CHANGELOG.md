@@ -40,7 +40,7 @@ tool / primitive renames going forward (CONTRACT §A10).
 - **2 provider adapters** beyond fastapi/: `_adapters/redis/PubSubAdapter.py`
   + `_adapters/stripe/BillingAdapter.py`. Both ship with lazy SDK
   imports and hermetic behavioural test suites (13 Redis + 22 Stripe).
-- **176 staged primitives** (`_extracted/`, `status="staged"`) —
+- **176 staged primitives** (`_staging/`, `status="staged"`) —
   discoverable, not promoted. Wave 1.5 deleted 3 (+3 quarantined
   copies) that the new motor+adapter pair replaced.
 - **20 complete examples** at `/examples/` (5 baseline + 10 mid + 5 adversarial).
@@ -134,7 +134,7 @@ Three parallel tracks contributed to v1.0.0:
 ### Track B — Promotion pipeline for the staged pool (2026-04-21 overnight)
 
 Tooling to triage and selectively promote the 315 staged+quarantined
-primitives in `core/venous/_extracted/` without silently amending §A12
+primitives in `core/venous/_staging/` without silently amending §A12
 (the inviolable rule: promote only when benchmark gap demands).
 
 **Ships:**
@@ -207,7 +207,7 @@ machine-verified, every commit lands `33/33 ALL GREEN`.
   that were registered at the MCP layer but invisible to the catalog.
   All now carry canonical `MCP_TOOL` dicts.
 - **180 staged primitives surfaced** (`status="staged"`) — the
-  `core/venous/_extracted/` HuGR-shelled pool (PascalCase-filtered,
+  `core/venous/_staging/` HuGR-shelled pool (PascalCase-filtered,
   deduped vs the registered 122) is now discoverable via
   `fastapi_meta_search`. Opt-in promotion via the extraction pipeline
   stays Phase-5 work; surfacing them is benchmark-gap-driven.
@@ -434,7 +434,7 @@ First public release. All five phases 0-4 green per `CONTRACT.md`.
 - One skill only (FastAPI). Second skill gated on v1.0 per ROADMAP §6.
 - Benchmark is plan-level, not code-level. Code-level evaluation is
   deferred to Phase 5+.
-- `_extracted/` staging area holds 430+ pre-audited primitives; they
+- `_staging/` staging area holds 430+ pre-audited primitives; they
   are pulled on demand only, never preemptively.
 
 ---

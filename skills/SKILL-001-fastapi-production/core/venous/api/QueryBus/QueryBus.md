@@ -14,7 +14,7 @@ Unresolved symbols (requires manual import/stub): ['Handler', 'logger'].
 - [ ] Flesh out `test_QueryBus.py` beyond the smoke-stubs.
 - [ ] Stateful? Add `<Name>.tla` + `<Name>.cfg`; otherwise omit.
 - [ ] Verify `conftest.py` picks up the correct hypothesis storage dir.
-- [ ] Move directory from `core/venous/_extracted/<ns>/<Name>/` to `core/venous/<ns>/<Name>/` and run `engine.check_primitive` with `--maturity emerging`.
+- [ ] Move directory from `core/venous/_staging/<ns>/<Name>/` to `core/venous/<ns>/<Name>/` and run `engine.check_primitive` with `--maturity emerging`.
 
 ## Compose with:
 

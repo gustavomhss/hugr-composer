@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Wrap shell: autonomously wrap a staged primitive with the minimal HuGR shell.
 
-Input:  `core/venous/_extracted/<ns>/<Name>/<Name>.py` (raw-lifted source).
+Input:  `core/venous/_staging/<ns>/<Name>/<Name>.py` (raw-lifted source).
 Output: the same directory, augmented with:
   - `<Name>.py`                  (import-resolved; original impl untouched)
   - `<Name>.protocol.py`         (auto-inferred Protocol surface — optional)
@@ -28,16 +28,15 @@ from __future__ import annotations
 import argparse
 import ast
 import json
-from datetime import datetime, timezone
+import re
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-
-import re
 
 from engine.extraction.infer_protocol import protocol_for_source
 from engine.extraction.resolve_imports import resolve_imports
 
-_STAGE_DIR = Path(__file__).resolve().parents[2] / "core" / "venous" / "_extracted"
+_STAGE_DIR = Path(__file__).resolve().parents[2] / "core" / "venous" / "_staging"
 
 
 def _camel_to_snake_upper(name: str) -> str:
@@ -78,22 +77,30 @@ def _fresh_obs_schema() -> dict[str, list[dict[str, object]]]:
     """
     return {
         "logs": [
-            {"event_name": "primitive.invoked",
-             "required_attributes": ["primitive", "op"]},
-            {"event_name": "primitive.failed",
-             "required_attributes": ["primitive", "op", "error_class"]},
+            {"event_name": "primitive.invoked", "required_attributes": ["primitive", "op"]},
+            {
+                "event_name": "primitive.failed",
+                "required_attributes": ["primitive", "op", "error_class"],
+            },
         ],
         "metrics": [
-            {"name": "primitive.ops", "metric_type": "counter",
-             "unit": "1", "cardinality_bound": 50,
-             "label_keys": ["primitive", "op", "outcome"]},
-            {"name": "primitive.latency", "metric_type": "histogram",
-             "unit": "ms", "cardinality_bound": 50,
-             "label_keys": ["primitive", "op"]},
+            {
+                "name": "primitive.ops",
+                "metric_type": "counter",
+                "unit": "1",
+                "cardinality_bound": 50,
+                "label_keys": ["primitive", "op", "outcome"],
+            },
+            {
+                "name": "primitive.latency",
+                "metric_type": "histogram",
+                "unit": "ms",
+                "cardinality_bound": 50,
+                "label_keys": ["primitive", "op"],
+            },
         ],
         "spans": [
-            {"operation_name": "primitive.call",
-             "required_attributes": ["primitive", "op"]},
+            {"operation_name": "primitive.call", "required_attributes": ["primitive", "op"]},
         ],
     }
 
@@ -109,9 +116,10 @@ def _public_methods_of_classes(source: str) -> dict[str, list[str]]:
         if isinstance(node, ast.ClassDef) and not node.name.startswith("_"):
             methods: list[str] = []
             for item in node.body:
-                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                    if not item.name.startswith("_"):
-                        methods.append(item.name)
+                if isinstance(
+                    item, (ast.FunctionDef, ast.AsyncFunctionDef)
+                ) and not item.name.startswith("_"):
+                    methods.append(item.name)
             out[node.name] = methods
     return out
 
@@ -120,14 +128,16 @@ def _synthesize_contract(name: str, ns: str, source: str) -> dict[str, Any]:
     method_map = _public_methods_of_classes(source)
     primary_class = next(iter(method_map), name)
     methods = method_map.get(primary_class, [])
-    api_signature = f"class {primary_class}: " + ", ".join(f"{m}(...)" for m in methods) if methods else ""
+    api_signature = (
+        f"class {primary_class}: " + ", ".join(f"{m}(...)" for m in methods) if methods else ""
+    )
     return {
         "name": name,
         "namespace": ns,
         "maturity": "emerging",
         "kind": "extracted",
-        "purpose": f"Extracted primitive (auto-generated stub). Human MUST replace with a "
-                   f"concrete purpose statement before promotion.",
+        "purpose": "Extracted primitive (auto-generated stub). Human MUST replace with a "
+        "concrete purpose statement before promotion.",
         "api_signature": api_signature,
         "invariants": [
             f"{_camel_to_snake_upper(name)}_INV_01: REPLACE_ME — describe the primary correctness invariant.",
@@ -157,7 +167,9 @@ def _synthesize_invariant_bindings(name: str, source: str) -> dict[str, Any]:
 def _synthesize_smoke_test(name: str, source: str) -> str:
     method_map = _public_methods_of_classes(source)
     primary_class = next(iter(method_map), name)
-    slug = (method_map.get(primary_class, [primary_class.lower()]) or [primary_class.lower()])[0].lower()
+    slug = (method_map.get(primary_class, [primary_class.lower()]) or [primary_class.lower()])[
+        0
+    ].lower()
     return (
         f'"""Smoke tests for extracted primitive `{primary_class}`.\n\n'
         "These tests intentionally EMPTY-SHELL until a human promotes the\n"
@@ -184,7 +196,7 @@ def _synthesize_md(name: str, ns: str, source_tool: str, unresolved: set[str]) -
         f"**Source tool:** `adapt/extend/{source_tool}`\n\n"
         "## Provenance\n"
         f"Lifted by `engine.extraction.wrap_shell` on "
-        f"{datetime.now(timezone.utc).isoformat(timespec='seconds')}.\n"
+        f"{datetime.now(UTC).isoformat(timespec='seconds')}.\n"
         f"Unresolved symbols (requires manual import/stub): "
         f"{sorted(unresolved) or 'none'}.\n\n"
         "## Checklist before promotion\n"
@@ -193,7 +205,7 @@ def _synthesize_md(name: str, ns: str, source_tool: str, unresolved: set[str]) -
         f"- [ ] Flesh out `test_{name}.py` beyond the smoke-stubs.\n"
         "- [ ] Stateful? Add `<Name>.tla` + `<Name>.cfg`; otherwise omit.\n"
         "- [ ] Verify `conftest.py` picks up the correct hypothesis storage dir.\n"
-        "- [ ] Move directory from `core/venous/_extracted/<ns>/<Name>/` to `core/venous/<ns>/<Name>/` and run `engine.check_primitive` with `--maturity emerging`.\n"
+        "- [ ] Move directory from `core/venous/_staging/<ns>/<Name>/` to `core/venous/<ns>/<Name>/` and run `engine.check_primitive` with `--maturity emerging`.\n"
     )
 
 
@@ -204,8 +216,11 @@ def _is_stub(path: Path) -> bool:
     content = path.read_text()
     # Every stub this module produces contains a `REPLACE_ME` token or one of
     # the known seed markers; a human who starts editing will remove those.
-    return "REPLACE_ME" in content or "auto-generated stub" in content or \
-           "Auto-inferred Protocol surface" in content
+    return (
+        "REPLACE_ME" in content
+        or "auto-generated stub" in content
+        or "Auto-inferred Protocol surface" in content
+    )
 
 
 def wrap(primitive_dir: Path, *, force: bool = False) -> dict[str, Any]:
@@ -228,7 +243,11 @@ def wrap(primitive_dir: Path, *, force: bool = False) -> dict[str, Any]:
     if any_edited and not force:
         return {"name": name, "namespace": ns, "status": "skipped_edited"}
 
-    origin_raw = (primitive_dir / "_origin.json").read_text() if (primitive_dir / "_origin.json").exists() else "{}"
+    origin_raw = (
+        (primitive_dir / "_origin.json").read_text()
+        if (primitive_dir / "_origin.json").exists()
+        else "{}"
+    )
     origin = json.loads(origin_raw)
     source_tool = origin.get("tool", "(unknown)")
 
@@ -237,6 +256,7 @@ def wrap(primitive_dir: Path, *, force: bool = False) -> dict[str, Any]:
 
     # Import-resolved impl.
     from engine.extraction.resolve_imports import prepend_imports
+
     rewritten, _ = prepend_imports(original_source)
     impl_path.write_text(rewritten)
 
@@ -245,20 +265,23 @@ def wrap(primitive_dir: Path, *, force: bool = False) -> dict[str, Any]:
     if protocols:
         proto_src = (
             "from __future__ import annotations\n\n"
-            "from typing import Protocol, runtime_checkable\n\n\n"
-            + "\n\n".join(protocols)
+            "from typing import Protocol, runtime_checkable\n\n\n" + "\n\n".join(protocols)
         )
         (primitive_dir / f"{name}.protocol.py").write_text(proto_src)
 
     # Contract + bindings + obs schema.
     (primitive_dir / f"{name}.contract.json").write_text(
-        json.dumps(_synthesize_contract(name, ns, original_source), indent=2))
+        json.dumps(_synthesize_contract(name, ns, original_source), indent=2)
+    )
     (primitive_dir / "invariant_bindings.json").write_text(
-        json.dumps(_synthesize_invariant_bindings(name, original_source), indent=2))
+        json.dumps(_synthesize_invariant_bindings(name, original_source), indent=2)
+    )
     (primitive_dir / "observability_schema.json").write_text(
-        json.dumps(_fresh_obs_schema(), indent=2))
+        json.dumps(_fresh_obs_schema(), indent=2)
+    )
     (primitive_dir / "dashboard.json").write_text(
-        json.dumps({"title": f"{name}", "panels": []}, indent=2))
+        json.dumps({"title": f"{name}", "panels": []}, indent=2)
+    )
 
     # Smoke test + conftest + md + __init__.
     (primitive_dir / f"test_{name}.py").write_text(_synthesize_smoke_test(name, original_source))
@@ -269,12 +292,17 @@ def wrap(primitive_dir: Path, *, force: bool = False) -> dict[str, Any]:
     (primitive_dir / "proposed_invariants.json").write_text('{"proposed": []}\n')
 
     # Provenance record.
-    (primitive_dir / "_provenance.json").write_text(json.dumps({
-        "extracted_at": datetime.now(timezone.utc).isoformat(),
-        "source_tool": source_tool,
-        "origin_candidate": origin.get("candidate", {}),
-        "wrapped_by": "engine.extraction.wrap_shell",
-    }, indent=2))
+    (primitive_dir / "_provenance.json").write_text(
+        json.dumps(
+            {
+                "extracted_at": datetime.now(UTC).isoformat(),
+                "source_tool": source_tool,
+                "origin_candidate": origin.get("candidate", {}),
+                "wrapped_by": "engine.extraction.wrap_shell",
+            },
+            indent=2,
+        )
+    )
 
     return {
         "name": name,
@@ -287,7 +315,7 @@ def wrap(primitive_dir: Path, *, force: bool = False) -> dict[str, Any]:
 
 def run(only: str | None = None, *, force: bool = False) -> list[dict[str, Any]]:
     if not _STAGE_DIR.exists():
-        raise SystemExit("No _extracted/ directory — run `engine.extraction.extract` first.")
+        raise SystemExit("No _staging/ directory — run `engine.extraction.extract` first.")
     reports: list[dict[str, Any]] = []
     for ns_dir in sorted(_STAGE_DIR.iterdir()):
         if not ns_dir.is_dir() or ns_dir.name.startswith("."):
@@ -304,8 +332,11 @@ def run(only: str | None = None, *, force: bool = False) -> list[dict[str, Any]]
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Wrap every staged primitive with the HuGR shell.")
     parser.add_argument("--only", type=str, default=None, help="Wrap only the named primitive.")
-    parser.add_argument("--force", action="store_true",
-                        help="Overwrite shell artifacts even if a human has edited them.")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite shell artifacts even if a human has edited them.",
+    )
     args = parser.parse_args()
     out = run(only=args.only, force=args.force)
     wrapped = sum(1 for r in out if r["status"] == "wrapped")

@@ -52,7 +52,7 @@ Rails-connected in Wave 1.5 — same tool count, but
   `core/venous/_adapters/stripe/BillingAdapter.py` (see §1.6.5). Both
   framework-isolated, lazy-SDK-imported, hermetically tested.
 - **176 staged primitives** surfaced in catalog with `status="staged"`
-  (discoverable; not promoted; `_extracted/<ns>/` + `_extracted/_quarantine/`
+  (discoverable; not promoted; `_staging/<ns>/` + `_staging/_quarantine/`
   combined PascalCase items).
 - **56 generators** + **28 module packages** + **123 adapt tools**
   (100 extend + 8 evolve + 8 operate + 6 verify + 1 proactive;
@@ -228,7 +228,7 @@ missing one. Deferred. Current flow is manual: classifier labels
 Framework-coupled primitives requiring re-extraction into
 (motor + adapter) pairs per §B1.0.1. ~2-4h each × 118 = substantial
 work; deferred to post-v1.0 operational cleanup sprints. The
-classifier has them documented; they stay in `_extracted/` until
+classifier has them documented; they stay in `_staging/` until
 someone picks one up and refactors.
 
 ### §2.5 — 101 NEEDS_CALLER items

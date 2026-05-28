@@ -53,7 +53,7 @@ for the next 50 violations.
 - [ ] **A11 — Opus for correctness-critical audit, not Sonnet.**
       Sonnet hallucinated a race condition this session; Opus caught
       30 real bugs Sonnet missed.
-- [ ] **A12 — `_extracted/` is a pool, not a backlog.** Promote only
+- [ ] **A12 — `_staging/` is a pool, not a backlog.** Promote only
       when ONE of:
       (a) a benchmark gap demands it;
       (b) the primitive is imported by a registered tool or module
@@ -180,7 +180,7 @@ for the next 50 violations.
 
 - **DoD:**
   - Every `test_*.py` under `/benchmark/`, `/benchmarks/`, and
-    `core/venous/` (excluding `_extracted/`) has every test
+    `core/venous/` (excluding `_staging/`) has every test
     function execute a real code path. A test whose body reduces
     to exactly ``assert True`` is a stub.
   - Rule `_r_benchmark_no_stubs` in
@@ -190,7 +190,7 @@ for the next 50 violations.
     function independently; mixed files with three stubs + one
     real test are rejected (pre-audit it only caught fully-stub
     files — that gap is closed).
-  - Tests in `core/venous/_extracted/` are exempt; that tree is
+  - Tests in `core/venous/_staging/` are exempt; that tree is
     the staging pool by design. Promotion via §A12 requires
     replacing the stubs with real tests before the primitive
     lands in `primitives_by_concern.yaml`.
@@ -202,7 +202,7 @@ for the next 50 violations.
   machine-checked independently by §B4.7 `_r_counts_sync`; no
   separate STATUS.md is maintained.
 - **Completeness:** 100% of benchmark directory AND
-  `core/venous/` reviewed (modulo `_extracted/`). No "maybe flaky,
+  `core/venous/` reviewed (modulo `_staging/`). No "maybe flaky,
   skip for now".
 - **Quality (SOTA):** Each surviving test has a one-line
   docstring explaining what it proves; per-function invariant
@@ -309,7 +309,7 @@ later phase's `§B*` items registered in `RULES`. There is no separate
   entry in the same PR. CI check mandatory. Broken `compose_with`
   references fail CI.
 - **Completeness:** 100% of production primitives (manifest.json
-  present). Staged `_extracted/` explicitly NOT included.
+  present). Staged `_staging/` explicitly NOT included.
 - **Quality (SOTA):** `purpose` is verb-first ("Verifies HMAC
   signatures with domain separation"), no marketing adjectives.
   `compose_with` entries are chosen for REAL synergy (a senior
@@ -319,7 +319,7 @@ later phase's `§B*` items registered in `RULES`. There is no separate
 #### B1.2 — "Compose with:" in every production primitive's `.md`
 
 - **DoD:**
-  - `grep -L "^## Compose with:" core/venous/*/*/*.md | grep -v _extracted`
+  - `grep -L "^## Compose with:" core/venous/*/*/*.md | grep -v _staging`
     returns EMPTY.
   - Every "Compose with:" section has ≥ 3 concrete patterns; each
     pattern names ≥ 2 sibling primitives + 1-sentence use case.

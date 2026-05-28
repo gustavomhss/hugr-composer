@@ -5,14 +5,16 @@ name: install.sh — fresh Docker smoke
 # or the skill's requirements-mcp.txt. Failure surfaces here, never in
 # a user's terminal.
 
-# DISABLED 2026-05-28: this workflow uses `container: image: python:3.12-slim`
-# on `ubuntu-latest`. With GH Actions minutes billing-blocked, it dies in ~3s
-# on every install.sh / requirements / VERSION change and pollutes PR checks.
-# Migration to self-hosted is non-trivial because the mac runners don't all
-# have Docker installed in a clean state; B4.1 will be re-enforced after that
-# infra step. Auto + schedule triggers removed; `workflow_dispatch` retained
-# so a maintainer can still smoke install.sh on demand.
+# PARTIALLY DISABLED 2026-05-28: this workflow uses `container: image:
+# python:3.12-slim` on `ubuntu-latest`. With GH Actions minutes billing-blocked,
+# it dies in ~3s on every PR/push and pollutes PR checks. Migration to
+# self-hosted is non-trivial (mac runners don't all have Docker clean state).
+# Push + pull_request triggers removed (the PR-pollution sources); `schedule:`
+# kept because nightly cron runs fail silently in cron history and do NOT
+# appear on PR checks — keeping the B4.1 contract honest until migration.
 on:
+  schedule:
+    - cron: '23 4 * * *'   # 04:23 UTC nightly (silent fail until self-hosted)
   workflow_dispatch:
 
 jobs:

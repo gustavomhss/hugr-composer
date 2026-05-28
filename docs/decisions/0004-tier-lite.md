@@ -18,10 +18,10 @@
 
 ## 1. Motivation
 
-`core/venous/_extracted/` holds 181 PascalCase-named staged primitives
+`core/venous/_staging/` holds 181 PascalCase-named staged primitives
 plus 47 quarantined variants — 228 items total (numbers updated
 post-cleanup 2026-04-22; ADR originally cited 194 + 121 = 315 before
-the _extracted/ pool was cleaned of 305 lowercase-function extraction
+the _staging/ pool was cleaned of 305 lowercase-function extraction
 garbage and 13 duplicates of already-registered primitives). They each
 carry the
 bulk of the HuGR shell already (`.py` implementation, `.protocol.py`,
@@ -106,18 +106,18 @@ governed by semver, not a tier upgrade.
 
 Current text:
 
-> **A12 — `_extracted/` is a pool, not a backlog.** Promote only when
+> **A12 — `_staging/` is a pool, not a backlog.** Promote only when
 > benchmark gap demands. No preemptive triage.
 
 Proposed amended text:
 
-> **A12 — `_extracted/` is a pool, not a backlog.** Promote only when
+> **A12 — `_staging/` is a pool, not a backlog.** Promote only when
 > ONE of:
 > (a) a benchmark gap demands it;
 > (b) the primitive is imported by a registered tool or module;
 > (c) the primitive is in-scope for a **triage pass** explicitly
 >     ratified in the amendment log, and the triage classifies every
->     item in `_extracted/` into promote / keep-staged-with-reason /
+>     item in `_staging/` into promote / keep-staged-with-reason /
 >     delete. Triage passes are not recurring — each pass is a one-
 >     shot cleanup with a start and end commit.
 >
@@ -199,7 +199,7 @@ cleanup.
 
 If this decision proves wrong, the reversal is mechanical:
 - Run `engine/promotion/demote.py --all-lite` to move every lite
-  primitive back to `_extracted/`.
+  primitive back to `_staging/`.
 - Remove §B1.8 from CONTRACT.md.
 - Remove the `tier` field from `primitives_by_concern.yaml` schema.
 

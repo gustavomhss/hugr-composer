@@ -34,7 +34,7 @@ _OUT_PATH = Path(__file__).resolve().parent / "dedupe_report.json"
 def _delivered_primitives() -> dict[str, dict[str, Any]]:
     """Return `{PrimitiveName: {namespace, manifest_path, shape_hash}}`.
 
-    Skips `_extracted/` staging, `__pycache__/`, byproduct dirs.
+    Skips `_staging/` staging, `__pycache__/`, byproduct dirs.
     """
     out: dict[str, dict[str, Any]] = {}
     if not _VENOUS_DIR.exists():
@@ -67,6 +67,7 @@ def _shape_hash_file(path: Path) -> str:
     hash (two unrelated files with the same line-multiset collide trivially).
     """
     import ast as _ast
+
     try:
         tree = _ast.parse(path.read_text())
     except SyntaxError:
@@ -94,7 +95,8 @@ def _levenshtein(a: str, b: str) -> int:
 
 
 def classify_candidate(
-    cand: dict[str, Any], delivered: dict[str, dict[str, Any]],
+    cand: dict[str, Any],
+    delivered: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
     name = cand["name"]
     decision: dict[str, Any] = {
@@ -171,7 +173,9 @@ def summarize(report: dict[str, Any]) -> None:
     for d in report["decisions"]:
         if d["decision"] == "fuzzy_name":
             m = d["match"]
-            print(f"  {d['name']:<30} ≈ {m['name']} (ns={m['namespace']}, dist={m['distance']}) — {d['tool']}")
+            print(
+                f"  {d['name']:<30} ≈ {m['name']} (ns={m['namespace']}, dist={m['distance']}) — {d['tool']}"
+            )
 
 
 if __name__ == "__main__":

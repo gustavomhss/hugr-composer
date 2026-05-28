@@ -21,27 +21,30 @@ Invariants this builder enforces (failures = non-zero exit):
   - Every tool's `tags` ⊆ TAG_VOCABULARY (the closed vocabulary).
   - Verb + domain are drawn from the closed lists in schemas.py.
 """
+
 from __future__ import annotations
 
 import argparse
 import ast
 import hashlib
-import importlib.util
 import json
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
 import yaml
 
 from engine.index import MANIFEST_SCHEMA_VERSION
 from engine.index.schemas import (
-    DOMAINS, TAG_VOCABULARY, VERBS,
-    CatalogManifest, PrimitiveEntry, RecipeEntry, ToolEntry,
+    DOMAINS,
+    TAG_VOCABULARY,
+    VERBS,
+    CatalogManifest,
+    PrimitiveEntry,
+    RecipeEntry,
+    ToolEntry,
 )
-
 
 SKILL_ROOT = Path(__file__).resolve().parents[2]
 REPO_ROOT = SKILL_ROOT.parents[1]
@@ -56,13 +59,13 @@ VENOUS_ROOT = SKILL_ROOT / "core" / "venous"
 # IN it (they would be circular entries pointing at themselves). Their
 # registration goes through `register_tier1_tools` instead of discovery.
 TOOL_SCAN_ROOTS: tuple[tuple[str, Path], ...] = (
-    ("adapt",      SKILL_ROOT / "adapt"),
+    ("adapt", SKILL_ROOT / "adapt"),
     ("generators", SKILL_ROOT / "generators"),
-    ("modules",    SKILL_ROOT / "modules"),
-    ("benchmark",  SKILL_ROOT / "benchmark"),
-    ("meta",       SKILL_ROOT / "meta"),
+    ("modules", SKILL_ROOT / "modules"),
+    ("benchmark", SKILL_ROOT / "benchmark"),
+    ("meta", SKILL_ROOT / "meta"),
     ("core_tools", SKILL_ROOT / "core" / "tools"),
-    ("discovery",  SKILL_ROOT / "engine" / "discovery"),
+    ("discovery", SKILL_ROOT / "engine" / "discovery"),
 )
 
 
@@ -80,66 +83,83 @@ class ManifestError(RuntimeError):
 
 _DOMAIN_FROM_PATH = {
     # adapt/extend/<bucket>/ → domain
-    "auth_access":   "auth",
-    "crud_data":     "data",
-    "api_design":    "api",
-    "realtime":      "realtime",
-    "infrastructure": "resiliency",      # overridden below when finer signal exists
+    "auth_access": "auth",
+    "crud_data": "data",
+    "api_design": "api",
+    "realtime": "realtime",
+    "infrastructure": "resiliency",  # overridden below when finer signal exists
     "testing_tools": "testing",
-    "performance":   "resiliency",
-    "proactive":     "resiliency",
+    "performance": "resiliency",
+    "proactive": "resiliency",
     # generators/<bucket>/
-    "auth":          "auth",
-    "database":      "data",
-    "deployment":    "deployment",
-    "endpoints":     "api",
-    "middleware":    "resiliency",
+    "auth": "auth",
+    "database": "data",
+    "deployment": "deployment",
+    "endpoints": "api",
+    "middleware": "resiliency",
     "observability": "observability",
-    "infra":         "deployment",
-    "schemas":       "api",
-    "testing":       "testing",
-    "tools":         "meta",
+    "infra": "deployment",
+    "schemas": "api",
+    "testing": "testing",
+    "tools": "meta",
     # modules/<bucket>/
     "background_jobs": "resiliency",
-    "caching":         "resiliency",
-    "security":        "auth",
-    "payments":        "data",
-    "websockets":      "realtime",
+    "caching": "resiliency",
+    "security": "auth",
+    "payments": "data",
+    "websockets": "realtime",
 }
 
 # Sharpen the "infrastructure" catch-all via filename keywords.
 _INFRA_KEYWORD_DOMAIN = (
-    ("observability", "observability"), ("telemetry", "observability"),
-    ("sentry",        "observability"), ("metrics",   "observability"),
-    ("log",           "observability"), ("otel",      "observability"),
-    ("audit",         "compliance"),    ("retention", "compliance"),
-    ("consent",       "compliance"),    ("gdpr",      "compliance"),
-    ("webhook",       "realtime"),      ("sse",       "realtime"),
-    ("websocket",     "realtime"),      ("realtime",  "realtime"),
-    ("rbac",          "auth"),          ("rate_limit", "resiliency"),
-    ("circuit",       "resiliency"),    ("retry",     "resiliency"),
-    ("bulkhead",      "resiliency"),    ("graceful",  "resiliency"),
-    ("event",         "data"),          ("outbox",    "data"),
-    ("saga",          "data"),          ("cqrs",      "api"),
-    ("graphql",       "api"),           ("versioning", "api"),
-    ("docker",        "deployment"),    ("k8s",       "deployment"),
-    ("compose",       "deployment"),    ("ci",        "deployment"),
-    ("soak",          "testing"),       ("fuzz",      "testing"),
-    ("property",      "testing"),       ("chaos",     "testing"),
+    ("observability", "observability"),
+    ("telemetry", "observability"),
+    ("sentry", "observability"),
+    ("metrics", "observability"),
+    ("log", "observability"),
+    ("otel", "observability"),
+    ("audit", "compliance"),
+    ("retention", "compliance"),
+    ("consent", "compliance"),
+    ("gdpr", "compliance"),
+    ("webhook", "realtime"),
+    ("sse", "realtime"),
+    ("websocket", "realtime"),
+    ("realtime", "realtime"),
+    ("rbac", "auth"),
+    ("rate_limit", "resiliency"),
+    ("circuit", "resiliency"),
+    ("retry", "resiliency"),
+    ("bulkhead", "resiliency"),
+    ("graceful", "resiliency"),
+    ("event", "data"),
+    ("outbox", "data"),
+    ("saga", "data"),
+    ("cqrs", "api"),
+    ("graphql", "api"),
+    ("versioning", "api"),
+    ("docker", "deployment"),
+    ("k8s", "deployment"),
+    ("compose", "deployment"),
+    ("ci", "deployment"),
+    ("soak", "testing"),
+    ("fuzz", "testing"),
+    ("property", "testing"),
+    ("chaos", "testing"),
 )
 
 
 _VERB_FROM_PREFIX = {
-    "add_":       "add",
-    "generate_":  "generate",
-    "verify_":    "verify",
-    "operate_":   "operate",
-    "evolve_":    "evolve",
+    "add_": "add",
+    "generate_": "generate",
+    "verify_": "verify",
+    "operate_": "operate",
+    "evolve_": "evolve",
     "proactive_": "proactive",
-    "check_":     "check",
-    "analyze_":   "analyze",
-    "search_":    "search",
-    "scaffold_":  "generate",       # scaffold_* is a generate synonym
+    "check_": "check",
+    "analyze_": "analyze",
+    "search_": "search",
+    "scaffold_": "generate",  # scaffold_* is a generate synonym
 }
 
 
@@ -151,13 +171,13 @@ def _parse_canonical_name(mcp_name: str) -> tuple[str | None, str | None]:
     """
     if not mcp_name.startswith("fastapi_"):
         return None, None
-    stripped = mcp_name[len("fastapi_"):]
+    stripped = mcp_name[len("fastapi_") :]
     # Longest-match domain first (meta, auth, data, api, ...).
     for dom in sorted(DOMAINS, key=len, reverse=True):
         prefix = f"{dom}_"
         if not stripped.startswith(prefix):
             continue
-        rest = stripped[len(prefix):]
+        rest = stripped[len(prefix) :]
         for v in VERBS:
             if rest.startswith(f"{v}_"):
                 return v, dom
@@ -225,11 +245,11 @@ def _canonical_tool_name(verb: str, domain: str, mcp_name: str) -> str:
     stripped = mcp_name.removeprefix("fastapi_")
     # Strip leading "<domain>_" if present (historical names often embed it).
     if stripped.startswith(f"{domain}_"):
-        stripped = stripped[len(domain) + 1:]
+        stripped = stripped[len(domain) + 1 :]
     # Strip the verb prefix from the start.
     for prefix, v in _VERB_FROM_PREFIX.items():
         if v == verb and stripped.startswith(prefix):
-            stripped = stripped[len(prefix):]
+            stripped = stripped[len(prefix) :]
             break
     noun = stripped
     return f"fastapi_{domain}_{verb}_{noun}"
@@ -238,6 +258,7 @@ def _canonical_tool_name(verb: str, domain: str, mcp_name: str) -> str:
 # ---------------------------------------------------------------------------
 # Tool scanning — reuses the same MCP_TOOL discovery path as mcp_tools/
 # ---------------------------------------------------------------------------
+
 
 def _load_mcp_tool_from_source(py: Path) -> dict | None:
     """Extract the MCP_TOOL dict from a Python module WITHOUT executing it.
@@ -269,7 +290,7 @@ def _load_mcp_tool_from_source(py: Path) -> dict | None:
 def _ast_literal_dict(node: ast.Dict) -> dict | None:
     """Evaluate an ast.Dict into a Python dict if every entry is a literal."""
     out: dict = {}
-    for k, v in zip(node.keys, node.values):
+    for k, v in zip(node.keys, node.values, strict=False):
         try:
             kk = ast.literal_eval(k) if k is not None else None
             vv = ast.literal_eval(v)
@@ -306,8 +327,7 @@ def _scan_tools() -> list[dict]:
                 continue
             if name in seen_names:
                 raise ManifestError(
-                    f"duplicate MCP_TOOL name {name!r}: "
-                    f"{seen_names[name]} AND {py}"
+                    f"duplicate MCP_TOOL name {name!r}: {seen_names[name]} AND {py}"
                 )
             seen_names[name] = py
             meta["_path"] = str(py.relative_to(SKILL_ROOT))
@@ -316,7 +336,7 @@ def _scan_tools() -> list[dict]:
 
 
 _CORE_VENOUS_IMPORT_RE = re.compile(
-    r"(?:from|import)\s+core\.venous\.(?!_adapters\b|_extracted\b)"
+    r"(?:from|import)\s+core\.venous\.(?!_adapters\b|_staging\b)"
     r"[a-z][a-z_]*\.(?P<name>[A-Z][A-Za-z0-9]+)"
 )
 
@@ -343,7 +363,7 @@ def _extract_primitive_imports(py: Path, declared: tuple[str, ...] = ()) -> tupl
     ``core.venous.resiliency.RateLimiter``); we extract the last segment
     as the primitive name.
 
-    The `_adapters` and `_extracted` sub-roots are excluded — those are
+    The `_adapters` and `_staging` sub-roots are excluded — those are
     meta namespaces, not primitives.
     """
     # Channel 0: explicit MCP_TOOL declaration wins.
@@ -352,7 +372,7 @@ def _extract_primitive_imports(py: Path, declared: tuple[str, ...] = ()) -> tupl
         for path in declared:
             parts = str(path).split(".")
             if len(parts) >= 4 and parts[0] == "core" and parts[1] == "venous":
-                if parts[2] in ("_adapters", "_extracted"):
+                if parts[2] in ("_adapters", "_staging"):
                     continue
                 names.add(parts[3])
         return tuple(sorted(names))
@@ -368,31 +388,42 @@ def _extract_primitive_imports(py: Path, declared: tuple[str, ...] = ()) -> tupl
 
     # Channel 1: real Python imports.
     for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith("core.venous."):
+        if (
+            isinstance(node, ast.ImportFrom)
+            and node.module
+            and node.module.startswith("core.venous.")
+        ):
             parts = node.module.split(".")
-            if len(parts) >= 4 and parts[2] not in ("_adapters", "_extracted"):
+            if len(parts) >= 4 and parts[2] not in ("_adapters", "_staging"):
                 names.add(parts[3])
-            elif len(parts) >= 3 and parts[2] not in ("_adapters", "_extracted"):
+            elif len(parts) >= 3 and parts[2] not in ("_adapters", "_staging"):
                 for alias in node.names:
                     names.add(alias.name)
         elif isinstance(node, ast.Import):
             for alias in node.names:
                 if alias.name.startswith("core.venous."):
                     parts = alias.name.split(".")
-                    if len(parts) >= 4 and parts[2] not in ("_adapters", "_extracted"):
+                    if len(parts) >= 4 and parts[2] not in ("_adapters", "_staging"):
                         names.add(parts[3])
 
     # Channel 2: string-embedded `from/import core.venous.*` inside non-
     # docstring string constants. Docstrings are excluded so narrative
     # prose doesn't create false positives.
     docstring_ids: set[int] = set()
+
     def _collect_docstring_ids(n: ast.AST) -> None:
         if isinstance(n, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
             body = getattr(n, "body", None) or []
-            if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant) and isinstance(body[0].value.value, str):
+            if (
+                body
+                and isinstance(body[0], ast.Expr)
+                and isinstance(body[0].value, ast.Constant)
+                and isinstance(body[0].value.value, str)
+            ):
                 docstring_ids.add(id(body[0].value))
         for child in ast.iter_child_nodes(n):
             _collect_docstring_ids(child)
+
     _collect_docstring_ids(tree)
 
     for node in ast.walk(tree):
@@ -411,6 +442,7 @@ def _extract_primitive_imports(py: Path, declared: tuple[str, ...] = ()) -> tupl
 # Primitives + recipes
 # ---------------------------------------------------------------------------
 
+
 def _load_primitives() -> list[PrimitiveEntry]:
     data = yaml.safe_load(REGISTRY_PATH.read_text(encoding="utf-8"))
     out: list[PrimitiveEntry] = []
@@ -418,15 +450,19 @@ def _load_primitives() -> list[PrimitiveEntry]:
         ns = entry["namespace"]
         name = entry["name"]
         module_path = VENOUS_ROOT / ns / name / f"{name}.py"
-        out.append(PrimitiveEntry(
-            name=name, namespace=ns,
-            concern=entry.get("concern", ns),
-            purpose=entry.get("purpose", "")[:140],
-            compose_with=tuple(entry.get("compose_with") or []),
-            module_path=str(module_path.relative_to(SKILL_ROOT))
-                if module_path.exists() else f"core/venous/{ns}/{name}/",
-        ))
-    # Append staged primitives from _extracted/ (excluding _quarantine), then
+        out.append(
+            PrimitiveEntry(
+                name=name,
+                namespace=ns,
+                concern=entry.get("concern", ns),
+                purpose=entry.get("purpose", "")[:140],
+                compose_with=tuple(entry.get("compose_with") or []),
+                module_path=str(module_path.relative_to(SKILL_ROOT))
+                if module_path.exists()
+                else f"core/venous/{ns}/{name}/",
+            )
+        )
+    # Append staged primitives from _staging/ (excluding _quarantine), then
     # globally sort so BM25 and byte-stable hashing see a single ordered list.
     out.extend(_load_staged_primitives(registered_names={p.name for p in out}))
     out.sort(key=lambda p: (p.namespace, p.name))
@@ -436,14 +472,14 @@ def _load_primitives() -> list[PrimitiveEntry]:
 def _load_staged_primitives(*, registered_names: set[str]) -> list[PrimitiveEntry]:
     """Surface every pre-audited staged primitive as `status="staged"`.
 
-    The staging area (`core/venous/_extracted/<ns>/<Name>/`) carries full
+    The staging area (`core/venous/_staging/<ns>/<Name>/`) carries full
     HuGR shell (contract.json, protocol, md, tests) but `REPLACE_ME`
     stubs in the impl. We index them so the Maestro can discover them
     via `fastapi_meta_search` and decide when a benchmark gap justifies
     promotion — but the `staged` status flags them as non-production.
     Quarantined primitives are skipped.
     """
-    root = VENOUS_ROOT / "_extracted"
+    root = VENOUS_ROOT / "_staging"
     if not root.exists():
         return []
     out: list[PrimitiveEntry] = []
@@ -466,18 +502,22 @@ def _load_staged_primitives(*, registered_names: set[str]) -> list[PrimitiveEntr
             if name in registered_names or name in seen:
                 # Do not duplicate a primitive that already lives in the
                 # production registry, nor a same-named primitive from a
-                # different _extracted namespace.
+                # different _staging namespace.
                 continue
             seen.add(name)
             purpose = _first_doc_line(prim_dir / f"{name}.md")[:140]
-            out.append(PrimitiveEntry(
-                name=name, namespace=ns,
-                concern=ns,
-                purpose=purpose or f"Staged primitive; promote via engine/extraction before use.",
-                compose_with=(),
-                module_path=str(prim_dir.relative_to(SKILL_ROOT)) + "/",
-                status="staged",
-            ))
+            out.append(
+                PrimitiveEntry(
+                    name=name,
+                    namespace=ns,
+                    concern=ns,
+                    purpose=purpose
+                    or "Staged primitive; promote via engine/extraction before use.",
+                    compose_with=(),
+                    module_path=str(prim_dir.relative_to(SKILL_ROOT)) + "/",
+                    status="staged",
+                )
+            )
     return sorted(out, key=lambda p: (p.namespace, p.name))
 
 
@@ -497,7 +537,8 @@ def _first_doc_line(md_path: Path) -> str:
 
 
 _RECIPE_BULLET_RE = re.compile(
-    r"^\s*-\s+(?P<body>.+?)(?=\n\s*-\s|\n\n|\Z)", re.DOTALL | re.MULTILINE,
+    r"^\s*-\s+(?P<body>.+?)(?=\n\s*-\s|\n\n|\Z)",
+    re.DOTALL | re.MULTILINE,
 )
 _RECIPE_PRIM_REF_RE = re.compile(r"`(?P<name>[A-Z][A-Za-z0-9]+)`")
 
@@ -520,21 +561,21 @@ def _extract_recipes(primitives: list[PrimitiveEntry]) -> list[RecipeEntry]:
         section = m.group(0)
         for idx, bullet in enumerate(_RECIPE_BULLET_RE.finditer(section), 1):
             text = bullet.group("body").strip()
-            refs = tuple(sorted(set(
-                h.group("name") for h in _RECIPE_PRIM_REF_RE.finditer(text)
-            )))
+            refs = tuple(sorted(set(h.group("name") for h in _RECIPE_PRIM_REF_RE.finditer(text))))
             # Skip bullets that don't reference a primitive directly.
             if not refs:
                 continue
             intent = _extract_intent(text)
             rid = f"{prim.name}__{idx:02d}_{_slugify(intent or text)[:40]}"
-            out.append(RecipeEntry(
-                id=rid,
-                source_primitive=prim.name,
-                primitives=refs,
-                intent=intent or "",
-                description=_clean_desc(text),
-            ))
+            out.append(
+                RecipeEntry(
+                    id=rid,
+                    source_primitive=prim.name,
+                    primitives=refs,
+                    intent=intent or "",
+                    description=_clean_desc(text),
+                )
+            )
     out.sort(key=lambda r: r.id)
     return out
 
@@ -561,6 +602,7 @@ def _slugify(s: str) -> str:
 # ---------------------------------------------------------------------------
 # Tool entry assembly
 # ---------------------------------------------------------------------------
+
 
 def _tool_entries(raw_tools: list[dict], primitive_names: set[str]) -> list[ToolEntry]:
     entries: list[ToolEntry] = []
@@ -606,22 +648,24 @@ def _tool_entries(raw_tools: list[dict], primitive_names: set[str]) -> list[Tool
         test_paths = (str(test_path),) if (SKILL_ROOT / test_path).exists() else ()
 
         try:
-            entries.append(ToolEntry(
-                name=canonical,
-                legacy_name=legacy,
-                verb=verb,
-                domain=domain,
-                synopsis=synopsis or mcp_name,
-                when_to_call=when_to_call,
-                when_not_to_call="",
-                tags=tags,
-                tier=1 if domain == "meta" else 2,
-                status="stable",
-                since="",
-                module_path=str(module_path),
-                test_paths=test_paths,
-                primitives_used=primitives_used,
-            ))
+            entries.append(
+                ToolEntry(
+                    name=canonical,
+                    legacy_name=legacy,
+                    verb=verb,
+                    domain=domain,
+                    synopsis=synopsis or mcp_name,
+                    when_to_call=when_to_call,
+                    when_not_to_call="",
+                    tags=tags,
+                    tier=1 if domain == "meta" else 2,
+                    status="stable",
+                    since="",
+                    module_path=str(module_path),
+                    test_paths=test_paths,
+                    primitives_used=primitives_used,
+                )
+            )
         except Exception as exc:  # noqa: BLE001
             errors.append(f"{mcp_name}: {exc}")
 
@@ -637,12 +681,17 @@ def _tool_entries(raw_tools: list[dict], primitive_names: set[str]) -> list[Tool
 # Top-level builders
 # ---------------------------------------------------------------------------
 
+
 def _git_short_sha() -> str:
     try:
         import subprocess
+
         out = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
-            cwd=REPO_ROOT, capture_output=True, text=True, check=False,
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
         )
         return (out.stdout or "unknown").strip()
     except Exception:  # noqa: BLE001
@@ -659,9 +708,9 @@ def build() -> CatalogManifest:
     manifest = CatalogManifest(
         schema_version=MANIFEST_SCHEMA_VERSION,
         kit_commit=_git_short_sha(),
-        generated_at=datetime.now(tz=timezone.utc).isoformat(timespec="seconds"),
-        verbs=VERBS,                        # type: ignore[arg-type]
-        domains=DOMAINS,                    # type: ignore[arg-type]
+        generated_at=datetime.now(tz=UTC).isoformat(timespec="seconds"),
+        verbs=VERBS,  # type: ignore[arg-type]
+        domains=DOMAINS,  # type: ignore[arg-type]
         tags=tuple(sorted(TAG_VOCABULARY)),
         tools=tuple(tools),
         primitives=tuple(primitives),
@@ -691,13 +740,9 @@ def write(manifest: CatalogManifest, path: Path = CATALOG_PATH) -> str:
 
     # Compute hash first, over non-hash fields only.
     stable = {
-        k: v
-        for k, v in data.items()
-        if k not in ("generated_at", "kit_commit", "stable_hash")
+        k: v for k, v in data.items() if k not in ("generated_at", "kit_commit", "stable_hash")
     }
-    digest = hashlib.sha256(
-        json.dumps(stable, indent=2, sort_keys=True).encode()
-    ).hexdigest()
+    digest = hashlib.sha256(json.dumps(stable, indent=2, sort_keys=True).encode()).hexdigest()
 
     # Write catalog WITH the hash embedded so consumers can read it back.
     data["stable_hash"] = digest
@@ -718,7 +763,9 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     h1 = write(m, args.out)
-    print(f"tools={m.counts['tools']}  primitives={m.counts['primitives']}  recipes={m.counts['recipes']}")
+    print(
+        f"tools={m.counts['tools']}  primitives={m.counts['primitives']}  recipes={m.counts['recipes']}"
+    )
     try:
         display = args.out.relative_to(SKILL_ROOT)
     except ValueError:

@@ -130,11 +130,11 @@ adapter. Example (Bulkhead):
 
 ## 6. Staged primitives — discoverability, not promotion
 
-v0.x surfaced `_extracted/` primitives with the same status as
+v0.x surfaced `_staging/` primitives with the same status as
 registered ones. v1.0.0 distinguishes:
 
 - **`status="stable"`** — registered primitive, production-ready.
-- **`status="staged"`** — present in `_extracted/`, discoverable but
+- **`status="staged"`** — present in `_staging/`, discoverable but
   NOT production-ready. Maestro should only cite staged primitives
   after human review AND a §A12(b) signal.
 
@@ -163,7 +163,7 @@ new `stable_hash` top-level field (ignore if not needed).
 `engine/promotion/` is new in v1.0.0. It does not break existing
 callers (no renames), but introduces:
 
-- `engine/promotion/classify.py` — ledger generation from `_extracted/`.
+- `engine/promotion/classify.py` — ledger generation from `_staging/`.
 - `engine/promotion/promote.py` — approved-action executor.
 - `engine/promotion/ledger.py` + `LEDGER.md` — human-facing approval
   artefact.
@@ -176,7 +176,7 @@ No migration required — the module is additive.
 
 v1.0.0 lands two new CONTRACT items:
 
-- **§A12** — amended text on when `_extracted/` items may be promoted
+- **§A12** — amended text on when `_staging/` items may be promoted
   (added triage-pass clause). Not a behavioural change for existing
   callers, but formalises the escape hatch.
 - **§B1.8** — tier-lite eligibility check. Vacuously satisfied while
