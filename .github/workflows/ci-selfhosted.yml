@@ -113,10 +113,11 @@ jobs:
       - name: Unit tests
         working-directory: ${{ env.KIT }}
         env: { PYTHONPATH: . }
-        # -n 6 (not auto/12): this job runs CONCURRENTLY with the other test jobs
-        # on the same 12-core mac; capping workers avoids CPU oversubscription that
-        # would reintroduce boot-timeout flakes across jobs.
-        run: "${VENV}/bin/python -m pytest adapt/ -q --tb=short -n 6 --dist loadfile"
+        # -n 4 (not auto/12): the 12-core mac is SHARED with other projects' CI
+        # (wallet runners) + dev work. Budget HuGR to ~half the machine: with 3
+        # concurrent jobs (unit -n4 + 2 lighter), HuGR peaks ~6/12 cores, leaving
+        # room for the neighbors. Avoids cross-project CPU thrash + boot-timeout flakes.
+        run: "${VENV}/bin/python -m pytest adapt/ -q --tb=short -n 4 --dist loadfile"
 
   # --- Composition gates (boot + the regression net) ------------------------
   composition:
