@@ -274,14 +274,32 @@ async def test_01_tenant_aware_auth(pd: Path) -> tuple[bool, str]:
 
         token = await _signup_and_login(client, "owner@acme.example.com", "OwnerPass123!", "Acme Owner")
 
+        # Valid token + header naming the user's own tenant → 200.
         r = await client.get("/api/v1/products/", headers=_th(token))
         if r.status_code != 200:
-            fails.append(f"GET products with token: {r.status_code}")
+            fails.append(f"GET products with token+matching header: {r.status_code}")
 
-        # Missing tenant header → 400
+        # Identity-bound tenancy: X-Tenant-ID is OPTIONAL. A valid token with NO
+        # header still works because the tenant is resolved from the user's
+        # identity (User.tenant_id), not a blind header. (The old header-gated
+        # model 400'd here — that was insecure AND broke every public route.)
         r = await client.get("/api/v1/products/", headers={"Authorization": f"Bearer {token}"})
-        if r.status_code not in (400, 401):
-            fails.append(f"missing tenant header: expected 400/401, got {r.status_code}")
+        if r.status_code != 200:
+            fails.append(f"no header but valid token: expected 200 (tenant from identity), got {r.status_code}")
+
+        # Spoofed header: a normal user naming a tenant that is NOT their own is
+        # rejected 403 — knowing a slug must never grant cross-tenant access.
+        r = await client.get(
+            "/api/v1/products/",
+            headers={"Authorization": f"Bearer {token}", "X-Tenant-ID": "definitely-not-my-tenant"},
+        )
+        if r.status_code != 403:
+            fails.append(f"spoofed cross-tenant header: expected 403, got {r.status_code}")
+
+        # No credentials at all → unauthenticated.
+        r = await client.get("/api/v1/products/")
+        if r.status_code not in (401, 403):
+            fails.append(f"no token: expected 401, got {r.status_code}")
 
     finally:
         await _teardown(app, client, session, engine)
