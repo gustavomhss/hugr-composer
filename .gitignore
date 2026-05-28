@@ -16,6 +16,9 @@ env/
 
 # Emitted/scaffolded projects (benchmark scratch, eval runs) — regenerated; never tracked.
 **/emitted/
+# EXCEPTION: blind-benchmark stub fixtures are committed test DATA (contract B3.7),
+# not regenerated scratch — the broad rule above must not swallow them.
+!**/benchmarks/blind/_stub_fixtures/**
 
 # Databases / local data
 *.db

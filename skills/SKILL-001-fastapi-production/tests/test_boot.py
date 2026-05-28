@@ -15,6 +15,7 @@ Exit code 1  → one or more tools failed to boot (details printed per-tool)
 
 from __future__ import annotations
 
+import concurrent.futures
 import importlib
 import subprocess
 import sys
@@ -216,6 +217,12 @@ def _run_tool_boot_test(
 def main() -> int:
     """Run all boot tests and print a summary.
 
+    Each tool's boot test is independent (own temp project, own boot
+    subprocess, no shared state), so they run on a thread pool. The boot
+    subprocess.run releases the GIL while it waits, so 4 workers overlap the
+    ~6s-per-tool boots — turning a ~9min serial sweep into ~3min. Workers are
+    capped at 4 to stay a good CPU neighbour on the shared CI mac.
+
     Returns:
         0 if all tools pass, 1 if any fail.
     """
@@ -223,17 +230,24 @@ def main() -> int:
     passed = 0
     failed: list[tuple[str, str]] = []
 
-    print(f"Running boot tests for {total} adapt tools ...\n")
+    print(f"Running boot tests for {total} adapt tools (parallel, 4 workers) ...\n")
 
-    for tool_name, module_path, fn_name in EXTEND_TOOLS:
-        ok, error_msg = _run_tool_boot_test(tool_name, module_path, fn_name)
-        if ok:
-            passed += 1
-            print(f"  PASS  {tool_name}")
-        else:
-            failed.append((tool_name, error_msg))
-            print(f"  FAIL  {tool_name} — {error_msg}")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+        futures = {
+            pool.submit(_run_tool_boot_test, name, module_path, fn_name): name
+            for name, module_path, fn_name in EXTEND_TOOLS
+        }
+        for fut in concurrent.futures.as_completed(futures):
+            tool_name = futures[fut]
+            ok, error_msg = fut.result()
+            if ok:
+                passed += 1
+                print(f"  PASS  {tool_name}")
+            else:
+                failed.append((tool_name, error_msg))
+                print(f"  FAIL  {tool_name} — {error_msg}")
 
+    failed.sort()
     print(f"\n{'='*60}")
     print(f"Boot test result: {passed}/{total} tools boot cleanly")
     if failed:

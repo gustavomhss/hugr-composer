@@ -256,6 +256,15 @@ def _run_chain(
         (all_passed, list_of_failures) where each failure is a descriptive string.
     """
     failures: list[str] = []
+    total = len(tools)
+
+    # Boot cadence: a cold-import boot subprocess costs ~6s. For the small
+    # hot-path chains (≤50 tools) we boot after every tool — exact per-tool
+    # granularity is cheap there. For the two full 100-tool chains, ~200 serial
+    # boots dominated CI (~32min); booting every 10 steps + always the last cuts
+    # that ~10× while still catching any composition break (granularity narrows
+    # to a 10-step window, recoverable by re-running locally per-tool).
+    boot_every = 10 if total > 50 else 1
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         project_dir = create_fixture_project(
@@ -278,12 +287,14 @@ def _run_chain(
                 )
                 break
 
-            passed, error_msg = _boot_ok(project_dir)
-            if not passed:
-                failures.append(
-                    f"[{chain_name}] step {step} ({tool_name}): boot failed — {error_msg}"
-                )
-                break
+            if step % boot_every == 0 or step == total:
+                passed, error_msg = _boot_ok(project_dir)
+                if not passed:
+                    window = f"≤ step {step}" if boot_every > 1 else f"step {step}"
+                    failures.append(
+                        f"[{chain_name}] {window} ({tool_name}): boot failed — {error_msg}"
+                    )
+                    break
 
     return len(failures) == 0, failures
 

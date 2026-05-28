@@ -124,22 +124,51 @@ jobs:
         # room for the neighbors. Avoids cross-project CPU thrash + boot-timeout flakes.
         run: "${VENV}/bin/python -m pytest adapt/ -q --tb=short -n 4 --dist loadfile"
 
-  # --- Composition gates (boot + the regression net) ------------------------
-  composition:
-    name: composition gates
+  # --- Boot sweep: every tool boots a fresh project (internally threaded) ----
+  # Split out of the old monolithic `composition` job (which ran boot + chains
+  # + gates serially for ~46min). These three jobs now run concurrently across
+  # the idle runners; each is internally parallel too.
+  boot:
+    name: boot (100 tools)
     needs: setup
     runs-on: [self-hosted, macos, local]
     steps:
       - uses: actions/checkout@v4
       - name: Link shared venv into checkout
         run: ln -sfn "${VENV}" "${{ github.workspace }}/${KIT}/.venv"
-      - name: Boot + chains + regression + property + contract
+      - name: Per-tool boot sweep (4 threads)
+        working-directory: ${{ env.KIT }}
+        env: { PYTHONPATH: . }
+        run: "${VENV}/bin/python" tests/test_boot.py
+
+  # --- Composition chains (forward/reverse full + hot-path chains) -----------
+  boot-chains:
+    name: boot chains
+    needs: setup
+    runs-on: [self-hosted, macos, local]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link shared venv into checkout
+        run: ln -sfn "${VENV}" "${{ github.workspace }}/${KIT}/.venv"
+      - name: Chains (5 chains in parallel)
+        working-directory: ${{ env.KIT }}
+        env: { PYTHONPATH: . }
+        run: "${VENV}/bin/python" -m pytest tests/test_boot_chains.py -n 3 -q --tb=short
+
+  # --- Regression net: P0 gates + property tests + contract/doc audit --------
+  gates:
+    name: regression + property + contract
+    needs: setup
+    runs-on: [self-hosted, macos, local]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link shared venv into checkout
+        run: ln -sfn "${VENV}" "${{ github.workspace }}/${KIT}/.venv"
+      - name: P0 gates + property + contract audit
         working-directory: ${{ env.KIT }}
         env: { PYTHONPATH: . }
         run: |
           set -euo pipefail
-          "${VENV}/bin/python" tests/test_boot.py
-          "${VENV}/bin/python" tests/test_boot_chains.py
           "${VENV}/bin/python" tests/test_p0_regression_gates.py
           "${VENV}/bin/python" tests/property_tests.py
           "${VENV}/bin/python" -m engine.audit.contract_check
