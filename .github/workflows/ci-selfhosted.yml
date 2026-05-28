@@ -110,6 +110,8 @@ jobs:
     runs-on: [self-hosted, macos, local]
     steps:
       - uses: actions/checkout@v4
+      - name: Link shared venv into checkout
+        run: ln -sfn "${VENV}" "${{ github.workspace }}/${KIT}/.venv"
       - name: Unit tests
         working-directory: ${{ env.KIT }}
         env: { PYTHONPATH: . }
@@ -126,6 +128,8 @@ jobs:
     runs-on: [self-hosted, macos, local]
     steps:
       - uses: actions/checkout@v4
+      - name: Link shared venv into checkout
+        run: ln -sfn "${VENV}" "${{ github.workspace }}/${KIT}/.venv"
       - name: Boot + chains + regression + property + contract
         working-directory: ${{ env.KIT }}
         env: { PYTHONPATH: . }
@@ -144,6 +148,8 @@ jobs:
     runs-on: [self-hosted, macos, local]
     steps:
       - uses: actions/checkout@v4
+      - name: Link shared venv into checkout
+        run: ln -sfn "${VENV}" "${{ github.workspace }}/${KIT}/.venv"
       - name: SQLite E2E + emitted audit
         working-directory: ${{ env.KIT }}
         env: { PYTHONPATH: . }
@@ -159,6 +165,8 @@ jobs:
     runs-on: [self-hosted, macos, local]
     steps:
       - uses: actions/checkout@v4
+      - name: Link shared venv into checkout
+        run: ln -sfn "${VENV}" "${{ github.workspace }}/${KIT}/.venv"
       - name: Auth gate + license/store/issuance/e2e + MCP discovery
         run: |
           set -euo pipefail
@@ -186,6 +194,8 @@ jobs:
       POSTGRES_DB: skill_e2e
     steps:
       - uses: actions/checkout@v4
+      - name: Link shared venv into checkout
+        run: ln -sfn "${VENV}" "${{ github.workspace }}/${KIT}/.venv"
       - name: PostgreSQL E2E + behavior scenarios
         working-directory: ${{ env.KIT }}
         env: { PYTHONPATH: . }
