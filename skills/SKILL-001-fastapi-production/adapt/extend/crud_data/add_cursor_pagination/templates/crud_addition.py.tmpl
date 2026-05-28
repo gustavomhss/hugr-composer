@@ -1,0 +1,35 @@
+
+# ---------------------------------------------------------------------------
+# Cursor pagination — added by add_cursor_pagination tool
+# ---------------------------------------------------------------------------
+from app.core.cursor_paginator import CursorPaginator as _CursorPaginator
+from sqlalchemy.ext.asyncio import AsyncSession as _AsyncSession
+from sqlalchemy import select as _select
+import uuid as _uuid
+
+CURSOR_FIELD = "created_at"
+CURSOR_DIRECTION = "desc"
+
+_paginator = _CursorPaginator(
+    $model_name, cursor_field=CURSOR_FIELD, direction=CURSOR_DIRECTION
+)
+
+
+async def get_multi_cursor(
+    session: _AsyncSession,
+    *,
+    cursor: str | None = None,
+    page_size: int = 20,
+    owner_id: _uuid.UUID | None = None,
+) -> dict:
+    """Cursor-paginated list.  Stable under concurrent inserts/deletes.
+
+    Returns a dict with ``data``, ``count``, ``next_cursor``, ``has_more``.
+    Raises ``ValueError`` if cursor is malformed or encodes a mismatched field.
+    """
+    stmt = _select($model_name)
+    if owner_id is not None:
+        stmt = stmt.where($model_name.owner_id == owner_id)
+    if hasattr($model_name, "is_deleted"):
+        stmt = stmt.where($model_name.is_deleted == False)  # noqa: E712
+    return await _paginator.paginate(session, stmt, cursor=cursor, page_size=page_size)

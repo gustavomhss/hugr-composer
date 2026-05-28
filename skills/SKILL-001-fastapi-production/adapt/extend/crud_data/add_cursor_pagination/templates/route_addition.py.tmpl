@@ -1,0 +1,42 @@
+
+
+# ---------------------------------------------------------------------------
+# Cursor pagination route — added by add_cursor_pagination tool
+# ---------------------------------------------------------------------------
+from app.crud.$lower import get_multi_cursor as _get_multi_cursor
+from fastapi import HTTPException
+from fastapi import Query as _Query
+
+
+@router.get("/cursor/", response_model=$PublicList)
+async def list_${lower}s_cursor(
+    session: SessionDep,
+    current_user: CurrentUser,
+    cursor: str | None = _Query(
+        default=None,
+        description="Opaque pagination cursor from previous response next_cursor field",
+        max_length=1024,
+    ),
+    page_size: int = _Query(
+        default=20,
+        ge=1,
+        le=100,
+        description="Number of items to return per page (1-100)",
+    ),
+) -> $PublicList:
+    """List ${model_name}s using cursor-based pagination.  Stable under concurrent writes.
+
+    Raises HTTPException 400 if cursor is malformed.
+    """
+    try:
+        result = await _get_multi_cursor(
+            session,
+            cursor=cursor,
+            page_size=page_size,
+            owner_id=current_user.id,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400, detail=f"Invalid cursor: {exc}"
+        ) from exc
+    return $PublicList(**result)

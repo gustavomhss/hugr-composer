@@ -1,0 +1,80 @@
+"""Opaque cursor encoding for cursor-based pagination.
+
+Cursors are URL-safe base64-encoded JSON blobs.  Clients MUST treat
+them as opaque strings — the internal format may change at any time.
+"""
+
+from __future__ import annotations
+
+import base64
+import json
+from datetime import datetime, timezone
+from typing import Any
+from uuid import UUID
+
+
+_MAX_CURSOR_BYTES: int = 1024  # 1 KB hard limit — rejects oversized malicious input
+
+
+def encode_cursor(
+    field: str,
+    value: Any,
+    tiebreaker_id: str | None = None,
+) -> str:
+    """Encode a sort key into a URL-safe base64 cursor string.
+
+    Supports: datetime (ISO-8601 UTC), UUID (str), int, float, str.
+    Includes optional tiebreaker_id (record UUID) for composite cursors.
+
+    Args:
+        field: Name of the sort column (e.g. ``"created_at"``).
+        value: Value of the sort column for the last item on the page.
+        tiebreaker_id: Optional record UUID to stabilise ties.
+
+    Returns:
+        URL-safe base64url string with no padding characters.
+    """
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        serialized: Any = value.isoformat()
+    elif isinstance(value, UUID):
+        serialized = str(value)
+    else:
+        serialized = value
+
+    payload: dict[str, Any] = {"f": field, "v": serialized}
+    if tiebreaker_id is not None:
+        payload["id"] = tiebreaker_id
+
+    raw = json.dumps(payload, separators=(",", ":"))
+    return base64.urlsafe_b64encode(raw.encode("utf-8")).decode("ascii").rstrip("=")
+
+
+def decode_cursor(cursor: str) -> dict[str, Any]:
+    """Decode a cursor string back to ``{field, value, id?}``.
+
+    Args:
+        cursor: Opaque cursor string from a previous response.
+
+    Returns:
+        Dict with keys ``field``, ``value``, and optionally ``id``.
+
+    Raises:
+        ValueError: On bad base64, invalid JSON, wrong structure,
+            oversized input, or missing required keys.
+    """
+    if len(cursor.encode("utf-8")) > _MAX_CURSOR_BYTES:
+        raise ValueError(
+            f"Cursor exceeds maximum size ({_MAX_CURSOR_BYTES} bytes)"
+        )
+    try:
+        padding_needed = (4 - len(cursor) % 4) % 4
+        padded = cursor + "=" * padding_needed
+        raw = base64.urlsafe_b64decode(padded.encode("ascii"))
+        data = json.loads(raw)
+        if not isinstance(data, dict) or "f" not in data or "v" not in data:
+            raise ValueError("Invalid cursor structure: missing 'f' or 'v' keys")
+        return {"field": data["f"], "value": data["v"], "id": data.get("id")}
+    except (ValueError, TypeError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise ValueError(f"Malformed cursor: {exc}") from exc

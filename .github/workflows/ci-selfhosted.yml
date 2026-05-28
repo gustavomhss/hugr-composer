@@ -95,7 +95,7 @@ jobs:
             BASE=$(git merge-base "origin/${TARGET}" HEAD 2>/dev/null || true)
           fi
           [ -z "$BASE" ] && { echo "::error::cannot determine diff base"; exit 1; }
-          CHANGED=$(git diff --name-only "$BASE" HEAD)
+          CHANGED=$(git diff --name-only --diff-filter=ACMR "$BASE" HEAD)
           # Exclude paths that pyproject.toml's ruff extend-exclude already
           # ignores: when ruff is invoked with explicit files it ignores
           # extend-exclude, so we mirror the rule here.
