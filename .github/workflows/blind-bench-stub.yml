@@ -5,21 +5,18 @@ name: Blind Benchmark — stub + unit
 # is wired separately under `benchmark-nightly.yml` and only fires on
 # schedule / dispatch so API costs are controlled.
 
+# DISABLED 2026-05-28: this workflow runs on `ubuntu-latest` (GitHub-hosted),
+# but GitHub Actions minutes are billing-blocked on this account — so every
+# push/PR-triggered run dies in 2-3s and pollutes PR checks. Auto triggers
+# replaced with `workflow_dispatch:` until the job is migrated to the
+# self-hosted mac runner pool (track: ci-runners follow-up). The blind harness
+# coverage of B3.7 is already enforced in ci-selfhosted.yml's `gates` job
+# (`engine.audit.contract_check`), so disabling this does NOT drop B3.7.
+# To re-enable: change `runs-on: ubuntu-latest` to `[self-hosted, macos, local]`,
+# share the venv via the same symlink pattern, and restore the push/pull_request
+# triggers below.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'skills/SKILL-001-fastapi-production/engine/bench/blind/**'
-      - 'skills/SKILL-001-fastapi-production/benchmarks/blind/**'
-      - 'skills/SKILL-001-fastapi-production/engine/tests/test_blind_harness.py'
-      - '.github/workflows/blind-bench-stub.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'skills/SKILL-001-fastapi-production/engine/bench/blind/**'
-      - 'skills/SKILL-001-fastapi-production/benchmarks/blind/**'
-      - 'skills/SKILL-001-fastapi-production/engine/tests/test_blind_harness.py'
-      - '.github/workflows/blind-bench-stub.yml'
+  workflow_dispatch:
 
 defaults:
   run:

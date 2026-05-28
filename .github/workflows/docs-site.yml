@@ -1,13 +1,13 @@
 name: docs-site
 
+# DISABLED 2026-05-28: deploys to GitHub Pages from `ubuntu-latest` runners
+# while GH Actions minutes are billing-blocked → every push to core/venous/**
+# or adapt/** fails in seconds and pollutes PR/main check history. Auto push
+# trigger removed; `workflow_dispatch` retained so the site can still be
+# built on demand. The next architecture refactor will touch adapt/** and
+# core/venous/** heavily — re-enable then with self-hosted (Pages can deploy
+# from a self-hosted runner via `actions/deploy-pages@v4`).
 on:
-  push:
-    branches: [main]
-    paths:
-      - "skills/SKILL-001-fastapi-production/core/venous/**"
-      - "skills/SKILL-001-fastapi-production/engine/primitives_by_concern.yaml"
-      - "skills/SKILL-001-fastapi-production/engine/docs/**"
-      - "skills/SKILL-001-fastapi-production/adapt/**"
   workflow_dispatch:
 
 permissions:

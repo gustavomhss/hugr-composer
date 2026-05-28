@@ -5,25 +5,14 @@ name: install.sh — fresh Docker smoke
 # or the skill's requirements-mcp.txt. Failure surfaces here, never in
 # a user's terminal.
 
+# DISABLED 2026-05-28: this workflow uses `container: image: python:3.12-slim`
+# on `ubuntu-latest`. With GH Actions minutes billing-blocked, it dies in ~3s
+# on every install.sh / requirements / VERSION change and pollutes PR checks.
+# Migration to self-hosted is non-trivial because the mac runners don't all
+# have Docker installed in a clean state; B4.1 will be re-enforced after that
+# infra step. Auto + schedule triggers removed; `workflow_dispatch` retained
+# so a maintainer can still smoke install.sh on demand.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'install.sh'
-      - 'skills/SKILL-001-fastapi-production/requirements-mcp.txt'
-      - 'skills/SKILL-001-fastapi-production/pyproject.toml'
-      - 'skills/SKILL-001-fastapi-production/VERSION'
-      - '.github/workflows/install-docker.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'install.sh'
-      - 'skills/SKILL-001-fastapi-production/requirements-mcp.txt'
-      - 'skills/SKILL-001-fastapi-production/pyproject.toml'
-      - 'skills/SKILL-001-fastapi-production/VERSION'
-      - '.github/workflows/install-docker.yml'
-  schedule:
-    - cron: '23 4 * * *'   # 04:23 UTC nightly
   workflow_dispatch:
 
 jobs:
