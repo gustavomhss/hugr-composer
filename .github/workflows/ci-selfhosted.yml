@@ -88,7 +88,7 @@ jobs:
             PyJWT alembic asyncpg email-validator fastapi "pwdlib[argon2]" \
             pydantic-settings pydantic python-multipart "redis[hiredis]==5.3.1" slowapi \
             "sqlalchemy[asyncio]" structlog "uvicorn[standard]" \
-            pytest pytest-asyncio aiosqlite httpx
+            pytest pytest-asyncio pytest-xdist aiosqlite httpx
           # Feature-tool runtime deps whose behavior tests boot real apps that
           # import them hard (s3->boto3, tasks->arq, email->jinja2, graphql->
           # strawberry, mfa->pyotp/qrcode, sse->sse-starlette, crypto). Tools
@@ -102,7 +102,10 @@ jobs:
             aiodataloader msgpack
 
       - name: Unit tests (pytest adapt/)
-        run: .venv/bin/python -m pytest adapt/ -q --tb=short
+        # -n auto parallelizes the 3200+ tests across cores: ~15min -> ~4min.
+        # Tests are independent (each scaffolds its own tempdir), validated
+        # parallel-safe (3248 passed under -n auto).
+        run: .venv/bin/python -m pytest adapt/ -q --tb=short -n auto
 
       - name: Boot 100/100 tools
         run: .venv/bin/python tests/test_boot.py
