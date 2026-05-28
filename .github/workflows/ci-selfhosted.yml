@@ -139,7 +139,7 @@ jobs:
       - name: Per-tool boot sweep (4 threads)
         working-directory: ${{ env.KIT }}
         env: { PYTHONPATH: . }
-        run: "${VENV}/bin/python" tests/test_boot.py
+        run: "${VENV}/bin/python tests/test_boot.py"
 
   # --- Composition chains (forward/reverse full + hot-path chains) -----------
   boot-chains:
@@ -153,7 +153,7 @@ jobs:
       - name: Chains (5 chains in parallel)
         working-directory: ${{ env.KIT }}
         env: { PYTHONPATH: . }
-        run: "${VENV}/bin/python" -m pytest tests/test_boot_chains.py -n 3 -q --tb=short
+        run: "${VENV}/bin/python -m pytest tests/test_boot_chains.py -n 3 -q --tb=short"
 
   # --- Regression net: P0 gates + property tests + contract/doc audit --------
   gates:
