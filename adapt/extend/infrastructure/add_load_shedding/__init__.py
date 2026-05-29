@@ -11,11 +11,14 @@ Idempotent: a second run detects the import chain in
 
 from __future__ import annotations
 
-import ast
 import time
 from pathlib import Path
 
+from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
+
+_HERE = Path(__file__).parent
 
 MCP_TOOL = {
     "name": "fastapi_resiliency_add_load_shedding",
@@ -30,40 +33,13 @@ MCP_TOOL = {
 }
 
 
-_GLUE = '''\
-"""Wire priority-aware load shedding into the FastAPI app.
-
-Delegates to the primitive + FastAPI adapter copied under `core/venous/`
-by the `add_load_shedding` tool. Re-emitted idempotently.
-"""
-
-from __future__ import annotations
-
-from fastapi import FastAPI
-
-from core.venous._adapters.fastapi.LoadShedderAdapter import install
-
-
-def install_load_shedding(app: FastAPI) -> None:
-    """Attach admission-control middleware to *app*.
-
-    Requests carry priority via ``X-Priority`` header; overloaded
-    requests get 503 + ``Retry-After`` (LSH-INV-02).
-    """
-    install(app)
-'''
-
-
 def add_load_shedding(inp: ToolInput) -> ToolResult:
     """Add load shedding by delegating to the shipped primitive + adapter."""
     start = time.monotonic()
-    project = Path(inp.project_dir)
 
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
-
-    from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
+        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -75,9 +51,10 @@ def add_load_shedding(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
-            execution_time_ms=_elapsed_ms(start),
+            execution_time_ms=_ms(start),
         )
 
+    project = Path(inp.project_dir)
     files_created: list[str] = list(scaffolded or [])
     app_dir = project / "app"
     glue_file = app_dir / "load_shedding.py"
@@ -86,7 +63,7 @@ def add_load_shedding(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["Load shedding already wired via the FastAPI adapter."],
-            execution_time_ms=_elapsed_ms(start),
+            execution_time_ms=_ms(start),
         )
 
     if inp.dry_run:
@@ -94,7 +71,7 @@ def add_load_shedding(inp: ToolInput) -> ToolResult:
             status="success",
             notes=["[dry_run] Would copy LoadShedder + adapter and write app/load_shedding.py."],
             next_steps=["Re-run without dry_run=True to apply."],
-            execution_time_ms=_elapsed_ms(start),
+            execution_time_ms=_ms(start),
         )
 
     from generators.scaffold_venous import ensure_primitives
@@ -107,20 +84,10 @@ def add_load_shedding(inp: ToolInput) -> ToolResult:
     files_created.append(manifest.path)
 
     app_dir.mkdir(parents=True, exist_ok=True)
-    glue_file.write_text(_GLUE)
+    render_to(_HERE, "load_shedding_glue.py.tmpl", dest=glue_file, substitutions={})
     files_created.append(str(glue_file))
 
-    for path_str in files_created:
-        p = Path(path_str)
-        if p.suffix == ".py" and p.is_file():
-            try:
-                ast.parse(p.read_text())
-            except SyntaxError as exc:
-                return ToolResult(
-                    status="error",
-                    error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_elapsed_ms(start),
-                )
+    _emit_project_test(project, files_created)
 
     return ToolResult(
         status="success",
@@ -136,9 +103,18 @@ def add_load_shedding(inp: ToolInput) -> ToolResult:
             "Clients SHOULD send X-Priority: critical|normal|sheddable_plus|sheddable.",
             "Feed queue depth / CPU EWMA via X-Queue-Depth / X-Cpu-Ewma headers or a custom composer.",
         ],
-        execution_time_ms=_elapsed_ms(start),
+        execution_time_ms=_ms(start),
     )
 
 
-def _elapsed_ms(start: float) -> int:
+def _emit_project_test(project: Path, created: list[str]) -> None:
+    (project / "tests").mkdir(parents=True, exist_ok=True)
+    emitted = project / "tests" / "test_add_load_shedding_emitted.py"
+    if emitted.exists():
+        return
+    render_to(_HERE, "test_add_load_shedding_emitted.py.tmpl", dest=emitted, substitutions={})
+    created.append(str(emitted))
+
+
+def _ms(start: float) -> int:
     return int((time.monotonic() - start) * 1000)

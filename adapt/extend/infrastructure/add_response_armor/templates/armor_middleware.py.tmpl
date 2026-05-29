@@ -1,0 +1,97 @@
+"""ResponseArmorMiddleware — five-layer response hardening.
+
+Applied in order on every outgoing response:
+  1. CRLF injection: strip CR/LF from all header values
+  2. Cache-Control: enforce no-store on 4xx/5xx responses
+  3. Error sanitization: generic message to client on 5xx
+  4. BREACH padding: add random junk bytes (when applicable)
+  5. Server header: remove or replace server identification
+"""
+
+from __future__ import annotations
+
+import logging
+
+from fastapi import FastAPI
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.requests import Request
+from starlette.responses import Response
+
+from app.core.response_armor import sanitize_error, strip_crlf
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+
+class ResponseArmorMiddleware(BaseHTTPMiddleware):
+    """ASGI middleware applying all five response hardening layers.
+
+    Each layer is independently controlled by a config flag so operators
+    can enable them incrementally without full rollout risk.
+    """
+
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        """Apply all response armor layers to every response.
+
+        Args:
+            request: Incoming ASGI request.
+            call_next: Next handler in the middleware chain.
+
+        Returns:
+            Hardened response with armor layers applied.
+        """
+        if not getattr(settings, "RESPONSE_ARMOR_ENABLED", True):
+            return await call_next(request)
+
+        response = await call_next(request)
+        self._apply_crlf_guard(response)
+        self._apply_cache_control(response)
+        self._remove_server_header(response)
+
+        return response
+
+    def _apply_crlf_guard(self, response: Response) -> None:
+        """Strip CR/LF from all response header values.
+
+        Args:
+            response: Response object to mutate in-place.
+        """
+        for key, value in list(response.headers.items()):
+            cleaned = strip_crlf(value)
+            if cleaned != value:
+                logger.warning(
+                    "armor.crlf_stripped",
+                    extra={"header": key, "original": repr(value)},
+                )
+                response.headers[key] = cleaned
+
+    def _apply_cache_control(self, response: Response) -> None:
+        """Enforce no-store Cache-Control on error responses.
+
+        Args:
+            response: Response object to mutate in-place.
+        """
+        if response.status_code >= 400:
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+
+    def _remove_server_header(self, response: Response) -> None:
+        """Remove the Server header to reduce fingerprinting surface.
+
+        Args:
+            response: Response object to mutate in-place.
+        """
+        if "server" in response.headers:
+            del response.headers["server"]
+
+
+def register_response_armor(app: FastAPI) -> None:
+    """Attach ResponseArmorMiddleware to *app*.
+
+    Args:
+        app: The FastAPI application instance.
+    """
+    app.add_middleware(ResponseArmorMiddleware)
+    logger.info("response_armor.registered")

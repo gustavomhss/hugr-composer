@@ -1,0 +1,33 @@
+"""Wire an exponential-backoff retry policy into the FastAPI app.
+
+Delegates to the primitive + FastAPI adapter copied under `core/venous/`
+by the `add_retry_budget` tool. Re-emitted idempotently on subsequent runs.
+"""
+
+from __future__ import annotations
+
+import os
+
+from fastapi import FastAPI
+
+from core.venous._adapters.fastapi.RetryPolicyAdapter import (
+    budget,
+    install,
+    policy_dep,
+)
+
+
+def install_retry_policy(app: FastAPI) -> None:
+    """Attach a shared retry policy to *app.state.retry_policy*."""
+    install(
+        app,
+        max_attempts=int(os.getenv("RETRY_MAX_ATTEMPTS", "3")),
+        initial_interval_ms=int(os.getenv("RETRY_INITIAL_MS", "100")),
+        multiplier=float(os.getenv("RETRY_MULTIPLIER", "2.0")),
+        max_interval_ms=int(os.getenv("RETRY_MAX_INTERVAL_MS", "30000")),
+        jitter=float(os.getenv("RETRY_JITTER", "1.0")),
+        budget_ratio=float(os.getenv("RETRY_BUDGET_RATIO", "0.1")),
+    )
+
+
+__all__ = ["budget", "install_retry_policy", "policy_dep"]

@@ -1,0 +1,41 @@
+"""App-specific bulkhead configuration + route classifier.
+
+``BulkheadConfig`` is re-exported from the shipped adapter so the app
+uses the exact type ``Bulkhead`` validates against. ``classify_route``
+is app-specific policy: it decides which URL paths go to which partition.
+
+Groups:
+    payments   — payment processing (default: 10)
+    crud       — standard CRUD endpoints (default: 50)
+    analytics  — analytics / reporting queries (default: 20)
+"""
+
+from __future__ import annotations
+
+import os
+
+from core.venous._adapters.fastapi.BulkheadAdapter import BulkheadConfig
+
+
+def get_default_config() -> BulkheadConfig:
+    """Return BulkheadConfig populated from environment variables."""
+    return BulkheadConfig(
+        limits={
+            "payments": int(os.getenv("BULKHEAD_PAYMENTS_MAX", "10")),
+            "crud": int(os.getenv("BULKHEAD_CRUD_MAX", "50")),
+            "analytics": int(os.getenv("BULKHEAD_ANALYTICS_MAX", "20")),
+        },
+        wait_ms=int(os.getenv("BULKHEAD_WAIT_MS", "0")),
+    )
+
+
+def classify_route(path: str) -> str:
+    """Map a URL path to a bulkhead group name."""
+    if path.startswith(("/payments", "/billing", "/subscriptions", "/invoices")):
+        return "payments"
+    if path.startswith(("/analytics", "/reports", "/exports", "/metrics")):
+        return "analytics"
+    return "crud"
+
+
+__all__ = ["BulkheadConfig", "classify_route", "get_default_config"]

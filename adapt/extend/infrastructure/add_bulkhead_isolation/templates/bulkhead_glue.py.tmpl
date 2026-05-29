@@ -1,0 +1,32 @@
+"""Thin glue that wires the Bulkhead FastAPI adapter into the app.
+
+Re-exports ``Bulkhead`` (multi-partition facade) and ``BulkheadFullError``
+from ``core.venous._adapters.fastapi.BulkheadAdapter`` — the adapter owns
+the convenience API (acquire, status, middleware). The motor primitive at
+``core.venous.resiliency.Bulkhead`` owns all permit accounting, invariant
+enforcement (BH_INV_01..05) and rejection metering. No business logic
+lives in this file.
+
+``get_bulkhead()`` builds a process-global ``Bulkhead`` from env vars.
+"""
+
+from __future__ import annotations
+
+from core.venous._adapters.fastapi.BulkheadAdapter import (
+    Bulkhead,
+    BulkheadFullError,
+)
+from app.resilience.pool_config import BulkheadConfig, get_default_config
+
+_bulkhead: Bulkhead | None = None
+
+
+def get_bulkhead() -> Bulkhead:
+    """Return the process-global Bulkhead (lazy init from env)."""
+    global _bulkhead
+    if _bulkhead is None:
+        _bulkhead = Bulkhead(get_default_config())
+    return _bulkhead
+
+
+__all__ = ["Bulkhead", "BulkheadConfig", "BulkheadFullError", "get_bulkhead"]

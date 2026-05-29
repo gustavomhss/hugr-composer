@@ -1,0 +1,71 @@
+"""Thin glue that wires the TimeoutBudget primitive into a FastAPI app.
+
+Delegates to the primitive copied under
+`core/venous/resiliency/TimeoutBudget/` by the `add_adaptive_timeouts`
+tool. Re-emitted idempotently on subsequent runs. This file contains NO
+business logic — deadline monotonicity, hierarchical derivation, and
+context propagation (TB-INV-01..05) all live in
+``core.venous.resiliency.TimeoutBudget``.
+
+The ASGI middleware opens a fresh ``MonotonicTimeoutBudget`` per request
+and executes the downstream handler via
+``asyncio.wait_for(..., timeout=budget.remaining_ms()/1000)``.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import os
+
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
+
+from core.venous.resiliency.TimeoutBudget import (
+    MonotonicTimeoutBudget,
+    TimeoutBudget,
+    TimeoutBudgetExpired,
+    bind,
+)
+
+
+def budget_for_request(request: Request) -> MonotonicTimeoutBudget:
+    """Open a root TimeoutBudget for *request* using env-configured ceiling."""
+    ceiling_ms = int(os.getenv("ADAPTIVE_TIMEOUT_CEILING_MS", "10000"))
+    return MonotonicTimeoutBudget.from_ms(ceiling_ms, origin=request.url.path)
+
+
+class TimeoutBudgetMiddleware(BaseHTTPMiddleware):
+    """ASGI middleware that binds a TimeoutBudget + enforces asyncio.wait_for."""
+
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
+    ) -> Response:
+        if os.getenv("ADAPTIVE_TIMEOUT_ENABLED", "false").lower() != "true":
+            return await call_next(request)
+        budget = budget_for_request(request)
+        timeout_s = max(0.001, budget.remaining_ms() / 1000.0)
+        try:
+            with bind(budget):
+                return await asyncio.wait_for(call_next(request), timeout=timeout_s)
+        except (asyncio.TimeoutError, TimeoutBudgetExpired):
+            return JSONResponse(
+                status_code=504,
+                content={"detail": "Gateway timeout: request exceeded budget."},
+            )
+
+
+def install_adaptive_timeouts(app) -> None:
+    """Attach the TimeoutBudget middleware to *app*."""
+    app.add_middleware(TimeoutBudgetMiddleware)
+
+
+__all__ = [
+    "MonotonicTimeoutBudget",
+    "TimeoutBudget",
+    "TimeoutBudgetMiddleware",
+    "budget_for_request",
+    "install_adaptive_timeouts",
+]

@@ -1,0 +1,23 @@
+"""Wire graceful shutdown into the FastAPI app.
+
+Delegates to the primitive + FastAPI adapter copied under `core/venous/`
+by the `add_graceful_shutdown` tool. Hand-editing is safe but the file is
+re-emitted idempotently on subsequent tool runs.
+"""
+
+from __future__ import annotations
+
+import os
+
+from fastapi import FastAPI
+
+from core.venous._adapters.fastapi.GracefulShutdownAdapter import install
+
+
+def install_graceful_shutdown(app: FastAPI) -> None:
+    """Attach drain middleware + shutdown coordinator to *app*."""
+    install(
+        app,
+        drain_seconds=float(os.getenv("SHUTDOWN_DRAIN_SECONDS", "5")),
+        timeout_seconds=float(os.getenv("SHUTDOWN_TIMEOUT_SECONDS", "30")),
+    )

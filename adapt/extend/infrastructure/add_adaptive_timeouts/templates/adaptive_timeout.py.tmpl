@@ -1,0 +1,124 @@
+"""AdaptiveTimeout: per-dependency p99-based timeout helper (application layer).
+
+This is a thin application-level helper that LAYERS on top of the copied
+``core.venous.resiliency.TimeoutBudget`` primitive. The primitive owns the
+monotonic deadline; this helper owns the observed-latency statistics used
+to compute per-dependency timeouts.
+
+Usage::
+
+    @adaptive_timeout("stripe_api")
+    async def charge_card(amount: float) -> dict:
+        ...
+"""
+
+from __future__ import annotations
+
+import asyncio
+import functools
+import logging
+import os
+import time
+from typing import Any, Callable
+
+from app.resilience.timeout_registry import TimeoutRegistry, get_timeout_registry
+from core.venous.resiliency.TimeoutBudget import MonotonicTimeoutBudget
+
+logger = logging.getLogger(__name__)
+
+_DEFAULT_FLOOR_MS = 100.0
+_DEFAULT_CEILING_MS = 10_000.0
+
+
+class AdaptiveTimeout:
+    """Tracks latency statistics for a single downstream dependency.
+
+    Maintains a sliding window of latency samples and computes p50/p95/p99.
+    The computed timeout is ``p99 * 1.5`` clamped between floor and ceiling.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        window_size: int = 100,
+        multiplier: float = 1.5,
+        floor_ms: float = _DEFAULT_FLOOR_MS,
+        ceiling_ms: float = _DEFAULT_CEILING_MS,
+    ) -> None:
+        self.name = name
+        self._window_size = window_size
+        self._multiplier = multiplier
+        self._floor_ms = floor_ms
+        self._ceiling_ms = ceiling_ms
+        self._samples: list[float] = []
+
+    def record(self, latency_ms: float) -> None:
+        self._samples.append(latency_ms)
+        if len(self._samples) > self._window_size:
+            self._samples = self._samples[-self._window_size:]
+
+    def get_timeout_s(self) -> float:
+        if not self._samples:
+            return self._ceiling_ms / 1000.0
+        p99 = self._percentile(0.99)
+        raw_ms = p99 * self._multiplier
+        clamped_ms = max(self._floor_ms, min(self._ceiling_ms, raw_ms))
+        return clamped_ms / 1000.0
+
+    def get_stats(self) -> dict[str, float]:
+        if not self._samples:
+            return {
+                "p50": 0.0, "p95": 0.0, "p99": 0.0,
+                "current_timeout_s": self._ceiling_ms / 1000.0,
+                "sample_count": 0,
+            }
+        return {
+            "p50": self._percentile(0.50),
+            "p95": self._percentile(0.95),
+            "p99": self._percentile(0.99),
+            "current_timeout_s": self.get_timeout_s(),
+            "sample_count": len(self._samples),
+        }
+
+    def _percentile(self, p: float) -> float:
+        sorted_s = sorted(self._samples)
+        idx = max(0, int(len(sorted_s) * p) - 1)
+        return sorted_s[idx]
+
+    def open_budget(self, origin: str) -> MonotonicTimeoutBudget:
+        """Delegate budget creation to the primitive (TB-INV-02)."""
+        return MonotonicTimeoutBudget.from_ms(
+            max(1, int(self.get_timeout_s() * 1000)), origin=origin,
+        )
+
+
+def adaptive_timeout(
+    dependency: str,
+    registry: TimeoutRegistry | None = None,
+) -> Callable:
+    """Decorator that wraps an async function with an adaptive timeout."""
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
+            if os.getenv("ADAPTIVE_TIMEOUT_ENABLED", "false").lower() != "true":
+                return await func(*args, **kwargs)
+            reg = registry or get_timeout_registry()
+            tracker = reg.get_or_create(dependency)
+            timeout_s = tracker.get_timeout_s()
+            t0 = time.monotonic()
+            try:
+                result = await asyncio.wait_for(
+                    func(*args, **kwargs), timeout=timeout_s,
+                )
+                tracker.record((time.monotonic() - t0) * 1000.0)
+                return result
+            except asyncio.TimeoutError:
+                tracker.record(timeout_s * 1000.0)
+                logger.warning(
+                    "Adaptive timeout fired for %s after %.0fms",
+                    dependency, timeout_s * 1000.0,
+                )
+                raise
+
+        return wrapper
+    return decorator

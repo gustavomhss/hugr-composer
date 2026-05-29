@@ -1,0 +1,35 @@
+"""BulkheadMiddleware re-export + env-gated installer.
+
+The middleware class itself lives in the shipped adapter
+(``core.venous._adapters.fastapi.BulkheadAdapter``). This file adds the
+``BULKHEAD_ENABLED`` env guard and the ``install_if_enabled`` helper so
+``main.py`` can opt in with one line.
+"""
+
+from __future__ import annotations
+
+import os
+
+from fastapi import FastAPI
+
+from core.venous._adapters.fastapi.BulkheadAdapter import BulkheadMiddleware
+from app.resilience.bulkhead import get_bulkhead
+from app.resilience.pool_config import classify_route
+
+
+def install_if_enabled(app: FastAPI) -> bool:
+    """Install BulkheadMiddleware on *app* iff BULKHEAD_ENABLED=true in env.
+
+    Returns ``True`` if installed, ``False`` otherwise.
+    """
+    if os.getenv("BULKHEAD_ENABLED", "false").lower() != "true":
+        return False
+    app.add_middleware(
+        BulkheadMiddleware,
+        bulkhead=get_bulkhead(),
+        classify_route=classify_route,
+    )
+    return True
+
+
+__all__ = ["BulkheadMiddleware", "install_if_enabled"]
