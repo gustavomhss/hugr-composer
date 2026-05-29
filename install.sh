@@ -114,9 +114,9 @@ ${c_cyan}{
 }${c_reset}
 
 After adding the stanza, restart your IDE.  The skill exposes ${c_bold}201 MCP tools${c_reset}
-(100 slice generators + 27 verify/operate/evolve/contracts/proactive
-+ 56 macro generators + 7 Tier-1 meta + 9 domain dispatchers + 2 discovery
-tools) for generating production-grade FastAPI projects:
+(100 slice generators in adapt/extend + 24 verify/operate/evolve/contracts/proactive
++ 42 macro generators + 28 module dispatchers + 7 discovery/meta) for generating
+production-grade FastAPI projects:
 
   fastapi_generate_project      — one call → 53-file production API
   fastapi_add_rbac              — add role-based access control
@@ -125,13 +125,20 @@ tools) for generating production-grade FastAPI projects:
   fastapi_add_soft_delete       — add is_deleted flag + restore endpoint
   fastapi_find_primitive        — JIT discovery: "which primitive for X?"
   fastapi_suggest_composition   — recipe index: "combine these for webhook + dedup"
-  ...and 174 more
+  ...and 194 more
+
+(Per-bucket counts above sum to the 201 tools in engine/index/catalog.json — the
+single source of truth for what the MCP server exposes. INVENTORY.md reports the
+broader 258-file MCP_TOOL surface, which includes dispatcher entries and helpers
+that the catalog does not promote into tools/list.)
 
 ${c_bold}Quick test:${c_reset}
   ${PY_PATH} ${MCP_SERVER_PATH} --list-tools
 
 ${c_bold}Full docs:${c_reset}
-  ${SKILL_DIR}/SKILL.md
-  ${SKILL_DIR}/README.md
+  ${SKILL_DIR}/SKILL.md       (agent-facing entry point)
+  ${SKILL_DIR}/README.md      (skill overview + per-bucket counts)
+  ${SKILL_DIR}/STATUS.md      (release status + freeze cuts)
+  ${INSTALL_DIR}/README.md    (repo-root product framing)
 
 EOF

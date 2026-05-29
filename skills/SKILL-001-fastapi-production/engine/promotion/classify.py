@@ -23,7 +23,11 @@ Decision tree (evaluated in order — first match wins):
        (needs splitting into framework-free primitive + adapter).
 
 5. Physically quarantined (non-framework-coupled)
-       → FILL_AND_PROMOTE or NEEDS_CALLER depending on signal/shell.
+       → NEEDS_REVIEW (the extraction gate rejected it for a non-framework
+       reason; a human must inspect before any signal-driven path can apply).
+       Quarantined items short-circuit the signal/shell flow on purpose:
+       silently routing them through FILL_AND_PROMOTE or NEEDS_CALLER would
+       paper over the underlying rejection rationale.
 
 6. No §A12(b) signal → NEEDS_CALLER.
 

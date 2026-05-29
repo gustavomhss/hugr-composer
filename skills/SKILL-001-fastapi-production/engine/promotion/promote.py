@@ -6,8 +6,11 @@ Usage:
 
 Invariants:
     - Refuses to promote unless the ledger entry carries an actionable
-      verdict (PROMOTE_AS_ADAPTER, PROMOTE_AS_PRIMITIVE, FILL_AND_PROMOTE)
-      AND has zero blockers.
+      verdict (PROMOTE_AS_ADAPTER or PROMOTE_AS_PRIMITIVE) AND has zero
+      blockers. FILL_AND_PROMOTE is reclassify-only: the contributor must
+      fill the shell, re-run `engine.promotion.classify`, and let that
+      flip the verdict to PROMOTE_AS_PRIMITIVE before the executor will
+      touch it. The executor never writes through an incomplete shell.
     - Lite-tier promotions (PROMOTE_AS_PRIMITIVE with registry
       `tier: "lite"`) require the ratification token "§B1.8 ratified"
       in CONTRACT.md §E. Without it, the executor refuses (§A12 intact).
@@ -156,9 +159,16 @@ def plan(name: str, is_quarantined: bool | None = None) -> PromotionPlan:
         Verdict.PROMOTE_AS_ADAPTER,
         Verdict.PROMOTE_AS_PRIMITIVE,
     ):
+        hint = ""
+        if entry.verdict == Verdict.FILL_AND_PROMOTE:
+            hint = (
+                " FILL_AND_PROMOTE is reclassify-only: resolve the listed "
+                "blockers, re-run `python -m engine.promotion.classify`, "
+                "and re-invoke once the verdict flips to PROMOTE_AS_PRIMITIVE."
+            )
         raise SystemExit(
             f"Ledger verdict for `{name}` is {entry.verdict.value}, not a "
-            "promotion. Executor refuses (§A12 discipline)."
+            f"promotion. Executor refuses (§A12 discipline).{hint}"
         )
 
     if entry.blockers:

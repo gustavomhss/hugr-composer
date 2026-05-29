@@ -3,12 +3,26 @@
 
 Concentrating docs keeps the source navigable and free of AGENT_SESSION / brief /
 KNOWLEDGE / HANDOFF noise. A markdown file is allowed only if it is:
-  - under docs/ (or another exempt top-level: .github/, _staging/, tools/), OR
+  - under docs/ (at any depth — top-level or nested `<pkg>/docs/`), OR
+  - under another exempt top-level prefix (.github/, _staging/, tools/), OR
   - inside a content directory (any path segment in CONTENT_SEGMENTS — these
     legitimately hold specs/eval/example/audit markdown), OR
-  - one of the allowed convention basenames (README/SKILL/KNOWLEDGE/LLM/…).
-Everything else — including stray narrative markdown in code packages or at the
-repo root — is a violation.
+  - a path-context-allowed convention basename:
+      * ROOT_ONLY basenames (CHANGELOG/CONTRIBUTING/LICENSE/CLAUDE) only at repo root,
+      * PACKAGE basenames (README/SKILL/KNOWLEDGE/LLM) at any code-package depth,
+  - an explicit governance file at repo root (ROOT_GOV) or skill root (SKILL_GOV)
+    or package root (PKG_GOV), OR
+  - a per-primitive spec file matching `<Name>/<Name>.md` (the primitive's own
+    invariant doc — colocated with its code by design).
+Everything else — including stray narrative markdown in code packages and any
+privileged basename used outside its allowed depth — is a violation.
+
+F-005 closure note (2026-05-29): previously, ANY basename in ALLOWED_BASENAMES
+passed at ANY depth, so a stray `CHANGELOG.md` or `CLAUDE.md` could be smuggled
+into any code package. The bypass is closed by splitting the basename pool into
+ROOT_ONLY (root-only) and PACKAGE (package-depth-allowed). Five pre-existing
+files are grandfathered in GRANDFATHERED_PATHS — they predate this rule, are
+legit domain artefacts, and a separate cleanup PR can migrate them to docs/.
 
 Modes:
   - pre-commit (argv = changed files): only those files → blocks NEW noise.
@@ -26,17 +40,74 @@ from pathlib import PurePosixPath
 ROOT_EXEMPT_PREFIXES = ("docs/", ".github/", "_staging/", "tools/")
 # Content dirs that legitimately hold markdown at any depth (matched per-segment).
 CONTENT_SEGMENTS = {"benchmarks", "examples", "specs", "evidence", "audit"}
-# Convention files that are allowed anywhere (skill/platform/standard conventions).
-ALLOWED_BASENAMES = {
-    "README.md",
-    "SKILL.md",
-    "KNOWLEDGE.md",
-    "LLM.md",
+# `docs/` at ANY depth (top-level or nested `<pkg>/docs/`) is exempt — this
+# is the per-package narrative escape hatch the repo standard documents.
+NESTED_DOCS_SEGMENT = "docs"
+
+# Repo-root narrative governance docs — visible by convention at the top level.
+ROOT_GOV = {
+    "CONTRACT.md",
+    "EXTERNAL_EVAL_PACKET.md",
+    "EXTERNAL_EVAL_RESULTS.md",
+    "FREEZE.md",
+    "GOLIVE.md",
+    "INTERFACES.md",
+    "LAUNCH.md",
+    "MIGRATION.md",
+    "POST_RELEASE.md",
+    "PRODUCT.md",
+    "QUICK_START.md",
+    "ROADMAP.md",
+    "SECURITY.md",
+}
+# Skill-root governance (depth-2 under `skills/SKILL-NNN-*/`).
+SKILL_GOV = {"INVENTORY.md", "STATUS.md", "CONTRACT.md"}
+# Top-level package-root governance (e.g. `agents/release_attestor/CONTRACT.md`).
+PKG_GOV = {"CONTRACT.md"}
+# Convention basenames that are root-only — passing them deeper used to be the
+# F-005 bypass; restricting them to depth-0 closes it.
+ROOT_ONLY_BASENAMES = {
     "CHANGELOG.md",
     "CONTRIBUTING.md",
     "LICENSE.md",
     "CLAUDE.md",
 }
+# Convention basenames that are package-level — each code package may carry
+# one, at any depth that is a code-package directory.
+PACKAGE_BASENAMES = {
+    "README.md",
+    "SKILL.md",
+    "KNOWLEDGE.md",
+    "LLM.md",
+}
+# Top-level code packages where governance/contract markdown is conventional.
+CODE_TOPLEVEL = {
+    "agents",
+    "hugr_auth",
+    "mcp_tools",
+    "adapt",
+    "generators",
+    "engine",
+    "core",
+    "deploy",
+    "tests",
+    "scripts",
+}
+# Five pre-existing tracked files that predate the F-005 tightening. They are
+# legitimate domain artefacts (promotion executor handoff/ledger spec, test
+# architecture overview, agent briefing templates). Grandfathered explicitly so
+# the tightening doesn't ship as a baseline regression. A future cleanup PR may
+# migrate these to a `docs/` subtree and remove them from this list.
+GRANDFATHERED_PATHS = frozenset(
+    {
+        "skills/SKILL-001-fastapi-production/engine/promotion/HANDOFF.md",
+        "skills/SKILL-001-fastapi-production/engine/promotion/LEDGER.md",
+        "skills/SKILL-001-fastapi-production/tests/TESTING.md",
+        "skills/SKILL-001-fastapi-production/tests/contracts/AGENT_BRIEFING_TEMPLATE.md",
+        "skills/SKILL-001-fastapi-production/tests/contracts/MEGA_BRIEFING.md",
+    }
+)
+
 _IGNORE = (".venv", "site-packages", "emitted", "node_modules")
 
 
@@ -51,12 +122,36 @@ def _is_violation(path: str) -> bool:
     norm = path.replace("\\", "/")
     if any(seg in norm for seg in _IGNORE):
         return False
+    if norm in GRANDFATHERED_PATHS:
+        return False
     if norm.startswith(ROOT_EXEMPT_PREFIXES):
         return False
     p = PurePosixPath(norm)
-    if any(seg in CONTENT_SEGMENTS for seg in p.parts):
+    parts = p.parts
+    # `docs/` at any depth is exempt (per-package narrative escape hatch).
+    if NESTED_DOCS_SEGMENT in parts:
         return False
-    if p.name in ALLOWED_BASENAMES:
+    if any(seg in CONTENT_SEGMENTS for seg in parts):
+        return False
+    name = p.name
+    # Repo root (depth 1).
+    if len(parts) == 1:
+        if name in ROOT_GOV or name in ROOT_ONLY_BASENAMES or name in PACKAGE_BASENAMES:
+            return False
+        return True
+    # Skill root (`skills/SKILL-NNN-*/<file>`, depth 3).
+    if len(parts) == 3 and parts[0] == "skills":
+        if name in SKILL_GOV or name in PACKAGE_BASENAMES:
+            return False
+    # Top-level code-package root (depth 3, e.g. `agents/release_attestor/...`).
+    if len(parts) == 3 and parts[0] in CODE_TOPLEVEL:
+        if name in PACKAGE_BASENAMES or name in PKG_GOV:
+            return False
+    # PACKAGE_BASENAMES allowed at any code-package depth (modules/<x>/KNOWLEDGE.md etc.).
+    if name in PACKAGE_BASENAMES:
+        return False
+    # Per-primitive spec colocated with its code (`.../<Name>/<Name>.md`).
+    if len(parts) >= 2 and parts[-1] == parts[-2] + ".md":
         return False
     return True
 
@@ -73,7 +168,10 @@ def main(argv: list[str]) -> int:
         if len(violations) > 25:
             print(f"    … and {len(violations) - 25} more")
         print(
-            "  Rule: narrative .md lives in docs/; code packages keep only README/SKILL/KNOWLEDGE."
+            "  Rule: narrative .md lives in docs/; code packages keep only README/SKILL/KNOWLEDGE/LLM."
+        )
+        print(
+            "  Root-only basenames (CHANGELOG/CONTRIBUTING/LICENSE/CLAUDE) are NOT allowed deeper."
         )
         return 1
     print("✓ md_location: no stray narrative markdown")

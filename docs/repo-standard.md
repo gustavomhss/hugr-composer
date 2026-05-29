@@ -5,15 +5,33 @@ trustworthy. Small on purpose — every rule has teeth (a check) and a reason.
 
 ## 1. Structure
 ```
-/                 root: configs only (pyproject, .pre-commit, .gitignore, Makefile, README)
-/docs/            ALL narrative docs: architecture, contributing, adr/, guides/, wp/
+/                 root: configs + root convention docs (see exemption list below)
+/docs/            narrative docs: architecture, adr/, guides/, wp/, repo-standard, …
 /skills/…/        the kit (code); each package has at most one thin README.md
 /hugr_auth/       the gate (license + MCP)
 /deploy/          Dockerfiles + compose
 /scripts/         verify.sh + checks/
 /_staging/        relocated extraction graveyard (outside the import path)
 ```
-**Rule:** no narrative markdown outside `docs/` — only `README.md` (a pointer) inside code packages. *(enforced: `scripts/checks/md_location.py`)*
+**Rule:** narrative markdown lives in `docs/`, with **two intentional exemptions** —
+*(enforced: `scripts/checks/md_location.py`)*
+
+- **Root convention docs** stay at repo root because GitHub or the repo standard
+  surfaces them there: `CONTRIBUTING.md`, `CHANGELOG.md`, `LICENSE.md`, `SECURITY.md`,
+  `README.md`, `CLAUDE.md`, plus the governance set (`CONTRACT.md`, `ROADMAP.md`,
+  `PRODUCT.md`, `STATUS.md`, `INTERFACES.md`, `FREEZE.md`, `GOLIVE.md`,
+  `LAUNCH.md`, `MIGRATION.md`, `POST_RELEASE.md`, `QUICK_START.md`,
+  `EXTERNAL_EVAL_PACKET.md`, `EXTERNAL_EVAL_RESULTS.md`). Audit `B4.5` and the
+  docs-site builder (`engine.docs.build`) both treat root `CONTRIBUTING.md` as
+  canonical — `docs/contributing.md` is a thin pointer to root.
+- **Per-package convention basenames** (`README.md`, `SKILL.md`, `KNOWLEDGE.md`,
+  `LLM.md`) inside any code package. One per package, kept thin (pointer +
+  per-bucket counts).
+
+Privileged basenames are now scope-limited: the four root-only files
+(`CHANGELOG.md`, `CONTRIBUTING.md`, `LICENSE.md`, `CLAUDE.md`) only pass at the
+repo root — smuggling them into a code package is rejected (F-005 closure,
+2026-05-29).
 
 ## 2. Hygiene
 - Never track virtualenvs, `site-packages`, emitted projects, `*.db`, `__pycache__`. *(enforced: `scripts/checks/no_committed_venv.py` + `.gitignore`)*
