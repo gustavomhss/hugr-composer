@@ -48,7 +48,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.auth_access.add_bola_guard import add_bola_guard
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -166,6 +165,7 @@ def asgi_app(project_dir_and_app: tuple[Path, Any]) -> Any:
 # B-01: GET /healthz → 200
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.anyio
 async def test_b01_healthz_returns_200(asgi_app: Any) -> None:
     """B-01: GET /healthz must return 200 after add_bola_guard applied."""
@@ -181,6 +181,7 @@ async def test_b01_healthz_returns_200(asgi_app: Any) -> None:
 # B-02: bola_guard.py importable without raising
 # ---------------------------------------------------------------------------
 
+
 def test_b02_bola_guard_importable(project_dir: Path) -> None:
     """B-02: app/auth/bola_guard.py must be importable without raising."""
     bola_file = project_dir / "app" / "auth" / "bola_guard.py"
@@ -191,9 +192,7 @@ def test_b02_bola_guard_importable(project_dir: Path) -> None:
     for key in stale:
         del sys.modules[key]
     try:
-        spec = importlib.util.spec_from_file_location(
-            "app.auth.bola_guard_b02", str(bola_file)
-        )
+        spec = importlib.util.spec_from_file_location("app.auth.bola_guard_b02", str(bola_file))
         assert spec and spec.loader
         mod = importlib.util.module_from_spec(spec)
         sys.modules["app.auth.bola_guard_b02"] = mod  # required for @dataclass in Py3.14
@@ -212,6 +211,7 @@ def test_b02_bola_guard_importable(project_dir: Path) -> None:
 # B-03: ResourceAccessPolicy.allows() correct logic
 # ---------------------------------------------------------------------------
 
+
 def test_b03_resource_access_policy_allows_logic(project_dir: Path) -> None:
     """B-03: ResourceAccessPolicy.allows() returns True for grantee, False for other."""
     bola_file = project_dir / "app" / "auth" / "bola_guard.py"
@@ -221,9 +221,7 @@ def test_b03_resource_access_policy_allows_logic(project_dir: Path) -> None:
     for key in stale:
         del sys.modules[key]
     try:
-        spec = importlib.util.spec_from_file_location(
-            "app.auth.bola_guard_b03", str(bola_file)
-        )
+        spec = importlib.util.spec_from_file_location("app.auth.bola_guard_b03", str(bola_file))
         assert spec and spec.loader
         mod = importlib.util.module_from_spec(spec)
         sys.modules["app.auth.bola_guard_b03"] = mod  # required for @dataclass in Py3.14
@@ -249,6 +247,7 @@ def test_b03_resource_access_policy_allows_logic(project_dir: Path) -> None:
 # B-04: bola_test_gen.py importable
 # ---------------------------------------------------------------------------
 
+
 def test_b04_bola_test_gen_importable(project_dir: Path) -> None:
     """B-04: app/auth/bola_test_gen.py must be importable without raising."""
     test_gen = project_dir / "app" / "auth" / "bola_test_gen.py"
@@ -259,9 +258,7 @@ def test_b04_bola_test_gen_importable(project_dir: Path) -> None:
     for key in stale:
         del sys.modules[key]
     try:
-        spec = importlib.util.spec_from_file_location(
-            "app.auth.bola_test_gen_b04", str(test_gen)
-        )
+        spec = importlib.util.spec_from_file_location("app.auth.bola_test_gen_b04", str(test_gen))
         assert spec and spec.loader
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)  # type: ignore[attr-defined]
@@ -276,9 +273,8 @@ def test_b04_bola_test_gen_importable(project_dir: Path) -> None:
 # B-05: generate_bola_tests() creates a parseable test file
 # ---------------------------------------------------------------------------
 
-def test_b05_generate_bola_tests_creates_parseable_file(
-    project_dir: Path, tmp_path: Path
-) -> None:
+
+def test_b05_generate_bola_tests_creates_parseable_file(project_dir: Path, tmp_path: Path) -> None:
     """B-05: generate_bola_tests() creates a Python file that parses cleanly."""
     test_gen = project_dir / "app" / "auth" / "bola_test_gen.py"
     orig = sys.path.copy()
@@ -287,9 +283,7 @@ def test_b05_generate_bola_tests_creates_parseable_file(
     for key in stale:
         del sys.modules[key]
     try:
-        spec = importlib.util.spec_from_file_location(
-            "app.auth.bola_test_gen_b05", str(test_gen)
-        )
+        spec = importlib.util.spec_from_file_location("app.auth.bola_test_gen_b05", str(test_gen))
         assert spec and spec.loader
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)  # type: ignore[attr-defined]
@@ -313,6 +307,7 @@ def test_b05_generate_bola_tests_creates_parseable_file(
 # B-06: bola_enabled check in bola_guard.py
 # ---------------------------------------------------------------------------
 
+
 def test_b06_bola_enabled_env_respected(project_dir: Path) -> None:
     """B-06: bola_guard.py contains BOLA_GUARD_ENABLED check."""
     bola_file = project_dir / "app" / "auth" / "bola_guard.py"
@@ -325,6 +320,7 @@ def test_b06_bola_enabled_env_respected(project_dir: Path) -> None:
 # ---------------------------------------------------------------------------
 # B-07: all generated functions <= 50 LOC
 # ---------------------------------------------------------------------------
+
 
 def test_b07_all_generated_functions_under_50_loc(project_dir: Path) -> None:
     """B-07: All generated functions in app/auth/ are <= 50 LOC."""
@@ -344,6 +340,7 @@ def test_b07_all_generated_functions_under_50_loc(project_dir: Path) -> None:
 # B-08: config fields 4-space indent
 # ---------------------------------------------------------------------------
 
+
 def test_b08_config_fields_4_space_indent(project_dir: Path) -> None:
     """B-08: BOLA_* config fields have 4-space indent in config.py."""
     config = project_dir / "app" / "core" / "config.py"
@@ -355,8 +352,59 @@ def test_b08_config_fields_4_space_indent(project_dir: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# B-09 (F-001): tests/test_bola_generated.py emitted + parseable + per-model
+# ---------------------------------------------------------------------------
+
+
+def test_b09_generated_bola_tests_file_emitted(project_dir: Path) -> None:
+    """B-09 (F-001): tests/test_bola_generated.py exists, parses, and contains
+    per-model BOLA test classes for every owner-bearing model.
+
+    Before the F-001 fix the tool advertised this file in next_steps but never
+    emitted it; this test would have failed on FileNotFoundError. Post-fix the
+    file MUST exist for the default fixture (which has Item with user_id),
+    contain ≥3 assertions for that owner-bearing model, and parse cleanly.
+    """
+    generated = project_dir / "tests" / "test_bola_generated.py"
+    assert generated.exists(), (
+        "tests/test_bola_generated.py was advertised by add_bola_guard.next_steps "
+        "but was never emitted (F-001 regression)."
+    )
+    content = generated.read_text()
+    try:
+        ast.parse(content)
+    except SyntaxError as exc:
+        raise AssertionError(
+            f"Generated tests/test_bola_generated.py has a syntax error: {exc}"
+        ) from exc
+
+    # Default fixture has Item (with owner_models={"Item": "user"} → user_id FK).
+    # The emitted file should contain a per-model block for Item with ≥3 asserts.
+    assert "Item" in content, "Default fixture's Item model not represented"
+    assertion_count = content.count("assert response.status_code")
+    assert assertion_count >= 3, (
+        f"Expected ≥3 status-code assertions for owner-bearing model(s); found {assertion_count}"
+    )
+    # Sanity-check: the BOLA-01..BOLA-04 labels are present.
+    assert "BOLA-01" in content and "BOLA-02" in content, (
+        "Per-model BOLA-01/BOLA-02 test cases missing in emitted file"
+    )
+
+
+def test_b10_generated_bola_tests_idempotent(project_dir: Path) -> None:
+    """B-10 (F-001): re-running add_bola_guard against the same project
+    returns status=no_op once tests/test_bola_generated.py also exists.
+    """
+    result = add_bola_guard(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "no_op", (
+        f"Expected no_op on second run after F-001 fix; got {result.status}: {result.error}"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
+
 
 def _run_async_test(coro_fn: Any, *args: Any) -> None:
     import inspect
@@ -372,16 +420,26 @@ def _run_async_test(coro_fn: Any, *args: Any) -> None:
 
 if __name__ == "__main__":
     import tempfile
+
     _pd, _app = _get_shared_app()
     _tmp = Path(tempfile.mkdtemp())
 
     _TESTS: list[tuple[str, Any]] = [
         ("B-01: /healthz → 200", lambda: _run_async_test(test_b01_healthz_returns_200, _app)),
         ("B-02: bola_guard.py importable", lambda: test_b02_bola_guard_importable(_pd)),
-        ("B-03: ResourceAccessPolicy.allows() logic", lambda: test_b03_resource_access_policy_allows_logic(_pd)),
+        (
+            "B-03: ResourceAccessPolicy.allows() logic",
+            lambda: test_b03_resource_access_policy_allows_logic(_pd),
+        ),
         ("B-04: bola_test_gen.py importable", lambda: test_b04_bola_test_gen_importable(_pd)),
-        ("B-05: generate_bola_tests() parseable file", lambda: test_b05_generate_bola_tests_creates_parseable_file(_pd, _tmp)),
-        ("B-06: BOLA_GUARD_ENABLED env respected", lambda: test_b06_bola_enabled_env_respected(_pd)),
+        (
+            "B-05: generate_bola_tests() parseable file",
+            lambda: test_b05_generate_bola_tests_creates_parseable_file(_pd, _tmp),
+        ),
+        (
+            "B-06: BOLA_GUARD_ENABLED env respected",
+            lambda: test_b06_bola_enabled_env_respected(_pd),
+        ),
         ("B-07: all funcs <= 50 LOC", lambda: test_b07_all_generated_functions_under_50_loc(_pd)),
         ("B-08: config 4-space indent", lambda: test_b08_config_fields_4_space_indent(_pd)),
     ]
@@ -396,7 +454,7 @@ if __name__ == "__main__":
             print(f"  FAIL  {name}: {exc}")
             failed += 1
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"TOOL-112 BEHAVIOR: {passed}/{passed + failed} passed")
     if failed:
         sys.exit(1)

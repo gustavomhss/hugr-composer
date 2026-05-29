@@ -39,6 +39,7 @@ os.environ.setdefault("SECRET_KEY", "behavior-test-presence-secret-key-32+chars!
 os.environ.pop("REDIS_URL", None)
 
 import ast
+import contextlib
 import importlib
 import json
 import sys
@@ -53,7 +54,6 @@ import pytest
 from adapt.contracts import ToolInput
 from adapt.extend.realtime.add_websocket_presence import add_websocket_presence
 from tests.common.fixture_factory import create_fixture_project
-
 
 # ---------------------------------------------------------------------------
 # Patch templates
@@ -107,6 +107,7 @@ _PASSTHROUGH_IDEMPOTENCY_PY = textwrap.dedent("""\
 # ---------------------------------------------------------------------------
 # Project setup helpers
 # ---------------------------------------------------------------------------
+
 
 def _patch_project(project_dir: Path) -> None:
     """Apply SQLite + idempotency pass-through stubs to the fixture project."""
@@ -193,6 +194,7 @@ def asgi_app() -> Any:
 # B-01: GET /healthz → 200 (base liveness, proves app boots cleanly)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.anyio
 async def test_b01_healthz_returns_200(asgi_app: Any) -> None:
     """B-01: GET /healthz must return 200 — proves the app boots cleanly."""
@@ -210,6 +212,7 @@ async def test_b01_healthz_returns_200(asgi_app: Any) -> None:
 # B-02: GET /presence/online → 200 or 500 (no Redis; no crash)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.anyio
 async def test_b02_presence_online_no_crash(asgi_app: Any) -> None:
     """B-02: GET /presence/online must not crash (200 or 500, never unhandled exception)."""
@@ -225,6 +228,7 @@ async def test_b02_presence_online_no_crash(asgi_app: Any) -> None:
 # B-03: GET /presence/{user_id} → 200 or 500 (no Redis; no crash)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.anyio
 async def test_b03_presence_user_no_crash(asgi_app: Any) -> None:
     """B-03: GET /presence/{user_id} must not crash (200, 404, or 500 acceptable)."""
@@ -233,14 +237,14 @@ async def test_b03_presence_user_no_crash(asgi_app: Any) -> None:
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get(f"/presence/{test_uid}")
     assert response.status_code in (200, 404, 422, 500, 503), (
-        f"Unexpected status from /presence/{{user_id}}: "
-        f"{response.status_code}: {response.text}"
+        f"Unexpected status from /presence/{{user_id}}: {response.status_code}: {response.text}"
     )
 
 
 # ---------------------------------------------------------------------------
 # B-04: presence manager module imports without crash
 # ---------------------------------------------------------------------------
+
 
 def test_b04_presence_manager_importable(behavior_project: Path) -> None:
     """B-04: app/ws/presence.py must import without raising an unexpected exception."""
@@ -276,6 +280,7 @@ def test_b04_presence_manager_importable(behavior_project: Path) -> None:
 # B-05: presence_endpoint.py module AST-parses and defines the websocket route
 # ---------------------------------------------------------------------------
 
+
 def test_b05_presence_endpoint_importable(behavior_project: Path) -> None:
     """B-05: app/ws/presence_endpoint.py must AST-parse and contain ws_presence."""
     endpoint_file = behavior_project / "app" / "ws" / "presence_endpoint.py"
@@ -300,6 +305,7 @@ def test_b05_presence_endpoint_importable(behavior_project: Path) -> None:
 # ---------------------------------------------------------------------------
 # B-06: schemas module imports without crash
 # ---------------------------------------------------------------------------
+
 
 def test_b06_presence_schemas_importable(behavior_project: Path) -> None:
     """B-06: app/schemas/presence.py must import without crash."""
@@ -333,6 +339,7 @@ def test_b06_presence_schemas_importable(behavior_project: Path) -> None:
 # B-07: PRESENCE_* config fields present in config.py
 # ---------------------------------------------------------------------------
 
+
 def test_b07_presence_config_fields(behavior_project: Path) -> None:
     """B-07: app/core/config.py must contain all PRESENCE_* fields."""
     config_file = behavior_project / "app" / "core" / "config.py"
@@ -344,6 +351,7 @@ def test_b07_presence_config_fields(behavior_project: Path) -> None:
 # ---------------------------------------------------------------------------
 # B-08: routes __init__.py includes presence router
 # ---------------------------------------------------------------------------
+
 
 def test_b08_routes_init_includes_presence(behavior_project: Path) -> None:
     """B-08: app/routes/__init__.py must include presence router."""
@@ -359,6 +367,7 @@ def test_b08_routes_init_includes_presence(behavior_project: Path) -> None:
 # B-09: models __init__.py registers UserPresence
 # ---------------------------------------------------------------------------
 
+
 def test_b09_models_init_has_user_presence(behavior_project: Path) -> None:
     """B-09: app/models/__init__.py must register UserPresence."""
     models_init = behavior_project / "app" / "models" / "__init__.py"
@@ -367,8 +376,71 @@ def test_b09_models_init_has_user_presence(behavior_project: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# B-11 (F-005): emitted presence endpoint registers /ws/presence + REST routes
+# ---------------------------------------------------------------------------
+
+
+def test_b11_presence_endpoint_registers_routes(behavior_project: Path) -> None:
+    """B-11 (F-005): the emitted presence_endpoint module imports cleanly
+    and registers ``/ws/presence`` on its APIRouter. Pre-fix a regression
+    that deleted the route or broke the module would still pass the suite
+    because B-02/B-03 accept 404 and B-04/B-05 only AST-parsed.
+
+    This test fails closed if:
+
+    * presence_endpoint.py cannot be imported (route registration broken), or
+    * the imported router does not declare ``/ws/presence``.
+    """
+    project_str = str(behavior_project)
+    if project_str not in sys.path:
+        sys.path.insert(0, project_str)
+    _clear_app_modules()
+    try:
+        endpoint_mod = importlib.import_module("app.ws.presence_endpoint")
+    except Exception as exc:  # pragma: no cover — the assertion below diagnoses
+        pytest.fail(
+            f"app.ws.presence_endpoint failed to import — route registration "
+            f"cannot be verified: {exc!r}"
+        )
+    finally:
+        if project_str in sys.path:
+            with contextlib.suppress(ValueError):
+                sys.path.remove(project_str)
+
+    router = getattr(endpoint_mod, "router", None)
+    assert router is not None, "presence_endpoint exposes no `router`"
+    paths = {getattr(r, "path", None) for r in getattr(router, "routes", [])}
+    assert "/ws/presence" in paths, (
+        f"WebSocket route /ws/presence not registered on router; got: {paths}"
+    )
+
+
+def test_b12_presence_rest_routes_registered_on_app(asgi_app: object) -> None:
+    """B-12 (F-005): the booted FastAPI app exposes the REST presence routes.
+
+    Replaces the previous "accept 200/404/500" laxness which would mask a
+    regression that drops the routes entirely. We assert the routes exist
+    in ``app.routes`` so a missing registration fails the suite.
+    """
+    paths = {getattr(r, "path", None) for r in getattr(asgi_app, "routes", [])}
+    # The scaffold mounts api_router under /api/v1, so the presence REST
+    # routes appear as /api/v1/presence/* once the tool registers them.
+    has_online = any(p and p.endswith("/presence/online") for p in paths)
+    has_user = any(p and p.endswith("/presence/{user_id}") for p in paths)
+    assert has_online, (
+        f"/presence/online not in app.routes (regression — F-005). Routes: "
+        f"{sorted(p for p in paths if p)}"
+    )
+    assert has_user, (
+        f"/presence/{{user_id}} not in app.routes (regression — F-005). Routes: "
+        f"{sorted(p for p in paths if p)}"
+    )
+
+
+# ---------------------------------------------------------------------------
 # B-10: Delivery contract — final mechanistic proof of delivery
 # ---------------------------------------------------------------------------
+
 
 def test_b10_delivery_contract(behavior_project: Path) -> None:
     """B-10: Validate the full delivery contract for TOOL-062.

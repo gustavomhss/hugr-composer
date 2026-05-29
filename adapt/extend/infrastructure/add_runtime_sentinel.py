@@ -33,7 +33,6 @@ from pathlib import Path
 
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
-
 MCP_TOOL = {
     "name": "fastapi_resiliency_add_runtime_sentinel",
     "description": (
@@ -48,6 +47,7 @@ MCP_TOOL = {
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
+
 
 def add_runtime_sentinel(inp: ToolInput) -> ToolResult:
     """Add runtime sentinel RASP middleware to a FastAPI project.
@@ -67,10 +67,9 @@ def add_runtime_sentinel(inp: ToolInput) -> ToolResult:
 
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err,
-                          execution_time_ms=_elapsed_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
-    from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
+    from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -98,7 +97,9 @@ def add_runtime_sentinel(inp: ToolInput) -> ToolResult:
     if sentinel_file.exists() and "RuntimeSentinelMiddleware" in sentinel_file.read_text():
         return ToolResult(
             status="no_op",
-            notes=["RuntimeSentinelMiddleware already present — runtime sentinel already enabled, skipped."],
+            notes=[
+                "RuntimeSentinelMiddleware already present — runtime sentinel already enabled, skipped."
+            ],
             execution_time_ms=_elapsed_ms(start),
         )
 
@@ -135,10 +136,26 @@ def add_runtime_sentinel(inp: ToolInput) -> ToolResult:
     files_created.append(str(sentinel_file))
 
     # --- Step 4: patch config.py ---------------------------------------------
+    # F-007: only mark config.py as modified when the helper actually wrote.
     config_file = project / "app" / "core" / "config.py"
+    config_notes: list[str] = []
     if config_file.exists():
-        _patch_config(config_file)
-        files_modified.append(str(config_file))
+        from adapt.contracts.config_patcher import PatchResult
+
+        patch_outcome = _patch_config(config_file)
+        if patch_outcome is PatchResult.APPLIED:
+            files_modified.append(str(config_file))
+        elif patch_outcome is PatchResult.TARGET_MISSING:
+            config_notes.append(
+                "config.py: no `class Settings` shape found — "
+                "SENTINEL_* fields were appended at module level."
+            )
+        elif patch_outcome is PatchResult.SYNTAX_ERROR:
+            return ToolResult(
+                status="error",
+                error="app/core/config.py has a syntax error — refusing to patch.",
+                execution_time_ms=_elapsed_ms(start),
+            )
 
     # --- Step 5: ast.parse validation loop -----------------------------------
     for path_str in files_created:
@@ -164,6 +181,7 @@ def add_runtime_sentinel(inp: ToolInput) -> ToolResult:
             "Learning mode: logs detections without blocking for 24h, then switches to enforcing.",
             "Config: SENTINEL_ENABLED, SENTINEL_MODE (learning/enforcing), SENTINEL_ALLOWED_HOSTS.",
             "Register RuntimeSentinelMiddleware in app/main.py lifespan or add_middleware().",
+            *config_notes,
         ],
         next_steps=[
             "Register middleware in app/main.py: app.add_middleware(RuntimeSentinelMiddleware)",
@@ -180,13 +198,15 @@ def add_runtime_sentinel(inp: ToolInput) -> ToolResult:
 # File writers — each < 50 LOC
 # ---------------------------------------------------------------------------
 
+
 def _write_sentinel_registry(dest: Path) -> None:
     """Write ``app/core/sentinel_registry.py`` with AttackPatternRegistry + SecurityEvent.
 
     Args:
         dest: Absolute path for the registry module.
     """
-    dest.write_text(textwrap.dedent("""\
+    dest.write_text(
+        textwrap.dedent("""\
         \"\"\"Attack pattern registry and security event model for runtime sentinel.
 
         Stores in-memory records of detected injection attempts and computes
@@ -310,7 +330,8 @@ def _write_sentinel_registry(dest: Path) -> None:
             if _registry is None:
                 _registry = AttackPatternRegistry()
             return _registry
-    """))
+    """)
+    )
 
 
 def _write_runtime_sentinel(dest: Path) -> None:
@@ -322,10 +343,10 @@ def _write_runtime_sentinel(dest: Path) -> None:
     # Use direct string construction to avoid raw-string escaping issues
     # with quote characters inside regex character classes in templates.
     _sql_pattern = (
-        r"(\b(?:OR|AND)\b\s+\w+\s*=\s*\w+)"      # tautology: OR 1=1
-        r"|\bUNION\b.{0,30}\bSELECT\b"             # UNION SELECT
+        r"(\b(?:OR|AND)\b\s+\w+\s*=\s*\w+)"  # tautology: OR 1=1
+        r"|\bUNION\b.{0,30}\bSELECT\b"  # UNION SELECT
         r"|;\s*\b(?:DROP|INSERT|UPDATE|DELETE|EXEC)\b"  # stacked query
-        r"|(/\*.*?\*/|--\s|#\s)"                    # comment injection
+        r"|(/\*.*?\*/|--\s|#\s)"  # comment injection
     )
     _cmd_pattern = (
         r"[;&|!`$()\[\]{}<>\\]"
@@ -597,15 +618,19 @@ def _write_runtime_sentinel(dest: Path) -> None:
     dest.write_text(content)
 
 
-def _patch_config(config_file: Path) -> None:
+def _patch_config(config_file: Path):  # type: ignore[no-untyped-def]
     """Inject sentinel settings into ``app/core/config.py`` Settings class.
 
     Args:
         config_file: Path to the existing config.py.
+
+    Returns:
+        ``PatchResult`` describing the outcome (see
+        :mod:`adapt.contracts.config_patcher`).
     """
     from adapt.contracts.config_patcher import patch_settings_fields
 
-    patch_settings_fields(
+    return patch_settings_fields(
         config_file,
         fields=[
             ("SENTINEL_ENABLED", "SENTINEL_ENABLED: bool = True"),
@@ -618,6 +643,7 @@ def _patch_config(config_file: Path) -> None:
 # ---------------------------------------------------------------------------
 # Utilities
 # ---------------------------------------------------------------------------
+
 
 def _elapsed_ms(start: float) -> int:
     """Return elapsed milliseconds since *start* (from ``time.monotonic()``).

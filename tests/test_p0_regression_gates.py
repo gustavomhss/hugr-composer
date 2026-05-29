@@ -28,12 +28,33 @@ from pathlib import Path
 
 _SKILL_ROOT = Path(__file__).resolve().parent.parent
 
-# Compose tools that change the emitted API/DB contract and therefore MUST keep
-# the emitted test suite green after they run. Extend this list as new
+# Compose tools that change the emitted API/DB contract and therefore MUST
+# keep the emitted test suite green after they run. Extend this list as new
 # contract-changing tools land — that is the point of the gate.
+#
+# F-002 (Codex C1): the original list covered only multi_tenancy + soft_delete,
+# leaving every other contract-mutating tool free of a green-suite gate. The
+# list below now covers every compose tool that:
+#   (a) mutates routes (adds, renames, removes) — payload/path/method contract;
+#   (b) mutates the SQLAlchemy model layer — DB contract; or
+#   (c) emits its own pytest file that becomes part of the suite — a
+#       regression in the emitted test is a regression in the green-suite
+#       contract for the next tool that runs after it.
+# When adding a new compose tool that fits any of (a)(b)(c), add it here.
 _CONTRACT_CHANGING_TOOLS: list[tuple[str, str]] = [
+    # Auth / access — contract-changing across routes + DB layer.
     ("add_multi_tenancy", "adapt.extend.auth_access.add_multi_tenancy"),
+    ("add_bola_guard", "adapt.extend.auth_access.add_bola_guard"),
+    # CRUD / data — routes + emitted tests.
     ("add_soft_delete", "adapt.extend.crud_data.add_soft_delete"),
+    ("add_cursor_pagination", "adapt.extend.crud_data.add_cursor_pagination"),
+    ("add_audit_log", "adapt.extend.crud_data.add_audit_log"),
+    ("add_event_sourcing", "adapt.extend.crud_data.add_event_sourcing"),
+    ("add_data_export", "adapt.extend.crud_data.add_data_export"),
+    ("add_data_versioning", "adapt.extend.crud_data.add_data_versioning"),
+    ("add_bulk_operations", "adapt.extend.crud_data.add_bulk_operations"),
+    ("add_search", "adapt.extend.crud_data.add_search"),
+    ("add_file_upload", "adapt.extend.crud_data.add_file_upload"),
 ]
 
 _SCRATCH_MODELS = {

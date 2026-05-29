@@ -22,10 +22,10 @@ from adapt.contracts import ToolInput
 from adapt.extend.realtime.add_websocket_presence import add_websocket_presence
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _all_py_files(root: Path) -> list[Path]:
     return sorted(root.rglob("*.py"))
@@ -52,16 +52,20 @@ def _max_function_loc(root: Path, subdir: str = "app") -> int:
         except SyntaxError:
             continue
         for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                if hasattr(node, "end_lineno") and node.end_lineno:
-                    loc = node.end_lineno - node.lineno + 1
-                    max_loc = max(max_loc, loc)
+            if (
+                isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and hasattr(node, "end_lineno")
+                and node.end_lineno
+            ):
+                loc = node.end_lineno - node.lineno + 1
+                max_loc = max(max_loc, loc)
     return max_loc
 
 
 # ---------------------------------------------------------------------------
 # Category A — Tool execution
 # ---------------------------------------------------------------------------
+
 
 def test_success_status() -> None:
     """Tool returns status='success' on a fresh project."""
@@ -121,6 +125,7 @@ def test_files_modified_count() -> None:
 # Category B — Generated code quality
 # ---------------------------------------------------------------------------
 
+
 def test_all_py_parse() -> None:
     """Every generated .py file AST-parses clean."""
     project_dir = create_fixture_project(name="wsp_t06")
@@ -152,8 +157,7 @@ def test_config_fields_patched() -> None:
     for line in content.splitlines():
         if "PRESENCE_HEARTBEAT_SECONDS" in line:
             assert line.startswith("    "), (
-                f"PRESENCE_HEARTBEAT_SECONDS not inside class body "
-                f"(no 4-space indent): {line!r}"
+                f"PRESENCE_HEARTBEAT_SECONDS not inside class body (no 4-space indent): {line!r}"
             )
             break
 
@@ -180,6 +184,7 @@ def test_routes_registered() -> None:
 # ---------------------------------------------------------------------------
 # Category C — Domain-specific
 # ---------------------------------------------------------------------------
+
 
 def test_presence_manager_file_created() -> None:
     """app/ws/presence.py exists with PresenceManager."""
@@ -314,9 +319,9 @@ def test_requirements_patched() -> None:
     # Remove redis if present to force a patch
     if requirements_file.exists():
         src = requirements_file.read_text()
-        requirements_file.write_text("\n".join(
-            line for line in src.splitlines() if "redis" not in line.lower()
-        ) + "\n")
+        requirements_file.write_text(
+            "\n".join(line for line in src.splitlines() if "redis" not in line.lower()) + "\n"
+        )
     add_websocket_presence(ToolInput(project_dir=str(project_dir)))
     content = requirements_file.read_text()
     assert "redis" in content.lower(), "redis not added to requirements.txt"
@@ -346,6 +351,85 @@ def test_dry_run_mentions_heartbeat_ttl() -> None:
     combined = " ".join(result.notes)
     assert "20" in combined, "dry_run notes should mention heartbeat_seconds=20"
     assert "60" in combined, "dry_run notes should mention TTL (20 × 3 = 60)"
+
+
+# ---------------------------------------------------------------------------
+# F-006: requirements parse must be line-by-line (no raw substring)
+# ---------------------------------------------------------------------------
+
+
+def test_requirements_aioredis_does_not_suppress_redis_add() -> None:
+    """F-006: a pre-existing ``aioredis`` line must NOT prevent the tool from
+    declaring ``redis``.
+
+    Pre-fix the patcher used ``"redis" not in src`` which falsely treated
+    ``aioredis>=2.0.0`` (a different package) as proof that ``redis`` was
+    declared and skipped the add. Post-fix the line-by-line parser sees
+    ``aioredis`` as a distinct package and still appends ``redis[hiredis]``.
+    """
+    project_dir = create_fixture_project(name="wsp_f006_aioredis")
+    requirements_file = project_dir / "requirements.txt"
+    # Strip every redis-like line, then add aioredis only.
+    src = requirements_file.read_text()
+    cleaned = "\n".join(line for line in src.splitlines() if "redis" not in line.lower())
+    requirements_file.write_text(cleaned + "\naioredis>=2.0.0\n")
+
+    add_websocket_presence(ToolInput(project_dir=str(project_dir)))
+
+    final = requirements_file.read_text()
+    declared = set()
+    for raw_line in final.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or line.startswith("-"):
+            continue
+        # Strip extras BEFORE version specifier so ``redis[hiredis]>=5.0.0``
+        # normalises to ``redis`` (the extras list contains ``[`` which is
+        # an earlier separator than ``>=``).
+        if "[" in line:
+            line = line.split("[", 1)[0].strip()
+        for sep in ("===", "==", ">=", "<=", "!=", "~=", ">", "<"):
+            if sep in line:
+                line = line.split(sep, 1)[0].strip()
+                break
+        declared.add(line.lower())
+    assert "redis" in declared, (
+        f"redis package not added when aioredis was already declared "
+        f"(F-006 regression). Final declared: {declared}\n--- file ---\n{final}"
+    )
+    assert "aioredis" in declared, "aioredis must be preserved"
+
+
+def test_requirements_redis_comment_does_not_suppress_add() -> None:
+    """F-006: a ``# redis comment`` line must NOT suppress the redis add."""
+    project_dir = create_fixture_project(name="wsp_f006_comment")
+    requirements_file = project_dir / "requirements.txt"
+    src = requirements_file.read_text()
+    cleaned = "\n".join(line for line in src.splitlines() if "redis" not in line.lower())
+    requirements_file.write_text(cleaned + "\n# redis: TODO add when caching lands\n")
+
+    add_websocket_presence(ToolInput(project_dir=str(project_dir)))
+
+    final = requirements_file.read_text()
+    # The exact package name redis must appear as a distinct requirement.
+    declared = set()
+    for raw_line in final.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or line.startswith("-"):
+            continue
+        # Strip extras BEFORE version specifier so ``redis[hiredis]>=5.0.0``
+        # normalises to ``redis`` (the extras list contains ``[`` which is
+        # an earlier separator than ``>=``).
+        if "[" in line:
+            line = line.split("[", 1)[0].strip()
+        for sep in ("===", "==", ">=", "<=", "!=", "~=", ">", "<"):
+            if sep in line:
+                line = line.split(sep, 1)[0].strip()
+                break
+        declared.add(line.lower())
+    assert "redis" in declared, (
+        f"redis not added when only a comment mentioned 'redis' (F-006 regression). "
+        f"declared: {declared}; file:\n{final}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -392,7 +476,7 @@ if __name__ == "__main__":
             print(f"  FAIL  {test_fn.__name__}: {exc}")
             failed += 1
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"TOOL-062 add_websocket_presence: {passed} passed, {failed} failed")
     if failed:
         sys.exit(1)

@@ -120,12 +120,23 @@ def add_bola_guard(inp: ToolInput) -> ToolResult:
     files_created: list[str] = list(scaffolded)
 
     # --- Idempotency guard ---------------------------------------------------
+    # F-001: also check the emitted tests/test_bola_generated.py — the tool's
+    # contract advertises this file in next_steps, so the second-run no-op
+    # MUST be true for BOTH artefacts, not just bola_guard.py.
     auth_dir = project / "app" / "auth"
     bola_file = auth_dir / "bola_guard.py"
-    if bola_file.exists() and "OwnershipVerifier" in bola_file.read_text():
+    generated_tests_file = project / "tests" / "test_bola_generated.py"
+    if (
+        bola_file.exists()
+        and "OwnershipVerifier" in bola_file.read_text()
+        and generated_tests_file.exists()
+        and "BOLA-01" in generated_tests_file.read_text()
+    ):
         return ToolResult(
             status="no_op",
-            notes=["OwnershipVerifier already present — BOLA guard already enabled, skipped."],
+            notes=[
+                "OwnershipVerifier and tests/test_bola_generated.py already present — BOLA guard already enabled, skipped."
+            ],
             execution_time_ms=_elapsed_ms(start),
         )
 
@@ -136,6 +147,7 @@ def add_bola_guard(inp: ToolInput) -> ToolResult:
             notes=[
                 "[dry_run] Would create app/auth/bola_guard.py",
                 "[dry_run] Would create app/auth/bola_test_gen.py",
+                "[dry_run] Would create tests/test_bola_generated.py for every owner-bearing model",
                 "[dry_run] Would patch app/core/config.py with BOLA settings",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
@@ -160,11 +172,43 @@ def add_bola_guard(inp: ToolInput) -> ToolResult:
     _write_bola_test_gen(test_gen_file)
     files_created.append(str(test_gen_file))
 
+    # --- Step 3b: tests/test_bola_generated.py (F-001) -----------------------
+    # The tool advertises this file in next_steps ("pytest tests/test_bola_
+    # generated.py -v"). Before this fix the tool wrote bola_test_gen.py (a
+    # generator helper) but never actually called it, so the advertised file
+    # never existed. Now we discover owner-bearing models and emit one test
+    # class per model with at least 3 assertions.
+    owner_models = _discover_owner_bearing_models(project)
+    tests_dir = project / "tests"
+    tests_dir.mkdir(parents=True, exist_ok=True)
+    generated_tests_file = tests_dir / "test_bola_generated.py"
+    generated_tests_file.write_text(_render_generated_bola_tests(owner_models))
+    files_created.append(str(generated_tests_file))
+
     # --- Step 4: patch config.py ---------------------------------------------
+    # F-007: only mark config.py as modified when patch_settings_fields
+    # actually writes — otherwise files_modified would lie about state.
     config_file = project / "app" / "core" / "config.py"
+    config_notes: list[str] = []
     if config_file.exists():
-        _patch_config(config_file)
-        files_modified.append(str(config_file))
+        from adapt.contracts.config_patcher import PatchResult
+
+        patch_outcome = _patch_config(config_file)
+        if patch_outcome is PatchResult.APPLIED:
+            files_modified.append(str(config_file))
+        elif patch_outcome is PatchResult.TARGET_MISSING:
+            config_notes.append(
+                "config.py: no `class Settings` shape found — "
+                "BOLA_GUARD_* fields were appended at module level "
+                "(callers using `settings.BOLA_GUARD_*` must adapt)."
+            )
+        elif patch_outcome is PatchResult.SYNTAX_ERROR:
+            return ToolResult(
+                status="error",
+                error="app/core/config.py has a syntax error — refusing to patch.",
+                execution_time_ms=_elapsed_ms(start),
+            )
+        # PatchResult.ALREADY_PRESENT → no change needed, no note.
 
     # --- Step 5: ast.parse validation loop -----------------------------------
     for path_str in files_created:
@@ -190,6 +234,17 @@ def add_bola_guard(inp: ToolInput) -> ToolResult:
             "TenantIsolationFilter: auto-injects tenant_id into SQLAlchemy queries.",
             "ResourceAccessPolicy: delegation table, allows cross-user access grants.",
             "bola_test_gen.py: generates pytest cases — two users, verifies cross-access blocked.",
+            (
+                "tests/test_bola_generated.py: "
+                + (
+                    f"emitted with {len(owner_models)} owner-bearing model(s): "
+                    + ", ".join(m["class_name"] for m in owner_models)
+                    + "."
+                    if owner_models
+                    else "no owner-bearing models discovered; placeholder emitted."
+                )
+            ),
+            *config_notes,
         ],
         next_steps=[
             "Import require_ownership in route files:",
@@ -719,21 +774,261 @@ def list_generated_test_files(tests_dir: str = "tests") -> list[str]:
 '''
 
 
-def _patch_config(config_file: Path) -> None:
+def _patch_config(config_file: Path):  # type: ignore[no-untyped-def]
     """Inject BOLA guard settings into ``app/core/config.py`` Settings class.
 
     Args:
         config_file: Path to the existing config.py.
+
+    Returns:
+        ``PatchResult`` describing the outcome (see
+        :mod:`adapt.contracts.config_patcher`).
     """
     from adapt.contracts.config_patcher import patch_settings_fields
 
-    patch_settings_fields(
+    return patch_settings_fields(
         config_file,
         fields=[
             ("BOLA_GUARD_ENABLED", "BOLA_GUARD_ENABLED: bool = True"),
             ("BOLA_GUARD_STRICT_MODE", "BOLA_GUARD_STRICT_MODE: bool = False"),
         ],
     )
+
+
+# ---------------------------------------------------------------------------
+# F-001: discover owner-bearing models + emit tests/test_bola_generated.py
+# ---------------------------------------------------------------------------
+
+_OWNER_FIELD_CANDIDATES: tuple[str, ...] = ("user_id", "owner_id", "created_by_id")
+
+
+def _discover_owner_bearing_models(project: Path) -> list[dict]:
+    """Find every ``app/models/*.py`` class that declares an owner FK column.
+
+    Owner detection: the class body contains an annotated/assigned attribute
+    whose name is one of ``user_id`` / ``owner_id`` / ``created_by_id``.
+
+    Args:
+        project: Project root.
+
+    Returns:
+        List of ``{"class_name": str, "stem": str, "owner_field": str}`` dicts,
+        sorted deterministically by class_name.
+    """
+    models_dir = project / "app" / "models"
+    routes_dir = project / "app" / "api" / "routes"
+    if not models_dir.is_dir():
+        return []
+
+    available_routes: set[str] = set()
+    if routes_dir.is_dir():
+        for r in routes_dir.glob("*.py"):
+            if r.stem != "__init__":
+                available_routes.add(r.stem)
+
+    skip = {"base", "user", "mixins", "__init__", "tenant"}
+    discovered: list[dict] = []
+    for f in sorted(models_dir.glob("*.py")):
+        stem = f.stem
+        if stem in skip:
+            continue
+        try:
+            tree = ast.parse(f.read_text())
+        except SyntaxError:
+            continue
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ClassDef):
+                continue
+            if node.name.lower() != stem:
+                continue
+            owner_field = _owner_field_for_class(node)
+            if owner_field is None:
+                continue
+            discovered.append(
+                {
+                    "class_name": node.name,
+                    "stem": stem,
+                    "owner_field": owner_field,
+                    "route_prefix": (
+                        f"/api/v1/{stem}s" if stem in available_routes else f"/api/v1/{stem}s"
+                    ),
+                }
+            )
+    discovered.sort(key=lambda d: d["class_name"])
+    return discovered
+
+
+def _owner_field_for_class(cls: ast.ClassDef) -> str | None:
+    """Return the first owner-FK column name on *cls*, or ``None``."""
+    for body_node in cls.body:
+        target_name: str | None = None
+        if isinstance(body_node, ast.AnnAssign) and isinstance(body_node.target, ast.Name):
+            target_name = body_node.target.id
+        elif isinstance(body_node, ast.Assign):
+            for target in body_node.targets:
+                if isinstance(target, ast.Name):
+                    target_name = target.id
+                    break
+        if target_name in _OWNER_FIELD_CANDIDATES:
+            return target_name
+    return None
+
+
+def _render_generated_bola_tests(owner_models: list[dict]) -> str:
+    """Produce the full content for ``tests/test_bola_generated.py``.
+
+    Each owner-bearing model contributes 4 test functions (≥3 assertions
+    per model): owner can access, attacker cannot access, unauthenticated
+    is rejected, attacker cannot delete.
+
+    Args:
+        owner_models: Output of :func:`_discover_owner_bearing_models`.
+
+    Returns:
+        Python source as a string (always ``ast.parse``-clean).
+    """
+    header = textwrap.dedent('''\
+        """Auto-generated BOLA test suite.
+
+        Emitted by ``add_bola_guard`` for every owner-bearing model discovered
+        under ``app/models/``. Each model gets test cases that prove cross-user
+        access is blocked.
+
+        Replace OWNER_TOKEN_PLACEHOLDER / ATTACKER_TOKEN_PLACEHOLDER with real
+        per-user JWTs (and the placeholder owner-resource fixture) from your
+        test setup, then remove ``pytestmark = pytest.mark.skip(...)`` below
+        to enable the suite.
+
+        Run::
+
+            PYTHONPATH=. pytest tests/test_bola_generated.py -v
+        """
+
+        from __future__ import annotations
+
+        import pytest
+
+        # Skipped by default — the per-model fixtures below are placeholders
+        # (OWNER_TOKEN_PLACEHOLDER / id=1) and the suite will fail until the
+        # caller wires in real auth tokens and an owned-resource id. Remove
+        # this line after replacing the placeholders.
+        pytestmark = pytest.mark.skip(
+            reason=(
+                "BOLA placeholders not wired — replace OWNER_TOKEN_PLACEHOLDER, "
+                "ATTACKER_TOKEN_PLACEHOLDER and owner_<model>_id fixtures, "
+                "then delete this pytestmark."
+            )
+        )
+
+    ''')
+    if not owner_models:
+        body = textwrap.dedent('''\
+
+            # No owner-bearing models discovered when add_bola_guard ran.
+            # Re-run the tool after declaring models with a ``user_id`` / ``owner_id``
+            # / ``created_by_id`` column to regenerate this file with per-model cases.
+
+
+            def test_placeholder_no_owner_bearing_models() -> None:
+                """BOLA-PLACEHOLDER: regenerate this file once owner-bearing models exist."""
+                assert True
+        ''')
+        return header + body
+
+    blocks: list[str] = []
+    for m in owner_models:
+        blocks.append(_render_bola_block_for_model(m))
+    return header + "\n".join(blocks)
+
+
+def _render_bola_block_for_model(model: dict) -> str:
+    """Render the per-model BOLA test block.
+
+    Args:
+        model: Dict with ``class_name``, ``stem``, ``owner_field``,
+            ``route_prefix``.
+
+    Returns:
+        Python source for 4 test functions plus 3 fixtures.
+    """
+    cls = model["class_name"]
+    stem = model["stem"]
+    route = model["route_prefix"]
+    return textwrap.dedent(f'''\
+
+        # ---------------------------------------------------------------------------
+        # BOLA tests for {cls} (owner field: {model["owner_field"]})
+        # ---------------------------------------------------------------------------
+
+
+        @pytest.fixture
+        def owner_token_{stem}() -> str:
+            """Return a JWT for the resource owner ({cls})."""
+            # TODO: replace with a real owner JWT.
+            return "OWNER_TOKEN_PLACEHOLDER"
+
+
+        @pytest.fixture
+        def attacker_token_{stem}() -> str:
+            """Return a JWT for an attacker user (not the owner of any {cls})."""
+            # TODO: replace with a real attacker JWT.
+            return "ATTACKER_TOKEN_PLACEHOLDER"
+
+
+        @pytest.fixture
+        def owner_{stem}_id() -> int:
+            """Return the id of a {cls} record owned by the owner user."""
+            # TODO: create a {cls} owned by the owner user and return its id.
+            return 1
+
+
+        def test_owner_can_access_own_{stem}(
+            client,
+            owner_token_{stem}: str,
+            owner_{stem}_id: int,
+        ) -> None:
+            """BOLA-01: Owner can read their own {cls} (200)."""
+            response = client.get(
+                f"{route}/{{owner_{stem}_id}}",
+                headers={{"Authorization": f"Bearer {{owner_token_{stem}}}"}},
+            )
+            assert response.status_code == 200
+
+
+        def test_attacker_cannot_access_owner_{stem}(
+            client,
+            attacker_token_{stem}: str,
+            owner_{stem}_id: int,
+        ) -> None:
+            """BOLA-02: Attacker gets 403 on owner {cls}."""
+            response = client.get(
+                f"{route}/{{owner_{stem}_id}}",
+                headers={{"Authorization": f"Bearer {{attacker_token_{stem}}}"}},
+            )
+            assert response.status_code == 403
+
+
+        def test_unauthenticated_access_{stem}_rejected(
+            client,
+            owner_{stem}_id: int,
+        ) -> None:
+            """BOLA-03: Unauthenticated access is rejected (401/403)."""
+            response = client.get(f"{route}/{{owner_{stem}_id}}")
+            assert response.status_code in (401, 403)
+
+
+        def test_attacker_cannot_delete_owner_{stem}(
+            client,
+            attacker_token_{stem}: str,
+            owner_{stem}_id: int,
+        ) -> None:
+            """BOLA-04: Attacker DELETE is rejected (403)."""
+            response = client.delete(
+                f"{route}/{{owner_{stem}_id}}",
+                headers={{"Authorization": f"Bearer {{attacker_token_{stem}}}"}},
+            )
+            assert response.status_code == 403
+    ''')
 
 
 # ---------------------------------------------------------------------------
