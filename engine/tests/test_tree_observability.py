@@ -81,19 +81,40 @@ def test_primitive_copies_files(tmp_path: Path) -> None:
     assert r["ok"] is True, r
     files = r["result"]["files_created"]
     assert any(f.endswith("AccessLog.py") for f in files), files
-    target = tmp_path / "app" / "core" / "venous" / "obs" / "AccessLog" / "AccessLog.py"
+    # F-003: target layout matches compose + scaffold_venous (no `app/`).
+    target = tmp_path / "core" / "venous" / "obs" / "AccessLog" / "AccessLog.py"
     assert target.exists()
+    assert any(
+        "from core.venous.obs.AccessLog.AccessLog import AccessLog" in step
+        for step in r["next_steps"]
+    )
 
 
-def test_primitive_overwrites_existing_dir(tmp_path: Path) -> None:
-    target = tmp_path / "app" / "core" / "venous" / "obs" / "AccessLog"
+def test_primitive_overwrites_existing_dir_only_with_force(tmp_path: Path) -> None:
+    """F-002: copy is non-destructive by default; ``force=True`` opts in."""
+    target = tmp_path / "core" / "venous" / "obs" / "AccessLog"
     target.mkdir(parents=True)
     (target / "stale.txt").write_text("old")
-    r = fastapi_observability(
-        action="primitive", params={"name": "AccessLog", "output_dir": str(tmp_path)}
+
+    r_skip = fastapi_observability(
+        action="primitive",
+        params={"name": "AccessLog", "output_dir": str(tmp_path)},
     )
-    assert r["ok"] is True
-    assert not (target / "stale.txt").exists(), "must wipe previous state"
+    assert r_skip["ok"] is True
+    assert r_skip["result"]["status"] == "skipped"
+    assert (target / "stale.txt").exists(), "default must NOT destroy user code"
+
+    r_force = fastapi_observability(
+        action="primitive",
+        params={
+            "name": "AccessLog",
+            "output_dir": str(tmp_path),
+            "force": True,
+        },
+    )
+    assert r_force["ok"] is True
+    assert r_force["result"]["status"] == "copied"
+    assert not (target / "stale.txt").exists(), "force=True must wipe previous state"
 
 
 # ---------------------------------------------------------------------------
