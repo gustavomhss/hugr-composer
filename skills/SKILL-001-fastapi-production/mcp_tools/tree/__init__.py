@@ -17,4 +17,5 @@ And one introspection action:
 This file ships `auth` first as the proof-of-concept. On live-run
 success we expand to the other 9 domains in subsequent commits.
 """
+
 DOMAIN_TREE_VERSION = "1"

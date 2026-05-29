@@ -22,7 +22,6 @@ POC scope rules
 
 from __future__ import annotations
 
-import importlib
 import shutil
 import time
 from pathlib import Path
@@ -140,37 +139,21 @@ def _envelope(*, ok: bool, what: str, result: Any, next_steps: list[str], t0: fl
 def _call_slice(slice_name: str, **kwargs) -> dict:
     """Route to the underlying `adapt/extend/auth_access/<module>` tool.
 
-    Slice entry functions accept a ``ToolInput(project_dir=...)`` dataclass
-    (adapt convention), NOT raw kwargs. We translate dispatcher kwargs
-    (`output_dir`, `dry_run`) into the ToolInput shape, drop dispatcher-
-    only keys (like `providers` for OAuth2), and call the entry. The
-    `ToolResult` return is returned as-is for the envelope wrapper.
+    Thin wrapper over :func:`mcp_tools._tree_dispatch.dispatch_via_toolinput`
+    — the shared helper that does the canonical
+    ``dispatcher kwargs → ToolInput → slice entry → dict`` translation.
+    Closes Codex 3 F-001: every `mcp_tools/tree/*.py` dispatcher MUST go
+    through this helper so the public contract stays uniform.
     """
-    from adapt.contracts import ToolInput
+    from mcp_tools._tree_dispatch import dispatch_via_toolinput
 
     meta = SLICES[slice_name]
-    mod_name = f"adapt.extend.auth_access.{meta['mod']}"
-    mod = importlib.import_module(mod_name)
-    entry = getattr(mod, meta["mod"], None)
-    if entry is None or not callable(entry):
-        raise RuntimeError(
-            f"slice {slice_name!r}: entry function {meta['mod']!r} not found in {mod_name}"
-        )
-    project_dir = kwargs.pop("output_dir", None) or kwargs.pop("project_dir", None)
-    if not project_dir:
-        raise ValueError(f"slice {slice_name!r}: output_dir is required")
-    dry_run = bool(kwargs.pop("dry_run", False))
-    # Remaining kwargs are slice-specific extras (e.g. providers=['google'])
-    # that the contract-level ToolInput doesn't carry. Drop them for now —
-    # the slice reads its own env/config. Future work: pass a typed payload.
-    inp = ToolInput(project_dir=str(project_dir), dry_run=dry_run)
-    result = entry(inp)
-    # Normalise ToolResult → dict for the envelope.
-    if hasattr(result, "model_dump"):
-        return result.model_dump(mode="json")
-    if hasattr(result, "_asdict"):
-        return result._asdict()
-    return dict(result) if not isinstance(result, dict) else result
+    return dispatch_via_toolinput(
+        module_path=f"adapt.extend.auth_access.{meta['mod']}",
+        entry_name=meta["mod"],
+        slice_name=slice_name,
+        **kwargs,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -178,12 +161,28 @@ def _call_slice(slice_name: str, **kwargs) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def _copy_primitive(name: str, output_dir: str) -> dict:
-    """Copy core/venous/auth/<Name>/ into <output_dir>/app/core/venous/auth/<Name>/.
+def _is_non_empty(p: Path) -> bool:
+    """Return True if *p* exists, is a directory, and has at least one child."""
+    return p.is_dir() and any(p.iterdir())
+
+
+def _copy_primitive(name: str, output_dir: str, *, force: bool = False) -> dict:
+    """Copy core/venous/auth/<Name>/ into <output_dir>/core/venous/auth/<Name>/.
 
     Follows ADR 0002 (copy-in distribution). Skips _t0_report.json + _evidence/
     (per .gitignore). Also copies the matching fastapi adapter under
     _adapters/fastapi/ if one exists.
+
+    F-002 (Codex 3): default non-destructive. When ``force=False`` and the
+    target directory exists with content, return ``status="skipped"`` instead
+    of wiping the user's customizations. Pass ``force=True`` to opt back into
+    the legacy overwrite behaviour (and emit a ``warnings`` hint).
+
+    F-003 (Codex 3): copy target is ``<output_dir>/core/venous/<ns>/<Name>/``
+    (NO ``app/`` prefix) so the emitted import path
+    ``from core.venous.<ns>.<Name>.<Name> import <Name>`` resolves —
+    matching ``generators.scaffold_venous.copy_primitive`` and
+    ``mcp_tools.compose._primitive_import_line``.
     """
     if name not in PRIMITIVES:
         raise ValueError(
@@ -192,8 +191,24 @@ def _copy_primitive(name: str, output_dir: str) -> dict:
     src = VENOUS_AUTH / name
     if not src.is_dir():
         raise FileNotFoundError(f"primitive source missing: {src}")
-    target = Path(output_dir) / "app" / "core" / "venous" / "auth" / name
-    if target.exists():
+    target = Path(output_dir) / "core" / "venous" / "auth" / name
+    warnings: list[str] = []
+    if _is_non_empty(target) and not force:
+        return {
+            "primitive": name,
+            "status": "skipped",
+            "reason": (
+                f"target exists and is non-empty: {target.relative_to(output_dir)}. "
+                "Pass params={'force': True} to overwrite (destructive)."
+            ),
+            "files_created": [],
+            "target": str(target.relative_to(output_dir)),
+        }
+    if target.exists() and force:
+        warnings.append(
+            f"force=True: removed existing {target.relative_to(output_dir)} "
+            "before copy (user customisations lost)."
+        )
         shutil.rmtree(target)
     shutil.copytree(
         src,
@@ -210,7 +225,7 @@ def _copy_primitive(name: str, output_dir: str) -> dict:
     adapter_name = f"{name}Adapter.py"
     adapter_src = ADAPTERS_FASTAPI / adapter_name
     if adapter_src.exists():
-        adapter_target = Path(output_dir) / "app" / "core" / "venous" / "_adapters" / "fastapi"
+        adapter_target = Path(output_dir) / "core" / "venous" / "_adapters" / "fastapi"
         adapter_target.mkdir(parents=True, exist_ok=True)
         shutil.copy(adapter_src, adapter_target / adapter_name)
         files_created.append(str((adapter_target / adapter_name).relative_to(output_dir)))
@@ -221,7 +236,15 @@ def _copy_primitive(name: str, output_dir: str) -> dict:
             files_created.append(
                 str((adapter_target / f"test_{adapter_name}").relative_to(output_dir))
             )
-    return {"primitive": name, "files_created": files_created}
+    result = {
+        "primitive": name,
+        "status": "copied",
+        "files_created": files_created,
+        "target": str(target.relative_to(output_dir)),
+    }
+    if warnings:
+        result["warnings"] = warnings
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -249,7 +272,9 @@ MCP_TOOL = {
         "AuthorizationCodeFlow, TotpVerifier, WebAuthnAuthenticator, "
         "FeatureFlagCache). Use when you need surgical granularity — "
         "e.g. 'I already have auth, I need the SessionStore for session "
-        "preservation on node kill'.\n"
+        "preservation on node kill'. Pass params={'force': True} to "
+        "overwrite an existing target (default is non-destructive: "
+        "returns status='skipped' when the target already has files).\n"
         "Call with action='list' if unsure which level to use. Every "
         "return carries `next_steps` pointing at the next likely call."
     ),
@@ -344,6 +369,7 @@ def fastapi_auth(action: str, params: dict | None = None) -> dict:
     if action == "primitive":
         name = params.get("name")
         output_dir = params.get("output_dir")
+        force = bool(params.get("force", False))
         if not name or not output_dir:
             return _envelope(
                 ok=False,
@@ -356,7 +382,7 @@ def fastapi_auth(action: str, params: dict | None = None) -> dict:
                 t0=t0,
             )
         try:
-            res = _copy_primitive(name, output_dir)
+            res = _copy_primitive(name, output_dir, force=force)
         except (ValueError, FileNotFoundError) as exc:
             return _envelope(
                 ok=False,
@@ -365,14 +391,26 @@ def fastapi_auth(action: str, params: dict | None = None) -> dict:
                 next_steps=["Call fastapi_auth(action='list') for valid primitive names."],
                 t0=t0,
             )
+        skipped = res.get("status") == "skipped"
         return _envelope(
             ok=True,
-            what=f"primitive {name} copied into {output_dir}",
+            what=(
+                f"primitive {name} skipped (target exists; pass force=True)"
+                if skipped
+                else f"primitive {name} copied into {output_dir}"
+            ),
             result=res,
-            next_steps=[
-                f"Import in your handler: from core.venous.auth.{name} import {name}",
-                f"Call fastapi_meta_describe(name='{name}') for Protocol + invariants.",
-            ],
+            next_steps=(
+                [
+                    res["reason"],
+                    "Re-run with params={'force': True} to overwrite the existing target.",
+                ]
+                if skipped
+                else [
+                    f"Import in your handler: from core.venous.auth.{name}.{name} import {name}",
+                    f"Call fastapi_meta_describe(name='{name}') for Protocol + invariants.",
+                ]
+            ),
             t0=t0,
         )
 

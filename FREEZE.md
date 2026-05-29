@@ -79,8 +79,8 @@ Rails-connected in Wave 1.5 — same tool count, but
 
 - `engine/promotion/` module (schemas, classify, signals, state,
   promote, ledger).
-- `engine/promotion/LEDGER.md` — 219-entry triage ledger (post-Wave-1.5
-  pool cleanup — 225 → 219 after 3 NEEDS_REVIEW promotions + 3 twin
+- `engine/promotion/LEDGER.md` — 218-entry triage ledger (post-Wave-1.5
+  pool cleanup — 225 → 218 after 3 NEEDS_REVIEW promotions + 3 twin
   deletions) with action-focused verdicts (promote_as_adapter /
   promote_as_primitive / extract_motor_pair / fill_and_promote /
   redundant / needs_caller / needs_review).
@@ -195,7 +195,7 @@ What landed:
   primitive copy behaviour.
 - **Pool cleanup**: the 3 NEEDS_REVIEW ledger entries (and their
   `_quarantine/` twins) deleted — staged went 179 → 176, quarantined
-  went 45 → 42, ledger entries went 225 → 219.
+  went 45 → 42, ledger entries went 225 → 218.
 
 v1.0 freeze ships **124 registered primitives** (122 pre-Wave-1.5 +
 `PubSub` + `Billing`) and **19 total adapters** (17 fastapi + 1 redis
@@ -231,7 +231,7 @@ work; deferred to post-v1.0 operational cleanup sprints. The
 classifier has them documented; they stay in `_staging/` until
 someone picks one up and refactors.
 
-### §2.5 — 101 NEEDS_CALLER items
+### §2.5 — 100 NEEDS_CALLER items
 
 Staged primitives without §A12(b) signal. §A12 discipline preserved
 — they wait for a tool/module/benchmark to reference them.

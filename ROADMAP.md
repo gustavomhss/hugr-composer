@@ -97,7 +97,7 @@ the command says 125, the doc is wrong, not the command.
 | Quarantined primitives | 42 | `_staging/_quarantine/`, hidden from catalog |
 | Recipes | 392 | Parsed from primitive `.md` `## Compose with:` sections |
 | Benchmark specs | 20 | 5 baseline / 10 mid / 5 adversarial |
-| Ledger entries | 219 | Post-Wave-1.5 triage state |
+| Ledger entries | 218 | Post-Wave-1.5 triage state (1 needs_caller → extract_motor_pair on 2026-05-29) |
 | Contract rules passing | 37/37 | Machine-verified by `engine.audit.contract_check` |
 | Plan-level benchmark | 100.00 | 20/20 specs, v3 best-of-ensemble |
 | Code-level benchmark | 100.00 | 20/20 specs, executable pytest rubric |
@@ -984,7 +984,7 @@ each item are in `/GOLIVE.md §1-§6`.
 ### §5.2 — Promotion pipeline verify (Claude) — 3 items
 
 - [ ] `engine.promotion.classify` runs clean; ledger.json reflects
-      post-Wave-1.5 state (219 entries, needs_review=0).
+      post-Wave-1.5 state (218 entries, needs_review=0).
 - [ ] `engine.promotion.ledger` regenerates LEDGER.md byte-identical
       on re-run (idempotent).
 - [ ] No ledger entry with `PROMOTE_AS_*` verdict + zero blockers is
@@ -1476,7 +1476,7 @@ Preserved + expanded from the old ROADMAP Part 3.
 | R9 | **Single-person bus factor (Gustavo).** All ratifications currently go through one person. | Accept for v1.0-v1.x; delegation protocol is a Phase 7 item. |
 | R10 | **Benchmark overfit.** 100.00 on 20 specs doesn't guarantee 100.00 on spec 21. | Blind benchmark harness (§B3.7) + new specs with every major use-case. |
 | R11 | **Stale stable_hash in consumers.** agent sessions pin a hash that a patched release invalidates. | CHANGELOG cites `stable_hash` every release. §2.12 consumer protocol says: abort the session on hash change AND surface the new hash to the user with a pointer to the CHANGELOG entry. PATCH releases that change `stable_hash` MUST document the change explicitly in the `[X.Y.Z]` block (semver §3.7: PATCHes shouldn't surface-change, but bug-fix code edits regenerate the hash even when the tool catalog shape is identical). |
-| R12 | **Wave fatigue.** 118 + 101 = 219 post-v1.0 items is a marathon. | Batch per-wave commits (20/week); accept that "done" for post-v1.0 waves is months not weeks. |
+| R12 | **Wave fatigue.** 118 + 100 = 218 post-v1.0 items is a marathon. | Batch per-wave commits (20/week); accept that "done" for post-v1.0 waves is months not weeks. |
 
 ### §8.3 — Drift-fighting protocol
 

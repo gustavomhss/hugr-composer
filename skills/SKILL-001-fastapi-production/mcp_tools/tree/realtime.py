@@ -7,7 +7,6 @@ See `mcp_tools/tree/auth.py` — the canonical POC template this file mirrors.
 
 from __future__ import annotations
 
-import importlib
 import shutil
 import time
 from pathlib import Path
@@ -100,17 +99,18 @@ def _call_slice(slice_name: str, **kwargs) -> dict:
     """Route to the underlying `<pkg>.<mod>` tool.
 
     Multi-bucket aware: each SLICES entry carries its own `pkg`
-    because realtime tools span multiple adapt/ subtrees.
+    because realtime tools span multiple adapt/ subtrees. Routes through
+    the shared `dispatch_via_toolinput` helper (Codex 3 F-001).
     """
+    from mcp_tools._tree_dispatch import dispatch_via_toolinput
+
     meta = SLICES[slice_name]
-    mod_name = f"{meta['pkg']}.{meta['mod']}"
-    mod = importlib.import_module(mod_name)
-    entry = getattr(mod, meta["mod"], None)
-    if entry is None or not callable(entry):
-        raise RuntimeError(
-            f"slice {slice_name!r}: entry function {meta['mod']!r} not found in {mod_name}"
-        )
-    return entry(**kwargs)
+    return dispatch_via_toolinput(
+        module_path=f"{meta['pkg']}.{meta['mod']}",
+        entry_name=meta["mod"],
+        slice_name=slice_name,
+        **kwargs,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -118,12 +118,22 @@ def _call_slice(slice_name: str, **kwargs) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def _copy_primitive(name: str, output_dir: str) -> dict:
-    """Copy core/venous/events/<Name>/ into <output_dir>/app/core/venous/events/<Name>/.
+def _is_non_empty(p: Path) -> bool:
+    """Return True if *p* exists, is a directory, and has at least one child."""
+    return p.is_dir() and any(p.iterdir())
+
+
+def _copy_primitive(name: str, output_dir: str, *, force: bool = False) -> dict:
+    """Copy core/venous/events/<Name>/ into <output_dir>/core/venous/events/<Name>/.
 
     Follows ADR 0002 (copy-in distribution). Skips _t0_report.json +
     _evidence/ (per .gitignore). Also copies the matching fastapi
     adapter under _adapters/fastapi/ if one exists.
+
+    F-002 (Codex 3): default non-destructive. Pass ``force=True`` to
+    overwrite an existing populated target.
+    F-003 (Codex 3): target layout matches the generator + compose
+    import path (``core/venous/<ns>/<Name>/<Name>.py``).
     """
     if name not in PRIMITIVES:
         raise ValueError(
@@ -132,8 +142,24 @@ def _copy_primitive(name: str, output_dir: str) -> dict:
     src = VENOUS_DIR / name
     if not src.is_dir():
         raise FileNotFoundError(f"primitive source missing: {src}")
-    target = Path(output_dir) / "app" / "core" / "venous" / "events" / name
-    if target.exists():
+    target = Path(output_dir) / "core" / "venous" / "events" / name
+    warnings: list[str] = []
+    if _is_non_empty(target) and not force:
+        return {
+            "primitive": name,
+            "status": "skipped",
+            "reason": (
+                f"target exists and is non-empty: {target.relative_to(output_dir)}. "
+                "Pass params={'force': True} to overwrite (destructive)."
+            ),
+            "files_created": [],
+            "target": str(target.relative_to(output_dir)),
+        }
+    if target.exists() and force:
+        warnings.append(
+            f"force=True: removed existing {target.relative_to(output_dir)} "
+            "before copy (user customisations lost)."
+        )
         shutil.rmtree(target)
     shutil.copytree(
         src,
@@ -149,7 +175,7 @@ def _copy_primitive(name: str, output_dir: str) -> dict:
     adapter_name = f"{name}Adapter.py"
     adapter_src = ADAPTERS_FASTAPI / adapter_name
     if adapter_src.exists():
-        adapter_target = Path(output_dir) / "app" / "core" / "venous" / "_adapters" / "fastapi"
+        adapter_target = Path(output_dir) / "core" / "venous" / "_adapters" / "fastapi"
         adapter_target.mkdir(parents=True, exist_ok=True)
         shutil.copy(adapter_src, adapter_target / adapter_name)
         files_created.append(str((adapter_target / adapter_name).relative_to(output_dir)))
@@ -159,7 +185,15 @@ def _copy_primitive(name: str, output_dir: str) -> dict:
             files_created.append(
                 str((adapter_target / f"test_{adapter_name}").relative_to(output_dir))
             )
-    return {"primitive": name, "files_created": files_created}
+    result = {
+        "primitive": name,
+        "status": "copied",
+        "files_created": files_created,
+        "target": str(target.relative_to(output_dir)),
+    }
+    if warnings:
+        result["warnings"] = warnings
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -260,6 +294,7 @@ def fastapi_realtime(action: str, params: dict | None = None) -> dict:
     if action == "primitive":
         name = params.get("name")
         output_dir = params.get("output_dir")
+        force = bool(params.get("force", False))
         if not name or not output_dir:
             return _envelope(
                 ok=False,
@@ -272,7 +307,7 @@ def fastapi_realtime(action: str, params: dict | None = None) -> dict:
                 t0=t0,
             )
         try:
-            res = _copy_primitive(name, output_dir)
+            res = _copy_primitive(name, output_dir, force=force)
         except (ValueError, FileNotFoundError) as exc:
             return _envelope(
                 ok=False,
@@ -281,14 +316,26 @@ def fastapi_realtime(action: str, params: dict | None = None) -> dict:
                 next_steps=["Call fastapi_realtime(action='list') for valid primitive names."],
                 t0=t0,
             )
+        skipped = res.get("status") == "skipped"
         return _envelope(
             ok=True,
-            what=f"primitive {name} copied into {output_dir}",
+            what=(
+                f"primitive {name} skipped (target exists; pass force=True)"
+                if skipped
+                else f"primitive {name} copied into {output_dir}"
+            ),
             result=res,
-            next_steps=[
-                f"Import in your handler: from core.venous.events.{name} import {name}",
-                f"Call fastapi_meta_describe(name='{name}') for Protocol + invariants.",
-            ],
+            next_steps=(
+                [
+                    res["reason"],
+                    "Re-run with params={'force': True} to overwrite the existing target.",
+                ]
+                if skipped
+                else [
+                    f"Import in your handler: from core.venous.events.{name}.{name} import {name}",
+                    f"Call fastapi_meta_describe(name='{name}') for Protocol + invariants.",
+                ]
+            ),
             t0=t0,
         )
 

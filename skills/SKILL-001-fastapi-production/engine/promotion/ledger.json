@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-04-23T20:19:25+00:00",
+  "generated_at": "2026-05-29T02:02:53+00:00",
   "classifier_version": "1.0",
-  "total_staged": 177,
+  "total_staged": 176,
   "total_quarantined": 42,
   "entries": [
     {
@@ -328,13 +328,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_cursor_pagination.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_cursor_pagination.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "CursorPaginator",
@@ -2363,43 +2357,6 @@
       "classifier_version": "1.0"
     },
     {
-      "primitive": "WorkerSettings",
-      "namespace": "api",
-      "verdict": "needs_caller",
-      "tier": "none",
-      "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/api_design/add_long_running_task.py",
-          "detail": "Primitive was extracted from `adapt/extend/api_design/add_long_running_task.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
-      "blockers": [],
-      "state": {
-        "name": "WorkerSettings",
-        "namespace": "api",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 17,
-        "primitive_score": 2496,
-        "origin_tool": "api_design/add_long_running_task.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [],
-        "duplicate_of_registered": null,
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": "No \u00a7A12(b) signal yet. Primitive was extracted from `api_design/add_long_running_task.py` but no current caller declares it. Re-evaluate on the next triage pass.",
-      "delete_reason": null,
-      "promotion_target": null,
-      "classifier_version": "1.0"
-    },
-    {
       "primitive": "APIKey",
       "namespace": "auth",
       "verdict": "extract_motor_pair",
@@ -3443,13 +3400,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_cursor_pagination.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_cursor_pagination.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "CursorPaginator",
