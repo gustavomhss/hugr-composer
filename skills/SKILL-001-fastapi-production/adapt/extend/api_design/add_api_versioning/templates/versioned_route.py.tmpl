@@ -1,0 +1,16 @@
+"""API ${version} routes for ${model_name}.
+
+Delegates to the shared CRUD layer; override response schemas here when
+introducing breaking changes between versions.
+"""
+
+from __future__ import annotations
+
+from fastapi import APIRouter
+
+from app.api.routes.${lower} import router as _base_router
+
+# Re-export the base router unchanged for ${version}.
+# When introducing a breaking change, replace this with a custom router.
+router = APIRouter()
+router.include_router(_base_router)

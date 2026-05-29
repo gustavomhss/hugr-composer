@@ -1,0 +1,120 @@
+"""GraphQL Subscription type — real-time event streams via WebSocket.
+
+Provides two example subscriptions:
+- ``on_item_created``: streams ``ItemEvent`` payloads when items are created.
+- ``on_notification``: streams ``NotificationEvent`` payloads per user.
+
+Clients must authenticate via the ``connection_init`` payload.
+"""
+
+from __future__ import annotations
+
+import logging
+from collections.abc import AsyncIterator
+
+import strawberry
+
+# Imported at MODULE level (not TYPE_CHECKING) because strawberry
+# resolves forward-reference strings in Subscription field
+# annotations at schema-construction time via `__globals__`.
+# TYPE_CHECKING-only imports leave the name undefined at runtime
+# and strawberry raises "Subscription fields cannot be resolved.
+# name 'GraphQLContext' is not defined" when the schema is built.
+from app.graphql.context import GraphQLContext  # noqa: F401 — used in annotations
+
+logger = logging.getLogger(__name__)
+
+
+@strawberry.type
+class ItemEvent:
+    """Payload emitted when an item is created.
+
+    Attributes:
+        id: Newly created item ID.
+        title: Item title.
+        created_by: User ID of the creator.
+    """
+
+    id: strawberry.ID
+    title: str
+    created_by: strawberry.ID
+
+
+@strawberry.type
+class NotificationEvent:
+    """Payload emitted when a notification is sent to a user.
+
+    Attributes:
+        id: Notification ID.
+        user_id: Target user ID.
+        message: Notification message text.
+        level: Severity level (info, warning, error).
+    """
+
+    id: strawberry.ID
+    user_id: strawberry.ID
+    message: str
+    level: str = "info"
+
+
+@strawberry.type
+class Subscription:
+    """Root GraphQL subscription type.  All subscriptions require authentication."""
+
+    @strawberry.subscription
+    async def on_item_created(
+        self,
+        info: strawberry.types.Info["GraphQLContext", None],
+    ) -> AsyncIterator[ItemEvent]:
+        """Stream ``ItemEvent`` payloads whenever an item is created.
+
+        Authenticates via ``info.context`` — raises ``PermissionError``
+        for unauthenticated connections.
+
+        Args:
+            info: GraphQL resolve info carrying request context.
+
+        Yields:
+            ``ItemEvent`` for each new item creation.
+        """
+        if not info.context.user:
+            raise PermissionError("Authentication required for subscriptions")
+        from app.graphql.pubsub import get_pubsub
+        mgr = get_pubsub()
+        async for payload in mgr.subscribe("items"):
+            yield ItemEvent(
+                id=strawberry.ID(str(payload.get("id", ""))),
+                title=str(payload.get("title", "")),
+                created_by=strawberry.ID(str(payload.get("created_by", ""))),
+            )
+
+    @strawberry.subscription
+    async def on_notification(
+        self,
+        info: strawberry.types.Info["GraphQLContext", None],
+        user_id: strawberry.ID,
+    ) -> AsyncIterator[NotificationEvent]:
+        """Stream ``NotificationEvent`` for the given *user_id*.
+
+        Only the authenticated user or a superuser may subscribe to their
+        own notification channel.
+
+        Args:
+            info: GraphQL resolve info carrying request context.
+            user_id: Target user whose notifications to stream.
+
+        Yields:
+            ``NotificationEvent`` for each new notification.
+        """
+        if not info.context.user:
+            raise PermissionError("Authentication required for subscriptions")
+        from app.graphql.pubsub import get_pubsub
+        mgr = get_pubsub()
+        topic = f"notifications:{user_id}"
+        async for payload in mgr.subscribe(topic):
+            yield NotificationEvent(
+                id=strawberry.ID(str(payload.get("id", ""))),
+                user_id=strawberry.ID(str(user_id)),
+                message=str(payload.get("message", "")),
+                level=str(payload.get("level", "info")),
+            )

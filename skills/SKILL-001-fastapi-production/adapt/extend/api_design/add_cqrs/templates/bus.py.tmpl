@@ -1,0 +1,89 @@
+"""CommandBus and QueryBus — registry-based message dispatchers.
+
+Handlers are registered with ``register()``.  ``dispatch()`` /
+``query()`` look up the handler by message class name and invoke it.
+"""
+
+from __future__ import annotations
+
+import logging
+from collections.abc import Awaitable, Callable
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
+Handler = Callable[..., Awaitable[Any]]
+
+
+class CommandBus:
+    """Dispatch Commands to their registered async handlers."""
+
+    def __init__(self) -> None:
+        """Initialise with an empty handler registry."""
+        self._registry: dict[str, Handler] = {}
+
+    def register(self, command_name: str, handler: Handler) -> None:
+        """Register *handler* for *command_name*.
+
+        Args:
+            command_name: Fully-qualified command class name (e.g. ``'CreateItem'``).
+            handler: Async callable that accepts the command and returns a result.
+        """
+        self._registry[command_name] = handler
+
+    async def dispatch(self, command: object, **kwargs: Any) -> Any:
+        """Dispatch *command* to its registered handler.
+
+        Args:
+            command: A Command instance — its class name is used as lookup key.
+            **kwargs: Extra keyword arguments forwarded to the handler.
+
+        Returns:
+            Whatever the handler returns.
+
+        Raises:
+            KeyError: When no handler is registered for the command type.
+        """
+        name = type(command).__name__
+        handler = self._registry.get(name)
+        if handler is None:
+            raise KeyError(f"No handler registered for command: {name!r}")
+        logger.debug("CommandBus dispatching %r", name)
+        return await handler(command, **kwargs)
+
+
+class QueryBus:
+    """Dispatch Queries to their registered async handlers."""
+
+    def __init__(self) -> None:
+        """Initialise with an empty handler registry."""
+        self._registry: dict[str, Handler] = {}
+
+    def register(self, query_name: str, handler: Handler) -> None:
+        """Register *handler* for *query_name*.
+
+        Args:
+            query_name: Fully-qualified query class name (e.g. ``'GetItem'``).
+            handler: Async callable that accepts the query and returns a result.
+        """
+        self._registry[query_name] = handler
+
+    async def query(self, q: object, **kwargs: Any) -> Any:
+        """Dispatch *q* to its registered handler.
+
+        Args:
+            q: A Query instance — its class name is used as lookup key.
+            **kwargs: Extra keyword arguments forwarded to the handler.
+
+        Returns:
+            Whatever the handler returns.
+
+        Raises:
+            KeyError: When no handler is registered for the query type.
+        """
+        name = type(q).__name__
+        handler = self._registry.get(name)
+        if handler is None:
+            raise KeyError(f"No handler registered for query: {name!r}")
+        logger.debug("QueryBus dispatching %r", name)
+        return await handler(q, **kwargs)

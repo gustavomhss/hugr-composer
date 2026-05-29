@@ -1,0 +1,42 @@
+"""Command base class and example command definitions.
+
+Commands represent write-intent messages.  They are dispatched through
+``CommandBus.dispatch()`` and MUST NOT query state — they only mutate it.
+"""
+
+from __future__ import annotations
+
+import uuid
+
+from pydantic import BaseModel
+
+
+class Command(BaseModel):
+    """Base class for all commands.
+
+    All command fields should be immutable value objects.  Use UUIDs
+    for entity references rather than full object graphs.
+    """
+
+
+class CreateItemCommand(Command):
+    """Command to create a new item."""
+
+    title: str
+    description: str = ""
+    owner_id: uuid.UUID
+
+
+class UpdateItemCommand(Command):
+    """Command to update an existing item."""
+
+    item_id: uuid.UUID
+    title: str | None = None
+    description: str | None = None
+
+
+class DeleteItemCommand(Command):
+    """Command to delete an item by ID."""
+
+    item_id: uuid.UUID
+    owner_id: uuid.UUID

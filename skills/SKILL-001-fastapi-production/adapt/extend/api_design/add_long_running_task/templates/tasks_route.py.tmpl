@@ -1,0 +1,62 @@
+"""HTTP surface for long-running tasks.
+
+- POST /tasks        -> 202 Accepted + Location header (workflow started)
+- GET  /tasks/{wid}  -> status + run_id (polling)
+- DELETE /tasks/{wid}-> cooperative cancellation
+
+All state lives in the `WorkflowClient` shipped by the adapter; this module
+is pure wiring.
+
+Warnings:
+    Task state is held in-process (InMemoryWorkflowClient). It does NOT
+    persist across process restarts. Swap the reference client for a
+    Temporal/Cadence client in production.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, Response
+
+from app.workflow import workflow_client_dep
+
+router = APIRouter(prefix="/tasks", tags=["tasks"])
+
+
+@router.post("", status_code=202)
+async def start_task(
+    payload: dict[str, Any],
+    response: Response,
+    client=Depends(workflow_client_dep),
+) -> dict[str, Any]:
+    """Start a new workflow run. Returns 202 + Location header."""
+    workflow_id = str(payload.get("workflow_id") or payload.get("id") or "")
+    if not workflow_id:
+        raise HTTPException(status_code=400, detail="workflow_id required")
+    workflow_type = str(payload.get("workflow_type", "default"))
+    task_queue = str(payload.get("task_queue", "default"))
+    args = tuple(payload.get("args", ()))
+    run = await client.start(workflow_type, workflow_id, task_queue, args)
+    response.headers["Location"] = f"/tasks/{run.workflow_id}"
+    return {"workflow_id": run.workflow_id, "run_id": run.run_id, "status": "accepted"}
+
+
+@router.get("/{workflow_id}")
+async def get_task(workflow_id: str, client=Depends(workflow_client_dep)) -> dict[str, Any]:
+    """Poll a task's current run identity."""
+    try:
+        run = await client.describe(workflow_id)
+    except Exception as exc:  # noqa: BLE001 — primitive raises when unknown
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"workflow_id": run.workflow_id, "run_id": run.run_id, "task_queue": run.task_queue}
+
+
+@router.delete("/{workflow_id}", status_code=204)
+async def cancel_task(workflow_id: str, client=Depends(workflow_client_dep)) -> Response:
+    """Cooperatively cancel a task by workflow_id."""
+    try:
+        await client.cancel(workflow_id)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return Response(status_code=204)

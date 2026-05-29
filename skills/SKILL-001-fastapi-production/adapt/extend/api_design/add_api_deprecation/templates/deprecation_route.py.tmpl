@@ -1,0 +1,33 @@
+"""GET /deprecations — list all deprecated endpoints and sunset dates.
+
+Mounted under the api_router prefix (e.g. /api/v1/deprecations).
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+from fastapi import APIRouter
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(tags=["lifecycle"])
+
+
+@router.get("/deprecations")
+async def list_deprecations() -> dict[str, Any]:
+    """List all deprecated endpoints with sunset dates and usage statistics.
+
+    Returns:
+        Dict with 'deprecated' list and 'usage' list.
+    """
+    from app.deprecation import registry
+    from app.deprecation.reporter import reporter
+    entries = registry.list_all()
+    usage = reporter.usage_report()
+    return {
+        "deprecated": entries,
+        "usage": usage,
+        "total_deprecated": len(entries),
+    }

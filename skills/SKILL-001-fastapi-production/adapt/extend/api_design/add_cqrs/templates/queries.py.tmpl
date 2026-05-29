@@ -1,0 +1,41 @@
+"""Query base class and example query definitions.
+
+Queries represent read-intent messages.  They are dispatched through
+``QueryBus.query()`` and MUST NOT mutate state — they only read it.
+Queries should be routed to the read replica via ``ReadReplicaSession``.
+"""
+
+from __future__ import annotations
+
+import uuid
+
+from pydantic import BaseModel
+
+
+class Query(BaseModel):
+    """Base class for all queries.
+
+    Query fields describe what to look for.  Results are returned as
+    plain dicts or Pydantic read-models — never as mutable ORM objects.
+    """
+
+
+class GetItemQuery(Query):
+    """Query to fetch a single item by ID."""
+
+    item_id: uuid.UUID
+
+
+class ListItemsQuery(Query):
+    """Query to list items with pagination."""
+
+    owner_id: uuid.UUID | None = None
+    limit: int = 50
+    offset: int = 0
+
+
+class SearchItemsQuery(Query):
+    """Query to search items by keyword."""
+
+    keyword: str
+    limit: int = 20

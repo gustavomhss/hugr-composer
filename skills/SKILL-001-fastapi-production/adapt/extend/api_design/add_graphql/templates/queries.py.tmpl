@@ -1,0 +1,18 @@
+"""GraphQL Query type — resolvers delegate to existing CRUD functions."""
+
+from __future__ import annotations
+
+import uuid
+
+import strawberry
+
+from app.graphql.context import GraphQLContext
+
+${import_lines}
+
+
+@strawberry.type
+class Query:
+    """Root GraphQL query type.  All fields require authentication."""
+
+${resolver_blocks}

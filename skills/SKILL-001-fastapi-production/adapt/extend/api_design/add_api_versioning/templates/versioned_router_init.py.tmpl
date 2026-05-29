@@ -1,0 +1,13 @@
+"""Versioned router package for API ${version}.
+
+All endpoints served under ``/api/${version}/`` are assembled here.
+"""
+
+from __future__ import annotations
+
+from fastapi import APIRouter
+
+${import_lines}
+
+router = APIRouter()
+${include_lines}

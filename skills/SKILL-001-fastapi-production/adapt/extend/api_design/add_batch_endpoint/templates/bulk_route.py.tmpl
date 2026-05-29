@@ -1,0 +1,77 @@
+"""Bulk create endpoint for ${model_name} — POST /${lower}s/bulk, HTTP 207."""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi.responses import JSONResponse
+
+from app.api.deps import SessionDep, CurrentUser
+from app.core.batch_core import (
+    BatchCore,
+    BatchRequest,
+    BatchResponse,
+    IsolationMode,
+    ProcessingStrategy,
+)
+from app.core.idempotency import get_idempotency_store
+from app.schemas.${lower} import ${model_name}Create, ${model_name}Public
+
+router = APIRouter()
+
+_MAX_BATCH: int = ${max_batch}
+_TIMEOUT_S: float = ${timeout_s}
+
+
+async def _run_bulk_${lower}(
+    request: BatchRequest[${model_name}Create], session: SessionDep,
+) -> dict:
+    """Execute the bulk-create engine and return the serialized response body."""
+    from app.crud.${lower} import create_${lower} as _crud_create
+
+    async def _handle(item: ${model_name}Create):
+        return await _crud_create(session, item_in=item)
+
+    engine = BatchCore(_handle, timeout_per_item_s=_TIMEOUT_S)
+    results = await engine.run(
+        request.items,
+        mode=request.mode,
+        strategy=request.strategy,
+        idempotency_keys=request.idempotency_keys,
+    )
+    return BatchResponse.build(results).model_dump()
+
+
+@router.post(
+    "/bulk",
+    status_code=status.HTTP_207_MULTI_STATUS,
+    response_model=BatchResponse[${model_name}Public],
+    summary="Bulk-create ${model_name} records",
+)
+async def bulk_create_${lower}(
+    request: BatchRequest[${model_name}Create],
+    session: SessionDep,
+    current_user: CurrentUser,
+    x_idempotency_key: str | None = Header(default=None, alias="X-Idempotency-Key"),
+) -> JSONResponse:
+    """Bulk-create up to ${max_batch} ${model_name} records in a single request.
+
+    Returns HTTP 207 Multi-Status with per-item outcomes.
+
+    Raises:
+        HTTPException: 422 if batch size exceeds ${max_batch}.
+    """
+    if len(request.items) > _MAX_BATCH:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Batch size {len(request.items)} exceeds maximum {_MAX_BATCH}.",
+        )
+    store = get_idempotency_store()
+    if x_idempotency_key and store.seen(x_idempotency_key):
+        return JSONResponse(
+            content=store.get(x_idempotency_key),
+            status_code=status.HTTP_207_MULTI_STATUS,
+        )
+    payload = await _run_bulk_${lower}(request, session)
+    if x_idempotency_key:
+        store.put(x_idempotency_key, payload)
+    return JSONResponse(content=payload, status_code=status.HTTP_207_MULTI_STATUS)

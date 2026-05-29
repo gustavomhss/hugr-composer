@@ -1,0 +1,110 @@
+"""HTTP routes for the CQRS buses.
+
+POST /cqrs/commands — dispatch a named command payload.
+POST /cqrs/queries  — dispatch a named query payload.
+
+These routes are intentionally thin: they deserialise the incoming JSON
+into the appropriate message object and forward it to the bus.  All
+business logic lives in registered handlers.
+
+Warnings:
+    CQRS does NOT separate read/write database models at the ORM level.
+    CommandBus and QueryBus are logical separators; physical model
+    separation requires custom schema migration work outside this tool.
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+
+from app.cqrs.bus import CommandBus, QueryBus
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/cqrs", tags=["cqrs"])
+
+# Module-level bus singletons — handlers are registered at startup.
+command_bus = CommandBus()
+query_bus = QueryBus()
+
+
+class BusRequest(BaseModel):
+    """Generic envelope for bus dispatch requests."""
+
+    name: str
+    payload: dict[str, Any] = {}
+
+
+@router.post(
+    "/commands",
+    status_code=status.HTTP_200_OK,
+    summary="Dispatch a command",
+)
+async def dispatch_command(req: BusRequest) -> dict[str, Any]:
+    """Dispatch a named command to its registered handler.
+
+    Args:
+        req: Command name and payload dict.
+
+    Returns:
+        Handler result wrapped in a ``{"result": ...}`` envelope.
+
+    Raises:
+        HTTPException 404: When no handler is registered for *req.name*.
+    """
+    from app.cqrs.commands import Command
+    try:
+        cmd_cls_map = {
+            sub.__name__: sub
+            for sub in Command.__subclasses__()
+        }
+        cmd_cls = cmd_cls_map.get(req.name)
+        if cmd_cls is None:
+            raise KeyError(req.name)
+        cmd = cmd_cls(**req.payload)
+        result = await command_bus.dispatch(cmd)
+        return {"result": result}
+    except KeyError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"detail": f"No handler registered for command: {req.name!r}"},
+        )
+
+
+@router.post(
+    "/queries",
+    status_code=status.HTTP_200_OK,
+    summary="Dispatch a query",
+)
+async def dispatch_query(req: BusRequest) -> dict[str, Any]:
+    """Dispatch a named query to its registered handler.
+
+    Args:
+        req: Query name and payload dict.
+
+    Returns:
+        Handler result wrapped in a ``{"result": ...}`` envelope.
+
+    Raises:
+        HTTPException 404: When no handler is registered for *req.name*.
+    """
+    from app.cqrs.queries import Query
+    try:
+        qry_cls_map = {
+            sub.__name__: sub
+            for sub in Query.__subclasses__()
+        }
+        qry_cls = qry_cls_map.get(req.name)
+        if qry_cls is None:
+            raise KeyError(req.name)
+        qry = qry_cls(**req.payload)
+        result = await query_bus.query(qry)
+        return {"result": result}
+    except KeyError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"detail": f"No handler registered for query: {req.name!r}"},
+        )

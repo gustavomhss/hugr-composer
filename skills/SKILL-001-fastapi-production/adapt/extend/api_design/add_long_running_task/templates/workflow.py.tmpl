@@ -1,0 +1,23 @@
+"""Wire durable long-running-task primitives into the FastAPI app.
+
+Delegates to the primitives + FastAPI adapter copied under `core/venous/`
+by the `add_long_running_task` tool. Re-emitted idempotently on subsequent runs.
+"""
+
+from __future__ import annotations
+
+from fastapi import FastAPI
+
+from core.venous._adapters.fastapi.WorkflowAdapter import (
+    install,
+    timer_service_dep,
+    workflow_client_dep,
+)
+
+
+def install_long_running_tasks(app: FastAPI) -> None:
+    """Attach a WorkflowClient + TimerService to *app.state*."""
+    install(app)
+
+
+__all__ = ["install_long_running_tasks", "timer_service_dep", "workflow_client_dep"]

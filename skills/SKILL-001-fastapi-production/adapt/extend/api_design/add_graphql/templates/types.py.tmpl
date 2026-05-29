@@ -1,0 +1,18 @@
+"""Strawberry GraphQL types auto-generated from SQLAlchemy models.
+
+Each type mirrors its SQLAlchemy counterpart and delegates relationship
+resolution to dataloaders to prevent N+1 queries.
+"""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from typing import TYPE_CHECKING
+
+import strawberry
+
+if TYPE_CHECKING:
+    from app.graphql.context import GraphQLContext
+
+${type_blocks}

@@ -1,0 +1,72 @@
+"""Emitted tests for add_api_versioning — verify the versioning setup.
+
+These tests run inside the generated project via::
+
+    PYTHONPATH=. pytest tests/test_add_api_versioning_emitted.py -q
+
+Positive case: VersionRegistry holds v1 (deprecated) and v2 (current);
+  extract_version_from_path correctly parses /api/v1/items.
+Negative case: unknown version "v99" is not in registry.supported();
+  non-versioned path returns None from extract_version_from_path.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+
+def test_version_registry_v1_deprecated() -> None:
+    """Positive: v1 is registered as deprecated with a sunset_date."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.core.version_registry import registry
+
+    info = registry.get("v1")
+    assert info is not None, "v1 must be registered"
+    assert info.is_deprecated is True, "v1 must be deprecated"
+    assert info.sunset_date is not None, "v1 must have a sunset_date"
+
+
+def test_version_registry_v2_current() -> None:
+    """Positive: v2 is registered and not deprecated."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.core.version_registry import registry
+
+    info = registry.get("v2")
+    assert info is not None, "v2 must be registered"
+    assert info.is_deprecated is False, "v2 must not be deprecated"
+
+
+def test_extract_version_from_path_v1() -> None:
+    """Positive: /api/v1/items returns 'v1'."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.core.version_registry import extract_version_from_path
+
+    ver = extract_version_from_path("/api/v1/items")
+    assert ver == "v1", f"Expected 'v1', got {ver!r}"
+
+
+def test_extract_version_from_path_v2() -> None:
+    """Positive: /api/v2/users/123 returns 'v2'."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.core.version_registry import extract_version_from_path
+
+    ver = extract_version_from_path("/api/v2/users/123")
+    assert ver == "v2", f"Expected 'v2', got {ver!r}"
+
+
+def test_unknown_version_not_supported() -> None:
+    """Negative: v99 is not in the supported list."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.core.version_registry import registry
+
+    assert "v99" not in registry.supported(), "v99 must not be in supported versions"
+
+
+def test_non_versioned_path_returns_none() -> None:
+    """Negative: /health has no version prefix — extract returns None."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.core.version_registry import extract_version_from_path
+
+    ver = extract_version_from_path("/health")
+    assert ver is None, f"Expected None for non-versioned path, got {ver!r}"
