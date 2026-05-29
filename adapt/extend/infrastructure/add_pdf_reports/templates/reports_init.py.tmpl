@@ -1,0 +1,9 @@
+"""PDF report generation — WeasyPrint + Jinja2 rendering pipeline.
+
+Public API:
+    ReportEngine: Render HTML templates to PDF with lazy WeasyPrint.
+"""
+
+from app.reports.engine import ReportEngine
+
+__all__ = ["ReportEngine"]

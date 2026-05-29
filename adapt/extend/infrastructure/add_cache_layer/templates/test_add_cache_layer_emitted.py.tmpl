@@ -1,0 +1,50 @@
+"""Emitted test for add_cache_layer — verifies the Redis cache layer is wired.
+
+Tests run inside the generated project after ``add_cache_layer`` is applied.
+No real Redis required — all assertions use the in-memory primitives.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+
+def test_cache_package_importable() -> None:
+    """Positive: app/cache package is importable after tool application."""
+    import app.cache  # noqa: F401 — presence assertion
+
+
+def test_cache_backend_importable() -> None:
+    """Positive: CacheBackend class is present in app.cache."""
+    from app.cache.core import CacheBackend  # noqa: F401
+
+
+def test_primitives_importable() -> None:
+    """Positive: in-memory primitive classes are importable from glue."""
+    from app.cache.primitives import (  # noqa: F401
+        InMemoryKeyValueBucket,
+        InMemorySessionCache,
+        InMemoryDistributedLock,
+        get_bucket,
+        get_session_cache,
+        cache_aside,
+    )
+
+
+def test_cache_aside_stores_and_retrieves() -> None:
+    """Positive: cache_aside returns the factory value on first call."""
+    from app.cache.primitives import cache_aside, get_bucket
+
+    key = "test:cache_aside:positive"
+    value = b"hello-cache"
+    result = cache_aside(key, lambda: value)
+    assert result == value
+
+
+def test_cache_miss_returns_none() -> None:
+    """Negative: cache GET on a key that was never set returns None."""
+    from app.cache.primitives import get_bucket
+
+    bucket = get_bucket()
+    entry = bucket.get("nonexistent-key-that-was-never-set")
+    assert entry is None

@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "d64a920",
-  "generated_at": "2026-05-29T20:05:54+00:00",
+  "kit_commit": "f3dbbd0",
+  "generated_at": "2026-05-29T20:07:27+00:00",
   "verbs": [
     "add",
     "generate",
@@ -1395,10 +1395,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_docker_production.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_docker_production.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_docker_production/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -2822,10 +2820,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_cache_layer.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_cache_layer.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_cache_layer/__init__.py",
+      "test_paths": [],
       "primitives_used": [
         "DistributedLock",
         "KeyValueBucket",
@@ -3047,10 +3043,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_email_templates.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_email_templates.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_email_templates/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3069,10 +3063,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_excel_export.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_excel_export.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_excel_export/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3183,10 +3175,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_kubernetes_manifests.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_kubernetes_manifests.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_kubernetes_manifests/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3345,10 +3335,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_pdf_reports.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_pdf_reports.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_pdf_reports/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3501,10 +3489,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_s3_storage.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_s3_storage.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_s3_storage/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3565,10 +3551,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_sqladmin.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_sqladmin.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_sqladmin/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3697,10 +3681,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_transactional_email.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_transactional_email.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_transactional_email/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -12189,5 +12171,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "f18b9124f66818f7ec5daf878f47bf8db9953ca5f5132bde1f21337af30b633e"
+  "stable_hash": "30b6cb6ab8089a2c592ce125e3bb5b8bb926eaa81b6ec768e56ff5adc542fd6d"
 }

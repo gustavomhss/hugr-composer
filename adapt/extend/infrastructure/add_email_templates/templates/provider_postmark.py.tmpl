@@ -1,0 +1,40 @@
+"""Postmark adapter — lazy-imports the ``postmark`` SDK on first send."""
+from __future__ import annotations
+
+import logging
+
+from app.core.config import settings
+from app.schemas.email import EmailMessage, EmailResult
+
+logger = logging.getLogger(__name__)
+
+
+class PostmarkProvider:
+    """Postmark HTTP API adapter.
+
+    Imports the ``postmarker`` package lazily.  The server token is
+    read on every call from settings and NEVER logged.
+    """
+
+    async def send(self, message: EmailMessage) -> EmailResult:
+        """Send *message* via Postmark."""
+        from postmarker.core import PostmarkClient  # local import
+
+        client = PostmarkClient(server_token=settings.POSTMARK_API_KEY)
+        from_header = (
+            f"{message.from_name} <{message.from_}>"
+            if message.from_name
+            else message.from_
+        )
+        response = client.emails.send(
+            From=from_header,
+            To=message.to,
+            Subject=message.subject,
+            HtmlBody=message.html,
+            TextBody=message.text,
+            ReplyTo=message.reply_to or None,
+        )
+        msg_id = (
+            response.get("MessageID") if isinstance(response, dict) else ""
+        ) or ""
+        return EmailResult(id=str(msg_id), provider="postmark")

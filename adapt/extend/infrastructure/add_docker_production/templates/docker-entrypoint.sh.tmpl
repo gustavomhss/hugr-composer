@@ -1,0 +1,33 @@
+#!/bin/sh
+# docker-entrypoint.sh — run DB migrations then start the app
+set -e
+
+DB_HOST="${POSTGRES_SERVER:-db}"
+DB_PORT="${POSTGRES_PORT:-5432}"
+MAX_TRIES=30
+
+echo "Waiting for database at ${DB_HOST}:${DB_PORT}..."
+tries=0
+until python -c "
+import socket, sys
+s = socket.socket()
+try:
+    s.connect(('${DB_HOST}', ${DB_PORT}))
+    s.close()
+except OSError:
+    sys.exit(1)
+" 2>/dev/null; do
+    tries=$((tries + 1))
+    if [ "$tries" -ge "$MAX_TRIES" ]; then
+        echo "Database not ready after ${MAX_TRIES} attempts. Aborting." >&2
+        exit 1
+    fi
+    echo "  attempt ${tries}/${MAX_TRIES} — retrying in 2s..."
+    sleep 2
+done
+
+echo "Database is ready. Running alembic upgrade head..."
+alembic upgrade head
+
+echo "Starting application..."
+exec "$@"

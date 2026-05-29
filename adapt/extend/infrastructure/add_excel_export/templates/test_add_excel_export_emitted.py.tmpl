@@ -1,0 +1,60 @@
+"""Emitted test for add_excel_export — verifies the Excel export layer is wired."""
+
+from __future__ import annotations
+
+import io
+
+import pytest
+
+
+def test_excel_exporter_importable() -> None:
+    """Positive: ExcelExporter is importable from app.exports."""
+    from app.exports.excel import ExcelExporter  # noqa: F401
+
+
+def test_create_workbook_returns_workbook() -> None:
+    """Positive: create_workbook returns a usable openpyxl Workbook."""
+    pytest.importorskip("openpyxl", reason="openpyxl not installed")
+    from app.exports.excel import ExcelExporter
+
+    exporter = ExcelExporter()
+    wb = exporter.create_workbook()
+    assert wb is not None
+
+
+def test_add_sheet_creates_sheet() -> None:
+    """Positive: add_sheet creates a worksheet with the given title."""
+    pytest.importorskip("openpyxl", reason="openpyxl not installed")
+    from app.exports.excel import ExcelExporter
+
+    exporter = ExcelExporter()
+    wb = exporter.create_workbook()
+    ws = exporter.add_sheet(wb, title="Test", headers=["id", "name"])
+    assert ws.title == "Test"
+
+
+def test_to_bytes_returns_bytes() -> None:
+    """Positive: to_bytes serialises a workbook to non-empty bytes."""
+    pytest.importorskip("openpyxl", reason="openpyxl not installed")
+    from app.exports.excel import ExcelExporter
+
+    exporter = ExcelExporter()
+    wb = exporter.create_workbook()
+    exporter.add_sheet(wb, title="Sheet1", headers=["col"])
+    data = exporter.to_bytes(wb)
+    assert isinstance(data, bytes)
+    assert len(data) > 0
+
+
+def test_stream_rows_exceeds_max_raises() -> None:
+    """Negative: stream_rows raises ValueError when max_rows is exceeded."""
+    pytest.importorskip("openpyxl", reason="openpyxl not installed")
+    from app.exports.excel import ExcelExporter
+
+    exporter = ExcelExporter(max_rows=2)
+    wb = exporter.create_workbook()
+    ws = exporter.add_sheet(wb, title="S", headers=["x"])
+    rows = [["a"], ["b"], ["c"]]
+    with pytest.raises(ValueError, match="EXCEL_MAX_ROWS"):
+        for _ in exporter.stream_rows(ws, iter(rows)):
+            pass

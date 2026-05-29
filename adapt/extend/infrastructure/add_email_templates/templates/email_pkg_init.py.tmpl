@@ -1,0 +1,21 @@
+"""Transactional email layer — Jinja2 templates + pluggable providers.
+
+Public API:
+    TemplateName:   Enum of built-in template identifiers.
+    render_email:   Render a template to (subject, html, text).
+    send_email:     Synchronous send via the configured provider.
+    enqueue_email:  Fire-and-forget send (arq if available, else
+                    FastAPI BackgroundTasks).
+"""
+from __future__ import annotations
+
+from app.email.registry import TemplateName
+from app.email.render import render_email
+from app.email.service import enqueue_email, send_email
+
+__all__ = [
+    "TemplateName",
+    "render_email",
+    "send_email",
+    "enqueue_email",
+]

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Receipt {{ receipt_number | default('REC-0001') }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; color: #333; max-width: 400px; }
+    h1 { color: #27ae60; text-align: center; }
+    .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; }
+    .total { font-weight: bold; font-size: 1.2em; color: #27ae60; }
+    .footer { text-align: center; margin-top: 20px; font-size: 0.85em; color: #888; }
+  </style>
+</head>
+<body>
+  <h1>Receipt</h1>
+  <div class="row"><span>Receipt #</span><span>{{ receipt_number | default('REC-0001') }}</span></div>
+  <div class="row"><span>Date</span><span>{{ date | default('') }}</span></div>
+  <div class="row"><span>Customer</span><span>{{ customer_name | default('') }}</span></div>
+  {% for item in items | default([]) %}
+  <div class="row"><span>{{ item.name }}</span><span>{{ item.amount }}</span></div>
+  {% endfor %}
+  <div class="row total"><span>Total Paid</span><span>{{ total | default('0.00') }}</span></div>
+  <div class="footer">Thank you for your business!</div>
+</body>
+</html>

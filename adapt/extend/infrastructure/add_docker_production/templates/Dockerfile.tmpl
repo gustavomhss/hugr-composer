@@ -1,0 +1,38 @@
+# syntax=docker/dockerfile:1.7
+# Stage 1 — builder: install dependencies into /venv
+FROM python:3.12-slim AS builder
+WORKDIR /build
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY requirements.txt .
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m venv /venv && \
+    /venv/bin/pip install --upgrade pip && \
+    /venv/bin/pip install -r requirements.txt
+
+# Stage 2 — runtime: lean image, non-root user
+FROM python:3.12-slim AS runtime
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libpq5 \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd -g 1000 appgroup \
+    && useradd -u 1000 -g appgroup -m -s /bin/sh appuser
+COPY --from=builder /venv /venv
+ENV PATH="/venv/bin:$PATH" \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+WORKDIR /app
+COPY . .
+RUN chown -R appuser:appgroup /app
+USER 1000
+EXPOSE ${DOCKER_PORT:-8000}
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${DOCKER_PORT:-8000}${DOCKER_HEALTH_PATH:-/healthz}')"
+ENTRYPOINT ["scripts/docker-entrypoint.sh"]
+CMD ["gunicorn", "app.main:app", \
+     "--worker-class", "uvicorn.workers.UvicornWorker", \
+     "--workers", "${DOCKER_WORKERS:-2}", \
+     "--bind", "0.0.0.0:${DOCKER_PORT:-8000}", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-"]

@@ -1,0 +1,106 @@
+"""HTTP routes for PDF report generation and download."""
+
+from __future__ import annotations
+
+import logging
+import uuid
+from pathlib import Path
+
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
+
+from app.schemas.report import ReportRequest, ReportResponse
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/reports", tags=["reports"])
+
+
+def _get_engine():
+    """Lazy factory for the ReportEngine using current settings.
+
+    Returns:
+        Configured ReportEngine instance.
+    """
+    from app.core.config import settings
+    from app.reports.engine import ReportEngine
+
+    return ReportEngine(
+        template_dir=settings.REPORT_TEMPLATE_DIR,
+        max_pages=settings.REPORT_MAX_PAGES,
+    )
+
+
+@router.post("/generate", response_model=ReportResponse, status_code=201)
+async def generate_report(body: ReportRequest) -> ReportResponse:
+    """Generate a PDF from a named template and context data.
+
+    Args:
+        body: Template name, context, and optional filename.
+
+    Returns:
+        ReportResponse with report_id and download_url.
+
+    Raises:
+        HTTPException 404: When the template is not found.
+        HTTPException 500: When PDF generation fails.
+    """
+    from app.core.config import settings
+
+    engine = _get_engine()
+    report_id = str(uuid.uuid4())
+    filename = f"{body.output_filename or body.template_name}_{report_id}.pdf"
+    output_dir = Path(settings.REPORT_OUTPUT_DIR)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / filename
+
+    try:
+        pdf_bytes = await engine.generate_pdf_async(
+            f"{body.template_name}.html", body.context
+        )
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Template '{body.template_name}' not found.",
+        )
+    except Exception as exc:
+        logger.error("PDF generation failed: %s", exc)
+        raise HTTPException(status_code=500, detail={"detail": "PDF generation failed."})
+
+    output_path.write_bytes(pdf_bytes)
+    logger.info("Report generated: %s (%d bytes)", report_id, len(pdf_bytes))
+
+    return ReportResponse(
+        report_id=report_id,
+        download_url=f"/api/v1/reports/{report_id}/download",
+        template_name=body.template_name,
+        size_bytes=len(pdf_bytes),
+    )
+
+
+@router.get("/{report_id}/download")
+async def download_report(report_id: str) -> FileResponse:
+    """Download a previously generated PDF report by ID.
+
+    Args:
+        report_id: UUID of the generated report.
+
+    Returns:
+        FileResponse with the PDF content.
+
+    Raises:
+        HTTPException 404: When no matching report file is found.
+    """
+    from app.core.config import settings
+
+    output_dir = Path(settings.REPORT_OUTPUT_DIR)
+    matches = list(output_dir.glob(f"*_{report_id}.pdf"))
+    if not matches:
+        raise HTTPException(status_code=404, detail={"detail": "Report not found."})
+
+    pdf_path = matches[0]
+    return FileResponse(
+        path=str(pdf_path),
+        media_type="application/pdf",
+        filename=pdf_path.name,
+    )

@@ -1,0 +1,89 @@
+"""Cache key generation: ``cache:{tenant}:resource:{id}`` pattern."""
+
+from __future__ import annotations
+
+import logging
+from contextvars import ContextVar
+from typing import Callable
+
+logger = logging.getLogger(__name__)
+
+_tenant_var: ContextVar[str | None] = ContextVar("cache_tenant", default=None)
+
+
+def set_tenant(tenant_id: str | None) -> None:
+    """Set current tenant for key namespacing (request-scoped via ContextVar).
+
+    Uses a ``ContextVar`` so concurrent requests never share tenant state.
+
+    Args:
+        tenant_id: Tenant identifier, or None for global namespace.
+    """
+    _tenant_var.set(tenant_id)
+
+
+def get_tenant() -> str:
+    """Return current tenant string (falls back to 'global')."""
+    return _tenant_var.get() or "global"
+
+
+def build_key(
+    func: Callable,
+    key_pattern: str | None,
+    vary_on: list[str] | None,
+    kwargs: dict,
+) -> str:
+    """Build a namespaced cache key.
+
+    Pattern: ``cache:{tenant}:{func_module}.{func_name}[:{formatted_pattern}]``
+
+    Args:
+        func: The decorated function (used for module + name).
+        key_pattern: Optional format string (e.g. ``"items:{item_id}"``).
+        vary_on: List of kwarg names to append to the key.
+        kwargs: The function's keyword arguments at call time.
+
+    Returns:
+        String cache key.
+    """
+    tenant = get_tenant()
+    base = f"cache:{tenant}:{func.__module__}.{func.__name__}"
+
+    if key_pattern:
+        try:
+            return f"{base}:{key_pattern.format(**kwargs)}"
+        except KeyError:
+            logger.warning("Cache key pattern formatting failed: %s", key_pattern)
+
+    if vary_on:
+        parts = [f"{k}:{kwargs.get(k)}" for k in vary_on if k in kwargs]
+        return f"{base}:{'|'.join(parts)}"
+
+    return base
+
+
+def resource_key(tenant: str, resource: str, resource_id: str) -> str:
+    """Build canonical resource key ``cache:{tenant}:resource:{id}``.
+
+    Args:
+        tenant: Tenant identifier.
+        resource: Resource type name (e.g. ``"items"``).
+        resource_id: Resource primary key.
+
+    Returns:
+        Fully qualified cache key string.
+    """
+    return f"cache:{tenant}:{resource}:{resource_id}"
+
+
+def resource_pattern(tenant: str, resource: str) -> str:
+    """Build glob pattern for all keys of a resource type.
+
+    Args:
+        tenant: Tenant identifier.
+        resource: Resource type name.
+
+    Returns:
+        Redis glob pattern, e.g. ``cache:tenant1:items:*``.
+    """
+    return f"cache:{tenant}:{resource}:*"

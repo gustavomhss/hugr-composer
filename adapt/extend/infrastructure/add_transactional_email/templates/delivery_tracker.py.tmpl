@@ -1,0 +1,100 @@
+"""DeliveryTracker -- record and query email delivery events.
+
+All writes go through ``track()``.  The recipient address is NEVER stored
+in full -- only the redacted form (``u***@example.com``) is persisted so
+a database dump cannot leak PII.
+"""
+
+from __future__ import annotations
+
+import logging
+import re
+import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
+
+_EMAIL_RE = re.compile(r"^([^@]{1})([^@]*)(@.+)$$")
+
+
+def _redact_email(address: str) -> str:
+    """Return a redacted version of *address* (``u***@example.com``).
+
+    Args:
+        address: Full email address to redact.
+
+    Returns:
+        Redacted string safe to log and store.
+    """
+    m = _EMAIL_RE.match(address)
+    if m:
+        return m.group(1) + "***" + m.group(3)
+    return "***@***"
+
+
+class DeliveryTracker:
+    """Async helper for recording and querying email delivery events."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        """Initialise with an active async database session."""
+        self._session = session
+
+    async def track(
+        self,
+        *,
+        message_id: str,
+        event_type: str,
+        recipient: str,
+        provider: str,
+    ) -> None:
+        """Record a delivery event for *message_id*.
+
+        Args:
+            message_id: Provider-assigned message identifier.
+            event_type: One of sent / delivered / bounced / complained.
+            recipient: Full recipient address (redacted before storing).
+            provider: Provider name (resend / postmark / sendgrid).
+        """
+        from app.models.email_event import EmailEvent
+        event = EmailEvent(
+            id=uuid.uuid4(),
+            message_id=message_id,
+            event_type=event_type,
+            recipient_redacted=_redact_email(recipient),
+            provider=provider,
+            occurred_at=datetime.now(timezone.utc),
+        )
+        self._session.add(event)
+        await self._session.commit()
+        logger.info(
+            "email.delivery provider=%s event=%s msg_id=%s",
+            provider, event_type, message_id,
+        )
+
+    async def list_events(
+        self,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list:
+        """Return the most recent email events, newest first.
+
+        Args:
+            limit: Maximum rows to return.
+            offset: Rows to skip for pagination.
+
+        Returns:
+            List of ``EmailEvent`` ORM instances.
+        """
+        from app.models.email_event import EmailEvent
+        stmt = (
+            select(EmailEvent)
+            .order_by(EmailEvent.occurred_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())

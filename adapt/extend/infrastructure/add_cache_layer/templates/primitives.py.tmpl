@@ -1,0 +1,65 @@
+"""Thin glue that wires the cache primitives into a FastAPI app.
+
+Delegates to the primitives copied under `core/venous/cache/` by the
+`add_cache_layer` tool. Re-emitted idempotently on subsequent runs. This
+file contains NO caching semantics — revision-tracked KV (KeyValueBucket),
+session-scoped read-through (SessionCache), and lease-based mutex
+(DistributedLock) all live in the primitives.
+"""
+
+from __future__ import annotations
+
+import os
+import uuid
+from typing import Any, Callable
+
+from core.venous.cache.KeyValueBucket.KeyValueBucket import InMemoryKeyValueBucket
+from core.venous.cache.SessionCache.SessionCache import InMemorySessionCache
+from core.venous.cache.DistributedLock.DistributedLock import InMemoryDistributedLock
+
+_bucket: InMemoryKeyValueBucket | None = None
+_lock: InMemoryDistributedLock | None = None
+_session: InMemorySessionCache | None = None
+
+
+def get_bucket() -> InMemoryKeyValueBucket:
+    """Return the process-global KeyValueBucket (lazy init from env)."""
+    global _bucket
+    if _bucket is None: _bucket = InMemoryKeyValueBucket()
+    return _bucket
+
+
+def get_lock() -> InMemoryDistributedLock:
+    """Return the process-global DistributedLock (lazy init)."""
+    global _lock
+    if _lock is None: _lock = InMemoryDistributedLock()
+    return _lock
+
+
+def get_session_cache() -> InMemorySessionCache:
+    """Return the process-global SessionCache (lazy init)."""
+    global _session
+    if _session is None: _session = InMemorySessionCache()
+    return _session
+
+
+def cache_aside(key: str, factory: Callable[[], bytes], ttl: int | None = None) -> bytes:
+    """Cache-aside read with DistributedLock stampede prevention."""
+    bucket, lock = get_bucket(), get_lock()
+    entry = bucket.get(key)
+    if entry is not None: return entry.value
+    handle = lock.try_lock(key, uuid.uuid4().hex, int(ttl or int(os.getenv("CACHE_LOCK_LEASE_S", "5"))))
+    if handle is None: return (bucket.get(key).value if bucket.get(key) else factory())
+    try: value = factory(); bucket.create(key, value); return value
+    finally: lock.unlock(handle)
+
+
+__all__ = [
+    "InMemoryKeyValueBucket",
+    "InMemorySessionCache",
+    "InMemoryDistributedLock",
+    "get_bucket",
+    "get_lock",
+    "get_session_cache",
+    "cache_aside",
+]

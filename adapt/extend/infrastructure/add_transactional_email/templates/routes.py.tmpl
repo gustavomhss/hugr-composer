@@ -1,0 +1,123 @@
+"""HTTP routes for email delivery events.
+
+POST /email/webhook/{provider} -- receive delivery events from providers.
+GET  /email/events             -- list recent delivery events (admin).
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+from fastapi import APIRouter, Depends, Request, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.schemas.email_event import EmailEventList, EmailEventRead
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/email", tags=["email"])
+
+
+async def _get_session() -> Any:
+    """Database session dependency -- resolved at runtime from app.core.session.
+
+    Yields:
+        An active ``AsyncSession``.
+    """
+    from app.core.session import get_session
+    async for session in get_session():
+        yield session
+
+
+@router.post(
+    "/webhook/{provider}",
+    status_code=status.HTTP_200_OK,
+    summary="Receive email delivery webhook",
+)
+async def email_webhook(
+    provider: str,
+    request: Request,
+    session: AsyncSession = Depends(_get_session),
+) -> dict[str, str]:
+    """Ingest a delivery event webhook from an email provider.
+
+    Parses the provider-specific payload and records the event via
+    ``DeliveryTracker``.  Unknown event types are logged and ignored.
+
+    Args:
+        provider: Provider name from the URL path (resend/postmark/sendgrid).
+        request: The raw HTTP request (body read for payload).
+        session: Active async database session.
+
+    Returns:
+        ``{"status": "ok"}`` on success.
+    """
+    from app.email.delivery_tracker import DeliveryTracker
+    payload: dict = await request.json()
+    tracker = DeliveryTracker(session)
+    event_type, message_id, recipient = _parse_webhook(provider, payload)
+    if event_type:
+        await tracker.track(
+            message_id=message_id,
+            event_type=event_type,
+            recipient=recipient,
+            provider=provider,
+        )
+    return {"status": "ok"}
+
+
+def _parse_webhook(provider: str, payload: dict) -> tuple[str, str, str]:
+    """Extract (event_type, message_id, recipient) from a provider webhook payload.
+
+    Args:
+        provider: Provider name (resend / postmark / sendgrid).
+        payload: Raw webhook JSON dict.
+
+    Returns:
+        Tuple of (event_type, message_id, recipient). All fields default
+        to empty string when the provider or event type is unknown.
+    """
+    if provider == "resend":
+        event_type = payload.get("type", "")
+        data = payload.get("data", {})
+        to = data.get("to", [""])
+        return event_type, data.get("email_id", ""), to[0] if isinstance(to, list) else ""
+    if provider == "postmark":
+        event_type = payload.get("RecordType", "").lower()
+        return event_type, payload.get("MessageID", ""), payload.get("Recipient", "")
+    if provider == "sendgrid":
+        events = payload if isinstance(payload, list) else [payload]
+        first = events[0] if events else {}
+        event_type = first.get("event", "")
+        return event_type, first.get("sg_message_id", ""), first.get("email", "")
+    logger.warning("email_webhook: unknown provider %r", provider)
+    return "", "", ""
+
+
+@router.get(
+    "/events",
+    response_model=EmailEventList,
+    summary="List recent email delivery events",
+)
+async def list_email_events(
+    limit: int = 50,
+    offset: int = 0,
+    session: AsyncSession = Depends(_get_session),
+) -> EmailEventList:
+    """Return the most recent email delivery events.
+
+    Args:
+        limit: Maximum number of events to return.
+        offset: Number of events to skip for pagination.
+        session: Active async database session.
+
+    Returns:
+        Paginated ``EmailEventList``.
+    """
+    from app.email.delivery_tracker import DeliveryTracker
+    tracker = DeliveryTracker(session)
+    events = await tracker.list_events(limit=limit, offset=offset)
+    return EmailEventList(
+        items=[EmailEventRead.model_validate(e) for e in events],
+        total=len(events),
+    )

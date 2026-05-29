@@ -1,0 +1,70 @@
+"""Pydantic schemas + internal dataclasses for the email layer.
+
+``EmailMessage`` and ``EmailResult`` are plain dataclasses — they
+live on the hot path between renderer and provider and never cross
+the HTTP boundary, so pydantic validation would be pure overhead.
+``EmailDeliveryPublic`` is a pydantic model that the
+``GET /email/deliveries/me`` endpoint uses to return a PII-safe
+view of an audit row (the recipient is already redacted in the DB,
+but the schema explicitly drops the ``provider_message_id`` field
+from the public view for good measure).
+"""
+from __future__ import annotations
+
+import uuid
+from dataclasses import dataclass
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+@dataclass(frozen=True)
+class EmailMessage:
+    """Internal provider payload."""
+
+    to: str
+    from_: str
+    from_name: str
+    subject: str
+    html: str
+    text: str
+    reply_to: str | None = None
+
+
+@dataclass(frozen=True)
+class EmailResult:
+    """Provider response — message id + provider name."""
+
+    id: str
+    provider: str
+
+
+class EmailDeliveryPublic(BaseModel):
+    """PII-safe public view of an email delivery audit row."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    to_email_redacted: str
+    template_name: str
+    locale: str
+    provider: str
+    status: str
+    error: str | None = None
+    created_at: datetime
+    sent_at: datetime | None = None
+
+
+class EmailDeliveryListResponse(BaseModel):
+    """Envelope for GET /email/deliveries/me."""
+
+    data: list[EmailDeliveryPublic]
+    count: int
+
+
+class EmailPreviewRequest(BaseModel):
+    """Optional body for POST /email/preview."""
+
+    template: str
+    context: dict = Field(default_factory=dict)
+    locale: str = "en"

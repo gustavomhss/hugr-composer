@@ -1,0 +1,77 @@
+"""Template registry — maps logical names to required context keys.
+
+The registry is the single source of truth for what context a
+template needs.  ``render_email`` validates the caller's context
+against this map and raises ``MissingContextError`` on mismatch so
+template bugs surface at the call site, not deep inside Jinja2.
+"""
+from __future__ import annotations
+
+from enum import Enum
+
+
+class TemplateName(str, Enum):
+    """Built-in transactional template identifiers.
+
+    Values are the on-disk filename stems (without extension).
+    The renderer expects three sibling files per template under
+    ``app/email/templates/{locale}/``:
+
+        * ``{name}.subject.txt`` — plaintext subject line
+        * ``{name}.html``       — HTML body (inline CSS)
+        * ``{name}.txt``        — plaintext body
+    """
+
+    WELCOME = "welcome"
+    PASSWORD_RESET = "password_reset"
+    EMAIL_VERIFICATION = "email_verification"
+    RECEIPT = "receipt"
+
+
+# Required context keys for each template.  Missing keys raise
+# MissingContextError before Jinja2 gets a chance to emit a
+# silent-empty-string.
+TEMPLATE_REQUIRED_CONTEXT: dict[TemplateName, tuple[str, ...]] = {
+    TemplateName.WELCOME: ("user_name", "activation_url"),
+    TemplateName.PASSWORD_RESET: ("user_name", "reset_url", "expires_in_hours"),
+    TemplateName.EMAIL_VERIFICATION: ("user_name", "verification_url"),
+    TemplateName.RECEIPT: (
+        "user_name",
+        "amount_formatted",
+        "item_name",
+        "receipt_url",
+    ),
+}
+
+
+# Example context used by the dev preview endpoint so designers can
+# iterate on templates without constructing a payload by hand.
+TEMPLATE_EXAMPLE_CONTEXT: dict[TemplateName, dict[str, str]] = {
+    TemplateName.WELCOME: {
+        "app_name": "Your App",
+        "user_name": "Alice",
+        "activation_url": "https://example.com/activate?token=demo",
+    },
+    TemplateName.PASSWORD_RESET: {
+        "app_name": "Your App",
+        "user_name": "Alice",
+        "reset_url": "https://example.com/reset?token=demo",
+        "expires_in_hours": "2",
+    },
+    TemplateName.EMAIL_VERIFICATION: {
+        "app_name": "Your App",
+        "user_name": "Alice",
+        "verification_url": "https://example.com/verify?token=demo",
+    },
+    TemplateName.RECEIPT: {
+        "app_name": "Your App",
+        "user_name": "Alice",
+        "amount_formatted": "$$49.00",
+        "item_name": "Pro Plan (monthly)",
+        "receipt_url": "https://example.com/receipts/demo",
+    },
+}
+
+
+class MissingContextError(ValueError):
+    """Raised when a template is rendered with missing required keys."""

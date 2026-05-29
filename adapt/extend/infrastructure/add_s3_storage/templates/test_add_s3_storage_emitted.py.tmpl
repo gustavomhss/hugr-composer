@@ -1,0 +1,74 @@
+"""Emitted test for add_s3_storage — verifies S3 storage layer is wired.
+
+Uses mocked boto3 clients — no real AWS connection required.
+
+Security note:
+    Server-side encryption (SSE) is NOT enforced by this tool; it only sets a
+    content-type hint in presigned PUT URLs. Configure bucket-level SSE policies
+    in your AWS console or IaC separately.
+"""
+
+from __future__ import annotations
+
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+
+def test_storage_package_importable() -> None:
+    """Positive: app/storage package is importable after tool application."""
+    import app.storage  # noqa: F401
+
+
+def test_s3_client_importable() -> None:
+    """Positive: S3Client class is importable from app.storage."""
+    from app.storage.client import S3Client  # noqa: F401
+
+
+def test_generate_key_no_path_traversal() -> None:
+    """Positive: generate_key sanitises filenames with '..' path segments."""
+    with patch("app.storage.client.settings") as mock_settings:
+        mock_settings.S3_KEY_PREFIX = "uploads"
+        mock_settings.S3_REGION = "us-east-1"
+        mock_settings.S3_ACCESS_KEY_ID = ""
+        mock_settings.S3_SECRET_ACCESS_KEY = ""
+        mock_settings.S3_ENDPOINT_URL = ""
+        with patch("boto3.client", return_value=MagicMock()):
+            from app.storage.client import S3Client
+            client = S3Client()
+            key = client.generate_key("../../etc/passwd")
+            assert ".." not in key, "generate_key must sanitise path traversal"
+            assert "uploads/" in key, "key must start with prefix"
+
+
+def test_presigned_upload_url_called() -> None:
+    """Positive: presigned_upload_url returns a URL string."""
+    with patch("app.storage.client.settings") as mock_settings:
+        mock_settings.S3_KEY_PREFIX = "uploads"
+        mock_settings.S3_REGION = "us-east-1"
+        mock_settings.S3_ACCESS_KEY_ID = ""
+        mock_settings.S3_SECRET_ACCESS_KEY = ""
+        mock_settings.S3_ENDPOINT_URL = ""
+        mock_settings.S3_BUCKET_NAME = "test-bucket"
+        mock_settings.S3_PRESIGNED_URL_EXPIRATION = 3600
+        mock_boto_client = MagicMock()
+        mock_boto_client.generate_presigned_url.return_value = "https://s3.example.com/test"
+        with patch("boto3.client", return_value=mock_boto_client):
+            from app.storage.client import S3Client
+            client = S3Client()
+            url = client.presigned_upload_url("uploads/uuid/file.png", "image/png")
+            assert url.startswith("https://"), "presigned URL must be an https URL"
+
+
+def test_disallowed_content_type_raises_415() -> None:
+    """Negative: uploading a disallowed content type raises HTTP 415."""
+    from fastapi.testclient import TestClient
+    from fastapi import FastAPI
+    from app.api.routes.storage import router, _validate_content_type
+    from fastapi import HTTPException
+
+    with patch("app.api.routes.storage.settings") as mock_settings:
+        mock_settings.S3_ALLOWED_CONTENT_TYPES = ["image/png"]
+        with pytest.raises(HTTPException) as exc_info:
+            _validate_content_type("application/exe")
+        assert exc_info.value.status_code == 415

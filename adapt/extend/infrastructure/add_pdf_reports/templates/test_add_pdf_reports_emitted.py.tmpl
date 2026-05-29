@@ -1,0 +1,50 @@
+"""Emitted test for add_pdf_reports — verifies the PDF report layer is wired."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+
+def test_report_engine_importable() -> None:
+    """Positive: ReportEngine is importable from app.reports."""
+    from app.reports.engine import ReportEngine  # noqa: F401
+
+
+def test_render_template_returns_html(tmp_path: Path) -> None:
+    """Positive: render_template returns HTML containing context values."""
+    pytest.importorskip("jinja2", reason="jinja2 not installed")
+    from app.reports.engine import ReportEngine
+
+    tpl_dir = tmp_path / "templates"
+    tpl_dir.mkdir()
+    (tpl_dir / "test.html").write_text("<p>{{ name }}</p>")
+
+    engine = ReportEngine(template_dir=str(tpl_dir))
+    html = engine.render_template("test.html", {"name": "Alice"})
+    assert "Alice" in html
+
+
+def test_render_template_autoescapes_html(tmp_path: Path) -> None:
+    """Positive: render_template escapes user-supplied HTML in context."""
+    pytest.importorskip("jinja2", reason="jinja2 not installed")
+    from app.reports.engine import ReportEngine
+
+    tpl_dir = tmp_path / "templates"
+    tpl_dir.mkdir()
+    (tpl_dir / "test.html").write_text("<p>{{ value }}</p>")
+
+    engine = ReportEngine(template_dir=str(tpl_dir))
+    html = engine.render_template("test.html", {"value": "<script>alert(1)</script>"})
+    assert "<script>" not in html
+
+
+def test_render_template_missing_raises(tmp_path: Path) -> None:
+    """Negative: render_template raises when the template file does not exist."""
+    pytest.importorskip("jinja2", reason="jinja2 not installed")
+    from app.reports.engine import ReportEngine
+
+    engine = ReportEngine(template_dir=str(tmp_path))
+    with pytest.raises(Exception):
+        engine.render_template("nonexistent.html", {})

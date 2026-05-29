@@ -1,0 +1,51 @@
+"""StorageConfig dataclass — typed view over S3-related settings fields.
+
+Using a dedicated dataclass separates the S3 surface from the wider
+``Settings`` object, making the storage layer independently testable.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+from app.core.config import settings
+
+
+@dataclass(frozen=True)
+class StorageConfig:
+    """Typed snapshot of S3/MinIO settings for a single request context.
+
+    Attributes:
+        bucket_name: S3 bucket name.
+        region: AWS region (or MinIO region label).
+        endpoint_url: Optional custom endpoint for MinIO / compatible stores.
+        presigned_url_expiration: Seconds before a presigned URL expires.
+        max_upload_size_bytes: Maximum allowed upload size in bytes.
+        allowed_content_types: Whitelist of accepted MIME types.
+        key_prefix: Default path prefix for generated object keys.
+    """
+
+    bucket_name: str
+    region: str
+    endpoint_url: str
+    presigned_url_expiration: int
+    max_upload_size_bytes: int
+    allowed_content_types: list[str]
+    key_prefix: str
+
+    @classmethod
+    def from_settings(cls) -> "StorageConfig":
+        """Build a ``StorageConfig`` from the global settings object.
+
+        Returns:
+            A frozen ``StorageConfig`` instance populated from
+            ``app.core.config.settings``.
+        """
+        return cls(
+            bucket_name=settings.S3_BUCKET_NAME,
+            region=settings.S3_REGION,
+            endpoint_url=settings.S3_ENDPOINT_URL,
+            presigned_url_expiration=settings.S3_PRESIGNED_URL_EXPIRATION,
+            max_upload_size_bytes=settings.S3_MAX_UPLOAD_SIZE_BYTES,
+            allowed_content_types=list(settings.S3_ALLOWED_CONTENT_TYPES),
+            key_prefix=settings.S3_KEY_PREFIX,
+        )

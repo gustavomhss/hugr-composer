@@ -1,0 +1,125 @@
+"""Jinja2-powered email renderer with locale fallback.
+
+Responsibilities:
+    * Load templates from ``app/email/templates/{locale}/``.
+    * Fall back ``{locale} -> "en" -> first available`` so a Portuguese
+      request never 500s just because a translation is missing.
+    * Validate context keys against the registry and raise a
+      ``MissingContextError`` pointing at the exact missing key.
+    * Render ``(subject, html, text)`` as a dataclass.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound, select_autoescape
+
+from app.email.registry import (
+    TEMPLATE_REQUIRED_CONTEXT,
+    MissingContextError,
+    TemplateName,
+)
+
+
+TEMPLATES_ROOT = Path(__file__).resolve().parent / "templates"
+
+
+@dataclass(frozen=True)
+class RenderedEmail:
+    """A fully-rendered email message ready for a provider adapter."""
+
+    subject: str
+    html: str
+    text: str
+
+
+def _build_env(locale: str) -> Environment:
+    """Build a Jinja2 environment rooted at a specific locale directory.
+
+    Args:
+        locale: Locale subdirectory name (e.g. ``"en"``).
+
+    Returns:
+        A Jinja2 ``Environment`` with autoescape enabled for HTML.
+    """
+    loader = FileSystemLoader(str(TEMPLATES_ROOT / locale))
+    return Environment(
+        loader=loader,
+        autoescape=select_autoescape(["html"]),
+        keep_trailing_newline=True,
+    )
+
+
+def _resolve_locale(name: TemplateName, requested: str) -> str:
+    """Return a locale that has the given template, with fallback chain.
+
+    Order: requested -> ``"en"`` -> first available directory that
+    has ``{name}.html``.
+
+    Args:
+        name: Template identifier.
+        requested: Caller-requested locale.
+
+    Returns:
+        A locale name that is guaranteed to contain ``{name}.html``.
+
+    Raises:
+        TemplateNotFound: If no locale has the template.
+    """
+    for candidate in (requested, "en"):
+        if (TEMPLATES_ROOT / candidate / f"{name.value}.html").exists():
+            return candidate
+    if TEMPLATES_ROOT.exists():
+        for entry in sorted(TEMPLATES_ROOT.iterdir()):
+            if entry.is_dir() and (entry / f"{name.value}.html").exists():
+                return entry.name
+    raise TemplateNotFound(f"{name.value}.html")
+
+
+def _validate_context(name: TemplateName, context: dict[str, Any]) -> None:
+    """Ensure all required context keys are present.
+
+    Args:
+        name: Template identifier.
+        context: Caller-supplied context dict.
+
+    Raises:
+        MissingContextError: If any required key is missing.
+    """
+    required = TEMPLATE_REQUIRED_CONTEXT.get(name, ())
+    missing = [k for k in required if k not in context]
+    if missing:
+        raise MissingContextError(
+            f"template {name.value!r} missing required context keys: "
+            + ", ".join(missing)
+        )
+
+
+def render_email(
+    name: TemplateName,
+    context: dict[str, Any],
+    locale: str = "en",
+) -> RenderedEmail:
+    """Render a template triple into a ``RenderedEmail``.
+
+    Args:
+        name: Template identifier.
+        context: Values to inject into the Jinja2 templates.
+        locale: Preferred locale; falls back to ``"en"`` automatically.
+
+    Returns:
+        A ``RenderedEmail`` with non-empty ``subject``, ``html``, and ``text``.
+
+    Raises:
+        MissingContextError: If required context keys are missing.
+        TemplateNotFound: If no locale has the template.
+    """
+    _validate_context(name, context)
+    resolved = _resolve_locale(name, locale)
+    env = _build_env(resolved)
+    subject = env.get_template(f"{name.value}.subject.txt").render(**context).strip()
+    html = env.get_template(f"{name.value}.html").render(**context)
+    text = env.get_template(f"{name.value}.txt").render(**context)
+    return RenderedEmail(subject=subject, html=html, text=text)

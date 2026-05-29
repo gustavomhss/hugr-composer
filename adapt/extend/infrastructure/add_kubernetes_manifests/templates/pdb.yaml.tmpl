@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: APP_NAME
+  namespace: ${K8S_NAMESPACE:-production}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: APP_NAME

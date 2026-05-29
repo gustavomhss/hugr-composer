@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ title | default('Summary Report') }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
+    h1 { color: #2c3e50; }
+    .section { margin-top: 20px; padding: 15px; background: #f9f9f9; border-left: 4px solid #3498db; }
+    .metric { display: flex; justify-content: space-between; padding: 5px 0; }
+  </style>
+</head>
+<body>
+  <h1>{{ title | default('Summary Report') }}</h1>
+  <p>{{ description | default('') }}</p>
+  <div class="section">
+    {% for key, value in metrics.items() if metrics is defined %}
+    <div class="metric">
+      <span>{{ key }}</span>
+      <strong>{{ value }}</strong>
+    </div>
+    {% endfor %}
+  </div>
+  <p><em>Generated: {{ generated_at | default('') }}</em></p>
+</body>
+</html>

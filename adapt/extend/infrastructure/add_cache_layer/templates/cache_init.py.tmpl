@@ -1,0 +1,17 @@
+"""Redis cache layer — public API."""
+
+from app.cache.core import CacheBackend, get_cache, init_cache, close_cache
+from app.cache.decorator import cached
+from app.cache.invalidation import invalidate_resource, invalidate_pattern
+from app.cache.keys import build_key
+
+__all__ = [
+    "CacheBackend",
+    "get_cache",
+    "init_cache",
+    "close_cache",
+    "cached",
+    "invalidate_resource",
+    "invalidate_pattern",
+    "build_key",
+]
