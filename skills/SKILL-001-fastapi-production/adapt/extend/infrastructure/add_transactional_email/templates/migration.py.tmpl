@@ -1,0 +1,36 @@
+"""add email_events table
+
+Revision ID: add_email_events
+Revises: DOWN_REV_PLACEHOLDER
+Create Date: 2026-01-01 00:00:00
+"""
+
+from __future__ import annotations
+
+import uuid
+
+import sqlalchemy as sa
+from alembic import op
+
+revision: str = "add_email_events"
+down_revision: str = "DOWN_REV_PLACEHOLDER"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    """Create the email_events table."""
+    op.create_table(
+        "email_events",
+        sa.Column("id", sa.Uuid(), nullable=False, primary_key=True),
+        sa.Column("message_id", sa.String(255), nullable=False, index=True),
+        sa.Column("event_type", sa.String(32), nullable=False),
+        sa.Column("recipient_redacted", sa.String(128), nullable=False),
+        sa.Column("provider", sa.String(32), nullable=False),
+        sa.Column("occurred_at", sa.DateTime(timezone=True), nullable=False),
+    )
+
+
+def downgrade() -> None:
+    """Drop the email_events table."""
+    op.drop_table("email_events")

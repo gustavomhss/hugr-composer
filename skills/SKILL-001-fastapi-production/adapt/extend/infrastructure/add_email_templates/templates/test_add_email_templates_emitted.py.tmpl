@@ -1,0 +1,55 @@
+"""Emitted test for add_email_templates — verifies the email layer is wired."""
+
+from __future__ import annotations
+
+import pytest
+
+
+def test_template_name_importable() -> None:
+    """Positive: TemplateName is importable from app.email."""
+    from app.email.registry import TemplateName  # noqa: F401
+
+
+def test_render_email_welcome_returns_rendered() -> None:
+    """Positive: render_email returns RenderedEmail with non-empty fields."""
+    pytest.importorskip("jinja2", reason="jinja2 not installed")
+    from app.email.registry import TemplateName
+    from app.email.render import render_email
+
+    rendered = render_email(
+        TemplateName.WELCOME,
+        {"user_name": "Alice", "activation_url": "https://example.com/activate"},
+        locale="en",
+    )
+    assert rendered.subject
+    assert rendered.html
+    assert rendered.text
+    assert "Alice" in rendered.html or "Alice" in rendered.text
+
+
+def test_render_email_missing_context_raises() -> None:
+    """Negative: render_email raises MissingContextError on missing keys."""
+    pytest.importorskip("jinja2", reason="jinja2 not installed")
+    from app.email.registry import MissingContextError, TemplateName
+    from app.email.render import render_email
+
+    with pytest.raises(MissingContextError):
+        render_email(TemplateName.WELCOME, {}, locale="en")
+
+
+def test_get_provider_returns_resend_default() -> None:
+    """Positive: get_provider returns a ResendProvider when provider=resend."""
+    from app.email.providers import get_provider
+    from app.email.providers.resend import ResendProvider
+
+    provider = get_provider()
+    assert isinstance(provider, ResendProvider)
+
+
+def test_redact_email_hides_local_part() -> None:
+    """Positive: _redact_email masks all but first char of local part."""
+    from app.email.service import _redact_email
+
+    result = _redact_email("alice@example.com")
+    assert result == "a***@example.com"
+    assert "alice" not in result

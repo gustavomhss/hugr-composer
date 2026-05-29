@@ -1,0 +1,23 @@
+"""Auto-generated ModelAdmin classes for the SQLAdmin panel.
+
+Each model discovered in ``app/models/__init__.py`` gets a
+``ModelAdmin`` subclass with auto-detected columns for list view,
+search, and sort.  Sensitive columns are excluded from the list
+view and ``can_delete = False`` is set for the User model.
+
+The ``MODEL_ADMINS`` list at the bottom collects all view classes
+for registration by ``setup_admin()``.
+"""
+from __future__ import annotations
+
+try:
+    from sqladmin import ModelAdmin
+except ImportError:
+    # Provide a dummy base so this module can be imported for type
+    # checking even when sqladmin is not installed.  The
+    # __init_subclass__ override accepts the ``model=`` keyword
+    # argument that real ModelAdmin subclasses pass.
+    class ModelAdmin:  # type: ignore[no-redef]
+        def __init_subclass__(cls, **kwargs: object) -> None:
+            super().__init_subclass__()
+

@@ -1,0 +1,42 @@
+"""Pydantic schemas for the PDF report generation API."""
+
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class ReportRequest(BaseModel):
+    """Request body for POST /reports/generate.
+
+    Attributes:
+        template_name: Name of the template to render (e.g. 'invoice').
+        context: Key-value pairs injected into the Jinja2 template.
+        output_filename: Optional filename for the generated PDF.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    template_name: str = Field(..., description="Template name without extension.")
+    context: dict = Field(default_factory=dict, description="Template context data.")
+    output_filename: str | None = Field(
+        default=None,
+        description="Optional output filename (without .pdf extension).",
+    )
+
+
+class ReportResponse(BaseModel):
+    """Response body for a generated PDF report.
+
+    Attributes:
+        report_id: Unique identifier for the generated report.
+        download_url: URL to download the PDF file.
+        template_name: Template used to generate the report.
+        size_bytes: Size of the generated PDF in bytes.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    report_id: str = Field(..., description="Unique report identifier.")
+    download_url: str = Field(..., description="URL to download the PDF.")
+    template_name: str = Field(..., description="Template used for generation.")
+    size_bytes: int = Field(..., description="Size of the PDF in bytes.")

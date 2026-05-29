@@ -1,0 +1,45 @@
+"""Emitted test for add_transactional_email — verifies the delivery tracking layer is wired."""
+
+from __future__ import annotations
+
+import pytest
+
+
+def test_delivery_tracker_importable() -> None:
+    """Positive: DeliveryTracker is importable from app.email.delivery_tracker."""
+    from app.email.delivery_tracker import DeliveryTracker  # noqa: F401
+
+
+def test_email_event_importable() -> None:
+    """Positive: EmailEvent is importable from app.models.email_event."""
+    from app.models.email_event import EmailEvent  # noqa: F401
+
+
+def test_get_provider_returns_resend_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Positive: get_provider returns a ResendProvider when EMAIL_PROVIDER=resend."""
+    from app.email.providers import get_provider
+    from app.email.providers.resend_provider import ResendProvider
+
+    provider = get_provider()
+    assert isinstance(provider, ResendProvider)
+
+
+def test_get_provider_raises_on_unknown_provider(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Negative: get_provider raises ValueError for unknown EMAIL_PROVIDER."""
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "EMAIL_PROVIDER", "unknownprovider")
+
+    from app.email.providers import get_provider
+
+    with pytest.raises(ValueError, match="EMAIL_PROVIDER"):
+        get_provider()
+
+
+def test_redact_email_masks_local_part() -> None:
+    """Positive: _redact_email returns only first char + *** + domain."""
+    from app.email.delivery_tracker import _redact_email
+
+    result = _redact_email("alice@example.com")
+    assert result == "a***@example.com"
+    assert "alice" not in result

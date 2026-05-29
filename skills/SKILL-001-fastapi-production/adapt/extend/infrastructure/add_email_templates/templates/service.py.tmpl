@@ -1,0 +1,164 @@
+"""High-level email send helpers: ``send_email`` + ``enqueue_email``.
+
+* ``send_email`` renders the template, calls the configured provider
+  adapter, and persists an ``EmailDelivery`` audit row — all within
+  a single request/transaction.
+* ``enqueue_email`` dispatches the send off the critical path.  When
+  the arq worker is wired (``app.worker.arq_worker``) the job is
+  queued there; otherwise it falls back to FastAPI's ``BackgroundTasks``
+  so the caller's response isn't blocked on SMTP latency.
+
+All generated recipient addresses are redacted to ``u***@example.com``
+before they touch a log line or an audit row.
+"""
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import settings
+from app.crud.email_delivery import (
+    mark_delivery_failed,
+    mark_delivery_sent,
+    record_delivery,
+)
+from app.email.providers import get_provider
+from app.email.registry import TemplateName
+from app.email.render import render_email
+from app.schemas.email import EmailMessage
+
+logger = logging.getLogger(__name__)
+
+
+def _redact_email(email: str) -> str:
+    """Return a PII-safe rendering of an email address.
+
+    Examples:
+        ``alice@example.com`` -> ``a***@example.com``
+        ``bob@acme.co``       -> ``b***@acme.co``
+
+    Args:
+        email: Raw recipient address.
+
+    Returns:
+        Redacted form safe to log or persist.
+    """
+    if "@" not in email:
+        return "***"
+    local, _, domain = email.partition("@")
+    first = local[:1] or "u"
+    return f"{first}***@{domain}"
+
+
+def _build_message(rendered: Any, to: str) -> EmailMessage:
+    """Assemble an ``EmailMessage`` from rendered content + settings."""
+    return EmailMessage(
+        to=to,
+        from_=settings.EMAIL_FROM,
+        from_name=settings.EMAIL_FROM_NAME,
+        subject=rendered.subject,
+        html=rendered.html,
+        text=rendered.text,
+        reply_to=settings.EMAIL_REPLY_TO or None,
+    )
+
+
+async def send_email(
+    session: AsyncSession,
+    *,
+    to: str,
+    template: TemplateName,
+    context: dict[str, Any],
+    locale: str | None = None,
+    user_id: Any | None = None,
+) -> Any:
+    """Render + send an email synchronously, persisting an audit row.
+
+    Args:
+        session: Async SQLAlchemy session.
+        to: Recipient email address (redacted in the audit row).
+        template: Template identifier.
+        context: Template render context.
+        locale: Preferred locale; defaults to ``settings.EMAIL_DEFAULT_LOCALE``.
+        user_id: Optional user UUID for the audit FK.
+
+    Returns:
+        The persisted ``EmailDelivery`` row.
+
+    Raises:
+        Exception: Whatever the provider raises — after the audit row
+            is marked failed.
+    """
+    effective_locale = locale or settings.EMAIL_DEFAULT_LOCALE
+    rendered = render_email(template, context, effective_locale)
+    redacted = _redact_email(to)
+    delivery = await record_delivery(
+        session,
+        to_email_redacted=redacted,
+        template_name=template.value,
+        locale=effective_locale,
+        provider=settings.EMAIL_PROVIDER,
+        user_id=user_id,
+    )
+    message = _build_message(rendered, to)
+    try:
+        result = await get_provider().send(message)
+    except Exception as exc:  # noqa: BLE001 — provider may raise anything
+        logger.warning("email send failed for %s", redacted)
+        await mark_delivery_failed(session, delivery.id, str(exc)[:500])
+        raise
+    await mark_delivery_sent(session, delivery.id, result.id)
+    return delivery
+
+
+async def enqueue_email(
+    session: AsyncSession,
+    *,
+    to: str,
+    template: TemplateName,
+    context: dict[str, Any],
+    locale: str | None = None,
+    user_id: Any | None = None,
+) -> Any:
+    """Fire-and-forget email send, off the caller's critical path.
+
+    When the arq worker is available (``app.worker.arq_worker`` with
+    an ``ArqRedis`` pool) the send is enqueued there.  Otherwise the
+    helper awaits ``send_email`` directly — in that case the caller
+    is encouraged to wrap the call in ``BackgroundTasks`` at the
+    route layer.
+
+    Args:
+        session: Async SQLAlchemy session.
+        to: Recipient email address.
+        template: Template identifier.
+        context: Template render context.
+        locale: Preferred locale.
+        user_id: Optional user UUID.
+
+    Returns:
+        The persisted ``EmailDelivery`` row (pending or sent).
+    """
+    try:
+        from app.worker.arq_worker import get_arq_pool  # type: ignore
+    except ImportError:
+        return await send_email(
+            session,
+            to=to,
+            template=template,
+            context=context,
+            locale=locale,
+            user_id=user_id,
+        )
+    pool = await get_arq_pool()
+    await pool.enqueue_job(
+        "send_email_job",
+        to=to,
+        template=template.value,
+        context=context,
+        locale=locale,
+        user_id=str(user_id) if user_id else None,
+    )
+    return None

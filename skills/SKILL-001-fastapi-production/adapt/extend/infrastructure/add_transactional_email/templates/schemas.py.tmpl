@@ -1,0 +1,32 @@
+"""Pydantic schemas for email delivery events."""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict
+
+
+class EmailEventRead(BaseModel):
+    """Schema for reading an email delivery event.
+
+    Note: recipient_redacted is the only PII-adjacent field exposed.
+    The full address is never stored or returned.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    message_id: str
+    event_type: str
+    recipient_redacted: str
+    provider: str
+    occurred_at: datetime
+
+
+class EmailEventList(BaseModel):
+    """Paginated list of email delivery events."""
+
+    items: list[EmailEventRead]
+    total: int

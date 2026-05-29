@@ -1,0 +1,103 @@
+"""Async CRUD helpers for the ``email_deliveries`` table.
+
+Each helper keeps the audit trail consistent with the lifecycle
+``pending -> sent -> (delivered | failed)``.  Every transition is
+idempotent.
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timezone
+from typing import Any
+
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.email_delivery import EmailDelivery
+
+
+async def record_delivery(
+    session: AsyncSession,
+    *,
+    to_email_redacted: str,
+    template_name: str,
+    locale: str,
+    provider: str,
+    user_id: Any | None,
+) -> EmailDelivery:
+    """Insert a ``pending`` EmailDelivery row."""
+    delivery = EmailDelivery(
+        to_email_redacted=to_email_redacted[:255],
+        template_name=template_name[:64],
+        locale=locale[:8],
+        provider=provider[:32],
+        status="pending",
+        user_id=user_id,
+    )
+    session.add(delivery)
+    await session.flush()
+    return delivery
+
+
+async def mark_delivery_sent(
+    session: AsyncSession,
+    delivery_id: uuid.UUID,
+    provider_message_id: str,
+) -> EmailDelivery | None:
+    """Transition a delivery to ``sent`` (idempotent)."""
+    delivery = await get_delivery(session, delivery_id)
+    if delivery is None or delivery.status == "sent":
+        return delivery
+    delivery.status = "sent"
+    delivery.provider_message_id = (provider_message_id or "")[:255]
+    delivery.sent_at = datetime.now(timezone.utc)
+    await session.flush()
+    return delivery
+
+
+async def mark_delivery_failed(
+    session: AsyncSession,
+    delivery_id: uuid.UUID,
+    error: str,
+) -> EmailDelivery | None:
+    """Transition a delivery to ``failed`` (idempotent)."""
+    delivery = await get_delivery(session, delivery_id)
+    if delivery is None or delivery.status == "failed":
+        return delivery
+    delivery.status = "failed"
+    delivery.error = (error or "")[:500]
+    await session.flush()
+    return delivery
+
+
+async def get_delivery(
+    session: AsyncSession,
+    delivery_id: uuid.UUID,
+) -> EmailDelivery | None:
+    """Return the EmailDelivery row with *delivery_id* or ``None``."""
+    stmt = select(EmailDelivery).where(EmailDelivery.id == delivery_id)
+    return (await session.execute(stmt)).scalar_one_or_none()
+
+
+async def list_user_deliveries(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    limit: int = 50,
+    offset: int = 0,
+) -> tuple[list[EmailDelivery], int]:
+    """Return (rows, total_count) for a user's email deliveries."""
+    total_stmt = (
+        select(func.count())
+        .select_from(EmailDelivery)
+        .where(EmailDelivery.user_id == user_id)
+    )
+    total = int((await session.execute(total_stmt)).scalar_one() or 0)
+    page_stmt = (
+        select(EmailDelivery)
+        .where(EmailDelivery.user_id == user_id)
+        .order_by(EmailDelivery.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    rows = list((await session.execute(page_stmt)).scalars().all())
+    return rows, total

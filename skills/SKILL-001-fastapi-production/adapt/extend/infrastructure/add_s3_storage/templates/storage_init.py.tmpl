@@ -1,0 +1,11 @@
+"""S3/MinIO storage package — re-exports the public surface.
+
+Usage::
+
+    from app.storage import S3Client, StorageConfig, get_s3_client
+"""
+
+from app.storage.client import S3Client, get_s3_client
+from app.storage.config import StorageConfig
+
+__all__ = ["S3Client", "StorageConfig", "get_s3_client"]

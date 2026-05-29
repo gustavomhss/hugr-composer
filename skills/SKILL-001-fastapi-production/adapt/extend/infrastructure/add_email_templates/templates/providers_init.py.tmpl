@@ -1,0 +1,38 @@
+"""Email provider selector — picks an adapter based on settings.
+
+The selector reads ``settings.EMAIL_PROVIDER`` on every call so
+operators can flip providers at runtime via env var without
+restarting the app.  Third-party SDKs (``resend``, ``postmark``)
+are imported LAZILY inside each adapter's ``send()`` method.
+"""
+from __future__ import annotations
+
+from app.core.config import settings
+from app.email.providers.base import EmailProvider
+from app.email.providers.postmark import PostmarkProvider
+from app.email.providers.resend import ResendProvider
+from app.email.providers.smtp import SMTPProvider
+
+
+def get_provider() -> EmailProvider:
+    """Return the provider adapter matching ``settings.EMAIL_PROVIDER``.
+
+    Returns:
+        A provider instance implementing the ``EmailProvider`` protocol.
+
+    Raises:
+        ValueError: If ``settings.EMAIL_PROVIDER`` is unknown.
+    """
+    name = (settings.EMAIL_PROVIDER or "resend").lower()
+    if name == "resend":
+        return ResendProvider()
+    if name == "postmark":
+        return PostmarkProvider()
+    if name == "smtp":
+        return SMTPProvider()
+    raise ValueError(
+        f"unknown EMAIL_PROVIDER {name!r}; expected resend|postmark|smtp"
+    )
+
+
+__all__ = ["EmailProvider", "get_provider"]

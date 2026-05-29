@@ -1,0 +1,150 @@
+"""REST routes for S3/MinIO presigned URL operations.
+
+Routes
+------
+POST   /storage/upload          Return a presigned PUT URL for direct upload.
+GET    /storage/{key:path}      Return a presigned GET URL for direct download.
+DELETE /storage/{key:path}      Delete an object from the bucket.
+
+The API server never buffers binary data — all file I/O goes directly
+between the client and S3/MinIO via the presigned URLs.
+"""
+from __future__ import annotations
+
+from fastapi import APIRouter, HTTPException, status
+from pydantic import BaseModel, Field
+
+from app.core.config import settings
+from app.storage.client import get_s3_client
+
+router = APIRouter(prefix="/storage", tags=["storage"])
+
+
+class UploadRequest(BaseModel):
+    """Request body for presigned upload URL generation.
+
+    Attributes:
+        filename: Original filename from the client.
+        content_type: MIME type of the file to be uploaded.
+        prefix: Optional path prefix; defaults to settings.S3_KEY_PREFIX.
+    """
+
+    filename: str = Field(..., min_length=1, max_length=255)
+    content_type: str = Field(..., min_length=1)
+    prefix: str = Field(default="", max_length=200)
+
+
+class UploadResponse(BaseModel):
+    """Response body for a presigned upload URL.
+
+    Attributes:
+        upload_url: Presigned S3 PUT URL — client must PUT directly here.
+        key: Object key that will be created in the bucket.
+        expires_in: Number of seconds until the URL expires.
+    """
+
+    upload_url: str
+    key: str
+    expires_in: int
+
+
+class DownloadResponse(BaseModel):
+    """Response body for a presigned download URL.
+
+    Attributes:
+        download_url: Presigned S3 GET URL — client may GET directly.
+        key: Object key this URL points to.
+        expires_in: Number of seconds until the URL expires.
+    """
+
+    download_url: str
+    key: str
+    expires_in: int
+
+
+def _validate_content_type(content_type: str) -> None:
+    """Raise HTTP 415 if *content_type* is not in the allowed list.
+
+    Args:
+        content_type: MIME type string from the client request.
+
+    Raises:
+        HTTPException: 415 Unsupported Media Type when the type is not
+            in ``settings.S3_ALLOWED_CONTENT_TYPES``.
+    """
+    allowed = settings.S3_ALLOWED_CONTENT_TYPES
+    if allowed and content_type not in allowed:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=(
+                f"Content-Type '{content_type}' is not allowed. "
+                f"Allowed types: {', '.join(allowed)}"
+            ),
+        )
+
+
+@router.post(
+    "/upload",
+    response_model=UploadResponse,
+    summary="Generate a presigned URL for direct-to-S3 upload",
+    status_code=status.HTTP_200_OK,
+)
+def create_upload_url(body: UploadRequest) -> UploadResponse:
+    """Return a presigned PUT URL for a direct client-to-S3 upload.
+
+    Args:
+        body: Upload request containing filename, content_type, prefix.
+
+    Returns:
+        ``UploadResponse`` with the presigned URL and object key.
+
+    Raises:
+        HTTPException: 415 if content_type is not allowed.
+    """
+    _validate_content_type(body.content_type)
+    client = get_s3_client()
+    key = client.generate_key(body.filename, prefix=body.prefix)
+    url = client.presigned_upload_url(key, body.content_type)
+    return UploadResponse(
+        upload_url=url,
+        key=key,
+        expires_in=settings.S3_PRESIGNED_URL_EXPIRATION,
+    )
+
+
+@router.get(
+    "/{key:path}",
+    response_model=DownloadResponse,
+    summary="Generate a presigned URL for direct-to-S3 download",
+)
+def create_download_url(key: str) -> DownloadResponse:
+    """Return a presigned GET URL for a direct client-to-S3 download.
+
+    Args:
+        key: Object key within the S3 bucket.
+
+    Returns:
+        ``DownloadResponse`` with the presigned URL and object key.
+    """
+    client = get_s3_client()
+    url = client.presigned_download_url(key)
+    return DownloadResponse(
+        download_url=url,
+        key=key,
+        expires_in=settings.S3_PRESIGNED_URL_EXPIRATION,
+    )
+
+
+@router.delete(
+    "/{key:path}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete an object from S3",
+)
+def delete_object(key: str) -> None:
+    """Delete an object from the configured S3 bucket.
+
+    Args:
+        key: Object key within the S3 bucket.
+    """
+    client = get_s3_client()
+    client.delete_object(key)

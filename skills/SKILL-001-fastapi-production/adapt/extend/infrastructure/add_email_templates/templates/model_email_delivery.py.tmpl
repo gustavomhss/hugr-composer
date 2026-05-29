@@ -1,0 +1,98 @@
+"""SQLAlchemy model for email delivery audit records.
+
+The ``email_deliveries`` table persists every send attempt so
+operators can troubleshoot bounces/failures without tailing logs.
+The recipient is REDACTED at write time (``u***@example.com``) so
+a DB dump can never leak PII even if it escapes the operator
+firewall.
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    Uuid,
+    func,
+)
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.models.base import Base
+
+
+class EmailDelivery(Base):
+    """An email send attempt — one row per provider call.
+
+    Attributes:
+        id: Internal UUID primary key.
+        to_email_redacted: Redacted recipient (e.g. ``a***@example.com``).
+        template_name: Logical template name from ``TemplateName``.
+        locale: Locale actually used for rendering (post-fallback).
+        provider: Provider used (``resend`` / ``postmark`` / ``smtp``).
+        provider_message_id: Provider's own message id (populated on
+            successful send, used for reconciling webhook events).
+        status: Lifecycle status -- ``pending`` / ``sent`` / ``failed``.
+        error: Truncated error message (max 500 chars) when ``failed``.
+        user_id: Optional FK to ``users.id``.
+        tenant_id: Optional tenant UUID (FK only when tenants exist).
+        created_at: UTC timestamp when the row was inserted.
+        sent_at: UTC timestamp when the provider accepted the send.
+    """
+
+    __tablename__ = "email_deliveries"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, primary_key=True, default=uuid.uuid4
+    )
+    to_email_redacted: Mapped[str] = mapped_column(
+        String(255), nullable=False
+    )
+    template_name: Mapped[str] = mapped_column(
+        String(64), nullable=False, index=True
+    )
+    locale: Mapped[str] = mapped_column(String(8), nullable=False)
+    provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    provider_message_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True
+    )
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, server_default="pending"
+    )
+    error: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+TENANT_PLACEHOLDER
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending','sent','delivered','bounced','failed')",
+            name="ck_email_deliveries_status",
+        ),
+        Index(
+            "ix_email_deliveries_status_created",
+            "status",
+            "created_at",
+        ),
+        Index(
+            "ix_email_deliveries_user_created",
+            "user_id",
+            "created_at",
+        ),
+    )

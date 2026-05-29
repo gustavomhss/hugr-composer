@@ -1,0 +1,74 @@
+"""Emitted test for add_kubernetes_manifests — verifies K8s YAML artifacts are present.
+
+Warnings:
+    - The generated k8s/secret.yaml contains placeholder base64 values that MUST be
+      replaced before applying to a real cluster.
+    - The generated manifests do not include NetworkPolicy or PodSecurityPolicy;
+      those are out of scope for this scaffold.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+_PROJECT = Path(__file__).resolve().parent.parent
+_K8S = _PROJECT / "k8s"
+
+
+def test_k8s_directory_exists() -> None:
+    """Positive: k8s/ directory was created."""
+    assert _K8S.is_dir(), "k8s/ directory not found"
+
+
+def test_deployment_yaml_exists() -> None:
+    """Positive: k8s/deployment.yaml is present."""
+    assert (_K8S / "deployment.yaml").exists()
+
+
+def test_deployment_yaml_parses() -> None:
+    """Positive: k8s/deployment.yaml is valid YAML."""
+    try:
+        import yaml
+    except ImportError:
+        pytest.skip("pyyaml not installed — skipping YAML parse test")
+    content = yaml.safe_load((_K8S / "deployment.yaml").read_text())
+    assert content["kind"] == "Deployment"
+
+
+def test_service_references_deployment() -> None:
+    """Positive: k8s/service.yaml selector matches deployment app label."""
+    try:
+        import yaml
+    except ImportError:
+        pytest.skip("pyyaml not installed")
+    deployment = yaml.safe_load((_K8S / "deployment.yaml").read_text())
+    service = yaml.safe_load((_K8S / "service.yaml").read_text())
+    dep_app = deployment["metadata"]["labels"]["app"]
+    svc_selector = service["spec"]["selector"]["app"]
+    assert dep_app == svc_selector, "service selector does not match deployment label"
+
+
+def test_hpa_yaml_exists() -> None:
+    """Positive: k8s/hpa.yaml contains HorizontalPodAutoscaler."""
+    content = (_K8S / "hpa.yaml").read_text()
+    assert "HorizontalPodAutoscaler" in content
+
+
+def test_secret_yaml_has_placeholder_warning() -> None:
+    """Negative: k8s/secret.yaml must contain the placeholder warning comment."""
+    content = (_K8S / "secret.yaml").read_text()
+    assert "IMPORTANT" in content or "placeholder" in content.lower(), (
+        "secret.yaml must contain a warning to replace placeholder values"
+    )
+
+
+def test_all_manifests_present() -> None:
+    """Positive: all 7 manifest files are present."""
+    expected = [
+        "deployment.yaml", "service.yaml", "hpa.yaml",
+        "pdb.yaml", "configmap.yaml", "secret.yaml", "ingress.yaml",
+    ]
+    missing = [f for f in expected if not (_K8S / f).exists()]
+    assert not missing, f"Missing manifests: {missing}"

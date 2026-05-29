@@ -1,0 +1,30 @@
+"""Admin endpoint: GET /cache/stats."""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, HTTPException
+
+from app.api.deps import get_current_superuser
+from app.cache.core import get_cache
+
+router = APIRouter(prefix="/cache", tags=["cache"])
+
+
+@router.get("/stats", response_model=dict, dependencies=[Depends(get_current_superuser)])
+async def cache_stats() -> dict:
+    """Return Redis cache statistics.  Admin use only.
+
+    Requires superuser authentication (INV-CACHE-07).
+
+    Returns:
+        Dict with ``connected``, ``memory_used_bytes``, ``memory_human``,
+        and ``keyspace`` from Redis INFO.
+
+    Raises:
+        HTTPException: 401/403 if not authenticated as superuser.
+        HTTPException: 503 if cache backend is not initialised.
+    """
+    cache = get_cache()
+    if cache is None:
+        raise HTTPException(status_code=503, detail="Cache backend not initialised")
+    return await cache.stats()

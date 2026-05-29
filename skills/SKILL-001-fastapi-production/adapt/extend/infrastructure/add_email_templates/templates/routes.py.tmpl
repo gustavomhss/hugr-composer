@@ -1,0 +1,78 @@
+"""HTTP routes for the email layer.
+
+Endpoints:
+    GET /email/preview/{template_name}
+        Render a template with the registry's example context and
+        return the HTML body as ``text/html``.  **403 in production**
+        unless ``settings.EMAIL_PREVIEW_ENABLED_IN_PROD`` is true.
+        Intended for designers iterating on templates.
+
+    GET /email/deliveries/me
+        Paginated list of the current user's email deliveries
+        (PII-safe, recipient already redacted).
+"""
+from __future__ import annotations
+
+from fastapi import APIRouter, HTTPException, Query, status
+from fastapi.responses import HTMLResponse
+
+from app.api.deps import CurrentUser
+from app.core.config import settings
+from app.core.session import SessionDep
+from app.crud.email_delivery import list_user_deliveries
+from app.email.registry import TEMPLATE_EXAMPLE_CONTEXT, TemplateName
+from app.email.render import render_email
+from app.schemas.email import EmailDeliveryListResponse, EmailDeliveryPublic
+
+router = APIRouter(prefix="/email", tags=["email"])
+
+
+def _preview_guard() -> None:
+    """Raise 403 if preview is disabled in the current environment."""
+    env = (getattr(settings, "ENVIRONMENT", "") or "").lower()
+    if env == "production" and not getattr(
+        settings, "EMAIL_PREVIEW_ENABLED_IN_PROD", False
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="email preview is disabled in production",
+        )
+
+
+def _resolve_template(name: str) -> TemplateName:
+    """Map a URL slug to a ``TemplateName`` or raise 404."""
+    try:
+        return TemplateName(name)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"unknown template {name!r}",
+        ) from exc
+
+
+@router.get("/preview/{template_name}", response_class=HTMLResponse)
+async def preview_template(
+    template_name: str,
+    locale: str = Query(default="en"),
+) -> HTMLResponse:
+    """Return the rendered HTML body of a template for dev preview."""
+    _preview_guard()
+    template = _resolve_template(template_name)
+    context = dict(TEMPLATE_EXAMPLE_CONTEXT.get(template, {}))
+    rendered = render_email(template, context, locale=locale)
+    return HTMLResponse(content=rendered.html)
+
+
+@router.get("/deliveries/me", response_model=EmailDeliveryListResponse)
+async def list_my_deliveries(
+    current_user: CurrentUser,
+    session: SessionDep,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+) -> EmailDeliveryListResponse:
+    """Return the current user's email deliveries, newest first."""
+    rows, total = await list_user_deliveries(
+        session, current_user.id, limit=limit, offset=skip
+    )
+    data = [EmailDeliveryPublic.model_validate(r) for r in rows]
+    return EmailDeliveryListResponse(data=data, count=total)

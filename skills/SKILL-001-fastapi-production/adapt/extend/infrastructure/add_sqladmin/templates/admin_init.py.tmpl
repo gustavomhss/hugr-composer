@@ -1,0 +1,11 @@
+"""SQLAdmin admin panel package.
+
+Provides a production-grade admin panel mounted on the FastAPI app.
+Auto-discovers SQLAlchemy models and generates CRUD views with
+authentication gated on superuser status.
+
+Usage::
+
+    from app.admin.setup import setup_admin
+    setup_admin(app)
+"""

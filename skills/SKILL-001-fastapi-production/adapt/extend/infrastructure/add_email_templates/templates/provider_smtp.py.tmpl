@@ -1,0 +1,66 @@
+"""SMTP adapter — uses stdlib ``smtplib``, no third-party deps."""
+from __future__ import annotations
+
+import asyncio
+import logging
+import smtplib
+from email.message import EmailMessage as StdlibEmailMessage
+
+from app.core.config import settings
+from app.schemas.email import EmailMessage, EmailResult
+
+logger = logging.getLogger(__name__)
+
+
+def _build_mime(message: EmailMessage) -> StdlibEmailMessage:
+    """Build a stdlib ``EmailMessage`` with HTML + plaintext alternatives.
+
+    Args:
+        message: Application-level email payload.
+
+    Returns:
+        A MIME multipart/alternative message ready for ``send_message``.
+    """
+    mime = StdlibEmailMessage()
+    mime["Subject"] = message.subject
+    mime["From"] = (
+        f"{message.from_name} <{message.from_}>"
+        if message.from_name
+        else message.from_
+    )
+    mime["To"] = message.to
+    if message.reply_to:
+        mime["Reply-To"] = message.reply_to
+    mime.set_content(message.text)
+    mime.add_alternative(message.html, subtype="html")
+    return mime
+
+
+def _send_sync(mime: StdlibEmailMessage) -> str:
+    """Open an SMTP connection and send *mime* synchronously.
+
+    Args:
+        mime: Pre-built MIME message.
+
+    Returns:
+        The SMTP ``Message-ID`` header (or empty string).
+    """
+    host = settings.SMTP_HOST or "localhost"
+    port = int(settings.SMTP_PORT or 587)
+    with smtplib.SMTP(host, port) as smtp:
+        if settings.SMTP_USE_TLS:
+            smtp.starttls()
+        if settings.SMTP_USERNAME:
+            smtp.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+        smtp.send_message(mime)
+    return mime.get("Message-ID", "")
+
+
+class SMTPProvider:
+    """Pure-stdlib SMTP adapter — no third-party dependency."""
+
+    async def send(self, message: EmailMessage) -> EmailResult:
+        """Send *message* via SMTP in a worker thread."""
+        mime = _build_mime(message)
+        msg_id = await asyncio.to_thread(_send_sync, mime)
+        return EmailResult(id=str(msg_id), provider="smtp")

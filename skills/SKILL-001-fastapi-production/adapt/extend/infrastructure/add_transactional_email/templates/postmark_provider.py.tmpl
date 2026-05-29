@@ -1,0 +1,54 @@
+"""Postmark email provider adapter.
+
+Sends emails via the Postmark API (https://postmarkapp.com).  The
+``postmarker`` package is imported lazily so the app boots without it.
+"""
+
+from __future__ import annotations
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class PostmarkProvider:
+    """Send transactional emails via Postmark."""
+
+    def send(
+        self,
+        *,
+        to: str,
+        subject: str,
+        html: str,
+        from_address: str = "noreply@example.com",
+        text: str = "",
+    ) -> str:
+        """Send a single email via the Postmark API.
+
+        Args:
+            to: Recipient email address.
+            subject: Email subject line.
+            html: HTML body.
+            from_address: Sender address (``From:`` header).
+            text: Optional plaintext fallback body.
+
+        Returns:
+            The Postmark message ID string.
+
+        Raises:
+            ImportError: When the ``postmarker`` package is not installed.
+        """
+        try:
+            from postmarker.core import PostmarkClient  # noqa: PLC0415 — lazy
+        except ImportError as exc:
+            raise ImportError(
+                "postmarker package is required: pip install postmarker"
+            ) from exc
+
+        from app.core.config import settings
+        client = PostmarkClient(server_token=settings.POSTMARK_API_KEY)
+        msg = {"From": from_address, "To": to, "Subject": subject, "HtmlBody": html}
+        if text:
+            msg["TextBody"] = text
+        response = client.emails.send(**msg)
+        return str(response.get("MessageID", ""))

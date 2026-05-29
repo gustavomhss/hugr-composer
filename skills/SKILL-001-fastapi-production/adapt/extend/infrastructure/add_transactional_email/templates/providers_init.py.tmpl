@@ -1,0 +1,40 @@
+"""Email provider adapters — lazy-imported multi-provider support.
+
+Supported providers (set EMAIL_PROVIDER env var):
+    resend     -- resend-python SDK (pip install resend)
+    postmark   -- postmarker SDK   (pip install postmarker)
+    sendgrid   -- sendgrid SDK     (pip install sendgrid)
+"""
+
+from __future__ import annotations
+
+import logging
+
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+
+def get_provider():
+    """Return the configured email provider adapter.
+
+    Returns:
+        An adapter instance for the configured EMAIL_PROVIDER.
+
+    Raises:
+        ValueError: When EMAIL_PROVIDER is set to an unknown value.
+    """
+    provider = (settings.EMAIL_PROVIDER or "resend").lower()
+    if provider == "resend":
+        from app.email.providers.resend_provider import ResendProvider
+        return ResendProvider()
+    if provider == "postmark":
+        from app.email.providers.postmark_provider import PostmarkProvider
+        return PostmarkProvider()
+    if provider == "sendgrid":
+        from app.email.providers.sendgrid_provider import SendgridProvider
+        return SendgridProvider()
+    raise ValueError(
+        f"Unknown EMAIL_PROVIDER={provider!r}. "
+        "Valid values: resend, postmark, sendgrid."
+    )

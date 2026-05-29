@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f6f7f9; margin:0; padding:24px;">
+    <div style="max-width:560px; margin:0 auto; background:#ffffff; border-radius:12px; padding:32px; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+      <h1 style="margin:0 0 16px 0; color:#111827; font-size:22px;">Welcome, {{ user_name }}!</h1>
+      <p style="color:#374151; font-size:16px; line-height:1.5;">
+        Thanks for signing up for {{ app_name | default('our app') }}. Click the button below to activate your account and get started.
+      </p>
+      <p style="margin:24px 0;">
+        <a href="{{ activation_url }}" style="display:inline-block; background:#2563eb; color:#ffffff; text-decoration:none; padding:12px 20px; border-radius:8px; font-weight:600;">Activate account</a>
+      </p>
+      <p style="color:#6b7280; font-size:13px;">
+        If the button doesn't work, paste this URL into your browser:<br>
+        <span style="word-break:break-all;">{{ activation_url }}</span>
+      </p>
+    </div>
+  </body>
+</html>
