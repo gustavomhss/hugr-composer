@@ -7,7 +7,6 @@ See `mcp_tools/tree/auth.py` — the canonical POC template this file mirrors.
 
 from __future__ import annotations
 
-import importlib
 import time
 from pathlib import Path
 from typing import Any
@@ -65,18 +64,20 @@ def _envelope(*, ok: bool, what: str, result: Any, next_steps: list[str], t0: fl
 def _call_slice(slice_name: str, **kwargs) -> dict:
     """Route to the underlying `<pkg>.<mod>` tool.
 
-    Multi-bucket aware: each SLICES entry carries its own `pkg`
-    because deployment tools span multiple adapt/ subtrees.
+    Multi-bucket aware: each SLICES entry carries its own `pkg` because
+    deployment tools span multiple adapt/ subtrees. Routes through the
+    shared `dispatch_via_toolinput` helper so the public contract stays
+    uniform (closes Codex 3 F-001).
     """
+    from mcp_tools._tree_dispatch import dispatch_via_toolinput
+
     meta = SLICES[slice_name]
-    mod_name = f"{meta['pkg']}.{meta['mod']}"
-    mod = importlib.import_module(mod_name)
-    entry = getattr(mod, meta["mod"], None)
-    if entry is None or not callable(entry):
-        raise RuntimeError(
-            f"slice {slice_name!r}: entry function {meta['mod']!r} not found in {mod_name}"
-        )
-    return entry(**kwargs)
+    return dispatch_via_toolinput(
+        module_path=f"{meta['pkg']}.{meta['mod']}",
+        entry_name=meta["mod"],
+        slice_name=slice_name,
+        **kwargs,
+    )
 
 
 # ---------------------------------------------------------------------------

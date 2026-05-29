@@ -78,10 +78,16 @@ def test_primitive_copies_session_store_files(tmp_path: Path) -> None:
     files = r["result"]["files_created"]
     assert any(f.endswith("SessionStore.py") for f in files)
     assert any(f.endswith("SessionStore.md") for f in files)
-    # adapter copied (SessionStore has no adapter in the current tree;
-    # this check tolerates the absence)
-    target = tmp_path / "app" / "core" / "venous" / "auth" / "SessionStore" / "SessionStore.py"
+    # F-003: target layout is `core/venous/<ns>/<Name>/` (no `app/` prefix)
+    # so that `from core.venous.auth.SessionStore.SessionStore import …`
+    # resolves at runtime in the emitted project.
+    target = tmp_path / "core" / "venous" / "auth" / "SessionStore" / "SessionStore.py"
     assert target.exists()
+    # Emitted next_steps must advertise the matching nested import.
+    assert any(
+        "from core.venous.auth.SessionStore.SessionStore import SessionStore" in step
+        for step in r["next_steps"]
+    )
 
 
 def test_primitive_copy_skips_pycache(tmp_path: Path) -> None:
@@ -100,23 +106,35 @@ def test_primitive_copy_skips_pycache(tmp_path: Path) -> None:
                 "output_dir": str(tmp_path),
             },
         )
-        target_pycache = (
-            tmp_path / "app" / "core" / "venous" / "auth" / "SessionStore" / "__pycache__"
-        )
+        target_pycache = tmp_path / "core" / "venous" / "auth" / "SessionStore" / "__pycache__"
         assert not target_pycache.exists(), "pycache should have been excluded"
     finally:
         bogus.unlink(missing_ok=True)
 
 
-def test_primitive_overwrites_existing_dir(tmp_path: Path) -> None:
-    target = tmp_path / "app" / "core" / "venous" / "auth" / "SessionStore"
+def test_primitive_overwrites_existing_dir_only_with_force(tmp_path: Path) -> None:
+    """F-002: copy is non-destructive by default; ``force=True`` opts in."""
+    target = tmp_path / "core" / "venous" / "auth" / "SessionStore"
     target.mkdir(parents=True)
     (target / "stale.txt").write_text("old")
-    r = fastapi_auth(
-        action="primitive", params={"name": "SessionStore", "output_dir": str(tmp_path)}
+
+    # First call: default (force=False) → must SKIP and preserve stale.txt.
+    r_skip = fastapi_auth(
+        action="primitive",
+        params={"name": "SessionStore", "output_dir": str(tmp_path)},
     )
-    assert r["ok"] is True
-    assert not (target / "stale.txt").exists(), "must wipe previous state"
+    assert r_skip["ok"] is True
+    assert r_skip["result"]["status"] == "skipped"
+    assert (target / "stale.txt").exists(), "default must NOT destroy user code"
+
+    # Second call: force=True → wipes + repopulates.
+    r_force = fastapi_auth(
+        action="primitive",
+        params={"name": "SessionStore", "output_dir": str(tmp_path), "force": True},
+    )
+    assert r_force["ok"] is True
+    assert r_force["result"]["status"] == "copied"
+    assert not (target / "stale.txt").exists(), "force=True must wipe previous state"
 
 
 # ---------------------------------------------------------------------------
