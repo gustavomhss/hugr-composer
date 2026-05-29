@@ -39,7 +39,6 @@ from pathlib import Path
 
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
-
 MCP_TOOL = {
     "name": "fastapi_testing_add_e2e_test_suite",
     "description": (
@@ -54,6 +53,7 @@ MCP_TOOL = {
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
+
 
 def add_e2e_test_suite(inp: ToolInput) -> ToolResult:
     """Scaffold an async E2E test suite for a FastAPI project.
@@ -80,11 +80,10 @@ def add_e2e_test_suite(inp: ToolInput) -> ToolResult:
 
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err,
-                          execution_time_ms=_elapsed_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     # --- Prerequisite check (standalone mode) --------------------------------
-    from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
+    from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -115,7 +114,9 @@ def add_e2e_test_suite(inp: ToolInput) -> ToolResult:
     if conftest.exists() and "async_client" in conftest.read_text():
         return ToolResult(
             status="no_op",
-            notes=["async_client fixture already present in tests/e2e/conftest.py — E2E suite already installed, skipped."],
+            notes=[
+                "async_client fixture already present in tests/e2e/conftest.py — E2E suite already installed, skipped."
+            ],
             execution_time_ms=_elapsed_ms(start),
         )
 
@@ -166,10 +167,40 @@ def add_e2e_test_suite(inp: ToolInput) -> ToolResult:
     files_created.append(str(error_test))
 
     # --- Step 6: Patch config.py with E2E settings fields --------------------
+    # F-007: only treat as modified when the helper actually wrote.
     config_file = project / "app" / "core" / "config.py"
+    config_notes: list[str] = []
     if config_file.exists():
-        _patch_config(config_file)
-        files_modified.append(str(config_file))
+        from adapt.contracts.config_patcher import PatchResult
+
+        patch_outcome = _patch_config(config_file)
+        if patch_outcome is PatchResult.APPLIED:
+            files_modified.append(str(config_file))
+        elif patch_outcome is PatchResult.TARGET_MISSING:
+            config_notes.append(
+                "config.py: no `class Settings` shape found — "
+                "E2E_* fields were appended at module level."
+            )
+        elif patch_outcome is PatchResult.SYNTAX_ERROR:
+            return ToolResult(
+                status="error",
+                error="app/core/config.py has a syntax error — refusing to patch.",
+                execution_time_ms=_elapsed_ms(start),
+            )
+
+    # --- Step 7 (F-003): patch requirements.txt with test deps ---------------
+    # Pre-fix the emitted suite imported pytest_asyncio + httpx but the
+    # standalone scaffold's requirements.txt declared httpx alone. Running
+    # ``pytest tests/e2e/`` on a fresh scaffold would ImportError. We now
+    # ensure both packages are declared (httpx is usually already there,
+    # but the check is line-by-line + idempotent).
+    requirements_file = project / "requirements.txt"
+    if (
+        requirements_file.exists()
+        and _patch_requirements_with_test_deps(requirements_file)
+        and str(requirements_file) not in files_modified
+    ):
+        files_modified.append(str(requirements_file))
 
     # --- ast.parse validation loop (BEFORE success return) -------------------
     for path_str in files_created:
@@ -196,6 +227,8 @@ def add_e2e_test_suite(inp: ToolInput) -> ToolResult:
             "  test_error_handling.py: 422 validation, 404 not found, 401 unauthorized.",
             "All tests use httpx.AsyncClient — no real HTTP server needed.",
             "Config fields added: E2E_BASE_URL, E2E_TEST_EMAIL, E2E_TEST_PASSWORD.",
+            "requirements.txt: httpx + pytest-asyncio declared so the emitted suite is runnable.",
+            *config_notes,
         ],
         next_steps=[
             "pip install pytest-asyncio httpx  # if not already installed",
@@ -210,6 +243,7 @@ def add_e2e_test_suite(inp: ToolInput) -> ToolResult:
 # ---------------------------------------------------------------------------
 # File writers — each < 50 LOC
 # ---------------------------------------------------------------------------
+
 
 def _write_conftest(dest: Path) -> None:
     """Write tests/e2e/conftest.py with async_client, test_user, auth_headers fixtures.
@@ -594,42 +628,108 @@ def _write_test_error_handling(dest: Path) -> None:
     dest.write_text(content)
 
 
-def _patch_config(config_file: Path) -> None:
+def _patch_config(config_file: Path):  # type: ignore[no-untyped-def]
     """Inject E2E settings fields inside the ``class Settings`` body.
 
-    Inserts E2E_BASE_URL, E2E_TEST_EMAIL, E2E_TEST_PASSWORD with 4-space
-    indent just before the ``settings = Settings()`` instantiation line so
-    the fields remain inside the class body. When that line is absent,
-    appends at end of file.
+    F-004: pre-fix this used the hand-rolled
+    ``content.replace("settings = Settings()", ...)`` pattern that
+    ``adapt.contracts.config_patcher`` was introduced to replace. The
+    hand-rolled pattern silently corrupts configs that have blank lines /
+    comments between the class body and the ``settings = Settings()``
+    instantiation. We now delegate to the shared helper, which AST-parses
+    config.py and inserts INTO the ``Settings`` class body.
 
     Args:
         config_file: Absolute path to ``app/core/config.py``.
+
+    Returns:
+        ``PatchResult`` describing the outcome (see
+        :mod:`adapt.contracts.config_patcher`).
     """
-    content = config_file.read_text()
-    fields_needed = [
-        '    E2E_BASE_URL: str = "http://localhost:8000"',
-        '    E2E_TEST_EMAIL: str = "e2e_test@example.com"',
-        '    E2E_TEST_PASSWORD: str = "E2eTestPass123!"',
-    ]
-    new_lines = [line for line in fields_needed if line.strip().split(":")[0] not in content]
-    if not new_lines:
-        return
+    from adapt.contracts.config_patcher import patch_settings_fields
 
-    insertion = "\n".join(new_lines) + "\n"
+    return patch_settings_fields(
+        config_file,
+        fields=[
+            ("E2E_BASE_URL", 'E2E_BASE_URL: str = "http://localhost:8000"'),
+            ("E2E_TEST_EMAIL", 'E2E_TEST_EMAIL: str = "e2e_test@example.com"'),
+            ("E2E_TEST_PASSWORD", 'E2E_TEST_PASSWORD: str = "E2eTestPass123!"'),
+        ],
+    )
 
-    marker = "settings = Settings()"
-    if marker in content:
-        content = content.replace(marker, insertion + "\n" + marker, 1)
-    else:
-        if not content.endswith("\n"):
-            content += "\n"
-        content += "\n" + insertion
-    config_file.write_text(content)
+
+# ---------------------------------------------------------------------------
+# F-003: declare test deps the emitted suite imports
+# ---------------------------------------------------------------------------
+
+_E2E_TEST_DEPS: tuple[tuple[str, str], ...] = (
+    # (package_name, pinned spec) — kept in sync with the imports in the
+    # emitted tests/e2e/conftest.py + flow modules.
+    ("httpx", "httpx>=0.28.0"),
+    ("pytest-asyncio", "pytest-asyncio>=0.24.0"),
+)
+
+
+def _patch_requirements_with_test_deps(requirements_file: Path) -> bool:
+    """Append any missing E2E test deps to ``requirements.txt`` line-by-line.
+
+    Parses each line, normalises to its PEP 503 package name (stripping
+    extras / version specifiers / comments / env markers), and only adds
+    packages that are NOT already declared. Mirrors the line-by-line
+    parser used by ``add_websocket_presence`` (F-006).
+
+    Args:
+        requirements_file: Path to ``requirements.txt``.
+
+    Returns:
+        ``True`` when at least one new dep was appended, ``False`` otherwise.
+    """
+    src = requirements_file.read_text()
+    declared = {_extract_req_name(line) for line in src.splitlines()}
+    declared.discard(None)
+    to_add: list[str] = []
+    for pkg, spec in _E2E_TEST_DEPS:
+        if pkg.lower() not in declared:
+            to_add.append(spec)
+    if not to_add:
+        return False
+    if not src.endswith("\n"):
+        src += "\n"
+    requirements_file.write_text(src + "\n".join(to_add) + "\n")
+    return True
+
+
+def _extract_req_name(raw_line: str) -> str | None:
+    """Return the lowercase package name of a requirements line, or None.
+
+    Args:
+        raw_line: A single ``requirements.txt`` line.
+
+    Returns:
+        Normalised package name, or ``None`` if the line declares no package.
+    """
+    line = raw_line.strip()
+    if not line or line.startswith("#"):
+        return None
+    if line.startswith("-") or line.startswith("--"):
+        return None
+    if " #" in line:
+        line = line.split(" #", 1)[0].strip()
+    if ";" in line:
+        line = line.split(";", 1)[0].strip()
+    if "[" in line:
+        line = line.split("[", 1)[0].strip()
+    for sep in ("===", "==", ">=", "<=", "!=", "~=", ">", "<"):
+        if sep in line:
+            line = line.split(sep, 1)[0].strip()
+            break
+    return line.lower() if line else None
 
 
 # ---------------------------------------------------------------------------
 # Utility
 # ---------------------------------------------------------------------------
+
 
 def _elapsed_ms(start: float) -> int:
     """Return wall-clock milliseconds since *start*.

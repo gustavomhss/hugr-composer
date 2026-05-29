@@ -14,57 +14,100 @@ inside the class regardless of layout.
 
 Usage::
 
-    from adapt.contracts.config_patcher import patch_settings_fields
+    from adapt.contracts.config_patcher import patch_settings_fields, PatchResult
 
-    patch_settings_fields(
+    result = patch_settings_fields(
         app_dir / "core" / "config.py",
         fields=[
             ('TEMPORAL_HOST', 'TEMPORAL_HOST: str = "localhost:7233"'),
             ('TEMPORAL_NAMESPACE', 'TEMPORAL_NAMESPACE: str = "default"'),
         ],
     )
+    if result is PatchResult.APPLIED:
+        files_modified.append(str(config_file))
+    elif result in (PatchResult.TARGET_MISSING, PatchResult.SYNTAX_ERROR):
+        notes.append(f"config.py not patched: {result.name}")
 
 Each entry is ``(field_name, field_line)``. `field_name` is used for the
 idempotency check: if that token already appears anywhere in `config.py`
 the field is not re-added. `field_line` is the raw content WITHOUT
 leading indent (the helper adds 4-space indent automatically).
+
+Return values (F-007 — structured PatchResult):
+
+* ``PatchResult.APPLIED`` — file was modified on disk.
+* ``PatchResult.ALREADY_PRESENT`` — all requested fields already exist; no-op.
+* ``PatchResult.TARGET_MISSING`` — config.py absent OR no ``Settings``
+  class was found in it (the helper fell back to module-level append).
+* ``PatchResult.SYNTAX_ERROR`` — config.py had a syntax error OR the
+  patched output would have introduced one; nothing was written.
+
+Callers SHOULD only treat ``APPLIED`` as "I modified config.py". The
+helper is backwards-compatible: ``PatchResult.APPLIED`` is truthy,
+every other result is falsy, so ``if patch_settings_fields(...): ...``
+still works.
 """
+
 from __future__ import annotations
 
 import ast
+from collections.abc import Iterable
+from enum import Enum
 from pathlib import Path
-from typing import Iterable
-
 
 _CLASS_INDENT = "    "
+
+
+class PatchResult(Enum):
+    """Outcome of a ``patch_settings_fields`` call.
+
+    Members:
+        APPLIED: File was written on disk. Truthy.
+        ALREADY_PRESENT: All requested fields already exist. Falsy.
+        TARGET_MISSING: config.py absent or has no ``Settings`` class
+            shape; module-level fallback may have been written. Falsy.
+        SYNTAX_ERROR: Existing file or patched output had a syntax
+            error; nothing was written. Falsy.
+    """
+
+    APPLIED = "applied"
+    ALREADY_PRESENT = "already_present"
+    TARGET_MISSING = "target_missing"
+    SYNTAX_ERROR = "syntax_error"
+
+    def __bool__(self) -> bool:
+        """Truthy only for APPLIED so ``if patch_settings_fields(...)`` keeps working."""
+        return self is PatchResult.APPLIED
 
 
 def patch_settings_fields(
     config_file: Path,
     *,
     fields: Iterable[tuple[str, str]],
-) -> bool:
+) -> PatchResult:
     """Insert new fields into the ``Settings`` class body.
 
-    Returns True if the file was modified, False otherwise.
+    Returns a ``PatchResult`` describing the outcome. The result is
+    backwards-compatible with the old boolean return: ``APPLIED`` is
+    truthy, every other value is falsy.
 
     Idempotent: fields whose `name` token is already present anywhere in
     the file are skipped. A no-op call (all fields already present)
-    returns False without writing.
+    returns ``ALREADY_PRESENT`` without writing.
     """
     if not config_file.exists():
-        return False
+        return PatchResult.TARGET_MISSING
 
     content = config_file.read_text(encoding="utf-8")
     missing = [line for name, line in fields if name not in content]
     if not missing:
-        return False
+        return PatchResult.ALREADY_PRESENT
 
     try:
         tree = ast.parse(content)
     except SyntaxError:
         # Don't corrupt a file that's already broken — surface via return.
-        return False
+        return PatchResult.SYNTAX_ERROR
 
     settings_cls: ast.ClassDef | None = None
     for node in tree.body:
@@ -73,19 +116,17 @@ def patch_settings_fields(
             break
 
     if settings_cls is None or not settings_cls.body:
-        # No Settings class. Fall back to module-level append (unindented)
-        # so at minimum the field names exist and Python parses the file.
-        # Callers relying on `settings.FIELD` will need to adapt.
+        # No Settings class shape — fall back to module-level append so the
+        # field names at least exist + Python parses, but tell the caller we
+        # could not honour the contract via TARGET_MISSING.
         if not content.endswith("\n"):
             content += "\n"
         content += "\n" + "\n".join(missing) + "\n"
         config_file.write_text(content, encoding="utf-8")
-        return True
+        return PatchResult.TARGET_MISSING
 
     last_body_node = settings_cls.body[-1]
-    insert_after_line = getattr(
-        last_body_node, "end_lineno", last_body_node.lineno
-    )
+    insert_after_line = getattr(last_body_node, "end_lineno", last_body_node.lineno)
 
     lines = content.splitlines(keepends=True)
     prefix = lines[:insert_after_line]
@@ -99,7 +140,7 @@ def patch_settings_fields(
     try:
         ast.parse(new_content)
     except SyntaxError:
-        return False
+        return PatchResult.SYNTAX_ERROR
 
     config_file.write_text(new_content, encoding="utf-8")
-    return True
+    return PatchResult.APPLIED

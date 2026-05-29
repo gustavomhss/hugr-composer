@@ -38,7 +38,6 @@ from pathlib import Path
 
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
-
 MCP_TOOL = {
     "name": "fastapi_realtime_add_websocket_presence",
     "description": (
@@ -53,6 +52,7 @@ MCP_TOOL = {
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
+
 
 def add_websocket_presence(
     inp: ToolInput,
@@ -84,7 +84,7 @@ def add_websocket_presence(
         return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     # --- Prerequisite check (standalone mode) --------------------------------
-    from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
+    from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -118,7 +118,9 @@ def add_websocket_presence(
     if presence_ws_file.exists() and "PresenceManager" in presence_ws_file.read_text():
         return ToolResult(
             status="no_op",
-            notes=["PresenceManager already present — WebSocket presence is already enabled, skipped."],
+            notes=[
+                "PresenceManager already present — WebSocket presence is already enabled, skipped."
+            ],
             execution_time_ms=_elapsed_ms(start),
         )
 
@@ -227,8 +229,7 @@ def add_websocket_presence(
             "Set REDIS_URL in .env — presence TTL and pub/sub require Redis.",
             "Restart the application so the new presence router and WS endpoint are active.",
             "Connect a client with: ws://<host>/ws/presence?token=<access_token>",
-            "Client must send {\"type\": \"ping\"} every "
-            f"{heartbeat_seconds}s to stay online.",
+            f'Client must send {{"type": "ping"}} every {heartbeat_seconds}s to stay online.',
             "Poll online users at GET /presence/online.",
         ],
         execution_time_ms=_elapsed_ms(start),
@@ -239,6 +240,7 @@ def add_websocket_presence(
 # File writers — each <= 50 LOC
 # ---------------------------------------------------------------------------
 
+
 def _write_presence_model(dest: Path) -> None:
     """Write ``app/models/presence.py`` with ``UserPresence`` SQLAlchemy model.
 
@@ -246,7 +248,8 @@ def _write_presence_model(dest: Path) -> None:
         dest: Absolute path for the new file.
     """
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(textwrap.dedent("""\
+    dest.write_text(
+        textwrap.dedent("""\
         \"\"\"SQLAlchemy model for user presence tracking.\"\"\"
         from __future__ import annotations
 
@@ -288,7 +291,8 @@ def _write_presence_model(dest: Path) -> None:
                 onupdate=func.now(),
                 nullable=False,
             )
-    """))
+    """)
+    )
 
 
 def _write_presence_schemas(dest: Path) -> None:
@@ -297,7 +301,8 @@ def _write_presence_schemas(dest: Path) -> None:
     Args:
         dest: Absolute path for the new file.
     """
-    dest.write_text(textwrap.dedent("""\
+    dest.write_text(
+        textwrap.dedent("""\
         \"\"\"Pydantic schemas for WebSocket presence.\"\"\"
         from __future__ import annotations
 
@@ -350,7 +355,8 @@ def _write_presence_schemas(dest: Path) -> None:
 
             online: list[uuid.UUID]
             count: int
-    """))
+    """)
+    )
 
 
 def _write_presence_manager(
@@ -366,7 +372,8 @@ def _write_presence_manager(
         max_devices_per_user: Hard cap on simultaneous device connections per user.
     """
     ttl = heartbeat_seconds * 3
-    content = textwrap.dedent("""\
+    content = (
+        textwrap.dedent("""\
         \"\"\"PresenceManager — Redis-backed user presence tracker.
 
         One instance per application process (singleton via ``get_presence_manager``).
@@ -485,7 +492,10 @@ def _write_presence_manager(
             if _manager is None:
                 _manager = PresenceManager()
             return _manager
-        """).replace("{ttl}", str(ttl)).replace("{max_devices}", str(max_devices_per_user))
+        """)
+        .replace("{ttl}", str(ttl))
+        .replace("{max_devices}", str(max_devices_per_user))
+    )
     dest.write_text(content)
 
 
@@ -497,7 +507,8 @@ def _write_presence_endpoint(dest: Path, heartbeat_seconds: int) -> None:
         heartbeat_seconds: Expected heartbeat interval for timeout detection.
     """
     timeout = heartbeat_seconds * 3
-    content = textwrap.dedent("""\
+    content = (
+        textwrap.dedent("""\
         \"\"\"WebSocket presence endpoint: WS /ws/presence.
 
         Auth: JWT via ``?token=`` query param or ``Authorization: Bearer`` subprotocol.
@@ -602,7 +613,10 @@ def _write_presence_endpoint(dest: Path, heartbeat_seconds: int) -> None:
                 pass
             finally:
                 await manager.mark_offline(user_id, device_id)
-        """).replace("{hb}", str(heartbeat_seconds)).replace("{timeout}", str(timeout))
+        """)
+        .replace("{hb}", str(heartbeat_seconds))
+        .replace("{timeout}", str(timeout))
+    )
     dest.write_text(content)
 
 
@@ -617,7 +631,8 @@ def _write_presence_http_routes(dest: Path) -> None:
         dest: Absolute path for the new file.
     """
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(textwrap.dedent("""\
+    dest.write_text(
+        textwrap.dedent("""\
         \"\"\"REST companion routes for presence: GET /presence/online, GET /presence/{user_id}.\"\"\"
         from __future__ import annotations
 
@@ -677,7 +692,8 @@ def _write_presence_http_routes(dest: Path) -> None:
                 last_seen=_dt.datetime.now(_dt.timezone.utc),
                 device=device,
             )
-    """))
+    """)
+    )
 
 
 def _patch_models_init(
@@ -786,7 +802,8 @@ def _write_redis_module(dest: Path) -> None:
         dest: Absolute destination path (``app/core/redis.py``).
     """
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(textwrap.dedent("""\
+    dest.write_text(
+        textwrap.dedent("""\
         \"\"\"Async Redis client factory for realtime features (SSE, webhooks, presence).\"\"\"
         from __future__ import annotations
 
@@ -807,23 +824,95 @@ def _write_redis_module(dest: Path) -> None:
                 getattr(settings, "REDIS_URL", "redis://localhost:6379/0"),
                 decode_responses=True,
             )
-    """))
+    """)
+    )
 
 
 def _patch_requirements(requirements_file: Path) -> None:
     """Add ``redis[hiredis]`` to requirements.txt if not already present.
 
+    F-006: pre-fix this used a raw ``"redis" not in src`` substring check
+    which would (a) treat ``aioredis``/``hiredis``/``# redis comment``
+    lines as proof the package was installed, and (b) skip the add. We
+    now parse requirements line-by-line, normalise each to its package
+    name (strip extras, version specifier, environment markers, hash
+    fragments, comments), and compare to the exact name ``redis``.
+
     Args:
         requirements_file: Path to ``requirements.txt``.
     """
     src = requirements_file.read_text()
-    if "redis" not in src:
-        requirements_file.write_text(src.rstrip("\n") + "\nredis[hiredis]>=5.0.0\n")
+    if _requirements_contain_package(src, "redis"):
+        return
+    requirements_file.write_text(src.rstrip("\n") + "\nredis[hiredis]>=5.0.0\n")
+
+
+def _requirements_contain_package(src: str, pkg: str) -> bool:
+    """Return True iff ``pkg`` appears as a package name in *src*.
+
+    Args:
+        src: Raw ``requirements.txt`` contents.
+        pkg: Exact package name to look for (case-insensitive,
+            normalised to PEP 503 lowercase).
+
+    Returns:
+        ``True`` when *pkg* is a declared requirement; ``False`` otherwise.
+        Comments and unrelated tokens that merely contain ``pkg`` as a
+        substring (``aioredis``, ``redis-py-cluster``, etc.) do NOT count.
+    """
+    target = pkg.strip().lower()
+    for raw_line in src.splitlines():
+        name = _extract_requirement_name(raw_line)
+        if name is None:
+            continue
+        if name == target:
+            return True
+    return False
+
+
+def _extract_requirement_name(raw_line: str) -> str | None:
+    """Return the normalised package name of a single requirements line.
+
+    Strips inline comments, environment markers, extras, version
+    specifiers, and whitespace. Lines that are blank, full-line
+    comments, or pip flags (``-r foo.txt``, ``--index-url ...``) return
+    ``None``.
+
+    Args:
+        raw_line: One line from a ``requirements.txt`` file.
+
+    Returns:
+        Lowercase package name without extras/version, or ``None`` when
+        the line declares no package.
+    """
+    line = raw_line.strip()
+    if not line or line.startswith("#"):
+        return None
+    # Pip directives like ``-r ...`` / ``--index-url ...`` carry no pkg name.
+    if line.startswith("-") or line.startswith("--"):
+        return None
+    # Drop inline comments. PEP 508 says ``#`` only starts a comment when
+    # preceded by whitespace; close enough for the patcher's purpose.
+    if " #" in line:
+        line = line.split(" #", 1)[0].strip()
+    # Drop environment marker (``pkg; python_version < '3.13'``).
+    if ";" in line:
+        line = line.split(";", 1)[0].strip()
+    # Drop extras (``redis[hiredis]``).
+    if "[" in line:
+        line = line.split("[", 1)[0].strip()
+    # Drop version specifier — first of ``=<>!~`` wins.
+    for sep in ("===", "==", ">=", "<=", "!=", "~=", ">", "<"):
+        if sep in line:
+            line = line.split(sep, 1)[0].strip()
+            break
+    return line.lower() if line else None
 
 
 # ---------------------------------------------------------------------------
 # Utilities
 # ---------------------------------------------------------------------------
+
 
 def _assert_parses(path: Path) -> None:
     """Raise ``SyntaxError`` if *path* is not valid Python.
