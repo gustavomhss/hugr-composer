@@ -21,6 +21,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from sqlalchemy.orm import Session
+
 from hugr_auth.license import introspect_license, mint_license
 from hugr_auth.store import SubscriptionStore, authorize
 from hugr_auth.store_sql import SqlSubscriptionStore
@@ -31,6 +33,7 @@ _SECRET = _secrets.token_bytes(32)
 # ---------------------------------------------------------------------------
 # Protocol satisfaction check
 # ---------------------------------------------------------------------------
+
 
 def _protocol_check() -> list[str]:
     """Verify isinstance(..., SubscriptionStore) is True (runtime_checkable)."""
@@ -47,6 +50,7 @@ def _protocol_check() -> list[str]:
 # ---------------------------------------------------------------------------
 # authorize() integration check
 # ---------------------------------------------------------------------------
+
 
 def _authorize_checks() -> list[str]:
     """authorize() from store.py works with SqlSubscriptionStore (in-memory DB)."""
@@ -88,6 +92,7 @@ def _authorize_checks() -> list[str]:
 # Persistence check — the key production requirement
 # ---------------------------------------------------------------------------
 
+
 def _persistence_checks() -> list[str]:
     """State persists across a fresh SqlSubscriptionStore on the same SQLite file."""
     f: list[str] = []
@@ -123,6 +128,7 @@ def _persistence_checks() -> list[str]:
 # Idempotency check
 # ---------------------------------------------------------------------------
 
+
 def _idempotency_checks() -> list[str]:
     """cancel/revoke/reactivate are idempotent (no DB errors on double-call)."""
     f: list[str] = []
@@ -144,6 +150,7 @@ def _idempotency_checks() -> list[str]:
 # ---------------------------------------------------------------------------
 # Full authorize() + cancel via SqlStore (covers the scope requirement)
 # ---------------------------------------------------------------------------
+
 
 def _authorize_with_sql_cancel() -> list[str]:
     """Mint a license, cancel the seat via SqlSubscriptionStore, assert authorize returns None."""
@@ -169,6 +176,7 @@ def _authorize_with_sql_cancel() -> list[str]:
 # pytest entry-points
 # ---------------------------------------------------------------------------
 
+
 def test_protocol_satisfied() -> None:
     assert not _protocol_check(), "\n".join(_protocol_check())
 
@@ -190,16 +198,125 @@ def test_authorize_with_sql_cancel() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Codex C3 F-011 regression — SQL revocation is a real DB-level upsert
+# ---------------------------------------------------------------------------
+
+
+def test_revoke_and_cancel_are_db_level_upserts() -> None:
+    """Double-revoke / double-cancel must be a DB-level no-op + leave 1 row.
+
+    Before the F-011 fix, the mutation methods did Python-side
+    ``session.get(...) is None`` then ``session.add(...)``. That READ-then-ADD
+    is racy: two concurrent admins both observe "not present", both insert,
+    and the second one hits the unique-key constraint and raises
+    IntegrityError — the docstring's "INSERT OR IGNORE / ON CONFLICT DO
+    NOTHING" promise was a lie.
+
+    This test asserts the contract the docstring claims: idempotent at the DB
+    level, no IntegrityError, exactly one row after duplicate writes.
+    """
+    from sqlalchemy import func, select
+
+    from hugr_auth.store_sql import _CancelledSeat, _RevokedKey
+
+    failures: list[str] = []
+    store = SqlSubscriptionStore()
+
+    # Double-write the same identifiers; must not raise.
+    try:
+        store.cancel_seat("dup-seat")
+        store.cancel_seat("dup-seat")
+        store.cancel_seat("dup-seat")
+        store.revoke_key("dup-jti")
+        store.revoke_key("dup-jti")
+        store.revoke_key("dup-jti")
+    except Exception as exc:
+        failures.append(f"duplicate write raised: {type(exc).__name__}: {exc}")
+
+    # Final row count must be exactly 1 per deny-list table.
+    with Session(store._engine) as session:
+        seat_rows = session.scalar(select(func.count()).select_from(_CancelledSeat))
+        jti_rows = session.scalar(select(func.count()).select_from(_RevokedKey))
+        if seat_rows != 1:
+            failures.append(f"expected 1 cancelled_seats row, got {seat_rows}")
+        if jti_rows != 1:
+            failures.append(f"expected 1 revoked_keys row, got {jti_rows}")
+
+    # Idempotent semantics survive a reload (the deny-list still denies).
+    if not store.seat_cancelled("dup-seat"):
+        failures.append("seat_cancelled returned False after triple-cancel")
+    if not store.key_revoked("dup-jti"):
+        failures.append("key_revoked returned False after triple-revoke")
+
+    assert not failures, "\n".join(failures)
+
+
+def test_concurrent_revoke_does_not_raise_integrity_error() -> None:
+    """Two threads revoking the same jti concurrently must both succeed.
+
+    This is the racy path the old read-then-add lost on: two threads pass the
+    ``session.get(...) is None`` check, both call ``session.add(...)``, the
+    second commit raises IntegrityError. With ON CONFLICT DO NOTHING /
+    INSERT OR IGNORE the DB resolves the collision and both threads exit
+    cleanly. SQLite serialises writes, so the test runs on an in-memory DB
+    with ``check_same_thread=False`` already wired in.
+    """
+    import threading
+
+    from sqlalchemy import func, select
+
+    from hugr_auth.store_sql import _RevokedKey
+
+    failures: list[str] = []
+    # File-backed SQLite + WAL — the in-memory engine uses a SingletonThreadPool
+    # that can't serve multiple writer threads; the file backend exercises the
+    # real concurrent-writer path the production Postgres deployment lives on.
+    with tempfile.TemporaryDirectory() as d:
+        db_path = Path(d) / "race.db"
+        store = SqlSubscriptionStore(f"sqlite:///{db_path}")
+        errors: list[BaseException] = []
+        barrier = threading.Barrier(8)
+
+        def _revoke_same() -> None:
+            try:
+                barrier.wait()
+                store.revoke_key("race-jti")
+            except BaseException as exc:  # pragma: no cover — only on regression
+                errors.append(exc)
+
+        threads = [threading.Thread(target=_revoke_same) for _ in range(8)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        if errors:
+            failures.append(
+                "concurrent revoke raised: "
+                + "; ".join(f"{type(e).__name__}: {e}" for e in errors)
+            )
+        with Session(store._engine) as session:
+            jti_rows = session.scalar(select(func.count()).select_from(_RevokedKey))
+            if jti_rows != 1:
+                failures.append(
+                    f"expected 1 revoked_keys row after race, got {jti_rows}"
+                )
+
+    assert not failures, "\n".join(failures)
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
 
+
 def main() -> int:
     all_checks = [
-        ("protocol satisfied",         _protocol_check),
-        ("authorize() revocation",     _authorize_checks),
+        ("protocol satisfied", _protocol_check),
+        ("authorize() revocation", _authorize_checks),
         ("persistence across instances", _persistence_checks),
-        ("idempotent mutations",        _idempotency_checks),
-        ("authorize() + SQL cancel",    _authorize_with_sql_cancel),
+        ("idempotent mutations", _idempotency_checks),
+        ("authorize() + SQL cancel", _authorize_with_sql_cancel),
     ]
     failures: list[str] = []
     for label, fn in all_checks:

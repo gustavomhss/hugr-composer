@@ -87,8 +87,10 @@ def _endpoint_checks() -> list[str]:
     import httpx
 
     f: list[str] = []
-    saved = {k: os.environ.get(k) for k in
-             ("HUGR_LICENSE_SIGNING_SECRET", "HUGR_ADMIN_TOKEN", "HUGR_STORE_PATH")}
+    saved = {
+        k: os.environ.get(k)
+        for k in ("HUGR_LICENSE_SIGNING_SECRET", "HUGR_ADMIN_TOKEN", "HUGR_STORE_PATH")
+    }
     os.environ["HUGR_LICENSE_SIGNING_SECRET"] = _SECRET.hex()
     os.environ["HUGR_ADMIN_TOKEN"] = "admin-token-at-least-16-chars"
     os.environ.pop("HUGR_STORE_PATH", None)
@@ -103,7 +105,9 @@ def _endpoint_checks() -> list[str]:
 
         async def _run() -> None:
             transport = httpx.ASGITransport(app=app_mod.app)
-            async with httpx.AsyncClient(transport=transport, base_url="http://auth") as c:
+            async with httpx.AsyncClient(
+                transport=transport, base_url="http://auth"
+            ) as c:
                 # active before cancellation
                 r = await c.post("/introspect", json={"key": key})
                 if not r.json().get("active"):
@@ -112,24 +116,38 @@ def _endpoint_checks() -> list[str]:
                 # admin guard: no token → 403
                 r = await c.post("/admin/cancel_seat", json={"seat": "seat-rev"})
                 if r.status_code != 403:
-                    f.append(f"admin cancel without token: expected 403, got {r.status_code}")
+                    f.append(
+                        f"admin cancel without token: expected 403, got {r.status_code}"
+                    )
 
                 # admin guard: wrong token → 403
-                r = await c.post("/admin/cancel_seat", json={"seat": "seat-rev"},
-                                 headers={"Authorization": "Bearer wrong"})
+                r = await c.post(
+                    "/admin/cancel_seat",
+                    json={"seat": "seat-rev"},
+                    headers={"Authorization": "Bearer wrong"},
+                )
                 if r.status_code != 403:
-                    f.append(f"admin cancel wrong token: expected 403, got {r.status_code}")
+                    f.append(
+                        f"admin cancel wrong token: expected 403, got {r.status_code}"
+                    )
 
                 # cancel with the right token → 200
-                r = await c.post("/admin/cancel_seat", json={"seat": "seat-rev"},
-                                 headers={"Authorization": "Bearer admin-token-at-least-16-chars"})
+                r = await c.post(
+                    "/admin/cancel_seat",
+                    json={"seat": "seat-rev"},
+                    headers={"Authorization": "Bearer admin-token-at-least-16-chars"},
+                )
                 if r.status_code != 200:
-                    f.append(f"admin cancel with token: expected 200, got {r.status_code} {r.text[:120]}")
+                    f.append(
+                        f"admin cancel with token: expected 200, got {r.status_code} {r.text[:120]}"
+                    )
 
                 # now the same key is denied in real time
                 r = await c.post("/introspect", json={"key": key})
                 if r.json().get("active"):
-                    f.append("key still active after seat cancellation (no real-time revocation)")
+                    f.append(
+                        "key still active after seat cancellation (no real-time revocation)"
+                    )
 
             await transport.aclose()
 
@@ -160,6 +178,82 @@ def test_introspect_and_admin_endpoints() -> None:
     assert not _endpoint_checks(), "\n".join(_endpoint_checks())
 
 
+# ---------------------------------------------------------------------------
+# Codex C3 F-009 regression — FileSubscriptionStore mutate+persist atomicity
+# ---------------------------------------------------------------------------
+
+
+def test_file_store_persist_is_atomic_under_concurrent_mutations() -> None:
+    """N concurrent admin writes → on-disk JSON matches the live in-memory state.
+
+    Before the F-009 fix, ``_persist`` ran OUTSIDE the mutation lock, so two
+    parallel ``revoke_key`` calls could interleave ``set.add`` + ``json.dump``
+    and let the later writer serialize an older snapshot — silently dropping
+    revocations across restart. The fix moves the persist call inside the
+    lock; this test fans out N threads doing real mutations and asserts the
+    final on-disk payload equals the final in-memory state.
+    """
+    import json as _json
+    import threading
+
+    failures: list[str] = []
+    with tempfile.TemporaryDirectory() as d:
+        path = Path(d) / "subs.json"
+        store = FileSubscriptionStore(path)
+
+        n_workers = 16
+        jtis_per_worker = 32
+        all_jtis = [
+            f"jti-{worker}-{i}"
+            for worker in range(n_workers)
+            for i in range(jtis_per_worker)
+        ]
+        seats = [f"seat-{worker}" for worker in range(n_workers)]
+
+        barrier = threading.Barrier(n_workers)
+
+        def _hammer(worker: int) -> None:
+            # All workers reach this line before any starts mutating, so the
+            # contention window is maximal.
+            barrier.wait()
+            store.cancel_seat(f"seat-{worker}")
+            for i in range(jtis_per_worker):
+                store.revoke_key(f"jti-{worker}-{i}")
+
+        threads = [
+            threading.Thread(target=_hammer, args=(w,)) for w in range(n_workers)
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        # 1. Final disk payload must equal final in-memory state.
+        on_disk = _json.loads(path.read_text(encoding="utf-8"))
+        if set(on_disk["cancelled_seats"]) != set(seats):
+            failures.append(
+                f"cancelled_seats on disk != in-memory: "
+                f"missing={set(seats) - set(on_disk['cancelled_seats'])}, "
+                f"extra={set(on_disk['cancelled_seats']) - set(seats)}"
+            )
+        if set(on_disk["revoked_keys"]) != set(all_jtis):
+            failures.append(
+                f"revoked_keys on disk != in-memory: "
+                f"missing_count={len(set(all_jtis) - set(on_disk['revoked_keys']))}"
+            )
+
+        # 2. A fresh store on the same path reloads the same view (durability).
+        reloaded = FileSubscriptionStore(path)
+        for seat in seats:
+            if not reloaded.seat_cancelled(seat):
+                failures.append(f"reloaded store lost cancelled seat: {seat}")
+        for jti in all_jtis:
+            if not reloaded.key_revoked(jti):
+                failures.append(f"reloaded store lost revoked jti: {jti}")
+
+    assert not failures, "\n".join(failures)
+
+
 def main() -> int:
     failures = _authorize_checks() + _persistence_checks() + _endpoint_checks()
     if failures:
@@ -167,8 +261,10 @@ def main() -> int:
         for x in failures:
             print(f"  FAIL  {x}")
         return 1
-    print("HuGR auth store: revocation green — cancel seat / revoke key cut access "
-          "in real time, survive restart, admin endpoints fail-closed.")
+    print(
+        "HuGR auth store: revocation green — cancel seat / revoke key cut access "
+        "in real time, survive restart, admin endpoints fail-closed."
+    )
     return 0
 
 

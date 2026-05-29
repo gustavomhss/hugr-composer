@@ -73,12 +73,18 @@ def _checks() -> list[str]:
 
         os.environ["HUGR_AUTH_URL"] = "http://auth.test"
         _orig_remote = ag._introspect_remote
-        try:
-            ag._introspect_remote = lambda base, tok: (
+
+        async def _fake_remote(base: str, tok: str):
+            # Async stand-in for the real httpx-backed introspect; F-010 made the
+            # function async to keep the event loop free during /introspect.
+            return (
                 {"client_id": "seat-remote", "scopes": ["hugr:tools"], "plan": "pro"}
                 if tok == "remote-good"
                 else None
             )
+
+        try:
+            ag._introspect_remote = _fake_remote
             tok = _verify("remote-good")
             if tok is None or tok.client_id != "seat-remote":
                 failures.append(f"gate did not honour the auth-API claims: {tok}")
@@ -105,6 +111,7 @@ def _checks() -> list[str]:
 # pytest entrypoints
 # ---------------------------------------------------------------------------
 
+
 def test_gate_enabled_reflects_flag() -> None:
     """Covered within the consolidated gate checks."""
     assert not _checks(), "\n".join(_checks())
@@ -116,8 +123,82 @@ def test_unlicensed_is_denied_and_licensed_is_allowed() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Codex C3 F-010 regression — verify_token must NOT block the event loop
+# ---------------------------------------------------------------------------
+
+
+import pytest  # noqa: E402  — kept near the async test it gates
+
+
+@pytest.mark.asyncio
+async def test_verify_token_does_not_block_event_loop() -> None:
+    """N concurrent verify_token calls must complete in ~1×, not N×, latency.
+
+    Before the F-010 fix, ``_introspect_remote`` used synchronous
+    ``httpx.post`` inside an ``async def`` method. asyncio.gather() over N
+    verify_token calls would still serialise on the blocking POST, so the
+    wall-clock would scale linearly with N and the event loop would stall.
+    With ``httpx.AsyncClient`` + ``await`` the gather runs the calls
+    concurrently and total time stays close to one round-trip.
+
+    Methodology: we monkey-patch ``_introspect_remote`` with a coroutine that
+    sleeps ``DELAY`` seconds before returning claims. With concurrent awaits
+    the gather should finish in ~DELAY; a blocking impl would take ~N*DELAY.
+    We assert wall-clock < N * DELAY / 2 — a generous bound that still
+    fails the old sync code (which would take ~N * DELAY).
+    """
+    import asyncio as _asyncio
+    import time as _time
+
+    import mcp_tools.auth_gate as ag
+
+    delay = 0.1  # seconds per "introspect"
+    n = 10
+
+    saved_env = {k: os.environ.get(k) for k in ("HUGR_GATE", "HUGR_AUTH_URL")}
+    saved_remote = ag._introspect_remote
+
+    async def _slow_remote(base: str, tok: str) -> dict | None:
+        # Coroutine that yields to the loop — concurrent awaits should
+        # overlap, the way an AsyncClient call would.
+        await _asyncio.sleep(delay)
+        return {
+            "client_id": f"seat:{tok}",
+            "scopes": ["hugr:tools"],
+            "plan": "pro",
+        }
+
+    try:
+        os.environ["HUGR_AUTH_URL"] = "http://auth.test"
+        ag._introspect_remote = _slow_remote
+
+        v = ag.HugrTokenVerifier()
+        t0 = _time.monotonic()
+        results = await _asyncio.gather(*[v.verify_token(f"tok-{i}") for i in range(n)])
+        elapsed = _time.monotonic() - t0
+
+        assert all(r is not None for r in results), "every verify_token should return a token"
+
+        # Concurrent: ~delay. Sync-blocking: ~n*delay. Bound at n*delay/2.
+        upper_bound = (n * delay) / 2
+        assert elapsed < upper_bound, (
+            f"verify_token serialised on its body: {elapsed:.3f}s for {n} concurrent calls "
+            f"(>= {upper_bound:.3f}s); the event loop is blocked. "
+            "Did _introspect_remote regress to sync httpx?"
+        )
+    finally:
+        ag._introspect_remote = saved_remote
+        for k, val in saved_env.items():
+            if val is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = val
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
+
 
 def main() -> int:
     failures = _checks()
@@ -126,8 +207,10 @@ def main() -> int:
         for f in failures:
             print(f"  FAIL  {f}")
         return 1
-    print("Auth gate: all checks pass — unlicensed denied, licensed allowed, "
-          "gate inert unless HUGR_GATE set.")
+    print(
+        "Auth gate: all checks pass — unlicensed denied, licensed allowed, "
+        "gate inert unless HUGR_GATE set."
+    )
     return 0
 
 

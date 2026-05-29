@@ -26,7 +26,6 @@ HuGR auth API (verify subscription active + resolve the seat's plan/scopes).
 from __future__ import annotations
 
 import os
-import time
 
 from fastmcp.server.auth.auth import AccessToken, TokenVerifier
 
@@ -49,21 +48,26 @@ def _dev_license_keys() -> set[str]:
     return {k.strip() for k in raw.split(",") if k.strip()}
 
 
-def _introspect_remote(base_url: str, token: str) -> dict | None:
+async def _introspect_remote(base_url: str, token: str) -> dict | None:
     """POST the key to the HuGR auth service's /introspect; return claims or None.
 
+    Async on purpose: ``verify_token`` is awaited inside the FastMCP request
+    pipeline, and a synchronous ``httpx.post`` here would block the event loop
+    on every token check — turning a slow/flaky auth service into server-wide
+    latency spikes (Codex C3 F-010).
+
     Fail-closed: any transport error, non-200, or inactive verdict → None, so a
-    flaky/unreachable auth service denies rather than leaks. Factored out so the
-    HTTP edge is mockable in tests.
+    flaky/unreachable auth service denies rather than leaks. Factored out so
+    the HTTP edge is mockable in tests.
     """
     import httpx
 
     try:
-        resp = httpx.post(
-            f"{base_url.rstrip('/')}/introspect",
-            json={"key": token},
-            timeout=5.0,
-        )
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.post(
+                f"{base_url.rstrip('/')}/introspect",
+                json={"key": token},
+            )
     except httpx.HTTPError:
         return None
     if resp.status_code != 200:
@@ -72,7 +76,7 @@ def _introspect_remote(base_url: str, token: str) -> dict | None:
     return data.get("claims") if data.get("active") else None
 
 
-def _validate_license(token: str) -> dict | None:
+async def _validate_license(token: str) -> dict | None:
     """Validate a license key; return the seat's claims if active, else None.
 
     Resolution order:
@@ -82,13 +86,16 @@ def _validate_license(token: str) -> dict | None:
     2. **Dev keys** (``HUGR_DEV_LICENSE_KEYS``) — local/CI shortcut when no auth
        service is configured.
     3. Otherwise **deny** — an enabled gate never leaks tools by accident.
+
+    Async because path (1) does network I/O; paths (2) and (3) are CPU-only
+    but still ``await``-able so callers have one uniform interface.
     """
     if not token:
         return None
 
     auth_url = os.getenv("HUGR_AUTH_URL", "").strip()
     if auth_url:
-        return _introspect_remote(auth_url, token)
+        return await _introspect_remote(auth_url, token)
 
     if token in _dev_license_keys():
         return {
@@ -111,7 +118,7 @@ class HugrTokenVerifier(TokenVerifier):
         super().__init__(required_scopes=required_scopes)
 
     async def verify_token(self, token: str) -> AccessToken | None:
-        claims = _validate_license(token)
+        claims = await _validate_license(token)
         if claims is None:
             return None
 

@@ -64,6 +64,12 @@ class FileSubscriptionStore(InMemorySubscriptionStore):
     Tiny by design (two string sets). A real deployment swaps this for a DB via
     the SubscriptionStore Protocol; the JSON file keeps the first hosted cut
     durable without a DB dependency.
+
+    Concurrency contract: every mutation holds ``self._lock`` across both the
+    in-memory set update AND the on-disk JSON write. Without that, two
+    concurrent admin writes can mutate the sets correctly, then race while
+    persisting snapshots — letting the later write serialize an older view and
+    silently lose a revocation across restart (Codex C3 F-009).
     """
 
     def __init__(self, path: str | Path) -> None:
@@ -81,7 +87,13 @@ class FileSubscriptionStore(InMemorySubscriptionStore):
         self._cancelled_seats = set(data.get("cancelled_seats", []))
         self._revoked_keys = set(data.get("revoked_keys", []))
 
-    def _persist(self) -> None:
+    def _persist_locked(self) -> None:
+        """Write a snapshot of the in-memory state to disk.
+
+        Caller MUST hold ``self._lock`` — the snapshot is read directly from
+        the live sets, so an unlocked call would race a concurrent mutation
+        and could serialize a torn view.
+        """
         payload = {
             "cancelled_seats": sorted(self._cancelled_seats),
             "revoked_keys": sorted(self._revoked_keys),
@@ -92,16 +104,19 @@ class FileSubscriptionStore(InMemorySubscriptionStore):
         tmp.replace(self._path)  # atomic
 
     def cancel_seat(self, seat: str) -> None:
-        super().cancel_seat(seat)
-        self._persist()
+        with self._lock:
+            self._cancelled_seats.add(seat)
+            self._persist_locked()
 
     def reactivate_seat(self, seat: str) -> None:
-        super().reactivate_seat(seat)
-        self._persist()
+        with self._lock:
+            self._cancelled_seats.discard(seat)
+            self._persist_locked()
 
     def revoke_key(self, jti: str) -> None:
-        super().revoke_key(jti)
-        self._persist()
+        with self._lock:
+            self._revoked_keys.add(jti)
+            self._persist_locked()
 
 
 def authorize(secret: bytes, key: str, store: SubscriptionStore) -> dict | None:
