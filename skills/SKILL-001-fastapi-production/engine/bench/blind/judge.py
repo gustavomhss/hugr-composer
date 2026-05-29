@@ -16,6 +16,7 @@ naming convention encodes the layer:
 
 Authors follow this convention in each spec's judge/test_*.py.
 """
+
 from __future__ import annotations
 
 import contextlib
@@ -34,7 +35,6 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
-
 LAYER_PREFIX = re.compile(r"^test_([A-E])_([a-z_]+)__")
 
 
@@ -42,18 +42,20 @@ LAYER_PREFIX = re.compile(r"^test_([A-E])_([a-z_]+)__")
 class TestRecord:
     __test__ = False  # not a pytest test class despite the "Test" prefix
     test_id: str
-    outcome: str                     # "pass" | "fail" | "error" | "skip"
-    layer: str                       # "A" | "B" | "C" | "D" | "E"
-    bucket: str                      # "concurrency" | "exactly_once" | ...
+    outcome: str  # "pass" | "fail" | "error" | "skip"
+    layer: str  # "A" | "B" | "C" | "D" | "E"
+    bucket: str  # "concurrency" | "exactly_once" | ...
     elapsed_ms: int
     stderr_snippet: str = ""
     hypothesis_minimal: dict | None = None
-    rubric_trace: str = ""           # prose: what this test asserted + why pass/fail
+    rubric_trace: str = ""  # prose: what this test asserted + why pass/fail
 
     def as_dict(self) -> dict:
         d = {
-            "test_id": self.test_id, "outcome": self.outcome,
-            "layer": self.layer, "bucket": self.bucket,
+            "test_id": self.test_id,
+            "outcome": self.outcome,
+            "layer": self.layer,
+            "bucket": self.bucket,
             "elapsed_ms": self.elapsed_ms,
         }
         if self.stderr_snippet:
@@ -73,6 +75,7 @@ def _collect_docstrings(judge_dir: Path) -> dict[str, str]:
     (test_id → docstring → outcome) triples.
     """
     import ast as _ast
+
     out: dict[str, str] = {}
     for py in judge_dir.glob("test_*.py"):
         try:
@@ -90,7 +93,7 @@ def _collect_docstrings(judge_dir: Path) -> dict[str, str]:
 
 @dataclass
 class JudgeResult:
-    boot_status: str                 # "success" | "boot_timeout" | "boot_error" | "skipped"
+    boot_status: str  # "success" | "boot_timeout" | "boot_error" | "skipped"
     boot_log_path: Path | None
     test_records: list[TestRecord] = field(default_factory=list)
     per_layer: dict[str, float] = field(default_factory=dict)
@@ -169,9 +172,11 @@ def run_judge(spec, workdir: Path, *, boot_extra_env: dict | None = None) -> Jud
     chaos_writer = _ChaosWriter(chaos_log_path)
     chaos_writer.event("judge_start", spec_id=spec.spec_id, workdir=str(workdir))
 
-    static_only = all(
-        _classify(p.name)[0] == "E" for p in judge_src.glob("test_*.py")
-    ) if any(judge_src.glob("test_*.py")) else False
+    static_only = (
+        all(_classify(p.name)[0] == "E" for p in judge_src.glob("test_*.py"))
+        if any(judge_src.glob("test_*.py"))
+        else False
+    )
 
     # Copy sealed tests into workdir for pytest discovery (keep source pristine).
     # We use a temp subdir under workdir.parent so the agent's emitted code is
@@ -188,23 +193,24 @@ def run_judge(spec, workdir: Path, *, boot_extra_env: dict | None = None) -> Jud
         chaos_writer.event("boot_skipped", reason="all tests are Layer E static")
     else:
         port = _free_port()
-        boot_cmd_str = (
-            spec.boot_command
-            .replace("{PORT}", str(port))
-            .replace("{PYTHON}", sys.executable)
+        boot_cmd_str = spec.boot_command.replace("{PORT}", str(port)).replace(
+            "{PYTHON}", sys.executable
         )
         # If the spec boot_command uses `python ...` directly (not {PYTHON}),
         # still substitute — the judge's venv Python is the authoritative
         # interpreter for any emitted app.
         if boot_cmd_str.startswith("python "):
-            boot_cmd_str = sys.executable + boot_cmd_str[len("python"):]
+            boot_cmd_str = sys.executable + boot_cmd_str[len("python") :]
         env = {**os.environ, "PORT": str(port), **(boot_extra_env or {})}
         # Start the emitted app as a subprocess.
         try:
             with boot_log_path.open("w") as log:
                 proc = subprocess.Popen(
-                    boot_cmd_str, shell=True, cwd=workdir,
-                    stdout=log, stderr=log,
+                    boot_cmd_str,
+                    shell=True,
+                    cwd=workdir,
+                    stdout=log,
+                    stderr=log,
                     preexec_fn=os.setsid if hasattr(os, "setsid") else None,
                     env=env,
                 )
@@ -242,9 +248,15 @@ def run_judge(spec, workdir: Path, *, boot_extra_env: dict | None = None) -> Jud
         pytest_env.update(boot_extra_env)
 
     cmd = [
-        sys.executable, "-m", "pytest", str(judge_copy),
-        "-q", "--tb=short", "--no-header",
-        "--json-report", f"--json-report-file={report_path}",
+        sys.executable,
+        "-m",
+        "pytest",
+        str(judge_copy),
+        "-q",
+        "--tb=short",
+        "--no-header",
+        "--json-report",
+        f"--json-report-file={report_path}",
         "--json-report-omit=collectors,log,keywords",
     ]
     # Let tests append to the chaos log via env (Layer D tests that kill
@@ -253,8 +265,12 @@ def run_judge(spec, workdir: Path, *, boot_extra_env: dict | None = None) -> Jud
     chaos_writer.event("pytest_start", cmd=" ".join(cmd[1:])[:400])
     try:
         pr = subprocess.run(
-            cmd, capture_output=True, text=True, check=False,
-            cwd=workdir, timeout=spec.timeout_s,
+            cmd,
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=workdir,
+            timeout=spec.timeout_s,
             env=pytest_env,
         )
     except subprocess.TimeoutExpired:
@@ -263,7 +279,8 @@ def run_judge(spec, workdir: Path, *, boot_extra_env: dict | None = None) -> Jud
             _kill(proc)
             chaos_writer.event("kill_on_pytest_timeout", pid=proc.pid)
         return JudgeResult(
-            boot_status=boot_status, boot_log_path=boot_log_path,
+            boot_status=boot_status,
+            boot_log_path=boot_log_path,
             notes=f"pytest timed out after {spec.timeout_s}s",
         )
     chaos_writer.event("pytest_done", returncode=pr.returncode)
@@ -308,6 +325,7 @@ class _ChaosWriter:
 
     def event(self, kind: str, **details: object) -> None:
         from time import time as _now
+
         line = {"ts": round(_now(), 3), "kind": kind, **details}
         with self._path.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(line, default=str) + "\n")
@@ -338,39 +356,57 @@ def _parse_pytest_json(report_path: Path, fallback: str) -> list[TestRecord]:
                 layer, bucket = _classify(nid)
                 outcome = t.get("outcome", "error")
                 outcome = {
-                    "passed": "pass", "failed": "fail",
-                    "error": "error", "skipped": "skip",
+                    "passed": "pass",
+                    "failed": "fail",
+                    "error": "error",
+                    "skipped": "skip",
                 }.get(outcome, outcome)
                 elapsed_ms = int(float(t.get("duration", 0.0)) * 1000)
                 call = t.get("call", {}) or {}
                 crash = (call.get("longrepr") or "").split("\n")[-1] if outcome != "pass" else ""
-                records.append(TestRecord(
-                    test_id=nid, outcome=outcome, layer=layer, bucket=bucket,
-                    elapsed_ms=elapsed_ms, stderr_snippet=crash[:400],
-                ))
+                records.append(
+                    TestRecord(
+                        test_id=nid,
+                        outcome=outcome,
+                        layer=layer,
+                        bucket=bucket,
+                        elapsed_ms=elapsed_ms,
+                        stderr_snippet=crash[:400],
+                    )
+                )
             return records
     # Fallback: best-effort parse of pytest stdout summary.
     records = []
     for line in fallback.splitlines():
         m = re.match(r"^(PASSED|FAILED|ERROR|SKIPPED)\s+(\S+)", line)
         if m:
-            outcome = {"PASSED": "pass", "FAILED": "fail",
-                       "ERROR": "error", "SKIPPED": "skip"}[m.group(1)]
+            outcome = {"PASSED": "pass", "FAILED": "fail", "ERROR": "error", "SKIPPED": "skip"}[
+                m.group(1)
+            ]
             nid = m.group(2)
             layer, bucket = _classify(nid)
-            records.append(TestRecord(
-                test_id=nid, outcome=outcome, layer=layer, bucket=bucket,
-                elapsed_ms=0,
-            ))
+            records.append(
+                TestRecord(
+                    test_id=nid,
+                    outcome=outcome,
+                    layer=layer,
+                    bucket=bucket,
+                    elapsed_ms=0,
+                )
+            )
     return records
 
 
 def _aggregate(
-    records: list[TestRecord], *, boot_status: str, boot_log_path: Path | None,
+    records: list[TestRecord],
+    *,
+    boot_status: str,
+    boot_log_path: Path | None,
 ) -> JudgeResult:
     if not records:
         return JudgeResult(
-            boot_status=boot_status, boot_log_path=boot_log_path,
+            boot_status=boot_status,
+            boot_log_path=boot_log_path,
             notes="no tests collected",
         )
     passed = sum(1 for r in records if r.outcome == "pass")
@@ -392,19 +428,19 @@ def _aggregate(
             by_bucket_passed[r.bucket] += 1
 
     per_layer = {
-        k: round(100.0 * by_layer_passed[k] / t, 2)
-        for k, t in by_layer_totals.items() if t
+        k: round(100.0 * by_layer_passed[k] / t, 2) for k, t in by_layer_totals.items() if t
     }
     per_bucket = {
-        k: round(100.0 * by_bucket_passed[k] / t, 2)
-        for k, t in by_bucket_totals.items() if t
+        k: round(100.0 * by_bucket_passed[k] / t, 2) for k, t in by_bucket_totals.items() if t
     }
 
     return JudgeResult(
         boot_status=boot_status,
         boot_log_path=boot_log_path,
         test_records=records,
-        per_layer=per_layer, per_bucket=per_bucket,
-        tests_passed=passed, tests_total=total_counted,
+        per_layer=per_layer,
+        per_bucket=per_bucket,
+        tests_passed=passed,
+        tests_total=total_counted,
         final_score=round(score, 2),
     )

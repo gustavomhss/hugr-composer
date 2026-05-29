@@ -10,6 +10,7 @@ and builds a BM25 index over combined ``name + rationale + primitive_names``.
 
 Pure retrieval — zero LLM, zero network. Deterministic.
 """
+
 from __future__ import annotations
 
 MCP_TOOL = {
@@ -35,24 +36,22 @@ from pathlib import Path
 
 import yaml
 
-from engine.discovery.find_primitive import _K1, _B, _tokenize
+from engine.discovery.find_primitive import _B, _K1, _tokenize
 
 _REGISTRY_PATH = Path(__file__).resolve().parents[1] / "primitives_by_concern.yaml"
 _VENOUS_ROOT = Path(__file__).resolve().parents[2] / "core" / "venous"
 
 # Recipe line format used throughout the 97 production .md files.
-_RECIPE_HEADER = re.compile(
-    r"^\s*-\s+\*\*(?P<name>[^*]+?)\*\*\s*(?:→|->)\s*(?P<prims>.+?)\s*$"
-)
+_RECIPE_HEADER = re.compile(r"^\s*-\s+\*\*(?P<name>[^*]+?)\*\*\s*(?:→|->)\s*(?P<prims>.+?)\s*$")
 _BACKTICK_NAME = re.compile(r"`([A-Za-z][A-Za-z0-9_]+)`")
 _HEADING = re.compile(r"^## ", re.MULTILINE)
 
 
 @dataclass(frozen=True)
 class Recipe:
-    source: str               # owning primitive name
+    source: str  # owning primitive name
     source_concern: str
-    name: str                 # human-readable recipe title
+    name: str  # human-readable recipe title
     primitives: tuple[str, ...]
     rationale: str
 
@@ -83,7 +82,7 @@ def _extract_compose_section(md: str) -> str:
     m = re.search(r"(?m)^##\s+Compose\s+with:?\s*$", md)
     if not m:
         return ""
-    rest = md[m.end():]
+    rest = md[m.end() :]
     nxt = _HEADING.search(rest)
     return rest[: nxt.start()] if nxt else rest
 
@@ -111,13 +110,15 @@ def _parse_recipes(source: str, source_concern: str, md: str) -> list[Recipe]:
         listed = tuple(_BACKTICK_NAME.findall(prims_raw))
         primitives: tuple[str, ...] = (source,) + tuple(p for p in listed if p != source)
         rationale = " ".join(line.strip() for line in rest.splitlines() if line.strip())
-        recipes.append(Recipe(
-            source=source,
-            source_concern=source_concern,
-            name=name,
-            primitives=primitives,
-            rationale=rationale,
-        ))
+        recipes.append(
+            Recipe(
+                source=source,
+                source_concern=source_concern,
+                name=name,
+                primitives=primitives,
+                rationale=rationale,
+            )
+        )
     return recipes
 
 
@@ -197,7 +198,13 @@ class RecipeIndex:
             s = self._score(query_tokens, i)
             if s > 0:
                 scored.append((s, i))
-        scored.sort(key=lambda sx: (-sx[0], self._recipes[sx[1]].source.lower(), self._recipes[sx[1]].name.lower()))
+        scored.sort(
+            key=lambda sx: (
+                -sx[0],
+                self._recipes[sx[1]].source.lower(),
+                self._recipes[sx[1]].name.lower(),
+            )
+        )
 
         # Dedupe: same ordered primitive tuple should not appear twice even if
         # two source primitives describe it mutually.
@@ -209,13 +216,15 @@ class RecipeIndex:
             if key in seen:
                 continue
             seen.add(key)
-            out.append(CompositionHit(
-                primitives=r.primitives,
-                rationale=r.rationale,
-                score=s,
-                source=r.source,
-                name=r.name,
-            ))
+            out.append(
+                CompositionHit(
+                    primitives=r.primitives,
+                    rationale=r.rationale,
+                    score=s,
+                    source=r.source,
+                    name=r.name,
+                )
+            )
             if len(out) >= limit:
                 break
         return out

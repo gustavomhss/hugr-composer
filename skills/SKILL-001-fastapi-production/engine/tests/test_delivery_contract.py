@@ -9,6 +9,7 @@ Run:
     python3 -m engine.tests.test_delivery_contract
     # or pytest
 """
+
 from __future__ import annotations
 
 import copy
@@ -42,17 +43,19 @@ from engine.contracts import (  # noqa: E402
     compute_sha256,
 )
 
-
 # ==========================================================================
 # Fixtures
 # ==========================================================================
+
 
 def sha_for(body: str) -> str:
     return hashlib.sha256(body.encode()).hexdigest()
 
 
 def make_file(path: str, *, kind: str, body: str = "x") -> FileArtefact:
-    return FileArtefact(path=path, sha256=sha_for(body + path), size_bytes=max(1, len(body)), kind=kind)
+    return FileArtefact(
+        path=path, sha256=sha_for(body + path), size_bytes=max(1, len(body)), kind=kind
+    )
 
 
 def make_binding(slug: str, *, text: str | None = None) -> InvariantTestBinding:
@@ -65,24 +68,46 @@ def make_binding(slug: str, *, text: str | None = None) -> InvariantTestBinding:
     )
 
 
-def make_tier_report(tier: Tier, status: GateStatus = GateStatus.PASSED, *, ev: str = "_evidence/x.log") -> TierReport:
+def make_tier_report(
+    tier: Tier, status: GateStatus = GateStatus.PASSED, *, ev: str = "_evidence/x.log"
+) -> TierReport:
     if status == GateStatus.PASSED:
-        return TierReport(tier=tier, status=status, duration_ms=10, evidence_path=ev,
-                          tool_name="pytest", tool_version="8.0",
-                          summary="Passed with evidence captured.")
+        return TierReport(
+            tier=tier,
+            status=status,
+            duration_ms=10,
+            evidence_path=ev,
+            tool_name="pytest",
+            tool_version="8.0",
+            summary="Passed with evidence captured.",
+        )
     if status == GateStatus.FAILED:
-        return TierReport(tier=tier, status=status, duration_ms=10,
-                          summary="Failed with stderr captured.",
-                          error_details="stderr blob for failing test")
+        return TierReport(
+            tier=tier,
+            status=status,
+            duration_ms=10,
+            summary="Failed with stderr captured.",
+            error_details="stderr blob for failing test",
+        )
     if status == GateStatus.SKIPPED:
-        return TierReport(tier=tier, status=status, duration_ms=1,
-                          summary="Skipped, tier not applicable for this primitive.")
-    return TierReport(tier=tier, status=status, duration_ms=1,
-                      summary="Errored, runner crashed.",
-                      error_details="traceback snippet")
+        return TierReport(
+            tier=tier,
+            status=status,
+            duration_ms=1,
+            summary="Skipped, tier not applicable for this primitive.",
+        )
+    return TierReport(
+        tier=tier,
+        status=status,
+        duration_ms=1,
+        summary="Errored, runner crashed.",
+        error_details="traceback snippet",
+    )
 
 
-def _attack(model: str, idx: int, outcome: str = "rejected", violated: str | None = None) -> AdversarialAttack:
+def _attack(
+    model: str, idx: int, outcome: str = "rejected", violated: str | None = None
+) -> AdversarialAttack:
     return AdversarialAttack(
         model=model,
         attack_id=f"ATK-N{idx:03d}",
@@ -108,26 +133,49 @@ def _ensemble_report_clean() -> AdversarialEnsembleReport:
 def _judge_clean() -> LLMJudgeReport:
     axes = [
         JudgeAxis(axis=a, score=9, rationale="Strong evidence in the impl and docs for this axis.")
-        for a in ("fidelity", "completeness", "error_quality", "composability",
-                  "production_readiness", "catalog_conformance")
+        for a in (
+            "fidelity",
+            "completeness",
+            "error_quality",
+            "composability",
+            "production_readiness",
+            "catalog_conformance",
+        )
     ]
     return LLMJudgeReport(judge_model="claude-opus-4-7", axes=axes)
 
 
 def _personas_clean() -> PersonaReviewReport:
-    return PersonaReviewReport(reviews=[
-        PersonaReview(persona=p, understood=True, friction_points=[])
-        for p in ("junior_dev", "principal_engineer", "security_auditor", "sre", "pm")
-    ])
+    return PersonaReviewReport(
+        reviews=[
+            PersonaReview(persona=p, understood=True, friction_points=[])
+            for p in ("junior_dev", "principal_engineer", "security_auditor", "sre", "pm")
+        ]
+    )
 
 
 def _obs_clean() -> ObservabilitySchema:
     return ObservabilitySchema(
-        logs=[EmittedLog(event_name="primitive.state.changed", required_attributes=["from", "to", "reason"])],
-        metrics=[EmittedMetric(name="primitive.invariant.checks", metric_type="counter",
-                               unit="call", cardinality_bound=100, label_keys=["outcome"])],
-        spans=[EmittedSpan(operation_name="primitive.public_method",
-                           required_attributes=["primitive.name", "primitive.version"])],
+        logs=[
+            EmittedLog(
+                event_name="primitive.state.changed", required_attributes=["from", "to", "reason"]
+            )
+        ],
+        metrics=[
+            EmittedMetric(
+                name="primitive.invariant.checks",
+                metric_type="counter",
+                unit="call",
+                cardinality_bound=100,
+                label_keys=["outcome"],
+            )
+        ],
+        spans=[
+            EmittedSpan(
+                operation_name="primitive.public_method",
+                required_attributes=["primitive.name", "primitive.version"],
+            )
+        ],
     )
 
 
@@ -144,18 +192,22 @@ def valid_delivery_dict(maturity: Maturity = Maturity.BATTLE_TESTED) -> dict:
         make_file(f"{namespace}/{name}/{name}.manifest.json", kind="manifest"),
     ]
     if maturity is Maturity.BATTLE_TESTED:
-        files.extend([
-            make_file(f"{namespace}/{name}/state_machine_{name}.py", kind="state_machine"),
-            make_file(f"{namespace}/{name}/metamorphic_{name}.py", kind="metamorphic"),
-            make_file(f"{namespace}/{name}/concurrent_{name}.py", kind="concurrent"),
-            make_file(f"{namespace}/{name}/adversarial_claude_opus.json", kind="adversarial"),
-            make_file(f"{namespace}/{name}/chaos_{name}.py", kind="chaos"),
-            make_file(f"{namespace}/{name}/observability_{name}.py", kind="observability"),
-            make_file(f"{namespace}/{name}/dashboard.json", kind="dashboard"),
-            make_file(f"{namespace}/{name}/{name}.contract.json", kind="contract_json"),
-            make_file(f"{namespace}/{name}/persona_reviews.json", kind="persona_reviews"),
-            make_file(f"{namespace}/{name}/proposed_invariants.json", kind="proposed_invariants"),
-        ])
+        files.extend(
+            [
+                make_file(f"{namespace}/{name}/state_machine_{name}.py", kind="state_machine"),
+                make_file(f"{namespace}/{name}/metamorphic_{name}.py", kind="metamorphic"),
+                make_file(f"{namespace}/{name}/concurrent_{name}.py", kind="concurrent"),
+                make_file(f"{namespace}/{name}/adversarial_claude_opus.json", kind="adversarial"),
+                make_file(f"{namespace}/{name}/chaos_{name}.py", kind="chaos"),
+                make_file(f"{namespace}/{name}/observability_{name}.py", kind="observability"),
+                make_file(f"{namespace}/{name}/dashboard.json", kind="dashboard"),
+                make_file(f"{namespace}/{name}/{name}.contract.json", kind="contract_json"),
+                make_file(f"{namespace}/{name}/persona_reviews.json", kind="persona_reviews"),
+                make_file(
+                    f"{namespace}/{name}/proposed_invariants.json", kind="proposed_invariants"
+                ),
+            ]
+        )
 
     bindings = [make_binding(f"s{i}") for i in range(3)]
 
@@ -167,10 +219,17 @@ def valid_delivery_dict(maturity: Maturity = Maturity.BATTLE_TESTED) -> dict:
     if maturity is Maturity.BATTLE_TESTED:
         tier_reports = [make_tier_report(t) for t in Tier]
     elif maturity is Maturity.EMERGING:
-        tier_reports = [make_tier_report(t) for t in (
-            Tier.T0_STATIC, Tier.T1_BEHAVIORAL, Tier.T3_STATE_MACHINE,
-            Tier.T4_METAMORPHIC, Tier.T6_ADVERSARIAL, Tier.T7_OBSERVABILITY,
-        )]
+        tier_reports = [
+            make_tier_report(t)
+            for t in (
+                Tier.T0_STATIC,
+                Tier.T1_BEHAVIORAL,
+                Tier.T3_STATE_MACHINE,
+                Tier.T4_METAMORPHIC,
+                Tier.T6_ADVERSARIAL,
+                Tier.T7_OBSERVABILITY,
+            )
+        ]
 
     raw: dict = {
         "name": name,
@@ -255,6 +314,7 @@ def test_name_accepts_pascal_with_digits():
     r["name"] = "HealthProbeV2"
     # Also need to reflect into file paths + catalog dirs — so instead, verify pattern accepts.
     from pydantic import ValidationError
+
     try:
         PrimitiveDelivery.model_validate(r)
     except ValidationError as e:
@@ -499,7 +559,9 @@ def test_test_names_unique_across_bindings():
     r["invariant_bindings"][1]["confirms_test"] = r["invariant_bindings"][0]["confirms_test"]
     # This WILL trip slug check first if slugs differ, so swap slug too.
     r["invariant_bindings"][1]["prevents_test"] = r["invariant_bindings"][0]["prevents_test"]
-    r["invariant_bindings"][1]["under_failure_test"] = r["invariant_bindings"][0]["under_failure_test"]
+    r["invariant_bindings"][1]["under_failure_test"] = r["invariant_bindings"][0][
+        "under_failure_test"
+    ]
     # Now the binding is valid on its own (slug consistent) but duplicates the other binding
     # IDs — so the invariant_id uniqueness check fires first; make IDs distinct and slugs equal.
     r["invariant_bindings"][1]["invariant_id"] = "INV_DIFFERENT"
@@ -539,9 +601,11 @@ def test_errored_tier_rejects_delivery():
 
 def test_passed_tier_without_evidence_path_rejected():
     from pydantic import ValidationError
+
     try:
-        TierReport(tier=Tier.T1_BEHAVIORAL, status=GateStatus.PASSED,
-                   duration_ms=1, summary="no evidence")
+        TierReport(
+            tier=Tier.T1_BEHAVIORAL, status=GateStatus.PASSED, duration_ms=1, summary="no evidence"
+        )
     except ValidationError as e:
         assert "evidence_path MUST be set" in str(e)
         return
@@ -550,9 +614,14 @@ def test_passed_tier_without_evidence_path_rejected():
 
 def test_failed_tier_without_error_details_rejected():
     from pydantic import ValidationError
+
     try:
-        TierReport(tier=Tier.T1_BEHAVIORAL, status=GateStatus.FAILED,
-                   duration_ms=1, summary="silent failure")
+        TierReport(
+            tier=Tier.T1_BEHAVIORAL,
+            status=GateStatus.FAILED,
+            duration_ms=1,
+            summary="silent failure",
+        )
     except ValidationError as e:
         assert "error_details MUST be set" in str(e)
         return
@@ -649,6 +718,7 @@ def test_cost_at_cap_accepted():
 # ==========================================================================
 def test_ensemble_requires_three_distinct_models():
     from pydantic import ValidationError
+
     ok = _ensemble_report_clean()
     bad = ok.model_dump()
     bad["models_run"] = ["claude-opus-4-7", "claude-opus-4-7", "claude-opus-4-7"]
@@ -662,24 +732,30 @@ def test_ensemble_requires_three_distinct_models():
 
 def test_ensemble_requires_20_attacks():
     from pydantic import ValidationError
+
     bad = _ensemble_report_clean().model_dump()
     bad["attacks"] = bad["attacks"][:10]
     try:
         AdversarialEnsembleReport(**bad)
     except ValidationError as e:
-        assert "at least 20 items" in str(e).lower() or "list should have at least 20" in str(e).lower()
+        assert (
+            "at least 20 items" in str(e).lower()
+            or "list should have at least 20" in str(e).lower()
+        )
         return
     raise AssertionError("<20 attacks should be rejected.")
 
 
 def test_ensemble_any_successful_rejected():
     from pydantic import ValidationError
+
     attacks = list(_ensemble_report_clean().attacks)
     attacks[0] = _attack("claude-opus-4-7", 0, outcome="violated_invariant", violated="INV_X")
     try:
         AdversarialEnsembleReport(
             models_run=["claude-opus-4-7", "claude-sonnet-4-6", "claude-haiku-4-5"],
-            attacks=attacks, successful_attacks=1,
+            attacks=attacks,
+            successful_attacks=1,
         )
     except ValidationError as e:
         assert "zero successful attacks" in str(e).lower()
@@ -689,11 +765,13 @@ def test_ensemble_any_successful_rejected():
 
 def test_ensemble_successful_count_must_match_observed():
     from pydantic import ValidationError
+
     attacks = list(_ensemble_report_clean().attacks)
     try:
         AdversarialEnsembleReport(
             models_run=["claude-opus-4-7", "claude-sonnet-4-6", "claude-haiku-4-5"],
-            attacks=attacks, successful_attacks=3,
+            attacks=attacks,
+            successful_attacks=3,
         )
     except ValidationError as e:
         assert "claims 3" in str(e).lower() or "observed" in str(e).lower()
@@ -703,10 +781,15 @@ def test_ensemble_successful_count_must_match_observed():
 
 def test_attack_leaked_outcome_requires_violation_id():
     from pydantic import ValidationError
+
     try:
-        AdversarialAttack(model="claude-opus-4-7", attack_id="ATK-LEAK-01",
-                          hypothesis="Exfiltrate via error path exposing stack to the caller.",
-                          input_fixture="...", defender_outcome="leaked")
+        AdversarialAttack(
+            model="claude-opus-4-7",
+            attack_id="ATK-LEAK-01",
+            hypothesis="Exfiltrate via error path exposing stack to the caller.",
+            input_fixture="...",
+            defender_outcome="leaked",
+        )
     except ValidationError as e:
         assert "must cite the violated invariant id" in str(e).lower()
         return
@@ -715,10 +798,15 @@ def test_attack_leaked_outcome_requires_violation_id():
 
 def test_attack_id_pattern_enforced():
     from pydantic import ValidationError
+
     try:
-        AdversarialAttack(model="claude-opus-4-7", attack_id="bad-id",
-                          hypothesis="Adversary does not satisfy attack_id pattern.",
-                          input_fixture="x", defender_outcome="rejected")
+        AdversarialAttack(
+            model="claude-opus-4-7",
+            attack_id="bad-id",
+            hypothesis="Adversary does not satisfy attack_id pattern.",
+            input_fixture="x",
+            defender_outcome="rejected",
+        )
     except ValidationError as e:
         assert "pattern" in str(e).lower()
         return
@@ -730,8 +818,12 @@ def test_attack_id_pattern_enforced():
 # ==========================================================================
 def test_judge_requires_six_unique_axes():
     from pydantic import ValidationError
-    axes = [JudgeAxis(axis="fidelity", score=9,
-                      rationale="solid reasoning over the impl and docs evidence")] * 6
+
+    axes = [
+        JudgeAxis(
+            axis="fidelity", score=9, rationale="solid reasoning over the impl and docs evidence"
+        )
+    ] * 6
     try:
         LLMJudgeReport(judge_model="claude-opus-4-7", axes=axes)
     except ValidationError as e:
@@ -742,12 +834,18 @@ def test_judge_requires_six_unique_axes():
 
 def test_judge_any_axis_below_eight_rejected():
     from pydantic import ValidationError
+
     axes = [
         JudgeAxis(axis="fidelity", score=7, rationale="borderline fidelity story"),
     ] + [
         JudgeAxis(axis=a, score=9, rationale="solid evidence for axis")
-        for a in ("completeness", "error_quality", "composability",
-                  "production_readiness", "catalog_conformance")
+        for a in (
+            "completeness",
+            "error_quality",
+            "composability",
+            "production_readiness",
+            "catalog_conformance",
+        )
     ]
     try:
         LLMJudgeReport(judge_model="claude-opus-4-7", axes=axes)
@@ -759,6 +857,7 @@ def test_judge_any_axis_below_eight_rejected():
 
 def test_judge_score_out_of_range_rejected():
     from pydantic import ValidationError
+
     try:
         JudgeAxis(axis="fidelity", score=11, rationale="above the allowed max range value")
     except ValidationError as e:
@@ -769,10 +868,16 @@ def test_judge_score_out_of_range_rejected():
 
 def test_judge_missing_axis_rejected():
     from pydantic import ValidationError
+
     axes = [
         JudgeAxis(axis=a, score=9, rationale="ok evidence for axis under review")
-        for a in ("fidelity", "completeness", "error_quality",
-                  "composability", "production_readiness")
+        for a in (
+            "fidelity",
+            "completeness",
+            "error_quality",
+            "composability",
+            "production_readiness",
+        )
     ]
     try:
         LLMJudgeReport(judge_model="claude-opus-4-7", axes=axes)
@@ -787,8 +892,11 @@ def test_judge_missing_axis_rejected():
 # ==========================================================================
 def test_personas_requires_all_five():
     from pydantic import ValidationError
-    reviews = [PersonaReview(persona=p, understood=True)
-               for p in ("junior_dev", "principal_engineer", "security_auditor", "sre")]
+
+    reviews = [
+        PersonaReview(persona=p, understood=True)
+        for p in ("junior_dev", "principal_engineer", "security_auditor", "sre")
+    ]
     try:
         PersonaReviewReport(reviews=reviews)
     except ValidationError as e:
@@ -799,10 +907,14 @@ def test_personas_requires_all_five():
 
 def test_personas_all_must_understand():
     from pydantic import ValidationError
-    reviews = [PersonaReview(persona=p, understood=True)
-               for p in ("junior_dev", "principal_engineer", "security_auditor", "sre")]
-    reviews.append(PersonaReview(persona="pm", understood=False,
-                                 friction_points=["Too much jargon"]))
+
+    reviews = [
+        PersonaReview(persona=p, understood=True)
+        for p in ("junior_dev", "principal_engineer", "security_auditor", "sre")
+    ]
+    reviews.append(
+        PersonaReview(persona="pm", understood=False, friction_points=["Too much jargon"])
+    )
     try:
         PersonaReviewReport(reviews=reviews)
     except ValidationError as e:
@@ -813,6 +925,7 @@ def test_personas_all_must_understand():
 
 def test_personas_duplicate_persona_rejected():
     from pydantic import ValidationError
+
     reviews = [PersonaReview(persona="junior_dev", understood=True)] * 5
     try:
         PersonaReviewReport(reviews=reviews)
@@ -827,9 +940,9 @@ def test_personas_duplicate_persona_rejected():
 # ==========================================================================
 def test_obs_schema_metric_type_enum():
     from pydantic import ValidationError
+
     try:
-        EmittedMetric(name="foo.bar", metric_type="invalid",
-                      unit="call", cardinality_bound=1)
+        EmittedMetric(name="foo.bar", metric_type="invalid", unit="call", cardinality_bound=1)
     except ValidationError as e:
         assert "pattern" in str(e).lower()
         return
@@ -838,6 +951,7 @@ def test_obs_schema_metric_type_enum():
 
 def test_obs_schema_cardinality_bound_required():
     from pydantic import ValidationError
+
     try:
         EmittedMetric(name="foo.bar", metric_type="counter", unit="call", cardinality_bound=0)
     except ValidationError as e:
@@ -848,10 +962,15 @@ def test_obs_schema_cardinality_bound_required():
 
 def test_obs_schema_empty_logs_rejected():
     from pydantic import ValidationError
+
     try:
         ObservabilitySchema(
             logs=[],
-            metrics=[EmittedMetric(name="foo.bar", metric_type="counter", unit="call", cardinality_bound=1)],
+            metrics=[
+                EmittedMetric(
+                    name="foo.bar", metric_type="counter", unit="call", cardinality_bound=1
+                )
+            ],
             spans=[EmittedSpan(operation_name="foo.bar")],
         )
     except ValidationError as e:
@@ -862,6 +981,7 @@ def test_obs_schema_empty_logs_rejected():
 
 def test_obs_schema_event_name_pattern():
     from pydantic import ValidationError
+
     try:
         EmittedLog(event_name="Bad Name", required_attributes=["a"])
     except ValidationError as e:
@@ -893,9 +1013,14 @@ def test_llm_cost_non_negative():
 
 def test_tier_report_duration_cap():
     from pydantic import ValidationError
+
     try:
-        TierReport(tier=Tier.T1_BEHAVIORAL, status=GateStatus.SKIPPED,
-                   duration_ms=3_600_001, summary="too slow")
+        TierReport(
+            tier=Tier.T1_BEHAVIORAL,
+            status=GateStatus.SKIPPED,
+            duration_ms=3_600_001,
+            summary="too slow",
+        )
     except ValidationError as e:
         assert "less than or equal to 3600000" in str(e).lower()
         return
@@ -907,10 +1032,11 @@ def test_tier_report_duration_cap():
 # ==========================================================================
 def test_binding_text_too_short_rejected():
     from pydantic import ValidationError
+
     try:
         InvariantTestBinding(
             invariant_id="INV_X",
-            invariant_text="MUST x",          # 7 chars
+            invariant_text="MUST x",  # 7 chars
             confirms_test="test_inv_x_confirms",
             prevents_test="test_inv_x_prevents",
             under_failure_test="test_inv_x_under_failure",
@@ -923,6 +1049,7 @@ def test_binding_text_too_short_rejected():
 
 def test_binding_id_pattern_enforced():
     from pydantic import ValidationError
+
     try:
         InvariantTestBinding(
             invariant_id="inv-lowercase",
@@ -942,8 +1069,9 @@ def test_binding_id_pattern_enforced():
 # ==========================================================================
 def test_file_path_min_length():
     from pydantic import ValidationError
+
     try:
-        FileArtefact(path="abc", sha256="0"*64, size_bytes=1, kind="impl")
+        FileArtefact(path="abc", sha256="0" * 64, size_bytes=1, kind="impl")
     except ValidationError as e:
         assert "at least 5" in str(e).lower()
         return
@@ -952,8 +1080,9 @@ def test_file_path_min_length():
 
 def test_file_path_max_length():
     from pydantic import ValidationError
+
     try:
-        FileArtefact(path="x" * 201, sha256="0"*64, size_bytes=1, kind="impl")
+        FileArtefact(path="x" * 201, sha256="0" * 64, size_bytes=1, kind="impl")
     except ValidationError as e:
         assert "at most 200" in str(e).lower()
         return

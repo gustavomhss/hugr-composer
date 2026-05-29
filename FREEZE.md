@@ -51,7 +51,7 @@ Rails-connected in Wave 1.5 — same tool count, but
   `core/venous/_adapters/redis/PubSubAdapter.py` +
   `core/venous/_adapters/stripe/BillingAdapter.py` (see §1.6.5). Both
   framework-isolated, lazy-SDK-imported, hermetically tested.
-- **176 staged primitives** surfaced in catalog with `status="staged"`
+- **175 staged primitives** surfaced in catalog with `status="staged"`
   (discoverable; not promoted; `_staging/<ns>/` + `_staging/_quarantine/`
   combined PascalCase items).
 - **56 generators** + **28 module packages** + **123 adapt tools**

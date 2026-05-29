@@ -9,6 +9,7 @@ or `import core.venous.<ns>.<Name>`. Returns:
   - `unexpected`: imported but not required (not a failure — kit may help
                   with complementary pairings)
 """
+
 from __future__ import annotations
 
 import ast
@@ -52,9 +53,7 @@ def attribute(workdir: Path, required: list[str]) -> dict:
     return {
         "imported": sorted(imported),
         "required": sorted(req_set),
-        "coverage_of_required": (
-            round(len(covered) / len(req_set), 3) if req_set else 0.0
-        ),
+        "coverage_of_required": (round(len(covered) / len(req_set), 3) if req_set else 0.0),
         "unexpected_imports": sorted(unexpected),
         "missing_required": sorted(req_set - imported),
     }

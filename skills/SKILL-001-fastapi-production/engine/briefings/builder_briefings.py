@@ -9,6 +9,7 @@ for each builder agent.
 Validated at import time. Any drift between the research catalog and the
 assignment map aborts import.
 """
+
 from __future__ import annotations
 
 import json
@@ -27,17 +28,34 @@ sys.path.insert(0, str(ENGINE_ROOT))
 
 from contracts.primitive_delivery_contract import Maturity  # noqa: E402
 
-
 # ---------------------------------------------------------------------------
 # Is-stateful heuristic — agents can override per primitive via the CLI.
 # Primitives with in-memory/session state, shared registries, or async
 # coordination are stateful; pure functions and value types are not.
 # ---------------------------------------------------------------------------
-_STATEFUL_NAMESPACES = frozenset({
-    "auth", "data", "events", "jobs", "cache", "resiliency", "llm", "cost",
-})
-_STATELESS_NAME_PREFIXES = ("Config", "Value", "Semantic", "Resource", "Histogram",
-                            "Encryption", "Policy", "Key", "Retention")
+_STATEFUL_NAMESPACES = frozenset(
+    {
+        "auth",
+        "data",
+        "events",
+        "jobs",
+        "cache",
+        "resiliency",
+        "llm",
+        "cost",
+    }
+)
+_STATELESS_NAME_PREFIXES = (
+    "Config",
+    "Value",
+    "Semantic",
+    "Resource",
+    "Histogram",
+    "Encryption",
+    "Policy",
+    "Key",
+    "Retention",
+)
 
 
 def _infer_stateful(name: str, namespace: str, api_signature: str) -> bool:
@@ -51,9 +69,10 @@ def _infer_stateful(name: str, namespace: str, api_signature: str) -> bool:
     if "async def" in api_signature or "register_" in api_signature or "acquire(" in api_signature:
         return True
     # Dataclass frozen without methods → value object → stateless.
-    if "dataclass(frozen=True)" in api_signature and "def " not in api_signature.split("class ", 1)[-1]:
-        return False
-    return True
+    return not (
+        "dataclass(frozen=True)" in api_signature
+        and "def " not in api_signature.split("class ", 1)[-1]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -68,7 +87,7 @@ class PrimitiveAssignment(BaseModel):
     catalog_spec: dict = Field(description="Full PrimitiveSpec dict from the research deliverable.")
 
     @model_validator(mode="after")
-    def catalog_matches_identity(self) -> "PrimitiveAssignment":
+    def catalog_matches_identity(self) -> PrimitiveAssignment:
         if self.catalog_spec.get("name") != self.name:
             raise ValueError(
                 f"catalog_spec['name']={self.catalog_spec.get('name')!r} != assignment name {self.name!r}"
@@ -94,8 +113,12 @@ class BuilderBatchBriefing(BaseModel):
     codename: str = Field(pattern=r"^[A-Z][A-Z0-9_]+$", max_length=40)
     rationale: str = Field(min_length=40, max_length=400)
     primitives: list[PrimitiveAssignment] = Field(min_length=5, max_length=25)
-    contract_path: str = Field(default="skills/SKILL-001-fastapi-production/engine/contracts/primitive_delivery_contract.py")
-    check_cli_path: str = Field(default="skills/SKILL-001-fastapi-production/engine/check_primitive.py")
+    contract_path: str = Field(
+        default="skills/SKILL-001-fastapi-production/engine/contracts/primitive_delivery_contract.py"
+    )
+    check_cli_path: str = Field(
+        default="skills/SKILL-001-fastapi-production/engine/check_primitive.py"
+    )
     standards_doc_path: str = Field(default="docs/research/CONTRACT_STANDARDS.md")
     skill_engine_spec_path: str = Field(default="docs/research/SKILL_ENGINE_SPEC.md")
     target_root: str = Field(default="skills/SKILL-001-fastapi-production/core/venous")
@@ -108,7 +131,7 @@ class BuilderBatchBriefing(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def primitive_names_unique(self) -> "BuilderBatchBriefing":
+    def primitive_names_unique(self) -> BuilderBatchBriefing:
         names = [p.name for p in self.primitives]
         if len(names) != len(set(names)):
             dup = {n for n in names if names.count(n) > 1}
@@ -282,109 +305,198 @@ def _load_research_primitives() -> dict[str, tuple[int, dict]]:
 # ---------------------------------------------------------------------------
 _BATCHES: list[tuple[int, str, str, list[str]]] = [
     (
-        1, "FRAMEWORKS_CORE",
+        1,
+        "FRAMEWORKS_CORE",
         "Request-scoped DI / lifecycle / config / guard primitives extracted from "
         "Spring Boot, Nest.js, ASP.NET Core, Rails, Phoenix, Quarkus.",
         [
-            "DiContainer", "LifetimeScope", "RequestContext", "CurrentPrincipal",
-            "CorrelationId", "MiddlewarePipeline", "RequestGuard", "ValueTransform",
-            "ConfigBinding", "HealthProbe", "LifecycleHook", "FeatureToggle",
-            "RouterPipeline", "EventBus",
+            "DiContainer",
+            "LifetimeScope",
+            "RequestContext",
+            "CurrentPrincipal",
+            "CorrelationId",
+            "MiddlewarePipeline",
+            "RequestGuard",
+            "ValueTransform",
+            "ConfigBinding",
+            "HealthProbe",
+            "LifecycleHook",
+            "FeatureToggle",
+            "RouterPipeline",
+            "EventBus",
         ],
     ),
     (
-        2, "DISTRIBUTED_EVENTS",
+        2,
+        "DISTRIBUTED_EVENTS",
         "Pub/sub, event envelope, streaming topology primitives from Dapr, Kafka, "
         "NATS, CloudEvents.",
         [
-            "EventEnvelope", "TopicBus", "StreamSubject", "DeadLetterRoute",
-            "PartitionLog", "DistributedLock", "KeyValueBucket",
+            "EventEnvelope",
+            "TopicBus",
+            "StreamSubject",
+            "DeadLetterRoute",
+            "PartitionLog",
+            "DistributedLock",
+            "KeyValueBucket",
             "StateStore",
         ],
     ),
     (
-        3, "DISTRIBUTED_JOBS",
+        3,
+        "DISTRIBUTED_JOBS",
         "Durable workflow + job primitives from Temporal 1.24 (workflows, activities, "
         "signals, timers) plus Dapr bindings and virtual actors.",
         [
-            "WorkflowRun", "ActivityCall", "DurableTimer", "WorkflowSignal",
-            "VirtualActor", "TransactionalBatch", "OutboundBinding",
+            "WorkflowRun",
+            "ActivityCall",
+            "DurableTimer",
+            "WorkflowSignal",
+            "VirtualActor",
+            "TransactionalBatch",
+            "OutboundBinding",
             "RpcInterceptor",
         ],
     ),
     (
-        4, "PATTERNS_DATA",
+        4,
+        "PATTERNS_DATA",
         "Fowler PEAA + Evans DDD data-shape primitives (UnitOfWork, Repository, "
         "Aggregate, Value Object, Bounded Context, Data Mapper, Identity Map, ACL).",
         [
-            "UnitOfWork", "Repository", "IdentityMap", "DataMapper", "Specification",
-            "Aggregate", "ValueObject", "BoundedContext", "AntiCorruptionLayer",
-            "MaterializedView", "ChangeDataCapture",
+            "UnitOfWork",
+            "Repository",
+            "IdentityMap",
+            "DataMapper",
+            "Specification",
+            "Aggregate",
+            "ValueObject",
+            "BoundedContext",
+            "AntiCorruptionLayer",
+            "MaterializedView",
+            "ChangeDataCapture",
         ],
     ),
     (
-        5, "PATTERNS_EVENTS_API",
+        5,
+        "PATTERNS_EVENTS_API",
         "Event-sourcing + saga + CQRS patterns from Richardson / Kleppmann plus "
         "context map and command/query separator.",
         [
-            "DomainEvent", "TransactionalOutbox", "InboxDeduplicator",
-            "IdempotentConsumer", "SagaOrchestrator", "EventStream",
-            "EventSourcedStore", "ContextMap", "CommandQuerySeparator",
+            "DomainEvent",
+            "TransactionalOutbox",
+            "InboxDeduplicator",
+            "IdempotentConsumer",
+            "SagaOrchestrator",
+            "EventStream",
+            "EventSourcedStore",
+            "ContextMap",
+            "CommandQuerySeparator",
         ],
     ),
     (
-        6, "RESILIENCY",
+        6,
+        "RESILIENCY",
         "Nygard Release It! stability primitives + modern resiliency (Envoy, Hystrix "
         "aftermath). NOTE: HealthProbe and RateLimiter are co-produced with batches 1 / 7 "
         "and live canonically per `COLLISIONS_RESOLVED.md`; this batch owns the resiliency-lens "
         "implementations that compose with observability + security facades.",
         [
-            "CircuitBreaker", "Bulkhead", "TimeoutBudget", "RetryPolicy",
-            "LoadShedder", "BackpressureSignal", "FallbackChain",
-            "OutlierEjection", "ChaosInjector", "RateLimiter", "RequestShape",
+            "CircuitBreaker",
+            "Bulkhead",
+            "TimeoutBudget",
+            "RetryPolicy",
+            "LoadShedder",
+            "BackpressureSignal",
+            "FallbackChain",
+            "OutlierEjection",
+            "ChaosInjector",
+            "RateLimiter",
+            "RequestShape",
         ],
     ),
     (
-        7, "SECURITY",
+        7,
+        "SECURITY",
         "OWASP ASVS + RFC-backed auth + crypto + input/output hygiene primitives.",
         [
-            "PasswordHasher", "CsrfGuard", "ContentSecurityPolicy", "OutputEncoder",
-            "SecretsVault", "CryptoEnvelope", "SignatureVerifier", "InputValidator",
-            "AuthorizationCodeFlow", "TokenIntrospector", "WebAuthnAuthenticator",
-            "TotpVerifier", "SessionStore", "CorsPolicy",
+            "PasswordHasher",
+            "CsrfGuard",
+            "ContentSecurityPolicy",
+            "OutputEncoder",
+            "SecretsVault",
+            "CryptoEnvelope",
+            "SignatureVerifier",
+            "InputValidator",
+            "AuthorizationCodeFlow",
+            "TokenIntrospector",
+            "WebAuthnAuthenticator",
+            "TotpVerifier",
+            "SessionStore",
+            "CorsPolicy",
         ],
     ),
     (
-        8, "COMPLIANCE",
+        8,
+        "COMPLIANCE",
         "SOC 2 / HIPAA / GDPR / PCI-DSS / NIST primitives — audit trail, retention, "
         "consent, DSAR, PII classification, encryption policy.",
         [
-            "TamperEvidentAuditLog", "RetentionPolicy", "ConsentLedger",
-            "DataSubjectRequest", "PiiClassification", "AccessLog",
-            "EncryptionPolicy", "KeyRotationSchedule", "ProcessingRecord",
-            "LegalHold", "BreachNotificationQueue", "DataResidencyPolicy",
+            "TamperEvidentAuditLog",
+            "RetentionPolicy",
+            "ConsentLedger",
+            "DataSubjectRequest",
+            "PiiClassification",
+            "AccessLog",
+            "EncryptionPolicy",
+            "KeyRotationSchedule",
+            "ProcessingRecord",
+            "LegalHold",
+            "BreachNotificationQueue",
+            "DataResidencyPolicy",
         ],
     ),
     (
-        9, "OBSERVABILITY",
+        9,
+        "OBSERVABILITY",
         "OpenTelemetry 1.32 + Prometheus + SRE Book primitives — tracer, metrics, "
         "structured logger, sampling, correlation, error tracking, resource descriptor.",
         [
-            "Tracer", "MetricMeter", "StructuredLogger", "CorrelationContext",
-            "ErrorSink", "SamplingPolicy", "SemanticAttributes", "CardinalityGuard",
-            "HistogramBuckets", "ResourceDescriptor", "TelemetryExporter", "AuditEvent",
+            "Tracer",
+            "MetricMeter",
+            "StructuredLogger",
+            "CorrelationContext",
+            "ErrorSink",
+            "SamplingPolicy",
+            "SemanticAttributes",
+            "CardinalityGuard",
+            "HistogramBuckets",
+            "ResourceDescriptor",
+            "TelemetryExporter",
+            "AuditEvent",
         ],
     ),
     (
-        10, "LLM_ERA",
+        10,
+        "LLM_ERA",
         "Anthropic MCP / OWASP LLM Top 10 / Langfuse / Portkey / Helicone / LiteLLM / "
         "Weave primitives — prompt, model registry, guardrails, HITL, eval, cost, "
         "cache, routing, tool-use, injection filter.",
         [
-            "PromptTemplate", "ModelRegistry", "VectorStore", "InputGuardrail",
-            "OutputGuardrail", "HumanCheckpoint", "EvalHarness", "TokenMeter",
-            "ResponseCache", "ModelRouter", "ToolSchema", "LlmTrace",
-            "BudgetGuard", "PromptInjectionFilter",
+            "PromptTemplate",
+            "ModelRegistry",
+            "VectorStore",
+            "InputGuardrail",
+            "OutputGuardrail",
+            "HumanCheckpoint",
+            "EvalHarness",
+            "TokenMeter",
+            "ResponseCache",
+            "ModelRouter",
+            "ToolSchema",
+            "LlmTrace",
+            "BudgetGuard",
+            "PromptInjectionFilter",
         ],
     ),
 ]
@@ -406,20 +518,24 @@ def _build_briefings() -> list[BuilderBatchBriefing]:
                     f"Check docs/research/outputs/*.json."
                 )
             aid, spec = research[name]
-            assignments.append(PrimitiveAssignment(
-                name=name,
-                namespace=spec["namespace"],
-                maturity=Maturity(spec["maturity"]),
-                is_stateful=_infer_stateful(name, spec["namespace"], spec["api_signature"]),
-                source_agent_id=aid,
-                catalog_spec=spec,
-            ))
-        result.append(BuilderBatchBriefing(
-            batch_id=batch_id,
-            codename=codename,
-            rationale=rationale,
-            primitives=assignments,
-        ))
+            assignments.append(
+                PrimitiveAssignment(
+                    name=name,
+                    namespace=spec["namespace"],
+                    maturity=Maturity(spec["maturity"]),
+                    is_stateful=_infer_stateful(name, spec["namespace"], spec["api_signature"]),
+                    source_agent_id=aid,
+                    catalog_spec=spec,
+                )
+            )
+        result.append(
+            BuilderBatchBriefing(
+                batch_id=batch_id,
+                codename=codename,
+                rationale=rationale,
+                primitives=assignments,
+            )
+        )
 
     _sanity_check(result, research)
     return result
@@ -462,8 +578,10 @@ BRIEFINGS: list[BuilderBatchBriefing] = _build_briefings()
 # CLI preview
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    print(f"Builder briefings loaded: {len(BRIEFINGS)} batches, "
-          f"{sum(len(b.primitives) for b in BRIEFINGS)} primitives.\n")
+    print(
+        f"Builder briefings loaded: {len(BRIEFINGS)} batches, "
+        f"{sum(len(b.primitives) for b in BRIEFINGS)} primitives.\n"
+    )
     for b in BRIEFINGS:
         mats = {p.maturity.value: 0 for p in b.primitives}
         for p in b.primitives:
@@ -478,4 +596,4 @@ if __name__ == "__main__":
     print("\nPrompt length per batch (chars ~ tokens/4):")
     for b in BRIEFINGS:
         p = b.render_prompt()
-        print(f"  Batch {b.batch_id}: {len(p)} chars (~{len(p)//4} tokens)")
+        print(f"  Batch {b.batch_id}: {len(p)} chars (~{len(p) // 4} tokens)")

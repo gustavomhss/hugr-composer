@@ -1,19 +1,20 @@
 """Unit tests for mcp_tools.tree.auth — the POC domain dispatcher."""
+
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
 
-import pytest
-
 from mcp_tools.tree.auth import (
-    BUNDLE_SLICES, PRIMITIVES, SLICES, fastapi_auth,
+    BUNDLE_SLICES,
+    PRIMITIVES,
+    SLICES,
+    fastapi_auth,
 )
-
 
 # ---------------------------------------------------------------------------
 # Contract of the dispatcher itself
 # ---------------------------------------------------------------------------
+
 
 def test_list_returns_full_tree() -> None:
     r = fastapi_auth(action="list")
@@ -52,6 +53,7 @@ def test_envelope_shape_uniform_across_all_actions() -> None:
 # Primitive action
 # ---------------------------------------------------------------------------
 
+
 def test_primitive_requires_name_and_output_dir() -> None:
     r = fastapi_auth(action="primitive", params={"name": "SessionStore"})
     assert r["ok"] is False
@@ -59,16 +61,19 @@ def test_primitive_requires_name_and_output_dir() -> None:
 
 
 def test_primitive_rejects_unknown_name() -> None:
-    r = fastapi_auth(action="primitive",
-                     params={"name": "DoesNotExist", "output_dir": "/tmp/x"})
+    r = fastapi_auth(action="primitive", params={"name": "DoesNotExist", "output_dir": "/tmp/x"})
     assert r["ok"] is False
     assert "unknown primitive" in r["what_happened"].lower()
 
 
 def test_primitive_copies_session_store_files(tmp_path: Path) -> None:
-    r = fastapi_auth(action="primitive", params={
-        "name": "SessionStore", "output_dir": str(tmp_path),
-    })
+    r = fastapi_auth(
+        action="primitive",
+        params={
+            "name": "SessionStore",
+            "output_dir": str(tmp_path),
+        },
+    )
     assert r["ok"] is True
     files = r["result"]["files_created"]
     assert any(f.endswith("SessionStore.py") for f in files)
@@ -82,15 +87,22 @@ def test_primitive_copies_session_store_files(tmp_path: Path) -> None:
 def test_primitive_copy_skips_pycache(tmp_path: Path) -> None:
     # Seed the source with a bogus __pycache__ file to verify exclusion.
     from mcp_tools.tree.auth import VENOUS_AUTH
+
     cache = VENOUS_AUTH / "SessionStore" / "__pycache__"
     cache.mkdir(exist_ok=True)
     bogus = cache / "test_exclusion.pyc"
     bogus.write_bytes(b"\x00")
     try:
-        fastapi_auth(action="primitive", params={
-            "name": "SessionStore", "output_dir": str(tmp_path),
-        })
-        target_pycache = tmp_path / "app" / "core" / "venous" / "auth" / "SessionStore" / "__pycache__"
+        fastapi_auth(
+            action="primitive",
+            params={
+                "name": "SessionStore",
+                "output_dir": str(tmp_path),
+            },
+        )
+        target_pycache = (
+            tmp_path / "app" / "core" / "venous" / "auth" / "SessionStore" / "__pycache__"
+        )
         assert not target_pycache.exists(), "pycache should have been excluded"
     finally:
         bogus.unlink(missing_ok=True)
@@ -100,8 +112,9 @@ def test_primitive_overwrites_existing_dir(tmp_path: Path) -> None:
     target = tmp_path / "app" / "core" / "venous" / "auth" / "SessionStore"
     target.mkdir(parents=True)
     (target / "stale.txt").write_text("old")
-    r = fastapi_auth(action="primitive",
-                     params={"name": "SessionStore", "output_dir": str(tmp_path)})
+    r = fastapi_auth(
+        action="primitive", params={"name": "SessionStore", "output_dir": str(tmp_path)}
+    )
     assert r["ok"] is True
     assert not (target / "stale.txt").exists(), "must wipe previous state"
 
@@ -110,6 +123,7 @@ def test_primitive_overwrites_existing_dir(tmp_path: Path) -> None:
 # Bundle + slice actions (smoke — the slice tools themselves are tested
 # under adapt/extend/auth_access/test_*.py)
 # ---------------------------------------------------------------------------
+
 
 def test_bundle_requires_output_dir() -> None:
     r = fastapi_auth(action="bundle")
@@ -127,10 +141,13 @@ def test_slice_requires_output_dir() -> None:
 # Registration smoke
 # ---------------------------------------------------------------------------
 
+
 def test_fastapi_auth_registered_in_mcp_discovery() -> None:
     import asyncio
-    from mcp_tools.server import mcp as _mcp
+
     from mcp_tools.discovery import discover_and_register
+    from mcp_tools.server import mcp as _mcp
+
     discover_and_register(_mcp)
     names = {t.name for t in asyncio.run(_mcp.list_tools())}
     assert "fastapi_auth" in names

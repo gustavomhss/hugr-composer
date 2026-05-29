@@ -506,7 +506,7 @@ A subtle drift can ship as:
   the entire YAML file, breaking downstream consumers that scan by
   position.
 - A regression where `_staging/` is no longer filtered out of the manifest
-  scan — admits ~176 staged primitives + 42 quarantined into the registry,
+  scan — admits ~175 staged primitives + 42 quarantined into the registry,
   silently breaking the B1.1 production-only contract.
 
 **Mitigation: byte-equivalent pre/post `primitives_by_concern.yaml` gate.**

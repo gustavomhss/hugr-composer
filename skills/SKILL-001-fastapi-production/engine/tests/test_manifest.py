@@ -1,4 +1,5 @@
 """Unit tests for engine.index.manifest — the single source of truth."""
+
 from __future__ import annotations
 
 import json
@@ -7,16 +8,23 @@ from pathlib import Path
 import pytest
 
 from engine.index.manifest import (
-    CATALOG_PATH, ManifestError, build, write,
-    _canonical_tool_name, _infer_domain, _infer_verb, _infer_tags,
-    _extract_intent, _slugify,
+    CATALOG_PATH,
+    ManifestError,
+    _canonical_tool_name,
+    _extract_intent,
+    _infer_domain,
+    _infer_tags,
+    _infer_verb,
+    _slugify,
+    build,
+    write,
 )
 from engine.index.schemas import DOMAINS, TAG_VOCABULARY, VERBS
-
 
 # ---------------------------------------------------------------------------
 # High-level build
 # ---------------------------------------------------------------------------
+
 
 def test_build_succeeds_and_produces_expected_counts() -> None:
     m = build()
@@ -72,6 +80,7 @@ def test_committed_catalog_matches_fresh_build() -> None:
 # Entry invariants
 # ---------------------------------------------------------------------------
 
+
 def test_every_tool_verb_domain_in_closed_vocab() -> None:
     m = build()
     for t in m.tools:
@@ -125,6 +134,7 @@ def test_every_recipe_references_at_least_one_registered_primitive() -> None:
 # Inference helpers
 # ---------------------------------------------------------------------------
 
+
 def test_infer_verb_from_add_prefix() -> None:
     assert _infer_verb("fastapi_add_rbac", "add_rbac") == "add"
 
@@ -171,6 +181,7 @@ def test_slugify_collapses_nonalnum() -> None:
 # Error paths
 # ---------------------------------------------------------------------------
 
+
 def test_manifest_error_raised_on_duplicate_mcp_name(tmp_path: Path, monkeypatch) -> None:
     """Plant two modules with the same MCP_TOOL name; scanner must reject.
 
@@ -178,6 +189,7 @@ def test_manifest_error_raised_on_duplicate_mcp_name(tmp_path: Path, monkeypatch
     resolves. Use a tmp dir inside the skill's engine/ tree and clean up.
     """
     import engine.index.manifest as mod
+
     fake_root = mod.SKILL_ROOT / "engine" / "_manifest_test_fixtures"
     try:
         fake_root.mkdir(parents=True, exist_ok=True)
@@ -192,6 +204,7 @@ def test_manifest_error_raised_on_duplicate_mcp_name(tmp_path: Path, monkeypatch
             mod._scan_tools()
     finally:
         import shutil
+
         shutil.rmtree(fake_root, ignore_errors=True)
 
 
@@ -199,8 +212,10 @@ def test_manifest_error_raised_on_duplicate_mcp_name(tmp_path: Path, monkeypatch
 # Tier-1 meta tools (mcp_tools/tier1.py)
 # ---------------------------------------------------------------------------
 
+
 def test_tier1_home_returns_landscape_envelope() -> None:
     from mcp_tools.tier1 import fastapi_meta_home
+
     r = fastapi_meta_home()
     assert r["ok"] is True
     assert r["elapsed_ms"] >= 0
@@ -211,6 +226,7 @@ def test_tier1_home_returns_landscape_envelope() -> None:
 
 def test_tier1_search_finds_tamper_evident_chain() -> None:
     from mcp_tools.tier1 import fastapi_meta_search
+
     r = fastapi_meta_search("tamper evident audit chain", k=5)
     assert r["ok"] is True
     hits = r["result"]["hits"]
@@ -221,6 +237,7 @@ def test_tier1_search_finds_tamper_evident_chain() -> None:
 
 def test_tier1_search_respects_domain_filter() -> None:
     from mcp_tools.tier1 import fastapi_meta_search
+
     r = fastapi_meta_search("rate limit", domain="resiliency", k=5)
     assert r["ok"] is True
     for h in r["result"]["hits"]:
@@ -229,6 +246,7 @@ def test_tier1_search_respects_domain_filter() -> None:
 
 def test_tier1_search_empty_query_returns_ok_false() -> None:
     from mcp_tools.tier1 import fastapi_meta_search
+
     r = fastapi_meta_search("", k=5)
     assert r["ok"] is False
     assert r["result"]["hits"] == []
@@ -236,6 +254,7 @@ def test_tier1_search_empty_query_returns_ok_false() -> None:
 
 def test_tier1_describe_primitive() -> None:
     from mcp_tools.tier1 import fastapi_meta_describe
+
     r = fastapi_meta_describe("CausalReorderBuffer")
     assert r["ok"] is True
     assert r["result"]["kind"] == "primitive"
@@ -244,6 +263,7 @@ def test_tier1_describe_primitive() -> None:
 
 def test_tier1_describe_unknown_returns_ok_false_with_hint() -> None:
     from mcp_tools.tier1 import fastapi_meta_describe
+
     r = fastapi_meta_describe("does-not-exist-xyz")
     assert r["ok"] is False
     assert any("search" in step.lower() for step in r["next_steps"])
@@ -252,9 +272,11 @@ def test_tier1_describe_unknown_returns_ok_false_with_hint() -> None:
 def test_tier1_envelope_shape_uniform() -> None:
     """Every tier-1 return must conform to the same envelope."""
     from mcp_tools.tier1 import (
-        fastapi_meta_home, fastapi_meta_search,
         fastapi_meta_describe,
+        fastapi_meta_home,
+        fastapi_meta_search,
     )
+
     required_keys = {"ok", "what_happened", "result", "next_steps", "elapsed_ms"}
     for fn_call in (
         lambda: fastapi_meta_home(),
@@ -271,6 +293,7 @@ def test_tier1_envelope_shape_uniform() -> None:
 def test_tier1_home_breadcrumbs_reference_other_tier1_tools() -> None:
     """The whole point of next_steps is to form a workflow graph."""
     from mcp_tools.tier1 import fastapi_meta_home
+
     r = fastapi_meta_home()
     joined = " ".join(r["next_steps"])
     assert "fastapi_meta_search" in joined
@@ -280,8 +303,10 @@ def test_tier1_home_breadcrumbs_reference_other_tier1_tools() -> None:
 def test_tier1_registered_as_mcp_tools() -> None:
     """discover_and_register must expose exactly 6 fastapi_meta_* tools."""
     import asyncio
-    from mcp_tools.server import mcp as _mcp
+
     from mcp_tools.discovery import discover_and_register
+    from mcp_tools.server import mcp as _mcp
+
     discover_and_register(_mcp)
     names = {t.name for t in asyncio.run(_mcp.list_tools())}
     expected = {

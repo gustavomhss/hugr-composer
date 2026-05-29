@@ -126,7 +126,7 @@ Authoritative list (registered): **`engine/primitives_by_concern.yaml`**
   `"lite"` is defined in §B1.8 but no v1.0.0 primitive ships at that
   tier (reserved for post-v1.0). Wave 1.5 added `events.PubSub` and
   `billing.Billing` (see FREEZE §1.6.5).
-- **176 staged primitives** discoverable via `fastapi_meta_search`
+- **175 staged primitives** discoverable via `fastapi_meta_search`
   with `status="staged"` — usable as reference, NOT production-ready.
   Distributed across `_staging/<namespace>/` (134) and
   `_staging/_quarantine/` (42 PascalCase). Lowercase function

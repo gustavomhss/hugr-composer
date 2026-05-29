@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "26ed4c4",
-  "generated_at": "2026-05-28T19:04:18+00:00",
+  "kit_commit": "a91feee",
+  "generated_at": "2026-05-28T23:12:19+00:00",
   "verbs": [
     "add",
     "generate",
@@ -4533,15 +4533,6 @@
       "status": "staged"
     },
     {
-      "name": "WorkerSettings",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/WorkerSettings/",
-      "status": "staged"
-    },
-    {
       "name": "APIKey",
       "namespace": "auth",
       "concern": "auth",
@@ -7323,6 +7314,15 @@
       "purpose": "**Status:** extracted-staged (needs human review).",
       "compose_with": [],
       "module_path": "core/venous/_staging/resiliency/WorkerFactory/",
+      "status": "staged"
+    },
+    {
+      "name": "WorkerSettings",
+      "namespace": "resiliency",
+      "concern": "resiliency",
+      "purpose": "**Status:** extracted-staged (needs human review).",
+      "compose_with": [],
+      "module_path": "core/venous/_staging/resiliency/WorkerSettings/",
       "status": "staged"
     },
     {
@@ -11762,5 +11762,5 @@
     "primitives": 299,
     "recipes": 392
   },
-  "stable_hash": "e1a42b7cc29b09317801d6095a7023662332d271bfa01712ce8f724ad2d52643"
+  "stable_hash": "d22c9f69c7468ecb6b9e265258c9569483a94258da95548846f2eca0c9aee886"
 }

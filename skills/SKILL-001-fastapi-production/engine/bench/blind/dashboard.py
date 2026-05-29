@@ -5,6 +5,7 @@ external CDN. Open in a browser or host on GitHub Pages / any static
 host. Every number links back to the raw JSON under the same run_dir
 so a reviewer can audit the source.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -52,8 +53,7 @@ a:hover { text-decoration: underline; }
 def _bar(pct: float, kind: str = "") -> str:
     pct = max(0.0, min(100.0, float(pct)))
     return (
-        f'<span class="bar-wrap"><span class="bar {kind}" '
-        f'style="width: {pct:.0f}%"></span></span>'
+        f'<span class="bar-wrap"><span class="bar {kind}" style="width: {pct:.0f}%"></span></span>'
     )
 
 
@@ -61,8 +61,8 @@ def _render_overall(ov: dict) -> str:
     return (
         f'<div class="card"><div class="big">{ov.get("mean_score", 0):.2f}</div>'
         f'<div class="meta">mean score across {ov.get("runs", 0)} runs · '
-        f'min {ov.get("min_score", 0):.2f} / max {ov.get("max_score", 0):.2f} · '
-        f'stdev {ov.get("stdev_score", 0):.2f}</div></div>'
+        f"min {ov.get('min_score', 0):.2f} / max {ov.get('max_score', 0):.2f} · "
+        f"stdev {ov.get('stdev_score', 0):.2f}</div></div>"
     )
 
 
@@ -72,12 +72,12 @@ def _render_hypothesis(h: dict) -> str:
     return f"""<div class="card">
 <b>Pre-registered hypothesis (PROTOCOL §1)</b><br>
 <span class="{h1}">H1 hard-tier mean gap</span>:
-  {h.get('H1_hard_tier_gap_mean', 0):.2f} pts
-  (threshold {h.get('H1_threshold', 25)} → <b class="{h1}">{'supported' if h.get('H1_supported') else 'NOT supported'}</b>)
+  {h.get("H1_hard_tier_gap_mean", 0):.2f} pts
+  (threshold {h.get("H1_threshold", 25)} → <b class="{h1}">{"supported" if h.get("H1_supported") else "NOT supported"}</b>)
 <br>
 <span class="{h2}">H2 impossible-tier ceiling gap</span>:
-  {h.get('H2_impossible_tier_ceiling_gap', 0):.2f} pts
-  (threshold {h.get('H2_threshold', 30)} → <b class="{h2}">{'supported' if h.get('H2_supported') else 'NOT supported'}</b>)
+  {h.get("H2_impossible_tier_ceiling_gap", 0):.2f} pts
+  (threshold {h.get("H2_threshold", 30)} → <b class="{h2}">{"supported" if h.get("H2_supported") else "NOT supported"}</b>)
 </div>"""
 
 
@@ -198,10 +198,12 @@ def build(run_id: str) -> Path:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--run", required=False, default=None,
-                        help="run_id under benchmarks/blind/results/")
-    parser.add_argument("--latest", action="store_true",
-                        help="build dashboard for the most recent run_id")
+    parser.add_argument(
+        "--run", required=False, default=None, help="run_id under benchmarks/blind/results/"
+    )
+    parser.add_argument(
+        "--latest", action="store_true", help="build dashboard for the most recent run_id"
+    )
     args = parser.parse_args(argv)
 
     if args.latest or not args.run:

@@ -6,11 +6,12 @@ the kit's *capability ceiling* — what achievable when the Maestro chooses
 well. It is NOT cheating — every attempt is a legitimate, independently
 scored run; we simply report the best-of-N distribution statistic.
 """
+
 from __future__ import annotations
 
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from engine.bench.rubric import aggregate, score_spec
@@ -27,7 +28,8 @@ def score_one(spec_path: Path, workdir: Path) -> float:
     adapter = SubagentMaestro(runs_dir=workdir.parent)
     result = adapter.run_spec(spec_path, workdir)
     s = score_spec(
-        result.spec_id, result.tier,
+        result.spec_id,
+        result.tier,
         scaffold_completeness=result.scaffold_completeness,
         test_suite_pass=result.test_suite_pass,
         primitive_gate_pass=result.primitive_gate_pass,
@@ -74,7 +76,8 @@ def main() -> int:
         _, wd, _ = best
         r = adapter.run_spec(spec_path, wd)
         s = score_spec(
-            r.spec_id, r.tier,
+            r.spec_id,
+            r.tier,
             scaffold_completeness=r.scaffold_completeness,
             test_suite_pass=r.test_suite_pass,
             primitive_gate_pass=r.primitive_gate_pass,
@@ -87,7 +90,7 @@ def main() -> int:
         best_scores,
         kit_version=_kit_version(),
         maestro_model="cli-subagent-ensemble-best-of",
-        generated_at=datetime.now(tz=timezone.utc).isoformat(timespec="seconds"),
+        generated_at=datetime.now(tz=UTC).isoformat(timespec="seconds"),
     )
     data = report.as_dict()
     data["methodology"] = "plan_level_v3_best_of_ensemble"
@@ -105,7 +108,7 @@ def main() -> int:
     for tier, v in report.by_tier().items():
         print(f"  {tier:12} {v:6.2f}")
     for s in best_scores:
-        src = [d.evidence for d in s.dimensions if "run_source" in (d.evidence or "")][:1]
+        [d.evidence for d in s.dimensions if "run_source" in (d.evidence or "")][:1]
         print(f"  {s.spec_id:55} {s.total:6.2f}")
     return 0
 

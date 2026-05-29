@@ -18,6 +18,7 @@ Usage (from repo root):
     python3 -m engine.merge --venous-root skills/SKILL-001-fastapi-production/core/venous
     python3 -m engine.merge --venous-root ... --json
 """
+
 from __future__ import annotations
 
 import argparse
@@ -36,8 +37,12 @@ from engine.contracts import accept_delivery  # noqa: E402
 def _iter_primitive_dirs(venous_root: Path) -> list[Path]:
     """A primitive dir is two levels below venous_root and contains a *.manifest.json."""
     out: list[Path] = []
-    for ns_dir in sorted(p for p in venous_root.iterdir() if p.is_dir() and not p.name.startswith(".")):
-        for prim_dir in sorted(p for p in ns_dir.iterdir() if p.is_dir() and not p.name.startswith(".")):
+    for ns_dir in sorted(
+        p for p in venous_root.iterdir() if p.is_dir() and not p.name.startswith(".")
+    ):
+        for prim_dir in sorted(
+            p for p in ns_dir.iterdir() if p.is_dir() and not p.name.startswith(".")
+        ):
             manifest = prim_dir / f"{prim_dir.name}.manifest.json"
             if manifest.exists():
                 out.append(prim_dir)
@@ -65,21 +70,22 @@ def _roll_up(venous_root: Path) -> tuple[dict, list[str]]:
             offenders.append(f"{prim_dir.name}: {'; '.join(errors)[:300]}")
             continue
 
-        entries.append({
-            "name": parsed.name,
-            "namespace": parsed.namespace,
-            "maturity": parsed.maturity.value,
-            "builder_agent_id": parsed.builder_agent_id,
-            "file_count": len(parsed.files),
-            "invariant_count": len(parsed.invariant_bindings),
-            "tier_summary": [
-                {"tier": r.tier.value, "status": r.status.value}
-                for r in parsed.tier_reports
-            ],
-            "llm_cost_usd": parsed.llm_cost_usd,
-            "build_duration_ms": parsed.build_duration_ms,
-            "catalog_entry_sha256": parsed.catalog_entry_sha256,
-        })
+        entries.append(
+            {
+                "name": parsed.name,
+                "namespace": parsed.namespace,
+                "maturity": parsed.maturity.value,
+                "builder_agent_id": parsed.builder_agent_id,
+                "file_count": len(parsed.files),
+                "invariant_count": len(parsed.invariant_bindings),
+                "tier_summary": [
+                    {"tier": r.tier.value, "status": r.status.value} for r in parsed.tier_reports
+                ],
+                "llm_cost_usd": parsed.llm_cost_usd,
+                "build_duration_ms": parsed.build_duration_ms,
+                "catalog_entry_sha256": parsed.catalog_entry_sha256,
+            }
+        )
         total_cost += parsed.llm_cost_usd
         by_ns[parsed.namespace] = by_ns.get(parsed.namespace, 0) + 1
         by_maturity[parsed.maturity.value] = by_maturity.get(parsed.maturity.value, 0) + 1
@@ -132,7 +138,9 @@ def _write_report(manifest: dict, offenders: list[str], out_path: Path) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Consolidate per-primitive manifests into a catalog roll-up.")
+    parser = argparse.ArgumentParser(
+        description="Consolidate per-primitive manifests into a catalog roll-up."
+    )
     parser.add_argument("--venous-root", type=Path, required=True)
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
@@ -151,10 +159,17 @@ def main() -> int:
 
     ok = len(offenders) == 0
     if args.json:
-        print(json.dumps({
-            "ok": ok, "accepted": manifest["total_primitives"],
-            "rejected": len(offenders), "offenders": offenders,
-        }, indent=2))
+        print(
+            json.dumps(
+                {
+                    "ok": ok,
+                    "accepted": manifest["total_primitives"],
+                    "rejected": len(offenders),
+                    "offenders": offenders,
+                },
+                indent=2,
+            )
+        )
     else:
         if ok:
             print(f"✓ {manifest['total_primitives']} primitives accepted.")

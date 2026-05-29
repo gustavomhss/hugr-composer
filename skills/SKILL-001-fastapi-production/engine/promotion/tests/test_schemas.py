@@ -6,6 +6,7 @@ Validates:
   * is_ready_to_execute() logic.
   * Ledger JSON round-trip preserves every field.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -124,11 +125,7 @@ def test_ledger_round_trip_preserves_all_fields():
         tier="none",
         rationale="duplicate of a registered primitive reference",
         delete_reason="registered version Foo is canonical",
-        signals=[
-            Signal(
-                kind=SignalKind.TOOL_IMPORT, source="adapt/tool.py", detail="x"
-            )
-        ],
+        signals=[Signal(kind=SignalKind.TOOL_IMPORT, source="adapt/tool.py", detail="x")],
         state=_state(duplicate_of_registered="Foo"),
     )
     l1 = Ledger(

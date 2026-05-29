@@ -9,8 +9,8 @@ Environment requirements:
 - Python 3.12+.
 
 Contract (every caller MUST obey):
-- Every `llm_call` returns a typed `LLMResponse` or raises `LLMCallFailed`.
-- `LLMCallFailed` carries the full stderr, exit code, and invoked argv.
+- Every `llm_call` returns a typed `LLMResponse` or raises `LLMCallFailedError`.
+- `LLMCallFailedError` carries the full stderr, exit code, and invoked argv.
 - Concurrency ceiling is enforced by `TransportPool`, never by the caller.
 - Prompts MUST NOT embed credentials or API keys — hard rejection.
 
@@ -34,17 +34,17 @@ from dataclasses import dataclass
 from typing import Any
 
 _CREDENTIAL_SIGNATURES = (
-    r"sk-ant-[A-Za-z0-9_-]{20,}",       # Anthropic
-    r"sk-[A-Za-z0-9_-]{20,}",           # OpenAI legacy / generic
-    r"AKIA[0-9A-Z]{16}",                # AWS access key
-    r"AIza[0-9A-Za-z_-]{35}",           # Google API
-    r"ghp_[A-Za-z0-9]{36}",             # GitHub personal token
-    r"xox[baprs]-[A-Za-z0-9-]{10,}",    # Slack
+    r"sk-ant-[A-Za-z0-9_-]{20,}",  # Anthropic
+    r"sk-[A-Za-z0-9_-]{20,}",  # OpenAI legacy / generic
+    r"AKIA[0-9A-Z]{16}",  # AWS access key
+    r"AIza[0-9A-Za-z_-]{35}",  # Google API
+    r"ghp_[A-Za-z0-9]{36}",  # GitHub personal token
+    r"xox[baprs]-[A-Za-z0-9-]{10,}",  # Slack
 )
 _CREDENTIAL_RE = re.compile("|".join(_CREDENTIAL_SIGNATURES))
 
 
-class LLMCallFailed(RuntimeError):
+class LLMCallFailedError(RuntimeError):
     """Raised when the CLI subprocess exits non-zero or the response is malformed."""
 
     def __init__(self, message: str, *, argv: list[str], exit_code: int, stderr: str) -> None:
@@ -55,7 +55,7 @@ class LLMCallFailed(RuntimeError):
 
     def __repr__(self) -> str:
         return (
-            f"LLMCallFailed(exit_code={self.exit_code}, argv={self.argv!r}, "
+            f"LLMCallFailedError(exit_code={self.exit_code}, argv={self.argv!r}, "
             f"stderr={self.stderr[:300]!r})"
         )
 
@@ -111,11 +111,16 @@ class TransportPool:
 
         argv: list[str] = [
             self._cli,
-            "-p", prompt,
-            "--output-format", "json",
-            "--model", model,
-            "--max-turns", str(max_turns),
-            "--permission-mode", "plan",  # read-only; builder does not let the judge model mutate files
+            "-p",
+            prompt,
+            "--output-format",
+            "json",
+            "--model",
+            model,
+            "--max-turns",
+            str(max_turns),
+            "--permission-mode",
+            "plan",  # read-only; builder does not let the judge model mutate files
         ]
         if system is not None:
             argv.extend(["--append-system-prompt", system])
@@ -129,35 +134,42 @@ class TransportPool:
             )
             try:
                 stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout_s)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 proc.kill()
                 await proc.communicate()
-                raise LLMCallFailed(
+                raise LLMCallFailedError(
                     f"CLI call timed out after {timeout_s}s.",
-                    argv=argv, exit_code=-1, stderr=f"timeout={timeout_s}s",
-                )
+                    argv=argv,
+                    exit_code=-1,
+                    stderr=f"timeout={timeout_s}s",
+                ) from None
 
             duration_ms = int((time.monotonic() - started) * 1000)
             if proc.returncode != 0:
-                raise LLMCallFailed(
+                raise LLMCallFailedError(
                     f"CLI exited with code {proc.returncode}.",
-                    argv=argv, exit_code=proc.returncode or -1,
+                    argv=argv,
+                    exit_code=proc.returncode or -1,
                     stderr=stderr.decode(errors="replace"),
                 )
 
             try:
                 raw = json.loads(stdout.decode())
             except json.JSONDecodeError as e:
-                raise LLMCallFailed(
+                raise LLMCallFailedError(
                     f"CLI stdout was not JSON: {e}",
-                    argv=argv, exit_code=0, stderr=stdout.decode()[:2000],
-                )
+                    argv=argv,
+                    exit_code=0,
+                    stderr=stdout.decode()[:2000],
+                ) from e
 
         text = raw.get("result", "")
         if not isinstance(text, str):
-            raise LLMCallFailed(
+            raise LLMCallFailedError(
                 "CLI JSON missing str `result` field.",
-                argv=argv, exit_code=0, stderr=str(raw)[:2000],
+                argv=argv,
+                exit_code=0,
+                stderr=str(raw)[:2000],
             )
 
         cost = self._extract_cost(raw, model)
@@ -174,7 +186,7 @@ class TransportPool:
         m = _CREDENTIAL_RE.search(blob)
         if m:
             # Redact before raising so the logs don't echo the secret.
-            preview = blob[: m.start()][-40:] + "<REDACTED>" + blob[m.end():][:40]
+            preview = blob[: m.start()][-40:] + "<REDACTED>" + blob[m.end() :][:40]
             raise ValueError(
                 f"Prompt looks like it contains a credential. Refusing. Preview: {preview!r}"
             )
@@ -198,17 +210,18 @@ async def fan_out(
     *,
     system: str | None = None,
     timeout_s: float = 180.0,
-) -> list[tuple[str, LLMResponse | LLMCallFailed]]:
+) -> list[tuple[str, LLMResponse | LLMCallFailedError]]:
     """Run the same prompt against multiple models concurrently.
 
     Returns a list of `(model, response_or_failure)` tuples — failures do NOT
     propagate; the caller decides whether a partial ensemble is acceptable.
     """
-    async def one(m: str) -> tuple[str, LLMResponse | LLMCallFailed]:
+
+    async def one(m: str) -> tuple[str, LLMResponse | LLMCallFailedError]:
         try:
             res = await pool.call(prompt, model=m, system=system, max_turns=5, timeout_s=timeout_s)
             return (m, res)
-        except LLMCallFailed as e:
+        except LLMCallFailedError as e:
             return (m, e)
 
     return await asyncio.gather(*(one(m) for m in models))

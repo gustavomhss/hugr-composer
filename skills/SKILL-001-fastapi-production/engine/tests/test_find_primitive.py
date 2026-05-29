@@ -9,6 +9,7 @@ Tests enforce the contract's DoD and invariants:
 - Schema shape matches contract exactly.
 - Limit is capped at 10 regardless of caller input.
 """
+
 from __future__ import annotations
 
 import time
@@ -25,9 +26,13 @@ def index() -> PrimitiveIndex:
 
 def test_index_loads_all_registered_primitives(index: PrimitiveIndex) -> None:
     # Registry must equal on-disk production primitive count (CONTRACT §B1.1).
-    import yaml
     from pathlib import Path
-    reg = yaml.safe_load((Path(__file__).resolve().parents[1] / "primitives_by_concern.yaml").read_text())
+
+    import yaml
+
+    reg = yaml.safe_load(
+        (Path(__file__).resolve().parents[1] / "primitives_by_concern.yaml").read_text()
+    )
     assert index.size == len(reg["primitives"])
     assert index.size >= 97, f"registry shrunk below Phase 1 floor: {index.size}"
 
@@ -53,9 +58,17 @@ def test_schema_shape_matches_contract() -> None:
 
 
 def test_exact_name_query_ranks_that_primitive_first() -> None:
-    for name in ("CircuitBreaker", "SignatureVerifier", "RateLimiter", "SecretsVault", "IdempotentConsumer"):
+    for name in (
+        "CircuitBreaker",
+        "SignatureVerifier",
+        "RateLimiter",
+        "SecretsVault",
+        "IdempotentConsumer",
+    ):
         hits = find_primitive(query=name, limit=3)
-        assert hits and hits[0]["name"] == name, f"exact-name query {name!r} did not rank itself first"
+        assert hits and hits[0]["name"] == name, (
+            f"exact-name query {name!r} did not rank itself first"
+        )
 
 
 def test_unknown_concern_returns_empty() -> None:
@@ -87,11 +100,26 @@ def test_stemmer_symmetry_plurals() -> None:
 
 def test_latency_p95_under_fifty_ms(index: PrimitiveIndex) -> None:
     queries = [
-        "circuit breaker", "deduplicate webhook", "signature verify", "audit tamper",
-        "rate limit", "retry budget", "saga compensation", "outbox transactional",
-        "dead letter", "distributed lock", "structured log correlation", "workflow durable",
-        "feature toggle", "secrets vault", "password hash", "encrypt envelope",
-        "graceful shutdown", "csrf cookie", "totp one time password", "bulkhead pool",
+        "circuit breaker",
+        "deduplicate webhook",
+        "signature verify",
+        "audit tamper",
+        "rate limit",
+        "retry budget",
+        "saga compensation",
+        "outbox transactional",
+        "dead letter",
+        "distributed lock",
+        "structured log correlation",
+        "workflow durable",
+        "feature toggle",
+        "secrets vault",
+        "password hash",
+        "encrypt envelope",
+        "graceful shutdown",
+        "csrf cookie",
+        "totp one time password",
+        "bulkhead pool",
     ]
     # Warm any lazy state.
     for q in queries:

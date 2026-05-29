@@ -36,7 +36,6 @@ if __package__ is None or __package__ == "":
 
 from engine.contracts import (  # noqa: E402
     Maturity,
-    PrimitiveDelivery,
     Tier,
     accept_delivery,
     compute_sha256,
@@ -73,31 +72,33 @@ def _spec_sha256(spec: dict) -> str:
 
 def _file_artefacts(primitive_dir: Path, namespace: str, primitive_name: str) -> list[dict]:
     # Byproduct directories created by gate runners (not primitive artefacts).
-    _BYPRODUCT_DIRS = {
-        "_evidence",          # per-tier JUnit XML / T6 / T9 evidence
-        "__pycache__",        # Python bytecode
-        ".hypothesis",        # hypothesis example DB (T3)
-        "states",             # TLC model-checker output dir (T2)
-        ".pytest_cache",      # pytest cache
-        ".ruff_cache",        # ruff cache
-        ".mypy_cache",        # mypy cache
+    _byproduct_dirs = {
+        "_evidence",  # per-tier JUnit XML / T6 / T9 evidence
+        "__pycache__",  # Python bytecode
+        ".hypothesis",  # hypothesis example DB (T3)
+        "states",  # TLC model-checker output dir (T2)
+        ".pytest_cache",  # pytest cache
+        ".ruff_cache",  # ruff cache
+        ".mypy_cache",  # mypy cache
     }
     out: list[dict] = []
     for p in sorted(primitive_dir.rglob("*")):
         if p.is_dir():
             continue
-        if any(part in _BYPRODUCT_DIRS for part in p.parts):
+        if any(part in _byproduct_dirs for part in p.parts):
             continue
         # __init__.py / conftest.py are package hygiene files, not primitive artefacts.
         if p.name in ("__init__.py", "conftest.py"):
             continue
         rel = f"{namespace}/{primitive_name}/" + str(p.relative_to(primitive_dir))
-        out.append({
-            "path": rel,
-            "sha256": compute_sha256(p.read_bytes()),
-            "size_bytes": p.stat().st_size,
-            "kind": _infer_kind(p.name, primitive_name),
-        })
+        out.append(
+            {
+                "path": rel,
+                "sha256": compute_sha256(p.read_bytes()),
+                "size_bytes": p.stat().st_size,
+                "kind": _infer_kind(p.name, primitive_name),
+            }
+        )
     return out
 
 
@@ -158,16 +159,29 @@ async def _run_all_tiers(ctx: GateContext, tiers_needed: frozenset[Tier]) -> lis
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate a primitive delivery against all 9 tiers.")
+    parser = argparse.ArgumentParser(
+        description="Validate a primitive delivery against all 9 tiers."
+    )
     parser.add_argument("--primitive-dir", type=Path, required=True)
-    parser.add_argument("--catalog-entry", type=Path, required=True,
-                        help="JSON file containing `primitives: [...]` (one agent deliverable).")
+    parser.add_argument(
+        "--catalog-entry",
+        type=Path,
+        required=True,
+        help="JSON file containing `primitives: [...]` (one agent deliverable).",
+    )
     parser.add_argument("--maturity", choices=[m.value for m in Maturity], required=True)
     parser.add_argument("--builder-agent", type=int, required=True)
-    parser.add_argument("--invariant-bindings", type=Path, required=True,
-                        help="JSON file: {'invariant_bindings': [{invariant_id, invariant_text, confirms_test, prevents_test, under_failure_test}, ...]}")
-    parser.add_argument("--is-stateful", action="store_true",
-                        help="Primitive carries shared/in-memory state; enables T2 / T3 / T5.")
+    parser.add_argument(
+        "--invariant-bindings",
+        type=Path,
+        required=True,
+        help="JSON file: {'invariant_bindings': [{invariant_id, invariant_text, confirms_test, prevents_test, under_failure_test}, ...]}",
+    )
+    parser.add_argument(
+        "--is-stateful",
+        action="store_true",
+        help="Primitive carries shared/in-memory state; enables T2 / T3 / T5.",
+    )
     parser.add_argument("--max-concurrent-llm", type=int, default=6)
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
@@ -182,16 +196,22 @@ def main() -> int:
     spec = _catalog_lookup(args.catalog_entry, primitive_name)
 
     if namespace != spec["namespace"]:
-        _emit(args.json, False, [
-            f"namespace mismatch: directory says '{namespace}', catalog says '{spec['namespace']}'."
-        ])
+        _emit(
+            args.json,
+            False,
+            [
+                f"namespace mismatch: directory says '{namespace}', catalog says '{spec['namespace']}'."
+            ],
+        )
         return 3
 
     maturity = Maturity(args.maturity)
     required = _required_tiers(maturity)
-    pool = TransportPool(max_concurrent=args.max_concurrent_llm) if (
-        Tier.T6_ADVERSARIAL in required or Tier.T9_META in required
-    ) else None
+    pool = (
+        TransportPool(max_concurrent=args.max_concurrent_llm)
+        if (Tier.T6_ADVERSARIAL in required or Tier.T9_META in required)
+        else None
+    )
 
     ctx = GateContext(
         primitive_dir=pdir,
@@ -214,8 +234,7 @@ def main() -> int:
     bindings_raw = json.loads(args.invariant_bindings.read_text())["invariant_bindings"]
 
     llm_cost = sum(
-        (pool._COST_HINT_PER_CALL.get(r.tool_version or "", 0.0) if pool else 0.0)
-        for r in reports
+        (pool._COST_HINT_PER_CALL.get(r.tool_version or "", 0.0) if pool else 0.0) for r in reports
     )
     duration_ms = int((time.monotonic() - started) * 1000)
 
@@ -259,10 +278,13 @@ def main() -> int:
 
 def _required_tiers(maturity: Maturity) -> frozenset[Tier]:
     from engine.contracts import MATURITY_REQUIRED_TIERS
+
     return MATURITY_REQUIRED_TIERS[maturity]
 
 
-def _emit(as_json: bool, ok: bool, errors: list[str], parsed=None, manifest: Path | None = None) -> None:
+def _emit(
+    as_json: bool, ok: bool, errors: list[str], parsed=None, manifest: Path | None = None
+) -> None:
     payload = {
         "ok": ok,
         "errors": errors,

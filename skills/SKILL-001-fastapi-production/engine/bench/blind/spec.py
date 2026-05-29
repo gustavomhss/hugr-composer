@@ -4,6 +4,7 @@ A "spec" is a directory under `benchmarks/blind/specs/<tier>/<id>/` that
 carries the agent-visible brief, the sealed judge, and metadata. This
 module validates the shape and hashes the brief for contamination guards.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -14,30 +15,39 @@ from typing import Any
 
 TIER_PREDICTIONS = {
     "calibration": {"naked_min": 75, "naked_max": 95, "kit_min": 80, "kit_max": 95},
-    "hard":        {"naked_min": 10, "naked_max": 40, "kit_min": 55, "kit_max": 85},
-    "impossible":  {"naked_min":  0, "naked_max": 15, "kit_min": 30, "kit_max": 60},
+    "hard": {"naked_min": 10, "naked_max": 40, "kit_min": 55, "kit_max": 85},
+    "impossible": {"naked_min": 0, "naked_max": 15, "kit_min": 30, "kit_max": 60},
 }
 
-DIFFICULTY_AXES = frozenset({
-    "concurrency", "exactly_once", "causal_order", "multi_invariant",
-    "failure_injection", "property_based", "large_n_scaling", "type_safety",
-    "security", "observability",
-})
+DIFFICULTY_AXES = frozenset(
+    {
+        "concurrency",
+        "exactly_once",
+        "causal_order",
+        "multi_invariant",
+        "failure_injection",
+        "property_based",
+        "large_n_scaling",
+        "type_safety",
+        "security",
+        "observability",
+    }
+)
 
 
 @dataclass(frozen=True)
 class Spec:
-    spec_id: str                    # e.g. "hard/01_financial_ledger"
-    tier: str                       # "calibration" | "hard" | "impossible"
-    root: Path                      # directory containing brief.md, judge/, ...
-    brief: str                      # agent-visible text
+    spec_id: str  # e.g. "hard/01_financial_ledger"
+    tier: str  # "calibration" | "hard" | "impossible"
+    root: Path  # directory containing brief.md, judge/, ...
+    brief: str  # agent-visible text
     brief_sha256: str
     metadata: dict[str, Any]
-    boot_command: str               # e.g. "uvicorn app.main:app --port {PORT}"
-    judge_dir: Path                 # contains sealed test files
-    health_probe: str               # e.g. "/health"
-    timeout_s: int                  # pytest timeout
-    boot_health_timeout_s: int = 45 # max wait for health probe 200
+    boot_command: str  # e.g. "uvicorn app.main:app --port {PORT}"
+    judge_dir: Path  # contains sealed test files
+    health_probe: str  # e.g. "/health"
+    timeout_s: int  # pytest timeout
+    boot_health_timeout_s: int = 45  # max wait for health probe 200
 
     @property
     def difficulty_axes(self) -> list[str]:
@@ -94,10 +104,18 @@ def load_spec(spec_dir: Path) -> Spec:
             f"predicted_naked_score {pn} out of tier band {predictions['naked_min']}-{predictions['naked_max']}"
         )
 
-    required_keys = {"tier", "difficulty_axes", "required_primitives",
-                     "predicted_naked_score", "predicted_kit_score",
-                     "boot_command", "health_probe", "timeout_s",
-                     "authored_at", "author"}
+    required_keys = {
+        "tier",
+        "difficulty_axes",
+        "required_primitives",
+        "predicted_naked_score",
+        "predicted_kit_score",
+        "boot_command",
+        "health_probe",
+        "timeout_s",
+        "authored_at",
+        "author",
+    }
     missing = required_keys - meta.keys()
     if missing:
         raise SpecValidationError(f"metadata.json missing keys: {sorted(missing)}")

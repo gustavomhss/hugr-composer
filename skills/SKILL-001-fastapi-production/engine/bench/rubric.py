@@ -19,19 +19,20 @@ The overall score is the arithmetic mean of the four dimensions, each
 normalized to 0-100. `score_spec` returns a `SpecScore` dataclass with
 the breakdown; `aggregate` over many specs is the north-star number.
 """
+
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass, field
+from collections.abc import Iterable
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Iterable
 
 
 @dataclass(frozen=True)
 class DimensionScore:
     name: str
-    value: float           # 0-100
-    evidence: str          # short, reviewable
+    value: float  # 0-100
+    evidence: str  # short, reviewable
 
     def weighted(self) -> float:
         return self.value * 0.25
@@ -40,7 +41,7 @@ class DimensionScore:
 @dataclass(frozen=True)
 class SpecScore:
     spec_id: str
-    tier: str              # baseline / mid / adversarial
+    tier: str  # baseline / mid / adversarial
     dimensions: tuple[DimensionScore, ...]
 
     @property
@@ -77,10 +78,18 @@ def score_spec(
         return max(0.0, min(100.0, float(v)))
 
     dims = (
-        DimensionScore("scaffold_completeness", _clamp(scaffold_completeness), ev.get("scaffold_completeness", "")),
+        DimensionScore(
+            "scaffold_completeness",
+            _clamp(scaffold_completeness),
+            ev.get("scaffold_completeness", ""),
+        ),
         DimensionScore("test_suite_pass", _clamp(test_suite_pass), ev.get("test_suite_pass", "")),
-        DimensionScore("primitive_gate_pass", _clamp(primitive_gate_pass), ev.get("primitive_gate_pass", "")),
-        DimensionScore("hand_editability", _clamp(hand_editability), ev.get("hand_editability", "")),
+        DimensionScore(
+            "primitive_gate_pass", _clamp(primitive_gate_pass), ev.get("primitive_gate_pass", "")
+        ),
+        DimensionScore(
+            "hand_editability", _clamp(hand_editability), ev.get("hand_editability", "")
+        ),
     )
     return SpecScore(spec_id=spec_id, tier=tier, dimensions=dims)
 
@@ -89,7 +98,7 @@ def score_spec(
 class BenchmarkReport:
     kit_version: str
     maestro_model: str
-    generated_at: str       # ISO-8601 UTC
+    generated_at: str  # ISO-8601 UTC
     scores: tuple[SpecScore, ...]
 
     @property
@@ -118,7 +127,9 @@ class BenchmarkReport:
         path.write_text(json.dumps(self.as_dict(), indent=2, sort_keys=False), encoding="utf-8")
 
 
-def aggregate(scores: Iterable[SpecScore], *, kit_version: str, maestro_model: str, generated_at: str) -> BenchmarkReport:
+def aggregate(
+    scores: Iterable[SpecScore], *, kit_version: str, maestro_model: str, generated_at: str
+) -> BenchmarkReport:
     return BenchmarkReport(
         kit_version=kit_version,
         maestro_model=maestro_model,

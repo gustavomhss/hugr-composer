@@ -1,10 +1,11 @@
 """Verdict logic tests — each decision rule exercised."""
+
 from __future__ import annotations
 
 from engine.promotion.classify import (
     _classify_single,
-    _motor_name,
     _motor_is_registered,
+    _motor_name,
 )
 from engine.promotion.schemas import (
     Signal,
@@ -72,9 +73,7 @@ def test_rule3_framework_coupled_motor_registered_adapter_missing_promotes_as_ad
 
     monkeypatch.setattr(m, "_adapter_exists", lambda _: False)
     state = _s(name="BulkheadMiddleware", framework_imports=["starlette"])
-    v, tier, rat, _, _, target = _unpack(
-        _classify_single(state, [], registered_names={"Bulkhead"})
-    )
+    v, tier, rat, _, _, target = _unpack(_classify_single(state, [], registered_names={"Bulkhead"}))
     assert v == Verdict.PROMOTE_AS_ADAPTER
     assert tier == "adapter"
     assert target == "core/venous/_adapters/fastapi/BulkheadAdapter.py"
@@ -83,18 +82,14 @@ def test_rule3_framework_coupled_motor_registered_adapter_missing_promotes_as_ad
 
 def test_rule4_framework_coupled_no_motor_registers_extract_motor_pair():
     state = _s(name="CORSConfigMiddleware", framework_imports=["starlette"])
-    v, _, rat, _, _, _ = _unpack(
-        _classify_single(state, [], registered_names={"Bulkhead"})
-    )
+    v, _, rat, _, _, _ = _unpack(_classify_single(state, [], registered_names={"Bulkhead"}))
     assert v == Verdict.EXTRACT_MOTOR_PAIR
     assert "CORSConfig" in rat or "motor" in rat.lower()
 
 
 def test_rule4_no_suffix_extract_motor_pair_still_valid():
     state = _s(name="FooBar", framework_imports=["fastapi"])
-    v, _, rat, _, _, _ = _unpack(
-        _classify_single(state, [], registered_names=set())
-    )
+    v, _, rat, _, _, _ = _unpack(_classify_single(state, [], registered_names=set()))
     assert v == Verdict.EXTRACT_MOTOR_PAIR
     assert "manually" in rat or "No common framework suffix" in rat
 

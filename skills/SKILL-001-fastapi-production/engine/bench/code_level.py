@@ -29,15 +29,15 @@ Usage:
     PYTHONPATH=. python -m engine.bench.code_level           # runs + prints
     PYTHONPATH=. python -m engine.bench.code_level --publish  # writes json
 """
+
 from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import subprocess
 import sys
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -52,7 +52,7 @@ class SpecResult:
     spec_id: str
     tier: str
     covered: bool
-    score: float | None        # None when pending
+    score: float | None  # None when pending
     tests_passed: int = 0
     tests_total: int = 0
     notes: str = ""
@@ -77,7 +77,10 @@ def _kit_version() -> str:
     try:
         out = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True, text=True, check=False, cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=REPO_ROOT,
         )
         return (out.stdout or "unknown").strip()
     except Exception:  # noqa: BLE001
@@ -93,6 +96,7 @@ def _parse_pytest_summary(stdout: str) -> tuple[int, int]:
         `2 failed, 3 passed in 0.42s`
     """
     import re
+
     last = ""
     for line in stdout.splitlines():
         if re.search(r"\b\d+\s+(passed|failed|error|skipped)\b", line):
@@ -113,24 +117,38 @@ def _score_one(spec_id: str, target_rel: str, python_bin: Path) -> SpecResult:
     target = REPO_ROOT / target_rel
     if not target.exists():
         return SpecResult(
-            spec_id=spec_id, tier=tier, covered=False, score=None,
+            spec_id=spec_id,
+            tier=tier,
+            covered=False,
+            score=None,
             pending_reason=f"target {target_rel} missing on disk",
         )
     out = subprocess.run(
         [str(python_bin), "-m", "pytest", "-q", "--tb=no", str(target)],
-        capture_output=True, text=True, check=False, cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=REPO_ROOT,
     )
     passed, total = _parse_pytest_summary(out.stdout + "\n" + out.stderr)
     if total == 0:
         return SpecResult(
-            spec_id=spec_id, tier=tier, covered=True, score=0.0,
-            tests_passed=0, tests_total=0,
+            spec_id=spec_id,
+            tier=tier,
+            covered=True,
+            score=0.0,
+            tests_passed=0,
+            tests_total=0,
             notes=f"pytest collected no tests under {target_rel}",
         )
     score = 100.0 * passed / total if total else 0.0
     return SpecResult(
-        spec_id=spec_id, tier=tier, covered=True, score=round(score, 2),
-        tests_passed=passed, tests_total=total,
+        spec_id=spec_id,
+        tier=tier,
+        covered=True,
+        score=round(score, 2),
+        tests_passed=passed,
+        tests_total=total,
         notes=f"pytest: {passed}/{total} passed",
     )
 
@@ -147,19 +165,22 @@ def run() -> dict[str, Any]:
         tier = spec_id.split("/", 1)[0]
         target = cfg.get("code_level_target")
         if not target:
-            results.append(SpecResult(
-                spec_id=spec_id, tier=tier, covered=False, score=None,
-                pending_reason=cfg.get("pending_reason", "not covered"),
-            ))
+            results.append(
+                SpecResult(
+                    spec_id=spec_id,
+                    tier=tier,
+                    covered=False,
+                    score=None,
+                    pending_reason=cfg.get("pending_reason", "not covered"),
+                )
+            )
             continue
         results.append(_score_one(spec_id, target, python_bin))
 
     covered = [r for r in results if r.covered and r.score is not None]
     total_specs = len(results)
     coverage_pct = 100.0 * len(covered) / total_specs if total_specs else 0.0
-    code_level_score = (
-        sum(r.score for r in covered) / len(covered) if covered else 0.0
-    )
+    code_level_score = sum(r.score for r in covered) / len(covered) if covered else 0.0
 
     by_tier: dict[str, dict[str, Any]] = {}
     for tier in ("baseline", "mid", "adversarial"):
@@ -170,7 +191,8 @@ def run() -> dict[str, Any]:
             "total": len(tier_results),
             "score": (
                 round(sum(r.score for r in tier_covered) / len(tier_covered), 2)
-                if tier_covered else None
+                if tier_covered
+                else None
             ),
         }
 
@@ -191,14 +213,15 @@ def run() -> dict[str, Any]:
         "by_tier": by_tier,
         "spec_results": [r.as_dict() for r in results],
         "kit_version": _kit_version(),
-        "generated_at": datetime.now(tz=timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": datetime.now(tz=UTC).isoformat(timespec="seconds"),
     }
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--publish", action="store_true",
-                        help="write benchmarks/code_level_score.json")
+    parser.add_argument(
+        "--publish", action="store_true", help="write benchmarks/code_level_score.json"
+    )
     args = parser.parse_args(argv)
 
     report = run()

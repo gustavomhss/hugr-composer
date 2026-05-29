@@ -19,9 +19,9 @@ Design choices
   - Skipped turns (no snapshot taken because the turn didn't write files)
     carry no reward.
 """
+
 from __future__ import annotations
 
-import contextlib
 import json
 import shutil
 import subprocess
@@ -30,7 +30,7 @@ import tarfile
 import tempfile
 from pathlib import Path
 
-from engine.bench.blind.judge import _classify, _parse_pytest_json, _ChaosWriter
+from engine.bench.blind.judge import _ChaosWriter, _parse_pytest_json
 from engine.bench.blind.spec import Spec
 
 
@@ -57,11 +57,13 @@ def _extract_snapshot(archive: Path, out_dir: Path) -> Path | None:
 
 
 def _score_snapshot_layer_a(
-    spec: Spec, workdir: Path, chaos: _ChaosWriter | None = None,
+    spec: Spec,
+    workdir: Path,
+    chaos: _ChaosWriter | None = None,
 ) -> tuple[int, int]:
     """Boot the workdir and run only Layer-A tests. Returns (passed, total)."""
-    from engine.bench.blind.judge import _free_port, _wait_for_health, _kill
-    import os, signal  # noqa: E401
+
+    from engine.bench.blind.judge import _free_port, _kill, _wait_for_health
 
     # Copy only Layer-A test files to a scratch judge dir.
     layer_a_dir = workdir.parent / "_pr_layer_a"
@@ -81,15 +83,18 @@ def _score_snapshot_layer_a(
     port = _free_port()
     boot_cmd = spec.boot_command.replace("{PORT}", str(port)).replace("{PYTHON}", sys.executable)
     if boot_cmd.startswith("python "):
-        boot_cmd = sys.executable + boot_cmd[len("python"):]
+        boot_cmd = sys.executable + boot_cmd[len("python") :]
 
     env = {**__import__("os").environ, "PORT": str(port)}
     boot_log = workdir.parent / "_pr_boot_log.txt"
     try:
         with boot_log.open("w") as log:
             proc = subprocess.Popen(
-                boot_cmd, shell=True, cwd=workdir,
-                stdout=log, stderr=log,
+                boot_cmd,
+                shell=True,
+                cwd=workdir,
+                stdout=log,
+                stderr=log,
                 preexec_fn=getattr(__import__("os"), "setsid", None),
                 env=env,
             )
@@ -107,14 +112,28 @@ def _score_snapshot_layer_a(
     report = workdir.parent / "_pr_report.json"
     try:
         subprocess.run(
-            [sys.executable, "-m", "pytest", str(layer_a_dir),
-             "-q", "--tb=no", "--no-header",
-             "--json-report", f"--json-report-file={report}",
-             "--json-report-omit=collectors,log,keywords"],
-            capture_output=True, text=True, check=False,
-            cwd=workdir, timeout=30,
-            env={**env, "BLIND_BASE_URL": f"http://127.0.0.1:{port}",
-                 "BLIND_EMITTED_DIR": str(workdir)},
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                str(layer_a_dir),
+                "-q",
+                "--tb=no",
+                "--no-header",
+                "--json-report",
+                f"--json-report-file={report}",
+                "--json-report-omit=collectors,log,keywords",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=workdir,
+            timeout=30,
+            env={
+                **env,
+                "BLIND_BASE_URL": f"http://127.0.0.1:{port}",
+                "BLIND_EMITTED_DIR": str(workdir),
+            },
         )
     except subprocess.TimeoutExpired:
         _kill(proc)
@@ -138,8 +157,11 @@ def compute(spec: Spec, attempt_dir: Path) -> list[dict]:
     if not snapshots_dir.exists():
         return []
     archives = sorted(
-        [p for p in snapshots_dir.iterdir()
-         if p.name.startswith("turn_") and p.suffix in (".zst", ".gz")],
+        [
+            p
+            for p in snapshots_dir.iterdir()
+            if p.name.startswith("turn_") and p.suffix in (".zst", ".gz")
+        ],
         key=lambda p: p.name,
     )
     if not archives:
@@ -159,14 +181,17 @@ def compute(spec: Spec, attempt_dir: Path) -> list[dict]:
             passed, total = _score_snapshot_layer_a(spec, wd, chaos)
         score_after = 100.0 * passed / total if total else 0.0
         reward = score_after - prev_score
-        records.append({
-            "turn": turn,
-            "score_before": round(prev_score, 2),
-            "score_after": round(score_after, 2),
-            "reward": round(reward, 2),
-            "layer_a_passed": passed, "layer_a_total": total,
-            "snapshot": archive.name,
-        })
+        records.append(
+            {
+                "turn": turn,
+                "score_before": round(prev_score, 2),
+                "score_after": round(score_after, 2),
+                "reward": round(reward, 2),
+                "layer_a_passed": passed,
+                "layer_a_total": total,
+                "snapshot": archive.name,
+            }
+        )
         prev_score = score_after
 
     out = attempt_dir / "process_rewards.jsonl"

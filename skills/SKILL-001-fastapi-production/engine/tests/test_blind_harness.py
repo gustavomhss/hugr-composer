@@ -3,6 +3,7 @@
 These tests cover the harness modules directly — no LLM calls, no boot.
 They run in a couple of seconds and MUST stay green for B3.7 to pass.
 """
+
 from __future__ import annotations
 
 import json
@@ -10,23 +11,28 @@ from pathlib import Path
 
 import pytest
 
-from engine.bench.blind.attribution import scan_primitives, attribute
-from engine.bench.blind.judge import _classify, _aggregate, _parse_pytest_json, TestRecord
+from engine.bench.blind.attribution import attribute, scan_primitives
+from engine.bench.blind.judge import TestRecord, _aggregate, _classify, _parse_pytest_json
 from engine.bench.blind.publish import (
-    DPO_MARGIN_THRESHOLD, _margin, _pre_registered_hypothesis,
-    _by_tier_stats, _by_condition_stats,
+    DPO_MARGIN_THRESHOLD,
+    _by_condition_stats,
+    _by_tier_stats,
+    _pre_registered_hypothesis,
 )
 from engine.bench.blind.snapshots import snapshot_workdir
 from engine.bench.blind.spec import (
-    DIFFICULTY_AXES, TIER_PREDICTIONS, discover_specs, load_spec,
+    DIFFICULTY_AXES,
+    TIER_PREDICTIONS,
     SpecValidationError,
+    discover_specs,
+    load_spec,
 )
 from engine.bench.blind.static_scan import run_static_scan
-
 
 # ---------------------------------------------------------------------------
 # spec.py
 # ---------------------------------------------------------------------------
+
 
 def test_spec_loader_accepts_valid_seed_spec() -> None:
     """The one spec we author (hard/01) must validate."""
@@ -37,7 +43,11 @@ def test_spec_loader_accepts_valid_seed_spec() -> None:
     assert s.tier == "hard"
     assert s.brief_sha256 and len(s.brief_sha256) == 64
     assert "concurrency" in s.difficulty_axes
-    assert TIER_PREDICTIONS["hard"]["naked_min"] <= s.predicted_naked_score <= TIER_PREDICTIONS["hard"]["naked_max"]
+    assert (
+        TIER_PREDICTIONS["hard"]["naked_min"]
+        <= s.predicted_naked_score
+        <= TIER_PREDICTIONS["hard"]["naked_max"]
+    )
 
 
 def test_spec_loader_rejects_missing_brief(tmp_path: Path) -> None:
@@ -52,15 +62,27 @@ def test_spec_loader_rejects_missing_brief(tmp_path: Path) -> None:
 def test_spec_loader_rejects_unknown_difficulty_axis(tmp_path: Path) -> None:
     d = tmp_path / "bad_axis"
     d.mkdir()
-    (d / "brief.md").write_text("# x\n## Requirements\n## Acceptance criteria\n## Non-requirements\n")
+    (d / "brief.md").write_text(
+        "# x\n## Requirements\n## Acceptance criteria\n## Non-requirements\n"
+    )
     (d / "judge").mkdir()
     (d / "judge" / "test_A.py").write_text("def test_x(): pass")
-    (d / "metadata.json").write_text(json.dumps({
-        "tier": "hard", "difficulty_axes": ["made_up"],
-        "required_primitives": [], "predicted_naked_score": 20,
-        "predicted_kit_score": 70, "boot_command": "x", "health_probe": "/",
-        "timeout_s": 60, "authored_at": "2026", "author": "t",
-    }))
+    (d / "metadata.json").write_text(
+        json.dumps(
+            {
+                "tier": "hard",
+                "difficulty_axes": ["made_up"],
+                "required_primitives": [],
+                "predicted_naked_score": 20,
+                "predicted_kit_score": 70,
+                "boot_command": "x",
+                "health_probe": "/",
+                "timeout_s": 60,
+                "authored_at": "2026",
+                "author": "t",
+            }
+        )
+    )
     with pytest.raises(SpecValidationError, match="unknown difficulty_axes"):
         load_spec(d)
 
@@ -71,27 +93,41 @@ def test_spec_loader_rejects_predictions_outside_tier_band(tmp_path: Path) -> No
     (d / "brief.md").write_text("x")
     (d / "judge").mkdir()
     (d / "judge" / "test_A.py").write_text("def test_x(): pass")
-    (d / "metadata.json").write_text(json.dumps({
-        "tier": "hard", "difficulty_axes": [],
-        "required_primitives": [],
-        "predicted_naked_score": 90,   # way above hard band max=40
-        "predicted_kit_score": 95,
-        "boot_command": "x", "health_probe": "/",
-        "timeout_s": 60, "authored_at": "2026", "author": "t",
-    }))
+    (d / "metadata.json").write_text(
+        json.dumps(
+            {
+                "tier": "hard",
+                "difficulty_axes": [],
+                "required_primitives": [],
+                "predicted_naked_score": 90,  # way above hard band max=40
+                "predicted_kit_score": 95,
+                "boot_command": "x",
+                "health_probe": "/",
+                "timeout_s": 60,
+                "authored_at": "2026",
+                "author": "t",
+            }
+        )
+    )
     with pytest.raises(SpecValidationError, match="out of tier band"):
         load_spec(d)
 
 
 def test_difficulty_axes_whitelist_covers_expected() -> None:
-    for required in ("concurrency", "exactly_once", "causal_order",
-                      "multi_invariant", "failure_injection"):
+    for required in (
+        "concurrency",
+        "exactly_once",
+        "causal_order",
+        "multi_invariant",
+        "failure_injection",
+    ):
         assert required in DIFFICULTY_AXES
 
 
 # ---------------------------------------------------------------------------
 # judge.py
 # ---------------------------------------------------------------------------
+
 
 def test_judge_classify_extracts_layer_and_bucket() -> None:
     assert _classify("test_A_functional__health_endpoint") == ("A", "functional")
@@ -120,15 +156,25 @@ def test_judge_aggregate_computes_per_layer_and_bucket() -> None:
 
 def test_judge_parse_pytest_json_reads_report(tmp_path: Path) -> None:
     report = tmp_path / "r.json"
-    report.write_text(json.dumps({
-        "tests": [
-            {"nodeid": "tests/test_file.py::test_A_functional__x",
-             "outcome": "passed", "duration": 0.05},
-            {"nodeid": "tests/test_file.py::test_B_property__y",
-             "outcome": "failed", "duration": 0.12,
-             "call": {"longrepr": "AssertionError: conservation broken"}},
-        ],
-    }))
+    report.write_text(
+        json.dumps(
+            {
+                "tests": [
+                    {
+                        "nodeid": "tests/test_file.py::test_A_functional__x",
+                        "outcome": "passed",
+                        "duration": 0.05,
+                    },
+                    {
+                        "nodeid": "tests/test_file.py::test_B_property__y",
+                        "outcome": "failed",
+                        "duration": 0.12,
+                        "call": {"longrepr": "AssertionError: conservation broken"},
+                    },
+                ],
+            }
+        )
+    )
     records = _parse_pytest_json(report, "")
     assert len(records) == 2
     assert records[0].outcome == "pass"
@@ -141,30 +187,56 @@ def test_judge_parse_pytest_json_reads_report(tmp_path: Path) -> None:
 # publish.py
 # ---------------------------------------------------------------------------
 
-def _run_record(spec_id: str, condition: str, score: float, seed: int = 7919,
-                attempt: int = 1, tokens: int = 1000) -> dict:
+
+def _run_record(
+    spec_id: str,
+    condition: str,
+    score: float,
+    seed: int = 7919,
+    attempt: int = 1,
+    tokens: int = 1000,
+) -> dict:
     return {
         "identity": {
-            "run_id": "x", "spec_id": spec_id, "condition": condition,
-            "attempt": attempt, "seed": seed, "model": "m",
-            "temperature": 0.7, "kit_commit": "abc", "mcp_config_hash": "h",
-            "harness_version": "1.0.0", "brief_sha256": "deadbeef",
+            "run_id": "x",
+            "spec_id": spec_id,
+            "condition": condition,
+            "attempt": attempt,
+            "seed": seed,
+            "model": "m",
+            "temperature": 0.7,
+            "kit_commit": "abc",
+            "mcp_config_hash": "h",
+            "harness_version": "1.0.0",
+            "brief_sha256": "deadbeef",
         },
         "outcome": {
-            "emit_status": "success", "boot_status": "success",
-            "final_score": score, "tests_passed": int(score / 10),
-            "tests_total": 10, "per_layer": {"A": score}, "per_bucket": {},
-            "emit_error": "", "judge_notes": "",
+            "emit_status": "success",
+            "boot_status": "success",
+            "final_score": score,
+            "tests_passed": int(score / 10),
+            "tests_total": 10,
+            "per_layer": {"A": score},
+            "per_bucket": {},
+            "emit_error": "",
+            "judge_notes": "",
         },
         "efficiency": {
-            "wall_clock_s": 100, "input_tokens": tokens,
-            "output_tokens": tokens // 2, "cache_read_tokens": 0,
+            "wall_clock_s": 100,
+            "input_tokens": tokens,
+            "output_tokens": tokens // 2,
+            "cache_read_tokens": 0,
             "cache_creation_tokens": 0,
         },
-        "kit_attribution": {"imported": [], "required": [],
-                             "coverage_of_required": 0.0,
-                             "unexpected_imports": [], "missing_required": []},
-        "static_findings": [], "extra": {},
+        "kit_attribution": {
+            "imported": [],
+            "required": [],
+            "coverage_of_required": 0.0,
+            "unexpected_imports": [],
+            "missing_required": [],
+        },
+        "static_findings": [],
+        "extra": {},
     }
 
 
@@ -215,6 +287,7 @@ def test_publish_dpo_margin_threshold_constant() -> None:
 # attribution.py
 # ---------------------------------------------------------------------------
 
+
 def test_attribution_detects_from_imports(tmp_path: Path) -> None:
     (tmp_path / "app.py").write_text(
         "from core.venous.cache.SessionCache import SessionCache\n"
@@ -226,9 +299,7 @@ def test_attribution_detects_from_imports(tmp_path: Path) -> None:
 
 
 def test_attribution_coverage_math(tmp_path: Path) -> None:
-    (tmp_path / "a.py").write_text(
-        "from core.venous.data.UnitOfWork import UnitOfWork\n"
-    )
+    (tmp_path / "a.py").write_text("from core.venous.data.UnitOfWork import UnitOfWork\n")
     result = attribute(tmp_path, required=["UnitOfWork", "OptimisticConcurrency"])
     assert result["coverage_of_required"] == 0.5
     assert "OptimisticConcurrency" in result["missing_required"]
@@ -243,6 +314,7 @@ def test_attribution_does_not_match_bare_core_venous(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 # static_scan.py
 # ---------------------------------------------------------------------------
+
 
 def test_static_scan_triggers_on_float_call(tmp_path: Path) -> None:
     (tmp_path / "rules.yaml").write_text(
@@ -279,6 +351,7 @@ def test_static_scan_clean_when_no_match(tmp_path: Path) -> None:
 # snapshots.py
 # ---------------------------------------------------------------------------
 
+
 def test_snapshot_creates_archive(tmp_path: Path) -> None:
     workdir = tmp_path / "emitted"
     workdir.mkdir()
@@ -293,18 +366,25 @@ def test_snapshot_creates_archive(tmp_path: Path) -> None:
 # adapter.py
 # ---------------------------------------------------------------------------
 
+
 def test_adapter_kit_without_mcp_config_raises() -> None:
     from engine.bench.blind.adapter import (
-        AdapterConfigError, ClaudeCliAdapter, ClaudeCliConfig,
+        AdapterConfigError,
+        ClaudeCliAdapter,
+        ClaudeCliConfig,
     )
+
     with pytest.raises(AdapterConfigError, match="silently degrade"):
         ClaudeCliAdapter(ClaudeCliConfig(mcp_config_path=None), name="kit")
 
 
 def test_adapter_kit_with_missing_mcp_config_raises(tmp_path: Path) -> None:
     from engine.bench.blind.adapter import (
-        AdapterConfigError, ClaudeCliAdapter, ClaudeCliConfig,
+        AdapterConfigError,
+        ClaudeCliAdapter,
+        ClaudeCliConfig,
     )
+
     missing = tmp_path / "nope.json"
     with pytest.raises(AdapterConfigError, match="does not exist"):
         ClaudeCliAdapter(ClaudeCliConfig(mcp_config_path=missing), name="kit")
@@ -312,8 +392,11 @@ def test_adapter_kit_with_missing_mcp_config_raises(tmp_path: Path) -> None:
 
 def test_adapter_kit_with_empty_mcp_servers_raises(tmp_path: Path) -> None:
     from engine.bench.blind.adapter import (
-        AdapterConfigError, ClaudeCliAdapter, ClaudeCliConfig,
+        AdapterConfigError,
+        ClaudeCliAdapter,
+        ClaudeCliConfig,
     )
+
     f = tmp_path / "cfg.json"
     f.write_text(json.dumps({"mcpServers": {}}))
     with pytest.raises(AdapterConfigError, match="no mcpServers"):
@@ -322,6 +405,7 @@ def test_adapter_kit_with_empty_mcp_servers_raises(tmp_path: Path) -> None:
 
 def test_adapter_naked_with_no_mcp_config_ok() -> None:
     from engine.bench.blind.adapter import ClaudeCliAdapter, ClaudeCliConfig
+
     # Naked MUST accept no MCP — that's the point.
     a = ClaudeCliAdapter(ClaudeCliConfig(mcp_config_path=None), name="naked")
     assert a.name == "naked"
@@ -329,6 +413,7 @@ def test_adapter_naked_with_no_mcp_config_ok() -> None:
 
 def test_adapter_compact_result_handles_list_and_str() -> None:
     from engine.bench.blind.adapter import _compact_result
+
     assert _compact_result("hello") == "hello"
     assert _compact_result([{"type": "text", "text": "abc"}]) == "abc"
     assert _compact_result(None) == ""
@@ -339,22 +424,30 @@ def test_adapter_compact_result_handles_list_and_str() -> None:
 # runner.py
 # ---------------------------------------------------------------------------
 
+
 def test_runner_discover_completed_returns_success_only(tmp_path: Path) -> None:
     from engine.bench.blind.runner import _discover_completed
+
     # Craft two attempts: one success, one error (should NOT count as completed).
     for status, ident in (
         ("success", ("hard/01_x", "naked", 7919, 1)),
-        ("error",   ("hard/01_x", "kit",   7919, 1)),
+        ("error", ("hard/01_x", "kit", 7919, 1)),
     ):
         a = tmp_path / ident[0].replace("/", "__") / ident[1] / f"attempt_{ident[3]:02d}"
         a.mkdir(parents=True)
-        (a / "metrics.json").write_text(json.dumps({
-            "identity": {
-                "spec_id": ident[0], "condition": ident[1],
-                "seed": ident[2], "attempt": ident[3],
-            },
-            "outcome": {"emit_status": status},
-        }))
+        (a / "metrics.json").write_text(
+            json.dumps(
+                {
+                    "identity": {
+                        "spec_id": ident[0],
+                        "condition": ident[1],
+                        "seed": ident[2],
+                        "attempt": ident[3],
+                    },
+                    "outcome": {"emit_status": status},
+                }
+            )
+        )
     done = _discover_completed(tmp_path)
     assert ("hard/01_x", "naked", 7919, 1) in done
     assert ("hard/01_x", "kit", 7919, 1) not in done
@@ -365,7 +458,7 @@ def test_runner_run_attempt_with_stub_produces_metrics(tmp_path: Path, monkeypat
     brief.md, and the emitted directory into the canonical layout.
     """
     from engine.bench.blind.adapter import StubAdapter
-    from engine.bench.blind.runner import run_attempt, RESULTS_ROOT
+    from engine.bench.blind.runner import run_attempt
     from engine.bench.blind.spec import load_spec
 
     bench_root = Path(__file__).resolve().parents[2] / "benchmarks" / "blind"
@@ -374,11 +467,11 @@ def test_runner_run_attempt_with_stub_produces_metrics(tmp_path: Path, monkeypat
 
     # Redirect RESULTS_ROOT to tmp to avoid polluting the repo
     import engine.bench.blind.runner as runner_mod
+
     monkeypatch.setattr(runner_mod, "RESULTS_ROOT", tmp_path)
 
     adapter = StubAdapter(fixture_root, name="kit")
-    m = run_attempt(spec, adapter, run_id="test_run",
-                    condition="kit", attempt=1, seed=7919)
+    m = run_attempt(spec, adapter, run_id="test_run", condition="kit", attempt=1, seed=7919)
     assert m["outcome"]["emit_status"] == "success"
     assert m["outcome"]["final_score"] == 100.0
 
@@ -396,7 +489,7 @@ def test_snapshot_skips_pycache(tmp_path: Path) -> None:
     out_dir = tmp_path / "snaps"
     archive = snapshot_workdir(workdir, out_dir, label="t")
     import tarfile
-    opener = {"tar.zst": "r|", "tar.gz": "r:gz"}
+
     ext = "tar.zst" if str(archive).endswith(".tar.zst") else "tar.gz"
     if ext == "tar.gz":
         with tarfile.open(archive, "r:gz") as tar:

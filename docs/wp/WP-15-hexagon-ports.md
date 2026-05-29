@@ -81,7 +81,7 @@ The agent must operate with exactly this set — nothing wider. WP-15's owned fi
 - **Golden reference (read-only, copy the consumed-surface pattern):** `skills/SKILL-001-fastapi-production/adapt/_base/` — the hexagon helpers from PR #28 (`__init__.py` + `discover.py` + `patch.py` + `render.py`). WP-15 does NOT migrate a tool; instead, it formalizes the type-only ports that `_base/` and future compose tools should consume. Read `_base/__init__.py` to understand the *consumer* shape so the port surface matches it.
 - **Shared base/contract to import (read-only):** `skills/SKILL-001-fastapi-production/adapt/contracts/` (for `ToolInput`/`ToolResult` typing the ports may reference); `skills/SKILL-001-fastapi-production/core/venous/<ns>/<Name>/<Name>.protocol.py` for all 25 existing protocol stubs.
 - **Spec to follow:** `docs/architecture.md`, `docs/adr/0001-architecture.md` (hexagonal core + plugin rationale), `docs/tool-contract.md`, `skills/SKILL-001-fastapi-production/INVENTORY.md` (the 124 registered primitives + 17 FastAPI adapters count).
-- **Staging pool (read-only reference, not a write surface):** `core/venous/_staging/` (176 staged primitives) — WP-15 catalogues them but does NOT promote any.
+- **Staging pool (read-only reference, not a write surface):** `core/venous/_staging/` (175 staged primitives) — WP-15 catalogues them but does NOT promote any.
 
 ## 2. Forbidden surface (collision guard)
 The agent MUST NOT create, modify, move, or delete anything outside §1 owned files.
@@ -191,7 +191,7 @@ Gate 1 = ruff. Gate 2 = compat shim works for both exemplars. Gate 3+4 = port-im
 | Adapters | `core/venous/_adapters/` (17 FastAPI + redis + stripe) |
 | Concrete primitives | `core/venous/<ns>/<Name>/<Name>.py` for all 124 — read-only |
 | Existing protocol stubs | `core/venous/<ns>/<Name>/<Name>.protocol.py` for the 25 that have one — read-only |
-| Staging | `core/venous/_staging/` (176 staged + 42 quarantined) — read-only catalog reference |
+| Staging | `core/venous/_staging/` (175 staged + 42 quarantined) — read-only catalog reference |
 | Shared | `engine/`, `generators/`, `tests/`, `pyproject.toml`, CI, `hugr_auth/` |
 
 `git diff --name-only main..HEAD` MUST list only paths inside the §1 write surface.
@@ -227,7 +227,7 @@ Measurements taken on `main` at branch creation (HEAD `bd634a5`); `find` counts;
 
 1. **F-01. Catalog derivation procedure not reproducible.**
    - *Symptom:* `CATALOG.json` lists 123 or 125 entries, not 124; OR the reviewer re-runs the documented derivation and gets a different result.
-   - *Cause:* the documented procedure relies on a `find` invocation that races against `_staging/` (which has its own `<Name>.protocol.py` files for the 176 staged primitives). The 124 number is *registered* primitives (excluding `_staging/`), so the find must `-prune` `_staging/` AND `_adapters/`.
+   - *Cause:* the documented procedure relies on a `find` invocation that races against `_staging/` (which has its own `<Name>.protocol.py` files for the 175 staged primitives). The 124 number is *registered* primitives (excluding `_staging/`), so the find must `-prune` `_staging/` AND `_adapters/`.
    - *STOP-and-report rule:* before generating the catalog, run the documented find on a fresh checkout and confirm count = 124. If count ≠ 124, the INVENTORY.md derivation procedure is the source of truth; reconcile with INVENTORY's `engine.inventory` invocation, NOT by hand-tweaking the count.
 
 2. **F-02. Compat shim resolves at import but fails at type-check.**

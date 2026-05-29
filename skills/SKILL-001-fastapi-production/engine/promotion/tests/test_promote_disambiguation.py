@@ -1,4 +1,5 @@
 """Tests for the `_resolve_match` disambiguation helper in promote.py."""
+
 from __future__ import annotations
 
 import pytest

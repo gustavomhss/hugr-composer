@@ -9,31 +9,31 @@
 - **257 files carry `MCP_TOOL` metadata** (Maestro-visible surface).
 - **Catalog:** 201 tools + 299 primitives + 392 recipes.
 - **124 registered primitives** (`core/venous/<ns>/<Name>/`).
-- **176 staged primitives** in `_staging/` (plus 42 quarantined).
+- **175 staged primitives** in `_staging/` (plus 42 quarantined).
 - **17 FastAPI adapters** (production-wired).
 - **28 `modules/` packages** (pre-built feature bundles).
 - **20 populated examples** (0 empty scaffolds), 124 specs, 20 benchmark specs.
 
 ---
 
-## 1. adapt/ — 127 tools
+## 1. adapt/ — 126 tools
 
 | bucket | count |
 |---|---:|
-| `extend` | 100 |
+| `extend` | 99 |
 | `verify` | 6 |
 | `operate` | 8 |
 | `evolve` | 8 |
 | `proactive` | 1 |
 | `contracts` | 4 |
 
-### adapt/extend/ sub-domains (100 tools)
+### adapt/extend/ sub-domains (99 tools)
 
 | domain | count |
 |---|---:|
 | `api_design` | 7 |
 | `auth_access` | 15 |
-| `crud_data` | 10 |
+| `crud_data` | 9 |
 | `infrastructure` | 53 |
 | `realtime` | 5 |
 | `testing_tools` | 10 |
@@ -90,12 +90,12 @@
 
 Plus **17 FastAPI adapters** under `core/venous/_adapters/fastapi/`.
 
-## 5. core/venous/_staging — staged primitives (176 + 42 quarantined)
+## 5. core/venous/_staging — staged primitives (175 + 42 quarantined)
 
 | namespace | count |
 |---|---:|
 | `_quarantine` | 42 |
-| `api` | 19 |
+| `api` | 18 |
 | `auth` | 25 |
 | `data` | 14 |
 | `extras` | 14 |

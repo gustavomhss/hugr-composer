@@ -1,4 +1,5 @@
 """Unit tests for CONTRACT §B2.3 — docs site generator."""
+
 from __future__ import annotations
 
 import json

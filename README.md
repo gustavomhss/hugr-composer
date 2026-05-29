@@ -21,7 +21,7 @@ Phase:      v1.0.0-rc.1 (golive frozen, awaiting ratification)
 Skills:      1   (SKILL-001-fastapi-production)
 Tools:     217   (201 catalog + 7 tier-1 + 9 tree dispatchers)
 Primitives: 124  (production, 17-FastAPI + 1-Redis + 1-Stripe adapters, 10-tier gate)
-Staged:    176   (core/venous/_staging/, +42 quarantined, pre-audited pool)
+Staged:    175   (core/venous/_staging/, +42 quarantined, pre-audited pool)
 Benchmark: 100.00 plan · 100.00 code-level (20/20 specs × 100%)
 Contract:  37/37 green
 Examples:   20   (full spec coverage; /examples/01-20)
@@ -46,9 +46,9 @@ HuGR_Arsenal/
     └── SKILL-001-fastapi-production/
         ├── SKILL.md              # skill manifest (Anthropic Agent Skills format)
         ├── INVENTORY.md          # machine-verified on-disk counts
-        ├── adapt/                # 127 tools (100 extend + 27 other)
+        ├── adapt/                # 126 tools (99 extend + 27 other)
         ├── generators/           # 56 macro scaffold helpers
-        ├── core/venous/          # 124 primitives + 17 FastAPI adapters (+2 provider) + 176 staged
+        ├── core/venous/          # 124 primitives + 17 FastAPI adapters (+2 provider) + 175 staged
         ├── mcp_tools/            # MCP server + tier-1 meta + tree dispatchers
         └── engine/               # audit + index + bench + promotion + extraction
 ```

@@ -25,38 +25,82 @@ _EXTEND_DIR = Path(__file__).resolve().parents[2] / "adapt" / "extend"
 
 
 # Decorators that scream "this is an HTTP route handler, not a primitive".
-_ROUTE_DECORATORS: frozenset[str] = frozenset({
-    "get", "post", "put", "patch", "delete", "options", "head",
-    "route", "api_route", "websocket", "include_router",
-})
+_ROUTE_DECORATORS: frozenset[str] = frozenset(
+    {
+        "get",
+        "post",
+        "put",
+        "patch",
+        "delete",
+        "options",
+        "head",
+        "route",
+        "api_route",
+        "websocket",
+        "include_router",
+    }
+)
 
 # Pydantic base classes (any of these as a base makes the class a DTO, not a primitive).
-_PYDANTIC_BASES: frozenset[str] = frozenset({
-    "BaseModel", "GenericModel", "BaseSettings", "RootModel",
-})
+_PYDANTIC_BASES: frozenset[str] = frozenset(
+    {
+        "BaseModel",
+        "GenericModel",
+        "BaseSettings",
+        "RootModel",
+    }
+)
 
 # Non-primitive class hints — exceptions, protocols with no body, etc.
-_TRIVIAL_BASE_EXCEPTIONS: frozenset[str] = frozenset({
-    "Exception", "BaseException", "ValueError", "RuntimeError", "TypeError",
-    "NotImplementedError", "LookupError", "KeyError",
-})
+_TRIVIAL_BASE_EXCEPTIONS: frozenset[str] = frozenset(
+    {
+        "Exception",
+        "BaseException",
+        "ValueError",
+        "RuntimeError",
+        "TypeError",
+        "NotImplementedError",
+        "LookupError",
+        "KeyError",
+    }
+)
 
 # Domain-demo markers — names that strongly suggest tool-specific example code
 # rather than a reusable primitive. Partial-match substrings, case-sensitive.
 _DOMAIN_DEMO_SUBSTRINGS: tuple[str, ...] = (
-    "Order", "Payment", "Invoice", "Subscription", "Checkout",
-    "Customer", "Product", "Cart", "Inventory",
-    "Post", "Comment", "Article", "Blog",
-    "Task", "Todo", "Note",
-    "Predictor", "Demo", "Example", "Sample",
+    "Order",
+    "Payment",
+    "Invoice",
+    "Subscription",
+    "Checkout",
+    "Customer",
+    "Product",
+    "Cart",
+    "Inventory",
+    "Post",
+    "Comment",
+    "Article",
+    "Blog",
+    "Task",
+    "Todo",
+    "Note",
+    "Predictor",
+    "Demo",
+    "Example",
+    "Sample",
 )
 
 # Exact-name allowlist: these LOOK demo-ish but ARE canonical primitives.
-_DEMO_OVERRIDE_ALLOWLIST: frozenset[str] = frozenset({
-    "TaskManager", "TaskRegistry", "TaskScheduler",  # long-running-task primitives
-    "PaymentMethod", "PaymentIntent",                 # if extracted as interfaces
-    "OrderEnvelope",                                  # generic envelope shape
-})
+_DEMO_OVERRIDE_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        "TaskManager",
+        "TaskRegistry",
+        "TaskScheduler",  # long-running-task primitives
+        "PaymentMethod",
+        "PaymentIntent",  # if extracted as interfaces
+        "OrderEnvelope",  # generic envelope shape
+    }
+)
 
 
 def _is_domain_demo(name: str) -> bool:
@@ -110,18 +154,17 @@ def _is_trivial_exception(node: ast.AST) -> bool:
 def _method_count(node: ast.AST) -> int:
     if not isinstance(node, ast.ClassDef):
         return 0
-    return sum(
-        1 for item in node.body
-        if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))
-    )
+    return sum(1 for item in node.body if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)))
 
 
 def _branching_complexity(node: ast.AST) -> int:
     """Rough cyclomatic-ish count: If/For/While/Try/With/Match nodes."""
     n = 0
     for child in ast.walk(node):
-        if isinstance(child, (ast.If, ast.For, ast.AsyncFor, ast.While,
-                              ast.Try, ast.With, ast.AsyncWith, ast.Match)):
+        if isinstance(
+            child,
+            (ast.If, ast.For, ast.AsyncFor, ast.While, ast.Try, ast.With, ast.AsyncWith, ast.Match),
+        ):
             n += 1
     return n
 
@@ -147,6 +190,7 @@ def _reparse_candidate(tool_rel: str, cand: dict[str, Any]) -> ast.AST | None:
     except SyntaxError:
         return None
     import textwrap as _tw
+
     wanted = cand["name"]
     # Walk string constants; parse each; find the first matching def/class by name.
     for parent in ast.walk(tree):
@@ -158,13 +202,17 @@ def _reparse_candidate(tool_rel: str, cand: dict[str, Any]) -> ast.AST | None:
                 except SyntaxError:
                     continue
                 for node in ast.walk(inner):
-                    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-                        if node.name == wanted:
-                            return node
+                    if (
+                        isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+                        and node.name == wanted
+                    ):
+                        return node
         # Also the tool-level nodes.
-        if isinstance(parent, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            if parent.name == wanted:
-                return parent
+        if (
+            isinstance(parent, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+            and parent.name == wanted
+        ):
+            return parent
     return None
 
 
@@ -188,13 +236,15 @@ def score_candidate(tool_rel: str, cand: dict[str, Any]) -> dict[str, Any]:
         complexity = _branching_complexity(node)
         method_count = _method_count(node)
 
-    disqualified = any([
-        signals["is_route_handler"],
-        signals["is_pydantic_model"],
-        signals["is_trivial_exception"],
-        signals["is_blacklisted_name"],
-        signals["is_domain_demo"],
-    ])
+    disqualified = any(
+        [
+            signals["is_route_handler"],
+            signals["is_pydantic_model"],
+            signals["is_trivial_exception"],
+            signals["is_blacklisted_name"],
+            signals["is_domain_demo"],
+        ]
+    )
 
     score = 0
     if not disqualified:
@@ -240,7 +290,7 @@ def summarize(ranked: list[dict[str, Any]]) -> None:
 
     print(f"Total candidates:           {len(ranked)}")
     print(f"Qualifying (primitive-like): {len(qualifying)}")
-    print(f"Disqualified:")
+    print("Disqualified:")
     print(f"  route handlers:           {route_n}")
     print(f"  pydantic models:          {pyd_n}")
     print(f"  trivial exceptions:       {trivial_n}")
@@ -249,8 +299,7 @@ def summarize(ranked: list[dict[str, Any]]) -> None:
     print()
     print("Top-25 qualifying primitives (score • kind • name • tool):")
     for r in qualifying[:25]:
-        print(f"  {r['primitive_score']:>12} • {r['kind']:<8} • "
-              f"{r['name']:<30} • {r['tool']}")
+        print(f"  {r['primitive_score']:>12} • {r['kind']:<8} • {r['name']:<30} • {r['tool']}")
 
 
 if __name__ == "__main__":

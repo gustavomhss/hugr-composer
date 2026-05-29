@@ -29,7 +29,7 @@ from __future__ import annotations
 import ast
 import re
 import textwrap
-from typing import Iterator
+from collections.abc import Iterator
 
 
 def strip_placeholders(src: str) -> str:
@@ -40,9 +40,7 @@ def strip_placeholders(src: str) -> str:
     placeholder becomes an identifier literal; otherwise a string literal.
     """
     src = src.replace("{{", "\x00LB").replace("}}", "\x00RB")
-    ident_ctx = re.compile(
-        r"(?P<prefix>(?:class|def|async\s+def|import|from)\s+)\{[^{}\n]*\}"
-    )
+    ident_ctx = re.compile(r"(?P<prefix>(?:class|def|async\s+def|import|from)\s+)\{[^{}\n]*\}")
     src = ident_ctx.sub(r"\g<prefix>PLACEHOLDER_IDENT", src)
     src = re.sub(r"\{[^{}\n]*\}", '"PLACEHOLDER"', src)
     return src.replace("\x00LB", "{").replace("\x00RB", "}")
@@ -88,7 +86,8 @@ def iter_embedded_modules(source: str) -> Iterator[tuple[ast.Module, ast.Constan
 
 
 def find_top_level_def(
-    module: ast.Module, name: str,
+    module: ast.Module,
+    name: str,
 ) -> ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef | None:
     """Return the TOP-LEVEL (not nested) def/class named `name`, or None.
 
@@ -97,9 +96,11 @@ def find_top_level_def(
     ignored — they are not independently extractable primitives.
     """
     for node in module.body:
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            if node.name == name:
-                return node
+        if (
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+            and node.name == name
+        ):
+            return node
     return None
 
 
@@ -116,8 +117,7 @@ def extract_source_segment(module_source: str, node: ast.AST) -> str:
     """Return the literal source slice for `node`, preserving comments +
     original formatting. Falls back to `ast.unparse` when line/col info is
     incomplete (old pickles, synthetic nodes)."""
-    if (getattr(node, "lineno", None) is None
-            or getattr(node, "end_lineno", None) is None):
+    if getattr(node, "lineno", None) is None or getattr(node, "end_lineno", None) is None:
         return ast.unparse(node)
     try:
         segment = ast.get_source_segment(module_source, node)
@@ -129,7 +129,8 @@ def extract_source_segment(module_source: str, node: ast.AST) -> str:
 
 
 def find_all_top_level_matches(
-    source: str, name: str,
+    source: str,
+    name: str,
 ) -> list[tuple[ast.AST, str]]:
     """Return every top-level `name`-defined node across ALL embedded modules
     in `source`. Each entry is (node, dedented_payload_the_node_came_from).

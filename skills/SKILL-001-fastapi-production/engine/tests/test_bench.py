@@ -1,4 +1,5 @@
 """Unit tests for CONTRACT §B3.1-B3.3 — specs, rubric, runner."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -8,8 +9,8 @@ import pytest
 from engine.bench import BenchmarkRunner, score_spec
 from engine.bench.runner import SPECS_ROOT, StubMaestro, _discover_specs
 
-
 # ---------------------------------------------------------------- B3.1 specs
+
 
 def test_twenty_specs_exist() -> None:
     specs = _discover_specs()
@@ -57,11 +58,15 @@ def test_specs_contain_no_tool_or_primitive_hints() -> None:
 
 # ---------------------------------------------------------------- B3.2 rubric
 
+
 def test_score_spec_weights_are_equal() -> None:
     s = score_spec(
-        "test/x", "baseline",
-        scaffold_completeness=100, test_suite_pass=0,
-        primitive_gate_pass=100, hand_editability=0,
+        "test/x",
+        "baseline",
+        scaffold_completeness=100,
+        test_suite_pass=0,
+        primitive_gate_pass=100,
+        hand_editability=0,
     )
     # 100 + 0 + 100 + 0 = 200 * 0.25 = 50
     assert s.total == 50.0
@@ -69,9 +74,12 @@ def test_score_spec_weights_are_equal() -> None:
 
 def test_score_spec_clamps_to_range() -> None:
     s = score_spec(
-        "test/y", "baseline",
-        scaffold_completeness=150, test_suite_pass=-10,
-        primitive_gate_pass=200, hand_editability=99,
+        "test/y",
+        "baseline",
+        scaffold_completeness=150,
+        test_suite_pass=-10,
+        primitive_gate_pass=200,
+        hand_editability=99,
     )
     assert s.dimensions[0].value == 100
     assert s.dimensions[1].value == 0
@@ -81,15 +89,19 @@ def test_score_spec_clamps_to_range() -> None:
 
 def test_score_spec_includes_evidence() -> None:
     s = score_spec(
-        "test/z", "mid",
-        scaffold_completeness=80, test_suite_pass=70,
-        primitive_gate_pass=90, hand_editability=75,
+        "test/z",
+        "mid",
+        scaffold_completeness=80,
+        test_suite_pass=70,
+        primitive_gate_pass=90,
+        hand_editability=75,
         evidence={"scaffold_completeness": "all 5 endpoints present"},
     )
     assert s.dimensions[0].evidence == "all 5 endpoints present"
 
 
 # ---------------------------------------------------------------- B3.3 runner
+
 
 def test_runner_with_stub_maestro_produces_full_report(tmp_path: Path) -> None:
     stub = StubMaestro(scoreboard={"baseline/01_crud_todos": 80.0, "mid/02_realtime_chat": 50.0})
@@ -107,13 +119,15 @@ def test_runner_with_stub_maestro_produces_full_report(tmp_path: Path) -> None:
 
 
 def test_runner_aggregates_by_tier(tmp_path: Path) -> None:
-    stub = StubMaestro(scoreboard={
-        "baseline/01_crud_todos": 100,
-        "baseline/02_auth_only_saas": 100,
-        "baseline/03_webhook_sink": 100,
-        "baseline/04_rate_limited_api": 100,
-        "baseline/05_multi_tenant_admin": 100,
-    })
+    stub = StubMaestro(
+        scoreboard={
+            "baseline/01_crud_todos": 100,
+            "baseline/02_auth_only_saas": 100,
+            "baseline/03_webhook_sink": 100,
+            "baseline/04_rate_limited_api": 100,
+            "baseline/05_multi_tenant_admin": 100,
+        }
+    )
     runner = BenchmarkRunner(adapter=stub, workdir=tmp_path)
     report = runner.run_all(kit_version="t")
     by_tier = report.by_tier()
@@ -131,10 +145,13 @@ def test_report_writes_json_roundtrip(tmp_path: Path) -> None:
     out = tmp_path / "score.json"
     report.write_json(out)
     import json
+
     loaded = json.loads(out.read_text())
     assert loaded["maestro_model"] == "stub"
     assert loaded["kit_version"] == "rev"
-    assert any(s["spec_id"] == "baseline/01_crud_todos" and s["total"] == 42.0 for s in loaded["scores"])
+    assert any(
+        s["spec_id"] == "baseline/01_crud_todos" and s["total"] == 42.0 for s in loaded["scores"]
+    )
 
 
 @pytest.mark.parametrize("tier", ["baseline", "mid", "adversarial"])
