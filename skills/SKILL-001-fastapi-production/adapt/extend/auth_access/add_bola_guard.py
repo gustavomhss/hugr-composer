@@ -1,5 +1,20 @@
 """TOOL-112: add_bola_guard — Object-level authorization (BOLA/IDOR) for FastAPI.
 
+Role since v0.5 (P1 #16 secure-by-default):
+  - ``generators.orchestrator.generate_project`` already emits an inline
+    per-object ownership guard on every owner-bearing model by default;
+    ``shared_models={"X"}`` is the explicit opt-out.
+  - This tool is the LAYERED / RETROFIT path.  Use it to:
+      1. Add BOLA protection to a project scaffolded BEFORE secure-by-
+         default landed (the inline guard is missing).
+      2. Add capabilities the inline guard does NOT provide:
+         ``ResourceAccessPolicy`` (cross-user delegation),
+         ``TenantIsolationFilter`` (multi-tenant query scoping), and
+         ``BOLA_GUARD_STRICT_MODE`` (deny-by-default on missing proof).
+      3. Defence-in-depth: when layered on top of the inline guard, the
+         two enforcement points are independent (route-level vs DB-level)
+         and either alone is sufficient to block BOLA.
+
 Generates:
   - ``app/auth/bola_guard.py``       — OwnershipVerifier dep + ResourceAccessPolicy
   - ``app/auth/bola_test_gen.py``    — Auto-generates BOLA test cases
@@ -33,12 +48,24 @@ from pathlib import Path
 
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
-
 MCP_TOOL = {
     "name": "fastapi_auth_add_bola_guard",
     "description": (
-        "Add object-level authorization (BOLA/IDOR protection) with ownership "
-        "verification, multi-tenant isolation, and auto-generated test cases."
+        "Layer object-level authorization (BOLA/IDOR) onto an existing project: "
+        "OwnershipVerifier FastAPI dependency, TenantIsolationFilter for multi-"
+        "tenant query scoping, ResourceAccessPolicy for cross-user delegation, "
+        "and auto-generated pytest BOLA test cases.  NOTE: as of v0.5, "
+        "``generators.orchestrator.generate_project`` already emits an inline "
+        "per-object ownership guard on every owner-bearing model by default "
+        "(see ``shared_models=`` for the explicit opt-out).  This tool stays "
+        "useful for: (a) retrofitting existing projects scaffolded before "
+        "secure-by-default, (b) projects that need delegated / cross-user "
+        "access (``ResourceAccessPolicy``), and (c) multi-tenant query "
+        "isolation (``TenantIsolationFilter``) — capabilities the inline "
+        "guard does not provide.  When used alongside the inline guard the "
+        "two layers compose: the inline check denies non-owner access at "
+        "the route level, and OwnershipVerifier provides a second-level DB "
+        "verification + strict-mode toggle."
     ),
     "tags": ["extend", "auth_access", "security", "bola", "idor"],
     "entry": "add_bola_guard",
@@ -48,6 +75,7 @@ MCP_TOOL = {
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
+
 
 def add_bola_guard(inp: ToolInput) -> ToolResult:
     """Add BOLA guard to a FastAPI project.
@@ -67,10 +95,9 @@ def add_bola_guard(inp: ToolInput) -> ToolResult:
 
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err,
-                          execution_time_ms=_elapsed_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
-    from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
+    from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -180,13 +207,15 @@ def add_bola_guard(inp: ToolInput) -> ToolResult:
 # File writers — each < 50 LOC
 # ---------------------------------------------------------------------------
 
+
 def _write_bola_guard(dest: Path) -> None:
     """Write ``app/auth/bola_guard.py`` with OwnershipVerifier + ResourceAccessPolicy.
 
     Args:
         dest: Absolute path for the BOLA guard module.
     """
-    dest.write_text(textwrap.dedent("""\
+    dest.write_text(
+        textwrap.dedent("""\
         \"\"\"Object-level authorization (BOLA/IDOR) protection for FastAPI.
 
         Prevents Broken Object Level Authorization (OWASP API1:2023) by
@@ -475,7 +504,8 @@ def _write_bola_guard(dest: Path) -> None:
                 if model is not None and hasattr(model, "tenant_id"):
                     return stmt.where(model.tenant_id == self._tenant_id)
                 return stmt
-    """))
+    """)
+    )
 
 
 def _write_bola_test_gen(dest: Path) -> None:
@@ -709,6 +739,7 @@ def _patch_config(config_file: Path) -> None:
 # ---------------------------------------------------------------------------
 # Utilities
 # ---------------------------------------------------------------------------
+
 
 def _elapsed_ms(start: float) -> int:
     """Return elapsed milliseconds since *start* (from ``time.monotonic()``).
