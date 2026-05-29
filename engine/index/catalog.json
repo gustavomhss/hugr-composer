@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "a91feee",
-  "generated_at": "2026-05-28T23:12:19+00:00",
+  "kit_commit": "3fe3146",
+  "generated_at": "2026-05-29T00:15:13+00:00",
   "verbs": [
     "add",
     "generate",
@@ -357,8 +357,8 @@
       "legacy_name": null,
       "verb": "add",
       "domain": "auth",
-      "synopsis": "Add object-level authorization (BOLA/IDOR protection) with ownership verification, multi-tenant isol",
-      "when_to_call": "Add object-level authorization (BOLA/IDOR protection) with ownership verification, multi-tenant isolation, and auto-generated test cases.",
+      "synopsis": "Layer object-level authorization (BOLA/IDOR) onto an existing project: OwnershipVerifier FastAPI dep",
+      "when_to_call": "Layer object-level authorization (BOLA/IDOR) onto an existing project: OwnershipVerifier FastAPI dependency, TenantIsolationFilter for multi-tenant query scoping, ResourceAccessPolicy for cross-user delegation, and auto-generated pytest BOLA test cases.  NOTE: as of v0.5, ``generators.orchestrator.generate_project`` already emits an inline per-object ownership guard on every owner-bearing model by default (see ``shared_models=`` for the explicit opt-out).  This tool stays useful for: (a) retrofitting existing projects scaffolded before secure-by-default, (b) projects that need delegated / cross-user access (``ResourceAccessPolicy``), and (c) multi-tenant query isolation (``TenantIsolationFilter``) \u2014 capabilities the inline guard does not provide.  When used alongside the inline guard the two layers compose: the inline check denies non-owner access at the route level, and OwnershipVerifier provides a second-level DB verification + strict-mode toggle.",
       "when_not_to_call": "",
       "tags": [],
       "tier": 2,
@@ -11762,5 +11762,5 @@
     "primitives": 299,
     "recipes": 392
   },
-  "stable_hash": "d22c9f69c7468ecb6b9e265258c9569483a94258da95548846f2eca0c9aee886"
+  "stable_hash": "62101581f92676134a246aaea39e6107c49e534336b6f20baa06e585e800903f"
 }

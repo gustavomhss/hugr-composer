@@ -167,3 +167,5 @@ ignore = [
 "engine/promotion/tests/**" = ["E741"]
 "engine/bench/blind/**" = ["E741", "SIM117"]
 "mcp_tools/**" = ["E402"]
+# generators/** also place module-level config dicts (FEATURE_FLAGS, etc.) before imports.
+"generators/**" = ["E402"]
