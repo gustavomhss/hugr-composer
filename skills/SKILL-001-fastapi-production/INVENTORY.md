@@ -6,7 +6,7 @@
 
 ## Headline
 
-- **256 files carry `MCP_TOOL` metadata** (agent-visible surface).
+- **258 files carry `MCP_TOOL` metadata** (agent-visible surface).
 - **Catalog:** 1 skill, 6 bundles, 201 tools (201 local + 0 federated), 299 primitives, 392 recipes.
 - **124 registered primitives** (`core/venous/<ns>/<Name>/`).
 - **175 staged primitives** in `_staging/` (plus 42 quarantined).

@@ -249,15 +249,33 @@ def _r_readme_md() -> tuple[bool, str]:
     )
 
 
-def _r_claude_memory() -> tuple[bool, str]:
-    mem = Path.home() / ".claude" / "projects"
-    hits = list(mem.rglob("venous_architecture.md"))
-    if not hits:
-        return False, "no venous_architecture.md in ~/.claude/projects/"
-    body = hits[0].read_text()
-    if "PRODUCT.md" not in body or "CONTRACT.md" not in body:
-        return False, "memory entry does not point to PRODUCT.md + CONTRACT.md"
-    return True, f"memory ok at {hits[0]}"
+def _r_agent_memory_pointer() -> tuple[bool, str]:
+    """B0.6 — repo-local agent-memory pointer is committed + canonical.
+
+    The acceptance-gate contract (``docs/wp/WP-CONTRACT-TEMPLATE.md``)
+    requires every ``B*`` item to be a deterministic function of the
+    working tree. The pre-C2 version of this rule read
+    ``~/.claude/projects/.../venous_architecture.md`` — a per-developer
+    artefact that lives **outside** the repo. A fresh clone or a CI
+    runner therefore failed B0.6 for reasons unrelated to repository
+    state, which broke the "37/37 deterministic gate" promise the WPs
+    make to builders.
+
+    The repo-local replacement is ``engine/audit/AGENT_MEMORY_POINTER.md``
+    — a small committed file that names the canonical contract surface
+    (PRODUCT.md + CONTRACT.md). This rule passes iff that file exists
+    AND mentions both, so the pointer cannot silently drift away from
+    the two documents the rest of the §B0 gate hinges on.
+    """
+    pointer = SKILL_ROOT / "engine" / "audit" / "AGENT_MEMORY_POINTER.md"
+    ok, msg = _exists(pointer, min_bytes=200)
+    if not ok:
+        return ok, msg
+    body = pointer.read_text(encoding="utf-8")
+    missing = [s for s in ("PRODUCT.md", "CONTRACT.md") if s not in body]
+    if missing:
+        return False, f"AGENT_MEMORY_POINTER.md missing pointer to: {missing}"
+    return True, f"agent memory pointer ok: {pointer.relative_to(REPO_ROOT)}"
 
 
 def _r_skillmd_honest() -> tuple[bool, str]:
@@ -2454,7 +2472,7 @@ RULES: list[Rule] = [
     Rule("B0.3", 0, "CONTRACT.md (this)", _r_contract_md),
     Rule("B0.4", 0, "SKILL.md ground-truth honest", _r_skillmd_honest),
     Rule("B0.5", 0, "README.md ≤100 lines + links", _r_readme_md),
-    Rule("B0.6", 0, "CLAUDE memory pointer", _r_claude_memory),
+    Rule("B0.6", 0, "agent memory pointer (repo-local)", _r_agent_memory_pointer),
     Rule("B0.7", 0, "No stub tests under /benchmark/", _r_benchmark_no_stubs),
     Rule("B0.8", 0, ".gitignore covers artefacts", _r_gitignore_artefacts),
     Rule("B0.9", 0, "no discontinued 'Maestro' terminology in live tree", _r_no_legacy_terminology),

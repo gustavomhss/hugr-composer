@@ -1,17 +1,24 @@
 # SkillEngine — primitive delivery pipeline
 
-Inviolable, 9-tier, contract-gated. Zero soft-accept.
+Inviolable, 10-tier, contract-gated. Zero soft-accept.
+
+> **Canonical tier count = 10** (T0_static + T1..T9). The validator
+> (`contracts/primitive_delivery_contract.py::Tier`), the test suite
+> (`tests/test_delivery_contract.py`), and the gate runners all assume
+> ten tiers. Pre-C2 versions of this README described a nine-tier model
+> that omitted T0_static; that was a documentation drift, not a spec
+> change — code + tests are the canonical source.
 
 ## Layout
 
 ```
 engine/
 ├── contracts/
-│   └── primitive_delivery_contract.py   # 40+ Pydantic validators, 9 tiers
+│   └── primitive_delivery_contract.py   # 40+ Pydantic validators, 10 tiers
 ├── llm/
 │   └── transport.py                      # claude CLI subprocess wrapper
 ├── gates/
-│   └── runners.py                        # 9 tier gate runners
+│   └── runners.py                        # 10 tier gate runners
 ├── briefings/
 │   └── builder_briefings.py              # 10 batch assignments (113 primitives)
 ├── check_primitive.py                    # per-primitive aggregator CLI
@@ -25,6 +32,7 @@ engine/
 
 | Tier | Check | Applies to |
 |---|---|---|
+| T0 static | `mypy --strict` + `ruff` + rationale-attached suppressions | every primitive |
 | T1 behavioral | end-to-end scenarios prove invariants | every primitive |
 | T2 formal | TLA+ / Alloy model check | stateful primitives only |
 | T3 state-machine | hypothesis `RuleBasedStateMachine` | stateful primitives only |
@@ -35,9 +43,9 @@ engine/
 | T8 chaos | fault injection + game-day scripts | every primitive |
 | T9 meta | LLM judge ≥8/10 × 6 axes + 5 personas understood | every primitive |
 
-`experimental` primitives require: T1 + T6.
-`emerging`: T1, T3, T4, T6, T7.
-`battle_tested`: all 9.
+`experimental` primitives require: T0 + T1 + T6.
+`emerging`: T0, T1, T3, T4, T6, T7.
+`battle_tested`: all 10.
 
 ## Per-primitive workflow
 
@@ -61,6 +69,9 @@ pytest skills/SKILL-001-fastapi-production/engine/tests/test_integration.py -q
   specific failure mode.
 - `accept_delivery()` returns `(False, None, [errors])` on any violation; no
   soft-accept path exists.
+- All 10 tiers (T0..T9) are first-class members of the `Tier` enum and the
+  `MATURITY_REQUIRED_TIERS` table; the README cheat-sheet above MUST match
+  that table or `test_readme_tier_doc_matches_code` fails.
 - Tier runners ERRORED on missing external tools (tlc, alloy); the aggregator
   treats ERRORED as rejection.
 - `_sanity_check` in `briefings/` asserts the 10-batch partition is complete
