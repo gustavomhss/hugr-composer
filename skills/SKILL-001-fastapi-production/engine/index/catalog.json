@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
-  "kit_commit": "3fe3146",
-  "generated_at": "2026-05-29T00:15:13+00:00",
+  "kit_commit": "f74450f",
+  "generated_at": "2026-05-29T00:42:08+00:00",
   "verbs": [
     "add",
     "generate",
@@ -1031,8 +1031,8 @@
       "legacy_name": null,
       "verb": "add",
       "domain": "data",
-      "synopsis": "Inject is_deleted + deleted_at columns into domain models, override delete() in CRUD to soft-delete,",
-      "when_to_call": "Inject is_deleted + deleted_at columns into domain models, override delete() in CRUD to soft-delete, emit migration, and copy UnitOfWork primitive + FastAPI adapter into the project.",
+      "synopsis": "Inject is_deleted + deleted_at columns into domain models, patch the shared CRUDBase class so get/ge",
+      "when_to_call": "Inject is_deleted + deleted_at columns into domain models, patch the shared CRUDBase class so get/get_multi/delete are soft-delete-aware in place, and emit an Alembic migration per affected table.",
       "when_not_to_call": "",
       "tags": [
         "soft-delete"
@@ -1044,9 +1044,7 @@
       "test_paths": [
         "adapt/extend/crud_data/test_add_soft_delete.py"
       ],
-      "primitives_used": [
-        "UnitOfWork"
-      ],
+      "primitives_used": [],
       "example_input": null,
       "example_output": null
     },
@@ -11762,5 +11760,5 @@
     "primitives": 299,
     "recipes": 392
   },
-  "stable_hash": "62101581f92676134a246aaea39e6107c49e534336b6f20baa06e585e800903f"
+  "stable_hash": "363fcfb8f83d3b82289e122df9147e75243d788c55b0aadc3cca03d439bfd861"
 }
