@@ -1,0 +1,141 @@
+"""arq task registry and example tasks.
+
+Every task here must be ``async def`` and must accept ``ctx`` (an
+arq-provided dict with ``job_id``, ``job_try``, ``redis``, etc.) as
+its first positional argument.
+
+To register a new task:
+
+1. Write your ``async def my_task(ctx, ...): ...`` function.
+2. Append it to ``TASK_REGISTRY``.
+3. Restart the worker (or roll-restart in production).
+"""
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
+
+async def startup(ctx: dict[str, Any]) -> None:
+    """Worker startup hook.
+
+    Runs once per worker process.  Use this hook to open long-lived
+    resources (database pools, HTTP clients) and stash them on
+    ``ctx`` for task access.
+
+    Args:
+        ctx: arq worker context dict.  Mutated in-place.
+    """
+    logger.info("arq worker starting up", extra={"worker": "arq"})
+    ctx["started_at"] = True
+
+
+async def shutdown(ctx: dict[str, Any]) -> None:
+    """Worker shutdown hook.
+
+    Runs once per worker process on graceful exit.  Close any
+    resources opened in ``startup``.
+
+    Args:
+        ctx: arq worker context dict.
+    """
+    logger.info("arq worker shutting down", extra={"worker": "arq"})
+
+
+async def send_email_task(
+    ctx: dict[str, Any],
+    to: str,
+    subject: str,
+    body: str,
+) -> dict[str, Any]:
+    """Example I/O task: send a transactional email.
+
+    This stub logs instead of calling an SMTP provider so the task
+    is safe to run in tests.  Replace the body with a real email
+    client (``aiosmtplib``, Postmark, SES, …) in production.
+
+    Args:
+        ctx: arq worker context dict.
+        to: Recipient address.
+        subject: Email subject line.
+        body: Plain-text body.
+
+    Returns:
+        Dict with ``status``, ``to``, and the executing ``job_id``.
+    """
+    job_id = ctx.get("job_id", "unknown")
+    logger.info(
+        "send_email_task executing",
+        extra={"job_id": job_id, "to": to, "subject": subject},
+    )
+    # Stub: in production, await a real SMTP/API client here.
+    _ = body  # referenced to satisfy linters until real impl lands
+    return {"status": "sent", "to": to, "job_id": job_id}
+
+
+async def cleanup_task(ctx: dict[str, Any]) -> dict[str, Any]:
+    """Example scheduled cleanup task (no task arguments).
+
+    Designed to be invoked on a cron-like schedule (e.g. from an
+    external scheduler enqueuing it periodically).  In production,
+    replace the body with real cleanup logic (soft-deleted row
+    purge, expired token sweep, etc.).
+
+    Args:
+        ctx: arq worker context dict.
+
+    Returns:
+        Dict with ``status``, ``cleaned``, and the executing ``job_id``.
+    """
+    job_id = ctx.get("job_id", "unknown")
+    logger.info("cleanup_task executing", extra={"job_id": job_id})
+    # Stub: in production, sweep expired rows/tokens/files here.
+    return {"status": "ok", "cleaned": 0, "job_id": job_id}
+
+
+async def webhook_retry_task(
+    ctx: dict[str, Any],
+    delivery_id: str,
+    url: str,
+    payload: dict[str, Any],
+    signature: str,
+) -> dict[str, Any]:
+    """Retry a failed webhook delivery.
+
+    Args:
+        ctx: arq worker context dict.
+        delivery_id: UUID of the original delivery attempt.
+        url: Destination URL of the webhook.
+        payload: JSON-serialisable payload to resend.
+        signature: HMAC signature the receiver will verify.
+
+    Returns:
+        Dict with ``status``, ``delivery_id``, and ``job_id``.
+    """
+    job_id = ctx.get("job_id", "unknown")
+    logger.info(
+        "webhook_retry_task executing",
+        extra={
+            "job_id": job_id,
+            "delivery_id": delivery_id,
+            "url": url,
+            "payload_keys": list(payload.keys()),
+            "signature_len": len(signature),
+        },
+    )
+    # Stub: in production, use an async HTTP client (httpx/aiohttp)
+    # to POST payload with signature header here.
+    return {
+        "status": "retried",
+        "delivery_id": delivery_id,
+        "job_id": job_id,
+    }
+
+
+TASK_REGISTRY: list[Any] = [
+    send_email_task,
+    cleanup_task,
+    webhook_retry_task,
+]

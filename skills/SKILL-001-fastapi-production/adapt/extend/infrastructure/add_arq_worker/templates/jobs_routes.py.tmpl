@@ -1,0 +1,102 @@
+"""HTTP companion routes for the arq background job queue.
+
+Provides job introspection endpoints for UI dashboards and operators.
+Both endpoints require authentication so job state cannot be probed
+by unauthenticated clients.
+"""
+from __future__ import annotations
+
+import logging
+
+from fastapi import APIRouter, HTTPException, Request, status
+
+from app.api.deps import CurrentUser
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/jobs", tags=["jobs"])
+
+
+def _require_pool(request: Request):
+    """Return the arq pool from app state or raise 503."""
+    pool = getattr(request.app.state, "arq_pool", None)
+    if pool is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="arq pool not initialised",
+        )
+    return pool
+
+
+async def _fetch_job(job_id: str, pool) -> tuple:
+    """Fetch (status, info) for *job_id* or raise 404 on lookup failure."""
+    try:
+        from arq.jobs import Job as ArqJob
+        job = ArqJob(job_id, pool)
+        return await job.status(), await job.info()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("arq job lookup failed: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="job not found",
+        ) from exc
+
+
+def _extract_outcome(info) -> tuple:
+    """Return (result, error) from an arq JobResult info object."""
+    if info is None:
+        return None, None
+    success = getattr(info, "success", None)
+    if success is True:
+        return getattr(info, "result", None), None
+    if success is False:
+        return None, str(getattr(info, "result", "") or "job failed")
+    return None, None
+
+
+@router.get("/{job_id}/status")
+async def get_job_status(
+    job_id: str,
+    request: Request,
+    current_user: CurrentUser,
+) -> dict:
+    """Return the current status (and result/error) of *job_id*.
+
+    Reads job state from the live arq Redis pool attached to
+    ``request.app.state.arq_pool``.
+
+    Raises:
+        HTTPException(503): arq pool not initialised.
+        HTTPException(404): job_id unknown to arq.
+    """
+    _ = current_user  # auth gate only
+    pool = _require_pool(request)
+    job_status, info = await _fetch_job(job_id, pool)
+    result_value, error_value = _extract_outcome(info)
+    return {
+        "job_id": job_id,
+        "status": str(job_status).split(".")[-1].lower(),
+        "result": result_value,
+        "error": error_value,
+    }
+
+
+@router.get("/active")
+async def list_active_jobs(
+    request: Request,
+    current_user: CurrentUser,
+) -> dict:
+    """Return currently-queued job ids for ops dashboards.
+
+    Raises:
+        HTTPException(503): arq pool not initialised.
+    """
+    _ = current_user  # auth gate only
+    pool = _require_pool(request)
+    try:
+        jobs = await pool.queued_jobs()
+        ids = [getattr(j, "job_id", "") for j in jobs]
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("arq queued_jobs lookup failed: %s", exc)
+        ids = []
+    return {"data": ids, "count": len(ids)}

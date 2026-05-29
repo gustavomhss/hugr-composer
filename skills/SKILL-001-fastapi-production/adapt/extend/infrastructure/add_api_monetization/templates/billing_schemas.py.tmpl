@@ -1,0 +1,70 @@
+"""Pydantic schemas for API billing/metering endpoints."""
+
+from __future__ import annotations
+
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class UsageSummary(BaseModel):
+    """Current usage summary for a tenant."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    tenant_id: str
+    tier: str
+    current_usage: int
+    monthly_limit: int
+    remaining: int
+    reset_date: str
+
+
+class UsageHistoryItem(BaseModel):
+    """A single historical usage data point."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    endpoint: str
+    method: str
+    status_code: int
+    duration_ms: int
+    created_at: datetime
+
+
+class PlanInfo(BaseModel):
+    """Information about an available billing plan."""
+
+    plan_id: str
+    name: str
+    monthly_limit: int
+    price_monthly_usd: float
+    stripe_price_id: str
+
+
+class UpgradeRequest(BaseModel):
+    """Request body for self-serve plan upgrade."""
+
+    plan_id: str = Field(..., description="Target plan identifier")
+    stripe_payment_method_id: str = Field(
+        ..., description="Stripe PaymentMethod ID for billing"
+    )
+
+
+class UpgradeResponse(BaseModel):
+    """Response after a successful plan upgrade."""
+
+    tenant_id: str
+    new_plan: str
+    effective_date: str
+    next_billing_date: str
+
+
+class RevenueAnalytics(BaseModel):
+    """Admin-only revenue analytics snapshot."""
+
+    mrr_usd: float
+    total_active_tenants: int
+    total_api_calls_this_month: int
+    top_consumers: list[dict]
+    churn_risk_tenants: list[str]

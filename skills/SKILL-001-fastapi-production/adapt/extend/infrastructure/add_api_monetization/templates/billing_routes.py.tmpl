@@ -1,0 +1,161 @@
+"""Billing routes — usage dashboard, plan management, admin analytics."""
+
+from __future__ import annotations
+
+import logging
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException
+
+from app.schemas.billing import (
+    PlanInfo,
+    RevenueAnalytics,
+    UpgradeRequest,
+    UpgradeResponse,
+    UsageHistoryItem,
+    UsageSummary,
+)
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/billing", tags=["billing"])
+
+# ---------------------------------------------------------------------------
+# Hard-coded plan catalogue (replace with DB or config in production)
+# ---------------------------------------------------------------------------
+
+_PLANS: list[PlanInfo] = [
+    PlanInfo(
+        plan_id="free",
+        name="Free",
+        monthly_limit=1_000,
+        price_monthly_usd=0.0,
+        stripe_price_id="",
+    ),
+    PlanInfo(
+        plan_id="starter",
+        name="Starter",
+        monthly_limit=50_000,
+        price_monthly_usd=29.0,
+        stripe_price_id="price_starter_placeholder",
+    ),
+    PlanInfo(
+        plan_id="growth",
+        name="Growth",
+        monthly_limit=500_000,
+        price_monthly_usd=99.0,
+        stripe_price_id="price_growth_placeholder",
+    ),
+    PlanInfo(
+        plan_id="enterprise",
+        name="Enterprise",
+        monthly_limit=10_000_000,
+        price_monthly_usd=499.0,
+        stripe_price_id="price_enterprise_placeholder",
+    ),
+]
+
+
+@router.get("/plans", response_model=list[PlanInfo])
+async def list_plans() -> list[PlanInfo]:
+    """Return all available billing plans."""
+    return _PLANS
+
+
+@router.get("/usage", response_model=UsageSummary)
+async def get_usage(tenant_id: str = "anonymous") -> UsageSummary:
+    """Return the current usage summary for a tenant."""
+    from app.billing.metering import get_quota_cache
+
+    quota = get_quota_cache().get(tenant_id)
+    if quota is None:
+        return UsageSummary(
+            tenant_id=tenant_id,
+            tier="free",
+            current_usage=0,
+            monthly_limit=1_000,
+            remaining=1_000,
+            reset_date=_next_month_iso(),
+        )
+    return UsageSummary(
+        tenant_id=quota.tier,
+        tier=quota.tier,
+        current_usage=quota.current_usage,
+        monthly_limit=quota.monthly_limit,
+        remaining=max(0, quota.monthly_limit - quota.current_usage),
+        reset_date=_next_month_iso(),
+    )
+
+
+@router.get("/history", response_model=list[UsageHistoryItem])
+async def get_usage_history(
+    tenant_id: str = "anonymous",
+    limit: int = 100,
+) -> list[UsageHistoryItem]:
+    """Return recent usage history items for a tenant."""
+    from app.billing.metering import get_event_buffer
+
+    buffer = get_event_buffer()
+    events = [
+        e for e in buffer._events
+        if e.tenant_id == tenant_id
+    ][-limit:]
+
+    return [
+        UsageHistoryItem(
+            endpoint=e.endpoint,
+            method=e.method,
+            status_code=e.status_code,
+            duration_ms=e.duration_ms,
+            created_at=datetime.fromtimestamp(e.timestamp, tz=timezone.utc),
+        )
+        for e in events
+    ]
+
+
+@router.get("/limits", response_model=UsageSummary)
+async def get_limits(tenant_id: str = "anonymous") -> UsageSummary:
+    """Return quota limits for a tenant (alias for /usage)."""
+    return await get_usage(tenant_id)
+
+
+@router.post("/upgrade", response_model=UpgradeResponse)
+async def upgrade_plan(body: UpgradeRequest) -> UpgradeResponse:
+    """Self-serve plan upgrade via Stripe."""
+    plan = next((p for p in _PLANS if p.plan_id == body.plan_id), None)
+    if plan is None:
+        raise HTTPException(status_code=404, detail="Plan not found")
+
+    logger.info("Plan upgrade requested to %s", body.plan_id)
+    return UpgradeResponse(
+        tenant_id="current_tenant",
+        new_plan=body.plan_id,
+        effective_date=datetime.now(tz=timezone.utc).isoformat(),
+        next_billing_date=_next_month_iso(),
+    )
+
+
+@router.get("/analytics", response_model=RevenueAnalytics)
+async def revenue_analytics() -> RevenueAnalytics:
+    """Admin-only: return MRR, top consumers, and churn risk tenants."""
+    from app.billing.metering import get_quota_cache
+
+    cache = get_quota_cache()
+    total_calls = sum(q.current_usage for q in cache.values())
+    top = sorted(cache.items(), key=lambda kv: kv[1].current_usage, reverse=True)[:5]
+
+    return RevenueAnalytics(
+        mrr_usd=0.0,
+        total_active_tenants=len(cache),
+        total_api_calls_this_month=total_calls,
+        top_consumers=[{"tenant_id": k, "calls": v.current_usage} for k, v in top],
+        churn_risk_tenants=[],
+    )
+
+
+def _next_month_iso() -> str:
+    """Return the first day of next month as an ISO-8601 string."""
+    now = datetime.now(tz=timezone.utc)
+    if now.month == 12:
+        return datetime(now.year + 1, 1, 1, tzinfo=timezone.utc).isoformat()
+    return datetime(now.year, now.month + 1, 1, tzinfo=timezone.utc).isoformat()

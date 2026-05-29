@@ -1,0 +1,55 @@
+"""Celery Beat schedule configuration.
+
+``BEAT_SCHEDULE`` is consumed by ``create_celery_app()`` in
+``app/workers/celery_app.py``.  Each entry maps a human-readable
+schedule name to a dict with ``task``, ``schedule``, and optional
+``args`` / ``kwargs``.
+
+``crontab`` notation (minute, hour, day_of_week, day_of_month,
+month_of_year) is used throughout for readability.
+
+Celery is imported lazily so this module loads cleanly without a
+running broker (e.g. during unit tests).
+"""
+from __future__ import annotations
+
+try:
+    from celery.schedules import crontab  # noqa: PLC0415
+except ImportError:  # pragma: no cover — celery not installed
+    crontab = None  # type: ignore[assignment, misc]
+
+
+def _cron(**kwargs) -> object:  # type: ignore[return]
+    """Return a crontab or a sentinel object when celery is absent.
+
+    Args:
+        **kwargs: Forwarded verbatim to ``crontab()``.
+
+    Returns:
+        A ``crontab`` instance, or ``None`` when celery is not installed.
+    """
+    if crontab is not None:
+        return crontab(**kwargs)
+    return None  # pragma: no cover
+
+
+#: Beat schedule mapping consumed by the Celery application factory.
+BEAT_SCHEDULE: dict = {
+    # Run cleanup at 02:00 UTC every night.
+    "cleanup-expired-nightly": {
+        "task": "app.workers.celery_tasks.cleanup_expired",
+        "schedule": _cron(hour=2, minute=0),
+    },
+    # Send weekly digest every Monday at 08:00 UTC.
+    "send-digest-weekly": {
+        "task": "app.workers.celery_tasks.send_digest",
+        "schedule": _cron(hour=8, minute=0, day_of_week=1),
+        "kwargs": {"digest_type": "weekly"},
+    },
+    # Sync external source every 30 minutes during business hours.
+    "sync-external-business-hours": {
+        "task": "app.workers.celery_tasks.sync_external",
+        "schedule": _cron(minute="*/30", hour="8-18"),
+        "kwargs": {"source": "default"},
+    },
+}

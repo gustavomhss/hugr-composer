@@ -1,0 +1,199 @@
+"""OrderProcessingWorkflow — durable order processing with compensation.
+
+Demonstrates:
+* Three sequential activities with retry policies.
+* Compensation-on-failure: ``compensate_payment`` is called when
+  ``fulfil_order`` raises, guaranteeing no phantom charges.
+* Signal support: ``cancel`` signal aborts mid-flight execution.
+* Query support: ``status`` query returns the current phase.
+
+The Temporal SDK decorators (``@workflow.defn``, ``@workflow.run``,
+``@workflow.signal``, ``@workflow.query``) require ``temporalio`` to be
+installed.  When the SDK is absent the class is still importable for
+unit tests — the ``try/except ModuleNotFoundError`` block at module
+level handles this gracefully.
+"""
+
+from __future__ import annotations
+
+import logging
+from datetime import timedelta
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
+
+class OrderProcessingWorkflow:
+    """Durable Temporal workflow for processing an order end-to-end.
+
+    Phases:
+      1. validate_order  — check the order is processable.
+      2. charge_payment  — capture payment from the customer.
+      3. fulfil_order    — dispatch and notify; compensate on failure.
+
+    Attributes:
+        _status: Current phase label (``pending``, ``validating``,
+            ``charging``, ``fulfilling``, ``completed``, ``failed``,
+            ``cancelled``).
+        _cancelled: Whether a cancel signal was received.
+    """
+
+    def __init__(self) -> None:
+        """Initialise the workflow state machine."""
+        self._status: str = "pending"
+        self._cancelled: bool = False
+
+    async def run(self, order_id: str, amount_cents: int) -> dict[str, Any]:
+        """Execute the full order-processing pipeline.
+
+        Args:
+            order_id: Unique order identifier passed from the REST caller.
+            amount_cents: Payment amount in the smallest currency unit.
+
+        Returns:
+            Result dict with ``order_id``, ``status``, and phase outputs.
+        """
+        from temporalio import workflow  # lazy SDK import
+
+        workflow.logger.info("OrderProcessingWorkflow starting %s", order_id)
+
+        if self._cancelled:
+            self._status = "cancelled"
+            return {"order_id": order_id, "status": "cancelled"}
+
+        validation = await self._validate(workflow, order_id)
+        if not validation.get("valid"):
+            self._status = "failed"
+            return {
+                "order_id": order_id,
+                "status": "failed",
+                "reason": validation.get("reason", "invalid order"),
+            }
+
+        if self._cancelled:
+            self._status = "cancelled"
+            return {"order_id": order_id, "status": "cancelled"}
+
+        charge_id = await self._charge(workflow, order_id, amount_cents)
+        return await self._fulfil(workflow, order_id, charge_id)
+
+    async def _validate(self, workflow: Any, order_id: str) -> dict[str, Any]:
+        """Phase 1: validate the order via Temporal activity.
+
+        Args:
+            workflow: The ``temporalio.workflow`` module.
+            order_id: Unique order identifier.
+
+        Returns:
+            Validation result dict with ``valid`` boolean.
+        """
+        from app.workflows.activities import validate_order
+
+        self._status = "validating"
+        return await workflow.execute_activity(
+            validate_order,
+            order_id,
+            start_to_close_timeout=timedelta(seconds=60),
+        )
+
+    async def _charge(
+        self, workflow: Any, order_id: str, amount_cents: int
+    ) -> str:
+        """Phase 2: charge the payment instrument.
+
+        Args:
+            workflow: The ``temporalio.workflow`` module.
+            order_id: Unique order identifier.
+            amount_cents: Amount to charge in the smallest currency unit.
+
+        Returns:
+            Charge reference string (``charge_id``).
+        """
+        from app.workflows.activities import charge_payment
+
+        self._status = "charging"
+        charge = await workflow.execute_activity(
+            charge_payment,
+            order_id,
+            amount_cents,
+            start_to_close_timeout=timedelta(seconds=30),
+        )
+        return charge["charge_id"]
+
+    async def _fulfil(
+        self, workflow: Any, order_id: str, charge_id: str
+    ) -> dict[str, Any]:
+        """Phase 3: fulfil with compensation on failure.
+
+        Args:
+            workflow: The ``temporalio.workflow`` module.
+            order_id: Unique order identifier.
+            charge_id: Charge reference from Phase 2.
+
+        Returns:
+            Result dict with ``order_id``, ``status``, and outcomes.
+        """
+        from app.workflows.activities import compensate_payment, fulfil_order
+
+        if self._cancelled:
+            self._status = "cancelled"
+            await workflow.execute_activity(
+                compensate_payment, order_id, charge_id,
+                start_to_close_timeout=timedelta(seconds=30),
+            )
+            return {"order_id": order_id, "status": "cancelled"}
+
+        self._status = "fulfilling"
+        try:
+            result = await workflow.execute_activity(
+                fulfil_order, order_id, charge_id,
+                start_to_close_timeout=timedelta(seconds=120),
+            )
+        except Exception:  # noqa: BLE001
+            logger.warning("fulfil_order failed, compensating order=%s", order_id)
+            await workflow.execute_activity(
+                compensate_payment, order_id, charge_id,
+                start_to_close_timeout=timedelta(seconds=30),
+            )
+            self._status = "failed"
+            return {
+                "order_id": order_id, "status": "failed",
+                "charge_id": charge_id, "compensated": True,
+            }
+
+        self._status = "completed"
+        return {
+            "order_id": order_id, "status": "completed",
+            "charge_id": charge_id,
+            "fulfillment_id": result.get("fulfillment_id"),
+        }
+
+    def cancel(self) -> None:
+        """Signal handler: request graceful cancellation.
+
+        Sets ``_cancelled`` so the workflow checks between phases
+        and compensates any captured payment before exiting.
+        """
+        logger.info("cancel signal received")
+        self._cancelled = True
+
+    def status(self) -> str:
+        """Query handler: return the current workflow phase.
+
+        Returns:
+            One of: ``pending``, ``validating``, ``charging``,
+            ``fulfilling``, ``completed``, ``failed``, ``cancelled``.
+        """
+        return self._status
+
+
+try:
+    from temporalio import workflow as _wf
+
+    OrderProcessingWorkflow = _wf.defn(OrderProcessingWorkflow)
+    OrderProcessingWorkflow.run = _wf.run(OrderProcessingWorkflow.run)
+    OrderProcessingWorkflow.cancel = _wf.signal(OrderProcessingWorkflow.cancel)
+    OrderProcessingWorkflow.status = _wf.query(OrderProcessingWorkflow.status)
+except ModuleNotFoundError:
+    # temporalio not installed — class still importable for unit tests
+    pass

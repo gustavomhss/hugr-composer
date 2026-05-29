@@ -1,0 +1,94 @@
+"""Emitted test for add_arq_worker: arq job queue scaffold.
+
+WARNING (honesty rule §5, F-06): arq provides AT-LEAST-ONCE delivery semantics
+backed by Redis. Jobs enqueued are not guaranteed to be executed exactly once.
+Tests below assert idempotent consumer behavior (same job processed safely
+twice), NOT exactly-once delivery.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+
+# ---------------------------------------------------------------------------
+# Positive test: core files exist with expected content
+# ---------------------------------------------------------------------------
+
+def test_worker_settings_exists() -> None:
+    """app/workers/arq_worker.py contains WorkerSettings class."""
+    worker_file = Path(__file__).parent.parent / "app" / "workers" / "arq_worker.py"
+    assert worker_file.exists(), "app/workers/arq_worker.py not created"
+    content = worker_file.read_text()
+    assert "WorkerSettings" in content, "WorkerSettings not found in arq_worker.py"
+
+
+def test_task_registry_populated() -> None:
+    """app/workers/tasks.py has TASK_REGISTRY with expected tasks."""
+    tasks_file = Path(__file__).parent.parent / "app" / "workers" / "tasks.py"
+    assert tasks_file.exists(), "app/workers/tasks.py not created"
+    content = tasks_file.read_text()
+    assert "TASK_REGISTRY" in content, "TASK_REGISTRY not found"
+    assert "send_email_task" in content, "send_email_task missing"
+    assert "cleanup_task" in content, "cleanup_task missing"
+
+
+def test_enqueue_helpers_exist() -> None:
+    """app/workers/enqueue.py provides create_arq_pool and enqueue."""
+    enqueue_file = Path(__file__).parent.parent / "app" / "workers" / "enqueue.py"
+    assert enqueue_file.exists(), "app/workers/enqueue.py not created"
+    content = enqueue_file.read_text()
+    assert "create_arq_pool" in content
+    assert "async def enqueue" in content
+
+
+def test_job_model_exists() -> None:
+    """app/models/job.py defines the Job audit model."""
+    job_file = Path(__file__).parent.parent / "app" / "models" / "job.py"
+    assert job_file.exists(), "app/models/job.py not created"
+    assert "class Job" in job_file.read_text()
+
+
+def test_dockerfile_worker_non_root() -> None:
+    """Dockerfile.worker runs as non-root USER 1000."""
+    dockerfile = Path(__file__).parent.parent / "Dockerfile.worker"
+    assert dockerfile.exists(), "Dockerfile.worker not created"
+    content = dockerfile.read_text()
+    assert "USER" in content, "Dockerfile.worker must specify USER for non-root execution"
+
+
+# ---------------------------------------------------------------------------
+# Negative test: at-least-once — enqueue same task twice is handled safely
+# ---------------------------------------------------------------------------
+
+def test_second_run_is_noop() -> None:
+    """Running add_arq_worker twice returns no_op (idempotent install)."""
+    from adapt.contracts import ToolInput
+    from adapt.extend.infrastructure.add_arq_worker import add_arq_worker
+    from tests.common.fixture_factory import create_fixture_project
+
+    project_dir = create_fixture_project(name="arq_emitted_neg01")
+    r1 = add_arq_worker(ToolInput(project_dir=str(project_dir)))
+    assert r1.status == "success", r1.error
+
+    r2 = add_arq_worker(ToolInput(project_dir=str(project_dir)))
+    assert r2.status == "no_op", (
+        f"Second run must be no_op (idempotent), got {r2.status}"
+    )
+    assert not r2.files_created, "no_op run must not create files"
+
+
+if __name__ == "__main__":
+    tests = [v for k, v in globals().items() if k.startswith("test_")]
+    passed = failed = 0
+    for fn in tests:
+        try:
+            fn()
+            print(f"  PASS  {fn.__name__}")
+            passed += 1
+        except Exception as exc:
+            print(f"  FAIL  {fn.__name__}: {exc}")
+            failed += 1
+    print(f"\n{passed}/{passed + failed}")
+    sys.exit(0 if not failed else 1)

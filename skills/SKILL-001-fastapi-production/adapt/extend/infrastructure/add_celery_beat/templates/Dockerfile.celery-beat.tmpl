@@ -1,0 +1,21 @@
+# Dockerfile.celery-beat — Celery Beat periodic task scheduler
+# Run EXACTLY ONE instance of this container at a time.
+# Running multiple beat instances causes duplicate task firing.
+FROM python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app/ ./app/
+
+# Run as non-root for least-privilege execution.
+USER 1000
+
+CMD ["celery", "-A", "app.workers.celery_app", "beat", "--loglevel=info"]

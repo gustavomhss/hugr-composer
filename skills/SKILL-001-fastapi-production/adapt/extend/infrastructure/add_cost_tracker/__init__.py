@@ -15,11 +15,13 @@ and returns ``status="no_op"``.
 
 from __future__ import annotations
 
-import ast
 import time
 from pathlib import Path
 
+from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+
+_HERE = Path(__file__).parent
 
 MCP_TOOL = {
     "name": "fastapi_resiliency_add_cost_tracker",
@@ -38,33 +40,6 @@ MCP_TOOL = {
 }
 
 
-_GLUE = '''\
-"""Wire per-request cost estimation into the FastAPI app.
-
-Delegates to the primitive + FastAPI adapter copied under `core/venous/`
-by the `add_cost_tracker` tool. Re-emitted idempotently on subsequent runs.
-"""
-
-from __future__ import annotations
-
-import os
-
-from fastapi import FastAPI
-
-from core.venous._adapters.fastapi.CostTrackerAdapter import install
-
-
-def install_cost_tracker(app: FastAPI) -> None:
-    """Attach a CostTracker + X-Request-Cost-Estimate middleware to *app*."""
-    install(
-        app,
-        db_rate=float(os.getenv("COST_DB_QUERY_RATE", "0.00001")),
-        s3_rate=float(os.getenv("COST_S3_PER_GB", "0.023")),
-        api_rate=float(os.getenv("COST_API_CALL_RATE", "0.0001")),
-    )
-'''
-
-
 def add_cost_tracker(inp: ToolInput) -> ToolResult:
     """Add per-request cost estimation by delegating to the shipped primitive + adapter."""
     start = time.monotonic()
@@ -74,7 +49,7 @@ def add_cost_tracker(inp: ToolInput) -> ToolResult:
     if err:
         return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
-    from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
+    from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -123,7 +98,7 @@ def add_cost_tracker(inp: ToolInput) -> ToolResult:
     files_created.append(manifest.path)
 
     app_dir.mkdir(parents=True, exist_ok=True)
-    glue_file.write_text(_GLUE)
+    render_to(_HERE, "cost_tracker_glue.py.tmpl", dest=glue_file, substitutions={})
     files_created.append(str(glue_file))
 
     files_modified: list[str] = []
@@ -142,17 +117,7 @@ def add_cost_tracker(inp: ToolInput) -> ToolResult:
         )
         files_modified.append(str(config_file))
 
-    for path_str in files_created:
-        p = Path(path_str)
-        if p.suffix == ".py" and p.is_file():
-            try:
-                ast.parse(p.read_text())
-            except SyntaxError as exc:
-                return ToolResult(
-                    status="error",
-                    error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_elapsed_ms(start),
-                )
+    _emit_project_test(project, files_created)
 
     return ToolResult(
         status="success",
@@ -173,6 +138,16 @@ def add_cost_tracker(inp: ToolInput) -> ToolResult:
     )
 
 
+def _emit_project_test(project: Path, created: list[str]) -> None:
+    """Render emitted test into {project}/tests/test_add_cost_tracker_emitted.py."""
+    (project / "tests").mkdir(parents=True, exist_ok=True)
+    emitted = project / "tests" / "test_add_cost_tracker_emitted.py"
+    if emitted.exists():
+        return
+    render_to(_HERE, "test_add_cost_tracker_emitted.py.tmpl", dest=emitted, substitutions={})
+    created.append(str(emitted))
+
+
 def _elapsed_ms(start: float) -> int:
-    """Return elapsed ms since *start* (from ``time.monotonic()``)."""
+    """Return elapsed milliseconds since *start* (from ``time.monotonic()``)."""
     return int((time.monotonic() - start) * 1000)

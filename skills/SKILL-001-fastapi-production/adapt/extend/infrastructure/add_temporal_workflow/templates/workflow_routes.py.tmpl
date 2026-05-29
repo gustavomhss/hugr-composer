@@ -1,0 +1,214 @@
+"""REST companion routes for Temporal workflow management.
+
+Provides start, status, signal, and cancel endpoints for the
+OrderProcessingWorkflow.  All routes require authentication so
+workflow state cannot be probed anonymously.
+"""
+
+from __future__ import annotations
+
+import logging
+import uuid
+
+from fastapi import APIRouter, HTTPException, status
+from pydantic import BaseModel
+
+from app.api.deps import CurrentUser
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/workflows", tags=["workflows"])
+
+
+class StartWorkflowRequest(BaseModel):
+    """Request body for POST /workflows/start.
+
+    Attributes:
+        order_id: Unique order identifier to process.
+        amount_cents: Payment amount in the smallest currency unit.
+    """
+
+    order_id: str
+    amount_cents: int = 0
+
+
+class WorkflowStatusResponse(BaseModel):
+    """Response body for GET /workflows/{workflow_id}/status.
+
+    Attributes:
+        workflow_id: Temporal workflow run ID.
+        status: Current lifecycle status string.
+    """
+
+    workflow_id: str
+    status: str
+
+
+@router.post("/start", status_code=status.HTTP_202_ACCEPTED)
+async def start_workflow(
+    body: StartWorkflowRequest,
+    current_user: CurrentUser,
+) -> dict:
+    """Start an OrderProcessingWorkflow for the given order.
+
+    Args:
+        body: ``StartWorkflowRequest`` with order_id and amount_cents.
+        current_user: Authenticated user (auth gate only).
+
+    Returns:
+        Dict with ``workflow_id`` and ``status``.
+
+    Raises:
+        HTTPException(503): Temporal client unavailable.
+    """
+    _ = current_user  # auth gate only
+    try:
+        from app.workflows.client import get_client
+        from app.workflows.example_workflow import OrderProcessingWorkflow
+
+        client = await get_client()
+        workflow_id = f"order-{body.order_id}-{uuid.uuid4().hex[:8]}"
+        handle = await client.start_workflow(
+            OrderProcessingWorkflow.run,
+            body.order_id,
+            body.amount_cents,
+            id=workflow_id,
+            task_queue=_get_task_queue(),
+        )
+        return {"workflow_id": handle.id, "status": "started"}
+    except (ModuleNotFoundError, Exception) as exc:  # noqa: BLE001
+        logger.warning("start_workflow error: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Temporal client unavailable",
+        ) from exc
+
+
+@router.get("/{workflow_id}/status")
+async def get_workflow_status(
+    workflow_id: str,
+    current_user: CurrentUser,
+) -> WorkflowStatusResponse:
+    """Return the current status of a running or completed workflow.
+
+    Args:
+        workflow_id: Temporal workflow run ID.
+        current_user: Authenticated user (auth gate only).
+
+    Returns:
+        ``WorkflowStatusResponse`` with workflow_id and status.
+
+    Raises:
+        HTTPException(404): Workflow not found.
+        HTTPException(503): Temporal client unavailable.
+    """
+    _ = current_user  # auth gate only
+    try:
+        from app.workflows.client import get_client
+
+        client = await get_client()
+        handle = client.get_workflow_handle(workflow_id)
+        wf_status = await handle.query(lambda wf: wf.status())
+        return WorkflowStatusResponse(
+            workflow_id=workflow_id, status=str(wf_status)
+        )
+    except ModuleNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Temporal client unavailable",
+        ) from exc
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("get_workflow_status error: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="workflow not found",
+        ) from exc
+
+
+@router.post("/{workflow_id}/signal")
+async def signal_workflow(
+    workflow_id: str,
+    current_user: CurrentUser,
+) -> dict:
+    """Send a cancel signal to a running workflow.
+
+    Args:
+        workflow_id: Temporal workflow run ID.
+        current_user: Authenticated user (auth gate only).
+
+    Returns:
+        Dict with ``workflow_id`` and ``status``.
+
+    Raises:
+        HTTPException(404): Workflow not found.
+        HTTPException(503): Temporal client unavailable.
+    """
+    _ = current_user  # auth gate only
+    try:
+        from app.workflows.client import get_client
+
+        client = await get_client()
+        handle = client.get_workflow_handle(workflow_id)
+        await handle.signal("cancel")
+        return {"workflow_id": workflow_id, "status": "signal_sent"}
+    except ModuleNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Temporal client unavailable",
+        ) from exc
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("signal_workflow error: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="workflow not found",
+        ) from exc
+
+
+@router.post("/{workflow_id}/cancel")
+async def cancel_workflow(
+    workflow_id: str,
+    current_user: CurrentUser,
+) -> dict:
+    """Request cancellation of a running workflow via Temporal's cancel API.
+
+    Args:
+        workflow_id: Temporal workflow run ID.
+        current_user: Authenticated user (auth gate only).
+
+    Returns:
+        Dict with ``workflow_id`` and ``status``.
+
+    Raises:
+        HTTPException(404): Workflow not found.
+        HTTPException(503): Temporal client unavailable.
+    """
+    _ = current_user  # auth gate only
+    try:
+        from app.workflows.client import get_client
+
+        client = await get_client()
+        handle = client.get_workflow_handle(workflow_id)
+        await handle.cancel()
+        return {"workflow_id": workflow_id, "status": "cancel_requested"}
+    except ModuleNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Temporal client unavailable",
+        ) from exc
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("cancel_workflow error: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="workflow not found",
+        ) from exc
+
+
+def _get_task_queue() -> str:
+    """Return the configured Temporal task queue name.
+
+    Returns:
+        Task queue string from ``settings.TEMPORAL_TASK_QUEUE``.
+    """
+    from app.core.config import settings
+
+    return settings.TEMPORAL_TASK_QUEUE

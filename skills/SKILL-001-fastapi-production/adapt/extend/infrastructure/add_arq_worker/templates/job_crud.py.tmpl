@@ -1,0 +1,152 @@
+"""Async CRUD helpers for the ``jobs`` audit table."""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timezone
+from typing import Any
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.job import Job
+
+
+async def record_job(
+    session: AsyncSession,
+    *,
+    task_name: str,
+    payload: dict[str, Any],
+    user_id: uuid.UUID | None = None,
+) -> Job:
+    """Create a new ``queued`` audit row for a job about to be enqueued.
+
+    Args:
+        session: Async database session.
+        task_name: Registered task function name.
+        payload: JSON-serialisable snapshot of the task arguments.
+        user_id: Optional UUID of the user triggering the job.
+
+    Returns:
+        The persisted ``Job`` instance (status = ``queued``).
+    """
+    job = Job(
+        task_name=task_name,
+        payload=payload,
+        user_id=user_id,
+        status="queued",
+    )
+    session.add(job)
+    await session.flush()
+    return job
+
+
+async def update_job_started(
+    session: AsyncSession, *, job_id: uuid.UUID
+) -> Job | None:
+    """Mark *job_id* as ``running`` and stamp ``started_at``.
+
+    Args:
+        session: Async database session.
+        job_id: UUID primary key of the job row.
+
+    Returns:
+        The updated ``Job`` or ``None`` if not found.
+    """
+    job = await _get(session, job_id)
+    if job is None:
+        return None
+    job.status = "running"
+    job.started_at = datetime.now(timezone.utc)
+    await session.flush()
+    return job
+
+
+async def update_job_completed(
+    session: AsyncSession,
+    *,
+    job_id: uuid.UUID,
+    result: dict[str, Any],
+) -> Job | None:
+    """Mark *job_id* as ``success`` and persist *result*.
+
+    Args:
+        session: Async database session.
+        job_id: UUID primary key of the job row.
+        result: JSON-serialisable task return value.
+
+    Returns:
+        The updated ``Job`` or ``None`` if not found.
+    """
+    job = await _get(session, job_id)
+    if job is None:
+        return None
+    job.status = "success"
+    job.result = result
+    job.completed_at = datetime.now(timezone.utc)
+    await session.flush()
+    return job
+
+
+async def update_job_failed(
+    session: AsyncSession,
+    *,
+    job_id: uuid.UUID,
+    error: str,
+) -> Job | None:
+    """Mark *job_id* as ``failed`` and persist *error*.
+
+    Args:
+        session: Async database session.
+        job_id: UUID primary key of the job row.
+        error: Human-readable failure message (truncated to 4k chars).
+
+    Returns:
+        The updated ``Job`` or ``None`` if not found.
+    """
+    job = await _get(session, job_id)
+    if job is None:
+        return None
+    job.status = "failed"
+    job.error = error[:4000]
+    job.completed_at = datetime.now(timezone.utc)
+    await session.flush()
+    return job
+
+
+async def list_user_jobs(
+    session: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+    limit: int = 50,
+) -> list[Job]:
+    """Return the most recent jobs triggered by *user_id*.
+
+    Args:
+        session: Async database session.
+        user_id: UUID of the user who triggered the jobs.
+        limit: Maximum number of rows to return (default 50).
+
+    Returns:
+        List of ``Job`` instances, newest first.
+    """
+    stmt = (
+        select(Job)
+        .where(Job.user_id == user_id)
+        .order_by(Job.enqueued_at.desc())
+        .limit(limit)
+    )
+    return list((await session.execute(stmt)).scalars().all())
+
+
+async def _get(session: AsyncSession, job_id: uuid.UUID) -> Job | None:
+    """Return the ``Job`` row with *job_id* or ``None``.
+
+    Args:
+        session: Async database session.
+        job_id: UUID primary key.
+
+    Returns:
+        The ``Job`` or ``None`` if absent.
+    """
+    stmt = select(Job).where(Job.id == job_id)
+    return (await session.execute(stmt)).scalar_one_or_none()

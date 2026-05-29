@@ -1,0 +1,109 @@
+"""Emitted test for add_temporal_workflow: Temporal.io durable workflow scaffold.
+
+These tests verify the scaffold was emitted correctly by inspecting
+file existence and critical structural markers — they do NOT require
+the ``temporalio`` SDK to be installed.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+
+# ---------------------------------------------------------------------------
+# Positive tests: key files exist with expected content markers
+# ---------------------------------------------------------------------------
+
+def test_temporal_client_factory_exists() -> None:
+    """app/workflows/client.py defines TemporalClientFactory."""
+    client_file = Path(__file__).parent.parent / "app" / "workflows" / "client.py"
+    assert client_file.exists(), "app/workflows/client.py not created"
+    content = client_file.read_text()
+    assert "class TemporalClientFactory" in content, "TemporalClientFactory class missing"
+    assert "async def get_client" in content, "get_client function missing"
+
+
+def test_worker_factory_exists() -> None:
+    """app/workflows/worker.py defines WorkerFactory."""
+    worker_file = Path(__file__).parent.parent / "app" / "workflows" / "worker.py"
+    assert worker_file.exists(), "app/workflows/worker.py not created"
+    content = worker_file.read_text()
+    assert "class WorkerFactory" in content, "WorkerFactory class missing"
+    assert "SEPARATE PROCESS" in content or "separate process" in content.lower(), (
+        "worker.py must note it runs as a SEPARATE PROCESS from FastAPI"
+    )
+
+
+def test_compensation_pattern_in_workflow() -> None:
+    """example_workflow.py implements compensation-on-failure."""
+    workflow_file = (
+        Path(__file__).parent.parent / "app" / "workflows" / "example_workflow.py"
+    )
+    assert workflow_file.exists(), "app/workflows/example_workflow.py not created"
+    content = workflow_file.read_text()
+    assert "compensate_payment" in content, "Compensation activity not called in workflow"
+    assert "except" in content, "Workflow must have try/except for compensation"
+
+
+def test_workflow_routes_exist() -> None:
+    """app/api/routes/workflows.py provides start/status/signal/cancel endpoints."""
+    routes_file = (
+        Path(__file__).parent.parent / "app" / "api" / "routes" / "workflows.py"
+    )
+    assert routes_file.exists(), "app/api/routes/workflows.py not created"
+    content = routes_file.read_text()
+    assert "/start" in content, "POST /workflows/start endpoint missing"
+    assert "/status" in content, "GET /workflows/{id}/status endpoint missing"
+    assert "/signal" in content, "POST /workflows/{id}/signal endpoint missing"
+    assert "/cancel" in content, "POST /workflows/{id}/cancel endpoint missing"
+
+
+def test_dockerfile_temporal_worker_exists() -> None:
+    """Dockerfile.temporal-worker exists and specifies non-root USER."""
+    dockerfile = Path(__file__).parent.parent / "Dockerfile.temporal-worker"
+    assert dockerfile.exists(), "Dockerfile.temporal-worker not created"
+    content = dockerfile.read_text()
+    assert "USER 1000" in content, (
+        "Dockerfile.temporal-worker must run as non-root user (USER 1000)"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Negative test: SDK absence does not prevent import (lazy imports)
+# ---------------------------------------------------------------------------
+
+def test_client_module_importable_without_sdk() -> None:
+    """client.py must not import temporalio at the module top-level.
+
+    This is the negative test: the module must be importable even when
+    temporalio is not installed (lazy SDK import pattern).
+    """
+    client_file = Path(__file__).parent.parent / "app" / "workflows" / "client.py"
+    assert client_file.exists(), "app/workflows/client.py not created"
+    content = client_file.read_text()
+    # Top-level import of temporalio would break app startup when SDK is absent
+    lines = content.splitlines()
+    top_level_imports = [
+        ln for ln in lines
+        if ln.startswith("import temporalio") or ln.startswith("from temporalio")
+    ]
+    assert len(top_level_imports) == 0, (
+        f"client.py must not import temporalio at the top level (found: {top_level_imports}). "
+        "Use lazy imports inside function bodies."
+    )
+
+
+if __name__ == "__main__":
+    tests = [v for k, v in globals().items() if k.startswith("test_")]
+    passed = failed = 0
+    for fn in tests:
+        try:
+            fn()
+            print(f"  PASS  {fn.__name__}")
+            passed += 1
+        except Exception as exc:
+            print(f"  FAIL  {fn.__name__}: {exc}")
+            failed += 1
+    print(f"\n{passed}/{passed + failed}")
+    sys.exit(0 if not failed else 1)

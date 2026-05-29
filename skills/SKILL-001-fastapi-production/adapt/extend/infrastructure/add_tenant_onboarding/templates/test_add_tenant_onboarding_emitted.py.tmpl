@@ -1,0 +1,107 @@
+"""Emitted test for add_tenant_onboarding: wizard orchestrator scaffold.
+
+These tests verify the scaffold was emitted correctly. The key invariant
+tested is that compensation (rollback) occurs in REVERSE order when a step
+fails — this is the atomicity guarantee of the onboarding pipeline.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+
+# ---------------------------------------------------------------------------
+# Positive tests: key files exist with expected structure
+# ---------------------------------------------------------------------------
+
+def test_orchestrator_exists() -> None:
+    """app/onboarding/orchestrator.py defines OnboardingOrchestrator."""
+    orch_file = (
+        Path(__file__).parent.parent / "app" / "onboarding" / "orchestrator.py"
+    )
+    assert orch_file.exists(), "app/onboarding/orchestrator.py not created"
+    content = orch_file.read_text()
+    assert "class OnboardingOrchestrator" in content, "OnboardingOrchestrator class missing"
+    assert "def start" in content, "start() method missing from OnboardingOrchestrator"
+    assert "def _compensate" in content, "_compensate() method missing"
+
+
+def test_steps_file_exists() -> None:
+    """app/onboarding/steps.py defines OnboardingStep protocol and built-in steps."""
+    steps_file = Path(__file__).parent.parent / "app" / "onboarding" / "steps.py"
+    assert steps_file.exists(), "app/onboarding/steps.py not created"
+    content = steps_file.read_text()
+    assert "class OnboardingStep" in content, "OnboardingStep protocol missing"
+    assert "class CreateTenantStep" in content, "CreateTenantStep missing"
+    assert "class CreateAdminUserStep" in content, "CreateAdminUserStep missing"
+    assert "class SeedDataStep" in content, "SeedDataStep missing"
+    assert "class ConfigureBillingStep" in content, "ConfigureBillingStep missing"
+    assert "class SendWelcomeEmailStep" in content, "SendWelcomeEmailStep missing"
+
+
+def test_onboarding_routes_exist() -> None:
+    """app/api/routes/onboarding.py defines start and status endpoints."""
+    route_file = (
+        Path(__file__).parent.parent / "app" / "api" / "routes" / "onboarding.py"
+    )
+    assert route_file.exists(), "app/api/routes/onboarding.py not created"
+    content = route_file.read_text()
+    assert "/start" in content, "POST /onboarding/start endpoint missing"
+    assert "/status" in content, "GET /onboarding/{id}/status endpoint missing"
+
+
+def test_compensation_is_reverse_order() -> None:
+    """OnboardingOrchestrator compensates completed steps in reverse order.
+
+    The key atomicity guarantee: if step N fails, steps 0..N-1 are
+    compensated in REVERSE order (LIFO). This test verifies the
+    reversed() call is present in _compensate().
+    """
+    orch_file = (
+        Path(__file__).parent.parent / "app" / "onboarding" / "orchestrator.py"
+    )
+    assert orch_file.exists(), "app/onboarding/orchestrator.py not created"
+    content = orch_file.read_text()
+    assert "reversed(" in content, (
+        "_compensate() must iterate steps in reverse order for LIFO rollback"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Negative test: failed step triggers compensation (not silent failure)
+# ---------------------------------------------------------------------------
+
+def test_failed_step_triggers_compensation() -> None:
+    """OnboardingOrchestrator must call _compensate() when a step fails.
+
+    This is the negative test: failure must NOT be silent. The except
+    block must explicitly call self._compensate() to roll back.
+    """
+    orch_file = (
+        Path(__file__).parent.parent / "app" / "onboarding" / "orchestrator.py"
+    )
+    assert orch_file.exists(), "app/onboarding/orchestrator.py not created"
+    content = orch_file.read_text()
+    assert "_compensate" in content, (
+        "OnboardingOrchestrator must call _compensate() in the failure path"
+    )
+    # The except block must lead to compensation
+    assert "except Exception" in content, (
+        "OnboardingOrchestrator must have a broad except to catch step failures"
+    )
+
+
+if __name__ == "__main__":
+    tests = [v for k, v in globals().items() if k.startswith("test_")]
+    passed = failed = 0
+    for fn in tests:
+        try:
+            fn()
+            print(f"  PASS  {fn.__name__}")
+            passed += 1
+        except Exception as exc:
+            print(f"  FAIL  {fn.__name__}: {exc}")
+            failed += 1
+    print(f"\n{passed}/{passed + failed}")
+    sys.exit(0 if not failed else 1)

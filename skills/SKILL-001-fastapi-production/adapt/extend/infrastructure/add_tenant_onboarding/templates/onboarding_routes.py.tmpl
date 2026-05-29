@@ -1,0 +1,79 @@
+"""Tenant onboarding routes."""
+
+from __future__ import annotations
+
+import logging
+
+from fastapi import APIRouter, HTTPException
+
+from app.schemas.onboarding import (
+    OnboardingRequest,
+    OnboardingStartResponse,
+    OnboardingStatusResponse,
+)
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/onboarding", tags=["onboarding"])
+
+
+def _build_orchestrator():
+    """Build the OnboardingOrchestrator from config."""
+    from app.core.config import settings
+    from app.onboarding.orchestrator import OnboardingOrchestrator
+    from app.onboarding.steps import build_steps_from_config
+
+    steps_cfg = getattr(
+        settings,
+        "ONBOARDING_STEPS",
+        "create_tenant,create_admin,seed_data,configure_billing,welcome_email",
+    )
+    steps = build_steps_from_config(steps_cfg)
+    return OnboardingOrchestrator(steps=steps)
+
+
+@router.post("/start", response_model=OnboardingStartResponse, status_code=202)
+async def start_onboarding(body: OnboardingRequest) -> OnboardingStartResponse:
+    """Start the tenant onboarding wizard.
+
+    Runs all configured onboarding steps synchronously and returns
+    the result. For long-running pipelines, move execution to a
+    background task.
+    """
+    orchestrator = _build_orchestrator()
+    progress = orchestrator.start(
+        tenant_name=body.tenant_name,
+        admin_email=body.admin_email,
+    )
+
+    if progress.status.value in ("failed", "compensated"):
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "message": "Onboarding failed and was rolled back",
+                "failed_step": progress.failed_step,
+                "error": progress.error,
+            },
+        )
+
+    return OnboardingStartResponse(
+        onboarding_id=progress.onboarding_id,
+        status=progress.status.value,
+        message=f"Onboarding for '{body.tenant_name}' completed successfully.",
+    )
+
+
+@router.get("/{onboarding_id}/status", response_model=OnboardingStatusResponse)
+async def get_onboarding_status(onboarding_id: str) -> OnboardingStatusResponse:
+    """Return the current status of an onboarding run."""
+    from app.onboarding.orchestrator import get_progress
+
+    progress = get_progress(onboarding_id)
+    if progress is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"detail": f"Onboarding run '{onboarding_id}' not found"},
+        )
+
+    data = progress.to_dict()
+    return OnboardingStatusResponse(**data)

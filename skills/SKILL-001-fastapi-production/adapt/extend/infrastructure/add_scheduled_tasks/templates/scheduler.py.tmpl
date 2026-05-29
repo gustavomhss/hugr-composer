@@ -1,0 +1,102 @@
+"""APScheduler factory — async scheduler with configurable job store.
+
+When ``settings.SCHEDULER_JOBSTORE_URL`` starts with ``redis://``, the
+scheduler uses a persistent Redis job store (multi-instance safe).
+Otherwise it falls back to an in-memory store (single-instance only).
+
+WARNING: This scheduler runs IN-PROCESS (single instance). It is NOT
+clustered. Multiple app instances will each run their own scheduler,
+potentially executing jobs multiple times. For clustered scheduling,
+use a Redis-backed job store with a distributed lock, or replace this
+with a dedicated scheduling service (Celery beat, APScheduler with
+a distributed lock, etc.).
+
+The factory is wired into the FastAPI lifespan via
+``start_scheduler`` / ``stop_scheduler`` — called from ``app.main``.
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+_scheduler: Any | None = None
+
+
+class SchedulerFactory:
+    """Build and return an ``AsyncIOScheduler`` instance.
+
+    APScheduler is imported lazily so the module can be loaded even
+    when the SDK is not installed — the error surfaces only when
+    ``start_scheduler`` is actually called.
+    """
+
+    @staticmethod
+    def build() -> Any:
+        """Return a scheduler configured from settings.
+
+        Returns:
+            A new ``AsyncIOScheduler`` with job store + timezone.
+
+        Raises:
+            ImportError: If ``apscheduler`` is not installed.
+        """
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+        jobstore_url = getattr(settings, "SCHEDULER_JOBSTORE_URL", "") or ""
+        jobstores: dict[str, Any] = {}
+        if jobstore_url.startswith("redis://"):
+            try:
+                from apscheduler.jobstores.redis import RedisJobStore
+                jobstores["default"] = RedisJobStore(
+                    jobs_key="apscheduler.jobs",
+                    run_times_key="apscheduler.run_times",
+                    host="localhost",
+                )
+            except ImportError:
+                logger.warning(
+                    "apscheduler redis jobstore unavailable; falling back to memory"
+                )
+        timezone = getattr(settings, "SCHEDULER_TIMEZONE", "UTC")
+        return AsyncIOScheduler(jobstores=jobstores or None, timezone=timezone)
+
+
+def get_scheduler() -> Any:
+    """Return the shared scheduler singleton, building it on first call."""
+    global _scheduler
+    if _scheduler is None:
+        _scheduler = SchedulerFactory.build()
+    return _scheduler
+
+
+async def start_scheduler() -> None:
+    """Start the scheduler and register declared cron jobs.
+
+    If ``apscheduler`` is not installed OR ``SCHEDULER_ENABLED`` is
+    false, this is a silent no-op — the application keeps booting.
+    """
+    if not getattr(settings, "SCHEDULER_ENABLED", True):
+        logger.info("scheduler.disabled")
+        return
+    try:
+        sched = get_scheduler()
+    except ImportError:
+        logger.warning("scheduler.apscheduler_not_installed")
+        return
+    from app.workers.cron_jobs import register_jobs
+    register_jobs(sched)
+    sched.start()
+    logger.info("scheduler.started", extra={"jobs": len(sched.get_jobs())})
+
+
+async def stop_scheduler() -> None:
+    """Shut down the scheduler if running."""
+    global _scheduler
+    if _scheduler is not None and getattr(_scheduler, "running", False):
+        _scheduler.shutdown(wait=False)
+        logger.info("scheduler.stopped")
+    _scheduler = None

@@ -1,0 +1,98 @@
+"""Celery task registry.
+
+Tasks are discovered automatically by the Celery worker via
+``autodiscover_tasks(["app.workers.celery_tasks"])``.
+
+To add a new task:
+
+1. Define a function decorated with ``@celery_app.task``.
+2. The worker picks it up on the next restart.
+
+Celery is imported lazily at the top of this module so that running
+the FastAPI server without celery installed does not cause an
+``ImportError``.
+"""
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Lazy Celery import — app boots without celery installed
+# ---------------------------------------------------------------------------
+try:
+    from app.workers.celery_app import celery_app  # noqa: PLC0415
+    _CELERY_AVAILABLE = True
+except Exception:  # noqa: BLE001
+    celery_app = None  # type: ignore[assignment]
+    _CELERY_AVAILABLE = False
+
+
+def _task(func: Any) -> Any:
+    """Decorator that applies ``@celery_app.task`` when celery is available.
+
+    Falls back to a no-op wrapper when celery is absent so the module
+    can be imported in test environments without a running broker.
+
+    Args:
+        func: The task function to decorate.
+
+    Returns:
+        The decorated (or unchanged) function.
+    """
+    if _CELERY_AVAILABLE and celery_app is not None:
+        return celery_app.task(bind=False)(func)
+    return func
+
+
+@_task
+def cleanup_expired() -> dict[str, Any]:
+    """Scheduled task: purge expired records and tokens.
+
+    Designed to run periodically via the beat schedule (e.g. nightly).
+    Replace the stub body with real cleanup logic (soft-deleted row
+    purge, expired session sweep, stale file removal, etc.).
+
+    Returns:
+        Dict with ``status`` and ``cleaned`` count.
+    """
+    logger.info("cleanup_expired: starting sweep")
+    # Stub: replace with real cleanup logic in production.
+    return {"status": "ok", "cleaned": 0}
+
+
+@_task
+def send_digest(user_id: str, digest_type: str = "weekly") -> dict[str, Any]:
+    """Scheduled task: send a periodic digest email to a user.
+
+    Args:
+        user_id: UUID string of the target user.
+        digest_type: Digest frequency label (e.g. ``weekly``, ``daily``).
+
+    Returns:
+        Dict with ``status``, ``user_id``, and ``digest_type``.
+    """
+    logger.info(
+        "send_digest: user=%s type=%s",
+        user_id,
+        digest_type,
+    )
+    # Stub: call an email service (SES, Postmark, etc.) here.
+    return {"status": "sent", "user_id": user_id, "digest_type": digest_type}
+
+
+@_task
+def sync_external(source: str = "default") -> dict[str, Any]:
+    """Scheduled task: pull updates from an external data source.
+
+    Args:
+        source: Named data source to sync (e.g. ``"crm"``, ``"erp"``).
+
+    Returns:
+        Dict with ``status``, ``source``, and ``synced`` record count.
+    """
+    logger.info("sync_external: source=%s", source)
+    # Stub: call external API or import pipeline here.
+    return {"status": "ok", "source": source, "synced": 0}

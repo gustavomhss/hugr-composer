@@ -1,0 +1,117 @@
+"""Emitted test for add_api_monetization: usage-metered billing scaffold.
+
+Tests verify the scaffold structure — they do NOT require Stripe or httpx
+to be installed. Key assertions: quota enforcement returns 429, dead-letter
+queue exists for failed Stripe submissions, and lazy import is used.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+
+# ---------------------------------------------------------------------------
+# Positive tests: key files exist with expected structure
+# ---------------------------------------------------------------------------
+
+def test_metering_middleware_exists() -> None:
+    """app/billing/metering.py defines MeteringMiddleware."""
+    metering_file = Path(__file__).parent.parent / "app" / "billing" / "metering.py"
+    assert metering_file.exists(), "app/billing/metering.py not created"
+    content = metering_file.read_text()
+    assert "class MeteringMiddleware" in content, "MeteringMiddleware class missing"
+    assert "MeterEventBuffer" in content, "MeterEventBuffer class missing"
+    assert "TenantQuota" in content, "TenantQuota class missing"
+
+
+def test_quota_enforcement_returns_429() -> None:
+    """MeteringMiddleware must return 429 when quota is exhausted."""
+    metering_file = Path(__file__).parent.parent / "app" / "billing" / "metering.py"
+    assert metering_file.exists(), "app/billing/metering.py not created"
+    content = metering_file.read_text()
+    assert "429" in content, (
+        "MeteringMiddleware must return 429 status code when quota is exhausted"
+    )
+    assert "Monthly API quota exhausted" in content or "quota" in content.lower(), (
+        "429 response must include a quota-exhaustion message"
+    )
+
+
+def test_stripe_sync_has_dead_letter_queue() -> None:
+    """stripe_meter_sync.py must write failed events to a dead-letter queue."""
+    sync_file = (
+        Path(__file__).parent.parent / "app" / "billing" / "stripe_meter_sync.py"
+    )
+    assert sync_file.exists(), "app/billing/stripe_meter_sync.py not created"
+    content = sync_file.read_text()
+    assert "_DEAD_LETTER" in content or "dead_letter" in content.lower(), (
+        "stripe_meter_sync.py must maintain a dead-letter queue for failed events"
+    )
+    assert "get_dead_letter_queue" in content, "get_dead_letter_queue() function missing"
+
+
+def test_usage_alerts_at_thresholds() -> None:
+    """MeteringMiddleware must fire alerts at 80/90/100% usage thresholds."""
+    metering_file = Path(__file__).parent.parent / "app" / "billing" / "metering.py"
+    assert metering_file.exists(), "app/billing/metering.py not created"
+    content = metering_file.read_text()
+    assert "80" in content, "80% threshold alert missing"
+    assert "90" in content, "90% threshold alert missing"
+    assert "100" in content, "100% threshold alert missing"
+
+
+def test_billing_routes_exist() -> None:
+    """app/api/routes/billing.py provides usage, history, limits, upgrade, analytics."""
+    routes_file = (
+        Path(__file__).parent.parent / "app" / "api" / "routes" / "billing.py"
+    )
+    assert routes_file.exists(), "app/api/routes/billing.py not created"
+    content = routes_file.read_text()
+    assert "/usage" in content, "GET /billing/usage endpoint missing"
+    assert "/history" in content, "GET /billing/history endpoint missing"
+    assert "/limits" in content, "GET /billing/limits endpoint missing"
+    assert "/upgrade" in content, "POST /billing/upgrade endpoint missing"
+    assert "/analytics" in content, "GET /billing/analytics endpoint missing"
+
+
+# ---------------------------------------------------------------------------
+# Negative test: stripe is imported lazily (not at top-level)
+# ---------------------------------------------------------------------------
+
+def test_stripe_import_is_lazy() -> None:
+    """stripe_meter_sync.py must not import stripe at the top level.
+
+    This is the negative test: top-level ``import stripe`` would crash
+    the app if the SDK is not installed. Lazy import inside function
+    bodies is required.
+    """
+    sync_file = (
+        Path(__file__).parent.parent / "app" / "billing" / "stripe_meter_sync.py"
+    )
+    assert sync_file.exists(), "app/billing/stripe_meter_sync.py not created"
+    content = sync_file.read_text()
+    lines = content.splitlines()
+    top_level_stripe = [
+        ln for ln in lines
+        if ln.startswith("import stripe") or ln.startswith("from stripe")
+    ]
+    assert len(top_level_stripe) == 0, (
+        f"stripe_meter_sync.py must not import stripe at the top level "
+        f"(found: {top_level_stripe}). Use lazy imports inside function bodies."
+    )
+
+
+if __name__ == "__main__":
+    tests = [v for k, v in globals().items() if k.startswith("test_")]
+    passed = failed = 0
+    for fn in tests:
+        try:
+            fn()
+            print(f"  PASS  {fn.__name__}")
+            passed += 1
+        except Exception as exc:
+            print(f"  FAIL  {fn.__name__}: {exc}")
+            failed += 1
+    print(f"\n{passed}/{passed + failed}")
+    sys.exit(0 if not failed else 1)

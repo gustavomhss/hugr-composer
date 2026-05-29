@@ -1,0 +1,54 @@
+"""Thin glue that wires the TransactionalOutbox primitive into a FastAPI app.
+
+Delegates to the primitive copied under
+`core/venous/events/TransactionalOutbox/` by the `add_outbox_pattern` tool.
+Re-emitted idempotently on subsequent runs. This file contains NO outbox
+semantics — transactional write atomicity (TXN-INV-01), at-least-once
+relay (TXN-INV-03), and per-partition ordering (TXN-INV-04) all live in
+``core.venous.events.TransactionalOutbox``.
+
+The SQLAlchemy model + ARQ dispatcher emitted alongside this glue are the
+production backend; this module exposes a process-level in-memory outbox
+suitable for tests and a background relayer factory that the dispatcher
+worker can consume.
+"""
+
+from __future__ import annotations
+
+import asyncio
+from typing import Any, Callable
+
+from core.venous.events.TransactionalOutbox import (
+    InMemoryTransactionalOutbox,
+    OutboxMessage,
+    TransactionalOutboxInvariantError,
+)
+
+_outbox: InMemoryTransactionalOutbox | None = None
+
+
+def get_outbox(
+    broker_publish_fn: Callable[[OutboxMessage], bool] | None = None,
+) -> InMemoryTransactionalOutbox:
+    """Return the process-global InMemoryTransactionalOutbox (lazy init)."""
+    global _outbox
+    if _outbox is None:
+        _outbox = InMemoryTransactionalOutbox(broker_publish_fn=broker_publish_fn)
+    return _outbox
+
+
+async def relay_loop(interval_s: float = 1.0) -> None:
+    """Background task that drives the primitive's relay on an interval."""
+    outbox = get_outbox()
+    while True:
+        outbox.relay_once()
+        await asyncio.sleep(interval_s)
+
+
+__all__ = [
+    "InMemoryTransactionalOutbox",
+    "OutboxMessage",
+    "TransactionalOutboxInvariantError",
+    "get_outbox",
+    "relay_loop",
+]

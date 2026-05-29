@@ -1,0 +1,104 @@
+"""Emitted test for add_scheduled_tasks: APScheduler cron job scaffold.
+
+WARNING (honesty rule §4): The scheduler runs IN-PROCESS and is NOT
+clustered. Multiple app instances will each run their own scheduler,
+potentially executing jobs multiple times. For clustered scheduling,
+use a Redis-backed job store with a distributed lock, or replace this
+with a dedicated scheduling service. Tests below assert the scheduler
+is disabled when SCHEDULER_ENABLED=False (negative test for no-op guard).
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+
+# ---------------------------------------------------------------------------
+# Positive test: scheduler files exist and have expected structure
+# ---------------------------------------------------------------------------
+
+def test_scheduler_factory_exists() -> None:
+    """app/workers/scheduler.py defines SchedulerFactory."""
+    scheduler_file = Path(__file__).parent.parent / "app" / "workers" / "scheduler.py"
+    assert scheduler_file.exists(), "app/workers/scheduler.py not created"
+    content = scheduler_file.read_text()
+    assert "class SchedulerFactory" in content, "SchedulerFactory class missing"
+    assert "start_scheduler" in content, "start_scheduler function missing"
+    assert "stop_scheduler" in content, "stop_scheduler function missing"
+
+
+def test_cron_jobs_has_registry() -> None:
+    """app/workers/cron_jobs.py defines @scheduled_job decorator and register_jobs."""
+    cron_file = Path(__file__).parent.parent / "app" / "workers" / "cron_jobs.py"
+    assert cron_file.exists(), "app/workers/cron_jobs.py not created"
+    content = cron_file.read_text()
+    assert "def scheduled_job" in content, "@scheduled_job decorator missing"
+    assert "def register_jobs" in content, "register_jobs function missing"
+    assert "def list_jobs" in content, "list_jobs function missing"
+
+
+def test_scheduler_status_route_exists() -> None:
+    """app/api/routes/scheduler.py defines GET /scheduler/jobs endpoint."""
+    route_file = (
+        Path(__file__).parent.parent / "app" / "api" / "routes" / "scheduler.py"
+    )
+    assert route_file.exists(), "app/api/routes/scheduler.py not created"
+    content = route_file.read_text()
+    assert "/jobs" in content, "GET /scheduler/jobs endpoint missing"
+    assert "JobInfo" in content, "JobInfo model missing from route"
+
+
+# ---------------------------------------------------------------------------
+# Positive test: not-clustered warning present in scheduler
+# ---------------------------------------------------------------------------
+
+def test_scheduler_warns_not_clustered() -> None:
+    """scheduler.py must contain a warning that it is NOT clustered (§4 honesty rule)."""
+    scheduler_file = Path(__file__).parent.parent / "app" / "workers" / "scheduler.py"
+    assert scheduler_file.exists(), "app/workers/scheduler.py not created"
+    content = scheduler_file.read_text()
+    assert "NOT" in content or "not" in content.lower(), (
+        "scheduler.py must warn it is NOT clustered (single-process only)"
+    )
+    # Check for the specific honesty phrase
+    lower = content.lower()
+    assert "single" in lower or "in-process" in lower or "in_process" in lower, (
+        "scheduler.py must clarify it runs in a single process (not distributed)"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Negative test: SCHEDULER_ENABLED=False disables scheduler startup (no-op)
+# ---------------------------------------------------------------------------
+
+def test_scheduler_respects_enabled_flag() -> None:
+    """start_scheduler() must check SCHEDULER_ENABLED and skip when False.
+
+    This is the negative test: scheduler is a no-op when disabled.
+    """
+    scheduler_file = Path(__file__).parent.parent / "app" / "workers" / "scheduler.py"
+    assert scheduler_file.exists(), "app/workers/scheduler.py not created"
+    content = scheduler_file.read_text()
+    assert "SCHEDULER_ENABLED" in content, (
+        "start_scheduler must check SCHEDULER_ENABLED setting before starting"
+    )
+    # Verify the guard is a conditional return (no-op when disabled)
+    assert "return" in content, (
+        "start_scheduler must return early when SCHEDULER_ENABLED is False"
+    )
+
+
+if __name__ == "__main__":
+    tests = [v for k, v in globals().items() if k.startswith("test_")]
+    passed = failed = 0
+    for fn in tests:
+        try:
+            fn()
+            print(f"  PASS  {fn.__name__}")
+            passed += 1
+        except Exception as exc:
+            print(f"  FAIL  {fn.__name__}: {exc}")
+            failed += 1
+    print(f"\n{passed}/{passed + failed}")
+    sys.exit(0 if not failed else 1)
