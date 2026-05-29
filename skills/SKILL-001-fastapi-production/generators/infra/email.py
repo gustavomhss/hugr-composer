@@ -3,17 +3,20 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_deployment_generate_email',
-    'description': 'Generate email utilities: SMTP sender, password reset email, welcome email with HTML templates.',
-    'tags': ['generator', 'infra'],
-    'entry': 'generate_email_utils',
+    "name": "fastapi_deployment_generate_email",
+    "description": "Generate email utilities: SMTP sender, password reset email, welcome email with HTML templates.",
+    "tags": ["generator", "infra"],
+    "entry": "generate_email_utils",
 }
 
 import textwrap
 from pathlib import Path
 
 
-def generate_email_utils(output_dir: str) -> dict:
+def generate_email_utils(
+    output_dir: str,
+    password_reset_expiry_minutes: int | None = None,
+) -> dict:
     """Generate ``utils/email.py`` with SMTP email sending and HTML templates.
 
     Provides:
@@ -29,10 +32,21 @@ def generate_email_utils(output_dir: str) -> dict:
 
     Args:
         output_dir: Project root.  File is written to ``utils/email.py``.
+        password_reset_expiry_minutes: Lifetime advertised in the
+            password-reset email template. Defaults to the shared
+            ``generators.auth.jwt.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES``
+            constant so the email copy and the actual token TTL stay in
+            lockstep (Codex 3 F-014).
 
     Returns:
         Dict with ``files_created`` and ``notes``.
     """
+    # Lazy import to avoid cycle at module load + to honour the shared
+    # default the orchestrator already wires through to ``generate_jwt``.
+    from generators.auth.jwt import PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
+
+    if password_reset_expiry_minutes is None:
+        password_reset_expiry_minutes = PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
     out = Path(output_dir) / "utils"
     out.mkdir(parents=True, exist_ok=True)
 
@@ -184,7 +198,7 @@ def generate_email_utils(output_dir: str) -> dict:
                 <p style="text-align: center;">
                     <a href="{reset_url}" class="button">Reset Password</a>
                 </p>
-                <p>If you did not request a password reset, please ignore this email. The link will expire in 30 minutes.</p>
+                <p>If you did not request a password reset, please ignore this email. The link will expire in __RESET_EXPIRY_MINUTES__ minutes.</p>
                 <p style="font-size: 12px; color: #666;">
                     If the button does not work, copy and paste this URL into your browser:<br>
                     <code>{reset_url}</code>
@@ -223,6 +237,15 @@ def generate_email_utils(output_dir: str) -> dict:
         </html>"""
     ''')
 
+    # F-014: stamp the canonical password-reset TTL into the email
+    # template AFTER the textwrap.dedent so we don't have to escape the
+    # template's own ``{project_name}``/``{reset_url}`` str.format
+    # placeholders.
+    content = content.replace(
+        "__RESET_EXPIRY_MINUTES__",
+        str(password_reset_expiry_minutes),
+    )
+
     email_path = out / "email.py"
     email_path.write_text(content)
 
@@ -231,6 +254,8 @@ def generate_email_utils(output_dir: str) -> dict:
         "Generated utils/email.py with SMTP email sending (TLS + SSL support).",
         "Includes send_password_reset_email() and send_new_account_email() with inline HTML templates.",
         "No-op when SMTP is not configured (settings.emails_enabled = False).",
+        f"Password-reset email advertises a {password_reset_expiry_minutes}-min "
+        "expiry — matches generators.auth.jwt.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES (F-014).",
     ]
 
     return {"files_created": files, "notes": notes}

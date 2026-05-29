@@ -801,6 +801,9 @@ def generate_project(
                 models=models,
                 owner_models=owner_models,
                 with_auth=with_auth,
+                # F-005 + F-007: pass shared_models through so emitted
+                # tests pick the right BOLA story (403 vs open access).
+                shared_models=shared_models_set or None,
             ),
         )
 

@@ -5,11 +5,23 @@ from __future__ import annotations
 import textwrap
 from pathlib import Path
 
+# ---------------------------------------------------------------------------
+# F-014 (Codex 3): single source of truth for the password-reset TTL.
+# The previous scaffold disagreed with itself — the token TTL was 60
+# minutes (jwt.py) while the user-facing email template told users the
+# link expires in 30 minutes. The constant below is shared by:
+#   - generators/auth/jwt.py  → the actual token expiry
+#   - generators/infra/email.py → the user-facing copy
+# Bump this here and both surfaces update together.
+# ---------------------------------------------------------------------------
+PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 60
+
 
 def generate_jwt(
     output_dir: str,
     access_expiry_minutes: int = 30,
     algorithm: str = "HS256",
+    password_reset_expiry_minutes: int = PASSWORD_RESET_TOKEN_EXPIRE_MINUTES,
 ) -> dict:
     """Generate core/jwt.py with JWT helpers using PyJWT.
 
@@ -17,6 +29,11 @@ def generate_jwt(
         output_dir: Directory where core/jwt.py will be written.
         access_expiry_minutes: Default access-token lifetime in minutes.
         algorithm: JWT signing algorithm (HS256, HS384, HS512).
+        password_reset_expiry_minutes: Lifetime of password-reset tokens
+            in minutes. Defaults to the project constant
+            ``PASSWORD_RESET_TOKEN_EXPIRE_MINUTES``; the same constant
+            is used by ``generators.infra.email`` so the JWT TTL and the
+            user-visible email copy can never drift (Codex 3 F-014).
 
     Returns:
         Dict with files_created and notes.
@@ -39,6 +56,9 @@ def generate_jwt(
 
         ALGORITHM = "{algorithm}"
         ACCESS_TOKEN_EXPIRE_MINUTES = {access_expiry_minutes}
+        # F-014: kept in lockstep with the email template via the
+        # generator-side PASSWORD_RESET_TOKEN_EXPIRE_MINUTES constant.
+        PASSWORD_RESET_TOKEN_EXPIRE_MINUTES = {password_reset_expiry_minutes}
 
 
         def create_access_token(
@@ -94,12 +114,14 @@ def generate_jwt(
                 email: User email embedded in the token.
 
             Returns:
-                Encoded JWT string (expires in 1 hour).
+                Encoded JWT string. Lifetime =
+                ``PASSWORD_RESET_TOKEN_EXPIRE_MINUTES`` (kept in sync
+                with the user-facing email template — Codex 3 F-014).
             """
             now = datetime.now(timezone.utc)
             payload = {{
                 "sub": email,
-                "exp": now + timedelta(hours=1),
+                "exp": now + timedelta(minutes=PASSWORD_RESET_TOKEN_EXPIRE_MINUTES),
                 "iat": now,
                 "type": "password_reset",
             }}

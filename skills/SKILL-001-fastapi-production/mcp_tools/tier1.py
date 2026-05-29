@@ -421,6 +421,11 @@ MCP_TOOL_SCAFFOLD = {
         "project: DB engine, alembic, auth (optional), middleware stack, "
         "CRUD routes, observability, Docker, tests. The opinionated default "
         "is profile='full'; pass profile='minimal' for a bare starter. "
+        "BOLA opt-out: pass `shared_models` (iterable of model names also "
+        "listed in `owner_models`) to suppress the per-object ownership "
+        "guard for catalogue / lookup tables that track who created a row "
+        "but are not user-private; each opt-out is captured in an audit "
+        "test file the reviewer can grep for ('test_bola_shared_models'). "
         "After this call, use fastapi_<domain>_add_* tools to bolt on "
         "spec-specific capabilities (webhooks, rate limiting, RBAC, etc). "
         "This wraps generators.orchestrator.generate_project with "
@@ -437,6 +442,7 @@ def fastapi_meta_scaffold(
     name: str = "app",
     models: dict[str, dict[str, str]] | None = None,
     owner_models: dict[str, str] | None = None,
+    shared_models: list[str] | set[str] | None = None,
     *,
     profile: str = "full",
     with_auth: bool | None = None,
@@ -457,6 +463,10 @@ def fastapi_meta_scaffold(
         kwargs["models"] = models
     if owner_models is not None:
         kwargs["owner_models"] = owner_models
+    if shared_models is not None:
+        # Normalise to set — generate_project accepts any iterable and
+        # rejects names that are not in owner_models (caller-typo guard).
+        kwargs["shared_models"] = set(shared_models)
     if with_auth is not None:
         kwargs["with_auth"] = with_auth
     try:
