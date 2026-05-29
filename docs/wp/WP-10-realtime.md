@@ -126,7 +126,7 @@ $PY -m pytest adapt/extend/realtime/test_add_{sse,webhook_receiver,webhook_sende
 $PY tests/test_boot.py | grep -E 'add_sse|add_webhook_receiver|add_webhook_sender|add_websocket_chat|add_websocket_presence'
 # Mandatory gate 4 — boot chains (run ALONE — contention-sensitive)
 $PY tests/test_boot_chains.py
-# Mandatory gate 5 — contract audit (37/37)
+# Mandatory gate 5 — contract audit (40/40)
 $PY -m engine.audit.contract_check
 ```
 
@@ -175,7 +175,7 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
    - *STOP-and-report rule:* before any extraction, dump the source's interpolation style for the tool; if it does not match F1 golden's template syntax, **stop and report** — joint amendment with WP-F1 needed.
 
 2. **F-02. `MCP_TOOL` metadata lost in module split.**
-   - *Symptom:* `engine.audit.contract_check` drops from 37/37 → 36/37 for the migrated tool.
+   - *Symptom:* `engine.audit.contract_check` drops from 40/40 → 36/37 for the migrated tool.
    - *Cause:* `MCP_TOOL = {...}` constant lived at module top in the flat `.py` and was not copied into the new `__init__.py`.
    - *STOP-and-report rule:* after every per-tool migration, run `python -c "from adapt.extend.realtime import add_<tool>; assert add_<tool>.MCP_TOOL"` — fail = stop and report.
 
@@ -231,7 +231,7 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
 - [ ] **D-08.** §6 gate 2 (pytest per tool) green for all 5 tools.
 - [ ] **D-09.** §6 gate 3 (boot smoke `tests/test_boot.py | grep`) returns a PASS line per tool name; no import-time async side effects (F-07 cleared).
 - [ ] **D-10.** §6 gate 4 (`tests/test_boot_chains.py`) green, run ALONE.
-- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 37/37.
+- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 40/40.
 - [ ] **D-12.** `git diff --name-only main..HEAD` lists only paths inside §1 write surface (no sibling WP surface touched).
 - [ ] **D-13.** Idempotency check passes per tool (second run = `no_op`).
 - [ ] **D-14.** Websocket / SSE emitted tests confirmed deterministic (no `time.sleep`, no `@flaky`); F-08 cleared.

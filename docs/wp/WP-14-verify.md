@@ -154,7 +154,7 @@ $PY -m pytest adapt/verify/test_{api_spec_compliance,dependency_audit,detect_n_p
 $PY tests/test_boot.py | grep -E 'api_spec_compliance|dependency_audit|detect_n_plus_one|performance_baseline|schema_coverage|security_scan'
 # Mandatory gate 4 — boot chains (run ALONE — contention-sensitive)
 $PY tests/test_boot_chains.py
-# Mandatory gate 5 — contract audit (37/37)
+# Mandatory gate 5 — contract audit (40/40)
 $PY -m engine.audit.contract_check
 ```
 
@@ -203,7 +203,7 @@ Measurements taken on `main` at branch creation (HEAD `bd634a5`); LOC = `wc -l`;
    - *STOP-and-report rule:* before extraction, dump source's interpolation style. `_base.render` is strict-substitute — a missing key raises `KeyError`. Mismatch = stop and report.
 
 2. **F-02. `MCP_TOOL` metadata lost in module split.**
-   - *Symptom:* `engine.audit.contract_check` drops from 37/37 → 36/37.
+   - *Symptom:* `engine.audit.contract_check` drops from 40/40 → 36/37.
    - *Cause:* `MCP_TOOL = {...}` constant not copied into new `__init__.py`.
    - *STOP-and-report rule:* per-tool sanity import check: `python -c "from adapt.verify import <tool>; assert <tool>.MCP_TOOL"` — fail = stop and report.
 
@@ -254,7 +254,7 @@ Measurements taken on `main` at branch creation (HEAD `bd634a5`); LOC = `wc -l`;
 - [ ] **D-08.** §6 gate 2 (pytest per tool) green for all 6 tools.
 - [ ] **D-09.** §6 gate 3 (boot smoke `tests/test_boot.py | grep`) returns a PASS line per tool name.
 - [ ] **D-10.** §6 gate 4 (`tests/test_boot_chains.py`) green, run ALONE.
-- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 37/37.
+- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 40/40.
 - [ ] **D-12.** `git diff --name-only main..HEAD` lists only paths inside §1 write surface (no forbidden surface touched).
 - [ ] **D-13.** Idempotency check passes per tool (second run = `no_op`, emitted `scripts/<check>.py` mtime unchanged).
 - [ ] **D-14.** Read-only invariant verified per tool: post-compose `git status` on a fixture project shows changes ONLY in `scripts/`, `tests/`, `.github/workflows/`, and root config files. Any product-code (`app/`, `models/`, `routes/`, `schemas/`) modification = WP rejected per F-05.
@@ -291,10 +291,10 @@ WP-03 and WP-13 mandate per-tool byte-equivalence because a drift in security mi
 PY=.venv/bin/python
 # 1. Compose on main (pre-migration) into /tmp/pre/<tool>
 git checkout main -- skills/SKILL-001-fastapi-production/adapt/verify/<tool>.py
-$PY -m engine.compose --tool <tool> --project /tmp/pre/<tool>
+$PY -c "from tests.common.fixture_factory import create_fixture_project; create_fixture_project("/tmp/pre/<tool>")"  # baseline scaffold
 # 2. Compose the migrated tool into /tmp/post/<tool>
 git checkout HEAD -- skills/SKILL-001-fastapi-production/adapt/verify/<tool>
-$PY -m engine.compose --tool <tool> --project /tmp/post/<tool>
+$PY -c "from tests.common.fixture_factory import create_fixture_project; from adapt.contracts import ToolInput; from adapt.${BUCKET}.<tool> import <tool> as _t; p = create_fixture_project("/tmp/post/<tool>"); _t(ToolInput(project_dir=str(p)))"  # apply tool
 # 3. Diff. Allowed drift in scripts/<check>.py body: comment/whitespace only.
 #    Diff in .github/workflows/*.yml, threshold constants, allowlist files = STOP.
 diff -ruN /tmp/pre/<tool> /tmp/post/<tool> | grep -vE '^[+-]\s*(#|$)' | tee /tmp/diff_<tool>.txt

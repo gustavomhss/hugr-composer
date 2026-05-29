@@ -34,6 +34,12 @@
 | **Isolation** | dedicated git worktree |
 | **Model** | `opus` — data-integrity primitives carry highest blast radius alongside authz; P1 #14 + P1 #15 folded into this WP require subtle judgement on UoW deletion + emitted-test honesty |
 
+> **Phase 4 split note (2026-05-29).** WP-07 estimates ~37 h / 7 011 LOC across 9 tools — too heavy for a single agent session. Execute as **3 sub-WPs**:
+> - **WP-07a crud-data-light (3 tools)** — `add_audit_log` + `add_event_sourcing` + `add_soft_delete`. Includes folded P1 #14 (`add_soft_delete` patches CRUDBase.delete + drops orphan UoW). Smallest tools + the architectural P1 fold. ~10-11 h.
+> - **WP-07b crud-data-heavy-1 (3 tools)** — `add_bulk_operations` + `add_data_export` + `add_data_import`. ~15 h.
+> - **WP-07c crud-data-heavy-2 (3 tools)** — `add_data_versioning` + `add_file_upload` + `add_search`. Includes F-08 raw-SQL preservation for `add_search`. ~15 h.
+> P1 #14 status: already shipped via PR #36 (`fix(p1#14): soft_delete patches CRUDBase + drops orphan UoW`). WP-07a's `add_soft_delete` migration is structural-only — the patch is in main. P1 #15 (emitted tests honest, ≥1 pos + ≥1 neg per tool) folds into each sub-WP for the 3 tools it owns. Sub-WP ids: `WP-07a`, `WP-07b`, `WP-07c`. Branches: `wp/07a-crud-light`, `wp/07b-crud-heavy-1`, `wp/07c-crud-heavy-2`.
+
 ## 1. Context bundle (the ONLY context the agent gets)
 The agent must operate with exactly this set — nothing wider.
 
@@ -164,7 +170,7 @@ $PY -m pytest adapt/extend/crud_data/test_add_{audit_log,bulk_operations,data_ex
 $PY tests/test_boot.py | grep -E 'add_audit_log|add_bulk_operations|add_data_export|add_data_import|add_data_versioning|add_event_sourcing|add_file_upload|add_search|add_soft_delete'
 # Mandatory gate 4 — boot chains (run ALONE — contention-sensitive)
 $PY tests/test_boot_chains.py
-# Mandatory gate 5 — contract audit (37/37)
+# Mandatory gate 5 — contract audit (40/40)
 $PY -m engine.audit.contract_check
 ```
 
@@ -217,7 +223,7 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
    - *STOP-and-report rule:* before extraction, dump source's interpolation style; mismatch with F1 golden = stop and report.
 
 2. **F-02. `MCP_TOOL` metadata lost in module split.**
-   - *Symptom:* `engine.audit.contract_check` drops from 37/37 → 36/37.
+   - *Symptom:* `engine.audit.contract_check` drops from 40/40 → 36/37.
    - *Cause:* `MCP_TOOL = {...}` not copied into the new `__init__.py`.
    - *STOP-and-report rule:* per-tool sanity import check (`python -c "from adapt.extend.crud_data import add_<tool>; assert add_<tool>.MCP_TOOL"`); fail = stop and report.
 
@@ -273,7 +279,7 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
 - [ ] **D-08.** §6 gate 2 (pytest per tool) green for all 9 tools.
 - [ ] **D-09.** §6 gate 3 (boot smoke) returns a PASS line per tool name.
 - [ ] **D-10.** §6 gate 4 (`tests/test_boot_chains.py`) green, run ALONE.
-- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 37/37.
+- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 40/40.
 - [ ] **D-12.** `git diff --name-only main..HEAD` lists only paths inside §1 write surface.
 - [ ] **D-13.** Idempotency check passes per tool (second run = `no_op`).
 - [ ] **D-14.** **P1 #14 verified.** `add_soft_delete` patches `app/crud/base.py` `CRUDBase.delete`, emits NO `app/soft_delete.py`, and emitted test asserts `CRUDBase.delete` sets `deleted_at` instead of issuing SQL DELETE. Diff pasted in PR.

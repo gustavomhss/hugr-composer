@@ -62,7 +62,7 @@ $PY -m pytest <owned test paths> -q -p no:cacheprovider -n auto
 $PY tests/property_tests.py            # 8/8 × N
 $PY tests/test_p0_regression_gates.py  # GATE 1 + GATE 2 PASS
 $PY tests/test_boot_chains.py          # 5/5 (run ALONE — contention-sensitive)
-$PY -m engine.audit.contract_check     # 37/37
+$PY -m engine.audit.contract_check     # 40/40
 ```
 A WP that changes a contract-changing tool MUST also show the EMITTED project's
 `pytest tests/` green after composing it (GATE 1 covers this class).

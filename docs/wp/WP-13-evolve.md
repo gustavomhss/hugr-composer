@@ -165,7 +165,7 @@ $PY -m pytest adapt/evolve/test_{add_event_driven,add_i18n,add_migration_data,ex
 $PY tests/test_boot.py | grep -E 'add_event_driven|add_i18n|add_migration_data|extract_service|generate_admin_panel|generate_docs|generate_sdk|refactor_model'
 # Mandatory gate 4 — boot chains (run ALONE — contention-sensitive)
 $PY tests/test_boot_chains.py
-# Mandatory gate 5 — contract audit (37/37)
+# Mandatory gate 5 — contract audit (40/40)
 $PY -m engine.audit.contract_check
 ```
 
@@ -216,7 +216,7 @@ Measurements taken on `main` at branch creation (HEAD `bd634a5`); LOC = `wc -l`;
    - *STOP-and-report rule:* before any extraction, dump the source's interpolation style for the tool. `_base.render` is strict-substitute (`.substitute`, not `.safe_substitute`) — a missing key raises `KeyError`. If a triple-quoted block uses any mechanism other than literal `$name`, **stop and report**.
 
 2. **F-02. `MCP_TOOL` metadata lost in module split.**
-   - *Symptom:* `engine.audit.contract_check` drops from 37/37 → 36/37 for the migrated tool.
+   - *Symptom:* `engine.audit.contract_check` drops from 40/40 → 36/37 for the migrated tool.
    - *Cause:* `MCP_TOOL = {...}` constant lived at module top in the flat `.py` and was not copied into the new `__init__.py`.
    - *STOP-and-report rule:* after every per-tool migration, run `python -c "from adapt.evolve import <tool>; assert <tool>.MCP_TOOL"` — fail = stop and report.
 
@@ -277,7 +277,7 @@ Measurements taken on `main` at branch creation (HEAD `bd634a5`); LOC = `wc -l`;
 - [ ] **D-08.** §6 gate 2 (pytest per tool) green for all 8 tools.
 - [ ] **D-09.** §6 gate 3 (boot smoke `tests/test_boot.py | grep`) returns a PASS line per tool name.
 - [ ] **D-10.** §6 gate 4 (`tests/test_boot_chains.py`) green, run ALONE.
-- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 37/37.
+- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 40/40.
 - [ ] **D-12.** `git diff --name-only main..HEAD` lists only paths inside §1 write surface (no forbidden surface touched).
 - [ ] **D-13.** Idempotency check passes per tool (second run = `no_op`); for `add_migration_data` second run does NOT produce a duplicate alembic revision file.
 - [ ] **D-14.** §11 byte-equivalence diff gate PASS for all 8 tools, diff output pasted in PR.
@@ -304,10 +304,10 @@ Measurements taken on `main` at branch creation (HEAD `bd634a5`); LOC = `wc -l`;
 # 1. Compose the tool against a fixed test project on main (pre-migration) → capture emitted files.
 PY=.venv/bin/python
 git checkout main -- skills/SKILL-001-fastapi-production/adapt/evolve/<tool>.py
-$PY -m engine.compose --tool <tool> --project /tmp/pre/<tool>
+$PY -c "from tests.common.fixture_factory import create_fixture_project; create_fixture_project("/tmp/pre/<tool>")"  # baseline scaffold
 # 2. Compose the migrated tool against the same fixed test project.
 git checkout HEAD -- skills/SKILL-001-fastapi-production/adapt/evolve/<tool>
-$PY -m engine.compose --tool <tool> --project /tmp/post/<tool>
+$PY -c "from tests.common.fixture_factory import create_fixture_project; from adapt.contracts import ToolInput; from adapt.${BUCKET}.<tool> import <tool> as _t; p = create_fixture_project("/tmp/post/<tool>"); _t(ToolInput(project_dir=str(p)))"  # apply tool
 # 3. Diff. Allowed drift: comment/whitespace only. Anything else = STOP and report.
 diff -ruN /tmp/pre/<tool> /tmp/post/<tool> | grep -vE '^[+-]\s*(#|$)' | tee /tmp/diff_<tool>.txt
 test ! -s /tmp/diff_<tool>.txt   # PASS = empty after comment/whitespace strip
@@ -318,7 +318,7 @@ Paste each tool's diff-gate result in §7. If the diff-gate is non-empty for non
 **Migration-specific extra gate (only `add_migration_data`).** After §11 byte-equivalence passes, also verify the emitted alembic revision applies and reverts cleanly on an in-memory SQLite:
 
 ```bash
-$PY -m engine.compose --tool add_migration_data --project /tmp/post/add_migration_data
+$PY -c "from tests.common.fixture_factory import create_fixture_project; from adapt.contracts import ToolInput; from adapt.evolve.add_migration_data import add_migration_data as _t; p = create_fixture_project("/tmp/post/add_migration_data"); _t(ToolInput(project_dir=str(p)))"
 cd /tmp/post/add_migration_data && PYTHONPATH=. .venv/bin/python -m alembic upgrade head
 # Confirm downgrade() honesty: either reverses backfill OR `warnings` flags it as advisory-only.
 .venv/bin/python -m alembic downgrade -1

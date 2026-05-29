@@ -149,7 +149,7 @@ $PY -m pytest adapt/extend/infrastructure/test_add_{cache_layer,docker_productio
 $PY tests/test_boot.py | grep -E 'add_cache_layer|add_docker_production|add_kubernetes_manifests|add_s3_storage|add_excel_export|add_pdf_reports|add_sqladmin|add_email_templates|add_transactional_email'
 # Mandatory gate 4 — boot chains (run ALONE — contention-sensitive)
 $PY tests/test_boot_chains.py
-# Mandatory gate 5 — contract audit (37/37)
+# Mandatory gate 5 — contract audit (40/40)
 $PY -m engine.audit.contract_check
 ```
 
@@ -201,7 +201,7 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
    - *STOP-and-report rule:* before any extraction, dump the source's interpolation style for the tool; if it does not match F1 golden's template syntax, **stop and report** — joint amendment with WP-F1 needed.
 
 2. **F-02. `MCP_TOOL` metadata lost in module split.**
-   - *Symptom:* `engine.audit.contract_check` drops from 37/37 → 36/37 for the migrated tool.
+   - *Symptom:* `engine.audit.contract_check` drops from 40/40 → 36/37 for the migrated tool.
    - *Cause:* `MCP_TOOL = {...}` constant lived at module top in the flat `.py` and was not copied into the new `__init__.py`.
    - *STOP-and-report rule:* after every per-tool migration, run `python -c "from adapt.extend.infrastructure import add_<tool>; assert add_<tool>.MCP_TOOL"` — fail = stop and report.
 
@@ -262,7 +262,7 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
 - [ ] **D-08.** §6 gate 2 (pytest per tool) green for all 9 tools.
 - [ ] **D-09.** §6 gate 3 (boot smoke `tests/test_boot.py | grep`) returns a PASS line per tool name.
 - [ ] **D-10.** §6 gate 4 (`tests/test_boot_chains.py`) green, run ALONE.
-- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 37/37.
+- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 40/40.
 - [ ] **D-12.** `git diff --name-only main..HEAD` lists only paths inside §1 write surface (no forbidden surface touched).
 - [ ] **D-13.** Idempotency check passes per tool (second run = `no_op`).
 - [ ] **D-14.** `add_docker_production` / `add_kubernetes_manifests` / `add_email_templates` mixed-language templates successfully extracted (F-07 + F-09 cleared) OR explicit stop-and-report posted.

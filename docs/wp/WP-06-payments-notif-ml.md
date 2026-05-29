@@ -23,11 +23,17 @@
 | **WP id** | `WP-06-payments-notif-ml` |
 | **Title** | Migrate 8 payments / notifications / ML-serving tools to per-tool directory + externalized templates |
 | **Wave** | `1` |
-| **Depends on** | `WP-F0-staging-rename` (PR #24, merged) · `WP-F1-base-and-golden` (in flight — `adapt/_base/` + golden `add_cursor_pagination/`) |
+| **Depends on** | `WP-F0-staging-rename` (PR #24, merged) · `WP-F1-base-and-golden` (PR #28, merged — `adapt/_base/` + golden `add_cursor_pagination/`) |
 | **Blocks** | none (sibling WPs are file-disjoint) |
-| **Branch** | `wp/06-payments-notif-ml` (off the post-dependency main, i.e. main with WP-F0 + WP-F1 merged) |
+| **Branch** | `wp/06-payments-notif-ml` (off main; main carries WP-F0 + WP-F1) |
 | **Isolation** | dedicated git worktree |
 | **Model** | `opus` — Stripe + ML serving primitives carry the highest behavior-change blast radius; webhook-signature handling and weight-loading safety are subtle; byte-equivalence diff gate applies (§11) |
+
+> **Phase 4 split note (2026-05-29).** WP-06 estimates ~38 h / 9 066 LOC across 8 tools — too heavy for a single agent session per the SOTA v2.1 STOP-and-report doctrine. Execute as **3 sub-WPs**, each shipping as its own PR with full §10 paste-proof:
+> - **WP-06a stripe (3 tools)** — Stripe-touching primitives only. Highest webhook-signature blast radius; isolated to keep the §11 diff reviewable.
+> - **WP-06b ml-serving (3 tools)** — ML weight-loading safety (`add_ml_model_registry`, `add_ml_serving`, `add_ml_drift_detector` or equivalents). Held to the §11 mitigation 2 (lazy SDK imports) hard.
+> - **WP-06c notifications (2 tools)** — remaining notification primitives.
+> Each sub-WP picks a slice of the §1 owned files below + carries the full §11 byte-equivalence diff for its 2-3 tools. The §4 invariants and §6 mandatory gates apply per sub-WP. Sub-WP ids: `WP-06a`, `WP-06b`, `WP-06c`. Branches: `wp/06a-stripe`, `wp/06b-ml-serving`, `wp/06c-notifications`. Re-use the existing manifest; only the file-list in §1 narrows.
 
 ## 1. Context bundle (the ONLY context the agent gets)
 The agent must operate with exactly this set — nothing wider.
@@ -156,7 +162,7 @@ $PY -m pytest adapt/extend/infrastructure/test_add_{notifications,push_notificat
 $PY tests/test_boot.py | grep -E 'add_notifications|add_push_notifications_native|add_stripe_checkout|add_stripe_refund_flow|add_stripe_subscription|add_ml_gpu_inference|add_ml_model_registry|add_ml_model_server'
 # Mandatory gate 4 — boot chains (run ALONE — contention-sensitive)
 $PY tests/test_boot_chains.py
-# Mandatory gate 5 — contract audit (37/37)
+# Mandatory gate 5 — contract audit (40/40)
 $PY -m engine.audit.contract_check
 ```
 
@@ -212,7 +218,7 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
    - *STOP-and-report rule:* before extraction, dump source's interpolation style; mismatch with F1 golden = stop and report.
 
 2. **F-02. `MCP_TOOL` metadata lost in module split.**
-   - *Symptom:* `engine.audit.contract_check` drops from 37/37 → 36/37.
+   - *Symptom:* `engine.audit.contract_check` drops from 40/40 → 36/37.
    - *Cause:* `MCP_TOOL = {...}` constant not copied into new `__init__.py`.
    - *STOP-and-report rule:* per-tool sanity import check; fail = stop and report.
 
@@ -278,7 +284,7 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
 - [ ] **D-08.** §6 gate 2 (pytest per tool) green for all 8 tools.
 - [ ] **D-09.** §6 gate 3 (boot smoke `tests/test_boot.py | grep`) returns a PASS line per tool name.
 - [ ] **D-10.** §6 gate 4 (`tests/test_boot_chains.py`) green, run ALONE.
-- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 37/37.
+- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 40/40.
 - [ ] **D-12.** `git diff --name-only main..HEAD` lists only paths inside §1 write surface (no forbidden surface touched).
 - [ ] **D-13.** Idempotency check passes per tool (second run = `no_op`).
 - [ ] **D-14.** §11 byte-equivalence diff gate PASS for all 3 Stripe tools, diff output pasted in PR.
@@ -302,10 +308,10 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
 PY=.venv/bin/python
 # 1. Compose the tool against a fixed test project on main (pre-migration).
 git checkout main -- skills/SKILL-001-fastapi-production/adapt/extend/infrastructure/add_<tool>.py
-$PY -m engine.compose --tool add_<tool> --project /tmp/pre/<tool>
+$PY -c "from tests.common.fixture_factory import create_fixture_project; create_fixture_project("/tmp/pre/<tool>")"  # baseline scaffold; tool not yet applied
 # 2. Compose the migrated tool against the same fixed test project.
 git checkout HEAD -- skills/SKILL-001-fastapi-production/adapt/extend/infrastructure/add_<tool>
-$PY -m engine.compose --tool add_<tool> --project /tmp/post/<tool>
+$PY -c "from tests.common.fixture_factory import create_fixture_project; from adapt.contracts import ToolInput; from adapt.extend.${BUCKET}.add_<tool> import add_<tool> as _t; p = create_fixture_project("/tmp/post/<tool>"); _t(ToolInput(project_dir=str(p)))"  # apply the migrated tool
 # 3. Diff. Allowed drift: comment/whitespace only. Anything else = STOP and report.
 diff -ruN /tmp/pre/<tool> /tmp/post/<tool> | grep -vE '^[+-]\s*(#|$)' | tee /tmp/diff_<tool>.txt
 test ! -s /tmp/diff_<tool>.txt   # PASS = empty after comment/whitespace strip

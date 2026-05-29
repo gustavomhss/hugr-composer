@@ -153,7 +153,7 @@ $PY -m pytest adapt/extend/infrastructure/test_add_{canary_tokens,chaos_testing,
 $PY tests/test_boot.py | grep -E 'add_canary_tokens|add_chaos_testing|add_compliance_engine|add_cors_config|add_csrf_protection|add_dlp_shield|add_input_sanitization|add_request_fingerprint|add_secret_rotation'
 # Mandatory gate 4 — boot chains (run ALONE — contention-sensitive)
 $PY tests/test_boot_chains.py
-# Mandatory gate 5 — contract audit (37/37)
+# Mandatory gate 5 — contract audit (40/40)
 $PY -m engine.audit.contract_check
 ```
 
@@ -202,7 +202,7 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
    - *STOP-and-report rule:* before extraction, dump source's interpolation style; mismatch with F1 golden = stop and report.
 
 2. **F-02. `MCP_TOOL` metadata lost in module split.**
-   - *Symptom:* `engine.audit.contract_check` drops from 37/37 → 36/37.
+   - *Symptom:* `engine.audit.contract_check` drops from 40/40 → 36/37.
    - *Cause:* `MCP_TOOL = {...}` constant not copied into new `__init__.py`.
    - *STOP-and-report rule:* per-tool sanity import check; fail = stop and report.
 
@@ -263,7 +263,7 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
 - [ ] **D-08.** §6 gate 2 (pytest per tool) green for all 9 tools.
 - [ ] **D-09.** §6 gate 3 (boot smoke `tests/test_boot.py | grep`) returns a PASS line per tool name.
 - [ ] **D-10.** §6 gate 4 (`tests/test_boot_chains.py`) green, run ALONE.
-- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 37/37.
+- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 40/40.
 - [ ] **D-12.** `git diff --name-only main..HEAD` lists only paths inside §1 write surface (no forbidden surface touched).
 - [ ] **D-13.** Idempotency check passes per tool (second run = `no_op`).
 - [ ] **D-14.** §11 byte-equivalence diff gate PASS for all 9 tools, diff output pasted in PR.
@@ -290,10 +290,10 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
 # 1. Compose the tool against a fixed test project on main (pre-migration) → capture emitted files.
 PY=.venv/bin/python
 git checkout main -- skills/SKILL-001-fastapi-production/adapt/extend/infrastructure/add_<tool>.py
-$PY -m engine.compose --tool add_<tool> --project /tmp/pre/<tool>
+$PY -c "from tests.common.fixture_factory import create_fixture_project; create_fixture_project("/tmp/pre/<tool>")"  # baseline scaffold; tool not yet applied
 # 2. Compose the migrated tool against the same fixed test project.
 git checkout HEAD -- skills/SKILL-001-fastapi-production/adapt/extend/infrastructure/add_<tool>
-$PY -m engine.compose --tool add_<tool> --project /tmp/post/<tool>
+$PY -c "from tests.common.fixture_factory import create_fixture_project; from adapt.contracts import ToolInput; from adapt.extend.${BUCKET}.add_<tool> import add_<tool> as _t; p = create_fixture_project("/tmp/post/<tool>"); _t(ToolInput(project_dir=str(p)))"  # apply the migrated tool
 # 3. Diff. Allowed drift: comment/whitespace only. Anything else = STOP and report.
 diff -ruN /tmp/pre/<tool> /tmp/post/<tool> | grep -vE '^[+-]\s*(#|$)' | tee /tmp/diff_<tool>.txt
 test ! -s /tmp/diff_<tool>.txt   # PASS = empty after comment/whitespace strip

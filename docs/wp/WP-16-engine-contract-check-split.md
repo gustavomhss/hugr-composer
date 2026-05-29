@@ -10,7 +10,7 @@
 > Theme: **cohesion-driven decomposition of `engine/audit/contract_check.py`**
 > (2 325 LOC superfile → ≥4 cohesive modules each ≤500 LOC) while preserving
 > the public surface (`python -m engine.audit.contract_check`,
-> `engine.audit.contract_check:main`) and emitting an identical 37/37 result.
+> `engine.audit.contract_check:main`) and emitting an identical 40/40 result.
 >
 > **Model elevation:** WP-16 runs on `opus`, not `sonnet`, because
 > `contract_check.py` is the audit safety net — the file every other WAVE 1
@@ -83,7 +83,7 @@ Decompose the 2 325-LOC `engine/audit/contract_check.py` into a cohesion-driven 
 1. Preserving `python -m engine.audit.contract_check` as the entrypoint.
 2. Preserving the `RULES` list ORDER verbatim (CONTRACT.md §B0.x → §B4.7 source of truth).
 3. Preserving `engine.audit.contract_check.main()` as the public callable.
-4. Yielding byte-identical pre/post output for `python -m engine.audit.contract_check` (37/37, same per-line text — §11 gate).
+4. Yielding byte-identical pre/post output for `python -m engine.audit.contract_check` (40/40, same per-line text — §11 gate).
 5. Keeping `pytest engine/tests/test_delivery_contract.py` green identically (985 LOC of coverage — the behavior oracle).
 
 ### Before
@@ -120,11 +120,11 @@ nearly an entire module's budget worth of one rule.
 | # | Module path (under `engine/audit/contract_rules/`) | Est. LOC | Rules / responsibilities | Depends on (modules) |
 |---:|---|---:|---|---|
 | 1 | `_common.py` | ~60 | `REPO_ROOT`, `SKILL_ROOT`, `_SEMVER_RE`, `Rule` dataclass, helpers `_exists`, `_grep_count`. The shared base every phase module imports. | stdlib only |
-| 2 | `phase0_identity.py` | ~270 | §B0.1 `_r_product_md`, §B0.2 `_r_roadmap_md`, §B0.3 `_r_contract_md`, §B0.4 `_r_skillmd_honest`, §B0.5 `_r_readme_md` (114 LOC — single largest in phase), §B0.6 `_r_claude_memory`, §B0.7 `_r_benchmark_no_stubs`, §B0.8 `_r_gitignore_artefacts`. **Cohesion:** all eight rules read top-level repo / skill identity docs (`PRODUCT.md`, `ROADMAP.md`, `CONTRACT.md`, `README.md`, `SKILL.md`, `.gitignore`, `~/.claude/projects/`); they share `_exists` and rely on the same INVENTORY-as-source-of-truth surface-count pattern. | `_common` |
+| 2 | `phase0_identity.py` | ~340 | §B0.1 `_r_product_md`, §B0.2 `_r_roadmap_md`, §B0.3 `_r_contract_md`, §B0.4 `_r_skillmd_honest`, §B0.5 `_r_readme_md` (114 LOC — single largest in phase), §B0.6 `_r_claude_memory`, §B0.7 `_r_benchmark_no_stubs`, §B0.8 `_r_gitignore_artefacts`, **§B0.9 `_r_no_legacy_terminology` (post-F2, PR #37 — scans live tree for discontinued legacy terminology against an exemption list)**. **Cohesion:** all nine rules read top-level repo / skill identity docs (`PRODUCT.md`, `ROADMAP.md`, `CONTRACT.md`, `README.md`, `SKILL.md`, `.gitignore`, `~/.claude/projects/`); they share `_exists` and rely on the same INVENTORY-as-source-of-truth surface-count pattern. | `_common` |
 | 3 | `phase1_primitives.py` | ~390 | §B1.0 `_r_core_venous_distribution`, §B1.0.1 `_r_adapter_layer_invariant`, §B1.1 `_r_registry_exists`, §B1.2 `_r_compose_with_coverage`, §B1.3 `_r_tools_import_primitives`, §B1.5 `_r_no_manual_mcp_tool_decorator`, §B1.6 `_r_no_orphan_generators`, §B1.7 `_r_adapter_coverage`, §B1.8 `_r_tier_lite_eligibility` (78 LOC — lazy-imports `engine.promotion.state`). **Cohesion:** every rule reads `core/venous/`, `engine/primitives_by_concern.yaml`, or `engine/index/catalog.json` and asserts a property of the primitive layer (registry sync, framework-purity, sibling-pairing coverage, adapter wiring, orphan-generator detection, lite-tier eligibility). | `_common` (+ lazy `engine.promotion.state`) |
-| 4 | `phase2_catalog.py` | ~215 | §B2.1 `_r_find_primitive_discovery`, §B2.2 `_r_suggest_composition`, §B2.3 `_r_docs_site`, §B2.4 `_r_index_manifest`. **Cohesion:** all four rules subprocess-shell into `engine.{discovery,docs,index}.*` modules, parse the catalog manifest, and exercise an MCP-tool registration smoke. They share the `env_pythonpath = str(SKILL_ROOT)` + subprocess pattern. | `_common` |
+| 4 | `phase2_catalog.py` | ~280 | §B2.1 `_r_find_primitive_discovery`, §B2.2 `_r_suggest_composition`, §B2.3 `_r_docs_site`, §B2.4 `_r_index_manifest`, **§B2.8 `_r_catalog_schema_version` (post-F2, PR #39 — asserts `schema_version == '2.0'` and the v2 hierarchical fields `skills`, `bundles`, `tools_total` are present in `catalog.json`)**. **Cohesion:** all five rules subprocess-shell into `engine.{discovery,docs,index}.*` modules, parse the catalog manifest, and exercise an MCP-tool registration smoke. They share the `env_pythonpath = str(SKILL_ROOT)` + subprocess pattern. | `_common` |
 | 5 | `phase2_skill_md.py` | ~470 | §B2.5 `_r_skill_md_contract` (448 LOC — single largest rule in the file, enforces the 20-rule Anthropic Agent Skills contract: frontmatter shape, SPDX→LICENSE signature match for 19 licenses, body sections, machine-readable YAML, transcript validation, footer version sync). Isolated in its own module because its sheer size + the `_license_signatures` table + `_gnu_sig` factory dominate its budget; co-locating it with other B2 rules pushed `phase2_catalog.py` over the cap. | `_common` |
-| 6 | `phase2_tier1.py` | ~160 | §B2.6 `_r_tier1_surface_truth` (145 LOC). Separate from `phase2_catalog.py` because B2.6 is the only B2 rule that parses `mcp_tools/tier1.py` (runtime-string truth check), uses a different family of regexes (`MCP_TOOL_*` dict literals + workflow lists), and shares no helper with the rest of B2 except `_common`. Splitting B2 into catalog + skill_md + tier1 keeps every module ≤500 LOC and respects the three distinct surfaces B2 rules audit (catalog file, agent entry doc, tier-1 runtime tool surface). | `_common` |
+| 6 | `phase2_tier1.py` | ~220 | §B2.6 `_r_tier1_surface_truth` (145 LOC), **§B2.7 `_r_tier1_surface_inventory` (post-F2, PR #39 — asserts exactly 8 `MCP_TOOL*` dict literals at module top of `mcp_tools/tier1.py`, matching the tier-1 cognition cap from ADR-0003)**. Separate from `phase2_catalog.py` because both B2.6 and B2.7 parse `mcp_tools/tier1.py` (runtime-string truth check + surface inventory), use a different family of regexes (`MCP_TOOL_*` dict literals + workflow lists), and share no helper with the rest of B2 except `_common`. Splitting B2 into catalog + skill_md + tier1 keeps every module ≤500 LOC and respects the three distinct surfaces B2 rules audit (catalog file, agent entry doc, tier-1 runtime tool surface). | `_common` |
 | 7 | `phase3_benchmarks.py` | ~220 | §B3.1 `_r_bench_specs`, §B3.2 + §B3.3 `_r_bench_rubric_runner` (shared callback for two rule IDs — preserved verbatim, see F-02), §B3.4 `_r_bench_nightly_workflow`, §B3.5 `_r_benchmark_score`, §B3.6 `_r_code_level_benchmark`, §B3.7 `_r_blind_benchmark_harness` (lazy-imports `engine.bench.blind.*`). **Cohesion:** all rules read `benchmarks/*.json`, run `engine.bench.*` subprocess smokes, or validate the nightly CI workflow + scorefiles. | `_common` |
 | 8 | `phase4_release.py` | ~400 | §B4.1 `_r_install_docker_ci`, §B4.2 `_r_examples_populated`, §B4.3 `_r_docs_site_v1`, §B4.4 `_r_changelog_semver`, §B4.5 `_r_contributing_md`, §B4.6 `_r_version_sync`, §B4.7 `_r_counts_sync` (223 LOC — single largest in phase, holds the INVENTORY ↔ {CLAUDE/STATUS/ROADMAP/CHANGELOG/SKILL/FREEZE/INTERFACES} reconciliation). **Cohesion:** every rule audits a release-surface doc (README site, install path, examples, CHANGELOG, VERSION triplet, narrative-doc count sync). | `_common` |
 | 9 | `_registry.py` | ~120 | The `RULES: list[Rule] = [...]` registry — imports every `_r_*` callback from the phase modules above and ASSEMBLES them in the exact CONTRACT.md order (B0.1 → B4.7). Also hosts the `main()` CLI (argparse, filter logic, pass/fail loop, exit code). | every `phase*` module + `_common` |
@@ -211,7 +211,7 @@ Topological sort: `_common → phase0..phase4 → _registry → __init__ → fac
 - [ ] **`engine/audit/contract_check.py` ≤ 30 LOC** (facade only) — verified by `wc -l`.
 - [ ] **No new dependencies.** No `pyproject.toml` change. Lazy imports stay lazy.
 - [ ] **`RULES` order preserved.** Pre-split `[r.item for r in RULES]` equals post-split `[r.item for r in RULES]` element-wise. Verified by §6 gate 4.
-- [ ] **37/37 result identical.** `python -m engine.audit.contract_check` exits 0 with the same per-rule pass/fail breakdown (line by line) pre vs post. Verified by §11.
+- [ ] **40/40 result identical.** `python -m engine.audit.contract_check` exits 0 with the same per-rule pass/fail breakdown (line by line) pre vs post. Verified by §11.
 - [ ] **`pytest engine/tests/test_delivery_contract.py` green identically.** 985 LOC of coverage; same number passed pre vs post (§6 gate 5).
 - [ ] **No stale staging-directory references.** The staging tree is `_staging/` (renamed in PR #24); no manifest text, comment, or code path may use the pre-rename name (DoD D10 enforces).
 - [ ] **No silent rule deletion.** `engine.audit.contract_rules._registry.RULES` length == 37; every `B<n>.<m>` item id present pre is present post (§6 gate 4).
@@ -224,7 +224,7 @@ The behavior-preservation oracle for this WP is **NOT** a new emitted-test
 (this is a refactor-WP, not a tool migration — per the WP-scope manifest §D-G
 + I8). The oracle is the EXISTING test suite + the EXISTING audit run:
 
-1. **`engine.audit.contract_check`** itself, run via `python -m engine.audit.contract_check`, must return 37/37 with a byte-identical per-line output pre vs post (§11).
+1. **`engine.audit.contract_check`** itself, run via `python -m engine.audit.contract_check`, must return 40/40 with a byte-identical per-line output pre vs post (§11).
 2. **`engine.tests.test_delivery_contract`** must run green identically pre vs post (`pytest engine/tests/test_delivery_contract.py -q`).
 3. Per-phase filter behavior unchanged: `python -m engine.audit.contract_check --phase 0` returns the same 8/8 subset; `--phase 1` returns 9/9; `--phase 2` returns 6/6; `--phase 3` returns 7/7; `--phase 4` returns 7/7 (totals: 8+9+6+7+7 = 37 ✓).
 4. Per-item filter behavior unchanged: `python -m engine.audit.contract_check --item B2.5` returns 1/1 (the largest single rule).
@@ -261,14 +261,16 @@ $PY -m ruff format --check engine/audit/contract_check.py engine/audit/contract_
 $PY -c "
 from engine.audit.contract_check import main, RULES
 items = [r.item for r in RULES]
-expected = ['B0.1','B0.2','B0.3','B0.4','B0.5','B0.6','B0.7','B0.8',
+# Post-F2 (PR #39): added B0.9 (legacy-terminology audit), B2.7 (tier-1 surface inventory),
+# B2.8 (catalog schema_version=='2.0'). Total = 40.
+expected = ['B0.1','B0.2','B0.3','B0.4','B0.5','B0.6','B0.7','B0.8','B0.9',
             'B1.0','B1.0.1','B1.1','B1.2','B1.3','B1.5','B1.6','B1.7','B1.8',
-            'B2.1','B2.2','B2.3','B2.4','B2.5','B2.6',
+            'B2.1','B2.2','B2.3','B2.4','B2.5','B2.6','B2.7','B2.8',
             'B3.1','B3.2','B3.3','B3.4','B3.5','B3.6','B3.7',
             'B4.1','B4.2','B4.3','B4.4','B4.5','B4.6','B4.7']
 assert items == expected, f'RULES order drift: {items}'
-assert len(RULES) == 37, f'expected 37 rules, got {len(RULES)}'
-print('public surface ok: 37 rules, order preserved')
+assert len(RULES) == 40, f'expected 40 rules, got {len(RULES)}'
+print('public surface ok: 40 rules, order preserved')
 "
 
 # Mandatory gate 5 — delivery_contract test suite (the 985-LOC behavior oracle)
@@ -360,7 +362,7 @@ repo; getting its module boundary right is `opus` territory.
 9. **F-09. Silent rule deletion during the move.**
    - *Symptom:* `len(RULES) == 36` post-split. `python -m engine.audit.contract_check` reports 36/36 — *passes*, but a CONTRACT item is no longer audited.
    - *Cause:* a copy-paste mistake during the move dropped a `_r_*` callback or its `Rule(...)` entry.
-   - *STOP-and-report rule:* gate 4 asserts `len(RULES) == 37` AND every B-id is present. CI fails before merge if either drifts.
+   - *STOP-and-report rule:* gate 4 asserts `len(RULES) == 40` AND every B-id is present. CI fails before merge if either drifts.
 
 10. **F-10. Hard-cap LOC breach for `phase2_skill_md.py`.**
     - *Symptom:* `_r_skill_md_contract` weighs in at 448 LOC; combined with module docstring + imports it lands at 470–490 LOC. A future small addition (e.g. one more SPDX identifier + its signature) pushes it past 500.
@@ -388,7 +390,7 @@ repo; getting its module boundary right is `opus` territory.
 - [ ] **D-02.** `engine/audit/contract_check.py` rewritten as ≤30-LOC facade.
 - [ ] **D-03.** Every new file ≤500 LOC (gate 2). No file exceeds the hard cap.
 - [ ] **D-04.** `_common.py` is the only module imported by every `phase*`; phase modules never import each other.
-- [ ] **D-05.** `_registry.py` `RULES` literal in CONTRACT.md order; `len(RULES) == 37`; gate 4 green.
+- [ ] **D-05.** `_registry.py` `RULES` literal in CONTRACT.md order; `len(RULES) == 40`; gate 4 green.
 - [ ] **D-06.** `python -m engine.audit.contract_check` exits 0 with the same per-line output as pre-split. Diff = empty (§11 + gate 1).
 - [ ] **D-07.** `pytest engine/tests/test_delivery_contract.py -q` PASS — same count green pre vs post (gate 5).
 - [ ] **D-08.** `--phase 0/1/2/3/4` + `--item Bx.y` filter behavior identical pre vs post (sanity-spot-checked in §7).

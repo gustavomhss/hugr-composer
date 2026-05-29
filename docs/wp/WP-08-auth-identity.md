@@ -27,13 +27,18 @@
 | Field | Value |
 |---|---|
 | **WP id** | `WP-08-auth-identity` |
-| **Title** | Migrate 8 auth identity / credential tools to per-tool directory + externalized templates |
+| **Title** | Migrate 6 auth identity / credential tools to per-tool directory + externalized templates (post-D8 refresh: 8 - 2 already-venous = 6) |
 | **Wave** | `1` |
 | **Depends on** | `WP-F0-staging-rename` (PR #24, merged) · `WP-F1-base-and-golden` (golden `add_cursor_pagination/` already on main via PR #28) |
 | **Blocks** | none (sibling WPs are file-disjoint) |
 | **Branch** | `wp/08-auth-identity` (off the post-dependency main) |
 | **Isolation** | dedicated git worktree |
 | **Model** | `opus` — credential primitives carry highest token-verification blast radius; honesty-rule checks (e.g. "passkey enforces user-verification" vs "passkey records the assertion") are subtle; byte-equivalence diff gate applies (§11) |
+
+> **Phase 4 split note (2026-05-29).** After D8 exclusion of `add_mfa` + `add_oauth2_provider` (already venous-hexagon), the surface is 6 tools. Original estimate was ~36 h / 7 950 LOC for 8 tools; post-D8 reduces to ~30 h / ~6 600 LOC across 6 tools. Execute as **2 sub-WPs** (smaller-than-3 because the 2 lighter tools dropped out):
+> - **WP-08a credentials-heavy (3 tools)** — `add_api_key_auth` + `add_passkey_auth` + `add_social_login`. The three biggest tools (1 020 - 1 378 LOC each). ~14 h.
+> - **WP-08b credentials-light (3 tools)** — `add_dpop_tokens` + `add_request_signing` + `add_sms_otp`. Smaller blast radius, still credential-class. ~12 h.
+> Sub-WP ids: `WP-08a`, `WP-08b`. Branches: `wp/08a-credentials-heavy`, `wp/08b-credentials-light`.
 
 ## 1. Context bundle (the ONLY context the agent gets)
 The agent must operate with exactly this set — nothing wider.
@@ -46,12 +51,16 @@ The agent must operate with exactly this set — nothing wider.
   skills/SKILL-001-fastapi-production/adapt/extend/auth_access/add_dpop_tokens/
     __init__.py
     templates/*.py.tmpl
-  skills/SKILL-001-fastapi-production/adapt/extend/auth_access/add_mfa/
-    __init__.py
-    templates/*.py.tmpl
-  skills/SKILL-001-fastapi-production/adapt/extend/auth_access/add_oauth2_provider/
-    __init__.py
-    templates/*.py.tmpl
+  # NOTE (Phase 4 manifest refresh, 2026-05-29): add_mfa and add_oauth2_provider
+  # are EXCLUDED from this WP. They are already venous-hexagon (call
+  # `generators.scaffold_venous.ensure_primitives` to copy `core/venous/auth/{
+  # TokenIntrospector,SessionStore,TotpVerifier,...}` into the emitted project,
+  # plus the matching `core/venous/_adapters/fastapi/<X>Adapter.py`, and emit a
+  # ≤20-LOC glue `app/<tool>.py`). They do NOT carry `textwrap.dedent` or
+  # triple-quoted code-as-strings; the structural transformation §3 doesn't
+  # apply. Migrating them to `adapt/_base/` + `templates/*.py.tmpl` would
+  # regress the hexagonal-decoupling invariant (`docs/architecture.md`
+  # §"Key invariants"). They remain on disk as-is.
   skills/SKILL-001-fastapi-production/adapt/extend/auth_access/add_passkey_auth/
     __init__.py
     templates/*.py.tmpl
@@ -67,8 +76,8 @@ The agent must operate with exactly this set — nothing wider.
   # Delete after migration (one-line removal each):
   skills/SKILL-001-fastapi-production/adapt/extend/auth_access/add_api_key_auth.py      [DELETE]
   skills/SKILL-001-fastapi-production/adapt/extend/auth_access/add_dpop_tokens.py       [DELETE]
-  skills/SKILL-001-fastapi-production/adapt/extend/auth_access/add_mfa.py               [DELETE]
-  skills/SKILL-001-fastapi-production/adapt/extend/auth_access/add_oauth2_provider.py   [DELETE]
+  # add_mfa.py: KEEP (already venous-hexagon — see exclusion note above)
+  # add_oauth2_provider.py: KEEP (already venous-hexagon — see exclusion note above)
   skills/SKILL-001-fastapi-production/adapt/extend/auth_access/add_passkey_auth.py      [DELETE]
   skills/SKILL-001-fastapi-production/adapt/extend/auth_access/add_request_signing.py   [DELETE]
   skills/SKILL-001-fastapi-production/adapt/extend/auth_access/add_sms_otp.py           [DELETE]
@@ -97,7 +106,7 @@ Explicitly off-limits:
 If the task seems to require touching a forbidden file, **stop and report** — do not edit it.
 
 ## 3. Transformation (exact before → after)
-- **Goal:** Migrate 8 auth identity / credential tools from flat single-file modules with inline emitted code into the per-tool directory layout with externalized `templates/*.py.tmpl`, route their `discover/patch` through `adapt/_base/`, AND pass the §11 byte-equivalence diff gate per tool (carried over from WP-03 §11 because credential primitives share the same blast-radius profile as security primitives).
+- **Goal:** Migrate **6** auth identity / credential tools from flat single-file modules with inline emitted code into the per-tool directory layout with externalized `templates/*.py.tmpl`, route their `discover/patch` through `adapt/_base/`, AND pass the §11 byte-equivalence diff gate per tool (carried over from WP-03 §11 because credential primitives share the same blast-radius profile as security primitives). `add_mfa` and `add_oauth2_provider` are excluded per §1 note — they are already at the venous-hexagon target architecture.
 - **Before:** Each tool is a single `add_<tool>.py` carrying embedded code-as-strings (API-key middleware + storage, DPoP nonce + proof verification, MFA TOTP setup + verification, OAuth2 authorization-code + PKCE flow, passkey WebAuthn registration + assertion, request-signing canonicalization + HMAC, SMS OTP send + verify, social-login providers + state CSRF). Per-tool LOC measurements (raw, end of §8) range 161–1378.
 - **After:**
   - Each tool becomes `add_<tool>/__init__.py` + `templates/*.py.tmpl`.
@@ -112,8 +121,8 @@ If the task seems to require touching a forbidden file, **stop and report** — 
 |---|---|---:|---:|---|
 | `add_api_key_auth` | `add_api_key_auth/{__init__.py, templates/}` | ≤ 290 | ≥ 9 (9 `dedent`, 47 triple-quote anchors) | `test_add_api_key_auth_emitted.py` |
 | `add_dpop_tokens` | `add_dpop_tokens/{__init__.py, templates/}` | ≤ 280 | ≥ 6 (3 `dedent` + 6 `_GLUE` consts) | `test_add_dpop_tokens_emitted.py` |
-| `add_mfa` | `add_mfa/{__init__.py, templates/}` | ≤ 200 | ≥ 2 (9 triple-quote anchors → ~4 code blocks, 2 `_GLUE`) | `test_add_mfa_emitted.py` |
-| `add_oauth2_provider` | `add_oauth2_provider/{__init__.py, templates/}` | ≤ 140 | ≥ 2 (5 triple-quote anchors → ~2 code blocks, 2 `_GLUE`) | `test_add_oauth2_provider_emitted.py` |
+| ~~`add_mfa`~~ | EXCLUDED — already venous-hexagon | — | — | — |
+| ~~`add_oauth2_provider`~~ | EXCLUDED — already venous-hexagon | — | — | — |
 | `add_passkey_auth` | `add_passkey_auth/{__init__.py, templates/}` | ≤ 290 | ≥ 5 (5 `dedent`, 33 triple-quote anchors) | `test_add_passkey_auth_emitted.py` |
 | `add_request_signing` | `add_request_signing/{__init__.py, templates/}` | ≤ 270 | ≥ 4 (4 `dedent`, 21 triple-quote anchors) | `test_add_request_signing_emitted.py` |
 | `add_sms_otp` | `add_sms_otp/{__init__.py, templates/}` | ≤ 280 | ≥ 5 (5 `dedent`, 33 triple-quote anchors) | `test_add_sms_otp_emitted.py` |
@@ -158,7 +167,7 @@ $PY -m pytest adapt/extend/auth_access/test_add_{api_key_auth,dpop_tokens,mfa,oa
 $PY tests/test_boot.py | grep -E 'add_api_key_auth|add_dpop_tokens|add_mfa|add_oauth2_provider|add_passkey_auth|add_request_signing|add_sms_otp|add_social_login'
 # Mandatory gate 4 — boot chains (run ALONE — contention-sensitive)
 $PY tests/test_boot_chains.py
-# Mandatory gate 5 — contract audit (37/37)
+# Mandatory gate 5 — contract audit (40/40)
 $PY -m engine.audit.contract_check
 ```
 
@@ -210,7 +219,7 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
    - *STOP-and-report rule:* before extraction, dump source's interpolation style; mismatch with F1 golden = stop and report.
 
 2. **F-02. `MCP_TOOL` metadata lost in module split.**
-   - *Symptom:* `engine.audit.contract_check` drops from 37/37 → 36/37.
+   - *Symptom:* `engine.audit.contract_check` drops from 40/40 → 36/37.
    - *Cause:* `MCP_TOOL = {...}` not copied into the new `__init__.py`.
    - *STOP-and-report rule:* per-tool sanity import check; fail = stop and report.
 
@@ -271,7 +280,7 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
 - [ ] **D-08.** §6 gate 2 (pytest per tool) green for all 8 tools.
 - [ ] **D-09.** §6 gate 3 (boot smoke) returns a PASS line per tool name.
 - [ ] **D-10.** §6 gate 4 (`tests/test_boot_chains.py`) green, run ALONE.
-- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 37/37.
+- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 40/40.
 - [ ] **D-12.** `git diff --name-only main..HEAD` lists only paths inside §1 write surface.
 - [ ] **D-13.** Idempotency check passes per tool (second run = `no_op`).
 - [ ] **D-14.** §11 byte-equivalence diff gate PASS for all 8 tools, diff output pasted in PR.
@@ -300,10 +309,10 @@ Before declaring any tool migrated, the agent MUST:
 # 1. Compose the tool against a fixed test project on main (pre-migration) → capture emitted files.
 PY=.venv/bin/python
 git checkout main -- skills/SKILL-001-fastapi-production/adapt/extend/auth_access/add_<tool>.py
-$PY -m engine.compose --tool add_<tool> --project /tmp/pre/<tool>
+$PY -c "from tests.common.fixture_factory import create_fixture_project; create_fixture_project("/tmp/pre/<tool>")"  # baseline scaffold; tool not yet applied
 # 2. Compose the migrated tool against the same fixed test project.
 git checkout HEAD -- skills/SKILL-001-fastapi-production/adapt/extend/auth_access/add_<tool>
-$PY -m engine.compose --tool add_<tool> --project /tmp/post/<tool>
+$PY -c "from tests.common.fixture_factory import create_fixture_project; from adapt.contracts import ToolInput; from adapt.extend.${BUCKET}.add_<tool> import add_<tool> as _t; p = create_fixture_project("/tmp/post/<tool>"); _t(ToolInput(project_dir=str(p)))"  # apply the migrated tool
 # 3. Diff. Allowed drift: comment/whitespace only. Anything else = STOP and report.
 diff -ruN /tmp/pre/<tool> /tmp/post/<tool> | grep -vE '^[+-]\s*(#|$)' | tee /tmp/diff_<tool>.txt
 test ! -s /tmp/diff_<tool>.txt   # PASS = empty after comment/whitespace strip

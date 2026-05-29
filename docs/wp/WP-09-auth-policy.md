@@ -101,8 +101,9 @@ If the task seems to require touching a forbidden file, **stop and report** — 
   - `__init__.py` ≤ 300 LOC (hard cap 500 per §4). Templates exempt.
   - Public dotted path `adapt.extend.auth_access.add_<tool>` resolves identically; `MCP_TOOL` metadata preserved verbatim.
   - **Honesty-rule audit per tool:** any `warnings` string MUST honestly describe what the migrated code enforces. Carry-over of overclaiming from the source is an instant reject (authz overclaiming = silent bypass).
-  - **P1 #16 fold (`add_bola_guard`):** the migrated tool MUST emit a per-object ownership guard on ALL owner-bearing models by default, with `shared_models={...}` as the opt-out, AND every opt-out model MUST emit a test documenting the open-access decision. The emission point patches the route templates fed by `generators/endpoints/crud_routes.py:219` (read-only context — the migrated tool patches the *templates*, not the generator).
-  - **§11 byte-equivalence diff gate** must pass for each tool *except* `add_bola_guard` (P1 #16 is a deliberate behavior change; see §11 for the targeted diff).
+  - **P1 #16 status (post-2026-05-29 manifest refresh):** P1 #16 (BOLA secure-default) **already shipped at generation time** via `generators/orchestrator.py` (PR #35, commit `f74450f`). New projects scaffolded after 2026-05-28 21:40 already get the per-object ownership guard by default. The migrated `add_bola_guard` retains its **retrofit-path** semantics: applied to a project that was scaffolded BEFORE PR #35 (or that explicitly skipped the guard), it adds the secure-default to existing emitted route files. `add_bola_guard` is therefore NO LONGER a "fold P1 #16" — it is a layered retrofit of the same contract.
+  - **`add_bola_guard` migration scope (refined):** structural migration only — extract triple-quoted blocks to `templates/*.py.tmpl`, route through `adapt/_base/`, preserve the existing retrofit semantics (per-model ownership-check patch + `shared_models` opt-out + opt-out test). The behavior contract is unchanged from the on-disk `add_bola_guard.py` HEAD; the §11 diff gate applies to it like every other tool (byte-equivalent emit).
+  - **§11 byte-equivalence diff gate** must pass for ALL 7 tools including `add_bola_guard`. No deliberate behavior change in this WP.
 
 | Tool | Target dir layout | Expected post-LOC (`__init__.py`) | Templates to externalize | Emitted-test name |
 |---|---|---:|---:|---|
@@ -125,8 +126,8 @@ If the task seems to require touching a forbidden file, **stop and report** — 
 - [ ] **Docstrings honest.** Authz-specific: a tool that does NOT enforce a guarantee MUST lead its `warnings` with `⚠ … IS NOT ENFORCED`. Examples: `add_rbac` warning if role hierarchy is advisory; `add_cedar_policies` warning if Cedar bundle is sample-only; `add_feature_flags` warning if default-on/default-off behavior diverges from documented; `add_multi_tenancy` warning if tenant isolation is best-effort (the round-2 external panel already convicted the unfixed version on tenant isolation — see memory `external_eval_panel_round2.md`); `add_opa_integration` warning if OPA bundle is a placeholder; `add_bola_guard` warning describing exactly which models are owner-scoped vs `shared_models` opt-out.
 - [ ] **No new dependencies.** No `pyproject.toml` change. Emitted deps go in generated `requirements.txt`.
 - [ ] **Idempotent.** Second run returns `no_op` without touching files. Verified per tool.
-- [ ] **§11 byte-equivalence diff gate passes for 6 of 7 tools.** `add_bola_guard` has a targeted P1 #16 diff (see §11) — diff is NOT empty but is *expected and reviewed*.
-- [ ] **P1 #16 verified.** `add_bola_guard` emits owner-scoped check on ALL owner-bearing models by default; `shared_models={...}` opt-out emits a test documenting open access.
+- [ ] **§11 byte-equivalence diff gate passes for ALL 7 tools** (including `add_bola_guard` — P1 #16 already shipped at generators/orchestrator.py per PR #35; this WP is structural-only).
+- [ ] **`add_bola_guard` retrofit semantics preserved.** The migrated tool, applied to a pre-PR-#35 project, still adds the per-object ownership guard on owner-bearing models with `shared_models={...}` opt-out, byte-equivalent to the pre-migration behavior of `add_bola_guard.py`.
 
 ## 5. Test emission (per P1 #15)
 P1 backlog item **#15** mandates: every tool emits a test in the generated project that asserts the behavior added by the tool. WP-F1's golden tool (`add_cursor_pagination`) sets the emitted-test format — **copy that format verbatim** (location: `{project}/tests/test_<tool>_emitted.py`). WP-07 is the canonical propagation precedent for the WAVE 1 P1 #15 rollout; WP-09 follows it.
@@ -154,7 +155,7 @@ $PY -m pytest adapt/extend/auth_access/test_add_{bola_guard,cedar_policies,featu
 $PY tests/test_boot.py | grep -E 'add_bola_guard|add_cedar_policies|add_feature_flags|add_feature_toggles_api|add_multi_tenancy|add_opa_integration|add_rbac'
 # Mandatory gate 4 — boot chains (run ALONE — contention-sensitive)
 $PY tests/test_boot_chains.py
-# Mandatory gate 5 — contract audit (37/37)
+# Mandatory gate 5 — contract audit (40/40)
 $PY -m engine.audit.contract_check
 ```
 
@@ -206,7 +207,7 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
    - *STOP-and-report rule:* before extraction, dump source's interpolation style; mismatch with F1 golden = stop and report.
 
 2. **F-02. `MCP_TOOL` metadata lost in module split.**
-   - *Symptom:* `engine.audit.contract_check` drops from 37/37 → 36/37.
+   - *Symptom:* `engine.audit.contract_check` drops from 40/40 → 36/37.
    - *Cause:* `MCP_TOOL = {...}` not copied into the new `__init__.py`.
    - *STOP-and-report rule:* per-tool sanity import check; fail = stop and report.
 
@@ -272,7 +273,7 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
 - [ ] **D-08.** §6 gate 2 (pytest per tool) green for all 7 tools.
 - [ ] **D-09.** §6 gate 3 (boot smoke) returns a PASS line per tool name.
 - [ ] **D-10.** §6 gate 4 (`tests/test_boot_chains.py`) green, run ALONE.
-- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 37/37.
+- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 40/40.
 - [ ] **D-12.** `git diff --name-only main..HEAD` lists only paths inside §1 write surface (no `generators/` or `orchestrator.py` edits).
 - [ ] **D-13.** Idempotency check passes per tool (second run = `no_op`).
 - [ ] **D-14.** §11 byte-equivalence diff gate empty for 6 of 7 tools; `add_bola_guard` shows ONLY the targeted P1 #16 secure-default diff, reviewed and pasted in PR.
@@ -317,9 +318,9 @@ Before declaring any tool migrated, the agent MUST:
 # For each of the 7 tools:
 PY=.venv/bin/python
 git checkout main -- skills/SKILL-001-fastapi-production/adapt/extend/auth_access/add_<tool>.py
-$PY -m engine.compose --tool add_<tool> --project /tmp/pre/<tool>
+$PY -c "from tests.common.fixture_factory import create_fixture_project; create_fixture_project("/tmp/pre/<tool>")"  # baseline scaffold; tool not yet applied
 git checkout HEAD -- skills/SKILL-001-fastapi-production/adapt/extend/auth_access/add_<tool>
-$PY -m engine.compose --tool add_<tool> --project /tmp/post/<tool>
+$PY -c "from tests.common.fixture_factory import create_fixture_project; from adapt.contracts import ToolInput; from adapt.extend.${BUCKET}.add_<tool> import add_<tool> as _t; p = create_fixture_project("/tmp/post/<tool>"); _t(ToolInput(project_dir=str(p)))"  # apply the migrated tool
 diff -ruN /tmp/pre/<tool> /tmp/post/<tool> | grep -vE '^[+-]\s*(#|$)' | tee /tmp/diff_<tool>.txt
 # For 6 of 7 tools: PASS = empty after comment/whitespace strip.
 # For add_bola_guard: PASS = diff contains ONLY the secure-default patch on

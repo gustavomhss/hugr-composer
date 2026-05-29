@@ -159,7 +159,7 @@ $PY -m pytest adapt/extend/testing_tools/test_add_{api_fuzzer,contract_tests,dat
 $PY tests/test_boot.py | grep -E 'add_api_fuzzer|add_contract_tests|add_data_seeder|add_database_migrations_ci|add_factory|add_load_profile|add_sbom_guardian|add_schema_enforcer|add_schema_evolution_guard'
 # Mandatory gate 4 — boot chains (run ALONE — contention-sensitive)
 $PY tests/test_boot_chains.py
-# Mandatory gate 5 — contract audit (37/37)
+# Mandatory gate 5 — contract audit (40/40)
 $PY -m engine.audit.contract_check
 ```
 
@@ -210,7 +210,7 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
    - *STOP-and-report rule:* before any extraction, dump the source's interpolation style for the tool; if it does not match F1 golden's template syntax, **stop and report**.
 
 2. **F-02. `MCP_TOOL` metadata lost in module split.**
-   - *Symptom:* `engine.audit.contract_check` drops from 37/37 → 36/37 for the migrated tool.
+   - *Symptom:* `engine.audit.contract_check` drops from 40/40 → 36/37 for the migrated tool.
    - *Cause:* `MCP_TOOL = {...}` constant lived at module top in the flat `.py` and was not copied into the new `__init__.py`.
    - *STOP-and-report rule:* after every per-tool migration, run `python -c "from adapt.extend.testing_tools import add_<tool>; assert add_<tool>.MCP_TOOL"` — fail = stop and report.
 
@@ -256,7 +256,7 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
 
 ## 10. DoD checklist (every box, or it's not done)
 
-- [ ] **D-00.** §11 open question resolved by tech-lead before any code is touched.
+- [x] **D-00.** §11 open question resolved by tech-lead — picked **(1) Wiring assertion** on 2026-05-29 (Phase 4 manifest refresh). See §11 for rationale.
 - [ ] **D-01.** All 9 tool directories created under `adapt/extend/testing_tools/`, each with `__init__.py` + `templates/`.
 - [ ] **D-02.** All 9 legacy flat `.py` files removed (`git diff --name-only` shows 9 deletions). `add_e2e_test_suite.py` is NOT touched.
 - [ ] **D-03.** Each `__init__.py` ≤ 300 LOC (verified by `wc -l`).
@@ -267,7 +267,7 @@ Measurements taken on `main` at branch creation; LOC = `wc -l`; `dedent` = `grep
 - [ ] **D-08.** §6 gate 2 (pytest per tool) green for all 9 tools.
 - [ ] **D-09.** §6 gate 3 (boot smoke `tests/test_boot.py | grep`) returns a PASS line per tool name.
 - [ ] **D-10.** §6 gate 4 (`tests/test_boot_chains.py`) green, run ALONE.
-- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 37/37.
+- [ ] **D-11.** §6 gate 5 (`engine.audit.contract_check`) 40/40.
 - [ ] **D-12.** `git diff --name-only main..HEAD` lists only paths inside §1 write surface (no sibling WP surface touched; `add_e2e_test_suite` untouched).
 - [ ] **D-13.** Idempotency check passes per tool (second run = `no_op`).
 - [ ] **D-14.** Reflexive emitted-test loop avoided (F-07 cleared): emitted tests assert wiring, not sub-runner success.
@@ -314,10 +314,21 @@ rejected for partition decisions made by an agent. The §11 question changes the
 executing WP-11 should NOT pre-decide; the manifest documents the three
 candidates so tech-lead can pick one before execution.
 
-**Default if not resolved.** Treat this WP as **blocked on D-00**. Do NOT
-proceed with implementation until the answer is recorded as an amendment to
-this manifest. The structural transformation (§3) is unaffected by the
-resolution — only the emitted-test template content changes.
+**Tech-lead resolution (2026-05-29, Phase 4 manifest refresh).** Picked **(1) Wiring assertion**. Rationale:
+- §5 already prescribes "asserts that the emitted test infra fires — NOT that every fuzz case finds a bug, NOT that every contract pact validates against an external provider." Wiring assertion is the literal reading.
+- F-07 STOP rule (§9) explicitly forbids "the reflexive emitted-test loop … the emitted tests must NOT invoke the tool's own emitted test infra as a sub-runner."
+- F-08 (non-determinism via subprocess) is excluded by construction under wiring assertion.
+- Hybrid (3) re-opens the partition decision per tool, which is exactly the agent-deciding-scope class WP-11's brief forbids.
+
+**D-00 is therefore CLOSED** as of this manifest refresh. WP-11 execution targets wiring assertion only:
+- file exists at expected path
+- importable
+- declares expected fixtures/markers
+- generated `conftest.py` / `factories/` / `pact/` / `locustfile.py` / `alembic.ini` is structurally valid (AST-parses or YAML-loads)
+
+**Model elevation note.** §0 said sonnet with "promotion to opus only if §11 open question resolves toward a semantic redesign." Wiring assertion is NOT a semantic redesign (it's the simpler reading); sonnet stays the recommended model for WP-11 execution.
+
+**Historical reference (kept for audit).** The original three candidates were (1) wiring assertion, (2) sub-runner assertion, (3) hybrid. The structural transformation (§3) is unaffected by the resolution — only the emitted-test template content changes. Pick (1) is recorded above.
 
 ---
 
