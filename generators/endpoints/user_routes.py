@@ -11,10 +11,10 @@ can handle:
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_api_generate_user_routes',
-    'description': 'Generate complete User management routes: signup, /me, /me/password, and superuser CRUD.',
-    'tags': ['auth', 'endpoints', 'generator'],
-    'entry': 'generate_user_routes',
+    "name": "fastapi_api_generate_user_routes",
+    "description": "Generate complete User management routes: signup, /me, /me/password, and superuser CRUD.",
+    "tags": ["auth", "endpoints", "generator"],
+    "entry": "generate_user_routes",
 }
 
 import textwrap
@@ -240,7 +240,7 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy.exc import IntegrityError
 
 from app.crud.user import (
@@ -262,6 +262,7 @@ from app.api.deps import CurrentUser
     UserUpdate,
 )
 from app.schemas.message import Message
+from app.schemas.password_policy import password_strength_validator
 {deps_helper}
 
 # ---------------------------------------------------------------------------
@@ -270,10 +271,20 @@ from app.schemas.message import Message
 
 
 class UpdatePassword(BaseModel):
-    """Payload for the change-own-password endpoint."""
+    """Payload for the change-own-password endpoint.
+
+    Codex 3 F-008: ``new_password`` is validated against the project
+    password policy (length + digit + uppercase + blocklist) — see
+    ``app.schemas.password_policy``. Without this the advertised
+    strength rules never applied to real change-password traffic.
+    """
 
     current_password: str = Field(max_length=128)
     new_password: str = Field(min_length=8, max_length=128)
+
+    _validate_new_password = field_validator("new_password")(
+        password_strength_validator,
+    )
 
 
 class UserUpdateMe(BaseModel):

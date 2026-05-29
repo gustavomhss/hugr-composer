@@ -112,10 +112,26 @@ def generate_test_infrastructure(
 
         from __future__ import annotations
 
-        # CRITICAL: disable rate limiting BEFORE importing app.main, otherwise
-        # back-to-back test calls hit the limiter and start returning 429s.
-        # The Settings class reads RATE_LIMITING_ENABLED from the environment.
+        # CRITICAL: the order of these env defaults is load-bearing —
+        # every one of them MUST run before ``from app.main import app``
+        # because the generated Settings() validates at import time and
+        # raises on a missing/weak SECRET_KEY (Codex 3 F-006).
+        #
+        # - SECRET_KEY: deterministic 64-char hex placeholder. Real
+        #   deployments override via .env / Secret manager; the value is
+        #   long enough to clear the production-grade length check
+        #   without ever shipping as a real credential (clearly marked
+        #   test-only).
+        # - RATE_LIMITING_ENABLED: off so sequential async test calls do
+        #   not get 429-throttled by the production limiter.
+        # - ENVIRONMENT: "local" so the strict prod-only validators
+        #   relax.
         import os
+        os.environ.setdefault(
+            "SECRET_KEY",
+            "test-only-secret-key-not-for-production-"
+            "0000000000000000000000000000",
+        )
         os.environ.setdefault("RATE_LIMITING_ENABLED", "false")
         os.environ.setdefault("ENVIRONMENT", "local")
 
@@ -202,16 +218,18 @@ def generate_test_infrastructure(
     # pytest.ini for asyncio mode
     pytest_ini = Path(output_dir) / "pytest.ini"
     if not pytest_ini.exists():
-        pytest_ini.write_text(
-            "[pytest]\n"
-            "asyncio_mode = auto\n"
-        )
+        pytest_ini.write_text("[pytest]\nasyncio_mode = auto\n")
 
     # Add test deps to requirements.txt
     req_file = Path(output_dir) / "requirements.txt"
     if req_file.exists():
         req_content = req_file.read_text()
-        test_deps = ["pytest>=8.0.0", "pytest-asyncio>=0.24.0", "httpx>=0.28.0", "aiosqlite>=0.20.0"]
+        test_deps = [
+            "pytest>=8.0.0",
+            "pytest-asyncio>=0.24.0",
+            "httpx>=0.28.0",
+            "aiosqlite>=0.20.0",
+        ]
         added = []
         for dep in test_deps:
             pkg = dep.split(">=")[0].split("[")[0]

@@ -14,16 +14,15 @@ The generated tests are designed to work with the fixtures from
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_testing_generate_suite',
-    'description': 'Generate complete test infrastructure + test suite.',
-    'tags': ['generator', 'testing'],
-    'entry': 'generate_tests',
+    "name": "fastapi_testing_generate_suite",
+    "description": "Generate complete test infrastructure + test suite.",
+    "tags": ["generator", "testing"],
+    "entry": "generate_tests",
 }
 
 import re
 import textwrap
 from pathlib import Path
-
 
 # ---------------------------------------------------------------------------
 # Simple inflection (duplicated from crud_routes.py to stay self-contained)
@@ -110,6 +109,7 @@ def generate_test_suite(
     models: dict[str, dict[str, str]] | None = None,
     owner_models: dict[str, str] | None = None,
     with_auth: bool = True,
+    shared_models: list[str] | set[str] | None = None,
 ) -> dict:
     """Generate test files for login, user, and CRUD model endpoints.
 
@@ -124,7 +124,13 @@ def generate_test_suite(
             A ``test_{model_lower}.py`` file is generated for each.
         owner_models: Which models have owner-scoped access.
             ``{"Product": "user"}`` means the model has ``owner_id``.
-        with_auth: Generate login and user test files.
+        with_auth: Generate login and user test files. When False, the
+            emitted CRUD tests do NOT depend on auth fixtures (the
+            no-auth conftest does not provide ``superuser_token`` —
+            Codex 3 F-005).
+        shared_models: BOLA opt-out (Codex 3 F-007). Owner-bearing models
+            listed here get an open-access regression test instead of
+            the non-owner 403 test.
 
     Returns:
         Dict with ``files_created`` and ``notes``.
@@ -163,17 +169,37 @@ def generate_test_suite(
         notes.append("Generated tests/api/routes/test_users.py with 8 user endpoint tests.")
 
     # --- CRUD model tests ---
+    # F-005 (Codex 3): when ``with_auth=False`` the conftest does NOT emit
+    # the ``superuser_token`` / ``normal_user_token`` fixtures, so a CRUD
+    # test that asks for them collides at fixture-resolution time and the
+    # whole module errors out. Pass ``with_auth`` into the CRUD generator
+    # so the no-auth path emits header-less requests instead.
+    # F-007 (Codex 3): for owner-bearing models we now also emit a
+    # non-owner 403 regression test (or, for shared_models opt-out, an
+    # open-access test) so the BOLA guard behaviour is exercised by the
+    # generated suite — previously only superuser-happy-paths existed.
     if models:
+        shared_set = set(shared_models or ())
         for model_name, fields in models.items():
             has_owner = model_name in (owner_models or {})
+            is_shared = model_name in shared_set
             model_path = routes_dir / f"test_{model_name.lower()}.py"
             model_path.write_text(
-                _generate_crud_tests(model_name, fields, has_owner)
+                _generate_crud_tests(
+                    model_name,
+                    fields,
+                    has_owner=has_owner,
+                    with_auth=with_auth,
+                    is_shared=is_shared,
+                )
             )
             files.append(str(model_path))
+            test_count = 6
+            if with_auth and has_owner:
+                test_count += 1  # BOLA owner-guard regression
             notes.append(
                 f"Generated tests/api/routes/test_{model_name.lower()}.py "
-                f"with 6 CRUD tests for {model_name}."
+                f"with {test_count} CRUD tests for {model_name}."
             )
 
     return {"files_created": files, "notes": notes}
@@ -469,9 +495,24 @@ def _generate_user_tests() -> str:
 def _generate_crud_tests(
     model_name: str,
     fields: dict[str, str],
-    has_owner: bool,
+    *,
+    has_owner: bool = False,
+    with_auth: bool = True,
+    is_shared: bool = False,
 ) -> str:
-    """Generate a test module for a CRUD model's endpoints."""
+    """Generate a test module for a CRUD model's endpoints.
+
+    Codex 3 F-005: when ``with_auth=False`` the emitted tests use no
+    auth headers (matching ``route_auth="none"``). Without this flag
+    the tests reference ``superuser_token`` which the no-auth conftest
+    does not provide → collection error.
+
+    Codex 3 F-007: when ``has_owner`` and ``with_auth`` are both True,
+    an extra regression test is emitted that proves the secure-by-
+    default BOLA guard (non-owner ⇒ 403). For ``is_shared=True``
+    (BOLA opt-out) the test instead proves open access (non-owner ⇒
+    200) so the audit story matches the code path.
+    """
     lower = model_name.lower()
     plural = _pluralize(lower)
     create_payload = _build_payload(fields, _SAMPLE_VALUES)
@@ -480,6 +521,16 @@ def _generate_crud_tests(
     # Indent payloads to match their position inside the function bodies
     create_indented = create_payload.replace("\n", "\n    ")
     update_indented = update_payload.replace("\n", "\n    ")
+
+    if not with_auth:
+        # F-005: no-auth scaffold ships an auth-less CRUD test module
+        # (no superuser_token fixture, no Authorization headers).
+        return _generate_crud_tests_no_auth(
+            model_name=model_name,
+            fields=fields,
+            create_indented=create_indented,
+            update_indented=update_indented,
+        )
 
     return (
         f'"""Tests for {model_name} CRUD endpoints (/{plural})."""\n'
@@ -642,6 +693,188 @@ def _generate_crud_tests(
         f"    )\n"
         f"\n"
         f"    assert response.status_code == 404\n"
+        + _bola_owner_guard_test(model_name, has_owner=has_owner, is_shared=is_shared)
+    )
+
+
+# ---------------------------------------------------------------------------
+# F-007: BOLA owner-guard regression — emitted alongside the standard
+# six CRUD tests when the model has an owner_id column. Two variants:
+#   - secure-by-default (is_shared=False): non-owner GET ⇒ 403
+#   - explicit opt-out (is_shared=True): non-owner GET ⇒ 200 (open access)
+# Either way the emitted suite EXERCISES the policy declared by the
+# generator instead of trusting the production code in isolation.
+# ---------------------------------------------------------------------------
+
+
+def _bola_owner_guard_test(
+    model_name: str,
+    *,
+    has_owner: bool,
+    is_shared: bool,
+) -> str:
+    if not has_owner:
+        return ""
+    lower = model_name.lower()
+    plural = _pluralize(lower)
+    if is_shared:
+        # Shared model: non-owner must STILL get a 200 (open access by
+        # design — confirms shared_models opt-out actually disengages
+        # the per-object guard, not just the docstring).
+        return (
+            f"\n\n"
+            f"# -------------------------------------------------------------------\n"
+            f"# BOLA opt-out (Codex 3 F-007) — shared_model={model_name!r}\n"
+            f"# Non-owner read MUST succeed (open access; secure-by-default suppressed).\n"
+            f"# -------------------------------------------------------------------\n"
+            f"\n"
+            f"\n"
+            f"@pytest.mark.asyncio\n"
+            f"async def test_{lower}_shared_model_open_access(\n"
+            f"    client: AsyncClient,\n"
+            f"    superuser_token: dict[str, str],\n"
+            f"    normal_user_token: dict[str, str],\n"
+            f") -> None:\n"
+            f'    """A regular user can read a {model_name} created by someone else (shared)."""\n'
+            f"    created = await _create_{lower}(client, superuser_token)\n"
+            f"\n"
+            f"    response = await client.get(\n"
+            f"        f\"{{API}}/{plural}/{{created['id']}}\",\n"
+            f"        headers=normal_user_token,\n"
+            f"    )\n"
+            f"\n"
+            f"    assert response.status_code == 200, (\n"
+            f'        f"shared model returned {{response.status_code}} for non-owner — "\n'
+            f'        f"the per-object guard is still firing despite the opt-out."\n'
+            f"    )\n"
+        )
+    # Secure-by-default: non-owner must get a 403 (BOLA closed).
+    return (
+        f"\n\n"
+        f"# -------------------------------------------------------------------\n"
+        f"# BOLA owner-guard (Codex 3 F-007) — secure-by-default\n"
+        f"# Non-owner read MUST be rejected with 403 Forbidden.\n"
+        f"# -------------------------------------------------------------------\n"
+        f"\n"
+        f"\n"
+        f"@pytest.mark.asyncio\n"
+        f"async def test_{lower}_bola_non_owner_denied(\n"
+        f"    client: AsyncClient,\n"
+        f"    superuser_token: dict[str, str],\n"
+        f"    normal_user_token: dict[str, str],\n"
+        f") -> None:\n"
+        f'    """A regular user CANNOT read a {model_name} owned by someone else."""\n'
+        f"    created = await _create_{lower}(client, superuser_token)\n"
+        f"\n"
+        f"    response = await client.get(\n"
+        f"        f\"{{API}}/{plural}/{{created['id']}}\",\n"
+        f"        headers=normal_user_token,\n"
+        f"    )\n"
+        f"\n"
+        f"    assert response.status_code == 403, (\n"
+        f'        f"BOLA regression: non-owner got {{response.status_code}} "\n'
+        f'        f"reading another user\'s {model_name} (expected 403)."\n'
+        f"    )\n"
+    )
+
+
+# ---------------------------------------------------------------------------
+# F-005: no-auth CRUD test module — used when the generated app does
+# NOT have auth (``route_auth="none"``). The conftest in this mode does
+# not provide ``superuser_token`` / ``normal_user_token`` so the tests
+# below talk to the API with no headers.
+# ---------------------------------------------------------------------------
+
+
+def _generate_crud_tests_no_auth(
+    *,
+    model_name: str,
+    fields: dict[str, str],  # noqa: ARG001 — kept for future field-aware ID extraction
+    create_indented: str,
+    update_indented: str,
+) -> str:
+    lower = model_name.lower()
+    plural = _pluralize(lower)
+    return (
+        f'"""Tests for {model_name} CRUD endpoints (/{plural}) — no-auth mode."""\n'
+        f"\n"
+        f"from __future__ import annotations\n"
+        f"\n"
+        f"import pytest\n"
+        f"from httpx import AsyncClient\n"
+        f"\n"
+        f"from app.core.config import settings\n"
+        f"\n"
+        f"\n"
+        f"API = settings.API_V1_STR\n"
+        f"\n"
+        f"\n"
+        f"async def _create_{lower}(client: AsyncClient) -> dict:\n"
+        f'    """Create a {model_name} (no auth) and return the response body."""\n'
+        f"    payload = {create_indented}\n"
+        f'    response = await client.post(f"{{API}}/{plural}/", json=payload)\n'
+        f"    assert response.status_code == 201\n"
+        f"    return response.json()\n"
+        f"\n"
+        f"\n"
+        f"@pytest.mark.asyncio\n"
+        f"async def test_create_{lower}(client: AsyncClient) -> None:\n"
+        f'    """Creating a {model_name} returns 201 without auth."""\n'
+        f"    body = await _create_{lower}(client)\n"
+        f'    assert "id" in body\n'
+        f'    assert body["id"]\n'
+        f"\n"
+        f"\n"
+        f"@pytest.mark.asyncio\n"
+        f"async def test_list_{plural}(client: AsyncClient) -> None:\n"
+        f'    """Listing {plural} returns 200 with data and count."""\n'
+        f"    await _create_{lower}(client)\n"
+        f'    response = await client.get(f"{{API}}/{plural}/")\n'
+        f"    assert response.status_code == 200\n"
+        f"    body = response.json()\n"
+        f'    assert "data" in body\n'
+        f'    assert "count" in body\n'
+        f'    assert body["count"] >= 1\n'
+        f"\n"
+        f"\n"
+        f"@pytest.mark.asyncio\n"
+        f"async def test_get_{lower}(client: AsyncClient) -> None:\n"
+        f'    """Fetching a {model_name} by ID returns 200."""\n'
+        f"    created = await _create_{lower}(client)\n"
+        f"    response = await client.get(f\"{{API}}/{plural}/{{created['id']}}\")\n"
+        f"    assert response.status_code == 200\n"
+        f"    body = response.json()\n"
+        f'    assert body["id"] == created["id"]\n'
+        f"\n"
+        f"\n"
+        f"@pytest.mark.asyncio\n"
+        f"async def test_update_{lower}(client: AsyncClient) -> None:\n"
+        f'    """Updating a {model_name} returns 200."""\n'
+        f"    created = await _create_{lower}(client)\n"
+        f"    update_data = {update_indented}\n"
+        f"    response = await client.patch(\n"
+        f"        f\"{{API}}/{plural}/{{created['id']}}\",\n"
+        f"        json=update_data,\n"
+        f"    )\n"
+        f"    assert response.status_code == 200\n"
+        f"\n"
+        f"\n"
+        f"@pytest.mark.asyncio\n"
+        f"async def test_delete_{lower}(client: AsyncClient) -> None:\n"
+        f'    """Deleting a {model_name} returns 200."""\n'
+        f"    created = await _create_{lower}(client)\n"
+        f"    response = await client.delete(\n"
+        f"        f\"{{API}}/{plural}/{{created['id']}}\",\n"
+        f"    )\n"
+        f"    assert response.status_code == 200\n"
+        f"\n"
+        f"\n"
+        f"@pytest.mark.asyncio\n"
+        f"async def test_get_{lower}_not_found(client: AsyncClient) -> None:\n"
+        f'    """Fetching a non-existent {model_name} returns 404."""\n'
+        f'    fake_id = "00000000-0000-0000-0000-000000000000"\n'
+        f'    response = await client.get(f"{{API}}/{plural}/{{fake_id}}")\n'
+        f"    assert response.status_code == 404\n"
     )
 
 
@@ -650,12 +883,13 @@ def generate_tests(
     models: dict[str, dict[str, str]] | None = None,
     owner_models: dict[str, str] | None = None,
     with_auth: bool = True,
+    shared_models: list[str] | set[str] | None = None,
 ) -> dict:
     """MCP entry: generate test infrastructure + test suite.
 
     Produces: conftest.py (async SQLite, fixtures for superuser/regular tokens),
     test_login.py (5 tests), test_users.py (8 tests), and test_{model}.py
-    (6 tests each).
+    (6 tests each plus a BOLA regression when the model has an owner_id).
     """
     from generators.testing.conftest import generate_test_infrastructure
     from generators.testing.test_suite import generate_test_suite as _gts
@@ -665,7 +899,13 @@ def generate_tests(
     results["files_created"].extend(r1["files_created"])
     results["notes"].extend(r1.get("notes", []))
     if models or with_auth:
-        r2 = _gts(output_dir, models=models, owner_models=owner_models, with_auth=with_auth)
+        r2 = _gts(
+            output_dir,
+            models=models,
+            owner_models=owner_models,
+            with_auth=with_auth,
+            shared_models=shared_models,
+        )
         results["files_created"].extend(r2["files_created"])
         results["notes"].extend(r2.get("notes", []))
     return results

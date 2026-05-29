@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import textwrap
 from pathlib import Path
 
 # Mapping from user-friendly type names to (python_type, field_constraints).
@@ -33,12 +32,21 @@ def generate_input_schema(
 ) -> dict:
     """Generate a Pydantic v2 input schema (for create requests).
 
-    The generated schema enforces ``strict=True`` via ``model_config``
-    and applies sensible constraints to every field:
+    The generated schema sets ``model_config = ConfigDict(extra="forbid")``
+    so unknown fields are rejected at validation time. Note: it does NOT
+    set ``strict=True`` — JSON-payload coercion (``"42"`` → 42, ``"9.99"``
+    → Decimal) is intentionally still allowed so HTTP request bodies
+    don't need every field pre-coerced client-side. Codex 3 F-013 closed
+    the prior drift where this docstring + emitted notes advertised a
+    strict-mode contract the code did not deliver. Per-field
+    constraints:
 
     * String fields always have ``max_length``.
     * Numeric fields have ``ge`` / ``le`` bounds.
-    * Password fields: ``min_length=8, max_length=128``.
+    * Password fields: ``min_length=8, max_length=128`` PLUS the
+      project ``password_strength_validator`` (digit + uppercase +
+      blocklist) when ``schemas/password_policy.py`` is also present
+      (Codex 3 F-008).
     * Email fields: ``EmailStr`` with ``max_length=255``.
     * Optional fields are typed as ``T | None = None``.
 
@@ -71,6 +79,19 @@ def generate_input_schema(
     pydantic_imports: set[str] = {"BaseModel", "ConfigDict", "Field"}
     extra_pydantic_imports: set[str] = set()
     need_field_validator = bool(validators)
+
+    # Codex 3 F-008: when the schema declares a ``password`` field, wire
+    # the project-wide ``password_strength_validator`` into the emitted
+    # class. The generated User schemas (and any future password-bearing
+    # input schema) thus enforce digit + uppercase + blocklist instead of
+    # just length — closing the "policy generated but never applied"
+    # drift the hunt caught.
+    password_fields: list[str] = []
+    for fname, raw in fields.items():
+        if raw.rstrip("?") == "password":
+            password_fields.append(fname)
+    if password_fields:
+        pydantic_imports.add("field_validator")
 
     if need_field_validator:
         pydantic_imports.add("field_validator")
@@ -127,6 +148,10 @@ def generate_input_schema(
     # pydantic
     all_pydantic = sorted(pydantic_imports | extra_pydantic_imports)
     import_lines.append(f"from pydantic import {', '.join(all_pydantic)}")
+    # F-008: pull the project password policy validator at module level
+    # whenever the schema declares a password field.
+    if password_fields:
+        import_lines.append("from app.schemas.password_policy import password_strength_validator")
     import_lines.append("")
     import_lines.append("")
 
@@ -137,7 +162,7 @@ def generate_input_schema(
     class_lines.append(f"class {class_name}Create(BaseModel):")
     class_lines.append(f'    """Schema for creating a new {class_name}."""')
     class_lines.append("")
-    class_lines.append("    model_config = ConfigDict(extra=\"forbid\")")
+    class_lines.append('    model_config = ConfigDict(extra="forbid")')
     class_lines.append("")
 
     for field_name, py_type, optional, constraints in parsed_fields:
@@ -153,18 +178,31 @@ def generate_input_schema(
                     f"    {field_name}: {display} | None = Field(default=None, {field_kwargs})"
                 )
             else:
-                class_lines.append(
-                    f"    {field_name}: {display} | None = None"
-                )
+                class_lines.append(f"    {field_name}: {display} | None = None")
         else:
             if field_kwargs:
-                class_lines.append(
-                    f"    {field_name}: {display} = Field({field_kwargs})"
-                )
+                class_lines.append(f"    {field_name}: {display} = Field({field_kwargs})")
             else:
-                class_lines.append(
-                    f"    {field_name}: {display}"
-                )
+                class_lines.append(f"    {field_name}: {display}")
+
+    # ------------------------------------------------------------------
+    # Password policy validator hook (Codex 3 F-008)
+    #
+    # For every password-typed field, attach the project-wide
+    # ``password_strength_validator`` (defined in
+    # ``app/schemas/password_policy.py``). The emitted class line uses
+    # ``field_validator`` declaratively so the policy applies to every
+    # path that constructs the model (route body, internal callers,
+    # tests).
+    # ------------------------------------------------------------------
+    if password_fields:
+        class_lines.append("")
+        class_lines.append("    # Codex 3 F-008: enforce the project password policy")
+        class_lines.append("    # on every password field.")
+        for pf in password_fields:
+            class_lines.append(
+                f'    _validate_{pf} = field_validator("{pf}")(password_strength_validator)'
+            )
 
     # ------------------------------------------------------------------
     # Validators
@@ -173,13 +211,9 @@ def generate_input_schema(
         class_lines.append("")
         for v_field, v_body in validators.items():
             method_name = f"validate_{v_field}"
-            class_lines.append(
-                f'    @field_validator("{v_field}")'
-            )
+            class_lines.append(f'    @field_validator("{v_field}")')
             class_lines.append("    @classmethod")
-            class_lines.append(
-                f"    def {method_name}(cls, v: object) -> object:"
-            )
+            class_lines.append(f"    def {method_name}(cls, v: object) -> object:")
             # Indent each line of the validator body
             for body_line in v_body.strip().splitlines():
                 class_lines.append(f"        {body_line}")
@@ -193,7 +227,7 @@ def generate_input_schema(
     class_lines.append(f"class {class_name}Update(BaseModel):")
     class_lines.append(f'    """Schema for partially updating a {class_name}."""')
     class_lines.append("")
-    class_lines.append("    model_config = ConfigDict(extra=\"forbid\")")
+    class_lines.append('    model_config = ConfigDict(extra="forbid")')
     class_lines.append("")
 
     for field_name, py_type, _optional, constraints in parsed_fields:
@@ -205,9 +239,7 @@ def generate_input_schema(
                 f"    {field_name}: {display} | None = Field(default=None, {field_kwargs})"
             )
         else:
-            class_lines.append(
-                f"    {field_name}: {display} | None = None"
-            )
+            class_lines.append(f"    {field_name}: {display} | None = None")
 
     # ------------------------------------------------------------------
     # Assemble & write
@@ -219,8 +251,16 @@ def generate_input_schema(
 
     notes = [
         f"Generated schemas/{name.lower()}.py with {class_name}Create and {class_name}Update.",
-        f"{len(parsed_fields)} field(s), strict=True, all constraints applied.",
+        # F-013: drop the false "strict=True" claim. The emitted
+        # ConfigDict only sets extra="forbid"; JSON coercion is allowed.
+        f'{len(parsed_fields)} field(s), extra="forbid", all constraints applied.',
     ]
+    if password_fields:
+        notes.append(
+            "Password field(s) "
+            + ", ".join(password_fields)
+            + " gated by app.schemas.password_policy.password_strength_validator (F-008)."
+        )
     if validators:
         notes.append(
             f"{len(validators)} custom field_validator(s) added: "

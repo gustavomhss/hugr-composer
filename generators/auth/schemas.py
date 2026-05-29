@@ -21,10 +21,18 @@ def generate_auth_schemas(output_dir: str) -> dict:
     files_created: list[str] = []
 
     # --- schemas/token.py -------------------------------------------------
+    # Codex 3 F-008: NewPassword now applies the strength validator that
+    # ships in schemas/password_policy.py — previously the policy was
+    # generated but never bound to any real password input, so weak
+    # passwords slipped past the advertised digit/uppercase/blocklist
+    # rules. The validator returns the raw string on success and raises
+    # ValueError on policy violations (Pydantic surfaces these as 422).
     token_content = textwrap.dedent('''\
         """Token and password-reset schemas."""
 
-        from pydantic import BaseModel, Field
+        from pydantic import BaseModel, Field, field_validator
+
+        from app.schemas.password_policy import password_strength_validator
 
 
         class Token(BaseModel):
@@ -45,10 +53,19 @@ def generate_auth_schemas(output_dir: str) -> dict:
 
 
         class NewPassword(BaseModel):
-            """Password-reset request body."""
+            """Password-reset request body.
+
+            ``new_password`` is validated against the project password
+            policy (length + digit + uppercase + common-passwords
+            blocklist) — see ``schemas.password_policy``.
+            """
 
             token: str
             new_password: str = Field(min_length=8, max_length=128)
+
+            _validate_new_password = field_validator("new_password")(
+                password_strength_validator,
+            )
     ''')
 
     token_path = out / "token.py"
