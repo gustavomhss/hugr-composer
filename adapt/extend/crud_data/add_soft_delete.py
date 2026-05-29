@@ -6,24 +6,30 @@ What this tool actually does (end-to-end):
    names — not filename-derived guesses).
 2. Injects ``is_deleted`` + ``deleted_at`` columns into each model file that
    doesn't already have them.
-3. Patches each model's CRUD file to override ``delete()`` so it sets
-   ``is_deleted=True`` / ``deleted_at=now()`` instead of hard-deleting, and
-   to filter ``is_deleted=True`` rows out of ``get_multi``.
+3. **Patches the shared ``CRUDBase`` class in ``app/crud/base.py``** so its
+   ``get()`` / ``get_multi()`` / ``delete()`` methods are soft-delete-aware
+   *in place* — when the bound model has an ``is_deleted`` column, deletes
+   flip the flag (instead of physically removing the row) and reads filter
+   soft-deleted rows out automatically.
 4. Generates an Alembic migration adding the two columns to each affected table.
-5. Copies the framework-agnostic ``core.venous.data.UnitOfWork`` primitive and
-   its FastAPI adapter into the project and writes ``app/soft_delete.py`` — a
-   ≤20-line glue module that wires the UoW flush-function into FastAPI Depends.
 
 CONTRACT §B1.0 + §B1.0.1 pattern (mirrors ``add_graceful_shutdown``):
 
-The tool is idempotent: a second run detects the ``is_deleted`` fingerprint in
-the first model file and returns ``status="no_op"`` without touching any file.
+The tool is idempotent: a second run detects the ``SOFT_DELETE_PATCH_APPLIED``
+fingerprint in ``app/crud/base.py`` and returns ``status="no_op"`` without
+touching any file.
 
-BUG C FIX (vs. previous version): the old implementation returned
-``status="success"`` after only copying the UoW primitive, leaving
-``is_deleted`` absent from every model.  The ``hasattr(entity, "is_deleted")``
-guards in ``soft_delete.py`` were therefore always-False, meaning deletes still
-hard-deleted.  This rewrite actually injects the column and migration.
+P1-#14 RESOLUTION (vs. previous version): the old implementation wrote
+per-model module-level shadow functions (``get``/``get_multi``/``delete``)
+that *appeared* to override the CRUDBase re-export aliases, plus an orphan
+UnitOfWork "glue module" at ``app/soft_delete.py`` that nothing imported.
+Soft-delete worked by accident through the shadow; the actual ``CRUDBase``
+instance stayed hard-delete, and the UoW primitive was dead weight.  This
+rewrite patches ``CRUDBase`` directly (single source of truth) and drops the
+orphan UoW emission entirely.
+
+BUG C FIX (preserved): the column injection + migration emission remain the
+honest fix for the older "success-but-inert" failure mode.
 """
 
 from __future__ import annotations
@@ -34,49 +40,94 @@ import textwrap
 import time
 from pathlib import Path
 
+from adapt._base import patch_append_module_block
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 from adapt.contracts.migration_helper import find_migration_head
 
 MCP_TOOL = {
     "name": "fastapi_data_add_soft_delete",
     "description": (
-        "Inject is_deleted + deleted_at columns into domain models, override "
-        "delete() in CRUD to soft-delete, emit migration, and copy UnitOfWork "
-        "primitive + FastAPI adapter into the project."
+        "Inject is_deleted + deleted_at columns into domain models, patch the "
+        "shared CRUDBase class so get/get_multi/delete are soft-delete-aware "
+        "in place, and emit an Alembic migration per affected table."
     ),
     "tags": ["extend", "crud_data"],
     "entry": "add_soft_delete",
-    "imports_primitives": [
-        "core.venous.data.UnitOfWork",
-    ],
-    "imports_adapters": [
-        "core.venous._adapters.fastapi.UnitOfWorkAdapter",
-    ],
 }
 
 
-_GLUE = '''\
-"""Wire soft-delete into the FastAPI app via the UnitOfWork primitive.
-
-Delegates to `UnitOfWorkAdapter` copied under `core/venous/` by
-`add_soft_delete`. Hand-editing is safe but the file is re-emitted
-idempotently on subsequent tool runs.
-"""
-
-from __future__ import annotations
-
-from core.venous._adapters.fastapi.UnitOfWorkAdapter import make_dependency
+# Fingerprint substring used to detect that ``app/crud/base.py`` has already
+# been patched with the soft-delete-aware overrides (drives idempotency).
+_PATCH_FINGERPRINT = "SOFT_DELETE_PATCH_APPLIED"
 
 
-def _soft_delete_flush(new, dirty, removed):
-    """Flip `is_deleted=True` on every 'removed' entity instead of DELETEing."""
-    for entity in removed:
-        if hasattr(entity, "is_deleted"):
-            entity.is_deleted = True
+# Module-level block appended to ``app/crud/base.py`` to make ``CRUDBase``
+# soft-delete-aware. We override the three methods by assignment at module
+# scope rather than editing the class body — this keeps the patch additive
+# and AST-safe.
+_CRUDBASE_PATCH = '''
+
+# ---------------------------------------------------------------------------
+# SOFT_DELETE_PATCH_APPLIED — added by add_soft_delete tool.
+# ---------------------------------------------------------------------------
+# Single source of truth: CRUDBase.get / get_multi / delete become
+# soft-delete-aware in place. When the bound model has an ``is_deleted``
+# column, reads exclude soft-deleted rows and ``delete()`` flips the flag
+# (and ``deleted_at`` if present) instead of physically removing the row.
+# Models without ``is_deleted`` keep the original hard-delete behaviour, so
+# auth / infra tables stay untouched.
+from datetime import datetime as _sd_datetime, timezone as _sd_timezone
+
+from sqlalchemy import func as _sd_func, select as _sd_select
 
 
-get_uow = make_dependency(_soft_delete_flush)
-"""FastAPI dependency yielding a UoW whose 'removed' bucket soft-deletes."""
+async def _sd_get(self, session, id):
+    """Soft-delete-aware ``get`` — returns ``None`` for soft-deleted rows."""
+    stmt = _sd_select(self.model).where(self.model.id == id)
+    if hasattr(self.model, "is_deleted"):
+        stmt = stmt.where(self.model.is_deleted == False)  # noqa: E712
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def _sd_get_multi(self, session, *, skip=0, limit=20, owner_id=None):
+    """Soft-delete-aware ``get_multi`` — excludes soft-deleted rows."""
+    stmt = _sd_select(self.model)
+    if hasattr(self.model, "is_deleted"):
+        stmt = stmt.where(self.model.is_deleted == False)  # noqa: E712
+    if owner_id is not None and hasattr(self.model, "owner_id"):
+        stmt = stmt.where(self.model.owner_id == owner_id)
+    count_stmt = _sd_select(_sd_func.count()).select_from(stmt.subquery())
+    total = (await session.execute(count_stmt)).scalar_one()
+    stmt = stmt.order_by(self.model.created_at.desc()).offset(skip).limit(limit)
+    result = await session.execute(stmt)
+    return {"data": list(result.scalars().all()), "count": total}
+
+
+async def _sd_delete(self, session, id):
+    """Soft-delete-aware ``delete``.
+
+    For models with ``is_deleted``: flips ``is_deleted=True`` (and
+    ``deleted_at`` if present) instead of issuing a SQL DELETE.
+    For models without it: falls back to the original hard-delete.
+    """
+    obj = await _sd_get(self, session, id)
+    if obj is None:
+        return None
+    if hasattr(obj, "is_deleted"):
+        obj.is_deleted = True
+        if hasattr(obj, "deleted_at"):
+            obj.deleted_at = _sd_datetime.now(_sd_timezone.utc)
+        await session.flush()
+        return obj
+    await session.delete(obj)
+    await session.flush()
+    return obj
+
+
+CRUDBase.get = _sd_get
+CRUDBase.get_multi = _sd_get_multi
+CRUDBase.delete = _sd_delete
 '''
 
 
@@ -84,12 +135,15 @@ get_uow = make_dependency(_soft_delete_flush)
 # Public entry point
 # ---------------------------------------------------------------------------
 
+
 def add_soft_delete(inp: ToolInput) -> ToolResult:
     """Add real soft-delete capability to a FastAPI/SQLAlchemy project.
 
     Discovers domain models, injects ``is_deleted`` / ``deleted_at`` columns,
-    patches CRUD to soft-delete, generates Alembic migration, and copies the
-    UnitOfWork primitive + FastAPI adapter.
+    patches the shared ``CRUDBase`` in ``app/crud/base.py`` to be
+    soft-delete-aware in place, and emits an Alembic migration per affected
+    table. **No** per-model CRUD module is shadowed, and **no** orphan UoW
+    glue file is written.
 
     Args:
         inp: ``ToolInput`` with ``project_dir`` (absolute path) and optional
@@ -106,7 +160,7 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
     if err:
         return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
-    from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
+    from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -123,14 +177,15 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
         )
 
     app_dir = project / "app"
-    glue_file = app_dir / "soft_delete.py"
+    crud_base_file = app_dir / "crud" / "base.py"
 
-    # Idempotency check: look for the is_deleted column in any model AND the
-    # glue file.  Both must be present for a true no_op.
-    if _soft_delete_already_installed(app_dir):
+    # Idempotency check: CRUDBase patch fingerprint present in app/crud/base.py.
+    if _soft_delete_already_installed(crud_base_file):
         return ToolResult(
             status="no_op",
-            notes=["Soft-delete already installed — is_deleted column present in models."],
+            notes=[
+                "Soft-delete already installed — CRUDBase patch fingerprint present in app/crud/base.py."
+            ],
             execution_time_ms=_elapsed_ms(start),
         )
 
@@ -144,9 +199,8 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
             notes=[
                 "[dry_run] Would inject is_deleted + deleted_at into models: "
                 + ", ".join(model_names),
-                "[dry_run] Would patch CRUD delete() + get_multi() for each model.",
+                "[dry_run] Would patch CRUDBase in app/crud/base.py so get/get_multi/delete are soft-delete-aware.",
                 "[dry_run] Would generate Alembic migration for each model.",
-                "[dry_run] Would copy UnitOfWork primitive + adapter and write app/soft_delete.py.",
             ],
             next_steps=["Re-run without dry_run=True to apply."],
             execution_time_ms=_elapsed_ms(start),
@@ -155,48 +209,31 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
     files_created: list[str] = list(scaffolded or [])
     files_modified: list[str] = []
 
-    # --- Step 1: Copy UnitOfWork primitive + adapter -------------------------
-    from generators.scaffold_venous import ensure_primitives
-
-    manifest = ensure_primitives(
-        str(project),
-        names=["core.venous.data.UnitOfWork"],
-        adapters=["core.venous._adapters.fastapi.UnitOfWorkAdapter"],
-    )
-    files_created.append(manifest.path)
-
-    # --- Step 2: Write glue file ---------------------------------------------
-    app_dir.mkdir(parents=True, exist_ok=True)
-    glue_file.write_text(_GLUE)
-    files_created.append(str(glue_file))
-
-    # --- Step 3: Patch models + CRUD + generate migration per model ----------
-    versions_dir = project / "alembic" / "versions"
+    # --- Step 1: Patch models (inject is_deleted + deleted_at) ---------------
     patched_models: list[str] = []
+    versions_dir = project / "alembic" / "versions"
 
     for stem, pascal in model_pairs:
         model_file = app_dir / "models" / f"{stem}.py"
-        crud_file = app_dir / "crud" / f"{stem}.py"
 
-        # Patch model file: inject is_deleted + deleted_at
-        if model_file.exists():
-            modified = _patch_model(model_file, pascal)
-            if modified:
-                files_modified.append(str(model_file))
-                patched_models.append(pascal)
-
-        # Patch CRUD file: override delete() + filter in get_multi
-        if crud_file.exists():
-            modified = _patch_crud(crud_file, pascal, stem)
-            if modified:
-                files_modified.append(str(crud_file))
+        if model_file.exists() and _patch_model(model_file, pascal):
+            files_modified.append(str(model_file))
+            patched_models.append(pascal)
 
         # Generate migration
         if versions_dir.exists():
             mig = _write_migration(versions_dir, pascal, stem)
             files_created.append(str(mig))
 
-    # --- Step 4: Syntax-check all written files ------------------------------
+    # --- Step 2: Patch CRUDBase (single source of truth) ---------------------
+    if crud_base_file.exists() and patch_append_module_block(
+        crud_base_file,
+        block=_CRUDBASE_PATCH,
+        fingerprint=_PATCH_FINGERPRINT,
+    ):
+        files_modified.append(str(crud_base_file))
+
+    # --- Step 3: Syntax-check all written files ------------------------------
     all_written = files_created + files_modified
     for path_str in all_written:
         p = Path(path_str)
@@ -218,18 +255,17 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
         files_modified=files_modified,
         notes=[
             f"Injected is_deleted + deleted_at columns into models: {model_summary}.",
-            "CRUD delete() overridden: sets is_deleted=True + deleted_at=now() instead of hard-delete.",
-            "CRUD get_multi() patched: filters out is_deleted=True rows automatically.",
+            "Patched app/crud/base.py: CRUDBase.get/get_multi/delete are now soft-delete-aware.",
+            "  - get()/get_multi() filter out is_deleted=True rows.",
+            "  - delete() flips is_deleted/deleted_at instead of issuing SQL DELETE.",
+            "  - Models without is_deleted (auth/infra) keep original hard-delete behaviour.",
             "Alembic migration generated for each patched model.",
-            "Shipped primitive: core.venous.data.UnitOfWork (change-bucket transaction).",
-            "Shipped adapter: UnitOfWorkAdapter (FastAPI generator-dependency).",
-            "Wrote app/soft_delete.py — depend on get_uow to soft-delete via register_removed().",
         ],
         next_steps=[
             "alembic upgrade head",
-            "In routes: use the standard delete endpoint — it now soft-deletes automatically.",
+            "In routes: keep using the existing crud.delete/get/get_multi entry points — they now soft-delete automatically.",
             "Soft-deleted rows are excluded from get_multi() list/get responses.",
-            "To hard-delete, use a direct SQL DELETE or add a purge endpoint.",
+            "To hard-delete, issue a direct SQL DELETE or add a dedicated purge endpoint.",
         ],
         execution_time_ms=_elapsed_ms(start),
     )
@@ -239,24 +275,19 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
 # Discovery helpers
 # ---------------------------------------------------------------------------
 
-def _soft_delete_already_installed(app_dir: Path) -> bool:
-    """Return True if is_deleted is present in at least one model file.
+
+def _soft_delete_already_installed(crud_base_file: Path) -> bool:
+    """Return True if the CRUDBase soft-delete patch fingerprint is present.
 
     Args:
-        app_dir: The ``app/`` package directory.
+        crud_base_file: Path to ``app/crud/base.py``.
 
     Returns:
-        True if soft-delete is already installed.
+        True if soft-delete is already installed (fingerprint present).
     """
-    models_dir = app_dir / "models"
-    if not models_dir.exists():
+    if not crud_base_file.exists():
         return False
-    for f in sorted(models_dir.glob("*.py")):
-        if f.stem in {"base", "user", "mixins", "__init__", "tenant"}:
-            continue
-        if "is_deleted" in f.read_text():
-            return True
-    return False
+    return _PATCH_FINGERPRINT in crud_base_file.read_text()
 
 
 def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
@@ -294,7 +325,8 @@ def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
             continue
         # Use real class names from AST, not filename-derived guesses
         base_subclasses = [
-            n.name for n in ast.walk(tree)
+            n.name
+            for n in ast.walk(tree)
             if isinstance(n, ast.ClassDef)
             and any(
                 (isinstance(b, ast.Name) and b.id == "Base")
@@ -311,6 +343,7 @@ def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
 # ---------------------------------------------------------------------------
 # Model patcher
 # ---------------------------------------------------------------------------
+
 
 def _patch_model(model_file: Path, model_name: str) -> bool:
     """Inject ``is_deleted`` and ``deleted_at`` columns into the model class.
@@ -332,8 +365,6 @@ def _patch_model(model_file: Path, model_name: str) -> bool:
         return False
 
     # --- Ensure required imports are present ----------------------------------
-    lines = src.splitlines()
-
     # Add Boolean, DateTime to sqlalchemy imports
     src = _ensure_sa_imports(src, {"Boolean", "DateTime"})
     # Add datetime import
@@ -347,7 +378,6 @@ def _patch_model(model_file: Path, model_name: str) -> bool:
         )
 
     # --- Append columns to the class body ------------------------------------
-    # Find the last mapped_column line for the model class, then insert after it
     new_cols = (
         "\n"
         "    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)\n"
@@ -395,8 +425,6 @@ def _ensure_sa_imports(src: str, names: set[str]) -> str:
     # Determine which names are ALREADY imported from sqlalchemy via AST so we
     # correctly handle both single-line (`from sqlalchemy import A, B`) and
     # parenthesized multi-line (`from sqlalchemy import (\n  A,\n  B,\n)`) forms.
-    # The old regex naively matched `from sqlalchemy import (` and treated "("
-    # as the import list, mangling multi-line blocks into invalid syntax.
     try:
         already: set[str] = set()
         for node in ast.walk(ast.parse(src)):
@@ -410,10 +438,11 @@ def _ensure_sa_imports(src: str, names: set[str]) -> str:
     # Add the missing names as a SEPARATE, always-valid import line placed just
     # before the first existing sqlalchemy import (a second from-import is fine).
     insert = "from sqlalchemy import " + ", ".join(sorted(missing)) + "\n"
-    anchor = re.search(r"^from sqlalchemy import ", src, flags=re.MULTILINE) or \
-        re.search(r"^from sqlalchemy\.orm ", src, flags=re.MULTILINE)
+    anchor = re.search(r"^from sqlalchemy import ", src, flags=re.MULTILINE) or re.search(
+        r"^from sqlalchemy\.orm ", src, flags=re.MULTILINE
+    )
     if anchor:
-        return src[:anchor.start()] + insert + src[anchor.start():]
+        return src[: anchor.start()] + insert + src[anchor.start() :]
     return insert + src
 
 
@@ -436,128 +465,9 @@ def _insert_after_future(src: str, line_to_insert: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# CRUD patcher
-# ---------------------------------------------------------------------------
-
-def _patch_crud(crud_file: Path, model_name: str, stem: str) -> bool:
-    """Override get(), get_multi() and delete() in the CRUD file.
-
-    Adds module-level functions that shadow the ``get``/``get_multi``/``delete``
-    re-exports from CRUDBase (whose aliases are commented out), so every read and
-    delete path is is_deleted-aware:
-    - ``get()`` returns None for a soft-deleted row (route → 404).
-    - ``get_multi()`` excludes soft-deleted rows, same ``{"data", "count"}`` shape.
-    - ``delete()`` sets ``is_deleted=True`` + ``deleted_at=now()`` instead of
-      hard-deleting.
-
-    Args:
-        crud_file: Path to ``app/crud/{stem}.py``.
-        model_name: PascalCase model class name.
-        stem: Snake-case model stem (used to build table/file names).
-
-    Returns:
-        True if the file was modified.
-    """
-    src = crud_file.read_text()
-    if "is_deleted" in src:
-        return False
-
-    soft_delete_block = textwrap.dedent(f"""
-
-        # ---------------------------------------------------------------------------
-        # Soft-delete overrides — added by add_soft_delete tool
-        # ---------------------------------------------------------------------------
-        # These shadow the `get`/`get_multi`/`delete` re-exports above (their
-        # aliases are neutralized) so that read and delete paths honour
-        # is_deleted: a soft-deleted row is invisible to GET-by-id and list, and
-        # DELETE flips the flag instead of physically removing the row.
-        import uuid as _sd_uuid
-        from datetime import datetime as _sd_datetime, timezone as _sd_timezone
-        from sqlalchemy import func as _sd_func, select as _sd_select
-        from sqlalchemy.ext.asyncio import AsyncSession as _SdSession
-
-
-        async def get(session: _SdSession, id: "_sd_uuid.UUID") -> {model_name} | None:
-            \"\"\"Fetch a single non-deleted {model_name} by primary key.
-
-            Returns None for a missing OR soft-deleted row, so the route layer
-            returns 404 once a {model_name} has been soft-deleted.
-            \"\"\"
-            stmt = _sd_select({model_name}).where(
-                {model_name}.id == id,
-                {model_name}.is_deleted == False,  # noqa: E712
-            )
-            result = await session.execute(stmt)
-            return result.scalar_one_or_none()
-
-
-        async def get_multi(
-            session: _SdSession,
-            *,
-            skip: int = 0,
-            limit: int = 20,
-            owner_id: "_sd_uuid.UUID | None" = None,
-        ) -> dict:
-            \"\"\"List {model_name} rows excluding soft-deleted ones.
-
-            Mirrors the base CRUDBase.get_multi return shape
-            (``{{"data": [...], "count": <total>}}``) so the existing route and
-            pagination code keep working unchanged.
-            \"\"\"
-            stmt = _sd_select({model_name}).where({model_name}.is_deleted == False)  # noqa: E712
-            if owner_id is not None and hasattr({model_name}, "owner_id"):
-                stmt = stmt.where({model_name}.owner_id == owner_id)
-            count_stmt = _sd_select(_sd_func.count()).select_from(stmt.subquery())
-            total = (await session.execute(count_stmt)).scalar_one()
-            stmt = stmt.order_by({model_name}.created_at.desc()).offset(skip).limit(limit)
-            result = await session.execute(stmt)
-            return {{"data": list(result.scalars().all()), "count": total}}
-
-
-        async def delete(session: _SdSession, id: "_sd_uuid.UUID") -> {model_name} | None:
-            \"\"\"Soft-delete a {model_name} by primary key.
-
-            Sets ``is_deleted=True`` and ``deleted_at`` to the current UTC time.
-            The row is NOT physically removed — use a separate purge step if needed.
-
-            Args:
-                session: Async SQLAlchemy session.
-                id: Primary key of the {model_name} to soft-delete.
-
-            Returns:
-                The updated {model_name} instance, or None if not found.
-            \"\"\"
-            stmt = _sd_select({model_name}).where(
-                {model_name}.id == id,
-                {model_name}.is_deleted == False,  # noqa: E712
-            )
-            result = await session.execute(stmt)
-            obj = result.scalar_one_or_none()
-            if obj is None:
-                return None
-            obj.is_deleted = True
-            obj.deleted_at = _sd_datetime.now(_sd_timezone.utc)
-            await session.flush()
-            return obj
-    """)
-
-    # Neutralize the `get`/`get_multi`/`delete = crud.<fn>` re-export aliases so
-    # the soft-delete functions below are not F811 redefinitions of unused names,
-    # and so reads/deletes actually route through the is_deleted-aware versions.
-    src = re.sub(
-        r"^(get_multi|get|delete) = crud\.(?:get_multi|get|delete)\b.*$",
-        lambda m: f"# {m.group(0)}  # overridden by the soft-delete {m.group(1)}() below",
-        src,
-        flags=re.MULTILINE,
-    )
-
-    crud_file.write_text(src + soft_delete_block)
-    return True
-
-
-# ---------------------------------------------------------------------------
 # Migration generator
 # ---------------------------------------------------------------------------
+
 
 def _write_migration(versions_dir: Path, model_name: str, stem: str) -> Path:
     """Generate an Alembic migration adding is_deleted + deleted_at columns.
@@ -571,6 +481,7 @@ def _write_migration(versions_dir: Path, model_name: str, stem: str) -> Path:
         Path of the created migration file.
     """
     from generators._pluralize import pluralize
+
     table = pluralize(stem)
     rev_id = f"soft_delete_{table}"
     down_rev = find_migration_head(versions_dir) or "0001_initial"
@@ -627,6 +538,7 @@ def _write_migration(versions_dir: Path, model_name: str, stem: str) -> Path:
 # ---------------------------------------------------------------------------
 # Utilities
 # ---------------------------------------------------------------------------
+
 
 def _elapsed_ms(start: float) -> int:
     """Return elapsed milliseconds since *start* (from ``time.monotonic()``).
