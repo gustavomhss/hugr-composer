@@ -1,12 +1,14 @@
 """
-Primitive Delivery Contract — SOTA, 9-tier, absurdly rigorous.
+Primitive Delivery Contract — SOTA, 10-tier, absurdly rigorous.
 
 Every primitive module submitted by a Sonnet builder agent is validated
 against this contract BEFORE acceptance. A delivery that fails any tier is
 rejected with a structured error — no soft-accept, ever.
 
-Nine tiers, each a qualitatively different class of confidence:
+Ten tiers, each a qualitatively different class of confidence:
 
+    T0  Static                       mypy --strict + ruff + rationale-attached
+                                     suppressions, frozen at delivery time
     T1  Behavioral runtime           invariants hold in end-to-end scenarios
     T2  Formal model check           TLA+ / Alloy spec machine-verified
     T3  State-machine hypothesis     all reachable states explored
@@ -17,10 +19,19 @@ Nine tiers, each a qualitatively different class of confidence:
     T8  Chaos + game-day             fault injection, economic attacks
     T9  Meta                         LLM test-gap, persona, spec lint
 
-Maturity gates which tiers are required:
-    experimental  → T1 (+ T6 single-model)
-    emerging      → T1, T2?, T3, T4, T6
-    battle_tested → ALL 9
+Maturity gates which tiers are required (see `MATURITY_REQUIRED_TIERS`
+below — that table is the canonical source; this prose is a summary):
+
+    experimental  → T0, T1, T6
+    emerging      → T0, T1, T3, T4, T6, T7
+    battle_tested → ALL 10
+
+Pre-C2 versions of this docstring (and `engine/README.md`) described a
+nine-tier model with T0_static missing. That was prose drift from the
+shipped enum, not a spec change — the test suite has required
+T0_static on every maturity since this module landed. The audit
+contract treats code + tests as canonical and this docstring as a
+documentation surface that must match them.
 
 See also: `docs/research/SKILL_ENGINE_SPEC.md`, `docs/research/CONTRACT_STANDARDS.md`.
 """

@@ -6,9 +6,16 @@ Entry point:
     python -m engine.index.manifest verify      # builds twice, fails if hash drifts
 
 Design:
-  - Scans every `MCP_TOOL` dict across `adapt/`, `generators/`, `modules/`,
-    `mcp_tools/`, `benchmark/analyzer.py` — same discovery path as the MCP
-    server. Each produces a ToolEntry.
+  - Scans every `MCP_TOOL` dict under the roots listed in
+    ``TOOL_SCAN_ROOTS`` (currently ``adapt/``, ``generators/``,
+    ``modules/``, ``benchmark/``, ``meta/``, ``core/tools/``,
+    ``engine/discovery/``). Each scan walks ``**/*.py`` (so both
+    flat ``add_*.py`` modules and the per-tool directory layout
+    ``add_<tool>/__init__.py`` are picked up) and produces a
+    ToolEntry. ``mcp_tools/`` is **deliberately excluded** — the
+    tier-1 meta tools defined there operate ON the manifest and
+    must not appear IN it; they are surfaced via
+    ``mcp_tools.tier1.register_tier1_tools`` instead.
   - Reads `engine/primitives_by_concern.yaml` → PrimitiveEntry per primitive.
   - Parses every primitive `<Name>.md` for its `## Compose with:` section →
     RecipeEntry per bullet.

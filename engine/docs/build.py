@@ -21,9 +21,9 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import html
-import importlib.util
 import json
 import re
 import sys
@@ -368,20 +368,93 @@ def _last_audit_timestamp(namespace: str, name: str) -> str:
     return ts.strftime("%Y-%m-%d")
 
 
-def _load_tools() -> list[ToolMeta]:
-    tools: list[ToolMeta] = []
+def _discover_tool_sources() -> list[Path]:
+    """Yield every adapt-tool source file under ``ADAPT_ROOT``.
+
+    WAVE-1 migrates tools from flat modules (``add_<tool>.py``) to a
+    per-tool directory layout (``add_<tool>/__init__.py`` +
+    ``templates/*.py.tmpl``). The pre-C2 discovery only walked
+    ``rglob("add_*.py")``, which silently dropped the directory-form
+    tools from the docs site as soon as a WP landed. We scan both
+    shapes here so the published site tracks the manifest exactly.
+
+    A directory-form tool is identified by ``add_<name>/__init__.py``
+    where the parent directory itself starts with ``add_``. We skip
+    the bare ``add_<name>.py`` if a sibling directory of the same stem
+    also exists (the directory wins, matching how `mcp_tools` discovery
+    + the static manifest scanner resolve duplicates).
+    """
+    flat_sources: dict[str, Path] = {}
     for py in sorted(ADAPT_ROOT.rglob("add_*.py")):
         if py.name.startswith("test_") or "__pycache__" in py.parts:
             continue
-        spec = importlib.util.spec_from_file_location(f"_tool_{py.stem}", py)
-        if spec is None or spec.loader is None:
+        # `add_*/__init__.py` modules are caught by the dir scan below.
+        if py.name == "__init__.py":
             continue
-        mod = importlib.util.module_from_spec(spec)
-        try:
-            spec.loader.exec_module(mod)
-        except Exception:  # noqa: BLE001
+        flat_sources[py.stem] = py
+
+    dir_sources: dict[str, Path] = {}
+    for init_py in sorted(ADAPT_ROOT.rglob("__init__.py")):
+        if "__pycache__" in init_py.parts:
             continue
-        meta = getattr(mod, "MCP_TOOL", None)
+        parent = init_py.parent
+        if not parent.name.startswith("add_"):
+            continue
+        dir_sources[parent.name] = init_py
+
+    # Directory layout wins on a collision (the WAVE-1 migration deletes
+    # the flat module after porting, but during the cut-over both can
+    # coexist; the directory form is the new source of truth).
+    merged: dict[str, Path] = {**flat_sources, **dir_sources}
+    return sorted(merged.values())
+
+
+def _parse_mcp_tool_dict(py: Path) -> dict | None:
+    """Extract the ``MCP_TOOL`` dict from a Python file without exec.
+
+    Mirrors ``engine.index.manifest._load_mcp_tool_from_source``. The
+    pre-C2 docs builder imported each tool module, which (a) required
+    every optional runtime dependency to be installed and (b) silently
+    skipped (``except Exception``) any tool whose import failed — so
+    the published site could lose tools with no failing test. AST
+    parsing is fast, dependency-free, and surfaces real syntax errors
+    instead of swallowing them.
+    """
+    try:
+        tree = ast.parse(py.read_text(encoding="utf-8"))
+    except (SyntaxError, OSError):
+        return None
+    for node in tree.body:
+        if not isinstance(node, ast.Assign):
+            continue
+        for target in node.targets:
+            if not (isinstance(target, ast.Name) and target.id == "MCP_TOOL"):
+                continue
+            if not isinstance(node.value, ast.Dict):
+                return None
+            out: dict = {}
+            for k, v in zip(node.value.keys, node.value.values, strict=False):
+                try:
+                    kk = ast.literal_eval(k) if k is not None else None
+                    vv = ast.literal_eval(v)
+                except (ValueError, SyntaxError):
+                    return None
+                out[kk] = vv
+            return out
+    return None
+
+
+def _load_tools() -> list[ToolMeta]:
+    """Build the ToolMeta list rendered into the docs site.
+
+    Static AST parse only — no module exec, no swallowed import
+    errors. Discovers both ``add_<tool>.py`` and
+    ``add_<tool>/__init__.py``. The returned count is the truth the
+    docs-build tests assert against (``test_tool_pages_match_discovered``).
+    """
+    tools: list[ToolMeta] = []
+    for py in _discover_tool_sources():
+        meta = _parse_mcp_tool_dict(py)
         if not isinstance(meta, dict) or "name" not in meta:
             continue
         tools.append(

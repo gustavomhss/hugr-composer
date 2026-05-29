@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-check_primitive — aggregate all 9 tier gates for a single primitive delivery.
+check_primitive — aggregate all 10 tier gates for a single primitive delivery.
 
 Usage:
     python3 -m engine.check_primitive \\
@@ -160,7 +160,7 @@ async def _run_all_tiers(ctx: GateContext, tiers_needed: frozenset[Tier]) -> lis
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Validate a primitive delivery against all 9 tiers."
+        description="Validate a primitive delivery against all 10 tiers."
     )
     parser.add_argument("--primitive-dir", type=Path, required=True)
     parser.add_argument(
