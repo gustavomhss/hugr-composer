@@ -1,15 +1,17 @@
 """Tier-1 meta-tools — the "awakening" surface the agent always sees.
 
-Design per `/docs/research/DUAL_INDEX_DESIGN.md` §4.1. These are the
-seven MCP tools always loaded into the Claude session (primacy
-position 1). Everything else in the 201-tool catalog becomes tier-2
-(deferred) reachable via `fastapi_meta_search`.
+Design per `/docs/research/DUAL_INDEX_DESIGN.md` §4.1 + ADR-0003. These
+are the eight MCP tools defined in this module and always loaded into
+the Claude session (primacy position 1). Everything else in the 201-tool
+catalog becomes tier-2 (deferred) reachable via `fastapi_meta_search`,
+`fastapi_meta_list_bundle`, or session activation via
+`fastapi_meta_activate_bundle`.
 
-DO NOT add a seventh tier-1 tool without a protocol-version bump. The
-cognition research (cap ≤ 8) + Anthropic's 30–50-tool degradation
-threshold are the load-bearing constraints.
+DO NOT add a ninth tier-1 tool in this module without a protocol-version
+bump. The cognition research (cap ≤ 8) + Anthropic's 30–50-tool
+degradation threshold are the load-bearing constraints.
 
-All seven return a uniform envelope:
+All eight return a uniform envelope:
 
     {
       "ok": bool,
@@ -108,6 +110,26 @@ def fastapi_meta_home() -> dict:
                 "top_3": [{"name": b["name"], "synopsis": b["synopsis"]} for b in bucket[:3]],
             }
         )
+    # Schema v2 hierarchical surface (ADR-0003): skills + bundles. The
+    # agent reads this to know which bundles exist BEFORE deciding
+    # whether to activate one via fastapi_meta_activate_bundle.
+    skills_view: list[dict] = []
+    for s in catalog.get("skills", []):
+        skills_view.append(
+            {
+                "name": s["name"],
+                "version": s.get("version", ""),
+                "type": s.get("type", "local"),
+                "bundles": [
+                    {
+                        "name": b["name"],
+                        "tool_count": b["tool_count"],
+                        "tags": list(b.get("tags", [])),
+                    }
+                    for b in s.get("bundles", [])
+                ],
+            }
+        )
 
     result = {
         "version": catalog.get("kit_commit", "unknown"),
@@ -115,6 +137,7 @@ def fastapi_meta_home() -> dict:
         "counts": catalog["counts"],
         "verbs": list(catalog["verbs"]),
         "domains": list(catalog["domains"]),
+        "skills": skills_view,
         "landscape": landscape,
         "workflow": [
             "1. fastapi_meta_scaffold(models={...}, owner_models={...}) — scaffold a fresh project (inspect your working directory first; the catalog map this tool returns does NOT include repo state)",
@@ -579,21 +602,241 @@ def fastapi_meta_verify(primitive: str | None = None) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# MCP_TOOL aliases so the discovery loop registers all seven.
-# The discovery scanner at mcp_tools/discovery.py picks up ANY module-level
-# variable that starts with "MCP_TOOL" and has a dict value — so publishing
-# each one with a unique suffix is enough to register all seven.
+# fastapi_meta_list_bundle — list tools in a bundle (schema v2)
+#
+# Sits between fastapi_meta_home (skill+bundle map) and fastapi_meta_describe
+# (single-entry schema). When a bundle name has been identified, this tool
+# returns the bundle's tool roster — bounded by ~80 entries even at 10K
+# total catalog size, so it stays useful as the kit federates.
 # ---------------------------------------------------------------------------
 
-# (MCP_TOOL for fastapi_meta_home is defined above as the canonical name.)
-MCP_TOOL_HOME = MCP_TOOL  # alias so the pattern is uniform
-# MCP_TOOL_SEARCH / _DESCRIBE / _SCAFFOLD / _AUDIT / _VERIFY — already assigned above.
+MCP_TOOL_LIST_BUNDLE = {
+    "name": "fastapi_meta_list_bundle",
+    "description": (
+        "List the tools belonging to a specific bundle within a skill. "
+        "Call this after fastapi_meta_home / fastapi_meta_search identifies "
+        "a bundle you want to explore (e.g. 'crud_data', 'auth_access', "
+        "'infrastructure'). Returns the bundle's tool names + synopses + "
+        "tags. Caps at one bundle's slice (typically a few dozen entries) "
+        "vs the full 201 tools diluted in a flat list, and scales the same "
+        "way as the kit grows toward 10K tools. Pass `skill` only when "
+        "SKILL-002 onward ship; "
+        "today the single skill SKILL-001-fastapi-production is the default."
+    ),
+    "tags": ["meta", "discovery"],
+    "entry": "fastapi_meta_list_bundle",
+    "annotations": {"readOnlyHint": True, "destructiveHint": False},
+}
+
+
+def fastapi_meta_list_bundle(bundle_name: str, skill: str | None = None) -> dict:
+    """Return tools belonging to the named bundle.
+
+    Args:
+        bundle_name: e.g. "crud_data", "auth_access", "infrastructure".
+        skill: Optional skill name; defaults to the only skill present
+            (SKILL-001-fastapi-production today). Required only when
+            SKILL-002 onwards ship.
+
+    Returns: standard meta envelope with:
+        result.bundle: {name, skill, tool_count, tags}
+        result.tools: [{name, synopsis, domain, verb, tags}, ...]
+        next_steps: ["fastapi_meta_describe(name=...) for details",
+                     "fastapi_meta_activate_bundle to surface these in
+                      tools/list", ...]
+    """
+    t0 = time.perf_counter()
+    catalog = _load_catalog()
+    skills_list = catalog.get("skills", [])
+    if not skills_list:
+        return _envelope(
+            ok=False,
+            what="catalog has no skills entry",
+            result={"bundle": None, "tools": []},
+            next_steps=["Regenerate catalog: python -m engine.index.manifest build"],
+            t0=t0,
+        )
+    if skill is None:
+        skill = skills_list[0].get("name")
+    skill_entry = next((s for s in skills_list if s.get("name") == skill), None)
+    if skill_entry is None:
+        return _envelope(
+            ok=False,
+            what=f"unknown skill {skill!r}",
+            result={"bundle": None, "tools": []},
+            next_steps=[
+                "Call fastapi_meta_home() to list available skills.",
+            ],
+            t0=t0,
+        )
+    bundle_entry = next(
+        (b for b in skill_entry.get("bundles", []) if b.get("name") == bundle_name),
+        None,
+    )
+    if bundle_entry is None:
+        available = [b.get("name") for b in skill_entry.get("bundles", [])]
+        return _envelope(
+            ok=False,
+            what=f"unknown bundle {bundle_name!r} in {skill}",
+            result={"bundle": None, "tools": [], "available": available},
+            next_steps=[
+                "Call fastapi_meta_home() to see all bundles in this skill.",
+                f"Available bundles: {', '.join(available)}",
+            ],
+            t0=t0,
+        )
+
+    tools_view = [
+        {
+            "name": t["name"],
+            "synopsis": t.get("synopsis", ""),
+            "domain": t.get("domain", ""),
+            "verb": t.get("verb", ""),
+            "tags": list(t.get("tags", [])),
+        }
+        for t in catalog["tools"]
+        if t.get("skill") == skill and t.get("bundle") == bundle_name
+    ]
+    tools_view.sort(key=lambda x: x["name"])
+
+    return _envelope(
+        ok=True,
+        what=f"bundle {bundle_name!r}: {len(tools_view)} tools in {skill}",
+        result={
+            "bundle": {
+                "name": bundle_name,
+                "skill": skill,
+                "tool_count": bundle_entry.get("tool_count", len(tools_view)),
+                "tags": list(bundle_entry.get("tags", [])),
+            },
+            "tools": tools_view,
+        },
+        next_steps=[
+            f"Call fastapi_meta_describe(name='{tools_view[0]['name']}') for details on the first tool."
+            if tools_view
+            else "Bundle is empty; try fastapi_meta_home() to pick another.",
+            f"Call fastapi_meta_activate_bundle(bundle_name='{bundle_name}') to surface these tools in tools/list.",
+            "Call fastapi_meta_search(query=...) inside this bundle's domain to narrow further.",
+        ],
+        t0=t0,
+    )
+
+
+# ---------------------------------------------------------------------------
+# fastapi_meta_activate_bundle — session-scoped bundle activation
+#
+# Activation toggles a bundle's tools INTO tools/list for the current
+# session. Default tools/list returns only the eight tier-1 meta tools;
+# activating a bundle adds its slice on top. This is CLUTTER management
+# (keeps the agent's tool surface focused), NOT access control — every
+# tool remains callable via tools/call regardless of activation; auth/
+# scopes still gate the actual call.
+# ---------------------------------------------------------------------------
+
+MCP_TOOL_ACTIVATE_BUNDLE = {
+    "name": "fastapi_meta_activate_bundle",
+    "description": (
+        "Mark a bundle as ACTIVE in the current session. Subsequent "
+        "tools/list calls will include this bundle's tools alongside "
+        "the tier-1 meta tools. Use to surface a focused tool subset "
+        "for a working session without loading the entire catalogue "
+        "(clutter management, not access control — scopes still gate "
+        "tools/call). Activation is session-scoped via a ContextVar; "
+        "resetting the session clears it."
+    ),
+    "tags": ["meta", "discovery", "session"],
+    "entry": "fastapi_meta_activate_bundle",
+    "annotations": {"readOnlyHint": False, "destructiveHint": False},
+}
+
+
+def fastapi_meta_activate_bundle(bundle_name: str, skill: str | None = None) -> dict:
+    """Activate a bundle for the current session.
+
+    Uses a contextvars.ContextVar (see ``mcp_tools.discovery``) to track
+    active bundles per session. On session close, state resets.
+
+    Returns: envelope with result.activated_bundles list + total tool
+    count surfaced in tools/list afterwards.
+    """
+    t0 = time.perf_counter()
+    catalog = _load_catalog()
+    skills_list = catalog.get("skills", [])
+    if skill is None and skills_list:
+        skill = skills_list[0].get("name")
+    skill_entry = next((s for s in skills_list if s.get("name") == skill), None)
+    if skill_entry is None:
+        return _envelope(
+            ok=False,
+            what=f"unknown skill {skill!r}",
+            result={"activated_bundles": [], "tool_count": 0},
+            next_steps=["Call fastapi_meta_home() to list skills."],
+            t0=t0,
+        )
+    available = {b.get("name") for b in skill_entry.get("bundles", [])}
+    if bundle_name not in available:
+        return _envelope(
+            ok=False,
+            what=f"unknown bundle {bundle_name!r}",
+            result={"activated_bundles": [], "tool_count": 0, "available": sorted(available)},
+            next_steps=[
+                f"Available: {', '.join(sorted(available))}",
+                "Call fastapi_meta_home() for the full skill/bundle map.",
+            ],
+            t0=t0,
+        )
+    # Import lazily to avoid a cyclic import with discovery.py.
+    from mcp_tools.discovery import activate_bundle as _activate
+
+    active = _activate(bundle_name)
+    bundle_tool_count = sum(
+        1 for t in catalog["tools"] if t.get("bundle") in active and t.get("skill") == skill
+    )
+    return _envelope(
+        ok=True,
+        what=f"activated bundle {bundle_name!r} ({len(active)} bundle(s) active)",
+        result={
+            "activated_bundles": sorted(active),
+            "tool_count": bundle_tool_count,
+        },
+        next_steps=[
+            "Subsequent tools/list calls now include this bundle's tools.",
+            f"Call fastapi_meta_list_bundle(bundle_name='{bundle_name}') to inspect them.",
+            "Activation resets when the session ends.",
+        ],
+        t0=t0,
+    )
+
+
+# ---------------------------------------------------------------------------
+# MCP_TOOL surface inventory — eight tier-1 dicts in this module.
+#
+# Naming convention: each module-level `MCP_TOOL*` variable is a distinct
+# dict that the discovery scanner registers. The set is enforced by audit
+# rule B2.7 (engine/audit/contract_check.py). The eight are:
+#
+#   MCP_TOOL                  → fastapi_meta_home
+#   MCP_TOOL_SEARCH           → fastapi_meta_search
+#   MCP_TOOL_DESCRIBE         → fastapi_meta_describe
+#   MCP_TOOL_SCAFFOLD         → fastapi_meta_scaffold
+#   MCP_TOOL_AUDIT            → fastapi_meta_audit
+#   MCP_TOOL_VERIFY           → fastapi_meta_verify
+#   MCP_TOOL_LIST_BUNDLE      → fastapi_meta_list_bundle
+#   MCP_TOOL_ACTIVATE_BUNDLE  → fastapi_meta_activate_bundle
+#
+# `MCP_TOOL_HOME` was retired during WAVE-0-F2 (it aliased MCP_TOOL — a
+# dummy entry inflated the surface count without adding a distinct
+# behaviour). The compose tool lives in `mcp_tools/compose.py` and is
+# registered by `register_tier1_tools` alongside this set.
+# ---------------------------------------------------------------------------
 
 # Wire each MCP_TOOL_<X> to the matching entry function — the discovery
 # loop needs to know which callable to register for each metadata dict.
-MCP_TOOL_HOME["entry"] = "fastapi_meta_home"
+MCP_TOOL["entry"] = "fastapi_meta_home"
 MCP_TOOL_SEARCH["entry"] = "fastapi_meta_search"
 MCP_TOOL_DESCRIBE["entry"] = "fastapi_meta_describe"
 MCP_TOOL_SCAFFOLD["entry"] = "fastapi_meta_scaffold"
 MCP_TOOL_AUDIT["entry"] = "fastapi_meta_audit"
 MCP_TOOL_VERIFY["entry"] = "fastapi_meta_verify"
+MCP_TOOL_LIST_BUNDLE["entry"] = "fastapi_meta_list_bundle"
+MCP_TOOL_ACTIVATE_BUNDLE["entry"] = "fastapi_meta_activate_bundle"

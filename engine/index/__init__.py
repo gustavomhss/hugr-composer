@@ -10,4 +10,4 @@ resources / prompts, and (b) the human catalog page.
 Anything downstream that drifts from the manifest is a CONTRACT §A8 bug.
 """
 
-MANIFEST_SCHEMA_VERSION = "2"
+MANIFEST_SCHEMA_VERSION = "2.0"

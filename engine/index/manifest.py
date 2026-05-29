@@ -40,9 +40,11 @@ from engine.index.schemas import (
     DOMAINS,
     TAG_VOCABULARY,
     VERBS,
+    BundleEntry,
     CatalogManifest,
     PrimitiveEntry,
     RecipeEntry,
+    SkillEntry,
     ToolEntry,
 )
 
@@ -600,6 +602,120 @@ def _slugify(s: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Skill + bundle derivation (schema v2)
+#
+# Schema v2 makes the tool surface hierarchical: skill → bundles → tools.
+# Today the kit ships ONE skill (`SKILL-001-fastapi-production`); federation
+# handoff will add more under the same shape (see ADR-0003).
+#
+# Bundle derivation:
+#   - Tools under `adapt/extend/<bundle>/` map to `<bundle>` directly
+#     (6 bundles: api_design, auth_access, crud_data, infrastructure,
+#     realtime, testing_tools — the six dirs that exist today).
+#   - Tools outside `adapt/extend/` (generators/, modules/, core/tools/,
+#     adapt/{evolve,operate,proactive,verify}/, etc.) inherit a bundle
+#     by their domain affinity. Six bundles cover the ten domains:
+#         auth         → auth_access
+#         data         → crud_data
+#         api          → api_design
+#         realtime     → realtime
+#         testing      → testing_tools
+#         resiliency, observability, compliance, deployment, meta
+#                      → infrastructure (the "ops + cross-cutting" bucket)
+#
+# Bundle tags are a small curated hint set for search; the tag list per
+# bundle is fixed at v2 and ⊆ a freeform vocabulary (NOT necessarily
+# TAG_VOCABULARY — bundles are coarser than per-tool tags).
+# ---------------------------------------------------------------------------
+
+SKILL_ID = "SKILL-001-fastapi-production"
+
+_BUNDLE_TAGS: dict[str, tuple[str, ...]] = {
+    "crud_data": ("data", "persistence"),
+    "auth_access": ("security", "auth"),
+    "infrastructure": ("resiliency", "infra"),
+    "realtime": ("streaming", "sse", "websocket"),
+    "testing_tools": ("testing", "fixtures"),
+    "api_design": ("api", "versioning", "cqrs"),
+}
+
+# Order matters only for stable listing; the catalog re-sorts by name.
+_BUNDLE_NAMES: tuple[str, ...] = (
+    "api_design",
+    "auth_access",
+    "crud_data",
+    "infrastructure",
+    "realtime",
+    "testing_tools",
+)
+
+# Domain → bundle fallback for tools NOT under adapt/extend/<bundle>/.
+_DOMAIN_TO_BUNDLE: dict[str, str] = {
+    "auth": "auth_access",
+    "data": "crud_data",
+    "api": "api_design",
+    "realtime": "realtime",
+    "testing": "testing_tools",
+    "resiliency": "infrastructure",
+    "observability": "infrastructure",
+    "compliance": "infrastructure",
+    "deployment": "infrastructure",
+    "meta": "infrastructure",
+}
+
+
+def _infer_bundle(module_path: Path, domain: str) -> str:
+    """Return the bundle name a tool belongs to.
+
+    Path-based for `adapt/extend/<bundle>/...`, domain-based otherwise.
+    Every tool resolves to one of the six bundles in `_BUNDLE_NAMES`.
+    """
+    parts = module_path.parts
+    if len(parts) >= 3 and parts[0] == "adapt" and parts[1] == "extend":
+        b = parts[2]
+        if b in _BUNDLE_NAMES:
+            return b
+    # Fall back to domain mapping (e.g. generators/, modules/, core/tools/).
+    return _DOMAIN_TO_BUNDLE.get(domain, "infrastructure")
+
+
+def _build_skills(tools: list[ToolEntry]) -> tuple[SkillEntry, ...]:
+    """Derive the single SkillEntry from the assembled tool list.
+
+    The skill's bundle list is exactly `_BUNDLE_NAMES` with per-bundle
+    `tool_count` = number of tools whose `bundle` field matches. Bundle
+    tags come from `_BUNDLE_TAGS`. The skill's own version reads from
+    `skills/<SKILL_ID>/VERSION` if present; falls back to "0.0.0".
+    """
+    skill_version = "0.0.0"
+    vfile = SKILL_ROOT / "VERSION"
+    if vfile.exists():
+        skill_version = vfile.read_text(encoding="utf-8").strip() or skill_version
+
+    counts: dict[str, int] = dict.fromkeys(_BUNDLE_NAMES, 0)
+    for t in tools:
+        if t.bundle in counts:
+            counts[t.bundle] += 1
+
+    bundles = tuple(
+        BundleEntry(
+            name=name,
+            tool_count=counts[name],
+            tags=_BUNDLE_TAGS.get(name, ()),
+        )
+        for name in _BUNDLE_NAMES
+    )
+    return (
+        SkillEntry(
+            name=SKILL_ID,
+            version=skill_version,
+            type="local",
+            bundles=bundles,
+        ),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Tool entry assembly
 # ---------------------------------------------------------------------------
 
@@ -647,6 +763,8 @@ def _tool_entries(raw_tools: list[dict], primitive_names: set[str]) -> list[Tool
         test_path = module_path.with_name(f"test_{module_path.name}")
         test_paths = (str(test_path),) if (SKILL_ROOT / test_path).exists() else ()
 
+        bundle = _infer_bundle(module_path, domain)
+
         try:
             entries.append(
                 ToolEntry(
@@ -654,6 +772,8 @@ def _tool_entries(raw_tools: list[dict], primitive_names: set[str]) -> list[Tool
                     legacy_name=legacy,
                     verb=verb,
                     domain=domain,
+                    skill=SKILL_ID,
+                    bundle=bundle,
                     synopsis=synopsis or mcp_name,
                     when_to_call=when_to_call,
                     when_not_to_call="",
@@ -704,6 +824,22 @@ def build() -> CatalogManifest:
     recipes = _extract_recipes(primitives)
     raw_tools = _scan_tools()
     tools = _tool_entries(raw_tools, primitive_names)
+    skills = _build_skills(tools)
+
+    # Schema v2 counts (see ADR-0003). `tools_total` replaces the v1
+    # `tools` key; `tools_local` + `tools_federated` split the surface
+    # so federation handoff can land without re-shaping the catalog.
+    tools_local = len(tools)  # everything in this manifest is local today
+    tools_federated = 0
+    counts = {
+        "tools_total": tools_local + tools_federated,
+        "tools_local": tools_local,
+        "tools_federated": tools_federated,
+        "primitives": len(primitives),
+        "recipes": len(recipes),
+        "skills": len(skills),
+        "bundles": sum(len(s.bundles) for s in skills),
+    }
 
     manifest = CatalogManifest(
         schema_version=MANIFEST_SCHEMA_VERSION,
@@ -712,14 +848,11 @@ def build() -> CatalogManifest:
         verbs=VERBS,  # type: ignore[arg-type]
         domains=DOMAINS,  # type: ignore[arg-type]
         tags=tuple(sorted(TAG_VOCABULARY)),
+        skills=skills,
         tools=tuple(tools),
         primitives=tuple(primitives),
         recipes=tuple(recipes),
-        counts={
-            "tools": len(tools),
-            "primitives": len(primitives),
-            "recipes": len(recipes),
-        },
+        counts=counts,
     )
     return manifest
 
@@ -764,7 +897,9 @@ def main(argv: list[str] | None = None) -> int:
 
     h1 = write(m, args.out)
     print(
-        f"tools={m.counts['tools']}  primitives={m.counts['primitives']}  recipes={m.counts['recipes']}"
+        f"skills={m.counts['skills']}  bundles={m.counts['bundles']}  "
+        f"tools={m.counts['tools_total']}  "
+        f"primitives={m.counts['primitives']}  recipes={m.counts['recipes']}"
     )
     try:
         display = args.out.relative_to(SKILL_ROOT)

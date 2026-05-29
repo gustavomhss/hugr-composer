@@ -64,6 +64,10 @@ class ToolEntry(BaseModel):
     (the small always-loaded set). Tier-2 tools are allowed to inherit
     defaults (e.g. missing `when_not_to_call` is tolerated; the tool
     search index falls back to the general description).
+
+    Schema v2 (WAVE-0-F2): every tool also carries `skill` + `bundle`
+    fields so the tier-1 router can answer "list bundle X" / "activate
+    bundle X" without re-scanning the file tree. See ADR-0003.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -72,6 +76,8 @@ class ToolEntry(BaseModel):
     legacy_name: str | None = None  # pre-rename name for the compat shim window
     verb: Verb
     domain: Domain
+    skill: str  # NEW v2: skill id this tool ships under (e.g. SKILL-001-fastapi-production)
+    bundle: str  # NEW v2: bundle name within the skill (one of skill.bundles[*].name)
     synopsis: str  # one-line (≤100 chars), sentence case, no trailing dot
     when_to_call: str  # 1-3 sentences, LLM-oriented
     when_not_to_call: str = ""  # required on tier-1
@@ -84,6 +90,39 @@ class ToolEntry(BaseModel):
     primitives_used: tuple[str, ...] = ()  # names registered in primitives_by_concern.yaml
     example_input: dict | None = None
     example_output: dict | None = None
+
+
+class BundleEntry(BaseModel):
+    """One bundle inside a skill (hierarchical catalog v2).
+
+    A bundle is a coherent slice of the skill's tool surface (e.g.
+    `crud_data`, `auth_access`, `infrastructure`). Bundles are how the
+    tier-1 router exposes ~80-tool subsets without flooding `tools/list`
+    with the full 201-tool surface. Activation is session-scoped via the
+    `_ACTIVE_BUNDLES` ContextVar in `mcp_tools/discovery`.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    name: str  # e.g. "crud_data"
+    tool_count: int  # number of tools in this bundle (in this skill)
+    tags: tuple[str, ...] = ()  # semantic hints for search (subset of TAG_VOCABULARY or freeform)
+
+
+class SkillEntry(BaseModel):
+    """One skill in the catalog (hierarchical catalog v2).
+
+    Today the catalog ships a single skill (`SKILL-001-fastapi-production`);
+    federation handoff will add more under the same shape. Skills are
+    the top of the discovery hierarchy: skill → bundles → tools.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    name: str  # skill id, e.g. "SKILL-001-fastapi-production"
+    version: str  # skill's own semver — reads from skills/<skill>/VERSION
+    type: Literal["local", "federated"] = "local"
+    bundles: tuple[BundleEntry, ...] = ()
 
 
 class PrimitiveEntry(BaseModel):
@@ -118,12 +157,18 @@ class CatalogManifest(BaseModel):
     verbs: tuple[Verb, ...]
     domains: tuple[Domain, ...]
     tags: tuple[str, ...]  # closed vocabulary snapshot
+    skills: tuple[SkillEntry, ...] = ()  # NEW v2: hierarchical surface
     tools: tuple[ToolEntry, ...]
     primitives: tuple[PrimitiveEntry, ...]
     recipes: tuple[RecipeEntry, ...]
     counts: dict[str, int] = Field(
-        default_factory=dict
-    )  # shortcut: {tools: 180, primitives: 122, recipes: 290}
+        default_factory=dict,
+        description=(
+            "Schema v2 counts: tools_total + tools_local + tools_federated + "
+            "primitives + recipes + skills + bundles. Pre-v2 callers reading "
+            "`counts.tools` must migrate to `counts.tools_total`."
+        ),
+    )
     stable_hash: str | None = Field(
         default=None,
         description=(

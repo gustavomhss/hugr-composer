@@ -28,7 +28,11 @@ from engine.index.schemas import DOMAINS, TAG_VOCABULARY, VERBS
 
 def test_build_succeeds_and_produces_expected_counts() -> None:
     m = build()
-    assert m.counts["tools"] >= 150, f"too few tools: {m.counts['tools']}"
+    # Schema v2 (ADR-0003): `tools_total` replaces the v1 flat `tools`
+    # key. The local + federated split is asserted here too so future
+    # federation handoff lands without re-shaping the test.
+    assert m.counts["tools_total"] >= 150, f"too few tools: {m.counts['tools_total']}"
+    assert m.counts["tools_local"] + m.counts["tools_federated"] == m.counts["tools_total"]
     # Registry (engine/primitives_by_concern.yaml) is the authoritative source
     # for `stable`. As of v1.0.0-rc.1 the registry carries 124 entries.
     # Drift-floor: tests treat any count below the registry length as a
@@ -39,7 +43,10 @@ def test_build_succeeds_and_produces_expected_counts() -> None:
     assert staged >= 150, f"staged primitive surface collapsed: {staged}"
     assert m.counts["primitives"] == stable + staged
     assert m.counts["recipes"] >= 250
-    assert m.schema_version == "2"
+    # Schema v2 hierarchical surface invariants.
+    assert m.counts["skills"] == len(m.skills) >= 1
+    assert m.counts["bundles"] == sum(len(s.bundles) for s in m.skills) == 6
+    assert m.schema_version == "2.0"
 
 
 def test_build_is_deterministic(tmp_path: Path) -> None:
@@ -220,7 +227,11 @@ def test_tier1_home_returns_landscape_envelope() -> None:
     assert r["ok"] is True
     assert r["elapsed_ms"] >= 0
     assert len(r["result"]["landscape"]) == 10  # 10 domains
-    assert r["result"]["counts"]["tools"] >= 150
+    # Schema v2 (ADR-0003): counts.tools_total replaces v1 counts.tools.
+    assert r["result"]["counts"]["tools_total"] >= 150
+    # The hierarchical skills × bundles map is also surfaced at home.
+    assert len(r["result"]["skills"]) >= 1
+    assert r["result"]["skills"][0]["bundles"], "skill must expose bundles"
     assert r["next_steps"], "home must provide breadcrumbs"
 
 
@@ -301,7 +312,12 @@ def test_tier1_home_breadcrumbs_reference_other_tier1_tools() -> None:
 
 
 def test_tier1_registered_as_mcp_tools() -> None:
-    """discover_and_register must expose exactly 6 fastapi_meta_* tools."""
+    """discover_and_register must expose every tier-1 meta tool.
+
+    WAVE-0-F2 added two: fastapi_meta_list_bundle +
+    fastapi_meta_activate_bundle. The compose tool lives in
+    `mcp_tools/compose.py` but is registered alongside tier-1.
+    """
     import asyncio
 
     from mcp_tools.discovery import discover_and_register
@@ -316,6 +332,8 @@ def test_tier1_registered_as_mcp_tools() -> None:
         "fastapi_meta_scaffold",
         "fastapi_meta_audit",
         "fastapi_meta_verify",
+        "fastapi_meta_list_bundle",
+        "fastapi_meta_activate_bundle",
     }
     missing = expected - names
     assert not missing, f"tier-1 tools not registered: {missing}"
