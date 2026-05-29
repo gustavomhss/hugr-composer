@@ -10,13 +10,13 @@
 <!-- Implementation approach + key design decisions. Note anything out of scope. -->
 
 ## Testing
-<!-- Paste the verbatim tail of the gates you ran (verify.sh tier, regression gates, contract_check). -->
+<!-- Paste the verbatim tail of the gates you ran (`make verify` tier, regression gates, contract_check). -->
 ```
 <gate output>
 ```
 
 ## Definition of Done
-- [ ] `scripts/verify.sh` green for the affected tier (output pasted above)
+- [ ] `make verify` green for the affected tier (output pasted above) — entrypoint is the repo-root `Makefile` (`make verify` / `verify-tier0` / `verify-tier1` / `verify-tier2`), which delegates to `skills/SKILL-001-fastapi-production/scripts/verify.sh`. There is NO repo-root `scripts/verify.sh`.
 - [ ] Regression gates pass (`tests/test_p0_regression_gates.py`)
 - [ ] No file outside the intended scope touched (`git diff --name-only`)
 - [ ] No new narrative markdown outside `docs/`; no committed venv/emitted/db

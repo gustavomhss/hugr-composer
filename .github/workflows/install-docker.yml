@@ -1,9 +1,18 @@
 name: install.sh — fresh Docker smoke
 
 # B4.1 — validates that `install.sh` runs to completion in a hermetic
-# python:3.12-slim container. Nightly + on every change to install.sh
-# or the skill's requirements-mcp.txt. Failure surfaces here, never in
-# a user's terminal.
+# python:3.12-slim container.
+#
+# Live triggers (post 2026-05-28): nightly cron + workflow_dispatch only.
+# The earlier `push` / `pull_request` triggers on install-related paths
+# (`install.sh`, `pyproject.toml`, `VERSION`, `requirements-mcp.txt`)
+# were removed when GH Actions billing was blocked — see the comment
+# block under `on:` below. Until the self-hosted-runner migration lands,
+# install-touching PRs do NOT auto-smoke; reviewers must dispatch this
+# workflow manually (`gh workflow run install-docker.yml`) or run
+# `bash install.sh` locally before merge. Failure here still beats a
+# failure in a user's terminal — the cron run remains the persistent
+# safety net.
 
 # PARTIALLY DISABLED 2026-05-28: this workflow uses `container: image:
 # python:3.12-slim` on `ubuntu-latest`. With GH Actions minutes billing-blocked,

@@ -25,8 +25,8 @@ HuGR_Arsenal/
 │       ├── STATUS.md                   # Counts humanos + test matrix
 │       ├── INVENTORY.md                # Machine-verified counts (fonte única)
 │       ├── generators/                 # 56 code generators
-│       ├── adapt/                      # 127 tools (100 extend + 27 outros)
-│       │   ├── extend/                 # 100 feature tools (api_design, auth_access, crud_data, infrastructure, realtime, testing_tools)
+│       ├── adapt/                      # 126 tools (99 extend + 27 outros)
+│       │   ├── extend/                 # 99 feature tools (api_design, auth_access, crud_data, infrastructure, realtime, testing_tools)
 │       │   ├── verify/                 # 6 validation tools
 │       │   ├── operate/                # 8 operations tools
 │       │   ├── evolve/                 # 8 evolution tools
@@ -76,7 +76,7 @@ A skill principal. Convention over Configuration para FastAPI.
 124  primitivos registrados      (core/venous/<ns>/<Name>/)
 175  primitivos staged           (PascalCase-filtered, +42 quarantined)
  17  FastAPI adapters            (production-wired; +1 Redis, +1 Stripe adapter outside fastapi/)
-127  adapt tools                 (100 extend + 8 operate + 8 evolve + 6 verify + 4 contracts + 1 proactive)
+126  adapt tools                 (99 extend + 8 operate + 8 evolve + 6 verify + 4 contracts + 1 proactive)
  24  extend add_* Rails-connected (§B1.3 floor = 22, non-regressive)
  56  generators
  28  modules/ packages           (auth, payments, caching, db, deployment, obs, security, background_jobs, websockets)
@@ -94,7 +94,7 @@ A skill principal. Convention over Configuration para FastAPI.
 | Primitivos staged (PascalCase) | `core/venous/_staging/` | 175 | HuGR-shelled mas com REPLACE_ME, +42 quarantined |
 | Adapters FastAPI | `core/venous/_adapters/fastapi/` | 17 | Wiring production-grade |
 | Adapters Redis / Stripe | `core/venous/_adapters/{redis,stripe}/` | 2 | Provider glue sobre motores `events.PubSub` / `billing.Billing` |
-| EXTEND tools | `adapt/extend/` | 100 | Slice generators (add_*) |
+| EXTEND tools | `adapt/extend/` | 99 | Slice generators (add_*) |
 | Outros adapt | `adapt/{verify,operate,evolve,contracts,proactive}/` | 27 | Validação, ops, evolução |
 | Generators | `generators/` | 56 | Scaffolders de subsistemas (per `engine.inventory`; 60 .py files on disk incl. 3 top-level helpers + conftest) |
 | Modules | `modules/` | 28 | Feature packages prontos |

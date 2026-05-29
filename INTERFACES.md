@@ -25,9 +25,16 @@ Installation surface:
   (declared via `container: image: python:3.12-slim` in the
   workflow). There is NO repo-level `Dockerfile`; the workflow is
   the only gate, which keeps the install flow single-sourced and
-  removes a Dockerfile-vs-install.sh drift risk. Validated nightly
-  + on any change to `install.sh`, `pyproject.toml`, `VERSION`, or
-  `requirements-mcp.txt`.
+  removes a Dockerfile-vs-install.sh drift risk. **Triggers today
+  (post 2026-05-28):** nightly `schedule:` cron only + manual
+  `workflow_dispatch`. The earlier `push` / `pull_request` triggers
+  on install-related paths were removed when GH Actions billing was
+  blocked (workflow header documents the reason). A change to
+  `install.sh`, `pyproject.toml`, `VERSION`, or `requirements-mcp.txt`
+  is therefore NOT automatically smoked in-PR — reviewers must run
+  `bash install.sh` locally (or dispatch the workflow) before
+  merging install-touching changes. Re-enabling change-triggered
+  coverage is tracked against the self-hosted-runner migration.
 - **PyPI** — *not* shipped in v1.0. Install from git ref for now.
 
 File that identifies the skill to a host:

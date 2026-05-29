@@ -87,7 +87,7 @@ the command says 125, the doc is wrong, not the command.
 | Tools indexed in `catalog.json` | 201 | Canonical `fastapi_<domain>_<verb>_<noun>` |
 | Tier-1 meta tools | 7 | home / search / describe / scaffold / compose / audit / verify |
 | Tree dispatchers | 9 | auth, data, api, realtime, resiliency, obs, compliance, deployment, testing |
-| Adapt tools | 127 | 100 extend / 8 evolve / 8 operate / 6 verify / 4 contracts / 1 proactive |
+| Adapt tools | 126 | 99 extend / 8 evolve / 8 operate / 6 verify / 4 contracts / 1 proactive (matches INVENTORY.md §1; drift fixed via Codex C4 F-002) |
 | Generators | 56 | scaffolders per subsystem |
 | Module packages | 28 | pre-built feature bundles |
 | Registered primitives | 124 | `core/venous/<ns>/<Name>/` — framework-free, full shell |
@@ -178,8 +178,10 @@ where possible; reviewer-enforced where not).
 
 > **Two numbers, one source.** CONTRACT.md §B lists **45 items** as of
 > v1.0.0-rc.1 (count: `grep -cE '^#### B[0-9]' CONTRACT.md`).
-> `engine.audit.contract_check` wires **36 of them as machine-checked
-> rules** today. The delta is accounted for:
+> `engine.audit.contract_check` wires **37 of them as machine-checked
+> rules** today (run from `skills/SKILL-001-fastapi-production/`:
+> `PYTHONPATH=. python -m engine.audit.contract_check`). The delta is
+> accounted for:
 >
 > - **9 items are spec'd but deliberately not machine-checked** —
 >   `§B1.4` is subsumed by `§B1.3`'s AST scan; `§B5.1..§B7.3` close
@@ -653,8 +655,8 @@ disk via `ls .github/workflows/`):
 
 | Workflow | Trigger | What it runs |
 |---|---|---|
-| `skill-001-ci.yml` | Every push / PR touching `skills/SKILL-001-*` | Full contract check + full pytest + property tests |
-| `install-docker.yml` | Nightly + on `pyproject.toml` / `VERSION` / `requirements-mcp.txt` change | Fresh `python:3.12-slim` Docker; `install.sh`; smoke every tool |
+| `ci-selfhosted.yml` | Every push / PR (self-hosted macOS runner) | Full contract check + full pytest + property tests + auth + MCP gates (ratified by PR #39 — replaces the retired `skill-001-ci.yml`) |
+| `install-docker.yml` | Nightly cron + `workflow_dispatch` only (path-based push / PR triggers removed 2026-05-28 when GH Actions billing was blocked — see workflow header) | Fresh `python:3.12-slim` Docker; `install.sh`; smoke every tool |
 | `benchmark-nightly.yml` | Nightly (cron) + workflow_dispatch | `engine.bench.plan_level --publish` + `engine.bench.code_level --publish`; upload artefacts |
 | `blind-bench-stub.yml` | On demand + scheduled | Blind benchmark harness against pinned stub fixtures |
 | `docs-site.yml` | On main-branch push that touches docs | Rebuilds `engine/docs/build.py` output; deploys docs site |

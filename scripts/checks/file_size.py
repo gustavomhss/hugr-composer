@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Repo rule: keep logic files small. Templates are data and are exempt.
+"""Repo rule: keep logic files small. Template data files are exempt.
 
 Sweet spot ~300 LOC, hard cap 500 (file-level only — no per-function cap). A file
 over the hard cap is a refactor signal (usually embedded code-templates that
@@ -10,6 +10,17 @@ belong in templates/*.py.tmpl). Emitted-code template files do not count.
 
 Modes: pre-commit (argv = changed .py) or manual/CI (scan tracked .py).
 Exit 1 if any non-exempt logic file exceeds the hard cap.
+
+Exemption policy (post Codex C4 F-006):
+  - `.venv`, `site-packages`, `node_modules` — third-party trees.
+  - `/emitted/` — runtime-generated scaffold output (not source).
+  - `core/venous/_extracted/` — extraction-pipeline scratch (not source).
+  - Template DATA files by suffix (`.py.tmpl`, `.tmpl`, `.j2`, `.mustache`).
+  - Plain `.py` files under a `templates/` directory are NOT exempt — a
+    blanket `/templates/` token previously let executable Python hide there
+    above the hard cap. Real templates carry one of the suffixes above; if
+    a primitive needs an oversized `.py` helper, it should be split, not
+    parked under a `templates/` directory.
 """
 
 from __future__ import annotations
@@ -20,7 +31,17 @@ from pathlib import Path
 
 SOFT_CAP = 300
 HARD_CAP = 500
-EXEMPT_TOKENS = (".venv", "site-packages", "/emitted/", "node_modules", "/templates/")
+# NOTE: `/templates/` removed 2026-05-29 (Codex C4 F-006). See module
+# docstring for the rationale. Tracked `.py` files under `templates/`
+# at the time of the change: zero — verified via
+# `git ls-files '*.py' | grep '/templates/'`.
+EXEMPT_TOKENS = (
+    ".venv",
+    "site-packages",
+    "/emitted/",
+    "node_modules",
+    "core/venous/_extracted/",
+)
 EXEMPT_SUFFIXES = (".py.tmpl", ".tmpl", ".j2", ".mustache")
 
 
