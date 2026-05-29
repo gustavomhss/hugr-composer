@@ -229,7 +229,7 @@ def render_markdown(inv: dict) -> str:
 
 ## Headline
 
-- **{inv["mcp_tools_total"]} files carry `MCP_TOOL` metadata** (Maestro-visible surface).
+- **{inv["mcp_tools_total"]} files carry `MCP_TOOL` metadata** (agent-visible surface).
 - **Catalog:** {inv["catalog"]["tools"]} tools + {inv["catalog"]["primitives"]} primitives + {inv["catalog"]["recipes"]} recipes.
 - **{inv["venous_registered_total"]} registered primitives** (`core/venous/<ns>/<Name>/`).
 - **{inv["extracted_staged_total"]} staged primitives** in `_staging/` (plus {inv["extracted_quarantined"]} quarantined).

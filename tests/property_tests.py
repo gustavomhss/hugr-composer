@@ -22,12 +22,11 @@ import string
 import sys
 import tempfile
 import traceback
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 from adapt.contracts import ToolInput, ToolResult
 from tests.common.fixture_factory import create_fixture_project
-
 
 # ---------------------------------------------------------------------------
 # Tool registry — maps module.function to the callable, with default kwargs
@@ -38,143 +37,266 @@ from tests.common.fixture_factory import create_fixture_project
 # (e.g., tools that need a non-empty `target` or `operation`).
 _TOOL_REGISTRY: list[tuple[str, str, dict]] = [
     # extend / api_design
-    ("adapt.extend.api_design.add_api_versioning",  "add_api_versioning",  {}),
-    ("adapt.extend.api_design.add_batch_endpoint",  "add_batch_endpoint",  {}),
-    ("adapt.extend.api_design.add_graphql",         "add_graphql",         {}),
-    ("adapt.extend.api_design.add_long_running_task","add_long_running_task",{}),
+    ("adapt.extend.api_design.add_api_versioning", "add_api_versioning", {}),
+    ("adapt.extend.api_design.add_batch_endpoint", "add_batch_endpoint", {}),
+    ("adapt.extend.api_design.add_graphql", "add_graphql", {}),
+    ("adapt.extend.api_design.add_long_running_task", "add_long_running_task", {}),
     # extend / auth_access
-    ("adapt.extend.auth_access.add_api_key_auth",   "add_api_key_auth",    {}),
-    ("adapt.extend.auth_access.add_feature_flags",  "add_feature_flags",   {}),
-    ("adapt.extend.auth_access.add_mfa",            "add_mfa",             {}),
-    ("adapt.extend.auth_access.add_multi_tenancy",  "add_multi_tenancy",   {}),
-    ("adapt.extend.auth_access.add_oauth2_provider","add_oauth2_provider", {}),
-    ("adapt.extend.auth_access.add_rbac",           "add_rbac",            {}),
+    ("adapt.extend.auth_access.add_api_key_auth", "add_api_key_auth", {}),
+    ("adapt.extend.auth_access.add_feature_flags", "add_feature_flags", {}),
+    ("adapt.extend.auth_access.add_mfa", "add_mfa", {}),
+    ("adapt.extend.auth_access.add_multi_tenancy", "add_multi_tenancy", {}),
+    ("adapt.extend.auth_access.add_oauth2_provider", "add_oauth2_provider", {}),
+    ("adapt.extend.auth_access.add_rbac", "add_rbac", {}),
     # extend / crud_data
-    ("adapt.extend.crud_data.add_audit_log",        "add_audit_log",       {}),
-    ("adapt.extend.crud_data.add_bulk_operations",  "add_bulk_operations", {}),
-    ("adapt.extend.crud_data.add_cursor_pagination","add_cursor_pagination",{}),
-    ("adapt.extend.crud_data.add_data_export",      "add_data_export",     {}),
-    ("adapt.extend.crud_data.add_file_upload",      "add_file_upload",     {}),
-    ("adapt.extend.crud_data.add_search",           "add_search",          {}),
-    ("adapt.extend.crud_data.add_soft_delete",      "add_soft_delete",     {}),
+    ("adapt.extend.crud_data.add_audit_log", "add_audit_log", {}),
+    ("adapt.extend.crud_data.add_bulk_operations", "add_bulk_operations", {}),
+    ("adapt.extend.crud_data.add_cursor_pagination", "add_cursor_pagination", {}),
+    ("adapt.extend.crud_data.add_data_export", "add_data_export", {}),
+    ("adapt.extend.crud_data.add_file_upload", "add_file_upload", {}),
+    ("adapt.extend.crud_data.add_search", "add_search", {}),
+    ("adapt.extend.crud_data.add_soft_delete", "add_soft_delete", {}),
     # extend / infrastructure
-    ("adapt.extend.infrastructure.add_cache_layer",      "add_cache_layer",      {}),
-    ("adapt.extend.infrastructure.add_circuit_breaker",  "add_circuit_breaker",  {}),
-    ("adapt.extend.infrastructure.add_outbox_pattern",   "add_outbox_pattern",   {}),
-    ("adapt.extend.infrastructure.add_saga",             "add_saga",             {}),
-    ("adapt.extend.infrastructure.add_arq_worker",       "add_arq_worker",       {}),
-    ("adapt.extend.infrastructure.add_stripe_checkout",  "add_stripe_checkout",  {}),
-    ("adapt.extend.infrastructure.add_email_templates",  "add_email_templates",  {}),
-    ("adapt.extend.infrastructure.add_rate_limiting",    "add_rate_limiting",    {}),
-    ("adapt.extend.infrastructure.add_scheduled_tasks",  "add_scheduled_tasks",  {}),
-    ("adapt.extend.infrastructure.add_sqladmin",         "add_sqladmin",         {}),
-    ("adapt.extend.infrastructure.add_celery_beat",      "add_celery_beat",      {}),
-    ("adapt.extend.infrastructure.add_s3_storage",       "add_s3_storage",       {}),
-    ("adapt.extend.infrastructure.add_health_deep",      "add_health_deep",      {}),
-    ("adapt.extend.infrastructure.add_notifications",    "add_notifications",    {}),
-    ("adapt.extend.infrastructure.add_stripe_subscription","add_stripe_subscription",{}),
-    ("adapt.extend.infrastructure.add_stripe_refund_flow","add_stripe_refund_flow",{}),
-    ("adapt.extend.infrastructure.add_temporal_workflow","add_temporal_workflow",{}),
-    ("adapt.extend.infrastructure.add_ml_model_server","add_ml_model_server",{}),
-    ("adapt.extend.infrastructure.add_ml_gpu_inference","add_ml_gpu_inference",{}),
-    ("adapt.extend.infrastructure.add_ml_model_registry","add_ml_model_registry",{}),
-    ("adapt.extend.auth_access.add_feature_toggles_api","add_feature_toggles_api",{}),
-    ("adapt.extend.auth_access.add_cedar_policies","add_cedar_policies",{}),
-    ("adapt.extend.auth_access.add_opa_integration","add_opa_integration",{}),
-    ("adapt.extend.realtime.add_websocket_presence",    "add_websocket_presence",{}),
+    ("adapt.extend.infrastructure.add_cache_layer", "add_cache_layer", {}),
+    ("adapt.extend.infrastructure.add_circuit_breaker", "add_circuit_breaker", {}),
+    ("adapt.extend.infrastructure.add_outbox_pattern", "add_outbox_pattern", {}),
+    ("adapt.extend.infrastructure.add_saga", "add_saga", {}),
+    ("adapt.extend.infrastructure.add_arq_worker", "add_arq_worker", {}),
+    ("adapt.extend.infrastructure.add_stripe_checkout", "add_stripe_checkout", {}),
+    ("adapt.extend.infrastructure.add_email_templates", "add_email_templates", {}),
+    ("adapt.extend.infrastructure.add_rate_limiting", "add_rate_limiting", {}),
+    ("adapt.extend.infrastructure.add_scheduled_tasks", "add_scheduled_tasks", {}),
+    ("adapt.extend.infrastructure.add_sqladmin", "add_sqladmin", {}),
+    ("adapt.extend.infrastructure.add_celery_beat", "add_celery_beat", {}),
+    ("adapt.extend.infrastructure.add_s3_storage", "add_s3_storage", {}),
+    ("adapt.extend.infrastructure.add_health_deep", "add_health_deep", {}),
+    ("adapt.extend.infrastructure.add_notifications", "add_notifications", {}),
+    ("adapt.extend.infrastructure.add_stripe_subscription", "add_stripe_subscription", {}),
+    ("adapt.extend.infrastructure.add_stripe_refund_flow", "add_stripe_refund_flow", {}),
+    ("adapt.extend.infrastructure.add_temporal_workflow", "add_temporal_workflow", {}),
+    ("adapt.extend.infrastructure.add_ml_model_server", "add_ml_model_server", {}),
+    ("adapt.extend.infrastructure.add_ml_gpu_inference", "add_ml_gpu_inference", {}),
+    ("adapt.extend.infrastructure.add_ml_model_registry", "add_ml_model_registry", {}),
+    ("adapt.extend.auth_access.add_feature_toggles_api", "add_feature_toggles_api", {}),
+    ("adapt.extend.auth_access.add_cedar_policies", "add_cedar_policies", {}),
+    ("adapt.extend.auth_access.add_opa_integration", "add_opa_integration", {}),
+    ("adapt.extend.realtime.add_websocket_presence", "add_websocket_presence", {}),
     # extend / realtime
-    ("adapt.extend.realtime.add_sse",              "add_sse",              {}),
+    ("adapt.extend.realtime.add_sse", "add_sse", {}),
     ("adapt.extend.realtime.add_webhook_receiver", "add_webhook_receiver", {}),
-    ("adapt.extend.realtime.add_webhook_sender",   "add_webhook_sender",   {}),
-    ("adapt.extend.realtime.add_websocket_chat",   "add_websocket_chat",   {}),
-    ("adapt.extend.api_design.add_graphql_subscriptions","add_graphql_subscriptions",{}),
-        # NEW TOOLS (Batch 4)
-    ("adapt.extend.infrastructure.add_cors_config","add_cors_config",{}),
-    ("adapt.extend.api_design.add_cqrs","add_cqrs",{}),
-    ("adapt.extend.infrastructure.add_csrf_protection","add_csrf_protection",{}),
-    ("adapt.extend.crud_data.add_data_import","add_data_import",{}),
-    ("adapt.extend.crud_data.add_data_versioning","add_data_versioning",{}),
-    ("adapt.extend.testing_tools.add_database_migrations_ci","add_database_migrations_ci",{}),
-    ("adapt.extend.infrastructure.add_docker_production","add_docker_production",{}),
-    ("adapt.extend.testing_tools.add_e2e_test_suite","add_e2e_test_suite",{}),
-    ("adapt.extend.crud_data.add_event_sourcing","add_event_sourcing",{}),
-    ("adapt.extend.infrastructure.add_excel_export","add_excel_export",{}),
-    ("adapt.extend.infrastructure.add_input_sanitization","add_input_sanitization",{}),
-    ("adapt.extend.infrastructure.add_kubernetes_manifests","add_kubernetes_manifests",{}),
-    ("adapt.extend.infrastructure.add_opentelemetry","add_opentelemetry",{}),
-    ("adapt.extend.auth_access.add_passkey_auth","add_passkey_auth",{}),
-    ("adapt.extend.infrastructure.add_pdf_reports","add_pdf_reports",{}),
-    ("adapt.extend.infrastructure.add_prometheus_metrics","add_prometheus_metrics",{}),
-    ("adapt.extend.infrastructure.add_push_notifications_native","add_push_notifications_native",{}),
-    ("adapt.extend.auth_access.add_sms_otp","add_sms_otp",{}),
-    ("adapt.extend.auth_access.add_social_login","add_social_login",{}),
-    ("adapt.extend.infrastructure.add_structured_logging","add_structured_logging",{}),
-    ("adapt.extend.infrastructure.add_transactional_email","add_transactional_email",{}),
+    ("adapt.extend.realtime.add_webhook_sender", "add_webhook_sender", {}),
+    ("adapt.extend.realtime.add_websocket_chat", "add_websocket_chat", {}),
+    ("adapt.extend.api_design.add_graphql_subscriptions", "add_graphql_subscriptions", {}),
+    # NEW TOOLS (Batch 4)
+    ("adapt.extend.infrastructure.add_cors_config", "add_cors_config", {}),
+    ("adapt.extend.api_design.add_cqrs", "add_cqrs", {}),
+    ("adapt.extend.infrastructure.add_csrf_protection", "add_csrf_protection", {}),
+    ("adapt.extend.crud_data.add_data_import", "add_data_import", {}),
+    ("adapt.extend.crud_data.add_data_versioning", "add_data_versioning", {}),
+    ("adapt.extend.testing_tools.add_database_migrations_ci", "add_database_migrations_ci", {}),
+    ("adapt.extend.infrastructure.add_docker_production", "add_docker_production", {}),
+    ("adapt.extend.testing_tools.add_e2e_test_suite", "add_e2e_test_suite", {}),
+    ("adapt.extend.crud_data.add_event_sourcing", "add_event_sourcing", {}),
+    ("adapt.extend.infrastructure.add_excel_export", "add_excel_export", {}),
+    ("adapt.extend.infrastructure.add_input_sanitization", "add_input_sanitization", {}),
+    ("adapt.extend.infrastructure.add_kubernetes_manifests", "add_kubernetes_manifests", {}),
+    ("adapt.extend.infrastructure.add_opentelemetry", "add_opentelemetry", {}),
+    ("adapt.extend.auth_access.add_passkey_auth", "add_passkey_auth", {}),
+    ("adapt.extend.infrastructure.add_pdf_reports", "add_pdf_reports", {}),
+    ("adapt.extend.infrastructure.add_prometheus_metrics", "add_prometheus_metrics", {}),
+    (
+        "adapt.extend.infrastructure.add_push_notifications_native",
+        "add_push_notifications_native",
+        {},
+    ),
+    ("adapt.extend.auth_access.add_sms_otp", "add_sms_otp", {}),
+    ("adapt.extend.auth_access.add_social_login", "add_social_login", {}),
+    ("adapt.extend.infrastructure.add_structured_logging", "add_structured_logging", {}),
+    ("adapt.extend.infrastructure.add_transactional_email", "add_transactional_email", {}),
     # extend / testing_tools
-    ("adapt.extend.testing_tools.add_contract_tests","add_contract_tests", {}),
-    ("adapt.extend.testing_tools.add_factory",       "add_factory",        {}),
-    ("adapt.extend.testing_tools.add_load_profile",  "add_load_profile",   {}),
+    ("adapt.extend.testing_tools.add_contract_tests", "add_contract_tests", {}),
+    ("adapt.extend.testing_tools.add_factory", "add_factory", {}),
+    ("adapt.extend.testing_tools.add_load_profile", "add_load_profile", {}),
     # evolve (all have extra keyword params with sensible defaults)
-    ("adapt.evolve.add_event_driven",  "add_event_driven",  {}),
-    ("adapt.evolve.add_i18n",          "add_i18n",          {}),
-    ("adapt.evolve.add_migration_data","add_migration_data",{}),
-    ("adapt.evolve.extract_service",   "extract_service",   {}),
-    ("adapt.evolve.generate_admin_panel","generate_admin_panel",{}),
-    ("adapt.evolve.generate_docs",     "generate_docs",     {}),
-    ("adapt.evolve.generate_sdk",      "generate_sdk",      {}),
+    ("adapt.evolve.add_event_driven", "add_event_driven", {}),
+    ("adapt.evolve.add_i18n", "add_i18n", {}),
+    ("adapt.evolve.add_migration_data", "add_migration_data", {}),
+    ("adapt.evolve.extract_service", "extract_service", {}),
+    ("adapt.evolve.generate_admin_panel", "generate_admin_panel", {}),
+    ("adapt.evolve.generate_docs", "generate_docs", {}),
+    ("adapt.evolve.generate_sdk", "generate_sdk", {}),
     # refactor_model needs a non-empty target to do real work, but
     # calling with defaults (empty target) must still not crash
-    ("adapt.evolve.refactor_model",    "refactor_model",    {}),
+    ("adapt.evolve.refactor_model", "refactor_model", {}),
     # operate
-    ("adapt.operate.api_changelog",         "api_changelog",         {}),
-    ("adapt.operate.blast_radius",          "blast_radius",          {}),
-    ("adapt.operate.connection_pool_monitor","connection_pool_monitor",{}),
-    ("adapt.operate.dead_code_finder",      "dead_code_finder",      {}),
-    ("adapt.operate.dependency_graph",      "dependency_graph",      {}),
-    ("adapt.operate.error_rate_analyzer",   "error_rate_analyzer",   {}),
-    ("adapt.operate.migration_diff",        "migration_diff",        {}),
-    ("adapt.operate.sla_reporter",          "sla_reporter",          {}),
+    ("adapt.operate.api_changelog", "api_changelog", {}),
+    ("adapt.operate.blast_radius", "blast_radius", {}),
+    ("adapt.operate.connection_pool_monitor", "connection_pool_monitor", {}),
+    ("adapt.operate.dead_code_finder", "dead_code_finder", {}),
+    ("adapt.operate.dependency_graph", "dependency_graph", {}),
+    ("adapt.operate.error_rate_analyzer", "error_rate_analyzer", {}),
+    ("adapt.operate.migration_diff", "migration_diff", {}),
+    ("adapt.operate.sla_reporter", "sla_reporter", {}),
     # verify
-    ("adapt.verify.api_spec_compliance",    "api_spec_compliance",   {}),
-    ("adapt.verify.dependency_audit",       "dependency_audit",      {}),
-    ("adapt.verify.detect_n_plus_one",      "detect_n_plus_one",     {}),
-    ("adapt.verify.performance_baseline",   "performance_baseline",  {}),
-    ("adapt.verify.schema_coverage",        "schema_coverage",       {}),
-    ("adapt.verify.security_scan",          "security_scan",         {}),
+    ("adapt.verify.api_spec_compliance", "api_spec_compliance", {}),
+    ("adapt.verify.dependency_audit", "dependency_audit", {}),
+    ("adapt.verify.detect_n_plus_one", "detect_n_plus_one", {}),
+    ("adapt.verify.performance_baseline", "performance_baseline", {}),
+    ("adapt.verify.schema_coverage", "schema_coverage", {}),
+    ("adapt.verify.security_scan", "security_scan", {}),
     # proactive
-    ("adapt.proactive.fastapi_doctor",      "fastapi_doctor",        {}),
-
+    ("adapt.proactive.fastapi_doctor", "fastapi_doctor", {}),
     # BATCH 5 (30 tools)
-    ("adapt.extend.infrastructure.add_adaptive_throttle","add_adaptive_throttle",{},),
-    ("adapt.extend.infrastructure.add_adaptive_timeouts","add_adaptive_timeouts",{},),
-    ("adapt.extend.infrastructure.add_anomaly_detector","add_anomaly_detector",{},),
-    ("adapt.extend.api_design.add_api_deprecation","add_api_deprecation",{},),
-    ("adapt.extend.testing_tools.add_api_fuzzer","add_api_fuzzer",{},),
-    ("adapt.extend.infrastructure.add_api_monetization","add_api_monetization",{},),
-    ("adapt.extend.infrastructure.add_api_replay_debugger","add_api_replay_debugger",{},),
-    ("adapt.extend.auth_access.add_bola_guard","add_bola_guard",{},),
-    ("adapt.extend.infrastructure.add_bulkhead_isolation","add_bulkhead_isolation",{},),
-    ("adapt.extend.infrastructure.add_canary_tokens","add_canary_tokens",{},),
-    ("adapt.extend.infrastructure.add_chaos_testing","add_chaos_testing",{},),
-    ("adapt.extend.infrastructure.add_compliance_engine","add_compliance_engine",{},),
-    ("adapt.extend.infrastructure.add_cost_tracker","add_cost_tracker",{},),
-    ("adapt.extend.testing_tools.add_data_seeder","add_data_seeder",{},),
-    ("adapt.extend.infrastructure.add_dependency_health_map","add_dependency_health_map",{},),
-    ("adapt.extend.infrastructure.add_dlp_shield","add_dlp_shield",{},),
-    ("adapt.extend.auth_access.add_dpop_tokens","add_dpop_tokens",{},),
-    ("adapt.extend.infrastructure.add_graceful_shutdown","add_graceful_shutdown",{},),
-    ("adapt.extend.infrastructure.add_load_shedding","add_load_shedding",{},),
-    ("adapt.extend.infrastructure.add_request_fingerprint","add_request_fingerprint",{},),
-    ("adapt.extend.auth_access.add_request_signing","add_request_signing",{},),
-    ("adapt.extend.infrastructure.add_request_tracing_ui","add_request_tracing_ui",{},),
-    ("adapt.extend.infrastructure.add_response_armor","add_response_armor",{},),
-    ("adapt.extend.infrastructure.add_retry_budget","add_retry_budget",{},),
-    ("adapt.extend.infrastructure.add_runtime_sentinel","add_runtime_sentinel",{},),
-    ("adapt.extend.testing_tools.add_sbom_guardian","add_sbom_guardian",{},),
-    ("adapt.extend.testing_tools.add_schema_enforcer","add_schema_enforcer",{},),
-    ("adapt.extend.testing_tools.add_schema_evolution_guard","add_schema_evolution_guard",{},),
-    ("adapt.extend.infrastructure.add_secret_rotation","add_secret_rotation",{},),
-    ("adapt.extend.infrastructure.add_tenant_onboarding","add_tenant_onboarding",{},),
+    (
+        "adapt.extend.infrastructure.add_adaptive_throttle",
+        "add_adaptive_throttle",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_adaptive_timeouts",
+        "add_adaptive_timeouts",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_anomaly_detector",
+        "add_anomaly_detector",
+        {},
+    ),
+    (
+        "adapt.extend.api_design.add_api_deprecation",
+        "add_api_deprecation",
+        {},
+    ),
+    (
+        "adapt.extend.testing_tools.add_api_fuzzer",
+        "add_api_fuzzer",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_api_monetization",
+        "add_api_monetization",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_api_replay_debugger",
+        "add_api_replay_debugger",
+        {},
+    ),
+    (
+        "adapt.extend.auth_access.add_bola_guard",
+        "add_bola_guard",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_bulkhead_isolation",
+        "add_bulkhead_isolation",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_canary_tokens",
+        "add_canary_tokens",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_chaos_testing",
+        "add_chaos_testing",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_compliance_engine",
+        "add_compliance_engine",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_cost_tracker",
+        "add_cost_tracker",
+        {},
+    ),
+    (
+        "adapt.extend.testing_tools.add_data_seeder",
+        "add_data_seeder",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_dependency_health_map",
+        "add_dependency_health_map",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_dlp_shield",
+        "add_dlp_shield",
+        {},
+    ),
+    (
+        "adapt.extend.auth_access.add_dpop_tokens",
+        "add_dpop_tokens",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_graceful_shutdown",
+        "add_graceful_shutdown",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_load_shedding",
+        "add_load_shedding",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_request_fingerprint",
+        "add_request_fingerprint",
+        {},
+    ),
+    (
+        "adapt.extend.auth_access.add_request_signing",
+        "add_request_signing",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_request_tracing_ui",
+        "add_request_tracing_ui",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_response_armor",
+        "add_response_armor",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_retry_budget",
+        "add_retry_budget",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_runtime_sentinel",
+        "add_runtime_sentinel",
+        {},
+    ),
+    (
+        "adapt.extend.testing_tools.add_sbom_guardian",
+        "add_sbom_guardian",
+        {},
+    ),
+    (
+        "adapt.extend.testing_tools.add_schema_enforcer",
+        "add_schema_enforcer",
+        {},
+    ),
+    (
+        "adapt.extend.testing_tools.add_schema_evolution_guard",
+        "add_schema_evolution_guard",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_secret_rotation",
+        "add_secret_rotation",
+        {},
+    ),
+    (
+        "adapt.extend.infrastructure.add_tenant_onboarding",
+        "add_tenant_onboarding",
+        {},
+    ),
 ]
 
 
@@ -253,6 +375,7 @@ def _all_py_parse(directory: Path) -> list[str]:
 # Results accumulator
 # ---------------------------------------------------------------------------
 
+
 class _Results:
     """Simple pass/fail accumulator for a single property run."""
 
@@ -284,10 +407,7 @@ class _Results:
             Formatted summary with pass/fail counts and any failure details.
         """
         status = "PASS" if self.failed == 0 else "FAIL"
-        lines = [
-            f"  {status} {self.property_name}: "
-            f"{self.passed}/{self.total_tools} tools"
-        ]
+        lines = [f"  {status} {self.property_name}: {self.passed}/{self.total_tools} tools"]
         lines.extend(self.failures[:5])  # cap noise
         if len(self.failures) > 5:
             lines.append(f"  ... and {len(self.failures) - 5} more failures")
@@ -307,28 +427,31 @@ class _Results:
 # (they produce fresh reports or snapshots rather than patching project structure).
 # Idempotency is tested differently for them: they must not crash and must return
 # a consistent status, but re-creating output files is expected behaviour.
-_REPORT_TOOLS: frozenset[str] = frozenset({
-    "dead_code_finder",
-    "dependency_graph",
-    "sla_reporter",
-    "error_rate_analyzer",
-    "api_changelog",
-    "blast_radius",
-    "connection_pool_monitor",
-    "migration_diff",
-    "fastapi_doctor",
-    "api_spec_compliance",
-    "dependency_audit",
-    "performance_baseline",
-    "schema_coverage",
-    "security_scan",
-    "generate_sdk",      # regenerates openapi.json + .schema_hash every run
-})
+_REPORT_TOOLS: frozenset[str] = frozenset(
+    {
+        "dead_code_finder",
+        "dependency_graph",
+        "sla_reporter",
+        "error_rate_analyzer",
+        "api_changelog",
+        "blast_radius",
+        "connection_pool_monitor",
+        "migration_diff",
+        "fastapi_doctor",
+        "api_spec_compliance",
+        "dependency_audit",
+        "performance_baseline",
+        "schema_coverage",
+        "security_scan",
+        "generate_sdk",  # regenerates openapi.json + .schema_hash every run
+    }
+)
 
 
 # ---------------------------------------------------------------------------
 # Property 1 — Idempotency
 # ---------------------------------------------------------------------------
+
 
 def prop_idempotency(tools: list[tuple[str, str, dict]], n_iter: int = 1) -> _Results:
     """Property: applying a write-capable tool twice must not re-create files on the
@@ -371,17 +494,20 @@ def prop_idempotency(tools: list[tuple[str, str, dict]], n_iter: int = 1) -> _Re
             # re-create files that the first run already created.
             if r2.status == "error" and r1.status != "error":
                 error_msg = r2.error or ""
-                is_guard = any(kw in error_msg.lower() for kw in
-                               ["already", "present", "exist", "no_op"])
+                is_guard = any(
+                    kw in error_msg.lower() for kw in ["already", "present", "exist", "no_op"]
+                )
                 if not is_guard:
-                    results.record(label, False,
-                                   f"second run returned error: {r2.error!r}")
+                    results.record(label, False, f"second run returned error: {r2.error!r}")
                     continue
 
             if r1.status == "success" and r2.status == "success" and r2.files_created:
-                results.record(label, False,
-                               f"second run re-created {len(r2.files_created)} file(s): "
-                               f"{r2.files_created[:2]}")
+                results.record(
+                    label,
+                    False,
+                    f"second run re-created {len(r2.files_created)} file(s): "
+                    f"{r2.files_created[:2]}",
+                )
                 continue
 
             results.record(label, True)
@@ -395,6 +521,7 @@ def prop_idempotency(tools: list[tuple[str, str, dict]], n_iter: int = 1) -> _Re
 # ---------------------------------------------------------------------------
 # Property 2 — Dry-run purity
 # ---------------------------------------------------------------------------
+
 
 def prop_dry_run_purity(tools: list[tuple[str, str, dict]]) -> _Results:
     """Property: dry_run=True never modifies any file on disk.
@@ -427,8 +554,7 @@ def prop_dry_run_purity(tools: list[tuple[str, str, dict]]) -> _Results:
             after = _dir_sha256(project_dir)
 
             if before != after:
-                results.record(label, False,
-                               "dry_run=True modified at least one file on disk")
+                results.record(label, False, "dry_run=True modified at least one file on disk")
             else:
                 results.record(label, True)
 
@@ -442,8 +568,8 @@ def prop_dry_run_purity(tools: list[tuple[str, str, dict]]) -> _Results:
 # Property 3 — No crash on any path (robustness under arbitrary input)
 # ---------------------------------------------------------------------------
 
-def prop_error_on_invalid_dir(tools: list[tuple[str, str, dict]],
-                               n_iter: int = 5) -> _Results:
+
+def prop_error_on_invalid_dir(tools: list[tuple[str, str, dict]], n_iter: int = 5) -> _Results:
     """Property: calling any tool with a novel (never-used) temp path must never
     raise an unhandled exception or call sys.exit().
 
@@ -487,8 +613,7 @@ def prop_error_on_invalid_dir(tools: list[tuple[str, str, dict]],
                 if not isinstance(result, ToolResult):
                     tool_ok = False
                     failure_msg = (
-                        f"returned non-ToolResult for path {test_path!r}: "
-                        f"{type(result).__name__}"
+                        f"returned non-ToolResult for path {test_path!r}: {type(result).__name__}"
                     )
                     break
 
@@ -512,6 +637,7 @@ def prop_error_on_invalid_dir(tools: list[tuple[str, str, dict]],
 # ---------------------------------------------------------------------------
 # Property 4 — Parse correctness
 # ---------------------------------------------------------------------------
+
 
 def prop_parse_correctness(tools: list[tuple[str, str, dict]]) -> _Results:
     """Property: after applying any tool, all .py files in the project parse with ast.parse.
@@ -548,8 +674,7 @@ def prop_parse_correctness(tools: list[tuple[str, str, dict]]) -> _Results:
 
             errors = _all_py_parse(project_dir)
             if errors:
-                results.record(label, False,
-                               f"{len(errors)} parse error(s): {errors[0]}")
+                results.record(label, False, f"{len(errors)} parse error(s): {errors[0]}")
             else:
                 results.record(label, True)
 
@@ -562,6 +687,7 @@ def prop_parse_correctness(tools: list[tuple[str, str, dict]]) -> _Results:
 # ---------------------------------------------------------------------------
 # Property 5 — ToolResult contract
 # ---------------------------------------------------------------------------
+
 
 def prop_toolresult_contract(tools: list[tuple[str, str, dict]]) -> _Results:
     """Property: ToolResult always has valid status, list fields, and non-negative timing.
@@ -598,19 +724,19 @@ def prop_toolresult_contract(tools: list[tuple[str, str, dict]]) -> _Results:
 
             result = _call_tool(fn, inp, extra_kwargs)
 
-        except Exception as exc:
-            results.record(label, False,
-                           f"tool raised unhandled exception: "
-                           f"{traceback.format_exc().splitlines()[-1]}")
+        except Exception:
+            results.record(
+                label,
+                False,
+                f"tool raised unhandled exception: {traceback.format_exc().splitlines()[-1]}",
+            )
             continue
 
         # Validate each contract clause
         violations: list[str] = []
 
         if result.status not in valid_statuses:
-            violations.append(
-                f"status={result.status!r} not in {valid_statuses}"
-            )
+            violations.append(f"status={result.status!r} not in {valid_statuses}")
 
         if not isinstance(result.files_created, list):
             violations.append(
@@ -627,9 +753,7 @@ def prop_toolresult_contract(tools: list[tuple[str, str, dict]]) -> _Results:
             violations.append("files_modified contains non-str element")
 
         if result.execution_time_ms < 0:
-            violations.append(
-                f"execution_time_ms={result.execution_time_ms} is negative"
-            )
+            violations.append(f"execution_time_ms={result.execution_time_ms} is negative")
 
         if violations:
             results.record(label, False, "; ".join(violations))
@@ -645,16 +769,18 @@ def prop_toolresult_contract(tools: list[tuple[str, str, dict]]) -> _Results:
 
 # Risky SDKs that MUST be imported lazily (inside function bodies), not at
 # module top level, so that ``app.main`` boots without them installed.
-_LAZY_SDKS: frozenset[str] = frozenset({
-    "stripe",
-    "resend",
-    "postmarker",
-    "arq",
-    "apscheduler",
-    "sqladmin",
-    "sentry_sdk",
-    "redis_job",  # apscheduler.jobstores.redis
-})
+_LAZY_SDKS: frozenset[str] = frozenset(
+    {
+        "stripe",
+        "resend",
+        "postmarker",
+        "arq",
+        "apscheduler",
+        "sqladmin",
+        "sentry_sdk",
+        "redis_job",  # apscheduler.jobstores.redis
+    }
+)
 
 
 def _run_ruff_critical(project_dir: Path) -> list[str]:
@@ -664,7 +790,7 @@ def _run_ruff_critical(project_dir: Path) -> list[str]:
     apply tool → run `ruff --fix-only` (auto-fix what's auto-fixable) →
     check residuals. F401 unused imports, F541 empty f-strings, F811
     redefinitions are all auto-fixable; the polish step is what every
-    real Maestro session would do post-edit. Residuals after fix are
+    real agent session would do post-edit. Residuals after fix are
     TRUE structural bugs (e.g., F821 undefined-name) that must be
     fixed at the generator source.
 
@@ -678,6 +804,7 @@ def _run_ruff_critical(project_dir: Path) -> list[str]:
         List of residual ruff violation lines. Empty = clean (after auto-fix).
     """
     import subprocess
+
     app_dir = project_dir / "app"
     if not app_dir.is_dir():
         return []
@@ -687,8 +814,12 @@ def _run_ruff_critical(project_dir: Path) -> list[str]:
     try:
         subprocess.run(
             [
-                sys.executable, "-m", "ruff", "check",
-                "--select", "F",
+                sys.executable,
+                "-m",
+                "ruff",
+                "check",
+                "--select",
+                "F",
                 "--fix-only",
                 "--unsafe-fixes",
                 "--quiet",
@@ -705,8 +836,12 @@ def _run_ruff_critical(project_dir: Path) -> list[str]:
     try:
         r = subprocess.run(
             [
-                sys.executable, "-m", "ruff", "check",
-                "--select", "F",
+                sys.executable,
+                "-m",
+                "ruff",
+                "check",
+                "--select",
+                "F",
                 "--quiet",
                 "--no-cache",
                 str(app_dir),
@@ -770,6 +905,7 @@ def prop_ruff_critical_clean(tools: list[tuple[str, str, dict]]) -> _Results:
 # ---------------------------------------------------------------------------
 # Property 7 — Lazy SDK imports (optional deps never at module top level)
 # ---------------------------------------------------------------------------
+
 
 def _toplevel_imports(py_file: Path) -> set[str]:
     """Return the set of module names imported at the top level of *py_file*.
@@ -861,6 +997,7 @@ def prop_lazy_sdk_imports(tools: list[tuple[str, str, dict]]) -> _Results:
 # Property 8 — Standalone mode (empty project root, must handle gracefully)
 # ---------------------------------------------------------------------------
 
+
 def prop_standalone_mode(tools: list[tuple[str, str, dict]]) -> _Results:
     """Property: every tool handles a bare empty project dir gracefully.
 
@@ -880,7 +1017,6 @@ def prop_standalone_mode(tools: list[tuple[str, str, dict]]) -> _Results:
     Returns:
         _Results accumulator.
     """
-    import tempfile
     results = _Results("STANDALONE_MODE", len(tools))
 
     for module_path, fn_name, extra_kwargs in tools:
@@ -902,21 +1038,19 @@ def prop_standalone_mode(tools: list[tuple[str, str, dict]]) -> _Results:
                         f"returned non-ToolResult: {type(result).__name__}",
                     )
                     continue
-                if result.status == "error":
-                    if not result.error or len(result.error.strip()) < 5:
-                        results.record(
-                            label,
-                            False,
-                            "error status without usable error message",
-                        )
-                        continue
+                if result.status == "error" and (not result.error or len(result.error.strip()) < 5):
+                    results.record(
+                        label,
+                        False,
+                        "error status without usable error message",
+                    )
+                    continue
                 results.record(label, True)
-        except Exception as exc:
+        except Exception:
             results.record(
                 label,
                 False,
-                f"raised unhandled exception: "
-                f"{traceback.format_exc().splitlines()[-1]}",
+                f"raised unhandled exception: {traceback.format_exc().splitlines()[-1]}",
             )
 
     return results
@@ -925,6 +1059,7 @@ def prop_standalone_mode(tools: list[tuple[str, str, dict]]) -> _Results:
 # ---------------------------------------------------------------------------
 # Main runner
 # ---------------------------------------------------------------------------
+
 
 def _load_all_tools() -> list[tuple[str, str, dict]]:
     """Return the full tool registry.
@@ -944,9 +1079,9 @@ def run_all_properties() -> int:
     tools = _load_all_tools()
     n_tools = len(tools)
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"PROPERTY-BASED TESTS  —  {n_tools} tools × 8 properties")
-    print(f"{'='*70}\n")
+    print(f"{'=' * 70}\n")
 
     properties = [
         prop_idempotency(tools),
@@ -965,7 +1100,7 @@ def run_all_properties() -> int:
         if not res.ok:
             overall_ok = False
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     passed_props = sum(1 for r in properties if r.ok)
     total_props = len(properties)
     total_tool_checks = sum(r.passed + r.failed for r in properties)
@@ -983,7 +1118,7 @@ def run_all_properties() -> int:
             f"{passed_props}/{total_props} properties passed "
             f"({total_passed}/{total_tool_checks} tool-checks passed)"
         )
-    print(f"{'='*70}\n")
+    print(f"{'=' * 70}\n")
 
     return 0 if overall_ok else 1
 

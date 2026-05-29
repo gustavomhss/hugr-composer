@@ -1,4 +1,4 @@
-"""Subagent-driven Maestro — CONTRACT §B3.5 baseline.
+"""Subagent-driven agent runner — CONTRACT §B3.5 baseline.
 
 The harness spawns a Claude subagent per spec (using the host CLI's
 authentication — no API key required). Each subagent receives the spec
@@ -12,7 +12,7 @@ plus a structured prompt asking it to:
          primitives/tools + rationale + covered/uncovered bool.
        - ``scaffold_plan.md`` — human-readable plan document.
 
-The Maestro is NOT asked to write a full working codebase in this first
+The agent is NOT asked to write a full working codebase in this first
 baseline (``plan_level_v0``). That is an explicit scope reduction
 documented in the emitted score JSON. Full-codebase benchmarking is
 tracked for Phase 5+ (see ROADMAP.md).
@@ -60,7 +60,7 @@ def extract_acceptance(spec_md: str) -> list[str]:
 
 
 PROMPT_TEMPLATE = """\
-You are the HuGR Arsenal Maestro. A product spec is below. Your job is to
+You are the HuGR Arsenal agent. A product spec is below. Your job is to
 read it, use the SKILL's discovery tools to identify the right primitives
 and adapt tools for each requirement, and produce two artifact files in
 the workdir: `plan.json` and `scaffold_plan.md`.
@@ -110,7 +110,7 @@ You may also use Grep/Read/Glob across {skill_root} to inspect primitive
 ```
 
 2. **`scaffold_plan.md`** — human-readable plan (~200 words) describing
-   the composition, in the Maestro's own words.
+   the composition, in the the agent's own words.
 
 ### Rules
 - DO NOT hallucinate primitive names. Every primitive in `plan.json` MUST
@@ -243,7 +243,7 @@ def _load_tool_names() -> set[str]:
 
 
 @dataclass
-class SubagentMaestro:
+class SubagentRunner:
     runs_dir: Path
     model_label: str = "cli-subagent-sonnet-4-6"
 

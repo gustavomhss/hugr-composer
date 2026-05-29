@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from engine.bench import BenchmarkRunner, score_spec
-from engine.bench.runner import SPECS_ROOT, StubMaestro, _discover_specs
+from engine.bench.runner import SPECS_ROOT, StubAgent, _discover_specs
 
 # ---------------------------------------------------------------- B3.1 specs
 
@@ -104,7 +104,7 @@ def test_score_spec_includes_evidence() -> None:
 
 
 def test_runner_with_stub_maestro_produces_full_report(tmp_path: Path) -> None:
-    stub = StubMaestro(scoreboard={"baseline/01_crud_todos": 80.0, "mid/02_realtime_chat": 50.0})
+    stub = StubAgent(scoreboard={"baseline/01_crud_todos": 80.0, "mid/02_realtime_chat": 50.0})
     runner = BenchmarkRunner(adapter=stub, workdir=tmp_path)
     report = runner.run_all(kit_version="test-rev")
 
@@ -119,7 +119,7 @@ def test_runner_with_stub_maestro_produces_full_report(tmp_path: Path) -> None:
 
 
 def test_runner_aggregates_by_tier(tmp_path: Path) -> None:
-    stub = StubMaestro(
+    stub = StubAgent(
         scoreboard={
             "baseline/01_crud_todos": 100,
             "baseline/02_auth_only_saas": 100,
@@ -139,7 +139,7 @@ def test_runner_aggregates_by_tier(tmp_path: Path) -> None:
 
 
 def test_report_writes_json_roundtrip(tmp_path: Path) -> None:
-    stub = StubMaestro(scoreboard={"baseline/01_crud_todos": 42})
+    stub = StubAgent(scoreboard={"baseline/01_crud_todos": 42})
     runner = BenchmarkRunner(adapter=stub, workdir=tmp_path)
     report = runner.run_all(kit_version="rev")
     out = tmp_path / "score.json"

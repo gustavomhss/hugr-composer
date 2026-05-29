@@ -474,7 +474,7 @@ def _load_staged_primitives(*, registered_names: set[str]) -> list[PrimitiveEntr
 
     The staging area (`core/venous/_staging/<ns>/<Name>/`) carries full
     HuGR shell (contract.json, protocol, md, tests) but `REPLACE_ME`
-    stubs in the impl. We index them so the Maestro can discover them
+    stubs in the impl. We index them so the agent can discover them
     via `fastapi_meta_search` and decide when a benchmark gap justifies
     promotion — but the `staged` status flags them as non-production.
     Quarantined primitives are skipped.
@@ -732,7 +732,7 @@ def write(manifest: CatalogManifest, path: Path = CATALOG_PATH) -> str:
     `stable_hash` value itself stripped (otherwise the hash would be
     circular: computing it requires the file to not yet contain it).
 
-    Consumers (Forge, Maestro, CI) read `stable_hash` from the on-disk
+    Consumers (Forge, agent, CI) read `stable_hash` from the on-disk
     catalog to pin the skill surface for a session / benchmark run.
     """
     path.parent.mkdir(parents=True, exist_ok=True)

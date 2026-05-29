@@ -42,7 +42,7 @@ A rough inventory of latent primitives per tool:
 - **Library size jumps 4-5×**: 113 → ~500 primitives in weeks instead of months.
 - **Tools shrink ~5×**: after extraction, each EXTEND tool becomes thin orchestration (~50-100 lines) over primitive imports, instead of ~300-800-line self-contained scripts.
 - **Cross-tool consistency** becomes automatic: fixing a primitive patches every tool that imports it. Today, 30 tools re-implement idempotency subtly differently.
-- **Composition discovery is natural**: the Maestro LLM can read the tool source as an example of "how do I combine primitives to achieve X".
+- **Composition discovery is natural**: the agent LLM can read the tool source as an example of "how do I combine primitives to achieve X".
 
 ## Process
 

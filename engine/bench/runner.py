@@ -1,12 +1,12 @@
 """Benchmark runner — CONTRACT §B3.3.
 
-Harness that drives a Maestro implementation against every spec in
+Harness that drives a agent implementation against every spec in
 `benchmarks/specs/` and records transcripts + scores.
 
 The runner does NOT couple to Anthropic or any specific LLM SDK; the
-Maestro is any callable that implements `MaestroAdapter`. This keeps the
+agent is any callable that implements `AgentAdapter`. This keeps the
 harness unit-testable with a deterministic stub and production-capable
-with a real Opus/Sonnet-backed Maestro.
+with a real Opus/Sonnet-backed agent.
 
 Typical production entry point (invoked from the nightly workflow):
 
@@ -16,7 +16,7 @@ Typical production entry point (invoked from the nightly workflow):
 
 Typical test entry point (deterministic, no LLM calls):
 
-    runner = BenchmarkRunner(adapter=StubMaestro(scoreboard={"baseline/01_crud_todos": 80, ...}))
+    runner = BenchmarkRunner(adapter=StubAgent(scoreboard={"baseline/01_crud_todos": 80, ...}))
     report = runner.run_all()
     assert report.overall >= 30.0
 """
@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class RunResult:
-    """Produced by a Maestro per spec. The runner converts this into a score."""
+    """Produced by a agent per spec. The runner converts this into a score."""
 
     spec_id: str
     tier: str
@@ -54,24 +54,24 @@ class RunResult:
     transcript_path: Path | None = None
 
 
-class MaestroAdapter(Protocol):
-    """Implementors drive a real or stub Maestro against a spec."""
+class AgentAdapter(Protocol):
+    """Implementors drive a real or stub agent against a spec."""
 
     def model_name(self) -> str: ...
 
     def run_spec(self, spec_path: Path, workdir: Path) -> RunResult:
-        """Read the spec, invoke the Maestro, score the output.
+        """Read the spec, invoke the agent, score the output.
 
         Implementations MUST return a fully-populated ``RunResult``.
-        They SHOULD write the Maestro transcript into ``workdir`` and
+        They SHOULD write the agent transcript into ``workdir`` and
         reference it in ``RunResult.transcript_path``.
         """
         ...
 
 
 @dataclass
-class StubMaestro:
-    """Deterministic Maestro used by tests — never calls an LLM.
+class StubAgent:
+    """Deterministic agent used by tests — never calls an LLM.
 
     ``scoreboard`` maps ``spec_id`` → one 0-100 number applied to every
     dimension. Anything not in the scoreboard scores zero (models a
@@ -108,7 +108,7 @@ def _discover_specs(root: Path = SPECS_ROOT) -> list[Path]:
 
 @dataclass
 class BenchmarkRunner:
-    adapter: MaestroAdapter
+    adapter: AgentAdapter
     specs_root: Path = SPECS_ROOT
     workdir: Path | None = None  # temp dir per run by default
     on_spec_start: Callable[[Path], None] | None = None
@@ -179,7 +179,7 @@ def main(argv: list[str] | None = None) -> int:
     """CLI entry point — requires an adapter choice.
 
     Default is `stub` (prints a canned zero-score report). To run against
-    the real Claude-backed Maestro, use `--adapter claude`; the Claude
+    the real Claude-backed agent, use `--adapter claude`; the Claude
     adapter is intentionally not shipped in this module to keep the
     runner dependency-free. The caller wires it up at invocation time.
     """
@@ -190,7 +190,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, default=DEFAULT_REPORT)
     args = parser.parse_args(argv)
 
-    adapter: MaestroAdapter = StubMaestro(scoreboard={})
+    adapter: AgentAdapter = StubAgent(scoreboard={})
     runner = BenchmarkRunner(adapter=adapter)
     report = runner.run_all()
     report.write_json(args.out)

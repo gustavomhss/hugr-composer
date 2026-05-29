@@ -1,4 +1,4 @@
-"""Tier-1 meta-tools — the "awakening" surface the Maestro always sees.
+"""Tier-1 meta-tools — the "awakening" surface the agent always sees.
 
 Design per `/docs/research/DUAL_INDEX_DESIGN.md` §4.1. These are the
 seven MCP tools always loaded into the Claude session (primacy
@@ -16,14 +16,15 @@ All seven return a uniform envelope:
       "what_happened": str,         # one-sentence human-readable
       "result": dict,                # the actual payload
       "next_steps": list[str],       # 2-5 concrete tool invocations
-                                     # the Maestro should consider next
+                                     # the agent should consider next
       "elapsed_ms": int,
     }
 
 `next_steps` is THE affordance that drives natural use of the kit —
-every return gives the Maestro 2-5 candidate next actions, phrased as
+every return gives the agent 2-5 candidate next actions, phrased as
 tool-invocation breadcrumbs. See the `breadcrumbs` module.
 """
+
 from __future__ import annotations
 
 import json
@@ -40,14 +41,20 @@ CATALOG_PATH = SKILL_ROOT / "engine" / "index" / "catalog.json"
 # Shared envelope
 # ---------------------------------------------------------------------------
 
+
 def _envelope(
-    *, ok: bool, what: str, result: Any, next_steps: list[str], t0: float,
+    *,
+    ok: bool,
+    what: str,
+    result: Any,
+    next_steps: list[str],
+    t0: float,
 ) -> dict:
     return {
         "ok": ok,
         "what_happened": what,
         "result": result,
-        "next_steps": next_steps[:5],          # cap — cognition says 3-5
+        "next_steps": next_steps[:5],  # cap — cognition says 3-5
         "elapsed_ms": int((time.perf_counter() - t0) * 1000),
     }
 
@@ -94,14 +101,13 @@ def fastapi_meta_home() -> dict:
     landscape: list[dict] = []
     for domain in catalog["domains"]:
         bucket = sorted(by_domain.get(domain, []), key=lambda x: x["name"])
-        landscape.append({
-            "domain": domain,
-            "tools": len(bucket),
-            "top_3": [
-                {"name": b["name"], "synopsis": b["synopsis"]}
-                for b in bucket[:3]
-            ],
-        })
+        landscape.append(
+            {
+                "domain": domain,
+                "tools": len(bucket),
+                "top_3": [{"name": b["name"], "synopsis": b["synopsis"]} for b in bucket[:3]],
+            }
+        )
 
     result = {
         "version": catalog.get("kit_commit", "unknown"),
@@ -112,7 +118,7 @@ def fastapi_meta_home() -> dict:
         "landscape": landscape,
         "workflow": [
             "1. fastapi_meta_scaffold(models={...}, owner_models={...}) — scaffold a fresh project (inspect your working directory first; the catalog map this tool returns does NOT include repo state)",
-            "2. fastapi_meta_search(query=\"...\") — find a capability in the 201-tool catalog",
+            '2. fastapi_meta_search(query="...") — find a capability in the 201-tool catalog',
             "3. <one of the returned fastapi_<domain>_add_*> — emit the slice",
             "4. fastapi_meta_audit() — verify the SKILL-KIT contract (not the emitted project; run pytest inside the scaffold for project-level validation)",
             "5. fastapi_meta_verify() — 10-tier quality gate on the skill's primitive registry (also skill-kit scoped)",
@@ -121,7 +127,7 @@ def fastapi_meta_home() -> dict:
     return _envelope(
         ok=True,
         what=f"landscape: {len(tools)} tools across {len(catalog['domains'])} domains, "
-             f"{len(primitives)} primitives, {len(recipes)} recipes",
+        f"{len(primitives)} primitives, {len(recipes)} recipes",
         result=result,
         next_steps=[
             "Call fastapi_meta_scaffold if you're starting a fresh project.",
@@ -148,32 +154,49 @@ def _bm25_index(catalog: dict) -> dict:
         return _BM25_CACHE
     docs: list[dict] = []
     for t in catalog["tools"]:
-        text = " ".join([
-            t["name"].replace("_", " "),
-            t.get("synopsis", ""),
-            t.get("when_to_call", ""),
-            " ".join(t.get("tags", [])),
-        ]).lower()
-        docs.append({"kind": "tool", "name": t["name"],
-                     "synopsis": t["synopsis"],
-                     "domain": t["domain"], "verb": t["verb"],
-                     "tokens": _tokens(text)})
+        text = " ".join(
+            [
+                t["name"].replace("_", " "),
+                t.get("synopsis", ""),
+                t.get("when_to_call", ""),
+                " ".join(t.get("tags", [])),
+            ]
+        ).lower()
+        docs.append(
+            {
+                "kind": "tool",
+                "name": t["name"],
+                "synopsis": t["synopsis"],
+                "domain": t["domain"],
+                "verb": t["verb"],
+                "tokens": _tokens(text),
+            }
+        )
     for p in catalog["primitives"]:
         text = f"{p['name']} {p['purpose']} {p['concern']}".lower()
-        docs.append({"kind": "primitive", "name": p["name"],
-                     "synopsis": p["purpose"],
-                     "domain": p["namespace"], "verb": "compose",
-                     "tokens": _tokens(text)})
+        docs.append(
+            {
+                "kind": "primitive",
+                "name": p["name"],
+                "synopsis": p["purpose"],
+                "domain": p["namespace"],
+                "verb": "compose",
+                "tokens": _tokens(text),
+            }
+        )
     # Inverted index
-    N = len(docs)
+    n_docs = len(docs)
     df: dict[str, int] = {}
     for d in docs:
         for tok in set(d["tokens"]):
             df[tok] = df.get(tok, 0) + 1
-    avgdl = sum(len(d["tokens"]) for d in docs) / N if N else 1
+    avgdl = sum(len(d["tokens"]) for d in docs) / n_docs if n_docs else 1
     _BM25_CACHE = {
         "_sig": catalog.get("kit_commit"),
-        "docs": docs, "df": df, "N": N, "avgdl": avgdl,
+        "docs": docs,
+        "df": df,
+        "N": n_docs,
+        "avgdl": avgdl,
     }
     return _BM25_CACHE
 
@@ -185,9 +208,11 @@ def _tokens(text: str) -> list[str]:
     return _WORD_RE.findall(text)
 
 
-def _bm25_score(query_tokens: list[str], doc: dict, idx: dict,
-                *, k1: float = 1.5, b: float = 0.75) -> float:
+def _bm25_score(
+    query_tokens: list[str], doc: dict, idx: dict, *, k1: float = 1.5, b: float = 0.75
+) -> float:
     import math
+
     score = 0.0
     dl = len(doc["tokens"])
     if dl == 0:
@@ -238,7 +263,8 @@ def fastapi_meta_search(
     q_tokens = _tokens(query.lower())
     if not q_tokens:
         return _envelope(
-            ok=False, what="empty query",
+            ok=False,
+            what="empty query",
             result={"hits": []},
             next_steps=["Pass a non-empty `query` string."],
             t0=t0,
@@ -252,13 +278,15 @@ def fastapi_meta_search(
         score = _bm25_score(q_tokens, doc, idx)
         if score > 0:
             scored.append((score, doc))
-    scored.sort(key=lambda x: (-x[0], x[1]["name"]))   # stable tie-break by name
+    scored.sort(key=lambda x: (-x[0], x[1]["name"]))  # stable tie-break by name
     top = scored[: max(1, min(int(k), 20))]
     hits = [
         {
-            "kind": d["kind"], "name": d["name"],
+            "kind": d["kind"],
+            "name": d["name"],
             "synopsis": d["synopsis"],
-            "domain": d["domain"], "verb": d["verb"],
+            "domain": d["domain"],
+            "verb": d["verb"],
             "score": round(s, 4),
         }
         for s, d in top
@@ -279,8 +307,8 @@ def fastapi_meta_search(
     return _envelope(
         ok=True,
         what=f"{len(hits)} hit(s) for query {query!r}"
-             + (f" in domain={domain}" if domain else "")
-             + (f" verb={verb}" if verb else ""),
+        + (f" in domain={domain}" if domain else "")
+        + (f" verb={verb}" if verb else ""),
         result={"query": query, "domain": domain, "verb": verb, "hits": hits},
         next_steps=next_steps,
         t0=t0,
@@ -312,7 +340,8 @@ def fastapi_meta_describe(name: str) -> dict:
     for t in catalog["tools"]:
         if t["name"] == name or t.get("legacy_name") == name:
             return _envelope(
-                ok=True, what=f"tool: {t['name']}",
+                ok=True,
+                what=f"tool: {t['name']}",
                 result={"kind": "tool", **t},
                 next_steps=[
                     f"Call {t['name']}(...) with the appropriate arguments.",
@@ -323,7 +352,8 @@ def fastapi_meta_describe(name: str) -> dict:
     for p in catalog["primitives"]:
         if p["name"] == name:
             return _envelope(
-                ok=True, what=f"primitive: {p['name']}",
+                ok=True,
+                what=f"primitive: {p['name']}",
                 result={"kind": "primitive", **p},
                 next_steps=[
                     f"Import with: from core.venous.{p['namespace']}.{p['name']} import {p['name']}",
@@ -334,7 +364,8 @@ def fastapi_meta_describe(name: str) -> dict:
     for r in catalog["recipes"]:
         if r["id"] == name:
             return _envelope(
-                ok=True, what=f"recipe: {r['id']}",
+                ok=True,
+                what=f"recipe: {r['id']}",
                 result={"kind": "recipe", **r},
                 next_steps=[
                     f"Compose primitives: {', '.join(r['primitives'])}",
@@ -343,7 +374,8 @@ def fastapi_meta_describe(name: str) -> dict:
                 t0=t0,
             )
     return _envelope(
-        ok=False, what=f"no match for {name!r}",
+        ok=False,
+        what=f"no match for {name!r}",
         result={"kind": None},
         next_steps=[
             f"Call fastapi_meta_search(query='{name}') — the name may have legacy form.",
@@ -391,11 +423,13 @@ def fastapi_meta_scaffold(
         from generators.orchestrator import generate_project
     except ImportError as exc:
         return _envelope(
-            ok=False, what=f"generators.orchestrator unavailable: {exc}",
-            result={}, next_steps=[], t0=t0,
+            ok=False,
+            what=f"generators.orchestrator unavailable: {exc}",
+            result={},
+            next_steps=[],
+            t0=t0,
         )
-    kwargs: dict[str, Any] = {"output_dir": output_dir, "name": name,
-                               "profile": profile}
+    kwargs: dict[str, Any] = {"output_dir": output_dir, "name": name, "profile": profile}
     if models is not None:
         kwargs["models"] = models
     if owner_models is not None:
@@ -406,25 +440,33 @@ def fastapi_meta_scaffold(
         res = generate_project(**kwargs)
     except Exception as exc:  # noqa: BLE001
         return _envelope(
-            ok=False, what=f"scaffold failed: {exc}",
-            result={}, next_steps=[
+            ok=False,
+            what=f"scaffold failed: {exc}",
+            result={},
+            next_steps=[
                 "Check that `models` is a dict of model_name → field-type map.",
                 "Call fastapi_meta_home() for the expected signature.",
-            ], t0=t0,
+            ],
+            t0=t0,
         )
     files = res.get("files_created") if isinstance(res, dict) else None
     files_count = len(files) if isinstance(files, list) else -1
     next_steps = [
-        f"Boot: python -m uvicorn app.main:app --port 8000 then GET /health.",
+        "Boot: python -m uvicorn app.main:app --port 8000 then GET /health.",
         f"For auth (signup/login/MFA/RBAC/sessions) → CALL fastapi_auth(action='bundle', params={{'output_dir':'{output_dir}'}}).",
-        f"For ONE auth feature only → fastapi_auth(action='<slice>', params={{...}}); use action='list' to see the tree.",
-        f"For exactly-once / idempotency / webhooks / rate-limit → fastapi_meta_search(query='<need>', k=5).",
-        f"When done, fastapi_meta_audit() validates the structural contract.",
+        "For ONE auth feature only → fastapi_auth(action='<slice>', params={...}); use action='list' to see the tree.",
+        "For exactly-once / idempotency / webhooks / rate-limit → fastapi_meta_search(query='<need>', k=5).",
+        "When done, fastapi_meta_audit() validates the structural contract.",
     ]
     return _envelope(
-        ok=True, what=f"scaffold emitted {files_count} files at {output_dir}",
-        result={"files_created": files, "notes": res.get("notes") if isinstance(res, dict) else None},
-        next_steps=next_steps, t0=t0,
+        ok=True,
+        what=f"scaffold emitted {files_count} files at {output_dir}",
+        result={
+            "files_created": files,
+            "notes": res.get("notes") if isinstance(res, dict) else None,
+        },
+        next_steps=next_steps,
+        t0=t0,
     )
 
 
@@ -452,16 +494,21 @@ MCP_TOOL_AUDIT = {
 
 def fastapi_meta_audit() -> dict:
     t0 = time.perf_counter()
-    import subprocess, sys
+    import subprocess
+    import sys
+
     out = subprocess.run(
         [sys.executable, "-m", "engine.audit.contract_check", "--quiet"],
-        cwd=SKILL_ROOT, capture_output=True, text=True, check=False,
+        cwd=SKILL_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
     )
     text = (out.stdout or "") + (out.stderr or "")
     # The quiet mode prints only failures; success prints the final summary line.
-    lines = [l for l in text.splitlines() if l.strip()]
+    lines = [line for line in text.splitlines() if line.strip()]
     summary = lines[-1] if lines else ""
-    failures = [l for l in lines if l.strip().startswith("✗")]
+    failures = [line for line in lines if line.strip().startswith("✗")]
     ok = out.returncode == 0 and not failures
     next_steps: list[str] = []
     if ok:
@@ -503,21 +550,28 @@ MCP_TOOL_VERIFY = {
 
 def fastapi_meta_verify(primitive: str | None = None) -> dict:
     t0 = time.perf_counter()
-    import subprocess, sys
+    import subprocess
+    import sys
+
     cmd = [sys.executable, "-m", "engine.check_primitive"]
     if primitive:
         cmd += ["--name", primitive]
     out = subprocess.run(
-        cmd, cwd=SKILL_ROOT, capture_output=True, text=True, check=False,
+        cmd,
+        cwd=SKILL_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
     )
     text = (out.stdout or "") + (out.stderr or "")
     return _envelope(
         ok=out.returncode == 0,
         what=f"10-tier gate exit={out.returncode}"
-             + (f" on {primitive}" if primitive else " on all primitives"),
+        + (f" on {primitive}" if primitive else " on all primitives"),
         result={"returncode": out.returncode, "tail": text[-1500:]},
         next_steps=(
-            ["Fix the failing tier (see tail)."] if out.returncode != 0
+            ["Fix the failing tier (see tail)."]
+            if out.returncode != 0
             else ["All tiers green. Continue development or commit."]
         ),
         t0=t0,
@@ -532,14 +586,14 @@ def fastapi_meta_verify(primitive: str | None = None) -> dict:
 # ---------------------------------------------------------------------------
 
 # (MCP_TOOL for fastapi_meta_home is defined above as the canonical name.)
-MCP_TOOL_HOME = MCP_TOOL          # alias so the pattern is uniform
+MCP_TOOL_HOME = MCP_TOOL  # alias so the pattern is uniform
 # MCP_TOOL_SEARCH / _DESCRIBE / _SCAFFOLD / _AUDIT / _VERIFY — already assigned above.
 
 # Wire each MCP_TOOL_<X> to the matching entry function — the discovery
 # loop needs to know which callable to register for each metadata dict.
-MCP_TOOL_HOME["entry"]      = "fastapi_meta_home"
-MCP_TOOL_SEARCH["entry"]    = "fastapi_meta_search"
-MCP_TOOL_DESCRIBE["entry"]  = "fastapi_meta_describe"
-MCP_TOOL_SCAFFOLD["entry"]  = "fastapi_meta_scaffold"
-MCP_TOOL_AUDIT["entry"]     = "fastapi_meta_audit"
-MCP_TOOL_VERIFY["entry"]    = "fastapi_meta_verify"
+MCP_TOOL_HOME["entry"] = "fastapi_meta_home"
+MCP_TOOL_SEARCH["entry"] = "fastapi_meta_search"
+MCP_TOOL_DESCRIBE["entry"] = "fastapi_meta_describe"
+MCP_TOOL_SCAFFOLD["entry"] = "fastapi_meta_scaffold"
+MCP_TOOL_AUDIT["entry"] = "fastapi_meta_audit"
+MCP_TOOL_VERIFY["entry"] = "fastapi_meta_verify"

@@ -46,7 +46,7 @@ ToolStatus = Literal["experimental", "stable", "deprecated"]
 
 # Primitive-only status. Adds "staged" for pre-audited primitives that live
 # under `core/venous/_staging/` but still carry REPLACE_ME stubs. Staged
-# primitives are surfaced in the catalog so the Maestro can see them, but
+# primitives are surfaced in the catalog so the agent can see them, but
 # they are NOT ready for production composition — promote through the
 # extraction pipeline before relying on them.
 PrimitiveStatus = Literal["experimental", "staged", "stable", "deprecated"]
@@ -130,7 +130,7 @@ class CatalogManifest(BaseModel):
             "SHA-256 content hash (hex) over the catalog excluding "
             "`generated_at`, `kit_commit`, and `stable_hash` itself. "
             "Populated at write time by `engine.index.manifest.write`. "
-            "Consumers (Forge, Maestro, CI) read this value to pin the "
+            "Consumers (Forge, agent, CI) read this value to pin the "
             "skill surface version within a session / benchmark run."
         ),
     )

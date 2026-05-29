@@ -4,7 +4,7 @@ This directory contains the **`fastapi_analyze`** MCP tool
 (`benchmark/analyzer.py`) that mechanically checks a generated
 FastAPI project against structural requirements (routes, auth
 middleware, rate limiting, health probes, etc.). It is consumed by
-`generators/tools/fix_findings.py` and surfaced to the Maestro via
+`generators/tools/fix_findings.py` and surfaced to the agent via
 `mcp_tools.discovery`.
 
 ## Why two directories named `benchmark` / `benchmarks`?

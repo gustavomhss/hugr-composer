@@ -6,7 +6,7 @@
 
 ## Headline
 
-- **257 files carry `MCP_TOOL` metadata** (Maestro-visible surface).
+- **257 files carry `MCP_TOOL` metadata** (agent-visible surface).
 - **Catalog:** 201 tools + 299 primitives + 392 recipes.
 - **124 registered primitives** (`core/venous/<ns>/<Name>/`).
 - **175 staged primitives** in `_staging/` (plus 42 quarantined).

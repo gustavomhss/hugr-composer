@@ -2,7 +2,7 @@
 
 Takes runs v0 + v2 + v3 (each with attempt artifacts) and, for every spec,
 keeps the HIGHEST-scoring attempt. This is an honest statistic: it measures
-the kit's *capability ceiling* — what achievable when the Maestro chooses
+the kit's *capability ceiling* — what achievable when the agent chooses
 well. It is NOT cheating — every attempt is a legitimate, independently
 scored run; we simply report the best-of-N distribution statistic.
 """
@@ -16,7 +16,7 @@ from pathlib import Path
 
 from engine.bench.rubric import aggregate, score_spec
 from engine.bench.runner import _discover_specs, _kit_version
-from engine.bench.subagent_maestro import SubagentMaestro
+from engine.bench.subagent_runner import SubagentRunner
 
 SKILL_ROOT = Path(__file__).resolve().parents[2]
 
@@ -25,7 +25,7 @@ def score_one(spec_path: Path, workdir: Path) -> float:
     """Return total score for one spec+workdir, or -1 if no artifact."""
     if not (workdir / "plan.json").exists():
         return -1.0
-    adapter = SubagentMaestro(runs_dir=workdir.parent)
+    adapter = SubagentRunner(runs_dir=workdir.parent)
     result = adapter.run_spec(spec_path, workdir)
     s = score_spec(
         result.spec_id,
@@ -41,7 +41,7 @@ def score_one(spec_path: Path, workdir: Path) -> float:
 
 def main() -> int:
     specs = _discover_specs()
-    adapter = SubagentMaestro(runs_dir=SKILL_ROOT / "benchmarks" / "_runs")
+    adapter = SubagentRunner(runs_dir=SKILL_ROOT / "benchmarks" / "_runs")
 
     runs = [
         SKILL_ROOT / "benchmarks" / "_runs" / "v0",
@@ -97,9 +97,9 @@ def main() -> int:
     data["methodology_notes"] = (
         "Ensemble best-of across independent plan-level runs (v0 + v2 + v3 attempts). "
         "For each spec, the highest-scoring attempt is reported. Every attempt is a "
-        "legitimate independent run by a fresh subagent Maestro using the kit's MCP "
+        "legitimate independent run by a fresh subagent agent using the kit's MCP "
         "discovery tools; no scoring was relaxed. This measures the kit's capability "
-        "ceiling under realistic Maestro variance."
+        "ceiling under realistic agent variance."
     )
     out = SKILL_ROOT / "benchmarks" / "latest_score.json"
     out.write_text(json.dumps(data, indent=2, sort_keys=False), encoding="utf-8")

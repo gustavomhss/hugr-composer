@@ -1,9 +1,10 @@
 """`fastapi_compliance` — the compliance-domain tree dispatcher.
 
-ONE MCP tool that routes to 0 slice tool(s) + 7 primitive(s) under the `compliance` domain. The Claude Maestro chooses granularity by `action`.
+ONE MCP tool that routes to 0 slice tool(s) + 7 primitive(s) under the `compliance` domain. The Claude agent chooses granularity by `action`.
 
 See `mcp_tools/tree/auth.py` — the canonical POC template this file mirrors.
 """
+
 from __future__ import annotations
 
 import importlib
@@ -41,6 +42,7 @@ BUNDLE_SLICES: tuple[str, ...] = ()
 # Shared envelope (same shape as tier-1 meta tools)
 # ---------------------------------------------------------------------------
 
+
 def _envelope(*, ok: bool, what: str, result: Any, next_steps: list[str], t0: float) -> dict:
     return {
         "ok": ok,
@@ -55,6 +57,7 @@ def _envelope(*, ok: bool, what: str, result: Any, next_steps: list[str], t0: fl
 # Slice routing
 # ---------------------------------------------------------------------------
 
+
 def _call_slice(slice_name: str, **kwargs) -> dict:
     """Route to the underlying `<pkg>.<mod>` tool.
 
@@ -67,8 +70,7 @@ def _call_slice(slice_name: str, **kwargs) -> dict:
     entry = getattr(mod, meta["mod"], None)
     if entry is None or not callable(entry):
         raise RuntimeError(
-            f"slice {slice_name!r}: entry function {meta['mod']!r} "
-            f"not found in {mod_name}"
+            f"slice {slice_name!r}: entry function {meta['mod']!r} not found in {mod_name}"
         )
     return entry(**kwargs)
 
@@ -76,6 +78,7 @@ def _call_slice(slice_name: str, **kwargs) -> dict:
 # ---------------------------------------------------------------------------
 # Primitive routing
 # ---------------------------------------------------------------------------
+
 
 def _copy_primitive(name: str, output_dir: str) -> dict:
     """Copy core/venous/compliance/<Name>/ into <output_dir>/app/core/venous/compliance/<Name>/.
@@ -86,8 +89,7 @@ def _copy_primitive(name: str, output_dir: str) -> dict:
     """
     if name not in PRIMITIVES:
         raise ValueError(
-            f"unknown primitive {name!r} in domain compliance. "
-            f"Available: {sorted(PRIMITIVES)}"
+            f"unknown primitive {name!r} in domain compliance. Available: {sorted(PRIMITIVES)}"
         )
     src = VENOUS_DIR / name
     if not src.is_dir():
@@ -96,25 +98,23 @@ def _copy_primitive(name: str, output_dir: str) -> dict:
     if target.exists():
         shutil.rmtree(target)
     shutil.copytree(
-        src, target,
+        src,
+        target,
         ignore=shutil.ignore_patterns(
-            "__pycache__", "_t0_report.json", "_evidence", "*.pyc",
+            "__pycache__",
+            "_t0_report.json",
+            "_evidence",
+            "*.pyc",
         ),
     )
-    files_created = sorted(
-        str(p.relative_to(output_dir)) for p in target.rglob("*") if p.is_file()
-    )
+    files_created = sorted(str(p.relative_to(output_dir)) for p in target.rglob("*") if p.is_file())
     adapter_name = f"{name}Adapter.py"
     adapter_src = ADAPTERS_FASTAPI / adapter_name
     if adapter_src.exists():
-        adapter_target = (
-            Path(output_dir) / "app" / "core" / "venous" / "_adapters" / "fastapi"
-        )
+        adapter_target = Path(output_dir) / "app" / "core" / "venous" / "_adapters" / "fastapi"
         adapter_target.mkdir(parents=True, exist_ok=True)
         shutil.copy(adapter_src, adapter_target / adapter_name)
-        files_created.append(
-            str((adapter_target / adapter_name).relative_to(output_dir))
-        )
+        files_created.append(str((adapter_target / adapter_name).relative_to(output_dir)))
         test_src = ADAPTERS_FASTAPI / f"test_{adapter_name}"
         if test_src.exists():
             shutil.copy(test_src, adapter_target / f"test_{adapter_name}")
@@ -156,27 +156,23 @@ def fastapi_compliance(action: str, params: dict | None = None) -> dict:
             result={
                 "domain": "compliance",
                 "slices": {
-                    name: {"description": meta["desc"]}
-                    for name, meta in sorted(SLICES.items())
+                    name: {"description": meta["desc"]} for name, meta in sorted(SLICES.items())
                 },
                 "primitives": {
-                    name: {"purpose": purpose}
-                    for name, purpose in sorted(PRIMITIVES.items())
+                    name: {"purpose": purpose} for name, purpose in sorted(PRIMITIVES.items())
                 },
                 "usage_examples": [
                     "fastapi_compliance(action='primitive', params={'name':'AuditEvent','output_dir':'/tmp/my-app'})"
                 ],
             },
-            next_steps=[
-                "action='primitive' + name=X → copy one Lego surgically."
-            ],
+            next_steps=["action='primitive' + name=X → copy one Lego surgically."],
             t0=t0,
         )
 
     if action == "bundle":
         return _envelope(
             ok=False,
-            what=f"domain 'compliance' has no slice tools — no bundle to install",
+            what="domain 'compliance' has no slice tools — no bundle to install",
             result={},
             next_steps=[
                 "Use action='primitive' with name=<PrimitiveName> + output_dir.",
@@ -203,7 +199,9 @@ def fastapi_compliance(action: str, params: dict | None = None) -> dict:
             res = _copy_primitive(name, output_dir)
         except (ValueError, FileNotFoundError) as exc:
             return _envelope(
-                ok=False, what=str(exc), result={},
+                ok=False,
+                what=str(exc),
+                result={},
                 next_steps=["Call fastapi_compliance(action='list') for valid primitive names."],
                 t0=t0,
             )
