@@ -1,4 +1,5 @@
 """Unit tests for CONTRACT §B2.2 — `suggest_composition` retrieval tool."""
+
 from __future__ import annotations
 
 import time
@@ -24,7 +25,9 @@ def test_schema_shape_matches_contract() -> None:
     required = {"primitives", "rationale", "score", "source", "name"}
     for h in hits:
         assert required <= set(h.keys())
-        assert isinstance(h["primitives"], list) and all(isinstance(p, str) for p in h["primitives"])
+        assert isinstance(h["primitives"], list) and all(
+            isinstance(p, str) for p in h["primitives"]
+        )
         assert isinstance(h["rationale"], str) and h["rationale"]
         assert isinstance(h["score"], float) and h["score"] > 0
         assert isinstance(h["source"], str) and h["source"]
@@ -32,7 +35,9 @@ def test_schema_shape_matches_contract() -> None:
 
 def test_source_primitive_always_included() -> None:
     for h in suggest_composition("circuit breaker timeout budget retry", limit=5):
-        assert h["source"] in h["primitives"], f"source {h['source']} missing from {h['primitives']}"
+        assert h["source"] in h["primitives"], (
+            f"source {h['source']} missing from {h['primitives']}"
+        )
 
 
 def test_limit_capped_at_five() -> None:
@@ -96,7 +101,11 @@ def test_no_network(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(socket.socket, "connect", boom, raising=True)
     monkeypatch.setattr(socket.socket, "connect_ex", boom, raising=True)
     hits = suggest_composition("webhook receiver", limit=3)
-    assert hits and "IdempotentConsumer" in hits[0]["primitives"] or "SignatureVerifier" in hits[0]["primitives"]
+    assert (
+        hits
+        and "IdempotentConsumer" in hits[0]["primitives"]
+        or "SignatureVerifier" in hits[0]["primitives"]
+    )
 
 
 def test_quality_bench_meets_contract() -> None:

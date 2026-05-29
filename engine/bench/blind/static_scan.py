@@ -14,6 +14,7 @@ Every spec can declare a `judge/static_scan.yaml` with rules of the form:
 Scanner returns `StaticScanResult` with per-rule verdicts. Rules with
 severity=fail contribute a synthetic test_E_static__<rule_id> outcome.
 """
+
 from __future__ import annotations
 
 import ast
@@ -25,8 +26,8 @@ from pathlib import Path
 @dataclass
 class StaticFinding:
     rule_id: str
-    severity: str          # "fail" | "warn"
-    verdict: str           # "triggered" (bad) | "clean"
+    severity: str  # "fail" | "warn"
+    verdict: str  # "triggered" (bad) | "clean"
     matches: list[str]
     description: str
 
@@ -35,6 +36,7 @@ def run_static_scan(workdir: Path, rules_yaml: Path | None) -> list[StaticFindin
     if rules_yaml is None or not rules_yaml.exists():
         return []
     import yaml as _yaml
+
     cfg = _yaml.safe_load(rules_yaml.read_text(encoding="utf-8")) or {}
     rules = cfg.get("rules", []) or []
     out: list[StaticFinding] = []
@@ -45,12 +47,15 @@ def run_static_scan(workdir: Path, rules_yaml: Path | None) -> list[StaticFindin
         scope_glob = rule.get("scope", "glob:**/*.py").split(":", 1)[1]
         patterns = rule.get("pattern_any_of", []) or []
         triggered, matches = _eval_patterns(workdir, scope_glob, patterns)
-        out.append(StaticFinding(
-            rule_id=rid, severity=severity,
-            verdict="triggered" if triggered else "clean",
-            matches=matches[:5],
-            description=desc,
-        ))
+        out.append(
+            StaticFinding(
+                rule_id=rid,
+                severity=severity,
+                verdict="triggered" if triggered else "clean",
+                matches=matches[:5],
+                description=desc,
+            )
+        )
     return out
 
 
@@ -78,8 +83,9 @@ def _eval_patterns(workdir: Path, scope_glob: str, patterns: list[dict]) -> tupl
                 for node in ast.walk(tree):
                     if isinstance(node, ast.Call):
                         name = (
-                            node.func.id if isinstance(node.func, ast.Name) else
-                            (node.func.attr if isinstance(node.func, ast.Attribute) else "")
+                            node.func.id
+                            if isinstance(node.func, ast.Name)
+                            else (node.func.attr if isinstance(node.func, ast.Attribute) else "")
                         )
                         if name == target:
                             matches.append(str(py.relative_to(workdir)))

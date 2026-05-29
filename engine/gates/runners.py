@@ -51,12 +51,12 @@ from ..llm.transport import TransportPool, fan_out
 class GateContext:
     """Inputs every runner needs."""
 
-    primitive_dir: Path        # e.g. core/venous/obs/HealthProbe/
-    primitive_name: str        # HealthProbe
-    namespace: str             # obs
-    is_stateful: bool          # drives T2 / T3 / T5 applicability
-    catalog_spec: dict         # the matching PrimitiveSpec dict from the catalog
-    pool: TransportPool | None # present iff tier requires LLM calls
+    primitive_dir: Path  # e.g. core/venous/obs/HealthProbe/
+    primitive_name: str  # HealthProbe
+    namespace: str  # obs
+    is_stateful: bool  # drives T2 / T3 / T5 applicability
+    catalog_spec: dict  # the matching PrimitiveSpec dict from the catalog
+    pool: TransportPool | None  # present iff tier requires LLM calls
 
 
 def _evidence_path(ctx: GateContext, filename: str) -> Path:
@@ -65,7 +65,9 @@ def _evidence_path(ctx: GateContext, filename: str) -> Path:
     return out / filename
 
 
-def _run_pytest(target: Path, *, junit_xml: Path | None = None, timeout: int = 600) -> tuple[int, str, str]:
+def _run_pytest(
+    target: Path, *, junit_xml: Path | None = None, timeout: int = 600
+) -> tuple[int, str, str]:
     """Return (exit_code, stdout, stderr). Uses the repo venv's python.
 
     Gate hardening (Builder-Agent-7): `shutil.which('python3')` returns the
@@ -75,7 +77,10 @@ def _run_pytest(target: Path, *, junit_xml: Path | None = None, timeout: int = 6
     matches the venv when check_primitive.py is invoked via `.venv/bin/python`).
     """
     import sys as _sys
-    venv_py = os.environ.get("SKILLKIT_PY") or _sys.executable or shutil.which("python3") or "python3"
+
+    venv_py = (
+        os.environ.get("SKILLKIT_PY") or _sys.executable or shutil.which("python3") or "python3"
+    )
     argv = [venv_py, "-m", "pytest", "-q", "--no-header", "--disable-warnings", str(target)]
     if junit_xml:
         argv.extend(["--junitxml", str(junit_xml)])
@@ -124,29 +129,54 @@ def _ruff_config_args(impl: Path) -> list[str]:
     #   TCH  TYPE_CHECKING guard opinion
     #   TID252  relative imports
     #   S603/S607  subprocess false positives on wrapper scripts
-    ignore = ",".join([
-        "D", "ANN", "COM", "CPY", "ERA", "TRY003", "FIX", "EM101", "EM102",
-        "T201", "E501", "ARG", "FBT", "PLR0913", "PLR2004", "PLR0915",
-        "TCH", "TID252", "S603", "S607",
-        # PascalCase module names are catalog-mandated (Tracer.py, not tracer.py).
-        "N999",
-        # PERF401 (list.extend) is stylistic; append in a loop is readable for <5 items.
-        "PERF401",
-        # PLC0415 (import-outside-toplevel): SKILL-001 uses lazy SDK imports inside
-        # function bodies by design — module boots without optional deps installed.
-        "PLC0415",
-        # SIM101/SIM102/SIM114 / RET504 — stylistic refactors that often hurt
-        # readability when the impl follows a catalog-cited invariant structure.
-        "SIM101", "SIM102", "SIM114", "RET504",
-        # SLF001 (private attribute access) — tests and harnesses need to probe internals.
-        # Intentionally NOT ignored for impl — leave it on.
-    ])
+    ignore = ",".join(
+        [
+            "D",
+            "ANN",
+            "COM",
+            "CPY",
+            "ERA",
+            "TRY003",
+            "FIX",
+            "EM101",
+            "EM102",
+            "T201",
+            "E501",
+            "ARG",
+            "FBT",
+            "PLR0913",
+            "PLR2004",
+            "PLR0915",
+            "TCH",
+            "TID252",
+            "S603",
+            "S607",
+            # PascalCase module names are catalog-mandated (Tracer.py, not tracer.py).
+            "N999",
+            # PERF401 (list.extend) is stylistic; append in a loop is readable for <5 items.
+            "PERF401",
+            # PLC0415 (import-outside-toplevel): SKILL-001 uses lazy SDK imports inside
+            # function bodies by design — module boots without optional deps installed.
+            "PLC0415",
+            # SIM101/SIM102/SIM114 / RET504 — stylistic refactors that often hurt
+            # readability when the impl follows a catalog-cited invariant structure.
+            "SIM101",
+            "SIM102",
+            "SIM114",
+            "RET504",
+            # SLF001 (private attribute access) — tests and harnesses need to probe internals.
+            # Intentionally NOT ignored for impl — leave it on.
+        ]
+    )
     return [
         "check",
-        "--select", "ALL",
-        "--ignore", ignore,
+        "--select",
+        "ALL",
+        "--ignore",
+        ignore,
         "--no-fix",
-        "--output-format", "concise",
+        "--output-format",
+        "concise",
         str(impl),
     ]
 
@@ -160,7 +190,7 @@ def _audit_suppressions(impl: Path) -> tuple[list[dict], list[dict]]:
         if not m:
             continue
         directive = m.group("directive")
-        tail = line[m.end():].strip(" :#—-")
+        tail = line[m.end() :].strip(" :#—-")
         has_inv = bool(_INV_ID_RE.search(line))
         has_rationale = len(tail) >= _MIN_RATIONALE_CHARS
         ok = has_inv or has_rationale
@@ -179,8 +209,12 @@ def _audit_suppressions(impl: Path) -> tuple[list[dict], list[dict]]:
 
 def _run_mypy_strict(impl: Path, venv_python: str) -> tuple[int, str, str]:
     argv = [
-        venv_python, "-m", "mypy", "--strict",
-        "--no-error-summary", "--no-color-output",
+        venv_python,
+        "-m",
+        "mypy",
+        "--strict",
+        "--no-error-summary",
+        "--no-color-output",
         str(impl),
     ]
     try:
@@ -204,6 +238,7 @@ def _venv_python_for(ctx: GateContext) -> str:
     # When check_primitive.py is invoked via the venv's python, `shutil.which("python3")`
     # returns that same interpreter so mypy / ruff execute inside the venv.
     import sys as _sys
+
     return os.environ.get("SKILLKIT_PY") or _sys.executable or shutil.which("python3") or "python3"
 
 
@@ -224,9 +259,7 @@ def run_t0_static(ctx: GateContext) -> TierReport:
 
     mypy_code, mypy_out, mypy_err = _run_mypy_strict(impl, py)
     if mypy_code != 0:
-        errors.append(
-            f"[mypy --strict] exit {mypy_code}\n{mypy_out[-2000:]}\n{mypy_err[-500:]}"
-        )
+        errors.append(f"[mypy --strict] exit {mypy_code}\n{mypy_out[-2000:]}\n{mypy_err[-500:]}")
 
     ruff_code, ruff_out, ruff_err = _run_ruff_all(impl, py)
     if ruff_code != 0:
@@ -236,25 +269,27 @@ def run_t0_static(ctx: GateContext) -> TierReport:
 
     all_suppr, bare_suppr = _audit_suppressions(impl)
     if bare_suppr:
-        lines = [
-            f"line {s['line']}: {s['directive']} — no rationale / INV-ID"
-            for s in bare_suppr
-        ]
+        lines = [f"line {s['line']}: {s['directive']} — no rationale / INV-ID" for s in bare_suppr]
         errors.append(
             f"[suppression audit] {len(bare_suppr)} bare `type: ignore` / `noqa` "
             f"without rationale or INV-ID citation:\n" + "\n".join(lines)
         )
 
     ev = _evidence_path(ctx, "t0_static.json")
-    ev.write_text(json.dumps({
-        "mypy_exit": mypy_code,
-        "ruff_exit": ruff_code,
-        "mypy_out_tail": mypy_out[-2000:],
-        "ruff_out_tail": ruff_out[-2000:],
-        "suppressions_total": len(all_suppr),
-        "suppressions_bare": len(bare_suppr),
-        "suppression_detail": all_suppr,
-    }, indent=2))
+    ev.write_text(
+        json.dumps(
+            {
+                "mypy_exit": mypy_code,
+                "ruff_exit": ruff_code,
+                "mypy_out_tail": mypy_out[-2000:],
+                "ruff_out_tail": ruff_out[-2000:],
+                "suppressions_total": len(all_suppr),
+                "suppressions_bare": len(bare_suppr),
+                "suppression_detail": all_suppr,
+            },
+            indent=2,
+        )
+    )
 
     if errors:
         return TierReport(
@@ -356,7 +391,9 @@ def run_t2_formal(ctx: GateContext) -> TierReport:
             tool_name="tlc",
             tool_version=_tlc_version(),
             summary=f"TLA+ model check {'passed' if passed else 'failed'}.",
-            error_details=None if passed else p.stdout[-3500:] + "\n---STDERR---\n" + p.stderr[-500:],
+            error_details=None
+            if passed
+            else p.stdout[-3500:] + "\n---STDERR---\n" + p.stderr[-500:],
         )
 
     # Alloy
@@ -527,7 +564,7 @@ def _extract_json(text: str) -> dict:
         start = s.find("{")
         end = s.rfind("}")
         if start >= 0 and end > start:
-            return json.loads(s[start:end + 1])
+            return json.loads(s[start : end + 1])
         raise
 
 
@@ -543,7 +580,9 @@ async def run_t6_adversarial(ctx: GateContext) -> TierReport:
         )
 
     user_prompt = _t6_user_prompt(ctx)
-    model_results = await fan_out(ctx.pool, user_prompt, list(_ENSEMBLE_MODELS), system=_ADVERSARIAL_SYSTEM)
+    model_results = await fan_out(
+        ctx.pool, user_prompt, list(_ENSEMBLE_MODELS), system=_ADVERSARIAL_SYSTEM
+    )
 
     attacks: list[AdversarialAttack] = []
     for model, res in model_results:
@@ -562,10 +601,12 @@ async def run_t6_adversarial(ctx: GateContext) -> TierReport:
             status=GateStatus.FAILED,
             duration_ms=_now_ms(started),
             summary=f"T6 requires ≥20 attacks across the ensemble; got {len(attacks)}.",
-            error_details=f"Models contributing fewer than expected may indicate CLI failure.",
+            error_details="Models contributing fewer than expected may indicate CLI failure.",
         )
 
-    successful = [a for a in attacks if a.defender_outcome in ("leaked", "crashed", "violated_invariant")]
+    successful = [
+        a for a in attacks if a.defender_outcome in ("leaked", "crashed", "violated_invariant")
+    ]
     ev = _evidence_path(ctx, "t6_adversarial.json")
     try:
         report = AdversarialEnsembleReport(
@@ -617,13 +658,12 @@ def _execute_attack(ctx: GateContext, model: str, attack_json: dict) -> Adversar
     # lives in `engine/gates/adversarial_runner.py` (executed as subprocess by agent).
     # For now we trust the attack_json provided structure and REJECT any attack
     # that did not state an outcome — that is the cautious default.
-    outcome = attack_json.get("outcome", "rejected")  # builder marks outcome after running the fixture
+    outcome = attack_json.get(
+        "outcome", "rejected"
+    )  # builder marks outcome after running the fixture
     raw_id = str(attack_json.get("attack_id", "ATK-UNKNOWN"))
     # Normalize: uppercase, replace invalid chars with _, keep the ATK- prefix shape.
-    if raw_id.upper().startswith("ATK-"):
-        body = raw_id[4:]
-    else:
-        body = raw_id
+    body = raw_id[4:] if raw_id.upper().startswith("ATK-") else raw_id
     body = re.sub(r"[^A-Za-z0-9_-]", "_", body).upper()[:40]
     if not body:
         body = "UNKNOWN"
@@ -677,7 +717,7 @@ def run_t7_observability(ctx: GateContext) -> TierReport:
     try:
         raw = json.loads(schema_path.read_text())
         ObservabilitySchema(
-            logs=[EmittedLog(**l) for l in raw["logs"]],
+            logs=[EmittedLog(**log) for log in raw["logs"]],
             metrics=[EmittedMetric(**m) for m in raw["metrics"]],
             spans=[EmittedSpan(**s) for s in raw["spans"]],
         )
@@ -779,13 +819,17 @@ async def run_t9_meta(ctx: GateContext) -> TierReport:
         f"# Primitive spec\n{md_src}\n\n"
         f"# Catalog spec\n```json\n{json.dumps(ctx.catalog_spec, indent=2)}\n```\n"
     )
+
     async def _call_with_retry(prompt: str, model: str, system: str) -> object:
         last_err: Exception | None = None
         for attempt in range(3):
             try:
                 return await ctx.pool.call(
-                    prompt, model=model, system=system,
-                    max_turns=5, timeout_s=300.0,
+                    prompt,
+                    model=model,
+                    system=system,
+                    max_turns=5,
+                    timeout_s=300.0,
                 )
             except Exception as e:
                 last_err = e
@@ -833,10 +877,15 @@ async def run_t9_meta(ctx: GateContext) -> TierReport:
         )
 
     ev = _evidence_path(ctx, "t9_meta.json")
-    ev.write_text(json.dumps({
-        "judge": judge.model_dump(),
-        "personas": personas.model_dump(),
-    }, indent=2))
+    ev.write_text(
+        json.dumps(
+            {
+                "judge": judge.model_dump(),
+                "personas": personas.model_dump(),
+            },
+            indent=2,
+        )
+    )
     return TierReport(
         tier=Tier.T9_META,
         status=GateStatus.PASSED,
@@ -853,7 +902,9 @@ async def run_t9_meta(ctx: GateContext) -> TierReport:
 # ---------------------------------------------------------------------------
 def _pytest_version() -> str:
     try:
-        out = subprocess.run(["pytest", "--version"], capture_output=True, text=True, timeout=5).stdout
+        out = subprocess.run(
+            ["pytest", "--version"], capture_output=True, text=True, timeout=5
+        ).stdout
         return out.strip().split("\n")[-1][:40]
     except Exception:
         return "unknown"

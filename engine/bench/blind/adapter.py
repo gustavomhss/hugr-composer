@@ -12,16 +12,17 @@ One stub:
   - StubAdapter   — used in unit tests to validate harness plumbing.
                     Emits a pre-baked project + synthetic trajectory.
 """
+
 from __future__ import annotations
 
-import hashlib
+import contextlib
 import json
 import os
 import shutil
 import subprocess
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -29,10 +30,11 @@ from typing import Any, Protocol
 @dataclass
 class EmissionResult:
     """What an adapter produced for one (spec, workdir) pair."""
-    emit_status: str                       # "success" | "timeout" | "error"
+
+    emit_status: str  # "success" | "timeout" | "error"
     error: str = ""
-    trajectory_path: Path | None = None    # jsonl with full transcript
-    tool_calls_path: Path | None = None    # jsonl, flat
+    trajectory_path: Path | None = None  # jsonl with full transcript
+    tool_calls_path: Path | None = None  # jsonl, flat
     input_tokens: int = 0
     output_tokens: int = 0
     cache_read_tokens: int = 0
@@ -54,6 +56,7 @@ class MaestroAdapter(Protocol):
 # ---------------------------------------------------------------------------
 # Stub adapter — validates harness plumbing end-to-end without an LLM call.
 # ---------------------------------------------------------------------------
+
 
 class StubAdapter:
     """Replays a pre-baked emission from a fixture directory.
@@ -77,7 +80,8 @@ class StubAdapter:
                 emit_status="error",
                 error=f"stub fixture missing: {src}",
                 wall_clock_s=time.perf_counter() - t0,
-                model="stub", seed=seed,
+                model="stub",
+                seed=seed,
             )
         # Copy fixture → workdir
         if workdir.exists():
@@ -87,20 +91,36 @@ class StubAdapter:
         # Emit a synthetic trajectory
         traj_path = workdir.parent / "trajectory.jsonl"
         tool_path = workdir.parent / "tool_calls.jsonl"
-        now = datetime.now(tz=timezone.utc).isoformat(timespec="seconds")
+        now = datetime.now(tz=UTC).isoformat(timespec="seconds")
         trajectory_lines = [
-            {"turn": 0, "timestamp": now, "role": "system",
-             "content": [{"type": "text", "text": "stub adapter"}],
-             "model": "stub", "usage": {}, "latency_ms": 0},
-            {"turn": 1, "timestamp": now, "role": "user",
-             "content": [{"type": "text", "text": spec.brief[:200]}],
-             "model": "stub", "usage": {}, "latency_ms": 0},
-            {"turn": 2, "timestamp": now, "role": "assistant",
-             "content": [{"type": "text", "text": f"[stub:{self.name}] emitted fixture"}],
-             "model": "stub",
-             "usage": {"input_tokens": 100, "output_tokens": 50},
-             "latency_ms": 1,
-             "workdir_snapshot_after": "final"},
+            {
+                "turn": 0,
+                "timestamp": now,
+                "role": "system",
+                "content": [{"type": "text", "text": "stub adapter"}],
+                "model": "stub",
+                "usage": {},
+                "latency_ms": 0,
+            },
+            {
+                "turn": 1,
+                "timestamp": now,
+                "role": "user",
+                "content": [{"type": "text", "text": spec.brief[:200]}],
+                "model": "stub",
+                "usage": {},
+                "latency_ms": 0,
+            },
+            {
+                "turn": 2,
+                "timestamp": now,
+                "role": "assistant",
+                "content": [{"type": "text", "text": f"[stub:{self.name}] emitted fixture"}],
+                "model": "stub",
+                "usage": {"input_tokens": 100, "output_tokens": 50},
+                "latency_ms": 1,
+                "workdir_snapshot_after": "final",
+            },
         ]
         traj_path.write_text("\n".join(json.dumps(l) for l in trajectory_lines) + "\n")
         tool_path.write_text("")  # stub has no tool calls
@@ -109,9 +129,11 @@ class StubAdapter:
             emit_status="success",
             trajectory_path=traj_path,
             tool_calls_path=tool_path,
-            input_tokens=100, output_tokens=50,
+            input_tokens=100,
+            output_tokens=50,
             wall_clock_s=time.perf_counter() - t0,
-            model="stub", seed=seed,
+            model="stub",
+            seed=seed,
             extra={"adapter": "stub", "fixture_slug": slug},
         )
 
@@ -120,13 +142,15 @@ class StubAdapter:
 # Claude CLI subagent adapter (live).
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ClaudeCliConfig:
     """Config for invoking a Claude CLI subagent."""
+
     model: str = "claude-sonnet-4-6"
     temperature: float = 0.7
     max_turns: int = 40
-    mcp_config_path: Path | None = None     # None → naked
+    mcp_config_path: Path | None = None  # None → naked
     dangerously_skip_permissions: bool = True
     timeout_s: int = 900
 
@@ -205,11 +229,16 @@ class ClaudeCliAdapter:
         prompt = _build_prompt(spec, workdir, has_kit_mcp=has_kit)
 
         cmd = [
-            "claude", "-p", prompt,
-            "--output-format", "stream-json",
+            "claude",
+            "-p",
+            prompt,
+            "--output-format",
+            "stream-json",
             "--verbose",
-            "--model", self.config.model,
-            "--max-turns", str(self.config.max_turns),
+            "--model",
+            self.config.model,
+            "--max-turns",
+            str(self.config.max_turns),
         ]
         if self.config.mcp_config_path is not None:
             cmd += ["--mcp-config", str(self.config.mcp_config_path)]
@@ -220,8 +249,10 @@ class ClaudeCliAdapter:
             proc = subprocess.Popen(
                 cmd,
                 cwd=workdir,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                text=True, bufsize=1,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1,
                 preexec_fn=os.setsid if hasattr(os, "setsid") else None,
                 env={**os.environ, "CLAUDE_CODE_DISABLE_TELEMETRY": "1"},
             )
@@ -230,7 +261,8 @@ class ClaudeCliAdapter:
                 emit_status="error",
                 error="claude CLI not found on PATH",
                 wall_clock_s=time.perf_counter() - t0,
-                model=self.config.model, seed=seed,
+                model=self.config.model,
+                seed=seed,
             )
 
         input_tokens = output_tokens = cache_read = cache_creation = 0
@@ -258,15 +290,19 @@ class ClaudeCliAdapter:
                 if msg_type not in ("assistant", "user"):
                     # system / result events — record minimal trace for auditability
                     if msg_type in ("system", "result"):
-                        traj_lines.append({
-                            "turn": None,
-                            "timestamp": datetime.now(tz=timezone.utc).isoformat(timespec="milliseconds"),
-                            "role": msg_type,
-                            "content": ev,
-                            "model": self.config.model,
-                            "usage": {},
-                            "latency_ms": 0,
-                        })
+                        traj_lines.append(
+                            {
+                                "turn": None,
+                                "timestamp": datetime.now(tz=UTC).isoformat(
+                                    timespec="milliseconds"
+                                ),
+                                "role": msg_type,
+                                "content": ev,
+                                "model": self.config.model,
+                                "usage": {},
+                                "latency_ms": 0,
+                            }
+                        )
                     continue
                 turn += 1
                 now = time.perf_counter()
@@ -285,41 +321,61 @@ class ClaudeCliAdapter:
                     if not isinstance(blk, dict):
                         continue
                     if blk.get("type") == "tool_use":
-                        tool_call_lines.append({
-                            "turn": turn, "tool_use_id": blk.get("id"),
-                            "name": blk.get("name"), "input": blk.get("input"),
-                            "timestamp": datetime.now(tz=timezone.utc).isoformat(timespec="milliseconds"),
-                        })
-                        if blk.get("name") in {"Write", "Edit", "str_replace_based_edit_tool", "create_file"}:
+                        tool_call_lines.append(
+                            {
+                                "turn": turn,
+                                "tool_use_id": blk.get("id"),
+                                "name": blk.get("name"),
+                                "input": blk.get("input"),
+                                "timestamp": datetime.now(tz=UTC).isoformat(
+                                    timespec="milliseconds"
+                                ),
+                            }
+                        )
+                        if blk.get("name") in {
+                            "Write",
+                            "Edit",
+                            "str_replace_based_edit_tool",
+                            "create_file",
+                        }:
                             writes_fs = True
                     elif blk.get("type") == "tool_result":
-                        tool_call_lines.append({
-                            "turn": turn, "tool_use_id": blk.get("tool_use_id"),
-                            "name": "<tool_result>",
-                            "result": _compact_result(blk.get("content")),
-                            "timestamp": datetime.now(tz=timezone.utc).isoformat(timespec="milliseconds"),
-                        })
+                        tool_call_lines.append(
+                            {
+                                "turn": turn,
+                                "tool_use_id": blk.get("tool_use_id"),
+                                "name": "<tool_result>",
+                                "result": _compact_result(blk.get("content")),
+                                "timestamp": datetime.now(tz=UTC).isoformat(
+                                    timespec="milliseconds"
+                                ),
+                            }
+                        )
 
                 snapshot_ref = None
                 if writes_fs:
                     try:
                         snap = snapshot_workdir(
-                            workdir, snapshots_dir, label=f"turn_{turn:03d}",
+                            workdir,
+                            snapshots_dir,
+                            label=f"turn_{turn:03d}",
                         )
                         snapshot_ref = snap.name
                     except Exception:  # noqa: BLE001
                         pass
 
-                traj_lines.append({
-                    "turn": turn,
-                    "timestamp": datetime.now(tz=timezone.utc).isoformat(timespec="milliseconds"),
-                    "role": ev.get("message", {}).get("role", msg_type),
-                    "content": content,
-                    "model": self.config.model,
-                    "usage": usage,
-                    "latency_ms": latency_ms,
-                    "workdir_snapshot_after": snapshot_ref,
-                })
+                traj_lines.append(
+                    {
+                        "turn": turn,
+                        "timestamp": datetime.now(tz=UTC).isoformat(timespec="milliseconds"),
+                        "role": ev.get("message", {}).get("role", msg_type),
+                        "content": content,
+                        "model": self.config.model,
+                        "usage": usage,
+                        "latency_ms": latency_ms,
+                        "workdir_snapshot_after": snapshot_ref,
+                    }
+                )
         finally:
             if timed_out:
                 _kill_process_group(proc)
@@ -328,10 +384,8 @@ class ClaudeCliAdapter:
                 proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 _kill_process_group(proc)
-                try:
+                with contextlib.suppress(subprocess.TimeoutExpired):
                     proc.wait(timeout=3)
-                except subprocess.TimeoutExpired:
-                    pass
 
         stderr_tail = (proc.stderr.read() if proc.stderr else "")[-500:]
         returncode = proc.returncode if proc.returncode is not None else -1
@@ -355,17 +409,22 @@ class ClaudeCliAdapter:
             error=error,
             trajectory_path=traj_path,
             tool_calls_path=tool_path,
-            input_tokens=input_tokens, output_tokens=output_tokens,
-            cache_read_tokens=cache_read, cache_creation_tokens=cache_creation,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cache_read_tokens=cache_read,
+            cache_creation_tokens=cache_creation,
             wall_clock_s=time.perf_counter() - t0,
-            model=self.config.model, temperature=self.config.temperature,
+            model=self.config.model,
+            temperature=self.config.temperature,
             seed=seed,
             extra={
-                "adapter": self.name, "returncode": returncode,
+                "adapter": self.name,
+                "returncode": returncode,
                 "turns": turn,
                 "tool_call_count": len(tool_call_lines),
                 "snapshots_taken": len(list(snapshots_dir.glob("turn_*.tar.*")))
-                    if snapshots_dir.exists() else 0,
+                if snapshots_dir.exists()
+                else 0,
             },
         )
 
@@ -396,7 +455,7 @@ def _kill_process_group(proc: subprocess.Popen) -> None:
         try:
             os.killpg(os.getpgid(proc.pid), 15)  # SIGTERM
             time.sleep(0.3)
-            os.killpg(os.getpgid(proc.pid), 9)   # SIGKILL
+            os.killpg(os.getpgid(proc.pid), 9)  # SIGKILL
         except (ProcessLookupError, PermissionError):
             pass
     else:

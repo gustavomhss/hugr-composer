@@ -29,7 +29,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from enum import Enum
+from enum import StrEnum
 from pathlib import PurePosixPath
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -38,8 +38,8 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 # ---------------------------------------------------------------------------
 # Taxonomy
 # ---------------------------------------------------------------------------
-class Tier(str, Enum):
-    T0_STATIC = "T0_static"              # mypy --strict + ruff + rationale-attached suppressions
+class Tier(StrEnum):
+    T0_STATIC = "T0_static"  # mypy --strict + ruff + rationale-attached suppressions
     T1_BEHAVIORAL = "T1_behavioral"
     T2_FORMAL = "T2_formal"
     T3_STATE_MACHINE = "T3_state_machine"
@@ -51,14 +51,14 @@ class Tier(str, Enum):
     T9_META = "T9_meta"
 
 
-class GateStatus(str, Enum):
+class GateStatus(StrEnum):
     PASSED = "passed"
     FAILED = "failed"
-    SKIPPED = "skipped"     # legitimately not applicable (e.g. stateless → T2 skipped)
-    ERRORED = "errored"     # gate runner crashed; treated as failure by the aggregator
+    SKIPPED = "skipped"  # legitimately not applicable (e.g. stateless → T2 skipped)
+    ERRORED = "errored"  # gate runner crashed; treated as failure by the aggregator
 
 
-class Maturity(str, Enum):
+class Maturity(StrEnum):
     EXPERIMENTAL = "experimental"
     EMERGING = "emerging"
     BATTLE_TESTED = "battle_tested"
@@ -66,10 +66,16 @@ class Maturity(str, Enum):
 
 MATURITY_REQUIRED_TIERS: dict[Maturity, frozenset[Tier]] = {
     Maturity.EXPERIMENTAL: frozenset({Tier.T0_STATIC, Tier.T1_BEHAVIORAL, Tier.T6_ADVERSARIAL}),
-    Maturity.EMERGING: frozenset({
-        Tier.T0_STATIC, Tier.T1_BEHAVIORAL, Tier.T3_STATE_MACHINE,
-        Tier.T4_METAMORPHIC, Tier.T6_ADVERSARIAL, Tier.T7_OBSERVABILITY,
-    }),
+    Maturity.EMERGING: frozenset(
+        {
+            Tier.T0_STATIC,
+            Tier.T1_BEHAVIORAL,
+            Tier.T3_STATE_MACHINE,
+            Tier.T4_METAMORPHIC,
+            Tier.T6_ADVERSARIAL,
+            Tier.T7_OBSERVABILITY,
+        }
+    ),
     Maturity.BATTLE_TESTED: frozenset(Tier),  # all ten
 }
 
@@ -95,9 +101,9 @@ class FileArtefact(BaseModel):
     size_bytes: int = Field(ge=1, le=5_000_000)
     kind: str = Field(
         pattern=r"^(impl|test|behavioral|state_machine|metamorphic|concurrent|"
-                r"adversarial|chaos|observability|dashboard|spec_md|manifest|"
-                r"formal_tla|formal_alloy|contract_json|persona_reviews|"
-                r"proposed_invariants|sbom)$",
+        r"adversarial|chaos|observability|dashboard|spec_md|manifest|"
+        r"formal_tla|formal_alloy|contract_json|persona_reviews|"
+        r"proposed_invariants|sbom)$",
         description="Functional role of the file; validator requires certain kinds per maturity.",
     )
 
@@ -143,13 +149,11 @@ class InvariantTestBinding(BaseModel):
     def imperative_required(cls, v: str) -> str:
         upper = v.upper()
         if not any(kw in upper for kw in IMPERATIVE_STARTS):
-            raise ValueError(
-                f"invariant_text MUST contain one of {IMPERATIVE_STARTS}: {v!r}"
-            )
+            raise ValueError(f"invariant_text MUST contain one of {IMPERATIVE_STARTS}: {v!r}")
         return v
 
     @model_validator(mode="after")
-    def test_names_share_slug(self) -> "InvariantTestBinding":
+    def test_names_share_slug(self) -> InvariantTestBinding:
         def slug(test_name: str) -> str:
             # strip `test_inv_` prefix and `_confirms|_prevents|_under_failure` suffix
             m = re.match(r"^test_inv_(.+?)_(confirms|prevents|under_failure)$", test_name)
@@ -181,7 +185,7 @@ class TierReport(BaseModel):
     error_details: str | None = Field(default=None, max_length=4000)
 
     @model_validator(mode="after")
-    def evidence_present_when_passed(self) -> "TierReport":
+    def evidence_present_when_passed(self) -> TierReport:
         if self.status is GateStatus.PASSED and not self.evidence_path:
             raise ValueError(
                 f"{self.tier.value} passed — evidence_path MUST be set (no blind PASS)."
@@ -199,7 +203,9 @@ class TierReport(BaseModel):
 class AdversarialAttack(BaseModel):
     model: str = Field(min_length=5, max_length=60, description="e.g. 'claude-opus-4-7'.")
     attack_id: str = Field(pattern=r"^ATK-[A-Z0-9_-]{3,40}$")
-    hypothesis: str = Field(min_length=20, max_length=600, description="What the red-team model bet would break.")
+    hypothesis: str = Field(
+        min_length=20, max_length=600, description="What the red-team model bet would break."
+    )
     input_fixture: str = Field(min_length=1, max_length=10_000)
     defender_outcome: str = Field(
         pattern=r"^(rejected|held|leaked|crashed|violated_invariant)$",
@@ -208,12 +214,14 @@ class AdversarialAttack(BaseModel):
     violated_invariant_id: str | None = Field(default=None)
 
     @model_validator(mode="after")
-    def leaked_requires_violation_id(self) -> "AdversarialAttack":
-        if self.defender_outcome in ("leaked", "crashed", "violated_invariant"):
-            if not self.violated_invariant_id:
-                raise ValueError(
-                    f"Attack outcome '{self.defender_outcome}' MUST cite the violated invariant id."
-                )
+    def leaked_requires_violation_id(self) -> AdversarialAttack:
+        if (
+            self.defender_outcome in ("leaked", "crashed", "violated_invariant")
+            and not self.violated_invariant_id
+        ):
+            raise ValueError(
+                f"Attack outcome '{self.defender_outcome}' MUST cite the violated invariant id."
+            )
         return self
 
 
@@ -225,9 +233,10 @@ class AdversarialEnsembleReport(BaseModel):
     successful_attacks: int = Field(ge=0)
 
     @model_validator(mode="after")
-    def successful_count_matches(self) -> "AdversarialEnsembleReport":
+    def successful_count_matches(self) -> AdversarialEnsembleReport:
         observed = sum(
-            1 for a in self.attacks
+            1
+            for a in self.attacks
             if a.defender_outcome in ("leaked", "crashed", "violated_invariant")
         )
         if observed != self.successful_attacks:
@@ -238,7 +247,7 @@ class AdversarialEnsembleReport(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def zero_successful_required(self) -> "AdversarialEnsembleReport":
+    def zero_successful_required(self) -> AdversarialEnsembleReport:
         if self.successful_attacks > 0:
             raise ValueError(
                 f"T6 MUST have zero successful attacks to pass; got {self.successful_attacks}."
@@ -246,7 +255,7 @@ class AdversarialEnsembleReport(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def distinct_models(self) -> "AdversarialEnsembleReport":
+    def distinct_models(self) -> AdversarialEnsembleReport:
         if len(set(self.models_run)) != len(self.models_run):
             raise ValueError(f"models_run MUST be distinct, got {self.models_run}.")
         return self
@@ -256,8 +265,10 @@ class AdversarialEnsembleReport(BaseModel):
 # LLM judge report (T9-ish) — fidelity, completeness, clarity
 # ---------------------------------------------------------------------------
 class JudgeAxis(BaseModel):
-    axis: str = Field(pattern=r"^(fidelity|completeness|error_quality|composability|"
-                              r"production_readiness|catalog_conformance)$")
+    axis: str = Field(
+        pattern=r"^(fidelity|completeness|error_quality|composability|"
+        r"production_readiness|catalog_conformance)$"
+    )
     score: int = Field(ge=1, le=10)
     rationale: str = Field(min_length=20, max_length=1000)
 
@@ -267,16 +278,22 @@ class LLMJudgeReport(BaseModel):
     axes: list[JudgeAxis] = Field(min_length=6, max_length=6)
 
     @model_validator(mode="after")
-    def six_unique_axes(self) -> "LLMJudgeReport":
-        expected = {"fidelity", "completeness", "error_quality",
-                    "composability", "production_readiness", "catalog_conformance"}
+    def six_unique_axes(self) -> LLMJudgeReport:
+        expected = {
+            "fidelity",
+            "completeness",
+            "error_quality",
+            "composability",
+            "production_readiness",
+            "catalog_conformance",
+        }
         seen = {a.axis for a in self.axes}
         if seen != expected:
             raise ValueError(f"LLMJudgeReport MUST cover exactly {expected}, got {seen}.")
         return self
 
     @model_validator(mode="after")
-    def every_axis_ge_8(self) -> "LLMJudgeReport":
+    def every_axis_ge_8(self) -> LLMJudgeReport:
         below = [(a.axis, a.score) for a in self.axes if a.score < 8]
         if below:
             raise ValueError(f"Every axis MUST score ≥ 8/10. Below-threshold axes: {below}")
@@ -297,7 +314,7 @@ class PersonaReviewReport(BaseModel):
     reviews: list[PersonaReview] = Field(min_length=5, max_length=5)
 
     @model_validator(mode="after")
-    def all_five_personas_present(self) -> "PersonaReviewReport":
+    def all_five_personas_present(self) -> PersonaReviewReport:
         expected = {"junior_dev", "principal_engineer", "security_auditor", "sre", "pm"}
         seen = {r.persona for r in self.reviews}
         if seen != expected:
@@ -305,10 +322,12 @@ class PersonaReviewReport(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def all_five_understood(self) -> "PersonaReviewReport":
+    def all_five_understood(self) -> PersonaReviewReport:
         unclear = [r.persona for r in self.reviews if not r.understood]
         if unclear:
-            raise ValueError(f"All five personas MUST mark understood=true. Unclear for: {unclear}.")
+            raise ValueError(
+                f"All five personas MUST mark understood=true. Unclear for: {unclear}."
+            )
         return self
 
 
@@ -329,7 +348,9 @@ class EmittedMetric(BaseModel):
 
 
 class EmittedSpan(BaseModel):
-    operation_name: str = Field(pattern=r"^[a-z0-9][a-z0-9._]*[a-z0-9]$", min_length=3, max_length=80)
+    operation_name: str = Field(
+        pattern=r"^[a-z0-9][a-z0-9._]*[a-z0-9]$", min_length=3, max_length=80
+    )
     required_attributes: list[str] = Field(default_factory=list, max_length=20)
 
 
@@ -385,7 +406,7 @@ class PrimitiveDelivery(BaseModel):
     # =====================================================================
 
     @model_validator(mode="after")
-    def files_unique_by_path(self) -> "PrimitiveDelivery":
+    def files_unique_by_path(self) -> PrimitiveDelivery:
         paths = [f.path for f in self.files]
         if len(paths) != len(set(paths)):
             dupes = {p for p in paths if paths.count(p) > 1}
@@ -393,21 +414,25 @@ class PrimitiveDelivery(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def files_unique_by_sha(self) -> "PrimitiveDelivery":
+    def files_unique_by_sha(self) -> PrimitiveDelivery:
         shas = [f.sha256 for f in self.files]
         if len(shas) != len(set(shas)):
-            raise ValueError("Duplicate SHA-256 across files — delivery cannot contain identical files.")
+            raise ValueError(
+                "Duplicate SHA-256 across files — delivery cannot contain identical files."
+            )
         return self
 
     @model_validator(mode="after")
-    def invariant_ids_unique(self) -> "PrimitiveDelivery":
+    def invariant_ids_unique(self) -> PrimitiveDelivery:
         ids = [b.invariant_id for b in self.invariant_bindings]
         if len(ids) != len(set(ids)):
-            raise ValueError(f"invariant_ids MUST be unique per primitive, got duplicates in {ids}.")
+            raise ValueError(
+                f"invariant_ids MUST be unique per primitive, got duplicates in {ids}."
+            )
         return self
 
     @model_validator(mode="after")
-    def test_names_unique(self) -> "PrimitiveDelivery":
+    def test_names_unique(self) -> PrimitiveDelivery:
         all_tests = []
         for b in self.invariant_bindings:
             all_tests.extend([b.confirms_test, b.prevents_test, b.under_failure_test])
@@ -416,7 +441,7 @@ class PrimitiveDelivery(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def tier_reports_cover_maturity(self) -> "PrimitiveDelivery":
+    def tier_reports_cover_maturity(self) -> PrimitiveDelivery:
         required = MATURITY_REQUIRED_TIERS[self.maturity]
         present = {r.tier for r in self.tier_reports}
         missing = required - present
@@ -428,14 +453,14 @@ class PrimitiveDelivery(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def tier_reports_unique_tier(self) -> "PrimitiveDelivery":
+    def tier_reports_unique_tier(self) -> PrimitiveDelivery:
         tiers = [r.tier for r in self.tier_reports]
         if len(tiers) != len(set(tiers)):
             raise ValueError(f"Each tier MUST appear at most once in tier_reports, got {tiers}.")
         return self
 
     @model_validator(mode="after")
-    def no_tier_failed_or_errored(self) -> "PrimitiveDelivery":
+    def no_tier_failed_or_errored(self) -> PrimitiveDelivery:
         bad = [r for r in self.tier_reports if r.status in (GateStatus.FAILED, GateStatus.ERRORED)]
         if bad:
             raise ValueError(
@@ -445,22 +470,26 @@ class PrimitiveDelivery(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def required_files_present(self) -> "PrimitiveDelivery":
+    def required_files_present(self) -> PrimitiveDelivery:
         kinds = {f.kind for f in self.files}
         mandatory = {"impl", "test", "behavioral", "spec_md", "manifest"}
         missing = mandatory - kinds
         if missing:
-            raise ValueError(f"Delivery MUST contain files of kinds {sorted(mandatory)}; missing {sorted(missing)}.")
+            raise ValueError(
+                f"Delivery MUST contain files of kinds {sorted(mandatory)}; missing {sorted(missing)}."
+            )
 
         if self.maturity is Maturity.BATTLE_TESTED:
             # Tiers that are legitimately SKIPPED for stateless primitives may
             # omit their file kinds; evidence for those is absent by design.
-            skipped_tiers = {
-                r.tier for r in self.tier_reports if r.status is GateStatus.SKIPPED
-            }
+            skipped_tiers = {r.tier for r in self.tier_reports if r.status is GateStatus.SKIPPED}
             battle_req = {
-                "metamorphic", "chaos", "observability",
-                "dashboard", "contract_json", "persona_reviews",
+                "metamorphic",
+                "chaos",
+                "observability",
+                "dashboard",
+                "contract_json",
+                "persona_reviews",
                 "proposed_invariants",
             }
             if Tier.T3_STATE_MACHINE not in skipped_tiers:
@@ -479,8 +508,8 @@ class PrimitiveDelivery(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def sub_reports_present_when_tier_included(self) -> "PrimitiveDelivery":
-        tiers_present = {r.tier for r in self.tier_reports}
+    def sub_reports_present_when_tier_included(self) -> PrimitiveDelivery:
+        {r.tier for r in self.tier_reports}
         passed = {r.tier for r in self.tier_reports if r.status is GateStatus.PASSED}
 
         if Tier.T6_ADVERSARIAL in passed and self.adversarial is None:
@@ -493,7 +522,7 @@ class PrimitiveDelivery(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def llm_cost_bounded_by_maturity(self) -> "PrimitiveDelivery":
+    def llm_cost_bounded_by_maturity(self) -> PrimitiveDelivery:
         caps = {
             Maturity.EXPERIMENTAL: 0.25,
             Maturity.EMERGING: 1.00,
@@ -507,7 +536,7 @@ class PrimitiveDelivery(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def path_name_consistency(self) -> "PrimitiveDelivery":
+    def path_name_consistency(self) -> PrimitiveDelivery:
         """Every file path must live under the primitive's namespace/name directory."""
         prefix = f"{self.namespace}/{self.name}/"
         off = [f.path for f in self.files if not f.path.startswith(prefix)]

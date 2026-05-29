@@ -5,15 +5,16 @@ chosen run (default `benchmarks/_runs/v0/`), scores each via
 `SubagentMaestro`, aggregates, and writes the canonical
 `benchmarks/latest_score.json` that satisfies CONTRACT §B3.5.
 """
+
 from __future__ import annotations
 
 import argparse
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from engine.bench.rubric import aggregate, score_spec
-from engine.bench.runner import SPECS_ROOT, _discover_specs, _kit_version
+from engine.bench.runner import _discover_specs, _kit_version
 from engine.bench.subagent_maestro import SubagentMaestro
 
 SKILL_ROOT = Path(__file__).resolve().parents[2]
@@ -44,7 +45,8 @@ def main(argv: list[str] | None = None) -> int:
             missing.append(f"{tier}/{spec_path.stem}")
         result = adapter.run_spec(spec_path, workdir)
         s = score_spec(
-            result.spec_id, result.tier,
+            result.spec_id,
+            result.tier,
             scaffold_completeness=result.scaffold_completeness,
             test_suite_pass=result.test_suite_pass,
             primitive_gate_pass=result.primitive_gate_pass,
@@ -57,7 +59,7 @@ def main(argv: list[str] | None = None) -> int:
         scores,
         kit_version=_kit_version(),
         maestro_model=adapter.model_name(),
-        generated_at=datetime.now(tz=timezone.utc).isoformat(timespec="seconds"),
+        generated_at=datetime.now(tz=UTC).isoformat(timespec="seconds"),
     )
     data = report.as_dict()
     data["methodology"] = args.methodology
@@ -71,6 +73,7 @@ def main(argv: list[str] | None = None) -> int:
         data["missing_artifacts"] = missing
 
     import json
+
     args.out.write_text(json.dumps(data, indent=2, sort_keys=False), encoding="utf-8")
 
     print(f"overall: {report.overall:.2f}")

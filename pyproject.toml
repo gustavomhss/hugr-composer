@@ -140,7 +140,7 @@ norecursedirs = [
 
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py312"
 line-length = 100
 extend-exclude = [
     "core/venous/_staging",
@@ -158,3 +158,12 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["B011", "F401"]
+# engine/discovery/* + mcp_tools/* place `MCP_TOOL` dict at top of file (Maestro-facing
+# discovery contract); imports follow. Pattern is intentional + documented.
+"engine/discovery/**" = ["E402"]
+# Tests + bench files use short loop vars (l for ledger, l for line) idiomatically.
+# Nested with-statements in bench snapshots/process_rewards are required by context
+# manager ordering. Ignored explicitly.
+"engine/promotion/tests/**" = ["E741"]
+"engine/bench/blind/**" = ["E741", "SIM117"]
+"mcp_tools/**" = ["E402"]

@@ -1,4 +1,5 @@
 """Discovery layer — pure-retrieval BM25 over primitives_by_concern.yaml."""
+
 from __future__ import annotations
 
 from engine.discovery.compose import (

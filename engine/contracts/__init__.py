@@ -1,6 +1,7 @@
 """Engine contracts. Sealed, schema-validated, no soft-accept."""
 
 from .primitive_delivery_contract import (
+    MATURITY_REQUIRED_TIERS,
     AdversarialAttack,
     AdversarialEnsembleReport,
     EmittedLog,
@@ -11,7 +12,6 @@ from .primitive_delivery_contract import (
     InvariantTestBinding,
     JudgeAxis,
     LLMJudgeReport,
-    MATURITY_REQUIRED_TIERS,
     Maturity,
     ObservabilitySchema,
     PersonaReview,

@@ -4,6 +4,7 @@ Runs the curated query set at benchmarks/discovery_test_set.json through
 `find_primitive` and reports top-1 accuracy + P@3. Exit non-zero if the
 top-1 rate is below --min-top-1 (default 0.80, per CONTRACT §B2.1).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -30,15 +31,17 @@ def run(path: Path, verbose: bool = False) -> tuple[float, float, list[dict]]:
         got_p3 = expected in top_names[:3]
         top1 += int(got_top1)
         p_at_3 += int(got_p3)
-        rows.append({
-            "id": q["id"],
-            "query": q["query"],
-            "expected": expected,
-            "top_1": top_names[0] if top_names else None,
-            "top_3": top_names[:3],
-            "pass_top1": got_top1,
-            "pass_p3": got_p3,
-        })
+        rows.append(
+            {
+                "id": q["id"],
+                "query": q["query"],
+                "expected": expected,
+                "top_1": top_names[0] if top_names else None,
+                "top_3": top_names[:3],
+                "pass_top1": got_top1,
+                "pass_p3": got_p3,
+            }
+        )
     n = len(queries) or 1
     return top1 / n, p_at_3 / n, rows
 
@@ -61,7 +64,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.verbose or top1 < args.min_top_1 or p3 < args.min_p_at_3:
             for r in rows:
                 status = "OK " if r["pass_top1"] else "MISS"
-                print(f"  {status} {r['id']}: '{r['query']}' -> {r['top_1']} (expected {r['expected']}); top3={r['top_3']}")
+                print(
+                    f"  {status} {r['id']}: '{r['query']}' -> {r['top_1']} (expected {r['expected']}); top3={r['top_3']}"
+                )
 
     if top1 < args.min_top_1:
         print(f"FAIL: top-1 {top1:.2%} < required {args.min_top_1:.2%}", file=sys.stderr)

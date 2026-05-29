@@ -20,14 +20,16 @@ Typical test entry point (deterministic, no LLM calls):
     report = runner.run_all()
     assert report.overall >= 30.0
 """
+
 from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Callable, Protocol
+from typing import Protocol
 
 from engine.bench.rubric import BenchmarkReport, SpecScore, aggregate, score_spec
 
@@ -41,6 +43,7 @@ logger = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class RunResult:
     """Produced by a Maestro per spec. The runner converts this into a score."""
+
     spec_id: str
     tier: str
     scaffold_completeness: float
@@ -74,6 +77,7 @@ class StubMaestro:
     dimension. Anything not in the scoreboard scores zero (models a
     brand-new kit with no coverage).
     """
+
     scoreboard: dict[str, float]
     name: str = "stub"
 
@@ -99,17 +103,14 @@ class StubMaestro:
 def _discover_specs(root: Path = SPECS_ROOT) -> list[Path]:
     if not root.exists():
         return []
-    return sorted(
-        p for p in root.rglob("*.md")
-        if p.name != "README.md" and p.parent != root
-    )
+    return sorted(p for p in root.rglob("*.md") if p.name != "README.md" and p.parent != root)
 
 
 @dataclass
 class BenchmarkRunner:
     adapter: MaestroAdapter
     specs_root: Path = SPECS_ROOT
-    workdir: Path | None = None           # temp dir per run by default
+    workdir: Path | None = None  # temp dir per run by default
     on_spec_start: Callable[[Path], None] | None = None
     on_spec_end: Callable[[RunResult], None] | None = None
 
@@ -147,21 +148,25 @@ class BenchmarkRunner:
             results,
             kit_version=kit_version or _kit_version(),
             maestro_model=self.adapter.model_name(),
-            generated_at=datetime.now(tz=timezone.utc).isoformat(timespec="seconds"),
+            generated_at=datetime.now(tz=UTC).isoformat(timespec="seconds"),
         )
 
 
 def _timestamp() -> str:
-    return datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return datetime.now(tz=UTC).strftime("%Y%m%dT%H%M%SZ")
 
 
 def _kit_version() -> str:
     """Best-effort git rev for reproducibility."""
     import subprocess
+
     try:
         out = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
-            cwd=SKILL_ROOT, capture_output=True, text=True, check=False,
+            cwd=SKILL_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
         )
         if out.returncode == 0 and out.stdout.strip():
             return out.stdout.strip()
@@ -179,6 +184,7 @@ def main(argv: list[str] | None = None) -> int:
     runner dependency-free. The caller wires it up at invocation time.
     """
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--adapter", default="stub", choices=["stub"])
     parser.add_argument("--out", type=Path, default=DEFAULT_REPORT)
@@ -194,4 +200,5 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     import sys as _sys
+
     _sys.exit(main())

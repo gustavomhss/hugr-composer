@@ -17,6 +17,7 @@ Usage:
     PYTHONPATH=. python -m engine.docs.build              # writes docs_site/
     PYTHONPATH=. python -m engine.docs.build --out /tmp/site --verify
 """
+
 from __future__ import annotations
 
 import argparse
@@ -26,10 +27,10 @@ import importlib.util
 import json
 import re
 import sys
+from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Iterable
 
 import yaml
 
@@ -43,14 +44,16 @@ DEFAULT_OUT = SKILL_ROOT / "docs_site"
 # Top-level contract docs published at docs.hugr.dev root. Order matters —
 # this is the nav order on the landing page.
 _TOP_LEVEL_DOCS: tuple[tuple[str, str, str], ...] = (
-    ("PRODUCT.md",      "product",      "Product contract"),
-    ("ROADMAP.md",      "roadmap",      "Roadmap"),
-    ("CONTRACT.md",     "contract",     "Execution contract"),
+    ("PRODUCT.md", "product", "Product contract"),
+    ("ROADMAP.md", "roadmap", "Roadmap"),
+    ("CONTRACT.md", "contract", "Execution contract"),
     ("CONTRIBUTING.md", "contributing", "Contributing"),
-    ("CHANGELOG.md",    "changelog",    "Changelog"),
+    ("CHANGELOG.md", "changelog", "Changelog"),
 )
 
-_SOURCE_URL_BASE = "https://github.com/humangr-labs/HuGR-Arsenal/tree/main/skills/SKILL-001-fastapi-production"
+_SOURCE_URL_BASE = (
+    "https://github.com/humangr-labs/HuGR-Arsenal/tree/main/skills/SKILL-001-fastapi-production"
+)
 
 
 @dataclass(frozen=True)
@@ -77,7 +80,7 @@ _LINK = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 
 
 def _render_inline(text: str) -> str:
-    out = html.escape(text, quote=False)
+    html.escape(text, quote=False)
     # Links BEFORE bold/code (bold with ** could capture `[x]`) — but we
     # escaped first, so brackets are now &#91; etc. Unescape just for link
     # matching on the original string and re-render:
@@ -103,7 +106,9 @@ def _inline_rich(text: str) -> str:
             kind, m = best
             if kind == "link":
                 label, href = m.group(1), m.group(2)
-                tokens.append(("link", f'<a href="{html.escape(href, quote=True)}">{html.escape(label)}</a>'))
+                tokens.append(
+                    ("link", f'<a href="{html.escape(href, quote=True)}">{html.escape(label)}</a>')
+                )
             elif kind == "bold":
                 tokens.append(("bold", f"<strong>{html.escape(m.group(1))}</strong>"))
             else:
@@ -149,7 +154,11 @@ def _md_to_html(md: str) -> str:
             head = table_rows[0]
             body = table_rows[2:] if len(table_rows) > 2 else []
             out.append("<table>")
-            out.append("<thead><tr>" + "".join(f"<th>{_inline_rich(c)}</th>" for c in head) + "</tr></thead>")
+            out.append(
+                "<thead><tr>"
+                + "".join(f"<th>{_inline_rich(c)}</th>" for c in head)
+                + "</tr></thead>"
+            )
             out.append("<tbody>")
             for row in body:
                 out.append("<tr>" + "".join(f"<td>{_inline_rich(c)}</td>" for c in row) + "</tr>")
@@ -163,9 +172,11 @@ def _md_to_html(md: str) -> str:
 
         if stripped.startswith("```"):
             if in_code:
-                out.append(f'<pre><code class="lang-{html.escape(code_lang)}">'
-                           + html.escape("\n".join(code_buf))
-                           + "</code></pre>")
+                out.append(
+                    f'<pre><code class="lang-{html.escape(code_lang)}">'
+                    + html.escape("\n".join(code_buf))
+                    + "</code></pre>"
+                )
                 code_buf = []
                 code_lang = ""
                 in_code = False
@@ -227,9 +238,11 @@ def _md_to_html(md: str) -> str:
     _flush_list()
     _flush_table()
     if in_code:
-        out.append(f'<pre><code class="lang-{html.escape(code_lang)}">'
-                   + html.escape("\n".join(code_buf))
-                   + "</code></pre>")
+        out.append(
+            f'<pre><code class="lang-{html.escape(code_lang)}">'
+            + html.escape("\n".join(code_buf))
+            + "</code></pre>"
+        )
 
     return "\n".join(out)
 
@@ -320,6 +333,7 @@ def _shell(title: str, body: str, *, depth: int = 0) -> str:
 # Data loaders
 # ---------------------------------------------------------------------------
 
+
 def _load_registry() -> list[dict]:
     raw = yaml.safe_load(REGISTRY_PATH.read_text(encoding="utf-8")) or {}
     return raw.get("primitives") or []
@@ -350,7 +364,7 @@ def _last_audit_timestamp(namespace: str, name: str) -> str:
     mtimes = [p.stat().st_mtime for p in base.glob("*") if p.is_file()]
     if not mtimes:
         return ""
-    ts = datetime.fromtimestamp(max(mtimes), tz=timezone.utc)
+    ts = datetime.fromtimestamp(max(mtimes), tz=UTC)
     return ts.strftime("%Y-%m-%d")
 
 
@@ -370,12 +384,14 @@ def _load_tools() -> list[ToolMeta]:
         meta = getattr(mod, "MCP_TOOL", None)
         if not isinstance(meta, dict) or "name" not in meta:
             continue
-        tools.append(ToolMeta(
-            name=str(meta["name"]),
-            description=str(meta.get("description", "")),
-            tags=tuple(meta.get("tags", []) or []),
-            module_path=str(py.relative_to(SKILL_ROOT)),
-        ))
+        tools.append(
+            ToolMeta(
+                name=str(meta["name"]),
+                description=str(meta.get("description", "")),
+                tags=tuple(meta.get("tags", []) or []),
+                module_path=str(py.relative_to(SKILL_ROOT)),
+            )
+        )
     tools.sort(key=lambda t: t.name)
     return tools
 
@@ -383,6 +399,7 @@ def _load_tools() -> list[ToolMeta]:
 # ---------------------------------------------------------------------------
 # Renderers
 # ---------------------------------------------------------------------------
+
 
 def _render_landing(primitives: list[dict], tools: list[ToolMeta]) -> str:
     by_concern: dict[str, list[dict]] = {}
@@ -397,7 +414,7 @@ def _render_landing(primitives: list[dict], tools: list[ToolMeta]) -> str:
             f'<li><a href="primitive/{p["name"]}.html">{p["name"]}</a></li>'
             for p in by_concern[concern]
         )
-        concerns_html.append(f'<section><h3>{html.escape(concern)}</h3><ul>{items}</ul></section>')
+        concerns_html.append(f"<section><h3>{html.escape(concern)}</h3><ul>{items}</ul></section>")
 
     doc_nav = "".join(
         f'<li><a href="doc/{slug}.html">{html.escape(title)}</a></li>'
@@ -430,11 +447,11 @@ def _render_primitive(entry: dict, md: str, contract: dict | None, audit: str) -
     source_url = f"{_SOURCE_URL_BASE}/core/venous/{ns}/{name}"
 
     body_parts: list[str] = []
-    body_parts.append(f'<h1>{html.escape(name)}</h1>')
+    body_parts.append(f"<h1>{html.escape(name)}</h1>")
     body_parts.append(
         f'<p class="meta">namespace: <code>{html.escape(ns)}</code> · concern: <code>{html.escape(entry["concern"])}</code>'
         f' · <a href="{source_url}" target="_blank" rel="noopener">source</a>'
-        f' · last audit: {html.escape(audit or "—")}</p>'
+        f" · last audit: {html.escape(audit or '—')}</p>"
     )
 
     if contract and contract.get("api_signature"):
@@ -460,7 +477,9 @@ def _render_primitive(entry: dict, md: str, contract: dict | None, audit: str) -
     if composes:
         body_parts.append("<h2>Compose with</h2><ul>")
         for other in composes:
-            body_parts.append(f'<li><a href="{html.escape(other)}.html">{html.escape(other)}</a></li>')
+            body_parts.append(
+                f'<li><a href="{html.escape(other)}.html">{html.escape(other)}</a></li>'
+            )
         body_parts.append("</ul>")
 
     return _shell(name, "\n".join(body_parts), depth=1)
@@ -469,8 +488,8 @@ def _render_primitive(entry: dict, md: str, contract: dict | None, audit: str) -
 def _render_tools(tools: list[ToolMeta]) -> str:
     rows = "".join(
         f'<tr><td><a href="tool/{html.escape(t.name)}.html"><code>{html.escape(t.name)}</code></a></td>'
-        f'<td>{html.escape(t.description)}</td>'
-        f'<td>{"".join(f"<span class=tag>{html.escape(tag)}</span>" for tag in sorted(t.tags))}</td></tr>'
+        f"<td>{html.escape(t.description)}</td>"
+        f"<td>{''.join(f'<span class=tag>{html.escape(tag)}</span>' for tag in sorted(t.tags))}</td></tr>"
         for t in tools
     )
     body = f"""<h1>Adapt tools</h1>
@@ -483,9 +502,7 @@ def _render_tools(tools: list[ToolMeta]) -> str:
 
 def _render_tool(tool: ToolMeta) -> str:
     source_url = f"{_SOURCE_URL_BASE}/{tool.module_path}"
-    tag_html = "".join(
-        f'<span class="tag">{html.escape(t)}</span>' for t in sorted(tool.tags)
-    )
+    tag_html = "".join(f'<span class="tag">{html.escape(t)}</span>' for t in sorted(tool.tags))
     body = f"""<h1>{html.escape(tool.name)}</h1>
 <p class="meta">MCP tool · <a href="{html.escape(source_url, quote=True)}" target="_blank" rel="noopener">source</a> · module <code>{html.escape(tool.module_path)}</code></p>
 <p>{html.escape(tool.description)}</p>
@@ -499,38 +516,44 @@ def _render_tool(tool: ToolMeta) -> str:
 
 def _render_doc(slug: str, title: str, md: str) -> str:
     md_body = re.sub(r"^# .+\n", "", md, count=1)
-    body = f'<h1>{html.escape(title)}</h1>\n{_md_to_html(md_body)}'
+    body = f"<h1>{html.escape(title)}</h1>\n{_md_to_html(md_body)}"
     return _shell(title, body, depth=1)
 
 
 def _build_search_index(primitives: list[dict], tools: list[ToolMeta]) -> list[dict]:
     docs: list[dict] = []
     for p in primitives:
-        docs.append({
-            "name": p["name"],
-            "kind": "primitive",
-            "url": f"primitive/{p['name']}.html",
-            "summary": p.get("purpose", "") or "",
-            "body": p.get("purpose", "") + " " + " ".join(p.get("compose_with") or []),
-        })
+        docs.append(
+            {
+                "name": p["name"],
+                "kind": "primitive",
+                "url": f"primitive/{p['name']}.html",
+                "summary": p.get("purpose", "") or "",
+                "body": p.get("purpose", "") + " " + " ".join(p.get("compose_with") or []),
+            }
+        )
     for t in tools:
-        docs.append({
-            "name": t.name,
-            "kind": "tool",
-            "url": f"tool/{t.name}.html",
-            "summary": t.description,
-            "body": t.description + " " + " ".join(t.tags),
-        })
+        docs.append(
+            {
+                "name": t.name,
+                "kind": "tool",
+                "url": f"tool/{t.name}.html",
+                "summary": t.description,
+                "body": t.description + " " + " ".join(t.tags),
+            }
+        )
     for src, slug, title in _TOP_LEVEL_DOCS:
         if not (REPO_ROOT / src).exists():
             continue
-        docs.append({
-            "name": title,
-            "kind": "doc",
-            "url": f"doc/{slug}.html",
-            "summary": src,
-            "body": title + " " + src,
-        })
+        docs.append(
+            {
+                "name": title,
+                "kind": "doc",
+                "url": f"doc/{slug}.html",
+                "summary": src,
+                "body": title + " " + src,
+            }
+        )
     docs.sort(key=lambda d: (d["kind"], d["name"].lower()))
     return docs
 
@@ -538,6 +561,7 @@ def _build_search_index(primitives: list[dict], tools: list[ToolMeta]) -> list[d
 # ---------------------------------------------------------------------------
 # Top-level
 # ---------------------------------------------------------------------------
+
 
 def _clean_out(out_dir: Path) -> None:
     if out_dir.exists():
@@ -592,9 +616,7 @@ def build_site(out_dir: Path = DEFAULT_OUT) -> dict:
         pages += 1
 
     for tool in tools:
-        (out_dir / "tool" / f"{tool.name}.html").write_text(
-            _render_tool(tool), encoding="utf-8"
-        )
+        (out_dir / "tool" / f"{tool.name}.html").write_text(_render_tool(tool), encoding="utf-8")
         pages += 1
 
     for src, slug, title in _TOP_LEVEL_DOCS:
@@ -635,8 +657,7 @@ def _site_hash(out_dir: Path) -> str:
 
 
 def _iter_html(out_dir: Path) -> Iterable[Path]:
-    for p in out_dir.rglob("*.html"):
-        yield p
+    yield from out_dir.rglob("*.html")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -646,13 +667,17 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     m = build_site(args.out)
-    print(f"built {m['pages_written']} pages ({m['primitives']} primitives, {m['tools']} tools) → {args.out}")
+    print(
+        f"built {m['pages_written']} pages ({m['primitives']} primitives, {m['tools']} tools) → {args.out}"
+    )
     print(f"hash: {m['hash']}")
 
     if args.verify:
         m2 = build_site(args.out)
         if m["hash"] != m2["hash"]:
-            print(f"FAIL: hash drift across two builds ({m['hash']} vs {m2['hash']})", file=sys.stderr)
+            print(
+                f"FAIL: hash drift across two builds ({m['hash']} vs {m2['hash']})", file=sys.stderr
+            )
             return 1
         print("idempotent: hash stable across two builds")
     return 0

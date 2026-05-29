@@ -4,11 +4,11 @@ Every field here is derived deterministically from files on disk. No
 heuristic names, no LLM calls, no hidden magic. Two runs over an
 unchanged tree produce identical output.
 """
+
 from __future__ import annotations
 
 import ast
 import json
-import re
 from pathlib import Path
 
 import yaml
@@ -75,13 +75,13 @@ def _detect_concurrency(py_path: Path | None) -> bool:
             for alias in node.names:
                 if alias.name in _CONCURRENCY_NAMES:
                     return True
-        elif isinstance(node, ast.Attribute):
+        elif (
+            isinstance(node, ast.Attribute)
+            and isinstance(node.value, ast.Name)
+            and node.value.id in _CONCURRENCY_MODULES
+        ):
             # e.g. threading.Lock() used after an `import threading`
-            if (
-                isinstance(node.value, ast.Name)
-                and node.value.id in _CONCURRENCY_MODULES
-            ):
-                return True
+            return True
     return False
 
 
@@ -104,14 +104,11 @@ def _detect_mutable_class_state(py_path: Path | None) -> bool:
             if not isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
             for sub in ast.walk(item):
-                if (
-                    isinstance(sub, ast.Assign)
-                    and any(
-                        isinstance(t, ast.Attribute)
-                        and isinstance(t.value, ast.Name)
-                        and t.value.id == "self"
-                        for t in sub.targets
-                    )
+                if isinstance(sub, ast.Assign) and any(
+                    isinstance(t, ast.Attribute)
+                    and isinstance(t.value, ast.Name)
+                    and t.value.id == "self"
+                    for t in sub.targets
                 ):
                     mutations_outside_init += 1
         if mutations_outside_init > 0:

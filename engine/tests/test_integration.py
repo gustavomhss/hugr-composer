@@ -15,6 +15,7 @@ Runs after all batches have delivered. Verifies:
 
 Run with pytest once the merge script has produced `core/venous/MANIFEST.json`.
 """
+
 from __future__ import annotations
 
 import importlib
@@ -54,7 +55,9 @@ def test_manifest_entries_match_filesystem():
     for entry in man["entries"]:
         ns_dir = VENOUS_ROOT / entry["namespace"]
         prim_dir = ns_dir / entry["name"]
-        assert prim_dir.is_dir(), f"Manifest claims {entry['namespace']}/{entry['name']} but dir missing."
+        assert prim_dir.is_dir(), (
+            f"Manifest claims {entry['namespace']}/{entry['name']} but dir missing."
+        )
         assert (prim_dir / f"{entry['name']}.manifest.json").exists(), (
             f"Missing per-primitive manifest for {entry['name']}."
         )
@@ -115,7 +118,9 @@ def test_maturity_distribution_matches_catalog():
         if expected is None:
             drift.append(f"{entry['name']}: not in research catalog")
         elif expected != entry["maturity"]:
-            drift.append(f"{entry['name']}: delivered as {entry['maturity']} but catalog says {expected}")
+            drift.append(
+                f"{entry['name']}: delivered as {entry['maturity']} but catalog says {expected}"
+            )
     assert not drift, "\n".join(drift)
 
 

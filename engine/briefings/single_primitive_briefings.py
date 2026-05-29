@@ -11,6 +11,7 @@ sharding is one primitive per agent. This module:
 - Emits a `SinglePrimitiveBriefing` for every remaining primitive.
 - Renders a tight, focused prompt per primitive.
 """
+
 from __future__ import annotations
 
 import json
@@ -30,17 +31,34 @@ sys.path.insert(0, str(ENGINE_ROOT))
 
 from contracts.primitive_delivery_contract import Maturity, accept_delivery  # noqa: E402
 
-
 # ---------------------------------------------------------------------------
 # Heuristic: which primitives are stateful (drives T2/T3/T5 applicability).
 # Same logic as builder_briefings.py but repeated here so this module is
 # self-contained and importable before the batch infrastructure is torn down.
 # ---------------------------------------------------------------------------
-_STATEFUL_NAMESPACES = frozenset({
-    "auth", "data", "events", "jobs", "cache", "resiliency", "llm", "cost",
-})
-_STATELESS_NAME_PREFIXES = ("Config", "Value", "Semantic", "Resource", "Histogram",
-                            "Encryption", "Policy", "Key", "Retention")
+_STATEFUL_NAMESPACES = frozenset(
+    {
+        "auth",
+        "data",
+        "events",
+        "jobs",
+        "cache",
+        "resiliency",
+        "llm",
+        "cost",
+    }
+)
+_STATELESS_NAME_PREFIXES = (
+    "Config",
+    "Value",
+    "Semantic",
+    "Resource",
+    "Histogram",
+    "Encryption",
+    "Policy",
+    "Key",
+    "Retention",
+)
 
 
 def _is_stateful(name: str, namespace: str, api_signature: str) -> bool:
@@ -51,9 +69,10 @@ def _is_stateful(name: str, namespace: str, api_signature: str) -> bool:
             return False
     if "async def" in api_signature or "register_" in api_signature or "acquire(" in api_signature:
         return True
-    if "dataclass(frozen=True)" in api_signature and "def " not in api_signature.split("class ", 1)[-1]:
-        return False
-    return True
+    return not (
+        "dataclass(frozen=True)" in api_signature
+        and "def " not in api_signature.split("class ", 1)[-1]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -164,7 +183,7 @@ class SinglePrimitiveBriefing(BaseModel):
     reference_stateful_impl: str = "skills/SKILL-001-fastapi-production/core/venous/data/UnitOfWork"
 
     @model_validator(mode="after")
-    def spec_matches_identity(self) -> "SinglePrimitiveBriefing":
+    def spec_matches_identity(self) -> SinglePrimitiveBriefing:
         if self.catalog_spec.get("name") != self.primitive_name:
             raise ValueError(
                 f"catalog_spec['name']={self.catalog_spec.get('name')!r} "
@@ -182,12 +201,12 @@ class SinglePrimitiveBriefing(BaseModel):
             self.reference_stateful_impl if self.is_stateful else self.reference_stateless_impl
         )
         oss_ref = _load_oss_reference(self.primitive_name)
-        stateful_flag = "--is-stateful" if self.is_stateful else "(omit the flag for stateless)"
         stateful_extras = (
             "\n- `<Name>.tla` + `<Name>.cfg` — TLA+ spec with Init, Next, ≥2 SAFETY invariants mapped to catalog invariants. Run `tlc <Name>.tla` locally until `Model checking completed. No error has been found.`"
             "\n- `state_machine_<Name>.py` — hypothesis `RuleBasedStateMachine` exploring all reachable states."
             "\n- `concurrent_<Name>.py` — linearizability / race-detection suite."
-            if self.is_stateful else ""
+            if self.is_stateful
+            else ""
         )
         hypothesis_conftest = (
             """
@@ -204,7 +223,8 @@ settings.register_profile(
     deadline=None,
 )
 settings.load_profile(\"venous\")"""
-            if self.is_stateful else ""
+            if self.is_stateful
+            else ""
         )
         return f"""\
 # BUILDER — ONE PRIMITIVE: {self.primitive_name}
@@ -300,15 +320,17 @@ def pending_briefings() -> list[SinglePrimitiveBriefing]:
     for name, spec in catalog.items():
         if name in accepted:
             continue
-        pending.append(SinglePrimitiveBriefing(
-            primitive_name=name,
-            namespace=spec["namespace"],
-            maturity=Maturity(spec["maturity"]),
-            is_stateful=_is_stateful(name, spec["namespace"], spec["api_signature"]),
-            source_agent_id=spec["_source_agent"],
-            source_catalog_file=spec["_source_file"],
-            catalog_spec={k: v for k, v in spec.items() if not k.startswith("_")},
-        ))
+        pending.append(
+            SinglePrimitiveBriefing(
+                primitive_name=name,
+                namespace=spec["namespace"],
+                maturity=Maturity(spec["maturity"]),
+                is_stateful=_is_stateful(name, spec["namespace"], spec["api_signature"]),
+                source_agent_id=spec["_source_agent"],
+                source_catalog_file=spec["_source_file"],
+                catalog_spec={k: v for k, v in spec.items() if not k.startswith("_")},
+            )
+        )
     return pending
 
 
@@ -329,4 +351,4 @@ if __name__ == "__main__":
     if briefings:
         sample = briefings[0]
         p = sample.render_prompt()
-        print(f"\nSample prompt ({sample.primitive_name}): {len(p)} chars (~{len(p)//4} tokens)")
+        print(f"\nSample prompt ({sample.primitive_name}): {len(p)} chars (~{len(p) // 4} tokens)")

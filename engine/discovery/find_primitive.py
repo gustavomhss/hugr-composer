@@ -8,6 +8,7 @@ Contract: B2.1 (CONTRACT.md §B).
 - Ranking: BM25 (k1=1.5, b=0.75) over a weighted multi-field concatenation —
   name and concern are boosted so exact-name queries rank the primitive first.
 """
+
 from __future__ import annotations
 
 MCP_TOOL = {
@@ -28,9 +29,9 @@ MCP_TOOL = {
 import math
 import re
 import threading
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Sequence
 
 import yaml
 
@@ -53,6 +54,7 @@ _WEIGHT_BODY = 1
 
 _TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z0-9]+")
 
+
 # Porter-light stem: ordered so "classes" (→ "class") and "class" (→ "class")
 # converge. Rules are symmetric for query and index side; lengths-checked to
 # avoid over-stemming short tokens ("bus" stays "bus").
@@ -62,33 +64,33 @@ def _stem(token: str) -> str:
         return token
     # Plural family — must check longest first to avoid double-stripping.
     if token.endswith("sses"):
-        return token[:-2]                 # classes -> class, process kept elsewhere
+        return token[:-2]  # classes -> class, process kept elsewhere
     if token.endswith("ies") and n >= 5:
-        return token[:-3] + "i"           # ponies -> poni, queries -> queri
+        return token[:-3] + "i"  # ponies -> poni, queries -> queri
     if token.endswith("ss"):
-        return token                      # class, process, success, access
+        return token  # class, process, success, access
     if token.endswith("iers") and n >= 5:
-        return token[:-4] + "i"           # verifiers -> verifi
+        return token[:-4] + "i"  # verifiers -> verifi
     if token.endswith("ier") and n >= 5:
-        return token[:-3] + "i"           # verifier -> verifi  (matches verify->verifi below)
+        return token[:-3] + "i"  # verifier -> verifi  (matches verify->verifi below)
     if token.endswith("ied") and n >= 5:
-        return token[:-3] + "i"           # verified -> verifi
+        return token[:-3] + "i"  # verified -> verifi
     if token.endswith("ers") and n >= 5:
-        return token[:-3]                 # limiters -> limit
+        return token[:-3]  # limiters -> limit
     if token.endswith("er") and n >= 5:
-        return token[:-2]                 # limiter -> limit, logger -> log
+        return token[:-2]  # limiter -> limit, logger -> log
     if token.endswith("ing") and n >= 6:
-        return token[:-3]                 # hashing -> hash
+        return token[:-3]  # hashing -> hash
     if token.endswith("ed") and n >= 5:
-        return token[:-2]                 # hashed -> hash
+        return token[:-2]  # hashed -> hash
     if token.endswith("es") and n >= 5:
-        return token[:-2]                 # hashes -> hash
+        return token[:-2]  # hashes -> hash
     if token.endswith("ly") and n >= 5:
-        return token[:-2]                 # quickly -> quick
+        return token[:-2]  # quickly -> quick
     if token.endswith("y") and n >= 4:
-        return token[:-1] + "i"           # verify -> verifi (matches verifier->verifi above)
+        return token[:-1] + "i"  # verify -> verifi (matches verifier->verifi above)
     if token.endswith("s") and n >= 4:
-        return token[:-1]                 # hashes handled above; cats -> cat
+        return token[:-1]  # hashes handled above; cats -> cat
     return token
 
 
@@ -135,7 +137,9 @@ class PrimitiveHit:
 class PrimitiveIndex:
     """BM25 index over the full registry. Build once, query many."""
 
-    def __init__(self, registry_path: Path = _REGISTRY_PATH, venous_root: Path = _VENOUS_ROOT) -> None:
+    def __init__(
+        self, registry_path: Path = _REGISTRY_PATH, venous_root: Path = _VENOUS_ROOT
+    ) -> None:
         self._registry_path = registry_path
         self._venous_root = venous_root
         self._entries: list[dict] = []

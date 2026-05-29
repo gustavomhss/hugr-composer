@@ -34,9 +34,15 @@ _EXTEND_DIR = Path(__file__).resolve().parents[2] / "adapt" / "extend"
 _OUT_PATH = Path(__file__).resolve().parent / "tools_latent_primitives.json"
 
 # Symbols that are MCP metadata or dispatch plumbing — not extraction candidates.
-_SKIP_NAMES = frozenset({
-    "MCP_TOOL", "tool", "main", "_main", "__all__",
-})
+_SKIP_NAMES = frozenset(
+    {
+        "MCP_TOOL",
+        "tool",
+        "main",
+        "_main",
+        "__all__",
+    }
+)
 
 
 def _docstring(node: ast.AST) -> str:
@@ -54,10 +60,12 @@ def _normalized_body_hash(node: ast.AST) -> str:
     return hashlib.sha256("\n".join(lines).encode()).hexdigest()[:16]
 
 
-def _candidate(node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef, src: str) -> dict[str, Any]:
+def _candidate(
+    node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef, src: str
+) -> dict[str, Any]:
     start = node.lineno
     end = getattr(node, "end_lineno", start)
-    segment = extract_source_segment(src, node) or "\n".join(src.splitlines()[start - 1:end])
+    segment = extract_source_segment(src, node) or "\n".join(src.splitlines()[start - 1 : end])
     return {
         "name": node.name,
         "kind": "class" if isinstance(node, ast.ClassDef) else "function",
@@ -95,6 +103,7 @@ def _audit_tool(tool_path: Path) -> dict[str, Any]:
     # 2) Top-level defs inside every parseable string template. The shared
     #    `template_parser` guarantees identical parsing across pipeline stages.
     import textwrap as _tw
+
     for embedded, container in iter_embedded_modules(src):
         payload = _tw.dedent(container.value)
         for node in iter_top_level_defs(embedded):

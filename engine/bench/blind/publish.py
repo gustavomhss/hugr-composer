@@ -9,6 +9,7 @@ Consumes `MANIFEST.json` (written by runner) and produces:
   process_rewards.jsonl   — reserved — filled in a follow-up commit once
                             per-turn snapshots land (see PROTOCOL §5)
 """
+
 from __future__ import annotations
 
 import json
@@ -16,7 +17,7 @@ import statistics
 from collections import defaultdict
 from pathlib import Path
 
-DPO_MARGIN_THRESHOLD = 10.0   # points — pairs with smaller margins are noise
+DPO_MARGIN_THRESHOLD = 10.0  # points — pairs with smaller margins are noise
 SFT_MIN_SCORE = 90.0
 
 
@@ -29,9 +30,7 @@ def aggregate_and_write(run_root: Path, manifest: dict) -> dict:
     overall = _overall_stats(per_run)
     by_tier = _by_tier_stats(per_run)
     by_condition = _by_condition_stats(per_run)
-    by_spec_agg = {
-        sid: _spec_stats(sid, runs) for sid, runs in sorted(by_spec.items())
-    }
+    by_spec_agg = {sid: _spec_stats(sid, runs) for sid, runs in sorted(by_spec.items())}
 
     aggregate = {
         "run_id": manifest.get("run_id"),
@@ -62,8 +61,10 @@ def aggregate_and_write(run_root: Path, manifest: dict) -> dict:
     # can open one file and see the pre-registered hypothesis outcome.
     try:
         from engine.bench.blind.dashboard import render_html
+
         (run_root / "dashboard.html").write_text(
-            render_html(aggregate, run_root.name), encoding="utf-8",
+            render_html(aggregate, run_root.name),
+            encoding="utf-8",
         )
     except Exception:  # noqa: BLE001
         pass
@@ -71,7 +72,9 @@ def aggregate_and_write(run_root: Path, manifest: dict) -> dict:
 
 
 def _overall_stats(per_run: list[dict]) -> dict:
-    scores = [r["outcome"]["final_score"] for r in per_run if r["outcome"]["final_score"] is not None]
+    scores = [
+        r["outcome"]["final_score"] for r in per_run if r["outcome"]["final_score"] is not None
+    ]
     return {
         "runs": len(per_run),
         "mean_score": round(statistics.fmean(scores), 2) if scores else 0.0,
@@ -129,7 +132,10 @@ def _spec_stats(spec_id: str, runs: list[dict]) -> dict:
     return {
         "runs": len(runs),
         "by_condition": {
-            c: {"mean": round(statistics.fmean(s), 2) if s else 0.0, "max": round(max(s), 2) if s else 0.0}
+            c: {
+                "mean": round(statistics.fmean(s), 2) if s else 0.0,
+                "max": round(max(s), 2) if s else 0.0,
+            }
             for c, s in sorted(by_cond.items())
         },
         "margin_kit_minus_naked": _margin(by_cond),
@@ -146,8 +152,8 @@ def _pre_registered_hypothesis(by_tier: dict, by_condition: dict) -> dict:
     """Evaluate H1/H2 per PROTOCOL.md §1."""
     hard = by_tier.get("hard", {})
     imp = by_tier.get("impossible", {})
-    h1_gap = (hard.get("kit", {}).get("mean", 0) - hard.get("naked", {}).get("mean", 0))
-    h2_gap = (imp.get("kit", {}).get("max", 0) - imp.get("naked", {}).get("max", 0))
+    h1_gap = hard.get("kit", {}).get("mean", 0) - hard.get("naked", {}).get("mean", 0)
+    h2_gap = imp.get("kit", {}).get("max", 0) - imp.get("naked", {}).get("max", 0)
     return {
         "H1_hard_tier_gap_mean": round(h1_gap, 2),
         "H1_threshold": 25.0,
@@ -167,18 +173,17 @@ def _dpo_pairs(run_root: Path, per_run: list[dict]) -> tuple[list[dict], list[di
         by_key[key][ident["condition"]] = r
     pairs: list[dict] = []
     anti: list[dict] = []
-    for (spec_id, seed, attempt), pair in by_key.items():
+    for (spec_id, seed, _attempt), pair in by_key.items():
         if "kit" not in pair or "naked" not in pair:
             continue
         k, n = pair["kit"], pair["naked"]
         ks, ns = k["outcome"]["final_score"], n["outcome"]["final_score"]
         margin = ks - ns
         record = {
-            "spec_id": spec_id, "seed": seed,
-            "chosen": {"condition": "kit", "score": ks,
-                       "trajectory": _traj_ref(run_root, k)},
-            "rejected": {"condition": "naked", "score": ns,
-                         "trajectory": _traj_ref(run_root, n)},
+            "spec_id": spec_id,
+            "seed": seed,
+            "chosen": {"condition": "kit", "score": ks, "trajectory": _traj_ref(run_root, k)},
+            "rejected": {"condition": "naked", "score": ns, "trajectory": _traj_ref(run_root, n)},
             "margin": round(margin, 2),
             "chosen_metrics": _compact_metrics(k),
             "rejected_metrics": _compact_metrics(n),
@@ -222,8 +227,13 @@ def _sft_records(run_root: Path, per_run: list[dict]) -> list[dict]:
             continue
         ident = r["identity"]
         safe = ident["spec_id"].replace("/", "__")
-        traj = (run_root / safe / ident["condition"] / f"attempt_{ident['attempt']:02d}"
-                / "trajectory.jsonl")
+        traj = (
+            run_root
+            / safe
+            / ident["condition"]
+            / f"attempt_{ident['attempt']:02d}"
+            / "trajectory.jsonl"
+        )
         if not traj.exists():
             continue
         messages = []
@@ -234,15 +244,21 @@ def _sft_records(run_root: Path, per_run: list[dict]) -> list[dict]:
                 ev = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            messages.append({
-                "role": ev.get("role"), "content": ev.get("content"),
-            })
-        out.append({
-            "messages": messages,
-            "metadata": {
-                "spec_id": ident["spec_id"], "condition": ident["condition"],
-                "score": r["outcome"]["final_score"],
-                "kit_commit": ident["kit_commit"],
-            },
-        })
+            messages.append(
+                {
+                    "role": ev.get("role"),
+                    "content": ev.get("content"),
+                }
+            )
+        out.append(
+            {
+                "messages": messages,
+                "metadata": {
+                    "spec_id": ident["spec_id"],
+                    "condition": ident["condition"],
+                    "score": r["outcome"]["final_score"],
+                    "kit_commit": ident["kit_commit"],
+                },
+            }
+        )
     return out

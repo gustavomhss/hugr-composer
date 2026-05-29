@@ -4,6 +4,7 @@ Runs the curated intent set through `suggest_composition` and reports
 top-1 accuracy + P@3 against expected primitive sets. Exit non-zero if
 top-1 < --min-top-1 (default 0.70) or P@3 < --min-p-at-3 (default 0.90).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -33,15 +34,17 @@ def run(path: Path) -> tuple[float, float, list[dict]]:
         got_p3 = any(_matches(h, expected) for h in hits[:3])
         top1 += int(got_top1)
         p3 += int(got_p3)
-        rows.append({
-            "id": it["id"],
-            "intent": it["intent"],
-            "expected": expected,
-            "top_1": hits[0]["primitives"] if hits else None,
-            "top_1_source": hits[0].get("source") if hits else None,
-            "pass_top1": got_top1,
-            "pass_p3": got_p3,
-        })
+        rows.append(
+            {
+                "id": it["id"],
+                "intent": it["intent"],
+                "expected": expected,
+                "top_1": hits[0]["primitives"] if hits else None,
+                "top_1_source": hits[0].get("source") if hits else None,
+                "pass_top1": got_top1,
+                "pass_p3": got_p3,
+            }
+        )
     n = len(intents) or 1
     return top1 / n, p3 / n, rows
 
@@ -64,7 +67,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.verbose or top1 < args.min_top_1 or p3 < args.min_p_at_3:
             for r in rows:
                 mark = "OK " if r["pass_top1"] else ("P3 " if r["pass_p3"] else "MISS")
-                print(f"  {mark} {r['id']}: '{r['intent'][:50]}...' -> {r['top_1']} (expected ⊇ {r['expected']})")
+                print(
+                    f"  {mark} {r['id']}: '{r['intent'][:50]}...' -> {r['top_1']} (expected ⊇ {r['expected']})"
+                )
 
     if top1 < args.min_top_1:
         print(f"FAIL: top-1 {top1:.2%} < {args.min_top_1:.2%}", file=sys.stderr)

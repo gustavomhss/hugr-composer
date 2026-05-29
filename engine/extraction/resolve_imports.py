@@ -28,7 +28,6 @@ import ast
 import builtins
 from typing import Final
 
-
 # --- Canonical symbol → import mapping. Ordered so stdlib wins on collision.
 _STDLIB_SYMBOLS: Final[dict[str, str]] = {
     # hashlib / crypto

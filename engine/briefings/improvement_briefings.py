@@ -4,6 +4,7 @@ of the live-LLM tiers (T6 adversarial or T9 meta) with substantive feedback.
 The briefing injects the judge's specific low-score axes + rationale, or the
 successful adversarial attacks, so the next agent can target exactly the gap.
 """
+
 from __future__ import annotations
 
 import json
@@ -12,7 +13,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from single_primitive_briefings import SinglePrimitiveBriefing, pending_briefings  # noqa: E402
+from single_primitive_briefings import SinglePrimitiveBriefing  # noqa: E402
 
 
 def render_improvement_prompt(
@@ -32,23 +33,35 @@ def render_improvement_prompt(
                 ev = json.loads(ev_path.read_text())
                 for a in ev.get("judge", {}).get("axes", []):
                     if a["score"] < 8:
-                        gaps.append(f"[T9 judge] axis `{a['axis']}` = {a['score']}/10 → {a['rationale']}")
+                        gaps.append(
+                            f"[T9 judge] axis `{a['axis']}` = {a['score']}/10 → {a['rationale']}"
+                        )
                 for r in ev.get("personas", {}).get("reviews", []):
                     if not r.get("understood"):
-                        gaps.append(f"[T9 persona] `{r['persona']}` did not understand → friction: {r.get('friction_points')}")
+                        gaps.append(
+                            f"[T9 persona] `{r['persona']}` did not understand → friction: {r.get('friction_points')}"
+                        )
             err = tr.get("error_details") or ""
             gaps.append(f"[T9 contract] {err[:400]}")
         elif tier == "T6_adversarial":
-            ev_path = manifest_path.parent / (tr.get("evidence_path") or "_evidence/t6_adversarial.json")
+            ev_path = manifest_path.parent / (
+                tr.get("evidence_path") or "_evidence/t6_adversarial.json"
+            )
             if ev_path.exists():
                 ev = json.loads(ev_path.read_text())
                 for a in ev.get("attacks", []):
                     if a.get("defender_outcome") not in ("rejected", "held"):
-                        gaps.append(f"[T6 attack succeeded] `{a['attack_id']}` via {a['model']}: {a['hypothesis'][:200]}")
+                        gaps.append(
+                            f"[T6 attack succeeded] `{a['attack_id']}` via {a['model']}: {a['hypothesis'][:200]}"
+                        )
         else:
             gaps.append(f"[{tier} failed] {(tr.get('error_details') or '')[:300]}")
 
-    gap_block = "\n".join(f"  - {g}" for g in gaps) if gaps else "  - (no specific gap surfaced; see manifest)"
+    gap_block = (
+        "\n".join(f"  - {g}" for g in gaps)
+        if gaps
+        else "  - (no specific gap surfaced; see manifest)"
+    )
     base = briefing.render_prompt()
     prefix = f"""# IMPROVEMENT BRIEFING — {briefing.primitive_name}
 

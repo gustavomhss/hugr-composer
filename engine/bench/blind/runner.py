@@ -3,6 +3,7 @@
 One `runner.main()` invocation produces a run directory under
 `benchmarks/blind/results/<run_id>/` populated per PROTOCOL §5.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -10,14 +11,15 @@ import hashlib
 import json
 import subprocess
 import sys
-import uuid
-from dataclasses import asdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from engine.bench.blind import HARNESS_VERSION
 from engine.bench.blind.adapter import (
-    ClaudeCliAdapter, ClaudeCliConfig, EmissionResult, MaestroAdapter,
+    ClaudeCliAdapter,
+    ClaudeCliConfig,
+    EmissionResult,
+    MaestroAdapter,
     StubAdapter,
 )
 from engine.bench.blind.attribution import attribute
@@ -43,7 +45,10 @@ def _git_sha() -> str:
     try:
         out = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True, text=True, check=False, cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=REPO_ROOT,
         )
         return (out.stdout or "unknown").strip()
     except Exception:  # noqa: BLE001
@@ -62,18 +67,29 @@ def _attempt_dir(run_id: str, spec: Spec, condition: str, attempt: int) -> Path:
 
 
 def _write_metrics(
-    adir: Path, *, spec: Spec, condition: str, attempt: int, seed: int,
-    emission: EmissionResult, judge: JudgeResult,
+    adir: Path,
+    *,
+    spec: Spec,
+    condition: str,
+    attempt: int,
+    seed: int,
+    emission: EmissionResult,
+    judge: JudgeResult,
 ) -> dict:
     workdir = adir / "emitted"
-    attribution_info = attribute(workdir, spec.required_primitives) if workdir.exists() else {
-        "imported": [], "required": spec.required_primitives,
-        "coverage_of_required": 0.0, "unexpected_imports": [],
-        "missing_required": spec.required_primitives,
-    }
+    attribution_info = (
+        attribute(workdir, spec.required_primitives)
+        if workdir.exists()
+        else {
+            "imported": [],
+            "required": spec.required_primitives,
+            "coverage_of_required": 0.0,
+            "unexpected_imports": [],
+            "missing_required": spec.required_primitives,
+        }
+    )
     static_findings = (
-        run_static_scan(workdir, spec.judge_dir / "static_scan.yaml")
-        if workdir.exists() else []
+        run_static_scan(workdir, spec.judge_dir / "static_scan.yaml") if workdir.exists() else []
     )
     metrics = {
         "identity": {
@@ -110,8 +126,10 @@ def _write_metrics(
         "kit_attribution": attribution_info,
         "static_findings": [
             {
-                "rule_id": f.rule_id, "severity": f.severity,
-                "verdict": f.verdict, "matches": f.matches,
+                "rule_id": f.rule_id,
+                "severity": f.severity,
+                "verdict": f.verdict,
+                "matches": f.matches,
                 "description": f.description,
             }
             for f in static_findings
@@ -164,8 +182,13 @@ def _read_metrics_for(run_root: Path, spec: Spec, condition: str, attempt: int) 
 
 
 def run_attempt(
-    spec: Spec, adapter: MaestroAdapter, *,
-    run_id: str, condition: str, attempt: int, seed: int,
+    spec: Spec,
+    adapter: MaestroAdapter,
+    *,
+    run_id: str,
+    condition: str,
+    attempt: int,
+    seed: int,
     compute_process_rewards: bool = False,
 ) -> dict:
     adir = _attempt_dir(run_id, spec, condition, attempt)
@@ -175,7 +198,8 @@ def run_attempt(
     emission = adapter.emit(spec, workdir, seed=seed)
     if emission.emit_status != "success":
         judge = JudgeResult(
-            boot_status="skipped", boot_log_path=None,
+            boot_status="skipped",
+            boot_log_path=None,
             notes=f"judge skipped: emit_status={emission.emit_status}",
         )
     else:
@@ -187,19 +211,30 @@ def run_attempt(
     if compute_process_rewards and emission.emit_status == "success":
         try:
             from engine.bench.blind.process_rewards import compute as _compute_pr
+
             _compute_pr(spec, adir)
         except Exception as exc:  # noqa: BLE001
             (adir / "process_rewards_error.txt").write_text(f"{exc}\n")
     return _write_metrics(
-        adir, spec=spec, condition=condition, attempt=attempt, seed=seed,
-        emission=emission, judge=judge,
+        adir,
+        spec=spec,
+        condition=condition,
+        attempt=attempt,
+        seed=seed,
+        emission=emission,
+        judge=judge,
     )
 
 
 def run_all(
-    specs: list[Spec], adapters: dict[str, MaestroAdapter], *,
-    seeds: list[int], run_id: str | None = None, attempts_per_seed: int = 1,
-    resume: bool = False, compute_process_rewards: bool = False,
+    specs: list[Spec],
+    adapters: dict[str, MaestroAdapter],
+    *,
+    seeds: list[int],
+    run_id: str | None = None,
+    attempts_per_seed: int = 1,
+    resume: bool = False,
+    compute_process_rewards: bool = False,
 ) -> dict:
     """Orchestrate spec × condition × seed → emit + judge + persist.
 
@@ -208,7 +243,7 @@ def run_all(
     (non-empty metrics.json). This is idempotent — re-running a crashed
     session reuses everything computed so far and finishes the remainder.
     """
-    run_id = run_id or datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    run_id = run_id or datetime.now(tz=UTC).strftime("%Y%m%dT%H%M%SZ")
     run_root = RESULTS_ROOT / run_id
     run_root.mkdir(parents=True, exist_ok=True)
 
@@ -238,8 +273,11 @@ def run_all(
                             )
                             continue
                     m = run_attempt(
-                        spec, adapter, run_id=run_id,
-                        condition=condition, attempt=attempt_within,
+                        spec,
+                        adapter,
+                        run_id=run_id,
+                        condition=condition,
+                        attempt=attempt_within,
                         seed=seed,
                         compute_process_rewards=compute_process_rewards,
                     )
@@ -253,46 +291,65 @@ def run_all(
                         f"boot={outcome['boot_status']})"
                     )
     manifest = {
-        "run_id": run_id, "harness_version": HARNESS_VERSION,
-        "kit_commit": _git_sha(), "generated_at":
-            datetime.now(tz=timezone.utc).isoformat(timespec="seconds"),
-        "specs_count": len(specs), "attempts_total": len(all_metrics),
+        "run_id": run_id,
+        "harness_version": HARNESS_VERSION,
+        "kit_commit": _git_sha(),
+        "generated_at": datetime.now(tz=UTC).isoformat(timespec="seconds"),
+        "specs_count": len(specs),
+        "attempts_total": len(all_metrics),
         "per_run": all_metrics,
     }
     (run_root / "MANIFEST.json").write_text(json.dumps(manifest, indent=2))
 
     # Aggregate + publish. Keeping compute in publish.py for separation of concerns.
     from engine.bench.blind.publish import aggregate_and_write  # local import
+
     aggregate_and_write(run_root, manifest)
     return manifest
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--stub", action="store_true",
-                        help="use StubAdapter fixtures instead of Claude CLI")
-    parser.add_argument("--stub-fixture-root", type=Path,
-                        default=SKILL_ROOT / "benchmarks" / "blind" / "_stub_fixtures",
-                        help="where StubAdapter reads pre-baked emissions")
-    parser.add_argument("--spec", action="append", default=None,
-                        help="run only these spec_ids (repeatable)")
+    parser.add_argument(
+        "--stub", action="store_true", help="use StubAdapter fixtures instead of Claude CLI"
+    )
+    parser.add_argument(
+        "--stub-fixture-root",
+        type=Path,
+        default=SKILL_ROOT / "benchmarks" / "blind" / "_stub_fixtures",
+        help="where StubAdapter reads pre-baked emissions",
+    )
+    parser.add_argument(
+        "--spec", action="append", default=None, help="run only these spec_ids (repeatable)"
+    )
     parser.add_argument("--seeds", type=int, nargs="+", default=DEFAULT_SEEDS)
     parser.add_argument("--model", default="claude-sonnet-4-6")
-    parser.add_argument("--attempts", type=int, default=1,
-                        help="attempts per (spec × condition × seed)")
+    parser.add_argument(
+        "--attempts", type=int, default=1, help="attempts per (spec × condition × seed)"
+    )
     parser.add_argument("--run-id", default=None)
-    parser.add_argument("--resume", action="store_true",
-                        help="skip (spec, condition, seed, attempt) combos that "
-                             "already have a successful metrics.json in the run dir")
-    parser.add_argument("--compute-process-rewards", action="store_true",
-                        help="after each attempt, re-boot per-turn snapshots + "
-                             "run Layer-A smoke to emit process_rewards.jsonl "
-                             "(triples runtime; opt-in for PRM training)")
-    parser.add_argument("--condition", choices=("naked", "kit"), default=None,
-                        help="run ONLY this condition (default: both). Useful "
-                             "when the other condition already has preserved "
-                             "results under a previous run_id and re-running "
-                             "would waste API credits.")
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="skip (spec, condition, seed, attempt) combos that "
+        "already have a successful metrics.json in the run dir",
+    )
+    parser.add_argument(
+        "--compute-process-rewards",
+        action="store_true",
+        help="after each attempt, re-boot per-turn snapshots + "
+        "run Layer-A smoke to emit process_rewards.jsonl "
+        "(triples runtime; opt-in for PRM training)",
+    )
+    parser.add_argument(
+        "--condition",
+        choices=("naked", "kit"),
+        default=None,
+        help="run ONLY this condition (default: both). Useful "
+        "when the other condition already has preserved "
+        "results under a previous run_id and re-running "
+        "would waste API credits.",
+    )
     args = parser.parse_args(argv)
 
     specs = discover_specs(SPECS_ROOT)
@@ -306,21 +363,24 @@ def main(argv: list[str] | None = None) -> int:
     if args.stub:
         adapters: dict[str, MaestroAdapter] = {
             "naked": StubAdapter(args.stub_fixture_root, name="naked"),
-            "kit":   StubAdapter(args.stub_fixture_root, name="kit"),
+            "kit": StubAdapter(args.stub_fixture_root, name="kit"),
         }
     else:
         naked_cfg = ClaudeCliConfig(model=args.model, mcp_config_path=None)
         kit_cfg = ClaudeCliConfig(model=args.model, mcp_config_path=MCP_CONFIG)
         adapters = {
             "naked": ClaudeCliAdapter(naked_cfg, name="naked"),
-            "kit":   ClaudeCliAdapter(kit_cfg, name="kit"),
+            "kit": ClaudeCliAdapter(kit_cfg, name="kit"),
         }
     if args.condition is not None:
         adapters = {args.condition: adapters[args.condition]}
 
     manifest = run_all(
-        specs, adapters, seeds=args.seeds,
-        run_id=args.run_id, attempts_per_seed=args.attempts,
+        specs,
+        adapters,
+        seeds=args.seeds,
+        run_id=args.run_id,
+        attempts_per_seed=args.attempts,
         resume=args.resume,
         compute_process_rewards=args.compute_process_rewards,
     )
