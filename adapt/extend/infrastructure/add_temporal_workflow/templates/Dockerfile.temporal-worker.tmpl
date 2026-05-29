@@ -1,0 +1,27 @@
+# Dockerfile.temporal-worker
+# Builds the Temporal worker process as a separate, non-root container.
+# The FastAPI API container and this worker container share the same
+# app/ source tree via a common base image or volume mount.
+#
+# Build:
+#   docker build -f Dockerfile.temporal-worker -t myapp-temporal-worker .
+#
+# Run:
+#   docker run --rm --env-file .env myapp-temporal-worker
+
+FROM python:3.12-slim AS base
+
+WORKDIR /app
+
+# Install dependencies (layer-cached)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application source
+COPY . .
+
+# Run as non-root user (UID 1000) — do not change without security review
+RUN adduser --disabled-password --gecos "" --uid 1000 worker
+USER 1000
+
+CMD ["python", "-m", "app.workflows.worker"]

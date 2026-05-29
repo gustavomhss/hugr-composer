@@ -1,0 +1,64 @@
+"""Pydantic schemas for background job audit records."""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from enum import Enum
+
+from pydantic import BaseModel, ConfigDict
+
+
+class JobStatus(str, Enum):
+    """Lifecycle status of a background job.
+
+    Values:
+        queued: Waiting in the arq queue, not yet picked up.
+        running: Currently being executed by a worker.
+        success: Completed successfully; ``result`` is populated.
+        failed: Permanently failed after ``max_tries`` attempts.
+        cancelled: Aborted by an operator before completion.
+    """
+
+    queued = "queued"
+    running = "running"
+    success = "success"
+    failed = "failed"
+    cancelled = "cancelled"
+
+
+class JobPublic(BaseModel):
+    """Public view of a background job audit record.
+
+    Attributes:
+        id: UUID primary key of the ``Job`` row.
+        task_name: Registered task function name.
+        status: Current lifecycle status.
+        enqueued_at: UTC timestamp when the job was enqueued.
+        started_at: UTC timestamp when the worker picked it up.
+        completed_at: UTC timestamp when it finished (success or fail).
+        result: JSON snapshot of the task return value (success only).
+        error: Error message (failure only).
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    task_name: str
+    status: JobStatus
+    enqueued_at: datetime
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    result: dict | None = None
+    error: str | None = None
+
+
+class JobListResponse(BaseModel):
+    """Envelope for listing jobs.
+
+    Attributes:
+        data: List of public job views.
+        count: Total rows returned in *data* (NOT the full table count).
+    """
+
+    data: list[JobPublic]
+    count: int

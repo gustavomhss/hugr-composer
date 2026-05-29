@@ -1,0 +1,135 @@
+"""Stripe Billing Meters v2 sync — batching, retry, and dead-letter queue.
+
+Consumes events from ``MeterEventBuffer``, submits them to Stripe
+Meter Event API in configurable batches, retries on transient errors
+with exponential back-off, and writes failures to a dead-letter log.
+"""
+
+from __future__ import annotations
+
+import logging
+import time
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.billing.metering import MeterEvent, TenantQuota
+
+logger = logging.getLogger(__name__)
+
+_DEAD_LETTER: list[dict] = []
+_MAX_RETRIES = 3
+_RETRY_BASE_S = 1.0
+
+
+def flush_meter_events(batch_size: int = 100) -> int:
+    """Flush pending meter events to Stripe in one batch.
+
+    Args:
+        batch_size: Maximum number of events to flush per call.
+
+    Returns:
+        Number of events successfully submitted.
+    """
+    from app.billing.metering import get_event_buffer
+    from app.core.config import settings
+
+    buffer = get_event_buffer()
+    if buffer.size == 0:
+        return 0
+
+    batch = buffer.drain(batch_size)
+    if not batch:
+        return 0
+
+    submitted = 0
+    for event in batch:
+        success = _submit_with_retry(event, settings.STRIPE_METER_API_KEY)
+        if success:
+            submitted += 1
+        else:
+            _DEAD_LETTER.append({
+                "tenant_id": event.tenant_id,
+                "endpoint": event.endpoint,
+                "timestamp": event.timestamp,
+            })
+            logger.error("Dead-lettered meter event for tenant=%s", event.tenant_id)
+
+    return submitted
+
+
+def _submit_with_retry(event: MeterEvent, api_key: str) -> bool:
+    """Attempt to submit a single meter event with exponential back-off.
+
+    Args:
+        event: The meter event to submit.
+        api_key: Stripe API key for authentication.
+
+    Returns:
+        ``True`` on success, ``False`` after all retries exhausted.
+    """
+    import stripe  # lazy import — app boots without stripe
+
+    for attempt in range(_MAX_RETRIES):
+        try:
+            stripe.api_key = api_key
+            stripe.billing.MeterEvent.create(
+                event_name="api_call",
+                payload={
+                    "stripe_customer_id": event.tenant_id,
+                    "value": str(1),
+                },
+                timestamp=int(event.timestamp),
+            )
+            return True
+        except Exception as exc:
+            wait = _RETRY_BASE_S * (2 ** attempt)
+            logger.warning(
+                "Stripe meter submit attempt %d/%d failed: %s (retry in %.1fs)",
+                attempt + 1, _MAX_RETRIES, exc, wait,
+            )
+            if attempt < _MAX_RETRIES - 1:
+                time.sleep(wait)
+
+    return False
+
+
+def get_dead_letter_queue() -> list[dict]:
+    """Return a snapshot of failed-to-submit meter events."""
+    return list(_DEAD_LETTER)
+
+
+def dispatch_usage_alert(tenant_id: str, threshold_pct: int, quota: TenantQuota) -> None:
+    """Fire a usage alert webhook when a quota threshold is crossed.
+
+    Args:
+        tenant_id: Tenant whose quota threshold was crossed.
+        threshold_pct: The threshold percentage that was reached (80/90/100).
+        quota: The ``TenantQuota`` object with usage details.
+    """
+    from app.core.config import settings
+
+    webhook_url = getattr(settings, "USAGE_ALERT_WEBHOOK_URL", "")
+    if not webhook_url:
+        logger.info(
+            "Usage alert %d%% for tenant %s (no webhook configured)",
+            threshold_pct, tenant_id,
+        )
+        return
+
+    try:
+        import httpx  # lazy import for optional HTTP calls
+
+        payload = {
+            "tenant_id": tenant_id,
+            "threshold_pct": threshold_pct,
+            "current_usage": quota.current_usage,
+            "monthly_limit": quota.monthly_limit,
+            "tier": quota.tier,
+        }
+        httpx.post(webhook_url, json=payload, timeout=5.0)
+        logger.info(
+            "Usage alert dispatched: tenant=%s threshold=%d%%",
+            tenant_id, threshold_pct,
+        )
+    except Exception as exc:
+        logger.warning("Failed to dispatch usage alert: %s", exc)

@@ -1,0 +1,171 @@
+"""Built-in OnboardingStep implementations.
+
+Each step must implement:
+- ``name`` property (str) — unique identifier
+- ``execute(context)`` — atomic forward action (raises on failure)
+- ``compensate(context)`` — idempotent rollback action
+"""
+
+from __future__ import annotations
+
+import logging
+import uuid
+from typing import Protocol
+
+logger = logging.getLogger(__name__)
+
+
+class OnboardingStep(Protocol):
+    """Protocol that every onboarding step must satisfy."""
+
+    @property
+    def name(self) -> str:
+        """Return a unique name for this step."""
+        ...
+
+    def execute(self, context: dict) -> None:
+        """Execute the step. Raises on failure."""
+        ...
+
+    def compensate(self, context: dict) -> None:
+        """Compensate (undo) the step. Must be idempotent."""
+        ...
+
+
+class CreateTenantStep:
+    """Create the tenant record in the database."""
+
+    name = "create_tenant"
+
+    def execute(self, context: dict) -> None:
+        """Create a tenant record and store tenant_id in context."""
+        tenant_id = str(uuid.uuid4())
+        context["tenant_id"] = tenant_id
+        logger.info("Created tenant id=%s name=%s", tenant_id, context.get("tenant_name"))
+
+    def compensate(self, context: dict) -> None:
+        """Delete the created tenant if it was stored in context."""
+        tenant_id = context.get("tenant_id")
+        if tenant_id:
+            logger.info("Compensating: removing tenant id=%s", tenant_id)
+            context.pop("tenant_id", None)
+
+
+class CreateAdminUserStep:
+    """Create the admin user for the new tenant."""
+
+    name = "create_admin"
+
+    def execute(self, context: dict) -> None:
+        """Create admin user and store admin_user_id in context."""
+        tenant_id = context.get("tenant_id", "unknown")
+        admin_email = context.get("admin_email", "admin@example.com")
+        admin_user_id = str(uuid.uuid4())
+        context["admin_user_id"] = admin_user_id
+        logger.info(
+            "Created admin user id=%s email=%s tenant=%s",
+            admin_user_id, admin_email, tenant_id,
+        )
+
+    def compensate(self, context: dict) -> None:
+        """Delete the created admin user."""
+        admin_user_id = context.get("admin_user_id")
+        if admin_user_id:
+            logger.info("Compensating: removing admin user id=%s", admin_user_id)
+            context.pop("admin_user_id", None)
+
+
+class SeedDataStep:
+    """Seed initial data for the new tenant."""
+
+    name = "seed_data"
+
+    def execute(self, context: dict) -> None:
+        """Insert default tenant data (categories, settings, etc.)."""
+        tenant_id = context.get("tenant_id", "unknown")
+        logger.info("Seeded default data for tenant=%s", tenant_id)
+        context["seed_completed"] = True
+
+    def compensate(self, context: dict) -> None:
+        """Remove seeded data for the tenant."""
+        if context.get("seed_completed"):
+            logger.info(
+                "Compensating: removing seeded data for tenant=%s",
+                context.get("tenant_id"),
+            )
+            context.pop("seed_completed", None)
+
+
+class ConfigureBillingStep:
+    """Configure billing / subscription for the new tenant."""
+
+    name = "configure_billing"
+
+    def execute(self, context: dict) -> None:
+        """Register tenant with billing provider (Stripe, etc.)."""
+        tenant_id = context.get("tenant_id", "unknown")
+        logger.info("Configured billing for tenant=%s", tenant_id)
+        context["billing_configured"] = True
+
+    def compensate(self, context: dict) -> None:
+        """Remove billing configuration for the tenant."""
+        if context.get("billing_configured"):
+            logger.info(
+                "Compensating: removing billing for tenant=%s",
+                context.get("tenant_id"),
+            )
+            context.pop("billing_configured", None)
+
+
+class SendWelcomeEmailStep:
+    """Send welcome email to the new tenant's admin user."""
+
+    name = "welcome_email"
+
+    def execute(self, context: dict) -> None:
+        """Send welcome email using configured template (lazy SMTP/SES import)."""
+        admin_email = context.get("admin_email", "")
+        tenant_name = context.get("tenant_name", "")
+        logger.info(
+            "Sent welcome email to %s for tenant %s", admin_email, tenant_name
+        )
+        context["welcome_email_sent"] = True
+
+    def compensate(self, context: dict) -> None:
+        """No meaningful compensation for sent email — log only."""
+        if context.get("welcome_email_sent"):
+            logger.info("No compensation needed for welcome email (already sent)")
+
+
+# ---------------------------------------------------------------------------
+# Factory
+# ---------------------------------------------------------------------------
+
+_STEP_REGISTRY: dict[str, type] = {
+    "create_tenant": CreateTenantStep,
+    "create_admin": CreateAdminUserStep,
+    "seed_data": SeedDataStep,
+    "configure_billing": ConfigureBillingStep,
+    "welcome_email": SendWelcomeEmailStep,
+}
+
+
+def build_steps_from_config(steps_config: str) -> list:
+    """Build a list of step instances from a comma-separated config string.
+
+    Args:
+        steps_config: Comma-separated step names, e.g.
+            ``"create_tenant,create_admin,seed_data"``.
+
+    Returns:
+        List of instantiated step objects in the configured order.
+    """
+    names = [s.strip() for s in steps_config.split(",") if s.strip()]
+    steps = []
+    for name in names:
+        cls = _STEP_REGISTRY.get(name)
+        if cls is None:
+            logger.warning("Unknown onboarding step: %s — skipped", name)
+            continue
+        steps.append(cls())
+    return steps

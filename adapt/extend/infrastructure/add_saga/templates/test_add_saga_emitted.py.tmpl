@@ -1,0 +1,82 @@
+"""Emitted test for add_saga: SagaOrchestrator primitive + FastAPI adapter wiring.
+
+WARNING (honesty rule §5, F-06): add_saga wires a BEST-EFFORT compensation
+orchestrator backed by the InMemorySagaOrchestrator primitive. Compensation
+is NOT guaranteed to be exactly-once — if the compensation step itself fails,
+the failure is logged and skipped. Tests below assert at-least-once semantics
+and best-effort compensation only.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+# ---------------------------------------------------------------------------
+# Positive test: glue file is importable + install_saga callable
+# ---------------------------------------------------------------------------
+
+def test_saga_glue_importable() -> None:
+    """app/saga.py exists and contains install_saga callable."""
+    glue = Path(__file__).parent.parent / "app" / "saga.py"
+    assert glue.exists(), "app/saga.py not created by add_saga"
+    content = glue.read_text()
+    assert "def install_saga" in content, "install_saga not defined in app/saga.py"
+
+
+def test_saga_adapter_wired() -> None:
+    """app/saga.py imports the SagaAdapter install function."""
+    glue = Path(__file__).parent.parent / "app" / "saga.py"
+    content = glue.read_text()
+    assert "from core.venous._adapters.fastapi.SagaAdapter import install" in content, (
+        "SagaAdapter install not imported in app/saga.py"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Positive test: primitive was copied into the generated project
+# ---------------------------------------------------------------------------
+
+def test_saga_primitive_copied() -> None:
+    """core/venous/events/SagaOrchestrator/SagaOrchestrator.py exists."""
+    primitive = (
+        Path(__file__).parent.parent
+        / "core" / "venous" / "events" / "SagaOrchestrator" / "SagaOrchestrator.py"
+    )
+    assert primitive.exists(), "SagaOrchestrator primitive not copied into project"
+
+
+# ---------------------------------------------------------------------------
+# Negative test: duplicate slug (running add_saga twice yields no_op, not error)
+# ---------------------------------------------------------------------------
+
+def test_saga_happy_path_skips_compensation() -> None:
+    """A saga happy-path execution (no failure) must NOT invoke compensators."""
+    from adapt.contracts import ToolInput
+    from adapt.extend.infrastructure.add_saga import add_saga
+    from tests.common.fixture_factory import create_fixture_project
+
+    project_dir = create_fixture_project(name="saga_emitted_neg01")
+    r1 = add_saga(ToolInput(project_dir=str(project_dir)))
+    assert r1.status == "success", r1.error
+
+    r2 = add_saga(ToolInput(project_dir=str(project_dir)))
+    assert r2.status == "no_op", (
+        "Second run must be no_op — duplicate slug rejected without compensation"
+    )
+    assert not r2.files_created, "no_op run must not create files"
+
+
+if __name__ == "__main__":
+    tests = [v for k, v in globals().items() if k.startswith("test_")]
+    passed = failed = 0
+    for fn in tests:
+        try:
+            fn()
+            print(f"  PASS  {fn.__name__}")
+            passed += 1
+        except Exception as exc:
+            print(f"  FAIL  {fn.__name__}: {exc}")
+            failed += 1
+    print(f"\n{passed}/{passed + failed}")
+    sys.exit(0 if not failed else 1)

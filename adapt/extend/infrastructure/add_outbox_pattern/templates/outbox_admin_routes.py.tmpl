@@ -1,0 +1,48 @@
+"""Admin endpoints for outbox observability.
+
+Endpoints:
+    GET /outbox/metrics  — counts by status
+    GET /outbox/dlq      — dead-letter queue entries (paginated)
+"""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, Query
+
+router = APIRouter(prefix="/outbox", tags=["outbox"])
+
+
+@router.get("/metrics", response_model=dict)
+async def outbox_metrics() -> dict:
+    """Return counts of outbox events grouped by status.
+
+    Returns:
+        Dict mapping status strings to event counts.
+
+    Note:
+        Inject your async session dependency to run real queries.
+        This stub returns the expected schema for integration testing.
+    """
+    return {
+        "pending": 0,
+        "delivered": 0,
+        "dead": 0,
+        "total": 0,
+    }
+
+
+@router.get("/dlq", response_model=dict)
+async def outbox_dlq(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=20, ge=1, le=100),
+) -> dict:
+    """List dead-letter queue entries (events that exhausted all retries).
+
+    Args:
+        skip: Pagination offset.
+        limit: Page size (1-100).
+
+    Returns:
+        Dict with ``data`` list and ``count`` total.
+    """
+    return {"data": [], "count": 0, "skip": skip, "limit": limit}

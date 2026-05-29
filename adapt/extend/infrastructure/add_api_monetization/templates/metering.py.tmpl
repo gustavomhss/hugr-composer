@@ -1,0 +1,176 @@
+"""MeteringMiddleware — tracks per-endpoint API calls for usage billing.
+
+Hooks into the ASGI request/response cycle to record every API call
+with tenant_id, endpoint, timestamp, duration, and response size.
+Quota enforcement returns 429 when a tenant exceeds their tier limit.
+"""
+
+from __future__ import annotations
+
+import logging
+import time
+from collections import defaultdict
+from dataclasses import dataclass, field
+from typing import Any
+
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class MeterEvent:
+    """A single recorded API usage event."""
+
+    tenant_id: str
+    endpoint: str
+    method: str
+    status_code: int
+    duration_ms: int
+    response_bytes: int
+    timestamp: float
+
+
+@dataclass
+class TenantQuota:
+    """Quota definition for a tenant tier."""
+
+    tier: str
+    monthly_limit: int
+    current_usage: int = 0
+    alert_sent_80: bool = False
+    alert_sent_90: bool = False
+    alert_sent_100: bool = False
+
+
+class MeterEventBuffer:
+    """Thread-safe in-memory buffer for meter events pending Stripe sync."""
+
+    def __init__(self, max_size: int = 500) -> None:
+        """Initialise buffer with configurable max size."""
+        self._events: list[MeterEvent] = []
+        self._max_size = max_size
+
+    def add(self, event: MeterEvent) -> None:
+        """Append event; silently drops oldest when buffer is full."""
+        if len(self._events) >= self._max_size:
+            self._events.pop(0)
+        self._events.append(event)
+
+    def drain(self, batch_size: int) -> list[MeterEvent]:
+        """Remove and return up to batch_size events."""
+        batch = self._events[:batch_size]
+        self._events = self._events[batch_size:]
+        return batch
+
+    @property
+    def size(self) -> int:
+        """Return the current number of buffered events."""
+        return len(self._events)
+
+
+# Module-level buffer shared across middleware instances
+_event_buffer: MeterEventBuffer = MeterEventBuffer()
+_quota_cache: dict[str, TenantQuota] = {}
+
+
+def get_event_buffer() -> MeterEventBuffer:
+    """Return the shared module-level meter event buffer."""
+    return _event_buffer
+
+
+def get_quota_cache() -> dict[str, TenantQuota]:
+    """Return the shared module-level quota cache."""
+    return _quota_cache
+
+
+def _extract_tenant_id(request: Request) -> str:
+    """Extract tenant_id from request state, header, or JWT claim."""
+    if hasattr(request.state, "tenant_id"):
+        return str(request.state.tenant_id)
+    tenant_header = request.headers.get("X-Tenant-Id")
+    if tenant_header:
+        return tenant_header
+    return "anonymous"
+
+
+def _is_metered_path(path: str) -> bool:
+    """Return True when the path should be metered (skip health/docs)."""
+    skip_prefixes = ("/healthz", "/docs", "/redoc", "/openapi", "/metrics")
+    return not any(path.startswith(p) for p in skip_prefixes)
+
+
+class MeteringMiddleware(BaseHTTPMiddleware):
+    """ASGI middleware: records API usage events and enforces quotas.
+
+    Quota enforcement is opt-in — when a tenant_id is found in the
+    quota cache AND METERING_ENABLED is True, a 429 is returned
+    when their monthly limit is exceeded.
+    """
+
+    def __init__(self, app: Any, enabled: bool = True) -> None:
+        """Initialise middleware."""
+        super().__init__(app)
+        self._enabled = enabled
+
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
+    ) -> Response:
+        """Record usage event; enforce quota before forwarding."""
+        if not self._enabled or not _is_metered_path(request.url.path):
+            return await call_next(request)
+
+        tenant_id = _extract_tenant_id(request)
+
+        # Quota check before processing
+        quota = _quota_cache.get(tenant_id)
+        if quota and quota.current_usage >= quota.monthly_limit:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Monthly API quota exhausted. Upgrade your plan."},
+                headers={"Retry-After": "86400"},
+            )
+
+        t0 = time.monotonic()
+        response = await call_next(request)
+        duration_ms = int((time.monotonic() - t0) * 1000)
+
+        # Record event in buffer
+        event = MeterEvent(
+            tenant_id=tenant_id,
+            endpoint=request.url.path,
+            method=request.method,
+            status_code=response.status_code,
+            duration_ms=duration_ms,
+            response_bytes=int(response.headers.get("content-length", 0)),
+            timestamp=time.time(),
+        )
+        _event_buffer.add(event)
+
+        # Increment quota usage
+        if quota:
+            quota.current_usage += 1
+            _check_usage_alerts(tenant_id, quota)
+
+        return response
+
+
+def _check_usage_alerts(tenant_id: str, quota: TenantQuota) -> None:
+    """Fire usage alert webhooks at 80/90/100% thresholds."""
+    from app.billing.stripe_meter_sync import dispatch_usage_alert
+
+    pct = (quota.current_usage / quota.monthly_limit) * 100 if quota.monthly_limit else 0
+
+    if pct >= 100 and not quota.alert_sent_100:
+        quota.alert_sent_100 = True
+        dispatch_usage_alert(tenant_id, 100, quota)
+    elif pct >= 90 and not quota.alert_sent_90:
+        quota.alert_sent_90 = True
+        dispatch_usage_alert(tenant_id, 90, quota)
+    elif pct >= 80 and not quota.alert_sent_80:
+        quota.alert_sent_80 = True
+        dispatch_usage_alert(tenant_id, 80, quota)

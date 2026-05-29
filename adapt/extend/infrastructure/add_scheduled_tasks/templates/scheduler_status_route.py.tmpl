@@ -1,0 +1,43 @@
+"""GET /scheduler/jobs — report registered cron jobs and next run time."""
+
+from __future__ import annotations
+
+from datetime import datetime
+
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+from app.workers.cron_jobs import list_jobs
+from app.workers.scheduler import get_scheduler
+
+router = APIRouter(prefix="/scheduler", tags=["scheduler"])
+
+
+class JobInfo(BaseModel):
+    """Describes a single scheduled job."""
+
+    name: str
+    cron: str
+    next_run: datetime | None = None
+
+
+@router.get("/jobs", response_model=list[JobInfo])
+async def get_jobs() -> list[JobInfo]:
+    """Return the currently registered cron jobs and their next run times.
+
+    Returns:
+        A list of ``JobInfo`` entries sorted by job name.
+    """
+    declared = {j["name"]: j["cron"] for j in list_jobs()}
+    sched = get_scheduler()
+    out: list[JobInfo] = []
+    for name, cron in sorted(declared.items()):
+        next_run = None
+        try:
+            job = sched.get_job(name)
+            if job is not None:
+                next_run = job.next_run_time
+        except Exception:
+            next_run = None
+        out.append(JobInfo(name=name, cron=cron, next_run=next_run))
+    return out

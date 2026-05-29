@@ -1,0 +1,25 @@
+"""Wire the saga orchestrator into the FastAPI app.
+
+Delegates to the primitive + FastAPI adapter copied under `core/venous/`
+by the `add_saga` tool. Register real forward/compensator pairs on the
+returned definition before calling install().
+"""
+
+from __future__ import annotations
+
+from fastapi import FastAPI
+
+from core.venous._adapters.fastapi.SagaAdapter import install
+from core.venous.events.SagaOrchestrator.SagaOrchestrator import SagaDefinition
+
+
+def install_saga(app: FastAPI, *, definition: SagaDefinition | None = None) -> None:
+    """Attach a saga orchestrator + /admin/sagas router to *app*."""
+    d = definition or _default_definition()
+    install(app, definition=d)
+
+
+def _default_definition() -> SagaDefinition:
+    d = SagaDefinition("checkout")
+    d.register("noop", compensator=lambda payload: None)(lambda payload: {"ok": True})
+    return d

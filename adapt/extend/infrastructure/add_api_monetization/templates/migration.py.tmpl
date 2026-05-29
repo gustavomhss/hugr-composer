@@ -1,0 +1,43 @@
+"""add usage_records table
+
+Revision ID: ${rev_id}
+Revises: ${down_rev}
+"""
+
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision: str = "${rev_id}"
+down_revision: str | None = ${down_rev_repr}
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    """Create usage_records table."""
+    op.create_table(
+        "usage_records",
+        sa.Column("id", sa.String(36), primary_key=True, nullable=False),
+        sa.Column("tenant_id", sa.String(128), nullable=False, index=True),
+        sa.Column("endpoint", sa.String(512), nullable=False),
+        sa.Column("method", sa.String(16), nullable=False),
+        sa.Column("status_code", sa.Integer, nullable=False),
+        sa.Column("duration_ms", sa.Integer, nullable=False, server_default="0"),
+        sa.Column("response_bytes", sa.Integer, nullable=False, server_default="0"),
+        sa.Column("meter_name", sa.String(128), nullable=True),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+    )
+    op.create_index("ix_usage_records_tenant_id", "usage_records", ["tenant_id"])
+
+
+def downgrade() -> None:
+    """Drop usage_records table."""
+    op.drop_index("ix_usage_records_tenant_id", table_name="usage_records")
+    op.drop_table("usage_records")

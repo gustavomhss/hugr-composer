@@ -1,0 +1,16 @@
+"""Temporal workflow engine sub-package.
+
+Re-exports the public surface area so callers only need to import
+from ``app.workflows`` rather than individual sub-modules.
+"""
+
+from app.workflows.client import TemporalClientFactory, get_client
+from app.workflows.worker import WorkerFactory, start_worker, stop_worker
+
+__all__ = [
+    "TemporalClientFactory",
+    "get_client",
+    "WorkerFactory",
+    "start_worker",
+    "stop_worker",
+]

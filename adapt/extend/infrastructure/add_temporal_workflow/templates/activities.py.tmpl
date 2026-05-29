@@ -1,0 +1,152 @@
+"""Temporal activity definitions for the order-processing workflow.
+
+Activities are ordinary ``async def`` functions decorated with
+``@activity.defn``.  Each activity has an explicit retry policy
+so behaviour under failure is deterministic and auditable.
+
+``temporalio`` is imported lazily (inside function bodies) so this
+module can be imported without the SDK installed.
+"""
+
+from __future__ import annotations
+
+import logging
+from datetime import timedelta
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
+
+def _apply_retry_policy(fn: Any, *, schedule_to_close: int) -> Any:
+    """Tag *fn* with Temporal retry metadata used by the worker factory.
+
+    The actual ``@activity.defn`` decorator requires the SDK, so we
+    store the policy as attributes and apply ``activity.defn`` lazily
+    in ``WorkerFactory.create`` when the SDK is available.
+
+    Args:
+        fn: Async activity function to tag.
+        schedule_to_close: Schedule-to-close timeout in seconds.
+
+    Returns:
+        The same function, with ``__temporal_schedule_to_close__``
+        and ``__temporal_max_attempts__`` attributes set.
+    """
+    fn.__temporal_schedule_to_close__ = timedelta(seconds=schedule_to_close)
+    fn.__temporal_max_attempts__ = 3
+    return fn
+
+
+async def validate_order(order_id: str) -> dict[str, Any]:
+    """Validate an order before processing.
+
+    Checks that the order exists and is in a processable state.
+    This activity is idempotent — safe to retry.
+
+    Args:
+        order_id: Unique order identifier.
+
+    Returns:
+        Dict with ``order_id``, ``valid``, and optional ``reason``.
+    """
+    from temporalio import activity  # lazy SDK import
+
+    activity.logger.info("Validating order %s", order_id)
+    # Stub: replace with real DB / service call in production.
+    return {"order_id": order_id, "valid": True}
+
+
+validate_order = _apply_retry_policy(validate_order, schedule_to_close=60)
+
+
+async def charge_payment(order_id: str, amount_cents: int) -> dict[str, Any]:
+    """Charge the payment instrument for an order.
+
+    Calls the payment provider and returns a charge reference.  On
+    failure the workflow will execute ``compensate_payment`` to void
+    any partial charge.
+
+    Args:
+        order_id: Unique order identifier.
+        amount_cents: Amount to charge in the smallest currency unit.
+
+    Returns:
+        Dict with ``order_id``, ``charge_id``, and ``status``.
+    """
+    from temporalio import activity  # lazy SDK import
+
+    activity.logger.info(
+        "Charging payment for order %s amount_cents=%d",
+        order_id,
+        amount_cents,
+    )
+    # Stub: replace with real payment provider call in production.
+    return {
+        "order_id": order_id,
+        "charge_id": f"ch_{order_id[:8]}",
+        "status": "captured",
+    }
+
+
+charge_payment = _apply_retry_policy(charge_payment, schedule_to_close=30)
+
+
+async def fulfil_order(order_id: str, charge_id: str) -> dict[str, Any]:
+    """Fulfil an order after successful payment.
+
+    Triggers inventory deduction, dispatch, and notification.
+
+    Args:
+        order_id: Unique order identifier.
+        charge_id: Charge reference returned by ``charge_payment``.
+
+    Returns:
+        Dict with ``order_id``, ``fulfillment_id``, and ``status``.
+    """
+    from temporalio import activity  # lazy SDK import
+
+    activity.logger.info(
+        "Fulfilling order %s charge_id=%s", order_id, charge_id
+    )
+    # Stub: replace with real fulfilment service call in production.
+    return {
+        "order_id": order_id,
+        "fulfillment_id": f"ff_{order_id[:8]}",
+        "status": "dispatched",
+    }
+
+
+fulfil_order = _apply_retry_policy(fulfil_order, schedule_to_close=120)
+
+
+async def compensate_payment(order_id: str, charge_id: str) -> dict[str, Any]:
+    """Void or refund a payment charge on workflow failure.
+
+    Compensation activity: called from the workflow's except block
+    when a downstream activity fails after payment has been captured.
+
+    Args:
+        order_id: Unique order identifier.
+        charge_id: Charge reference to void/refund.
+
+    Returns:
+        Dict with ``order_id``, ``charge_id``, and ``status``.
+    """
+    from temporalio import activity  # lazy SDK import
+
+    activity.logger.info(
+        "Compensating payment for order %s charge_id=%s",
+        order_id,
+        charge_id,
+    )
+    # Stub: replace with real refund/void call in production.
+    return {
+        "order_id": order_id,
+        "charge_id": charge_id,
+        "status": "refunded",
+    }
+
+
+compensate_payment = _apply_retry_policy(
+    compensate_payment, schedule_to_close=30
+)

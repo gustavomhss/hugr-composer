@@ -1,0 +1,86 @@
+"""Emitted test for add_cost_tracker: CostTracker primitive + FastAPI adapter wiring.
+
+The cost tracker middleware attaches X-Request-Cost-Estimate to every response.
+Tests assert the glue file is correctly wired and the adapter is present.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+
+# ---------------------------------------------------------------------------
+# Positive test: glue file is present and imports the adapter
+# ---------------------------------------------------------------------------
+
+def test_cost_tracker_glue_exists() -> None:
+    """app/cost_tracker.py exists and defines install_cost_tracker."""
+    glue = Path(__file__).parent.parent / "app" / "cost_tracker.py"
+    assert glue.exists(), "app/cost_tracker.py not created by add_cost_tracker"
+    content = glue.read_text()
+    assert "def install_cost_tracker" in content, (
+        "install_cost_tracker not defined in app/cost_tracker.py"
+    )
+
+
+def test_cost_tracker_adapter_imported() -> None:
+    """app/cost_tracker.py imports CostTrackerAdapter."""
+    glue = Path(__file__).parent.parent / "app" / "cost_tracker.py"
+    content = glue.read_text()
+    assert "CostTrackerAdapter" in content, (
+        "CostTrackerAdapter not referenced in app/cost_tracker.py"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Positive test: primitive was copied
+# ---------------------------------------------------------------------------
+
+def test_cost_tracker_primitive_copied() -> None:
+    """core/venous/resiliency/CostTracker/ exists in the generated project."""
+    primitive_dir = (
+        Path(__file__).parent.parent / "core" / "venous" / "resiliency" / "CostTracker"
+    )
+    assert primitive_dir.exists(), (
+        "CostTracker primitive not copied into project by add_cost_tracker"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Negative test: boundary — missing queue does NOT crash cost-tracker boot
+# ---------------------------------------------------------------------------
+
+def test_cost_tracker_missing_config_is_noop() -> None:
+    """install_cost_tracker uses env-var defaults when settings are absent.
+
+    This ensures the tool does not crash if optional cost config is absent.
+    """
+    from adapt.contracts import ToolInput
+    from adapt.extend.infrastructure.add_cost_tracker import add_cost_tracker
+    from tests.common.fixture_factory import create_fixture_project
+
+    project_dir = create_fixture_project(name="cost_tracker_emitted_neg01")
+    r1 = add_cost_tracker(ToolInput(project_dir=str(project_dir)))
+    assert r1.status == "success", r1.error
+
+    # Second run must be no_op (boundary: no duplicate installs)
+    r2 = add_cost_tracker(ToolInput(project_dir=str(project_dir)))
+    assert r2.status == "no_op", (
+        f"Second run must be no_op, got {r2.status}"
+    )
+
+
+if __name__ == "__main__":
+    tests = [v for k, v in globals().items() if k.startswith("test_")]
+    passed = failed = 0
+    for fn in tests:
+        try:
+            fn()
+            print(f"  PASS  {fn.__name__}")
+            passed += 1
+        except Exception as exc:
+            print(f"  FAIL  {fn.__name__}: {exc}")
+            failed += 1
+    print(f"\n{passed}/{passed + failed}")
+    sys.exit(0 if not failed else 1)

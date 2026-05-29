@@ -1,0 +1,23 @@
+"""Wire per-request cost estimation into the FastAPI app.
+
+Delegates to the primitive + FastAPI adapter copied under `core/venous/`
+by the `add_cost_tracker` tool. Re-emitted idempotently on subsequent runs.
+"""
+
+from __future__ import annotations
+
+import os
+
+from fastapi import FastAPI
+
+from core.venous._adapters.fastapi.CostTrackerAdapter import install
+
+
+def install_cost_tracker(app: FastAPI) -> None:
+    """Attach a CostTracker + X-Request-Cost-Estimate middleware to *app*."""
+    install(
+        app,
+        db_rate=float(os.getenv("COST_DB_QUERY_RATE", "0.00001")),
+        s3_rate=float(os.getenv("COST_S3_PER_GB", "0.023")),
+        api_rate=float(os.getenv("COST_API_CALL_RATE", "0.0001")),
+    )

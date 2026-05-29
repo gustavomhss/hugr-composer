@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "13b3fb9",
-  "generated_at": "2026-05-29T14:26:06+00:00",
+  "kit_commit": "d64a920",
+  "generated_at": "2026-05-29T20:05:54+00:00",
   "verbs": [
     "add",
     "generate",
@@ -1119,10 +1119,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_outbox_pattern.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_outbox_pattern.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_outbox_pattern/__init__.py",
+      "test_paths": [],
       "primitives_used": [
         "TransactionalOutbox"
       ],
@@ -1143,10 +1141,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_saga.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_saga.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_saga/__init__.py",
+      "test_paths": [],
       "primitives_used": [
         "SagaOrchestrator"
       ],
@@ -2740,10 +2736,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_api_monetization.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_api_monetization.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_api_monetization/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -2784,10 +2778,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_arq_worker.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_arq_worker.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_arq_worker/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -2878,10 +2870,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_celery_beat.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_celery_beat.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_celery_beat/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -2969,10 +2959,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_cost_tracker.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_cost_tracker.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_cost_tracker/__init__.py",
+      "test_paths": [],
       "primitives_used": [
         "CostTracker"
       ],
@@ -3535,10 +3523,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_scheduled_tasks.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_scheduled_tasks.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_scheduled_tasks/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3671,10 +3657,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_temporal_workflow.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_temporal_workflow.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_temporal_workflow/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3693,10 +3677,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_tenant_onboarding.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_tenant_onboarding.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_tenant_onboarding/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -12207,5 +12189,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "bba9327d85a796bbb26a7c39047c1b5c1913cfe980493a553e4125295caa9df8"
+  "stable_hash": "f18b9124f66818f7ec5daf878f47bf8db9953ca5f5132bde1f21337af30b633e"
 }

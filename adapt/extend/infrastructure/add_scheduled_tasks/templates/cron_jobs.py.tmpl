@@ -1,0 +1,93 @@
+"""Cron job registry — declare scheduled tasks via @scheduled_job.
+
+Usage::
+
+    @scheduled_job("0 */6 * * *", name="refresh_view")
+    async def refresh_materialized_view() -> None:
+        ...
+
+The ``register_jobs`` function is called by ``start_scheduler`` at
+startup and installs every decorated function on the scheduler.
+"""
+
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass
+from typing import Any, Awaitable, Callable
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class ScheduledJob:
+    """A single cron job declaration."""
+
+    cron: str
+    name: str
+    func: Callable[[], Awaitable[None]]
+
+
+_JOBS: list[ScheduledJob] = []
+
+
+def scheduled_job(
+    cron: str, *, name: str | None = None
+) -> Callable[[Callable[[], Awaitable[None]]], Callable[[], Awaitable[None]]]:
+    """Decorator that registers an async function as a cron job.
+
+    Args:
+        cron: Cron expression (5-field: minute hour day month dow).
+        name: Optional job name (defaults to the function name).
+
+    Returns:
+        The original function, unchanged.
+    """
+
+    def wrap(fn: Callable[[], Awaitable[None]]) -> Callable[[], Awaitable[None]]:
+        _JOBS.append(ScheduledJob(cron=cron, name=name or fn.__name__, func=fn))
+        return fn
+
+    return wrap
+
+
+def register_jobs(scheduler: Any) -> None:
+    """Install every declared job on *scheduler*.
+
+    Args:
+        scheduler: The running APScheduler instance.
+    """
+    from apscheduler.triggers.cron import CronTrigger
+    for job in _JOBS:
+        trigger = CronTrigger.from_crontab(job.cron)
+        scheduler.add_job(
+            job.func, trigger=trigger, id=job.name, replace_existing=True
+        )
+        logger.info("cron.registered", extra={"name": job.name, "cron": job.cron})
+
+
+def list_jobs() -> list[dict[str, str]]:
+    """Return a serialisable list of declared jobs."""
+    return [{"name": j.name, "cron": j.cron} for j in _JOBS]
+
+
+# ---------------------------------------------------------------------
+# Example jobs — customise or delete as needed
+# ---------------------------------------------------------------------
+
+@scheduled_job("*/5 * * * *", name="health_heartbeat")
+async def health_heartbeat() -> None:
+    """Log a heartbeat every 5 minutes (useful as a liveness check)."""
+    logger.info("scheduler.heartbeat")
+
+
+@scheduled_job("0 3 * * *", name="cleanup_expired_sessions")
+async def cleanup_expired_sessions() -> None:
+    """Delete expired session rows every day at 03:00 UTC."""
+    logger.info("scheduler.cleanup_expired_sessions.stub")
+
+
+@scheduled_job("0 */6 * * *", name="refresh_materialized_view")
+async def refresh_materialized_view() -> None:
+    """Refresh a materialised view every 6 hours."""
+    logger.info("scheduler.refresh_materialized_view.stub")

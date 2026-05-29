@@ -1,0 +1,64 @@
+"""Pydantic schemas for outbox events."""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class OutboxEventPublic(BaseModel):
+    """Public representation of an outbox event (admin/observability use).
+
+    Attributes:
+        id: Event UUID.
+        event_type: Domain event name.
+        aggregate_type: Entity type for correlation.
+        aggregate_id: Entity identifier.
+        status: Current delivery status.
+        attempts: Number of dispatch attempts.
+        created_at: Row creation timestamp.
+        dispatched_at: Delivery timestamp (None if not delivered).
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    event_type: str
+    aggregate_type: str | None = None
+    aggregate_id: str | None = None
+    status: str
+    attempts: int
+    created_at: datetime
+    dispatched_at: datetime | None = None
+
+
+class DomainEvent(BaseModel):
+    """Typed base class for Pydantic-validated domain events.
+
+    Subclass this to add type safety to outbox.emit() calls::
+
+        class OrderCreated(DomainEvent):
+            order_id: uuid.UUID
+            total_amount: float
+
+    Attributes:
+        event_type: Discriminator field (set by subclass).
+        idempotency_key: Optional deduplication key.
+    """
+
+    event_type: str = Field(..., description="Domain event discriminator")
+    idempotency_key: str | None = Field(
+        default=None,
+        description="Optional dedup key for idempotent consumers",
+    )
+
+    def to_payload(self) -> dict[str, Any]:
+        """Serialize to dict for outbox storage.
+
+        Returns:
+            Dict suitable for OutboxService.emit(payload=...).
+        """
+        return self.model_dump(exclude_none=False)

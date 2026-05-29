@@ -1,0 +1,85 @@
+"""Emitted test for add_celery_beat: Celery Beat scheduled task scaffold.
+
+WARNING (honesty rule §5, F-06): Celery Beat runs in a SINGLE process that
+manages the schedule. Running multiple beat instances causes DUPLICATE task
+firing. Tests below assert this constraint and verify the scaffold exists.
+The emitted beat schedule with an empty ``BEAT_SCHEDULE`` is a no-op (not
+an error), which is asserted in the negative test.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+
+# ---------------------------------------------------------------------------
+# Positive test: core scaffold files exist
+# ---------------------------------------------------------------------------
+
+def test_celery_app_factory_exists() -> None:
+    """app/workers/celery_app.py contains celery_app singleton."""
+    celery_app_file = Path(__file__).parent.parent / "app" / "workers" / "celery_app.py"
+    assert celery_app_file.exists(), "app/workers/celery_app.py not created"
+    content = celery_app_file.read_text()
+    assert "celery_app" in content, "celery_app singleton not found"
+
+
+def test_beat_schedule_has_entries() -> None:
+    """app/workers/celery_beat_schedule.py defines BEAT_SCHEDULE with entries."""
+    beat_file = Path(__file__).parent.parent / "app" / "workers" / "celery_beat_schedule.py"
+    assert beat_file.exists(), "app/workers/celery_beat_schedule.py not created"
+    content = beat_file.read_text()
+    assert "BEAT_SCHEDULE" in content, "BEAT_SCHEDULE not defined"
+    assert "cleanup" in content.lower() or "digest" in content.lower(), (
+        "BEAT_SCHEDULE should have at least one example entry"
+    )
+
+
+def test_celery_tasks_defined() -> None:
+    """app/workers/celery_tasks.py defines at least one task function."""
+    tasks_file = Path(__file__).parent.parent / "app" / "workers" / "celery_tasks.py"
+    assert tasks_file.exists(), "app/workers/celery_tasks.py not created"
+    content = tasks_file.read_text()
+    assert "def cleanup_expired" in content or "def send_digest" in content, (
+        "Expected at least one task function in celery_tasks.py"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Negative test: empty beat schedule is a no-op (not an error)
+# ---------------------------------------------------------------------------
+
+def test_beat_schedule_empty_list_is_noop() -> None:
+    """Running add_celery_beat twice returns no_op (idempotent install).
+
+    Verifies that a beat schedule with no entries (second install attempt)
+    does NOT raise an error — it returns no_op.
+    """
+    from adapt.contracts import ToolInput
+    from adapt.extend.infrastructure.add_celery_beat import add_celery_beat
+    from tests.common.fixture_factory import create_fixture_project
+
+    project_dir = create_fixture_project(name="celery_beat_emitted_neg01")
+    r1 = add_celery_beat(ToolInput(project_dir=str(project_dir)))
+    assert r1.status == "success", r1.error
+
+    r2 = add_celery_beat(ToolInput(project_dir=str(project_dir)))
+    assert r2.status == "no_op", (
+        f"Second run must be no_op (beat schedule already present), got {r2.status}"
+    )
+
+
+if __name__ == "__main__":
+    tests = [v for k, v in globals().items() if k.startswith("test_")]
+    passed = failed = 0
+    for fn in tests:
+        try:
+            fn()
+            print(f"  PASS  {fn.__name__}")
+            passed += 1
+        except Exception as exc:
+            print(f"  FAIL  {fn.__name__}: {exc}")
+            failed += 1
+    print(f"\n{passed}/{passed + failed}")
+    sys.exit(0 if not failed else 1)

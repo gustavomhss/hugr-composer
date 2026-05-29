@@ -1,0 +1,122 @@
+"""Temporal worker factory and lifecycle helpers.
+
+The worker runs as a SEPARATE PROCESS from FastAPI.  ``app/main.py``
+is never imported or modified; the worker entry point is
+``python -m app.workflows.worker``.
+
+``temporalio`` is imported lazily so this module is safe to import
+without the SDK installed.
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+_worker: Any | None = None
+
+
+class WorkerFactory:
+    """Creates a Temporal worker bound to a task queue.
+
+    Attributes:
+        task_queue: Name of the Temporal task queue to poll.
+    """
+
+    def __init__(self, task_queue: str) -> None:
+        """Initialise the factory with a task queue name.
+
+        Args:
+            task_queue: Temporal task queue the worker will poll.
+        """
+        self.task_queue = task_queue
+
+    async def create(self, client: Any) -> Any:
+        """Create a Temporal worker connected to *client*.
+
+        Imports the SDK lazily, applies ``@activity.defn`` to each
+        activity function, and registers workflows + activities.
+
+        Args:
+            client: Connected ``temporalio.client.Client`` instance.
+
+        Returns:
+            A configured ``temporalio.worker.Worker`` instance.
+        """
+        from temporalio import activity as _act  # lazy SDK import
+        from temporalio.worker import Worker
+
+        import app.workflows.activities as _acts
+        from app.workflows.example_workflow import OrderProcessingWorkflow
+
+        activity_fns = [
+            _acts.validate_order,
+            _acts.charge_payment,
+            _acts.fulfil_order,
+            _acts.compensate_payment,
+        ]
+        registered = [_act.defn(fn) for fn in activity_fns]
+        worker = Worker(
+            client,
+            task_queue=self.task_queue,
+            workflows=[OrderProcessingWorkflow],
+            activities=registered,
+        )
+        logger.info("Temporal worker created task_queue=%s", self.task_queue)
+        return worker
+
+
+async def start_worker() -> Any:
+    """Create and start the Temporal worker (module-level singleton).
+
+    Connects to the Temporal server, creates the worker, and starts
+    polling.  Caches the worker so ``stop_worker()`` can shut it down.
+
+    Returns:
+        The running ``temporalio.worker.Worker`` instance.
+    """
+    global _worker
+    from app.workflows.client import get_client
+
+    client = await get_client()
+    factory = WorkerFactory(task_queue=settings.TEMPORAL_TASK_QUEUE)
+    _worker = await factory.create(client)
+    await _worker.start()
+    logger.info("Temporal worker started")
+    return _worker
+
+
+async def stop_worker() -> None:
+    """Gracefully shut down the running Temporal worker.
+
+    No-op when no worker has been started (e.g. in the API-only
+    container).
+    """
+    global _worker
+    if _worker is not None:
+        await _worker.shutdown()
+        logger.info("Temporal worker stopped")
+        _worker = None
+
+
+def main() -> None:
+    """Run the Temporal worker until interrupted.
+
+    Entry point for ``python -m app.workflows.worker`` and the
+    ``Dockerfile.temporal-worker`` CMD.
+    """
+    import asyncio
+
+    async def _run() -> None:
+        worker = await start_worker()
+        await worker.wait_all_polling_complete()
+
+    asyncio.run(_run())
+
+
+if __name__ == "__main__":
+    main()
