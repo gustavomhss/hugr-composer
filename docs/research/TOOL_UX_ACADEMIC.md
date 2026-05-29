@@ -51,7 +51,7 @@ The dominant published pattern at N > ~50 tools is **retrieval**: the agent is n
 - **ToolBench RapidAPI** (Qin 2023) organizes 16k APIs into 49 categories and 3,451 collections as *infrastructure*, but the headline ToolLLM pipeline is flat retrieval — so ToolBench itself does not publish a category-aware ablation.
 - **Chameleon** (Lu et al. 2023, arxiv 2304.09842). Composes tools in a plan but operates over a small fixed toolbox (~15 tools); not a scaling study.
 - **HuggingGPT / JARVIS** (Shen 2023, arxiv 2303.17580). Uses a model-registry structure (tasks → models) but again at modest scale (~24 model-tools in headline evals).
-- **Call-graph / dependency-aware organization.** **UNKNOWN in literature as of 2026-04** — I am not aware of a paper that organizes tools by explicit call-graph dependencies and measures agent accuracy. HuGR's "Maestro assembles LEGO" framing does not have a direct academic antecedent I can cite.
+- **Call-graph / dependency-aware organization.** **UNKNOWN in literature as of 2026-04** — I am not aware of a paper that organizes tools by explicit call-graph dependencies and measures agent accuracy. HuGR's "agent assembles LEGO" framing does not have a direct academic antecedent I can cite.
 
 The decisive gap: **there is no clean "flat-N vs hierarchical-N" ablation holding N and model fixed in the public literature I can recall.** AnyTool is the closest but its comparison is "hierarchical retriever vs flat retriever," not "hierarchical exposure vs flat exposure."
 
@@ -119,7 +119,7 @@ Each recommendation cites its grounding. Uncertainties are called out.
 
 5. **Consider a hierarchy (category → tool) if your retriever top-k is noisy.** AnyTool (arxiv 2402.04253) reports hierarchical navigation helps on hard splits. Caveat: the clean ablation "hierarchy vs flat at equal N" is not in the public literature I can cite — this would be a novel empirical contribution HuGR could make.
 
-6. **Adopt a skill-library mental model, not a tool-catalog one.** Voyager's composed, stored, retrieved skills (arxiv 2305.16291) and CodeAct's code-as-composition (arxiv 2402.01030) are the 2023–2024 state-of-the-art for agents operating over many capabilities. HuGR's "Maestro assembles LEGO" framing aligns with this; flat MCP-tool listings do not.
+6. **Adopt a skill-library mental model, not a tool-catalog one.** Voyager's composed, stored, retrieved skills (arxiv 2305.16291) and CodeAct's code-as-composition (arxiv 2402.01030) are the 2023–2024 state-of-the-art for agents operating over many capabilities. HuGR's "agent assembles LEGO" framing aligns with this; flat MCP-tool listings do not.
 
 7. **Measure the knee yourself.** Since no published curve covers Claude 4.5/4.7 at 10/30/60/120/201 tools, run the ablation internally on HuGR's own benchmark (FinHealth). This would be a publishable contribution, not just product work.
 

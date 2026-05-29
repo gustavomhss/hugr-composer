@@ -1,6 +1,6 @@
 """Single-shot benchmark runner skeleton.
 
-Drives N Maestro sessions (one per spec) + collects transcripts +
+Drives N agent sessions (one per spec) + collects transcripts +
 invokes grade.py for each. Produces results.json and run_manifest.json.
 
 Wave-H status: SKELETON only. Paid execution is deferred to the 48h
@@ -14,6 +14,7 @@ Usage (when ready to run for real):
 
 Cost: ~$50-100 for 10 specs × 1 model at current Claude pricing.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -50,8 +51,10 @@ def _prompt_bundle_hash() -> str:
     return h.hexdigest()
 
 
-def _drive_session(spec_path: pathlib.Path, transcript_path: pathlib.Path) -> pathlib.Path:
-    """Drive one Maestro session for the given spec. Returns emitted project dir.
+def _drive_session(
+    spec_path: pathlib.Path, transcript_path: pathlib.Path
+) -> pathlib.Path:
+    """Drive one agent session for the given spec. Returns emitted project dir.
 
     IMPLEMENTATION NOTE (Wave-H deferred): wire this to the Anthropic SDK
     using the system prompt in prompt.md, with the HuGR MCP tool
@@ -77,7 +80,10 @@ def main() -> int:
             print("--shape-only: writing EMPTY run_manifest for schema verification.")
             _write_manifest(empty=True)
             return 0
-        print("FATAL: ANTHROPIC_API_KEY not set. Pass --shape-only for schema verification only.", file=sys.stderr)
+        print(
+            "FATAL: ANTHROPIC_API_KEY not set. Pass --shape-only for schema verification only.",
+            file=sys.stderr,
+        )
         return 2
 
     TRANSCRIPT_DIR.mkdir(parents=True, exist_ok=True)
@@ -134,7 +140,14 @@ def _write_manifest(empty: bool, started: str = "", completed: str = "") -> None
 
 
 def _stable_hash_or_blank() -> str:
-    cat = REPO_ROOT / "skills" / "SKILL-001-fastapi-production" / "engine" / "index" / "catalog.json"
+    cat = (
+        REPO_ROOT
+        / "skills"
+        / "SKILL-001-fastapi-production"
+        / "engine"
+        / "index"
+        / "catalog.json"
+    )
     if not cat.exists():
         return ""
     d = json.loads(cat.read_text())
@@ -143,16 +156,22 @@ def _stable_hash_or_blank() -> str:
 
 def _grade(project_dir: pathlib.Path, spec: pathlib.Path) -> dict:
     from grade import grade as _g  # local import so shape test runs without paid deps
+
     acs = _extract_acs(spec.read_text())
     return _g(project_dir, acs)
 
 
 def _extract_acs(spec_text: str) -> list[str]:
     import re
+
     m = re.search(r"## Acceptance criteria\s*\n((?:\s*-\s+.+\n?)+)", spec_text)
     if not m:
         return []
-    return [l.strip().lstrip("- ").strip() for l in m.group(1).splitlines() if l.strip().startswith("-")]
+    return [
+        line.strip().lstrip("- ").strip()
+        for line in m.group(1).splitlines()
+        if line.strip().startswith("-")
+    ]
 
 
 if __name__ == "__main__":

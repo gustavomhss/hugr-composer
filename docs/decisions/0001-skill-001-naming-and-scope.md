@@ -14,7 +14,7 @@ Supersedes: none
 HuGR Arsenal's first skill had to answer two questions before any code
 landed:
 
-1. **What framework / stack does SKILL-001 target?** The Maestro-facing
+1. **What framework / stack does SKILL-001 target?** The agent-facing
    surface (`fastapi_<domain>_<verb>_<noun>` canonical names, every
    primitive `.md` citing FastAPI conventions, every example app built
    on FastAPI) only makes sense if that framework is a first-class
@@ -36,7 +36,7 @@ landed:
   starter / demo variant. Starter variants, if ever shipped, go to
   `SKILL-001a-fastapi-starter/` or similar, never diluting the
   production surface.
-- **Maestro-facing naming:** all tools use
+- **agent-facing naming:** all tools use
   `fastapi_<domain>_<verb>_<noun>` with closed vocabularies
   (10 domains × 9 verbs). Locked via CONTRACT §A10 terminology rule.
 - **Out of SKILL-001's scope:**

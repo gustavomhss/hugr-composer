@@ -2,7 +2,7 @@
 
 Reads plan.json + scaffold_plan.md from each spec's workdir under the
 chosen run (default `benchmarks/_runs/v0/`), scores each via
-`SubagentMaestro`, aggregates, and writes the canonical
+`SubagentRunner`, aggregates, and writes the canonical
 `benchmarks/latest_score.json` that satisfies CONTRACT §B3.5.
 """
 
@@ -15,7 +15,7 @@ from pathlib import Path
 
 from engine.bench.rubric import aggregate, score_spec
 from engine.bench.runner import _discover_specs, _kit_version
-from engine.bench.subagent_maestro import SubagentMaestro
+from engine.bench.subagent_runner import SubagentRunner
 
 SKILL_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_RUN = SKILL_ROOT / "benchmarks" / "_runs" / "v0"
@@ -34,7 +34,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"FAIL: run dir missing: {args.run}", file=sys.stderr)
         return 1
 
-    adapter = SubagentMaestro(runs_dir=args.run, model_label=args.model_label)
+    adapter = SubagentRunner(runs_dir=args.run, model_label=args.model_label)
 
     scores = []
     missing: list[str] = []
@@ -64,7 +64,7 @@ def main(argv: list[str] | None = None) -> int:
     data = report.as_dict()
     data["methodology"] = args.methodology
     data["methodology_notes"] = (
-        "Plan-level v0: subagent Maestro produces a requirement→primitive/tool map "
+        "Plan-level v0: subagent agent produces a requirement→primitive/tool map "
         "(plan.json + scaffold_plan.md) using the kit's discovery MCP tools. "
         "Scores reflect discoverability + composition accuracy, not executed code. "
         "Full-codebase benchmark is tracked for Phase 5+ per ROADMAP.md."

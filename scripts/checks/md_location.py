@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Repo rule: narrative markdown lives in docs/, not scattered through the tree.
 
-Concentrating docs keeps the source navigable and free of MAESTRO_SESSION / brief /
+Concentrating docs keeps the source navigable and free of AGENT_SESSION / brief /
 KNOWLEDGE / HANDOFF noise. A markdown file is allowed only if it is:
   - under docs/ (or another exempt top-level: .github/, _staging/, tools/), OR
   - inside a content directory (any path segment in CONTENT_SEGMENTS — these

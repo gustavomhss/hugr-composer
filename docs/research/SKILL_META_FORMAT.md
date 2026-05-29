@@ -1,13 +1,13 @@
-# SKILL.md Meta-Format — Design Contract for the HuGR Maestro
+# SKILL.md Meta-Format — Design Contract for the HuGR agent
 
 > Research + design doc · v1 · 2026-04-20 · author: Claude Opus 4.7 (1M) for Gustavo
 >
 > **Scope.** Define the file-format contract between a HuGR Arsenal skill and
-> the HuGR Maestro (the LLM orchestrator running inside HuGR Forge). The
+> the HuGR agent (the LLM orchestrator running inside HuGR Forge). The
 > concrete example is `SKILL-001-fastapi-production`; the format itself is
 > generic and reusable.
 >
-> **Audience.** The Maestro is a non-deterministic consumer (Opus / GPT /
+> **Audience.** The agent is a non-deterministic consumer (Opus / GPT /
 > Gemini). Every rule here exists because an LLM is the reader.
 >
 > **Citation discipline.** Every factual claim carries a URL or local path.
@@ -35,7 +35,7 @@
    **body**. Putting non-spec keys in frontmatter breaks portability. We
    layer HuGR-specific metadata in a clearly-fenced `## Machine-readable
    metadata` section containing a YAML block — belt-and-suspenders for both
-   the Maestro (LLM reader) and B2.5 contract validators (regex/parse
+   the agent (LLM reader) and B2.5 contract validators (regex/parse
    readers).
 
 3. **Body ≤ 500 lines, ≤ 5 000 tokens. One level of reference depth.**
@@ -47,7 +47,7 @@
    benchmark scores) is out of budget and moves to sibling files.
 
 4. **Triggering is done by description text, not flags.** Anthropic's
-   runtime injects only `name + description` at startup. The Maestro
+   runtime injects only `name + description` at startup. The agent
    decides to load by matching user intent against the description string.
    The description must be written in third person, must name concrete
    trigger words, must name concrete anti-trigger words. This matches the
@@ -57,7 +57,7 @@
 
 5. **Catalog is referenced, not embedded.** `SKILL.md` points to
    `engine/index/catalog.json` (the 358 KB inventory of 173 tools + 122
-   primitives + 385 recipes). The Maestro never loads catalog.json into
+   primitives + 385 recipes). The agent never loads catalog.json into
    context; it invokes the `fastapi_meta_search` tool, which reads it. This
    preserves the progressive-disclosure discipline and keeps SKILL.md at
    ~4 k tokens regardless of catalog size.
@@ -152,7 +152,7 @@ forbid custom frontmatter keys by validation rule.
 Per Anthropic best-practices (paraphrased): *"only the metadata (name and
 description) from all Skills is pre-loaded"* at startup. The 64-char name +
 1024-char description is a ceiling of ~280 tokens per skill in the
-Maestro's system prompt **permanently**. HuGR's rule: **aim for ≤ 260
+the agent's system prompt **permanently**. HuGR's rule: **aim for ≤ 260
 tokens of description**. If you need more, your description is doing the
 body's job.
 
@@ -175,7 +175,7 @@ Source (all four, one page):
 
 **HuGR body ceiling: 400 lines / 5 000 tokens.** We sit tighter than
 Anthropic's 500 to leave headroom for conversation history and the
-Maestro's other injected context (CLAUDE.md, PRODUCT.md, current diff).
+the agent's other injected context (CLAUDE.md, PRODUCT.md, current diff).
 
 ### 3.2 Required sections (in this order)
 
@@ -204,7 +204,7 @@ Maestro's other injected context (CLAUDE.md, PRODUCT.md, current diff).
    are reinforcing, not decorative: they measurably reduce
    hallucination in our own agent tests (see TOOL_UX_ANTHROPIC.md §4).
 9. **Reference files** — one-level-deep list of sibling markdowns the
-   Maestro may read on demand (catalog schema, contract, phase-by-phase
+   agent may read on demand (catalog schema, contract, phase-by-phase
    playbooks). ~150 tok.
 10. **Versioning footer** — `version · spec_compat · date · kit_commit`.
     ~30 tok.
@@ -214,7 +214,7 @@ Leaves 1 800-tok headroom under the 5 k ceiling.
 
 ### 3.3 Forbidden body content
 
-These blow the budget without helping the Maestro decide or execute.
+These blow the budget without helping the agent decide or execute.
 They live in sibling files or get cut entirely.
 
 - Test-suite counts, per-folder file counts, benchmark scores. Moves to
@@ -224,7 +224,7 @@ They live in sibling files or get cut entirely.
 - Contract audit commands (`./ci.sh`, `engine.audit.contract_check`).
   Moves to `CONTRIBUTING.md`.
 - Architectural prose (three-layer diagram, Rails analogy). Moves to
-  `/PRODUCT.md`. The Maestro already has `PRODUCT.md` in its Forge
+  `/PRODUCT.md`. The agent already has `PRODUCT.md` in its Forge
   context; duplicating is waste.
 - Signed-by lines, changelogs, sprint notes.
 - Internal refactor plans, TODOs, aspirational roadmap items.
@@ -233,14 +233,14 @@ They live in sibling files or get cut entirely.
 
 Fenced YAML block inside the body, so it is invisible to platforms that
 don't know about it, but trivially parseable by our B2.5 validator and
-by the Maestro's "read this fence" heuristic.
+by the the agent's "read this fence" heuristic.
 
 ```yaml
 # HuGR-specific metadata — not part of the Anthropic Agent Skills spec.
 # Placed in the body so it does not pollute frontmatter. Validated by
 # engine/audit/skill_contract.py.
 hugr_skill_version: "1.0.0"       # semver of THIS skill's contract
-spec_compat: ">=1.0.0,<2.0.0"     # Maestro versions that speak this
+spec_compat: ">=1.0.0,<2.0.0"     # agent versions that speak this
 kind: "framework-scaffold"         # enum: framework-scaffold | library-adapter | workflow
 domains: ["backend", "python", "fastapi", "web-api"]
 entry_tools:                        # Tier-1 MCP tools — always available
@@ -290,7 +290,7 @@ prod). Target the midpoint, hard-cap the ceiling.
 
 ---
 
-## 5. Triggering semantics — how the Maestro decides to load
+## 5. Triggering semantics — how the agent decides to load
 
 ### 5.1 Platform behaviour (factual)
 
@@ -318,12 +318,12 @@ Anthropic's own description-quality rubric (best-practices page, verbatim
    concrete, ungeneric.
 3. **Name 5–10 concrete trigger substrings.** Fine-grained examples from
    the `xlsx` skill: *"the user references a spreadsheet file by name or
-   path — even casually (like 'the xlsx in my downloads')"*. The Maestro
+   path — even casually (like 'the xlsx in my downloads')"*. The agent
    does fuzzy matching; give it surface area.
 4. **Name concrete anti-triggers with "Do NOT" in caps.** `docx`
    example: *"Do NOT use for PDFs, spreadsheets, Google Docs, or general
    coding tasks unrelated to document generation"*. Without these, the
-   Maestro over-fires.
+   agent over-fires.
 5. **≤ 1024 chars total.** Hard limit.
 6. **No XML tags** (hard limit; the system prompt wraps the description
    in tags and nested tags break parsing).
@@ -353,7 +353,7 @@ Anthropic's own description-quality rubric (best-practices page, verbatim
 
 ### 5.4 What the description *cannot* do
 
-- It cannot reference files (the Maestro hasn't loaded them yet).
+- It cannot reference files (the agent hasn't loaded them yet).
 - It cannot enumerate the 173 tools (would blow 1024 chars in one go).
 - It cannot carry instructions — those go in body. The description's
   only job is **"should I read the body?"**.
@@ -364,9 +364,9 @@ Anthropic's own description-quality rubric (best-practices page, verbatim
 
 ### 6.1 What we need
 
-The Maestro's canonical session for SKILL-001 walks six phases
+The the agent's canonical session for SKILL-001 walks six phases
 (orient → clarify → scaffold → compose → business → audit). Human
-reviewers want to see the phases; the Maestro wants a machine-readable
+reviewers want to see the phases; the agent wants a machine-readable
 list so it can stay on rails.
 
 ### 6.2 Two-surface encoding (belt + suspenders)
@@ -390,7 +390,7 @@ LLM:
 >    repo. Entry tool: `fastapi_meta_home`. Reads the repo root +
 >    catalog, returns a situation brief.
 > 2. **Clarify.** Resolve ambiguity by short, cheap questions — never
->    more than 3. Entry tool: none (Maestro uses its own reasoning).
+>    more than 3. Entry tool: none (agent uses its own reasoning).
 > 3. **Scaffold.** Lay down the canonical project tree. Entry tool:
 >    `fastapi_meta_scaffold`.
 > 4. **Compose.** Wire tier-2 (slice) and tier-3 (primitive) pieces to
@@ -421,7 +421,7 @@ body budget 3×, and Anthropic's tool-search infrastructure exists
 precisely to avoid that (Tool Search, Nov 2025, cites the 30–50 tool
 degradation threshold —
 <https://docs.claude.com/en/docs/agents-and-tools/tool-use/tool-search-tool>).
-The SKILL.md lists only the **tier-1 meta tools** the Maestro needs
+The SKILL.md lists only the **tier-1 meta tools** the agent needs
 before it has any business knowing the rest exist. All other tools are
 discovered via `fastapi_meta_search`, whose whole reason for existing is
 JIT tool discovery.
@@ -450,8 +450,8 @@ via `ToolSearch`). Cited in our `TOOL_UX_ANTHROPIC.md` §4.
 ### 7.3 When the Tier-1 list changes
 
 Adding a tier-1 tool is a **minor version bump** (§9). Removing one is a
-**major version bump**. Test: if removing this tool breaks the Maestro's
-ability to recover via search, it's tier-1 and must stay. If the Maestro
+**major version bump**. Test: if removing this tool breaks the the agent's
+ability to recover via search, it's tier-1 and must stay. If the agent
 can discover it itself, it's tier-2 and doesn't belong in SKILL.md.
 
 ---
@@ -486,21 +486,21 @@ Three examples, one per dominant intent shape:
   the answer. Demonstrates the Clarify phase. Compressed: ~400 tokens.
 
 Each transcript is framed as a tool-call trace (not narrative prose),
-because the Maestro's few-shot pattern matching is strongest on the
+because the the agent's few-shot pattern matching is strongest on the
 exact tool-call shape it will itself emit. Precedent: the Anthropic
 best-practices page's "effective examples" section explicitly prefers
 trace-shape over prose.
 
 ### 8.3 What makes transcripts load-bearing
 
-- **Every tool call names its arguments** — the Maestro copies the
+- **Every tool call names its arguments** — the agent copies the
   argument shape, not just the tool name.
 - **Every clarify question lists the exact 2–3 answer branches.** No
   open-ended questions.
 - **Every phase transition is marked** (`→ scaffold`, `→ compose`).
 - **Failure modes shown once.** Example B includes a deliberate
   `describe` call that reveals an invariant conflict, followed by the
-  Maestro backtracking. One explicit "recover" trace is worth a
+  agent backtracking. One explicit "recover" trace is worth a
   paragraph of prose.
 
 ---
@@ -513,15 +513,15 @@ trace-shape over prose.
 
 - **MAJOR** — breaking body-schema or frontmatter changes (tier-1 tool
   removed, phase removed/renamed, description-semantics changed). The
-  Maestro must be re-tested.
+  agent must be re-tested.
 - **MINOR** — additive (new tier-1 tool, new phase, new anti-pattern,
   new reference file).
 - **PATCH** — wording, typos, clarifications inside an existing section.
 
 ### 9.2 `spec_compat` range
 
-`spec_compat: ">=1.0.0,<2.0.0"` declares which Maestro versions can
-speak this contract. Maestro refuses to load skills whose `spec_compat`
+`spec_compat: ">=1.0.0,<2.0.0"` declares which agent versions can
+speak this contract. agent refuses to load skills whose `spec_compat`
 excludes its own version; soft-fail prints an actionable error.
 
 ### 9.3 Relationship with package semver
@@ -534,7 +534,7 @@ to the specific git commit for audit.
 ### 9.4 Migration between versions
 
 When bumping MAJOR, ship `MIGRATION.md` as a sibling reference file
-(one-level-deep link from SKILL.md). The Maestro sees it only when the
+(one-level-deep link from SKILL.md). The agent sees it only when the
 old version is detected. Precedent: Anthropic's `claude-api` skill
 handles the same problem at runtime (`/claude-api migrate`).
 
@@ -546,7 +546,7 @@ handles the same problem at runtime (`/claude-api migrate`).
 
 | File | Role | Audience | Size | Load timing |
 |---|---|---|---|---|
-| `SKILL.md` | Contract — what the skill is, when to load, how to drive. | Maestro system prompt. | ~3 k tokens. | Metadata always; body on trigger. |
+| `SKILL.md` | Contract — what the skill is, when to load, how to drive. | agent system prompt. | ~3 k tokens. | Metadata always; body on trigger. |
 | `engine/index/catalog.json` | Inventory — every tool, primitive, recipe, with schema + searchable fields. | `fastapi_meta_search` tool. | ~358 KB, ~90 k tokens if raw. | Never into context; tool reads disk. |
 
 **SKILL.md is the contract; catalog.json is the inventory.** The
@@ -557,7 +557,7 @@ every time we add a primitive.
 ### 10.2 The binding
 
 SKILL.md names `catalog_path` in its fenced YAML. The six tier-1 meta
-tools (`fastapi_meta_*`) all read that path. Maestro never reads the
+tools (`fastapi_meta_*`) all read that path. agent never reads the
 file directly. If the path is wrong, the audit tool catches it (B2.5
 rule: "catalog_path file exists and parses as JSON with the expected
 top-level keys: schema_version, verbs, domains, tools, primitives,
@@ -580,13 +580,13 @@ practices "Avoid" section + our own TOOL_UX_ANTHROPIC.md §Anti-patterns.
 1. **No test counts, no benchmark scores.** These belong in
    `STATUS.md`. They change daily; SKILL.md is a contract.
 2. **No install / CI instructions.** `README.md` / `CONTRIBUTING.md`
-   territory. The Maestro doesn't install things.
+   territory. The agent doesn't install things.
 3. **No internal refactor notes** ("Phase 4 complete", "§A8 binds us
    to…"). Reader is an LLM; sprint jargon is noise.
 4. **No per-folder file counts** ("38 infrastructure tools, 15 auth
-   tools…"). The Maestro discovers via `fastapi_meta_search`; static
+   tools…"). The agent discovers via `fastapi_meta_search`; static
    numbers drift instantly.
-5. **No duplication of PRODUCT.md.** The Maestro already has PRODUCT.md
+5. **No duplication of PRODUCT.md.** The agent already has PRODUCT.md
    in its Forge context; duplicating wastes the 5 k-token budget on
    information the agent already has.
 6. **No first-person voice** ("You can use this to…"). Anthropic best-
@@ -619,7 +619,7 @@ Turns a plain-English backend spec into a running, tested, production-grade
 FastAPI service. Emits idiomatic code that imports from a curated library of
 122 framework-free primitives (the "venous system"), so generated output
 survives hand-editing. Ships 173 MCP tools behind seven tier-1 meta tools
-and one tree dispatcher — the Maestro drives the skill exclusively through
+and one tree dispatcher — the agent drives the skill exclusively through
 those, never by listing the full catalog.
 
 ## When to use
@@ -722,7 +722,7 @@ All other tools (~165) are discovered on demand via
 
 ## Reference files
 <!-- ~150 tok -->
-- `PHASES.md` — long-form playbook per phase (only when Maestro gets stuck).
+- `PHASES.md` — long-form playbook per phase (only when agent gets stuck).
 - `CATALOG_SCHEMA.md` — structure of `catalog.json` (only when a `search`
   result shape is unclear).
 - `PRIMITIVES_GUIDE.md` — how to compose primitives directly.
@@ -826,7 +826,7 @@ SKILL.md surface.
 **HuGR internal.**
 - `/Users/gustavoschneiter/Documents/HuGR/HuGR_Arsenal/docs/research/TOOL_UX_ANTHROPIC.md` — prior research; §4 (Claude Code as reference impl), §6 (MCP system-prompt injection), §Anti-patterns.
 - `/Users/gustavoschneiter/Documents/HuGR/HuGR_Arsenal/PRODUCT.md` — three-layer architecture; §6 (design invariants).
-- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Arsenal/skills/SKILL-001-fastapi-production/SKILL.md` — current file (written for humans; this doc supersedes it for the Maestro contract).
+- `/Users/gustavoschneiter/Documents/HuGR/HuGR_Arsenal/skills/SKILL-001-fastapi-production/SKILL.md` — current file (written for humans; this doc supersedes it for the agent contract).
 - `/Users/gustavoschneiter/Documents/HuGR/HuGR_Arsenal/skills/SKILL-001-fastapi-production/engine/index/catalog.json` — 358 KB inventory, loaded via meta tools not SKILL.md.
 
 ---

@@ -1,4 +1,4 @@
-# Maestro session — 15-bi-export-service
+# agent session — 15-bi-export-service
 
 Plan-level transcript for `mid/10_bi_export_service.md`.
 

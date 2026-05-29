@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       adapter:
-        description: "Maestro adapter"
+        description: "Agent adapter"
         required: true
         default: "stub"
         type: choice
@@ -43,7 +43,7 @@ jobs:
         if: ${{ github.event_name == 'schedule' || inputs.adapter == 'stub' }}
         run: PYTHONPATH=. python -m engine.bench.runner --adapter stub --out benchmarks/latest_score.json
 
-      - name: Run benchmark (Claude Maestro)
+      - name: Run benchmark (Claude agent)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.adapter == 'claude' }}
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

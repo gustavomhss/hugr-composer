@@ -1,4 +1,4 @@
-# Maestro session — 14-workflow-orchestrator
+# agent session — 14-workflow-orchestrator
 
 Plan-level transcript for `mid/09_workflow_orchestrator.md`.
 

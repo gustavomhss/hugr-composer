@@ -1,4 +1,4 @@
-# Maestro session — 11-mobile-backend
+# agent session — 11-mobile-backend
 
 Plan-level transcript for `mid/06_mobile_backend.md`.
 

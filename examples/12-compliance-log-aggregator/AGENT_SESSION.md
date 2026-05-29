@@ -1,4 +1,4 @@
-# Maestro session — 12-compliance-log-aggregator
+# agent session — 12-compliance-log-aggregator
 
 Plan-level transcript for `mid/07_compliance_log_aggregator.md`.
 

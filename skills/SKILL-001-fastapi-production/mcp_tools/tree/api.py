@@ -1,9 +1,10 @@
 """`fastapi_api` — the api-domain tree dispatcher.
 
-ONE MCP tool that routes to 7 slice tool(s) + 17 primitive(s) under the `api` domain. The Claude Maestro chooses granularity by `action`.
+ONE MCP tool that routes to 7 slice tool(s) + 17 primitive(s) under the `api` domain. The Claude agent chooses granularity by `action`.
 
 See `mcp_tools/tree/auth.py` — the canonical POC template this file mirrors.
 """
+
 from __future__ import annotations
 
 import importlib
@@ -22,13 +23,41 @@ ADAPTERS_FASTAPI = SKILL_ROOT / "core" / "venous" / "_adapters" / "fastapi"
 # ---------------------------------------------------------------------------
 
 SLICES: dict[str, dict[str, Any]] = {
-    "add_api_deprecation":       {"mod": "add_api_deprecation",       "pkg": "adapt.extend.api_design", "desc": "Add endpoint lifecycle management with RFC 8594 Sunset headers, usage tracking, and @depreca..."},
-    "add_api_versioning":        {"mod": "add_api_versioning",        "pkg": "adapt.extend.api_design", "desc": "Add URL-based API versioning (/api/v1, /api/v2) with deprecation headers"},
-    "add_batch_endpoint":        {"mod": "add_batch_endpoint",        "pkg": "adapt.extend.api_design", "desc": "Add a generic batch request endpoint that fans out to multiple sub-requests"},
-    "add_cqrs":                  {"mod": "add_cqrs",                  "pkg": "adapt.extend.api_design", "desc": "Add a production-grade CQRS layer with CommandBus, QueryBus, read-replica session routing, a..."},
-    "add_graphql":               {"mod": "add_graphql",               "pkg": "adapt.extend.api_design", "desc": "Add GraphQL endpoint (Strawberry) alongside the existing REST API"},
-    "add_graphql_subscriptions": {"mod": "add_graphql_subscriptions", "pkg": "adapt.extend.api_design", "desc": "Add WebSocket GraphQL subscriptions (graphql-ws protocol) to a FastAPI project, extending th..."},
-    "add_long_running_task":     {"mod": "add_long_running_task",     "pkg": "adapt.extend.api_design", "desc": "Copy WorkflowRun + DurableTimer primitives + FastAPI WorkflowAdapter into the project and wi..."},
+    "add_api_deprecation": {
+        "mod": "add_api_deprecation",
+        "pkg": "adapt.extend.api_design",
+        "desc": "Add endpoint lifecycle management with RFC 8594 Sunset headers, usage tracking, and @depreca...",
+    },
+    "add_api_versioning": {
+        "mod": "add_api_versioning",
+        "pkg": "adapt.extend.api_design",
+        "desc": "Add URL-based API versioning (/api/v1, /api/v2) with deprecation headers",
+    },
+    "add_batch_endpoint": {
+        "mod": "add_batch_endpoint",
+        "pkg": "adapt.extend.api_design",
+        "desc": "Add a generic batch request endpoint that fans out to multiple sub-requests",
+    },
+    "add_cqrs": {
+        "mod": "add_cqrs",
+        "pkg": "adapt.extend.api_design",
+        "desc": "Add a production-grade CQRS layer with CommandBus, QueryBus, read-replica session routing, a...",
+    },
+    "add_graphql": {
+        "mod": "add_graphql",
+        "pkg": "adapt.extend.api_design",
+        "desc": "Add GraphQL endpoint (Strawberry) alongside the existing REST API",
+    },
+    "add_graphql_subscriptions": {
+        "mod": "add_graphql_subscriptions",
+        "pkg": "adapt.extend.api_design",
+        "desc": "Add WebSocket GraphQL subscriptions (graphql-ws protocol) to a FastAPI project, extending th...",
+    },
+    "add_long_running_task": {
+        "mod": "add_long_running_task",
+        "pkg": "adapt.extend.api_design",
+        "desc": "Copy WorkflowRun + DurableTimer primitives + FastAPI WorkflowAdapter into the project and wi...",
+    },
 }
 
 PRIMITIVES: dict[str, str] = {
@@ -66,6 +95,7 @@ BUNDLE_SLICES: tuple[str, ...] = (
 # Shared envelope (same shape as tier-1 meta tools)
 # ---------------------------------------------------------------------------
 
+
 def _envelope(*, ok: bool, what: str, result: Any, next_steps: list[str], t0: float) -> dict:
     return {
         "ok": ok,
@@ -80,6 +110,7 @@ def _envelope(*, ok: bool, what: str, result: Any, next_steps: list[str], t0: fl
 # Slice routing
 # ---------------------------------------------------------------------------
 
+
 def _call_slice(slice_name: str, **kwargs) -> dict:
     """Route to the underlying `<pkg>.<mod>` tool.
 
@@ -92,8 +123,7 @@ def _call_slice(slice_name: str, **kwargs) -> dict:
     entry = getattr(mod, meta["mod"], None)
     if entry is None or not callable(entry):
         raise RuntimeError(
-            f"slice {slice_name!r}: entry function {meta['mod']!r} "
-            f"not found in {mod_name}"
+            f"slice {slice_name!r}: entry function {meta['mod']!r} not found in {mod_name}"
         )
     return entry(**kwargs)
 
@@ -101,6 +131,7 @@ def _call_slice(slice_name: str, **kwargs) -> dict:
 # ---------------------------------------------------------------------------
 # Primitive routing
 # ---------------------------------------------------------------------------
+
 
 def _copy_primitive(name: str, output_dir: str) -> dict:
     """Copy core/venous/api/<Name>/ into <output_dir>/app/core/venous/api/<Name>/.
@@ -111,8 +142,7 @@ def _copy_primitive(name: str, output_dir: str) -> dict:
     """
     if name not in PRIMITIVES:
         raise ValueError(
-            f"unknown primitive {name!r} in domain api. "
-            f"Available: {sorted(PRIMITIVES)}"
+            f"unknown primitive {name!r} in domain api. Available: {sorted(PRIMITIVES)}"
         )
     src = VENOUS_DIR / name
     if not src.is_dir():
@@ -121,25 +151,23 @@ def _copy_primitive(name: str, output_dir: str) -> dict:
     if target.exists():
         shutil.rmtree(target)
     shutil.copytree(
-        src, target,
+        src,
+        target,
         ignore=shutil.ignore_patterns(
-            "__pycache__", "_t0_report.json", "_evidence", "*.pyc",
+            "__pycache__",
+            "_t0_report.json",
+            "_evidence",
+            "*.pyc",
         ),
     )
-    files_created = sorted(
-        str(p.relative_to(output_dir)) for p in target.rglob("*") if p.is_file()
-    )
+    files_created = sorted(str(p.relative_to(output_dir)) for p in target.rglob("*") if p.is_file())
     adapter_name = f"{name}Adapter.py"
     adapter_src = ADAPTERS_FASTAPI / adapter_name
     if adapter_src.exists():
-        adapter_target = (
-            Path(output_dir) / "app" / "core" / "venous" / "_adapters" / "fastapi"
-        )
+        adapter_target = Path(output_dir) / "app" / "core" / "venous" / "_adapters" / "fastapi"
         adapter_target.mkdir(parents=True, exist_ok=True)
         shutil.copy(adapter_src, adapter_target / adapter_name)
-        files_created.append(
-            str((adapter_target / adapter_name).relative_to(output_dir))
-        )
+        files_created.append(str((adapter_target / adapter_name).relative_to(output_dir)))
         test_src = ADAPTERS_FASTAPI / f"test_{adapter_name}"
         if test_src.exists():
             shutil.copy(test_src, adapter_target / f"test_{adapter_name}")
@@ -189,23 +217,21 @@ def fastapi_api(action: str, params: dict | None = None) -> dict:
                     "required_params": {"output_dir": "str"},
                 },
                 "slices": {
-                    name: {"description": meta["desc"]}
-                    for name, meta in sorted(SLICES.items())
+                    name: {"description": meta["desc"]} for name, meta in sorted(SLICES.items())
                 },
                 "primitives": {
-                    name: {"purpose": purpose}
-                    for name, purpose in sorted(PRIMITIVES.items())
+                    name: {"purpose": purpose} for name, purpose in sorted(PRIMITIVES.items())
                 },
                 "usage_examples": [
                     "fastapi_api(action='bundle', params={'output_dir':'/tmp/my-app'})",
                     "fastapi_api(action='add_api_versioning', params={'output_dir':'/tmp/my-app'})",
-                    "fastapi_api(action='primitive', params={'name':'BatchCore','output_dir':'/tmp/my-app'})"
+                    "fastapi_api(action='primitive', params={'name':'BatchCore','output_dir':'/tmp/my-app'})",
                 ],
             },
             next_steps=[
                 "action='bundle' → install everything for a new project.",
                 "action='<slice>' → install one slice for an existing project.",
-                "action='primitive' + name=X → copy one Lego surgically."
+                "action='primitive' + name=X → copy one Lego surgically.",
             ],
             t0=t0,
         )
@@ -214,8 +240,10 @@ def fastapi_api(action: str, params: dict | None = None) -> dict:
         output_dir = params.get("output_dir")
         if not output_dir:
             return _envelope(
-                ok=False, what="bundle requires output_dir",
-                result={}, next_steps=["Pass params={'output_dir':'/path/to/project'}."],
+                ok=False,
+                what="bundle requires output_dir",
+                result={},
+                next_steps=["Pass params={'output_dir':'/path/to/project'}."],
                 t0=t0,
             )
         installed: list[dict] = []
@@ -230,15 +258,16 @@ def fastapi_api(action: str, params: dict | None = None) -> dict:
         return _envelope(
             ok=ok,
             what=f"bundle: {len(installed)}/{len(BUNDLE_SLICES)} slices installed"
-                 + (f"; {len(errors)} failure(s)" if errors else ""),
+            + (f"; {len(errors)} failure(s)" if errors else ""),
             result={"installed": installed, "errors": errors},
             next_steps=(
                 [
                     "Bundle complete. Boot the app and exercise the new endpoints.",
                     "For remaining slices, call action=<slice> individually.",
                     "Call fastapi_meta_audit() to verify the contract.",
-                ] if ok else
-                ["Fix errors above. Retry failing slices individually via action=<slice>."]
+                ]
+                if ok
+                else ["Fix errors above. Retry failing slices individually via action=<slice>."]
             ),
             t0=t0,
         )
@@ -261,7 +290,9 @@ def fastapi_api(action: str, params: dict | None = None) -> dict:
             res = _copy_primitive(name, output_dir)
         except (ValueError, FileNotFoundError) as exc:
             return _envelope(
-                ok=False, what=str(exc), result={},
+                ok=False,
+                what=str(exc),
+                result={},
                 next_steps=["Call fastapi_api(action='list') for valid primitive names."],
                 t0=t0,
             )
@@ -280,7 +311,8 @@ def fastapi_api(action: str, params: dict | None = None) -> dict:
         output_dir = params.get("output_dir")
         if not output_dir:
             return _envelope(
-                ok=False, what=f"slice {action!r} requires output_dir in params",
+                ok=False,
+                what=f"slice {action!r} requires output_dir in params",
                 result={},
                 next_steps=["Pass params={'output_dir':'/path/to/project', ...}."],
                 t0=t0,
@@ -289,7 +321,8 @@ def fastapi_api(action: str, params: dict | None = None) -> dict:
             res = _call_slice(action, **params)
         except Exception as exc:  # noqa: BLE001
             return _envelope(
-                ok=False, what=f"slice {action!r} failed: {exc}",
+                ok=False,
+                what=f"slice {action!r} failed: {exc}",
                 result={},
                 next_steps=[
                     f"Check params for {action!r}. "

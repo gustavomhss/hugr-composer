@@ -158,7 +158,7 @@ This means the §5.1 gate IS NOT actually satisfied at Wave I-1.
 
 ## §12 — Token-count fields in single_shot run_manifest
 
-**LAUNCH.md §2.2 PRODUCT §3 mapping** says token cost is evidenced via `run_manifest.json`. Codex v7 HIGH: the manifest schema (in `external-eval/single_shot_benchmark/_harness/run.py`) has `cost_usd_estimate` but no `prompt_tokens` / `output_tokens` / `total_tokens` field. The §3 claim "Maestro discovers skill via MCP metadata (~100 tokens) + loads SKILL.md (~5k tokens)" cannot be evidenced from the current schema shape.
+**LAUNCH.md §2.2 PRODUCT §3 mapping** says token cost is evidenced via `run_manifest.json`. Codex v7 HIGH: the manifest schema (in `external-eval/single_shot_benchmark/_harness/run.py`) has `cost_usd_estimate` but no `prompt_tokens` / `output_tokens` / `total_tokens` field. The §3 claim "agent discovers skill via MCP metadata (~100 tokens) + loads SKILL.md (~5k tokens)" cannot be evidenced from the current schema shape.
 
 **Milestone to close:** before paid external-eval run — add `tokens` block to `_write_manifest()` capturing per-call provider response usage. Schema-only change.
 

@@ -1,4 +1,4 @@
-# Maestro session — 04-realtime-chat
+# agent session — 04-realtime-chat
 
 Plan-level transcript for `mid/02_realtime_chat.md` (v0.1.0 run, score 100).
 

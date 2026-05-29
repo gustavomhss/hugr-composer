@@ -1,6 +1,6 @@
 # HuGR Arsenal
 
-**Executable knowledge a Maestro LLM invokes to scaffold AND customize
+**Executable knowledge a agent LLM invokes to scaffold AND customize
 production backend apps.** Rails-style 3-layer architecture: macro
 scaffold (skill) + slice generators (tools) + reusable building blocks
 (primitives).
@@ -41,7 +41,7 @@ HuGR_Arsenal/
 ├── CONTRACT.md           # execution rules
 ├── FREEZE.md             # v1.0 scope lock
 ├── GOLIVE.md             # v1.0 execution checklist
-├── INTERFACES.md         # Maestro + Forge contracts
+├── INTERFACES.md         # agent + Forge contracts
 └── skills/
     └── SKILL-001-fastapi-production/
         ├── SKILL.md              # skill manifest (Anthropic Agent Skills format)

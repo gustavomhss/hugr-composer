@@ -24,11 +24,12 @@ result/next_steps/elapsed_ms).
 Scope discipline (load-bearing):
   - Pure INFRASTRUCTURE composition. If caller names a domain primitive
     (Aggregate / Specification / DomainEvent / BoundedContext /
-    AntiCorruptionLayer / ValueObject), refuse and point at Maestro's
+    AntiCorruptionLayer / ValueObject), refuse and point at the agent's
     domain-authoring responsibility. Boundary is §5 of the design doc.
   - No mutation of `app/main.py`. Caller wires the returned `install()`
     call into main.py themselves.
 """
+
 from __future__ import annotations
 
 import ast
@@ -43,24 +44,27 @@ SKILL_ROOT = Path(__file__).resolve().parents[1]
 CATALOG_PATH = SKILL_ROOT / "engine" / "index" / "catalog.json"
 ADAPTERS_DIR = SKILL_ROOT / "core" / "venous" / "_adapters" / "fastapi"
 
-# Domain-shaped primitive names that belong to Maestro's author-it-yourself
+# Domain-shaped primitive names that belong to the agent's author-it-yourself
 # layer, not to infra composition. Compose refuses if any is passed.
-DOMAIN_PRIMITIVE_BLACKLIST: frozenset[str] = frozenset({
-    "Aggregate",
-    "Specification",
-    "DomainEvent",
-    "BoundedContext",
-    "AntiCorruptionLayer",
-    "ValueObject",
-    "CommandBus",
-    "QueryBus",
-    "CommandQuerySeparator",
-})
+DOMAIN_PRIMITIVE_BLACKLIST: frozenset[str] = frozenset(
+    {
+        "Aggregate",
+        "Specification",
+        "DomainEvent",
+        "BoundedContext",
+        "AntiCorruptionLayer",
+        "ValueObject",
+        "CommandBus",
+        "QueryBus",
+        "CommandQuerySeparator",
+    }
+)
 
 
 # ---------------------------------------------------------------------------
 # Envelope (mirrors tier1._envelope — intentional duplication for decoupling)
 # ---------------------------------------------------------------------------
+
 
 def _envelope(*, ok: bool, what: str, result: Any, next_steps: list[str], t0: float) -> dict:
     return {
@@ -111,7 +115,11 @@ def _adapter_index() -> dict[str, frozenset[str]]:
             continue
         prims: set[str] = set()
         for node in ast.walk(tree):
-            if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith("core.venous."):
+            if (
+                isinstance(node, ast.ImportFrom)
+                and node.module
+                and node.module.startswith("core.venous.")
+            ):
                 parts = node.module.split(".")
                 # Module path is core.venous.<ns>.<Name>.<Name>; index 3 is <Name>
                 if len(parts) >= 4 and parts[3] in registered:
@@ -125,8 +133,11 @@ def _adapter_index() -> dict[str, frozenset[str]]:
 # Input validation
 # ---------------------------------------------------------------------------
 
+
 def _validate_inputs(
-    primitives: list[str] | None, recipe_id: str | None, catalog: dict,
+    primitives: list[str] | None,
+    recipe_id: str | None,
+    catalog: dict,
 ) -> tuple[list[str], str | None, str | None]:
     """Resolve (primitives, recipe_id) against the catalog.
 
@@ -139,14 +150,19 @@ def _validate_inputs(
     if recipe_id is not None:
         rec = recipes_by_id.get(recipe_id)
         if rec is None:
-            return ([], None, f"unknown recipe_id {recipe_id!r}. Call fastapi_meta_search to find a valid id.")
+            return (
+                [],
+                None,
+                f"unknown recipe_id {recipe_id!r}. Call fastapi_meta_search to find a valid id.",
+            )
         recipe_prims = list(rec["primitives"])
         # If caller ALSO passed primitives, treat as subset-assertion.
         if primitives is not None:
             missing = set(primitives) - set(recipe_prims)
             if missing:
                 return (
-                    [], None,
+                    [],
+                    None,
                     f"recipe {recipe_id} does not contain primitives {sorted(missing)}; "
                     f"recipe's primitives are {sorted(recipe_prims)}.",
                 )
@@ -158,9 +174,9 @@ def _validate_inputs(
     unknown = [p for p in primitives if p not in registered_prim_names]
     if unknown:
         return (
-            [], None,
-            f"unknown primitive name(s): {unknown}. Call fastapi_meta_search "
-            f"to find valid names.",
+            [],
+            None,
+            f"unknown primitive name(s): {unknown}. Call fastapi_meta_search to find valid names.",
         )
     return (list(primitives), None, None)
 
@@ -171,7 +187,7 @@ def _check_domain_blacklist(primitives: list[str]) -> str | None:
         return None
     return (
         f"domain-shaped primitive(s) {hits} cannot be composed via fastapi_meta_compose. "
-        f"These belong to Maestro's domain-authoring layer (Aggregate + Specification + "
+        f"These belong to the agent's domain-authoring layer (Aggregate + Specification + "
         f"DomainEvent). Compose handles INFRASTRUCTURE plumbing only. Author the domain "
         f"rule as an Aggregate method first; then compose plumbing around it."
     )
@@ -180,6 +196,7 @@ def _check_domain_blacklist(primitives: list[str]) -> str | None:
 # ---------------------------------------------------------------------------
 # Mode selection
 # ---------------------------------------------------------------------------
+
 
 def _match_adapter(primitives_set: frozenset[str]) -> str | None:
     """Return the adapter stem (e.g. 'WebhookReceiverAdapter') whose
@@ -235,6 +252,7 @@ def _match_recipe(primitives_set: frozenset[str], catalog: dict) -> dict | None:
 # Emitters — deterministic, style-matched to examples/02-webhook-sink/
 # ---------------------------------------------------------------------------
 
+
 def _primitive_import_line(name: str, catalog_primitives: list[dict]) -> str:
     """`from core.venous.<ns>.<Name>.<Name> import <Name>` form."""
     for p in catalog_primitives:
@@ -246,7 +264,10 @@ def _primitive_import_line(name: str, catalog_primitives: list[dict]) -> str:
 
 
 def _emit_adapter_reuse(
-    adapter_stem: str, primitives: list[str], mount_path: str, slug: str,
+    adapter_stem: str,
+    primitives: list[str],
+    mount_path: str,
+    slug: str,
 ) -> str:
     """Emit a thin wrapper that calls into the shipped adapter."""
     adapter_class = adapter_stem
@@ -272,17 +293,16 @@ def install(app: FastAPI, *, mount_path: str = {mount_path!r}) -> dict:
 
 
 def _emit_recipe_template(
-    recipe: dict, primitives: list[str], mount_path: str, slug: str,
+    recipe: dict,
+    primitives: list[str],
+    mount_path: str,
+    slug: str,
     catalog_primitives: list[dict],
 ) -> str:
     """Emit a vetted-recipe skeleton with the intent prose as module docstring."""
-    imports = "\n".join(
-        _primitive_import_line(p, catalog_primitives) for p in primitives
-    )
+    imports = "\n".join(_primitive_import_line(p, catalog_primitives) for p in primitives)
     wiring_summary = _sanitize_for_comment(recipe.get("intent") or recipe.get("description", ""))
-    instance_lines = "\n    ".join(
-        f"{_snake(p)} = {p}()" for p in primitives
-    )
+    instance_lines = "\n    ".join(f"{_snake(p)} = {p}()" for p in primitives)
     state_lines = ", ".join(f'"{_snake(p)}": {_snake(p)}' for p in primitives)
     return f'''"""{slug} — recipe-backed composition.
 
@@ -322,16 +342,14 @@ def install(app: FastAPI, *, mount_path: str = {mount_path!r}) -> dict:
 
 
 def _emit_ad_hoc(
-    primitives: list[str], mount_path: str, slug: str,
+    primitives: list[str],
+    mount_path: str,
+    slug: str,
     catalog_primitives: list[dict],
 ) -> str:
     """Emit a skeleton with a visible WARNING banner."""
-    imports = "\n".join(
-        _primitive_import_line(p, catalog_primitives) for p in primitives
-    )
-    instance_lines = "\n    ".join(
-        f"{_snake(p)} = {p}()" for p in primitives
-    )
+    imports = "\n".join(_primitive_import_line(p, catalog_primitives) for p in primitives)
+    instance_lines = "\n    ".join(f"{_snake(p)} = {p}()" for p in primitives)
     state_lines = ", ".join(f'"{_snake(p)}": {_snake(p)}' for p in primitives)
     return f'''"""{slug} — ad-hoc composition (UNVERIFIED).
 
@@ -375,6 +393,7 @@ def install(app: FastAPI, *, mount_path: str = {mount_path!r}) -> dict:
 # Utilities
 # ---------------------------------------------------------------------------
 
+
 def _snake(pascal: str) -> str:
     """PascalCase → snake_case."""
     s = re.sub(r"(?<!^)(?=[A-Z])", "_", pascal).lower()
@@ -390,6 +409,7 @@ def _derive_slug(recipe_id: str | None, primitives: list[str], name: str | None)
     Slug must be a valid Python attribute name (starts with letter/underscore,
     contains only [a-z0-9_]) because we emit `app.state.<slug>`.
     """
+
     def _py_safe(s: str) -> str:
         s = re.sub(r"[^a-z0-9_]", "_", s.lower()).strip("_")
         if not s:
@@ -415,6 +435,7 @@ def _sanitize_for_comment(text: str) -> str:
 # Validation
 # ---------------------------------------------------------------------------
 
+
 def _ast_validate(source: str) -> tuple[bool, str]:
     try:
         ast.parse(source)
@@ -438,7 +459,7 @@ MCP_TOOL = {
         "  mode=ad_hoc          — no match; emits a WARNING-banner skeleton\n"
         "Scope is INFRASTRUCTURE plumbing only; refuses domain-shaped primitives "
         "(Aggregate, Specification, DomainEvent, …) — those are authored by "
-        "Maestro as separate domain code. Use AFTER fastapi_meta_search finds "
+        "agent as separate domain code. Use AFTER fastapi_meta_search finds "
         "the primitives you need."
     ),
     "tags": ["meta", "compose"],
@@ -465,7 +486,9 @@ def fastapi_meta_compose(
     resolved_prims, resolved_recipe, err = _validate_inputs(primitives, recipe_id, catalog)
     if err is not None:
         return _envelope(
-            ok=False, what=err, result={},
+            ok=False,
+            what=err,
+            result={},
             next_steps=[
                 "fastapi_meta_search(query='<what you need>') to find valid names.",
                 "fastapi_meta_describe(name='<candidate>') to see the schema.",
@@ -477,9 +500,11 @@ def fastapi_meta_compose(
     err = _check_domain_blacklist(resolved_prims)
     if err is not None:
         return _envelope(
-            ok=False, what=err, result={},
+            ok=False,
+            what=err,
+            result={},
             next_steps=[
-                "Author your Aggregate + Specification first (Maestro responsibility).",
+                "Author your Aggregate + Specification first (agent responsibility).",
                 "Then call fastapi_meta_compose with the INFRASTRUCTURE primitives only.",
             ],
             t0=t0,
@@ -509,7 +534,7 @@ def fastapi_meta_compose(
     if adapter_stem is None and not recipe_id:
         # 4a. Tool delegation — if an indexed tool already emits exactly
         # this primitive set, don't duplicate its work. Return early with a
-        # pointer so the Maestro can call that tool (which has tests,
+        # pointer so the agent can call that tool (which has tests,
         # MCP_TOOL metadata, and a stable entry signature). Only consulted
         # when no adapter matches; adapter is strictly better when both do.
         matching_tool = _match_tool(prim_set, catalog)
@@ -551,7 +576,11 @@ def fastapi_meta_compose(
         if recipe is not None:
             mode = "recipe_template"
             source = _emit_recipe_template(
-                recipe, resolved_prims, mount_path, slug, catalog["primitives"],
+                recipe,
+                resolved_prims,
+                mount_path,
+                slug,
+                catalog["primitives"],
             )
             recipe_used = recipe["id"]
             wiring_summary = _sanitize_for_comment(
@@ -560,7 +589,10 @@ def fastapi_meta_compose(
         else:
             mode = "ad_hoc"
             source = _emit_ad_hoc(
-                resolved_prims, mount_path, slug, catalog["primitives"],
+                resolved_prims,
+                mount_path,
+                slug,
+                catalog["primitives"],
             )
             recipe_used = None
             wiring_summary = f"Ad-hoc composition of {', '.join(resolved_prims)} (unverified)."
@@ -572,16 +604,18 @@ def fastapi_meta_compose(
         "ast_error": ast_err if not ok_ast else "",
         "primitives_resolved": True,
         "mode_quality": (
-            "HIGH" if mode == "adapter_reuse" else
-            "MEDIUM" if mode == "recipe_template" else
-            "LOW"
+            "HIGH" if mode == "adapter_reuse" else "MEDIUM" if mode == "recipe_template" else "LOW"
         ),
     }
     if not ok_ast:
         return _envelope(
             ok=False,
             what=f"emitted source has syntax error: {ast_err}",
-            result={"mode": mode, "composition_source": source, "validation_report": validation_report},
+            result={
+                "mode": mode,
+                "composition_source": source,
+                "validation_report": validation_report,
+            },
             next_steps=[
                 "This is a bug in fastapi_meta_compose — file an issue with the primitives list.",
             ],

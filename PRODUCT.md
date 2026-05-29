@@ -10,12 +10,12 @@
 ## 1. What HuGR Arsenal IS, in one paragraph
 
 HuGR Arsenal is a **library of executable knowledge** that an LLM agent
-(we call it the **Maestro**) can invoke to scaffold AND customize
-production backend applications. The kit is structured like Ruby on Rails
-— a macro scaffold, a catalogue of slice generators, and a curated library
-of reusable building blocks the generated code references by import rather
-than by copy-paste. The Maestro uses the kit to turn plain-English product
-requirements into running, tested, production-grade code.
+can invoke to scaffold AND customize production backend applications.
+The kit is structured like Ruby on Rails — a macro scaffold, a catalogue
+of slice generators, and a curated library of reusable building blocks
+the generated code references by import rather than by copy-paste. The
+agent uses the kit to turn plain-English product requirements into
+running, tested, production-grade code.
 
 ---
 
@@ -27,7 +27,7 @@ Borrowing Rails terminology because it maps precisely:
 |---|---|---|---|
 | **Skill** | `rails new` | `SKILL-001-fastapi-production` | A macro scaffold that lays down a canonical project tree. One skill = one framework × one maturity (e.g. FastAPI production, Next.js production, Django lightweight). |
 | **Tools** | `rails g model/controller/migration` | `adapt/extend/add_*.py` (and peers) | Slice generators. Each tool mutates a scaffolded project to add ONE capability (`add_stripe_webhook`, `add_rbac`, `add_soft_delete`). Tools are the "80% common path". |
-| **Primitives** | `ActiveRecord::Base`, `ActiveSupport`, `ActionController` | `core/venous/<namespace>/<Name>/` | Reusable building blocks. Imported by generated code (Rails style), composed by the Maestro when tools don't cover a nuance. Primitives are the "20% customization headroom". |
+| **Primitives** | `ActiveRecord::Base`, `ActiveSupport`, `ActionController` | `core/venous/<namespace>/<Name>/` | Reusable building blocks. Imported by generated code (Rails style), composed by the agent when tools don't cover a nuance. Primitives are the "20% customization headroom". |
 
 **Crucial Rails lesson** (validated by research): generated code is a
 SEED, not a cage. `rails g model User` emits five lines; the power lives
@@ -39,21 +39,24 @@ primitives.
 
 ## 3. Who uses it, in what mode
 
-**Primary user: the Maestro LLM agent.**
+**Primary user: the LLM agent invoking the MCP server.** This is the
+user's own first-party agent — Claude Code, Cursor, Cline, Zed, or
+any compliant MCP client. HuGR does NOT ship a custom harness; the
+user brings their agent + their model auth.
 
 - Discovers the skill via Claude Skills / MCP metadata (~100 tokens).
-- On user intent (e.g. "build SaaS with auth + Stripe"), Maestro loads
-  `SKILL.md` (~5k tokens), picks tools, and executes.
-- When a tool doesn't fit exactly, Maestro **composes primitives**
+- On user intent (e.g. "build SaaS with auth + Stripe"), the agent
+  loads `SKILL.md` (~5k tokens), picks tools, and executes.
+- When a tool doesn't fit exactly, the agent **composes primitives**
   directly into the generated code using an indexed, searchable
   catalogue.
-- Maestro NEVER hand-writes what a primitive already provides —
+- The agent NEVER hand-writes what a primitive already provides —
   primitives are load-bearing for generated output.
 
 **Secondary user: the human developer.**
 
 - Drops into the project post-scaffold, edits, tests, ships.
-- Reads the same docs the Maestro reads (primitive reference, tool
+- Reads the same docs the agent reads (primitive reference, tool
   reference, composition recipes).
 - Can run the MCP server locally against Claude Desktop / Cursor / Zed
   for interactive skill invocation.
@@ -64,13 +67,13 @@ primitives.
 
 A single measurable outcome:
 
-> **The Maestro, given a plain-English product spec, produces a running,
+> **The agent, given a plain-English product spec, produces a running,
 > tested, production-grade backend in a single session — passing all 10
 > quality gates (T0-T9) with no human-authored code required.**
 
 Concrete benchmark harness (Phase 3 of roadmap): 20 realistic specs (SaaS
 auth, Stripe integration, multi-tenant admin, realtime chat, LLM agent
-backend, etc.). Score: **% of specs where Maestro ships green in one
+backend, etc.). Score: **% of specs where the agent ships green in one
 session**.
 
 Target: **≥ 70% on the canonical benchmark** before declaring the kit
@@ -81,7 +84,7 @@ Target: **≥ 70% on the canonical benchmark** before declaring the kit
 ## 5. Non-goals (explicit boundaries)
 
 - **NOT a general-purpose agent framework.** No planning, no memory, no
-  multi-agent orchestration. Maestro brings the brain; we bring the
+  multi-agent orchestration. The agent brings the brain; we bring the
   hands.
 - **NOT a LangChain/CrewAI competitor.** We are ONE tier above: a skill
   the agent invokes, not an agent runtime.
@@ -110,7 +113,7 @@ Target: **≥ 70% on the canonical benchmark** before declaring the kit
 5. **Every tool has an MCP metadata block.** Auto-discovery by the MCP
    server is mandatory — no manual registration drift.
 6. **A semantic registry indexes every primitive.**
-   `engine/primitives_by_concern.yaml` lets the Maestro find the right
+   `engine/primitives_by_concern.yaml` lets the agent find the right
    Lego piece in one query.
 7. **The SKILL.md manifest is the single source of truth for counts and
    capabilities.** Docs drift = audit bug.
@@ -125,7 +128,7 @@ Target: **≥ 70% on the canonical benchmark** before declaring the kit
 | Yeoman / scaffolding CLIs | Emits boilerplate then walks away | Primitives + composition recipes → customization headroom without regeneration |
 | LangChain / CrewAI | General-purpose agent frameworks | We are ONE skill invocable BY those agents; not a runtime |
 | Anthropic reference skills | Domain tasks (PDF, Excel) | We target full-stack production backends |
-| Rails / Django | Human-first frameworks | Maestro-first: every primitive designed for LLM composition (registry, compose-with recipes, structured contracts) |
+| Rails / Django | Human-first frameworks | Agent-first: every primitive designed for LLM composition (registry, compose-with recipes, structured contracts) |
 
 ---
 
@@ -136,9 +139,9 @@ To end the terminological confusion that prompted this doc:
 - **Skill** — macro scaffold + metadata. ONE per framework × stack. Right
   now we have SKILL-001 (FastAPI prod).
 - **Tool** — atomic slice generator. `add_*.py` under `adapt/extend/`.
-  Maestro-invocable via MCP.
+  Agent-invocable via MCP.
 - **Primitive** — reusable class/function in `core/venous/<ns>/<Name>/`.
-  IMPORTABLE by generated code AND composable by the Maestro.
+  IMPORTABLE by generated code AND composable by the agent.
 - **Generator** — (legacy term, used in older docs) = tool. Prefer
   "tool" going forward.
 - **Adapter** — a kind of primitive that wraps a third-party SDK
@@ -148,10 +151,13 @@ To end the terminological confusion that prompted this doc:
   expose.
 - **Recipe** — a `.md` section showing 1-3 primitives composed into a
   concrete pattern. Lives in the primitive's own `.md`.
-- **Maestro** — the LLM agent that invokes the skill. Not our code;
-  belongs to Anthropic / OpenAI / etc.
+- **Agent** — the LLM agent that invokes the skill via MCP. Not our
+  code; belongs to Anthropic / OpenAI / the user's choice (Claude
+  Code, Cursor, Cline, Zed, etc.). The "Maestro" term used in
+  earlier docs referred to a discontinued custom HuGR harness;
+  superseded by "agent" as of the 2026-05-26 pivot.
 - **Benchmark harness** — the set of plain-English specs we evaluate
-  Maestro-success-rate against. Lives in `benchmarks/`.
+  agent-success-rate against. Lives in `benchmarks/`.
 
 Any claim in any file that doesn't map to one of these terms is drift
 and must be reconciled.

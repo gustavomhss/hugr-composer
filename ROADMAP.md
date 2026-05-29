@@ -52,12 +52,12 @@
 | `/MIGRATION.md` | v0.x → v1.0 breaking changes |
 | `/SECURITY.md` | Disclosure + SLA ladder |
 | `/CHANGELOG.md` | Per-release notes + benchmark history |
-| `/INTERFACES.md` | Maestro + Forge consumer contracts |
+| `/INTERFACES.md` | agent + Forge consumer contracts |
 | `/CONTRIBUTING.md` | Contributor onboarding |
 | `/README.md` | ≤100-line entry with links |
 | `skills/SKILL-001-fastapi-production/INVENTORY.md` | Machine-generated canonical counts |
 | `skills/SKILL-001-fastapi-production/STATUS.md` | Human-readable surface counts |
-| `skills/SKILL-001-fastapi-production/SKILL.md` | Skill contract (Maestro-facing) |
+| `skills/SKILL-001-fastapi-production/SKILL.md` | Skill contract (agent-facing) |
 | `skills/SKILL-001-fastapi-production/engine/promotion/LEDGER.md` | Staged-primitive triage ledger |
 | `docs/decisions/NNNN-*.md` | ADRs (architectural decisions) |
 
@@ -239,7 +239,7 @@ where possible; reviewer-enforced where not).
 |---|---|---|
 | §B3.1 | 20 benchmark specs (5 baseline / 10 mid / 5 adversarial) — `# title` + `## Requirements` + `## Acceptance criteria` + `## Non-requirements` | ✅ |
 | §B3.2 | Scoring rubric implemented + tested | ✅ |
-| §B3.3 | Benchmark runner + stub Maestro + report JSON | ✅ |
+| §B3.3 | Benchmark runner + stub agent + report JSON | ✅ |
 | §B3.4 | Nightly benchmark CI workflow | ✅ |
 | §B3.5 | Baseline score published; plan-level ≥ 90 on 20/20 (currently 100.00) | ✅ |
 | §B3.6 | Code-level harness perfect on covered, ≥25% coverage (currently 100.00 / 20/20) | ✅ (added pre-freeze) |
@@ -250,7 +250,7 @@ where possible; reviewer-enforced where not).
 | ID | What it guards | Machine check? |
 |---|---|---|
 | §B4.1 | `install.sh` + fresh-Docker CI green | ✅ |
-| §B4.2 | `/examples/` populated (≥5 with README + MAESTRO_SESSION + cross-link; currently 20) | ✅ |
+| §B4.2 | `/examples/` populated (≥5 with README + AGENT_SESSION + cross-link; currently 20) | ✅ |
 | §B4.3 | Docs site v1 (top-level + per-tool pages) | ✅ |
 | §B4.4 | CHANGELOG + VERSION semver cite benchmark score | ✅ |
 | §B4.5 | `CONTRIBUTING.md` complete (primitive + tool + recipe + dev setup) | ✅ |
@@ -265,10 +265,10 @@ where possible; reviewer-enforced where not).
 | §B5.2 | Code-level score ≥ 70% (v1.0 ship criterion) | ✅ met (100.00) |
 | §B6.1 | SKILL-002 choice by demand signal | Post-v1.0 (Phase 6) |
 | §B6.2 | ≥ 30 shared primitives across skills | Post-v1.0 (Phase 6) |
-| §B6.3 | Multi-skill Maestro example | Post-v1.0 (Phase 6) |
+| §B6.3 | Multi-skill agent example | Post-v1.0 (Phase 6) |
 | §B7.1 | External PR lands a primitive via gate | Post-v1.0 (Phase 7) |
 | §B7.2 | Public benchmark scoreboard | Post-v1.0 (Phase 7) |
-| §B7.3 | SDK docs for external Maestro authors | Post-v1.0 (Phase 7) |
+| §B7.3 | SDK docs for external agent authors | Post-v1.0 (Phase 7) |
 
 #### §2.2.7 — How §B items become machine rules
 
@@ -320,7 +320,7 @@ bump, must update in SAME commit:
 
 1. `engine/index/schemas.py#DOMAINS` (the authoritative tuple).
 2. This doc's §9.2 domain list.
-3. At least one Maestro-facing tool that uses the new domain slot
+3. At least one agent-facing tool that uses the new domain slot
    (orphan domains are rejected).
 
 **Removing** a namespace OR domain = MAJOR semver bump (v2.0.0+).
@@ -462,7 +462,7 @@ at `/CONTRACT.md` and govern:
   audit, C2 PR discipline (above), C3 quarterly ratification by
   Gustavo, C4 amendment log format, C5 machine-check on every commit,
   C6 phase-gate CI, C7 pre-commit hook sample.
-- **§D — Explicit non-promises:** HuGR does NOT promise Maestro
+- **§D — Explicit non-promises:** HuGR does NOT promise agent
   success rates > 70% (target, not guarantee). Does NOT commit
   SKILL-003/004 timelines. Does NOT forbid experiments (branches
   only). Does NOT replace PRODUCT.md. Does NOT tolerate "temporary"
@@ -488,12 +488,12 @@ at `/CONTRACT.md` and govern:
 
 `engine/index/catalog.json` carries a top-level `stable_hash` field —
 SHA-256 hash of the catalog's deterministic content (sorted keys,
-canonical JSON, no timestamps). Purpose: let Maestro consumers pin a
+canonical JSON, no timestamps). Purpose: let agent consumers pin a
 session to a specific catalog version.
 
 - **Producer (us):** `engine.index.manifest build` re-computes the
   hash; §B2.4 requires idempotence (same disk → same hash).
-- **Consumer (Maestro):** on session open, read `stable_hash`; pin
+- **Consumer (agent):** on session open, read `stable_hash`; pin
   the session's tool catalog to it. If the hash changes during a
   session, prompt the user (or abort — caller's choice).
 - **CHANGELOG cite:** every `[X.Y.Z]` block cites the `stable_hash`
@@ -589,7 +589,7 @@ session to a specific catalog version.
 - **Never write a README.md inside a primitive / adapter directory.**
   The `<Name>.md` is THE doc; more files = noise.
 - **Examples docs:** every `/examples/<NN>-<name>/` has README +
-  MAESTRO_SESSION + cross-link table per §B4.2.
+  AGENT_SESSION + cross-link table per §B4.2.
 - **ADRs:** `docs/decisions/NNNN-<slug>.md` for architectural choices
   (not every PR).
 
@@ -920,8 +920,8 @@ Location: `modules/<category>/<name>/`
 Location: `/examples/<NN>-<name>/` (repo-root, NOT skill-internal)
 
 - [ ] Named `<NN>-<kebab-case-name>` with two-digit NN (01-99).
-- [ ] `README.md` — purpose + maestro prompt summary + file tree.
-- [ ] `MAESTRO_SESSION.md` — the actual prompt + the actual response
+- [ ] `README.md` — purpose + agent prompt summary + file tree.
+- [ ] `AGENT_SESSION.md` — the actual prompt + the actual response
       transcript (one complete turn minimum).
 - [ ] `app/` — working FastAPI project; `python -m app.main` imports
       cleanly.
@@ -950,7 +950,7 @@ across tiers).
       codes, request shapes, concurrency claims, …). Each bullet
       must be verifiable against a running app.
 - [ ] `## Non-requirements` — explicit scope exclusions so the
-      Maestro doesn't over-build. "Out of scope" > "undefined".
+      agent doesn't over-build. "Out of scope" > "undefined".
 - [ ] Tier directory matches the `<tier>` filename component
       (`baseline/`, `mid/`, `adversarial/`).
 - [ ] Spec surfaces in both plan-level and code-level rubrics
@@ -1193,13 +1193,13 @@ wave adds to it.
   - 70%+ code-level benchmark on the second skill's 20-spec corpus.
   - Shared primitives across SKILL-001 and SKILL-002 documented as
     cross-skill registry entries.
-  - Multi-skill Maestro session works (one session, two skills).
+  - Multi-skill agent session works (one session, two skills).
 
 ### §6.5 — Phase 7 — Ecosystem
 
 - Community contributions with T0-T9 extraction gate + Opus audit.
 - Public benchmark scoreboard (per-release, code-level).
-- SDK for Maestro authors (shipping against the skill's MCP surface).
+- SDK for agent authors (shipping against the skill's MCP surface).
 
 ---
 
@@ -1465,7 +1465,7 @@ Preserved + expanded from the old ROADMAP Part 3.
 
 | # | Risk | Mitigation |
 |---|---|---|
-| R1 | **Maestro success ceiling.** If 70% code-level benchmark is unattainable with current LLM capability, the product thesis fails. | De-risked: v1.0 shipping at 100.00. Re-measure per release; if a major LLM regression drops us under 70, we hotfix or yank. |
+| R1 | **agent success ceiling.** If 70% code-level benchmark is unattainable with current LLM capability, the product thesis fails. | De-risked: v1.0 shipping at 100.00. Re-measure per release; if a major LLM regression drops us under 70, we hotfix or yank. |
 | R2 | **Rails-analogy limits.** Rails had 20 years + human-first runtime. HuGR is LLM-first. Some ergonomic expectations won't transfer. | Treat analogy as design lodestar, not contract. Benchmark-driven iteration. |
 | R3 | **Framework churn.** FastAPI / Pydantic / SQLAlchemy breaking releases are real cost. | Pin versions per release; nightly CI against pinned stack; dep-MAJOR bumps require ADR. |
 | R4 | **Integration-discipline drift.** §B1.3 floor (currently 22; 24 Rails-connected) regresses if new tools ignore the rule. | Contract §B1.3 non-regression + §C6 phase-gate CI. |
@@ -1475,7 +1475,7 @@ Preserved + expanded from the old ROADMAP Part 3.
 | R8 | **Dependency supply-chain compromise.** Lazy imports don't fully mitigate if a user installs the SDK. | Pin minor versions in `pyproject.toml`; security-alerts gate releases (§3.11). |
 | R9 | **Single-person bus factor (Gustavo).** All ratifications currently go through one person. | Accept for v1.0-v1.x; delegation protocol is a Phase 7 item. |
 | R10 | **Benchmark overfit.** 100.00 on 20 specs doesn't guarantee 100.00 on spec 21. | Blind benchmark harness (§B3.7) + new specs with every major use-case. |
-| R11 | **Stale stable_hash in consumers.** Maestro sessions pin a hash that a patched release invalidates. | CHANGELOG cites `stable_hash` every release. §2.12 consumer protocol says: abort the session on hash change AND surface the new hash to the user with a pointer to the CHANGELOG entry. PATCH releases that change `stable_hash` MUST document the change explicitly in the `[X.Y.Z]` block (semver §3.7: PATCHes shouldn't surface-change, but bug-fix code edits regenerate the hash even when the tool catalog shape is identical). |
+| R11 | **Stale stable_hash in consumers.** agent sessions pin a hash that a patched release invalidates. | CHANGELOG cites `stable_hash` every release. §2.12 consumer protocol says: abort the session on hash change AND surface the new hash to the user with a pointer to the CHANGELOG entry. PATCH releases that change `stable_hash` MUST document the change explicitly in the `[X.Y.Z]` block (semver §3.7: PATCHes shouldn't surface-change, but bug-fix code edits regenerate the hash even when the tool catalog shape is identical). |
 | R12 | **Wave fatigue.** 118 + 101 = 219 post-v1.0 items is a marathon. | Batch per-wave commits (20/week); accept that "done" for post-v1.0 waves is months not weeks. |
 
 ### §8.3 — Drift-fighting protocol
@@ -1523,12 +1523,12 @@ trends toward zero between ratifications.
 | 72h runbook + rollback | `/POST_RELEASE.md` | ROADMAP.md §5.7/§5.8, LAUNCH.md §4 |
 | v0.x → v1.0 breaking changes | `/MIGRATION.md` | CHANGELOG.md, CONTRIBUTING.md |
 | Security disclosure + SLA | `/SECURITY.md` | ROADMAP.md §3.11, POST_RELEASE.md §3 |
-| Maestro / Forge consumer contracts | `/INTERFACES.md` | PRODUCT.md §2, ROADMAP.md §2.12 |
+| agent / Forge consumer contracts | `/INTERFACES.md` | PRODUCT.md §2, ROADMAP.md §2.12 |
 | Release notes + benchmark history | `/CHANGELOG.md` | ROADMAP.md §3.7, GOLIVE.md §5 |
 | Contributor onboarding | `/CONTRIBUTING.md` | README.md |
 | Machine-generated counts | `/skills/SKILL-001-fastapi-production/INVENTORY.md` | CLAUDE.md, ROADMAP.md §1, STATUS.md, CHANGELOG.md |
 | Human-readable surface counts | `/skills/SKILL-001-fastapi-production/STATUS.md` | README.md |
-| Skill contract (Maestro-facing) | `/skills/SKILL-001-fastapi-production/SKILL.md` | — |
+| Skill contract (agent-facing) | `/skills/SKILL-001-fastapi-production/SKILL.md` | — |
 | Architectural decisions | `/docs/decisions/NNNN-*.md` | ROADMAP.md (specific refs), CONTRACT.md §C |
 | Promotion pipeline ledger | `/skills/SKILL-001-fastapi-production/engine/promotion/LEDGER.md` | ROADMAP.md §6 |
 | This strategy doc | `/ROADMAP.md` (this file) | every doc points here |
@@ -1758,7 +1758,7 @@ none  # staged / quarantined (not registered)
 **Core surface:**
 
 - **Skill:** a framework-specific kit (e.g. SKILL-001-fastapi-production)
-  that plugs into Maestro (consumer) and Forge (host editor). One
+  that plugs into agent (consumer) and Forge (host editor). One
   `SKILL.md` + catalog + primitives + adapters + tools.
 - **Arsenal:** the collection of skills + shared tooling at this repo.
 - **Primitive (motor):** framework-free implementation under
@@ -1792,7 +1792,7 @@ none  # staged / quarantined (not registered)
   generators scaffold whole subsystems, not slices.
 - **Module (package):** `modules/<category>/<name>/` — pre-built
   feature bundle orchestrating multiple tools.
-- **Tier-1 meta tool:** one of the seven always-loaded Maestro tools
+- **Tier-1 meta tool:** one of the seven always-loaded agent tools
   (`fastapi_meta_home/search/describe/scaffold/compose/audit/verify`);
   operates ON the catalog, not IN it.
 - **Tree dispatcher:** one of nine domain-scoped tools

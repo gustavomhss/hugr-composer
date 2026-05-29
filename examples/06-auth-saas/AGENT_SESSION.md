@@ -1,4 +1,4 @@
-# Maestro session — 06-auth-saas
+# agent session — 06-auth-saas
 
 Plan-level transcript for `baseline/02_auth_only_saas.md`.
 

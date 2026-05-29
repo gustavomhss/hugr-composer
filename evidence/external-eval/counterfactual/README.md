@@ -8,7 +8,7 @@ PRODUCT §1 implicit: "cheaper + faster than hand-coded from scratch (with the s
 
 1. **Corpus.** Same 10 blind specs.
 2. **Model.** Same model as `single_shot_benchmark/` (default: Claude Opus 4.7).
-3. **Baseline prompt** (`_harness/baseline_prompt.md`): instructs Maestro to produce the same output shape WITHOUT access to the HuGR MCP server. The model must hand-author every route, test, and middleware from scratch.
+3. **Baseline prompt** (`_harness/baseline_prompt.md`): instructs agent to produce the same output shape WITHOUT access to the HuGR MCP server. The model must hand-author every route, test, and middleware from scratch.
 4. **Runner.** `_harness/run.py` drives 10 runs (10 specs × 1 model × no-HuGR) in parallel with the WITH-HuGR runs; results compared spec-by-spec.
 5. **Grading.** Same 4-check `grade.py` as single_shot_benchmark.
 6. **Deltas:**

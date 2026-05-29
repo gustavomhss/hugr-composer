@@ -1,4 +1,4 @@
-# Maestro session — 18-lockfree-serializable
+# agent session — 18-lockfree-serializable
 
 Plan-level transcript for
 `adversarial/03_conflicting_primitives_lockfree_serializable.md`.

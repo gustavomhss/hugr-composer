@@ -2,7 +2,7 @@
 
 > Mission: close the "last mile" between `fastapi_meta_search` (find
 > primitives) and running code (primitives wired into a FastAPI app). Today
-> Maestro must hand-write the glue — `fastapi_meta_compose` emits it.
+> agent must hand-write the glue — `fastapi_meta_compose` emits it.
 
 ## TLDR (5 bullets)
 
@@ -39,7 +39,7 @@
 5. **Scope is INFRASTRUCTURE plumbing only.** Compose wires
    verify-dedup-audit-retry-ratelimit. It does NOT emit domain rules
    ("cancel < 2h charges fee") — those are Aggregate + Specification
-   authored by Maestro. If the caller passes an Aggregate-shaped primitive
+   authored by agent. If the caller passes an Aggregate-shaped primitive
    (e.g. `Aggregate`, `Specification`, `DomainEvent`), `fastapi_meta_compose`
    refuses with `next_steps = ["Author your Aggregate + Specification; then
    compose the infra plumbing around it."]`. This boundary is load-bearing —
@@ -69,7 +69,7 @@ def fastapi_meta_compose(
   is a deterministic handle that survives rewording. Precedent: Yeoman
   sub-generators are invoked by slug (`yo angular:controller`); Rails
   scaffold by name (`rails g scaffold User`).
-- **`primitives` as escape hatch** — When Maestro already knows it wants
+- **`primitives` as escape hatch** — When agent already knows it wants
   `SignatureVerifier + IdempotentConsumer + TamperEvidentAuditLog` but no
   recipe id is handy, take the list. The tool then reverse-matches against
   `catalog.recipes[*].primitives` to pick the best recipe; on no match,
@@ -136,7 +136,7 @@ Uses the tier-1 envelope (`mcp_tools/tier1.py:43-52`):
 
 ### Why these fields
 
-- `composition_source` — lets Maestro inspect-before-write (token-efficient
+- `composition_source` — lets agent inspect-before-write (token-efficient
   review; precedent: Anthropic Oct 2025 guidance, "tools should let the
   agent see what it got").
 - `wiring_summary` — human-readable 1-liner; the 32 recipes we inspected all
@@ -235,7 +235,7 @@ them in a linear pipeline. Quality flag surfaced in `validation_report`.
       __init__.py                   # created if absent
       <slug>.py                     # THE emitted composition
       test_<slug>.py                # smoke test (adapter_reuse+recipe modes)
-    main.py                         # NOT TOUCHED — Maestro wires the import
+    main.py                         # NOT TOUCHED — agent wires the import
 ```
 
 ### Why this layout
@@ -254,7 +254,7 @@ them in a linear pipeline. Quality flag surfaced in `validation_report`.
 - `main.py` is NEVER edited by compose. Rationale: two-way-merge on
   `main.py` is the #1 source of "silently broke my app" bug reports in
   similar tools (Rails PR#42901 `app/application_controller.rb` wars).
-  Maestro gets a `next_steps` breadcrumb with the exact one-line import.
+  agent gets a `next_steps` breadcrumb with the exact one-line import.
 
 ---
 
@@ -327,7 +327,7 @@ do. Atomic write pattern: write to `<slug>.py.tmp`, fsync, rename.
 ## 8. Integration with existing pipeline
 
 ```
-Maestro                                                    Kit
+agent                                                    Kit
   │                                                         │
   │  user: "build me a webhook endpoint with HMAC + dedup"  │
   │                                                         │
@@ -563,11 +563,11 @@ The `next_steps` returned:
    Today, `fastapi_auth(action='primitive', name=X)` copies. Compose could
    (a) assume prior copy calls and refuse if missing, or (b) auto-copy any
    missing primitives. Recommendation: (a) — keeps responsibilities clear;
-   the error message in §7 points Maestro at the copy step. Alternative
+   the error message in §7 points agent at the copy step. Alternative
    (b) is one-shot-friendly but hides a write in what should be pure
    composition.
 
-4. **Composition id collision across reruns.** If Maestro calls compose
+4. **Composition id collision across reruns.** If agent calls compose
    twice with the same `primitives` but different `mount_path`, do we
    overwrite, emit two files, or refuse? Recommendation: require explicit
    `name=` when two compositions share primitives; default slug is a
@@ -578,7 +578,7 @@ The `next_steps` returned:
 
 5. **Should compose ever edit `app/main.py`?** Design says no; tempting to
    say yes for UX. If we reverse, need a format-preserving Python editor
-   (libcst). Recommendation: defer until telemetry shows Maestro fails to
+   (libcst). Recommendation: defer until telemetry shows agent fails to
    follow the `next_steps` wire-up breadcrumb >30% of the time. Not now.
 
 ---

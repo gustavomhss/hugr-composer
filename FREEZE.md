@@ -12,7 +12,7 @@
 
 ## Principle
 
-The skill is a standalone module that plugs into Maestro (consumer) and
+The skill is a standalone module that plugs into agent (consumer) and
 Forge (host editor). v1.0 is a **working, stabilized, frozen surface** —
 not a feature-complete one. Scope is set by what the skill promises to
 do *today*, not what it could do. Anything not in §1 defers to §2.
@@ -21,9 +21,9 @@ do *today*, not what it could do. Anything not in §1 defers to §2.
 
 ## §1 — IN scope for v1.0.0
 
-### §1.1 — Surface (Maestro-facing)
+### §1.1 — Surface (agent-facing)
 
-Total Maestro-visible tools at freeze: **217**
+Total agent-visible tools at freeze: **217**
 (201 catalog + 7 tier-1 meta + 9 tree dispatchers). Two `extend`
 tools (`add_graphql_subscriptions`, `add_stripe_subscription`) were
 Rails-connected in Wave 1.5 — same tool count, but
@@ -58,7 +58,7 @@ Rails-connected in Wave 1.5 — same tool count, but
   (100 extend + 8 evolve + 8 operate + 6 verify + 1 proactive;
   `adapt/contracts/` carries helpers but no MCP tools).
 - **20 complete examples** at `/examples/` (5 baseline + 10 mid + 5
-  adversarial) with README + MAESTRO_SESSION + working code + tests.
+  adversarial) with README + AGENT_SESSION + working code + tests.
 
 ### §1.2 — Quality gates (all machine-verifiable)
 

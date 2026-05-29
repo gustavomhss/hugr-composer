@@ -1,4 +1,4 @@
-# Maestro session — 03-rate-limited-api
+# agent session — 03-rate-limited-api
 
 Plan-level transcript for `baseline/04_rate_limited_api.md` (v0.1.0 run, score 100).
 

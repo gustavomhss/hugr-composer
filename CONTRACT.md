@@ -84,7 +84,7 @@ for the next 50 violations.
 - **Invariants:** Document is READ-ONLY for normal sessions; amendments
   require explicit ratification line at bottom with new date.
 - **Completeness:** All 9 sections present. Terminology covers all
-  8 terms (skill/tool/primitive/generator/adapter/recipe/Maestro + verb).
+  8 terms (skill/tool/primitive/generator/adapter/recipe/agent + verb).
 - **Quality (SOTA):** Every claim maps to a code location OR a
   ROADMAP.md step; zero "aspirational" phrasing; non-goals §5 explicit.
 
@@ -97,7 +97,7 @@ for the next 50 violations.
 - **Completeness:** 8 phases cover first-commit → ecosystem. Every
   phase has concrete numbered items linkable from this contract.
 - **Quality (SOTA):** Every promise tied to a measurable exit criterion;
-  risks §3 named honestly (Maestro ceiling, framework churn, etc.).
+  risks §3 named honestly (agent ceiling, framework churn, etc.).
 
 #### B0.3 — `CONTRACT.md` (this file) ✅ Done
 
@@ -440,7 +440,7 @@ later phase's `§B*` items registered in `RULES`. There is no separate
 - **Quality (SOTA):** Adapters ship with a module-level docstring
   explaining which primitive(s) they wire and which FastAPI seam
   they attach to (middleware, dependency, route handler, startup
-  hook). Adapters are LIBRARY CODE, not Maestro tools — they
+  hook). Adapters are LIBRARY CODE, not agent tools — they
   intentionally do NOT carry `MCP_TOOL` metadata. Discoverability
   happens at the tool layer (`adapt/extend/*` tools declare
   `imports_adapters` in their `MCP_TOOL`, surfacing adapter use in
@@ -575,7 +575,7 @@ cd skills/SKILL-001-fastapi-production && PYTHONPATH=. \
 #### B2.4 — Index catalog manifest: synced + deterministic
 
 > The catalog (`engine/index/catalog.json`) is the single machine-
-> readable view of every Maestro-visible surface. It MUST reflect
+> readable view of every agent-visible surface. It MUST reflect
 > on-disk reality AND MUST produce the same bytes (and therefore the
 > same `stable_hash`) for the same disk state — otherwise consumers
 > that pin to `stable_hash` see phantom drift.
@@ -607,7 +607,7 @@ cd skills/SKILL-001-fastapi-production && PYTHONPATH=. \
 
 #### B2.5 — `SKILL.md` v2 Anthropic Agent Skills contract
 
-> `SKILL.md` is the Maestro-facing entry document: the skill's
+> `SKILL.md` is the agent-facing entry document: the skill's
 > "README for LLM consumers". v2 format has TWO YAML blocks:
 > (a) Anthropic-spec frontmatter at the top (`name` / `description`
 >     / optional `license`), and
@@ -617,7 +617,7 @@ cd skills/SKILL-001-fastapi-production && PYTHONPATH=. \
 >     `entry_tools`, `catalog_path`, `phases`, `invariants`).
 > The split matches Anthropic's skill contract (which LLM hosts
 > parse by the frontmatter) + HuGR's richer metadata (which our own
-> catalog + Maestro drivers parse from the body). Do not conflate
+> catalog + agent drivers parse from the body). Do not conflate
 > the two — putting HuGR fields in the frontmatter breaks
 > Anthropic parsers, and putting Anthropic fields in the body
 > block breaks the hosts.
@@ -652,7 +652,7 @@ cd skills/SKILL-001-fastapi-production && PYTHONPATH=. \
 - **Invariants:**
   - Body-block `hugr_skill_version` matches the skill-dir `VERSION`
     file (§B4.6 triplet sync covers skill-dir VERSION independently;
-    the SKILL.md body value is the one Maestro consumes).
+    the SKILL.md body value is the one agent consumes).
   - Few-shot transcripts reference only registered primitives,
     catalog tools, tier-1 meta tools, and tree dispatchers — no
     aspirational surface. Machine-checked by `_r_skill_md_contract`
@@ -684,7 +684,7 @@ python -m engine.discovery.quality_bench --min-precision-3 0.9
 
 ---
 
-### Phase 3 — Maestro benchmark harness
+### Phase 3 — agent benchmark harness
 
 #### B3.1 — 20 benchmark specs
 
@@ -787,7 +787,7 @@ python -m engine.discovery.quality_bench --min-precision-3 0.9
 
 > Blind harness runs pinned stub fixtures without the benchmark
 > spec's `Expected primitives` / `Expected tools` sections visible
-> to the scoring LLM. Measures what Maestro would do "cold", without
+> to the scoring LLM. Measures what agent would do "cold", without
 > the spec steering it.
 
 - **DoD:**
@@ -833,7 +833,7 @@ test -f benchmarks/code_level_score.json
 
 - **DoD:** ≥ 5 subdirectories in `/examples/`, each containing:
   - `README.md` describing the app in one paragraph
-  - `MAESTRO_SESSION.md` with the transcript Maestro used to build it
+  - `AGENT_SESSION.md` with the transcript agent used to build it
   - Working code passing `pytest`
   - Cross-link table "tools used" + "primitives imported"
 - **Invariants:** Examples not allowed to drift from the kit — every
@@ -1025,10 +1025,10 @@ Every commit must cite `phase-5: close red→green on benchmarks/specs/<id>`.
 - **Quality (SOTA):** Each shared primitive genuinely framework-free
   (no `from fastapi import` etc.).
 
-#### B6.3 — Multi-skill Maestro example
+#### B6.3 — Multi-skill agent example
 
 - **DoD:** `/examples/fullstack-<name>/` contains a session where
-  Maestro invokes BOTH skills to build a full-stack app.
+  agent invokes BOTH skills to build a full-stack app.
 - **Invariants:** Example runs end-to-end in CI.
 - **Completeness:** Both front- and back-end built, tests green.
 - **Quality (SOTA):** Transcript readable; session cost < budget.
@@ -1057,11 +1057,11 @@ example green.
 - **Completeness:** All runs ever executed available.
 - **Quality (SOTA):** Chart readable, regression alerts automated.
 
-#### B7.3 — SDK docs for external Maestro authors
+#### B7.3 — SDK docs for external agent authors
 
-- **DoD:** `/docs/maestro-sdk/` explains how to build a Maestro
+- **DoD:** `/docs/agent-sdk/` explains how to build an agent
   against HuGR's MCP surface.
-- **Invariants:** Docs tested — a stranger builds a toy Maestro in
+- **Invariants:** Docs tested — a stranger builds a toy agent in
   < 1 day.
 - **Completeness:** All MCP endpoints documented + example client code.
 - **Quality (SOTA):** Examples run as-is; no "pseudo-code, adapt for
@@ -1125,7 +1125,7 @@ example green.
 
 ## §D — Explicit non-promises
 
-- Does NOT promise Maestro success rates > 70% — that's a target, not a
+- Does NOT promise agent success rates > 70% — that's a target, not a
   guarantee of capability.
 - Does NOT commit SKILL-003/004 timelines — exist only if Phase 7
   ecosystem pulls them.
@@ -1186,7 +1186,7 @@ formal ratification):
 - **§B2.5 — SKILL.md v2 Anthropic Agent Skills contract**
   (ratified). `_r_skill_md_contract` parses frontmatter +
   validates ≥3 few-shot transcripts + ≥1 entry_tools list + body
-  ≤ 500 lines (with Maestro-facing exceptions documented).
+  ≤ 500 lines (with agent-facing exceptions documented).
 - **§B3.6 — Code-level benchmark harness** (ratified). Covers
   ≥ 25% of the 20-spec corpus with ≥ 70 average on covered.
   Currently 100.00 across 20/20 (100% coverage, 30-point

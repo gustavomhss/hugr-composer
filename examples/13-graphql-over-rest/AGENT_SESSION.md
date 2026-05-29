@@ -1,4 +1,4 @@
-# Maestro session — 13-graphql-over-rest
+# agent session — 13-graphql-over-rest
 
 Plan-level transcript for `mid/08_graphql_over_rest.md`.
 

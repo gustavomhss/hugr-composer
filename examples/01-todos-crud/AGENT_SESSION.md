@@ -1,4 +1,4 @@
-# Maestro session — 01-todos-crud
+# agent session — 01-todos-crud
 
 > Plan-level transcript. This mirrors the v3 best-of run that scored
 > 100 on `baseline/01_crud_todos.md` during the v0.1.0 benchmark.

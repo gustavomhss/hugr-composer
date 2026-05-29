@@ -1,7 +1,7 @@
 """`fastapi_auth` — the auth-domain tree dispatcher (POC, tree variant).
 
 ONE MCP tool that routes to 15 legacy slice tools + 8 primitives under
-the `auth` domain. The Claude Maestro chooses granularity by `action`:
+the `auth` domain. The Claude agent chooses granularity by `action`:
 
     fastapi_auth(action="list")                          → tree
     fastapi_auth(action="bundle", output_dir=..., ...)   → full auth stack
@@ -19,6 +19,7 @@ POC scope rules
     next_steps, elapsed_ms}.
   - Failure in an underlying slice is surfaced, not swallowed.
 """
+
 from __future__ import annotations
 
 import importlib
@@ -39,32 +40,65 @@ ADAPT_ROOT = SKILL_ROOT / "adapt" / "extend" / "auth_access"
 
 SLICES: dict[str, dict[str, Any]] = {
     # slice_name → {module, entry, one-line description, required params}
-    "add_api_key_auth":     {"mod": "add_api_key_auth",     "desc": "API key authentication alongside JWT"},
-    "add_bola_guard":       {"mod": "add_bola_guard",       "desc": "BOLA / IDOR protection with ownership checks"},
-    "add_cedar_policies":   {"mod": "add_cedar_policies",   "desc": "AWS Cedar policy-as-code ABAC authorization"},
-    "add_dpop_tokens":      {"mod": "add_dpop_tokens",      "desc": "RFC 9449 DPoP (proof-of-possession) tokens"},
-    "add_feature_flags":    {"mod": "add_feature_flags",    "desc": "Per-user / per-tenant feature flag system"},
-    "add_feature_toggles_api": {"mod": "add_feature_toggles_api", "desc": "HTTP API wrapping the FeatureToggle primitive"},
-    "add_mfa":              {"mod": "add_mfa",              "desc": "TOTP second-factor via TotpVerifier primitive"},
-    "add_multi_tenancy":    {"mod": "add_multi_tenancy",    "desc": "Tenant scoping (schema-per-tenant or row-level)"},
-    "add_oauth2":           {"mod": "add_oauth2_provider",  "desc": "OAuth2 with PKCE + TokenIntrospector + SessionStore"},
-    "add_opa_integration":  {"mod": "add_opa_integration",  "desc": "Open Policy Agent with circuit breaker"},
-    "add_passkey_auth":     {"mod": "add_passkey_auth",     "desc": "WebAuthn / FIDO2 passwordless passkey auth"},
-    "add_rbac":             {"mod": "add_rbac",             "desc": "RBAC via RequestGuard + CurrentPrincipal"},
-    "add_request_signing":  {"mod": "add_request_signing",  "desc": "HMAC request signing (Stripe / AWS Sig V4 pattern)"},
-    "add_sms_otp":          {"mod": "add_sms_otp",          "desc": "SMS OTP via Twilio / Vonage with rate limits"},
-    "add_social_login":     {"mod": "add_social_login",     "desc": "Google / GitHub / Apple OAuth2 social login"},
+    "add_api_key_auth": {"mod": "add_api_key_auth", "desc": "API key authentication alongside JWT"},
+    "add_bola_guard": {
+        "mod": "add_bola_guard",
+        "desc": "BOLA / IDOR protection with ownership checks",
+    },
+    "add_cedar_policies": {
+        "mod": "add_cedar_policies",
+        "desc": "AWS Cedar policy-as-code ABAC authorization",
+    },
+    "add_dpop_tokens": {
+        "mod": "add_dpop_tokens",
+        "desc": "RFC 9449 DPoP (proof-of-possession) tokens",
+    },
+    "add_feature_flags": {
+        "mod": "add_feature_flags",
+        "desc": "Per-user / per-tenant feature flag system",
+    },
+    "add_feature_toggles_api": {
+        "mod": "add_feature_toggles_api",
+        "desc": "HTTP API wrapping the FeatureToggle primitive",
+    },
+    "add_mfa": {"mod": "add_mfa", "desc": "TOTP second-factor via TotpVerifier primitive"},
+    "add_multi_tenancy": {
+        "mod": "add_multi_tenancy",
+        "desc": "Tenant scoping (schema-per-tenant or row-level)",
+    },
+    "add_oauth2": {
+        "mod": "add_oauth2_provider",
+        "desc": "OAuth2 with PKCE + TokenIntrospector + SessionStore",
+    },
+    "add_opa_integration": {
+        "mod": "add_opa_integration",
+        "desc": "Open Policy Agent with circuit breaker",
+    },
+    "add_passkey_auth": {
+        "mod": "add_passkey_auth",
+        "desc": "WebAuthn / FIDO2 passwordless passkey auth",
+    },
+    "add_rbac": {"mod": "add_rbac", "desc": "RBAC via RequestGuard + CurrentPrincipal"},
+    "add_request_signing": {
+        "mod": "add_request_signing",
+        "desc": "HMAC request signing (Stripe / AWS Sig V4 pattern)",
+    },
+    "add_sms_otp": {"mod": "add_sms_otp", "desc": "SMS OTP via Twilio / Vonage with rate limits"},
+    "add_social_login": {
+        "mod": "add_social_login",
+        "desc": "Google / GitHub / Apple OAuth2 social login",
+    },
 }
 
 PRIMITIVES: dict[str, str] = {
     # name → one-line purpose (from registry)
     "AuthorizationCodeFlow": "OAuth 2.0 auth-code grant with PKCE, state, nonce enforcement",
-    "CurrentPrincipal":      "Read-only authenticated identity for the active request",
-    "FeatureFlagCache":      "Bounded async LRU cache with per-entry TTL for flag payloads",
-    "RequestGuard":          "Declarative authorization decision point per route, audited",
-    "SessionStore":          "Issue / rotate / revoke server-side session records",
-    "TokenIntrospector":     "Validate access tokens by signature / issuer / audience / expiry",
-    "TotpVerifier":          "TOTP per RFC 6238 with constant-time comparison",
+    "CurrentPrincipal": "Read-only authenticated identity for the active request",
+    "FeatureFlagCache": "Bounded async LRU cache with per-entry TTL for flag payloads",
+    "RequestGuard": "Declarative authorization decision point per route, audited",
+    "SessionStore": "Issue / rotate / revoke server-side session records",
+    "TokenIntrospector": "Validate access tokens by signature / issuer / audience / expiry",
+    "TotpVerifier": "TOTP per RFC 6238 with constant-time comparison",
     "WebAuthnAuthenticator": "WebAuthn / passkey register + assert with binding",
 }
 
@@ -72,20 +106,21 @@ PRIMITIVES: dict[str, str] = {
 # Chosen to deliver "production auth out of the box": core token handling,
 # session management, MFA, RBAC, rate limiting, and audit surface.
 BUNDLE_SLICES: tuple[str, ...] = (
-    "add_oauth2",           # tokens + session store
-    "add_rbac",             # RequestGuard + CurrentPrincipal
-    "add_mfa",              # TotpVerifier second factor
-    "add_api_key_auth",     # API key alongside JWT
-    "add_bola_guard",       # object-level auth
+    "add_oauth2",  # tokens + session store
+    "add_rbac",  # RequestGuard + CurrentPrincipal
+    "add_mfa",  # TotpVerifier second factor
+    "add_api_key_auth",  # API key alongside JWT
+    "add_bola_guard",  # object-level auth
     "add_request_signing",  # outgoing + incoming HMAC
-    "add_feature_flags",    # per-user / per-tenant toggles
-    "add_multi_tenancy",    # tenant scoping middleware
+    "add_feature_flags",  # per-user / per-tenant toggles
+    "add_multi_tenancy",  # tenant scoping middleware
 )
 
 
 # ---------------------------------------------------------------------------
 # Shared envelope (same shape as tier-1 meta tools)
 # ---------------------------------------------------------------------------
+
 
 def _envelope(*, ok: bool, what: str, result: Any, next_steps: list[str], t0: float) -> dict:
     return {
@@ -100,6 +135,7 @@ def _envelope(*, ok: bool, what: str, result: Any, next_steps: list[str], t0: fl
 # ---------------------------------------------------------------------------
 # Slice routing — import + call the legacy fastapi_add_<slice> tool
 # ---------------------------------------------------------------------------
+
 
 def _call_slice(slice_name: str, **kwargs) -> dict:
     """Route to the underlying `adapt/extend/auth_access/<module>` tool.
@@ -117,7 +153,9 @@ def _call_slice(slice_name: str, **kwargs) -> dict:
     mod = importlib.import_module(mod_name)
     entry = getattr(mod, meta["mod"], None)
     if entry is None or not callable(entry):
-        raise RuntimeError(f"slice {slice_name!r}: entry function {meta['mod']!r} not found in {mod_name}")
+        raise RuntimeError(
+            f"slice {slice_name!r}: entry function {meta['mod']!r} not found in {mod_name}"
+        )
     project_dir = kwargs.pop("output_dir", None) or kwargs.pop("project_dir", None)
     if not project_dir:
         raise ValueError(f"slice {slice_name!r}: output_dir is required")
@@ -139,6 +177,7 @@ def _call_slice(slice_name: str, **kwargs) -> dict:
 # Primitive routing — copy the primitive dir into the target project
 # ---------------------------------------------------------------------------
 
+
 def _copy_primitive(name: str, output_dir: str) -> dict:
     """Copy core/venous/auth/<Name>/ into <output_dir>/app/core/venous/auth/<Name>/.
 
@@ -148,8 +187,7 @@ def _copy_primitive(name: str, output_dir: str) -> dict:
     """
     if name not in PRIMITIVES:
         raise ValueError(
-            f"unknown primitive {name!r} in domain auth. "
-            f"Available: {sorted(PRIMITIVES)}"
+            f"unknown primitive {name!r} in domain auth. Available: {sorted(PRIMITIVES)}"
         )
     src = VENOUS_AUTH / name
     if not src.is_dir():
@@ -158,26 +196,24 @@ def _copy_primitive(name: str, output_dir: str) -> dict:
     if target.exists():
         shutil.rmtree(target)
     shutil.copytree(
-        src, target,
+        src,
+        target,
         ignore=shutil.ignore_patterns(
-            "__pycache__", "_t0_report.json", "_evidence", "*.pyc",
+            "__pycache__",
+            "_t0_report.json",
+            "_evidence",
+            "*.pyc",
         ),
     )
-    files_created = sorted(
-        str(p.relative_to(output_dir)) for p in target.rglob("*") if p.is_file()
-    )
+    files_created = sorted(str(p.relative_to(output_dir)) for p in target.rglob("*") if p.is_file())
     # Matching adapter (if any)
     adapter_name = f"{name}Adapter.py"
     adapter_src = ADAPTERS_FASTAPI / adapter_name
     if adapter_src.exists():
-        adapter_target = (
-            Path(output_dir) / "app" / "core" / "venous" / "_adapters" / "fastapi"
-        )
+        adapter_target = Path(output_dir) / "app" / "core" / "venous" / "_adapters" / "fastapi"
         adapter_target.mkdir(parents=True, exist_ok=True)
         shutil.copy(adapter_src, adapter_target / adapter_name)
-        files_created.append(
-            str((adapter_target / adapter_name).relative_to(output_dir))
-        )
+        files_created.append(str((adapter_target / adapter_name).relative_to(output_dir)))
         # adapter test (if present)
         test_src = ADAPTERS_FASTAPI / f"test_{adapter_name}"
         if test_src.exists():
@@ -250,12 +286,10 @@ def fastapi_auth(action: str, params: dict | None = None) -> dict:
                     "required_params": {"output_dir": "str"},
                 },
                 "slices": {
-                    name: {"description": meta["desc"]}
-                    for name, meta in sorted(SLICES.items())
+                    name: {"description": meta["desc"]} for name, meta in sorted(SLICES.items())
                 },
                 "primitives": {
-                    name: {"purpose": purpose}
-                    for name, purpose in sorted(PRIMITIVES.items())
+                    name: {"purpose": purpose} for name, purpose in sorted(PRIMITIVES.items())
                 },
                 "usage_examples": [
                     "fastapi_auth(action='bundle', params={'output_dir':'/tmp/my-app'})",
@@ -275,8 +309,10 @@ def fastapi_auth(action: str, params: dict | None = None) -> dict:
         output_dir = params.get("output_dir")
         if not output_dir:
             return _envelope(
-                ok=False, what="bundle requires output_dir",
-                result={}, next_steps=["Pass output_dir='/path/to/project'."],
+                ok=False,
+                what="bundle requires output_dir",
+                result={},
+                next_steps=["Pass output_dir='/path/to/project'."],
                 t0=t0,
             )
         installed: list[dict] = []
@@ -291,15 +327,16 @@ def fastapi_auth(action: str, params: dict | None = None) -> dict:
         return _envelope(
             ok=ok,
             what=f"bundle: {len(installed)}/{len(BUNDLE_SLICES)} slices installed"
-                 + (f"; {len(errors)} failure(s)" if errors else ""),
+            + (f"; {len(errors)} failure(s)" if errors else ""),
             result={"installed": installed, "errors": errors},
             next_steps=(
                 [
                     "Bundle complete. Boot: `uvicorn app.main:app`, then POST /auth/login.",
                     "For advanced flows (social, passkey, DPoP), call the individual add_* slices.",
                     "Call fastapi_meta_audit() to verify the contract.",
-                ] if ok else
-                [f"Fix errors above. Retry failing slices individually via action=<slice>."]
+                ]
+                if ok
+                else ["Fix errors above. Retry failing slices individually via action=<slice>."]
             ),
             t0=t0,
         )
@@ -311,16 +348,20 @@ def fastapi_auth(action: str, params: dict | None = None) -> dict:
             return _envelope(
                 ok=False,
                 what="primitive action requires name + output_dir",
-                result={}, next_steps=[
+                result={},
+                next_steps=[
                     "Example: fastapi_auth(action='primitive', name='SessionStore', output_dir='/tmp/app').",
                     "Call fastapi_auth(action='list') to see available primitive names.",
-                ], t0=t0,
+                ],
+                t0=t0,
             )
         try:
             res = _copy_primitive(name, output_dir)
         except (ValueError, FileNotFoundError) as exc:
             return _envelope(
-                ok=False, what=str(exc), result={},
+                ok=False,
+                what=str(exc),
+                result={},
                 next_steps=["Call fastapi_auth(action='list') for valid primitive names."],
                 t0=t0,
             )
@@ -339,19 +380,24 @@ def fastapi_auth(action: str, params: dict | None = None) -> dict:
         output_dir = params.get("output_dir")
         if not output_dir:
             return _envelope(
-                ok=False, what=f"slice {action!r} requires output_dir in params",
-                result={}, next_steps=["Pass params={'output_dir':'/path/to/project', ...}."],
+                ok=False,
+                what=f"slice {action!r} requires output_dir in params",
+                result={},
+                next_steps=["Pass params={'output_dir':'/path/to/project', ...}."],
                 t0=t0,
             )
         try:
             res = _call_slice(action, **params)
         except Exception as exc:  # noqa: BLE001
             return _envelope(
-                ok=False, what=f"slice {action!r} failed: {exc}",
-                result={}, next_steps=[
+                ok=False,
+                what=f"slice {action!r} failed: {exc}",
+                result={},
+                next_steps=[
                     f"Check params for {action!r}. "
                     f"Call fastapi_meta_describe(name='fastapi_{SLICES[action]['mod']}') for the schema."
-                ], t0=t0,
+                ],
+                t0=t0,
             )
         return _envelope(
             ok=True,

@@ -1,6 +1,6 @@
 """Grade a single single_shot_benchmark run.
 
-Called by `run.py` after each Maestro session. Produces a per-spec
+Called by `run.py` after each agent session. Produces a per-spec
 record under `results.json` and returns pass/fail for logging.
 
 4-check rubric:
@@ -12,6 +12,7 @@ record under `results.json` and returns pass/fail for logging.
 
 Pass = 4/4 green.
 """
+
 from __future__ import annotations
 
 import json
@@ -38,7 +39,10 @@ def _uvicorn_boot(project_dir: pathlib.Path, timeout_s: int = 30) -> tuple[bool,
         while time.time() < deadline:
             try:
                 import urllib.request
-                resp = urllib.request.urlopen("http://127.0.0.1:8799/healthz", timeout=2)
+
+                resp = urllib.request.urlopen(
+                    "http://127.0.0.1:8799/healthz", timeout=2
+                )
                 if resp.status == 200:
                     return True, "healthz 200"
             except Exception:
@@ -58,7 +62,9 @@ def _pytest_all_pass(project_dir: pathlib.Path) -> tuple[bool, str]:
         return False, f"no {venv_pytest}"
     r = subprocess.run(
         [str(venv_pytest), "-q", "--tb=line"],
-        cwd=project_dir, capture_output=True, text=True,
+        cwd=project_dir,
+        capture_output=True,
+        text=True,
     )
     ok = r.returncode == 0
     tail = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ""
@@ -71,7 +77,9 @@ def _bandit_clean(project_dir: pathlib.Path) -> tuple[bool, str]:
         return False, f"no {venv_py}"
     r = subprocess.run(
         [str(venv_py), "-m", "bandit", "-r", "app/", "-f", "txt"],
-        cwd=project_dir, capture_output=True, text=True,
+        cwd=project_dir,
+        capture_output=True,
+        text=True,
     )
     high = re.search(r"^\s*High:\s*(\d+)", r.stdout, re.MULTILINE)
     med = re.search(r"^\s*Medium:\s*(\d+)", r.stdout, re.MULTILINE)
@@ -80,11 +88,13 @@ def _bandit_clean(project_dir: pathlib.Path) -> tuple[bool, str]:
     return (h == 0 and m == 0), f"high={h} medium={m}"
 
 
-def _ac_coverage(project_dir: pathlib.Path, acceptance_criteria: list[str]) -> tuple[bool, str]:
+def _ac_coverage(
+    project_dir: pathlib.Path, acceptance_criteria: list[str]
+) -> tuple[bool, str]:
     """AST-based AC coverage — codex/opus HIGH-M3 fix.
 
     The previous implementation accepted "first 4 content words appear
-    in some test docstring" as coverage — gameable by a Maestro that
+    in some test docstring" as coverage — gameable by a agent that
     quoted the AC verbatim into a test docstring without actually
     asserting the behaviour.
 
@@ -122,13 +132,20 @@ def _ac_coverage(project_dir: pathlib.Path, acceptance_criteria: list[str]) -> t
         except SyntaxError:
             continue
         for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test_"):
+            if isinstance(
+                node, (ast.FunctionDef, ast.AsyncFunctionDef)
+            ) and node.name.startswith("test_"):
                 # Strip the docstring node so it doesn't pollute the body match
-                body_nodes = node.body[1:] if (
-                    node.body and isinstance(node.body[0], ast.Expr)
-                    and isinstance(node.body[0].value, ast.Constant)
-                    and isinstance(node.body[0].value.value, str)
-                ) else node.body
+                body_nodes = (
+                    node.body[1:]
+                    if (
+                        node.body
+                        and isinstance(node.body[0], ast.Expr)
+                        and isinstance(node.body[0].value, ast.Constant)
+                        and isinstance(node.body[0].value.value, str)
+                    )
+                    else node.body
+                )
                 try:
                     body_text = "\n".join(ast.unparse(n) for n in body_nodes)
                 except Exception:
@@ -145,7 +162,9 @@ def _ac_coverage(project_dir: pathlib.Path, acceptance_criteria: list[str]) -> t
             covered.append(ac)
     cov_n = len(covered)
     total = len(acceptance_criteria)
-    return (cov_n == total) and total > 0, f"{cov_n}/{total} covered (AST body match, not docstring)"
+    return (
+        cov_n == total
+    ) and total > 0, f"{cov_n}/{total} covered (AST body match, not docstring)"
 
 
 _HTTP_VERBS_PATH_STATUS = re.compile(

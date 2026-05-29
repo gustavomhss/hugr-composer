@@ -1,4 +1,4 @@
-# Maestro session — 02-webhook-sink
+# agent session — 02-webhook-sink
 
 Plan-level transcript mirroring the v3 best-of run that scored 100 on
 `baseline/03_webhook_sink.md`.

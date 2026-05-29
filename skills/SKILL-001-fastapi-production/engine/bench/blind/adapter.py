@@ -1,4 +1,4 @@
-"""MaestroAdapter Protocol + concrete adapters (naked + kit + stub).
+"""AgentAdapter Protocol + concrete adapters (naked + kit + stub).
 
 Each adapter consumes a Spec + workdir and emits files into the workdir
 while recording a full trajectory (see PROTOCOL.md §5). The harness does
@@ -46,7 +46,7 @@ class EmissionResult:
     extra: dict[str, Any] = field(default_factory=dict)
 
 
-class MaestroAdapter(Protocol):
+class AgentAdapter(Protocol):
     name: str
 
     def emit(self, spec, workdir: Path, *, seed: int) -> EmissionResult:  # noqa: ANN001

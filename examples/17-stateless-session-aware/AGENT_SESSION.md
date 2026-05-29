@@ -1,4 +1,4 @@
-# Maestro session — 17-stateless-session-aware
+# agent session — 17-stateless-session-aware
 
 Plan-level transcript for
 `adversarial/02_contradiction_stateless_but_session_aware.md`.

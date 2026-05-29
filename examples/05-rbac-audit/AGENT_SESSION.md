@@ -1,4 +1,4 @@
-# Maestro session — 05-rbac-audit
+# agent session — 05-rbac-audit
 
 Plan-level transcript for `mid/04_rbac_with_audit.md` (v0.1.0 run, score 100).
 

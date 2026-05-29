@@ -112,7 +112,7 @@ SKILL-001 v1.0.0 — Rails-style FastAPI production scaffolder
 Benchmark: plan 100.00 / code 100.00 on 20/20 specs.
 Stable_hash: <fill from `jq -r .stable_hash engine/index/catalog.json`>.
 
-Surface: 217 Maestro tools (201 catalog + 7 tier-1 + 9 tree),
+Surface: 217 agent tools (201 catalog + 7 tier-1 + 9 tree),
 124 registered primitives, 17 FastAPI adapters + 2 provider adapters
 (redis PubSub + stripe Billing), 175 staged primitives discoverable,
 20 complete examples, 37/37 contract rules green.

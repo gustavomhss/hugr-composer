@@ -149,7 +149,7 @@ method. Where §1-§6 of PRODUCT.md makes a claim we cannot evidence
 at v1.0.0, it is listed in `/evidence/not-yet-covered.md` with the
 reason + milestone that would enable evidence (NOT hidden).
 
-**PRODUCT §1 — "library of executable knowledge, invokable by Maestro":**
+**PRODUCT §1 — "library of executable knowledge, invokable by agent":**
 
 | Claim | Artefact | Grading | Class |
 |---|---|---|---|
@@ -165,15 +165,15 @@ reason + milestone that would enable evidence (NOT hidden).
 | Tools emit ≤20 LOC glue; logic in primitives | `loc_budget_stats.json` | histogram; 95th percentile ≤ §A1 budget | deterministic |
 | Primitives are framework-free motors | `framework_free_proof.log` | 124/124 boot without FastAPI | deterministic |
 
-**PRODUCT §3 — "primary user is Maestro":**
+**PRODUCT §3 — "primary user is agent":**
 
 | Claim | Artefact | Grading | Class |
 |---|---|---|---|
-| Maestro discovers skill via MCP metadata (~100 tokens) | `single_shot_benchmark/run_manifest.json` | prompt-bundle token count | external-eval |
-| Maestro loads SKILL.md (~5k tokens) | `single_shot_benchmark/run_manifest.json` | file token count | external-eval |
-| Maestro composes primitives when tools don't fit | `single_shot_benchmark/transcripts/` | presence of `fastapi_meta_compose` call | external-eval |
+| agent discovers skill via MCP metadata (~100 tokens) | `single_shot_benchmark/run_manifest.json` | prompt-bundle token count | external-eval |
+| agent loads SKILL.md (~5k tokens) | `single_shot_benchmark/run_manifest.json` | file token count | external-eval |
+| agent composes primitives when tools don't fit | `single_shot_benchmark/transcripts/` | presence of `fastapi_meta_compose` call | external-eval |
 
-**PRODUCT §4 — "Maestro produces running, tested, production-grade backend single-session":**
+**PRODUCT §4 — "agent produces running, tested, production-grade backend single-session":**
 
 | Claim | Artefact | Grading | Class |
 |---|---|---|---|
@@ -441,7 +441,7 @@ the first 72h post-tag launch window specifically:
 
 ### §4.4 — Consumer protection via `stable_hash`
 
-Per CONTRACT §2.12 and ROADMAP §2.12: every Maestro session pins a `stable_hash` from `catalog.json`. When HuGR patches / yanks, the hash changes. Consumer-side protocol MUST abort on hash-change and re-seat against the new version. This is the automatic version-safety rail; it works even if the user never reads the CHANGELOG.
+Per CONTRACT §2.12 and ROADMAP §2.12: every agent session pins a `stable_hash` from `catalog.json`. When HuGR patches / yanks, the hash changes. Consumer-side protocol MUST abort on hash-change and re-seat against the new version. This is the automatic version-safety rail; it works even if the user never reads the CHANGELOG.
 
 ---
 
@@ -485,7 +485,7 @@ strategy, do not block rollout.
 | Install-completion rate (telemetry-derived) | Binding only when the run-ID phone-home instrumentation ships in Wave 2. Until then: CONTEXT. Opt-in denominator; use with caution. |
 | First-shot scaffold success rate (telemetry) | Same caveat as install-completion. BINDING only post-Wave-2 telemetry. |
 | Median time-to-first-emitted-scaffold-boot | CONTEXT. Self-selected population, different hardware/network. |
-| Maestro token cost for "auth + 1 CRUD" feature | CONTEXT. Provider prices + model choice dominate; useful as a delta vs counterfactual baseline, not as absolute. |
+| agent token cost for "auth + 1 CRUD" feature | CONTEXT. Provider prices + model choice dominate; useful as a delta vs counterfactual baseline, not as absolute. |
 | Emitted apps reaching real production (self-reported) | CONTEXT. Self-report is un-falsifiable; track to see trend, do not gate. |
 | Critical CVEs reported | CONTEXT. Silence-sensitive — low count may mean "no bugs" or "no one reported." Pair with pentest rate + SECURITY.md disclosure activity. |
 | GitHub stars / forks / external contributors | CONTEXT. Vanity unless coupled to signed commits + reviewed PRs. |

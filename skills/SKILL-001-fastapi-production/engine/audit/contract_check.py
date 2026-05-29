@@ -305,6 +305,80 @@ def _r_gitignore_artefacts() -> tuple[bool, str]:
     return True, ".gitignore covers all machine-generated artefacts"
 
 
+# Exemption patterns for B0.9 — discontinued-terminology audit.
+# These paths are HISTORICAL audit records (analogous to ``docs/legacy/``):
+# committed transcripts, staged stubs, blind-benchmark fixtures + results.
+# A future contributor MUST be able to read the original wording in these
+# paths verbatim — rewriting them silently would erase the audit trail.
+# PRODUCT.md §8 is also exempt: the canonical terminology lock explicitly
+# documents the discontinued ``Maestro`` term as a historical note (see
+# the 2026-05-26 pivot in ``memory/product_business_model.md``).
+_B09_LEGACY_TERM_EXEMPTIONS = (
+    ".git/",
+    ".claude/",
+    "docs/legacy/",
+    "core/venous/_staging/",
+    "core/venous/_extracted/",
+    "benchmarks/blind/_stub_fixtures/",
+    "benchmarks/blind/results/",
+    "evidence/external-eval/reviewer_signoffs/transcripts/wave-i-1__",
+    # PRODUCT.md carries the canonical historical-note (see §8).
+    "PRODUCT.md",
+    # This rule's own source file MUST mention the discontinued term to
+    # define + document the audit; exempting the file avoids a
+    # self-referential false positive.
+    "skills/SKILL-001-fastapi-production/engine/audit/contract_check.py",
+)
+
+
+def _r_no_legacy_terminology() -> tuple[bool, str]:
+    """B0.9 — no live-tree references to discontinued ``Maestro`` term.
+
+    The "Maestro" project (a custom HuGR-authored harness) was
+    discontinued on 2026-05-26 (see
+    ``memory/product_business_model.md``). The product pivot makes the
+    user's own first-party agent (Claude Code / Cursor / Cline / Zed /
+    any compliant MCP client) the consumer of the skill — HuGR does NOT
+    ship a custom harness. From the pivot onward, the canonical noun is
+    ``agent``.
+
+    This rule fails CI if any LIVE doc/code/yaml file under the repo
+    reintroduces ``\\bmaestro\\b`` (case-insensitive). Historical
+    audit records (transcripts, staging pools, blind-benchmark fixtures
+    + results, PRODUCT.md §8 terminology-lock historical note,
+    ``docs/legacy/`` archive) are exempted via
+    ``_B09_LEGACY_TERM_EXEMPTIONS`` — silently rewriting them would
+    erase the audit trail.
+    """
+    pattern = re.compile(r"\bmaestro\b", re.IGNORECASE)
+    suffixes = (".md", ".py", ".yaml", ".yml")
+    hits: list[str] = []
+    for path in REPO_ROOT.rglob("*"):
+        if not path.is_file():
+            continue
+        if path.suffix not in suffixes:
+            continue
+        try:
+            rel = path.relative_to(REPO_ROOT).as_posix()
+        except ValueError:
+            continue
+        if any(ex in rel for ex in _B09_LEGACY_TERM_EXEMPTIONS):
+            continue
+        try:
+            body = path.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        if pattern.search(body):
+            hits.append(rel)
+    if hits:
+        sample = sorted(hits)[:3]
+        return (
+            False,
+            f"{len(hits)} live-doc/code references to discontinued 'Maestro' term: {sample}",
+        )
+    return True, "no legacy 'Maestro' refs in live tree"
+
+
 def _r_benchmark_no_stubs() -> tuple[bool, str]:
     """B0.7 — zero trivial-stub test functions anywhere in the skill.
 
@@ -704,7 +778,7 @@ def _r_counts_sync() -> tuple[bool, str]:
         "ROADMAP.md": REPO_ROOT / "ROADMAP.md",
         "CHANGELOG.md[1.0.0]": REPO_ROOT / "CHANGELOG.md",
         # SKILL.md added here post-Codex-audit (BLOCKER #2).
-        # The overview paragraph is Maestro's first read — it MUST carry
+        # The overview paragraph is the agent's first read — it MUST carry
         # the current canonical counts, not pre-Wave-1.5 values. The check
         # only looks at the single paragraph under `## Overview` (not the
         # few-shot transcript counts, which are illustrative).
@@ -714,7 +788,7 @@ def _r_counts_sync() -> tuple[bool, str]:
         # artefact disagrees with what LEDGER.md actually ships. §2.5
         # cites the NEEDS_CALLER verdict subtotal — held to ledger.json.
         "FREEZE.md": REPO_ROOT / "FREEZE.md",
-        # INTERFACES.md §2.3 cites the recipe count in the Forge/Maestro
+        # INTERFACES.md §2.3 cites the recipe count in the Forge/agent
         # consumer contract. Codex v3 H5 caught this drifting to 385
         # while catalog + ROADMAP were at 392 — a host impl against the
         # doc would mis-size its search index.
@@ -1275,7 +1349,7 @@ def _r_bench_specs() -> tuple[bool, str]:
 
 
 def _r_skill_md_contract() -> tuple[bool, str]:
-    """B2.5 — SKILL.md follows the Agent Skills contract for Maestro consumption.
+    """B2.5 — SKILL.md follows the Agent Skills contract for agent consumption.
 
     Enforces the 20 rules from `docs/research/SKILL_META_FORMAT.md` §13.
     Every rule is cheap (file parse + regex). Fails fast on the first
@@ -1373,7 +1447,7 @@ def _r_skill_md_contract() -> tuple[bool, str]:
                 "is genuinely new."
             )
         # 3b. License MUST be consistent with the repo-root LICENSE file.
-        #     Codex v5 B1 caught the Maestro-facing SKILL.md advertising
+        #     Codex v5 B1 caught the agent-facing SKILL.md advertising
         #     `Apache-2.0` while the shipped LICENSE is proprietary —
         #     a legal/compliance drift, not a cosmetic one. This map
         #     links each SPDX identifier to a signature we can detect in
@@ -1486,7 +1560,7 @@ def _r_skill_md_contract() -> tuple[bool, str]:
     # 4. `description` field (Anthropic spec + CONTRACT §B2.5 DoD)
     #    DoD says 800-1200 chars. Lower floor matters: a too-short
     #    description ends up as a bare tagline without the "use when"
-    #    triggers + "do not" anti-triggers the Maestro needs to route.
+    #    triggers + "do not" anti-triggers the agent needs to route.
     desc = fm.get("description")
     if not isinstance(desc, str) or not desc.strip():
         return False, "SKILL.md frontmatter missing `description`"
@@ -1556,7 +1630,7 @@ def _r_skill_md_contract() -> tuple[bool, str]:
 
     # 9. `hugr_skill_version` semver + equality with VERSION file.
     #    VERSION is the canonical pin (§B4.6 triplet). SKILL.md is the
-    #    Maestro-facing entry doc — if they diverge, the entry doc is
+    #    agent-facing entry doc — if they diverge, the entry doc is
     #    lying about what shipped. Accepts pre-release suffixes
     #    (e.g. `1.0.0-rc.1`) + build metadata (`+build.1`). Uses the
     #    module-level _SEMVER_RE (official semver.org spec) so Wave-E's
@@ -1639,7 +1713,7 @@ def _r_skill_md_contract() -> tuple[bool, str]:
 
     # 12. Few-shot transcripts ≥ 3 (CONTRACT §B2.5 DoD: "≥ 3 few-shot
     #     transcripts under `## Few-shot transcripts`"). No upper bound —
-    #     more transcripts = better Maestro grounding, not worse.
+    #     more transcripts = better agent grounding, not worse.
     transcripts_section = re.search(
         r"## Few-shot transcripts(.+?)(?=\n## )",
         body,
@@ -1658,7 +1732,7 @@ def _r_skill_md_contract() -> tuple[bool, str]:
     #      against the real catalog surface (or the known meta/dispatcher
     #      set). Prevents regressing to stale tool names like
     #      `fastapi_add_stripe_billing` that no longer exist — transcripts
-    #      are the highest-weight Maestro steering examples.
+    #      are the highest-weight agent steering examples.
     transcript_body = transcripts_section.group(1)
     cited = set(re.findall(r"\bfastapi_[a-zA-Z0-9_]+", transcript_body))
     unknown = sorted(cited - valid_tool_names)
@@ -1821,7 +1895,7 @@ def _r_bench_nightly_workflow() -> tuple[bool, str]:
 def _r_code_level_benchmark() -> tuple[bool, str]:
     """B3.6 — code-level harness published + perfect on covered specs.
 
-    The plan-level score (B3.5) measures the Maestro's requirement→primitive
+    The plan-level score (B3.5) measures the the agent's requirement→primitive
     mapping. The code-level score measures whether the ACTUAL code path
     asserted by the spec's Acceptance criteria is exercised by a passing
     test suite. Different signal; different failure modes.
@@ -1966,7 +2040,7 @@ def _r_examples_populated() -> tuple[bool, str]:
     subdirs = [p for p in examples.iterdir() if p.is_dir() and not p.name.startswith(("_", "."))]
     if len(subdirs) < 5:
         return False, f"only {len(subdirs)} examples (need ≥5)"
-    required = ("README.md", "MAESTRO_SESSION.md")
+    required = ("README.md", "AGENT_SESSION.md")
     for sub in subdirs:
         for f in required:
             if not (sub / f).exists():
@@ -1980,7 +2054,7 @@ def _r_examples_populated() -> tuple[bool, str]:
             )
     return (
         True,
-        f"{len(subdirs)} examples present with README + MAESTRO_SESSION + cross-link tables",
+        f"{len(subdirs)} examples present with README + AGENT_SESSION + cross-link tables",
     )
 
 
@@ -2051,7 +2125,7 @@ def _r_changelog_semver() -> tuple[bool, str]:
 def _r_tier1_surface_truth() -> tuple[bool, str]:
     """B2.6 — tier-1 runtime strings tell the truth about the catalog.
 
-    The tier-1 meta tools (mcp_tools/tier1.py) ship three Maestro-visible
+    The tier-1 meta tools (mcp_tools/tier1.py) ship three agent-visible
     runtime surfaces: the module docstring, each MCP_TOOL description,
     and the workflow breadcrumb list inside `fastapi_meta_home()`'s
     return envelope. Prior audits read SKILL.md (the prose contract)
@@ -2094,11 +2168,11 @@ def _r_tier1_surface_truth() -> tuple[bool, str]:
             "zero — cannot validate tier1 surface truth"
         )
 
-    # Stale-count detector — SCOPED to Maestro-visible runtime strings
+    # Stale-count detector — SCOPED to agent-visible runtime strings
     # only. Matches on:
     #   - `"description": ( ... )` blocks inside MCP_TOOL* dicts
     #   - the `"workflow": [ ... ]` list inside fastapi_meta_home's
-    #     return envelope (the strings the Maestro reads at runtime)
+    #     return envelope (the strings the agent reads at runtime)
     # Module docstrings, comments, and research citations like
     # "30–50-tool degradation threshold" are deliberately excluded —
     # they are internal commentary, not runtime surface.
@@ -2125,20 +2199,20 @@ def _r_tier1_surface_truth() -> tuple[bool, str]:
 
     tool_claims = set(int(m) for m in re.findall(r"\b(\d+)[\s-]+tool(?:s|-catalog)?\b", scoped_src))
     primitive_claims = set(int(m) for m in re.findall(r"\b(\d+)\s+primitive(?:s)?\b", scoped_src))
-    # Any claim in Maestro-visible text that isn't the canonical count
+    # Any claim in agent-visible text that isn't the canonical count
     # AND isn't a small structural literal (≤20) is stale.
     stale_tool_claims = sorted(n for n in tool_claims if n != tool_count and n > 20)
     stale_primitive_claims = sorted(n for n in primitive_claims if n != primitive_count and n > 20)
     if stale_tool_claims:
         return False, (
-            f"mcp_tools/tier1.py Maestro-visible text carries stale "
+            f"mcp_tools/tier1.py agent-visible text carries stale "
             f"tool-count claims {stale_tool_claims} — current catalog "
             f"has {tool_count} tools. Update the MCP_TOOL descriptions "
             f"+ workflow strings."
         )
     if stale_primitive_claims:
         return False, (
-            f"mcp_tools/tier1.py Maestro-visible text carries stale "
+            f"mcp_tools/tier1.py agent-visible text carries stale "
             f"primitive-count claims {stale_primitive_claims} — current "
             f"registry has {primitive_count} primitives."
         )
@@ -2146,7 +2220,7 @@ def _r_tier1_surface_truth() -> tuple[bool, str]:
         return False, (
             f"mcp_tools/tier1.py MCP_TOOL descriptions + workflow do "
             f"not cite the current catalog tool count ({tool_count}) "
-            f"anywhere. The Maestro reads these strings; they must "
+            f"anywhere. The agent reads these strings; they must "
             f"advertise the real surface size."
         )
 
@@ -2224,6 +2298,7 @@ RULES: list[Rule] = [
     Rule("B0.6", 0, "CLAUDE memory pointer", _r_claude_memory),
     Rule("B0.7", 0, "No stub tests under /benchmark/", _r_benchmark_no_stubs),
     Rule("B0.8", 0, ".gitignore covers artefacts", _r_gitignore_artefacts),
+    Rule("B0.9", 0, "no discontinued 'Maestro' terminology in live tree", _r_no_legacy_terminology),
     Rule("B1.0", 1, "core.venous copy-in distribution", _r_core_venous_distribution),
     Rule("B1.0.1", 1, "adapter layer + framework-free primitives", _r_adapter_layer_invariant),
     Rule("B1.1", 1, "primitives_by_concern.yaml registry", _r_registry_exists),
@@ -2247,11 +2322,11 @@ RULES: list[Rule] = [
     Rule("B2.2", 2, "suggest_composition MCP tool + recipe quality gate", _r_suggest_composition),
     Rule("B2.3", 2, "reference docs site idempotent build", _r_docs_site),
     Rule("B2.4", 2, "index catalog manifest synced + deterministic", _r_index_manifest),
-    Rule("B2.5", 2, "SKILL.md Agent Skills contract (Maestro-facing)", _r_skill_md_contract),
+    Rule("B2.5", 2, "SKILL.md Agent Skills contract (agent-facing)", _r_skill_md_contract),
     Rule("B2.6", 2, "tier1 runtime strings match catalog + scope-disclaim", _r_tier1_surface_truth),
     Rule("B3.1", 3, "20 benchmark specs (5 baseline / 10 mid / 5 adversarial)", _r_bench_specs),
     Rule("B3.2", 3, "scoring rubric implemented + tested", _r_bench_rubric_runner),
-    Rule("B3.3", 3, "benchmark runner + stub Maestro + report JSON", _r_bench_rubric_runner),
+    Rule("B3.3", 3, "benchmark runner + stub agent + report JSON", _r_bench_rubric_runner),
     Rule("B3.4", 3, "nightly benchmark CI workflow", _r_bench_nightly_workflow),
     Rule("B3.5", 3, "baseline benchmark score published", _r_benchmark_score),
     Rule(
@@ -2265,7 +2340,7 @@ RULES: list[Rule] = [
     Rule(
         "B4.2",
         4,
-        "/examples/ populated (≥5 with README + MAESTRO_SESSION + cross-link)",
+        "/examples/ populated (≥5 with README + AGENT_SESSION + cross-link)",
         _r_examples_populated,
     ),
     Rule("B4.3", 4, "docs site v1 (top-level docs + per-tool pages)", _r_docs_site_v1),

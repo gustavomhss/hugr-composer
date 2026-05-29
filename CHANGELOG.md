@@ -26,7 +26,7 @@ tool / primitive renames going forward (CONTRACT §A10).
 
 - **Plan-level benchmark:** 100.00 (methodology `plan_level_v3_best_of_ensemble`).
 - **Code-level benchmark:** 100.00 on 20/20 specs.
-- **217 Maestro-facing tools** total:
+- **217 agent-facing tools** total:
     - 201 catalog tools (`engine/index/catalog.json`)
     - 7 tier-1 meta tools (`mcp_tools/tier1.py` + `mcp_tools/compose.py`)
     - 9 tree dispatchers (`mcp_tools/tree/`)
@@ -188,10 +188,10 @@ primitives in `core/venous/_staging/` without silently amending §A12
 
 ### Track A — Catalog wiring + Rails-connection discipline (2026-04-21 sprint)
 
-Surfaced + enforced the library the Maestro is supposed to consume. Every
+Surfaced + enforced the library the agent is supposed to consume. Every
 machine-verified, every commit lands `33/33 ALL GREEN`.
 
-**Ships (Maestro-facing surface):**
+**Ships (agent-facing surface):**
 
 - **Canonical naming enforcement** — `fastapi_<domain>_<verb>_<noun>` with
   closed vocabularies (10 domains × 9 verbs). Manifest canonicalizer
@@ -411,7 +411,7 @@ First public release. All five phases 0-4 green per `CONTRACT.md`.
 - **Score: 100.00** on `plan_level_v3_best_of_ensemble` methodology
   across 20 specs / 3 tiers.
 - Methodology: plan-level mapping (requirement → primitive/tool) with
-  best-of ensemble across 3 independent Maestro runs per spec. No
+  best-of ensemble across 3 independent agent runs per spec. No
   scorer softening; every gap closed by shipping a real primitive.
 
 ### Discoverability

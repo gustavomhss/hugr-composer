@@ -56,10 +56,10 @@ invariants:
 2. **Clarify.** Ask at most three specific questions — each must offer 2–4 concrete answer branches. Never open-ended. Skip this phase only if the user's request is literally unambiguous.
 3. **Scaffold.** After confirming the working directory is empty (or lacks `app/main.py`) via your own file inspection, call `fastapi_meta_scaffold(output_dir, name, models=..., owner_models=...)` once. Not idempotent across runs.
 4. **Compose.** For each requested capability: `fastapi_meta_search(query)` → `fastapi_meta_describe(id)` → `fastapi_meta_compose(primitives=...)`. Prefer `fastapi_auth(action=...)` for any auth branch instead of hunting individual slice tools.
-5. **Business.** Add domain-specific routes, models, and rules. Business logic (Aggregate + Specification) is authored by the Maestro, NOT by compose — compose refuses domain-shaped primitives by design.
+5. **Business.** Add domain-specific routes, models, and rules. Business logic (Aggregate + Specification) is authored by the agent, NOT by compose — compose refuses domain-shaped primitives by design.
 6. **Audit.** Two layers — do NOT conflate them:
    - **Skill-kit integrity:** `fastapi_meta_audit` runs `engine.audit.contract_check` against the *skill tree itself* (the 37 binding rules in CONTRACT §A/§B). Close with `fastapi_meta_verify` which runs the 10-tier primitive gate. These validate that the HuGR kit is intact on disk; they do NOT validate the project you just emitted.
-   - **Emitted-project integrity:** the generated project ships its own `tests/` directory + pre-commit config. Run `pytest` inside the emitted project (or instruct the Maestro to) to validate runtime behaviour of the scaffold. This is out of scope for the meta tools by design.
+   - **Emitted-project integrity:** the generated project ships its own `tests/` directory + pre-commit config. Run `pytest` inside the emitted project (or instruct the agent to) to validate runtime behaviour of the scaffold. This is out of scope for the meta tools by design.
 
 ## Tier-1 tool index
 
@@ -78,7 +78,7 @@ All other tools (~185) are discovered on demand via `fastapi_meta_search`.
 
 ## Few-shot transcripts
 
-Three compressed tool-call traces that demonstrate the correct phase sequence. The Maestro pattern-matches these more strongly than prose.
+Three compressed tool-call traces that demonstrate the correct phase sequence. The agent pattern-matches these more strongly than prose.
 
 ### Transcript A — Fresh scaffold
 
@@ -89,7 +89,7 @@ STEP 1  → orient
 TOOL    fastapi_meta_home()
 RESULT  {counts: {tools: 201, primitives: 299, recipes: 392},
          domains: 10, landscape: [...]}
-# Maestro then inspects the working directory itself (Read / ls);
+# agent then inspects the working directory itself (Read / ls);
 # confirms /workspace/myapp is empty → scaffold is needed.
 
 STEP 2  → clarify
@@ -142,7 +142,7 @@ STEP 1  → orient
 TOOL    fastapi_meta_home()
 RESULT  {counts: {tools: 201, primitives: 299, recipes: 392},
          domains: 10, landscape: [...]}
-# Maestro inspects /workspace/store: app/main.py + app/routes/ present
+# agent inspects /workspace/store: app/main.py + app/routes/ present
 # → existing fastapi repo, scaffold will be skipped.
 
 STEP 2  → clarify (skipped — request is specific)
@@ -161,7 +161,7 @@ TOOL    fastapi_meta_compose(output_dir="/workspace/store",
 RESULT  {mode: "ad_hoc",
          warning: "no canonical recipe — review the emitted wiring"}
 
-STEP 5  → business (Maestro review)
+STEP 5  → business (agent review)
 ASSISTANT  "Ad-hoc composition. Reviewing emitted code…" (reads file)
 ASSISTANT  "Adjusting the rate-limit window from the default 60s to your
             stated 1000/min = 1000/60s. Updating…" (edits composition)
@@ -186,7 +186,7 @@ STEP 1  → orient
 TOOL    fastapi_meta_home()
 RESULT  {counts: {tools: 201, primitives: 299, recipes: 392},
          domains: 10, landscape: [...]}
-# Maestro inspects /workspace/app: app/main.py + 12 route modules,
+# agent inspects /workspace/app: app/main.py + 12 route modules,
 # no `app/api/routes/auth.py` → no auth is wired yet.
 
 STEP 2  → clarify (MANDATORY — "secure" is too broad)
@@ -211,7 +211,7 @@ TOOL    fastapi_meta_compose(output_dir="/workspace/app",
                               name="audit_trail")
 RESULT  {mode: "recipe_template", recipe: "AccessLog__01"}
 
-STEP 5  → business (Maestro adds audit calls inside existing handlers)
+STEP 5  → business (agent adds audit calls inside existing handlers)
 
 STEP 6  → audit
 TOOL    fastapi_meta_audit()        # skill-kit integrity

@@ -15,6 +15,7 @@ Usage (when ready):
 
 Cost: ~$35-70 for 10 specs × 1 model at current pricing.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -44,8 +45,10 @@ def _git(*args: str) -> str:
     return subprocess.check_output(["git", *args], cwd=REPO_ROOT, text=True).strip()
 
 
-def _drive_baseline_session(spec_path: pathlib.Path, transcript_dir: pathlib.Path) -> pathlib.Path:
-    """Drive ONE no-HuGR Maestro session for the given spec.
+def _drive_baseline_session(
+    spec_path: pathlib.Path, transcript_dir: pathlib.Path
+) -> pathlib.Path:
+    """Drive ONE no-HuGR agent session for the given spec.
 
     Implementation deferred to 48h pre-tag per LAUNCH.md §2.0. To wire:
     - Use Anthropic SDK with the SAME pinned model as single_shot.
@@ -73,10 +76,15 @@ def main() -> int:
     shape_only = "--shape-only" in sys.argv
     if not os.environ.get("ANTHROPIC_API_KEY"):
         if shape_only:
-            print("--shape-only: ANTHROPIC_API_KEY missing; writing EMPTY run_manifest.")
+            print(
+                "--shape-only: ANTHROPIC_API_KEY missing; writing EMPTY run_manifest."
+            )
             _write_manifest(empty=True)
             return 0
-        print("FATAL: ANTHROPIC_API_KEY not set. Pass --shape-only for schema verification only.", file=sys.stderr)
+        print(
+            "FATAL: ANTHROPIC_API_KEY not set. Pass --shape-only for schema verification only.",
+            file=sys.stderr,
+        )
         return 2
 
     TRANSCRIPTS.mkdir(parents=True, exist_ok=True)
@@ -109,6 +117,7 @@ def _grade(project_dir: pathlib.Path, spec: pathlib.Path) -> dict:
     sys.path.insert(0, str(ARTEFACT_DIR.parent / "single_shot_benchmark" / "_harness"))
     from grade import grade as _g  # type: ignore
     import re
+
     spec_text = spec.read_text()
     m = re.search(r"## Acceptance criteria\s*\n((?:\s*-\s+.+\n?)+)", spec_text)
     acs = []
@@ -121,7 +130,14 @@ def _grade(project_dir: pathlib.Path, spec: pathlib.Path) -> dict:
 
 
 def _stable_hash_or_blank() -> str:
-    cat = REPO_ROOT / "skills" / "SKILL-001-fastapi-production" / "engine" / "index" / "catalog.json"
+    cat = (
+        REPO_ROOT
+        / "skills"
+        / "SKILL-001-fastapi-production"
+        / "engine"
+        / "index"
+        / "catalog.json"
+    )
     if not cat.exists():
         return ""
     d = json.loads(cat.read_text())

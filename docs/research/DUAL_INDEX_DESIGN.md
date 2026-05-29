@@ -2,7 +2,7 @@
 
 > **Pre-implementation design.** Distillation of four research reports
 > (Anthropic/MCP, academic, production, cognition) into a single
-> executable design for two indices: one for the LLM Maestro, one for
+> executable design for two indices: one for the LLM agent, one for
 > humans. Shared source of truth, two renderings. Nothing here is built
 > yet — this document is the contract the implementation will honour.
 >
@@ -149,7 +149,7 @@ auto-include. Per MCP spec, resources are "application-driven."
 | `skill://index` | Compact JSON of `engine/index/catalog.json` minus full schemas. |
 | `skill://primitives` | 122 primitives registry (short form: name, concern, 1-line purpose). |
 | `skill://recipes` | 290 compose-with recipes as structured JSON. |
-| `skill://examples/{slug}` | Full `examples/NN-slug/MAESTRO_SESSION.md` for each worked example. |
+| `skill://examples/{slug}` | Full `examples/NN-slug/AGENT_SESSION.md` for each worked example. |
 | `skill://workflow` | Canonical workflow: scaffold → add_slices → audit → verify → deploy. |
 
 Resources are the answer to "how do I put docs in front of the LLM

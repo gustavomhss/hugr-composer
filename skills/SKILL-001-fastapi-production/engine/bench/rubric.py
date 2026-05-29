@@ -7,9 +7,9 @@ Four dimensions, 25% each:
    to files/endpoints/tables present) + auditor sign-off for semantics.
 2. **test_suite_pass** — percentage of the spec's acceptance criteria
    covered by passing tests in the produced codebase.
-3. **primitive_gate_pass** — for every primitive the Maestro imported,
+3. **primitive_gate_pass** — for every primitive the agent imported,
    does the primitive still pass its T0-T9 gate in isolation? Regression
-   guard that the Maestro did not corrupt a primitive.
+   guard that the agent did not corrupt a primitive.
 4. **hand_editability** — a human reader's 0-100 rating of how easy the
    produced codebase is to fork and edit. Judged on: naming, module
    boundaries, lack of magic, test readability. Provided at scoring

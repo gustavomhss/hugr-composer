@@ -1,4 +1,4 @@
-# Maestro session — 08-stripe-billing
+# agent session — 08-stripe-billing
 
 Plan-level transcript for `mid/01_saas_with_stripe_billing.md`.
 

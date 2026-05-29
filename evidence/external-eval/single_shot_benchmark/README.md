@@ -2,12 +2,12 @@
 
 ## Claim
 
-PRODUCT §4: "Maestro produces running, tested, production-grade backend single-session on ≥70% of fresh specs."
+PRODUCT §4: "agent produces running, tested, production-grade backend single-session on ≥70% of fresh specs."
 
 ## Method
 
 1. **Corpus.** 10 specs under `specs/` that were NOT part of the benchmark corpus used for `plan_level` / `code_level` training. Each spec is a ~200-word prompt + 3-5 acceptance criteria + 1-2 non-requirements, following the same shape as `benchmarks/specs/` but authored post-freeze specifically for this artefact.
-2. **Runner.** `_harness/run.py` drives one Maestro session per spec with the canonical system prompt + HuGR MCP tools available. Single-shot means NO intermediate human guidance; only the initial spec goes in.
+2. **Runner.** `_harness/run.py` drives one agent session per spec with the canonical system prompt + HuGR MCP tools available. Single-shot means NO intermediate human guidance; only the initial spec goes in.
 3. **Grading.** `_harness/grade.py` checks for each spec:
    - Emitted project boots (`.venv/bin/uvicorn app.main:app` returns 200 on `/healthz`).
    - Emitted `test_*.py` all pass (`.venv/bin/pytest`).
@@ -24,7 +24,7 @@ single_shot_benchmark/
 │   ├── 01-*.md ... 10-*.md   (blind specs)
 │   └── README.md              (authoring rules + corpus hash)
 ├── _harness/
-│   ├── run.py                 (Maestro session driver)
+│   ├── run.py                 (agent session driver)
 │   ├── grade.py               (4-check grader)
 │   └── prompt.md              (system prompt used for the run)
 ├── transcripts/              (one dir per spec, populated by run.py)

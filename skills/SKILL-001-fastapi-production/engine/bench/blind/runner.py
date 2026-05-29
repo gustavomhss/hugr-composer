@@ -16,10 +16,10 @@ from pathlib import Path
 
 from engine.bench.blind import HARNESS_VERSION
 from engine.bench.blind.adapter import (
+    AgentAdapter,
     ClaudeCliAdapter,
     ClaudeCliConfig,
     EmissionResult,
-    MaestroAdapter,
     StubAdapter,
 )
 from engine.bench.blind.attribution import attribute
@@ -183,7 +183,7 @@ def _read_metrics_for(run_root: Path, spec: Spec, condition: str, attempt: int) 
 
 def run_attempt(
     spec: Spec,
-    adapter: MaestroAdapter,
+    adapter: AgentAdapter,
     *,
     run_id: str,
     condition: str,
@@ -228,7 +228,7 @@ def run_attempt(
 
 def run_all(
     specs: list[Spec],
-    adapters: dict[str, MaestroAdapter],
+    adapters: dict[str, AgentAdapter],
     *,
     seeds: list[int],
     run_id: str | None = None,
@@ -361,7 +361,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     if args.stub:
-        adapters: dict[str, MaestroAdapter] = {
+        adapters: dict[str, AgentAdapter] = {
             "naked": StubAdapter(args.stub_fixture_root, name="naked"),
             "kit": StubAdapter(args.stub_fixture_root, name="kit"),
         }

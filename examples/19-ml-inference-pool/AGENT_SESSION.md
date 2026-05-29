@@ -1,4 +1,4 @@
-# Maestro session — 19-ml-inference-pool
+# agent session — 19-ml-inference-pool
 
 Plan-level transcript for
 `adversarial/04_missing_primitive_ml_inference_pool.md`.

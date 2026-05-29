@@ -21,6 +21,7 @@ Usage (when ready):
 
 Cost: ~$75-150 for 10 specs × 3 models at current pricing.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -43,9 +44,21 @@ MANIFEST = ARTEFACT_DIR / "run_manifest.json"
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[4]
 
 MODELS = [
-    {"id": "anthropic:claude-opus-4-7-20260101", "env": "ANTHROPIC_API_KEY", "label": "claude_opus_4_7"},
-    {"id": "openai:gpt-5.1-pro-20260401", "env": "OPENAI_API_KEY", "label": "gpt_5_1_pro"},
-    {"id": "google:gemini-2.5-ultra-20260215", "env": "GOOGLE_API_KEY", "label": "gemini_2_5_ultra"},
+    {
+        "id": "anthropic:claude-opus-4-7-20260101",
+        "env": "ANTHROPIC_API_KEY",
+        "label": "claude_opus_4_7",
+    },
+    {
+        "id": "openai:gpt-5.1-pro-20260401",
+        "env": "OPENAI_API_KEY",
+        "label": "gpt_5_1_pro",
+    },
+    {
+        "id": "google:gemini-2.5-ultra-20260215",
+        "env": "GOOGLE_API_KEY",
+        "label": "gemini_2_5_ultra",
+    },
 ]
 
 
@@ -63,8 +76,10 @@ def _prompt_bundle_hash() -> str:
     return _sha(SHARED_PROMPT)
 
 
-def _drive_session(spec_path: pathlib.Path, model: dict, transcript_dir: pathlib.Path) -> pathlib.Path:
-    """Drive ONE Maestro session for the given spec + model.
+def _drive_session(
+    spec_path: pathlib.Path, model: dict, transcript_dir: pathlib.Path
+) -> pathlib.Path:
+    """Drive ONE agent session for the given spec + model.
 
     Implementation deferred to 48h pre-tag per LAUNCH.md §2.0. To wire:
     - Use the provider SDK matching `model["id"]` prefix.
@@ -98,7 +113,10 @@ def main() -> int:
             print(f"--shape-only: missing keys {missing}; writing EMPTY run_manifest.")
             _write_manifest(empty=True)
             return 0
-        print(f"FATAL: missing API keys: {missing}. Pass --shape-only for schema verification only.", file=sys.stderr)
+        print(
+            f"FATAL: missing API keys: {missing}. Pass --shape-only for schema verification only.",
+            file=sys.stderr,
+        )
         return 2
 
     TRANSCRIPTS.mkdir(parents=True, exist_ok=True)
@@ -127,6 +145,7 @@ def main() -> int:
 
     # Post-process variance
     from variance import compute as variance_compute
+
     VARIANCE.write_text(json.dumps(variance_compute(RESULTS), indent=2))
     return 0
 
@@ -136,6 +155,7 @@ def _grade(project_dir: pathlib.Path, spec: pathlib.Path) -> dict:
     sys.path.insert(0, str(ARTEFACT_DIR.parent / "single_shot_benchmark" / "_harness"))
     from grade import grade as _g  # type: ignore
     import re
+
     spec_text = spec.read_text()
     m = re.search(r"## Acceptance criteria\s*\n((?:\s*-\s+.+\n?)+)", spec_text)
     acs = []
@@ -148,7 +168,14 @@ def _grade(project_dir: pathlib.Path, spec: pathlib.Path) -> dict:
 
 
 def _stable_hash_or_blank() -> str:
-    cat = REPO_ROOT / "skills" / "SKILL-001-fastapi-production" / "engine" / "index" / "catalog.json"
+    cat = (
+        REPO_ROOT
+        / "skills"
+        / "SKILL-001-fastapi-production"
+        / "engine"
+        / "index"
+        / "catalog.json"
+    )
     if not cat.exists():
         return ""
     d = json.loads(cat.read_text())
@@ -161,8 +188,7 @@ def _write_manifest(empty: bool, started: str = "", completed: str = "") -> None
         "tree": _git("rev-parse", "HEAD^{tree}"),
         "stable_hash": _stable_hash_or_blank(),
         "models": [
-            {"id": "" if empty else m["id"], "label": m["label"]}
-            for m in MODELS
+            {"id": "" if empty else m["id"], "label": m["label"]} for m in MODELS
         ],
         "prompt_bundle_hash": _prompt_bundle_hash(),
         "tool_manifest_hash": "",

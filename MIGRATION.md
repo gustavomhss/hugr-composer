@@ -24,7 +24,7 @@ under `### Added` / `### Changed`, not here.
 
 ## 2. Tool naming — canonical scheme locked
 
-All Maestro-facing tools now follow `fastapi_<domain>_<verb>_<noun>`
+All agent-facing tools now follow `fastapi_<domain>_<verb>_<noun>`
 with closed vocabularies (10 domains × 9 verbs).
 
 **Before (v0.x, any snapshot):**
@@ -44,7 +44,7 @@ catalog entry (`engine/index/catalog.json`) for cross-reference;
 they are NOT registered with the MCP server. Callers using a legacy
 name receive a "tool not found" response.
 
-**Fix:** update any Maestro prompt / downstream script to use the
+**Fix:** update any agent prompt / downstream script to use the
 canonical name. Look up the new name via
 `fastapi_meta_search "<concept>"` or by reading catalog.json.
 
@@ -135,10 +135,10 @@ registered ones. v1.0.0 distinguishes:
 
 - **`status="stable"`** — registered primitive, production-ready.
 - **`status="staged"`** — present in `_staging/`, discoverable but
-  NOT production-ready. Maestro should only cite staged primitives
+  NOT production-ready. agent should only cite staged primitives
   after human review AND a §A12(b) signal.
 
-**Fix:** any Maestro prompt that filtered primitives by name-only
+**Fix:** any agent prompt that filtered primitives by name-only
 must now filter by `status="stable"` to avoid suggesting unfinished
 code. See INTERFACES.md §2.2.
 
@@ -205,7 +205,7 @@ Once you updated callers:
     # 2. Run the contract check
     PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check
 
-    # 3. Run your Maestro session against the skill
+    # 3. Run your agent session against the skill
     #    and confirm tool names resolve.
 
 If any step fails, file an issue — include the failing step's full

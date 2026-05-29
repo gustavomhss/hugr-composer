@@ -71,7 +71,7 @@ A skill principal. Convention over Configuration para FastAPI.
 > Drift entre este bloco e INVENTORY.md = bug de audit.
 
 ```
-257  arquivos com MCP_TOOL      (superfície Maestro)
+257  arquivos com MCP_TOOL      (superfície agent)
 201  tools indexados no catalog.json
 124  primitivos registrados      (core/venous/<ns>/<Name>/)
 175  primitivos staged           (PascalCase-filtered, +42 quarantined)

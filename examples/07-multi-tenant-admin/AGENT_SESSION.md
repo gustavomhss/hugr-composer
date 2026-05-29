@@ -1,4 +1,4 @@
-# Maestro session — 07-multi-tenant-admin
+# agent session — 07-multi-tenant-admin
 
 Plan-level transcript for `baseline/05_multi_tenant_admin.md`.
 

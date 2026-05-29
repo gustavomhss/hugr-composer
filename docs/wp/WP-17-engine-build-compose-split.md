@@ -479,7 +479,7 @@ outputs that the WHOLE skill kit treats as source-of-truth:
   rules; read by `engine.discovery.compose` (the
   `fastapi_meta_search_composition` MCP tool); read by every recipe lookup
   in the kit. A single key dropped here removes a primitive from the
-  Maestro's visible surface.
+  the agent's visible surface.
 - `core/venous/<ns>/<Name>/<Name>.md` `## Compose with:` sections — read by
   §A5 "compose-with ≥3" inviolable rule and the recipe retrieval index. A
   silent re-append from this WP would duplicate bullets in 124 production

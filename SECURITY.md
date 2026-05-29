@@ -53,7 +53,7 @@ Out-of-scope:
 - Vulnerabilities in third-party dependencies unless we pin the
   affected version (then it's our fix to bump the pin; report is
   in-scope).
-- Issues in Forge (the host editor) or Maestro (the agent
+- Issues in Forge (the host editor) or agent (the agent
   orchestrator) — please file those with their respective teams.
 - Social-engineering, physical access, or DoS-via-resource-exhaustion
   against the user's own machine.

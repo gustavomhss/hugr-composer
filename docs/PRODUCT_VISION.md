@@ -1,12 +1,12 @@
 # HuGR Arsenal — Product Vision
 
 > Biblioteca proprietária de componentes de código battle-tested que servem
-> como peças de LEGO para o HuGR Maestro (coding agent powered by Claude).
+> como peças de LEGO para o HuGR agent (coding agent powered by Claude).
 
 ## O Produto
 
 **HuGR Arsenal** é uma biblioteca de componentes de código (peças de LEGO)
-que o HuGR Maestro usa para montar projetos completos. O LLM não gera código
+que o HuGR agent usa para montar projetos completos. O LLM não gera código
 do zero — seleciona, compõe e adapta peças prontas e testadas.
 
 ## O Moat
@@ -16,10 +16,10 @@ Não é o LLM (todo mundo tem). Não é o agent (Cursor/Devin fazem).
 
 ```
 Outros agents:  LLM → gera do zero → lento, caro, errático
-HuGR Maestro:   LLM → monta peças testadas → rápido, barato, preciso
+HuGR agent:   LLM → monta peças testadas → rápido, barato, preciso
 ```
 
-| Métrica | Cursor/Devin | HuGR Maestro |
+| Métrica | Cursor/Devin | HuGR agent |
 |---------|-------------|--------------|
 | Custo por projeto | $0.50-2.00 | $0.02-0.10 |
 | Tempo | 60-180s | 8-20s |
@@ -59,18 +59,18 @@ Layer 4: VALIDATION ($0-0.05, 5s)  → ruff + mypy + pytest
 ### Infra necessária
 - SkillEngine: orquestrador inteligente (Layer 0-4)
 - Pattern specs: 100+ patterns language-agnostic
-- Maestro: coding agent que consome o Arsenal
+- agent: coding agent que consome o Arsenal
 
 ## Flywheel
 
 ```
-Mais peças → Maestro resolve mais → Mais usuários → Mais feedback → Mais peças
+Mais peças → agent resolve mais → Mais usuários → Mais feedback → Mais peças
 ```
 
 ## Defensabilidade
 
 1. Tempo: meses pra replicar qualidade + testes + composição
-2. Exclusividade: só Maestro acessa (não é open source)
+2. Exclusividade: só agent acessa (não é open source)
 3. Calibração: Haiku + Arsenal > Opus naked (provado)
 4. Composição: peças compõem entre si (200+ cenários testados)
 5. Crescimento: cada peça nova torna o sistema mais valioso

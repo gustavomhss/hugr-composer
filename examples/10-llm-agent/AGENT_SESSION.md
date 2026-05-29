@@ -1,4 +1,4 @@
-# Maestro session — 10-llm-agent
+# agent session — 10-llm-agent
 
 Plan-level transcript for `mid/05_llm_agent_backend.md`.
 

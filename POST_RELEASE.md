@@ -115,7 +115,7 @@ tag and Gustavo reviews post-hoc.
 - **Forge team:** notify if a skill regression affects Forge's skill
   loader contract (INTERFACES.md §3). Fix path may require
   coordinated Forge patch.
-- **Maestro team:** notify if a tool name or schema changed in a
+- **agent team:** notify if a tool name or schema changed in a
   hotfix (shouldn't — PATCH releases don't rename — but monitor).
 - **Internal:** CHANGELOG.md + git tag message are the canonical
   announcement; everything else references them.

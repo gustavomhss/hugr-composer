@@ -1,6 +1,6 @@
 # Benchmark specs
 
-Plain-English product briefs used by the Maestro benchmark harness
+Plain-English product briefs used by the agent benchmark harness
 (CONTRACT §B3). Each spec file contains **four mandatory sections**:
 
 - `## Title` — one line.
@@ -12,7 +12,7 @@ Plain-English product briefs used by the Maestro benchmark harness
 ### Rules authored into every spec
 
 1. **No tool hints.** The spec NEVER names a primitive or tool
-   (`CircuitBreaker`, `add_rbac`, …). The Maestro must discover.
+   (`CircuitBreaker`, `add_rbac`, …). The agent must discover.
 2. **No framework hints.** Specs describe behavior, not FastAPI /
    SQLAlchemy / Celery conventions.
 3. **Acceptance criteria are machine- or inspection-checkable.** "Fast"

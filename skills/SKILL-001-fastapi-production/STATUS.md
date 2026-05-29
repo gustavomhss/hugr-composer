@@ -18,7 +18,7 @@ version: 1.0.0-rc.1
 
 ## Skill scope
 
-Production-grade FastAPI backend. The Maestro invokes this skill to
+Production-grade FastAPI backend. The agent invokes this skill to
 scaffold a project tree, uses slice tools to add capabilities (auth,
 CRUD, payments, realtime, compliance, ...), and composes primitives
 directly when a capability doesn't match any slice tool. All three
@@ -34,7 +34,7 @@ surfaces are MCP-registered and JIT-discoverable via
 | FastAPI adapters (`core/venous/_adapters/fastapi/`) | 17 | `find core/venous/_adapters/fastapi -maxdepth 1 -name '*Adapter.py' ! -name 'test_*' \| wc -l` |
 | Generator files (`generators/`) | 60 | `find generators -name '*.py' ! -name '__init__.py' ! -name 'test_*' \| wc -l` |
 | MCP-registered tools (catalog) | 201 | `jq '.tools \| length' engine/index/catalog.json` |
-| Maestro-visible surface (catalog + tier-1 + tree) | 217 | 201 catalog + 7 tier-1 + 9 tree dispatchers |
+| agent-visible surface (catalog + tier-1 + tree) | 217 | 201 catalog + 7 tier-1 + 9 tree dispatchers |
 | Production primitives (registered) | 124 | `grep -c '^- name:' engine/primitives_by_concern.yaml` |
 | Production primitive directories | 124 | `find core/venous -mindepth 2 -maxdepth 2 -type d ! -path '*_staging*' ! -path '*_adapters*' ! -path '*__pycache__*' \| wc -l` |
 | Staged primitives (PascalCase, promotable) | 175 | `jq '[.primitives[] \| select(.status=="staged")] \| length' engine/index/catalog.json` |
@@ -46,7 +46,7 @@ surfaces are MCP-registered and JIT-discoverable via
 | Benchmark score (plan-level, best-of ensemble) | 100.00 | `jq '.overall' benchmarks/latest_score.json` |
 | Benchmark score (code-level, 20/20 specs) | 100.00 | `jq '.overall' benchmarks/code_level_latest.json` |
 
-The 217 Maestro-visible surfaces decompose as: 201 auto-discovered catalog
+The 217 agent-visible surfaces decompose as: 201 auto-discovered catalog
 tools (100 `adapt/extend/` slice + 27 other `adapt/` tools across
 evolve/operate/verify/contracts/proactive + 60 generators + 9 module-tools
 + remainder = audit/discovery helpers) + 7 tier-1 meta tools
@@ -54,19 +54,19 @@ evolve/operate/verify/contracts/proactive + 60 generators + 9 module-tools
 dispatchers (`mcp_tools/tree/`). All auto-discovered via `MCP_TOOL`
 metadata scan — CONTRACT §B1.5 forbids manual `@mcp_app.tool` decorators.
 
-## Maestro workflow
+## agent workflow
 
 1. **Discovery.** MCP client lists tools via `tools/list`. JIT
    retrieval via `fastapi_meta_search_primitive(query, concern?)` +
    `fastapi_meta_search_composition(intent)` — BM25 + recipe index.
    Latency <50 ms cold; top-1 accuracy 85% (primitives), 90% (recipes).
-2. **Scaffold.** Maestro calls a macro generator (e.g.
+2. **Scaffold.** agent calls a macro generator (e.g.
    `fastapi_generate_project`) to lay down the project tree.
-3. **Capability adds.** Maestro invokes one or more slice tools
+3. **Capability adds.** agent invokes one or more slice tools
    (`fastapi_add_stripe_webhook`, `fastapi_add_rbac`, …). 64 of the
    19 slice tools emit code that imports from `core.venous.*` —
    the Rails-analogy connection is fully operative (Phase 1 complete).
-4. **Customize.** Where no slice tool fits exactly, Maestro composes
+4. **Customize.** Where no slice tool fits exactly, agent composes
    primitives directly — `from core.venous.<ns>.<Name>` into the
    generated code. Every production primitive carries a
    "Compose with:" section citing ≥3 sibling pairings.
@@ -142,7 +142,7 @@ Current score (methodology `plan_level_v3_best_of_ensemble`):
 ```
 
 **Known limitation (see `/CHANGELOG.md` v0.1.0):** this is *plan-level* —
-it scores the Maestro's requirement→primitive/tool map, not the
+it scores the the agent's requirement→primitive/tool map, not the
 executable behaviour of the emitted code. Code-level evaluation is
 Phase 5 work (tracked by a dedicated CONTRACT item added this sprint).
 
@@ -205,10 +205,10 @@ Local full CI (replicates GitHub Actions):
 
 ## Examples
 
-Five real Maestro-built examples live under `/examples/`, each
+Five real agent-built examples live under `/examples/`, each
 tied to a benchmark spec and passing pytest end-to-end
-(24/24 tests green). See `/examples/*/MAESTRO_SESSION.md` for
-the plan-level transcript the Maestro used to build them.
+(24/24 tests green). See `/examples/*/AGENT_SESSION.md` for
+the plan-level transcript the agent used to build them.
 
 ---
 

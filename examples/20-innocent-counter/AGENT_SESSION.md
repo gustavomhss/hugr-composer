@@ -1,4 +1,4 @@
-# Maestro session — 20-innocent-counter
+# agent session — 20-innocent-counter
 
 Plan-level transcript for
 `adversarial/05_hidden_scaling_innocent_counter.md`.

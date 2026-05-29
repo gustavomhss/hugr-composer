@@ -1,4 +1,4 @@
-# Maestro session — 16-exactly-once-weak-broker
+# agent session — 16-exactly-once-weak-broker
 
 Plan-level transcript for
 `adversarial/01_rare_edge_exactly_once_weak_broker.md`.

@@ -1,4 +1,4 @@
-# Maestro session — 09-event-sourced-orders
+# agent session — 09-event-sourced-orders
 
 Plan-level transcript for `mid/03_event_sourced_orders.md`.
 

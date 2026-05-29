@@ -26,7 +26,7 @@ python3.12 -m venv .venv
 
 | Tool                         | What it generated / verified in this example      |
 | ---------------------------- | ------------------------------------------------- |
-| `fastapi_generate_project`   | Base app skeleton (conceptual — see MAESTRO_SESSION). |
+| `fastapi_generate_project`   | Base app skeleton (conceptual — see AGENT_SESSION). |
 | `fastapi_add_crud_resource`  | `todos` resource with owner-scoped list/get/patch/delete. |
 | `fastapi_add_pagination`     | Keyset cursor over `(created_at, id)`.            |
 | `fastapi_add_auth_jwt`       | Bearer JWT → `current_user` dependency.           |

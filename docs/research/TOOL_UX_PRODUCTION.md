@@ -83,7 +83,7 @@
 
 - **Per-role tool scoping (CrewAI).**
   *What:* Each agent only sees tools relevant to its role.
-  *How for HuGR:* if Maestro has phases (plan → generate → verify → operate), expose
+  *How for HuGR:* if agent has phases (plan → generate → verify → operate), expose
   only phase-relevant tools. Maps onto existing `extend/`, `verify/`, `operate/`,
   `evolve/` directory structure — the infrastructure is already there.
 
@@ -215,7 +215,7 @@ Grounded in precedent, priority-ordered:
    internal action enum).
 
 5. **Phase-scoped tool exposure.** Precedent: CrewAI per-role tools.
-   If Maestro has phases, mirror `extend/` vs `verify/` vs `operate/` vs `evolve/`
+   If agent has phases, mirror `extend/` vs `verify/` vs `operate/` vs `evolve/`
    onto phase-gated tool sets. Infrastructure already exists in
    `adapt/{extend,verify,operate,evolve}/`.
 

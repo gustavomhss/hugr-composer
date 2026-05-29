@@ -45,7 +45,7 @@ trustworthy. Small on purpose — every rule has teeth (a check) and a reason.
 ## 7. Decisions & documentation
 - Significant architectural choices → an ADR in `docs/adr/NNNN-title.md` (template: `0000-template.md`).
 - Work is parceled as Work Package contracts in `docs/wp/` (template: `WP-CONTRACT-TEMPLATE.md`).
-- Docs live with the code in `docs/`, never scattered as `MAESTRO_SESSION.md` / `brief.md` / `KNOWLEDGE.md` in the tree.
+- Docs live with the code in `docs/`, never scattered as `AGENT_SESSION.md` / `brief.md` / `KNOWLEDGE.md` in the tree.
 
 ## How it's enforced
 | Layer | Tool |

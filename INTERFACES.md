@@ -1,11 +1,11 @@
-# INTERFACES — SKILL-001 ↔ Maestro / Forge contract
+# INTERFACES — SKILL-001 ↔ agent / Forge contract
 
-> **Purpose:** enumerate exactly what the skill promises to Maestro
+> **Purpose:** enumerate exactly what the skill promises to agent
 > (consumer LLM agent) and to Forge (host editor/runtime). Anyone
 > building against the skill reads this and knows what's stable, what's
 > versioned, and what they can rely on.
 >
-> **Audience:** Maestro session & Forge session (pass verbatim to
+> **Audience:** agent session & Forge session (pass verbatim to
 > those teams).
 >
 > **Binding at:** v1.0.0. Breaking changes only on MAJOR bumps.
@@ -15,7 +15,7 @@
 ## §1 — How the skill is distributed
 
 The skill is a **standalone module** living at `skills/SKILL-001-fastapi-production/`
-in this repo. It has no runtime dependency on Forge or Maestro — both
+in this repo. It has no runtime dependency on Forge or agent — both
 consume it, neither owns it.
 
 Installation surface:
@@ -33,14 +33,14 @@ Installation surface:
 File that identifies the skill to a host:
 - **`skills/SKILL-001-fastapi-production/SKILL.md`** (Anthropic Agent
   Skills format: YAML frontmatter + ≤500-line body). This is the
-  entry point Maestro reads first.
+  entry point agent reads first.
 
 ---
 
-## §2 — Contract exposed to **Maestro** (consumer)
+## §2 — Contract exposed to **agent** (consumer)
 
-Maestro is an LLM agent that invokes skill tools via MCP to build
-FastAPI backends. The contract to Maestro has four surfaces:
+agent is an LLM agent that invokes skill tools via MCP to build
+FastAPI backends. The contract to agent has four surfaces:
 
 ### §2.1 — MCP tool catalog
 
@@ -61,7 +61,7 @@ Authoritative list: **`skills/SKILL-001-fastapi-production/engine/index/catalog.
 
 ### §2.1.1 — Tool surface total (201 + 7 + 9 = 217)
 
-Three separate registration paths feed the Maestro MCP server:
+Three separate registration paths feed the agent MCP server:
 
 1. **201 catalog tools** — scanned from `adapt/`, `generators/`,
    `modules/`, `benchmark/`, `meta/`, `core/tools/`,
@@ -84,7 +84,7 @@ Three separate registration paths feed the Maestro MCP server:
 
 ### §2.1.2 — Tier-1 meta tools (7)
 
-Always stable; the first tool Maestro calls in a session:
+Always stable; the first tool agent calls in a session:
 
 - `fastapi_meta_home` — skill landscape (domains × top tools × counts).
 - `fastapi_meta_search` — BM25 over tools + primitives + recipes.
@@ -142,7 +142,7 @@ Authoritative list (registered): **`engine/primitives_by_concern.yaml`**
 **Stability guarantees:**
 - Registered primitive names + namespaces frozen at v1.0.0 (MAJOR
   bump required for renames).
-- Staged primitives are unstable; Maestro should cite them only
+- Staged primitives are unstable; agent should cite them only
   after human review and only if a §A12(b) signal exists.
 - Each registered primitive exports the class/protocol named in its
   manifest; module path is `core.venous.<namespace>.<Name>.<Name>`.
@@ -158,7 +158,7 @@ Authoritative list (registered): **`engine/primitives_by_concern.yaml`**
 **Stability guarantee:** recipe IDs are stable within a MINOR release;
 a recipe can be refined but not removed mid-minor.
 
-### §2.4 — What Maestro MUST do
+### §2.4 — What agent MUST do
 
 - Always load `SKILL.md` first.
 - Always check `status` of any primitive before citing — refuse to
@@ -170,27 +170,27 @@ a recipe can be refined but not removed mid-minor.
   (`fastapi`, `starlette`, `sqlalchemy`, `pydantic`) from
   `core.venous.<ns>.<Name>` — only from `core.venous._adapters.fastapi.*`.
 
-### §2.5 — Points of attention for the Maestro session
+### §2.5 — Points of attention for the agent session
 
-1. **Canonical names locked.** If a benchmark run shows Maestro calling
+1. **Canonical names locked.** If a benchmark run shows agent calling
    legacy names (`add_auth_jwt` vs `fastapi_auth_add_auth_jwt`), fix
-   Maestro prompt, not the skill — skill's canonical names don't shift.
-2. **Compose tier discipline.** Maestro must try tier 4a (tool_delegate)
+   agent prompt, not the skill — skill's canonical names don't shift.
+2. **Compose tier discipline.** agent must try tier 4a (tool_delegate)
    before falling to ad-hoc emission. Regression: if examples show
-   Maestro skipping tiers, tighten the prompt.
-3. **Staged primitive opt-in.** Maestro may only promote a staged
+   agent skipping tiers, tighten the prompt.
+3. **Staged primitive opt-in.** agent may only promote a staged
    primitive to production scaffold if it also writes a benchmark
    spec that cites the need (§A12 respected).
 4. **No editing under `core/venous/_adapters/`** without matching
-   primitive update. If Maestro tries to patch an adapter inline, that's
+   primitive update. If agent tries to patch an adapter inline, that's
    a bug — adapter edits go through the adapter's own test suite.
 
 ---
 
 ## §3 — Contract exposed to **Forge** (host editor)
 
-Forge is the HuGR editor runtime where Maestro sessions execute. Forge
-loads the skill and exposes it to the running Maestro.
+Forge is the HuGR editor runtime where agent sessions execute. Forge
+loads the skill and exposes it to the running agent.
 
 ### §3.1 — Skill discovery
 
@@ -198,7 +198,7 @@ loads the skill and exposes it to the running Maestro.
   the canonical entry point for the skill.
 - SKILL.md follows the **Anthropic Agent Skills format**: the YAML
   frontmatter declares exactly three keys — `name`, `description`,
-  `license` — nothing else. `description` is the Maestro-facing
+  `license` — nothing else. `description` is the agent-facing
   one-paragraph When-to-use (800-1200 chars, ≥3 transcripts in the
   body; machine-verified by `_r_skill_md_contract` — CONTRACT §B2.5).
 - Canonical counts + entry-tool list + phase model + invariants are
@@ -298,12 +298,12 @@ Skill MAJOR bumps are announced in CHANGELOG.md under a dedicated
    should be loaded in read-only mode (search/describe only), not
    scaffold/compose.
 4. **Adapter registration.** Forge should NOT auto-register adapter
-   files (`_adapters/fastapi/*.py`) as Maestro tools. Adapters are
+   files (`_adapters/fastapi/*.py`) as agent tools. Adapters are
    called from generated code, not via MCP.
 
 ---
 
-## §4 — Shared guarantees (apply to both Maestro and Forge)
+## §4 — Shared guarantees (apply to both agent and Forge)
 
 ### §4.1 — Semver binding
 
@@ -334,7 +334,7 @@ Skill MAJOR bumps are announced in CHANGELOG.md under a dedicated
 - Skill errors use `skill_error_code` + `message` + `remediation`
   (stable schema).
 - Forge surfaces the remediation string to the user.
-- Maestro surfaces error_code in the session transcript.
+- agent surfaces error_code in the session transcript.
 
 ---
 
@@ -343,29 +343,29 @@ Skill MAJOR bumps are announced in CHANGELOG.md under a dedicated
 - **Discrepancy between skill and this doc:** skill wins for runtime
   behaviour; this doc wins for contractual intent. File an INTERFACES
   drift issue, update both in the same PR.
-- **Breaking-change request from Maestro or Forge team:** opens a
+- **Breaking-change request from agent or Forge team:** opens a
   MAJOR-bump discussion, not a silent patch.
 - **Security issue:** out-of-band to Gustavo; skill has no runtime
   hotfix path beyond a PATCH release.
 
 ---
 
-## §6 — Open questions for Maestro + Forge teams
+## §6 — Open questions for agent + Forge teams
 
 Items the skill cannot answer unilaterally; relay to those sessions:
 
-1. **Maestro:** what's the expected transcript format when skill tools
-   are invoked? The skill produces structured `ToolResult`s; Maestro
+1. **agent:** what's the expected transcript format when skill tools
+   are invoked? The skill produces structured `ToolResult`s; agent
    session must decide render format.
-2. **Maestro:** how should staged primitives be presented in search
+2. **agent:** how should staged primitives be presented in search
    results — filtered out by default, or shown with warning badge?
 3. **Forge:** does the skill loader run in the same process as the
-   Maestro session, or is it IPC? Affects how `MCP_TOOL` discovery
+   agent session, or is it IPC? Affects how `MCP_TOOL` discovery
    errors surface.
 4. **Forge:** does the editor have a per-skill "pinned catalog hash"
    UI? If yes, skill `stable_hash` flow should integrate; if no, add
    to §3.6 roadmap.
-5. **Both:** is there a shared **session replay** format (Maestro
+5. **Both:** is there a shared **session replay** format (agent
    transcript + generated project snapshot) that includes the skill
    version + stable_hash so failures can be reproduced? The skill
    doesn't define it today.
@@ -378,4 +378,4 @@ Items the skill cannot answer unilaterally; relay to those sessions:
 ## §7 — Change log for this doc
 
 - 2026-04-22: initial draft (Claude). Awaits Gustavo review + relay
-  to Maestro + Forge sessions.
+  to agent + Forge sessions.
