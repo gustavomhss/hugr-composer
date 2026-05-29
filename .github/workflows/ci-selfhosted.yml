@@ -220,7 +220,29 @@ jobs:
           PYTHONPATH=. "${VENV}/bin/python" hugr_auth/test_issuance.py
           PYTHONPATH=. "${VENV}/bin/python" hugr_auth/test_e2e_gate.py
           cd "${{ github.workspace }}/${KIT}"
-          PYTHONPATH=. "${VENV}/bin/python" -c "import asyncio; from mcp_tools.server import mcp; from mcp_tools.discovery import discover_and_register; discover_and_register(mcp); n=len(asyncio.run(mcp.list_tools())); print(f'MCP discovery: {n} tools'); assert n>=170, f'expected >=170, got {n}'"
+          # Post WAVE-0-F2 (ADR-0003): default discovery surfaces Tier-1
+          # meta + a small default bundle slice (≈18 tools) instead of the
+          # full 201; the rest activate on demand via
+          # fastapi_meta_activate_bundle. We assert two surfaces:
+          #   (a) the lean default tools/list (≤ 30 — clutter cap),
+          #   (b) the full catalogue still reaches ≥ 170 after every bundle
+          #       is activated (no tool got dropped during the refactor).
+          PYTHONPATH=. "${VENV}/bin/python" -c "
+          import asyncio, json, pathlib
+          from mcp_tools.server import mcp
+          from mcp_tools.discovery import discover_and_register, activate_bundle
+          discover_and_register(mcp)
+          default = len(asyncio.run(mcp.list_tools()))
+          print(f'MCP discovery default surface: {default} tools')
+          assert default <= 30, f'tier-1 surface must stay lean (≤30), got {default}'
+          cat = json.loads(pathlib.Path('engine/index/catalog.json').read_text())
+          for s in cat.get('skills', []):
+              for b in s.get('bundles', []):
+                  activate_bundle(b['name'])
+          full = len(asyncio.run(mcp.list_tools()))
+          print(f'MCP discovery full surface (all bundles active): {full} tools')
+          assert full >= 170, f'expected >=170 after activating all bundles, got {full}'
+          "
 
   # --- Postgres-backed: pg e2e + behavior scenarios -------------------------
   postgres-behavior:

@@ -163,8 +163,12 @@ def _r_readme_md() -> tuple[bool, str]:
         "staged": r"\*\*(\d+) staged primitives\*\*",
         "quarantined": r"staged primitives\*\* in `_staging/` \(plus (\d+) quarantined\)",
         "adapters": r"\*\*(\d+) FastAPI adapters\*\*",
-        "generators": r"## 2\. generators/ — (\d+) tools",
-        "adapt_total": r"## 1\. adapt/ — (\d+) tools",
+        # Section numbering shifted in WAVE-0-F2 (catalog schema v2 /
+        # ADR-0003): `## 2. Skills × Bundles` was inserted between
+        # `## 1. adapt/` and the former `## 2. generators/`, pushing
+        # generators to `## 3.`. Same content, new offset.
+        "generators": r"## \d+\. generators/ — (\d+) tools",
+        "adapt_total": r"## \d+\. adapt/ — (\d+) tools",
     }
     canon: dict[str, int] = {}
     for label, pat in patterns.items():
@@ -688,15 +692,17 @@ def _r_counts_sync() -> tuple[bool, str]:
         ("staged", r"\*\*(\d+) staged primitives\*\*"),
         ("quarantined", r"staged primitives\*\* in `_staging/` \(plus (\d+) quarantined\)"),
         ("adapters", r"\*\*(\d+) FastAPI adapters\*\*"),
-        # Recipes come from the catalog manifest, not the primitive tree scan,
-        # so INVENTORY.md is the authoritative count (e.g. the 393→392 drop
-        # after the orphan `Billing → WebhookReceiver` recipe was removed).
-        ("recipes", r"\*\*Catalog:\*\* \d+ tools \+ \d+ primitives \+ (\d+) recipes"),
-        # Also extract tools + primitives from the catalog headline — used
-        # below for the cross-check against catalog.json (added post-WAVE-0-F0
-        # audit; see comment block under the catalog.json cross-check).
-        ("cat_tools", r"\*\*Catalog:\*\* (\d+) tools"),
-        ("cat_primitives", r"\*\*Catalog:\*\* \d+ tools \+ (\d+) primitives"),
+        # Schema v2 hierarchical headline shape (ADR-0003):
+        #   **Catalog:** 1 skill, 6 bundles, 201 tools (201 local + 0
+        #   federated), 299 primitives, 392 recipes.
+        # Each field is captured independently so future federation
+        # handoff (tools_federated > 0) doesn't require this rule to
+        # move again.
+        ("cat_skills", r"\*\*Catalog:\*\* (\d+) skill"),
+        ("cat_bundles", r"\*\*Catalog:\*\* \d+ skills?, (\d+) bundle"),
+        ("cat_tools", r"\*\*Catalog:\*\* \d+ skills?, \d+ bundles?, (\d+) tools"),
+        ("cat_primitives", r"\(\d+ local \+ \d+ federated\), (\d+) primitives"),
+        ("recipes", r"\(\d+ local \+ \d+ federated\), \d+ primitives, (\d+) recipes"),
     ]
     canon: dict[str, int] = {}
     for label, pat in checks:
@@ -724,8 +730,30 @@ def _r_counts_sync() -> tuple[bool, str]:
     except json.JSONDecodeError as exc:
         return False, f"catalog.json malformed: {exc}"
     _cat_counts = _cat.get("counts", {})
+    # Schema v2 (ADR-0003): the headline now carries skills + bundles +
+    # tools_total alongside primitives + recipes. Each field is checked
+    # against catalog.json's hierarchical counts. The skill array length
+    # is also asserted against counts.skills, and the sum of bundle
+    # entries against counts.bundles — closing the I3 invariant that
+    # catalog.json's flat counts cannot drift from its own structure.
+    skills_array_len = len(_cat.get("skills", []))
+    bundles_array_len = sum(len(s.get("bundles", [])) for s in _cat.get("skills", []))
+    if int(_cat_counts.get("skills", -1)) != skills_array_len:
+        return False, (
+            f"catalog.json counts.skills={_cat_counts.get('skills')} "
+            f"!= len(catalog.skills)={skills_array_len} — manifest "
+            "build emitted inconsistent counts; regenerate."
+        )
+    if int(_cat_counts.get("bundles", -1)) != bundles_array_len:
+        return False, (
+            f"catalog.json counts.bundles={_cat_counts.get('bundles')} "
+            f"!= sum(len(s.bundles))={bundles_array_len} — manifest "
+            "build emitted inconsistent counts; regenerate."
+        )
     for inv_key, cat_key in (
-        ("cat_tools", "tools"),
+        ("cat_skills", "skills"),
+        ("cat_bundles", "bundles"),
+        ("cat_tools", "tools_total"),
         ("cat_primitives", "primitives"),
         ("recipes", "recipes"),
     ):
@@ -879,7 +907,9 @@ def _r_counts_sync() -> tuple[bool, str]:
         )
     return True, (
         f"narrative docs (incl. SKILL.md Overview + FREEZE.md + "
-        f"INTERFACES.md) match INVENTORY + LEDGER: "
+        f"INTERFACES.md) match INVENTORY + LEDGER + catalog v2: "
+        f"{canon['cat_skills']} skill / {canon['cat_bundles']} bundles / "
+        f"{canon['cat_tools']} tools / "
         f"{canon['registered']} reg / {canon['staged']} staged / "
         f"{canon['quarantined']} qtn / {canon['adapters']} adapters / "
         f"{canon['recipes']} recipes / {canon['ledger']} ledger "
@@ -1661,7 +1691,8 @@ def _r_skill_md_contract() -> tuple[bool, str]:
         cat_data = json.loads(cat.read_text())
     except (json.JSONDecodeError, OSError) as exc:
         return False, f"catalog_path file malformed: {exc}"
-    for k in ("schema_version", "tools", "primitives", "recipes", "counts"):
+    # Schema v2 adds `skills` as a required top-level key (ADR-0003).
+    for k in ("schema_version", "skills", "tools", "primitives", "recipes", "counts"):
         if k not in cat_data:
             return False, f"catalog.json missing top-level key {k!r}"
 
@@ -1813,10 +1844,17 @@ def _r_index_manifest() -> tuple[bool, str]:
     except (OSError, json.JSONDecodeError) as exc:
         return False, f"catalog.json malformed: {exc}"
     schema_version = data.get("schema_version")
-    if schema_version != "2":
-        return False, f"catalog.json schema_version={schema_version!r}; expected '2'"
+    if schema_version != "2.0":
+        return False, f"catalog.json schema_version={schema_version!r}; expected '2.0'"
     counts = data.get("counts") or {}
-    for field, minimum in (("tools", 150), ("primitives", 100), ("recipes", 200)):
+    # Schema v2: tools_total replaces v1's flat `tools` key (ADR-0003).
+    for field, minimum in (
+        ("tools_total", 150),
+        ("primitives", 100),
+        ("recipes", 200),
+        ("skills", 1),
+        ("bundles", 6),
+    ):
         if int(counts.get(field, 0)) < minimum:
             return False, f"catalog.json counts.{field}={counts.get(field)} < floor {minimum}"
 
@@ -1848,7 +1886,8 @@ def _r_index_manifest() -> tuple[bool, str]:
                 "Regenerate via `python -m engine.index.manifest build` and commit."
             )
     return True, (
-        f"catalog synced: {counts.get('tools')} tools, "
+        f"catalog synced: {counts.get('tools_total')} tools "
+        f"({counts.get('skills')} skill / {counts.get('bundles')} bundles), "
         f"{counts.get('primitives')} primitives, {counts.get('recipes')} recipes"
     )
 
@@ -2160,12 +2199,16 @@ def _r_tier1_surface_truth() -> tuple[bool, str]:
         cat = json.loads(catalog_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         return False, f"catalog.json malformed: {exc}"
-    tool_count = int(cat.get("counts", {}).get("tools", 0))
-    primitive_count = int(cat.get("counts", {}).get("primitives", 0))
+    # Schema v2: `tools_total` replaces v1 flat `tools` key (ADR-0003).
+    # Falls back to legacy `tools` only if a transitional catalog ever
+    # ships; today catalog.json always emits `tools_total`.
+    _counts = cat.get("counts", {})
+    tool_count = int(_counts.get("tools_total", _counts.get("tools", 0)))
+    primitive_count = int(_counts.get("primitives", 0))
     if tool_count <= 0 or primitive_count <= 0:
         return False, (
-            "catalog.json counts.tools / counts.primitives missing or "
-            "zero — cannot validate tier1 surface truth"
+            "catalog.json counts.tools_total / counts.primitives missing "
+            "or zero — cannot validate tier1 surface truth"
         )
 
     # Stale-count detector — SCOPED to agent-visible runtime strings
@@ -2176,21 +2219,21 @@ def _r_tier1_surface_truth() -> tuple[bool, str]:
     # Module docstrings, comments, and research citations like
     # "30–50-tool degradation threshold" are deliberately excluded —
     # they are internal commentary, not runtime surface.
-    maestro_visible_blobs: list[str] = []
+    agent_visible_blobs: list[str] = []
     for m in re.finditer(
         r'"description":\s*\(\s*((?:[^()]|\([^)]*\))*?)\s*\),',
         src,
         re.DOTALL,
     ):
-        maestro_visible_blobs.append(m.group(1))
+        agent_visible_blobs.append(m.group(1))
     wf_match = re.search(
         r'"workflow":\s*\[(.*?)\],',
         src,
         re.DOTALL,
     )
     if wf_match:
-        maestro_visible_blobs.append(wf_match.group(1))
-    scoped_src = "\n".join(maestro_visible_blobs)
+        agent_visible_blobs.append(wf_match.group(1))
+    scoped_src = "\n".join(agent_visible_blobs)
     if not scoped_src:
         return False, (
             "could not extract MCP_TOOL descriptions + workflow from "
@@ -2269,6 +2312,122 @@ def _r_tier1_surface_truth() -> tuple[bool, str]:
     )
 
 
+def _r_tier1_surface_inventory() -> tuple[bool, str]:
+    """B2.7 — `mcp_tools/tier1.py` exposes exactly 8 distinct MCP_TOOL* dicts.
+
+    The cognition cap (≤ 8 always-loaded tools) is load-bearing — once
+    the surface grows past 8, the Maestro starts ignoring the descriptions
+    (Anthropic 30-50-tool degradation finding) and tier-1 stops being
+    "always-discoverable". This rule freezes the count at 8 after
+    WAVE-0-F2 (the two bundle tools landed; the redundant MCP_TOOL_HOME
+    alias was retired). Counts DISTINCT dicts (by id) so aliases don't
+    inflate the surface.
+
+    The compose tool in `mcp_tools/compose.py` is registered alongside
+    tier-1 but lives in a separate module by design; this rule only
+    polices the module that the dual-index design names as the tier-1
+    surface (per ADR-0003).
+    """
+    tier1 = SKILL_ROOT / "mcp_tools" / "tier1.py"
+    if not tier1.exists():
+        return False, "missing: mcp_tools/tier1.py"
+    # Parse module-level MCP_TOOL* assignments via AST (no import — keeps
+    # this rule cheap and side-effect free, the same pattern manifest.py
+    # uses to scan tool files).
+    import ast as _ast
+
+    try:
+        tree = _ast.parse(tier1.read_text(encoding="utf-8"))
+    except SyntaxError as exc:
+        return False, f"mcp_tools/tier1.py syntax error: {exc}"
+
+    found: set[str] = set()
+    for node in tree.body:
+        if not isinstance(node, _ast.Assign):
+            continue
+        for target in node.targets:
+            if not (isinstance(target, _ast.Name) and target.id.startswith("MCP_TOOL")):
+                continue
+            # Accept literal dict OR a Name (alias). We count alias *names*
+            # separately so the previous MCP_TOOL_HOME = MCP_TOOL pattern
+            # would be visible to the rule; modern tier1.py should NOT use
+            # such aliases — each MCP_TOOL* identifier must bind a fresh
+            # dict literal. We enforce that below.
+            if isinstance(node.value, _ast.Dict):
+                found.add(target.id)
+            elif isinstance(node.value, _ast.Name):
+                return False, (
+                    f"mcp_tools/tier1.py: {target.id} is an alias of "
+                    f"{node.value.id} — aliases inflate the tier-1 surface "
+                    "count without adding a distinct behaviour. Bind a "
+                    "literal dict or remove the alias."
+                )
+    expected = {
+        "MCP_TOOL",
+        "MCP_TOOL_SEARCH",
+        "MCP_TOOL_DESCRIBE",
+        "MCP_TOOL_SCAFFOLD",
+        "MCP_TOOL_AUDIT",
+        "MCP_TOOL_VERIFY",
+        "MCP_TOOL_LIST_BUNDLE",
+        "MCP_TOOL_ACTIVATE_BUNDLE",
+    }
+    if found != expected:
+        missing = sorted(expected - found)
+        extra = sorted(found - expected)
+        return False, (
+            f"mcp_tools/tier1.py MCP_TOOL* set mismatch: "
+            f"missing={missing} extra={extra}. The cognition cap (≤ 8) "
+            "freezes the tier-1 surface at exactly these eight."
+        )
+    if len(found) != 8:
+        return False, (
+            f"mcp_tools/tier1.py declares {len(found)} MCP_TOOL* dicts; "
+            "the cognition cap freezes tier-1 at exactly 8."
+        )
+    return True, "tier-1 surface = 8 MCP_TOOL* dicts in mcp_tools/tier1.py"
+
+
+def _r_catalog_schema_version() -> tuple[bool, str]:
+    """B2.8 — `catalog.json schema_version == "2.0"` (the v2 invariant).
+
+    Schema v2 (ADR-0003) was a breaking change for internal consumers
+    (Tier-1 router, audit, INVENTORY emitter). Pinning the on-disk
+    schema_version here means a future bump to v3 cannot land without
+    explicitly retiring this rule and updating every consumer — closes
+    the class of half-migrations the WAVE-0-F0 audit surfaced.
+    """
+    catalog = SKILL_ROOT / "engine" / "index" / "catalog.json"
+    if not catalog.exists():
+        return False, (
+            f"missing: {catalog.relative_to(SKILL_ROOT)} — "
+            "run `python -m engine.index.manifest build`"
+        )
+    try:
+        data = json.loads(catalog.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return False, f"catalog.json malformed: {exc}"
+    sv = data.get("schema_version")
+    if sv != "2.0":
+        return False, (
+            f"catalog.json schema_version={sv!r}; expected '2.0' "
+            "(set in engine/index/__init__.py::MANIFEST_SCHEMA_VERSION)"
+        )
+    # Sanity: skills array must be present + non-empty + every tool
+    # must carry skill + bundle fields. These were added in v2 (ADR-0003).
+    skills = data.get("skills") or []
+    if not skills:
+        return False, "catalog.json schema_version=2.0 but `skills` array is empty"
+    tools = data.get("tools") or []
+    for t in tools[:5]:  # cheap sample — manifest invariants enforce the full check
+        if "skill" not in t or "bundle" not in t:
+            return False, (
+                "catalog.json tool entry missing v2 fields `skill`/`bundle` "
+                f"(offender: {t.get('name')!r})"
+            )
+    return True, f"catalog.json schema_version='2.0' with {len(skills)} skill(s)"
+
+
 def _r_contributing_md() -> tuple[bool, str]:
     """B4.5 — CONTRIBUTING.md covers primitive / tool / recipe surfaces + dev setup."""
     f = REPO_ROOT / "CONTRIBUTING.md"
@@ -2324,6 +2483,18 @@ RULES: list[Rule] = [
     Rule("B2.4", 2, "index catalog manifest synced + deterministic", _r_index_manifest),
     Rule("B2.5", 2, "SKILL.md Agent Skills contract (agent-facing)", _r_skill_md_contract),
     Rule("B2.6", 2, "tier1 runtime strings match catalog + scope-disclaim", _r_tier1_surface_truth),
+    Rule(
+        "B2.7",
+        2,
+        "tier-1 surface inventory: exactly 8 MCP_TOOL* in tier1.py",
+        _r_tier1_surface_inventory,
+    ),
+    Rule(
+        "B2.8",
+        2,
+        "catalog.json schema_version == '2.0' + v2 fields present",
+        _r_catalog_schema_version,
+    ),
     Rule("B3.1", 3, "20 benchmark specs (5 baseline / 10 mid / 5 adversarial)", _r_bench_specs),
     Rule("B3.2", 3, "scoring rubric implemented + tested", _r_bench_rubric_runner),
     Rule("B3.3", 3, "benchmark runner + stub agent + report JSON", _r_bench_rubric_runner),

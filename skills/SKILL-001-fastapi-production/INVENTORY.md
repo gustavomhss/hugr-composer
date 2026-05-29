@@ -6,8 +6,8 @@
 
 ## Headline
 
-- **257 files carry `MCP_TOOL` metadata** (agent-visible surface).
-- **Catalog:** 201 tools + 299 primitives + 392 recipes.
+- **256 files carry `MCP_TOOL` metadata** (agent-visible surface).
+- **Catalog:** 1 skill, 6 bundles, 201 tools (201 local + 0 federated), 299 primitives, 392 recipes.
 - **124 registered primitives** (`core/venous/<ns>/<Name>/`).
 - **175 staged primitives** in `_staging/` (plus 42 quarantined).
 - **17 FastAPI adapters** (production-wired).
@@ -38,7 +38,26 @@
 | `realtime` | 5 |
 | `testing_tools` | 10 |
 
-## 2. generators/ — 56 tools
+## 2. Skills × Bundles
+
+Hierarchical surface (catalog schema v2 / ADR-0003). Each tool ships
+under exactly one skill + one bundle; the tier-1 router uses this map
+to expose ~80-tool bundle slices via `fastapi_meta_list_bundle` /
+`fastapi_meta_activate_bundle` instead of flooding `tools/list` with
+the full surface.
+
+### `SKILL-001-fastapi-production` — v1.0.0-rc.1 (local)
+
+| bundle | tools | tags |
+|---|---:|---|
+| `api_design` | 12 | api, versioning, cqrs |
+| `auth_access` | 20 | security, auth |
+| `crud_data` | 20 | data, persistence |
+| `infrastructure` | 130 | resiliency, infra |
+| `realtime` | 7 | streaming, sse, websocket |
+| `testing_tools` | 12 | testing, fixtures |
+
+## 3. generators/ — 56 tools
 
 | category | count |
 |---|---:|
@@ -53,7 +72,7 @@
 | `testing` | 0 |
 | `tools` | 9 |
 
-## 3. modules/ — 28 modules
+## 4. modules/ — 28 modules
 
 | module | count |
 |---|---:|
@@ -67,7 +86,7 @@
 | `security` | 3 |
 | `websockets` | 2 |
 
-## 4. core/venous — registered primitives (124)
+## 5. core/venous — registered primitives (124)
 
 | namespace | count |
 |---|---:|
@@ -90,7 +109,7 @@
 
 Plus **17 FastAPI adapters** under `core/venous/_adapters/fastapi/`.
 
-## 5. core/venous/_staging — staged primitives (175 + 42 quarantined)
+## 6. core/venous/_staging — staged primitives (175 + 42 quarantined)
 
 | namespace | count |
 |---|---:|
