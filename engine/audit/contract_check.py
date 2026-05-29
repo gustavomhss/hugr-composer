@@ -475,7 +475,7 @@ def _r_registry_exists() -> tuple[bool, str]:
     for d in venous.glob("*/*"):
         if not d.is_dir():
             continue
-        if any(part in d.parts for part in ("_staging", "_adapters", "__pycache__")):
+        if any(part in d.parts for part in ("_staging", "_adapters", "_ports", "__pycache__")):
             continue
         all_leaf_dirs.add(d)
         md = d / f"{d.name}.md"

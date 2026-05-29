@@ -1,0 +1,752 @@
+{
+  "wp": "WP-15-hexagon-ports",
+  "phase": 1,
+  "derived_from": "find core/venous -mindepth 2 -maxdepth 2 -type d (excluding _staging, _adapters, __pycache__)",
+  "expected_count": 124,
+  "entries": [
+    {
+      "namespace": "api",
+      "name": "BatchCore",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "api",
+      "name": "CommandBus",
+      "has_protocol_stub": true,
+      "port_status": "exemplar"
+    },
+    {
+      "namespace": "api",
+      "name": "CommandQuerySeparator",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "api",
+      "name": "ContextMap",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "api",
+      "name": "DataLoader",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "api",
+      "name": "DeprecationEntry",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "api",
+      "name": "DeprecationRegistry",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "api",
+      "name": "DeprecationReporter",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "api",
+      "name": "IdempotencyStore",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "api",
+      "name": "InboundVerifier",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "api",
+      "name": "MemoryPubSubBackend",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "api",
+      "name": "MiddlewarePipeline",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "api",
+      "name": "PersistedQueryRegistry",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "api",
+      "name": "QueryBus",
+      "has_protocol_stub": true,
+      "port_status": "exemplar"
+    },
+    {
+      "namespace": "api",
+      "name": "RequestContext",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "api",
+      "name": "RouterPipeline",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "api",
+      "name": "ValueTransform",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "auth",
+      "name": "AuthorizationCodeFlow",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "auth",
+      "name": "CurrentPrincipal",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "auth",
+      "name": "FeatureFlagCache",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "auth",
+      "name": "RequestGuard",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "auth",
+      "name": "SessionStore",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "auth",
+      "name": "TokenIntrospector",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "auth",
+      "name": "TotpVerifier",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "auth",
+      "name": "WebAuthnAuthenticator",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "billing",
+      "name": "Billing",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "cache",
+      "name": "DistributedLock",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "cache",
+      "name": "KeyValueBucket",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "cache",
+      "name": "SessionCache",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "compliance",
+      "name": "AuditEvent",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "compliance",
+      "name": "BreachNotificationQueue",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "compliance",
+      "name": "ConsentLedger",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "compliance",
+      "name": "DataSubjectRequest",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "compliance",
+      "name": "ProcessingRecord",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "compliance",
+      "name": "RetentionPolicy",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "compliance",
+      "name": "TamperEvidentAuditLog",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "data",
+      "name": "Aggregate",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "data",
+      "name": "AntiCorruptionLayer",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "data",
+      "name": "BoundedContext",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "data",
+      "name": "ChangeDataCapture",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "data",
+      "name": "ConfigBinding",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "data",
+      "name": "DataMapper",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "data",
+      "name": "DiContainer",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "data",
+      "name": "IdentityMap",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "data",
+      "name": "LegalHold",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "data",
+      "name": "LifetimeScope",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "data",
+      "name": "MaterializedView",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "data",
+      "name": "OptimisticConcurrency",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "data",
+      "name": "PiiClassification",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "data",
+      "name": "Repository",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "data",
+      "name": "ShardedCounter",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "data",
+      "name": "Specification",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "data",
+      "name": "TransactionalBatch",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "data",
+      "name": "UnitOfWork",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "data",
+      "name": "ValueObject",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "events",
+      "name": "CausalReorderBuffer",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "events",
+      "name": "DeadLetterRoute",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "events",
+      "name": "DomainEvent",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "events",
+      "name": "EventEnvelope",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "events",
+      "name": "EventSourcedStore",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "events",
+      "name": "EventStream",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "events",
+      "name": "IdempotentConsumer",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "events",
+      "name": "InboxDeduplicator",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "events",
+      "name": "PubSub",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "events",
+      "name": "SagaOrchestrator",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "events",
+      "name": "StreamSubject",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "events",
+      "name": "TopicBus",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "events",
+      "name": "TransactionalOutbox",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "extras",
+      "name": "OutboundBinding",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "extras",
+      "name": "RequestShape",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "extras",
+      "name": "RpcInterceptor",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "extras",
+      "name": "SchemaComparator",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "extras",
+      "name": "VirtualActor",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "flags",
+      "name": "FeatureToggle",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "jobs",
+      "name": "ActivityCall",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "jobs",
+      "name": "DurableTimer",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "jobs",
+      "name": "WorkflowRun",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "llm",
+      "name": "InputGuardrail",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "llm",
+      "name": "OutputGuardrail",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "llm",
+      "name": "PromptInjectionFilter",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "llm",
+      "name": "PromptTemplate",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "obs",
+      "name": "AccessLog",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "obs",
+      "name": "CardinalityGuard",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "obs",
+      "name": "CorrelationContext",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "obs",
+      "name": "CorrelationId",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "obs",
+      "name": "ErrorSink",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "obs",
+      "name": "EventBus",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "obs",
+      "name": "HealthProbe",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "obs",
+      "name": "HistogramBuckets",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "obs",
+      "name": "LifecycleHook",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "obs",
+      "name": "LlmTrace",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "obs",
+      "name": "MetricMeter",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "obs",
+      "name": "ResourceDescriptor",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "obs",
+      "name": "SamplingPolicy",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "obs",
+      "name": "SemanticAttributes",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "obs",
+      "name": "StructuredLogger",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "obs",
+      "name": "TelemetryExporter",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "obs",
+      "name": "Tracer",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "policy",
+      "name": "CorsPolicy",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "policy",
+      "name": "DataResidencyPolicy",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "policy",
+      "name": "EncryptionPolicy",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "policy",
+      "name": "KeyRotationSchedule",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "resiliency",
+      "name": "Bulkhead",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "resiliency",
+      "name": "CircuitBreaker",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "resiliency",
+      "name": "CostTracker",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "resiliency",
+      "name": "ExcelExporter",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "resiliency",
+      "name": "GracefulShutdown",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "resiliency",
+      "name": "HeterogeneousWorkerPool",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "resiliency",
+      "name": "LoadShedder",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "resiliency",
+      "name": "ModelRegistry",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "resiliency",
+      "name": "RateLimiter",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "resiliency",
+      "name": "Redactor",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "resiliency",
+      "name": "RetryBudget",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "resiliency",
+      "name": "RetryPolicy",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "resiliency",
+      "name": "TimeoutBudget",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "resiliency",
+      "name": "TracingBuffer",
+      "has_protocol_stub": true,
+      "port_status": "queued"
+    },
+    {
+      "namespace": "security",
+      "name": "ContentSecurityPolicy",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "security",
+      "name": "CryptoEnvelope",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "security",
+      "name": "CsrfGuard",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "security",
+      "name": "InputValidator",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "security",
+      "name": "OutputEncoder",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "security",
+      "name": "PasswordHasher",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "security",
+      "name": "SecretsVault",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    },
+    {
+      "namespace": "security",
+      "name": "SignatureVerifier",
+      "has_protocol_stub": false,
+      "port_status": "missing-stub"
+    }
+  ]
+}
