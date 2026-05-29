@@ -1,0 +1,88 @@
+"""Emitted tests for add_api_deprecation — verify the deprecation lifecycle.
+
+These tests run inside the generated project via::
+
+    PYTHONPATH=. pytest tests/test_add_api_deprecation_emitted.py -q
+
+Positive case: DeprecationRegistry registers an entry; DeprecationMiddleware
+injects Sunset + Deprecation headers.
+Negative case: A non-deprecated endpoint has no Deprecation header; a deprecated
+endpoint past its sunset date still returns a response (no 410 — the tool only
+adds headers, it does not enforce Gone status; see tool warnings).
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+
+def test_deprecation_registry_registers_entry() -> None:
+    """Positive: registry.register() stores an entry retrievable by path+method."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.deprecation import DeprecationRegistry
+
+    reg = DeprecationRegistry()
+    entry = reg.register(
+        path="/items",
+        method="GET",
+        sunset="2099-01-01",
+        replacement="/api/v2/items",
+    )
+    assert entry is not None, "register() must return a DeprecationEntry"
+    assert reg.get("/items", "GET") is entry, "Entry must be retrievable by path+method"
+    assert entry.sunset_header == "2099-01-01", "sunset_header must equal ISO date string"
+    assert entry.days_until_sunset > 0, "days_until_sunset must be positive for future date"
+
+
+def test_deprecation_reporter_records_calls() -> None:
+    """Positive: reporter.record() increments call count."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.deprecation.reporter import DeprecationReporter
+
+    rpt = DeprecationReporter()
+    rpt.record("/items", "GET")
+    rpt.record("/items", "GET")
+    assert rpt.get_count("/items", "GET") == 2, "Call count must be incremented each time"
+
+
+def test_deprecation_entry_list_sorted_by_sunset() -> None:
+    """Positive: list_all() returns entries sorted by sunset date ascending."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.deprecation import DeprecationRegistry
+
+    reg = DeprecationRegistry()
+    reg.register("/b", "GET", "2030-06-01", "/v2/b")
+    reg.register("/a", "GET", "2028-01-01", "/v2/a")
+    entries = reg.list_all()
+    assert entries[0]["sunset"] < entries[1]["sunset"], "list_all() must be sorted by sunset asc"
+
+
+def test_non_deprecated_endpoint_has_no_sunset() -> None:
+    """Negative: a path not registered in the registry returns None."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.deprecation import DeprecationRegistry
+
+    reg = DeprecationRegistry()
+    result = reg.get("/not-registered", "GET")
+    assert result is None, "Unregistered path must return None"
+
+
+def test_tool_only_adds_headers_not_410() -> None:
+    """Negative boundary: tool adds Sunset headers but does NOT enforce 410 Gone.
+
+    This test documents the honesty boundary: the tool adds headers; callers
+    must implement their own 410 enforcement if needed.
+    """
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.deprecation import DeprecationRegistry
+
+    reg = DeprecationRegistry()
+    # Past sunset date — tool still registers the entry (no enforcement)
+    entry = reg.register("/old", "DELETE", "2000-01-01", "/v2/old")
+    assert entry is not None, "Registry accepts past-sunset entries (no 410 enforcement)"
+    assert entry.days_until_sunset < 0, "days_until_sunset negative for past-sunset date"
+    # The presence of the entry in list_all() confirms no auto-removal
+    all_entries = reg.list_all()
+    paths = [e["path"] for e in all_entries]
+    assert "/old" in paths, "Past-sunset endpoint must remain in list_all() — tool does not enforce Gone"

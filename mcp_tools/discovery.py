@@ -229,12 +229,25 @@ def discover_and_register(mcp_app) -> int:
         if not base_dir.exists():
             continue
         for py_file in sorted(base_dir.rglob("*.py")):
-            if py_file.name.startswith("__"):
+            # Skip helpers under a dir-form tool (add_<tool>/foo.py).
+            # We pick up the dir-form tool itself via its __init__.py below.
+            if py_file.parent.name.startswith("add_") and py_file.name != "__init__.py":
+                continue
+            if py_file.name.startswith("__") and py_file.name != "__init__.py":
                 continue
             if py_file.name.startswith("test_") and py_file.name != "test_coverage_gaps.py":
                 continue
 
-            module_path = _file_to_module(py_file)
+            # For dir-form tools (add_<tool>/__init__.py), import the package
+            # itself (drop the .__init__ suffix) so we do not get a second
+            # module object that duplicates the same MCP_TOOL name.
+            if py_file.name == "__init__.py":
+                module_path = ".".join(py_file.parent.relative_to(SKILL_ROOT).parts)
+                entry_name_default = py_file.parent.name
+            else:
+                module_path = _file_to_module(py_file)
+                entry_name_default = py_file.stem
+
             try:
                 mod = importlib.import_module(module_path)
             except Exception as exc:
@@ -245,7 +258,7 @@ def discover_and_register(mcp_app) -> int:
             if mcp_meta is None:
                 continue
 
-            entry_name = mcp_meta.get("entry", py_file.stem)
+            entry_name = mcp_meta.get("entry", entry_name_default)
             entry_fn = getattr(mod, entry_name, None)
             if not callable(entry_fn):
                 logger.warning(

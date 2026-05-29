@@ -1,0 +1,78 @@
+"""GraphQL WebSocket handler — graphql-ws protocol over Starlette WebSocket.
+
+Mounts at ``/graphql/ws``. Authentication is resolved from the
+``connection_init`` payload; unauthenticated connections get a
+context with ``user=None`` (subscriptions will reject them).
+
+Keepalive interval is controlled by the ``GRAPHQL_SUBSCRIPTION_KEEPALIVE_MS``
+setting (default: 30 000 ms).
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+from starlette.websockets import WebSocket
+
+logger = logging.getLogger(__name__)
+
+
+async def graphql_ws_handler(websocket: WebSocket) -> None:
+    """Handle a single GraphQL WebSocket connection (graphql-ws protocol).
+
+    Accepts the WebSocket, resolves a per-connection context (including
+    optional JWT auth from ``connection_init``), then delegates to the
+    Strawberry schema's WebSocket handler.
+
+    Args:
+        websocket: Incoming Starlette ``WebSocket`` connection.
+    """
+    from app.graphql.schema import schema as _schema
+    from app.core.config import settings as _settings
+
+    keepalive_ms: int = getattr(
+        _settings, "GRAPHQL_SUBSCRIPTION_KEEPALIVE_MS", 30_000
+    )
+    enabled: bool = getattr(_settings, "GRAPHQL_WS_ENABLED", True)
+
+    if not enabled:
+        await websocket.close(code=4400, reason="GraphQL subscriptions disabled.")
+        return
+
+    context = await _build_ws_context(websocket)
+    await _schema.handle_websocket(
+        websocket,
+        context_value=context,
+    )
+
+
+async def _build_ws_context(websocket: WebSocket) -> Any:
+    """Build a per-connection GraphQL context from the WebSocket request.
+
+    Attempts to resolve the current user from the ``Authorization`` header
+    that may be passed inside the ``connection_init`` payload. Sets
+    ``user=None`` for unauthenticated connections so that subscription
+    resolvers can enforce auth explicitly.
+
+    Args:
+        websocket: Starlette WebSocket connection.
+
+    Returns:
+        A ``GraphQLContext`` instance with ``user`` set (or None).
+    """
+    from app.graphql.dataloaders import DataLoaderRegistry
+    from app.graphql.context import GraphQLContext
+
+    user: Any = None
+    try:
+        from app.api.deps import get_current_user as _get_user
+        user = await _get_user(websocket)
+    except Exception:
+        pass
+
+    return GraphQLContext(
+        request=websocket,  # type: ignore[arg-type]
+        user=user,
+        loaders=DataLoaderRegistry(),
+    )

@@ -1,0 +1,24 @@
+"""Strawberry GraphQL schema — top-level assembly.
+
+Import ``schema`` in ``app/main.py`` and mount via ``GraphQLRouter``.
+"""
+
+from __future__ import annotations
+
+import strawberry
+
+from app.graphql.extensions import ComplexityLimitExtension, DepthLimitExtension
+from app.graphql.mutations import Mutation
+from app.graphql.queries import Query
+
+_MAX_DEPTH: int = 8
+_MAX_COMPLEXITY: int = 1000
+
+schema = strawberry.Schema(
+    query=Query,
+    mutation=Mutation,
+    extensions=[
+        DepthLimitExtension(max_depth=_MAX_DEPTH),
+        ComplexityLimitExtension(max_complexity=_MAX_COMPLEXITY),
+    ],
+)

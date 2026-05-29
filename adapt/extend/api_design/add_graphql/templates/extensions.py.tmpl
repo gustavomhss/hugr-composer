@@ -1,0 +1,110 @@
+"""Strawberry schema extensions for depth and complexity limiting.
+
+Both extensions abort query execution before resolvers run, returning
+a structured error so the response never reaches the database.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from strawberry.extensions import SchemaExtension
+
+
+class DepthLimitExtension(SchemaExtension):
+    """Reject queries deeper than *max_depth* nesting levels.
+
+    Args:
+        max_depth: Maximum allowed query depth (default 8).
+    """
+
+    def __init__(self, *, max_depth: int = 8, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self._max_depth = max_depth
+
+    def on_executing_start(self) -> None:
+        """Check query depth before execution begins.
+
+        Raises:
+            ValueError: If the query exceeds the configured depth limit.
+        """
+        depth = _measure_depth(self.execution_context.graphql_document)
+        if depth > self._max_depth:
+            raise ValueError(
+                f"Query depth {depth} exceeds maximum allowed depth {self._max_depth}."
+            )
+
+
+class ComplexityLimitExtension(SchemaExtension):
+    """Reject queries with a complexity score above *max_complexity*.
+
+    Complexity is approximated as the total number of field selections in
+    the document — sufficient for DoS prevention without introspection cost.
+
+    Args:
+        max_complexity: Maximum allowed complexity score (default 1000).
+    """
+
+    def __init__(self, *, max_complexity: int = 1000, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self._max_complexity = max_complexity
+
+    def on_executing_start(self) -> None:
+        """Check query complexity before execution begins.
+
+        Raises:
+            ValueError: If the query exceeds the complexity limit.
+        """
+        complexity = _measure_complexity(self.execution_context.graphql_document)
+        if complexity > self._max_complexity:
+            raise ValueError(
+                f"Query complexity {complexity} exceeds maximum {self._max_complexity}."
+            )
+
+
+# ---------------------------------------------------------------------------
+# Internal document analysis helpers
+# ---------------------------------------------------------------------------
+
+def _measure_depth(document: Any, depth: int = 0) -> int:
+    """Recursively measure the maximum field nesting depth in a document.
+
+    Args:
+        document: GraphQL AST document node.
+        depth: Current recursion depth counter.
+
+    Returns:
+        Maximum depth found.
+    """
+    if document is None:
+        return depth
+    max_d = depth
+    selections = getattr(document, "selection_set", None)
+    if selections:
+        for sel in getattr(selections, "selections", []):
+            child_depth = _measure_depth(sel, depth + 1)
+            if child_depth > max_d:
+                max_d = child_depth
+    return max_d
+
+
+def _measure_complexity(document: Any) -> int:
+    """Count total field selections as a complexity approximation.
+
+    Args:
+        document: GraphQL AST document node.
+
+    Returns:
+        Total field selection count.
+    """
+    if document is None:
+        return 0
+    count = 0
+    selections = getattr(document, "selection_set", None)
+    if selections:
+        for sel in getattr(selections, "selections", []):
+            count += 1 + _measure_complexity(sel)
+    for child_attr in ("definitions",):
+        for child in getattr(document, child_attr, []):
+            count += _measure_complexity(child)
+    return count

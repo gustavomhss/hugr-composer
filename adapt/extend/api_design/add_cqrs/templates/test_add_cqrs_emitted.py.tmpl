@@ -1,0 +1,100 @@
+"""Emitted tests for add_cqrs — verify CQRS bus behavior.
+
+These tests run inside the generated project via::
+
+    PYTHONPATH=. pytest tests/test_add_cqrs_emitted.py -q
+
+Positive case: CommandBus dispatches a registered command; QueryBus dispatches
+  a registered query.
+Negative case: dispatching an unregistered command name raises KeyError;
+  POST /cqrs/commands with unknown name returns 404.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import sys
+from pathlib import Path
+
+
+def test_command_bus_dispatches_registered_handler() -> None:
+    """Positive: CommandBus.dispatch() invokes the registered handler."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.cqrs.bus import CommandBus
+    from app.cqrs.commands import Command
+
+    class PingCommand(Command):
+        message: str
+
+    bus = CommandBus()
+    received: list = []
+
+    async def _handler(cmd: PingCommand):
+        received.append(cmd.message)
+        return "pong"
+
+    bus.register("PingCommand", _handler)
+    result = asyncio.run(bus.dispatch(PingCommand(message="hello")))
+    assert result == "pong", f"Expected 'pong', got {result!r}"
+    assert received == ["hello"], f"Handler not called correctly: {received}"
+
+
+def test_query_bus_dispatches_registered_handler() -> None:
+    """Positive: QueryBus.query() invokes the registered handler."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.cqrs.bus import QueryBus
+    from app.cqrs.queries import Query
+
+    class PingQuery(Query):
+        keyword: str
+
+    bus = QueryBus()
+
+    async def _handler(q: PingQuery):
+        return {"found": q.keyword}
+
+    bus.register("PingQuery", _handler)
+    result = asyncio.run(bus.query(PingQuery(keyword="test")))
+    assert result == {"found": "test"}, f"Unexpected result: {result}"
+
+
+def test_command_bus_raises_on_unregistered_command() -> None:
+    """Negative: CommandBus raises KeyError for unregistered command."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.cqrs.bus import CommandBus
+    from app.cqrs.commands import Command
+
+    class UnknownCommand(Command):
+        pass
+
+    bus = CommandBus()
+
+    async def _run():
+        return await bus.dispatch(UnknownCommand())
+
+    try:
+        asyncio.run(_run())
+        assert False, "Should have raised KeyError"
+    except KeyError as exc:
+        assert "UnknownCommand" in str(exc), f"KeyError message unexpected: {exc}"
+
+
+def test_query_bus_raises_on_unregistered_query() -> None:
+    """Negative: QueryBus raises KeyError for unregistered query."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.cqrs.bus import QueryBus
+    from app.cqrs.queries import Query
+
+    class GhostQuery(Query):
+        pass
+
+    bus = QueryBus()
+
+    async def _run():
+        return await bus.query(GhostQuery())
+
+    try:
+        asyncio.run(_run())
+        assert False, "Should have raised KeyError"
+    except KeyError as exc:
+        assert "GhostQuery" in str(exc), f"KeyError message unexpected: {exc}"

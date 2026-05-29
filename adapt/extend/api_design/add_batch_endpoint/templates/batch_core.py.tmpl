@@ -1,0 +1,218 @@
+"""BatchCore — shared Pydantic types and async execution engine.
+
+Import ``BatchRequest``, ``BatchItemResult``, ``BatchResponse``, and
+``run_batch`` from this module in every bulk route handler.
+"""
+
+from __future__ import annotations
+
+import asyncio
+from enum import Enum
+from typing import Any, Awaitable, Callable, Generic, TypeVar
+
+from pydantic import BaseModel, Field
+
+T = TypeVar("T")
+R = TypeVar("R")
+
+
+class IsolationMode(str, Enum):
+    """Transaction isolation strategy for bulk operations.
+
+    Attributes:
+        ALL_OR_NOTHING: Roll back all items if any item fails.
+        BEST_EFFORT: Commit successful items even when others fail.
+    """
+
+    ALL_OR_NOTHING = "all_or_nothing"
+    BEST_EFFORT = "best_effort"
+
+
+class ProcessingStrategy(str, Enum):
+    """Item execution order.
+
+    Attributes:
+        SEQUENTIAL: Process items one at a time (preserves order).
+        PARALLEL: Process items concurrently (faster, unordered errors).
+    """
+
+    SEQUENTIAL = "sequential"
+    PARALLEL = "parallel"
+
+
+class BatchItemResult(BaseModel, Generic[R]):
+    """Per-item outcome in a 207 Multi-Status response.
+
+    Attributes:
+        index: Zero-based position of the item in the request list.
+        status_code: HTTP status code for this item (201, 422, 500, etc.).
+        data: Successful result payload, or None on failure.
+        error: Human-readable error message, or None on success.
+        idempotency_key: Echo of the submitted idempotency key if present.
+    """
+
+    index: int
+    status_code: int
+    data: Any | None = None
+    error: str | None = None
+    idempotency_key: str | None = None
+
+
+class BatchRequest(BaseModel, Generic[T]):
+    """Validated inbound bulk request.
+
+    Attributes:
+        items: List of item payloads. Capped at *max_batch_size*.
+        mode: Transaction isolation strategy.
+        strategy: Sequential or parallel item execution.
+        idempotency_keys: Optional per-item idempotency keys aligned to items.
+    """
+
+    items: list[T] = Field(..., min_length=1)
+    mode: IsolationMode = IsolationMode.BEST_EFFORT
+    strategy: ProcessingStrategy = ProcessingStrategy.SEQUENTIAL
+    idempotency_keys: list[str] | None = None
+
+
+class BatchResponse(BaseModel, Generic[R]):
+    """HTTP 207 Multi-Status response body.
+
+    Attributes:
+        results: Per-item outcomes, length == len(request.items).
+        total: Total items submitted.
+        succeeded: Count of items with 2xx status_code.
+        failed: Count of items with non-2xx status_code.
+    """
+
+    results: list[BatchItemResult[R]]
+    total: int
+    succeeded: int
+    failed: int
+
+    @classmethod
+    def build(cls, results: list[BatchItemResult[R]]) -> "BatchResponse[R]":
+        """Construct a BatchResponse from a list of per-item results.
+
+        Args:
+            results: List of BatchItemResult objects.
+
+        Returns:
+            Populated BatchResponse.
+        """
+        succeeded = sum(1 for r in results if 200 <= r.status_code < 300)
+        return cls(
+            results=results,
+            total=len(results),
+            succeeded=succeeded,
+            failed=len(results) - succeeded,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Async execution engine
+# ---------------------------------------------------------------------------
+
+class BatchCore:
+    """Async batch executor with per-item timeout and isolation support.
+
+    Args:
+        handler: Async callable accepting one item and returning a result.
+        timeout_per_item_s: Per-item timeout in seconds.
+        max_parallel: Semaphore concurrency limit for parallel mode.
+
+    Warnings:
+        This engine does NOT parallelize items in sequential mode.
+        Sequential execution preserves order; parallel is opt-in via strategy.
+    """
+
+    def __init__(
+        self,
+        handler: Callable[[Any], Awaitable[Any]],
+        *,
+        timeout_per_item_s: float = 5.0,
+        max_parallel: int = 10,
+    ) -> None:
+        self._handler = handler
+        self._timeout = timeout_per_item_s
+        self._sem = asyncio.Semaphore(max_parallel)
+
+    async def run(
+        self,
+        items: list[Any],
+        *,
+        mode: IsolationMode,
+        strategy: ProcessingStrategy,
+        idempotency_keys: list[str] | None = None,
+    ) -> list[BatchItemResult]:
+        """Execute all items and return per-item results.
+
+        Args:
+            items: Validated request items.
+            mode: Isolation strategy (all_or_nothing or best_effort).
+            strategy: Sequential or parallel execution.
+            idempotency_keys: Optional per-item idempotency keys.
+
+        Returns:
+            List of BatchItemResult aligned to *items*.
+        """
+        keys = idempotency_keys or [None] * len(items)
+        if strategy == ProcessingStrategy.SEQUENTIAL:
+            results: list[BatchItemResult] = []
+            for idx, (item, key) in enumerate(zip(items, keys)):
+                result = await self._run_one(idx, item, key)
+                results.append(result)
+                if mode == IsolationMode.ALL_OR_NOTHING and result.status_code >= 400:
+                    for remaining in range(idx + 1, len(items)):
+                        results.append(BatchItemResult(
+                            index=remaining,
+                            status_code=409,
+                            error="Rolled back due to all_or_nothing failure.",
+                            idempotency_key=keys[remaining],
+                        ))
+                    return results
+            return results
+        tasks = [
+            self._run_one(idx, item, key)
+            for idx, (item, key) in enumerate(zip(items, keys))
+        ]
+        return list(await asyncio.gather(*tasks))
+
+    async def _run_one(
+        self, idx: int, item: Any, idempotency_key: str | None
+    ) -> BatchItemResult:
+        """Execute a single item with timeout guard.
+
+        Args:
+            idx: Zero-based item index.
+            item: Item payload.
+            idempotency_key: Optional idempotency key for this item.
+
+        Returns:
+            BatchItemResult for this item.
+        """
+        async with self._sem:
+            try:
+                data = await asyncio.wait_for(
+                    self._handler(item), timeout=self._timeout
+                )
+                return BatchItemResult(
+                    index=idx,
+                    status_code=201,
+                    data=data,
+                    idempotency_key=idempotency_key,
+                )
+            except asyncio.TimeoutError:
+                return BatchItemResult(
+                    index=idx,
+                    status_code=504,
+                    error="Per-item timeout exceeded.",
+                    idempotency_key=idempotency_key,
+                )
+            except Exception as exc:
+                code = getattr(exc, "status_code", 500)
+                return BatchItemResult(
+                    index=idx,
+                    status_code=int(code),
+                    error=f"{type(exc).__name__}: {exc}",
+                    idempotency_key=idempotency_key,
+                )

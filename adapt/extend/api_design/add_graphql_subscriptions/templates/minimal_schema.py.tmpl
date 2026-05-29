@@ -1,0 +1,30 @@
+"""Strawberry GraphQL schema with Subscription support.
+
+Import ``schema`` in ``app/main.py`` and mount via GraphQL WebSocket handler.
+"""
+
+from __future__ import annotations
+
+import strawberry
+
+from app.graphql.subscriptions import Subscription as _GQLSubscription
+
+
+@strawberry.type
+class _Query:
+    """Minimal placeholder Query required by Strawberry."""
+
+    @strawberry.field
+    def health(self) -> str:
+        """Return a liveness string.
+
+        Returns:
+            Always 'ok'.
+        """
+        return "ok"
+
+
+schema = strawberry.Schema(
+    query=_Query,
+    subscription=_GQLSubscription,
+)

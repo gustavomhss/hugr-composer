@@ -1,0 +1,70 @@
+"""PubSub manager for GraphQL subscriptions.
+
+Backed by the HuGR ``events.PubSub`` primitive:
+
+- In-memory default (``InMemoryPubSub``): single-worker only.
+- Redis adapter (``RedisPubSubBackend``): multi-worker safe; lazy
+  import so the app boots without the ``redis`` package installed.
+
+Usage::
+
+    pubsub = get_pubsub()
+    await pubsub.publish("items", {"id": "...", "title": "..."})
+
+    async for event in pubsub.subscribe("items"):
+        yield event
+"""
+from __future__ import annotations
+
+import logging
+import os
+from typing import Any
+
+from core.venous.events.PubSub import InMemoryPubSub, PubSub
+
+logger = logging.getLogger(__name__)
+
+
+_pubsub: PubSub | None = None
+
+
+def _build() -> PubSub:
+    """Select the active PubSub backend.
+
+    When ``REDIS_URL`` is set AND ``redis`` is importable, use the
+    Redis adapter for multi-worker fanout. Otherwise fall back to
+    the in-memory motor (single worker).
+    """
+    redis_url = os.getenv("REDIS_URL", "")
+    if redis_url:
+        try:
+            import redis.asyncio  # noqa: F401, PLC0415
+        except ImportError:
+            logger.warning(
+                "REDIS_URL set but `redis` package not installed — "
+                "falling back to in-process PubSub (single worker).",
+            )
+        else:
+            from core.venous._adapters.redis import RedisPubSubBackend
+            return RedisPubSubBackend(redis_url)
+    return InMemoryPubSub()
+
+
+def get_pubsub() -> PubSub:
+    """Return the process-wide PubSub backend (singleton)."""
+    global _pubsub
+    if _pubsub is None:
+        _pubsub = _build()
+    return _pubsub
+
+
+# Backward-compatible alias — older callers imported
+# `get_pubsub_manager` and treated its return value as a PubSub.
+def get_pubsub_manager() -> PubSub:
+    """Deprecated: use ``get_pubsub()`` instead."""
+    return get_pubsub()
+
+
+async def publish(topic: str, payload: Any) -> None:
+    """Shortcut — ``get_pubsub().publish(topic, payload)``."""
+    await get_pubsub().publish(topic, payload)

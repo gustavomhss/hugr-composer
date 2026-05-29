@@ -1,0 +1,143 @@
+"""API version registry with deprecation and sunset lifecycle.
+
+Usage::
+
+    from app.core.version_registry import registry
+
+    info = registry.get("v1")
+    print(info.is_deprecated)  # True
+    print(info.sunset_header)  # RFC 7231 date string
+"""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass, field
+from datetime import date, timedelta
+from typing import Final
+
+
+# ---------------------------------------------------------------------------
+# Data model
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class VersionInfo:
+    """Immutable descriptor for a single API version.
+
+    Attributes:
+        name: Version label, e.g. "v1".
+        is_deprecated: True when this version is scheduled for removal.
+        sunset_date: Calendar date after which the version is removed.
+        changelog_url: Link to the version's changelog entry.
+    """
+
+    name: str
+    is_deprecated: bool = False
+    sunset_date: date | None = None
+    changelog_url: str = ""
+
+    @property
+    def sunset_header(self) -> str | None:
+        """Return an RFC 7231-formatted Sunset header value, or None.
+
+        Returns:
+            Formatted date string or None if sunset_date is unset.
+        """
+        if self.sunset_date is None:
+            return None
+        # RFC 7231 IMF-fixdate: Thu, 01 Jan 2026 00:00:00 GMT
+        import calendar
+        d = self.sunset_date
+        wd = calendar.day_abbr[d.weekday()]
+        mon = calendar.month_abbr[d.month]
+        return f"{wd}, {d.day:02d} {mon} {d.year} 00:00:00 GMT"
+
+
+# ---------------------------------------------------------------------------
+# Registry
+# ---------------------------------------------------------------------------
+
+class VersionRegistry:
+    """Holds all known API versions.
+
+    Attributes:
+        _versions: Internal mapping from version label to VersionInfo.
+    """
+
+    def __init__(self) -> None:
+        self._versions: dict[str, VersionInfo] = {}
+
+    def register(self, info: VersionInfo) -> None:
+        """Add a version descriptor to the registry.
+
+        Args:
+            info: VersionInfo to register.
+        """
+        self._versions[info.name] = info
+
+    def get(self, name: str) -> VersionInfo | None:
+        """Return VersionInfo for *name*, or None if unknown.
+
+        Args:
+            name: Version label (e.g. "v1").
+
+        Returns:
+            VersionInfo or None.
+        """
+        return self._versions.get(name)
+
+    def supported(self) -> list[str]:
+        """Return all registered version labels.
+
+        Returns:
+            List of version label strings.
+        """
+        return list(self._versions.keys())
+
+    def deprecated(self) -> list[str]:
+        """Return labels of deprecated versions.
+
+        Returns:
+            List of deprecated version label strings.
+        """
+        return [v for v, info in self._versions.items() if info.is_deprecated]
+
+
+# ---------------------------------------------------------------------------
+# Singleton registry — configure deprecation windows here
+# ---------------------------------------------------------------------------
+
+registry: Final[VersionRegistry] = VersionRegistry()
+
+registry.register(VersionInfo(
+    name="v1",
+    is_deprecated=True,
+    sunset_date=date.today() + timedelta(days=180),
+    changelog_url="/docs/changelog#v1",
+))
+registry.register(VersionInfo(
+    name="v2",
+    is_deprecated=False,
+    changelog_url="/docs/changelog#v2",
+))
+
+
+# ---------------------------------------------------------------------------
+# Path version extractor (used by middleware)
+# ---------------------------------------------------------------------------
+
+_PATH_VERSION_RE = re.compile(r"^/api/(v\d+)(/|$$)")
+
+
+def extract_version_from_path(path: str) -> str | None:
+    """Return the version token from a URL path, or None.
+
+    Args:
+        path: URL path string (e.g. "/api/v1/items/").
+
+    Returns:
+        Version label (e.g. "v1") or None if not present.
+    """
+    m = _PATH_VERSION_RE.match(path)
+    return m.group(1) if m else None

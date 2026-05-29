@@ -1,0 +1,72 @@
+"""Simple in-process idempotency key store for batch requests.
+
+In production replace with a Redis-backed implementation.
+The interface is intentionally simple so callers are backend-agnostic.
+"""
+
+from __future__ import annotations
+
+import threading
+from typing import Any
+
+
+class IdempotencyStore:
+    """Thread-safe in-memory idempotency store.
+
+    Keys expire when the process restarts.  In production, replace the
+    backing store with Redis and a configurable TTL.
+
+    Attributes:
+        _store: Internal dict mapping keys to cached results.
+        _lock: Thread lock protecting concurrent access.
+    """
+
+    def __init__(self) -> None:
+        self._store: dict[str, Any] = {}
+        self._lock = threading.Lock()
+
+    def get(self, key: str) -> Any | None:
+        """Return cached result for *key*, or None if not seen.
+
+        Args:
+            key: Idempotency key string.
+
+        Returns:
+            Previously stored result or None.
+        """
+        with self._lock:
+            return self._store.get(key)
+
+    def put(self, key: str, result: Any) -> None:
+        """Store *result* under *key* for future idempotent replays.
+
+        Args:
+            key: Idempotency key string.
+            result: Serialisable result to cache.
+        """
+        with self._lock:
+            self._store[key] = result
+
+    def seen(self, key: str) -> bool:
+        """Return True if *key* was already processed.
+
+        Args:
+            key: Idempotency key string.
+
+        Returns:
+            True if key exists in the store.
+        """
+        with self._lock:
+            return key in self._store
+
+
+_store: IdempotencyStore = IdempotencyStore()
+
+
+def get_idempotency_store() -> IdempotencyStore:
+    """Return the process-wide idempotency store singleton.
+
+    Returns:
+        The global IdempotencyStore instance.
+    """
+    return _store

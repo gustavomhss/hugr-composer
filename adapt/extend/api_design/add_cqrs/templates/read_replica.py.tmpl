@@ -1,0 +1,72 @@
+"""ReadReplicaSession — FastAPI dependency for read-replica routing.
+
+When ``settings.DATABASE_READ_URL`` is set, queries are routed to the
+read replica.  Otherwise falls back to the primary database connection.
+This makes the feature degrade gracefully on projects without a replica.
+"""
+
+from __future__ import annotations
+
+import logging
+from collections.abc import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+logger = logging.getLogger(__name__)
+
+_replica_engine = None
+_replica_session_factory = None
+
+
+def _get_replica_factory():
+    """Lazily create the read-replica session factory.
+
+    Returns:
+        An ``async_sessionmaker`` pointed at ``DATABASE_READ_URL``,
+        or ``None`` if the setting is absent or empty.
+    """
+    global _replica_engine, _replica_session_factory
+    if _replica_session_factory is not None:
+        return _replica_session_factory
+    try:
+        from app.core.config import settings
+        url = settings.DATABASE_READ_URL
+    except Exception:
+        return None
+
+    if not url:
+        return None
+
+    _replica_engine = create_async_engine(url, echo=False, pool_pre_ping=True)
+    _replica_session_factory = async_sessionmaker(
+        _replica_engine, class_=AsyncSession, expire_on_commit=False,
+    )
+    return _replica_session_factory
+
+
+async def ReadReplicaSession() -> AsyncGenerator[AsyncSession, None]:
+    """FastAPI dependency that yields a read-replica database session.
+
+    Falls back to the primary engine when ``DATABASE_READ_URL`` is not
+    configured, so query handlers work on projects without a replica.
+
+    Yields:
+        An ``AsyncSession`` connected to the read replica (or primary).
+    """
+    factory = _get_replica_factory()
+    if factory is not None:
+        async with factory() as session:
+            yield session
+        return
+
+    # Fallback: primary session
+    try:
+        from app.core.session import get_session
+        async for session in get_session():
+            yield session
+    except ImportError:
+        logger.warning(
+            "ReadReplicaSession: no replica URL and no app.core.session — "
+            "yielding a placeholder (queries will fail at handler level)."
+        )
+        raise

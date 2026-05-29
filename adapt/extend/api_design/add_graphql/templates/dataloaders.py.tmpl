@@ -1,0 +1,28 @@
+"""aiodataloader registry — one loader per model, batches DB lookups.
+
+Import ``DataLoaderRegistry`` in ``app/graphql/context.py`` and attach
+an instance per-request so the cache is never shared across requests.
+"""
+
+from __future__ import annotations
+
+import uuid
+from typing import Any
+
+from aiodataloader import DataLoader
+
+
+${loader_blocks}
+
+
+class DataLoaderRegistry:
+    """Per-request container for all model dataloaders.
+
+    Instantiate once per request inside ``get_graphql_context`` so the
+    cache is flushed at request end and never shared across users.
+
+    Attributes:
+${registry_attrs}    """
+
+    def __init__(self) -> None:
+${registry_init}

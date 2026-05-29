@@ -12,15 +12,23 @@ Follows the CONTRACT §B1.0 + §B1.0.1 pattern:
 
 Idempotent: a second run detects ``WorkflowAdapter`` in the glue file
 and returns ``status="no_op"``.
+
+Warnings:
+    Task state is held in-process (InMemoryWorkflowClient) and does NOT
+    persist across process restarts. Swap the reference client for a
+    Temporal/Cadence client in production for durable state.
 """
 
 from __future__ import annotations
 
-import ast
 import time
 from pathlib import Path
 
+from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
+
+_HERE = Path(__file__).parent
 
 MCP_TOOL = {
     "name": "fastapi_api_add_long_running_task",
@@ -40,94 +48,6 @@ MCP_TOOL = {
 }
 
 
-_GLUE = '''\
-"""Wire durable long-running-task primitives into the FastAPI app.
-
-Delegates to the primitives + FastAPI adapter copied under `core/venous/`
-by the `add_long_running_task` tool. Re-emitted idempotently on subsequent runs.
-"""
-
-from __future__ import annotations
-
-from fastapi import FastAPI
-
-from core.venous._adapters.fastapi.WorkflowAdapter import (
-    install,
-    timer_service_dep,
-    workflow_client_dep,
-)
-
-
-def install_long_running_tasks(app: FastAPI) -> None:
-    """Attach a WorkflowClient + TimerService to *app.state*."""
-    install(app)
-
-
-__all__ = ["install_long_running_tasks", "timer_service_dep", "workflow_client_dep"]
-'''
-
-
-_ROUTES = '''\
-"""HTTP surface for long-running tasks.
-
-- POST /tasks        → 202 Accepted + Location header (workflow started)
-- GET  /tasks/{wid}  → status + run_id (polling)
-- DELETE /tasks/{wid}→ cooperative cancellation
-
-All state lives in the `WorkflowClient` shipped by the adapter; this module
-is pure wiring.
-"""
-
-from __future__ import annotations
-
-from typing import Any
-
-from fastapi import APIRouter, Depends, HTTPException, Response
-
-from app.workflow import workflow_client_dep
-
-router = APIRouter(prefix="/tasks", tags=["tasks"])
-
-
-@router.post("", status_code=202)
-async def start_task(
-    payload: dict[str, Any],
-    response: Response,
-    client=Depends(workflow_client_dep),
-) -> dict[str, Any]:
-    """Start a new workflow run. Returns 202 + Location header."""
-    workflow_id = str(payload.get("workflow_id") or payload.get("id") or "")
-    if not workflow_id:
-        raise HTTPException(status_code=400, detail="workflow_id required")
-    workflow_type = str(payload.get("workflow_type", "default"))
-    task_queue = str(payload.get("task_queue", "default"))
-    args = tuple(payload.get("args", ()))
-    run = await client.start(workflow_type, workflow_id, task_queue, args)
-    response.headers["Location"] = f"/tasks/{run.workflow_id}"
-    return {"workflow_id": run.workflow_id, "run_id": run.run_id, "status": "accepted"}
-
-
-@router.get("/{workflow_id}")
-async def get_task(workflow_id: str, client=Depends(workflow_client_dep)) -> dict[str, Any]:
-    """Poll a task's current run identity."""
-    try:
-        run = await client.describe(workflow_id)
-    except Exception as exc:  # noqa: BLE001 — primitive raises when unknown
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return {"workflow_id": run.workflow_id, "run_id": run.run_id, "task_queue": run.task_queue}
-
-
-@router.delete("/{workflow_id}", status_code=204)
-async def cancel_task(workflow_id: str, client=Depends(workflow_client_dep)) -> Response:
-    """Cooperatively cancel a task by workflow_id."""
-    try:
-        await client.cancel(workflow_id)
-    except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return Response(status_code=204)
-'''
-
-
 def add_long_running_task(inp: ToolInput) -> ToolResult:
     """Add long-running-task endpoints by delegating to shipped primitives + adapter."""
     start = time.monotonic()
@@ -135,9 +55,7 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
 
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
-
-    from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
+        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -151,7 +69,7 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
             notes=["Generate a base project first via fastapi_generate_project(...)."],
-            execution_time_ms=_elapsed_ms(start),
+            execution_time_ms=_ms(start),
         )
 
     files_created: list[str] = list(scaffolded or [])
@@ -162,11 +80,12 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
     # package import precedence. See e2e regression fixed 2026-04-22.
     glue_file = app_dir / "workflow.py"
 
+    # Idempotency guard
     if glue_file.exists() and "WorkflowAdapter" in glue_file.read_text():
         return ToolResult(
             status="no_op",
             notes=["Long-running-task infra already wired via the FastAPI adapter."],
-            execution_time_ms=_elapsed_ms(start),
+            execution_time_ms=_ms(start),
         )
 
     if inp.dry_run:
@@ -177,7 +96,7 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
                 "and write app/workflow.py + app/api/routes/tasks.py."
             ],
             next_steps=["Re-run without dry_run=True to apply."],
-            execution_time_ms=_elapsed_ms(start),
+            execution_time_ms=_ms(start),
         )
 
     from generators.scaffold_venous import ensure_primitives
@@ -193,7 +112,7 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
     files_created.append(manifest.path)
 
     app_dir.mkdir(parents=True, exist_ok=True)
-    glue_file.write_text(_GLUE)
+    render_to(_HERE, "workflow.py.tmpl", dest=glue_file, substitutions={})
     files_created.append(str(glue_file))
 
     routes_dir = app_dir / "api" / "routes"
@@ -203,7 +122,7 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
         routes_init.write_text('"""API routes package."""\n')
         files_created.append(str(routes_init))
     tasks_route_file = routes_dir / "tasks.py"
-    tasks_route_file.write_text(_ROUTES)
+    render_to(_HERE, "tasks_route.py.tmpl", dest=tasks_route_file, substitutions={})
     files_created.append(str(tasks_route_file))
 
     files_modified: list[str] = []
@@ -218,17 +137,8 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
             routes_init_parent.write_text(content)
             files_modified.append(str(routes_init_parent))
 
-    for path_str in files_created:
-        p = Path(path_str)
-        if p.suffix == ".py" and p.is_file():
-            try:
-                ast.parse(p.read_text())
-            except SyntaxError as exc:
-                return ToolResult(
-                    status="error",
-                    error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_elapsed_ms(start),
-                )
+    # Emit test
+    _emit_project_test(project, files_created)
 
     return ToolResult(
         status="success",
@@ -239,16 +149,33 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
             "Shipped adapter: core.venous._adapters.fastapi.WorkflowAdapter.",
             "Wrote app/workflow.py + app/api/routes/tasks.py (POST 202 / GET / DELETE).",
             "WorkflowRun enforces id-reuse policy (REJECT by default) and deterministic replay.",
+            "WARNING: task state is in-process (InMemoryWorkflowClient) — does NOT persist "
+            "across restarts. Use Temporal/Cadence in production.",
         ],
         next_steps=[
             "Import install_long_running_tasks in app/main.py and invoke it after FastAPI().",
             "POST /tasks with {workflow_id, workflow_type, task_queue, args} returns 202 + Location.",
             "Swap the reference InMemoryWorkflowClient for a Temporal/Cadence client in production.",
         ],
-        execution_time_ms=_elapsed_ms(start),
+        execution_time_ms=_ms(start),
     )
 
 
-def _elapsed_ms(start: float) -> int:
+def _emit_project_test(project: Path, created: list[str]) -> None:
+    """Emit tests/test_add_long_running_task_emitted.py into the generated project."""
+    (project / "tests").mkdir(parents=True, exist_ok=True)
+    emitted = project / "tests" / "test_add_long_running_task_emitted.py"
+    if emitted.exists():
+        return
+    render_to(
+        _HERE,
+        "test_add_long_running_task_emitted.py.tmpl",
+        dest=emitted,
+        substitutions={},
+    )
+    created.append(str(emitted))
+
+
+def _ms(start: float) -> int:
     """Return elapsed ms since *start* (from ``time.monotonic()``)."""
     return int((time.monotonic() - start) * 1000)

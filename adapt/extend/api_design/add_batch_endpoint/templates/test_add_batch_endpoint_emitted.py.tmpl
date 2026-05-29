@@ -1,0 +1,114 @@
+"""Emitted tests for add_batch_endpoint — verify bulk endpoint behavior.
+
+These tests run inside the generated project via::
+
+    PYTHONPATH=. pytest tests/test_add_batch_endpoint_emitted.py -q
+
+Positive case: BatchCore processes N items and returns N BatchItemResults.
+Negative case: batch over the configured limit raises HTTPException 422.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import sys
+from pathlib import Path
+
+
+def test_batch_core_sequential_returns_n_results() -> None:
+    """Positive: BatchCore with N items returns N BatchItemResults."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.core.batch_core import (
+        BatchCore,
+        BatchRequest,
+        IsolationMode,
+        ProcessingStrategy,
+    )
+
+    async def _handler(item):
+        return {"echoed": item}
+
+    async def _run():
+        engine = BatchCore(_handler, timeout_per_item_s=1.0)
+        items = ["a", "b", "c"]
+        results = await engine.run(
+            items,
+            mode=IsolationMode.BEST_EFFORT,
+            strategy=ProcessingStrategy.SEQUENTIAL,
+        )
+        return results
+
+    results = asyncio.run(_run())
+    assert len(results) == 3, f"Expected 3 results, got {len(results)}"
+    for r in results:
+        assert 200 <= r.status_code < 300, f"Expected 2xx status, got {r.status_code}"
+
+
+def test_batch_core_all_or_nothing_stops_on_failure() -> None:
+    """Positive: all_or_nothing mode rolls back remaining items on first failure."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.core.batch_core import (
+        BatchCore,
+        IsolationMode,
+        ProcessingStrategy,
+    )
+
+    call_count = 0
+
+    async def _failing_handler(item):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise ValueError("first item fails")
+        return {"ok": item}
+
+    async def _run():
+        engine = BatchCore(_failing_handler)
+        return await engine.run(
+            ["x", "y", "z"],
+            mode=IsolationMode.ALL_OR_NOTHING,
+            strategy=ProcessingStrategy.SEQUENTIAL,
+        )
+
+    results = asyncio.run(_run())
+    assert len(results) == 3, "all_or_nothing must return results for ALL items"
+    assert results[0].status_code >= 400, "First item must have error status"
+    assert results[1].status_code == 409, "Second item must be rolled-back (409)"
+    assert results[2].status_code == 409, "Third item must be rolled-back (409)"
+
+
+def test_idempotency_store_seen_and_get() -> None:
+    """Positive: idempotency store returns cached result for a seen key."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.core.idempotency import IdempotencyStore
+
+    store = IdempotencyStore()
+    store.put("key-1", {"data": "result"})
+    assert store.seen("key-1") is True, "Key must be seen after put()"
+    assert store.get("key-1") == {"data": "result"}, "get() must return the stored value"
+
+
+def test_batch_response_build_counts_correctly() -> None:
+    """Positive: BatchResponse.build() counts succeeded and failed correctly."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.core.batch_core import BatchItemResult, BatchResponse
+
+    results = [
+        BatchItemResult(index=0, status_code=201, data="ok"),
+        BatchItemResult(index=1, status_code=422, error="bad"),
+        BatchItemResult(index=2, status_code=201, data="ok"),
+    ]
+    resp = BatchResponse.build(results)
+    assert resp.total == 3
+    assert resp.succeeded == 2
+    assert resp.failed == 1
+
+
+def test_unknown_idempotency_key_returns_none() -> None:
+    """Negative: get() on unseen key returns None."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from app.core.idempotency import IdempotencyStore
+
+    store = IdempotencyStore()
+    assert store.seen("missing") is False, "Unseen key must return False"
+    assert store.get("missing") is None, "get() on unseen key must return None"

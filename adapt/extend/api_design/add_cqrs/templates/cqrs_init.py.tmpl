@@ -1,0 +1,12 @@
+"""CQRS layer — CommandBus, QueryBus, and ReadReplicaSession.
+
+Public API:
+    CommandBus:          dispatch(command)  — mutating operations
+    QueryBus:            query(query)        — read-only operations
+    ReadReplicaSession:  FastAPI dependency  — routes to read replica
+"""
+
+from app.cqrs.bus import CommandBus, QueryBus
+from app.cqrs.read_replica import ReadReplicaSession
+
+__all__ = ["CommandBus", "QueryBus", "ReadReplicaSession"]

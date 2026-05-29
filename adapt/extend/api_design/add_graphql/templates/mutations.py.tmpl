@@ -1,0 +1,18 @@
+"""GraphQL Mutation type — delegates to existing CRUD functions."""
+
+from __future__ import annotations
+
+import uuid
+
+import strawberry
+
+from app.graphql.context import GraphQLContext
+
+${mutation_imports}
+
+
+@strawberry.type
+class Mutation:
+    """Root GraphQL mutation type.  All mutations require authentication."""
+
+${mutation_blocks}

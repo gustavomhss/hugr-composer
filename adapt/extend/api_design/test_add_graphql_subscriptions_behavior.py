@@ -50,7 +50,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.api_design.add_graphql_subscriptions import add_graphql_subscriptions
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Patch templates
 # ---------------------------------------------------------------------------
@@ -103,6 +102,7 @@ _PASSTHROUGH_IDEMPOTENCY_PY = textwrap.dedent("""\
 # ---------------------------------------------------------------------------
 # Project setup helpers
 # ---------------------------------------------------------------------------
+
 
 def _patch_project(project_dir: Path) -> None:
     """Apply SQLite + idempotency pass-through stubs to the fixture project."""
@@ -192,6 +192,7 @@ def asgi_app() -> Any:
 # B-01: GET /healthz → 200 (base liveness, proves app boots cleanly)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.anyio
 async def test_b01_healthz_returns_200(asgi_app: Any) -> None:
     """B-01: GET /healthz must return 200 — proves the app boots cleanly."""
@@ -208,6 +209,7 @@ async def test_b01_healthz_returns_200(asgi_app: Any) -> None:
 # ---------------------------------------------------------------------------
 # B-02: pubsub.py imports without crash (no Redis installed)
 # ---------------------------------------------------------------------------
+
 
 def test_b02_pubsub_importable_without_redis(behavior_project: Path) -> None:
     """B-02: app/graphql/pubsub.py must import cleanly without redis installed."""
@@ -239,9 +241,7 @@ def test_b02_pubsub_importable_without_redis(behavior_project: Path) -> None:
         # Post-Rails facade: `get_pubsub` is the canonical entry; the
         # `get_pubsub_manager` alias is retained for backward-compat.
         assert hasattr(mod, "get_pubsub"), "get_pubsub not in module"
-        assert hasattr(mod, "get_pubsub_manager"), (
-            "get_pubsub_manager compat alias missing"
-        )
+        assert hasattr(mod, "get_pubsub_manager"), "get_pubsub_manager compat alias missing"
     except ImportError:
         pass  # optional deps not installed — acceptable
     except Exception as exc:
@@ -255,6 +255,7 @@ def test_b02_pubsub_importable_without_redis(behavior_project: Path) -> None:
 # B-03: subscriptions.py AST-parses and defines Subscription class
 # ---------------------------------------------------------------------------
 
+
 def test_b03_subscriptions_module_structure(behavior_project: Path) -> None:
     """B-03: app/graphql/subscriptions.py must AST-parse with Subscription class."""
     subs_file = behavior_project / "app" / "graphql" / "subscriptions.py"
@@ -266,23 +267,18 @@ def test_b03_subscriptions_module_structure(behavior_project: Path) -> None:
     except SyntaxError as exc:
         pytest.fail(f"subscriptions.py has a SyntaxError: {exc}")
 
-    class_names = {
-        node.name
-        for node in ast.walk(tree)
-        if isinstance(node, ast.ClassDef)
-    }
+    class_names = {node.name for node in ast.walk(tree) if isinstance(node, ast.ClassDef)}
     assert "Subscription" in class_names, (
         f"Subscription class not found in subscriptions.py. Found: {class_names}"
     )
     assert "ItemEvent" in class_names, f"ItemEvent not found. Found: {class_names}"
-    assert "NotificationEvent" in class_names, (
-        f"NotificationEvent not found. Found: {class_names}"
-    )
+    assert "NotificationEvent" in class_names, f"NotificationEvent not found. Found: {class_names}"
 
 
 # ---------------------------------------------------------------------------
 # B-04: ws_handler.py AST-parses and exposes graphql_ws_handler function
 # ---------------------------------------------------------------------------
+
 
 def test_b04_ws_handler_structure(behavior_project: Path) -> None:
     """B-04: app/graphql/ws_handler.py must define graphql_ws_handler."""
@@ -309,6 +305,7 @@ def test_b04_ws_handler_structure(behavior_project: Path) -> None:
 # B-05: schema.py contains Subscription
 # ---------------------------------------------------------------------------
 
+
 def test_b05_schema_has_subscription(behavior_project: Path) -> None:
     """B-05: app/graphql/schema.py must reference Subscription."""
     schema_file = behavior_project / "app" / "graphql" / "schema.py"
@@ -320,6 +317,7 @@ def test_b05_schema_has_subscription(behavior_project: Path) -> None:
 # ---------------------------------------------------------------------------
 # B-06: config.py contains GRAPHQL_WS_ENABLED field
 # ---------------------------------------------------------------------------
+
 
 def test_b06_config_graphql_ws_fields(behavior_project: Path) -> None:
     """B-06: app/core/config.py must contain GRAPHQL_WS_ENABLED."""
@@ -335,6 +333,7 @@ def test_b06_config_graphql_ws_fields(behavior_project: Path) -> None:
 # B-07: main.py contains WebSocket route for /graphql/ws
 # ---------------------------------------------------------------------------
 
+
 def test_b07_main_has_ws_route(behavior_project: Path) -> None:
     """B-07: app/main.py must mount the WebSocket route for subscriptions."""
     main_file = behavior_project / "app" / "main.py"
@@ -348,6 +347,7 @@ def test_b07_main_has_ws_route(behavior_project: Path) -> None:
 # B-08: requirements.txt contains graphql-ws
 # ---------------------------------------------------------------------------
 
+
 def test_b08_requirements_has_graphql_ws(behavior_project: Path) -> None:
     """B-08: requirements.txt must contain graphql-ws."""
     req_file = behavior_project / "requirements.txt"
@@ -358,6 +358,7 @@ def test_b08_requirements_has_graphql_ws(behavior_project: Path) -> None:
 # ---------------------------------------------------------------------------
 # B-09: Memory backend pub/sub round-trip (unit: asyncio.Queue)
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.anyio
 async def test_b09_memory_pubsub_roundtrip(behavior_project: Path) -> None:
@@ -376,6 +377,7 @@ async def test_b09_memory_pubsub_roundtrip(behavior_project: Path) -> None:
     try:
         # Force memory backend selection.
         import os
+
         os.environ.pop("REDIS_URL", None)
 
         # Purge cached modules so the project's copy is the one that loads.
@@ -397,14 +399,13 @@ async def test_b09_memory_pubsub_roundtrip(behavior_project: Path) -> None:
                 break  # stop after first event
 
         import asyncio
+
         task = asyncio.create_task(_consumer())
         await asyncio.sleep(0)  # yield to let consumer register
         await backend.publish("test_topic", {"key": "value"})
         await task
 
-        assert received == [{"key": "value"}], (
-            f"Expected [{{'key': 'value'}}], got {received}"
-        )
+        assert received == [{"key": "value"}], f"Expected [{{'key': 'value'}}], got {received}"
     except (ImportError, ModuleNotFoundError):
         pytest.skip("app.graphql.pubsub not importable without optional deps")
     finally:
@@ -415,6 +416,7 @@ async def test_b09_memory_pubsub_roundtrip(behavior_project: Path) -> None:
 # ---------------------------------------------------------------------------
 # B-10: Delivery contract — final mechanistic proof of delivery
 # ---------------------------------------------------------------------------
+
 
 def test_b10_delivery_contract(behavior_project: Path) -> None:
     """B-10: Validate the full delivery contract for TOOL-073.
@@ -428,11 +430,9 @@ def test_b10_delivery_contract(behavior_project: Path) -> None:
     from tests.contracts.delivery_contract import BehaviorEvidence, ToolDelivery
 
     tool_file = (
-        skill_root / "adapt" / "extend" / "api_design" / "add_graphql_subscriptions.py"
+        skill_root / "adapt" / "extend" / "api_design" / "add_graphql_subscriptions" / "__init__.py"
     )
-    test_file = (
-        skill_root / "adapt" / "extend" / "api_design" / "test_add_graphql_subscriptions.py"
-    )
+    test_file = skill_root / "adapt" / "extend" / "api_design" / "test_add_graphql_subscriptions.py"
     behavior_file = Path(__file__)
 
     tool_loc = len(tool_file.read_text().splitlines()) if tool_file.exists() else 0

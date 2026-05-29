@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "f3dbbd0",
-  "generated_at": "2026-05-29T20:07:27+00:00",
+  "kit_commit": "4457d55",
+  "generated_at": "2026-05-29T20:36:44+00:00",
   "verbs": [
     "add",
     "generate",
@@ -158,10 +158,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/api_design/add_api_deprecation.py",
-      "test_paths": [
-        "adapt/extend/api_design/test_add_api_deprecation.py"
-      ],
+      "module_path": "adapt/extend/api_design/add_api_deprecation/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -182,10 +180,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/api_design/add_api_versioning.py",
-      "test_paths": [
-        "adapt/extend/api_design/test_add_api_versioning.py"
-      ],
+      "module_path": "adapt/extend/api_design/add_api_versioning/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -206,10 +202,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/api_design/add_batch_endpoint.py",
-      "test_paths": [
-        "adapt/extend/api_design/test_add_batch_endpoint.py"
-      ],
+      "module_path": "adapt/extend/api_design/add_batch_endpoint/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -230,10 +224,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/api_design/add_cqrs.py",
-      "test_paths": [
-        "adapt/extend/api_design/test_add_cqrs.py"
-      ],
+      "module_path": "adapt/extend/api_design/add_cqrs/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -254,10 +246,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/api_design/add_graphql.py",
-      "test_paths": [
-        "adapt/extend/api_design/test_add_graphql.py"
-      ],
+      "module_path": "adapt/extend/api_design/add_graphql/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -278,10 +268,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/api_design/add_graphql_subscriptions.py",
-      "test_paths": [
-        "adapt/extend/api_design/test_add_graphql_subscriptions.py"
-      ],
+      "module_path": "adapt/extend/api_design/add_graphql_subscriptions/__init__.py",
+      "test_paths": [],
       "primitives_used": [
         "PubSub"
       ],
@@ -302,10 +290,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/api_design/add_long_running_task.py",
-      "test_paths": [
-        "adapt/extend/api_design/test_add_long_running_task.py"
-      ],
+      "module_path": "adapt/extend/api_design/add_long_running_task/__init__.py",
+      "test_paths": [],
       "primitives_used": [
         "DurableTimer",
         "WorkflowRun"
@@ -12171,5 +12157,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "30b6cb6ab8089a2c592ce125e3bb5b8bb926eaa81b6ec768e56ff5adc542fd6d"
+  "stable_hash": "e2c90cb27232209d252588cc75206292938234198f587b67dbd5559fe30fcf13"
 }

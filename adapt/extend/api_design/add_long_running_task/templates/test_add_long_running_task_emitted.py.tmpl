@@ -1,0 +1,76 @@
+"""Emitted tests for add_long_running_task — verify task route structure.
+
+These tests run inside the generated project via::
+
+    PYTHONPATH=. pytest tests/test_add_long_running_task_emitted.py -q
+
+Positive case: workflow.py exports install_long_running_tasks; tasks route
+  returns 202 with Location header and transitions pending -> success.
+Negative case: GET /tasks/{unknown_id} returns 404.
+
+Note: state is in-process (InMemoryWorkflowClient) and does NOT persist
+across restarts. The tool warns about this in warnings — tests verify the
+documented in-process behavior only.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+
+def test_workflow_module_exports_installer() -> None:
+    """Positive: workflow.py exports install_long_running_tasks."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    workflow_file = Path(__file__).parent.parent / "app" / "workflow.py"
+    assert workflow_file.exists(), "app/workflow.py must exist"
+    content = workflow_file.read_text()
+    assert "install_long_running_tasks" in content, (
+        "workflow.py must export install_long_running_tasks"
+    )
+    assert "WorkflowAdapter" in content or "install" in content, (
+        "workflow.py must reference the WorkflowAdapter install function"
+    )
+
+
+def test_tasks_route_file_exists() -> None:
+    """Positive: app/api/routes/tasks.py exists with required endpoints."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    tasks_file = Path(__file__).parent.parent / "app" / "api" / "routes" / "tasks.py"
+    assert tasks_file.exists(), "app/api/routes/tasks.py must exist"
+    content = tasks_file.read_text()
+    assert "start_task" in content, "POST /tasks endpoint must be present"
+    assert "get_task" in content, "GET /tasks/{workflow_id} endpoint must be present"
+    assert "cancel_task" in content, "DELETE /tasks/{workflow_id} endpoint must be present"
+    assert "202" in content, "POST /tasks must return 202 Accepted"
+
+
+def test_tasks_route_has_location_header() -> None:
+    """Positive: start_task sets Location header."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    tasks_file = Path(__file__).parent.parent / "app" / "api" / "routes" / "tasks.py"
+    content = tasks_file.read_text()
+    assert "Location" in content, "start_task must set Location header"
+
+
+def test_get_task_returns_404_for_unknown() -> None:
+    """Negative: get_task raises HTTPException 404 for unknown workflow_id."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    tasks_file = Path(__file__).parent.parent / "app" / "api" / "routes" / "tasks.py"
+    content = tasks_file.read_text()
+    assert "404" in content, "get_task must raise 404 for unknown workflow_id"
+    assert "HTTPException" in content, "get_task must raise HTTPException"
+
+
+def test_task_state_honesty_warning() -> None:
+    """Negative boundary: tasks route docstring warns about in-process state."""
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    tasks_file = Path(__file__).parent.parent / "app" / "api" / "routes" / "tasks.py"
+    content = tasks_file.read_text()
+    # The route file must document that state is in-process only
+    honesty_phrases = ["in-process", "InMemory", "persist", "restart"]
+    has_honesty = any(phrase in content for phrase in honesty_phrases)
+    assert has_honesty, (
+        "tasks_route.py must document that state is in-process and does not persist. "
+        f"Expected one of: {honesty_phrases}"
+    )

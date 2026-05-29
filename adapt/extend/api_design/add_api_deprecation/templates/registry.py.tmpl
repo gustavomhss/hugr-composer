@@ -1,0 +1,217 @@
+"""API deprecation lifecycle management.
+
+Usage::
+
+    from app.deprecation import deprecated, registry
+
+    @router.get("/items")
+    @deprecated(sunset="2026-06-01", replacement="/api/v2/items")
+    async def list_items():
+        ...
+
+    # List all deprecated endpoints
+    entries = registry.list_all()
+"""
+
+from __future__ import annotations
+
+import functools
+import logging
+from collections.abc import Callable
+from datetime import date
+from typing import Any
+
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+
+class DeprecationEntry:
+    """Metadata for a single deprecated endpoint.
+
+    Attributes:
+        path: URL path of the deprecated endpoint.
+        method: HTTP method (GET, POST, etc.).
+        sunset: Date when the endpoint will be removed.
+        replacement: URL of the replacement endpoint.
+        description: Optional human-readable deprecation reason.
+    """
+
+    def __init__(
+        self,
+        path: str,
+        method: str,
+        sunset: str,
+        replacement: str,
+        description: str = "",
+    ) -> None:
+        """Initialise a deprecation entry.
+
+        Args:
+            path: URL path of the deprecated endpoint.
+            method: HTTP method (GET, POST, etc.).
+            sunset: ISO date string when endpoint will be removed.
+            replacement: URL of the replacement endpoint.
+            description: Optional human-readable deprecation reason.
+        """
+        self.path = path
+        self.method = method.upper()
+        self.sunset_date = date.fromisoformat(sunset)
+        self.replacement = replacement
+        self.description = description
+
+    @property
+    def sunset_header(self) -> str:
+        """RFC 8594 Sunset header value (ISO date string).
+
+        Returns:
+            ISO date string for the Sunset header.
+        """
+        return self.sunset_date.isoformat()
+
+    @property
+    def days_until_sunset(self) -> int:
+        """Number of days until the sunset date.
+
+        Returns:
+            Days remaining until sunset (negative if already past).
+        """
+        return (self.sunset_date - date.today()).days
+
+    @property
+    def should_warn(self) -> bool:
+        """Return True when within the warning window before sunset.
+
+        Returns:
+            True when sunset is within DEPRECATION_WARN_DAYS_BEFORE_SUNSET days.
+        """
+        warn_days = getattr(settings, "DEPRECATION_WARN_DAYS_BEFORE_SUNSET", 30)
+        return self.days_until_sunset <= warn_days
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialise entry to a JSON-safe dict.
+
+        Returns:
+            Dict with path, method, sunset, replacement, days_until_sunset.
+        """
+        return {
+            "path": self.path,
+            "method": self.method,
+            "sunset": self.sunset_date.isoformat(),
+            "replacement": self.replacement,
+            "description": self.description,
+            "days_until_sunset": self.days_until_sunset,
+            "warn": self.should_warn,
+        }
+
+
+class DeprecationRegistry:
+    """Central registry of all deprecated API endpoints."""
+
+    def __init__(self) -> None:
+        """Initialise an empty registry."""
+        self._entries: dict[str, DeprecationEntry] = {}
+
+    def register(
+        self,
+        path: str,
+        method: str,
+        sunset: str,
+        replacement: str,
+        description: str = "",
+    ) -> DeprecationEntry:
+        """Register an endpoint as deprecated.
+
+        Args:
+            path: URL path of the deprecated endpoint.
+            method: HTTP method (GET, POST, etc.).
+            sunset: ISO date string when endpoint will be removed.
+            replacement: URL of the replacement endpoint.
+            description: Optional human-readable reason.
+
+        Returns:
+            The created DeprecationEntry.
+        """
+        key = f"{method.upper()} {path}"
+        entry = DeprecationEntry(path, method, sunset, replacement, description)
+        self._entries[key] = entry
+        if entry.should_warn:
+            logger.warning(
+                "Deprecated endpoint %s sunsets in %d days -> %s",
+                key,
+                entry.days_until_sunset,
+                replacement,
+            )
+        return entry
+
+    def get(self, path: str, method: str) -> DeprecationEntry | None:
+        """Look up a deprecation entry by path and method.
+
+        Args:
+            path: URL path to look up.
+            method: HTTP method to look up.
+
+        Returns:
+            DeprecationEntry if found, None otherwise.
+        """
+        return self._entries.get(f"{method.upper()} {path}")
+
+    def list_all(self) -> list[dict[str, Any]]:
+        """Return all registered deprecation entries as serialisable dicts.
+
+        Returns:
+            List of entry dicts sorted by sunset date ascending.
+        """
+        return sorted(
+            (e.to_dict() for e in self._entries.values()),
+            key=lambda d: d["sunset"],
+        )
+
+
+# Module-level singleton registry
+registry = DeprecationRegistry()
+
+
+def deprecated(
+    sunset: str,
+    replacement: str,
+    method: str = "GET",
+    description: str = "",
+) -> Callable[[Any], Any]:
+    """Decorator to mark a route handler as deprecated.
+
+    Registers the endpoint in the module-level registry so
+    DeprecationMiddleware can add response headers automatically.
+
+    Args:
+        sunset: ISO date string when the endpoint will be removed.
+        replacement: URL of the replacement endpoint.
+        method: HTTP method (default 'GET').
+        description: Optional human-readable deprecation reason.
+
+    Returns:
+        Decorator that wraps the route handler unchanged.
+
+    Example::
+
+        @router.get("/items")
+        @deprecated(sunset="2026-06-01", replacement="/api/v2/items")
+        async def list_items():
+            ...
+    """
+    def decorator(func: Any) -> Any:
+        path = getattr(func, "__route_path__", f"/{func.__name__}")
+        registry.register(path, method, sunset, replacement, description)
+        func.__deprecated__ = True
+        func.__sunset__ = sunset
+        func.__replacement__ = replacement
+
+        @functools.wraps(func)
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
+            return await func(*args, **kwargs)
+
+        wrapper.__deprecated__ = True
+        wrapper.__sunset__ = sunset
+        wrapper.__replacement__ = replacement
+        return wrapper
+    return decorator
