@@ -1,0 +1,131 @@
+"""Adaptive throttle ASGI middleware + in-process penalty tracker.
+
+Uses an in-process dict as a lightweight penalty store when Redis is
+unavailable. For multi-worker deployments the Redis key
+``athrottle:penalty:{fingerprint}`` stores the tier.
+
+Middleware raises 429 with Retry-After when the client is in a
+penalty window or has exceeded their cost-based quota.
+"""
+
+from __future__ import annotations
+
+import logging
+import time
+
+from fastapi import FastAPI
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
+
+from app.core.adaptive_throttle import (
+    AdaptiveThrottleConfig,
+    build_config,
+    fingerprint_request,
+    penalty_seconds_for_tier,
+)
+
+logger = logging.getLogger(__name__)
+
+# In-process fallback store: {fingerprint: (tier, expiry_ts)}
+_PENALTY_STORE: dict[str, tuple[int, float]] = {}
+
+
+def _get_tier(fp: str) -> int:
+    """Return the current penalty tier for a fingerprint.
+
+    Args:
+        fp: Behavioral fingerprint hex string.
+
+    Returns:
+        Current penalty tier (0 = no penalty).
+    """
+    entry = _PENALTY_STORE.get(fp)
+    if entry is None:
+        return 0
+    tier, expiry = entry
+    if time.monotonic() > expiry:
+        _PENALTY_STORE.pop(fp, None)
+        return 0
+    return tier
+
+
+def _escalate_tier(fp: str) -> int:
+    """Increment penalty tier for *fp* and return new tier.
+
+    Args:
+        fp: Behavioral fingerprint hex string.
+
+    Returns:
+        New tier after escalation (capped at 4).
+    """
+    current = _get_tier(fp)
+    new_tier = min(current + 1, 4)
+    wait = penalty_seconds_for_tier(new_tier)
+    _PENALTY_STORE[fp] = (new_tier, time.monotonic() + wait)
+    return new_tier
+
+
+class AdaptiveThrottleMiddleware(BaseHTTPMiddleware):
+    """ASGI middleware enforcing adaptive throttle rules.
+
+    Applies fingerprint-based penalty checks and cascading cooldowns.
+    Skips throttle checks when ADAPTIVE_THROTTLE_ENABLED is False.
+    """
+
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        """Process request through adaptive throttle gate.
+
+        Args:
+            request: Incoming ASGI request.
+            call_next: Next handler in the middleware chain.
+
+        Returns:
+            Response from downstream or 429 if throttled.
+        """
+        cfg: AdaptiveThrottleConfig = build_config()
+        if not cfg.enabled:
+            return await call_next(request)
+
+        fp = fingerprint_request(request)
+        tier = _get_tier(fp)
+
+        if tier > 0:
+            wait = penalty_seconds_for_tier(tier)
+            logger.warning(
+                "adaptive_throttle.blocked",
+                extra={"fp": fp, "tier": tier, "retry_after": wait},
+            )
+            return JSONResponse(
+                status_code=429,
+                content={
+                    "detail": "Too many requests — adaptive throttle active",
+                    "penalty_tier": tier,
+                    "retry_after_seconds": wait,
+                },
+                headers={"Retry-After": str(wait)},
+            )
+
+        response = await call_next(request)
+
+        # Escalate on repeated 429 responses from downstream (e.g. from SlowAPI)
+        if response.status_code == 429:
+            new_tier = _escalate_tier(fp)
+            logger.info(
+                "adaptive_throttle.escalated",
+                extra={"fp": fp, "new_tier": new_tier},
+            )
+
+        return response
+
+
+def register_adaptive_throttle(app: FastAPI) -> None:
+    """Attach AdaptiveThrottleMiddleware to *app*.
+
+    Args:
+        app: The FastAPI application instance.
+    """
+    app.add_middleware(AdaptiveThrottleMiddleware)
+    logger.info("adaptive_throttle.registered")

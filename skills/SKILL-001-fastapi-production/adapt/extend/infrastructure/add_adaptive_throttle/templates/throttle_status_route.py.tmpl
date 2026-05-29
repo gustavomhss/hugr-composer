@@ -1,0 +1,48 @@
+"""GET /throttle/status — report the caller's current adaptive throttle state."""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, Request
+from pydantic import BaseModel
+
+from app.core.adaptive_throttle import (
+    build_config,
+    fingerprint_request,
+)
+from app.middleware.adaptive_throttle import _PENALTY_STORE, _get_tier
+
+router = APIRouter(prefix="/throttle", tags=["throttle"])
+
+
+class ThrottleStatus(BaseModel):
+    """Adaptive throttle status for the current caller."""
+
+    enabled: bool
+    fingerprint: str
+    penalty_tier: int
+    base_quota: int
+    learning_period_h: int
+    sensitivity: float
+
+
+@router.get("/status", response_model=ThrottleStatus)
+async def get_throttle_status(request: Request) -> ThrottleStatus:
+    """Return the current adaptive throttle state for the caller.
+
+    Args:
+        request: Incoming request used to derive behavioral fingerprint.
+
+    Returns:
+        ThrottleStatus describing the caller's current throttle state.
+    """
+    cfg = build_config()
+    fp = fingerprint_request(request)
+    tier = _get_tier(fp)
+    return ThrottleStatus(
+        enabled=cfg.enabled,
+        fingerprint=fp,
+        penalty_tier=tier,
+        base_quota=cfg.base_quota,
+        learning_period_h=cfg.learning_period_h,
+        sensitivity=cfg.sensitivity,
+    )

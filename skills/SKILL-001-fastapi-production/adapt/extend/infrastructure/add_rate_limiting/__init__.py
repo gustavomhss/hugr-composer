@@ -11,22 +11,18 @@ Follows the CONTRACT §B1.0 + §B1.0.1 pattern:
 
 The tool is idempotent: a second run detects ``RateLimiterAdapter`` in the
 glue file and returns ``status="no_op"``.
-
-Example::
-
-    from adapt.contracts import ToolInput
-    from adapt.extend.infrastructure.add_rate_limiting import add_rate_limiting
-
-    result = add_rate_limiting(ToolInput(project_dir="/path/to/project"))
 """
 
 from __future__ import annotations
 
-import ast
 import time
 from pathlib import Path
 
+from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
+
+_HERE = Path(__file__).parent
 
 MCP_TOOL = {
     "name": "fastapi_resiliency_add_rate_limiting",
@@ -45,43 +41,13 @@ MCP_TOOL = {
 }
 
 
-_GLUE = '''\
-"""Wire token-bucket rate limiting into the FastAPI app.
-
-Delegates to the primitive + FastAPI adapter copied under `core/venous/`
-by the `add_rate_limiting` tool. Re-emitted idempotently on subsequent runs.
-"""
-
-from __future__ import annotations
-
-import os
-
-from fastapi import FastAPI
-
-from core.venous._adapters.fastapi.RateLimiterAdapter import install
-
-
-def install_rate_limiting(app: FastAPI) -> None:
-    """Attach a token-bucket rate limiter middleware to *app*."""
-    install(
-        app,
-        rate_per_second=float(os.getenv("RATE_LIMIT_PER_SECOND", "100")),
-        burst=int(os.getenv("RATE_LIMIT_BURST", "200")),
-        key=os.getenv("RATE_LIMIT_KEY", "ip"),  # type: ignore[arg-type]
-    )
-'''
-
-
 def add_rate_limiting(inp: ToolInput) -> ToolResult:
     """Add rate limiting by delegating to the shipped primitive + adapter."""
     start = time.monotonic()
-    project = Path(inp.project_dir)
 
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
-
-    from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
+        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -94,9 +60,10 @@ def add_rate_limiting(inp: ToolInput) -> ToolResult:
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
             notes=["Generate a base project first via fastapi_generate_project(...)."],
-            execution_time_ms=_elapsed_ms(start),
+            execution_time_ms=_ms(start),
         )
 
+    project = Path(inp.project_dir)
     files_created: list[str] = list(scaffolded or [])
     app_dir = project / "app"
     glue_file = app_dir / "rate_limit.py"
@@ -105,7 +72,7 @@ def add_rate_limiting(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["Rate limiting already wired via the FastAPI adapter."],
-            execution_time_ms=_elapsed_ms(start),
+            execution_time_ms=_ms(start),
         )
 
     if inp.dry_run:
@@ -116,7 +83,7 @@ def add_rate_limiting(inp: ToolInput) -> ToolResult:
                 "and write app/rate_limit.py calling RateLimiterAdapter.install(app)."
             ],
             next_steps=["Re-run without dry_run=True to apply."],
-            execution_time_ms=_elapsed_ms(start),
+            execution_time_ms=_ms(start),
         )
 
     from generators.scaffold_venous import ensure_primitives
@@ -129,7 +96,7 @@ def add_rate_limiting(inp: ToolInput) -> ToolResult:
     files_created.append(manifest.path)
 
     app_dir.mkdir(parents=True, exist_ok=True)
-    glue_file.write_text(_GLUE)
+    render_to(_HERE, "rate_limit_glue.py.tmpl", dest=glue_file, substitutions={})
     files_created.append(str(glue_file))
 
     files_modified: list[str] = []
@@ -147,17 +114,7 @@ def add_rate_limiting(inp: ToolInput) -> ToolResult:
         )
         files_modified.append(str(config_file))
 
-    for path_str in files_created:
-        p = Path(path_str)
-        if p.suffix == ".py" and p.is_file():
-            try:
-                ast.parse(p.read_text())
-            except SyntaxError as exc:
-                return ToolResult(
-                    status="error",
-                    error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_elapsed_ms(start),
-                )
+    _emit_project_test(project, files_created)
 
     return ToolResult(
         status="success",
@@ -174,10 +131,18 @@ def add_rate_limiting(inp: ToolInput) -> ToolResult:
             "Set RATE_LIMIT_PER_SECOND / RATE_LIMIT_BURST / RATE_LIMIT_KEY in .env to override defaults.",
             "Add key='user' or 'user_endpoint' to scope buckets per authenticated user.",
         ],
-        execution_time_ms=_elapsed_ms(start),
+        execution_time_ms=_ms(start),
     )
 
 
-def _elapsed_ms(start: float) -> int:
-    """Return elapsed ms since *start* (from ``time.monotonic()``)."""
+def _emit_project_test(project: Path, created: list[str]) -> None:
+    (project / "tests").mkdir(parents=True, exist_ok=True)
+    emitted = project / "tests" / "test_add_rate_limiting_emitted.py"
+    if emitted.exists():
+        return
+    render_to(_HERE, "test_add_rate_limiting_emitted.py.tmpl", dest=emitted, substitutions={})
+    created.append(str(emitted))
+
+
+def _ms(start: float) -> int:
     return int((time.monotonic() - start) * 1000)

@@ -1,0 +1,20 @@
+"""Wire priority-aware load shedding into the FastAPI app.
+
+Delegates to the primitive + FastAPI adapter copied under `core/venous/`
+by the `add_load_shedding` tool. Re-emitted idempotently.
+"""
+
+from __future__ import annotations
+
+from fastapi import FastAPI
+
+from core.venous._adapters.fastapi.LoadShedderAdapter import install
+
+
+def install_load_shedding(app: FastAPI) -> None:
+    """Attach admission-control middleware to *app*.
+
+    Requests carry priority via ``X-Priority`` header; overloaded
+    requests get 503 + ``Retry-After`` (LSH-INV-02).
+    """
+    install(app)

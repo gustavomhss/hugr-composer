@@ -1,0 +1,75 @@
+"""Timing-safe comparison helpers — wrappers around hmac.compare_digest.
+
+All authentication token comparisons in the application MUST use these
+helpers instead of ``==`` to prevent timing oracle attacks.
+
+Import::
+
+    from app.core.timing_safe import compare_tokens, compare_bytes
+"""
+
+from __future__ import annotations
+
+import hmac
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def compare_tokens(a: str, b: str) -> bool:
+    """Compare two string tokens in constant time.
+
+    Uses ``hmac.compare_digest`` so the comparison time does not
+    reveal how many characters match (timing oracle prevention).
+
+    Args:
+        a: First token string.
+        b: Second token string (e.g. expected token from storage).
+
+    Returns:
+        ``True`` if tokens are equal, ``False`` otherwise.
+    """
+    try:
+        return hmac.compare_digest(a.encode(), b.encode())
+    except (AttributeError, TypeError) as exc:
+        logger.warning(
+            "timing_safe.compare_tokens.type_error",
+            extra={"exc": str(exc)},
+        )
+        return False
+
+
+def compare_bytes(a: bytes, b: bytes) -> bool:
+    """Compare two byte sequences in constant time.
+
+    Args:
+        a: First byte sequence.
+        b: Second byte sequence.
+
+    Returns:
+        ``True`` if sequences are equal, ``False`` otherwise.
+    """
+    try:
+        return hmac.compare_digest(a, b)
+    except (TypeError, ValueError) as exc:
+        logger.warning(
+            "timing_safe.compare_bytes.type_error",
+            extra={"exc": str(exc)},
+        )
+        return False
+
+
+def compare_signatures(received: str, expected: str) -> bool:
+    """Compare HMAC signatures in constant time.
+
+    Convenience wrapper that normalises both signatures to lowercase
+    before comparison (hex digests are case-insensitive).
+
+    Args:
+        received: Signature string from the incoming request.
+        expected: Reference signature computed server-side.
+
+    Returns:
+        ``True`` if signatures match, ``False`` otherwise.
+    """
+    return compare_tokens(received.lower(), expected.lower())

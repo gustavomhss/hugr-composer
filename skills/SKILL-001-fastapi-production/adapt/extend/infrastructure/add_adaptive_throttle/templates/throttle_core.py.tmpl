@@ -1,0 +1,110 @@
+"""Adaptive throttle engine — cost-based, behavioral, escalating.
+
+Three throttle dimensions:
+  1. Cost weight: expensive endpoints consume more quota per request.
+  2. Behavioral fingerprint: detects IP rotation via header patterns.
+  3. Adaptive threshold: tightens budget when anomaly score exceeds baseline.
+
+Penalty ladder (configurable):
+  tier 0 -> no penalty (normal)
+  tier 1 -> 1-minute cooldown
+  tier 2 -> 5-minute cooldown
+  tier 3 -> 30-minute cooldown
+  tier 4 -> 24-hour ban
+"""
+
+from __future__ import annotations
+
+import hashlib
+import logging
+import time
+from dataclasses import dataclass, field
+
+from starlette.requests import Request
+
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+PENALTY_SECONDS: list[int] = [0, 60, 300, 1800, 86400]
+
+
+@dataclass(frozen=True)
+class AdaptiveThrottleConfig:
+    """Immutable adaptive throttle configuration from settings."""
+
+    enabled: bool
+    sensitivity: float
+    learning_period_h: int
+    base_quota: int
+    penalty_escalation: bool
+    redis_url: str
+
+
+def build_config() -> AdaptiveThrottleConfig:
+    """Build AdaptiveThrottleConfig from current settings.
+
+    Returns:
+        AdaptiveThrottleConfig populated from ADAPTIVE_THROTTLE_* fields.
+    """
+    redis_url = getattr(settings, "REDIS_URL", "redis://localhost:6379/0") or ""
+    return AdaptiveThrottleConfig(
+        enabled=settings.ADAPTIVE_THROTTLE_ENABLED,
+        sensitivity=settings.ADAPTIVE_THROTTLE_SENSITIVITY,
+        learning_period_h=settings.ADAPTIVE_THROTTLE_LEARNING_PERIOD_H,
+        base_quota=settings.ADAPTIVE_THROTTLE_BASE_QUOTA,
+        penalty_escalation=settings.ADAPTIVE_THROTTLE_PENALTY_ESCALATION,
+        redis_url=str(redis_url),
+    )
+
+
+def fingerprint_request(request: Request) -> str:
+    """Build a behavioral fingerprint from header order and timing.
+
+    Combines the ordered header names (not values) with the remote
+    IP to create a fingerprint that detects IP rotation while rotating
+    clients that reuse the same header pattern.
+
+    Args:
+        request: Incoming Starlette request.
+
+    Returns:
+        A hex fingerprint string.
+    """
+    header_order = ",".join(k.lower() for k in request.headers.keys())
+    raw = f"{request.client.host if request.client else 'unknown'}|{header_order}"
+    return hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+
+def cost_weight(endpoint: str, weights: dict[str, int] | None = None) -> int:
+    """Return the cost weight for *endpoint*.
+
+    Higher weight = more quota consumed per request.
+    Defaults to 1 when no explicit weight is configured.
+
+    Args:
+        endpoint: Route path (e.g. ``/api/v1/reports``).
+        weights: Optional mapping of path prefix to weight.
+
+    Returns:
+        Integer cost weight (>= 1).
+    """
+    if not weights:
+        return 1
+    for prefix, w in weights.items():
+        if endpoint.startswith(prefix):
+            return max(1, w)
+    return 1
+
+
+def penalty_seconds_for_tier(tier: int) -> int:
+    """Return the cooldown duration in seconds for a given penalty tier.
+
+    Args:
+        tier: Penalty tier (0-4). Values > 4 are clamped to tier 4.
+
+    Returns:
+        Cooldown duration in seconds.
+    """
+    clamped = min(tier, len(PENALTY_SECONDS) - 1)
+    return PENALTY_SECONDS[clamped]

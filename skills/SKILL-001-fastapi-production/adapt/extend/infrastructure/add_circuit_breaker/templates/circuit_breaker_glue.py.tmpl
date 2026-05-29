@@ -1,0 +1,20 @@
+"""Wire the circuit-breaker registry into the FastAPI app.
+
+Delegates to the primitive + FastAPI adapter copied under `core/venous/`
+by the `add_circuit_breaker` tool. Re-emitted idempotently on subsequent runs.
+"""
+
+from __future__ import annotations
+
+from fastapi import FastAPI
+
+from core.venous._adapters.fastapi.CircuitBreakerAdapter import breaker, install
+
+
+def install_circuit_breakers(app: FastAPI) -> None:
+    """Attach a named-breaker registry to *app.state.circuit_breakers*."""
+    install(app)
+
+
+# Re-export the Depends factory so routes can import from app.circuit_breaker.
+__all__ = ["breaker", "install_circuit_breakers"]

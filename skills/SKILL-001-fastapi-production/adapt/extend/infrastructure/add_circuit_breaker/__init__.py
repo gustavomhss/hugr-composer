@@ -13,11 +13,14 @@ and returns ``status="no_op"``.
 
 from __future__ import annotations
 
-import ast
 import time
 from pathlib import Path
 
+from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
+
+_HERE = Path(__file__).parent
 
 MCP_TOOL = {
     "name": "fastapi_resiliency_add_circuit_breaker",
@@ -36,40 +39,13 @@ MCP_TOOL = {
 }
 
 
-_GLUE = '''\
-"""Wire the circuit-breaker registry into the FastAPI app.
-
-Delegates to the primitive + FastAPI adapter copied under `core/venous/`
-by the `add_circuit_breaker` tool. Re-emitted idempotently on subsequent runs.
-"""
-
-from __future__ import annotations
-
-from fastapi import FastAPI
-
-from core.venous._adapters.fastapi.CircuitBreakerAdapter import breaker, install
-
-
-def install_circuit_breakers(app: FastAPI) -> None:
-    """Attach a named-breaker registry to *app.state.circuit_breakers*."""
-    install(app)
-
-
-# Re-export the Depends factory so routes can import from app.circuit_breaker.
-__all__ = ["breaker", "install_circuit_breakers"]
-'''
-
-
 def add_circuit_breaker(inp: ToolInput) -> ToolResult:
     """Add circuit-breaker support by delegating to the shipped primitive + adapter."""
     start = time.monotonic()
-    project = Path(inp.project_dir)
 
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
-
-    from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
+        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -82,9 +58,10 @@ def add_circuit_breaker(inp: ToolInput) -> ToolResult:
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
             notes=["Generate a base project first via fastapi_generate_project(...)."],
-            execution_time_ms=_elapsed_ms(start),
+            execution_time_ms=_ms(start),
         )
 
+    project = Path(inp.project_dir)
     files_created: list[str] = list(scaffolded or [])
     app_dir = project / "app"
     glue_file = app_dir / "circuit_breaker.py"
@@ -93,7 +70,7 @@ def add_circuit_breaker(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["Circuit breakers already wired via the FastAPI adapter."],
-            execution_time_ms=_elapsed_ms(start),
+            execution_time_ms=_ms(start),
         )
 
     if inp.dry_run:
@@ -104,7 +81,7 @@ def add_circuit_breaker(inp: ToolInput) -> ToolResult:
                 "and write app/circuit_breaker.py calling CircuitBreakerAdapter.install(app)."
             ],
             next_steps=["Re-run without dry_run=True to apply."],
-            execution_time_ms=_elapsed_ms(start),
+            execution_time_ms=_ms(start),
         )
 
     from generators.scaffold_venous import ensure_primitives
@@ -117,20 +94,10 @@ def add_circuit_breaker(inp: ToolInput) -> ToolResult:
     files_created.append(manifest.path)
 
     app_dir.mkdir(parents=True, exist_ok=True)
-    glue_file.write_text(_GLUE)
+    render_to(_HERE, "circuit_breaker_glue.py.tmpl", dest=glue_file, substitutions={})
     files_created.append(str(glue_file))
 
-    for path_str in files_created:
-        p = Path(path_str)
-        if p.suffix == ".py" and p.is_file():
-            try:
-                ast.parse(p.read_text())
-            except SyntaxError as exc:
-                return ToolResult(
-                    status="error",
-                    error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_elapsed_ms(start),
-                )
+    _emit_project_test(project, files_created)
 
     return ToolResult(
         status="success",
@@ -147,10 +114,18 @@ def add_circuit_breaker(inp: ToolInput) -> ToolResult:
             "Wrap external calls: `async def read(cb=Depends(breaker('upstream')))` then `await cb.call(fn, ...)`.",
             "Breaker opens at failure_rate_threshold=0.5 (default); tune via get_breaker(..., **kw).",
         ],
-        execution_time_ms=_elapsed_ms(start),
+        execution_time_ms=_ms(start),
     )
 
 
-def _elapsed_ms(start: float) -> int:
-    """Return elapsed ms since *start* (from ``time.monotonic()``)."""
+def _emit_project_test(project: Path, created: list[str]) -> None:
+    (project / "tests").mkdir(parents=True, exist_ok=True)
+    emitted = project / "tests" / "test_add_circuit_breaker_emitted.py"
+    if emitted.exists():
+        return
+    render_to(_HERE, "test_add_circuit_breaker_emitted.py.tmpl", dest=emitted, substitutions={})
+    created.append(str(emitted))
+
+
+def _ms(start: float) -> int:
     return int((time.monotonic() - start) * 1000)

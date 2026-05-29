@@ -1,0 +1,23 @@
+"""Wire token-bucket rate limiting into the FastAPI app.
+
+Delegates to the primitive + FastAPI adapter copied under `core/venous/`
+by the `add_rate_limiting` tool. Re-emitted idempotently on subsequent runs.
+"""
+
+from __future__ import annotations
+
+import os
+
+from fastapi import FastAPI
+
+from core.venous._adapters.fastapi.RateLimiterAdapter import install
+
+
+def install_rate_limiting(app: FastAPI) -> None:
+    """Attach a token-bucket rate limiter middleware to *app*."""
+    install(
+        app,
+        rate_per_second=float(os.getenv("RATE_LIMIT_PER_SECOND", "100")),
+        burst=int(os.getenv("RATE_LIMIT_BURST", "200")),
+        key=os.getenv("RATE_LIMIT_KEY", "ip"),  # type: ignore[arg-type]
+    )

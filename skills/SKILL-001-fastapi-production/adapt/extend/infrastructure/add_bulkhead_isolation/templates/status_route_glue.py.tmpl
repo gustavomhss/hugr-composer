@@ -1,0 +1,19 @@
+"""GET /resilience/bulkheads — pool utilization per bulkhead partition.
+
+Delegates to ``Bulkhead.status()`` on the adapter facade — no local
+computation. Counters live in the motor primitive.
+"""
+
+from __future__ import annotations
+
+from fastapi import APIRouter
+
+from app.resilience.bulkhead import get_bulkhead
+
+router = APIRouter(prefix="/resilience", tags=["resilience"])
+
+
+@router.get("/bulkheads", response_model=dict)
+async def bulkhead_status() -> dict:
+    """Return current partition utilization for every registered group."""
+    return get_bulkhead().status()

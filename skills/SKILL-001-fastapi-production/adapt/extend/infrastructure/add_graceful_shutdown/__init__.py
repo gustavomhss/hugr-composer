@@ -1,6 +1,6 @@
 """TOOL-100: add_graceful_shutdown — signal-driven graceful shutdown for FastAPI.
 
-Reference implementation of the CONTRACT §B1.0 + §B1.0.1 pattern:
+Follows the CONTRACT §B1.0 + §B1.0.1 pattern:
 
 1. Copy the framework-agnostic primitive
    ``core.venous.resiliency.GracefulShutdown`` into the generated project.
@@ -11,24 +11,18 @@ Reference implementation of the CONTRACT §B1.0 + §B1.0.1 pattern:
 
 The tool is idempotent: a second run detects the import chain in
 ``app/shutdown.py`` and returns ``status="no_op"``.
-
-Example::
-
-    from adapt.contracts import ToolInput
-    from adapt.extend.infrastructure.add_graceful_shutdown import add_graceful_shutdown
-
-    result = add_graceful_shutdown(ToolInput(project_dir="/path/to/project"))
-    print(result.status)              # "success"
-    print(result.imports_primitives)  # ["core.venous.resiliency.GracefulShutdown"]
 """
 
 from __future__ import annotations
 
-import ast
 import time
 from pathlib import Path
 
+from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
+
+_HERE = Path(__file__).parent
 
 MCP_TOOL = {
     "name": "fastapi_resiliency_add_graceful_shutdown",
@@ -47,51 +41,13 @@ MCP_TOOL = {
 }
 
 
-_GLUE = '''\
-"""Wire graceful shutdown into the FastAPI app.
-
-Delegates to the primitive + FastAPI adapter copied under `core/venous/`
-by the `add_graceful_shutdown` tool. Hand-editing is safe but the file is
-re-emitted idempotently on subsequent tool runs.
-"""
-
-from __future__ import annotations
-
-import os
-
-from fastapi import FastAPI
-
-from core.venous._adapters.fastapi.GracefulShutdownAdapter import install
-
-
-def install_graceful_shutdown(app: FastAPI) -> None:
-    """Attach drain middleware + shutdown coordinator to *app*."""
-    install(
-        app,
-        drain_seconds=float(os.getenv("SHUTDOWN_DRAIN_SECONDS", "5")),
-        timeout_seconds=float(os.getenv("SHUTDOWN_TIMEOUT_SECONDS", "30")),
-    )
-'''
-
-
 def add_graceful_shutdown(inp: ToolInput) -> ToolResult:
-    """Add graceful shutdown by delegating to the shipped primitive + adapter.
-
-    Args:
-        inp: ``ToolInput`` with ``project_dir`` and optional ``dry_run``.
-
-    Returns:
-        ``ToolResult`` with ``status``, ``files_created``, ``files_modified``,
-        ``notes``, and ``next_steps``.
-    """
+    """Add graceful shutdown by delegating to the shipped primitive + adapter."""
     start = time.monotonic()
-    project = Path(inp.project_dir)
 
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
-
-    from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
+        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -108,19 +64,19 @@ def add_graceful_shutdown(inp: ToolInput) -> ToolResult:
                 "Generate a base project first:",
                 "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
             ],
-            execution_time_ms=_elapsed_ms(start),
+            execution_time_ms=_ms(start),
         )
 
+    project = Path(inp.project_dir)
     files_created: list[str] = list(scaffolded or [])
     app_dir = project / "app"
     shutdown_file = app_dir / "shutdown.py"
 
-    # --- Idempotency guard ---------------------------------------------------
     if shutdown_file.exists() and "GracefulShutdownAdapter" in shutdown_file.read_text():
         return ToolResult(
             status="no_op",
             notes=["Graceful shutdown already wired via the FastAPI adapter."],
-            execution_time_ms=_elapsed_ms(start),
+            execution_time_ms=_ms(start),
         )
 
     if inp.dry_run:
@@ -131,10 +87,9 @@ def add_graceful_shutdown(inp: ToolInput) -> ToolResult:
                 "and write app/shutdown.py calling GracefulShutdownAdapter.install(app)."
             ],
             next_steps=["Re-run without dry_run=True to apply."],
-            execution_time_ms=_elapsed_ms(start),
+            execution_time_ms=_ms(start),
         )
 
-    # --- Step 1: copy primitive + adapter (idempotent) ---------------------
     from generators.scaffold_venous import ensure_primitives
 
     manifest = ensure_primitives(
@@ -144,12 +99,10 @@ def add_graceful_shutdown(inp: ToolInput) -> ToolResult:
     )
     files_created.append(manifest.path)
 
-    # --- Step 2: thin glue -------------------------------------------------
     app_dir.mkdir(parents=True, exist_ok=True)
-    shutdown_file.write_text(_GLUE)
+    render_to(_HERE, "shutdown_glue.py.tmpl", dest=shutdown_file, substitutions={})
     files_created.append(str(shutdown_file))
 
-    # --- Step 3: patch config.py ------------------------------------------
     files_modified: list[str] = []
     config_file = app_dir / "core" / "config.py"
     if config_file.exists() and "SHUTDOWN_DRAIN_SECONDS" not in config_file.read_text():
@@ -164,18 +117,7 @@ def add_graceful_shutdown(inp: ToolInput) -> ToolResult:
         )
         files_modified.append(str(config_file))
 
-    # --- Step 4: validate every .py we created parses ---------------------
-    for path_str in files_created:
-        p = Path(path_str)
-        if p.suffix == ".py" and p.is_file():
-            try:
-                ast.parse(p.read_text())
-            except SyntaxError as exc:
-                return ToolResult(
-                    status="error",
-                    error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_elapsed_ms(start),
-                )
+    _emit_project_test(project, files_created)
 
     return ToolResult(
         status="success",
@@ -192,10 +134,18 @@ def add_graceful_shutdown(inp: ToolInput) -> ToolResult:
             "Set SHUTDOWN_DRAIN_SECONDS / SHUTDOWN_TIMEOUT_SECONDS in .env to override defaults.",
             "Test with: kill -SIGTERM <pid> and verify 503 during drain phase.",
         ],
-        execution_time_ms=_elapsed_ms(start),
+        execution_time_ms=_ms(start),
     )
 
 
-def _elapsed_ms(start: float) -> int:
-    """Return elapsed ms since *start* (from ``time.monotonic()``)."""
+def _emit_project_test(project: Path, created: list[str]) -> None:
+    (project / "tests").mkdir(parents=True, exist_ok=True)
+    emitted = project / "tests" / "test_add_graceful_shutdown_emitted.py"
+    if emitted.exists():
+        return
+    render_to(_HERE, "test_add_graceful_shutdown_emitted.py.tmpl", dest=emitted, substitutions={})
+    created.append(str(emitted))
+
+
+def _ms(start: float) -> int:
     return int((time.monotonic() - start) * 1000)

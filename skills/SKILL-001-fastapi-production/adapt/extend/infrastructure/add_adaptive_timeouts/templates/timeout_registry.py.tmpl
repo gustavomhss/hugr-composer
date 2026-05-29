@@ -1,0 +1,61 @@
+"""TimeoutRegistry: per-dependency AdaptiveTimeout instances.
+
+Holds one AdaptiveTimeout per downstream dependency. Pure application-layer
+bookkeeping — the deadline primitive that fires the actual timeouts lives
+in ``core.venous.resiliency.TimeoutBudget``.
+"""
+
+from __future__ import annotations
+
+import os
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.resilience.adaptive_timeout import AdaptiveTimeout
+
+
+class TimeoutRegistry:
+    """Registry that holds one AdaptiveTimeout per downstream dependency."""
+
+    def __init__(
+        self,
+        window_size: int = 100,
+        floor_ms: float = 100.0,
+        ceiling_ms: float = 10_000.0,
+    ) -> None:
+        self._window_size = window_size
+        self._floor_ms = floor_ms
+        self._ceiling_ms = ceiling_ms
+        self._trackers: dict[str, "AdaptiveTimeout"] = {}
+
+    def get_or_create(self, name: str) -> "AdaptiveTimeout":
+        if name not in self._trackers:
+            from app.resilience.adaptive_timeout import AdaptiveTimeout
+            self._trackers[name] = AdaptiveTimeout(
+                name=name,
+                window_size=self._window_size,
+                floor_ms=self._floor_ms,
+                ceiling_ms=self._ceiling_ms,
+            )
+        return self._trackers[name]
+
+    def all_stats(self) -> dict[str, dict[str, float]]:
+        return {name: t.get_stats() for name, t in self._trackers.items()}
+
+    def names(self) -> list[str]:
+        return sorted(self._trackers)
+
+
+_default_registry: TimeoutRegistry | None = None
+
+
+def get_timeout_registry() -> TimeoutRegistry:
+    """Return the process-global TimeoutRegistry (lazy init from env)."""
+    global _default_registry
+    if _default_registry is None:
+        _default_registry = TimeoutRegistry(
+            window_size=int(os.getenv("ADAPTIVE_TIMEOUT_WINDOW_SIZE", "100")),
+            floor_ms=float(os.getenv("ADAPTIVE_TIMEOUT_FLOOR_MS", "100")),
+            ceiling_ms=float(os.getenv("ADAPTIVE_TIMEOUT_CEILING_MS", "10000")),
+        )
+    return _default_registry
