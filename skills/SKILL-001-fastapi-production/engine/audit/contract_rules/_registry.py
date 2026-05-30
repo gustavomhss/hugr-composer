@@ -70,6 +70,7 @@ from .phase4_release import (
 )
 from .r_admin_routes_auth import _r_admin_routes_require_auth
 from .r_no_dead_security_features import _r_no_dead_security_features
+from .r_no_module_state import _r_no_module_state_in_templates
 from .r_write_schemas_strict import _r_write_schemas_strict
 
 # ---------------------------------------------------------------------------
@@ -101,6 +102,12 @@ RULES: list[Rule] = [
         0,
         "admin/diagnostic routes require auth (ROUND5_6_TRIAGE P2)",
         _r_admin_routes_require_auth,
+    ),
+    Rule(
+        "B0.12",
+        0,
+        "no module-level mutable state in adapt/ templates",
+        _r_no_module_state_in_templates,
     ),
     Rule(
         "B0.14",
