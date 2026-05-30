@@ -16,7 +16,10 @@ import ast
 import time
 from pathlib import Path
 
+from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+
+_HERE = Path(__file__).parent
 
 MCP_TOOL = {
     "name": "fastapi_data_add_event_sourcing",
@@ -35,26 +38,6 @@ MCP_TOOL = {
         "core.venous._adapters.fastapi.EventSourcedStoreAdapter",
     ],
 }
-
-
-_GLUE = '''\
-"""Wire the event-sourced store into the FastAPI app.
-
-Delegates to the primitive + FastAPI adapter copied under `core/venous/`
-by the `add_event_sourcing` tool. Re-emitted idempotently.
-"""
-
-from __future__ import annotations
-
-from fastapi import FastAPI
-
-from core.venous._adapters.fastapi.EventSourcedStoreAdapter import install
-
-
-def install_event_store(app: FastAPI) -> None:
-    """Attach an event-sourced store + /events router to *app*."""
-    install(app)
-'''
 
 
 def add_event_sourcing(inp: ToolInput) -> ToolResult:
@@ -113,8 +96,10 @@ def add_event_sourcing(inp: ToolInput) -> ToolResult:
     files_created.append(manifest.path)
 
     app_dir.mkdir(parents=True, exist_ok=True)
-    glue_file.write_text(_GLUE)
+    render_to(_HERE, "event_store_glue.py.tmpl", dest=glue_file, substitutions={})
     files_created.append(str(glue_file))
+
+    _emit_project_test(project, files_created)
 
     for path_str in files_created:
         p = Path(path_str)
@@ -144,6 +129,16 @@ def add_event_sourcing(inp: ToolInput) -> ToolResult:
         ],
         execution_time_ms=_elapsed_ms(start),
     )
+
+
+def _emit_project_test(project: Path, created: list[str]) -> None:
+    """Render emitted test into {project}/tests/test_add_event_sourcing_emitted.py."""
+    (project / "tests").mkdir(parents=True, exist_ok=True)
+    emitted = project / "tests" / "test_add_event_sourcing_emitted.py"
+    if emitted.exists():
+        return
+    render_to(_HERE, "test_add_event_sourcing_emitted.py.tmpl", dest=emitted, substitutions={})
+    created.append(str(emitted))
 
 
 def _elapsed_ms(start: float) -> int:

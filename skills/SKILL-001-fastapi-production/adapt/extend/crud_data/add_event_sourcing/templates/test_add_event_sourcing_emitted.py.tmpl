@@ -1,0 +1,71 @@
+"""Emitted test for add_event_sourcing: event-sourced store scaffold.
+
+HONESTY RULE (§5, F-06): EventSourcedStore provides optimistic-concurrency
+append semantics (ESS-INV-01). The emitted glue wires the primitive +
+adapter; appends are ordered per-aggregate via expected_version. F-10
+preservation: the per-aggregate append loop in the primitive enforces order;
+this test asserts the wiring exists, not that ordering is re-implemented at
+the glue level.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+
+# ---------------------------------------------------------------------------
+# Positive: glue file exists and wires the adapter
+# ---------------------------------------------------------------------------
+
+def test_event_store_glue_wires_adapter() -> None:
+    """app/event_store.py imports the FastAPI adapter and exposes install_event_store."""
+    glue = Path(__file__).parent.parent / "app" / "event_store.py"
+    assert glue.exists(), "app/event_store.py was not emitted"
+    body = glue.read_text()
+    assert (
+        "from core.venous._adapters.fastapi.EventSourcedStoreAdapter import install"
+        in body
+    ), "glue must import EventSourcedStoreAdapter.install"
+    assert "def install_event_store(" in body, (
+        "glue must expose install_event_store(app)"
+    )
+
+
+def test_event_store_primitive_copied() -> None:
+    """EventSourcedStore + DomainEvent primitives are present in the project."""
+    root = Path(__file__).parent.parent
+    ess = root / "core" / "venous" / "events" / "EventSourcedStore" / "EventSourcedStore.py"
+    de = root / "core" / "venous" / "events" / "DomainEvent" / "DomainEvent.py"
+    assert ess.exists(), "EventSourcedStore primitive missing"
+    assert de.exists(), "DomainEvent primitive missing"
+
+
+def test_event_store_adapter_copied() -> None:
+    """FastAPI adapter is present and exposes install()."""
+    adapter = (
+        Path(__file__).parent.parent
+        / "core"
+        / "venous"
+        / "_adapters"
+        / "fastapi"
+        / "EventSourcedStoreAdapter.py"
+    )
+    assert adapter.exists(), "EventSourcedStoreAdapter missing"
+    assert "def install(" in adapter.read_text(), "adapter must expose install(app)"
+
+
+# ---------------------------------------------------------------------------
+# Negative: no orphan/dead-code shim files emitted
+# ---------------------------------------------------------------------------
+
+def test_no_orphan_event_shim_emitted() -> None:
+    """No legacy event_sourcing shim files outside the adapter wiring."""
+    root = Path(__file__).parent.parent
+    # The only event_store touchpoint is the glue file. Any sibling shim would
+    # be dead code (no caller imports it).
+    bad_paths = [
+        root / "app" / "event_sourcing.py",
+        root / "app" / "events" / "event_sourcing_shim.py",
+    ]
+    for p in bad_paths:
+        assert not p.exists(), f"Unexpected shim file emitted: {p}"

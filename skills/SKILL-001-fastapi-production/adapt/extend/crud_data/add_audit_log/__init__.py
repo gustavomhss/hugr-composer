@@ -16,7 +16,10 @@ import ast
 import time
 from pathlib import Path
 
+from adapt._base import render, render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+
+_HERE = Path(__file__).parent
 
 MCP_TOOL = {
     "name": "fastapi_data_add_audit_log",
@@ -36,56 +39,8 @@ MCP_TOOL = {
     ],
 }
 
-
-_GLUE = '''\
-"""Wire the tamper-evident audit log into the FastAPI app.
-
-Delegates to the primitive + FastAPI adapter copied under `core/venous/`
-by the `add_audit_log` tool. Re-emitted idempotently.
-"""
-
-from __future__ import annotations
-
-import hashlib
-import os
-
-from fastapi import FastAPI
-
-from app.core.config import settings
-from core.venous._adapters.fastapi.AuditLogAdapter import install
-
-
-def _audit_hmac_secret() -> bytes:
-    """Resolve the audit-log HMAC key — never hardcoded, never silently absent.
-
-    Precedence:
-      1. AUDIT_LOG_HMAC_SECRET env var (prod / KMS-managed), if set; else
-      2. a domain-separated key derived from the app's SECRET_KEY.
-    SECRET_KEY is required and entropy-checked by Settings (loaded from env or
-    .env), so the audit chain always has a real key and the app still boots in
-    the standard .env workflow — fail-closed, with no hardcoded placeholder.
-    """
-    override = os.getenv("AUDIT_LOG_HMAC_SECRET", "").strip()
-    if override:
-        return override.encode()
-    return hashlib.sha256(b"hugr-audit-log:" + settings.SECRET_KEY.encode()).digest()
-
-
-def install_audit_log(app: FastAPI) -> None:
-    """Attach a tamper-evident audit log + /audit-logs router to *app*."""
-    install(app, hmac_secret=_audit_hmac_secret())
-'''
-
 # Sentinel inserted into main.py so idempotency check works correctly.
 _MAIN_SENTINEL = "install_audit_log(app)"
-
-_MAIN_PATCH = '''\
-
-
-# Audit log — wired by add_audit_log tool
-from app.audit_log import install_audit_log  # noqa: E402
-install_audit_log(app)
-'''
 
 
 def add_audit_log(inp: ToolInput) -> ToolResult:
@@ -115,8 +70,8 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
     files_created: list[str] = list(scaffolded or [])
     app_dir = project / "app"
     glue_file = app_dir / "audit_log.py"
-
     main_file = app_dir / "main.py"
+
     if (
         glue_file.exists()
         and "AuditLogAdapter" in glue_file.read_text()
@@ -150,16 +105,17 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
     files_created.append(manifest.path)
 
     app_dir.mkdir(parents=True, exist_ok=True)
-    glue_file.write_text(_GLUE)
+    render_to(_HERE, "audit_log_glue.py.tmpl", dest=glue_file, substitutions={})
     files_created.append(str(glue_file))
 
     # Wire install_audit_log(app) into main.py after app = FastAPI(...).
     # Without this the audit log primitives are copied but never activated.
     files_modified: list[str] = []
-    main_file = app_dir / "main.py"
     if main_file.exists() and _MAIN_SENTINEL not in main_file.read_text():
         _patch_main(main_file)
         files_modified.append(str(main_file))
+
+    _emit_project_test(project, files_created)
 
     for path_str in files_created:
         p = Path(path_str)
@@ -193,22 +149,23 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
 
 
 def _patch_main(main_file: Path) -> None:
-    """Append install_audit_log(app) call to app/main.py after app = FastAPI(...).
-
-    Inserts the call immediately after the ``app = FastAPI(...)`` block so that
-    the audit log is active from the first request.  No-op if the sentinel is
-    already present.
-
-    Args:
-        main_file: Absolute path to ``app/main.py``.
-    """
+    """Append install_audit_log(app) wiring to app/main.py — idempotent."""
     src = main_file.read_text()
     if _MAIN_SENTINEL in src:
         return
-    # Append the wiring block at the end of the file so it runs after
-    # app = FastAPI(...) regardless of where that call appears.
-    patched = src.rstrip("\n") + "\n" + _MAIN_PATCH
+    patch_block = render(_HERE, "main_patch.py.tmpl", {})
+    patched = src.rstrip("\n") + "\n\n" + patch_block
     main_file.write_text(patched)
+
+
+def _emit_project_test(project: Path, created: list[str]) -> None:
+    """Render emitted test into {project}/tests/test_add_audit_log_emitted.py."""
+    (project / "tests").mkdir(parents=True, exist_ok=True)
+    emitted = project / "tests" / "test_add_audit_log_emitted.py"
+    if emitted.exists():
+        return
+    render_to(_HERE, "test_add_audit_log_emitted.py.tmpl", dest=emitted, substitutions={})
+    created.append(str(emitted))
 
 
 def _elapsed_ms(start: float) -> int:

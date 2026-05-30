@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "7a5f303",
-  "generated_at": "2026-05-30T04:30:58+00:00",
+  "kit_commit": "88d16ff",
+  "generated_at": "2026-05-30T04:40:44+00:00",
   "verbs": [
     "add",
     "generate",
@@ -872,10 +872,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/crud_data/add_audit_log.py",
-      "test_paths": [
-        "adapt/extend/crud_data/test_add_audit_log.py"
-      ],
+      "module_path": "adapt/extend/crud_data/add_audit_log/__init__.py",
+      "test_paths": [],
       "primitives_used": [
         "AuditEvent",
         "TamperEvidentAuditLog"
@@ -1032,10 +1030,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/crud_data/add_event_sourcing.py",
-      "test_paths": [
-        "adapt/extend/crud_data/test_add_event_sourcing.py"
-      ],
+      "module_path": "adapt/extend/crud_data/add_event_sourcing/__init__.py",
+      "test_paths": [],
       "primitives_used": [
         "DomainEvent",
         "EventSourcedStore"
@@ -1149,10 +1145,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/crud_data/add_soft_delete.py",
-      "test_paths": [
-        "adapt/extend/crud_data/test_add_soft_delete.py"
-      ],
+      "module_path": "adapt/extend/crud_data/add_soft_delete/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -12079,5 +12073,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "64a2417a79b510e888a95679fbd00aced6d4998e8348d3d777fd7183351f3d7e"
+  "stable_hash": "61634354c52b55e65e53646486c5af507dcaacbb0aa58e0c89bc43e6e46e016d"
 }

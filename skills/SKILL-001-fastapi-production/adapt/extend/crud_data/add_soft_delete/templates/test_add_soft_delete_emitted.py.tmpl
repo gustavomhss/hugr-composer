@@ -1,0 +1,92 @@
+"""Emitted test for add_soft_delete: soft-delete via CRUDBase patch (P1-#14).
+
+HONESTY RULE (§5, F-06): Soft-delete is enforced at the CRUDBase layer
+(single source of truth). Models with an ``is_deleted`` column opt IN to
+soft-delete; models without (auth/infra) keep hard-delete (the per-model
+opt-out hook). These tests assert the patch is in place AND the per-model
+opt-out hook is preserved — F-04 clearance.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+
+# ---------------------------------------------------------------------------
+# Positive: CRUDBase carries the soft-delete patch and rebinds the methods
+# ---------------------------------------------------------------------------
+
+def test_crudbase_carries_soft_delete_patch() -> None:
+    """app/crud/base.py contains the SOFT_DELETE_PATCH_APPLIED fingerprint."""
+    crud_base = Path(__file__).parent.parent / "app" / "crud" / "base.py"
+    assert crud_base.exists(), "app/crud/base.py missing in emitted project"
+    body = crud_base.read_text()
+    assert "SOFT_DELETE_PATCH_APPLIED" in body, (
+        "CRUDBase patch fingerprint missing — soft-delete is inert"
+    )
+    assert "CRUDBase.get = _sd_get" in body
+    assert "CRUDBase.get_multi = _sd_get_multi" in body
+    assert "CRUDBase.delete = _sd_delete" in body
+
+
+def test_crudbase_delete_flips_flag_not_sql_delete() -> None:
+    """Patched CRUDBase.delete sets is_deleted=True instead of issuing SQL DELETE."""
+    crud_base = Path(__file__).parent.parent / "app" / "crud" / "base.py"
+    body = crud_base.read_text()
+    assert "obj.is_deleted = True" in body, (
+        "CRUDBase.delete must set obj.is_deleted = True for soft-delete-aware behaviour"
+    )
+    assert "deleted_at = _sd_datetime.now" in body, (
+        "CRUDBase.delete must stamp deleted_at when the column is present"
+    )
+
+
+def test_crudbase_reads_filter_soft_deleted() -> None:
+    """get() and get_multi() filter is_deleted == False when the column is present."""
+    crud_base = Path(__file__).parent.parent / "app" / "crud" / "base.py"
+    body = crud_base.read_text()
+    assert body.count("is_deleted == False") >= 2, (
+        "get() and get_multi() must each filter is_deleted == False"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Negative: per-model opt-out (F-04) + orphan UoW shim absent (P1-#14)
+# ---------------------------------------------------------------------------
+
+def test_per_model_opt_out_via_hasattr_guard() -> None:
+    """The CRUDBase patch must guard with hasattr(self.model, 'is_deleted').
+
+    This is the per-model opt-out hook (F-04): a model without the column
+    falls through to hard-delete. Required so auth/infra tables (sessions,
+    tokens) keep hard-delete semantics for PII/rotation correctness.
+    """
+    crud_base = Path(__file__).parent.parent / "app" / "crud" / "base.py"
+    body = crud_base.read_text()
+    assert body.count('hasattr(self.model, "is_deleted")') >= 2, (
+        "Both reads must check hasattr(self.model, 'is_deleted') so models "
+        "without the column keep hard-delete (F-04 per-model opt-out)"
+    )
+    # The hard-delete fallback in _sd_delete:
+    assert "await session.delete(obj)" in body, (
+        "Hard-delete fallback must remain for models that opt out of soft-delete"
+    )
+
+
+def test_no_orphan_uow_shim_emitted() -> None:
+    """P1-#14: app/soft_delete.py orphan UoW shim must NOT be emitted."""
+    orphan = Path(__file__).parent.parent / "app" / "soft_delete.py"
+    assert not orphan.exists(), (
+        "app/soft_delete.py is dead code (no caller imports it) — must not be emitted"
+    )
+
+
+def test_no_uow_primitive_copied() -> None:
+    """P1-#14: UnitOfWork primitive must NOT be copied — only the orphan glue used it."""
+    root = Path(__file__).parent.parent
+    uow = root / "core" / "venous" / "data" / "UnitOfWork" / "UnitOfWork.py"
+    adapter = (
+        root / "core" / "venous" / "_adapters" / "fastapi" / "UnitOfWorkAdapter.py"
+    )
+    assert not uow.exists(), "UnitOfWork primitive must not be copied (orphan)"
+    assert not adapter.exists(), "UnitOfWorkAdapter must not be copied (orphan)"
