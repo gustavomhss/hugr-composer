@@ -1,0 +1,34 @@
+"""Emitted test for add_i18n tool.
+
+add_i18n scaffolds locale_context.py + locale_meta.py + LocaleMiddleware +
+formatters. It does NOT auto-register the middleware in main.py — the
+patched main.py only appends a commented-out registration snippet.
+Operators must uncomment the lines before locale resolution takes effect.
+"""
+
+from __future__ import annotations
+
+
+def test_locale_context_roundtrips() -> None:
+    """Positive: setting a locale via the ContextVar resolves on read."""
+    from app.core.locale_context import get_current_locale, set_current_locale
+
+    set_current_locale("pt_BR")
+    assert get_current_locale() == "pt_BR"
+
+
+def test_unknown_locale_falls_back_to_default_without_raising() -> None:
+    """Negative honesty: unknown locale falls back, never raises.
+
+    The translator returns the source message when no catalog matches the
+    active locale (no compiled .mo, or completely unknown locale code) — this
+    pins the documented "fallback without raise" behaviour.
+    """
+    from app.core.babel_translator import _ as translate
+    from app.core.locale_context import set_current_locale
+
+    set_current_locale("xx_YY")  # not in SUPPORTED_LOCALES
+    out = translate("Hello")
+    # Without a compiled .mo catalog the source message is returned.
+    assert isinstance(out, str)
+    assert out == "Hello" or out

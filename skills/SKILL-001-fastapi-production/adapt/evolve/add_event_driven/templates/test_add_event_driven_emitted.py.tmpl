@@ -1,0 +1,46 @@
+"""Emitted test for add_event_driven tool.
+
+The scaffold registers handlers in a module-level _HANDLERS dict; calling
+register_handler() adds to it, dispatch_event() looks it up. Honesty: the
+outbox worker stub does NOT actually publish to a broker (returns 0 from
+_drain_batch); the operator must wire async_session_factory and
+broker_publish before any real delivery.
+"""
+
+from __future__ import annotations
+
+import asyncio
+
+
+def test_subscribed_handler_receives_event() -> None:
+    """Positive: registering a handler and dispatching reaches it."""
+    from events.consumer import dispatch_event, register_handler
+
+    received: list[dict] = []
+
+    async def _handler(payload: dict) -> None:
+        received.append(payload)
+
+    register_handler("TestEventSubscribed", _handler)
+    asyncio.run(
+        dispatch_event(
+            event_id="00000000-0000-0000-0000-000000000001",
+            event_type="TestEventSubscribed",
+            payload={"schema_version": 1, "data": "ok"},
+        )
+    )
+    assert received == [{"schema_version": 1, "data": "ok"}]
+
+
+def test_unsubscribed_event_does_not_dispatch() -> None:
+    """Negative: an event with no registered handler is silently dropped (warning logged)."""
+    from events.consumer import dispatch_event
+
+    # No handler registered for "TestEventUnsubscribed" — must not raise.
+    asyncio.run(
+        dispatch_event(
+            event_id="00000000-0000-0000-0000-000000000002",
+            event_type="TestEventUnsubscribed",
+            payload={"schema_version": 1},
+        )
+    )

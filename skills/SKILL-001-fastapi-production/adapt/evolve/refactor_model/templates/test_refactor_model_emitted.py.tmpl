@@ -1,0 +1,52 @@
+"""Emitted test for refactor_model tool.
+
+The refactor_model tool emits:
+- A unified-diff patch file under .refactor_patches/.
+- A markdown schema-alias note explaining backward-compat.
+- An alembic migration stub (when alembic/versions/ exists).
+
+Honest scope of this test: assert the emitted artefacts exist and that the
+patch references the renamed identifier. It does NOT assert that downgrade()
+reverses anything, that the rename is applied in-place, nor that route
+handlers were updated — refactor_model is patch-only by default and the
+alembic stub is a scaffold, not a complete migration.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+
+def test_refactor_patches_dir_exists() -> None:
+    """Positive: .refactor_patches/ is populated after a rename run."""
+    project = Path(__file__).resolve().parent.parent
+    patches = project / ".refactor_patches"
+    # The tool creates this directory on first non-dry_run invocation.
+    assert patches.exists(), (
+        ".refactor_patches/ missing — refactor_model did not produce a patch file. "
+        "Re-run refactor_model(ToolInput(project_dir='.')) without dry_run=True."
+    )
+    patch_files = list(patches.glob("*.patch"))
+    assert patch_files, "No .patch file in .refactor_patches/."
+
+
+def test_alembic_stub_is_advisory_only() -> None:
+    """Negative honesty: the emitted alembic stub does NOT auto-reverse data backfill.
+
+    refactor_model emits a scaffold whose upgrade() and downgrade() bodies are
+    comment-only pass statements. This test pins that honesty: if the tool ever
+    starts claiming reversibility, the body should contain real op.* calls.
+    """
+    project = Path(__file__).resolve().parent.parent
+    versions = project / "alembic" / "versions"
+    if not versions.exists():
+        # alembic not configured in this project — stub not emitted by design.
+        return
+    stubs = [p for p in versions.glob("refactor_*.py")]
+    if not stubs:
+        return
+    src = stubs[0].read_text()
+    # The stub's downgrade() is a no-op (pass) — assert we see that, so any
+    # future "real reversal" claim has to come with real op.* calls.
+    assert "def downgrade()" in src
+    assert "pass" in src.split("def downgrade()", 1)[1]

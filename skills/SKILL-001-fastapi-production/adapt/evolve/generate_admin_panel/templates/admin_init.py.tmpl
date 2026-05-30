@@ -1,0 +1,31 @@
+"""sqladmin admin panel setup.
+
+Mount at $mount_path in app/main.py:
+
+    from app.admin import create_admin
+    admin = create_admin(app, engine)
+"""
+from __future__ import annotations
+
+from sqladmin import Admin  # type: ignore[import-untyped]
+
+$view_imports
+from app.admin.auth import AdminAuth
+from app.admin.audit import register_audit_listeners
+
+
+def create_admin(app, engine) -> Admin:  # type: ignore[no-untyped-def]
+    """Create and configure the sqladmin Admin instance.
+
+    Args:
+        app: FastAPI application instance.
+        engine: SQLAlchemy async engine.
+
+    Returns:
+        Configured ``Admin`` instance mounted at ``$mount_path``.
+    """
+    auth_backend = AdminAuth(secret_key="CHANGE-ME-USE-ENV-VAR")
+    admin = Admin(app, engine, base_url="$mount_path", authentication_backend=auth_backend)
+    $view_registrations
+    register_audit_listeners()
+    return admin

@@ -1,0 +1,97 @@
+"""Audit missing and fuzzy translations across all supported locales.
+
+Exits with code 1 if any locale has untranslated or fuzzy strings.
+
+Usage::
+
+    python scripts/i18n_audit.py
+    python scripts/i18n_audit.py --threshold 90
+"""
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+TRANSLATION_DIR = Path(__file__).parent.parent / "$translation_dir"
+SUPPORTED_LOCALES = $supported_locales
+
+
+def audit_locale(locale: str) -> dict:
+    """Audit a single locale's .po file.
+
+    Args:
+        locale: BCP-47 locale code.
+
+    Returns:
+        Dict with total, translated, fuzzy, untranslated counts.
+    """
+    po_file = TRANSLATION_DIR / locale / "LC_MESSAGES" / "messages.po"
+    if not po_file.exists():
+        return {"locale": locale, "total": 0, "translated": 0, "fuzzy": 0, "untranslated": 0, "missing_file": True}
+    lines = po_file.read_text(encoding="utf-8").splitlines()
+    total = translated = fuzzy = untranslated = 0
+    in_msgid = False
+    current_msgid = ""
+    for line in lines:
+        if line.startswith("msgid ") and line != 'msgid ""':
+            total += 1
+            current_msgid = line
+            in_msgid = True
+        elif line.startswith("msgstr ") and in_msgid:
+            in_msgid = False
+            if line == 'msgstr ""':
+                untranslated += 1
+            else:
+                translated += 1
+        elif line.startswith("#, fuzzy"):
+            fuzzy += 1
+    return {
+        "locale": locale,
+        "total": total,
+        "translated": translated,
+        "fuzzy": fuzzy,
+        "untranslated": untranslated,
+        "missing_file": False,
+    }
+
+
+def main() -> None:
+    """Run the missing-translation audit and print a summary table."""
+    parser = argparse.ArgumentParser(description="i18n translation audit")
+    parser.add_argument(
+        "--threshold", type=int, default=0,
+        help="Minimum translated percentage; exit 1 if any locale is below"
+    )
+    args = parser.parse_args()
+
+    print(f"{'-' * 60}")
+    print(f"{'Locale':<12} {'Total':>6} {'Trans':>6} {'Fuzzy':>6} {'Missing':>8}")
+    print(f"{'-' * 60}")
+
+    any_fail = False
+    for locale in SUPPORTED_LOCALES:
+        stats = audit_locale(locale)
+        if stats.get("missing_file"):
+            print(f"{locale:<12} NO .po FILE")
+            any_fail = True
+            continue
+        total = stats["total"]
+        pct = int(stats["translated"] / total * 100) if total else 100
+        flag = "" if pct >= args.threshold else "BELOW THRESHOLD"
+        if flag:
+            any_fail = True
+        print(
+            f"{locale:<12} {total:>6} {stats['translated']:>6} "
+            f"{stats['fuzzy']:>6} {stats['untranslated']:>8}  {pct}% {flag}"
+        )
+
+    print(f"{'-' * 60}")
+    if any_fail:
+        print("AUDIT FAILED: some locales are below threshold or missing .po files.")
+        sys.exit(1)
+    print("AUDIT PASSED: all locales meet the translation threshold.")
+
+
+if __name__ == "__main__":
+    main()

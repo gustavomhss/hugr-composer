@@ -1,0 +1,57 @@
+"""Admin auth backend for sqladmin.
+
+Wraps the entire /admin mount — no individual route can bypass this gate.
+"""
+from __future__ import annotations
+
+from sqladmin.authentication import AuthenticationBackend  # type: ignore[import-untyped]
+from starlette.requests import Request
+from starlette.responses import RedirectResponse
+
+
+class AdminAuth(AuthenticationBackend):
+    """Session-based admin authentication backend.
+
+    CUSTOMIZE: replace the stub logic with your real auth check.
+    """
+
+    async def login(self, request: Request) -> bool:
+        """Validate login form credentials.
+
+        Args:
+            request: Incoming Starlette request with form data.
+
+        Returns:
+            True if credentials are valid.
+        """
+        form = await request.form()
+        username = form.get("username", "")
+        password = form.get("password", "")
+        # CUSTOMIZE: replace with real admin credential check
+        if username == "admin" and password == "admin":  # noqa: S105
+            request.session.update({"token": "admin-token"})
+            return True
+        return False
+
+    async def logout(self, request: Request) -> bool:
+        """Clear the admin session.
+
+        Args:
+            request: Incoming Starlette request.
+
+        Returns:
+            True after session is cleared.
+        """
+        request.session.clear()
+        return True
+
+    async def authenticate(self, request: Request) -> bool:
+        """Check if the current session has admin access.
+
+        Args:
+            request: Incoming Starlette request.
+
+        Returns:
+            True if session contains a valid admin token.
+        """
+        return "token" in request.session

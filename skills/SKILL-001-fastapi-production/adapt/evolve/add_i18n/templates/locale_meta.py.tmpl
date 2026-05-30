@@ -1,0 +1,42 @@
+"""Locale metadata: supported locales and RTL detection."""
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class LocaleMeta:
+    """Metadata for a single locale.
+
+    Attributes:
+        code: BCP-47 locale code (e.g. ``'pt_BR'``).
+        is_rtl: True for right-to-left text direction locales.
+    """
+
+    code: str
+    is_rtl: bool = False
+
+
+SUPPORTED_LOCALES: tuple[str, ...] = $supported_tuple
+DEFAULT_LOCALE = "$default_locale"
+
+LOCALE_META: dict[str, LocaleMeta] = {
+    code: LocaleMeta(
+        code=code,
+        is_rtl=code in $rtl_list or code.split("_")[0] in {"ar", "he", "fa", "ur"},
+    )
+    for code in SUPPORTED_LOCALES
+}
+
+
+def is_rtl(locale: str) -> bool:
+    """Return True if *locale* uses right-to-left text direction.
+
+    Args:
+        locale: BCP-47 locale code.
+
+    Returns:
+        True for RTL locales.
+    """
+    meta = LOCALE_META.get(locale)
+    return meta.is_rtl if meta else False

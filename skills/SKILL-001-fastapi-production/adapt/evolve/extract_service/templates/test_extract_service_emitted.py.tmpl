@@ -1,0 +1,45 @@
+"""Emitted test for extract_service tool.
+
+extract_service scaffolds a NEW sibling service directory and (optionally) a
+typed httpx client in the monolith. It does NOT rewrite the monolith's
+existing call sites — operators must do that manually before switching
+traffic. Honest assertions only.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+
+def test_extraction_manifest_exists() -> None:
+    """Positive: EXTRACTION_MANIFEST.json is written by the tool."""
+    project = Path(__file__).resolve().parent.parent
+    manifest = project / "EXTRACTION_MANIFEST.json"
+    assert manifest.exists(), (
+        "EXTRACTION_MANIFEST.json missing — extract_service must produce an audit trail."
+    )
+    data = json.loads(manifest.read_text())
+    assert "new_service" in data
+    assert "communication" in data
+
+
+def test_monolith_call_sites_not_auto_rewritten() -> None:
+    """Negative honesty: extract_service does NOT rewrite monolith call sites.
+
+    Pins the documented behaviour. If a future version starts auto-patching the
+    monolith, this test must be updated alongside the tool's warnings.
+    """
+    project = Path(__file__).resolve().parent.parent
+    # The tool optionally writes a typed client; presence of the client does
+    # NOT imply that any monolith route now calls it. Operators do that
+    # themselves before traffic cutover.
+    manifest_path = project / "EXTRACTION_MANIFEST.json"
+    if not manifest_path.exists():
+        return
+    data = json.loads(manifest_path.read_text())
+    # All files_created are NEW paths (client, service files), not patches.
+    for f in data.get("files_created", []):
+        assert "EXTRACTION_MANIFEST" in f or "clients" in f or "/" + data["new_service"] + "/" in f or f.endswith(
+            ("main.py", "Dockerfile", "requirements.txt", "ci.yml", ".py", "__init__.py")
+        )

@@ -1,0 +1,50 @@
+"""Emitted test for generate_docs tool.
+
+generate_docs scaffolds an mkdocs-material site with sections rendered from
+the project's models/schemas via mkdocstrings. It does NOT document every
+route: only sections explicitly included via include_sections are emitted,
+and only docstring-annotated symbols are picked up by mkdocstrings at
+build time. Unannotated routes are a coverage gap, not silently documented.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+
+def test_index_page_exists() -> None:
+    """Positive: docs source directory has an index.md."""
+    project = Path(__file__).resolve().parent.parent
+    candidates = [
+        project / "docs" / "generated" / "index.md",
+        project / "site_docs" / "index.md",
+    ]
+    assert any(p.exists() for p in candidates), (
+        "No index.md in any expected docs source directory."
+    )
+
+
+def test_unannotated_routes_are_not_silently_documented() -> None:
+    """Negative honesty: docs do NOT claim coverage of unannotated routes.
+
+    Coverage here is "what mkdocstrings can render from docstrings" — the
+    generator does not invent docs for un-annotated symbols. This test pins
+    that contract by checking that the section pages reference mkdocstrings
+    directives (which only document what's in the source) rather than
+    hand-written placeholders.
+    """
+    project = Path(__file__).resolve().parent.parent
+    section_dirs = [project / "docs" / "generated", project / "site_docs"]
+    rendered = False
+    for sd in section_dirs:
+        models_md = sd / "models.md"
+        if models_md.exists():
+            content = models_md.read_text()
+            # Either it's a mkdocstrings directive (auto-coverage) or absent —
+            # NEVER a hand-written "all routes documented" claim.
+            assert "::: app.models" in content or content.strip() == ""
+            rendered = True
+            break
+    if not rendered:
+        # No models section was emitted in this test fixture — also acceptable.
+        return

@@ -1,0 +1,41 @@
+"""Producer helper: write domain events to the transactional outbox.
+
+Usage::
+
+    from events.producer import publish_event
+    from events.schemas.order_created import OrderCreatedV1
+
+    event = OrderCreatedV1(order_id=order.id, user_id=user.id)
+    # Call inside an active SQLAlchemy session (same transaction as business row):
+    publish_event(session, event)
+"""
+from __future__ import annotations
+
+import logging
+
+from sqlalchemy.orm import Session
+
+from events.base import BaseEvent
+
+logger = logging.getLogger(__name__)
+
+
+def publish_event(session: Session, event: BaseEvent) -> None:
+    """Write *event* to the outbox table (does NOT commit — caller owns the transaction).
+
+    Args:
+        session: Active SQLAlchemy session.
+        event: Domain event to publish.
+
+    Note:
+        The outbox worker will drain this row to the $broker broker.
+    """
+    from app.models.outbox_event import OutboxEvent
+
+    row = OutboxEvent(
+        event_id=event.event_id,
+        event_type=event.event_type,
+        payload=event.model_dump_json(),
+    )
+    session.add(row)
+    logger.debug("Queued event %s id=%s", event.event_type, event.event_id)

@@ -1,0 +1,71 @@
+"""Babel/gettext translation catalog manager.
+
+Catalogs are loaded once at startup from ``$translation_dir/<locale>/LC_MESSAGES/messages.mo``
+and cached in a module-level dict for < 10 µs per lookup.
+"""
+from __future__ import annotations
+
+import gettext
+import logging
+from pathlib import Path
+
+from app.core.locale_context import get_current_locale
+
+logger = logging.getLogger(__name__)
+
+_LOCALE_DIR = Path(__file__).parent.parent.parent / "$translation_dir"
+_DEFAULT_LOCALE = "$default_locale"
+_CATALOGS: dict[str, gettext.GNUTranslations] = {}
+
+
+def load_catalogs(supported_locales: list[str]) -> None:
+    """Pre-load all compiled .mo catalogs at startup.
+
+    Args:
+        supported_locales: List of BCP-47 locale codes to load.
+    """
+    for locale in supported_locales:
+        try:
+            translation = gettext.translation(
+                domain="messages",
+                localedir=str(_LOCALE_DIR),
+                languages=[locale],
+            )
+            _CATALOGS[locale] = translation
+            logger.info("Loaded translation catalog for %s", locale)
+        except FileNotFoundError:
+            logger.warning("No compiled .mo for locale %s — falling back to default", locale)
+
+
+def _(message: str) -> str:
+    """Translate *message* using the active locale catalog.
+
+    Args:
+        message: Message ID string (English source text).
+
+    Returns:
+        Translated string for the active locale.
+    """
+    locale = get_current_locale()
+    catalog = _CATALOGS.get(locale) or _CATALOGS.get(_DEFAULT_LOCALE)
+    if catalog is None:
+        return message
+    return catalog.gettext(message)
+
+
+def ngettext(singular: str, plural: str, n: int) -> str:
+    """Translate a plural-form message.
+
+    Args:
+        singular: Singular form (English source).
+        plural: Plural form (English source).
+        n: Count used to select the appropriate plural form.
+
+    Returns:
+        Translated string for the active locale and count *n*.
+    """
+    locale = get_current_locale()
+    catalog = _CATALOGS.get(locale) or _CATALOGS.get(_DEFAULT_LOCALE)
+    if catalog is None:
+        return singular if n == 1 else plural
+    return catalog.ngettext(singular, plural, n)

@@ -1,0 +1,27 @@
+"""Thread-safe locale context via ContextVar.
+
+Downstream _() calls read from this context automatically.
+"""
+from __future__ import annotations
+
+from contextvars import ContextVar
+
+_current_locale: ContextVar[str] = ContextVar("_current_locale", default="en_US")
+
+
+def get_current_locale() -> str:
+    """Return the active locale for the current async context.
+
+    Returns:
+        BCP-47 locale string (e.g. ``'pt_BR'``).
+    """
+    return _current_locale.get()
+
+
+def set_current_locale(locale: str) -> None:
+    """Set the active locale for the current async context.
+
+    Args:
+        locale: BCP-47 locale string to activate.
+    """
+    _current_locale.set(locale)

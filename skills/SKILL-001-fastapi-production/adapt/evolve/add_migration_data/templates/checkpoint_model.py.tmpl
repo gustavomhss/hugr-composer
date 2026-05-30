@@ -1,0 +1,38 @@
+"""SQLAlchemy model for migration checkpoints."""
+from __future__ import annotations
+
+from datetime import datetime, timezone
+
+from sqlalchemy import DateTime, Integer, String, func
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+class _CheckpointBase(DeclarativeBase):
+    pass
+
+
+class MigrationCheckpoint(_CheckpointBase):
+    """Persists per-migration last-processed cursor and progress metadata.
+
+    Attributes:
+        id: Auto-increment PK.
+        migration_name: Unique snake_case migration identifier.
+        last_processed_id: Cursor — last ID processed by the migration.
+        rows_processed: Running total of rows processed.
+        status: ``pending``, ``running``, ``completed``, or ``failed``.
+        updated_at: Last update timestamp (UTC).
+    """
+
+    __tablename__ = "$table"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    migration_name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    last_processed_id: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    rows_processed: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )

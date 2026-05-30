@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "c2faa2d",
-  "generated_at": "2026-05-30T04:01:11+00:00",
+  "kit_commit": "242db79",
+  "generated_at": "2026-05-30T04:19:15+00:00",
   "verbs": [
     "add",
     "generate",
@@ -1009,10 +1009,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/evolve/add_event_driven.py",
-      "test_paths": [
-        "adapt/evolve/test_add_event_driven.py"
-      ],
+      "module_path": "adapt/evolve/add_event_driven/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3083,10 +3081,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/evolve/add_i18n.py",
-      "test_paths": [
-        "adapt/evolve/test_add_i18n.py"
-      ],
+      "module_path": "adapt/evolve/add_i18n/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3173,10 +3169,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/evolve/add_migration_data.py",
-      "test_paths": [
-        "adapt/evolve/test_add_migration_data.py"
-      ],
+      "module_path": "adapt/evolve/add_migration_data/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3845,10 +3839,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/evolve/extract_service.py",
-      "test_paths": [
-        "adapt/evolve/test_extract_service.py"
-      ],
+      "module_path": "adapt/evolve/extract_service/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3909,10 +3901,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/evolve/refactor_model.py",
-      "test_paths": [
-        "adapt/evolve/test_refactor_model.py"
-      ],
+      "module_path": "adapt/evolve/refactor_model/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3995,10 +3985,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/evolve/generate_admin_panel.py",
-      "test_paths": [
-        "adapt/evolve/test_generate_admin_panel.py"
-      ],
+      "module_path": "adapt/evolve/generate_admin_panel/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -4037,10 +4025,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/evolve/generate_docs.py",
-      "test_paths": [
-        "adapt/evolve/test_generate_docs.py"
-      ],
+      "module_path": "adapt/evolve/generate_docs/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -4119,10 +4105,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/evolve/generate_sdk.py",
-      "test_paths": [
-        "adapt/evolve/test_generate_sdk.py"
-      ],
+      "module_path": "adapt/evolve/generate_sdk/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -12113,5 +12097,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "99be4b84c0c10ba81460348093f66ffa036442745c7ef2fcaef4e0f86e6ccf0c"
+  "stable_hash": "8f991497605eccdc48959f5bb05a4f05f81e4f05062204f2fded9df413f0f990"
 }
