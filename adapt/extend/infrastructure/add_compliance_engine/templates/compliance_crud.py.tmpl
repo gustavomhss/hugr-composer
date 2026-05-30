@@ -1,0 +1,143 @@
+"""CRUD helpers for ComplianceEvent records."""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timezone
+from typing import Any
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.compliance_event import ComplianceEvent
+
+
+async def create_event(
+    session: AsyncSession,
+    event_type: str,
+    actor_id: str | None = None,
+    subject_id: str | None = None,
+    table_name: str | None = None,
+    details: str | None = None,
+) -> ComplianceEvent:
+    """Append a new compliance event record.
+
+    Args:
+        session: Async database session.
+        event_type: Short event classifier (e.g. 'pii_access', 'erasure').
+        actor_id: ID of the user or service that triggered the event.
+        subject_id: ID of the data subject the event concerns.
+        table_name: Database table involved.
+        details: Free-form JSON string with event context.
+
+    Returns:
+        The persisted ComplianceEvent instance.
+    """
+    event = ComplianceEvent(
+        id=str(uuid.uuid4()),
+        event_type=event_type,
+        actor_id=actor_id,
+        subject_id=subject_id,
+        table_name=table_name,
+        details=details,
+    )
+    session.add(event)
+    await session.commit()
+    await session.refresh(event)
+    return event
+
+
+async def get_events_for_subject(
+    session: AsyncSession,
+    subject_id: str,
+    limit: int = 100,
+) -> list[ComplianceEvent]:
+    """Return compliance events related to a specific data subject.
+
+    Args:
+        session: Async database session.
+        subject_id: The data subject's ID.
+        limit: Maximum number of rows to return.
+
+    Returns:
+        List of ComplianceEvent records, newest first.
+    """
+    stmt = (
+        select(ComplianceEvent)
+        .where(ComplianceEvent.subject_id == subject_id)
+        .order_by(ComplianceEvent.created_at.desc())
+        .limit(limit)
+    )
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def get_events_in_range(
+    session: AsyncSession,
+    start: datetime,
+    end: datetime,
+    limit: int = 500,
+) -> list[ComplianceEvent]:
+    """Return compliance events within a UTC date range.
+
+    Args:
+        session: Async database session.
+        start: Range start (UTC-aware datetime).
+        end: Range end (UTC-aware datetime).
+        limit: Maximum rows to return.
+
+    Returns:
+        List of ComplianceEvent records in chronological order.
+    """
+    stmt = (
+        select(ComplianceEvent)
+        .where(
+            ComplianceEvent.created_at >= start,
+            ComplianceEvent.created_at <= end,
+        )
+        .order_by(ComplianceEvent.created_at.asc())
+        .limit(limit)
+    )
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def count_events_by_type(
+    session: AsyncSession,
+) -> dict[str, int]:
+    """Return a mapping of event_type -> count across all rows.
+
+    Args:
+        session: Async database session.
+
+    Returns:
+        Dict mapping event_type string to row count.
+    """
+    from sqlalchemy import func
+    stmt = select(
+        ComplianceEvent.event_type,
+        func.count(ComplianceEvent.id).label("cnt"),
+    ).group_by(ComplianceEvent.event_type)
+    result = await session.execute(stmt)
+    return {row.event_type: row.cnt for row in result}
+
+
+async def purge_old_events(
+    session: AsyncSession,
+    retention_days: int,
+) -> int:
+    """Hard-delete compliance events older than retention_days.
+
+    Args:
+        session: Async database session.
+        retention_days: Records older than this many days are deleted.
+
+    Returns:
+        Number of rows deleted.
+    """
+    from datetime import timedelta
+    from sqlalchemy import delete
+    cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+    stmt = delete(ComplianceEvent).where(ComplianceEvent.created_at < cutoff)
+    result = await session.execute(stmt)
+    await session.commit()
+    return result.rowcount  # type: ignore[return-value]

@@ -1,0 +1,118 @@
+"""Honeypot endpoints — look legitimate but fire canary alerts on access.
+
+Routes:
+* ``GET /api/v1/internal/config`` — fake config dump
+* ``GET /api/v1/admin/backup``    — fake backup endpoint
+* ``GET /api/v1/debug/env``       — fake env dump
+
+CRITICAL: These routes ALWAYS return HTTP 200 with plausible-looking
+data.  Attackers must NOT see any error or redirect.
+"""
+
+from __future__ import annotations
+
+import logging
+
+from fastapi import APIRouter, Request
+
+from app.core.canary.alerter import build_request_context, fire_canary_alert
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/api/v1", tags=["_canary"])
+
+_FAKE_CONFIG_RESPONSE = {
+    "database_url": "postgresql://app:changeme@db:5432/app",
+    "redis_url": "redis://redis:6379/0",
+    "environment": "production",
+    "debug": False,
+}
+
+_FAKE_BACKUP_RESPONSE = {
+    "status": "ok",
+    "last_backup": "2024-01-01T00:00:00Z",
+    "size_mb": 1024,
+    "location": "s3://backups/app/2024-01-01.tar.gz",
+}
+
+_FAKE_ENV_RESPONSE = {
+    "ENVIRONMENT": "production",
+    "LOG_LEVEL": "INFO",
+    "WORKERS": "4",
+}
+
+
+def _alert(request: Request, token_id: str) -> None:
+    """Fire canary alert with sanitised request context — never raises.
+
+    Args:
+        request: The incoming FastAPI request.
+        token_id: The canary token ID that was triggered.
+    """
+    try:
+        ctx = build_request_context(
+            method=request.method,
+            path=str(request.url.path),
+            client_ip=request.client.host if request.client else "unknown",
+            headers={k.lower(): v for k, v in request.headers.items()},
+            query=str(request.url.query),
+        )
+        fire_canary_alert(
+            token_id=token_id,
+            request_context=ctx,
+            webhook_url=getattr(settings, "CANARY_ALERT_WEBHOOK_URL", ""),
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.error("canary_honeypot: alert dispatch error: %s", exc)
+
+
+@router.get("/internal/config")
+async def honeypot_internal_config(request: Request) -> dict:
+    """Honeypot: fake internal config endpoint.
+
+    Always returns 200 with plausible-looking config data.
+    Fires a canary alert in the background.
+
+    Args:
+        request: Incoming FastAPI request.
+
+    Returns:
+        Fake configuration dict.
+    """
+    _alert(request, "honeypot_internal_config")
+    return _FAKE_CONFIG_RESPONSE
+
+
+@router.get("/admin/backup")
+async def honeypot_admin_backup(request: Request) -> dict:
+    """Honeypot: fake admin backup endpoint.
+
+    Always returns 200 with plausible-looking backup status.
+    Fires a canary alert in the background.
+
+    Args:
+        request: Incoming FastAPI request.
+
+    Returns:
+        Fake backup status dict.
+    """
+    _alert(request, "honeypot_admin_backup")
+    return _FAKE_BACKUP_RESPONSE
+
+
+@router.get("/debug/env")
+async def honeypot_debug_env(request: Request) -> dict:
+    """Honeypot: fake debug env dump endpoint.
+
+    Always returns 200 with plausible-looking env vars.
+    Fires a canary alert in the background.
+
+    Args:
+        request: Incoming FastAPI request.
+
+    Returns:
+        Fake environment variable dict.
+    """
+    _alert(request, "honeypot_debug_env")
+    return _FAKE_ENV_RESPONSE

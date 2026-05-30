@@ -1,0 +1,65 @@
+"""Pydantic validators for input safety — SafeString and NoSQLInjection.
+
+Usage::
+
+    from app.security.validators import SafeString, validate_no_nosql
+    from pydantic import BaseModel
+
+    class ItemCreate(BaseModel):
+        title: SafeString
+        description: SafeString
+"""
+
+from __future__ import annotations
+
+import re
+from typing import Annotated
+
+from pydantic import BeforeValidator
+from pydantic.functional_validators import AfterValidator
+
+_NOSQL_PATTERNS = re.compile(
+    r"(\$$where|\$$gt|\$$lt|\$$ne|\$$in|\$$or|\$$and|\$$regex)",
+    re.IGNORECASE,
+)
+
+
+def _sanitize_string(value: object) -> str:
+    """BeforeValidator: sanitize HTML from string input.
+
+    Args:
+        value: Raw field value (expected to be str or coercible).
+
+    Returns:
+        Sanitized string.
+    """
+    if not isinstance(value, str):
+        return str(value) if value is not None else ""
+    from app.security.sanitizer import InputSanitizer
+    return InputSanitizer().sanitize_html(value)
+
+
+def _validate_no_nosql(value: str) -> str:
+    """AfterValidator: raise ValueError on NoSQL injection patterns.
+
+    Args:
+        value: String that has already passed BeforeValidator.
+
+    Returns:
+        Unchanged *value* when no injection detected.
+
+    Raises:
+        ValueError: When a NoSQL injection pattern is detected.
+    """
+    if _NOSQL_PATTERNS.search(value):
+        raise ValueError(
+            "Input contains disallowed pattern that may indicate NoSQL injection"
+        )
+    return value
+
+
+# Annotated type: auto-sanitizes HTML and rejects NoSQL injection.
+SafeString = Annotated[str, BeforeValidator(_sanitize_string)]
+
+# Annotated type: rejects NoSQL injection without HTML sanitization.
+NoSQLInjection = Annotated[str, AfterValidator(_validate_no_nosql)]

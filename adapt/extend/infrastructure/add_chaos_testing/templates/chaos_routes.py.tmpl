@@ -1,0 +1,62 @@
+"""Chaos engineering control endpoints.
+
+Endpoints:
+    POST /chaos/enable   — enable fault injection (dev/staging only)
+    POST /chaos/disable  — disable fault injection
+    GET  /chaos/status   — current chaos configuration
+"""
+
+from __future__ import annotations
+
+import os
+
+from fastapi import APIRouter, HTTPException
+
+from app.chaos import get_chaos_engine
+
+router = APIRouter(prefix="/chaos", tags=["chaos"])
+
+
+@router.post("/enable", response_model=dict)
+async def enable_chaos() -> dict:
+    """Enable chaos fault injection.
+
+    Blocked when ``ENVIRONMENT == "production"``.
+
+    Returns:
+        Confirmation dict with current chaos status.
+
+    Raises:
+        HTTPException: 403 when called in production environment.
+    """
+    if os.getenv("ENVIRONMENT", "local") == "production":
+        raise HTTPException(
+            status_code=403,
+            detail="Chaos testing cannot be enabled in production.",
+        )
+    engine = get_chaos_engine()
+    engine.enable()
+    return engine.status()
+
+
+@router.post("/disable", response_model=dict)
+async def disable_chaos() -> dict:
+    """Disable chaos fault injection.
+
+    Returns:
+        Confirmation dict with current chaos status.
+    """
+    engine = get_chaos_engine()
+    engine.disable()
+    return engine.status()
+
+
+@router.get("/status", response_model=dict)
+async def chaos_status() -> dict:
+    """Return the current chaos engine configuration.
+
+    Returns:
+        Dict with keys: enabled, environment, latency_ms,
+        error_rate, timeout_rate.
+    """
+    return get_chaos_engine().status()

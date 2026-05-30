@@ -1,0 +1,97 @@
+"""Fault injector implementations for chaos testing.
+
+Injectors:
+    LatencyInjector  — sleep for a configured duration
+    ErrorInjector    — randomly raise HTTP 500
+    TimeoutInjector  — sleep long enough to trigger upstream timeouts
+"""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+import random
+
+from fastapi import HTTPException
+
+logger = logging.getLogger(__name__)
+
+
+class LatencyInjector:
+    """Inject artificial latency into requests.
+
+    Args:
+        latency_ms: Milliseconds of extra delay to add.
+    """
+
+    def __init__(self, latency_ms: int = 200) -> None:
+        """Initialise with a fixed latency value.
+
+        Args:
+            latency_ms: Delay in milliseconds.
+        """
+        self.latency_ms = latency_ms
+
+    async def inject(self) -> None:
+        """Sleep for the configured latency duration."""
+        if self.latency_ms > 0:
+            logger.debug("Chaos: injecting %dms latency", self.latency_ms)
+            await asyncio.sleep(self.latency_ms / 1000.0)
+
+
+class ErrorInjector:
+    """Randomly inject HTTP 500 errors.
+
+    Args:
+        error_rate: Probability (0.0–1.0) of injecting an error.
+    """
+
+    def __init__(self, error_rate: float = 0.1) -> None:
+        """Initialise with an error probability.
+
+        Args:
+            error_rate: Fraction of calls that result in a 500.
+        """
+        self.error_rate = error_rate
+
+    def inject(self) -> None:
+        """Raise HTTPException(500) at the configured rate.
+
+        Raises:
+            HTTPException: With status 500 when randomly triggered.
+        """
+        if random.random() < self.error_rate:
+            logger.debug("Chaos: injecting 500 error (rate=%.2f)", self.error_rate)
+            raise HTTPException(
+                status_code=500,
+                detail="Chaos fault injection — simulated server error",
+            )
+
+
+class TimeoutInjector:
+    """Simulate a hung request to trigger upstream timeouts.
+
+    Args:
+        timeout_rate: Probability (0.0–1.0) of injecting a hang.
+        hang_seconds: How long to hang (default 35s — exceeds common 30s timeouts).
+    """
+
+    def __init__(
+        self, timeout_rate: float = 0.05, hang_seconds: float = 35.0
+    ) -> None:
+        """Initialise with a hang probability and duration.
+
+        Args:
+            timeout_rate: Fraction of calls that get a hang injected.
+            hang_seconds: Duration in seconds for the simulated hang.
+        """
+        self.timeout_rate = timeout_rate
+        self.hang_seconds = hang_seconds
+
+    async def inject(self) -> None:
+        """Sleep for hang_seconds at the configured rate."""
+        if random.random() < self.timeout_rate:
+            logger.debug(
+                "Chaos: injecting timeout hang (%.1fs)", self.hang_seconds
+            )
+            await asyncio.sleep(self.hang_seconds)

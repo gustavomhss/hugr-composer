@@ -1,0 +1,123 @@
+"""Canary token registry: tracks all deployed canary tokens by ID.
+
+Each canary has a unique fingerprint used for attribution when a token fires.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import logging
+import time
+from dataclasses import dataclass, field
+from typing import ClassVar
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class CanaryToken:
+    """A registered canary token.
+
+    Attributes:
+        token_id: Unique identifier for this canary.
+        canary_type: 'honeypot', 'credential', or 'decoy_record'.
+        description: Human-readable description.
+        fingerprint: Stable SHA-256-based fingerprint for attribution.
+    """
+
+    token_id: str
+    canary_type: str
+    description: str
+    fingerprint: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        """Compute the fingerprint from token_id + type."""
+        fp = hashlib.sha256(
+            f"{self.token_id}:{self.canary_type}".encode()
+        ).hexdigest()[:16]
+        object.__setattr__(self, "fingerprint", fp)
+
+
+class CanaryRegistry:
+    """Central registry of all deployed canary tokens.
+
+    Attributes:
+        _tokens: Internal mapping of token_id → CanaryToken.
+    """
+
+    _tokens: ClassVar[dict[str, CanaryToken]] = {}
+
+    @classmethod
+    def register(
+        cls,
+        token_id: str,
+        canary_type: str,
+        description: str,
+    ) -> CanaryToken:
+        """Register a canary token.
+
+        Args:
+            token_id: Unique ID (e.g. 'honeypot_internal_config').
+            canary_type: Token type: 'honeypot', 'credential', 'decoy_record'.
+            description: Human-readable description.
+
+        Returns:
+            The registered ``CanaryToken``.
+        """
+        token = CanaryToken(
+            token_id=token_id,
+            canary_type=canary_type,
+            description=description,
+        )
+        cls._tokens[token_id] = token
+        logger.info("canary_registry: registered %s (%s)", token_id, canary_type)
+        return token
+
+    @classmethod
+    def get(cls, token_id: str) -> CanaryToken | None:
+        """Look up a token by ID.
+
+        Args:
+            token_id: The token to look up.
+
+        Returns:
+            ``CanaryToken`` or ``None`` when not registered.
+        """
+        return cls._tokens.get(token_id)
+
+    @classmethod
+    def all_tokens(cls) -> list[CanaryToken]:
+        """Return all registered canary tokens.
+
+        Returns:
+            List of all ``CanaryToken`` instances in registration order.
+        """
+        return list(cls._tokens.values())
+
+
+# --- Pre-register built-in canaries ----------------------------------
+CanaryRegistry.register(
+    "honeypot_internal_config",
+    "honeypot",
+    "Access to /api/v1/internal/config",
+)
+CanaryRegistry.register(
+    "honeypot_admin_backup",
+    "honeypot",
+    "Access to /api/v1/admin/backup",
+)
+CanaryRegistry.register(
+    "honeypot_debug_env",
+    "honeypot",
+    "Access to /api/v1/debug/env",
+)
+CanaryRegistry.register(
+    "fake_aws_key",
+    "credential",
+    "Fake AWS access key in fake_credentials.py",
+)
+CanaryRegistry.register(
+    "decoy_admin_user",
+    "decoy_record",
+    "Fake admin user record in the users table",
+)

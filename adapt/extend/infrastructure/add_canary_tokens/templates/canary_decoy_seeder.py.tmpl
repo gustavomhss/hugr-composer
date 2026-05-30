@@ -1,0 +1,87 @@
+"""Decoy DB record seeder — canary type 3.
+
+Seeds fake admin user records into the database at startup.
+Any query that returns these records triggers a canary alert.
+
+Usage — call during startup lifespan::
+
+    from app.core.canary.decoy_seeder import seed_decoy_records
+
+    async with get_session() as session:
+        await seed_decoy_records(session)
+"""
+
+from __future__ import annotations
+
+import logging
+import uuid
+
+logger = logging.getLogger(__name__)
+
+_DECOY_USERS = [
+    {
+        "id": "00000000-cafe-babe-dead-000000000001",
+        "email": "canary-admin@internal.invalid",
+        "full_name": "Canary Admin",
+        "is_superuser": True,
+        "is_active": False,
+    },
+    {
+        "id": "00000000-cafe-babe-dead-000000000002",
+        "email": "canary-root@internal.invalid",
+        "full_name": "Canary Root",
+        "is_superuser": True,
+        "is_active": False,
+    },
+]
+
+
+async def seed_decoy_records(session: object) -> list[str]:
+    """Attempt to insert decoy user records into the users table.
+
+    Silently skips if the users table does not exist or the model
+    does not have the expected columns.  Always safe to call.
+
+    Args:
+        session: SQLAlchemy ``AsyncSession`` instance.
+
+    Returns:
+        List of emails successfully seeded.
+    """
+    seeded: list[str] = []
+    try:
+        from sqlalchemy import text  # optional SDK: import inside function body
+        for decoy in _DECOY_USERS:
+            stmt = text(
+                "INSERT INTO users (id, email, full_name, is_superuser, is_active, hashed_password) "
+                "VALUES (:id, :email, :full_name, :is_superuser, :is_active, :hashed_password) "
+                "ON CONFLICT (email) DO NOTHING"
+            )
+            await session.execute(  # type: ignore[union-attr]
+                stmt,
+                {
+                    **decoy,
+                    "hashed_password": "canary_not_a_real_hash",
+                },
+            )
+            seeded.append(decoy["email"])
+        await session.commit()  # type: ignore[union-attr]
+        logger.info("canary_seeder: seeded %d decoy records", len(seeded))
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("canary_seeder: skipped (table may not exist yet): %s", exc)
+    return seeded
+
+
+def is_canary_email(email: str) -> bool:
+    """Return True when *email* matches a known decoy canary email.
+
+    Use in auth/user lookup code to detect canary access attempts.
+
+    Args:
+        email: The email address to check.
+
+    Returns:
+        ``True`` when the email belongs to a canary decoy record.
+    """
+    canary_emails = {u["email"] for u in _DECOY_USERS}
+    return email in canary_emails

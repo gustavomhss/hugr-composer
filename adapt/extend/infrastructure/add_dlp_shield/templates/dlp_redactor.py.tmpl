@@ -1,0 +1,130 @@
+"""DLP redactor: scans and redacts sensitive data in response payloads."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import logging
+import re
+from typing import Any
+
+from app.core.dlp.patterns import BUILTIN_PATTERNS, SensitivePattern, luhn_valid
+
+logger = logging.getLogger(__name__)
+
+_REDACTION_MODES = frozenset({"full", "partial", "tokenize", "remove"})
+
+
+class Redactor:
+    """Scans JSON payloads and redacts matches.
+
+    Attributes:
+        mode: Redaction mode ('full', 'partial', 'tokenize', 'remove').
+        patterns: Sequence of SensitivePattern to apply.
+    """
+
+    def __init__(
+        self,
+        mode: str = "full",
+        extra_patterns: list[SensitivePattern] | None = None,
+    ) -> None:
+        """Initialise the redactor.
+
+        Args:
+            mode: Redaction mode.
+            extra_patterns: Additional patterns beyond builtins.
+        """
+        if mode not in _REDACTION_MODES:
+            raise ValueError(f"Unknown redaction mode: {mode!r}")
+        self.mode = mode
+        self.patterns: tuple[SensitivePattern, ...] = BUILTIN_PATTERNS + tuple(
+            extra_patterns or []
+        )
+
+    def redact_value(self, value: str) -> str:
+        """Apply redaction to a single string value.
+
+        Args:
+            value: The string that may contain sensitive data.
+
+        Returns:
+            Redacted version of *value*.
+        """
+        for pat in self.patterns:
+            for match in pat.regex.finditer(value):
+                raw = match.group(0)
+                if pat.name == "credit_card":
+                    digits = re.sub(r"\D", "", raw)
+                    if not luhn_valid(digits):
+                        continue
+                replacement = self._replace(raw)
+                value = value.replace(raw, replacement)
+        return value
+
+    def _replace(self, raw: str) -> str:
+        """Compute the replacement string for a sensitive match.
+
+        Args:
+            raw: The matched sensitive string.
+
+        Returns:
+            Replacement string according to ``self.mode``.
+        """
+        if self.mode == "full":
+            return "***"
+        if self.mode == "partial":
+            return f"***{raw[-4:]}" if len(raw) >= 4 else "***"
+        if self.mode == "tokenize":
+            return "tok_" + hashlib.sha256(raw.encode()).hexdigest()[:12]
+        return ""  # remove mode: empty string
+
+    def redact_payload(self, payload: Any) -> Any:
+        """Recursively redact a JSON-serialisable payload.
+
+        Args:
+            payload: Dict, list, or scalar value to redact.
+
+        Returns:
+            Redacted copy of *payload*.
+        """
+        if isinstance(payload, dict):
+            if self.mode == "remove":
+                return {
+                    k: self.redact_payload(v)
+                    for k, v in payload.items()
+                    if not (isinstance(v, str) and self._has_match(v))
+                }
+            return {k: self.redact_payload(v) for k, v in payload.items()}
+        if isinstance(payload, list):
+            return [self.redact_payload(item) for item in payload]
+        if isinstance(payload, str):
+            return self.redact_value(payload)
+        return payload
+
+    def _has_match(self, value: str) -> bool:
+        """Return True if any pattern matches *value*.
+
+        Args:
+            value: String to test against all patterns.
+
+        Returns:
+            ``True`` when at least one pattern matches.
+        """
+        return any(pat.regex.search(value) for pat in self.patterns)
+
+    def redact_json_bytes(self, data: bytes) -> bytes:
+        """Deserialise, redact, and re-serialise JSON bytes.
+
+        Args:
+            data: Raw JSON response body.
+
+        Returns:
+            Redacted JSON bytes.
+        """
+        try:
+            payload = json.loads(data)
+            redacted = self.redact_payload(payload)
+            return json.dumps(redacted).encode()
+        except (json.JSONDecodeError, ValueError):
+            logger.debug("dlp_shield: non-JSON body skipped")
+            return data
