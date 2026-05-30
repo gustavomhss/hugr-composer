@@ -1,0 +1,116 @@
+"""Chaos engineering engine — fault injection for dev/staging.
+
+PRODUCTION GUARD: chaos is physically blocked when
+``ENVIRONMENT == "production"``. The guard is hardcoded and cannot
+be bypassed via configuration.
+
+Usage::
+
+    engine = get_chaos_engine()
+    engine.enable()
+    # All requests now subject to injected faults
+"""
+
+from __future__ import annotations
+
+import logging
+import os
+
+logger = logging.getLogger(__name__)
+
+_engine: "ChaosEngine | None" = None
+
+
+class ChaosEngine:
+    """Central registry for chaos injectors.
+
+    Args:
+        latency_ms: Extra latency to inject (milliseconds).
+        error_rate: Fraction of requests to fail with 500 (0.0–1.0).
+        timeout_rate: Fraction of requests to hang until timeout (0.0–1.0).
+    """
+
+    def __init__(
+        self,
+        latency_ms: int = 0,
+        error_rate: float = 0.0,
+        timeout_rate: float = 0.0,
+    ) -> None:
+        """Initialise chaos engine with given injection parameters.
+
+        Args:
+            latency_ms: Milliseconds of extra latency per request.
+            error_rate: Fraction of requests that receive a 500 error.
+            timeout_rate: Fraction of requests that are timed out.
+        """
+        self.latency_ms = latency_ms
+        self.error_rate = error_rate
+        self.timeout_rate = timeout_rate
+        self._enabled = False
+
+    def enable(self) -> None:
+        """Enable fault injection (blocked in production)."""
+        env = os.getenv("ENVIRONMENT", "local")
+        if env == "production":
+            logger.error(
+                "CHAOS BLOCKED: cannot enable chaos in production environment."
+            )
+            return
+        self._enabled = True
+        logger.warning(
+            "Chaos enabled: latency=%dms, error_rate=%.2f, timeout_rate=%.2f",
+            self.latency_ms,
+            self.error_rate,
+            self.timeout_rate,
+        )
+
+    def disable(self) -> None:
+        """Disable all fault injection."""
+        self._enabled = False
+        logger.info("Chaos disabled.")
+
+    def is_enabled(self) -> bool:
+        """Return True if chaos is active (and not in production).
+
+        Returns:
+            ``True`` when chaos is enabled and environment is not production.
+        """
+        if os.getenv("ENVIRONMENT", "local") == "production":
+            return False
+        return self._enabled
+
+    def status(self) -> dict:
+        """Return the current chaos configuration as a dict.
+
+        Returns:
+            Dict with keys: enabled, environment, latency_ms,
+            error_rate, timeout_rate.
+        """
+        return {
+            "enabled": self.is_enabled(),
+            "environment": os.getenv("ENVIRONMENT", "local"),
+            "latency_ms": self.latency_ms,
+            "error_rate": self.error_rate,
+            "timeout_rate": self.timeout_rate,
+        }
+
+
+def get_chaos_engine() -> ChaosEngine:
+    """Return the global ChaosEngine instance, creating it on first call.
+
+    Reads ``CHAOS_LATENCY_MS``, ``CHAOS_ERROR_RATE``, and
+    ``CHAOS_TIMEOUT_RATE`` from the environment for initial configuration.
+
+    Returns:
+        The singleton ``ChaosEngine`` instance.
+    """
+    global _engine
+    if _engine is None:
+        _engine = ChaosEngine(
+            latency_ms=int(os.getenv("CHAOS_LATENCY_MS", "0")),
+            error_rate=float(os.getenv("CHAOS_ERROR_RATE", "0.0")),
+            timeout_rate=float(os.getenv("CHAOS_TIMEOUT_RATE", "0.0")),
+        )
+        if os.getenv("CHAOS_ENABLED", "false").lower() == "true":
+            _engine.enable()
+    return _engine

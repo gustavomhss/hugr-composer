@@ -1,0 +1,75 @@
+"""@sensitive decorator for explicit endpoint sensitivity tagging.
+
+Usage::
+
+    from app.core.dlp.decorator import sensitive
+
+    @router.get("/payment-methods")
+    @sensitive(level="pci")
+    async def list_payment_methods(current_user: CurrentUser):
+        ...
+"""
+
+from __future__ import annotations
+
+import functools
+import logging
+from collections.abc import Callable
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
+_SENSITIVITY_ATTR = "_dlp_sensitivity_level"
+
+
+def sensitive(level: str = "pii") -> Callable[[Any], Any]:
+    """Mark a route function with a DLP sensitivity level.
+
+    The ``DLPMiddleware`` reads this attribute to apply stricter redaction
+    for elevated sensitivity levels (e.g. ``'pci'`` forces ``full`` mode).
+
+    Args:
+        level: Sensitivity level string — ``'pii'``, ``'phi'``, ``'pci'``,
+            or ``'custom'``.
+
+    Returns:
+        Decorator that attaches ``_dlp_sensitivity_level`` to the function.
+    """
+    def decorator(func: Any) -> Any:
+        """Attach the DLP sensitivity level to *func*.
+
+        Args:
+            func: The route handler to decorate.
+
+        Returns:
+            The same *func* with ``_dlp_sensitivity_level`` attribute set.
+        """
+        @functools.wraps(func)
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
+            """Async wrapper preserving the sensitivity attribute.
+
+            Args:
+                *args: Positional arguments forwarded to *func*.
+                **kwargs: Keyword arguments forwarded to *func*.
+
+            Returns:
+                Result of *func*.
+            """
+            return await func(*args, **kwargs)
+
+        setattr(wrapper, _SENSITIVITY_ATTR, level)
+        return wrapper
+
+    return decorator
+
+
+def get_sensitivity_level(func: Any) -> str | None:
+    """Return the DLP sensitivity level attached to *func*, or None.
+
+    Args:
+        func: A callable, potentially decorated with ``@sensitive``.
+
+    Returns:
+        Sensitivity level string or ``None`` when not tagged.
+    """
+    return getattr(func, _SENSITIVITY_ATTR, None)

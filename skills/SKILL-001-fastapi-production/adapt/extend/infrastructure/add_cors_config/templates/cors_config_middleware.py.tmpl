@@ -1,0 +1,79 @@
+"""CORSConfigMiddleware — env-var driven CORS with wildcard warnings.
+
+Reads allowed origins from settings and warns when wildcard is used
+in non-local environments (security guardrail).
+"""
+
+from __future__ import annotations
+
+import logging
+import os
+
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.applications import Starlette
+from starlette.types import ASGIApp
+
+logger = logging.getLogger(__name__)
+
+
+def _parse_origins(raw: str) -> list[str]:
+    """Parse comma-separated origin string into a cleaned list.
+
+    Args:
+        raw: Comma-separated origins, e.g. ``"https://a.com, https://b.com"``.
+
+    Returns:
+        List of stripped, non-empty origin strings.
+    """
+    return [o.strip() for o in raw.split(",") if o.strip()]
+
+
+def _warn_if_wildcard(origins: list[str], environment: str) -> None:
+    """Log a warning when wildcard is configured in non-local environments.
+
+    Args:
+        origins: List of allowed origin strings.
+        environment: Current ENVIRONMENT value from settings.
+    """
+    if "*" in origins and environment not in ("local", "test"):
+        logger.warning(
+            "CORS wildcard '*' is active in environment=%s — "
+            "this disables origin protection. "
+            "Set CORS_ALLOWED_ORIGINS to specific origins in production.",
+            environment,
+        )
+
+
+class CORSConfigMiddleware:
+    """ASGI wrapper that installs CORSMiddleware from env-var settings.
+
+    Reads ``CORS_ALLOWED_ORIGINS``, ``CORS_ALLOW_CREDENTIALS``, and
+    ``CORS_MAX_AGE`` from environment variables, then wraps the inner
+    app with FastAPI's built-in ``CORSMiddleware``.
+
+    Args:
+        app: The inner ASGI application.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        """Configure CORS from environment and wrap the app."""
+        raw_origins = os.getenv("CORS_ALLOWED_ORIGINS", "*")
+        origins = _parse_origins(raw_origins)
+        environment = os.getenv("ENVIRONMENT", "local")
+        allow_credentials = (
+            os.getenv("CORS_ALLOW_CREDENTIALS", "false").lower() == "true"
+        )
+        max_age = int(os.getenv("CORS_MAX_AGE", "600"))
+        _warn_if_wildcard(origins, environment)
+        self._app = CORSMiddleware(
+            app=app,
+            allow_origins=origins,
+            allow_credentials=allow_credentials,
+            allow_methods=["*"],
+            allow_headers=["*"],
+            max_age=max_age,
+        )
+
+    async def __call__(self, scope, receive, send) -> None:
+        """Delegate every ASGI call to the wrapped CORSMiddleware."""
+        await self._app(scope, receive, send)

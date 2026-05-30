@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "242db79",
-  "generated_at": "2026-05-30T04:19:15+00:00",
+  "kit_commit": "7a5f303",
+  "generated_at": "2026-05-30T04:30:58+00:00",
   "verbs": [
     "add",
     "generate",
@@ -2796,10 +2796,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_canary_tokens.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_canary_tokens.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_canary_tokens/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -2856,17 +2854,15 @@
       "domain": "resiliency",
       "skill": "SKILL-001-fastapi-production",
       "bundle": "infrastructure",
-      "synopsis": "Add declarative data-governance at ORM level: PII detection, retention enforcer, right-to-erasure en",
-      "when_to_call": "Add declarative data-governance at ORM level: PII detection, retention enforcer, right-to-erasure endpoint, Fernet field encryption, access logging, SOC2 exporter, GDPR Article 30 generator, and Alembic migration.",
+      "synopsis": "Add a GDPR/SOC2 compliance engine: PII registry, Fernet field encryption, audit-log table, retention",
+      "when_to_call": "Add a GDPR/SOC2 compliance engine: PII registry, Fernet field encryption, audit-log table, retention worker, erasure / evidence / Article 30 endpoints.",
       "when_not_to_call": "",
       "tags": [],
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_compliance_engine.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_compliance_engine.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_compliance_engine/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -2885,10 +2881,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_cors_config.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_cors_config.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_cors_config/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -2929,10 +2923,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_csrf_protection.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_csrf_protection.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_csrf_protection/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -2973,10 +2965,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_dlp_shield.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_dlp_shield.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_dlp_shield/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3101,10 +3091,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_input_sanitization.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_input_sanitization.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_input_sanitization/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3349,10 +3337,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_request_fingerprint.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_request_fingerprint.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_request_fingerprint/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3475,10 +3461,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_secret_rotation.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_secret_rotation.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_secret_rotation/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -4211,10 +4195,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_chaos_testing.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_chaos_testing.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_chaos_testing/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -12097,5 +12079,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "8f991497605eccdc48959f5bb05a4f05f81e4f05062204f2fded9df413f0f990"
+  "stable_hash": "64a2417a79b510e888a95679fbd00aced6d4998e8348d3d777fd7183351f3d7e"
 }

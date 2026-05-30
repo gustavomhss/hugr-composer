@@ -1,0 +1,66 @@
+"""Pydantic schemas for compliance endpoints."""
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class ComplianceEventPublic(BaseModel):
+    """Public read schema for a compliance audit event."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    event_type: str
+    actor_id: str | None = None
+    subject_id: str | None = None
+    table_name: str | None = None
+    created_at: datetime
+
+
+class ErasureRequest(BaseModel):
+    """Request body for a GDPR right-to-erasure operation."""
+
+    reason: str = Field(default="user_request", max_length=256)
+
+
+class ErasureCertificate(BaseModel):
+    """Response returned after a successful erasure."""
+
+    certificate_type: str
+    issued_at: str
+    data_subject_id: str
+    tables_affected: list[str]
+    attestation: str
+
+
+class SocEvidenceReport(BaseModel):
+    """SOC2 evidence package response."""
+
+    generated_at: str
+    period_start: str | None = None
+    period_end: str | None = None
+    event_count: int
+    events: list[ComplianceEventPublic]
+
+
+class Article30Record(BaseModel):
+    """GDPR Article 30 record-of-processing entry."""
+
+    controller: str
+    purpose: str
+    data_categories: list[str]
+    retention_days: int
+    generated_at: str
+    notes: str = ""
+
+
+class ComplianceStatusResponse(BaseModel):
+    """Response for GET /compliance/status."""
+
+    enabled: bool
+    retention_default_days: int
+    encryption_configured: bool
+    details: dict[str, Any] = Field(default_factory=dict)

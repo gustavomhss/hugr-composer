@@ -1,0 +1,96 @@
+"""Leak detector middleware — scrubs secret values from response bodies.
+
+Scans outgoing response text for known secret substrings before they
+reach the client.  Matches are replaced with '[REDACTED]' and a warning
+is logged.  The scan is best-effort and never blocks a response.
+"""
+from __future__ import annotations
+
+import logging
+import os
+
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.requests import Request
+from starlette.responses import Response
+
+logger = logging.getLogger(__name__)
+
+# Names of env vars that hold secrets (extend as needed)
+_SECRET_ENV_VARS: list[str] = [
+    "SECRET_KEY", "DATABASE_URL", "REDIS_URL",
+    "VAULT_TOKEN", "AWS_SECRET_ACCESS_KEY",
+    "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET",
+    "COMPLIANCE_ENCRYPTION_KEY",
+]
+
+
+def _collect_secret_values() -> list[str]:
+    """Return current values of known secret environment variables.
+
+    Returns:
+        List of non-empty secret value strings.
+    """
+    return [v for name in _SECRET_ENV_VARS if (v := os.environ.get(name, ""))]
+
+
+class LeakDetectorMiddleware(BaseHTTPMiddleware):
+    """Starlette middleware that scans responses for secret leaks.
+
+    Add to ``app/main.py``::
+
+        from app.middleware.leak_detector import LeakDetectorMiddleware
+        app.add_middleware(LeakDetectorMiddleware)
+    """
+
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
+    ) -> Response:
+        """Process the request and scan the response for leaks.
+
+        Args:
+            request: Incoming HTTP request.
+            call_next: Next middleware or route handler.
+
+        Returns:
+            The response, with any secret substrings replaced.
+        """
+        response = await call_next(request)
+        content_type = response.headers.get("content-type", "")
+        if "application/json" not in content_type and "text/" not in content_type:
+            return response
+        return await self._scan_response(response, request)
+
+    async def _scan_response(self, response: Response, request: Request) -> Response:
+        """Read, scan, and optionally sanitise a text response.
+
+        Args:
+            response: Original response from the route handler.
+            request: Original request (for logging context).
+
+        Returns:
+            Sanitised response with leaks replaced.
+        """
+        from starlette.responses import Response as BaseResponse
+        body = b""
+        async for chunk in response.body_iterator:  # type: ignore[attr-defined]
+            body += chunk if isinstance(chunk, bytes) else chunk.encode()
+        text = body.decode("utf-8", errors="replace")
+        secrets = _collect_secret_values()
+        found: list[str] = []
+        for secret in secrets:
+            if secret and len(secret) > 4 and secret in text:
+                text = text.replace(secret, "[REDACTED]")
+                found.append(secret[:4] + "***")
+        if found:
+            logger.warning(
+                "secret_leak_detected",
+                extra={"path": str(request.url.path), "fragments": found},
+            )
+        return BaseResponse(
+            content=text.encode(),
+            status_code=response.status_code,
+            headers=dict(response.headers),
+            media_type=response.media_type,
+        )

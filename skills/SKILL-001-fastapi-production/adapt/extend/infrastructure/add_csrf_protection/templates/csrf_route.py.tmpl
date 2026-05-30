@@ -1,0 +1,43 @@
+"""CSRF token endpoint — issues signed tokens for JavaScript clients.
+
+Endpoints:
+    GET /csrf/token — generate a new CSRF token and set the cookie
+"""
+
+from __future__ import annotations
+
+import logging
+
+from fastapi import APIRouter
+from fastapi.responses import JSONResponse
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/csrf", tags=["csrf"])
+
+
+@router.get("/token")
+async def get_csrf_token() -> JSONResponse:
+    """Issue a new CSRF token as both a JSON body and a SameSite cookie.
+
+    JavaScript SPAs call this endpoint once (e.g. on app load) to obtain
+    a CSRF token, then include it in the ``X-CSRF-Token`` header for all
+    unsafe requests (POST/PUT/PATCH/DELETE).
+
+    Returns:
+        JSON response with ``{"csrf_token": "..."}`` and the token
+        also set as a ``csrftoken`` SameSite=Strict cookie.
+    """
+    from app.core.config import settings
+    from app.security.csrf import CSRFProtection
+
+    protection = CSRFProtection(
+        secret_key=settings.CSRF_SECRET_KEY,
+        cookie_name=settings.CSRF_COOKIE_NAME,
+        header_name=settings.CSRF_HEADER_NAME,
+    )
+    token = protection.generate_token()
+    response = JSONResponse(content={"csrf_token": token})
+    protection.get_csrf_cookie(response, token)
+    logger.debug("Issued CSRF token")
+    return response

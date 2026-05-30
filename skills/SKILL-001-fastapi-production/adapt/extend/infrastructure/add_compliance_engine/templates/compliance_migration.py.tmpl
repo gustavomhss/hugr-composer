@@ -1,0 +1,40 @@
+"""Alembic migration: add compliance_events table."""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision: str = "add_compliance_engine"
+down_revision: str = "$down_rev"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    """Create compliance_events table."""
+    op.create_table(
+        "compliance_events",
+        sa.Column("id", sa.String(36), primary_key=True),
+        sa.Column("event_type", sa.String(64), nullable=False),
+        sa.Column("actor_id", sa.String(36), nullable=True),
+        sa.Column("subject_id", sa.String(36), nullable=True),
+        sa.Column("table_name", sa.String(128), nullable=True),
+        sa.Column("details", sa.Text, nullable=True),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.func.now(),
+        ),
+    )
+    op.create_index("ix_compliance_events_event_type", "compliance_events", ["event_type"])
+    op.create_index("ix_compliance_events_subject_id", "compliance_events", ["subject_id"])
+    op.create_index("ix_compliance_events_created_at", "compliance_events", ["created_at"])
+
+
+def downgrade() -> None:
+    """Drop compliance_events table."""
+    op.drop_index("ix_compliance_events_created_at", "compliance_events")
+    op.drop_index("ix_compliance_events_subject_id", "compliance_events")
+    op.drop_index("ix_compliance_events_event_type", "compliance_events")
+    op.drop_table("compliance_events")

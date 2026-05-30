@@ -1,0 +1,64 @@
+"""Background retention worker — purges records past their retention window.
+
+Run this as an asyncio background task (e.g. via ``asyncio.create_task``
+in a FastAPI lifespan), a Celery beat job, or a cron script.
+"""
+from __future__ import annotations
+
+import asyncio
+import logging
+from datetime import datetime, timezone
+
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+_DEFAULT_INTERVAL_S: int = 3600  # run every hour
+
+
+async def run_retention_cycle(session_factory: object) -> dict[str, int]:
+    """Execute one retention purge cycle across compliance_events.
+
+    Args:
+        session_factory: An ``async_sessionmaker`` (or callable returning
+            ``AsyncSession``) from ``app.core.session``.
+
+    Returns:
+        Dict with ``deleted_count`` and ``run_at`` timestamp string.
+    """
+    from app.crud.compliance import purge_old_events
+    deleted = 0
+    async with session_factory() as session:  # type: ignore[attr-defined]
+        deleted = await purge_old_events(
+            session,
+            retention_days=settings.COMPLIANCE_RETENTION_DEFAULT_DAYS,
+        )
+    logger.info(
+        "retention_cycle_complete",
+        extra={
+            "deleted_count": deleted,
+            "run_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+    return {"deleted_count": deleted, "run_at": datetime.now(timezone.utc).isoformat()}
+
+
+async def schedule_retention_worker(
+    session_factory: object,
+    interval_s: int = _DEFAULT_INTERVAL_S,
+) -> None:
+    """Loop forever, running a retention cycle every *interval_s* seconds.
+
+    Intended to be started with ``asyncio.create_task(schedule_retention_worker(...))``.
+    All exceptions are caught and logged so the loop never crashes the process.
+
+    Args:
+        session_factory: Async session factory.
+        interval_s: Seconds between retention cycles (default 3600).
+    """
+    while True:
+        try:
+            await run_retention_cycle(session_factory)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("retention_worker_error", extra={"error": str(exc)})
+        await asyncio.sleep(interval_s)

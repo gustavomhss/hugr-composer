@@ -1,0 +1,187 @@
+"""Compliance HTTP routes: erasure, evidence, Article 30, status."""
+from __future__ import annotations
+
+import json
+import logging
+from datetime import datetime, timezone
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.compliance_engine import generate_erasure_certificate, get_compliance_engine
+from app.core.config import settings
+from app.crud.compliance import (
+    create_event,
+    get_events_for_subject,
+    get_events_in_range,
+)
+from app.schemas.compliance import (
+    Article30Record,
+    ComplianceStatusResponse,
+    ErasureCertificate,
+    ErasureRequest,
+    SocEvidenceReport,
+)
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/compliance", tags=["compliance"])
+
+
+def _get_session() -> AsyncSession:
+    """Placeholder — replaced by the project's session dependency."""
+    raise NotImplementedError("Wire app/core/session.py get_session here")
+
+
+try:
+    from app.core.session import get_session as _gs
+    _get_session = _gs  # type: ignore[assignment]
+except ImportError:
+    pass
+
+SessionDep = Annotated[AsyncSession, Depends(_get_session)]
+
+
+@router.delete(
+    "/erasure/{user_id}",
+    response_model=ErasureCertificate,
+    summary="GDPR Art. 17 right to erasure",
+)
+async def erasure_endpoint(
+    user_id: str,
+    body: ErasureRequest,
+    session: SessionDep,
+) -> ErasureCertificate:
+    """Delete or anonymise all personal data for *user_id*.
+
+    Cascades across known PII tables, records a compliance event, and
+    returns a signed erasure certificate.
+
+    Args:
+        user_id: Data subject identifier.
+        body: Optional reason for erasure.
+        session: Async database session.
+
+    Returns:
+        ErasureCertificate confirming the operation.
+    """
+    if not settings.COMPLIANCE_ENABLED:
+        raise HTTPException(status_code=503, detail="Compliance engine disabled")
+
+    tables_affected = await _run_erasure_cascade(session, user_id)
+
+    await create_event(
+        session,
+        event_type="erasure",
+        subject_id=user_id,
+        details=json.dumps({"reason": body.reason, "tables": tables_affected}),
+    )
+
+    cert = generate_erasure_certificate(user_id, tables_affected)
+    return ErasureCertificate(**cert)
+
+
+@router.get(
+    "/evidence/soc2",
+    response_model=SocEvidenceReport,
+    summary="SOC2 evidence export",
+)
+async def soc2_evidence(session: SessionDep) -> SocEvidenceReport:
+    """Return a SOC2-ready evidence package for the last 90 days.
+
+    Args:
+        session: Async database session.
+
+    Returns:
+        SocEvidenceReport with event list and metadata.
+    """
+    from datetime import timedelta
+    end = datetime.now(timezone.utc)
+    start = end - timedelta(days=90)
+    events = await get_events_in_range(session, start, end)
+    from app.schemas.compliance import ComplianceEventPublic
+    return SocEvidenceReport(
+        generated_at=end.isoformat(),
+        period_start=start.isoformat(),
+        period_end=end.isoformat(),
+        event_count=len(events),
+        events=[ComplianceEventPublic.model_validate(e) for e in events],
+    )
+
+
+@router.get(
+    "/article30",
+    response_model=Article30Record,
+    summary="GDPR Article 30 record of processing",
+)
+async def article30() -> Article30Record:
+    """Auto-generate a GDPR Article 30 record-of-processing entry.
+
+    Returns:
+        Article30Record with PII categories and retention metadata.
+    """
+    engine = get_compliance_engine()
+    return Article30Record(
+        controller="Your Organisation",
+        purpose="Service delivery and legal compliance",
+        data_categories=list(engine._pii_patterns),
+        retention_days=settings.COMPLIANCE_RETENTION_DEFAULT_DAYS,
+        generated_at=datetime.now(timezone.utc).isoformat(),
+    )
+
+
+@router.get(
+    "/status",
+    response_model=ComplianceStatusResponse,
+    summary="Compliance engine status",
+)
+async def compliance_status() -> ComplianceStatusResponse:
+    """Return the current compliance configuration.
+
+    Returns:
+        ComplianceStatusResponse with enabled flag and config summary.
+    """
+    return ComplianceStatusResponse(
+        enabled=settings.COMPLIANCE_ENABLED,
+        retention_default_days=settings.COMPLIANCE_RETENTION_DEFAULT_DAYS,
+        encryption_configured=bool(settings.COMPLIANCE_ENCRYPTION_KEY),
+    )
+
+
+async def _run_erasure_cascade(session: AsyncSession, user_id: str) -> list[str]:
+    """Anonymise user data across discoverable PII tables.
+
+    Performs a best-effort cascade: iterates SQLAlchemy metadata for
+    tables with user_id FK columns and replaces PII fields with
+    '[REDACTED]'.  Projects should override this stub with model-
+    specific logic.
+
+    Args:
+        session: Async database session.
+        user_id: Data subject identifier.
+
+    Returns:
+        List of table names that were processed.
+    """
+    touched: list[str] = []
+    try:
+        from app.models.base import Base
+        engine_obj = get_compliance_engine()
+        for table in Base.metadata.sorted_tables:
+            if "user_id" not in [c.name for c in table.columns]:
+                continue
+            pii_cols = [
+                c.name for c in table.columns
+                if engine_obj.is_pii_column(c.name)
+            ]
+            if not pii_cols:
+                continue
+            from sqlalchemy import update
+            updates = {col: "[REDACTED]" for col in pii_cols}
+            stmt = update(table).where(table.c.user_id == user_id).values(**updates)
+            await session.execute(stmt)
+            touched.append(table.name)
+        await session.commit()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("erasure_cascade_partial_failure", extra={"error": str(exc)})
+    return touched
