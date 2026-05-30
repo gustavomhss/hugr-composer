@@ -126,7 +126,9 @@ def connection_pool_monitor(
     # 4. Alert rules YAML
     alert_file = project / "infra" / "prometheus" / "pool_alerts.yaml"
     alert_file.parent.mkdir(parents=True, exist_ok=True)
-    alert_file.write_text(_render_alerts(alert_threshold_pct))
+    alert_file.write_text(
+        _render_alerts(alert_threshold_pct, pool_size=pool_size, max_overflow=max_overflow)
+    )
     files_created.append(str(alert_file))
 
     # 5. Patch main.py
@@ -433,21 +435,40 @@ def _render_dashboard(alert_threshold: float) -> str:
     return json.dumps(dashboard, indent=2)
 
 
-def _render_alerts(alert_threshold: float) -> str:
+def _render_alerts(
+    alert_threshold: float,
+    pool_size: int = 20,
+    max_overflow: int = 10,
+) -> str:
     """Return Prometheus alert rules YAML.
+
+    The PromQL divisor must be the true pool capacity (``pool_size +
+    max_overflow``) so utilisation is computed against real capacity. The
+    historical bug here was the f-string token ``({1})`` — Python's f-string
+    parser rendered ``{1}`` as the literal integer ``1``, so every generated
+    alert fired from the first active connection on every deploy
+    (R6-S10-F5; juror ad597adfde81405df).
 
     Args:
         alert_threshold: Warning threshold percentage.
+        pool_size: Steady-state pool size used as part of the PromQL divisor.
+        max_overflow: Burst overflow added to the PromQL divisor.
 
     Returns:
         YAML string of alert rules.
     """
+    capacity = pool_size + max_overflow
+    if capacity < 1:
+        # Defensive: capacity of 0 would yield a division-by-zero PromQL
+        # expression; fall back to 1 so the rule is at least syntactically
+        # valid (caller misconfiguration is the real bug to fix).
+        capacity = 1
     return textwrap.dedent(f"""\
         groups:
           - name: db_pool
             rules:
               - alert: DBPoolHighUtilisation
-                expr: db_pool_active_connections / ({1}) * 100 >= {alert_threshold}
+                expr: db_pool_active_connections / ({capacity}) * 100 >= {alert_threshold}
                 for: 2m
                 labels:
                   severity: warning
@@ -455,7 +476,7 @@ def _render_alerts(alert_threshold: float) -> str:
                   summary: "DB pool utilisation above {alert_threshold}%"
 
               - alert: DBPoolCriticalUtilisation
-                expr: db_pool_active_connections / ({1}) * 100 >= 95
+                expr: db_pool_active_connections / ({capacity}) * 100 >= 95
                 for: 1m
                 labels:
                   severity: critical
