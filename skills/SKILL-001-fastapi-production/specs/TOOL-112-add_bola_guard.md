@@ -31,7 +31,9 @@ Two additional abstractions support fine-grained authorisation. `ResourceAccessP
 
 A test generator `bola_test_gen.py` provides `generate_bola_tests(model_name)` and `_render_test_template(model_name)` that emit four test cases covering the canonical BOLA attack scenarios (BOLA-01: owner can access their resource; BOLA-02: attacker gets 403 accessing another user's resource; BOLA-03: unauthenticated request gets 401; BOLA-04: admin bypasses ownership check). The template uses `chr(34)*3` to avoid triple-quote nesting issues in generated Python source.
 
-The tool patches `app/core/config.py` with `BOLA_GUARD_ENABLED: bool = True` and `BOLA_GUARD_STRICT_MODE: bool = False`. The idempotency fingerprint is `OwnershipVerifier` in `app/auth/bola_guard.py`.
+The tool patches `app/core/config.py` with `BOLA_GUARD_ENABLED: bool = True` as the single kill-switch. The idempotency fingerprint is `OwnershipVerifier` in `app/auth/bola_guard.py`.
+
+**R5-O1-F1 secure-by-default (juror `a96f3835e9f3a913e`):** the guard is fail-CLOSED on missing resource id with no opt-out. When `_extract_resource_id` cannot find a path parameter matching `<model>_id` / `id` / first-integer (e.g. `/orders/{order_uuid}`, `/teams/{slug}`) the verifier raises `HTTP_403_FORBIDDEN`. The previous `BOLA_GUARD_STRICT_MODE` env var gated this branch and defaulted to false (fail-OPEN); it has been removed because the guard cannot verify what it cannot see.
 
 ---
 

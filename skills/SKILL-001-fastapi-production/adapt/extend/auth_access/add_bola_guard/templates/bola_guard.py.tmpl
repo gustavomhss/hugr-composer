@@ -28,6 +28,20 @@ middleware writes to ``request.state``); the guard would therefore see
 ``None`` and return 401 for every protected route — fail-safe but
 permanently broken.
 
+Fail-CLOSED on missing resource id (R5-O1-F1, juror a96f3835e9f3a913e)
+----------------------------------------------------------------------
+``_extract_resource_id`` returns ``None`` when no path parameter matches
+the ``<model>_id`` / ``id`` / first-integer heuristic — common on
+routes like ``/orders/{order_uuid}`` or ``/teams/{slug}``.  Pre-fix the
+verifier consulted ``BOLA_GUARD_STRICT_MODE`` (default ``false``) and
+returned silently on that branch — a fail-OPEN default that allowed
+anonymous access on every route whose path param naming fell outside
+the heuristic.  Post-fix the verifier ALWAYS raises 403 when the
+resource id cannot be extracted, regardless of strict mode.  The
+``BOLA_GUARD_STRICT_MODE`` env var was the only knob that controlled
+this branch and has been removed; the config field is kept for
+backwards-compatibility only and has no runtime effect.
+
 Session-binding fix (Phase-6 Round-4)
 -------------------------------------
 The previous implementation defaulted ``session`` to
@@ -99,15 +113,6 @@ def _bola_enabled() -> bool:
     return os.getenv("BOLA_GUARD_ENABLED", "true").lower() != "false"
 
 
-def _strict_mode() -> bool:
-    """Return True when BOLA_GUARD_STRICT_MODE is set to 'true'.
-
-    Returns:
-        Boolean strict-mode state.
-    """
-    return os.getenv("BOLA_GUARD_STRICT_MODE", "false").lower() == "true"
-
-
 class OwnershipVerifier:
     """FastAPI dependency that verifies object-level ownership.
 
@@ -155,12 +160,7 @@ class OwnershipVerifier:
             return
         resource_id = _extract_resource_id(request, self._model.__name__.lower())
         if resource_id is None:
-            if _strict_mode():
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail={"detail": "Resource ID not found in path"},
-                )
-            return
+            self._fail_closed_missing_resource_id(request)
         current_user_id = _resolve_current_user_id(current_user, request)
         if current_user_id is None:
             raise HTTPException(
@@ -168,6 +168,30 @@ class OwnershipVerifier:
                 detail={"detail": "Authentication required"},
             )
         await self._enforce(session, resource_id, current_user_id)
+
+    def _fail_closed_missing_resource_id(self, request: Request) -> None:
+        """Raise 403 when resource id cannot be extracted — fail-CLOSED.
+
+        R5-O1-F1 (juror a96f3835e9f3a913e): the previous implementation
+        consulted ``BOLA_GUARD_STRICT_MODE`` (default ``false``) and
+        returned silently — a fail-OPEN default on routes whose path
+        param name does not match ``<model>_id`` / ``id`` / first-
+        integer (e.g. ``/orders/{order_uuid}``).  The guard cannot
+        verify what it cannot see, so we always refuse.
+        """
+        model_name = self._model.__name__
+        logger.warning(
+            "BOLA: %s id missing from path_params %s — refusing access "
+            "(fail-CLOSED).  Rename path param to '%s_id' / 'id' or "
+            "use an integer-valued param so the guard can extract it.",
+            model_name,
+            dict(request.path_params),
+            model_name.lower(),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"detail": "Resource ID not found in path"},
+        )
 
     def _fail_closed_no_session(self, resource_id: int) -> None:
         """Raise 503 when session is None — fail-CLOSED."""
