@@ -1,0 +1,107 @@
+"""Wiring assertions for add_data_seeder — emitted by the tool.
+
+Asserts that the emitted seeder infrastructure exists at the expected paths,
+is importable, and key classes/functions are declared.  Does NOT invoke
+the seeder or database as a sub-runner (wiring assertion only).
+"""
+
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+_PROJECT = Path(__file__).parent.parent
+_SEEDER = _PROJECT / "app" / "seeder"
+
+
+def test_seeder_package_exists() -> None:
+    """Positive: app/seeder/__init__.py exists at expected path."""
+    p = _SEEDER / "__init__.py"
+    assert p.exists(), f"app/seeder/__init__.py not found at {p}"
+
+
+def test_seeder_init_has_data_seeder_class() -> None:
+    """Positive: DataSeeder class declared in app/seeder/__init__.py."""
+    src = (_SEEDER / "__init__.py").read_text()
+    assert "DataSeeder" in src, "DataSeeder class missing"
+    assert "async def seed" in src, "seed method missing"
+    assert "topological_order" in src or "DependencyGraph" in src, (
+        "DependencyGraph usage missing"
+    )
+
+
+def test_seeder_init_ast_parses() -> None:
+    """Positive: app/seeder/__init__.py is valid Python."""
+    p = _SEEDER / "__init__.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in seeder/__init__.py: {exc}") from exc
+
+
+def test_generators_file_exists() -> None:
+    """Positive: app/seeder/generators.py exists and declares FieldGenerator."""
+    p = _SEEDER / "generators.py"
+    assert p.exists(), "generators.py not found"
+    src = p.read_text()
+    assert "FieldGenerator" in src, "FieldGenerator missing"
+    assert "generate_instance" in src, "generate_instance method missing"
+
+
+def test_generators_ast_parses() -> None:
+    """Positive: app/seeder/generators.py is valid Python."""
+    p = _SEEDER / "generators.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in generators.py: {exc}") from exc
+
+
+def test_graph_file_exists() -> None:
+    """Positive: app/seeder/graph.py exists and declares DependencyGraph."""
+    p = _SEEDER / "graph.py"
+    assert p.exists(), "graph.py not found"
+    src = p.read_text()
+    assert "DependencyGraph" in src, "DependencyGraph missing"
+    assert "topological_order" in src, "topological_order method missing"
+
+
+def test_graph_ast_parses() -> None:
+    """Positive: app/seeder/graph.py is valid Python."""
+    p = _SEEDER / "graph.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in graph.py: {exc}") from exc
+
+
+def test_seed_cli_exists() -> None:
+    """Positive: scripts/seed.py CLI exists."""
+    p = _PROJECT / "scripts" / "seed.py"
+    assert p.exists(), "scripts/seed.py not found"
+    src = p.read_text()
+    assert "__main__" in src or "main()" in src, "CLI entry point missing"
+
+
+def test_seed_cli_ast_parses() -> None:
+    """Positive: scripts/seed.py is valid Python."""
+    p = _PROJECT / "scripts" / "seed.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in seed.py: {exc}") from exc
+
+
+def test_seeder_route_exists() -> None:
+    """Positive: app/api/routes/seeder.py exists with POST /dev/seed."""
+    p = _PROJECT / "app" / "api" / "routes" / "seeder.py"
+    assert p.exists(), "seeder route not found"
+    src = p.read_text()
+    assert "seed_database" in src or "/seed" in src, "seed endpoint missing"
+
+
+def test_seeder_disabled_in_production() -> None:
+    """Negative: seeder route checks SEEDER_ENABLED before seeding."""
+    p = _PROJECT / "app" / "api" / "routes" / "seeder.py"
+    src = p.read_text()
+    assert "SEEDER_ENABLED" in src, "SEEDER_ENABLED guard missing from route"

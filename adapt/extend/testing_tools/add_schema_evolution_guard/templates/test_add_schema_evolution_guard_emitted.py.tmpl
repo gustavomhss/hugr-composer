@@ -1,0 +1,133 @@
+"""Wiring assertions for add_schema_evolution_guard — emitted by the tool.
+
+Asserts that the emitted schema evolution guard infrastructure exists at
+expected paths, AST-parses cleanly, and key classes/functions are declared.
+Does NOT invoke the CI script or run live schema comparisons (wiring only).
+"""
+
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+_PROJECT = Path(__file__).parent.parent
+_APP = _PROJECT / "app"
+_SCRIPTS = _PROJECT / "scripts"
+_GUARD = _APP / "schema_guard"
+
+
+def test_schema_guard_package_exists() -> None:
+    """Positive: app/schema_guard/__init__.py exists."""
+    p = _GUARD / "__init__.py"
+    assert p.exists(), f"app/schema_guard/__init__.py not found at {p}"
+
+
+def test_rules_module_exists() -> None:
+    """Positive: app/schema_guard/rules.py exists."""
+    p = _GUARD / "rules.py"
+    assert p.exists(), f"app/schema_guard/rules.py not found at {p}"
+
+
+def test_rules_declares_check_functions() -> None:
+    """Positive: rules.py declares all five check_* functions."""
+    p = _GUARD / "rules.py"
+    src = p.read_text()
+    for fn in (
+        "check_fields_removed",
+        "check_types_changed",
+        "check_required_added",
+        "check_enum_shrunk",
+        "check_response_shape_changed",
+    ):
+        assert f"def {fn}" in src, f"{fn} not declared in rules.py"
+
+
+def test_rules_ast_parses() -> None:
+    """Positive: app/schema_guard/rules.py is valid Python."""
+    p = _GUARD / "rules.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in rules.py: {exc}") from exc
+
+
+def test_comparator_module_exists() -> None:
+    """Positive: app/schema_guard/comparator.py exists."""
+    p = _GUARD / "comparator.py"
+    assert p.exists(), f"app/schema_guard/comparator.py not found at {p}"
+
+
+def test_comparator_declares_schema_comparator() -> None:
+    """Positive: comparator.py declares SchemaComparator class."""
+    p = _GUARD / "comparator.py"
+    src = p.read_text()
+    assert "class SchemaComparator" in src, "SchemaComparator class not declared"
+
+
+def test_comparator_declares_change_class() -> None:
+    """Positive: comparator.py declares ChangeClass enum."""
+    p = _GUARD / "comparator.py"
+    src = p.read_text()
+    assert "class ChangeClass" in src, "ChangeClass enum not declared in comparator.py"
+
+
+def test_comparator_declares_breaking_constant() -> None:
+    """Positive: ChangeClass includes BREAKING value."""
+    p = _GUARD / "comparator.py"
+    src = p.read_text()
+    assert "BREAKING" in src, "BREAKING constant missing from comparator.py"
+
+
+def test_comparator_ast_parses() -> None:
+    """Positive: app/schema_guard/comparator.py is valid Python."""
+    p = _GUARD / "comparator.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in comparator.py: {exc}") from exc
+
+
+def test_ci_script_exists() -> None:
+    """Positive: scripts/check_schema_compat.py exists."""
+    p = _SCRIPTS / "check_schema_compat.py"
+    assert p.exists(), f"scripts/check_schema_compat.py not found at {p}"
+
+
+def test_ci_script_declares_main() -> None:
+    """Positive: check_schema_compat.py declares main function."""
+    p = _SCRIPTS / "check_schema_compat.py"
+    src = p.read_text()
+    assert "def main" in src, "main function not declared in check_schema_compat.py"
+
+
+def test_ci_script_exits_on_breaking() -> None:
+    """Negative: check_schema_compat.py exits 1 on breaking changes."""
+    p = _SCRIPTS / "check_schema_compat.py"
+    src = p.read_text()
+    assert "sys.exit(1)" in src or "return 1" in src, (
+        "Exit code 1 on breaking changes not found in check_schema_compat.py"
+    )
+
+
+def test_ci_script_ast_parses() -> None:
+    """Positive: scripts/check_schema_compat.py is valid Python."""
+    p = _SCRIPTS / "check_schema_compat.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in check_schema_compat.py: {exc}") from exc
+
+
+def test_github_workflow_exists() -> None:
+    """Positive: .github/workflows/schema_guard.yml exists."""
+    p = _PROJECT / ".github" / "workflows" / "schema_guard.yml"
+    assert p.exists(), f".github/workflows/schema_guard.yml not found at {p}"
+
+
+def test_github_workflow_references_check_script() -> None:
+    """Positive: schema_guard.yml runs check_schema_compat.py."""
+    p = _PROJECT / ".github" / "workflows" / "schema_guard.yml"
+    src = p.read_text()
+    assert "check_schema_compat" in src, (
+        "check_schema_compat.py not referenced in schema_guard.yml"
+    )

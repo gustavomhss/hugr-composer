@@ -1,0 +1,83 @@
+"""Migration safety checker — detects destructive operations in Alembic files."""
+
+from __future__ import annotations
+
+import logging
+import re
+from pathlib import Path
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
+_DESTRUCTIVE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
+    ("DROP TABLE", re.compile(r"drop_table|op\.drop_table", re.IGNORECASE)),
+    ("DROP COLUMN", re.compile(r"drop_column|op\.drop_column", re.IGNORECASE)),
+    ("TRUNCATE", re.compile(r"truncate|op\.execute.*TRUNCATE", re.IGNORECASE)),
+    ("DROP CONSTRAINT", re.compile(r"drop_constraint|op\.drop_constraint", re.IGNORECASE)),
+    ("DROP INDEX", re.compile(r"drop_index|op\.drop_index", re.IGNORECASE)),
+]
+
+
+class SafetyChecker:
+    """Detects destructive operations in Alembic migration files.
+
+    Args:
+        versions_dir: Path to the ``alembic/versions/`` directory.
+    """
+
+    def __init__(self, versions_dir: str | Path) -> None:
+        """Initialise with the alembic versions directory."""
+        self._versions_dir = Path(versions_dir)
+
+    def detect_destructive(self) -> dict[str, Any]:
+        """Scan all migration files for destructive operations.
+
+        Returns:
+            Dict with keys: ``destructive_found``, ``findings``, ``files_scanned``.
+        """
+        findings: list[dict[str, Any]] = []
+        files_scanned = 0
+
+        if not self._versions_dir.is_dir():
+            logger.warning("Versions dir not found: %s", self._versions_dir)
+            return {
+                "destructive_found": False,
+                "findings": [],
+                "files_scanned": 0,
+            }
+
+        for migration_file in sorted(self._versions_dir.glob("*.py")):
+            if migration_file.name.startswith("__"):
+                continue
+            findings.extend(self._scan_file(migration_file))
+            files_scanned += 1
+
+        if findings:
+            logger.warning(
+                "Destructive migrations detected: %d findings in %d files",
+                len(findings), files_scanned,
+            )
+        return {
+            "destructive_found": bool(findings),
+            "findings": findings,
+            "files_scanned": files_scanned,
+        }
+
+    def _scan_file(self, migration_file: Path) -> list[dict[str, Any]]:
+        """Scan a single migration file for destructive patterns."""
+        findings: list[dict[str, Any]] = []
+        try:
+            content = migration_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            logger.warning("Could not read %s: %s", migration_file, exc)
+            return findings
+        for op_name, pattern in _DESTRUCTIVE_PATTERNS:
+            for lineno, line in enumerate(content.splitlines(), start=1):
+                if pattern.search(line):
+                    findings.append({
+                        "file": str(migration_file),
+                        "operation": op_name,
+                        "line": lineno,
+                        "content": line.strip(),
+                    })
+        return findings

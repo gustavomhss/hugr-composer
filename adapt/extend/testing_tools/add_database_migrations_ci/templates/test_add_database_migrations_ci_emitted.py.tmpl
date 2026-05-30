@@ -1,0 +1,84 @@
+"""Wiring assertions for add_database_migrations_ci — emitted by the tool.
+
+Asserts that the emitted migration CI infrastructure exists at the expected
+paths, is importable, and key classes/functions are declared.  Does NOT
+invoke alembic as a sub-runner (wiring assertion only).
+"""
+
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+_PROJECT = Path(__file__).parent.parent
+_MIGRATIONS = _PROJECT / "app" / "migrations"
+
+
+def test_migrations_package_exists() -> None:
+    """Positive: app/migrations/__init__.py exists."""
+    p = _MIGRATIONS / "__init__.py"
+    assert p.exists(), f"app/migrations/__init__.py not found at {p}"
+
+
+def test_ci_runner_exists() -> None:
+    """Positive: app/migrations/ci_runner.py exists and declares MigrationCIRunner."""
+    p = _MIGRATIONS / "ci_runner.py"
+    assert p.exists(), "ci_runner.py not found"
+    src = p.read_text()
+    assert "MigrationCIRunner" in src, "MigrationCIRunner missing"
+    assert "check_pending" in src, "check_pending method missing"
+    assert "verify_rollback" in src, "verify_rollback method missing"
+    assert "schema_diff" in src, "schema_diff method missing"
+
+
+def test_ci_runner_ast_parses() -> None:
+    """Positive: ci_runner.py is valid Python."""
+    p = _MIGRATIONS / "ci_runner.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in ci_runner.py: {exc}") from exc
+
+
+def test_safety_checker_exists() -> None:
+    """Positive: safety_checker.py declares SafetyChecker with detect_destructive."""
+    p = _MIGRATIONS / "safety_checker.py"
+    assert p.exists(), "safety_checker.py not found"
+    src = p.read_text()
+    assert "SafetyChecker" in src, "SafetyChecker missing"
+    assert "detect_destructive" in src, "detect_destructive method missing"
+
+
+def test_safety_checker_ast_parses() -> None:
+    """Positive: safety_checker.py is valid Python."""
+    p = _MIGRATIONS / "safety_checker.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in safety_checker.py: {exc}") from exc
+
+
+def test_check_migrations_cli_exists() -> None:
+    """Positive: scripts/check_migrations.py CLI exists."""
+    p = _PROJECT / "scripts" / "check_migrations.py"
+    assert p.exists(), "check_migrations.py not found"
+    src = p.read_text()
+    assert "MigrationCIRunner" in src or "check_pending" in src, "CI runner ref missing"
+    assert "__main__" in src or "main()" in src, "CLI entry point missing"
+
+
+def test_check_migrations_cli_ast_parses() -> None:
+    """Positive: check_migrations.py is valid Python."""
+    p = _PROJECT / "scripts" / "check_migrations.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in check_migrations.py: {exc}") from exc
+
+
+def test_safety_checker_patterns_declared() -> None:
+    """Negative: SafetyChecker recognises DROP TABLE and DROP COLUMN."""
+    p = _MIGRATIONS / "safety_checker.py"
+    src = p.read_text()
+    assert "DROP TABLE" in src.upper() or "drop_table" in src, "DROP TABLE pattern missing"
+    assert "DROP COLUMN" in src.upper() or "drop_column" in src, "DROP COLUMN pattern missing"

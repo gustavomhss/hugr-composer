@@ -1,0 +1,67 @@
+"""Wiring assertions for add_factory — emitted by the tool.
+
+Asserts that the emitted factory infrastructure exists at the expected paths,
+is importable, and FACTORY_REGISTRY is declared.  Does NOT build instances
+or hit the database (wiring assertion only).
+"""
+
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+_PROJECT = Path(__file__).parent.parent
+_FACTORIES = _PROJECT / "tests" / "factories"
+
+
+def test_factories_package_exists() -> None:
+    """Positive: tests/factories/__init__.py exists."""
+    p = _FACTORIES / "__init__.py"
+    assert p.exists(), f"tests/factories/__init__.py not found at {p}"
+
+
+def test_factories_init_has_registry() -> None:
+    """Positive: __init__.py declares FACTORY_REGISTRY."""
+    src = (_FACTORIES / "__init__.py").read_text()
+    assert "FACTORY_REGISTRY" in src, "FACTORY_REGISTRY missing from factories/__init__.py"
+    assert "get_factory" in src, "get_factory function missing"
+
+
+def test_factories_init_ast_parses() -> None:
+    """Positive: factories/__init__.py is valid Python."""
+    p = _FACTORIES / "__init__.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in factories/__init__.py: {exc}") from exc
+
+
+def test_at_least_one_factory_file_exists() -> None:
+    """Positive: at least one *_factory.py file exists in tests/factories/."""
+    factory_files = list(_FACTORIES.glob("*_factory.py"))
+    assert len(factory_files) >= 1, (
+        f"No *_factory.py files found in {_FACTORIES}"
+    )
+
+
+def test_factory_files_ast_parse() -> None:
+    """Positive: all *_factory.py files are valid Python."""
+    for factory_file in sorted(_FACTORIES.glob("*_factory.py")):
+        try:
+            ast.parse(factory_file.read_text())
+        except SyntaxError as exc:
+            raise AssertionError(f"SyntaxError in {factory_file}: {exc}") from exc
+
+
+def test_factory_files_declare_factory_class() -> None:
+    """Positive: each *_factory.py declares a Factory subclass."""
+    for factory_file in sorted(_FACTORIES.glob("*_factory.py")):
+        src = factory_file.read_text()
+        assert "Factory" in src, f"No Factory class in {factory_file}"
+        assert "build_batch_seeded" in src, f"build_batch_seeded missing in {factory_file}"
+
+
+def test_get_factory_raises_on_unknown_model() -> None:
+    """Negative: get_factory raises ValueError for unknown model name."""
+    src = (_FACTORIES / "__init__.py").read_text()
+    assert "ValueError" in src, "ValueError not raised for unknown model in get_factory"

@@ -1,0 +1,85 @@
+"""SchemaEnforcerMiddleware — validates requests against OpenAPI spec.
+
+Supports three modes from settings.SCHEMA_ENFORCER_MODE:
+  enforce — rejects extra fields and logs shadow route access
+  detect  — logs violations, always passes requests through
+  fuzz    — same as detect; fuzz test runner controls the assertions
+"""
+
+from __future__ import annotations
+
+import logging
+
+from fastapi import FastAPI
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
+
+from app.core.schema_enforcer import (
+    detect_shadow_routes,
+    extract_route_paths,
+    load_spec,
+)
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+
+class SchemaEnforcerMiddleware(BaseHTTPMiddleware):
+    """ASGI middleware that enforces OpenAPI schema compliance.
+
+    On startup loads the spec once and caches ``spec_routes``.
+    In enforce mode, returns 403 for shadow routes when
+    SCHEMA_ENFORCER_BLOCK_SHADOW is True.
+    """
+
+    def __init__(self, app: FastAPI, **kwargs: object) -> None:
+        """Initialise middleware, loading spec from disk.
+
+        Args:
+            app: The FastAPI/Starlette application.
+            **kwargs: Forwarded to BaseHTTPMiddleware.
+        """
+        super().__init__(app, **kwargs)
+        self._spec = load_spec()
+        self._spec_routes = extract_route_paths(self._spec)
+
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        """Enforce schema rules on the incoming request.
+
+        Args:
+            request: Incoming ASGI request.
+            call_next: Next middleware/route handler.
+
+        Returns:
+            Response from downstream, or 403 on shadow route in enforce mode.
+        """
+        mode = getattr(settings, "SCHEMA_ENFORCER_MODE", "detect")
+        block_shadow = getattr(settings, "SCHEMA_ENFORCER_BLOCK_SHADOW", False)
+        path = request.url.path
+
+        shadow = detect_shadow_routes([path], self._spec_routes)
+        if shadow:
+            logger.warning(
+                "schema_enforcer.shadow_route",
+                extra={"path": path, "mode": mode},
+            )
+            if mode == "enforce" and block_shadow:
+                return JSONResponse(
+                    status_code=403,
+                    content={"detail": f"Undocumented endpoint: {path}"},
+                )
+
+        return await call_next(request)
+
+
+def register_schema_enforcer(app: FastAPI) -> None:
+    """Attach SchemaEnforcerMiddleware to *app*.
+
+    Args:
+        app: The FastAPI application instance.
+    """
+    app.add_middleware(SchemaEnforcerMiddleware)
+    logger.info("schema_enforcer.registered")

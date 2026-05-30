@@ -1,0 +1,97 @@
+"""CLI script to run the API fuzzer against a running FastAPI server.
+
+Usage::
+
+    python scripts/run_fuzz.py --base-url http://localhost:8000
+    python scripts/run_fuzz.py --base-url http://localhost:8000 --output fuzz_report.json
+
+Options:
+    --base-url     Target server base URL (required).
+    --iterations   Payloads per endpoint (default: FUZZ_ITERATIONS env var or 10).
+    --timeout      Per-request timeout in seconds (default: FUZZ_TIMEOUT_S or 5).
+    --output       Write JSON report to this file (default: stdout).
+"""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import json
+import sys
+from pathlib import Path
+
+
+def _parse_args() -> argparse.Namespace:
+    """Parse CLI arguments for the fuzz runner."""
+    parser = argparse.ArgumentParser(description="Schema-aware API fuzzer for FastAPI")
+    parser.add_argument("--base-url", required=True, help="Target server base URL")
+    parser.add_argument("--iterations", type=int, default=None,
+                        help="Payloads per endpoint (overrides FUZZ_ITERATIONS)")
+    parser.add_argument("--timeout", type=int, default=None,
+                        help="Per-request timeout in seconds (overrides FUZZ_TIMEOUT_S)")
+    parser.add_argument("--output", default=None,
+                        help="Write JSON report to file (default: stdout)")
+    return parser.parse_args()
+
+
+def _emit_report(report: dict, output_path: str | None, findings: list) -> int:
+    """Write the fuzz report to stdout or a file and return exit code.
+
+    Args:
+        report: Full fuzz report dict ready to JSON-serialise.
+        output_path: Optional file path to write the report to.
+        findings: List of finding dicts for exit code calculation.
+
+    Returns:
+        0 when no findings, 1 when findings were detected.
+    """
+    output_json = json.dumps(report, indent=2)
+    if output_path:
+        Path(output_path).write_text(output_json)
+        print(f"Report written to {output_path}", file=sys.stderr)
+    else:
+        print(output_json)
+    if findings:
+        print(f"\n{len(findings)} finding(s) detected!", file=sys.stderr)
+        return 1
+    print("No findings.", file=sys.stderr)
+    return 0
+
+
+async def _main() -> int:
+    """Run the fuzzer and return the exit code.
+
+    Returns:
+        0 when no findings, 1 when findings were detected, 2 on error.
+    """
+    args = _parse_args()
+    script_dir = Path(__file__).resolve().parent
+    project_root = script_dir.parent
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+    try:
+        from app.fuzzer.runner import FuzzRunner
+    except ImportError as exc:
+        print(f"ERROR: Cannot import FuzzRunner: {exc}", file=sys.stderr)
+        print("Make sure you are running from the project root.", file=sys.stderr)
+        return 2
+    runner = FuzzRunner(
+        base_url=args.base_url,
+        iterations=args.iterations,
+        timeout_s=args.timeout,
+    )
+    print(f"Fuzzing {args.base_url} ...", file=sys.stderr)
+    results = await runner.run()
+    findings = [r.to_dict() for r in results if r.is_finding()]
+    all_results = [r.to_dict() for r in results]
+    report = {
+        "base_url": args.base_url,
+        "total_requests": len(results),
+        "findings": len(findings),
+        "results": all_results,
+    }
+    return _emit_report(report, args.output, findings)
+
+
+if __name__ == "__main__":
+    sys.exit(asyncio.run(_main()))

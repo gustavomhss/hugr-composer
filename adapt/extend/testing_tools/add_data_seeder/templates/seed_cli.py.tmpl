@@ -1,0 +1,63 @@
+"""CLI script: seed the database with test data.
+
+Usage::
+
+    python scripts/seed.py --count 100
+
+Requires SEEDER_ENABLED=true in the environment or .env file.
+"""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import os
+import sys
+from pathlib import Path
+
+
+def _setup_path() -> None:
+    """Add project root to sys.path so app imports work."""
+    project_root = Path(__file__).parent.parent
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+
+
+async def _run(count: int) -> None:
+    """Run the seeder asynchronously.
+
+    Args:
+        count: Number of rows to seed per model.
+    """
+    from app.core.config import settings
+    if not settings.SEEDER_ENABLED:
+        print("ERROR: SEEDER_ENABLED=false. Set it to true in .env to use the seeder.")
+        sys.exit(1)
+    from app.core.session import async_session
+    async with async_session() as session:
+        from app.seeder import DataSeeder
+        seeder = DataSeeder(session)
+        results = await seeder.seed(count=count)
+        await session.commit()
+    total = sum(results.values())
+    print(f"Seeded {total} total rows:")
+    for model, rows in sorted(results.items()):
+        print(f"  {model}: {rows} rows")
+
+
+def main() -> None:
+    """Parse CLI arguments and run the seeder."""
+    _setup_path()
+    parser = argparse.ArgumentParser(description="Seed the database with test data.")
+    parser.add_argument(
+        "--count",
+        type=int,
+        default=int(os.environ.get("SEEDER_DEFAULT_COUNT", "10")),
+        help="Number of rows to seed per model (default: SEEDER_DEFAULT_COUNT or 10).",
+    )
+    args = parser.parse_args()
+    asyncio.run(_run(args.count))
+
+
+if __name__ == "__main__":
+    main()

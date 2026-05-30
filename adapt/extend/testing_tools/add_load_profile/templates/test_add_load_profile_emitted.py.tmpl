@@ -1,0 +1,107 @@
+"""Wiring assertions for add_load_profile — emitted by the tool.
+
+Asserts that the emitted load test infrastructure exists at the expected
+paths, is importable, and key classes/functions are declared.  Does NOT
+invoke locust as a sub-runner (wiring assertion only).
+"""
+
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+import yaml
+
+_PROJECT = Path(__file__).parent.parent
+_LOAD = _PROJECT / "tests" / "load"
+
+
+def test_load_package_exists() -> None:
+    """Positive: tests/load/__init__.py exists."""
+    p = _LOAD / "__init__.py"
+    assert p.exists(), f"tests/load/__init__.py not found at {p}"
+
+
+def test_locustfile_exists_and_has_user_classes() -> None:
+    """Positive: locustfile.py declares BrowsingUser, ActiveUser, AdminUser."""
+    p = _LOAD / "locustfile.py"
+    assert p.exists(), "locustfile.py not found"
+    src = p.read_text()
+    assert "BrowsingUser" in src, "BrowsingUser missing"
+    assert "ActiveUser" in src, "ActiveUser missing"
+    assert "AdminUser" in src, "AdminUser missing"
+    assert "register_slo_handlers" in src, "register_slo_handlers call missing"
+
+
+def test_locustfile_ast_parses() -> None:
+    """Positive: locustfile.py is valid Python."""
+    p = _LOAD / "locustfile.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in locustfile.py: {exc}") from exc
+
+
+def test_scenarios_declares_task_sets() -> None:
+    """Positive: scenarios.py declares BrowsingScenario, ActiveUserScenario, AdminScenario."""
+    p = _LOAD / "scenarios.py"
+    assert p.exists(), "scenarios.py not found"
+    src = p.read_text()
+    assert "BrowsingScenario" in src, "BrowsingScenario missing"
+    assert "ActiveUserScenario" in src, "ActiveUserScenario missing"
+    assert "AdminScenario" in src, "AdminScenario missing"
+
+
+def test_auth_mixin_declares_login() -> None:
+    """Positive: auth.py declares AuthMixin with login method."""
+    p = _LOAD / "auth.py"
+    assert p.exists(), "auth.py not found"
+    src = p.read_text()
+    assert "AuthMixin" in src, "AuthMixin missing"
+    assert "def login" in src, "login method missing"
+
+
+def test_slo_config_yaml_loads() -> None:
+    """Positive: slo_config.yaml is valid YAML with p99_targets_ms key."""
+    p = _LOAD / "slo_config.yaml"
+    assert p.exists(), "slo_config.yaml not found"
+    with p.open() as fh:
+        data = yaml.safe_load(fh)
+    assert data is not None, "slo_config.yaml parsed to None"
+    assert "p99_targets_ms" in data, "p99_targets_ms key missing from slo_config.yaml"
+
+
+def test_slo_assertions_declares_register() -> None:
+    """Positive: slo_assertions.py declares register_slo_handlers."""
+    p = _LOAD / "slo_assertions.py"
+    assert p.exists(), "slo_assertions.py not found"
+    src = p.read_text()
+    assert "register_slo_handlers" in src, "register_slo_handlers missing"
+    assert "quitting" in src, "locust quitting event missing"
+
+
+def test_shapes_declares_shape_classes() -> None:
+    """Positive: shapes.py declares SmokeShape, BaselineShape, PeakShape."""
+    p = _LOAD / "shapes.py"
+    assert p.exists(), "shapes.py not found"
+    src = p.read_text()
+    assert "SmokeShape" in src, "SmokeShape missing"
+    assert "BaselineShape" in src, "BaselineShape missing"
+    assert "PeakShape" in src, "PeakShape missing"
+
+
+def test_shapes_ast_parses() -> None:
+    """Positive: shapes.py is valid Python."""
+    p = _LOAD / "shapes.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in shapes.py: {exc}") from exc
+
+
+def test_slo_exit_code_on_violation() -> None:
+    """Negative: slo_assertions.py sets process_exit_code=1 on violation."""
+    p = _LOAD / "slo_assertions.py"
+    src = p.read_text()
+    assert "process_exit_code" in src, "SLO exit code mechanism missing"
+    assert "1" in src, "exit code 1 not referenced"

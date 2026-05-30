@@ -1,0 +1,89 @@
+"""Wiring assertions for add_contract_tests — emitted by the tool.
+
+Asserts that the emitted contract test infrastructure exists at the expected
+paths, is importable, and key fixtures/markers are declared.  Does NOT invoke
+schemathesis or Pact as sub-runners (wiring assertion only).
+"""
+
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+_PROJECT = Path(__file__).parent.parent
+_CONTRACTS = _PROJECT / "tests" / "contracts"
+
+
+def test_contracts_package_exists() -> None:
+    """Positive: tests/contracts/__init__.py exists."""
+    p = _CONTRACTS / "__init__.py"
+    assert p.exists(), f"tests/contracts/__init__.py not found at {p}"
+
+
+def test_conftest_exists_and_has_schema_fixture() -> None:
+    """Positive: conftest.py declares 'schema' fixture using schemathesis."""
+    p = _CONTRACTS / "conftest.py"
+    assert p.exists(), f"contracts/conftest.py not found"
+    src = p.read_text()
+    assert "schemathesis" in src, "schemathesis import missing from conftest"
+    assert "def schema" in src, "'schema' fixture missing from conftest"
+    assert "def api_client" in src, "'api_client' fixture missing"
+
+
+def test_conftest_ast_parses() -> None:
+    """Positive: contracts/conftest.py is valid Python."""
+    p = _CONTRACTS / "conftest.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in conftest.py: {exc}") from exc
+
+
+def test_base_schema_test_exists() -> None:
+    """Positive: test_api_schema.py declares test_api_contract."""
+    p = _CONTRACTS / "test_api_schema.py"
+    assert p.exists(), "test_api_schema.py not found"
+    src = p.read_text()
+    assert "test_api_contract" in src, "test_api_contract function missing"
+    assert "schema.parametrize" in src, "@schema.parametrize decorator missing"
+
+
+def test_base_schema_ast_parses() -> None:
+    """Positive: test_api_schema.py is valid Python."""
+    p = _CONTRACTS / "test_api_schema.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in test_api_schema.py: {exc}") from exc
+
+
+def test_custom_checks_declares_schemathesis_checks() -> None:
+    """Positive: custom_checks.py registers schemathesis check decorators."""
+    p = _CONTRACTS / "custom_checks.py"
+    assert p.exists(), "custom_checks.py not found"
+    src = p.read_text()
+    assert "@schemathesis.check" in src, "@schemathesis.check decorator missing"
+    assert "validate_error_response_structure" in src, "check function missing"
+
+
+def test_pact_stubs_declares_markers() -> None:
+    """Positive: test_pact_stubs.py uses pact_consumer and pact_provider markers."""
+    p = _CONTRACTS / "test_pact_stubs.py"
+    assert p.exists(), "test_pact_stubs.py not found"
+    src = p.read_text()
+    assert "pact_consumer" in src, "pact_consumer marker missing"
+    assert "pact_provider" in src, "pact_provider marker missing"
+
+
+def test_exclude_yaml_exists() -> None:
+    """Positive: .schemathesis-exclude.yaml created at project root."""
+    p = _PROJECT / ".schemathesis-exclude.yaml"
+    assert p.exists(), ".schemathesis-exclude.yaml not found at project root"
+
+
+def test_stateful_test_exists() -> None:
+    """Negative: test_stateful.py exists (even if skipped by default)."""
+    p = _CONTRACTS / "test_stateful.py"
+    assert p.exists(), "test_stateful.py not found"
+    src = p.read_text()
+    assert "test_stateful_api_sequence" in src, "stateful test function missing"

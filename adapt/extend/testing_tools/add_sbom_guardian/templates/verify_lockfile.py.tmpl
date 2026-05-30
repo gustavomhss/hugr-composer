@@ -1,0 +1,140 @@
+"""Lockfile integrity verifier + dependency confusion detector.
+
+Usage::
+
+    python scripts/verify_lockfile.py --lockfile requirements.txt
+    python scripts/verify_lockfile.py --lockfile requirements.txt --fail-on-critical
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import logging
+import re
+import sys
+import urllib.request
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+_INTERNAL_PREFIXES = ("myorg-", "internal-", "priv-")
+_OSV_BATCH_URL = "https://api.osv.dev/v1/querybatch"
+
+
+def hash_lockfile(path: Path) -> str:
+    """Return SHA-256 hex digest of the lockfile contents."""
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def detect_confusion(lockfile_path: Path) -> list[str]:
+    """Detect dependency confusion: internal packages potentially shadowed on PyPI."""
+    warnings: list[str] = []
+    content = lockfile_path.read_text()
+    for line in content.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        name = re.split(r"[>=<!=;\s]", line)[0].lower()
+        if any(name.startswith(prefix.lower()) for prefix in _INTERNAL_PREFIXES):
+            warnings.append(
+                f"CONFUSION-RISK: '{name}' matches internal prefix — "
+                "verify it cannot be claimed on PyPI"
+            )
+    return warnings
+
+
+def parse_requirements(lockfile_path: Path) -> list[dict]:
+    """Parse requirements.txt into list of name/version dicts."""
+    packages = []
+    for line in lockfile_path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or line.startswith("-"):
+            continue
+        match = re.match(r"^([A-Za-z0-9_.-]+)==([A-Za-z0-9_.+-]+)", line)
+        if match:
+            packages.append({"name": match.group(1), "version": match.group(2)})
+    return packages
+
+
+def query_osv(packages: list[dict]) -> list[dict]:
+    """Query OSV API for known vulnerabilities."""
+    if not packages:
+        return []
+    queries = [
+        {"version": p["version"], "package": {"name": p["name"], "ecosystem": "PyPI"}}
+        for p in packages
+    ]
+    payload = json.dumps({"queries": queries}).encode()
+    req = urllib.request.Request(
+        _OSV_BATCH_URL,
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read())
+        return data.get("results", [])
+    except Exception as exc:
+        logger.warning("OSV query failed (offline?): %s", exc)
+        return []
+
+
+def find_critical_vulns(osv_results: list[dict], packages: list[dict]) -> list[str]:
+    """Return list of CRITICAL/HIGH severity vulnerability descriptions."""
+    findings: list[str] = []
+    for pkg, result in zip(packages, osv_results):
+        for vuln in result.get("vulns", []):
+            severity = vuln.get("database_specific", {}).get("severity", "")
+            if severity.upper() in ("CRITICAL", "HIGH"):
+                findings.append(
+                    f"VULN {severity}: {pkg['name']}=={pkg['version']} — "
+                    f"{vuln.get('id', 'unknown')} {vuln.get('summary', '')[:80]}"
+                )
+    return findings
+
+
+def verify(lockfile: str, fail_on_critical: bool = False) -> dict:
+    """Run full lockfile verification pipeline."""
+    path = Path(lockfile)
+    if not path.exists():
+        return {"error": f"Lockfile not found: {lockfile}", "passed": False}
+
+    lockfile_hash = hash_lockfile(path)
+    confusion_warnings = detect_confusion(path)
+    packages = parse_requirements(path)
+    osv_results = query_osv(packages)
+    critical_findings = find_critical_vulns(osv_results, packages)
+
+    for w in confusion_warnings:
+        logger.warning(w)
+    for f in critical_findings:
+        logger.error(f)
+
+    passed = not (fail_on_critical and critical_findings)
+    return {
+        "lockfile_hash": lockfile_hash,
+        "packages_checked": len(packages),
+        "confusion_warnings": confusion_warnings,
+        "critical_findings": critical_findings,
+        "passed": passed,
+    }
+
+
+def main() -> None:
+    """CLI entry point for lockfile verification."""
+    parser = argparse.ArgumentParser(description="Verify lockfile integrity")
+    parser.add_argument("--lockfile", default="requirements.txt")
+    parser.add_argument("--fail-on-critical", action="store_true")
+    args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO)
+    result = verify(args.lockfile, fail_on_critical=args.fail_on_critical)
+    print(json.dumps(result, indent=2))
+    if not result.get("passed", True):
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

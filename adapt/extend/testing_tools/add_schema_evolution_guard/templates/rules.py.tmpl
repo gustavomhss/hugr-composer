@@ -1,0 +1,174 @@
+"""Breaking-change rules for OpenAPI schema comparison.
+
+Each rule is a plain function that accepts two schema dicts (baseline,
+current) and returns a list of human-readable violation strings.
+An empty list means the rule passes.
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
+
+def check_fields_removed(
+    baseline: dict[str, Any],
+    current: dict[str, Any],
+    path: str = "",
+) -> list[str]:
+    """Detect fields present in baseline but absent in current schema.
+
+    Args:
+        baseline: Baseline OpenAPI component schema properties dict.
+        current: Current OpenAPI component schema properties dict.
+        path: Dot-separated schema path for error messages.
+
+    Returns:
+        List of violation strings, empty if no removals detected.
+    """
+    violations: list[str] = []
+    for field, _spec in baseline.items():
+        if field not in current:
+            violations.append(
+                f"BREAKING: field '{path}.{field}' removed from schema"
+            )
+    return violations
+
+
+def check_types_changed(
+    baseline: dict[str, Any],
+    current: dict[str, Any],
+    path: str = "",
+) -> list[str]:
+    """Detect fields whose type changed between baseline and current.
+
+    Args:
+        baseline: Baseline OpenAPI component schema properties dict.
+        current: Current OpenAPI component schema properties dict.
+        path: Dot-separated schema path for error messages.
+
+    Returns:
+        List of violation strings, empty if no type changes detected.
+    """
+    violations: list[str] = []
+    for field, spec in baseline.items():
+        if field not in current:
+            continue
+        old_type = spec.get("type") or spec.get("$$ref", "")
+        new_type = current[field].get("type") or current[field].get("$$ref", "")
+        if old_type and new_type and old_type != new_type:
+            violations.append(
+                f"BREAKING: field '{path}.{field}' type changed "
+                f"'{old_type}' -> '{new_type}'"
+            )
+    return violations
+
+
+def check_required_added(
+    baseline: dict[str, Any],
+    current: dict[str, Any],
+    path: str = "",
+) -> list[str]:
+    """Detect required fields added that were not required in baseline.
+
+    Args:
+        baseline: Baseline OpenAPI schema dict (with 'required' key).
+        current: Current OpenAPI schema dict (with 'required' key).
+        path: Dot-separated schema path for error messages.
+
+    Returns:
+        List of violation strings, empty if no new required fields.
+    """
+    violations: list[str] = []
+    old_required = set(baseline.get("required") or [])
+    new_required = set(current.get("required") or [])
+    for field in sorted(new_required - old_required):
+        violations.append(
+            f"BREAKING: field '{path}.{field}' is now required "
+            "(was optional in baseline)"
+        )
+    return violations
+
+
+def check_enum_shrunk(
+    baseline: dict[str, Any],
+    current: dict[str, Any],
+    path: str = "",
+) -> list[str]:
+    """Detect enum fields that lost values between baseline and current.
+
+    Args:
+        baseline: Baseline OpenAPI component schema properties dict.
+        current: Current OpenAPI component schema properties dict.
+        path: Dot-separated schema path for error messages.
+
+    Returns:
+        List of violation strings, empty if no enum shrinkage detected.
+    """
+    violations: list[str] = []
+    for field, spec in baseline.items():
+        if field not in current:
+            continue
+        old_enum = set(spec.get("enum") or [])
+        new_enum = set(current[field].get("enum") or [])
+        if not old_enum:
+            continue
+        removed = old_enum - new_enum
+        if removed:
+            violations.append(
+                f"BREAKING: enum field '{path}.{field}' lost values: "
+                + ", ".join(sorted(str(v) for v in removed))
+            )
+    return violations
+
+
+def check_response_shape_changed(
+    baseline_responses: dict[str, Any],
+    current_responses: dict[str, Any],
+    path: str = "",
+) -> list[str]:
+    """Detect top-level response keys removed from successful responses.
+
+    Args:
+        baseline_responses: Baseline OpenAPI responses dict for an endpoint.
+        current_responses: Current OpenAPI responses dict for an endpoint.
+        path: Endpoint path for error messages.
+
+    Returns:
+        List of violation strings, empty if response shape unchanged.
+    """
+    violations: list[str] = []
+    for status_code in ("200", "201"):
+        old_resp = baseline_responses.get(status_code, {})
+        new_resp = current_responses.get(status_code, {})
+        if not old_resp:
+            continue
+        old_keys = set(_extract_response_keys(old_resp))
+        new_keys = set(_extract_response_keys(new_resp))
+        for key in sorted(old_keys - new_keys):
+            violations.append(
+                f"BREAKING: response key '{key}' removed from "
+                f"{path} {status_code}"
+            )
+    return violations
+
+
+def _extract_response_keys(response: dict[str, Any]) -> list[str]:
+    """Extract top-level property keys from an OpenAPI response object.
+
+    Args:
+        response: OpenAPI response dict (may contain content/schema nesting).
+
+    Returns:
+        List of property key names, empty when schema cannot be resolved.
+    """
+    content = response.get("content", {})
+    for media_type in ("application/json", "*/*"):
+        media = content.get(media_type, {})
+        schema = media.get("schema", {})
+        props = schema.get("properties", {})
+        if props:
+            return list(props.keys())
+    return []

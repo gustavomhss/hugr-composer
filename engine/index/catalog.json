@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "de90a8e",
-  "generated_at": "2026-05-30T14:29:05+00:00",
+  "kit_commit": "d2de703",
+  "generated_at": "2026-05-30T14:55:15+00:00",
   "verbs": [
     "add",
     "generate",
@@ -4125,10 +4125,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/testing_tools/add_api_fuzzer.py",
-      "test_paths": [
-        "adapt/extend/testing_tools/test_add_api_fuzzer.py"
-      ],
+      "module_path": "adapt/extend/testing_tools/add_api_fuzzer/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -4169,10 +4167,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/testing_tools/add_contract_tests.py",
-      "test_paths": [
-        "adapt/extend/testing_tools/test_add_contract_tests.py"
-      ],
+      "module_path": "adapt/extend/testing_tools/add_contract_tests/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -4191,10 +4187,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/testing_tools/add_data_seeder.py",
-      "test_paths": [
-        "adapt/extend/testing_tools/test_add_data_seeder.py"
-      ],
+      "module_path": "adapt/extend/testing_tools/add_data_seeder/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -4215,10 +4209,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/testing_tools/add_database_migrations_ci.py",
-      "test_paths": [
-        "adapt/extend/testing_tools/test_add_database_migrations_ci.py"
-      ],
+      "module_path": "adapt/extend/testing_tools/add_database_migrations_ci/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -4259,10 +4251,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/testing_tools/add_factory.py",
-      "test_paths": [
-        "adapt/extend/testing_tools/test_add_factory.py"
-      ],
+      "module_path": "adapt/extend/testing_tools/add_factory/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -4281,10 +4271,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/testing_tools/add_load_profile.py",
-      "test_paths": [
-        "adapt/extend/testing_tools/test_add_load_profile.py"
-      ],
+      "module_path": "adapt/extend/testing_tools/add_load_profile/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -4303,10 +4291,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/testing_tools/add_sbom_guardian.py",
-      "test_paths": [
-        "adapt/extend/testing_tools/test_add_sbom_guardian.py"
-      ],
+      "module_path": "adapt/extend/testing_tools/add_sbom_guardian/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -4325,10 +4311,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/testing_tools/add_schema_enforcer.py",
-      "test_paths": [
-        "adapt/extend/testing_tools/test_add_schema_enforcer.py"
-      ],
+      "module_path": "adapt/extend/testing_tools/add_schema_enforcer/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -4347,10 +4331,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/testing_tools/add_schema_evolution_guard.py",
-      "test_paths": [
-        "adapt/extend/testing_tools/test_add_schema_evolution_guard.py"
-      ],
+      "module_path": "adapt/extend/testing_tools/add_schema_evolution_guard/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -12033,5 +12015,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "877968559f49f96adcaaec590ac0e4ff72711d4de29ae35f8597d220e7316774"
+  "stable_hash": "582ca691042aef3ee973972f2b3443a63444733fa8b542e07d8c8c9e0f52fbf0"
 }
