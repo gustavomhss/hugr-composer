@@ -68,6 +68,7 @@ from .phase4_release import (
     _r_install_docker_ci,
     _r_version_sync,
 )
+from .r_admin_routes_auth import _r_admin_routes_require_auth
 from .r_no_dead_security_features import _r_no_dead_security_features
 
 # ---------------------------------------------------------------------------
@@ -93,6 +94,12 @@ RULES: list[Rule] = [
         0,
         "no dead security features in templates (ROUND5_6_TRIAGE P1)",
         _r_no_dead_security_features,
+    ),
+    Rule(
+        "B0.11",
+        0,
+        "admin/diagnostic routes require auth (ROUND5_6_TRIAGE P2)",
+        _r_admin_routes_require_auth,
     ),
     Rule("B1.0", 1, "core.venous copy-in distribution", _r_core_venous_distribution),
     Rule("B1.0.1", 1, "adapter layer + framework-free primitives", _r_adapter_layer_invariant),
