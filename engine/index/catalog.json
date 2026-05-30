@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "1b54b12",
-  "generated_at": "2026-05-30T13:17:56+00:00",
+  "kit_commit": "4519cac",
+  "generated_at": "2026-05-30T13:32:24+00:00",
   "verbs": [
     "add",
     "generate",
@@ -3161,10 +3161,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_ml_gpu_inference.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_ml_gpu_inference.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_ml_gpu_inference/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3185,10 +3183,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_ml_model_registry.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_ml_model_registry.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_ml_model_registry/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3209,10 +3205,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_ml_model_server.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_ml_model_server.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_ml_model_server/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -12057,5 +12051,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "a59d6d326b1d844d64aaf76331a3c60dae7909ce58e9e025d3544ff5d5d61d95"
+  "stable_hash": "51193ad5831d7da40bc547e0832e2ba8cf639982f9650be81b4b17a0133a58f7"
 }

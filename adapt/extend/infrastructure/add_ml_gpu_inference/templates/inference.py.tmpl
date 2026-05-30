@@ -1,0 +1,112 @@
+"""GPU-accelerated model predictor with optional mixed precision.
+
+``GPUPredictor`` wraps any torch model and handles:
+
+* Moving the model to the active device (GPU or CPU) on first call.
+* Optional ``torch.cuda.amp.autocast`` for float16 mixed precision.
+* ``MemoryGuard`` check before each forward pass.
+
+All torch imports are lazy.
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+from app.core.config import settings
+from app.ml.gpu.device import DeviceManager
+from app.ml.gpu.memory_guard import MemoryGuard
+
+logger = logging.getLogger(__name__)
+
+_device_manager = DeviceManager()
+_memory_guard = MemoryGuard()
+
+
+class GPUPredictor:
+    """Wrap a torch model for GPU-accelerated inference.
+
+    Handles device placement, mixed-precision autocast, and memory
+    guards.  All torch imports inside method bodies — safe on CPU-only
+    hosts.
+
+    Attributes:
+        model: The wrapped torch model (any ``torch.nn.Module``).
+        _device: Cached active device (resolved lazily).
+    """
+
+    def __init__(self, model: Any) -> None:
+        """Wrap *model* for GPU inference.
+
+        Args:
+            model: A ``torch.nn.Module`` instance.  Not moved to device
+                yet — movement happens lazily in ``predict()``.
+        """
+        self.model = model
+        self._device = None
+
+    def _get_device(self) -> Any:
+        """Return (and cache) the active torch.device.
+
+        Returns:
+            A ``torch.device`` or ``_CpuDevice`` stub.
+        """
+        if self._device is None:
+            self._device = _device_manager.get_device()
+        return self._device
+
+    def _move_model(self) -> None:
+        """Move the model to the active device (idempotent)."""
+        try:
+            import torch  # noqa: PLC0415,F401
+            device = self._get_device()
+            if hasattr(device, "type"):
+                self.model = self.model.to(device)
+        except Exception:  # noqa: BLE001
+            pass
+
+    def predict(self, inputs: Any) -> Any:
+        """Run inference on *inputs* with optional mixed precision.
+
+        Checks GPU memory, moves the model to device on first call,
+        and optionally wraps the forward pass in ``autocast``.
+
+        Args:
+            inputs: Input tensor or dict accepted by ``self.model``.
+
+        Returns:
+            Model output (type matches model return type).
+
+        Raises:
+            RuntimeError: If GPU memory exceeds the configured threshold.
+        """
+        device = self._get_device()
+        _memory_guard.check(device)
+        self._move_model()
+        return self._forward(inputs, device)
+
+    def _forward(self, inputs: Any, device: Any) -> Any:
+        """Execute the forward pass, optionally with autocast.
+
+        Args:
+            inputs: Input tensor or dict.
+            device: Active torch.device.
+
+        Returns:
+            Model output.
+        """
+        use_amp = (
+            settings.GPU_MIXED_PRECISION
+            and hasattr(device, "type")
+            and device.type == "cuda"
+        )
+        try:
+            import torch  # noqa: PLC0415,F401
+            if use_amp:
+                with torch.cuda.amp.autocast():
+                    return self.model(inputs)
+            return self.model(inputs)
+        except Exception:  # noqa: BLE001
+            # Fallback: call without autocast
+            return self.model(inputs)

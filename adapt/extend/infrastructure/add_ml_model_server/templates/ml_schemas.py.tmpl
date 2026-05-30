@@ -1,0 +1,104 @@
+"""Pydantic schemas for ML model prediction requests and responses."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from pydantic import BaseModel, Field
+
+
+class PredictionRequest(BaseModel):
+    """Request schema for a single prediction.
+
+    Attributes:
+        input: Input data for the model.  Accepts any JSON-serialisable
+            value (list, dict, float, string, etc.).
+        model_name: Name of the registered model to use.
+        model_version: Model version.  Defaults to ``"latest"``.
+    """
+
+    input: Any = Field(..., description="Input data for the model.")
+    model_name: str = Field(..., description="Registered model name.")
+    model_version: str = Field(
+        default="latest", description="Model version (default: latest)."
+    )
+
+
+class PredictionResponse(BaseModel):
+    """Response schema for a single prediction.
+
+    Attributes:
+        output: Model prediction output.
+        model_name: Name of the model that produced the prediction.
+        model_version: Version of the model used.
+        latency_ms: Wall-clock prediction latency in milliseconds.
+    """
+
+    output: Any = Field(..., description="Model prediction output.")
+    model_name: str = Field(..., description="Model name used.")
+    model_version: str = Field(..., description="Model version used.")
+    latency_ms: float = Field(..., description="Prediction latency in ms.")
+
+
+class BatchPredictionRequest(BaseModel):
+    """Request schema for batch prediction.
+
+    Attributes:
+        inputs: List of input items to predict on.
+        model_name: Registered model name.
+        model_version: Model version.  Defaults to ``"latest"``.
+    """
+
+    inputs: list[Any] = Field(..., description="List of inputs to predict on.")
+    model_name: str = Field(..., description="Registered model name.")
+    model_version: str = Field(
+        default="latest", description="Model version (default: latest)."
+    )
+
+
+class BatchPredictionResponse(BaseModel):
+    """Response schema for batch prediction.
+
+    Attributes:
+        outputs: List of predictions aligned with ``inputs``.
+        model_name: Model name used.
+        model_version: Model version used.
+        latency_ms: Total batch latency in milliseconds.
+        count: Number of predictions returned.
+    """
+
+    outputs: list[Any] = Field(..., description="Batch prediction outputs.")
+    model_name: str = Field(..., description="Model name used.")
+    model_version: str = Field(..., description="Model version used.")
+    latency_ms: float = Field(..., description="Total batch latency in ms.")
+    count: int = Field(..., description="Number of predictions.")
+
+
+class ModelInfo(BaseModel):
+    """Public metadata for a registered model.
+
+    Attributes:
+        name: Model name.
+        version: Model version string.
+        loaded: Whether the model has been loaded into memory.
+        last_latency_ms: Latency of the most recent prediction (ms).
+        error_count: Total number of prediction errors since startup.
+    """
+
+    name: str
+    version: str
+    loaded: bool
+    last_latency_ms: float | None = None
+    error_count: int = 0
+
+
+class ModelListResponse(BaseModel):
+    """Response schema for the models list endpoint.
+
+    Attributes:
+        data: List of model metadata objects.
+        count: Total number of registered models.
+    """
+
+    data: list[ModelInfo]
+    count: int

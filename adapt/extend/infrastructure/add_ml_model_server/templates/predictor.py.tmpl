@@ -1,0 +1,166 @@
+"""Predictor — wraps a loaded model with timeout, timing, and structured logging.
+
+The ``Predictor`` class is framework-agnostic: it calls ``model.predict()``
+(sklearn/joblib convention) and falls back to calling the model directly
+(``model(input)`` — torch/callable convention).  Results are timed and
+logged with ``logging.getLogger(__name__)``.
+
+Usage::
+
+    from app.ml.predictor import Predictor
+    from app.ml.registry import get_registry
+
+    registry = get_registry()
+    predictor = Predictor(registry, model_name="resnet50", timeout_ms=5000)
+    output = await predictor.predict(input_data)
+"""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+import time
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
+
+class Predictor:
+    """Async predictor wrapping a registered model.
+
+    Attributes:
+        registry: The ``ModelRegistry`` that holds the model.
+        model_name: Registered model name.
+        model_version: Registered model version (default ``"latest"``).
+        timeout_ms: Hard wall-clock timeout in milliseconds.
+    """
+
+    def __init__(
+        self,
+        registry: Any,
+        model_name: str,
+        model_version: str = "latest",
+        timeout_ms: int = 5000,
+    ) -> None:
+        """Initialise the predictor.
+
+        Args:
+            registry: ``ModelRegistry`` instance.
+            model_name: Name of the registered model.
+            model_version: Model version.  Defaults to ``"latest"``.
+            timeout_ms: Prediction timeout in milliseconds.
+        """
+        self.registry = registry
+        self.model_name = model_name
+        self.model_version = model_version
+        self.timeout_ms = timeout_ms
+
+    async def predict(self, input_data: Any) -> tuple[Any, float]:
+        """Run a single prediction with timeout and timing.
+
+        Args:
+            input_data: Input to pass to the model.
+
+        Returns:
+            Tuple of ``(output, latency_ms)`` where *output* is the model
+            prediction and *latency_ms* is wall-clock time in milliseconds.
+
+        Raises:
+            asyncio.TimeoutError: If prediction exceeds ``timeout_ms``.
+            KeyError: If the model is not registered.
+            RuntimeError: If the model call raises.
+        """
+        return await asyncio.wait_for(
+            self._predict_inner(input_data),
+            timeout=self.timeout_ms / 1000.0,
+        )
+
+    async def predict_batch(
+        self, inputs: list[Any], max_batch_size: int = 32
+    ) -> tuple[list[Any], float]:
+        """Run batch predictions with timeout and timing.
+
+        Splits the batch into chunks of *max_batch_size* and runs each
+        chunk sequentially to avoid memory spikes.
+
+        Args:
+            inputs: List of inputs to predict on.
+            max_batch_size: Maximum chunk size.
+
+        Returns:
+            Tuple of ``(outputs, latency_ms)`` where *outputs* is a list of
+            predictions aligned with *inputs*.
+        """
+        t0 = time.monotonic()
+        outputs: list[Any] = []
+        for i in range(0, len(inputs), max_batch_size):
+            chunk = inputs[i : i + max_batch_size]
+            chunk_out, _ = await asyncio.wait_for(
+                self._predict_inner(chunk),
+                timeout=self.timeout_ms / 1000.0,
+            )
+            if isinstance(chunk_out, list):
+                outputs.extend(chunk_out)
+            else:
+                outputs.append(chunk_out)
+        latency_ms = (time.monotonic() - t0) * 1000.0
+        self.registry.update_stats(
+            self.model_name, self.model_version, latency_ms
+        )
+        return outputs, latency_ms
+
+    async def _predict_inner(self, input_data: Any) -> tuple[Any, float]:
+        """Execute the model call in a thread pool and time it.
+
+        Args:
+            input_data: Raw input to pass to the model.
+
+        Returns:
+            Tuple of ``(output, latency_ms)``.
+        """
+        t0 = time.monotonic()
+        try:
+            loop = asyncio.get_running_loop()
+            output = await loop.run_in_executor(
+                None, self._call_model, input_data
+            )
+            latency_ms = (time.monotonic() - t0) * 1000.0
+            self.registry.update_stats(
+                self.model_name, self.model_version, latency_ms
+            )
+            logger.info(
+                "prediction complete",
+                extra={
+                    "model": self.model_name,
+                    "version": self.model_version,
+                    "latency_ms": round(latency_ms, 2),
+                },
+            )
+            return output, latency_ms
+        except Exception as exc:
+            latency_ms = (time.monotonic() - t0) * 1000.0
+            self.registry.update_stats(
+                self.model_name, self.model_version, latency_ms, error=True
+            )
+            logger.error(
+                "prediction failed",
+                extra={"model": self.model_name, "error": str(exc)},
+            )
+            raise
+
+    def _call_model(self, input_data: Any) -> Any:
+        """Call the model synchronously (runs in thread pool).
+
+        Tries ``model.predict(input_data)`` first (sklearn convention),
+        then falls back to ``model(input_data)`` (torch/callable convention).
+
+        Args:
+            input_data: Input to pass to the model.
+
+        Returns:
+            Model output (framework-specific).
+        """
+        model = self.registry.get(self.model_name, self.model_version)
+        if hasattr(model, "predict"):
+            return model.predict(input_data)
+        return model(input_data)

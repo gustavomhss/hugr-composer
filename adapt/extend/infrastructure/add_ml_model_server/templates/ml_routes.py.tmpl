@@ -1,0 +1,221 @@
+"""HTTP routes for ML model inference.
+
+Provides four endpoints:
+
+* ``POST /ml/predict``              — single prediction
+* ``POST /ml/predict/batch``        — batch prediction
+* ``GET  /ml/models``               — list all registered models
+* ``GET  /ml/models/{name}/health`` — health + last latency for a model
+
+All endpoints require authentication (``CurrentUser``) so inference
+cannot be triggered anonymously.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+
+from fastapi import APIRouter, HTTPException, status
+
+from app.api.deps import CurrentUser
+from app.core.config import settings
+from app.ml.predictor import Predictor
+from app.ml.registry import get_registry
+from app.schemas.ml import (
+    BatchPredictionRequest,
+    BatchPredictionResponse,
+    ModelInfo,
+    ModelListResponse,
+    PredictionRequest,
+    PredictionResponse,
+)
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/ml", tags=["ml"])
+
+
+def _get_predictor(model_name: str, model_version: str) -> Predictor:
+    """Build a ``Predictor`` for *model_name* or raise 404.
+
+    Args:
+        model_name: Registered model name.
+        model_version: Model version string.
+
+    Returns:
+        A configured ``Predictor`` instance.
+
+    Raises:
+        HTTPException(404): Model not registered.
+    """
+    registry = get_registry()
+    models = {
+        f"{m['name']}:{m['version']}"
+        for m in registry.list_models()
+    }
+    if f"{model_name}:{model_version}" not in models:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Model '{model_name}' version '{model_version}' is not registered.",
+        )
+    return Predictor(
+        registry,
+        model_name=model_name,
+        model_version=model_version,
+        timeout_ms=settings.ML_PREDICTION_TIMEOUT_MS,
+    )
+
+
+@router.post("/predict", response_model=PredictionResponse, status_code=200)
+async def predict(
+    req: PredictionRequest,
+    current_user: CurrentUser,
+) -> PredictionResponse:
+    """Run a single model prediction.
+
+    Args:
+        req: ``PredictionRequest`` with input, model_name, model_version.
+        current_user: Authenticated user (auth gate only).
+
+    Returns:
+        ``PredictionResponse`` with output and latency_ms.
+
+    Raises:
+        HTTPException(404): Model not registered.
+        HTTPException(504): Prediction timed out.
+        HTTPException(500): Prediction raised an unexpected error.
+    """
+    _ = current_user
+    predictor = _get_predictor(req.model_name, req.model_version)
+    try:
+        output, latency_ms = await predictor.predict(req.input)
+    except asyncio.TimeoutError:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail={"detail": "Prediction timed out"},
+        )
+    except KeyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"detail": str(exc)},
+        )
+    except Exception as exc:
+        logger.error("predict endpoint error: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"detail": "Prediction failed"},
+        )
+    return PredictionResponse(
+        output=output,
+        model_name=req.model_name,
+        model_version=req.model_version,
+        latency_ms=latency_ms,
+    )
+
+
+@router.post("/predict/batch", response_model=BatchPredictionResponse, status_code=200)
+async def predict_batch(
+    req: BatchPredictionRequest,
+    current_user: CurrentUser,
+) -> BatchPredictionResponse:
+    """Run batch predictions (respects ML_MAX_BATCH_SIZE).
+
+    Args:
+        req: ``BatchPredictionRequest`` with inputs list, model_name, version.
+        current_user: Authenticated user (auth gate only).
+
+    Returns:
+        ``BatchPredictionResponse`` with outputs list and total latency_ms.
+
+    Raises:
+        HTTPException(422): Batch exceeds ML_MAX_BATCH_SIZE.
+        HTTPException(404): Model not registered.
+        HTTPException(504): Prediction timed out.
+        HTTPException(500): Unexpected error.
+    """
+    _ = current_user
+    if len(req.inputs) > settings.ML_MAX_BATCH_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"detail": f"Batch size {len(req.inputs)} exceeds limit {settings.ML_MAX_BATCH_SIZE}"},
+        )
+    predictor = _get_predictor(req.model_name, req.model_version)
+    try:
+        outputs, latency_ms = await predictor.predict_batch(
+            req.inputs, max_batch_size=settings.ML_MAX_BATCH_SIZE
+        )
+    except asyncio.TimeoutError:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail={"detail": "Batch prediction timed out"},
+        )
+    except Exception as exc:
+        logger.error("predict_batch endpoint error: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"detail": "Batch prediction failed"},
+        )
+    return BatchPredictionResponse(
+        outputs=outputs,
+        model_name=req.model_name,
+        model_version=req.model_version,
+        latency_ms=latency_ms,
+        count=len(outputs),
+    )
+
+
+@router.get("/models", response_model=ModelListResponse, status_code=200)
+async def list_models(current_user: CurrentUser) -> ModelListResponse:
+    """List all registered models with metadata.
+
+    Args:
+        current_user: Authenticated user (auth gate only).
+
+    Returns:
+        ``ModelListResponse`` with data list and count.
+    """
+    _ = current_user
+    registry = get_registry()
+    raw = registry.list_models()
+    models = [ModelInfo(**m) for m in raw]
+    return ModelListResponse(data=models, count=len(models))
+
+
+@router.get("/models/{name}/health", status_code=200)
+async def model_health(
+    name: str,
+    current_user: CurrentUser,
+) -> dict:
+    """Return health info for a specific model.
+
+    Args:
+        name: Registered model name.
+        current_user: Authenticated user (auth gate only).
+
+    Returns:
+        Dict with ``name``, ``loaded``, ``last_latency_ms``,
+        ``error_count``, and ``status``.
+
+    Raises:
+        HTTPException(404): Model not registered.
+    """
+    _ = current_user
+    registry = get_registry()
+    meta = next(
+        (m for m in registry.list_models() if m["name"] == name), None
+    )
+    if meta is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"detail": f"Model '{name}' is not registered."},
+        )
+    healthy = meta.get("error_count", 0) == 0 or meta.get("last_latency_ms") is not None
+    return {
+        "name": meta["name"],
+        "version": meta["version"],
+        "loaded": meta.get("loaded", False),
+        "last_latency_ms": meta.get("last_latency_ms"),
+        "error_count": meta.get("error_count", 0),
+        "status": "ok" if healthy else "degraded",
+    }

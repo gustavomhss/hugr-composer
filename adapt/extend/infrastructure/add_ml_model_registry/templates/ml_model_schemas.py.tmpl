@@ -1,0 +1,62 @@
+"""Pydantic schemas for ML model registry.
+
+Schemas deliberately omit internal fields (``id``, ``created_at``) from
+create payloads and use ``MLModelRead`` for all API responses so the
+client always gets a stable, versioned view of the data.
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class MLModelCreate(BaseModel):
+    """Payload for registering a new model version."""
+
+    name: str = Field(..., max_length=128, description="Logical model name")
+    version: str = Field(..., max_length=64, description="Semantic version string")
+    artifact_path: str = Field(default="", max_length=512)
+    framework: str = Field(default="sklearn", max_length=64)
+    metrics_json: dict[str, Any] | None = Field(
+        default=None, description="accuracy, f1, latency, etc."
+    )
+
+
+class MLModelRead(BaseModel):
+    """Full model view returned by all read endpoints."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    name: str
+    version: str
+    artifact_path: str
+    framework: str
+    metrics_json: dict[str, Any] | None
+    status: str
+    promoted_at: datetime | None
+    created_at: datetime
+
+
+class MLModelPromote(BaseModel):
+    """Payload for promoting a version to production."""
+
+    version: str = Field(..., description="Version to promote to production")
+
+
+class MLModelCompare(BaseModel):
+    """Side-by-side metrics comparison of two versions."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    name: str
+    version_a: str
+    version_b: str
+    metrics_a: dict[str, Any] | None
+    metrics_b: dict[str, Any] | None
+    winner: str | None = Field(
+        default=None, description="Version with higher primary metric, or None if tied"
+    )

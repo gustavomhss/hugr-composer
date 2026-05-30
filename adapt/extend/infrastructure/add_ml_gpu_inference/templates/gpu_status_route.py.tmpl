@@ -1,0 +1,68 @@
+"""GPU status endpoint.
+
+``GET /ml/gpu/status`` returns live device information.  Works even
+when torch is not installed — returns ``{"available": false}`` in
+that case.  No authentication required (device info is not sensitive).
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+from fastapi import APIRouter
+from fastapi.responses import JSONResponse
+
+from app.ml.gpu.device import DeviceManager
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/ml/gpu", tags=["ml", "gpu"])
+
+_device_manager = DeviceManager()
+
+
+def _build_status_payload() -> dict[str, Any]:
+    """Build the GPU status dict without raising.
+
+    Performs lazy torch import; returns minimal ``{"available": false}``
+    when torch is absent or CUDA is not available.
+
+    Returns:
+        Dict with at minimum ``available`` (bool) and ``device`` (str).
+    """
+    try:
+        import torch  # noqa: PLC0415,F401
+        device = _device_manager.get_device()
+        is_cuda = hasattr(device, "type") and device.type == "cuda"
+        payload: dict[str, Any] = {
+            "available": is_cuda,
+            "device": str(device),
+            "torch_version": torch.__version__,
+            "cuda_version": torch.version.cuda if is_cuda else None,
+        }
+        if is_cuda:
+            payload["memory"] = _device_manager.memory_stats()
+        return payload
+    except ImportError:
+        logger.warning("torch not installed; reporting GPU unavailable")
+        return {"available": False, "device": "cpu", "torch_version": None,
+                "cuda_version": None}
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("GPU status check failed: %s", exc)
+        return {"available": False, "device": "cpu", "error": str(exc)}
+
+
+@router.get("/status", summary="GPU device status")
+async def gpu_status() -> JSONResponse:
+    """Return current GPU device information.
+
+    Works even when torch is not installed or CUDA is unavailable.
+
+    Returns:
+        200 JSON with ``available`` (bool), ``device`` (str),
+        ``torch_version``, ``cuda_version``, and optional ``memory``
+        stats when CUDA is active.
+    """
+    payload = _build_status_payload()
+    return JSONResponse(content=payload)
