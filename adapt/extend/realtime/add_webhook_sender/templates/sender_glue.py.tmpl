@@ -1,0 +1,52 @@
+"""Thin glue: wires SignatureVerifier + RetryPolicy primitives.
+
+Delegates all HMAC + retry semantics to the primitives copied under
+`core/venous/` by the `add_webhook_sender` tool.  No webhook logic here.
+"""
+
+from __future__ import annotations
+
+import os
+from typing import Any
+
+from core.venous.security.SignatureVerifier.SignatureVerifier import ALG_HMAC_SHA256, DetachedSigner, TrustAnchor
+from core.venous.resiliency.RetryPolicy.RetryPolicy import ExponentialBackoffRetryPolicy, RetryBudget
+
+_KEY_ID = os.getenv("WEBHOOK_KEY_ID", "webhook-default")
+_SECRET = os.getenv("WEBHOOK_SECRET", "change-me-32-bytes-min-development").encode().ljust(32, b"0")[:64]
+_signer: DetachedSigner | None = None
+_policy: ExponentialBackoffRetryPolicy | None = None
+
+
+def get_signer() -> DetachedSigner:
+    global _signer
+    if _signer is None:
+        a = TrustAnchor()
+        a.register(_KEY_ID, ALG_HMAC_SHA256, public_key=_SECRET, private_key=_SECRET)
+        _signer = DetachedSigner(a, default_msg_type="webhook")
+    return _signer
+
+
+def get_retry_policy() -> ExponentialBackoffRetryPolicy:
+    global _policy
+    if _policy is None:
+        _policy = ExponentialBackoffRetryPolicy(
+            max_attempts=int(os.getenv("WEBHOOK_MAX_RETRIES", "5")),
+            budget=RetryBudget(float(os.getenv("WEBHOOK_BUDGET_RATIO", "0.1"))),
+        )
+    return _policy
+
+
+async def _post(url: str, payload: bytes, headers: dict[str, str]) -> Any:
+    import httpx
+    async with httpx.AsyncClient() as c:
+        return await c.post(url, content=payload, headers=headers)
+
+
+async def send_webhook(url: str, payload: bytes) -> Any:
+    sig = get_signer().sign(payload, _KEY_ID).hex()
+    hdrs = {"X-Signature": sig, "X-Key-Id": _KEY_ID}
+    return await get_retry_policy().execute(lambda: _post(url, payload, hdrs), idempotent=True)
+
+
+__all__ = ["DetachedSigner", "ExponentialBackoffRetryPolicy", "TrustAnchor", "get_signer", "get_retry_policy", "send_webhook"]

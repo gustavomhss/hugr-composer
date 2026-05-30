@@ -1,0 +1,26 @@
+"""Fixed exponential backoff schedule for webhook delivery retries.
+
+Total delivery window across 7 attempts is approximately 32 hours,
+giving partners ample time to recover from an outage without the
+sender hammering them continuously.
+"""
+from __future__ import annotations
+
+# Delay in seconds before each attempt (1-indexed).
+# attempt 1: immediate, attempt 2: 1s, attempt 3: 5s, ...
+ATTEMPT_DELAYS_SECONDS: list[int] = [0, 1, 5, 30, 300, 3600, 21600]
+
+
+def delay_for_attempt(attempt_number: int) -> int:
+    """Return the delay in seconds before *attempt_number*.
+
+    Args:
+        attempt_number: 1-indexed attempt number.
+
+    Returns:
+        Seconds to wait before this attempt, or ``-1`` if there are no
+        more retries scheduled (attempt_number exceeds the schedule).
+    """
+    if attempt_number < 1 or attempt_number > len(ATTEMPT_DELAYS_SECONDS):
+        return -1
+    return ATTEMPT_DELAYS_SECONDS[attempt_number - 1]

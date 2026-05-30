@@ -1,0 +1,104 @@
+"""WebSocket presence endpoint: WS /ws/presence.
+
+Auth: JWT via ``?token=`` query param or ``Authorization: Bearer`` subprotocol.
+Heartbeat: client sends {"type": "ping"} every ${heartbeat_seconds}s; server echoes {"type": "pong"}.
+Timeout: ${timeout}s without ping = server closes with 1001.
+"""
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+import uuid as _uuid
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+
+from app.ws.presence import get_presence_manager
+
+logger = logging.getLogger(__name__)
+router = APIRouter()
+_TIMEOUT = ${timeout}
+
+
+def _extract_token(ws: WebSocket) -> str | None:
+    """Return JWT from ``?token=`` or ``Authorization`` header.
+
+    Args:
+        ws: Incoming ``WebSocket`` (before accept).
+
+    Returns:
+        Raw token string, or ``None`` if absent.
+    """
+    token = ws.query_params.get("token")
+    if token:
+        return token
+    auth = ws.headers.get("authorization", "")
+    if auth.lower().startswith("bearer "):
+        return auth.split(" ", 1)[1].strip()
+    return None
+
+
+def _authenticate_token(token: str) -> tuple[str, str] | None:
+    """Verify *token* and return ``(user_id, device_id)`` on success.
+
+    Args:
+        token: Raw JWT string.
+
+    Returns:
+        ``(user_id, device_id)`` tuple, or ``None`` on failure.
+    """
+    try:
+        from app.core.jwt import verify_access_token
+        payload = verify_access_token(token)
+    except Exception:  # noqa: BLE001
+        return None
+    user_id = payload.get("sub")
+    if not user_id:
+        return None
+    device_id = payload.get("device_id") or str(_uuid.uuid4())[:8]
+    return str(user_id), str(device_id)
+
+
+@router.websocket("/ws/presence")
+async def ws_presence(ws: WebSocket) -> None:
+    """WebSocket endpoint for real-time user presence tracking.
+
+    Authenticates via JWT, registers the connection, handles
+    heartbeat pings, and marks the user offline on disconnect.
+    """
+    token = _extract_token(ws)
+    if not token:
+        await ws.close(code=1008)
+        return
+    auth = _authenticate_token(token)
+    if not auth:
+        await ws.close(code=1008)
+        return
+    user_id, device_id = auth
+    await ws.accept()
+    manager = get_presence_manager()
+    ok = await manager.mark_online(user_id, device_id)
+    if not ok:
+        await ws.send_text(
+            json.dumps({"type": "error", "code": "device_limit_exceeded"})
+        )
+        await ws.close(code=1008)
+        return
+    try:
+        while True:
+            try:
+                raw = await asyncio.wait_for(ws.receive_text(), timeout=_TIMEOUT)
+            except asyncio.TimeoutError:
+                await ws.close(code=1001)
+                return
+            try:
+                msg = json.loads(raw)
+            except (ValueError, TypeError):
+                continue
+            if msg.get("type") == "ping":
+                await manager.mark_online(user_id, device_id)
+                await ws.send_text(json.dumps({"type": "pong"}))
+    except WebSocketDisconnect:
+        pass
+    finally:
+        await manager.mark_offline(user_id, device_id)

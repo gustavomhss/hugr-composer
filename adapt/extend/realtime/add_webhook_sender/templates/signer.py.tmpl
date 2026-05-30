@@ -1,0 +1,108 @@
+"""HMAC-SHA256 signature helpers for outbound webhook payloads.
+
+Every outbound delivery attaches::
+
+    X-Signature: t=<unix_seconds>,v1=<hex-hmac-sha256>
+
+The MAC is computed over ``f"{ts}." + body_bytes``.  Receivers verify
+using the same construction, reject signatures older than 5 minutes to
+mitigate replay, and use ``hmac.compare_digest`` for constant-time comparison.
+"""
+from __future__ import annotations
+
+import hashlib
+import hmac
+import time
+from dataclasses import dataclass
+
+MAX_SIGNATURE_AGE_SECONDS = 300
+
+
+@dataclass(frozen=True)
+class SignatureHeader:
+    """Value object representing the parsed ``X-Signature`` header.
+
+    Attributes:
+        timestamp: Unix seconds when the signature was created.
+        v1_hex: Hex-encoded HMAC-SHA256 digest.
+    """
+
+    timestamp: int
+    v1_hex: str
+
+    def to_header_value(self) -> str:
+        """Serialize to the ``t=...,v1=...`` wire format.
+
+        Returns:
+            Header string ready to send.
+        """
+        return f"t={self.timestamp},v1={self.v1_hex}"
+
+
+def sign_payload(
+    secret: str,
+    body: bytes,
+    timestamp: int | None = None,
+) -> SignatureHeader:
+    """Compute a Stripe-style HMAC-SHA256 signature header.
+
+    Args:
+        secret: The endpoint's signing secret.
+        body: The raw JSON request body bytes.
+        timestamp: Unix seconds override (defaults to current time).
+
+    Returns:
+        A ``SignatureHeader`` with the computed MAC.
+
+    Raises:
+        ValueError: If *secret* is empty.
+    """
+    if not secret:
+        raise ValueError("secret must be non-empty")
+    ts = timestamp if timestamp is not None else int(time.time())
+    signed_payload = f"{ts}.".encode("utf-8") + body
+    mac = hmac.new(secret.encode("utf-8"), signed_payload, hashlib.sha256).hexdigest()
+    return SignatureHeader(timestamp=ts, v1_hex=mac)
+
+
+def parse_signature_header(header_value: str) -> SignatureHeader | None:
+    """Parse a ``t=...,v1=...`` header string.
+
+    Args:
+        header_value: Raw header string value.
+
+    Returns:
+        A ``SignatureHeader`` or ``None`` if the format is invalid.
+    """
+    try:
+        parts = dict(p.strip().split("=", 1) for p in header_value.split(","))
+        return SignatureHeader(timestamp=int(parts["t"]), v1_hex=parts["v1"])
+    except (ValueError, KeyError):
+        return None
+
+
+def verify_signature(
+    secret: str,
+    body: bytes,
+    header_value: str,
+    now: int | None = None,
+) -> bool:
+    """Constant-time verify with replay-window check.
+
+    Args:
+        secret: The shared signing secret.
+        body: The raw request body bytes.
+        header_value: The ``X-Signature`` header value to verify.
+        now: Current Unix seconds override (defaults to ``time.time()``).
+
+    Returns:
+        ``True`` if the signature is valid and within the replay window.
+    """
+    header = parse_signature_header(header_value)
+    if header is None:
+        return False
+    now_ts = now if now is not None else int(time.time())
+    if abs(now_ts - header.timestamp) > MAX_SIGNATURE_AGE_SECONDS:
+        return False
+    expected = sign_payload(secret, body, header.timestamp)
+    return hmac.compare_digest(expected.v1_hex, header.v1_hex)

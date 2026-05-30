@@ -1,0 +1,69 @@
+"""Format SSE events to the text/event-stream wire format (HTML5 spec).
+
+An SSE event is a series of lines followed by a blank line::
+
+    id: 1234567890-abc
+    event: item.created
+    retry: 5000
+    data: {"id": "..."}
+
+Multi-line ``data`` values are split into multiple ``data:`` lines per spec.
+Replay buffer holds up to ${replay_buffer_size} events per channel.
+"""
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from typing import Any
+
+
+@dataclass(frozen=True)
+class SSEEvent:
+    """Immutable SSE event value object.
+
+    Attributes:
+        event_id: Unique identifier placed in the ``id:`` field.
+        event_name: Value of the ``event:`` field.
+        payload: JSON-serializable data placed in the ``data:`` field(s).
+        retry_ms: Optional ``retry:`` hint for client auto-reconnect.
+    """
+
+    event_id: str
+    event_name: str
+    payload: dict[str, Any]
+    retry_ms: int | None = None
+
+
+def format_event(event: SSEEvent) -> bytes:
+    """Serialize an SSEEvent to the text/event-stream wire format.
+
+    Args:
+        event: The SSEEvent to serialize.
+
+    Returns:
+        UTF-8 encoded bytes ready to stream to the client.
+
+    Raises:
+        ValueError: If ``event_id`` or ``event_name`` is empty.
+    """
+    if not event.event_id:
+        raise ValueError("event_id must be non-empty")
+    if not event.event_name:
+        raise ValueError("event_name must be non-empty")
+    lines: list[str] = [f"id: {event.event_id}", f"event: {event.event_name}"]
+    if event.retry_ms is not None:
+        lines.append(f"retry: {event.retry_ms}")
+    data_json = json.dumps(event.payload, separators=(",", ":"), ensure_ascii=False)
+    for data_line in data_json.splitlines() or [""]:
+        lines.append(f"data: {data_line}")
+    lines.append("")
+    return ("\n".join(lines) + "\n").encode("utf-8")
+
+
+def format_keepalive() -> bytes:
+    """Return a comment-only keepalive frame to defeat proxy idle timeouts.
+
+    Returns:
+        Bytes representing ``:keepalive\\n\\n``.
+    """
+    return b":keepalive\n\n"

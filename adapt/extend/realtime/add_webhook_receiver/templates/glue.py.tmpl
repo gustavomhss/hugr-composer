@@ -1,0 +1,24 @@
+"""Wire the inbound-webhook pipeline into the FastAPI app.
+
+Delegates to the primitives + FastAPI adapter copied under `core/venous/`
+by the `add_webhook_receiver` tool. Re-emitted idempotently on subsequent
+tool runs; hand-editing is safe.
+"""
+
+from __future__ import annotations
+
+import os
+
+from fastapi import FastAPI
+
+from core.venous._adapters.fastapi.WebhookReceiverAdapter import install
+
+
+def install_webhook_receiver(app: FastAPI) -> None:
+    """Attach the verify -> dedup -> audit pipeline to *app*."""
+    install(
+        app,
+        hmac_key=os.getenv("WEBHOOK_HMAC_KEY", "change-me-hmac-secret-bytes").encode(),
+        key_id=os.getenv("WEBHOOK_KEY_ID", "default"),
+        path=os.getenv("WEBHOOK_PATH", "/webhooks/in"),
+    )

@@ -1,0 +1,77 @@
+"""Pydantic schemas for WebSocket chat (rooms + messages)."""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field
+
+_MESSAGE_MAX_LENGTH = ${message_max_length}
+
+
+class ChatMessageIn(BaseModel):
+    """Schema for inbound WebSocket chat messages (client -> server).
+
+    Attributes:
+        content: Message text.  Length is strictly bounded to prevent
+            abuse — the server rejects anything over ``_MESSAGE_MAX_LENGTH``
+            with a WebSocket error frame.
+    """
+
+    model_config = ConfigDict(strict=True, extra="forbid")
+
+    content: str = Field(min_length=1, max_length=_MESSAGE_MAX_LENGTH)
+
+
+class ChatMessageOut(BaseModel):
+    """Schema for outbound chat messages (server -> client fan-out).
+
+    Attributes:
+        id: UUID of the persisted message.
+        room_id: UUID of the room the message belongs to.
+        user_id: UUID of the author.
+        user_name: Display name of the author (denormalized for UI).
+        content: Message text.
+        created_at: UTC timestamp of creation.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    room_id: uuid.UUID
+    user_id: uuid.UUID
+    user_name: str
+    content: str
+    created_at: datetime
+
+
+class ChatRoomCreate(BaseModel):
+    """Request schema for creating a new chat room.
+
+    Attributes:
+        name: Human-readable room name (3..127 chars).
+        is_private: Whether the room is private (default ``False``).
+    """
+
+    model_config = ConfigDict(strict=True, extra="forbid")
+
+    name: str = Field(min_length=3, max_length=127)
+    is_private: bool = False
+
+
+class ChatRoomPublic(BaseModel):
+    """Public representation of a chat room.
+
+    Attributes:
+        id: UUID primary key.
+        name: Human-readable name.
+        is_private: Whether the room is private.
+        created_at: UTC creation timestamp.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    name: str
+    is_private: bool
+    created_at: datetime

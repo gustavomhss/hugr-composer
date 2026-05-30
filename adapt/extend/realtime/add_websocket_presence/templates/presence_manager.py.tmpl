@@ -1,0 +1,118 @@
+"""PresenceManager — Redis-backed user presence tracker.
+
+One instance per application process (singleton via ``get_presence_manager``).
+"""
+from __future__ import annotations
+
+import json
+import logging
+
+logger = logging.getLogger(__name__)
+
+PRESENCE_KEY = "presence:user:{user_id}"
+DEVICE_KEY = "presence:devices:{user_id}"
+CHANNEL = "presence:events"
+_HEARTBEAT_TTL = ${heartbeat_ttl}
+_MAX_DEVICES = ${max_devices_per_user}
+
+
+class PresenceManager:
+    """Manages user presence state in Redis with TTL-based heartbeats.
+
+    Redis layout:
+
+    * ``presence:user:<uid>`` — string key with TTL, value = ``"online"``.
+    * ``presence:devices:<uid>`` — set of active device_id strings.
+    * ``presence:events`` — pub/sub channel for online/offline events.
+    """
+
+    async def mark_online(self, user_id: str, device_id: str) -> bool:
+        """Register *device_id* for *user_id* and set TTL.
+
+        Args:
+            user_id: UUID string of the user.
+            device_id: Device identifier string.
+
+        Returns:
+            ``True`` if registered, ``False`` if device cap exceeded.
+        """
+        from app.core.redis import get_redis
+        redis = await get_redis()
+        dkey = DEVICE_KEY.format(user_id=user_id)
+        count = await redis.scard(dkey)
+        if count >= _MAX_DEVICES and not await redis.sismember(dkey, device_id):
+            return False
+        await redis.sadd(dkey, device_id)
+        await redis.expire(dkey, _HEARTBEAT_TTL)
+        pkey = PRESENCE_KEY.format(user_id=user_id)
+        is_new = await redis.set(pkey, "online", ex=_HEARTBEAT_TTL, nx=True)
+        if is_new:
+            await self._publish_event(redis, user_id, "online", device_id)
+        else:
+            await redis.expire(pkey, _HEARTBEAT_TTL)
+        return True
+
+    async def mark_offline(self, user_id: str, device_id: str) -> None:
+        """Remove *device_id* from *user_id*'s active set; go offline if last.
+
+        Args:
+            user_id: UUID string of the user.
+            device_id: Device identifier string.
+        """
+        from app.core.redis import get_redis
+        redis = await get_redis()
+        dkey = DEVICE_KEY.format(user_id=user_id)
+        await redis.srem(dkey, device_id)
+        remaining = await redis.scard(dkey)
+        if remaining == 0:
+            pkey = PRESENCE_KEY.format(user_id=user_id)
+            await redis.delete(pkey)
+            await self._publish_event(redis, user_id, "offline", device_id)
+
+    async def is_online(self, user_id: str) -> bool:
+        """Return ``True`` if *user_id* has any active device.
+
+        Args:
+            user_id: UUID string of the user.
+
+        Returns:
+            ``True`` when the user is online.
+        """
+        from app.core.redis import get_redis
+        redis = await get_redis()
+        return bool(await redis.exists(PRESENCE_KEY.format(user_id=user_id)))
+
+    async def _publish_event(
+        self, redis: object, user_id: str, status: str, device: str
+    ) -> None:
+        """Publish an online/offline event to the presence pub/sub channel.
+
+        Args:
+            redis: Connected async Redis client.
+            user_id: UUID string of the user.
+            status: ``"online"`` or ``"offline"``.
+            device: Device identifier that triggered the change.
+        """
+        payload = json.dumps(
+            {"user_id": user_id, "status": status, "device": device},
+            separators=(",", ":"),
+        )
+        try:
+            await redis.publish(CHANNEL, payload)
+        except Exception:  # noqa: BLE001
+            logger.warning("Failed to publish presence event for user=%s", user_id)
+
+
+_manager: PresenceManager | None = None
+
+
+def get_presence_manager() -> PresenceManager:
+    """Return the application-wide ``PresenceManager`` singleton.
+
+    Returns:
+        The shared ``PresenceManager`` instance.
+    """
+    global _manager
+    if _manager is None:
+        _manager = PresenceManager()
+    return _manager

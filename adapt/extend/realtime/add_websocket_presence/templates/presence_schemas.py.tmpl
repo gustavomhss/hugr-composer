@@ -1,0 +1,52 @@
+"""Pydantic schemas for WebSocket presence."""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class PresenceUpdate(BaseModel):
+    """Inbound WebSocket control message from the client.
+
+    Attributes:
+        type: Message type — ``"ping"`` to refresh heartbeat,
+            ``"set_device"`` to register a device label.
+        device_id: Optional device identifier (max 64 chars).
+    """
+
+    model_config = ConfigDict(strict=True, extra="forbid")
+
+    type: str = Field(..., pattern="^(ping|set_device)$$")
+    device_id: str | None = Field(default=None, max_length=64)
+
+
+class PresenceOut(BaseModel):
+    """Outbound presence state broadcast to subscribers.
+
+    Attributes:
+        user_id: UUID of the user.
+        status: ``"online"`` or ``"offline"``.
+        last_seen: UTC timestamp of the most recent heartbeat.
+        device: Device identifier that triggered the update.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    user_id: uuid.UUID
+    status: str
+    last_seen: datetime
+    device: str
+
+
+class PresenceList(BaseModel):
+    """List of currently online users.
+
+    Attributes:
+        online: List of user UUIDs that have at least one active device.
+        count: Total number of online users.
+    """
+
+    online: list[uuid.UUID]
+    count: int

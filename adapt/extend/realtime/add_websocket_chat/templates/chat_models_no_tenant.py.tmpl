@@ -1,0 +1,115 @@
+"""SQLAlchemy models for WebSocket chat (rooms + messages)."""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+    Uuid,
+    func,
+)
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.models.base import Base
+
+
+class ChatRoom(Base):
+    """A chat room.  Rooms are ephemeral channels for real-time messaging.
+
+    Attributes:
+        id: UUID primary key.
+        tenant_id: Tenant UUID for multi-tenant chat isolation.
+        name: Human-readable room name.
+        is_private: Whether membership is restricted (private rooms require
+            explicit grants — not modeled in this minimal schema).
+        created_by: UUID of the user who created the room.
+        created_at: UTC timestamp of room creation.
+    """
+
+    __tablename__ = "chat_rooms"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        nullable=True,
+        index=True,
+        comment="Tenant owning this chat room",
+    )
+    name: Mapped[str] = mapped_column(String(127), nullable=False)
+    is_private: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
+    created_by: Mapped[uuid.UUID] = mapped_column(
+        Uuid,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+
+class ChatMessage(Base):
+    """A single chat message persisted for scrollback.
+
+    Attributes:
+        id: UUID primary key.
+        tenant_id: Tenant UUID for multi-tenant message scoping.
+        room_id: FK to ``chat_rooms.id`` with cascade delete.
+        user_id: FK to ``users.id`` — author of the message.
+        content: Message text (validated length at the Pydantic layer).
+        created_at: UTC timestamp when the message was written.
+        edited_at: UTC timestamp of the last edit (``None`` if unedited).
+    """
+
+    __tablename__ = "chat_messages"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        nullable=True,
+        index=True,
+        comment="Tenant context for multi-tenant message routing",
+    )
+    room_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid,
+        ForeignKey("chat_rooms.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    edited_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_chat_messages_room_created",
+            "room_id",
+            "created_at",
+        ),
+        Index(
+            "ix_chat_messages_user_created",
+            "user_id",
+            "created_at",
+        ),
+    )

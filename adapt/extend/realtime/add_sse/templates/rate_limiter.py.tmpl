@@ -1,0 +1,96 @@
+"""Per-connection token bucket for SSE event emission.
+
+A slow consumer cannot stall the publisher because overflow events are
+dropped and counted so operators can see slow consumers in dashboards.
+"""
+from __future__ import annotations
+
+import asyncio
+import time
+from dataclasses import dataclass, field
+
+
+@dataclass
+class TokenBucket:
+    """Asyncio-safe token bucket.
+
+    Attributes:
+        capacity: Maximum tokens the bucket holds.
+        refill_rate_per_second: Tokens added per second.
+    """
+
+    capacity: float
+    refill_rate_per_second: float
+    _tokens: float = field(default=0.0, init=False)
+    _last_refill: float = field(default=0.0, init=False)
+    _lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False)
+
+    def __post_init__(self) -> None:
+        self._tokens = self.capacity
+        self._last_refill = time.monotonic()
+
+    async def try_acquire(self, tokens: float = 1.0) -> bool:
+        """Attempt to consume *tokens* from the bucket.
+
+        Args:
+            tokens: Number of tokens to consume (default 1.0).
+
+        Returns:
+            ``True`` if the tokens were available and consumed.
+        """
+        async with self._lock:
+            now = time.monotonic()
+            elapsed = now - self._last_refill
+            self._tokens = min(
+                self.capacity,
+                self._tokens + elapsed * self.refill_rate_per_second,
+            )
+            self._last_refill = now
+            if self._tokens >= tokens:
+                self._tokens -= tokens
+                return True
+            return False
+
+
+class ConnectionRateLimiter:
+    """Maps connection_id to a TokenBucket; buckets are released on disconnect.
+
+    Args:
+        capacity: Initial token capacity per bucket (default 20.0).
+        refill_per_second: Token refill rate (default 10.0).
+    """
+
+    def __init__(self, capacity: float = 20.0, refill_per_second: float = 10.0) -> None:
+        self._capacity = capacity
+        self._refill = refill_per_second
+        self._buckets: dict[str, TokenBucket] = {}
+
+    def register(self, connection_id: str) -> None:
+        """Create a fresh token bucket for *connection_id*.
+
+        Args:
+            connection_id: Unique identifier for the connection.
+        """
+        self._buckets[connection_id] = TokenBucket(self._capacity, self._refill)
+
+    def release(self, connection_id: str) -> None:
+        """Remove the token bucket when a connection closes.
+
+        Args:
+            connection_id: Identifier of the closing connection.
+        """
+        self._buckets.pop(connection_id, None)
+
+    async def allow(self, connection_id: str) -> bool:
+        """Check whether *connection_id* may emit one more event.
+
+        Args:
+            connection_id: Identifier of the connection to check.
+
+        Returns:
+            ``True`` if the connection is within its rate limit.
+        """
+        bucket = self._buckets.get(connection_id)
+        if bucket is None:
+            return False
+        return await bucket.try_acquire(1.0)

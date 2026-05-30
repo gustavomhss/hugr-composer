@@ -1,0 +1,127 @@
+"""HTTP companion routes for the WebSocket chat feature.
+
+Provides non-realtime operations: create room, list rooms, fetch
+scrollback history.  The WebSocket endpoint itself lives in
+``app/ws/chat.py``.
+"""
+from __future__ import annotations
+
+import uuid as _uuid
+from typing import Annotated
+
+from fastapi import APIRouter, HTTPException, Query, status
+
+from app.api.deps import CurrentUser, SessionDep
+from app.crud import chat as crud_chat
+from app.schemas.chat import (
+    ChatMessageOut,
+    ChatRoomCreate,
+    ChatRoomPublic,
+)
+
+router = APIRouter(prefix="/chat", tags=["chat"])
+
+
+@router.post(
+    "/rooms",
+    response_model=ChatRoomPublic,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_chat_room(
+    body: ChatRoomCreate,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> ChatRoomPublic:
+    """Create a new chat room owned by the current user.
+
+    Args:
+        body: Room creation payload.
+        current_user: Authenticated requesting user.
+        session: Injected async DB session.
+
+    Returns:
+        Public view of the newly created room.
+    """
+    room = await crud_chat.create_room(
+        session,
+        name=body.name,
+        is_private=body.is_private,
+        created_by=current_user.id,
+    )
+    await session.commit()
+    return ChatRoomPublic.model_validate(room)
+
+
+@router.get("/rooms", response_model=list[ChatRoomPublic])
+async def list_chat_rooms(
+    current_user: CurrentUser,
+    session: SessionDep,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+) -> list[ChatRoomPublic]:
+    """Return rooms visible to the current user.
+
+    Args:
+        current_user: Authenticated requesting user.
+        session: Injected async DB session.
+        limit: Maximum number of rooms to return.
+
+    Returns:
+        List of public chat room views.
+    """
+    rooms = await crud_chat.list_rooms(
+        session, user_id=current_user.id, limit=limit
+    )
+    return [ChatRoomPublic.model_validate(r) for r in rooms]
+
+
+@router.get(
+    "/rooms/{room_id}/history",
+    response_model=list[ChatMessageOut],
+)
+async def get_chat_history(
+    room_id: _uuid.UUID,
+    current_user: CurrentUser,
+    session: SessionDep,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    before: Annotated[_uuid.UUID | None, Query()] = None,
+) -> list[ChatMessageOut]:
+    """Return recent messages in *room_id* for scrollback.
+
+    Args:
+        room_id: UUID of the target room.
+        current_user: Authenticated requesting user.
+        session: Injected async DB session.
+        limit: Maximum number of messages to return.
+        before: Optional pagination cursor (message UUID).
+
+    Returns:
+        List of message views, oldest first.
+
+    Raises:
+        HTTPException(403): If the user is not allowed to read the room.
+    """
+    allowed = await crud_chat.check_user_can_join(
+        session, room_id=room_id, user_id=current_user.id
+    )
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not allowed to read this room",
+        )
+    rows = await crud_chat.get_history(
+        session, room_id=room_id, limit=limit, before_id=before
+    )
+    display_name = getattr(current_user, "name", None) or getattr(
+        current_user, "email", ""
+    )
+    return [
+        ChatMessageOut(
+            id=row.id,
+            room_id=row.room_id,
+            user_id=row.user_id,
+            user_name=str(display_name),
+            content=row.content,
+            created_at=row.created_at,
+        )
+        for row in rows
+    ]

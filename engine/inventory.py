@@ -26,7 +26,12 @@ def _count_py(root: Path, *, skip_tests: bool = True) -> int:
         if skip_tests and (s.startswith("test_") or s == "conftest.py"):
             continue
         if s == "__init__.py":
-            continue
+            # Count __init__.py only if it carries MCP_TOOL (per-tool package entry-point)
+            try:
+                if "MCP_TOOL" not in p.read_text(encoding="utf-8"):
+                    continue
+            except (OSError, UnicodeDecodeError):
+                continue
         n += 1
     return n
 
