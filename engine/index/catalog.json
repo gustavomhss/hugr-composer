@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "ae8ec20",
-  "generated_at": "2026-05-30T11:50:26+00:00",
+  "kit_commit": "1b54b12",
+  "generated_at": "2026-05-30T13:17:56+00:00",
   "verbs": [
     "add",
     "generate",
@@ -477,10 +477,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/auth_access/add_dpop_tokens.py",
-      "test_paths": [
-        "adapt/extend/auth_access/test_add_dpop_tokens.py"
-      ],
+      "module_path": "adapt/extend/auth_access/add_dpop_tokens/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -682,10 +680,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/auth_access/add_request_signing.py",
-      "test_paths": [
-        "adapt/extend/auth_access/test_add_request_signing.py"
-      ],
+      "module_path": "adapt/extend/auth_access/add_request_signing/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -704,10 +700,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/auth_access/add_sms_otp.py",
-      "test_paths": [
-        "adapt/extend/auth_access/test_add_sms_otp.py"
-      ],
+      "module_path": "adapt/extend/auth_access/add_sms_otp/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -12063,5 +12057,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "eb2aa1bfa7fc357e690f8a8ef777245650a53b4222eabf033dd96ce8bed19852"
+  "stable_hash": "a59d6d326b1d844d64aaf76331a3c60dae7909ce58e9e025d3544ff5d5d61d95"
 }

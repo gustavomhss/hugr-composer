@@ -1,0 +1,51 @@
+"""Pydantic schemas for SMS OTP authentication endpoints."""
+
+from __future__ import annotations
+
+from pydantic import BaseModel, Field
+
+
+class OtpSendRequest(BaseModel):
+    """Request body for sending an OTP code.
+
+    Attributes:
+        phone: Recipient phone number in E.164 format (e.g. +15555550100).
+    """
+
+    phone: str = Field(..., description="Recipient phone in E.164 format")
+
+
+class OtpSendResponse(BaseModel):
+    """Response after successfully dispatching an OTP.
+
+    Attributes:
+        message: Human-readable confirmation.
+        expires_in_seconds: Validity window for the code.
+    """
+
+    message: str
+    expires_in_seconds: int
+
+
+class OtpVerifyRequest(BaseModel):
+    """Request body for verifying an OTP code.
+
+    Attributes:
+        phone: Phone number that received the OTP.
+        code: The OTP code entered by the user.
+    """
+
+    phone: str = Field(..., description="Phone number that received the OTP")
+    code: str = Field(..., description="OTP code entered by the user")
+
+
+class OtpVerifyResponse(BaseModel):
+    """Response after successful OTP verification.
+
+    Attributes:
+        verified: Always True on success.
+        phone: Phone number that was verified.
+    """
+
+    verified: bool
+    phone: str

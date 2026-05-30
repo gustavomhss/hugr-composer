@@ -1,0 +1,176 @@
+"""HMAC request signer — Stripe/AWS Sig V4 inspired canonical string.
+
+Canonical string format::
+
+    METHOD\n
+    PATH\n
+    SORTED_QUERY_STRING\n
+    SIGNED_HEADERS\n
+    HEX(SHA256(body))
+
+The HMAC is computed over the canonical string using the signing secret.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import hmac
+import logging
+import time
+import urllib.parse
+from typing import Sequence
+
+logger = logging.getLogger(__name__)
+
+_SIGNED_HEADERS: tuple[str, ...] = (
+    "content-type",
+    "x-request-id",
+)
+_ALGORITHM = "sha256"
+
+
+class HMACSigner:
+    """Signs requests and produces an HMAC-SHA256 signature.
+
+    Attributes:
+        secret: Raw signing secret bytes.
+        signed_headers: Header names included in canonical string.
+    """
+
+    def __init__(
+        self,
+        secret: str | bytes,
+        signed_headers: Sequence[str] = _SIGNED_HEADERS,
+    ) -> None:
+        """Initialise the signer.
+
+        Args:
+            secret: Signing secret (str decoded as UTF-8 or raw bytes).
+            signed_headers: Header names to include in canonical string.
+        """
+        self.secret: bytes = (
+            secret.encode() if isinstance(secret, str) else secret
+        )
+        self.signed_headers: tuple[str, ...] = tuple(
+            h.lower() for h in signed_headers
+        )
+
+    def canonical_string(
+        self,
+        method: str,
+        path: str,
+        query: str,
+        headers: dict[str, str],
+        body: bytes,
+    ) -> str:
+        """Build the canonical string for signing.
+
+        Args:
+            method: HTTP method in upper-case (e.g. 'GET').
+            path: URL path component (e.g. '/api/v1/items').
+            query: Raw query string (will be sorted by key).
+            headers: Lowercase header name → value mapping.
+            body: Raw request body bytes.
+
+        Returns:
+            Newline-separated canonical string.
+        """
+        sorted_query = _sort_query(query)
+        header_str = ";".join(
+            f"{h}:{headers.get(h, '')}" for h in self.signed_headers
+        )
+        body_hash = hashlib.sha256(body).hexdigest()
+        return "\n".join(
+            [method.upper(), path, sorted_query, header_str, body_hash]
+        )
+
+    def sign(
+        self,
+        method: str,
+        path: str,
+        query: str,
+        headers: dict[str, str],
+        body: bytes,
+        timestamp: int | None = None,
+        nonce: str | None = None,
+    ) -> dict[str, str]:
+        """Produce signature headers for a request.
+
+        Args:
+            method: HTTP method.
+            path: URL path.
+            query: Raw query string.
+            headers: Request headers (lowercase keys).
+            body: Raw body bytes.
+            timestamp: Unix timestamp (defaults to now).
+            nonce: Unique nonce (defaults to auto-generated hex).
+
+        Returns:
+            Dict with ``X-Signature``, ``X-Timestamp``, ``X-Nonce`` headers.
+        """
+        import os
+        ts = timestamp if timestamp is not None else int(time.time())
+        nc = nonce or os.urandom(16).hex()
+        canonical = self.canonical_string(method, path, query, headers, body)
+        signed_payload = f"{ts}\n{nc}\n{canonical}"
+        sig = hmac.new(self.secret, signed_payload.encode(), _ALGORITHM).hexdigest()
+        return {
+            "X-Signature": sig,
+            "X-Timestamp": str(ts),
+            "X-Nonce": nc,
+        }
+
+    def verify(
+        self,
+        method: str,
+        path: str,
+        query: str,
+        headers: dict[str, str],
+        body: bytes,
+        signature: str,
+        timestamp: int,
+        nonce: str,
+        window_seconds: int = 300,
+    ) -> bool:
+        """Verify an incoming request signature.
+
+        Args:
+            method: HTTP method.
+            path: URL path.
+            query: Raw query string.
+            headers: Lowercase request headers.
+            body: Raw body bytes.
+            signature: Received ``X-Signature`` value.
+            timestamp: Received ``X-Timestamp`` value (int).
+            nonce: Received ``X-Nonce`` value.
+            window_seconds: Max allowed timestamp skew in seconds.
+
+        Returns:
+            ``True`` when signature is valid and timestamp is in window.
+        """
+        now = int(time.time())
+        if abs(now - timestamp) > window_seconds:
+            logger.warning("request_signing: timestamp out of window ts=%d", timestamp)
+            return False
+        canonical = self.canonical_string(method, path, query, headers, body)
+        signed_payload = f"{timestamp}\n{nonce}\n{canonical}"
+        expected = hmac.new(self.secret, signed_payload.encode(), _ALGORITHM).hexdigest()
+        valid = hmac.compare_digest(expected, signature)
+        if not valid:
+            logger.warning("request_signing: signature mismatch")
+        return valid
+
+
+def _sort_query(query: str) -> str:
+    """Sort query string parameters for canonical form.
+
+    Args:
+        query: Raw query string (may be empty).
+
+    Returns:
+        Sorted, URL-encoded query string.
+    """
+    if not query:
+        return ""
+    params = urllib.parse.parse_qsl(query, keep_blank_values=True)
+    return urllib.parse.urlencode(sorted(params))

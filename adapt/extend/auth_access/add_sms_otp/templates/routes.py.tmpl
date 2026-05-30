@@ -1,0 +1,138 @@
+"""SMS OTP authentication routes: send and verify."""
+
+from __future__ import annotations
+
+import logging
+import os
+from datetime import datetime, timedelta, timezone
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.auth.sms_otp import generate_otp, send_sms, verify_otp
+from app.core.session import get_session
+from app.models.otp_code import OtpCode
+from app.schemas.otp import (
+    OtpSendRequest,
+    OtpSendResponse,
+    OtpVerifyRequest,
+    OtpVerifyResponse,
+)
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/auth/sms", tags=["sms-otp"])
+
+_RATE_LIMIT_MAX = 5
+_RATE_LIMIT_WINDOW_SECONDS = 3600
+
+
+@router.post("/send", response_model=OtpSendResponse)
+async def send_otp(
+    body: OtpSendRequest,
+    session: AsyncSession = Depends(get_session),
+) -> OtpSendResponse:
+    """Send an OTP code to the given phone number.
+
+    Rate limited to OTP_RATE_LIMIT_MAX requests per OTP_RATE_LIMIT_WINDOW_SECONDS.
+
+    Args:
+        body: Phone number in E.164 format.
+        session: SQLAlchemy async session dependency.
+
+    Returns:
+        ``OtpSendResponse`` with confirmation and expiry seconds.
+
+    Raises:
+        HTTPException 429: Rate limit exceeded.
+        HTTPException 500: SMS sending failed.
+    """
+    await _enforce_rate_limit(session, body.phone)
+    expiry_seconds = int(os.environ.get("OTP_EXPIRY_SECONDS", "300"))
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=expiry_seconds)
+    code = generate_otp()
+    record = OtpCode(phone=body.phone, code=code, expires_at=expires_at)
+    session.add(record)
+    await session.flush()
+    try:
+        await send_sms(body.phone, f"Your verification code is: {code}")
+    except Exception as exc:
+        logger.error("SMS send failed for %s: %s", body.phone[-4:], exc)
+        raise HTTPException(
+            status_code=500, detail={"detail": "Failed to send SMS"}
+        ) from exc
+    await session.commit()
+    return OtpSendResponse(
+        message="OTP sent successfully", expires_in_seconds=expiry_seconds
+    )
+
+
+@router.post("/verify", response_model=OtpVerifyResponse)
+async def verify_otp_code(
+    body: OtpVerifyRequest,
+    session: AsyncSession = Depends(get_session),
+) -> OtpVerifyResponse:
+    """Verify a submitted OTP code.
+
+    Finds the most recent unverified, unexpired code for the phone number,
+    performs constant-time comparison, and marks it as verified on success.
+
+    Args:
+        body: Phone number and submitted OTP code.
+        session: SQLAlchemy async session dependency.
+
+    Returns:
+        ``OtpVerifyResponse`` confirming the verified phone.
+
+    Raises:
+        HTTPException 400: Invalid or expired OTP code.
+    """
+    now = datetime.now(timezone.utc)
+    stmt = (
+        select(OtpCode)
+        .where(
+            OtpCode.phone == body.phone,
+            OtpCode.verified.is_(False),
+            OtpCode.expires_at > now,
+        )
+        .order_by(OtpCode.created_at.desc())
+        .limit(1)
+    )
+    result = await session.execute(stmt)
+    record = result.scalar_one_or_none()
+    if record is None or not verify_otp(record.code, body.code):
+        raise HTTPException(
+            status_code=400, detail={"detail": "Invalid or expired OTP code"}
+        )
+    record.verified = True
+    await session.flush()
+    await session.commit()
+    return OtpVerifyResponse(verified=True, phone=body.phone)
+
+
+async def _enforce_rate_limit(session: AsyncSession, phone: str) -> None:
+    """Raise HTTP 429 if the phone has exceeded the OTP send rate limit.
+
+    Args:
+        session: Active async database session.
+        phone: Phone number in E.164 format.
+
+    Raises:
+        HTTPException 429: When the rate limit is exceeded.
+    """
+    max_requests = int(os.environ.get("OTP_RATE_LIMIT_MAX", str(_RATE_LIMIT_MAX)))
+    window_seconds = int(
+        os.environ.get("OTP_RATE_LIMIT_WINDOW_SECONDS", str(_RATE_LIMIT_WINDOW_SECONDS))
+    )
+    window_start = datetime.now(timezone.utc) - timedelta(seconds=window_seconds)
+    count_stmt = select(func.count()).where(
+        OtpCode.phone == phone,
+        OtpCode.created_at >= window_start,
+    )
+    result = await session.execute(count_stmt)
+    count = result.scalar_one()
+    if count >= max_requests:
+        raise HTTPException(
+            status_code=429,
+            detail={"detail": "Too many OTP requests. Please wait before trying again."},
+        )

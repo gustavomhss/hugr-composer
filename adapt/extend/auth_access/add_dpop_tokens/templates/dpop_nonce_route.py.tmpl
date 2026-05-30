@@ -1,0 +1,61 @@
+"""DPoP nonce endpoint — RFC 9449 §8 server-nonce flow.
+
+Clients that receive a 401 with ``WWW-Authenticate: DPoP error="use_dpop_nonce"``
+should POST to this endpoint to obtain a fresh server nonce, then retry
+their request with ``nonce`` included in the DPoP proof JWT.
+"""
+from __future__ import annotations
+
+import logging
+
+from fastapi import APIRouter, Response
+
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/auth/dpop", tags=["dpop"])
+
+
+@router.post(
+    "/nonce",
+    status_code=200,
+    summary="Issue a fresh DPoP server nonce (RFC 9449 §8)",
+)
+async def issue_dpop_nonce(response: Response) -> dict[str, str]:
+    """Issue a fresh server nonce for DPoP proof construction.
+
+    Clients include the returned ``nonce`` in the ``nonce`` claim of
+    their next DPoP proof JWT.  The nonce is valid for
+    ``DPOP_NONCE_TTL_S`` seconds.
+
+    Returns:
+        JSON body with ``nonce`` field, plus ``DPoP-Nonce`` response header.
+
+    Raises:
+        HTTPException: 503 when DPoP is not enabled.
+    """
+    if not settings.DPOP_ENABLED:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=503, detail={"detail": "DPoP not enabled"})
+    from app.core.dpop import get_nonce_store
+    nonce = get_nonce_store().issue_nonce()
+    response.headers["DPoP-Nonce"] = nonce
+    logger.debug("dpop_nonce_issued")
+    return {"nonce": nonce}
+
+
+@router.get(
+    "/status",
+    summary="DPoP configuration status",
+)
+async def dpop_status() -> dict[str, object]:
+    """Return the current DPoP configuration.
+
+    Returns:
+        Dict with enabled flag, nonce TTL, and clock skew settings.
+    """
+    return {
+        "dpop_enabled": settings.DPOP_ENABLED,
+        "nonce_ttl_s": settings.DPOP_NONCE_TTL_S,
+        "clock_skew_s": settings.DPOP_CLOCK_SKEW_S,
+    }

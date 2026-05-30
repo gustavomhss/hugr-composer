@@ -1,0 +1,115 @@
+"""FastAPI dependency for DPoP proof-of-possession enforcement.
+
+Usage::
+
+    from app.api.deps.dpop import require_dpop
+
+    @router.get("/protected")
+    async def protected(dpop_claims: Annotated[dict, Depends(require_dpop)]):
+        return {"sub": dpop_claims.get("sub")}
+
+When ``DPOP_ENABLED=false`` the dependency is a no-op pass-through.
+"""
+from __future__ import annotations
+
+import logging
+from typing import Annotated, Any
+
+from fastapi import Depends, Header, HTTPException, Request
+
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+
+async def _noop_dpop() -> dict[str, Any]:
+    """No-op DPoP dependency used when DPoP is disabled.
+
+    Returns:
+        Empty claims dict.
+    """
+    return {}
+
+
+async def _verify_dpop_proof(
+    request: Request,
+    dpop: Annotated[str | None, Header(alias="DPoP")] = None,
+) -> dict[str, Any]:
+    """Verify the DPoP proof header and return its claims.
+
+    Args:
+        request: Current HTTP request (provides method and URL).
+        dpop: Raw value of the ``DPoP`` header.
+
+    Returns:
+        Verified DPoP JWT claims dict.
+
+    Raises:
+        HTTPException: 401 when DPoP header is missing or invalid.
+    """
+    if dpop is None:
+        raise HTTPException(
+            status_code=401,
+            detail={"detail": "DPoP header required"},
+            headers={"WWW-Authenticate": 'DPoP error="use_dpop_nonce"'},
+        )
+    from app.core.dpop import get_dpop_verifier
+    verifier = get_dpop_verifier()
+    method = request.method
+    uri = str(request.url).split("?")[0]
+    try:
+        claims = verifier.verify_proof(dpop, method, uri)
+    except ValueError as exc:
+        logger.warning("dpop_proof_invalid", extra={"error": str(exc)})
+        raise HTTPException(
+            status_code=401,
+            detail={"detail": f"DPoP proof invalid: {exc}"},
+            headers={"WWW-Authenticate": 'DPoP error="invalid_dpop_proof"'},
+        ) from exc
+    return claims
+
+
+def require_dpop(
+    request: Request,
+    dpop: Annotated[str | None, Header(alias="DPoP")] = None,
+) -> Any:
+    """FastAPI dependency: verify DPoP proof when DPOP_ENABLED is True.
+
+    Use as ``Depends(require_dpop)`` on routes that require proof-of-
+    possession.  Returns an empty dict when DPoP is disabled, allowing
+    gradual rollout.
+
+    Args:
+        request: Current HTTP request.
+        dpop: Raw value of the ``DPoP`` header.
+
+    Returns:
+        Verified claims dict or empty dict when disabled.
+    """
+    if not settings.DPOP_ENABLED:
+        return {}
+    import asyncio
+    return asyncio.get_event_loop().run_until_complete(
+        _verify_dpop_proof(request, dpop)
+    )
+
+
+# Async version for use with ``await``
+async def require_dpop_async(
+    request: Request,
+    dpop: Annotated[str | None, Header(alias="DPoP")] = None,
+) -> dict[str, Any]:
+    """Async FastAPI dependency for DPoP enforcement.
+
+    Preferred over ``require_dpop`` in async route handlers.
+
+    Args:
+        request: Current HTTP request.
+        dpop: Raw value of the ``DPoP`` header.
+
+    Returns:
+        Verified claims dict or empty dict when disabled.
+    """
+    if not settings.DPOP_ENABLED:
+        return {}
+    return await _verify_dpop_proof(request, dpop)
