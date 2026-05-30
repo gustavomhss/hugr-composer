@@ -1,0 +1,12 @@
+"""Deep health-check system — public API."""
+
+from app.health.registry import HealthRegistry, get_registry
+from app.health.models import DependencyCheck, HealthReport, HealthStatus
+
+__all__ = [
+    "HealthRegistry",
+    "get_registry",
+    "DependencyCheck",
+    "HealthReport",
+    "HealthStatus",
+]

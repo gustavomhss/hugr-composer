@@ -1,0 +1,64 @@
+"""Deep health endpoints: /health/live, /health/ready, /health/deep."""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, Response
+
+from app.health.models import HealthReport, HealthStatus
+from app.health.registry import get_registry
+
+router = APIRouter(prefix="/health", tags=["health"])
+
+
+@router.get("/live", response_model=HealthReport, summary="Liveness probe")
+async def liveness() -> HealthReport:
+    """Liveness probe — always 200 unless the process is stuck.
+
+    Kubernetes should restart the pod only when this returns 5xx,
+    which happens only if the event loop itself is blocked.
+
+    Returns:
+        HealthReport with ``status='healthy'`` and no checks.
+    """
+    registry = get_registry()
+    return await registry.run_liveness()
+
+
+@router.get("/ready", response_model=HealthReport, summary="Readiness probe")
+async def readiness(response: Response) -> HealthReport:
+    """Readiness probe — checks all critical dependencies.
+
+    Returns 503 when any critical check is unhealthy or degraded,
+    preventing traffic routing until the dependency recovers.
+
+    Args:
+        response: FastAPI Response for setting status code.
+
+    Returns:
+        HealthReport with results for all critical checks only.
+    """
+    registry = get_registry()
+    report = await registry.run_readiness()
+    if report.status != HealthStatus.HEALTHY:
+        response.status_code = 503
+    return report
+
+
+@router.get("/deep", response_model=HealthReport, summary="Full dependency matrix")
+async def deep_check(response: Response) -> HealthReport:
+    """Full dependency matrix — all checks with per-check latency.
+
+    Intended for dashboards, on-call tooling, and manual debugging.
+    Returns 503 if any check is unhealthy.
+
+    Args:
+        response: FastAPI Response for setting status code.
+
+    Returns:
+        HealthReport with all dependency results and latencies.
+    """
+    registry = get_registry()
+    report = await registry.run_all()
+    if report.status == HealthStatus.UNHEALTHY:
+        response.status_code = 503
+    return report

@@ -1,0 +1,104 @@
+"""Dependency health map endpoints: JSON graph and SVG visualization."""
+
+from __future__ import annotations
+
+import json
+import math
+from typing import Any
+
+from fastapi import APIRouter, Response
+from fastapi.responses import HTMLResponse
+
+from app.health_map import get_health_map_builder
+
+router = APIRouter(prefix="/health", tags=["health-map"])
+
+
+@router.get("/map", response_model=dict[str, Any])
+async def dependency_map() -> dict[str, Any]:
+    """Return the dependency health graph as JSON.
+
+    Returns:
+        Dict with 'status', 'nodes' (per-dep status+latency),
+        and 'edges' (api to each dep).
+    """
+    builder = get_health_map_builder()
+    return await builder.build_graph()
+
+
+@router.get("/map.html", response_class=HTMLResponse)
+async def dependency_map_html(response: Response) -> HTMLResponse:
+    """Return a self-contained SVG visualization of the dependency health map.
+
+    Sets HTTP 503 when any dependency is unhealthy.
+
+    Args:
+        response: FastAPI Response for setting the status code.
+
+    Returns:
+        HTMLResponse with inline SVG dependency graph.
+    """
+    builder = get_health_map_builder()
+    graph = await builder.build_graph()
+    if graph.get("status") == "unhealthy":
+        response.status_code = 503
+    nodes = graph.get("nodes", [])
+    graph_json = json.dumps(graph, indent=2)
+    html = _render_svg_page(nodes, graph_json)
+    return HTMLResponse(content=html)
+
+
+def _status_color(status: str) -> str:
+    """Return an SVG fill colour for a given status string.
+
+    Args:
+        status: 'healthy', 'degraded', 'unhealthy', or other.
+    """
+    _map = {"healthy": "#22c55e", "degraded": "#f59e0b", "unhealthy": "#ef4444"}
+    return _map.get(status, "#64748b")
+
+
+def _render_svg_page(nodes: list[dict], graph_json: str) -> str:
+    """Build the complete HTML page with an inline SVG dependency map.
+
+    Args:
+        nodes: List of node dicts from the health graph.
+        graph_json: Pretty-printed JSON for the raw data panel.
+
+    Returns:
+        Complete HTML string ready to serve.
+    """
+    cx, cy, r_orbit = 400, 150, 200
+    parts: list[str] = []
+    parts.append('<circle cx="{}" cy="{}" r="40" fill="#3b82f6"/>'.format(cx, cy))
+    parts.append('<text x="{}" y="{}" text-anchor="middle" fill="#fff"'
+                 ' font-size="14" dy=".35em">API</text>'.format(cx, cy))
+    n = len(nodes)
+    for i, node in enumerate(nodes):
+        angle = (2 * math.pi * i / max(n, 1)) - math.pi / 2
+        nx = int(cx + r_orbit * math.cos(angle))
+        ny = int(cy + r_orbit * math.sin(angle))
+        color = _status_color(node.get("status", "unknown"))
+        label = node.get("name", "?")
+        lat = node.get("latency_ms", 0)
+        parts.append('<line x1="{0}" y1="{1}" x2="{2}" y2="{3}"'
+                     ' stroke="#334155" stroke-width="2"/>'.format(cx, cy, nx, ny))
+        parts.append('<circle cx="{0}" cy="{1}" r="35" fill="{2}"/>'.format(
+            nx, ny, color))
+        parts.append('<text x="{0}" y="{1}" text-anchor="middle" fill="#fff"'
+                     ' font-size="11" dy=".35em">{2}</text>'.format(nx, ny, label))
+        parts.append('<text x="{0}" y="{1}" text-anchor="middle"'
+                     ' fill="#e2e8f0" font-size="9">{2} ms</text>'.format(
+            nx, ny + 20, lat))
+    svg_inner = "\n  ".join(parts)
+    head = ('<!DOCTYPE html><html lang="en"><head>'
+            '<meta charset="UTF-8"><title>Dependency Health Map</title>'
+            '<style>body{background:#0f172a;color:#e2e8f0;font-family:sans-serif;'
+            'padding:1.5rem}h1{color:#7dd3fc;margin-bottom:1rem}'
+            'pre{background:#1e293b;padding:1rem;border-radius:.5rem;'
+            'overflow:auto;font-size:.8rem;margin-top:1rem;color:#bfdbfe}'
+            '</style></head><body>'
+            '<h1>&#x1f5fa; Dependency Health Map</h1>')
+    svg_tag = '<svg width="800" height="400" style="background:#1e293b">' + svg_inner + "</svg>"
+    tail = "<pre>" + graph_json + "</pre></body></html>"
+    return head + svg_tag + tail

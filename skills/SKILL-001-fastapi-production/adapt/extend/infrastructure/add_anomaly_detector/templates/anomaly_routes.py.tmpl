@@ -1,0 +1,35 @@
+"""Admin route: GET /anomaly/status."""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, HTTPException
+
+from app.api.deps import get_current_superuser
+from app.anomaly.detector import get_detector
+from app.anomaly.models import AnomalyStatus
+
+router = APIRouter(prefix="/anomaly", tags=["anomaly"])
+
+
+@router.get(
+    "/status",
+    response_model=AnomalyStatus,
+    dependencies=[Depends(get_current_superuser)],
+)
+async def anomaly_status() -> dict:
+    """Return current anomaly detection baselines and recent events.
+
+    Returns:
+        AnomalyStatus with sensitivity, window_size, baselines per metric,
+        and up to 20 recent anomaly events.
+
+    Raises:
+        HTTPException: 503 if detector not initialised.
+    """
+    detector = get_detector()
+    if detector is None:
+        raise HTTPException(
+            status_code=503,
+            detail={"detail": "Anomaly detector not initialised"},
+        )
+    return detector.status()
