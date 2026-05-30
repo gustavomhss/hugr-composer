@@ -200,16 +200,60 @@ def generate_alembic(output_dir: str) -> dict:
     mako_path.write_text(mako_content)
     files_created.append(str(mako_path))
 
-    # --- alembic/versions/.gitkeep ----------------------------------------
-    gitkeep = versions_dir / ".gitkeep"
-    gitkeep.write_text("")
-    files_created.append(str(gitkeep))
+    # --- alembic/versions/0001_initial.py (chain root) --------------------
+    # Closes R6-O4-A1: every extend tool emits migrations chained off
+    # ``down_revision = "0001_initial"`` (see adapt/contracts/migration_helper
+    # fallback).  Without an actual ``0001_initial`` revision on disk,
+    # ``alembic upgrade head`` errors with "Can't locate revision identified by
+    # '0001_initial'".  Emit a no-op baseline here so the chain root always
+    # exists, regardless of whether ``generate_baseline_migration`` runs.
+    initial_path = versions_dir / "0001_initial.py"
+    if not initial_path.exists():
+        initial_content = textwrap.dedent('''\
+            """initial revision — chain root (no-op).
+
+            Revision ID: 0001_initial
+            Revises:
+            Create Date: scaffold
+
+            This is the empty root of the Alembic chain emitted by
+            ``generators.database.alembic.generate_alembic``.  It exists so that
+            extend tools which chain off ``down_revision = "0001_initial"``
+            always have a valid parent revision to attach to.
+
+            Real schema is created by ``0002_baseline_schema`` (if models are
+            scaffolded) or by subsequent extend-tool migrations.
+            """
+            from __future__ import annotations
+
+            from typing import Sequence, Union
+
+
+            # revision identifiers, used by Alembic.
+            revision: str = "0001_initial"
+            down_revision: Union[str, None] = None
+            branch_labels: Union[str, Sequence[str], None] = None
+            depends_on: Union[str, Sequence[str], None] = None
+
+
+            def upgrade() -> None:
+                """No-op: chain root exists solely so downstream migrations chain."""
+                pass
+
+
+            def downgrade() -> None:
+                """No-op: nothing to undo at the chain root."""
+                pass
+        ''')
+        initial_path.write_text(initial_content)
+    files_created.append(str(initial_path))
 
     return {
         "files_created": files_created,
         "notes": [
-            "Generated alembic.ini, alembic/env.py (async), alembic/script.mako, and versions/ directory.",
+            "Generated alembic.ini, alembic/env.py (async), alembic/script.mako, and versions/0001_initial.py.",
             "Database URL is injected from app.core.config.settings — never hardcoded in alembic.ini.",
             "Import all model modules in env.py so autogenerate detects schema changes.",
+            "0001_initial.py is the no-op chain root; baseline schema (when models exist) is 0002_baseline_schema.",
         ],
     }

@@ -11,6 +11,20 @@ Example::
 
     down_rev = find_migration_head(versions_dir) or "0001_initial"
     # Then embed down_rev in the generated migration file.
+
+R6-O4-A1 hardening
+------------------
+Historically this helper returned ``None`` when the versions directory was
+empty or missing, and callers fell back to the string ``"0001_initial"`` —
+which only worked if a migration with that revision actually existed on
+disk.  The scaffold did not always emit one, so ``alembic upgrade head``
+would fail with ``Can't locate revision identified by '0001_initial'``.
+
+The helper now raises :class:`MigrationChainError` when the versions
+directory is missing or contains no parseable revisions.  This forces the
+scaffold guarantee (``alembic/versions/0001_initial.py`` is emitted by
+``generators.database.alembic.generate_alembic``) to hold loudly instead
+of silently producing a broken migration chain.
 """
 
 from __future__ import annotations
@@ -19,13 +33,26 @@ import re
 from pathlib import Path
 
 
-# Matches:  down_revision = "foo"  or  down_revision = None  (with optional type hint)
+class MigrationChainError(RuntimeError):
+    """Raised when the Alembic chain root is missing or unparseable.
+
+    Callers should treat this as a scaffold-integrity failure: the project
+    was generated without the no-op ``0001_initial`` baseline that every
+    extend tool implicitly relies on.  Re-run the scaffold (or recover the
+    file) before retrying the extend tool.
+    """
+
+
+# Matches:  down_revision = "foo"  or  down_revision = None  (with optional
+# type hint of any complexity — e.g. ``Union[str, None]`` or ``str | None``).
+# ``[^=]+?`` (non-greedy) captures the annotation up to the assignment ``=``,
+# so we tolerate spaces inside the annotation that ``\S+`` would have rejected.
 _DOWN_REV_RE = re.compile(
-    r'^down_revision\s*(?::\s*\S+\s*)?\s*=\s*(?:["\']([^"\']*)["\']|(None))',
+    r'^down_revision\s*(?::\s*[^=]+?)?\s*=\s*(?:["\']([^"\']*)["\']|(None))',
     re.MULTILINE,
 )
 _REVISION_RE = re.compile(
-    r'^revision\s*(?::\s*\S+\s*)?\s*=\s*["\']([^"\']+)["\']',
+    r'^revision\s*(?::\s*[^=]+?)?\s*=\s*["\']([^"\']+)["\']',
     re.MULTILINE,
 )
 
@@ -42,11 +69,21 @@ def find_migration_head(alembic_dir: Path) -> str | None:
         alembic_dir: Path to the ``alembic/versions/`` directory.
 
     Returns:
-        The HEAD revision string (e.g. ``"0014_add_audit_log"``), or
-        ``None`` when the directory is empty or no unambiguous HEAD exists.
+        The HEAD revision string (e.g. ``"0014_add_audit_log"``).
+
+    Raises:
+        MigrationChainError: when *alembic_dir* does not exist, is not a
+            directory, or contains no parseable migration files.  This is
+            a scaffold-integrity failure (see module docstring) — the
+            ``0001_initial`` chain root must always exist on disk.
     """
     if not alembic_dir.is_dir():
-        return None
+        raise MigrationChainError(
+            f"Alembic versions directory not found: {alembic_dir}. "
+            "The scaffold must emit alembic/versions/0001_initial.py — "
+            "re-run generators.database.alembic.generate_alembic before "
+            "applying extend tools."
+        )
 
     # Parse every migration file
     revision_to_down: dict[str, str | None] = {}
@@ -73,7 +110,12 @@ def find_migration_head(alembic_dir: Path) -> str | None:
         revision_to_down[revision] = down_rev
 
     if not revision_to_down:
-        return None
+        raise MigrationChainError(
+            f"No parseable migration files in {alembic_dir}. "
+            "The scaffold must emit alembic/versions/0001_initial.py — "
+            "re-run generators.database.alembic.generate_alembic before "
+            "applying extend tools."
+        )
 
     # Collect all revisions that ARE referenced as a down_revision
     referenced_as_parent: set[str] = set()

@@ -27,6 +27,7 @@ from pathlib import Path
 
 from adapt._base import render, render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.migration_helper import MigrationChainError, find_migration_head
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 _HERE = Path(__file__).parent
@@ -205,7 +206,14 @@ def _rename_in_source(source: str, old_name: str, new_name: str, operation: str)
 def _write_alembic_migration(
     project: Path, operation: str, old_name: str, new_name: str
 ) -> Path | None:
-    """Generate an Alembic migration scaffold for the rename."""
+    """Generate an Alembic migration scaffold for the rename.
+
+    Closes R6-O4-A2: previously the emitted template hard-coded
+    ``down_revision = None``, which forked the chain (alembic upgrade head
+    saw multiple roots and refused to run).  We now resolve ``down_revision``
+    via :func:`find_migration_head` at emit time and substitute it into the
+    template, so the new revision chains off the current HEAD.
+    """
     versions_dir = project / "alembic" / "versions"
     if not versions_dir.exists():
         return None
@@ -214,6 +222,17 @@ def _write_alembic_migration(
     migration_file = versions_dir / f"{rev_id}.py"
     if migration_file.exists():
         return migration_file
+
+    # Resolve current chain HEAD so the new migration chains correctly.
+    # Falls back to "0001_initial" (the scaffold-guaranteed chain root —
+    # see R6-O4-A1) if the helper somehow returns falsy.  If the scaffold
+    # is missing entirely, the helper raises MigrationChainError, which we
+    # propagate so the failure is loud instead of producing a broken file.
+    try:
+        head = find_migration_head(versions_dir) or "0001_initial"
+    except MigrationChainError:
+        # No chain root on disk — let the operator know to re-scaffold.
+        raise
 
     render_to(
         _HERE,
@@ -224,6 +243,7 @@ def _write_alembic_migration(
             "old_name": old_name,
             "new_name": new_name,
             "rev_id": rev_id,
+            "down_rev": head,
         },
     )
     return migration_file

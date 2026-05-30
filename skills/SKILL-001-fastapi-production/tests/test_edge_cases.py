@@ -526,13 +526,19 @@ def run_blind_spot_b() -> tuple[bool, str]:
                 )
 
         # ---- Check 3: downgrade() must not be just `pass` ----
+        # Exception: the no-op chain root (0001_initial, down_revision=None)
+        # is intentionally empty because nothing precedes it.  See R6-O4-A1.
         for rev_id, info in meta.items():
             if not info["parse_ok"]:
                 continue
             if info["has_downgrade"] and info["downgrade_empty"]:
-                issues.append(
-                    f"EMPTY downgrade() (only `pass`) in '{info['file'].name}' (rev={rev_id})"
+                is_chain_root = (
+                    info.get("down_revision") is None and rev_id == "0001_initial"
                 )
+                if not is_chain_root:
+                    issues.append(
+                        f"EMPTY downgrade() (only `pass`) in '{info['file'].name}' (rev={rev_id})"
+                    )
 
         # ---- Check 4: Chain validity (no gaps, no duplicates) ----
         chain_errors = _validate_migration_chain(meta)
