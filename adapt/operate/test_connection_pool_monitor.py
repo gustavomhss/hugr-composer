@@ -180,6 +180,64 @@ def test_render_alerts_contains_critical() -> None:
     assert "critical" in alerts.lower()
 
 
+def test_render_alerts_divisor_is_pool_capacity_not_literal_one() -> None:
+    """R6-S10-F5 regression: divisor must be pool_size+max_overflow, not 1.
+
+    Prior bug: f-string emitted ``/ ({1}) * 100`` which Python rendered as
+    the literal ``1``, so every alert fired from the first active connection
+    on every deploy. The expression must divide by an integer >= 2 (a real
+    pool capacity). Default capacity is pool_size=20 + max_overflow=10 = 30.
+
+    Juror: ad597adfde81405df (R6-S10-F5).
+    """
+    import re
+
+    alerts = _render_alerts(80.0, pool_size=20, max_overflow=10)
+
+    # Must NOT contain the literal-1 divisor anywhere.
+    assert "/ (1)" not in alerts, (
+        "Divisor is literal 1 — every deploy fires critical from connection #1.\n"
+        f"Generated:\n{alerts}"
+    )
+
+    # Must contain an integer divisor >= 2.
+    divisors = [int(m) for m in re.findall(r"/ \((\d+)\) \* 100", alerts)]
+    assert divisors, f"No ``/ (<int>) * 100`` divisor found in:\n{alerts}"
+    for d in divisors:
+        assert d >= 2, f"Divisor {d} is too small (must be pool capacity, not 1)"
+
+    # And the default capacity should be exactly 30 (20 + 10).
+    assert 30 in divisors, (
+        f"Expected capacity 30 (pool_size=20 + max_overflow=10), got {divisors}"
+    )
+
+
+def test_render_alerts_divisor_reflects_custom_capacity() -> None:
+    """R6-S10-F5 regression: divisor follows custom pool_size/max_overflow."""
+    import re
+
+    alerts = _render_alerts(80.0, pool_size=50, max_overflow=25)
+    divisors = [int(m) for m in re.findall(r"/ \((\d+)\) \* 100", alerts)]
+    assert 75 in divisors, (
+        f"Expected capacity 75 (pool_size=50 + max_overflow=25), got {divisors}"
+    )
+
+
+def test_render_alerts_emits_promql_divisor_for_default_call() -> None:
+    """R6-S10-F5 regression: the tool entry point (default args) renders a real divisor."""
+    with tempfile.TemporaryDirectory() as tmp:
+        proj = _make_project(Path(tmp))
+        connection_pool_monitor(ToolInput(project_dir=str(proj)))
+        alert_yaml = (proj / "infra" / "prometheus" / "pool_alerts.yaml").read_text()
+        assert "/ (1)" not in alert_yaml, (
+            "Generated pool_alerts.yaml has literal-1 divisor:\n" + alert_yaml
+        )
+        # Defaults: pool_size=20, max_overflow=10 → 30.
+        assert "/ (30)" in alert_yaml, (
+            "Expected '/ (30)' divisor in generated YAML, got:\n" + alert_yaml
+        )
+
+
 def test_notes_contain_pool_params() -> None:
     """T-17: Notes mention pool_size and max_overflow."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -258,6 +316,9 @@ if __name__ == "__main__":
         test_pool_size_in_monitor_file,
         test_render_dashboard_has_six_panels,
         test_render_alerts_contains_critical,
+        test_render_alerts_divisor_is_pool_capacity_not_literal_one,
+        test_render_alerts_divisor_reflects_custom_capacity,
+        test_render_alerts_emits_promql_divisor_for_default_call,
         test_notes_contain_pool_params,
         test_next_steps_present,
         test_execution_time_recorded,
