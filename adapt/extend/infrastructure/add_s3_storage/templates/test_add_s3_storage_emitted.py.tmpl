@@ -72,3 +72,54 @@ def test_disallowed_content_type_raises_415() -> None:
         with pytest.raises(HTTPException) as exc_info:
             _validate_content_type("application/exe")
         assert exc_info.value.status_code == 415
+
+
+def test_routes_require_auth_dependency() -> None:
+    """Negative: every storage route signature carries CurrentUser.
+
+    Static guard against regressions of R6-S6-F1/F5/F6 — if anyone removes
+    the auth dependency from POST /storage/upload, GET /storage/{key},
+    or DELETE /storage/{key}, this test fails immediately without needing
+    a live auth scaffold.
+    """
+    import inspect
+
+    from app.api.routes.storage import (
+        create_download_url,
+        create_upload_url,
+        delete_object,
+    )
+
+    for handler in (create_upload_url, create_download_url, delete_object):
+        params = inspect.signature(handler).parameters
+        assert "current_user" in params, (
+            f"{handler.__name__} is missing the current_user auth dependency — "
+            "R6-S6-F1/F5/F6 regression: unauthenticated bucket CRUD."
+        )
+
+
+def test_ownership_check_rejects_other_users_key() -> None:
+    """Negative: a key outside users/{current_user.id}/ raises HTTP 403.
+
+    Closes R6-S6-F5/F6: even authenticated callers can only address keys
+    inside their own ``users/<id>/`` prefix.
+    """
+    from fastapi import HTTPException
+
+    from app.api.routes.storage import _require_key_owned_by
+
+    class _U:
+        id = "alice"
+
+    # Same-user key passes.
+    _require_key_owned_by("users/alice/photo.png", _U())
+
+    # Cross-user key is rejected with 403.
+    with pytest.raises(HTTPException) as exc_info:
+        _require_key_owned_by("users/bob/photo.png", _U())
+    assert exc_info.value.status_code == 403
+
+    # Top-level key (no users/ prefix) is rejected with 403.
+    with pytest.raises(HTTPException) as exc_info:
+        _require_key_owned_by("uploads/anything.png", _U())
+    assert exc_info.value.status_code == 403
