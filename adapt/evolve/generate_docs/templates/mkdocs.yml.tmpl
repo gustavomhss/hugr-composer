@@ -1,0 +1,38 @@
+site_name: $site_name
+docs_dir: $output_dir
+strict: true
+
+theme:
+  name: $theme
+  features:
+    - navigation.tabs
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_root_heading: true
+
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight
+
+nav:
+  - Home: index.md
+$nav_entries
+
+# Versioning via mike
+# extra:
+#   version:
+#     provider: mike

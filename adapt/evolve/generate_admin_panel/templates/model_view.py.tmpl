@@ -1,0 +1,39 @@
+"""sqladmin ModelView for $model_name."""
+from __future__ import annotations
+
+from sqladmin import ModelView  # type: ignore[import-untyped]
+
+try:
+    from app.models.$lower import $model_name
+except ImportError:
+    $model_name = None  # type: ignore[assignment]  # model not yet generated
+
+
+class ${model_name}Admin(ModelView, model=$model_name):
+    """Admin view for $model_name.
+
+    CUSTOMIZE: adjust column_list, searchable, sortable, and form columns.
+    """
+
+    name = "$model_name"
+    name_plural = "${model_name}s"
+    icon = "fa-table"
+
+    # Columns shown on the list page — CUSTOMIZE
+    column_list = "__all__"
+
+    # Enable/disable write actions
+    can_create = $can_create
+    can_edit = $can_edit
+    can_delete = $can_delete
+
+    # Soft-delete awareness: hide logically deleted rows by default
+    # CUSTOMIZE: uncomment when SoftDeleteMixin is present
+    # column_default_sort = [("$lower.created_at", True)]
+    # def get_query(self):
+    #     return super().get_query().filter_by(is_deleted=False)
+
+    # CSV export hard-capped at 10,000 rows
+    page_size = 50
+    page_size_options = [25, 50, 100]
+    export_max_rows = 10_000

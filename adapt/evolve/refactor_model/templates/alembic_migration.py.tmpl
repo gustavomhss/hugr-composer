@@ -1,0 +1,29 @@
+"""Refactor migration: $operation $old_name → $new_name.
+
+Revision ID: $rev_id
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "$rev_id"
+down_revision = None  # auto-detected by alembic from revision chain
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    """Apply the rename operation."""
+    # Phase 1: Add new column / rename
+    # op.alter_column("table", "$old_name", new_column_name="$new_name")
+    # Phase 2: Backfill if needed
+    # op.execute("UPDATE table SET $new_name = $old_name")
+    # Phase 3: Drop old column (in a separate migration after dual-read period)
+    pass
+
+
+def downgrade() -> None:
+    """Reverse the rename operation."""
+    # op.alter_column("table", "$new_name", new_column_name="$old_name")
+    pass

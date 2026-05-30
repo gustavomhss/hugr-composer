@@ -1,0 +1,9 @@
+# Babel extraction configuration.
+# Run: pybabel extract -F babel.cfg -k _ -k ngettext -o locales/messages.pot .
+
+[python: app/**.py]
+encoding = utf-8
+
+[jinja2: templates/**.html]
+encoding = utf-8
+extensions = jinja2.ext.autoescape,jinja2.ext.with_

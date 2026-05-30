@@ -1,0 +1,12 @@
+# Schema Backward-Compat Alias
+
+Field renamed: `$old_name` → `$new_name`
+
+Add the following to every Pydantic schema that exposes this field
+to preserve backward compatibility during the migration window:
+
+```python
+$new_name: str = Field(..., alias="$old_name")
+```
+
+Remove the alias after all consumers have migrated to `$new_name`.

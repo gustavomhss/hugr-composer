@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+VERSION=$$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])" 2>/dev/null || echo "latest")
+mike deploy --push --update-aliases "$$VERSION" latest
+echo "Docs published: $$VERSION"

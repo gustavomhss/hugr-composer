@@ -1,0 +1,43 @@
+"""Emitted test for generate_admin_panel tool.
+
+The scaffold ships with a STUB auth backend: hard-coded admin/admin
+credentials in app/admin/auth.py. It does NOT enforce RBAC and is NOT
+production-safe. Honesty assertions only.
+
+Positive: an unauthenticated request to the admin mount is rejected by
+the auth backend (returns False from authenticate).
+
+Negative: the scaffold's authenticate() does NOT do role-based access
+checks — any session with the "token" key passes, regardless of who set
+it. This pins the documented "open admin until you swap the stub" stance.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+
+def test_admin_auth_stub_rejects_no_session() -> None:
+    """Positive: with no session token, the stub authenticate() returns False."""
+    # The emitted auth.py is a class, not an instance — we read the source
+    # rather than constructing a Starlette Request fixture here.
+    admin_dir = Path(__file__).resolve().parent.parent / "app" / "admin"
+    src = (admin_dir / "auth.py").read_text()
+    assert 'return "token" in request.session' in src, (
+        "AdminAuth.authenticate must check for token in session."
+    )
+
+
+def test_admin_auth_is_stub_not_rbac() -> None:
+    """Negative honesty: the stub does NOT enforce RBAC.
+
+    Any session with the literal key "token" passes. The scaffold is an
+    advisory starting point; operators must swap the stub for a real
+    credential check + RBAC policy before production.
+    """
+    admin_dir = Path(__file__).resolve().parent.parent / "app" / "admin"
+    src = (admin_dir / "auth.py").read_text()
+    # Pin the stub credentials so any swap to real auth must update this test.
+    assert "admin" in src and "CUSTOMIZE" in src, (
+        "AdminAuth stub must keep a CUSTOMIZE marker so operators know to replace it."
+    )

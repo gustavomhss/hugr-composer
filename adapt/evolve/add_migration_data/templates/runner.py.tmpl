@@ -1,0 +1,83 @@
+"""Migration runner: loads checkpoint, executes migration, saves progress."""
+from __future__ import annotations
+
+import logging
+
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+from data_migrations.base import DataMigration, MigrationStats
+
+logger = logging.getLogger(__name__)
+
+
+def load_checkpoint(session: Session, migration_name: str, table: str) -> int:
+    """Load the last-processed cursor for a migration from the checkpoint table.
+
+    Args:
+        session: Active SQLAlchemy session.
+        migration_name: Unique migration identifier.
+        table: Checkpoint table name.
+
+    Returns:
+        Last processed id (0 if no checkpoint exists yet).
+    """
+    row = session.execute(
+        text(
+            f"SELECT last_processed_id FROM {table} "
+            "WHERE migration_name = :name"
+        ),
+        {"name": migration_name},
+    ).fetchone()
+    return int(row[0]) if row else 0
+
+
+def save_checkpoint(
+    session: Session, migration_name: str, last_id: int, rows: int, table: str
+) -> None:
+    """Upsert the migration checkpoint (idempotent).
+
+    Args:
+        session: Active SQLAlchemy session.
+        migration_name: Unique migration identifier.
+        last_id: Current cursor value.
+        rows: Running total of rows processed.
+        table: Checkpoint table name.
+    """
+    session.execute(
+        text(
+            f"INSERT INTO {table} (migration_name, last_processed_id, rows_processed, status) "
+            "VALUES (:name, :last_id, :rows, 'running') "
+            "ON CONFLICT (migration_name) DO UPDATE SET "
+            "last_processed_id = EXCLUDED.last_processed_id, "
+            "rows_processed = EXCLUDED.rows_processed, "
+            "status = 'running'"
+        ),
+        {"name": migration_name, "last_id": last_id, "rows": rows},
+    )
+    session.commit()
+
+
+def run_migration(migration: DataMigration, checkpoint_table: str) -> MigrationStats:
+    """Execute *migration* with checkpoint resume support.
+
+    Args:
+        migration: Concrete ``DataMigration`` instance.
+        checkpoint_table: Checkpoint table name.
+
+    Returns:
+        ``MigrationStats`` from the completed run.
+    """
+    start_from = load_checkpoint(
+        migration.session, migration.migration_name, checkpoint_table
+    )
+    logger.info("Resuming %s from id=%d", migration.migration_name, start_from)
+    stats = migration.run(start_from=start_from)
+    save_checkpoint(
+        migration.session,
+        migration.migration_name,
+        stats.rows_processed,
+        stats.rows_processed,
+        checkpoint_table,
+    )
+    return stats

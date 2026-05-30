@@ -10,35 +10,28 @@ modified in-place unless ``apply=True`` is passed.
 The tool is idempotent: re-running with the same arguments on an already-
 patched codebase detects the new name and returns ``status="no_op"``.
 
-Example::
-
-    from adapt.contracts import ToolInput
-    from adapt.evolve.refactor_model import refactor_model
-
-    result = refactor_model(
-        ToolInput(project_dir="/path/to/project"),
-        operation="rename_field",
-        target="app.models.user.User.email",
-        new_name="email_address",
-    )
-    print(result.status)        # "success"
-    print(result.files_created) # patch file path
-    print(result.next_steps)    # ["git apply ...", "alembic upgrade head"]
+Warnings:
+    - The emitted alembic migration is a SCAFFOLD only: upgrade() and
+      downgrade() bodies are comment-out templates with `pass` placeholders.
+      This stub does NOT auto-reverse data backfill; operators MUST fill in
+      real op.* calls before applying to a production database.
 """
 
 from __future__ import annotations
 
 import ast
 import difflib
-import textwrap
+import re
 import time
 from pathlib import Path
 
+from adapt._base import render, render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
-_SUPPORTED_OPERATIONS = frozenset(
-    {"rename_model", "rename_field", "change_type", "split_model"}
-)
+_HERE = Path(__file__).parent
+
+_SUPPORTED_OPERATIONS = frozenset({"rename_model", "rename_field", "change_type", "split_model"})
 
 
 MCP_TOOL = {
@@ -47,12 +40,6 @@ MCP_TOOL = {
     "tags": ["evolve"],
     "entry": "refactor_model",
 }
-
-
-
-# ---------------------------------------------------------------------------
-# Public entry point
-# ---------------------------------------------------------------------------
 
 
 def refactor_model(
@@ -65,30 +52,12 @@ def refactor_model(
     generate_migration: bool = True,
     apply: bool = False,
 ) -> ToolResult:
-    """Perform an AST-based refactor across the project codebase.
-
-    Args:
-        inp: ``ToolInput`` with ``project_dir`` and optional ``dry_run``.
-        operation: One of ``rename_model``, ``rename_field``, ``change_type``,
-            ``split_model``.
-        target: Dotted path to target, e.g. ``app.models.User.email``.
-        new_name: New identifier (field/model/type name).
-        update_schemas: Patch Pydantic schemas referencing the target.
-        update_routes: Patch route handlers referencing the target.
-        generate_migration: Emit an Alembic migration for DDL changes.
-        apply: Write patched files to disk (default False = patch-only).
-
-    Returns:
-        ``ToolResult`` with patch paths and next steps.
-    """
+    """Perform an AST-based refactor across the project codebase."""
     start = time.monotonic()
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
         return ToolResult(status="error", error=err)
-
-    # --- Prerequisite check (standalone mode) --------------------------------
-    from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -126,7 +95,6 @@ def refactor_model(
             execution_time_ms=_elapsed_ms(start),
         )
 
-    # Parse target
     parts = target.rsplit(".", 1)
     old_name = parts[-1]
 
@@ -150,7 +118,6 @@ def refactor_model(
             execution_time_ms=_elapsed_ms(start),
         )
 
-    # Collect and patch files
     patches_dir = project / ".refactor_patches"
     patches_dir.mkdir(parents=True, exist_ok=True)
 
@@ -178,29 +145,28 @@ def refactor_model(
             py_file.write_text(patched, encoding="utf-8")
             files_modified.append(str(py_file))
 
-    # Write unified patch
     patch_file = patches_dir / f"{operation}_{old_name}_to_{new_name}.patch"
     patch_file.write_text("".join(patch_lines) if patch_lines else "# No changes\n")
     files_created.append(str(patch_file))
 
-    # Backward-compat alias in schemas
     if update_schemas and operation == "rename_field":
         alias_file = patches_dir / f"schema_alias_{old_name}.md"
-        _write_schema_alias_note(alias_file, old_name, new_name)
+        alias_file.write_text(
+            render(_HERE, "schema_alias_note.md.tmpl", {"old_name": old_name, "new_name": new_name})
+        )
         files_created.append(str(alias_file))
 
-    # Alembic migration
     if generate_migration and operation in {"rename_field", "rename_model", "change_type"}:
         migration_file = _write_alembic_migration(project, operation, old_name, new_name)
         if migration_file:
             files_created.append(str(migration_file))
 
+    _emit_project_test(project, files_created)
+
     next_steps = [f"git apply {patch_file}"] if not apply else []
     next_steps.append("alembic upgrade head")
     if update_schemas and operation == "rename_field":
-        next_steps.append(
-            f"Add Field(alias='{old_name}') to Pydantic schemas for backward compat"
-        )
+        next_steps.append(f"Add Field(alias='{old_name}') to Pydantic schemas for backward compat")
 
     return ToolResult(
         status="success",
@@ -216,21 +182,8 @@ def refactor_model(
     )
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
 def _count_occurrences(project: Path, old_name: str) -> int:
-    """Count occurrences of *old_name* across all ``.py`` files.
-
-    Args:
-        project: Project root directory.
-        old_name: Identifier to search for.
-
-    Returns:
-        Total occurrence count.
-    """
+    """Count occurrences of *old_name* across all ``.py`` files."""
     count = 0
     for py_file in project.rglob("*.py"):
         if ".venv" in py_file.parts:
@@ -240,70 +193,19 @@ def _count_occurrences(project: Path, old_name: str) -> int:
 
 
 def _rename_in_source(source: str, old_name: str, new_name: str, operation: str) -> str:
-    """Rename *old_name* → *new_name* in *source* using AST token replacement.
-
-    Args:
-        source: Python source text.
-        old_name: Identifier to replace.
-        new_name: Replacement identifier.
-        operation: Refactor operation type (used for operation-specific logic).
-
-    Returns:
-        Patched source text.
-    """
+    """Rename *old_name* → *new_name* in *source* using word-boundary regex."""
     try:
         ast.parse(source)
     except SyntaxError:
-        return source  # Don't touch unparseable files
-
-    # Simple but robust: replace word-boundary occurrences of the identifier.
-    # For production use, libcst provides comment-preserving transforms.
-    import re
-
+        return source
     pattern = re.compile(r"\b" + re.escape(old_name) + r"\b")
     return pattern.sub(new_name, source)
-
-
-def _write_schema_alias_note(dest: Path, old_name: str, new_name: str) -> None:
-    """Write a markdown note explaining the backward-compat alias.
-
-    Args:
-        dest: Destination path for the note file.
-        old_name: Original field name.
-        new_name: New field name.
-    """
-    content = textwrap.dedent(f"""\
-        # Schema Backward-Compat Alias
-
-        Field renamed: `{old_name}` → `{new_name}`
-
-        Add the following to every Pydantic schema that exposes this field
-        to preserve backward compatibility during the migration window:
-
-        ```python
-        {new_name}: str = Field(..., alias="{old_name}")
-        ```
-
-        Remove the alias after all consumers have migrated to `{new_name}`.
-    """)
-    dest.write_text(content)
 
 
 def _write_alembic_migration(
     project: Path, operation: str, old_name: str, new_name: str
 ) -> Path | None:
-    """Generate a multi-phase Alembic migration for the rename.
-
-    Args:
-        project: Project root directory.
-        operation: Refactor operation type.
-        old_name: Original identifier.
-        new_name: New identifier.
-
-    Returns:
-        Path to the generated migration file, or None if alembic/versions
-        does not exist.
-    """
+    """Generate an Alembic migration scaffold for the rename."""
     versions_dir = project / "alembic" / "versions"
     if not versions_dir.exists():
         return None
@@ -313,48 +215,30 @@ def _write_alembic_migration(
     if migration_file.exists():
         return migration_file
 
-    content = textwrap.dedent(f"""\
-        \"\"\"Refactor migration: {operation} {old_name} → {new_name}.
-
-        Revision ID: {rev_id}
-        \"\"\"
-        from __future__ import annotations
-
-        import sqlalchemy as sa
-        from alembic import op
-
-        revision = "{rev_id}"
-        down_revision = None  # auto-detected by alembic from revision chain
-        branch_labels = None
-        depends_on = None
-
-
-        def upgrade() -> None:
-            \"\"\"Apply the rename operation.\"\"\"
-            # Phase 1: Add new column / rename
-            # op.alter_column("table", "{old_name}", new_column_name="{new_name}")
-            # Phase 2: Backfill if needed
-            # op.execute("UPDATE table SET {new_name} = {old_name}")
-            # Phase 3: Drop old column (in a separate migration after dual-read period)
-            pass
-
-
-        def downgrade() -> None:
-            \"\"\"Reverse the rename operation.\"\"\"
-            # op.alter_column("table", "{new_name}", new_column_name="{old_name}")
-            pass
-    """)
-    migration_file.write_text(content)
+    render_to(
+        _HERE,
+        "alembic_migration.py.tmpl",
+        dest=migration_file,
+        substitutions={
+            "operation": operation,
+            "old_name": old_name,
+            "new_name": new_name,
+            "rev_id": rev_id,
+        },
+    )
     return migration_file
 
 
+def _emit_project_test(project: Path, created: list[str]) -> None:
+    """Emit tests/test_refactor_model_emitted.py into the generated project."""
+    (project / "tests").mkdir(parents=True, exist_ok=True)
+    emitted = project / "tests" / "test_refactor_model_emitted.py"
+    if emitted.exists():
+        return
+    render_to(_HERE, "test_refactor_model_emitted.py.tmpl", dest=emitted, substitutions={})
+    created.append(str(emitted))
+
+
 def _elapsed_ms(start: float) -> int:
-    """Return elapsed milliseconds since *start*.
-
-    Args:
-        start: Reference time from ``time.monotonic()``.
-
-    Returns:
-        Elapsed milliseconds as an integer.
-    """
+    """Return elapsed milliseconds since *start*."""
     return int((time.monotonic() - start) * 1000)

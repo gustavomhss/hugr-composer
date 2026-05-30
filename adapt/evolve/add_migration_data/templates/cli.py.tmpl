@@ -1,0 +1,77 @@
+"""CLI for data migrations.
+
+Usage::
+
+    python -m data_migrations.cli run <name> [--live]
+    python -m data_migrations.cli status
+"""
+from __future__ import annotations
+
+import argparse
+import importlib
+import logging
+import sys
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+logger = logging.getLogger(__name__)
+
+
+def _cmd_run(args: argparse.Namespace) -> int:
+    """Run a named migration (dry-run unless --live is passed).
+
+    Args:
+        args: Parsed CLI arguments.
+
+    Returns:
+        Exit code (0 = success, 1 = failure).
+    """
+    dry_run = not args.live
+    try:
+        mod = importlib.import_module(f"data_migrations.{args.name}")
+        migration_cls = getattr(mod, "Migration", None)
+        if migration_cls is None:
+            logger.error("No Migration class in data_migrations.%s", args.name)
+            return 1
+    except ModuleNotFoundError:
+        logger.error("Migration module not found: data_migrations.%s", args.name)
+        return 1
+
+    logger.info("Running %s | dry_run=%s", args.name, dry_run)
+    # NOTE: Caller must wire a real session; this stub logs intent.
+    logger.info("Pass a SQLAlchemy Session to Migration(session=...) to execute.")
+    return 0
+
+
+def _cmd_status(args: argparse.Namespace) -> int:
+    """Print migration status from the checkpoint table.
+
+    Args:
+        args: Parsed CLI arguments (unused).
+
+    Returns:
+        Exit code.
+    """
+    logger.info("Status command: connect to DB and query data_migration_checkpoints.")
+    return 0
+
+
+def main() -> None:
+    """Parse CLI args and dispatch to sub-commands."""
+    parser = argparse.ArgumentParser(prog="data_migrations")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    run_p = sub.add_parser("run", help="Execute a named migration")
+    run_p.add_argument("name", help="Migration module name (snake_case)")
+    run_p.add_argument("--live", action="store_true", help="Disable dry-run and write to DB")
+
+    sub.add_parser("status", help="Show migration checkpoint status")
+
+    args = parser.parse_args()
+    if args.command == "run":
+        sys.exit(_cmd_run(args))
+    elif args.command == "status":
+        sys.exit(_cmd_status(args))
+
+
+if __name__ == "__main__":
+    main()

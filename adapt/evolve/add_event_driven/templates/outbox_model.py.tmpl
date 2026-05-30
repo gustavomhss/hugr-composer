@@ -1,0 +1,44 @@
+"""Transactional outbox model.
+
+Written atomically with the business row in the same transaction.
+Background outbox_worker.py drains this table to the broker.
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import Boolean, DateTime, Integer, String, Text, Uuid
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+class _OutboxBase(DeclarativeBase):
+    pass
+
+
+class OutboxEvent(_OutboxBase):
+    """Outbox table row for at-least-once delivery guarantee.
+
+    Attributes:
+        id: Auto-increment surrogate PK.
+        event_id: UUID v7 identifying the domain event.
+        event_type: Discriminator (e.g. 'OrderCreated').
+        payload: JSON-serialized event payload.
+        published: False until the outbox worker successfully publishes.
+        attempts: Number of publish attempts made.
+        created_at: Row creation timestamp (UTC).
+    """
+
+    __tablename__ = "outbox_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    event_id: Mapped[uuid.UUID] = mapped_column(Uuid, unique=True, nullable=False)
+    event_type: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    payload: Mapped[str] = mapped_column(Text, nullable=False)
+    published: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )

@@ -1,0 +1,73 @@
+"""Event consumer for $broker.
+
+Dispatches incoming events to registered handlers with retry logic,
+idempotency checking, and DLQ quarantine on exhaustion.
+"""
+from __future__ import annotations
+
+import logging
+from typing import Callable
+
+from events.idempotency import is_seen, mark_seen
+from events.retry_engine import retry_with_backoff
+from events.dlq import send_to_dlq
+
+logger = logging.getLogger(__name__)
+
+# Handler registry: event_type → async handler function
+_HANDLERS: dict[str, Callable] = {}
+
+# INV-ED-07: highest schema version this consumer understands
+SUPPORTED_SCHEMA_VERSION: int = 1
+
+
+def register_handler(event_type: str, handler: Callable) -> None:
+    """Register an async handler for an event type.
+
+    Args:
+        event_type: Event discriminator string (e.g. 'OrderCreated').
+        handler: Async callable accepting a single event dict.
+    """
+    _HANDLERS[event_type] = handler
+    logger.info("Registered handler for %s", event_type)
+
+
+async def dispatch_event(event_id: str, event_type: str, payload: dict) -> None:
+    """Dispatch one event to its registered handler with idempotency + retry.
+
+    Raises ``ValueError`` when the event carries a ``schema_version``
+    higher than ``SUPPORTED_SCHEMA_VERSION`` so that unknown schemas
+    are never silently ignored (INV-ED-07).
+
+    Args:
+        event_id: Unique event identifier (UUID string).
+        event_type: Event discriminator.
+        payload: Parsed event payload dict.
+
+    Raises:
+        ValueError: If ``payload["schema_version"] > SUPPORTED_SCHEMA_VERSION``.
+    """
+    # INV-ED-07: reject events with unsupported schema version
+    schema_ver = payload.get("schema_version", 1)
+    if schema_ver > SUPPORTED_SCHEMA_VERSION:
+        raise ValueError(
+            f"Unknown schema version {schema_ver} for event_type={event_type}. "
+            f"Consumer only supports up to v{SUPPORTED_SCHEMA_VERSION}."
+        )
+
+    consumer_name = "default"
+    if is_seen(consumer_name, event_id):
+        logger.debug("Duplicate event %s — skipped", event_id)
+        return
+
+    handler = _HANDLERS.get(event_type)
+    if handler is None:
+        logger.warning("No handler for event_type=%s", event_type)
+        return
+
+    try:
+        await retry_with_backoff(handler, payload)
+        mark_seen(consumer_name, event_id)
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Handler failed after retries: %s | event_id=%s", exc, event_id)
+        send_to_dlq(event_id, event_type, payload, str(exc))

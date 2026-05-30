@@ -1,0 +1,61 @@
+"""Locale-aware number, date, and currency formatters.
+
+All functions delegate to Babel's CLDR-backed format functions.
+"""
+from __future__ import annotations
+
+from datetime import date, datetime
+
+from app.core.locale_context import get_current_locale
+
+
+def format_number(value: int | float) -> str:
+    """Format *value* as a locale-aware number string.
+
+    Args:
+        value: Numeric value to format.
+
+    Returns:
+        Locale-formatted number string (e.g. ``'1.234,56'`` for pt_BR).
+    """
+    locale = get_current_locale()
+    try:
+        from babel.numbers import format_number as _fmt  # type: ignore[import-untyped]
+        return _fmt(value, locale=locale)
+    except (ImportError, Exception):  # noqa: BLE001
+        return str(value)
+
+
+def format_date(value: date | datetime) -> str:
+    """Format *value* as a locale-aware date string.
+
+    Args:
+        value: Date or datetime to format.
+
+    Returns:
+        Locale-formatted date string.
+    """
+    locale = get_current_locale()
+    try:
+        from babel.dates import format_date as _fmt  # type: ignore[import-untyped]
+        return _fmt(value, locale=locale)
+    except (ImportError, Exception):  # noqa: BLE001
+        return str(value)
+
+
+def format_currency(amount: int | float, currency: str = "USD") -> str:
+    """Format *amount* as a locale-aware currency string.
+
+    Args:
+        amount: Monetary value to format.
+        currency: ISO 4217 currency code (e.g. ``'BRL'``, ``'EUR'``).
+
+    Returns:
+        Locale-formatted currency string (e.g. ``'R$$ 1.234,56'``).
+    """
+    locale = get_current_locale()
+    try:
+        from babel.numbers import format_currency as _fmt  # type: ignore[import-untyped]
+        return _fmt(amount, currency, locale=locale)
+    except (ImportError, Exception):  # noqa: BLE001
+        return f"{currency} {amount}"

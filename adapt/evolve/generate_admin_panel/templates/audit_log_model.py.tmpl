@@ -1,0 +1,40 @@
+"""SQLAlchemy model for admin audit log entries."""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import DateTime, String, Text, Uuid
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+class _AuditBase(DeclarativeBase):
+    pass
+
+
+class AuditLog(_AuditBase):
+    """Immutable record of every admin write action.
+
+    Attributes:
+        id: UUID primary key.
+        table_name: Affected table.
+        operation: ``INSERT``, ``UPDATE``, or ``DELETE``.
+        record_id: Stringified PK of the affected row.
+        actor: Admin username who performed the action.
+        payload: JSON snapshot of changed values.
+        occurred_at: UTC timestamp of the operation.
+    """
+
+    __tablename__ = "audit_log"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    table_name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    operation: Mapped[str] = mapped_column(String(50), nullable=False)
+    record_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    actor: Mapped[str] = mapped_column(String(255), nullable=False)
+    payload: Mapped[str | None] = mapped_column(Text, nullable=True)
+    occurred_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )

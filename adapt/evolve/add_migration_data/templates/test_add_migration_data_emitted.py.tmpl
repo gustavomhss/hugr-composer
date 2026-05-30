@@ -1,0 +1,48 @@
+"""Emitted test for add_migration_data tool.
+
+add_migration_data scaffolds a data_migrations/ package. The honest
+assertions here:
+
+  Positive: data_migrations.base.DataMigration imports and the scaffold's
+  Migration subclass declares the required hooks.
+
+  Negative: DataMigration.undo() raises NotImplementedError by default.
+  This pins the documented advisory-only stance — the scaffold does NOT
+  claim that a generic data backfill is automatically reversible.
+"""
+
+from __future__ import annotations
+
+import importlib
+
+import pytest
+
+
+def test_data_migration_base_imports() -> None:
+    """Positive: data_migrations.base.DataMigration is importable."""
+    mod = importlib.import_module("data_migrations.base")
+    assert hasattr(mod, "DataMigration")
+    assert hasattr(mod, "MigrationStats")
+
+
+def test_undo_raises_not_implemented_by_default() -> None:
+    """Negative honesty: undo() raises NotImplementedError unless overridden.
+
+    Honesty rule: the scaffold does NOT provide a generic reverse-the-backfill
+    capability. Operators are pointed to a pg_dump restore in the error message.
+    """
+    from data_migrations.base import DataMigration
+
+    class _Subclass(DataMigration):
+        migration_name = "test_undo_raises"
+
+        def run_batch(self, last_id: int) -> tuple[int, int]:
+            return last_id, 0
+
+        def verify_after_run(self) -> bool:
+            return True
+
+    inst = _Subclass(session=None, batch_size=10, dry_run=True)  # type: ignore[arg-type]
+    with pytest.raises(NotImplementedError) as exc:
+        inst.undo()
+    assert "pg_dump" in str(exc.value)

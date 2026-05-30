@@ -1,0 +1,66 @@
+"""Data migration: $name.
+
+Replace this docstring and the run_batch/verify_after_run implementations
+with your actual migration logic.
+"""
+from __future__ import annotations
+
+import logging
+
+from sqlalchemy import text
+
+from data_migrations.base import DataMigration
+
+logger = logging.getLogger(__name__)
+$idempotent_note
+
+
+class Migration(DataMigration):
+    """Concrete migration for $name.
+
+    Processes rows in batches of $batch_size using a cursor-based
+    approach (WHERE id > last_id LIMIT N) to avoid full table scans.
+    """
+
+    migration_name = "$name"
+
+    def run_batch(self, last_id: int) -> tuple[int, int]:
+        """Process one batch of rows.
+
+        Args:
+            last_id: Cursor — process rows with id > last_id.
+
+        Returns:
+            Tuple of (new_last_id, rows_affected).  Returns (last_id, 0)
+            when no more rows remain.
+        """
+        # CUSTOMIZE: replace with your transformation query
+        rows_sql = text(
+            "SELECT id FROM items WHERE id > :last_id ORDER BY id LIMIT :batch"
+        )
+        rows = self.session.execute(
+            rows_sql, {"last_id": last_id, "batch": self.batch_size}
+        ).fetchall()
+        if not rows:
+            return last_id, 0
+        new_last_id = rows[-1][0]
+        if not self.dry_run:
+            # CUSTOMIZE: replace with your DML
+            self.session.execute(
+                text("UPDATE items SET updated_at = now() WHERE id > :last_id AND id <= :new_last"),
+                {"last_id": last_id, "new_last": new_last_id},
+            )
+            self.session.commit()
+        else:
+            logger.info("[dry_run] Would update %d rows (id %d..%d)", len(rows), last_id + 1, new_last_id)
+        return new_last_id, len(rows)
+
+    def verify_after_run(self) -> bool:
+        """Post-migration assertion.
+
+        Returns:
+            True if verification passes.
+        """
+        # CUSTOMIZE: add your post-migration assertion query
+        logger.info("verify_after_run: %s — add assertions here", self.migration_name)
+        return True

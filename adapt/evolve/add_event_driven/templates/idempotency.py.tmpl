@@ -1,0 +1,58 @@
+"""Consumer idempotency via Redis seen-cache.
+
+Uses a Redis SET with 7-day TTL to absorb duplicate deliveries.
+Falls back gracefully (allows processing) when Redis is unavailable.
+"""
+from __future__ import annotations
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+_TTL_SECONDS = 7 * 24 * 3600  # 7 days
+
+
+def _redis_client():  # type: ignore[return]
+    """Return a Redis client or None if unavailable."""
+    try:
+        import redis  # type: ignore[import-untyped]
+        return redis.Redis(host="localhost", port=6379, decode_responses=True)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def is_seen(consumer_name: str, event_id: str) -> bool:
+    """Return True if this event has already been processed by this consumer.
+
+    Args:
+        consumer_name: Unique consumer identifier.
+        event_id: Event UUID string.
+
+    Returns:
+        True if the event was already seen (should be skipped).
+    """
+    client = _redis_client()
+    if client is None:
+        return False
+    key = f"seen:{consumer_name}:{event_id}"
+    try:
+        return bool(client.exists(key))
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def mark_seen(consumer_name: str, event_id: str) -> None:
+    """Mark an event as processed by this consumer (7-day TTL).
+
+    Args:
+        consumer_name: Unique consumer identifier.
+        event_id: Event UUID string.
+    """
+    client = _redis_client()
+    if client is None:
+        return
+    key = f"seen:{consumer_name}:{event_id}"
+    try:
+        client.set(key, "1", ex=_TTL_SECONDS)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Failed to mark event seen: %s", exc)

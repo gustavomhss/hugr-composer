@@ -1,0 +1,69 @@
+"""Base event schema for all domain events.
+
+Uses UUID v7 for time-ordered event IDs (chronological by construction).
+All events are immutable (frozen=True) after creation.
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timezone
+from typing import Any
+
+from pydantic import BaseModel, Field
+
+
+def _uuid7() -> uuid.UUID:
+    """Generate a UUID v7 (time-ordered, RFC 9562).
+
+    Falls back to uuid4 with timestamp injection for Python < 3.13.
+
+    Returns:
+        A time-ordered UUID.
+    """
+    try:
+        return uuid.uuid7()  # type: ignore[attr-defined]  # Python 3.13+
+    except AttributeError:
+        import time as _time
+        ts_ms = int(_time.time() * 1000)
+        rand_b = uuid.uuid4().int & 0x3FFF_FFFF_FFFF_FFFF
+        val = (ts_ms << 80) | (0x7 << 76) | rand_b
+        return uuid.UUID(int=val)
+
+
+class BaseEvent(BaseModel):
+    """Immutable base for all domain events.
+
+    Attributes:
+        event_id: Time-ordered UUID v7 for chronological sort.
+        event_type: Discriminator string (e.g. 'OrderCreated').
+        occurred_at: UTC timestamp of when the event was raised.
+        correlation_id: Optional trace ID linking related events.
+        schema_version: Monotonic version for schema evolution.
+        producer_service: Name of the originating service.
+    """
+
+    event_id: uuid.UUID = Field(default_factory=_uuid7)
+    event_type: str
+    occurred_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+    correlation_id: uuid.UUID | None = None
+    schema_version: int = 1
+    producer_service: str = ""
+
+    model_config = {"frozen": True}
+
+    def to_stream_payload(self) -> dict[str, str]:
+        """Serialize to Redis XADD-compatible flat dict (all strings).
+
+        Returns:
+            Dict with all string values for Redis Streams.
+        """
+        return {
+            "event_id": str(self.event_id),
+            "event_type": self.event_type,
+            "occurred_at": self.occurred_at.isoformat(),
+            "correlation_id": str(self.correlation_id) if self.correlation_id else "",
+            "schema_version": str(self.schema_version),
+            "payload": self.model_dump_json(),
+        }

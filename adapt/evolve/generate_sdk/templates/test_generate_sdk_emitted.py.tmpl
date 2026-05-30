@@ -1,0 +1,39 @@
+"""Emitted test for generate_sdk tool.
+
+generate_sdk writes openapi.json + a per-language SDK directory (real
+generator output when installed, scaffold stub otherwise). It does NOT
+guarantee the SDK is "source of truth" for the live API — the SDK is a
+snapshot of whatever schema was captured at generation time, and may drift
+from app.openapi() until regenerated.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+
+def test_openapi_json_present_in_sdks_dir() -> None:
+    """Positive: sdks/openapi.json exists and is valid JSON with an info block."""
+    project = Path(__file__).resolve().parent.parent
+    schema_file = project / "sdks" / "openapi.json"
+    assert schema_file.exists(), "sdks/openapi.json missing — generate_sdk did not run."
+    schema = json.loads(schema_file.read_text())
+    assert "info" in schema or "openapi" in schema
+
+
+def test_sdk_is_snapshot_not_source_of_truth() -> None:
+    """Negative honesty: the SDK is a snapshot, NOT a freshness guarantee.
+
+    .schema_hash captures the hash at generation time. Drift between this hash
+    and the live app.openapi() is possible and expected until regen. This test
+    pins the documented contract: a .schema_hash file SHOULD be present, and
+    its presence is what the CI workflow watches for drift.
+    """
+    project = Path(__file__).resolve().parent.parent
+    hash_file = project / "sdks" / ".schema_hash"
+    assert hash_file.exists(), (
+        ".schema_hash missing — without it the CI drift check cannot run, "
+        "and the SDK has no anchor pointing back to the schema it was generated from."
+    )
+    assert hash_file.read_text().strip(), ".schema_hash is empty."

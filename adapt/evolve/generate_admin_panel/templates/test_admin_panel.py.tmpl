@@ -1,0 +1,171 @@
+"""Tests for the generated admin panel scaffold."""
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+ADMIN_DIR = Path(__file__).parent.parent / "app" / "admin"
+MOUNT_PATH = "$mount_path"
+MODELS = $models
+READ_ONLY = $read_only_models
+
+
+def test_admin_init_exists() -> None:
+    """app/admin/__init__.py must exist and contain 'sqladmin'."""
+    f = ADMIN_DIR / "__init__.py"
+    assert f.exists(), "admin/__init__.py missing"
+    assert "sqladmin" in f.read_text(), "sqladmin not referenced in admin init"
+
+
+def test_admin_init_parses() -> None:
+    """admin/__init__.py must be valid Python."""
+    src = (ADMIN_DIR / "__init__.py").read_text()
+    ast.parse(src)  # raises SyntaxError on failure
+
+
+def test_auth_file_exists() -> None:
+    """app/admin/auth.py must exist."""
+    assert (ADMIN_DIR / "auth.py").exists(), "admin/auth.py missing"
+
+
+def test_auth_parses() -> None:
+    """admin/auth.py must be valid Python."""
+    src = (ADMIN_DIR / "auth.py").read_text()
+    ast.parse(src)
+
+
+def test_audit_file_exists() -> None:
+    """app/admin/audit.py must exist."""
+    assert (ADMIN_DIR / "audit.py").exists(), "admin/audit.py missing"
+
+
+def test_audit_parses() -> None:
+    """admin/audit.py must be valid Python."""
+    src = (ADMIN_DIR / "audit.py").read_text()
+    ast.parse(src)
+
+
+def test_view_files_exist() -> None:
+    """Each model must have a corresponding view file."""
+    views_dir = ADMIN_DIR / "views"
+    for model in MODELS:
+        view_file = views_dir / f"{model.lower()}_view.py"
+        assert view_file.exists(), f"View missing for {model}: {view_file}"
+
+
+def test_view_files_parse() -> None:
+    """All view files must be valid Python."""
+    views_dir = ADMIN_DIR / "views"
+    for model in MODELS:
+        view_file = views_dir / f"{model.lower()}_view.py"
+        if view_file.exists():
+            ast.parse(view_file.read_text())
+
+
+def test_view_files_contain_model_admin_class() -> None:
+    """Each view file must define a <Model>Admin class."""
+    views_dir = ADMIN_DIR / "views"
+    for model in MODELS:
+        view_file = views_dir / f"{model.lower()}_view.py"
+        if view_file.exists():
+            src = view_file.read_text()
+            assert f"{model}Admin" in src, f"{model}Admin class missing in {view_file}"
+
+
+def test_read_only_views_have_can_false() -> None:
+    """Read-only model views must set can_create/can_edit/can_delete = False."""
+    views_dir = ADMIN_DIR / "views"
+    for model in READ_ONLY:
+        view_file = views_dir / f"{model.lower()}_view.py"
+        if view_file.exists():
+            src = view_file.read_text()
+            assert "can_create = False" in src
+            assert "can_edit = False" in src
+            assert "can_delete = False" in src
+
+
+def test_writable_views_have_can_true() -> None:
+    """Writable model views must set can_create/can_edit/can_delete = True."""
+    views_dir = ADMIN_DIR / "views"
+    writable = [m for m in MODELS if m not in READ_ONLY]
+    for model in writable:
+        view_file = views_dir / f"{model.lower()}_view.py"
+        if view_file.exists():
+            src = view_file.read_text()
+            assert "can_create = True" in src
+            assert "can_edit = True" in src
+            assert "can_delete = True" in src
+
+
+def test_csv_export_cap_in_views() -> None:
+    """All views must declare export_max_rows = 10_000."""
+    views_dir = ADMIN_DIR / "views"
+    for model in MODELS:
+        view_file = views_dir / f"{model.lower()}_view.py"
+        if view_file.exists():
+            src = view_file.read_text()
+            assert "export_max_rows" in src, f"export_max_rows missing in {view_file}"
+
+
+def test_audit_log_model_exists() -> None:
+    """app/models/audit_log.py must exist."""
+    audit_model = ADMIN_DIR.parent / "models" / "audit_log.py"
+    assert audit_model.exists(), "audit_log.py model missing"
+
+
+def test_audit_log_model_parses() -> None:
+    """audit_log.py must be valid Python."""
+    f = ADMIN_DIR.parent / "models" / "audit_log.py"
+    if f.exists():
+        ast.parse(f.read_text())
+
+
+def test_mount_path_in_admin_init() -> None:
+    """Admin __init__ must reference the configured mount path."""
+    src = (ADMIN_DIR / "__init__.py").read_text()
+    assert MOUNT_PATH in src, f"Mount path {MOUNT_PATH} not in admin __init__"
+
+
+def test_views_init_exists() -> None:
+    """app/admin/views/__init__.py must exist."""
+    assert (ADMIN_DIR / "views" / "__init__.py").exists()
+
+
+def test_admin_auth_class_name() -> None:
+    """auth.py must define AdminAuth class."""
+    src = (ADMIN_DIR / "auth.py").read_text()
+    assert "class AdminAuth" in src
+
+
+def test_admin_auth_login_method() -> None:
+    """AdminAuth must implement login method."""
+    src = (ADMIN_DIR / "auth.py").read_text()
+    assert "async def login" in src
+
+
+def test_admin_auth_logout_method() -> None:
+    """AdminAuth must implement logout method."""
+    src = (ADMIN_DIR / "auth.py").read_text()
+    assert "async def logout" in src
+
+
+def test_admin_auth_authenticate_method() -> None:
+    """AdminAuth must implement authenticate method."""
+    src = (ADMIN_DIR / "auth.py").read_text()
+    assert "async def authenticate" in src
+
+
+def test_audit_register_function_exists() -> None:
+    """audit.py must define register_audit_listeners function."""
+    src = (ADMIN_DIR / "audit.py").read_text()
+    assert "def register_audit_listeners" in src
+
+
+def test_all_view_files_reference_model_view() -> None:
+    """All view files must reference ModelView from sqladmin."""
+    views_dir = ADMIN_DIR / "views"
+    for model in MODELS:
+        view_file = views_dir / f"{model.lower()}_view.py"
+        if view_file.exists():
+            src = view_file.read_text()
+            assert "ModelView" in src

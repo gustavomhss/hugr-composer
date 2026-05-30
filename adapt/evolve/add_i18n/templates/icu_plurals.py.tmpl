@@ -1,0 +1,54 @@
+"""ICU MessageFormat-compatible pluralization helper.
+
+Uses Babel's CLDR plural rules for grammatically correct multi-language
+pluralization.  Falls back to simple English rules when Babel is not
+installed.
+"""
+from __future__ import annotations
+
+from app.core.locale_context import get_current_locale
+
+
+def pluralize(count: int, forms: dict[str, str]) -> str:
+    """Return the correct plural form for *count* in the active locale.
+
+    Args:
+        count: Numeric count to pluralize.
+        forms: Dict of CLDR plural category → translated string.
+            Categories: ``zero``, ``one``, ``two``, ``few``, ``many``, ``other``.
+            Always include ``other`` as the fallback.
+
+    Returns:
+        The appropriate plural form string.
+
+    Example::
+
+        text = pluralize(3, {
+            "one": "{} item",
+            "other": "{} items",
+        })
+        # Returns "3 items"
+    """
+    locale = get_current_locale()
+    category = _get_plural_category(count, locale)
+    template = forms.get(category) or forms.get("other", str(count))
+    return template.format(count)
+
+
+def _get_plural_category(count: int, locale: str) -> str:
+    """Return the CLDR plural category for *count* in *locale*.
+
+    Args:
+        count: Numeric value.
+        locale: BCP-47 locale code.
+
+    Returns:
+        CLDR category string (``'one'``, ``'few'``, ``'many'``, ``'other'``, etc.).
+    """
+    try:
+        from babel.plural import get_plural  # type: ignore[import-untyped]
+        plural_func = get_plural(locale)
+        return plural_func(count)
+    except (ImportError, Exception):  # noqa: BLE001
+        # English fallback: 1 → 'one', everything else → 'other'
+        return "one" if count == 1 else "other"
