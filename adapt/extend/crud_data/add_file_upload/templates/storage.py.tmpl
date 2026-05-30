@@ -1,0 +1,190 @@
+"""Storage backend ABC with LocalStorage and S3Storage implementations.
+
+Use ``get_storage()`` to obtain the configured backend.  The backend is
+selected by ``settings.STORAGE_BACKEND`` (``"local"`` or ``"s3"``).
+"""
+
+from __future__ import annotations
+
+import asyncio
+import os
+import tempfile
+import uuid
+from abc import ABC, abstractmethod
+from pathlib import Path
+
+
+CHUNK_SIZE: int = 65536  # 64 KB — never buffers full file in memory
+
+
+class StorageBackend(ABC):
+    """Abstract storage backend.  Both implementations share this interface."""
+
+    @abstractmethod
+    async def save(self, file_obj: object, content_type: str) -> tuple[str, int]:
+        """Persist *file_obj* and return ``(stored_key, size_bytes)``.
+
+        Args:
+            file_obj: File-like object with a ``read`` method.
+            content_type: MIME type of the file.
+
+        Returns:
+            Tuple of ``(stored_key, size_bytes)``.
+        """
+
+    @abstractmethod
+    async def get_url(self, stored_key: str, expires_in: int = 3600) -> str:
+        """Return a URL (presigned for S3, file path for local) for *stored_key*.
+
+        Args:
+            stored_key: UUID-based storage key.
+            expires_in: URL TTL in seconds (S3 only).
+
+        Returns:
+            Accessible URL string.
+        """
+
+    @abstractmethod
+    async def delete(self, stored_key: str) -> None:
+        """Remove the object identified by *stored_key* from storage.
+
+        Args:
+            stored_key: UUID-based storage key.
+        """
+
+
+class LocalStorage(StorageBackend):
+    """Local filesystem storage with atomic temp-file rename (no partial writes).
+
+    Attributes:
+        base_dir: Resolved absolute path to the upload root directory.
+    """
+
+    def __init__(self, base_dir: str) -> None:
+        self.base_dir = Path(base_dir).resolve()
+        self.base_dir.mkdir(parents=True, exist_ok=True)
+
+    async def save(self, file_obj: object, content_type: str) -> tuple[str, int]:
+        """Write *file_obj* atomically to ``base_dir/{uuid}.bin``.
+
+        Args:
+            file_obj: Readable file-like object.
+            content_type: MIME type (stored in FileMetadata, not in filename).
+
+        Returns:
+            ``(stored_key, size_bytes)`` where stored_key is ``"{uuid}.bin"``.
+        """
+        key = str(uuid.uuid4()) + ".bin"
+        target = self.base_dir / key
+
+        def _write() -> int:
+            size = 0
+            fd, tmp_path = tempfile.mkstemp(dir=self.base_dir)
+            try:
+                with os.fdopen(fd, "wb") as fh:
+                    while True:
+                        chunk = file_obj.read(CHUNK_SIZE)
+                        if not chunk:
+                            break
+                        fh.write(chunk)
+                        size += len(chunk)
+                os.replace(tmp_path, target)
+            except Exception:
+                os.unlink(tmp_path)
+                raise
+            return size
+
+        size = await asyncio.to_thread(_write)
+        return key, size
+
+    async def get_url(self, stored_key: str, expires_in: int = 3600) -> str:
+        """Return absolute filesystem path — validate against base_dir (no traversal).
+
+        Args:
+            stored_key: UUID-based storage key.
+            expires_in: Ignored for local storage.
+
+        Returns:
+            Absolute path string.
+
+        Raises:
+            ValueError: If stored_key escapes the base_dir.
+        """
+        target = (self.base_dir / stored_key).resolve()
+        if not str(target).startswith(str(self.base_dir)):
+            raise ValueError(f"Path traversal attempt rejected: {stored_key}")
+        return str(target)
+
+    async def delete(self, stored_key: str) -> None:
+        """Delete the file identified by *stored_key* from local storage.
+
+        Args:
+            stored_key: UUID-based storage key.
+        """
+        target = (self.base_dir / stored_key).resolve()
+        if not str(target).startswith(str(self.base_dir)):
+            raise ValueError(f"Path traversal attempt rejected: {stored_key}")
+        target.unlink(missing_ok=True)
+
+
+class S3Storage(StorageBackend):
+    """S3 storage backend — files uploaded directly by client via presigned URL.
+
+    ``save()`` is a no-op for S3 (client uploads directly); only ``get_url``
+    and ``delete`` are called by the application server.
+    """
+
+    async def save(self, file_obj: object, content_type: str) -> tuple[str, int]:
+        """Not used on S3 path — clients upload directly via presigned POST.
+
+        Args:
+            file_obj: Ignored.
+            content_type: Ignored.
+
+        Returns:
+            Empty stored_key and 0 bytes (S3 confirmation uses HEAD).
+        """
+        return "", 0
+
+    async def get_url(self, stored_key: str, expires_in: int = 3600) -> str:
+        """Return a presigned GET URL for *stored_key*.
+
+        Args:
+            stored_key: S3 object key.
+            expires_in: URL TTL in seconds.
+
+        Returns:
+            Presigned S3 GET URL.
+        """
+        import boto3
+        from app.core.config import settings
+        client = boto3.client("s3", region_name=settings.AWS_REGION)
+        return client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": settings.S3_BUCKET, "Key": stored_key},
+            ExpiresIn=expires_in,
+        )
+
+    async def delete(self, stored_key: str) -> None:
+        """Delete *stored_key* from S3.  Uses AES256 server-side encryption bucket.
+
+        Args:
+            stored_key: S3 object key.
+        """
+        import boto3
+        from app.core.config import settings
+        client = boto3.client("s3", region_name=settings.AWS_REGION)
+        client.delete_object(Bucket=settings.S3_BUCKET, Key=stored_key)
+
+
+def get_storage() -> StorageBackend:
+    """Return the configured storage backend based on ``settings.STORAGE_BACKEND``.
+
+    Returns:
+        ``LocalStorage`` or ``S3Storage`` instance.
+    """
+    from app.core.config import settings
+    if getattr(settings, "STORAGE_BACKEND", "local") == "s3":
+        return S3Storage()
+    upload_dir = getattr(settings, "UPLOAD_DIR", "/tmp/uploads")
+    return LocalStorage(upload_dir)

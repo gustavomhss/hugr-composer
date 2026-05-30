@@ -1,0 +1,74 @@
+"""Emitted test for add_file_upload: multipart streaming + ownership + virus 451.
+
+HONESTY RULE (§5, F-06): the tool installs LocalStorage (chunked atomic write,
+NO full-file buffering), magic-byte MIME validation, and ownership-checked
+download/delete. These tests assert the emitted code carries the streaming
++ ownership pattern at the source level.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+
+def _root() -> Path:
+    return Path(__file__).parent.parent
+
+
+# ---------------------------------------------------------------------------
+# Positive: streaming + ownership invariants emitted
+# ---------------------------------------------------------------------------
+
+def test_local_storage_streams_chunked_writes() -> None:
+    """LocalStorage.save must chunk via CHUNK_SIZE, never buffer full file."""
+    body = (_root() / "app" / "core" / "storage.py").read_text()
+    assert "CHUNK_SIZE: int = 65536" in body, (
+        "LocalStorage must declare a 64 KB CHUNK_SIZE (no full-file buffering)"
+    )
+    assert "file_obj.read(CHUNK_SIZE)" in body, (
+        "LocalStorage.save must read in CHUNK_SIZE-bounded chunks (streaming, not full-buffer)"
+    )
+    assert "os.replace(tmp_path, target)" in body, (
+        "LocalStorage.save must atomic-rename (no partial writes visible to readers)"
+    )
+
+
+def test_validator_uses_magic_bytes_not_extension() -> None:
+    """MIME validation reads magic bytes, never trusts Content-Type or extension."""
+    body = (_root() / "app" / "core" / "file_validator.py").read_text()
+    assert "magic.from_buffer" in body, (
+        "validator must use libmagic on a sniffed buffer, never Content-Type"
+    )
+    assert "ALWAYS_BLOCKED" in body, "validator must enforce ALWAYS_BLOCKED MIME types"
+
+
+def test_download_route_enforces_ownership() -> None:
+    """download_file must reject non-owner non-superuser with 403."""
+    body = (_root() / "app" / "api" / "routes" / "files.py").read_text()
+    assert "metadata.uploaded_by != current_user.id" in body
+    assert 'status_code=403' in body, "download_file must 403 on ownership mismatch"
+
+
+# ---------------------------------------------------------------------------
+# Negative: virus-detected → 451, FilesMetadataPublic hides stored_key
+# ---------------------------------------------------------------------------
+
+def test_virus_detected_returns_451() -> None:
+    """Quarantined files MUST be served with HTTP 451 (Unavailable For Legal Reasons)."""
+    body = (_root() / "app" / "api" / "routes" / "files.py").read_text()
+    assert '"virus_detected"' in body
+    assert "status_code=451" in body, (
+        "virus-detected files must surface as 451 (not silently 200)"
+    )
+
+
+def test_public_schema_excludes_stored_key() -> None:
+    """FileMetadataPublic must NOT expose stored_key (S3-key leakage prevention)."""
+    body = (_root() / "app" / "schemas" / "file.py").read_text()
+    public_start = body.find("class FileMetadataPublic")
+    next_class = body.find("\nclass ", public_start + 1)
+    public_section = body[public_start:next_class if next_class >= 0 else len(body)]
+    assert "stored_key" not in public_section, (
+        "FileMetadataPublic exposes stored_key — internal S3 path must not leak to clients"
+    )
+    assert "tenant_id" not in public_section, "FileMetadataPublic must not expose tenant_id"

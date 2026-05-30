@@ -1,0 +1,11 @@
+
+# ---------------------------------------------------------------------------
+# File upload settings — added by add_file_upload tool
+# ---------------------------------------------------------------------------
+STORAGE_BACKEND: str = "local"           # "local" or "s3"
+UPLOAD_DIR: str = "/tmp/uploads"          # Local storage root
+MAX_UPLOAD_SIZE_MB: int = 10              # Per-file size limit
+ALLOWED_FILE_TYPES: list[str] = []        # Empty = use SAFE_DEFAULTS
+S3_BUCKET: str = ""                       # S3 bucket name
+AWS_REGION: str = "us-east-1"             # AWS region
+QUOTA_MB_PER_USER: int = 500              # Per-user storage quota

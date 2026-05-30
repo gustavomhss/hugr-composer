@@ -1,0 +1,94 @@
+"""Per-user storage quota enforcement with Redis advisory locking.
+
+The Redis lock ensures only one concurrent upload per user passes the
+quota check at a time, preventing race conditions where two simultaneous
+uploads each see sufficient quota and both succeed.
+"""
+
+from __future__ import annotations
+
+import uuid
+from contextlib import asynccontextmanager
+
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.file import FileMetadata
+
+QUOTA_LOCK_TTL_SECONDS: int = 5  # Lock held during quota check + pending row insert
+
+
+async def _get_redis():
+    """Return a connected aioredis client from settings.REDIS_URL."""
+    import redis.asyncio as aioredis
+    from app.core.config import settings
+    return aioredis.from_url(settings.REDIS_URL, decode_responses=True)
+
+
+@asynccontextmanager
+async def quota_lock(user_id: uuid.UUID):
+    """Async context manager: acquire a Redis advisory lock for ``user_id``.
+
+    Args:
+        user_id: UUID of the uploading user.
+
+    Raises:
+        HTTPException: 429 if another upload is already in progress for this user.
+
+    Yields:
+        Nothing — the lock is released on exit regardless of outcome.
+    """
+    from fastapi import HTTPException
+    redis = await _get_redis()
+    lock_key = f"quota_lock:{user_id}"
+    acquired = False
+    try:
+        acquired = bool(
+            await redis.set(lock_key, "1", nx=True, ex=QUOTA_LOCK_TTL_SECONDS)
+        )
+        if not acquired:
+            raise HTTPException(
+                status_code=429,
+                detail="Upload in progress for this user. Retry shortly.",
+            )
+        yield
+    finally:
+        if acquired:
+            await redis.delete(lock_key)
+        await redis.aclose()
+
+
+async def check_quota(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    incoming_bytes: int,
+) -> None:
+    """Raise HTTP 413 if confirmed storage + incoming_bytes exceeds quota.
+
+    Must be called inside a ``quota_lock`` context to prevent race conditions.
+
+    Args:
+        session: Async SQLAlchemy session.
+        user_id: UUID of the uploading user.
+        incoming_bytes: Size of the file about to be uploaded.
+
+    Raises:
+        HTTPException: 413 if the user would exceed their quota.
+    """
+    from fastapi import HTTPException
+    from app.core.config import settings
+
+    stmt = (
+        select(func.coalesce(func.sum(FileMetadata.size_bytes), 0))
+        .where(FileMetadata.uploaded_by == user_id)
+        .where(FileMetadata.status == "confirmed")
+    )
+    used_bytes: int = (await session.execute(stmt)).scalar_one()
+    quota_bytes = getattr(settings, "QUOTA_MB_PER_USER", 500) * 1024 * 1024
+    if used_bytes + incoming_bytes > quota_bytes:
+        used_mb = used_bytes / (1024 * 1024)
+        quota_mb = getattr(settings, "QUOTA_MB_PER_USER", 500)
+        raise HTTPException(
+            status_code=413,
+            detail=f"Quota exceeded: {used_mb:.1f} MB used of {quota_mb} MB limit",
+        )

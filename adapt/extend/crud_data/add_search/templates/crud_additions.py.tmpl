@@ -1,0 +1,257 @@
+
+# ---------------------------------------------------------------------------
+# Full-text search helpers — added by add_search tool
+# ---------------------------------------------------------------------------
+import re as _re
+import uuid as _search_uuid
+from sqlalchemy import func as _func, select as _select, text as _text, or_ as _or
+from sqlalchemy.dialects.postgresql import REGCONFIG as _REGCONFIG
+from sqlalchemy.ext.asyncio import AsyncSession as _SearchSession
+
+# Columns used for search (same as tsvector fields, for LIKE fallback)
+_SEARCH_TEXT_COLUMNS: list[str] = ${search_field_names}
+
+
+def _get_dialect_name(session: _SearchSession) -> str:
+    """Return the dialect name of the current session's bind (e.g. 'postgresql', 'sqlite').
+
+    Returns 'unknown' if the bind is not available (should not happen in practice).
+    """
+    bind = session.get_bind()
+    return str(bind.dialect.name) if bind else "unknown"
+
+
+def _build_search_tsvector(language: str = "english"):
+    """Build weighted tsvector expression for ${model_name}.
+
+    Field weights: first field = A (highest), subsequent = B/C/D.
+    Uses setweight + coalesce so NULL columns are treated as empty strings.
+
+    Note: This is only used when the database dialect is PostgreSQL.
+
+    Args:
+        language: PostgreSQL text search dictionary name.
+
+    Returns:
+        Composited tsvector ColumnElement.
+    """
+    lang = language
+    vecs = ${field_vecs}
+    result = vecs[0]
+    for v in vecs[1:]:
+        result = result.op("||")(v)
+    return result
+
+
+async def _run_search_query(
+    session: _SearchSession,
+    stmt,
+    rank_expr,
+    cursor_score: float | None,
+    page_size: int,
+) -> tuple[int, list]:
+    """Execute count + paginated ranked query and return (total, rows).
+
+    Args:
+        session: Async SQLAlchemy session.
+        stmt: Base SELECT statement with match filter already applied.
+        rank_expr: ts_rank_cd label expression for ordering.
+        cursor_score: Optional rank cursor for keyset pagination.
+        page_size: Page size (one extra row fetched to detect has_more).
+
+    Returns:
+        Tuple of (total_count, rows) where rows is at most page_size + 1 items.
+    """
+    count_stmt = _select(_func.count()).select_from(stmt.subquery())
+    total = (await session.execute(count_stmt)).scalar_one()
+    if cursor_score is not None:
+        stmt = stmt.where(rank_expr < cursor_score)
+    stmt = stmt.order_by(rank_expr.desc(), ${model_name}.id.desc()).limit(page_size + 1)
+    result = await session.execute(stmt)
+    return total, list(result.all())
+
+
+async def _search_like_fallback(
+    session: _SearchSession,
+    *,
+    q: str,
+    page_size: int = 20,
+    owner_id: "_search_uuid.UUID | None" = None,
+) -> dict:
+    """Cross-database fallback search using case-insensitive LIKE.
+
+    Used when the database dialect is not PostgreSQL (e.g. SQLite, MySQL).
+    Splits the query into terms (max 5) and matches each term against all
+    searchable text columns using ILIKE/case-insensitive LIKE.
+
+    Args:
+        session: Async SQLAlchemy session.
+        q: Search query string (min 2 chars enforced at HTTP layer).
+        page_size: Number of results per page (1-100).
+        owner_id: Filter by owner (applied if model has owner_id column).
+
+    Returns:
+        Dict with ``data``, ``count``, ``has_more``, ``next_cursor`` (always None).
+    """
+    terms = q.strip().split()[:5]
+    conditions = []
+    for col_name in _SEARCH_TEXT_COLUMNS:
+        col = getattr(${model_name}, col_name, None)
+        if col is None:
+            continue
+        for term in terms:
+            conditions.append(col.ilike(f"%{term}%"))
+    if conditions:
+        stmt = _select(${model_name}).where(_or(*conditions))
+    else:
+        stmt = _select(${model_name})
+    if hasattr(${model_name}, "is_deleted"):
+        stmt = stmt.where(${model_name}.is_deleted == False)  # noqa: E712
+    if owner_id is not None and hasattr(${model_name}, "owner_id"):
+        stmt = stmt.where(${model_name}.owner_id == owner_id)
+    count_stmt = _select(_func.count()).select_from(stmt.subquery())
+    total = (await session.execute(count_stmt)).scalar_one()
+    stmt = stmt.order_by(${model_name}.id.desc()).limit(page_size + 1)
+    result = await session.execute(stmt)
+    rows = list(result.scalars().all())
+    has_more = len(rows) > page_size
+    rows = rows[:page_size]
+    data = [{**r.__dict__, "rank": None} for r in rows]
+    return {"data": data, "count": total, "has_more": has_more, "next_cursor": None}
+
+
+async def _search_postgres(
+    session: _SearchSession,
+    q: str,
+    page_size: int,
+    cursor_score: float | None,
+    owner_id: "_search_uuid.UUID | None",
+    language: str,
+) -> dict:
+    """PostgreSQL FTS path: tsvector + GIN + ts_rank_cd.
+
+    The ``language`` parameter is passed as a bound value cast to
+    ``regconfig`` — never string-concatenated into raw SQL.
+    """
+    tsquery_expr = _func.websearch_to_tsquery(_func.cast(language, _REGCONFIG), q)
+    tv = _build_search_tsvector(language)
+    rank_expr = _func.ts_rank_cd(tv, tsquery_expr).label("rank")
+    stmt = _select(${model_name}, rank_expr).where(tv.op("@@")(tsquery_expr))
+    if hasattr(${model_name}, "is_deleted"):
+        stmt = stmt.where(${model_name}.is_deleted == False)  # noqa: E712
+    if owner_id is not None and hasattr(${model_name}, "owner_id"):
+        stmt = stmt.where(${model_name}.owner_id == owner_id)
+    total, rows = await _run_search_query(session, stmt, rank_expr, cursor_score, page_size)
+    has_more = len(rows) > page_size
+    rows = rows[:page_size]
+    data = [{**r[0].__dict__, "rank": float(r[1])} for r in rows]
+    next_cursor = float(rows[-1][1]) if has_more and rows else None
+    return {"data": data, "count": total, "has_more": has_more, "next_cursor": next_cursor}
+
+
+async def search(
+    session: _SearchSession,
+    *,
+    q: str,
+    page_size: int = 20,
+    cursor_score: float | None = None,
+    owner_id: "_search_uuid.UUID | None" = None,
+    language: str = "english",
+) -> dict:
+    """Full-text search with dialect-aware implementation.
+
+    On PostgreSQL: tsvector + GIN index + websearch_to_tsquery + ts_rank_cd.
+    On other databases: case-insensitive LIKE across all searchable columns.
+    User input is ALWAYS parameterized — never interpolated into SQL.
+
+    Args:
+        session: Async SQLAlchemy session.
+        q: Search query string (min 2 chars).
+        page_size: Results per page (1-100).
+        cursor_score: ts_rank cursor for next-page (PostgreSQL only).
+        owner_id: Owner filter if model has owner_id column.
+        language: PostgreSQL text search dictionary.
+
+    Returns:
+        Dict with ``data``, ``count``, ``has_more``, ``next_cursor``.
+
+    Raises:
+        ValueError: If query is shorter than 2 characters.
+    """
+    if not q or len(q.strip()) < 2:
+        raise ValueError("Search query must be at least 2 characters.")
+    if _get_dialect_name(session) != "postgresql":
+        return await _search_like_fallback(session, q=q, page_size=page_size, owner_id=owner_id)
+    return await _search_postgres(session, q, page_size, cursor_score, owner_id, language)
+
+
+async def _autocomplete_like(
+    session: _SearchSession, q: str, owner_id: "_search_uuid.UUID | None",
+) -> list[str]:
+    """LIKE-based autocomplete fallback for non-PostgreSQL databases."""
+    first_token = q.strip().split()[0]
+    first_col_name = _SEARCH_TEXT_COLUMNS[0] if _SEARCH_TEXT_COLUMNS else "id"
+    col = getattr(${model_name}, first_col_name, ${model_name}.id)
+    stmt = _select(col).where(col.ilike(f"{first_token}%")).order_by(${model_name}.id.desc()).limit(5)
+    if hasattr(${model_name}, "is_deleted"):
+        stmt = stmt.where(${model_name}.is_deleted == False)  # noqa: E712
+    if owner_id is not None and hasattr(${model_name}, "owner_id"):
+        stmt = stmt.where(${model_name}.owner_id == owner_id)
+    result = await session.execute(stmt)
+    return [row[0] for row in result.all() if row[0]]
+
+
+async def autocomplete(
+    session: _SearchSession,
+    *,
+    q: str,
+    owner_id: "_search_uuid.UUID | None" = None,
+    language: str = "english",
+) -> list[str]:
+    """Prefix-match autocomplete with dialect-aware implementation.
+
+    On PostgreSQL: uses to_tsquery('term:*') for sub-20ms p99 latency.
+    On other databases: falls back to case-insensitive LIKE prefix match.
+
+    User input is always parameterized — the search token is stripped of
+    tsquery meta-characters and passed as a bound parameter to to_tsquery.
+
+    Returns up to 5 suggestions.
+
+    Args:
+        session: Async SQLAlchemy session.
+        q: Partial query (min 1 char).
+        owner_id: Filter by owner if model has owner_id.
+        language: PostgreSQL text search dictionary.
+
+    Returns:
+        List of up to 5 matching title/name strings.
+    """
+    if not q or not q.strip():
+        return []
+    if _get_dialect_name(session) != "postgresql":
+        return await _autocomplete_like(session, q, owner_id)
+
+    first_token = q.strip().split()[0]
+    # Strip tsquery meta-characters (&, |, !, :, *, (, ), ') so the
+    # token cannot break out of the tsquery expression. Pass the
+    # sanitized token as a bound parameter (NOT wrapped in _text) so
+    # SQLAlchemy emits CAST($$1 AS regconfig), $$2 — no inline SQL literal.
+    _safe_token = _re.sub(r"[^\w]+", " ", first_token).strip()
+    prefix_query = _func.to_tsquery(
+        _func.cast(language, _REGCONFIG),
+        _safe_token + ":*",
+    )
+    tv = _build_search_tsvector(language)
+    stmt = (
+        _select(${model_name}.${first_field})
+        .where(tv.op("@@")(prefix_query))
+        .order_by(${model_name}.id.desc())
+        .limit(5)
+    )
+    if hasattr(${model_name}, "is_deleted"):
+        stmt = stmt.where(${model_name}.is_deleted == False)  # noqa: E712
+    if owner_id is not None and hasattr(${model_name}, "owner_id"):
+        stmt = stmt.where(${model_name}.owner_id == owner_id)
+    result = await session.execute(stmt)
+    return [row[0] for row in result.all() if row[0]]

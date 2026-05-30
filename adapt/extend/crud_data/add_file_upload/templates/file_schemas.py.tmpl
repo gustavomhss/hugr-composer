@@ -1,0 +1,95 @@
+"""Pydantic v2 schemas for the file upload system."""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class PresignedUploadRequest(BaseModel):
+    """Request body for POST /files/presign.
+
+    Attributes:
+        filename: Original filename for display (max 255 chars).
+        content_type: Declared MIME type (validated before presign is issued).
+        size_bytes: Declared file size in bytes.
+        resource_type: Optional polymorphic association type.
+        resource_id: Optional polymorphic association ID.
+    """
+
+    filename: str = Field(..., max_length=255)
+    content_type: str = Field(..., max_length=255)
+    size_bytes: int = Field(..., gt=0)
+    resource_type: str | None = Field(default=None, max_length=64)
+    resource_id: uuid.UUID | None = None
+
+
+class PresignedUploadResponse(BaseModel):
+    """Response body for POST /files/presign.
+
+    Attributes:
+        file_id: UUID assigned to this upload (used in /confirm).
+        upload_url: S3 presigned POST URL.
+        fields: Form fields required in the POST to S3.
+        stored_key: Object key that will be used in S3.
+        expires_in: Seconds until the presigned URL expires.
+    """
+
+    file_id: uuid.UUID
+    upload_url: str
+    fields: dict
+    stored_key: str
+    expires_in: int
+
+
+class UploadConfirmRequest(BaseModel):
+    """Request body for POST /files/{id}/confirm."""
+
+    checksum_md5: str | None = Field(
+        default=None,
+        description="Optional MD5 hex digest for client-side integrity check.",
+    )
+
+
+class FileMetadataPublic(BaseModel):
+    """Public schema for FileMetadata — strips the internal S3 object reference and tenant identifier (which never reach clients).
+
+    Attributes:
+        id: UUID primary key.
+        original_filename: Display filename from the original upload.
+        content_type: Detected MIME type.
+        size_bytes: Confirmed file size in bytes.
+        status: Upload lifecycle status.
+        resource_type: Polymorphic resource type.
+        resource_id: Polymorphic resource ID.
+        created_at: Upload creation timestamp (UTC).
+        confirmed_at: Confirmation timestamp or ``None`` if still pending.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    original_filename: str
+    content_type: str
+    size_bytes: int
+    status: str
+    resource_type: str | None = None
+    resource_id: uuid.UUID | None = None
+    created_at: datetime
+    confirmed_at: datetime | None = None
+
+
+class FilesPublic(BaseModel):
+    """Paginated list of file metadata records.
+
+    Attributes:
+        data: Page of file metadata records.
+        count: Total records matching the filter.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    data: list[FileMetadataPublic]
+    count: int
