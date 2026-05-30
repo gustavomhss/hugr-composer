@@ -1,12 +1,15 @@
 """Invariant tests for primitive `GracefulShutdown`.
 
 These encode the confirms/prevents/under-failure slots of the three
-invariants listed in `GracefulShutdown.contract.json`. The tests exercise
-a minimal in-memory model of the primitive's state machine so they do not
-depend on the real module (which intentionally references `signal` and
-`logger` at the call-site — promoted, not wired here).
+invariants listed in `GracefulShutdown.contract.json`. Most tests exercise
+a minimal in-memory model of the primitive's state machine for speed and
+isolation, but the regression tests at the bottom of the file exercise
+the real `GracefulShutdown` module to guard against import / wiring
+regressions (see R6-S11-F2).
 """
 from __future__ import annotations
+
+import asyncio
 
 
 class _ShutdownModel:
@@ -107,3 +110,55 @@ def test_inv_in_flight_counter_non_negative_under_failure() -> None:
     for _ in range(1000):
         m.decrement()
     assert m.in_flight == 0
+
+
+# Regression tests against the REAL module --------------------------------
+# Guards R6-S11-F2 (juror aa1f49fe76936518b): the primitive referenced
+# `signal.*` and `logger.*` without importing either module, so the very
+# first call to `register()` raised NameError at runtime. The model-only
+# tests above could not catch this because they bypass the real class.
+
+
+def test_real_module_register_does_not_raise_nameerror() -> None:
+    """`GracefulShutdown.register()` must not raise NameError.
+
+    Pre-fix this raised: ``NameError: name 'signal' is not defined``.
+    """
+    from core.venous.resiliency.GracefulShutdown.GracefulShutdown import (
+        GracefulShutdown,
+    )
+
+    async def _run() -> None:
+        sd = GracefulShutdown(drain_seconds=0.01, timeout_seconds=0.05)
+        # `register()` exercises `signal.SIGTERM`, `signal.SIGINT`,
+        # `loop.add_signal_handler(...)` and `logger.info(...)`. Any of
+        # those resolving to an unbound name surfaces here as NameError.
+        sd.register()
+
+    asyncio.run(_run())
+
+
+def test_real_module_wait_complete_does_not_raise_nameerror() -> None:
+    """`wait_complete()` must not raise NameError on its log lines."""
+    from core.venous.resiliency.GracefulShutdown.GracefulShutdown import (
+        GracefulShutdown,
+    )
+
+    async def _run() -> None:
+        sd = GracefulShutdown(drain_seconds=0.0, timeout_seconds=0.0)
+        sd._draining = True  # bypass signal — we are testing logger refs
+        await sd.wait_complete()
+
+    asyncio.run(_run())
+
+
+def test_real_module_has_required_imports() -> None:
+    """Belt-and-braces: assert the module exposes `signal` and `logger`.
+
+    A pure import-side regression check so the failure mode is named
+    clearly even if Python's name resolution changes in future.
+    """
+    from core.venous.resiliency.GracefulShutdown import GracefulShutdown as mod
+
+    assert hasattr(mod, "signal"), "GracefulShutdown.py must import `signal`"
+    assert hasattr(mod, "logger"), "GracefulShutdown.py must define a module-level `logger`"
