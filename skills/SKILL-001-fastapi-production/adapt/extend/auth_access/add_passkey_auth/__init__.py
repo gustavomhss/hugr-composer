@@ -35,6 +35,12 @@ _NOTES_SUCCESS = [
     "Sign count validated on every login to detect cloned credentials.",
     "⚠ require_user_verification=True is asserted by py_webauthn at verify time; if "
     "py_webauthn is absent at runtime the lazy import fails (no silent bypass).",
+    "⚠ /passkeys/register/{begin,complete} REQUIRE an authenticated session "
+    "(Depends(get_current_user)) — the credential is bound to current_user.id, "
+    "NEVER to a client-supplied user_id. Registration is the "
+    "\"add a passkey to my logged-in account\" flow; first-time passkey-only "
+    "signup (no prior session) is OUT OF SCOPE and would need a separate "
+    "partial-credential dep (R5-O4-C5).",
 ]
 _NEXT_STEPS = [
     "pip install py_webauthn",

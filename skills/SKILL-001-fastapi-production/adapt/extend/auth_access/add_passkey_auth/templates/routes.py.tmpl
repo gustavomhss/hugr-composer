@@ -9,8 +9,10 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_current_user
 from app.auth.webauthn import WebAuthnManager
 from app.core.session import get_session
+from app.models.user import User
 from app.schemas.passkey import (
     AuthenticationBeginResponse,
     AuthenticationCompleteRequest,
@@ -29,20 +31,25 @@ _webauthn = WebAuthnManager()
 @router.post("/register/begin", response_model=RegistrationBeginResponse)
 async def register_begin(
     body: RegistrationBeginRequest,
+    current_user: User = Depends(get_current_user),
 ) -> RegistrationBeginResponse:
     """Begin WebAuthn passkey registration ceremony.
 
     Generates a challenge and registration options for the client.
+    The registering user is bound to the authenticated session — the
+    client CANNOT name a different owner (R5-O4-C5, ATO).
 
     Args:
-        body: User ID and username for the authenticator prompt.
+        body: Username for the authenticator prompt.
+        current_user: Authenticated user from the session (owner of
+            the new credential).
 
     Returns:
         ``RegistrationBeginResponse`` with options and session_id.
     """
     try:
         options = _webauthn.generate_registration_options(
-            str(body.user_id), body.username
+            str(current_user.id), body.username
         )
     except Exception as exc:
         logger.error("register_begin failed: %s", exc)
@@ -58,12 +65,19 @@ async def register_begin(
 async def register_complete(
     body: RegistrationCompleteRequest,
     session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> dict:
     """Complete WebAuthn passkey registration and persist credential.
 
+    The new credential is bound to ``current_user.id`` from the
+    authenticated session — the client cannot specify an arbitrary
+    owner (R5-O4-C5, ATO).
+
     Args:
-        body: Session ID, credential from client, and user UUID.
+        body: Session ID and credential from client.
         session: SQLAlchemy async session dependency.
+        current_user: Authenticated user from the session (owner of
+            the new credential).
 
     Returns:
         Dict with status and passkey_id fields.
@@ -85,7 +99,7 @@ async def register_complete(
         raise HTTPException(
             status_code=400, detail={"detail": "Registration verification failed"}
         ) from exc
-    passkey_id = await _persist_passkey(session, body.user_id, verified)
+    passkey_id = await _persist_passkey(session, current_user.id, verified)
     return {"status": "registered", "passkey_id": str(passkey_id)}
 
 

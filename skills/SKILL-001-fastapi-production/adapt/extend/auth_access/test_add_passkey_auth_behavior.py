@@ -28,7 +28,6 @@ import os
 import subprocess
 import sys
 import tempfile
-import uuid
 from pathlib import Path
 
 os.environ.setdefault("ENVIRONMENT", "local")
@@ -181,16 +180,21 @@ async def test_beh_01_app_boots() -> None:
 
 
 @pytest.mark.asyncio
-async def test_beh_02_register_begin_without_pywebauthn() -> None:
-    """BEH-02: POST /api/v1/passkeys/register/begin fails gracefully when py_webauthn absent."""
+async def test_beh_02_register_begin_requires_auth() -> None:
+    """BEH-02: POST /api/v1/passkeys/register/begin requires auth (R5-O4-C5).
+
+    Without an Authorization header the route MUST reject with 401 before
+    any WebAuthn work happens — the credential owner is taken from the
+    authenticated session, not from a client-supplied user_id.
+    """
     project_dir = _build_project()
     client, session, engine, app = await _make_sqlite_client(project_dir)
     try:
-        payload = {"user_id": str(uuid.uuid4()), "username": "testuser"}
+        payload = {"username": "testuser"}
         r = await client.post("/api/v1/passkeys/register/begin", json=payload)
-        # Either success (if py_webauthn is installed) or 500 (graceful failure)
-        assert r.status_code in (200, 500), (
-            f"Unexpected status for register/begin: {r.status_code} {r.text}"
+        assert r.status_code == 401, (
+            f"register/begin must reject unauthenticated callers with 401; "
+            f"got {r.status_code} {r.text}"
         )
     finally:
         await _teardown(app, client, session, engine)
@@ -211,19 +215,25 @@ async def test_beh_03_login_begin_without_pywebauthn() -> None:
 
 
 @pytest.mark.asyncio
-async def test_beh_04_register_complete_invalid_session() -> None:
-    """BEH-04: POST /api/v1/passkeys/register/complete with invalid session_id returns 400."""
+async def test_beh_04_register_complete_requires_auth() -> None:
+    """BEH-04: POST /api/v1/passkeys/register/complete requires auth (R5-O4-C5).
+
+    The credential owner is bound to current_user.id server-side; an
+    unauthenticated caller MUST be rejected with 401 regardless of the
+    session_id supplied — this prevents a client from registering an
+    authenticator under a victim's UUID.
+    """
     project_dir = _build_project()
     client, session, engine, app = await _make_sqlite_client(project_dir)
     try:
         payload = {
             "session_id": "nonexistent-session-id-xyz",
             "credential": {"type": "public-key", "id": "test"},
-            "user_id": str(uuid.uuid4()),
         }
         r = await client.post("/api/v1/passkeys/register/complete", json=payload)
-        assert r.status_code == 400, (
-            f"Expected 400 for invalid session, got {r.status_code}: {r.text}"
+        assert r.status_code == 401, (
+            f"register/complete must reject unauthenticated callers with 401; "
+            f"got {r.status_code} {r.text}"
         )
     finally:
         await _teardown(app, client, session, engine)

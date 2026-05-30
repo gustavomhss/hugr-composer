@@ -25,12 +25,15 @@ class PasskeyRead(BaseModel):
 class RegistrationBeginRequest(BaseModel):
     """Request body for beginning passkey registration.
 
+    The registering user is taken from the authenticated session
+    (``Depends(get_current_user)``) — NEVER from the request body —
+    so an attacker cannot pin the new credential to a victim's
+    account by submitting the victim's UUID (R5-O4-C5, ATO).
+
     Attributes:
-        user_id: UUID of the user registering the passkey.
-        username: Display name shown in the authenticator.
+        username: Display name shown in the authenticator prompt.
     """
 
-    user_id: uuid.UUID
     username: str
 
 
@@ -49,15 +52,17 @@ class RegistrationBeginResponse(BaseModel):
 class RegistrationCompleteRequest(BaseModel):
     """Request body for completing passkey registration.
 
+    The credential is bound to the authenticated user
+    (``Depends(get_current_user)``) server-side — the client cannot
+    name a different owner (R5-O4-C5, ATO).
+
     Attributes:
         session_id: Session identifier from the begin response.
         credential: navigator.credentials.create() output.
-        user_id: UUID of the user completing registration.
     """
 
     session_id: str
     credential: dict[str, Any]
-    user_id: uuid.UUID
 
 
 class AuthenticationBeginResponse(BaseModel):
