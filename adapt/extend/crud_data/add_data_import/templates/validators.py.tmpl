@@ -1,0 +1,60 @@
+"""Row-level validators for data import pipeline.
+
+RowValidator supports configurable required-field and type-coercion rules.
+Each rule is a callable that receives a raw dict and raises ValueError on failure.
+"""
+
+from __future__ import annotations
+
+import logging
+from collections.abc import Callable
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
+
+class RowValidator:
+    """Validate a single import row against a set of configurable rules.
+
+    Attributes:
+        required_fields: Column names that must be non-empty.
+        type_rules: Map of column name → callable that coerces/validates the value.
+    """
+
+    def __init__(
+        self,
+        required_fields: list[str] | None = None,
+        type_rules: dict[str, Callable[[Any], Any]] | None = None,
+    ) -> None:
+        """Initialise the validator.
+
+        Args:
+            required_fields: Column names that must be present and non-empty.
+            type_rules: Map of field name to a type-coercion callable.
+        """
+        self.required_fields: list[str] = required_fields or []
+        self.type_rules: dict[str, Callable[[Any], Any]] = type_rules or {}
+
+    def validate(self, row: dict[str, Any], row_index: int) -> list[str]:
+        """Validate a single row and return a list of error strings.
+
+        Args:
+            row: Raw row dict from the parsed file.
+            row_index: Zero-based row index for error messages.
+
+        Returns:
+            List of human-readable error descriptions. Empty means valid.
+        """
+        errors: list[str] = []
+        for field in self.required_fields:
+            val = row.get(field)
+            if val is None or str(val).strip() == "":
+                errors.append(f"Row {row_index}: required field '{field}' is missing or empty")
+        for field, coerce in self.type_rules.items():
+            if field not in row:
+                continue
+            try:
+                coerce(row[field])
+            except (ValueError, TypeError) as exc:
+                errors.append(f"Row {row_index}: field '{field}' failed type check: {exc}")
+        return errors

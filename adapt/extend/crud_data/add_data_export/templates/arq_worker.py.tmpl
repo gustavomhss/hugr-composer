@@ -1,0 +1,144 @@
+"""ARQ worker: exports data to storage and emails the user a presigned link.
+
+Register this function in your ARQ ``WorkerSettings.functions`` list.
+The worker session is expected in ``ctx["session"]`` via ARQ startup hooks.
+"""
+from __future__ import annotations
+
+import io
+import logging
+import uuid
+from typing import Any
+
+from app.core.export import export_csv, export_ndjson, export_parquet, export_xlsx
+from app.core.storage import get_storage
+
+logger = logging.getLogger(__name__)
+
+_GENERATORS = {
+    "csv": export_csv,
+    "json": export_ndjson,
+    "xlsx": export_xlsx,
+    "parquet": export_parquet,
+}
+
+_CONTENT_TYPES = {
+    "csv": "text/csv",
+    "json": "application/x-ndjson",
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "parquet": "application/octet-stream",
+}
+
+
+async def _stream_export_to_storage(
+    session, storage, gen_fn, stmt, cols: list, job_id: str, format: str
+) -> str:
+    """Stream rows through a generator into storage and return a presigned URL.
+
+    Args:
+        session: Async SQLAlchemy session.
+        storage: Storage backend (has .save() and .presigned_url()).
+        gen_fn: Async generator function that yields bytes chunks.
+        stmt: Filtered SQLAlchemy SELECT statement.
+        cols: Column names to include in the export.
+        job_id: Export job UUID string (used as storage key prefix).
+        format: File format extension (e.g. ``csv``, ``json``).
+
+    Returns:
+        Presigned download URL valid for 24 h.
+    """
+    buf = io.BytesIO()
+    async for chunk in gen_fn(session, stmt, cols):
+        buf.write(chunk)
+    buf.seek(0)
+    key = f"exports/{job_id}.{format}"
+    await storage.save(buf, key, content_type=_CONTENT_TYPES.get(format, "application/octet-stream"))
+    return await storage.presigned_url(key, expires_in=86400)
+
+
+async def run_export(
+    ctx: dict,
+    *,
+    job_id: str,
+    user_id: str,
+    model: str,
+    format: str,
+    filters: dict[str, Any],
+) -> dict[str, Any]:
+    """ARQ job entrypoint. Streams rows to storage, emails presigned URL.
+
+    Args:
+        ctx: ARQ job context (contains ``session``, ``redis``, etc.).
+        job_id: Unique export job UUID (string).
+        user_id: UUID string of the requesting user.
+        model: Model name string (e.g. ``"Item"``).
+        format: Export format — ``csv``, ``json``, ``xlsx``, or ``parquet``.
+        filters: Column filters to apply when building the export query.
+
+    Returns:
+        Dict with ``job_id``, ``url``, and ``status``.
+
+    Raises:
+        ValueError: If ``format`` is not a recognised export format.
+    """
+    gen_fn = _GENERATORS.get(format)
+    if gen_fn is None:
+        raise ValueError(f"run_export: unknown format={format!r}")
+    from app.core.export_progress import ExportStatus, set_export_progress
+    from app.core.model_registry import build_filtered_stmt, get_model_class
+
+    session = ctx["session"]
+    storage = get_storage()
+    redis = ctx.get("redis")
+    if redis:
+        await set_export_progress(redis, job_id, ExportStatus.RUNNING)
+    model_cls = get_model_class(model)
+    stmt = build_filtered_stmt(model_cls, filters)
+    cols = [
+        c.name for c in model_cls.__table__.columns
+        if c.name not in __import__("app.core.export", fromlist=["SENSITIVE_COLUMNS"]).SENSITIVE_COLUMNS
+    ]
+    url = await _stream_export_to_storage(session, storage, gen_fn, stmt, cols, job_id, format)
+    if redis:
+        await set_export_progress(redis, job_id, ExportStatus.COMPLETE, download_url=url)
+    _try_send_email(ctx, user_id, model, url, job_id)
+    logger.info("export_complete job_id=%s model=%s format=%s user=%s", job_id, model, format, user_id)
+    return {"job_id": job_id, "url": url, "status": "complete"}
+
+
+def _try_send_email(ctx: dict, user_id: str, model: str, url: str, job_id: str) -> None:
+    """Attempt to email the user a download link; log a warning on failure.
+
+    Args:
+        ctx: ARQ context.
+        user_id: UUID string of the requesting user.
+        model: Model name for the email subject.
+        url: Presigned download URL.
+        job_id: Export job identifier for log correlation.
+    """
+    try:
+        from app.core.email import send_email  # type: ignore[import]
+        import asyncio
+
+        session = ctx.get("session")
+        if session is None:
+            return
+
+        async def _send() -> None:
+            from app.crud.user import get as crud_get_user  # type: ignore[import]
+            user = await crud_get_user(session, uuid.UUID(user_id))
+            if user and getattr(user, "email", None):
+                await send_email(
+                    to=user.email,
+                    subject=f"Your {model} data export is ready",
+                    body=(
+                        f"Your export is ready for download.\n\n"
+                        f"Download link (expires in 24 hours):\n{url}\n\n"
+                        f"This link cannot be shared — it is scoped to your account."
+                    ),
+                )
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(_send())
+    except Exception as exc:
+        logger.warning("export_email_failed job_id=%s user_id=%s exc=%s", job_id, user_id, exc)

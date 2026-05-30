@@ -1,0 +1,89 @@
+"""Redis-backed idempotency key cache for bulk operation endpoints.
+
+Stores serialised BulkResponse payloads under the client-provided key
+with a 24-hour TTL.  If Redis is unavailable, operations proceed without
+caching and log a warning — never blocking the primary flow.
+"""
+from __future__ import annotations
+
+import json
+import logging
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import redis.asyncio as aioredis
+
+logger = logging.getLogger(__name__)
+
+_redis: "aioredis.Redis | None" = None
+
+
+def init_idempotency_cache(redis_url: str) -> None:
+    """Initialise the global idempotency Redis client.
+
+    Call once at application startup (e.g. in lifespan context).
+
+    Args:
+        redis_url: Redis connection URL (e.g. ``redis://localhost:6379/0``).
+    """
+    global _redis
+    import redis.asyncio as aioredis
+    _redis = aioredis.from_url(redis_url, decode_responses=True)
+
+
+def get_idempotency_cache() -> "IdempotencyCache":
+    """Return a cache wrapper bound to the current Redis client.
+
+    Returns:
+        ``IdempotencyCache`` instance (safe to call when Redis is None).
+    """
+    return IdempotencyCache(_redis)
+
+
+class IdempotencyCache:
+    """Thin wrapper around Redis providing get/set for idempotency keys.
+
+    Attributes:
+        _redis: Underlying async Redis client, or ``None`` when unavailable.
+    """
+
+    def __init__(self, redis: "aioredis.Redis | None") -> None:
+        """Initialise with a Redis client.
+
+        Args:
+            redis: Async Redis client instance, or ``None``.
+        """
+        self._redis = redis
+
+    async def get(self, key: str) -> dict | None:
+        """Fetch cached BulkResponse by idempotency key.
+
+        Args:
+            key: Client-provided idempotency key string.
+
+        Returns:
+            Deserialised response dict, or ``None`` on cache miss or Redis failure.
+        """
+        if self._redis is None:
+            return None
+        try:
+            raw = await self._redis.get(f"idem:{key}")
+            return json.loads(raw) if raw else None
+        except Exception as exc:
+            logger.warning("idempotency_cache_get_failed key=%s exc=%s", key, exc)
+            return None
+
+    async def set(self, key: str, value: Any, ttl: int = 86400) -> None:
+        """Store BulkResponse under idempotency key with TTL.
+
+        Args:
+            key: Client-provided idempotency key string.
+            value: Response payload to cache (must be JSON-serialisable).
+            ttl: Time-to-live in seconds (default: 86400 = 24 h).
+        """
+        if self._redis is None:
+            return
+        try:
+            await self._redis.setex(f"idem:{key}", ttl, json.dumps(value))
+        except Exception as exc:
+            logger.warning("idempotency_cache_set_failed key=%s exc=%s", key, exc)

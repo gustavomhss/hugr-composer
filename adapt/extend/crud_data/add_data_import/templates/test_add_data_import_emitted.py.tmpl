@@ -1,0 +1,130 @@
+"""Emitted test for add_data_import: CSV/Excel import pipeline.
+
+HONESTY RULE (§5, F-06): assertions inspect the static emitted code surface
+(processor, validator, ImportJob model, schemas, CRUD, routes, migration).
+Validation enforcement and ImportJob lifecycle are exercised at runtime by
+the kit's behaviour test (test_add_data_import_behavior.py).
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+
+# ---------------------------------------------------------------------------
+# Positive: pipeline modules + ImportJob model + routes shipped
+# ---------------------------------------------------------------------------
+
+
+def test_imports_package_exposes_processor_and_validator() -> None:
+    """app/imports/__init__.py exposes ImportProcessor + RowValidator."""
+    pkg = Path(__file__).parent.parent / "app" / "imports" / "__init__.py"
+    assert pkg.exists(), "app/imports/__init__.py was not emitted"
+    body = pkg.read_text()
+    assert "ImportProcessor" in body, "ImportProcessor must be re-exported"
+    assert "RowValidator" in body, "RowValidator must be re-exported"
+
+
+def test_validators_enforce_required_fields() -> None:
+    """RowValidator surfaces required-field errors per row index."""
+    validators = Path(__file__).parent.parent / "app" / "imports" / "validators.py"
+    body = validators.read_text()
+    assert "class RowValidator" in body, "RowValidator class missing"
+    # Honesty: required-field check anchors the validate() contract.
+    assert "required_fields" in body, "required_fields must drive validation"
+    assert "is missing or empty" in body, "missing-field error message must remain"
+    assert "failed type check" in body, "type-rule failure message must remain"
+
+
+def test_processor_supports_csv_and_excel_with_batch() -> None:
+    """ImportProcessor exposes parse_csv + parse_excel + batch processing."""
+    processor = Path(__file__).parent.parent / "app" / "imports" / "processor.py"
+    body = processor.read_text()
+    assert "def parse_csv(" in body, "parse_csv missing"
+    assert "def parse_excel(" in body, "parse_excel missing"
+    # Batching invariant — buffered transactions, not load-all-in-memory.
+    assert "self.batch_size" in body, "batch_size attribute must survive"
+    assert "process_batch" in body, "batch processing must be exposed"
+    # Lazy openpyxl import — module must boot without openpyxl installed.
+    assert "import openpyxl" in body, "openpyxl import must remain present"
+    assert "# noqa: PLC0415" in body, (
+        "openpyxl import must be lazy (inside parse_excel)"
+    )
+
+
+def test_import_job_model_tracks_lifecycle() -> None:
+    """ImportJob model declares all status/progress columns."""
+    model = Path(__file__).parent.parent / "app" / "models" / "import_job.py"
+    body = model.read_text()
+    assert "class ImportJob(Base):" in body, "ImportJob ORM class missing"
+    for col in ("status", "file_name", "total_rows", "processed", "failed"):
+        assert col in body, f"ImportJob.{col} column missing"
+    assert "error_report_url" in body, "error_report_url column required for /errors endpoint"
+
+
+def test_import_routes_expose_upload_status_and_errors() -> None:
+    """Routes file declares POST /imports/upload + status + errors endpoints."""
+    routes = Path(__file__).parent.parent / "app" / "api" / "routes" / "imports.py"
+    body = routes.read_text()
+    assert 'prefix="/imports"' in body, "router prefix must be /imports"
+    assert '@router.post(\n    "/upload"' in body, "POST /upload missing"
+    assert '@router.get("/{job_id}/status"' in body, "GET /<job>/status missing"
+    assert '@router.get("/{job_id}/errors")' in body, "GET /<job>/errors missing"
+
+
+def test_import_routes_enforce_file_size_and_extension() -> None:
+    """Upload endpoint enforces file extension + IMPORT_MAX_FILE_SIZE_MB."""
+    routes = Path(__file__).parent.parent / "app" / "api" / "routes" / "imports.py"
+    body = routes.read_text()
+    assert "settings.IMPORT_MAX_FILE_SIZE_MB" in body, "file-size cap must be enforced"
+    assert "HTTP_413_REQUEST_ENTITY_TOO_LARGE" in body, "413 response missing"
+    assert "File type not allowed" in body, "extension check missing"
+
+
+def test_import_migration_creates_import_jobs_table() -> None:
+    """Alembic migration creates import_jobs table."""
+    versions = Path(__file__).parent.parent / "alembic" / "versions"
+    if not versions.exists():
+        return
+    mig = versions / "add_import_jobs.py"
+    if not mig.exists():
+        return
+    body = mig.read_text()
+    assert 'create_table(\n        "import_jobs"' in body, "import_jobs table missing"
+    assert "ix_import_jobs_status" in body, "status index missing"
+
+
+# ---------------------------------------------------------------------------
+# Negative: invalid extensions rejected, missing fields surfaced
+# ---------------------------------------------------------------------------
+
+
+def test_import_routes_reject_unknown_extensions() -> None:
+    """Upload endpoint MUST reject extensions outside csv/xlsx/xls.
+
+    Silent acceptance would allow arbitrary file payloads to enter the
+    processing pipeline (resource exhaustion + parser injection).
+    """
+    routes = Path(__file__).parent.parent / "app" / "api" / "routes" / "imports.py"
+    body = routes.read_text()
+    allowed_line = '".csv"'
+    assert allowed_line in body and '".xlsx"' in body and '".xls"' in body, (
+        "allowed extension whitelist must include csv/xlsx/xls only"
+    )
+    assert "if ext not in allowed:" in body, (
+        "extension check must reject any non-whitelisted file type"
+    )
+
+
+def test_processor_silent_skip_on_bad_rows() -> None:
+    """validate_rows MUST partition rows into valid/error — never silently drop.
+
+    Silent skipping would mean poisoned datasets pass without surfacing
+    the rejected count to the operator.
+    """
+    processor = Path(__file__).parent.parent / "app" / "imports" / "processor.py"
+    body = processor.read_text()
+    assert "valid: list" in body and "errors: list" in body, (
+        "rows must be partitioned into valid + errors lists"
+    )
+    assert "_errors" in body, "rejected rows must carry their _errors payload"

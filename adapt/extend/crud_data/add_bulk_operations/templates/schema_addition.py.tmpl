@@ -1,0 +1,116 @@
+
+
+# ---------------------------------------------------------------------------
+# Bulk operation schemas — added by add_bulk_operations tool
+# ---------------------------------------------------------------------------
+import uuid as _bulk_uuid
+from typing import Annotated, Literal
+
+
+class BulkResultItem(BaseModel):
+    """Per-item outcome returned inside ``BulkResponse.results``.
+
+    ``index`` maps back to the original request list position, allowing
+    callers to correlate failures to the input payload by position.
+
+    Attributes:
+        index: Zero-based position in the request list.
+        id: Row UUID if the item was successfully persisted; ``None`` on failure.
+        success: True when the item was committed to the database.
+        error: Human-readable error description when ``success=False``.
+        error_code: Machine-readable code: VALIDATION_ERROR, NOT_FOUND,
+            INTEGRITY_ERROR, INSERT_ERROR, UPDATE_ERROR, ROLLBACK.
+    """
+
+    index: int
+    id: _bulk_uuid.UUID | None = None
+    success: bool
+    error: str | None = None
+    error_code: str | None = None
+
+
+class BulkResponse(BaseModel):
+    """Top-level response envelope for all bulk endpoints.
+
+    ``partial`` is ``True`` when ``mode=best_effort`` and at least one item failed.
+    ``transaction_id`` is populated from the idempotency key when present.
+
+    Attributes:
+        total: Total items in the request.
+        succeeded: Count of successfully committed items.
+        failed: Count of items that were not committed.
+        partial: True when best_effort mode committed a subset.
+        transaction_id: Idempotency key echo (when supplied by caller).
+        results: Per-item status list, one entry per input item.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    total: int
+    succeeded: int
+    failed: int
+    partial: bool
+    transaction_id: str | None = None
+    results: list[BulkResultItem]
+
+
+class ${model_name}BulkCreate(BaseModel):
+    """Request body for ``POST /${lower}s/bulk``.
+
+    ``items`` is bounded by ``max_length`` to prevent OOM and table-lock attacks.
+    ``mode`` selects the transaction strategy.
+
+    Attributes:
+        items: List of items to create (1–${max_batch} items).
+        mode: Transaction isolation — all_or_nothing or best_effort.
+    """
+
+    items: Annotated[list[${model_name}Create], Field(min_length=1, max_length=${max_batch})]
+    mode: Literal["all_or_nothing", "best_effort"] = "all_or_nothing"
+
+
+class ${model_name}BulkUpdate(BaseModel):
+    """Request body for ``PATCH /${lower}s/bulk``.
+
+    Each update dict MUST include ``id`` to resolve the target row.
+
+    Attributes:
+        updates: List of partial update dicts, each containing ``id`` (1–${max_batch}).
+        mode: Transaction isolation — all_or_nothing or best_effort.
+    """
+
+    updates: Annotated[list[dict], Field(min_length=1, max_length=${max_batch})]
+    mode: Literal["all_or_nothing", "best_effort"] = "all_or_nothing"
+
+    @field_validator("updates")
+    @classmethod
+    def each_update_has_id(cls, v: list[dict]) -> list[dict]:
+        """Reject any update dict that omits the ``id`` key.
+
+        Args:
+            v: List of update dicts to validate.
+
+        Returns:
+            The validated list.
+
+        Raises:
+            ValueError: If any dict is missing the ``id`` key.
+        """
+        for idx, u in enumerate(v):
+            if "id" not in u:
+                raise ValueError(
+                    f"Update at index {idx} is missing required 'id' field"
+                )
+        return v
+
+
+class ${model_name}BulkDelete(BaseModel):
+    """Request body for ``DELETE /${lower}s/bulk``.
+
+    Attributes:
+        ids: List of item UUIDs to delete (1–${max_batch}).
+        mode: Transaction isolation — all_or_nothing or best_effort.
+    """
+
+    ids: Annotated[list[_bulk_uuid.UUID], Field(min_length=1, max_length=${max_batch})]
+    mode: Literal["all_or_nothing", "best_effort"] = "all_or_nothing"

@@ -1,0 +1,5 @@
+
+
+# --- Data import routes — added by add_data_import tool ---
+from app.api.routes.imports import router as imports_router  # noqa: E402
+api_router.include_router(imports_router)

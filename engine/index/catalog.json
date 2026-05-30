@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "b1ad7f1",
-  "generated_at": "2026-05-30T13:55:54+00:00",
+  "kit_commit": "de90a8e",
+  "generated_at": "2026-05-30T14:29:05+00:00",
   "verbs": [
     "add",
     "generate",
@@ -889,10 +889,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/crud_data/add_bulk_operations.py",
-      "test_paths": [
-        "adapt/extend/crud_data/test_add_bulk_operations.py"
-      ],
+      "module_path": "adapt/extend/crud_data/add_bulk_operations/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -933,10 +931,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/crud_data/add_data_export.py",
-      "test_paths": [
-        "adapt/extend/crud_data/test_add_data_export.py"
-      ],
+      "module_path": "adapt/extend/crud_data/add_data_export/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -955,10 +951,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/crud_data/add_data_import.py",
-      "test_paths": [
-        "adapt/extend/crud_data/test_add_data_import.py"
-      ],
+      "module_path": "adapt/extend/crud_data/add_data_import/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -12039,5 +12033,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "70e44d7272745d0be98233aa51e82ccc52ec6cc69197a88f29e2db7716b8deeb"
+  "stable_hash": "877968559f49f96adcaaec590ac0e4ff72711d4de29ae35f8597d220e7316774"
 }

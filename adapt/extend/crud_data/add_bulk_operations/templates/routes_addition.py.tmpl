@@ -1,0 +1,123 @@
+
+
+# ---------------------------------------------------------------------------
+# Bulk operation endpoints — added by add_bulk_operations tool
+# ---------------------------------------------------------------------------
+from typing import Annotated as _Annotated
+from fastapi import Header as _Header
+
+from app.core.idempotency import get_idempotency_cache as _get_idem_cache
+from app.crud.${lower} import (
+    bulk_create_${lower}s as _crud_bulk_create,
+    bulk_update_${lower}s as _crud_bulk_update,
+    bulk_delete_${lower}s as _crud_bulk_delete,
+)
+from app.schemas.${lower} import (
+    ${model_name}BulkCreate,
+    ${model_name}BulkUpdate,
+    ${model_name}BulkDelete,
+    BulkResponse,
+)
+
+
+@router.post("/bulk", response_model=BulkResponse, status_code=207)
+async def bulk_create_${lower}(
+    payload: ${model_name}BulkCreate,
+    session: SessionDep,
+    current_user: CurrentUser,
+    idempotency_key: _Annotated[str | None, _Header(alias="Idempotency-Key")] = None,
+) -> BulkResponse:
+    """Create multiple ${model_name} rows in a single request (HTTP 207 Multi-Status).
+
+    Supports ``all_or_nothing`` (single transaction) and ``best_effort``
+    (per-item SAVEPOINT) transaction modes.  Idempotency-Key header deduplicates
+    retries within 24 hours.
+
+    Args:
+        payload: Bulk create request body.
+        session: Injected async DB session.
+        current_user: Authenticated user.
+        idempotency_key: Optional client-side deduplication key.
+
+    Returns:
+        BulkResponse with per-item status.
+    """
+    from fastapi import HTTPException
+
+    if idempotency_key:
+        cached = await _get_idem_cache().get(idempotency_key)
+        if cached is not None:
+            return BulkResponse.model_validate(cached)
+
+    result_dict = await _crud_bulk_create(
+        session, items=payload.items, owner_id=current_user.id, mode=payload.mode
+    )
+
+    if idempotency_key:
+        await _get_idem_cache().set(idempotency_key, result_dict, ttl=86400)
+
+    result = BulkResponse.model_validate(result_dict)
+    if result.failed > 0 and payload.mode == "all_or_nothing":
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "Batch failed", "results": result_dict},
+        )
+    return result
+
+
+@router.patch("/bulk", response_model=BulkResponse, status_code=207)
+async def bulk_update_${lower}(
+    payload: ${model_name}BulkUpdate,
+    session: SessionDep,
+    current_user: CurrentUser,
+    idempotency_key: _Annotated[str | None, _Header(alias="Idempotency-Key")] = None,
+) -> BulkResponse:
+    """Partially update multiple ${model_name} rows. Each dict must include ``id``.
+
+    Args:
+        payload: Bulk update request body.
+        session: Injected async DB session.
+        current_user: Authenticated user (ownership check applied).
+        idempotency_key: Optional client-side deduplication key.
+
+    Returns:
+        BulkResponse with per-item status.
+    """
+    if idempotency_key:
+        cached = await _get_idem_cache().get(idempotency_key)
+        if cached is not None:
+            return BulkResponse.model_validate(cached)
+
+    result_dict = await _crud_bulk_update(
+        session, updates=payload.updates, owner_id=current_user.id, mode=payload.mode
+    )
+
+    if idempotency_key:
+        await _get_idem_cache().set(idempotency_key, result_dict, ttl=86400)
+
+    return BulkResponse.model_validate(result_dict)
+
+
+@router.delete("/bulk", response_model=BulkResponse, status_code=207)
+async def bulk_delete_${lower}(
+    payload: ${model_name}BulkDelete,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> BulkResponse:
+    """Delete multiple ${model_name} rows by ID in a single transaction.
+
+    Ownership is verified before deletion. Unowned IDs are reported as
+    NOT_FOUND without rolling back the owned deletions (best_effort mode).
+
+    Args:
+        payload: Bulk delete request body.
+        session: Injected async DB session.
+        current_user: Authenticated user (ownership check applied).
+
+    Returns:
+        BulkResponse with per-item status.
+    """
+    result_dict = await _crud_bulk_delete(
+        session, ids=payload.ids, owner_id=current_user.id, mode=payload.mode
+    )
+    return BulkResponse.model_validate(result_dict)

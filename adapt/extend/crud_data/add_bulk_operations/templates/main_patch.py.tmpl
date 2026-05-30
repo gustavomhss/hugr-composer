@@ -1,0 +1,6 @@
+
+
+# Idempotency cache — added by add_bulk_operations tool
+import os as _os
+_redis_url = _os.getenv("REDIS_URL", "redis://localhost:6379/0")
+init_idempotency_cache(_redis_url)
