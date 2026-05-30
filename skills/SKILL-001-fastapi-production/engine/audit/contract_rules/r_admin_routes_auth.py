@@ -67,7 +67,9 @@ _WAIVED_TOOLS: frozenset[str] = frozenset(
         "add_long_running_task",
         "add_notifications",
         "add_opa_integration",
-        "add_s3_storage",
+        # "add_s3_storage" — removed by R6-S6-F1/F5/F6/F7 fix-PR (juror
+        # a077cc434dd7a8155): all three /storage routes now require
+        # CurrentUser + are prefix-scoped to users/{current_user.id}/.
         "add_scheduled_tasks",
     }
 )

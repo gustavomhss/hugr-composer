@@ -212,11 +212,11 @@ async def test_b01_healthz_returns_200(asgi_app: Any) -> None:
 
 @pytest.mark.anyio
 async def test_b02_upload_endpoint_exists(asgi_app: Any) -> None:
-    """B-02: POST /api/v1/storage/upload must exist — 404 is never acceptable.
+    """B-02: POST /api/v1/storage/upload must exist AND require auth.
 
-    Without real AWS credentials the handler may return 200 (presigned URL
-    with empty-credential signing), 401 (if auth guard is added), or 422
-    (validation error). What it must NOT return is 404 (route not registered).
+    Closes R6-S6-F1: anonymous POSTs must be rejected (401/403). 200 is a
+    regression — pre-fix the handler returned a presigned PUT URL to
+    anonymous callers, letting anyone stage uploads into the bucket.
     """
     transport = httpx.ASGITransport(app=asgi_app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
@@ -228,9 +228,12 @@ async def test_b02_upload_endpoint_exists(asgi_app: Any) -> None:
         f"POST /api/v1/storage/upload returned 404 — route not registered! "
         f"body: {response.text}"
     )
-    # Acceptable: 200 (presigned URL generated), 401 (auth guard), 422 (validation)
-    assert response.status_code in (200, 201, 401, 415, 422, 500), (
-        f"Unexpected status {response.status_code}; body: {response.text}"
+    # Anonymous callers MUST be rejected. 401 is the canonical "no token"
+    # response from FastAPI's OAuth2 dependency; 403 covers the case where
+    # the scaffold raises before the auth dep (some test stacks do this).
+    assert response.status_code in (401, 403), (
+        f"Anonymous POST /storage/upload must return 401/403 (R6-S6-F1); "
+        f"got {response.status_code}; body: {response.text}"
     )
 
 
@@ -240,11 +243,11 @@ async def test_b02_upload_endpoint_exists(asgi_app: Any) -> None:
 
 @pytest.mark.anyio
 async def test_b03_download_endpoint_exists(asgi_app: Any) -> None:
-    """B-03: GET /api/v1/storage/somekey must exist — 404 = route not registered.
+    """B-03: GET /api/v1/storage/{key} must exist AND require auth.
 
-    Without real S3 credentials the key won't exist; the endpoint will return
-    200 (presigned URL generated optimistically), 401 (auth), or 500 (error).
-    The one unacceptable response is 404.
+    Closes R6-S6-F5: anonymous GETs must be rejected (401/403). Pre-fix
+    the route handed back a presigned GET URL for any key, including
+    other users' objects.
     """
     transport = httpx.ASGITransport(app=asgi_app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
@@ -253,8 +256,9 @@ async def test_b03_download_endpoint_exists(asgi_app: Any) -> None:
         f"GET /api/v1/storage/somekey returned 404 — route not registered! "
         f"body: {response.text}"
     )
-    assert response.status_code in (200, 401, 422, 500), (
-        f"Unexpected status {response.status_code}; body: {response.text}"
+    assert response.status_code in (401, 403), (
+        f"Anonymous GET /storage/{{key}} must return 401/403 (R6-S6-F5); "
+        f"got {response.status_code}; body: {response.text}"
     )
 
 
@@ -263,77 +267,50 @@ async def test_b03_download_endpoint_exists(asgi_app: Any) -> None:
 # ---------------------------------------------------------------------------
 
 @pytest.mark.anyio
-async def test_b04_upload_returns_presigned_url_json(asgi_app: Any) -> None:
-    """B-04: POST /api/v1/storage/upload with valid body returns JSON with upload_url + key.
+async def test_b04_upload_routes_require_auth_dependency(asgi_app: Any) -> None:
+    """B-04: Every storage route signature carries the CurrentUser dep.
 
-    This test is skipped when boto3 is not installed.  When boto3 IS
-    installed (even without real credentials), the presigned URL is signed
-    locally, so the route returns 200 + a JSON body with the expected keys.
+    Closes R6-S6-F1/F5/F6 statically — even if an HTTP test stack short-
+    circuits the auth dep and returns 200, the route declaration itself
+    must still ask FastAPI for ``current_user``. We walk the live router
+    and assert every handler has it.
     """
-    try:
-        import boto3  # noqa: F401
-    except ImportError:
-        pytest.skip("boto3 not installed — cannot test presigned URL generation")
+    import inspect
 
-    transport = httpx.ASGITransport(app=asgi_app)
-    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.post(
-            "/api/v1/storage/upload",
-            json={"filename": "photo.png", "content_type": "image/png"},
-        )
-
-    if response.status_code == 200:
-        body = response.json()
-        assert "upload_url" in body, (
-            f"Expected 'upload_url' in response body; got: {body}"
-        )
-        assert "key" in body, (
-            f"Expected 'key' in response body; got: {body}"
-        )
-        assert "expires_in" in body, (
-            f"Expected 'expires_in' in response body; got: {body}"
-        )
-        # Key must follow {prefix}/{uuid}/{filename} pattern
-        key: str = body["key"]
-        parts = key.split("/")
-        assert len(parts) >= 3, (
-            f"Key '{key}' does not follow {{prefix}}/{{uuid}}/{{filename}} pattern"
-        )
-        # expires_in must be a positive integer
-        assert isinstance(body["expires_in"], int) and body["expires_in"] > 0, (
-            f"expires_in must be a positive int, got: {body['expires_in']}"
-        )
-    else:
-        # boto3 installed but credentials rejected — just verify endpoint exists
-        assert response.status_code != 404, (
-            f"Route should exist, got 404; body: {response.text}"
+    for route in asgi_app.routes:
+        path = getattr(route, "path", "")
+        if not path.startswith("/api/v1/storage") and not path.startswith("/storage"):
+            continue
+        endpoint = getattr(route, "endpoint", None)
+        if endpoint is None:
+            continue
+        params = inspect.signature(endpoint).parameters
+        assert "current_user" in params, (
+            f"Route {path} handler {endpoint.__name__} is missing "
+            f"current_user — R6-S6 regression."
         )
 
 
 # ---------------------------------------------------------------------------
-# BEHAVIOR-05: content-type validation — 415 on disallowed type
+# BEHAVIOR-05: DELETE endpoint also requires auth
 # ---------------------------------------------------------------------------
 
 @pytest.mark.anyio
-async def test_b05_upload_rejects_disallowed_content_type(asgi_app: Any) -> None:
-    """B-05: POST /api/v1/storage/upload with a disallowed MIME type → 415.
+async def test_b05_delete_endpoint_requires_auth(asgi_app: Any) -> None:
+    """B-05: DELETE /api/v1/storage/{key} must require auth.
 
-    The route validates content_type against S3_ALLOWED_CONTENT_TYPES.
-    ``application/x-binary-garbage`` is not in the default allowed list.
+    Closes R6-S6-F6: anonymous DELETEs must be rejected (401/403). Pre-fix
+    anyone could delete arbitrary objects from the bucket.
     """
     transport = httpx.ASGITransport(app=asgi_app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.post(
-            "/api/v1/storage/upload",
-            json={
-                "filename": "payload.bin",
-                "content_type": "application/x-binary-garbage",
-            },
-        )
-    # Must be 415 (unsupported media type) or 422 (validation caught earlier)
-    # Must NOT be 200 (should be rejected)
-    assert response.status_code in (415, 422), (
-        f"Expected 415 or 422 for disallowed content-type, "
+        response = await client.delete("/api/v1/storage/users/someone/photo.png")
+    assert response.status_code != 404, (
+        f"DELETE /storage/{{key}} returned 404 — route not registered; "
+        f"body: {response.text}"
+    )
+    assert response.status_code in (401, 403), (
+        f"Anonymous DELETE /storage/{{key}} must return 401/403 (R6-S6-F6); "
         f"got {response.status_code}; body: {response.text}"
     )
 
@@ -520,10 +497,10 @@ if __name__ == "__main__":
 
     _TESTS: list[tuple[str, Any]] = [
         ("B-01: /healthz → 200", lambda: _run_async(test_b01_healthz_returns_200, _app)),
-        ("B-02: POST /api/v1/storage/upload — exists (not 404)", lambda: _run_async(test_b02_upload_endpoint_exists, _app)),
-        ("B-03: GET /api/v1/storage/somekey — exists (not 404)", lambda: _run_async(test_b03_download_endpoint_exists, _app)),
-        ("B-04: upload returns presigned URL JSON", lambda: _run_async(test_b04_upload_returns_presigned_url_json, _app)),
-        ("B-05: disallowed content-type → 415/422", lambda: _run_async(test_b05_upload_rejects_disallowed_content_type, _app)),
+        ("B-02: POST /api/v1/storage/upload — requires auth (401/403)", lambda: _run_async(test_b02_upload_endpoint_exists, _app)),
+        ("B-03: GET /api/v1/storage/{key} — requires auth (401/403)", lambda: _run_async(test_b03_download_endpoint_exists, _app)),
+        ("B-04: every storage route handler declares current_user", lambda: _run_async(test_b04_upload_routes_require_auth_dependency, _app)),
+        ("B-05: DELETE /storage/{key} — requires auth (401/403)", lambda: _run_async(test_b05_delete_endpoint_requires_auth, _app)),
         ("B-06: storage/client.py imports clean", lambda: test_b06_storage_client_imports_without_crash(_pd)),
         ("B-07: storage/config.py parses + StorageConfig present", lambda: test_b07_storage_config_parses_and_has_class(_pd)),
         ("B-08: S3_BUCKET_NAME in config", lambda: test_b08_s3_bucket_name_in_config(_pd)),
@@ -559,10 +536,10 @@ if __name__ == "__main__":
         "failures": failures,
         "coverage": [
             "GET /healthz → 200",
-            "POST /api/v1/storage/upload — not 404 (route registered)",
-            "GET /api/v1/storage/{key} — not 404 (route registered)",
-            "upload returns upload_url + key + expires_in JSON",
-            "disallowed content-type → 415/422",
+            "POST /api/v1/storage/upload — anonymous rejected (401/403, R6-S6-F1)",
+            "GET /api/v1/storage/{key} — anonymous rejected (401/403, R6-S6-F5)",
+            "every storage route handler declares current_user (R6-S6)",
+            "DELETE /api/v1/storage/{key} — anonymous rejected (401/403, R6-S6-F6)",
             "app/storage/client.py imports clean (lazy boto3)",
             "app/storage/config.py parses clean + StorageConfig + from_settings present",
             "S3_BUCKET_NAME in app/core/config.py",

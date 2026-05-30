@@ -6,6 +6,16 @@ POST   /storage/upload          Return a presigned PUT URL for direct upload.
 GET    /storage/{key:path}      Return a presigned GET URL for direct download.
 DELETE /storage/{key:path}      Delete an object from the bucket.
 
+Security (closes R6-S6-F1 / F5 / F6 / F7)
+-----------------------------------------
+Every route requires an authenticated caller (``CurrentUser`` from
+``app.api.deps``). Object keys are PREFIX-SCOPED to the caller's user id
+— a user may only presign, download, or delete keys that live under
+``users/{current_user.id}/``. Any attempt to address a key outside that
+prefix returns HTTP 403. The legacy caller-controlled ``prefix`` field on
+``UploadRequest`` was removed; the prefix is now derived server-side from
+``current_user.id``.
+
 The API server never buffers binary data — all file I/O goes directly
 between the client and S3/MinIO via the presigned URLs.
 """
@@ -14,6 +24,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
+from app.api.deps import CurrentUser
 from app.core.config import settings
 from app.storage.client import get_s3_client
 
@@ -26,12 +37,15 @@ class UploadRequest(BaseModel):
     Attributes:
         filename: Original filename from the client.
         content_type: MIME type of the file to be uploaded.
-        prefix: Optional path prefix; defaults to settings.S3_KEY_PREFIX.
+
+    Note:
+        The ``prefix`` field that previously let callers choose where their
+        uploads landed was removed (R6-S6-F7) — uploads are now always
+        scoped to ``users/{current_user.id}/`` on the server side.
     """
 
     filename: str = Field(..., min_length=1, max_length=255)
     content_type: str = Field(..., min_length=1)
-    prefix: str = Field(default="", max_length=200)
 
 
 class UploadResponse(BaseModel):
@@ -83,27 +97,74 @@ def _validate_content_type(content_type: str) -> None:
         )
 
 
+def _user_prefix(user_id: object) -> str:
+    """Return the canonical per-user S3 key prefix.
+
+    Every object a user can read, write, or delete must live under this
+    prefix. Centralised here so route handlers, ownership checks, and
+    tests share one definition.
+
+    Args:
+        user_id: ``current_user.id`` — coerced to ``str`` so UUIDs, ints,
+            and strings all produce the same canonical form.
+
+    Returns:
+        Prefix string of the form ``users/{user_id}/`` (always ends in ``/``).
+    """
+    return f"users/{user_id}/"
+
+
+def _require_key_owned_by(key: str, current_user: CurrentUser) -> None:
+    """Raise HTTP 403 if *key* is not inside the caller's user prefix.
+
+    Args:
+        key: Object key as supplied in the URL path.
+        current_user: Authenticated caller injected by FastAPI.
+
+    Raises:
+        HTTPException: 403 Forbidden when the key escapes the caller's
+            ``users/{id}/`` prefix.
+    """
+    if not key.startswith(_user_prefix(current_user.id)):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Object key is outside caller's storage namespace.",
+        )
+
+
 @router.post(
     "/upload",
     response_model=UploadResponse,
     summary="Generate a presigned URL for direct-to-S3 upload",
     status_code=status.HTTP_200_OK,
 )
-def create_upload_url(body: UploadRequest) -> UploadResponse:
+def create_upload_url(
+    body: UploadRequest,
+    current_user: CurrentUser,
+) -> UploadResponse:
     """Return a presigned PUT URL for a direct client-to-S3 upload.
 
+    The generated key is forced to live under ``users/{current_user.id}/``
+    so a caller can never pre-stage uploads under another user's prefix
+    (R6-S6-F1 / F7).
+
     Args:
-        body: Upload request containing filename, content_type, prefix.
+        body: Upload request containing filename + content_type.
+        current_user: Authenticated caller injected by FastAPI.
 
     Returns:
         ``UploadResponse`` with the presigned URL and object key.
 
     Raises:
-        HTTPException: 415 if content_type is not allowed.
+        HTTPException: 401 if unauthenticated, 415 if content_type is not allowed.
     """
     _validate_content_type(body.content_type)
     client = get_s3_client()
-    key = client.generate_key(body.filename, prefix=body.prefix)
+    key = client.generate_key(body.filename, prefix=_user_prefix(current_user.id).rstrip("/"))
+    # Defence-in-depth: the prefix is derived from current_user.id above, but
+    # confirm the resulting key really is inside the caller's namespace
+    # before we hand back a presigned PUT URL.
+    _require_key_owned_by(key, current_user)
     url = client.presigned_upload_url(key, body.content_type)
     return UploadResponse(
         upload_url=url,
@@ -117,15 +178,26 @@ def create_upload_url(body: UploadRequest) -> UploadResponse:
     response_model=DownloadResponse,
     summary="Generate a presigned URL for direct-to-S3 download",
 )
-def create_download_url(key: str) -> DownloadResponse:
+def create_download_url(
+    key: str,
+    current_user: CurrentUser,
+) -> DownloadResponse:
     """Return a presigned GET URL for a direct client-to-S3 download.
+
+    Closes R6-S6-F5: rejects any key outside the caller's prefix with 403.
 
     Args:
         key: Object key within the S3 bucket.
+        current_user: Authenticated caller injected by FastAPI.
 
     Returns:
         ``DownloadResponse`` with the presigned URL and object key.
+
+    Raises:
+        HTTPException: 401 if unauthenticated, 403 if key is outside the
+            caller's ``users/{id}/`` namespace.
     """
+    _require_key_owned_by(key, current_user)
     client = get_s3_client()
     url = client.presigned_download_url(key)
     return DownloadResponse(
@@ -140,11 +212,22 @@ def create_download_url(key: str) -> DownloadResponse:
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete an object from S3",
 )
-def delete_object(key: str) -> None:
+def delete_object(
+    key: str,
+    current_user: CurrentUser,
+) -> None:
     """Delete an object from the configured S3 bucket.
+
+    Closes R6-S6-F6: rejects any key outside the caller's prefix with 403.
 
     Args:
         key: Object key within the S3 bucket.
+        current_user: Authenticated caller injected by FastAPI.
+
+    Raises:
+        HTTPException: 401 if unauthenticated, 403 if key is outside the
+            caller's ``users/{id}/`` namespace.
     """
+    _require_key_owned_by(key, current_user)
     client = get_s3_client()
     client.delete_object(key)
