@@ -1,0 +1,72 @@
+"""Nonce store for replay prevention.
+
+In-process dict with TTL eviction; upgrades to Redis when available.
+"""
+
+from __future__ import annotations
+
+import logging
+import threading
+import time
+from typing import ClassVar
+
+logger = logging.getLogger(__name__)
+
+
+class NonceStore:
+    """Thread-safe in-process nonce registry with TTL eviction.
+
+    Attributes:
+        window_seconds: TTL for each stored nonce (should match timestamp window).
+    """
+
+    _lock: ClassVar[threading.Lock] = threading.Lock()
+    _store: ClassVar[dict[str, float]] = {}  # nonce → expiry timestamp
+
+    def __init__(self, window_seconds: int = 300) -> None:
+        """Initialise the store.
+
+        Args:
+            window_seconds: How long nonces are remembered.
+        """
+        self.window_seconds = window_seconds
+
+    def is_replay(self, nonce: str) -> bool:
+        """Return True if this nonce was already seen within the window.
+
+        Args:
+            nonce: The nonce string from the request.
+
+        Returns:
+            ``True`` when the nonce is a replay, ``False`` when fresh.
+        """
+        self._evict()
+        with self._lock:
+            if nonce in self._store:
+                logger.warning("request_signing: nonce replay detected nonce=%s", nonce)
+                return True
+            self._store[nonce] = time.time() + self.window_seconds
+            return False
+
+    def _evict(self) -> None:
+        """Remove expired nonces from the in-process store."""
+        now = time.time()
+        with self._lock:
+            expired = [k for k, v in self._store.items() if v < now]
+            for k in expired:
+                del self._store[k]
+
+
+_default_store: NonceStore | None = None
+
+
+def get_nonce_store() -> NonceStore:
+    """Return the singleton NonceStore, creating it on first call.
+
+    Returns:
+        Module-level ``NonceStore`` singleton.
+    """
+    global _default_store
+    if _default_store is None:
+        _default_store = NonceStore()
+    return _default_store

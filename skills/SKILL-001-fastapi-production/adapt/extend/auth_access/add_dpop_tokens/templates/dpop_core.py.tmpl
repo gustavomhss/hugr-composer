@@ -1,0 +1,314 @@
+"""DPoP (RFC 9449) core — nonce store, proof verifier, and token binder.
+
+RFC 9449 Demonstrating Proof of Possession (DPoP) prevents token theft by
+binding access tokens to a client-held private key.  Each request carries
+a short-lived DPoP proof JWT signed by the client's private key.  The
+server verifies:
+
+1. The JWT header algorithm is an asymmetric EC or RSA scheme.
+2. ``htm`` matches the HTTP method of the current request.
+3. ``htu`` matches the request URI (scheme + host + path).
+4. ``iat`` is within the clock-skew window.
+5. ``jti`` has not been replayed (nonce store).
+6. When server-side nonces are enabled, ``nonce`` matches the issued value.
+
+PyJWT is imported LAZILY inside functions so the app boots without the
+library when ``DPOP_ENABLED=false``.
+"""
+from __future__ import annotations
+
+import hashlib
+import logging
+import secrets
+import time
+from threading import Lock
+from typing import Any
+
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+# Allowed DPoP proof header algorithms (RFC 9449 §4.2)
+_ALLOWED_ALGS: frozenset[str] = frozenset({
+    "ES256", "ES384", "ES512",
+    "RS256", "RS384", "RS512",
+    "PS256", "PS384", "PS512",
+    "EdDSA",
+})
+
+
+class DPoPNonceStore:
+    """Thread-safe in-process nonce store with TTL eviction.
+
+    Stores issued server nonces and consumed proof JTIs so replayed proofs
+    are detected within the ``DPOP_NONCE_TTL_S`` window.
+    """
+
+    def __init__(self, ttl_s: int = 300) -> None:
+        """Initialise with configurable TTL.
+
+        Args:
+            ttl_s: Seconds before a nonce or JTI expires.
+        """
+        self._ttl = ttl_s
+        self._nonces: dict[str, float] = {}  # nonce -> issued_at
+        self._jtis: dict[str, float] = {}    # jti -> seen_at
+        self._lock = Lock()
+
+    def issue_nonce(self) -> str:
+        """Generate, store, and return a fresh server nonce.
+
+        Returns:
+            URL-safe random nonce string.
+        """
+        nonce = secrets.token_urlsafe(24)
+        with self._lock:
+            self._evict()
+            self._nonces[nonce] = time.monotonic()
+        return nonce
+
+    def validate_nonce(self, nonce: str) -> bool:
+        """Return True when *nonce* was issued by this store and has not expired.
+
+        Args:
+            nonce: Nonce string from the DPoP proof JWT.
+
+        Returns:
+            True when the nonce is valid and unexpired.
+        """
+        with self._lock:
+            self._evict()
+            return nonce in self._nonces
+
+    def mark_jti(self, jti: str) -> bool:
+        """Mark *jti* as consumed; return False when already seen (replay).
+
+        Args:
+            jti: ``jti`` claim from the DPoP proof JWT.
+
+        Returns:
+            True when first-seen (fresh), False on replay.
+        """
+        with self._lock:
+            self._evict()
+            if jti in self._jtis:
+                return False
+            self._jtis[jti] = time.monotonic()
+            return True
+
+    def _evict(self) -> None:
+        """Remove expired nonces and JTIs (must be called under lock)."""
+        cutoff = time.monotonic() - self._ttl
+        self._nonces = {k: v for k, v in self._nonces.items() if v > cutoff}
+        self._jtis = {k: v for k, v in self._jtis.items() if v > cutoff}
+
+
+class DPoPVerifier:
+    """Stateful DPoP proof verifier (RFC 9449 §4.3)."""
+
+    def __init__(self, nonce_store: DPoPNonceStore) -> None:
+        """Initialise verifier with a shared nonce store.
+
+        Args:
+            nonce_store: The store used for nonce and JTI tracking.
+        """
+        self._store = nonce_store
+
+    def verify_proof(
+        self,
+        proof_header: str,
+        method: str,
+        uri: str,
+    ) -> dict[str, Any]:
+        """Verify a DPoP proof header and return its claims.
+
+        Args:
+            proof_header: Raw value of the ``DPoP`` HTTP header.
+            method: HTTP method of the current request (e.g. 'GET').
+            uri: Full URI of the current request (scheme+host+path).
+
+        Returns:
+            Decoded JWT claims dict on success.
+
+        Raises:
+            ValueError: When the proof fails any RFC 9449 check.
+        """
+        import jwt  # lazy import — PyJWT
+        header = _decode_header_unverified(proof_header)
+        alg = header.get("alg", "")
+        if alg not in _ALLOWED_ALGS:
+            raise ValueError(f"DPoP: unsupported algorithm {alg!r}")
+        jwk_data = header.get("jwk")
+        if not jwk_data:
+            raise ValueError("DPoP: missing jwk in header")
+        public_key = _load_public_key_from_jwk(jwk_data)
+        skew = settings.DPOP_CLOCK_SKEW_S
+        claims = jwt.decode(
+            proof_header,
+            public_key,
+            algorithms=list(_ALLOWED_ALGS),
+            options={"verify_exp": False, "leeway": skew},
+        )
+        _check_htm_htu(claims, method, uri)
+        _check_iat(claims, skew)
+        jti = claims.get("jti", "")
+        if not jti:
+            raise ValueError("DPoP: missing jti claim")
+        if not self._store.mark_jti(jti):
+            raise ValueError("DPoP: replayed jti")
+        if settings.DPOP_NONCE_TTL_S > 0:
+            nonce = claims.get("nonce", "")
+            if not nonce or not self._store.validate_nonce(nonce):
+                raise ValueError("DPoP: invalid or missing server nonce")
+        return claims
+
+    def bind_access_token(self, access_token: str, jwk_thumbprint: str) -> str:
+        """Return a token hash binding the access token to the client key.
+
+        The ``cnf/jkt`` claim in the access token should equal this value.
+
+        Args:
+            access_token: Bearer access token string.
+            jwk_thumbprint: SHA-256 thumbprint of the client's public JWK.
+
+        Returns:
+            SHA-256 hash of the access token encoded as hex.
+        """
+        return hashlib.sha256(
+            (access_token + ":" + jwk_thumbprint).encode()
+        ).hexdigest()
+
+
+def _decode_header_unverified(token: str) -> dict[str, Any]:
+    """Decode the JWT header without signature verification.
+
+    Args:
+        token: Raw JWT string.
+
+    Returns:
+        Header claims dict.
+
+    Raises:
+        ValueError: When the token is malformed.
+    """
+    import jwt  # lazy import
+    try:
+        return jwt.get_unverified_header(token)
+    except Exception as exc:
+        raise ValueError(f"DPoP: malformed JWT header: {exc}") from exc
+
+
+def _load_public_key_from_jwk(jwk_data: dict[str, Any]) -> Any:
+    """Convert a JWK dict to a cryptography public key object.
+
+    Args:
+        jwk_data: JWK dict from the DPoP proof header.
+
+    Returns:
+        Public key object usable by PyJWT.
+
+    Raises:
+        ValueError: When the JWK cannot be parsed.
+    """
+    try:
+        from jwt.algorithms import ECAlgorithm, RSAAlgorithm
+        import json
+        kty = jwk_data.get("kty", "")
+        jwk_str = json.dumps(jwk_data)
+        if kty == "EC":
+            return ECAlgorithm.from_jwk(jwk_str)
+        if kty == "RSA":
+            return RSAAlgorithm.from_jwk(jwk_str)
+        raise ValueError(f"DPoP: unsupported JWK kty {kty!r}")
+    except (ImportError, Exception) as exc:
+        raise ValueError(f"DPoP: cannot load public key: {exc}") from exc
+
+
+def _check_htm_htu(claims: dict[str, Any], method: str, uri: str) -> None:
+    """Raise ValueError when htm or htu claims do not match the request.
+
+    Args:
+        claims: Decoded JWT claims.
+        method: Expected HTTP method (uppercase).
+        uri: Expected request URI.
+    """
+    htm = claims.get("htm", "")
+    htu = claims.get("htu", "")
+    if htm.upper() != method.upper():
+        raise ValueError(f"DPoP: htm mismatch: expected {method!r}, got {htm!r}")
+    if htu.rstrip("/") != uri.rstrip("/"):
+        raise ValueError(f"DPoP: htu mismatch: expected {uri!r}, got {htu!r}")
+
+
+def _check_iat(claims: dict[str, Any], skew_s: int) -> None:
+    """Raise ValueError when the iat claim is outside the clock-skew window.
+
+    Args:
+        claims: Decoded JWT claims.
+        skew_s: Allowed clock skew in seconds.
+    """
+    iat = claims.get("iat")
+    if iat is None:
+        raise ValueError("DPoP: missing iat claim")
+    now = time.time()
+    if abs(now - iat) > skew_s:
+        raise ValueError(f"DPoP: iat outside clock skew window ({skew_s}s)")
+
+
+def generate_dpop_key_pair() -> tuple[Any, Any]:
+    """Generate an EC P-256 key pair for DPoP use (lazy cryptography import).
+
+    Returns:
+        Tuple of (private_key, public_key) cryptography objects.
+    """
+    from cryptography.hazmat.primitives.asymmetric.ec import (  # lazy import
+        SECP256R1, generate_private_key,
+    )
+    from cryptography.hazmat.backends import default_backend
+    private_key = generate_private_key(SECP256R1(), default_backend())
+    return private_key, private_key.public_key()
+
+
+def jwk_from_public_key(public_key: Any) -> dict[str, Any]:
+    """Export a public key as a JWK dict (EC P-256).
+
+    Args:
+        public_key: A cryptography EC public key object.
+
+    Returns:
+        JWK dict with kty, crv, x, y fields.
+    """
+    import base64
+    from cryptography.hazmat.primitives.asymmetric.ec import (  # lazy import
+        EllipticCurvePublicKey,
+    )
+    if not isinstance(public_key, EllipticCurvePublicKey):
+        raise TypeError("Only EC public keys are supported")
+    nums = public_key.public_numbers()
+    def _b64(n: int, length: int = 32) -> str:
+        return base64.urlsafe_b64encode(
+            n.to_bytes(length, "big")
+        ).rstrip(b"=").decode()
+    return {"kty": "EC", "crv": "P-256", "x": _b64(nums.x), "y": _b64(nums.y)}
+
+
+_nonce_store = DPoPNonceStore(ttl_s=settings.DPOP_NONCE_TTL_S or 300)
+_verifier = DPoPVerifier(_nonce_store)
+
+
+def get_dpop_verifier() -> DPoPVerifier:
+    """Return the module-level DPoPVerifier singleton.
+
+    Returns:
+        Shared DPoPVerifier instance.
+    """
+    return _verifier
+
+
+def get_nonce_store() -> DPoPNonceStore:
+    """Return the module-level DPoPNonceStore singleton.
+
+    Returns:
+        Shared DPoPNonceStore instance.
+    """
+    return _nonce_store
