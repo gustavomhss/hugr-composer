@@ -1,0 +1,12 @@
+"""ML model serving sub-package.
+
+Re-exports the public API so callers can write::
+
+    from app.ml import ModelRegistry, Predictor, load_model, get_registry
+"""
+
+from app.ml.loader import load_model
+from app.ml.predictor import Predictor
+from app.ml.registry import ModelRegistry, get_registry
+
+__all__ = ["ModelRegistry", "Predictor", "get_registry", "load_model"]

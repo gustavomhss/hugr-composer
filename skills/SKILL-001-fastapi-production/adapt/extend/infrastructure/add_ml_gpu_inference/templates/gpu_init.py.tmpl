@@ -1,0 +1,12 @@
+"""GPU inference sub-package.
+
+Re-exports the three public classes so callers can do::
+
+    from app.ml.gpu import DeviceManager, GPUPredictor, MemoryGuard
+"""
+
+from app.ml.gpu.device import DeviceManager
+from app.ml.gpu.inference import GPUPredictor
+from app.ml.gpu.memory_guard import MemoryGuard
+
+__all__ = ["DeviceManager", "GPUPredictor", "MemoryGuard"]

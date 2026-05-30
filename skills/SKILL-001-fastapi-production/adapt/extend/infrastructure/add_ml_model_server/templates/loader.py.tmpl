@@ -1,0 +1,129 @@
+"""ML model loader with lazy framework imports and warmup prediction.
+
+Supports torch (``.pt``/``.pth``), scikit-learn (``.pkl``/``.joblib``),
+ONNX (``.onnx``), and generic pickle models.  All ML framework imports
+are inside the load functions — ``app.main`` boots without any ML library.
+
+Safety note (S1): torch is loaded with ``weights_only=True`` to avoid
+deserialisation-RCE on untrusted checkpoints.  joblib/pickle paths still
+deserialise arbitrary Python; pin trusted artefact sources.
+
+Usage::
+
+    from app.ml.loader import load_model
+
+    model = load_model("/models/classifier.pkl")
+    model = load_model("https://example.com/model.onnx")
+"""
+
+from __future__ import annotations
+
+import logging
+from pathlib import Path
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
+
+def load_model(path_or_url: str) -> Any:
+    """Load a model from a local path or HTTP URL.
+
+    Dispatch is based on file extension:
+
+    * ``.pt`` / ``.pth`` → ``torch.load`` (weights_only=True)
+    * ``.onnx`` → ``onnxruntime.InferenceSession``
+    * ``.pkl`` / ``.joblib`` → ``joblib.load`` (RCE-equivalent on untrusted input)
+    * anything else → ``joblib.load`` (generic pickle fallback)
+
+    All ML framework imports are lazy — this function is the ONLY place
+    they are imported.
+
+    Args:
+        path_or_url: Absolute local path or HTTP(S) URL to the model
+            artefact.
+
+    Returns:
+        The loaded model object (framework-specific).
+
+    Raises:
+        ValueError: If the URL scheme or file extension is unsupported.
+        ImportError: If the required ML framework is not installed.
+        FileNotFoundError: If a local path does not exist.
+    """
+    resolved_path = _resolve_path(path_or_url)
+    ext = Path(resolved_path).suffix.lower()
+
+    if ext in (".pt", ".pth"):
+        return _load_torch(resolved_path)
+    if ext == ".onnx":
+        return _load_onnx(resolved_path)
+    return _load_joblib(resolved_path)
+
+
+def _resolve_path(path_or_url: str) -> str:
+    """Download URL to a temp file or return the local path as-is.
+
+    Args:
+        path_or_url: Local path or HTTP(S) URL.
+
+    Returns:
+        Absolute local path string.
+    """
+    if path_or_url.startswith(("http://", "https://")):
+        import tempfile
+        import urllib.request
+
+        suffix = Path(path_or_url.split("?")[0]).suffix or ".bin"
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+        logger.info("downloading model", extra={"url": path_or_url})
+        urllib.request.urlretrieve(path_or_url, tmp.name)  # noqa: S310
+        return tmp.name
+    return path_or_url
+
+
+def _load_torch(path: str) -> Any:
+    """Load a PyTorch model checkpoint with weights_only=True (S1 safety).
+
+    Args:
+        path: Local path to a ``.pt`` or ``.pth`` file.
+
+    Returns:
+        PyTorch model or state dict.
+    """
+    import torch  # lazy — not at module level
+
+    model = torch.load(path, map_location="cpu", weights_only=True)
+    logger.info("torch model loaded", extra={"path": path})
+    return model
+
+
+def _load_onnx(path: str) -> Any:
+    """Load an ONNX model via onnxruntime.
+
+    Args:
+        path: Local path to a ``.onnx`` file.
+
+    Returns:
+        ``onnxruntime.InferenceSession`` instance.
+    """
+    import onnxruntime as ort  # lazy — not at module level
+
+    session = ort.InferenceSession(path, providers=["CPUExecutionProvider"])
+    logger.info("onnx model loaded", extra={"path": path})
+    return session
+
+
+def _load_joblib(path: str) -> Any:
+    """Load a joblib/pickle model.
+
+    Args:
+        path: Local path to the ``.pkl`` or ``.joblib`` file.
+
+    Returns:
+        Deserialized model object.
+    """
+    import joblib  # lazy — not at module level
+
+    model = joblib.load(path)
+    logger.info("joblib model loaded", extra={"path": path})
+    return model

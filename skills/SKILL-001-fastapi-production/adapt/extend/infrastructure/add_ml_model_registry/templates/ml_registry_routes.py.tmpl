@@ -1,0 +1,215 @@
+"""HTTP routes for the ML model registry.
+
+Prefix: ``/ml/models``
+
+Endpoints:
+* ``POST   /ml/models``               — register a new version
+* ``GET    /ml/models``               — list all entries
+* ``GET    /ml/models/{name}/versions`` — list versions of one model
+* ``POST   /ml/models/{name}/promote`` — promote a version to production
+* ``POST   /ml/models/{name}/rollback`` — rollback production version
+* ``POST   /ml/models/{name}/ab-test`` — configure A/B percentage rollout
+* ``GET    /ml/models/{name}/compare`` — compare metrics of two versions
+"""
+from __future__ import annotations
+
+import logging
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.crud import ml_model as crud
+from app.ml.registry_service import RegistryService
+from app.schemas.ml_model import (
+    MLModelCompare,
+    MLModelCreate,
+    MLModelPromote,
+    MLModelRead,
+)
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/ml/models", tags=["ml-registry"])
+
+
+async def _get_session() -> AsyncSession:  # pragma: no cover
+    """FastAPI dependency: yield an async DB session.
+
+    Replaced at test time by the patched db/session fixture.
+    """
+    from app.core.session import get_session
+    async for session in get_session():
+        yield session
+
+
+SessionDep = Annotated[AsyncSession, Depends(_get_session)]
+
+
+@router.post("", response_model=MLModelRead, status_code=201)
+async def register_model(
+    payload: MLModelCreate,
+    session: SessionDep,
+) -> MLModelRead:
+    """Register a new ML model version.
+
+    Args:
+        payload: Model creation payload.
+        session: Injected async DB session.
+
+    Returns:
+        The newly created model entry.
+    """
+    svc = RegistryService(session)
+    row = await svc.register_model(payload)
+    await session.commit()
+    return MLModelRead.model_validate(row)
+
+
+@router.get("", response_model=list[MLModelRead])
+async def list_models(
+    session: SessionDep,
+    limit: int = Query(default=100, ge=1, le=500),
+) -> list[MLModelRead]:
+    """List all registered model entries.
+
+    Args:
+        session: Injected async DB session.
+        limit: Maximum number of entries to return (1-500).
+
+    Returns:
+        List of model entries ordered by creation date descending.
+    """
+    rows = await crud.list_all(session, limit=limit)
+    return [MLModelRead.model_validate(r) for r in rows]
+
+
+@router.get("/{name}/versions", response_model=list[MLModelRead])
+async def list_versions(
+    name: str,
+    session: SessionDep,
+    limit: int = Query(default=50, ge=1, le=200),
+) -> list[MLModelRead]:
+    """List all versions of a named model.
+
+    Args:
+        name: Logical model name.
+        session: Injected async DB session.
+        limit: Maximum number of entries to return (1-200).
+
+    Returns:
+        Versions ordered by creation date descending.
+    """
+    rows = await crud.list_versions(session, name=name, limit=limit)
+    return [MLModelRead.model_validate(r) for r in rows]
+
+
+@router.post("/{name}/promote", response_model=MLModelRead)
+async def promote_model(
+    name: str,
+    payload: MLModelPromote,
+    session: SessionDep,
+) -> MLModelRead:
+    """Promote a model version to production status.
+
+    Archives the previously active production version automatically.
+
+    Args:
+        name: Logical model name.
+        payload: Promote payload containing the target version.
+        session: Injected async DB session.
+
+    Returns:
+        The promoted model entry.
+
+    Raises:
+        HTTPException 404: Version not found.
+    """
+    svc = RegistryService(session)
+    row = await svc.promote_to_production(name, payload.version)
+    if row is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"detail": f"Version {payload.version!r} not found for model {name!r}"},
+        )
+    await session.commit()
+    return MLModelRead.model_validate(row)
+
+
+@router.post("/{name}/rollback", response_model=MLModelRead)
+async def rollback_model(
+    name: str,
+    session: SessionDep,
+) -> MLModelRead:
+    """Roll back the current production version to the previous one.
+
+    Args:
+        name: Logical model name.
+        session: Injected async DB session.
+
+    Returns:
+        The restored model entry.
+
+    Raises:
+        HTTPException 409: No rollback target found.
+    """
+    svc = RegistryService(session)
+    row = await svc.rollback_to_previous(name)
+    if row is None:
+        raise HTTPException(
+            status_code=409,
+            detail={"detail": f"Cannot rollback model {name!r}: no previous production version"},
+        )
+    await session.commit()
+    return MLModelRead.model_validate(row)
+
+
+@router.post("/{name}/ab-test")
+async def ab_test(
+    name: str,
+    session: SessionDep,
+    version_a: str = Query(...),
+    version_b: str = Query(...),
+    percentage: int = Query(default=50, ge=0, le=100),
+) -> dict:
+    """Configure an A/B percentage rollout between two versions.
+
+    Uses the feature-toggle backend when installed; returns a stub
+    response otherwise.
+
+    Args:
+        name: Logical model name.
+        session: Injected async DB session.
+        version_a: Version A (reference / control).
+        version_b: Version B (candidate / treatment).
+        percentage: Percentage of traffic routed to version_b (0-100).
+
+    Returns:
+        Rollout configuration dict.
+    """
+    svc = RegistryService(session)
+    result = await svc.ab_split(name, version_a, version_b, percentage)
+    await session.commit()
+    return result
+
+
+@router.get("/{name}/compare", response_model=MLModelCompare)
+async def compare_versions(
+    name: str,
+    session: SessionDep,
+    version_a: str = Query(...),
+    version_b: str = Query(...),
+) -> MLModelCompare:
+    """Compare metrics of two model versions side-by-side.
+
+    Args:
+        name: Logical model name.
+        session: Injected async DB session.
+        version_a: First version to compare.
+        version_b: Second version to compare.
+
+    Returns:
+        ``MLModelCompare`` object with metrics from both versions.
+    """
+    svc = RegistryService(session)
+    return await svc.build_compare(name, version_a, version_b)
