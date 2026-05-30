@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "7f1cbdf",
-  "generated_at": "2026-05-29T22:47:37+00:00",
+  "kit_commit": "6d9ee13",
+  "generated_at": "2026-05-30T00:23:34+00:00",
   "verbs": [
     "add",
     "generate",
@@ -2292,10 +2292,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_prometheus_metrics.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_prometheus_metrics.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_prometheus_metrics/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -2316,10 +2314,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_structured_logging.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_structured_logging.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_structured_logging/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3453,10 +3449,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_runtime_sentinel.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_runtime_sentinel.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_runtime_sentinel/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -12157,5 +12151,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "e2c90cb27232209d252588cc75206292938234198f587b67dbd5559fe30fcf13"
+  "stable_hash": "f7ab0dd34ddbc9df80f1d3a1f84bff6038176cf7c4a05a093e67558e4816dd0e"
 }

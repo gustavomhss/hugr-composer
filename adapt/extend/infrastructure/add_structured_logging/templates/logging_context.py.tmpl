@@ -1,0 +1,41 @@
+"""Correlation ID helpers for structlog context binding.
+
+Uses structlog's ``contextvars`` so each async request gets an isolated
+log context without thread-safety concerns.
+"""
+
+from __future__ import annotations
+
+import uuid
+from typing import Any
+
+import structlog
+
+
+def get_correlation_id() -> str:
+    """Return the current request's correlation ID, or a fresh UUID.
+
+    Returns:
+        Correlation ID string from structlog context vars, or a new UUID4
+        when no correlation ID has been bound yet.
+    """
+    ctx = structlog.contextvars.get_contextvars()
+    return str(ctx.get("correlation_id") or uuid.uuid4())
+
+
+def bind_context(**kwargs: Any) -> None:
+    """Bind key-value pairs into the structlog request context.
+
+    Bound values are included in every log entry for the current
+    async task. Call this in request middleware after extracting
+    headers (e.g. ``X-Request-ID``).
+
+    Args:
+        **kwargs: Key-value pairs to bind (e.g. ``request_id="abc"``).
+    """
+    structlog.contextvars.bind_contextvars(**kwargs)
+
+
+def clear_context() -> None:
+    """Clear all structlog context vars (call at request teardown)."""
+    structlog.contextvars.clear_contextvars()

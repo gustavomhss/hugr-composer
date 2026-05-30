@@ -1,0 +1,64 @@
+"""Redactor: structlog processor that strips PII from log events.
+
+Patterns scrubbed:
+- Email addresses
+- Phone numbers (E.164 and common formats)
+- Credit card PANs (13-19 digit sequences)
+- API keys / bearer tokens (common env-var patterns)
+"""
+
+from __future__ import annotations
+
+import logging
+import re
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
+_EMAIL_RE = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
+_PHONE_RE = re.compile(r"\+?\d[\d\s\-().]{7,}\d")
+_CARD_RE = re.compile(r"\b(?:\d[ -]?){13,19}\b")
+_APIKEY_RE = re.compile(
+    r"(?i)(api[_-]?key|token|secret|bearer)[=:\s]+[\w\-\.]{8,}"
+)
+
+
+class Redactor:
+    """Structlog processor that redacts PII patterns in log event strings."""
+
+    def __call__(
+        self,
+        logger: Any,
+        method: str,
+        event_dict: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Redact PII from all string values in *event_dict*.
+
+        Args:
+            logger: structlog logger instance (unused).
+            method: Log method name (unused).
+            event_dict: Mutable log event dictionary.
+
+        Returns:
+            event_dict with PII replaced by ``[REDACTED]``.
+        """
+        for key, value in list(event_dict.items()):
+            if isinstance(value, str):
+                event_dict[key] = _redact_string(value)
+        return event_dict
+
+
+def _redact_string(text: str) -> str:
+    """Apply all PII redaction patterns to *text*.
+
+    Args:
+        text: Input string that may contain PII.
+
+    Returns:
+        String with PII replaced by ``[REDACTED]``.
+    """
+    text = _EMAIL_RE.sub("[REDACTED]", text)
+    text = _PHONE_RE.sub("[REDACTED]", text)
+    text = _CARD_RE.sub("[REDACTED]", text)
+    text = _APIKEY_RE.sub(r"\1=[REDACTED]", text)
+    return text

@@ -1,0 +1,10 @@
+"""Prometheus metrics layer — public API."""
+
+from app.metrics.collectors import RequestMetrics, get_metrics
+from app.metrics.middleware import PrometheusMiddleware
+
+__all__ = [
+    "RequestMetrics",
+    "get_metrics",
+    "PrometheusMiddleware",
+]
