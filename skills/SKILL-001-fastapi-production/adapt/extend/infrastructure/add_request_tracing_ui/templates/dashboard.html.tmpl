@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Request Tracing Dashboard</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+       background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 1.5rem; }
+h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: #7dd3fc; }
+.toolbar { display: flex; gap: 0.75rem; margin-bottom: 1rem; align-items: center; }
+button { background: #1e40af; color: #fff; border: none; padding: 0.4rem 1rem;
+         border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem; }
+button:hover { background: #2563eb; }
+#filter { background: #1e293b; color: #e2e8f0; border: 1px solid #334155;
+          border-radius: 0.375rem; padding: 0.4rem 0.75rem; font-size: 0.875rem;
+          width: 220px; }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+th { text-align: left; padding: 0.5rem 0.75rem; background: #1e293b;
+     color: #94a3b8; font-weight: 600; border-bottom: 1px solid #334155; }
+td { padding: 0.45rem 0.75rem; border-bottom: 1px solid #1e293b; }
+tr:hover td { background: #1e293b; cursor: pointer; }
+.slow { color: #f87171; }
+.ok { color: #4ade80; }
+.badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 9999px;
+         font-size: 0.75rem; font-weight: 700; }
+.s2xx { background: #14532d; color: #4ade80; }
+.s4xx { background: #7c2d12; color: #fca5a5; }
+.s5xx { background: #450a0a; color: #f87171; }
+#detail { display: none; background: #1e293b; border-radius: 0.5rem;
+          padding: 1rem; margin-top: 1rem; white-space: pre-wrap;
+          font-family: monospace; font-size: 0.8rem; color: #bfdbfe; }
+.stats { display: flex; gap: 1.5rem; margin-bottom: 1rem; }
+.stat { background: #1e293b; border-radius: 0.5rem; padding: 0.75rem 1rem; }
+.stat-val { font-size: 1.5rem; font-weight: 700; color: #7dd3fc; }
+.stat-lbl { font-size: 0.75rem; color: #64748b; margin-top: 0.1rem; }
+</style>
+</head>
+<body>
+<h1>&#x26a1; Request Tracing Dashboard</h1>
+<div class="stats">
+  <div class="stat"><div class="stat-val" id="stat-total">0</div><div class="stat-lbl">Total traced</div></div>
+  <div class="stat"><div class="stat-val" id="stat-p99">&#x2014;</div><div class="stat-lbl">p99 latency (ms)</div></div>
+  <div class="stat"><div class="stat-val" id="stat-slow">0</div><div class="stat-lbl">Slow requests</div></div>
+</div>
+<div class="toolbar">
+  <button onclick="load()">&#x21ba; Refresh</button>
+  <button onclick="loadSlow()">&#x1f40c; Show slow (p99)</button>
+  <input id="filter" type="text" placeholder="Filter by path&#x2026;" oninput="applyFilter()">
+</div>
+<table id="tbl">
+  <thead><tr><th>Method</th><th>Path</th><th>Status</th><th>Total ms</th><th>Spans</th><th>ID</th></tr></thead>
+  <tbody id="tbody"></tbody>
+</table>
+<pre id="detail"></pre>
+<script>
+let _rows = [];
+function statusClass(s) {
+  if (s >= 500) return 's5xx';
+  if (s >= 400) return 's4xx';
+  return 's2xx';
+}
+function render(rows) {
+  const tb = document.getElementById('tbody');
+  tb.innerHTML = '';
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    const slow = r.total_ms > 500 ? 'slow' : 'ok';
+    const spans = (r.spans||[]).map(s => s.name + ':' + s.ms + 'ms').join(', ');
+    tr.innerHTML = '<td>' + r.method + '</td>' +
+      '<td>' + r.path + '</td>' +
+      '<td><span class="badge ' + statusClass(r.status_code) + '">' + r.status_code + '</span></td>' +
+      '<td class="' + slow + '">' + r.total_ms + '</td>' +
+      '<td>' + (spans || '&#x2014;') + '</td>' +
+      '<td style="font-size:0.7rem;color:#64748b">' + r.id.slice(0,8) + '&#x2026;</td>';
+    tr.onclick = () => showDetail(r);
+    tb.appendChild(tr);
+  });
+  updateStats(rows);
+}
+function updateStats(rows) {
+  document.getElementById('stat-total').textContent = rows.length;
+  if (!rows.length) return;
+  const sorted = rows.map(r => r.total_ms).sort((a,b) => a-b);
+  const p99 = sorted[Math.floor(sorted.length * 0.99)] || sorted[sorted.length-1];
+  document.getElementById('stat-p99').textContent = p99;
+  document.getElementById('stat-slow').textContent = rows.filter(r=>r.total_ms>500).length;
+}
+function showDetail(r) {
+  const el = document.getElementById('detail');
+  el.style.display = 'block';
+  el.textContent = JSON.stringify(r, null, 2);
+}
+function applyFilter() {
+  const q = document.getElementById('filter').value.toLowerCase();
+  render(q ? _rows.filter(r => r.path.toLowerCase().includes(q)) : _rows);
+}
+async function load() {
+  try {
+    const resp = await fetch('/tracing/requests');
+    _rows = await resp.json();
+    applyFilter();
+  } catch(e) { console.error('Tracing load error', e); }
+}
+async function loadSlow() {
+  try {
+    const resp = await fetch('/tracing/slow');
+    _rows = await resp.json();
+    applyFilter();
+  } catch(e) { console.error('Tracing slow load error', e); }
+}
+load();
+setInterval(load, 5000);
+</script>
+</body>
+</html>

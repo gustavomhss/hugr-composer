@@ -1,0 +1,83 @@
+"""Admin routes: GET /debug/requests, POST /debug/replay/{id}, DELETE /debug/flush."""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+
+from app.api.deps import get_current_superuser
+from app.debug.models import RecordedRequest, ReplayResult
+from app.debug.recorder import get_recorder
+from app.debug.replayer import RequestReplayer
+
+router = APIRouter(prefix="/debug", tags=["debug"])
+
+_SUPERUSER_DEP = [Depends(get_current_superuser)]
+
+
+@router.get(
+    "/requests",
+    response_model=list[RecordedRequest],
+    dependencies=_SUPERUSER_DEP,
+)
+async def list_requests(limit: int = 50) -> list[dict]:
+    """List the most recent recorded requests.
+
+    Args:
+        limit: Maximum records to return (default 50).
+
+    Returns:
+        List of RecordedRequest dicts ordered newest-first.
+
+    Raises:
+        HTTPException: 503 if recorder is not initialised.
+    """
+    recorder = get_recorder()
+    if recorder is None:
+        raise HTTPException(status_code=503, detail={"detail": "Recorder not initialised"})
+    return await recorder.list_records(limit=max(1, min(limit, 500)))
+
+
+@router.post(
+    "/replay/{rec_id}",
+    response_model=ReplayResult,
+    dependencies=_SUPERUSER_DEP,
+)
+async def replay_request(rec_id: str, http_request: Request) -> dict:
+    """Re-execute a recorded request and return a diff of the response.
+
+    Args:
+        rec_id: 16-char hex record id from GET /debug/requests.
+        http_request: Starlette Request (to access the ASGI app).
+
+    Returns:
+        ReplayResult with original vs replayed status codes and body diff.
+
+    Raises:
+        HTTPException: 404 if record not found.
+        HTTPException: 503 if recorder not initialised.
+    """
+    recorder = get_recorder()
+    if recorder is None:
+        raise HTTPException(status_code=503, detail={"detail": "Recorder not initialised"})
+    record = await recorder.get_record(rec_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail={"detail": f"Record {rec_id!r} not found"})
+    replayer = RequestReplayer(app=http_request.app)
+    return await replayer.replay(record)
+
+
+@router.delete("/flush", dependencies=_SUPERUSER_DEP)
+async def flush_records() -> dict:
+    """Delete all recorded requests from the ring buffer.
+
+    Returns:
+        Dict with ``deleted`` key indicating number of keys removed.
+
+    Raises:
+        HTTPException: 503 if recorder not initialised.
+    """
+    recorder = get_recorder()
+    if recorder is None:
+        raise HTTPException(status_code=503, detail={"detail": "Recorder not initialised"})
+    deleted = await recorder.flush()
+    return {"deleted": deleted}

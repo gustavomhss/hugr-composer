@@ -1,0 +1,36 @@
+"""Pydantic schemas for the debug replay API."""
+
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class RecordedRequest(BaseModel):
+    """Schema for a single recorded request entry."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str = Field(..., description="16-char hex record identifier.")
+    ts: float = Field(..., description="Unix timestamp of recording.")
+    method: str = Field(..., description="HTTP method (e.g. GET).")
+    path: str = Field(..., description="Request path with query string.")
+    status_code: int = Field(..., description="HTTP response status code.")
+    duration_ms: float = Field(..., description="Request duration in ms.")
+    request_body: str = Field(default="", description="Decoded request body.")
+    response_body: str = Field(default="", description="Decoded response body.")
+
+
+class ReplayResult(BaseModel):
+    """Result of replaying a recorded request."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str = Field(..., description="Record id that was replayed.")
+    original_status: int = Field(..., description="Status code when recorded.")
+    replayed_status: int = Field(..., description="Status code on replay.")
+    status_changed: bool = Field(..., description="True if status codes differ.")
+    body_diff: list[str] = Field(
+        default_factory=list,
+        description="List of diff lines between original and replayed body.",
+    )
+    diff_count: int = Field(default=0, description="Number of diff lines.")

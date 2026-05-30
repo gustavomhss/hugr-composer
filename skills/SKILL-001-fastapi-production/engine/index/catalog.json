@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "6d9ee13",
-  "generated_at": "2026-05-30T00:23:34+00:00",
+  "kit_commit": "1d5a9a6",
+  "generated_at": "2026-05-30T02:06:24+00:00",
   "verbs": [
     "add",
     "generate",
@@ -1404,10 +1404,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_request_tracing_ui.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_request_tracing_ui.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_request_tracing_ui/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -2267,10 +2265,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_opentelemetry.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_opentelemetry.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_opentelemetry/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -2736,10 +2732,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_api_replay_debugger.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_api_replay_debugger.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_api_replay_debugger/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -12151,5 +12145,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "f7ab0dd34ddbc9df80f1d3a1f84bff6038176cf7c4a05a093e67558e4816dd0e"
+  "stable_hash": "afabc61d15b3f18d898141be71b785f4497ec628603dfa0702f26651a6aff028"
 }

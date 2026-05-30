@@ -1,0 +1,111 @@
+"""OpenTelemetry provider bootstrap.
+
+ALL opentelemetry imports are lazy (inside function bodies) so the
+application boots without the SDK installed.
+"""
+
+from __future__ import annotations
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+_tracer = None
+_meter = None
+
+
+def init_telemetry() -> None:
+    """Bootstrap TracerProvider, MeterProvider, and LoggerProvider.
+
+    Reads configuration from ``app.core.config.settings``.  When
+    ``OTEL_ENABLED`` is ``False`` this function is a no-op — no SDK
+    packages are imported.
+    """
+    from app.core.config import settings
+
+    if not settings.OTEL_ENABLED:
+        logger.debug("OTEL disabled — skipping telemetry bootstrap")
+        return
+
+    _init_tracer_provider(settings)
+    _init_meter_provider(settings)
+    _init_logger_provider(settings)
+    logger.info("OpenTelemetry initialised for service '%s'", settings.OTEL_SERVICE_NAME)
+
+
+def _init_tracer_provider(settings) -> None:  # type: ignore[no-untyped-def]
+    """Configure the global TracerProvider with OTLP export.
+
+    Args:
+        settings: Application settings with OTEL_* fields.
+    """
+    from opentelemetry import trace  # noqa: PLC0415
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (  # noqa: PLC0415
+        OTLPSpanExporter,
+    )
+    from opentelemetry.sdk.trace import TracerProvider  # noqa: PLC0415
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor  # noqa: PLC0415
+
+    exporter = OTLPSpanExporter(endpoint=settings.OTEL_EXPORTER_OTLP_ENDPOINT)
+    provider = TracerProvider()
+    provider.add_span_processor(BatchSpanProcessor(exporter))
+    trace.set_tracer_provider(provider)
+
+
+def _init_meter_provider(settings) -> None:  # type: ignore[no-untyped-def]
+    """Configure the global MeterProvider with OTLP export.
+
+    Args:
+        settings: Application settings with OTEL_* fields.
+    """
+    from opentelemetry import metrics  # noqa: PLC0415
+    from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import (  # noqa: PLC0415
+        OTLPMetricExporter,
+    )
+    from opentelemetry.sdk.metrics import MeterProvider  # noqa: PLC0415
+    from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader  # noqa: PLC0415
+
+    reader = PeriodicExportingMetricReader(
+        OTLPMetricExporter(endpoint=settings.OTEL_EXPORTER_OTLP_ENDPOINT)
+    )
+    provider = MeterProvider(metric_readers=[reader])
+    metrics.set_meter_provider(provider)
+
+
+def _init_logger_provider(settings) -> None:  # type: ignore[no-untyped-def]
+    """Configure the global LoggerProvider with OTLP export.
+
+    Args:
+        settings: Application settings with OTEL_* fields.
+    """
+    from opentelemetry._logs import set_logger_provider  # noqa: PLC0415
+    from opentelemetry.exporter.otlp.proto.grpc._log_exporter import (  # noqa: PLC0415
+        OTLPLogExporter,
+    )
+    from opentelemetry.sdk._logs import LoggerProvider  # noqa: PLC0415
+    from opentelemetry.sdk._logs.export import BatchLogRecordProcessor  # noqa: PLC0415
+
+    exporter = OTLPLogExporter(endpoint=settings.OTEL_EXPORTER_OTLP_ENDPOINT)
+    provider = LoggerProvider()
+    provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
+    set_logger_provider(provider)
+
+
+def get_tracer(name: str = "app"):
+    """Return a tracer from the global TracerProvider.
+
+    When OTEL is disabled returns a no-op tracer so callers need
+    not check the enabled flag themselves.
+
+    Args:
+        name: Instrumentation scope name (typically ``__name__``).
+
+    Returns:
+        An OpenTelemetry Tracer instance.
+    """
+    try:
+        from opentelemetry import trace  # noqa: PLC0415
+        return trace.get_tracer(name)
+    except ImportError:  # pragma: no cover
+        from opentelemetry.trace import NoOpTracer  # type: ignore[attr-defined]
+        return NoOpTracer()
