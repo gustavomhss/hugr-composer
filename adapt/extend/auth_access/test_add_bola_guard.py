@@ -150,17 +150,26 @@ def test_no_function_over_50_loc() -> None:
 # ---------------------------------------------------------------------------
 
 def test_config_fields_patched() -> None:
-    """CC-08: BOLA_GUARD_ENABLED and BOLA_GUARD_STRICT_MODE in config.py."""
+    """CC-08: BOLA_GUARD_ENABLED in config.py (single kill-switch).
+
+    R5-O1-F1 (juror a96f3835e9f3a913e): ``BOLA_GUARD_STRICT_MODE`` was
+    removed — it was the only knob for fail-open-on-missing-resource-id
+    behaviour and that branch is now unconditionally fail-CLOSED.
+    """
     project_dir = create_fixture_project(name="bola_t08")
     add_bola_guard(ToolInput(project_dir=str(project_dir)))
     config = project_dir / "app" / "core" / "config.py"
     assert config.exists()
     content = config.read_text()
-    for field in ("BOLA_GUARD_ENABLED", "BOLA_GUARD_STRICT_MODE"):
-        assert field in content, f"{field} not patched into config.py"
-        for line in content.splitlines():
-            if field in line and ":" in line:
-                assert line.startswith("    "), f"Not 4-space indented: {line!r}"
+    field = "BOLA_GUARD_ENABLED"
+    assert field in content, f"{field} not patched into config.py"
+    for line in content.splitlines():
+        if field in line and ":" in line:
+            assert line.startswith("    "), f"Not 4-space indented: {line!r}"
+    assert "BOLA_GUARD_STRICT_MODE" not in content, (
+        "BOLA_GUARD_STRICT_MODE should be removed (R5-O1-F1): the field "
+        "was the fail-open knob and no longer has any runtime effect."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -313,12 +322,53 @@ def test_bola_enabled_env_check() -> None:
 # ---------------------------------------------------------------------------
 
 def test_strict_mode_logic_present() -> None:
-    """CC-20: Strict mode rejects access without explicit ownership proof."""
+    """CC-20 (R5-O1-F1, juror a96f3835e9f3a913e): the verifier raises 403
+    when ``_extract_resource_id`` returns ``None``.
+
+    Pre-fix this branch was gated by ``_strict_mode()`` (default False)
+    and silently allowed access — fail-OPEN on routes with path-param
+    names outside the ``<model>_id`` / ``id`` / first-integer
+    heuristic (e.g. ``/orders/{order_uuid}``).  Post-fix it
+    unconditionally raises ``HTTPException(status_code=403)``.
+    """
     project_dir = create_fixture_project(name="bola_t20")
     add_bola_guard(ToolInput(project_dir=str(project_dir)))
     content = (project_dir / "app" / "auth" / "bola_guard.py").read_text()
-    assert "strict" in content.lower() or "STRICT" in content, (
-        "Strict mode logic not found in bola_guard.py"
+    # The dead ``_strict_mode`` env helper must be gone.
+    assert "_strict_mode" not in content, (
+        "_strict_mode helper must be removed (R5-O1-F1): it was the "
+        "fail-open switch."
+    )
+    # The fail-CLOSED branch must reach a fail-closed code path
+    # (HTTPException 403 directly OR a delegating helper call).
+    tree = ast.parse(content)
+    extract_call_found = False
+    fail_closed_on_missing = False
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "_extract_resource_id"
+        ):
+            extract_call_found = True
+        if isinstance(node, ast.If):
+            test_src = ast.unparse(node.test) if hasattr(ast, "unparse") else ""
+            if "resource_id" in test_src and "None" in test_src:
+                body_src = ast.unparse(node) if hasattr(ast, "unparse") else ""
+                # Either: raises HTTPException 403 directly,
+                # OR: delegates to a fail-closed helper method.
+                has_403_raise = ("raise HTTPException" in body_src and "403" in body_src)
+                has_fail_closed_call = "fail_closed" in body_src
+                if has_403_raise or has_fail_closed_call:
+                    fail_closed_on_missing = True
+    assert extract_call_found, "_extract_resource_id call not found"
+    assert fail_closed_on_missing, (
+        "BOLA guard must fail-CLOSED when resource_id is None "
+        "(R5-O1-F1 fix); found fail-OPEN code path."
+    )
+    # Sanity: a fail-closed helper must exist and raise 403.
+    assert "HTTP_403_FORBIDDEN" in content or "status_code=403" in content, (
+        "No 403 path found in bola_guard.py"
     )
 
 

@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "6573ba4",
-  "generated_at": "2026-05-30T17:11:05+00:00",
+  "kit_commit": "3bf2da0",
+  "generated_at": "2026-05-30T20:29:55+00:00",
   "verbs": [
     "add",
     "generate",
@@ -429,7 +429,7 @@
       "skill": "SKILL-001-fastapi-production",
       "bundle": "auth_access",
       "synopsis": "Layer object-level authorization (BOLA/IDOR) onto an existing project: OwnershipVerifier FastAPI dep",
-      "when_to_call": "Layer object-level authorization (BOLA/IDOR) onto an existing project: OwnershipVerifier FastAPI dependency, TenantIsolationFilter for multi-tenant query scoping, ResourceAccessPolicy for cross-user delegation, and auto-generated pytest BOLA test cases.  NOTE: as of v0.5, ``generators.orchestrator.generate_project`` already emits an inline per-object ownership guard on every owner-bearing model by default (see ``shared_models=`` for the explicit opt-out).  This tool stays useful for: (a) retrofitting existing projects scaffolded before secure-by-default, (b) projects that need delegated / cross-user access (``ResourceAccessPolicy``), and (c) multi-tenant query isolation (``TenantIsolationFilter``) \u2014 capabilities the inline guard does not provide.  When used alongside the inline guard the two layers compose: the inline check denies non-owner access at the route level, and OwnershipVerifier provides a second-level DB verification + strict-mode toggle.",
+      "when_to_call": "Layer object-level authorization (BOLA/IDOR) onto an existing project: OwnershipVerifier FastAPI dependency, TenantIsolationFilter for multi-tenant query scoping, ResourceAccessPolicy for cross-user delegation, and auto-generated pytest BOLA test cases.  NOTE: as of v0.5, ``generators.orchestrator.generate_project`` already emits an inline per-object ownership guard on every owner-bearing model by default (see ``shared_models=`` for the explicit opt-out).  This tool stays useful for: (a) retrofitting existing projects scaffolded before secure-by-default, (b) projects that need delegated / cross-user access (``ResourceAccessPolicy``), and (c) multi-tenant query isolation (``TenantIsolationFilter``) \u2014 capabilities the inline guard does not provide.  When used alongside the inline guard the two layers compose: the inline check denies non-owner access at the route level, and OwnershipVerifier provides a second-level DB verification.  The guard is fail-CLOSED by default: when the resource id cannot be extracted from the path (param name does not match ``<model>_id`` / ``id`` / first-integer heuristic) the verifier raises HTTP 403 \u2014 there is no opt-out.",
       "when_not_to_call": "",
       "tags": [],
       "tier": 2,
@@ -12005,5 +12005,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "fc66e5fdf6fbe39a2df032debad8c8a1409b4df61bacc1a3d800195593bfa196"
+  "stable_hash": "a531bf3f10f2c4ef0bfd83e7b19ab15c46f0d4e42eb57bfd08e8f9cedf69694c"
 }

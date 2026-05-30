@@ -29,7 +29,9 @@ os.environ.setdefault("RATE_LIMITING_ENABLED", "false")
 os.environ.setdefault("ENVIRONMENT", "local")
 os.environ.setdefault("SECRET_KEY", "behavior-test-bola-secret-key-32+chars!!")
 os.environ.setdefault("BOLA_GUARD_ENABLED", "true")
-os.environ.setdefault("BOLA_GUARD_STRICT_MODE", "false")
+# R5-O1-F1: BOLA_GUARD_STRICT_MODE removed — guard is always fail-CLOSED
+# on missing resource_id (no env knob).
+os.environ.pop("BOLA_GUARD_STRICT_MODE", None)
 os.environ.pop("REDIS_URL", None)
 
 import ast
@@ -342,13 +344,21 @@ def test_b07_all_generated_functions_under_50_loc(project_dir: Path) -> None:
 
 
 def test_b08_config_fields_4_space_indent(project_dir: Path) -> None:
-    """B-08: BOLA_* config fields have 4-space indent in config.py."""
+    """B-08: BOLA_GUARD_ENABLED has 4-space indent in config.py.
+
+    R5-O1-F1: ``BOLA_GUARD_STRICT_MODE`` removed (was the fail-open
+    knob); only ``BOLA_GUARD_ENABLED`` remains as the kill-switch.
+    """
     config = project_dir / "app" / "core" / "config.py"
     assert config.exists()
     content = config.read_text()
     for line in content.splitlines():
-        if any(f in line for f in ("BOLA_GUARD_ENABLED", "BOLA_GUARD_STRICT_MODE")):
+        if "BOLA_GUARD_ENABLED" in line:
             assert line.startswith("    "), f"Not 4-space indented: {line!r}"
+    assert "BOLA_GUARD_STRICT_MODE" not in content, (
+        "BOLA_GUARD_STRICT_MODE was removed in R5-O1-F1; should not "
+        "be patched into config.py"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -389,6 +399,100 @@ def test_b09_generated_bola_tests_file_emitted(project_dir: Path) -> None:
     assert "BOLA-01" in content and "BOLA-02" in content, (
         "Per-model BOLA-01/BOLA-02 test cases missing in emitted file"
     )
+
+
+# ---------------------------------------------------------------------------
+# B-11 (R5-O1-F1, juror a96f3835e9f3a913e): unusual path-param name
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_b11_bola_guard_fail_closed_on_missing_resource_id(
+    project_dir: Path,
+) -> None:
+    """B-11 (R5-O1-F1): when ``_extract_resource_id`` returns ``None`` —
+    e.g. on routes like ``/orders/{order_uuid}`` where the path param
+    name does NOT match the ``<model>_id`` / ``id`` / first-integer
+    heuristic — the verifier MUST raise ``HTTPException(status_code=403)``
+    even when ``BOLA_GUARD_STRICT_MODE`` is unset (the default).
+
+    Pre-fix behaviour: the guard silently fell through to ``return``
+    unless ``BOLA_GUARD_STRICT_MODE=true`` was set in the environment,
+    so any caller could access the route (fail-OPEN).  This test would
+    have FAILED pre-fix because no HTTPException was raised.
+
+    Juror: ``a96f3835e9f3a913e``.
+    """
+    # Make sure no env override is in place — this test must hold with
+    # the *default* configuration.
+    os.environ.pop("BOLA_GUARD_STRICT_MODE", None)
+
+    bola_file = project_dir / "app" / "auth" / "bola_guard.py"
+    assert bola_file.exists()
+
+    orig = sys.path.copy()
+    sys.path.insert(0, str(project_dir))
+    stale = [k for k in sys.modules if k == "app" or k.startswith("app.")]
+    for key in stale:
+        del sys.modules[key]
+    try:
+        spec = importlib.util.spec_from_file_location(
+            "app.auth.bola_guard_b11", str(bola_file)
+        )
+        assert spec and spec.loader
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["app.auth.bola_guard_b11"] = mod
+        spec.loader.exec_module(mod)  # type: ignore[attr-defined]
+
+        # Build a Request whose path_params CANNOT be matched by the
+        # ``_extract_resource_id`` heuristic: no ``order_id`` / ``id``
+        # key, and the value is a non-integer UUID string.  Real-world
+        # equivalent: ``/orders/{order_uuid}``.
+        from starlette.requests import Request
+
+        scope = {
+            "type": "http",
+            "method": "GET",
+            "path": "/orders/abc-def-uuid",
+            "path_params": {"order_uuid": "abc-def-uuid"},
+            "headers": [],
+            "query_string": b"",
+        }
+        request = Request(scope)
+
+        # Dummy model that the verifier will introspect for __name__.
+        class Order:  # noqa: D401 — test dummy
+            pass
+
+        # Dummy authenticated user — irrelevant; we should be rejected
+        # BEFORE the ownership check runs.
+        class _FakeUser:
+            id = 42
+
+        verifier = mod.OwnershipVerifier(Order, "user_id")
+
+        from fastapi import HTTPException
+
+        raised: HTTPException | None = None
+        try:
+            await verifier(
+                request,
+                current_user=_FakeUser(),
+                session=None,  # irrelevant — we never reach the DB check
+            )
+        except HTTPException as exc:
+            raised = exc
+
+        assert raised is not None, (
+            "R5-O1-F1 regression: OwnershipVerifier did NOT raise on "
+            "unmatched path param (BOLA_GUARD_STRICT_MODE unset).  "
+            "Guard is fail-OPEN."
+        )
+        assert raised.status_code == 403, (
+            f"Expected 403 fail-CLOSED, got {raised.status_code}"
+        )
+    finally:
+        sys.path[:] = orig
 
 
 def test_b10_generated_bola_tests_idempotent(project_dir: Path) -> None:

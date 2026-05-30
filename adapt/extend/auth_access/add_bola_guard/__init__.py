@@ -8,9 +8,8 @@ Role since v0.5 (P1 #16 secure-by-default):
       1. Add BOLA protection to a project scaffolded BEFORE secure-by-
          default landed (the inline guard is missing).
       2. Add capabilities the inline guard does NOT provide:
-         ``ResourceAccessPolicy`` (cross-user delegation),
-         ``TenantIsolationFilter`` (multi-tenant query scoping), and
-         ``BOLA_GUARD_STRICT_MODE`` (deny-by-default on missing proof).
+         ``ResourceAccessPolicy`` (cross-user delegation) and
+         ``TenantIsolationFilter`` (multi-tenant query scoping).
       3. Defence-in-depth: when layered on top of the inline guard, the
          two enforcement points are independent (route-level vs DB-level)
          and either alone is sufficient to block BOLA.
@@ -18,7 +17,7 @@ Role since v0.5 (P1 #16 secure-by-default):
 Generates:
   - ``app/auth/bola_guard.py``       — OwnershipVerifier dep + ResourceAccessPolicy
   - ``app/auth/bola_test_gen.py``    — Auto-generates BOLA test cases
-  - patches ``app/core/config.py``   — BOLA_GUARD_ENABLED, BOLA_GUARD_STRICT_MODE
+  - patches ``app/core/config.py``   — BOLA_GUARD_ENABLED (kill-switch)
 
 Tool is idempotent: second run detects ``OwnershipVerifier`` in
 ``app/auth/bola_guard.py`` and returns ``status="no_op"``.
@@ -54,7 +53,10 @@ MCP_TOOL = {
         "guard does not provide.  When used alongside the inline guard the "
         "two layers compose: the inline check denies non-owner access at "
         "the route level, and OwnershipVerifier provides a second-level DB "
-        "verification + strict-mode toggle."
+        "verification.  The guard is fail-CLOSED by default: when the "
+        "resource id cannot be extracted from the path (param name does "
+        "not match ``<model>_id`` / ``id`` / first-integer heuristic) "
+        "the verifier raises HTTP 403 — there is no opt-out."
     ),
     "tags": ["extend", "auth_access", "security", "bola", "idor"],
     "entry": "add_bola_guard",
@@ -214,7 +216,7 @@ def add_bola_guard(inp: ToolInput) -> ToolResult:
             "Decorate routes: @router.get('/{id}', dependencies=[require_ownership(Model, 'user_id')])",
             "For multi-tenancy: use TenantIsolationFilter(session, tenant_id).apply(query)",
             "Run generated tests: pytest tests/test_bola_generated.py -v",
-            "Set BOLA_GUARD_STRICT_MODE=true to reject ANY access without explicit ownership proof",
+            "Guard is fail-CLOSED by default (R5-O1-F1): unmatched path-param names raise 403. Use <model>_id or id as the path param name.",
         ],
         execution_time_ms=_elapsed_ms(start),
     )

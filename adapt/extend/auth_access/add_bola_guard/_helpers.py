@@ -99,10 +99,14 @@ def patch_config(config_file: Path):
     """Inject BOLA guard settings into ``app/core/config.py`` Settings class."""
     from adapt.contracts.config_patcher import patch_settings_fields
 
+    # R5-O1-F1 (juror a96f3835e9f3a913e): BOLA_GUARD_STRICT_MODE used to
+    # gate fail-closed-on-missing-resource-id behaviour and defaulted to
+    # False (fail-OPEN).  The guard is now always fail-CLOSED on that
+    # branch, so the field is no longer emitted.  BOLA_GUARD_ENABLED is
+    # kept as the single kill-switch.
     return patch_settings_fields(
         config_file,
         fields=[
             ("BOLA_GUARD_ENABLED", "BOLA_GUARD_ENABLED: bool = True"),
-            ("BOLA_GUARD_STRICT_MODE", "BOLA_GUARD_STRICT_MODE: bool = False"),
         ],
     )
