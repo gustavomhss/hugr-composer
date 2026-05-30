@@ -5,12 +5,57 @@ from __future__ import annotations
 import logging
 import os
 import secrets
+import time
 from dataclasses import dataclass
+from typing import Any
 from urllib.parse import urlencode
 
 from app.auth.social_config import get_provider_config
 
 logger = logging.getLogger(__name__)
+
+# Apple JWKS endpoint (RFC 7517). Public — not a secret.
+_APPLE_JWKS_URL = "https://appleid.apple.com/auth/keys"
+_APPLE_ISSUER = "https://appleid.apple.com"
+
+# JWKS in-process cache TTL. Apple rotates keys infrequently; a 1-hour
+# window bounds key freshness without spamming the JWKS endpoint on
+# every callback. Per-worker caches are intentional here: JWKS is
+# public + read-only, so independent workers each fetching once per
+# hour is correct (not the worker-drift hazard B0.12 targets — there
+# is no write path to drift on).
+_JWKS_CACHE_TTL_S = 3600
+
+
+class _JWKSCache:
+    """Tiny per-process JWKS cache (URL -> (fetched_at, jwks_dict)).
+
+    Wrapped in a class so the mutable dict lives on an instance, not at
+    module scope (B0.12-friendly: state is scoped to the cache object).
+    The instance below is a module-level singleton because we want one
+    cache per process, not one per request.
+    """
+
+    def __init__(self) -> None:
+        self._entries: dict[str, tuple[float, dict[str, Any]]] = {}
+
+    def get(self, url: str, now: float) -> dict[str, Any] | None:
+        cached = self._entries.get(url)
+        if cached is None:
+            return None
+        fetched_at, jwks = cached
+        if now - fetched_at >= _JWKS_CACHE_TTL_S:
+            return None
+        return jwks
+
+    def set(self, url: str, now: float, jwks: dict[str, Any]) -> None:
+        self._entries[url] = (now, jwks)
+
+    def clear(self) -> None:
+        self._entries.clear()
+
+
+_jwks_cache = _JWKSCache()
 
 
 @dataclass
@@ -112,7 +157,9 @@ class SocialAuthProvider:
             )
             access_token = token_data.get("access_token", "")
             if self._provider == "apple":
-                return _parse_apple_id_token(token_data, self._provider)
+                return await _verify_apple_id_token(
+                    client, token_data, self._provider
+                )
             return await _fetch_userinfo(
                 client, self._config.userinfo_url,
                 access_token, self._provider,
@@ -202,39 +249,168 @@ async def _fetch_userinfo(
     )
 
 
-def _parse_apple_id_token(token_data: dict, provider: str) -> SocialUserInfo:
-    """Extract user info from Apple's id_token JWT (no userinfo endpoint).
+async def _verify_apple_id_token(
+    client: object, token_data: dict, provider: str
+) -> SocialUserInfo:
+    """Verify Apple's id_token JWT signature + claims, then return user info.
 
-    Apple returns user info inside the id_token JWT claims.  We decode
-    only the payload (no signature verification — server-side flow).
+    Closes R5-O4-C2 (Round-5 Opus juror ``acdd867db23e99170``): the prior
+    implementation base64-decoded the payload with no signature check,
+    so any attacker who could reach the callback with a self-crafted
+    id_token took over the matching account. We now:
+
+      1. Fetch Apple's published JWKS from ``_APPLE_JWKS_URL`` (cached
+         ``_JWKS_CACHE_TTL_S`` seconds; Apple rotates keys infrequently).
+      2. Read the JWT header's ``kid`` and select the matching JWK.
+      3. Verify the RS256 signature against that JWK using PyJWT.
+      4. Validate ``iss == https://appleid.apple.com`` and
+         ``aud == settings.APPLE_CLIENT_ID`` and ``exp`` not expired.
+      5. Reject any token that fails any of the above.
 
     Args:
+        client: httpx.AsyncClient instance (passed in so we share the
+            connection pool and timeout settings).
         token_data: Full response dict from Apple's token endpoint.
         provider: Always 'apple'.
 
     Returns:
-        ``SocialUserInfo`` parsed from id_token claims.
-    """
-    import base64
-    import json
+        ``SocialUserInfo`` parsed from verified id_token claims.
 
+    Raises:
+        ValueError: When the id_token is missing, malformed, has an
+            unknown ``kid``, fails signature verification, or any
+            registered claim (iss / aud / exp) does not validate.
+    """
     id_token = token_data.get("id_token", "")
-    parts = id_token.split(".")
-    if len(parts) < 2:
-        return SocialUserInfo(
-            provider=provider,
-            provider_user_id="",
-            email=None,
-            email_verified=False,
-            name=None,
-        )
-    padding = 4 - len(parts[1]) % 4
-    payload_bytes = base64.urlsafe_b64decode(parts[1] + "=" * padding)
-    claims = json.loads(payload_bytes)
+    if not id_token or id_token.count(".") != 2:
+        raise ValueError("Apple id_token missing or malformed")
+    jwks = await _fetch_apple_jwks(client)
+    public_key = _select_apple_jwk(id_token, jwks)
+    claims = _decode_apple_id_token(id_token, public_key)
     return SocialUserInfo(
         provider=provider,
-        provider_user_id=claims.get("sub", ""),
+        provider_user_id=str(claims.get("sub", "")),
         email=claims.get("email"),
-        email_verified=claims.get("email_verified", False),
+        email_verified=_coerce_apple_email_verified(
+            claims.get("email_verified", False)
+        ),
         name=None,
     )
+
+
+async def _fetch_apple_jwks(client: object) -> dict[str, Any]:
+    """Return Apple's current JWKS, caching the result for the TTL window.
+
+    The cache is in-process — multi-worker deployments will each hold
+    their own copy, which is fine: JWKS is public, and a 1-hour TTL
+    keeps every worker within Apple's documented rotation cadence.
+
+    Args:
+        client: httpx.AsyncClient instance.
+
+    Returns:
+        Parsed JWKS dict ``{"keys": [...]}``.
+    """
+    now = time.monotonic()
+    cached = _jwks_cache.get(_APPLE_JWKS_URL, now)
+    if cached is not None:
+        return cached
+    resp = await client.get(_APPLE_JWKS_URL)  # type: ignore[union-attr]
+    resp.raise_for_status()
+    jwks = resp.json()
+    if not isinstance(jwks, dict) or not isinstance(jwks.get("keys"), list):
+        raise ValueError("Apple JWKS response malformed")
+    _jwks_cache.set(_APPLE_JWKS_URL, now, jwks)
+    return jwks
+
+
+def _select_apple_jwk(id_token: str, jwks: dict[str, Any]) -> object:
+    """Find the JWK that matches the ``kid`` in the id_token header and
+    load it as a PyJWT-compatible public key object.
+
+    Args:
+        id_token: Raw JWT string.
+        jwks: Parsed JWKS dict.
+
+    Returns:
+        Public key object that PyJWT can use to verify the signature.
+
+    Raises:
+        ValueError: If the header has no ``kid``, the ``kid`` is not in
+            the JWKS, or the matching JWK cannot be loaded.
+    """
+    import jwt  # lazy — PyJWT
+    from jwt.algorithms import RSAAlgorithm
+    import json as _json
+
+    try:
+        header = jwt.get_unverified_header(id_token)
+    except Exception as exc:
+        raise ValueError(f"Apple id_token header malformed: {exc}") from exc
+    kid = header.get("kid")
+    if not kid:
+        raise ValueError("Apple id_token header missing kid")
+    for jwk in jwks.get("keys", []):
+        if isinstance(jwk, dict) and jwk.get("kid") == kid:
+            try:
+                return RSAAlgorithm.from_jwk(_json.dumps(jwk))
+            except Exception as exc:
+                raise ValueError(
+                    f"Apple JWK for kid={kid!r} unparseable: {exc}"
+                ) from exc
+    raise ValueError(f"Apple JWKS has no key for kid={kid!r}")
+
+
+def _decode_apple_id_token(id_token: str, public_key: object) -> dict[str, Any]:
+    """Verify the id_token's RS256 signature and registered claims.
+
+    ``iss`` / ``aud`` / ``exp`` are validated by PyJWT (``aud`` from
+    ``settings.APPLE_CLIENT_ID``, ``iss`` against the constant). PyJWT
+    raises ``InvalidTokenError`` subclasses on any failure; we normalise
+    to ``ValueError`` so callers don't have to import PyJWT to handle
+    them.
+
+    Args:
+        id_token: Raw JWT string.
+        public_key: Public key object returned by ``_select_apple_jwk``.
+
+    Returns:
+        Verified claims dict.
+
+    Raises:
+        ValueError: On any signature or claim validation failure.
+    """
+    import jwt  # lazy — PyJWT
+    from app.core.config import settings
+
+    audience = getattr(settings, "APPLE_CLIENT_ID", "") or ""
+    if not audience:
+        raise ValueError(
+            "APPLE_CLIENT_ID is not configured; refusing to verify "
+            "Apple id_token without a known audience"
+        )
+    try:
+        return jwt.decode(
+            id_token,
+            public_key,  # type: ignore[arg-type]
+            algorithms=["RS256"],
+            audience=audience,
+            issuer=_APPLE_ISSUER,
+            options={"require": ["exp", "iat", "iss", "aud", "sub"]},
+        )
+    except jwt.InvalidTokenError as exc:
+        raise ValueError(f"Apple id_token verification failed: {exc}") from exc
+
+
+def _coerce_apple_email_verified(value: object) -> bool:
+    """Coerce Apple's ``email_verified`` claim to a bool.
+
+    Apple has historically shipped this claim as either a bool or the
+    string ``"true"`` / ``"false"`` depending on the SDK path. Accept
+    both shapes and treat anything else as ``False``.
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() == "true"
+    return False

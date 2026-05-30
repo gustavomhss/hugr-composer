@@ -32,7 +32,7 @@ A finding can additionally be tagged **P{n}** — belongs to anti-pattern cluste
 | Finding | Bucket | Pattern | Note |
 |---|---|---|---|
 | R5-O4-C1 (social_login OAuth state CSRF) | **B** | P1 | TODO not closed; state generated then discarded |
-| R5-O4-C2 (Apple id_token sig not verified) | **B** | P1 | ATO direct path |
+| R5-O4-C2 (Apple id_token sig not verified) | **B** | P1 | ATO direct path — **CLOSED** in `fix/r5-o4-c2-apple-id-token-verify` (RS256 + JWKS + iss/aud/exp enforced) |
 | R5-O4-C3 (GitHub `email_verified=bool(email)`) | **B** | — | Cross-provider takeover |
 | R5-O4-C4 (Apple empty provider_user_id squat) | **B** | — | First-attacker-wins |
 | R5-O4-C5 (Passkey client-supplied `user_id`) | **B** | P2 | No auth dep on `/register/begin`+`/complete` |
