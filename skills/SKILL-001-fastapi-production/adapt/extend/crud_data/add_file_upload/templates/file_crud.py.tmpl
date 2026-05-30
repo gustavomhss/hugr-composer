@@ -1,0 +1,160 @@
+"""CRUD helpers for FileMetadata model."""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.file import FileMetadata
+
+
+async def create_pending(
+    session: AsyncSession,
+    *,
+    id: uuid.UUID,
+    original_filename: str,
+    stored_key: str,
+    content_type: str,
+    size_bytes: int,
+    uploaded_by: uuid.UUID | None = None,
+    resource_type: str | None = None,
+    resource_id: uuid.UUID | None = None,
+) -> FileMetadata:
+    """Insert a pending FileMetadata row before the upload completes.
+
+    Args:
+        session: Async SQLAlchemy session.
+        id: Pre-generated UUID for the file.
+        original_filename: Original client filename (display only).
+        stored_key: UUID-based storage key.
+        content_type: MIME type detected from magic bytes.
+        size_bytes: Declared size (confirmed later via HEAD).
+        uploaded_by: UUID of the uploading user.
+        resource_type: Optional polymorphic resource type.
+        resource_id: Optional polymorphic resource ID.
+
+    Returns:
+        The inserted FileMetadata ORM instance.
+    """
+    row = FileMetadata(
+        id=id,
+        original_filename=original_filename,
+        stored_key=stored_key,
+        content_type=content_type,
+        size_bytes=size_bytes,
+        status="pending",
+        uploaded_by=uploaded_by,
+        resource_type=resource_type,
+        resource_id=resource_id,
+    )
+    session.add(row)
+    await session.flush()
+    return row
+
+
+async def confirm(
+    session: AsyncSession,
+    *,
+    file_id: uuid.UUID,
+    size_bytes: int,
+    confirmed_at: datetime,
+) -> FileMetadata | None:
+    """Transition a pending file to confirmed status.
+
+    Args:
+        session: Async SQLAlchemy session.
+        file_id: UUID of the pending file to confirm.
+        size_bytes: Actual size confirmed from storage (e.g. S3 HEAD).
+        confirmed_at: UTC timestamp of confirmation.
+
+    Returns:
+        Updated FileMetadata instance, or ``None`` if not found.
+    """
+    stmt = select(FileMetadata).where(
+        FileMetadata.id == file_id, FileMetadata.status == "pending"
+    )
+    row = (await session.execute(stmt)).scalar_one_or_none()
+    if row is None:
+        return None
+    row.status = "confirmed"
+    row.size_bytes = size_bytes
+    row.confirmed_at = confirmed_at
+    await session.flush()
+    return row
+
+
+async def get_pending(
+    session: AsyncSession,
+    file_id: uuid.UUID,
+    owner_id: uuid.UUID | None = None,
+) -> FileMetadata | None:
+    """Fetch a pending FileMetadata row, optionally scoped to an owner.
+
+    Args:
+        session: Async SQLAlchemy session.
+        file_id: UUID to look up.
+        owner_id: If provided, must match ``uploaded_by``.
+
+    Returns:
+        FileMetadata instance or ``None``.
+    """
+    stmt = select(FileMetadata).where(
+        FileMetadata.id == file_id, FileMetadata.status == "pending"
+    )
+    if owner_id is not None:
+        stmt = stmt.where(FileMetadata.uploaded_by == owner_id)
+    return (await session.execute(stmt)).scalar_one_or_none()
+
+
+async def get_confirmed(
+    session: AsyncSession,
+    file_id: uuid.UUID,
+) -> FileMetadata | None:
+    """Fetch a confirmed FileMetadata row by ID.
+
+    Args:
+        session: Async SQLAlchemy session.
+        file_id: UUID to look up.
+
+    Returns:
+        FileMetadata instance or ``None``.
+    """
+    stmt = select(FileMetadata).where(
+        FileMetadata.id == file_id, FileMetadata.status == "confirmed"
+    )
+    return (await session.execute(stmt)).scalar_one_or_none()
+
+
+async def get(
+    session: AsyncSession,
+    file_id: uuid.UUID,
+) -> FileMetadata | None:
+    """Fetch any FileMetadata row by ID regardless of status.
+
+    Args:
+        session: Async SQLAlchemy session.
+        file_id: UUID to look up.
+
+    Returns:
+        FileMetadata instance or ``None``.
+    """
+    return await session.get(FileMetadata, file_id)
+
+
+async def delete(
+    session: AsyncSession,
+    file_id: uuid.UUID,
+) -> None:
+    """Delete a FileMetadata row.  Caller is responsible for removing storage object.
+
+    Args:
+        session: Async SQLAlchemy session.
+        file_id: UUID of the row to delete.
+    """
+    row = await session.get(FileMetadata, file_id)
+    if row is not None:
+        await session.delete(row)
+        await session.flush()

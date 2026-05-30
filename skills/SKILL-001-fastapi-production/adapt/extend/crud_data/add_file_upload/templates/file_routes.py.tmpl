@@ -1,0 +1,301 @@
+"""File upload routes: presign, confirm, direct upload, download, delete."""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse, RedirectResponse
+
+from app.api.deps import CurrentUser, SessionDep
+from app.core.file_validator import SAFE_DEFAULTS, validate_file
+from app.core.storage import get_storage
+from app.crud import file as crud_file
+from app.schemas.file import (
+    FileMetadataPublic,
+    PresignedUploadRequest,
+    PresignedUploadResponse,
+    UploadConfirmRequest,
+)
+
+router = APIRouter(prefix="/files", tags=["files"])
+
+
+def _validate_upload_request(body: PresignedUploadRequest, settings) -> None:
+    """Raise HTTPException if content-type or file size is disallowed.
+
+    Args:
+        body: Upload request schema with content_type and size_bytes.
+        settings: App settings object with ALLOWED_FILE_TYPES / MAX_UPLOAD_SIZE_MB.
+
+    Raises:
+        HTTPException 422: Content type not in allowed set.
+        HTTPException 413: File size exceeds configured limit.
+    """
+    allowed_set = frozenset(getattr(settings, "ALLOWED_FILE_TYPES", None) or SAFE_DEFAULTS)
+    if body.content_type not in allowed_set:
+        raise HTTPException(status_code=422, detail=f"Content type '{body.content_type}' not allowed")
+    max_bytes = getattr(settings, "MAX_UPLOAD_SIZE_MB", 10) * 1024 * 1024
+    if body.size_bytes > max_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large (max {getattr(settings, 'MAX_UPLOAD_SIZE_MB', 10)} MB)",
+        )
+
+
+@router.post(
+    "/presign",
+    response_model=PresignedUploadResponse,
+    summary="Generate presigned URL for direct S3 upload (Phase 1 of 2)",
+)
+async def request_presigned_upload(
+    body: PresignedUploadRequest,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> PresignedUploadResponse:
+    """Phase 1 of 2: client requests a presigned URL then uploads directly to S3.
+
+    Args:
+        body: Upload request with filename, content_type, size_bytes.
+        session: Injected async DB session.
+        current_user: Authenticated user.
+
+    Raises:
+        HTTPException: 422 for disallowed content type, 413 for oversized file.
+    """
+    from app.core.config import settings
+    from app.core.presigned_urls import generate_upload_url
+
+    _validate_upload_request(body, settings)
+    file_id = uuid.uuid4()
+    ext = (body.filename.rsplit(".", 1)[-1] if "." in body.filename else "bin")[:10]
+    result = generate_upload_url(
+        file_id=file_id, extension=ext,
+        content_type=body.content_type, max_size_bytes=body.size_bytes,
+    )
+    await crud_file.create_pending(
+        session, id=file_id, original_filename=body.filename[:255],
+        stored_key=result["stored_key"], content_type=body.content_type,
+        size_bytes=body.size_bytes, uploaded_by=current_user.id,
+        resource_type=body.resource_type, resource_id=body.resource_id,
+    )
+    return PresignedUploadResponse(file_id=file_id, **result)
+
+
+@router.post(
+    "/{file_id}/confirm",
+    response_model=FileMetadataPublic,
+    status_code=status.HTTP_200_OK,
+    summary="Confirm S3 upload completed (Phase 2 of 2)",
+)
+async def confirm_upload(
+    file_id: uuid.UUID,
+    body: UploadConfirmRequest,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> FileMetadataPublic:
+    """Phase 2 of 2: after client uploads to S3, confirm and activate the metadata row.
+
+    Verifies the S3 object exists via HEAD before transitioning status to confirmed.
+
+    Args:
+        file_id: UUID of the pending upload to confirm.
+        body: Optional checksum for integrity verification.
+        session: Injected async DB session.
+        current_user: Must be the original uploader.
+
+    Raises:
+        HTTPException: 404 if pending record not found, 422 if S3 object missing.
+    """
+    import boto3
+    from app.core.config import settings
+
+    metadata = await crud_file.get_pending(session, file_id, owner_id=current_user.id)
+    if metadata is None:
+        raise HTTPException(status_code=404, detail="Pending upload not found")
+
+    try:
+        s3 = boto3.client("s3", region_name=settings.AWS_REGION)
+        head = s3.head_object(Bucket=settings.S3_BUCKET, Key=metadata.stored_key)
+        actual_size = head["ContentLength"]
+    except Exception as exc:
+        raise HTTPException(
+            status_code=422, detail=f"S3 object not found: {exc}"
+        ) from exc
+
+    confirmed = await crud_file.confirm(
+        session,
+        file_id=file_id,
+        size_bytes=actual_size,
+        confirmed_at=datetime.now(timezone.utc),
+    )
+    return FileMetadataPublic.model_validate(confirmed)
+
+
+async def _persist_local_upload(session, storage, file_id, filename, stored_key, actual_mime, size_bytes, owner_id):
+    """Write metadata row, confirm upload, or rollback storage on DB error.
+
+    Args:
+        session: Async SQLAlchemy session.
+        storage: Storage backend with .delete() for rollback.
+        file_id: Pre-assigned UUID for the new file record.
+        filename: Original client-provided filename (truncated to 255 chars).
+        stored_key: Storage-layer key returned by storage.save().
+        actual_mime: Validated MIME type string.
+        size_bytes: Exact byte count from storage.
+        owner_id: UUID of the uploading user.
+
+    Returns:
+        Confirmed FileMetadata ORM instance.
+
+    Raises:
+        HTTPException 500: DB write failed (storage object is deleted on rollback).
+    """
+    try:
+        row = await crud_file.create_pending(
+            session, id=file_id, original_filename=filename[:255],
+            stored_key=stored_key, content_type=actual_mime,
+            size_bytes=size_bytes, uploaded_by=owner_id,
+        )
+        return await crud_file.confirm(session, file_id=row.id, size_bytes=size_bytes,
+            confirmed_at=datetime.now(timezone.utc))
+    except Exception as exc:
+        await storage.delete(stored_key)
+        raise HTTPException(status_code=500, detail=f"DB insert failed: {exc}") from exc
+
+
+@router.post(
+    "/",
+    response_model=FileMetadataPublic,
+    status_code=status.HTTP_201_CREATED,
+    summary="Direct file upload for local storage path",
+)
+async def upload_file_local(
+    file: UploadFile,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> FileMetadataPublic:
+    """Direct upload endpoint for local storage (not the S3 path).
+
+    Validates Content-Length header, detects MIME from magic bytes, writes
+    atomically via LocalStorage, creates a confirmed metadata row in one step.
+
+    Args:
+        file: Uploaded file from the multipart form.
+        session: Injected async DB session.
+        current_user: Authenticated user.
+
+    Raises:
+        HTTPException: 413 for oversized, 422 for disallowed MIME type.
+    """
+    from app.core.config import settings
+
+    max_bytes = getattr(settings, "MAX_UPLOAD_SIZE_MB", 10) * 1024 * 1024
+    if file.size is not None and file.size > max_bytes:
+        raise HTTPException(status_code=413, detail="File too large")
+    allowed = frozenset(getattr(settings, "ALLOWED_FILE_TYPES", None) or SAFE_DEFAULTS)
+    try:
+        actual_mime = validate_file(file.file, file.content_type or "", allowed)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    storage = get_storage()
+    file_id = uuid.uuid4()
+    try:
+        stored_key, size_bytes = await storage.save(file.file, actual_mime)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Storage write failed: {exc}") from exc
+    confirmed = await _persist_local_upload(
+        session, storage, file_id, file.filename or "upload",
+        stored_key, actual_mime, size_bytes, current_user.id,
+    )
+    return FileMetadataPublic.model_validate(confirmed)
+
+
+@router.get(
+    "/{file_id}",
+    response_model=None,
+    summary="Download or get presigned URL for a file",
+)
+async def download_file(
+    file_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> RedirectResponse | FileResponse:
+    """Return a 302 redirect (S3) or stream the file (local storage).
+
+    Ownership check: only the uploader or a superuser can download.
+
+    Args:
+        file_id: UUID of the confirmed file.
+        session: Injected async DB session.
+        current_user: Must be owner or superuser.
+
+    Raises:
+        HTTPException: 404 not found, 403 forbidden, 451 if virus-detected.
+    """
+    from app.core.config import settings
+    from app.core.presigned_urls import generate_download_url
+
+    metadata = await crud_file.get_confirmed(session, file_id)
+    if metadata is None:
+        raise HTTPException(status_code=404, detail="File not found")
+    if (
+        metadata.uploaded_by != current_user.id
+        and not getattr(current_user, "is_superuser", False)
+    ):
+        raise HTTPException(status_code=403, detail="Forbidden")
+    if metadata.status == "virus_detected":
+        raise HTTPException(status_code=451, detail="File is quarantined (virus detected)")
+
+    if getattr(settings, "STORAGE_BACKEND", "local") == "s3":
+        url = generate_download_url(metadata.stored_key, expires_in=3600)
+        return RedirectResponse(url=url, status_code=302)
+
+    from pathlib import Path as _Path
+    base = _Path(getattr(settings, "UPLOAD_DIR", "/tmp/uploads")).resolve()
+    target = (base / metadata.stored_key).resolve()
+    if not str(target).startswith(str(base)):
+        raise HTTPException(status_code=422, detail="Invalid stored key")
+    return FileResponse(
+        path=str(target),
+        media_type=metadata.content_type,
+        filename=metadata.original_filename,
+    )
+
+
+@router.delete(
+    "/{file_id}",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete file from storage and remove metadata",
+)
+async def delete_file(
+    file_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> None:
+    """Delete a file's storage object and metadata row.
+
+    Ownership check: only the uploader or a superuser can delete.
+
+    Args:
+        file_id: UUID of the file to delete.
+        session: Injected async DB session.
+        current_user: Must be owner or superuser.
+
+    Raises:
+        HTTPException: 404 not found, 403 forbidden.
+    """
+    metadata = await crud_file.get(session, file_id)
+    if metadata is None:
+        raise HTTPException(status_code=404, detail="File not found")
+    if (
+        metadata.uploaded_by != current_user.id
+        and not getattr(current_user, "is_superuser", False)
+    ):
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    storage = get_storage()
+    await storage.delete(metadata.stored_key)
+    await crud_file.delete(session, file_id)

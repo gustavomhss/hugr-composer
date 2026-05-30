@@ -1,0 +1,100 @@
+"""Presigned URL helpers for direct S3 client upload — server never proxies file bytes."""
+
+from __future__ import annotations
+
+import uuid
+from typing import Any
+
+
+def _build_presign_conditions(
+    content_type: str, max_size_bytes: int | None
+) -> list[Any]:
+    """Build the conditions list for a presigned POST request.
+
+    Args:
+        content_type: MIME type to enforce on the upload.
+        max_size_bytes: Optional maximum file size limit.
+
+    Returns:
+        List of S3 presign condition dicts/lists.
+    """
+    conditions: list[Any] = [
+        {"Content-Type": content_type},
+        ["starts-with", "$$key", "uploads/"],
+    ]
+    if max_size_bytes is not None:
+        conditions.append(["content-length-range", 1, max_size_bytes])
+    return conditions
+
+
+def generate_upload_url(
+    *,
+    file_id: uuid.UUID,
+    extension: str,
+    content_type: str,
+    expires_in: int = 300,
+    max_size_bytes: int | None = None,
+) -> dict[str, Any]:
+    """Return a presigned POST URL for direct client-to-S3 upload.
+
+    ``max_size_bytes`` adds a Content-Length-Range condition so S3 rejects
+    oversized uploads at the bucket level before our confirmation endpoint.
+
+    Args:
+        file_id: UUID for the new file — used to derive the stored_key.
+        extension: File extension (max 10 chars, stripped of leading dot).
+        content_type: Detected MIME type for the S3 object.
+        expires_in: Presigned URL TTL in seconds.
+        max_size_bytes: Optional maximum upload size enforced by S3.
+
+    Returns:
+        Dict with ``upload_url``, ``fields``, ``stored_key``, ``expires_in``.
+    """
+    import boto3
+    from app.core.config import settings
+
+    client = boto3.client("s3", region_name=settings.AWS_REGION)
+    ext = extension.lstrip(".")[:10]
+    stored_key = f"uploads/{file_id}.{ext}"
+    conditions = _build_presign_conditions(content_type, max_size_bytes)
+    response = client.generate_presigned_post(
+        Bucket=settings.S3_BUCKET,
+        Key=stored_key,
+        Fields={"Content-Type": content_type, "x-amz-server-side-encryption": "AES256"},
+        Conditions=conditions,
+        ExpiresIn=expires_in,
+    )
+    return {
+        "upload_url": response["url"],
+        "fields": response["fields"],
+        "stored_key": stored_key,
+        "expires_in": expires_in,
+    }
+
+
+def generate_download_url(stored_key: str, expires_in: int = 3600) -> str:
+    """Return a presigned GET URL for an S3 object.
+
+    Args:
+        stored_key: S3 object key.
+        expires_in: URL TTL in seconds.
+
+    Returns:
+        Presigned GET URL string.
+
+    Raises:
+        RuntimeError: If the boto3 presign call fails.
+    """
+    import boto3
+    from botocore.exceptions import ClientError
+    from app.core.config import settings
+
+    client = boto3.client("s3", region_name=settings.AWS_REGION)
+    try:
+        return client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": settings.S3_BUCKET, "Key": stored_key},
+            ExpiresIn=expires_in,
+        )
+    except ClientError as exc:
+        raise RuntimeError(f"S3 presign failed: {exc}") from exc

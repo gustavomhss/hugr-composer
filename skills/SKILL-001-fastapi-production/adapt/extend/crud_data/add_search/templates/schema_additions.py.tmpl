@@ -1,0 +1,61 @@
+
+
+# ---------------------------------------------------------------------------
+# Full-text search schemas — added by add_search tool
+# ---------------------------------------------------------------------------
+
+
+class ${model_name}_SearchParams(BaseModel):
+    """Validated search parameters for ${model_name} full-text search.
+
+    Attributes:
+        q: Full-text query string (min 2, max 200 characters).
+        page_size: Results per page (1–100).
+        cursor_score: ts_rank cursor value for rank-based next-page pagination.
+        sort: Sort mode — 'relevance' (default) or 'recency'.
+    """
+
+    q: str = Field(..., min_length=2, max_length=200, description="Full-text search query")
+    page_size: int = Field(default=20, ge=1, le=100)
+    cursor_score: float | None = Field(default=None, description="Rank cursor for next page")
+    sort: str = Field(default="relevance", pattern="^(relevance|recency)$$")
+
+
+class ${model_name}_SearchResultItem(BaseModel):
+    """Single search result with ranking metadata.
+
+    Attributes:
+        id: Primary key of the matching row.
+        rank: ts_rank_cd score (higher = more relevant). None on recency sort.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    rank: float | None = Field(default=None, description="ts_rank_cd score; higher = more relevant")
+
+
+class ${model_name}_SearchResponse(BaseModel):
+    """Paginated search response.
+
+    Attributes:
+        data: Page of search results.
+        count: Total matches (before pagination).
+        has_more: True if another page exists.
+        next_cursor: ts_rank cursor for fetching the next page.
+    """
+
+    data: list[${model_name}_SearchResultItem]
+    count: int
+    has_more: bool
+    next_cursor: float | None = None
+
+
+class ${model_name}_AutocompleteResult(BaseModel):
+    """Autocomplete suggestions from prefix tsquery matching.
+
+    Attributes:
+        suggestions: Up to 5 matching strings ordered by recency.
+    """
+
+    suggestions: list[str]

@@ -1,0 +1,4 @@
+
+# --- Data versioning routes — added by add_data_versioning tool ---
+from app.api.routes.versions import router as versions_router  # noqa: E402
+api_router.include_router(versions_router)

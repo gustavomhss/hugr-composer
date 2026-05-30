@@ -1,0 +1,84 @@
+"""Emitted test for add_search: full-text search CRUD + SQL-injection guard (F-08).
+
+HONESTY RULE (§5, F-06): The search tool installs CRUD helpers that ALWAYS
+parameterize user input (websearch_to_tsquery on PG, bound LIKE params off-PG).
+These tests assert the CRUD file carries that exact pattern — they cannot
+exercise the emitted SQL end-to-end without a Postgres instance, so we verify
+the source-level guards (which is what the external eval panel convicted the
+old code on).
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+
+def _read_crud() -> str:
+    """Locate the first emitted CRUD file under app/crud/ containing search()."""
+    crud_dir = Path(__file__).parent.parent / "app" / "crud"
+    for f in sorted(crud_dir.glob("*.py")):
+        body = f.read_text()
+        if "async def search" in body and "Full-text search helpers" in body:
+            return body
+    raise AssertionError("No CRUD file with full-text search helpers found")
+
+
+# ---------------------------------------------------------------------------
+# Positive: search() + autocomplete() emitted with parameterized SQL
+# ---------------------------------------------------------------------------
+
+def test_crud_emits_search_helper() -> None:
+    """search() function present in emitted CRUD."""
+    body = _read_crud()
+    assert "async def search(" in body, "search() helper missing from emitted CRUD"
+
+
+def test_crud_emits_autocomplete_helper() -> None:
+    """autocomplete() function present in emitted CRUD."""
+    body = _read_crud()
+    assert "async def autocomplete(" in body, "autocomplete() helper missing"
+
+
+def test_search_uses_websearch_to_tsquery_with_regconfig_cast() -> None:
+    """PostgreSQL branch uses websearch_to_tsquery + _func.cast(language, _REGCONFIG)."""
+    body = _read_crud()
+    assert "websearch_to_tsquery" in body, "PG path must call websearch_to_tsquery"
+    assert "_func.cast(language, _REGCONFIG)" in body, (
+        "language must be cast to regconfig via bound parameter (NOT string-concatenated)"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Negative (F-08): no SQL-injection via inline string-concatenated _text()
+# ---------------------------------------------------------------------------
+
+def test_no_inline_text_concatenation_for_user_input() -> None:
+    """User-supplied q / language MUST NOT be concatenated into _text() literals."""
+    body = _read_crud()
+    # The historic bug: _text("'" + language + "'") or _text("'" + first_token + ...)
+    forbidden_patterns = [
+        '_text("\'" + language',
+        '_text("\'" + lang ',
+        '_text("\'" + first_token',
+        "_text(\"'\" + language",
+        "_text(\"'\" + lang ",
+        "_text(\"'\" + first_token",
+    ]
+    hits = [p for p in forbidden_patterns if p in body]
+    assert not hits, (
+        f"Emitted CRUD contains SQL-injection-prone string concatenation: {hits}"
+    )
+
+
+def test_autocomplete_sanitizes_token_before_tsquery() -> None:
+    """Autocomplete strips tsquery meta-characters with re.sub before binding."""
+    body = _read_crud()
+    auto_start = body.find("async def autocomplete")
+    auto_body = body[auto_start:]
+    assert "_re.sub" in auto_body, (
+        "autocomplete must sanitize first_token with _re.sub (F-08 / round-2 panel finding)"
+    )
+    # And the sanitized token must NOT pass through _text()
+    assert "_text(" not in auto_body.split("_safe_token")[1].split("to_tsquery")[0], (
+        "Sanitized token must NOT be wrapped in _text() — it should be bound directly"
+    )

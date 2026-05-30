@@ -1,0 +1,74 @@
+
+
+# ---------------------------------------------------------------------------
+# Full-text search endpoints — added by add_search tool
+# IMPORTANT: Registered BEFORE /{id} route to avoid FastAPI path collision.
+# ---------------------------------------------------------------------------
+${import_header}
+
+
+@router.get("/search", response_model=${model_name}_SearchResponse)
+async def search_${lower}s(
+    session: SessionDep,
+    current_user: CurrentUser,
+    q: str = _SearchQuery(..., min_length=2, max_length=200, description="Full-text query"),
+    page_size: int = _SearchQuery(default=20, ge=1, le=100),
+    cursor: float | None = _SearchQuery(default=None, description="Rank cursor for next page"),
+    sort: str = _SearchQuery(default="relevance", pattern="^(relevance|recency)$$"),
+) -> ${model_name}_SearchResponse:
+    """Full-text search over ${lower}s using PostgreSQL tsvector + GIN index.
+
+    Results ordered by ts_rank_cd DESC (most relevant first).
+    Supports rank-cursor pagination (never OFFSET).
+
+    Args:
+        session: Injected async DB session.
+        current_user: Authenticated user (applied as owner filter).
+        q: Full-text query string (min 2, max 200 chars).
+        page_size: Page size (1-100).
+        cursor: ts_rank cursor value from previous page's ``next_cursor``.
+        sort: 'relevance' (default) or 'recency'.
+
+    Raises:
+        HTTPException: 422 if query is too short.
+    """
+    try:
+        raw = await _crud_search(
+            session,
+            q=q,
+            page_size=page_size,
+            cursor_score=cursor,
+            owner_id=current_user.id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    items = [${model_name}_SearchResultItem(id=str(r.get("id", "")), rank=r.get("rank")) for r in raw["data"]]
+    return ${model_name}_SearchResponse(
+        data=items,
+        count=raw["count"],
+        has_more=raw["has_more"],
+        next_cursor=raw["next_cursor"],
+    )
+
+
+@router.get("/autocomplete", response_model=${model_name}_AutocompleteResult)
+async def autocomplete_${lower}s(
+    session: SessionDep,
+    current_user: CurrentUser,
+    q: str = _SearchQuery(..., min_length=1, max_length=100, description="Partial query"),
+) -> ${model_name}_AutocompleteResult:
+    """Prefix-match autocomplete for ${lower}s. Up to 5 suggestions.
+
+    Uses to_tsquery('term:*') for sub-20ms p99 latency.
+
+    Args:
+        session: Injected async DB session.
+        current_user: Authenticated user.
+        q: Partial search string (min 1 char).
+    """
+    suggestions = await _crud_autocomplete(
+        session,
+        q=q,
+        owner_id=current_user.id,
+    )
+    return ${model_name}_AutocompleteResult(suggestions=suggestions)

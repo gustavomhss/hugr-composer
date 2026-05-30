@@ -1,0 +1,60 @@
+"""Thin CRUD layer for ContentVersion queries.
+
+Higher-level lifecycle operations live in VersioningService
+(app/versioning/service.py).
+"""
+
+from __future__ import annotations
+
+import uuid
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.content_version import ContentVersion
+
+
+async def get_version_by_id(
+    session: AsyncSession, version_id: uuid.UUID
+) -> ContentVersion | None:
+    """Fetch a ContentVersion by its primary key.
+
+    Args:
+        session: Async SQLAlchemy session.
+        version_id: UUID of the version row.
+
+    Returns:
+        ContentVersion instance or None if not found.
+    """
+    result = await session.execute(
+        select(ContentVersion).where(ContentVersion.id == version_id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def list_versions_for_content(
+    session: AsyncSession,
+    content_id: str,
+    status: str | None = None,
+    limit: int = 50,
+) -> list[ContentVersion]:
+    """List versions for a content item, optionally filtered by status.
+
+    Args:
+        session: Async SQLAlchemy session.
+        content_id: Opaque content item identifier.
+        status: Optional lifecycle status filter.
+        limit: Maximum rows to return.
+
+    Returns:
+        List of ContentVersion instances ordered by version_number desc.
+    """
+    stmt = (
+        select(ContentVersion)
+        .where(ContentVersion.content_id == content_id)
+    )
+    if status is not None:
+        stmt = stmt.where(ContentVersion.status == status)
+    stmt = stmt.order_by(ContentVersion.version_number.desc()).limit(limit)
+    result = await session.execute(stmt)
+    return list(result.scalars().all())

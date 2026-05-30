@@ -1,0 +1,223 @@
+"""Content versioning endpoints.
+
+Endpoints
+---------
+POST /versions/{content_type}/{id}/draft   — create a draft
+POST /versions/{content_type}/{id}/publish/{version_number} — publish a draft
+POST /versions/{content_type}/{id}/archive/{version_number} — archive a version
+GET  /versions/{content_type}/{id}/history — list all versions
+GET  /versions/{content_type}/{id}/diff/{v1}/{v2} — field-level diff
+"""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.schemas.version import VersionCreate, VersionDiff, VersionRead
+from app.versioning.service import VersioningService
+
+router = APIRouter(prefix="/versions", tags=["versions"])
+
+
+async def _get_session() -> AsyncSession:
+    """FastAPI dependency placeholder — replaced by real session dep on boot.
+
+    Raises:
+        RuntimeError: Always — callers must override this dependency.
+    """
+    raise RuntimeError("Inject get_async_session via app.dependency_overrides")
+
+
+def _get_service() -> VersioningService:
+    """Return a VersioningService configured from application settings.
+
+    Returns:
+        VersioningService with max_drafts from settings.
+    """
+    from app.core.config import settings  # noqa: PLC0415
+
+    return VersioningService(max_drafts=settings.VERSIONING_MAX_DRAFTS)
+
+
+@router.post(
+    "/{content_type}/{content_id}/draft",
+    response_model=VersionRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_draft(
+    content_type: str,
+    content_id: str,
+    body: VersionCreate,
+    session: AsyncSession = Depends(_get_session),
+    service: VersioningService = Depends(_get_service),
+) -> VersionRead:
+    """Create a new draft version for a content item.
+
+    Args:
+        content_type: Lowercase content type name.
+        content_id: Opaque string ID of the content item.
+        body: VersionCreate with data and optional author_id.
+        session: Injected async DB session.
+        service: VersioningService instance.
+
+    Returns:
+        The newly created draft as VersionRead.
+
+    Raises:
+        HTTPException 422: If max_drafts limit is reached.
+    """
+    try:
+        version = await service.create_draft(
+            session,
+            content_id=content_id,
+            content_type=content_type,
+            data=body.data,
+            author_id=body.author_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"detail": str(exc)},
+        ) from exc
+    return VersionRead.model_validate(version)
+
+
+@router.post(
+    "/{content_type}/{content_id}/publish/{version_number}",
+    response_model=VersionRead,
+)
+async def publish_version(
+    content_type: str,
+    content_id: str,
+    version_number: int,
+    session: AsyncSession = Depends(_get_session),
+    service: VersioningService = Depends(_get_service),
+) -> VersionRead:
+    """Publish a specific draft version.
+
+    Args:
+        content_type: Lowercase content type name.
+        content_id: Opaque string ID of the content item.
+        version_number: Version number of the draft to publish.
+        session: Injected async DB session.
+        service: VersioningService instance.
+
+    Returns:
+        The published ContentVersion as VersionRead.
+
+    Raises:
+        HTTPException 422: If the version is not in draft status.
+        HTTPException 404: If the version does not exist.
+    """
+    try:
+        version = await service.publish(session, content_id, version_number)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"detail": str(exc)},
+        ) from exc
+    return VersionRead.model_validate(version)
+
+
+@router.post(
+    "/{content_type}/{content_id}/archive/{version_number}",
+    response_model=VersionRead,
+)
+async def archive_version(
+    content_type: str,
+    content_id: str,
+    version_number: int,
+    session: AsyncSession = Depends(_get_session),
+    service: VersioningService = Depends(_get_service),
+) -> VersionRead:
+    """Archive a specific version (idempotent).
+
+    Args:
+        content_type: Lowercase content type name.
+        content_id: Opaque string ID of the content item.
+        version_number: Version number to archive.
+        session: Injected async DB session.
+        service: VersioningService instance.
+
+    Returns:
+        The archived ContentVersion as VersionRead.
+
+    Raises:
+        HTTPException 404: If the version does not exist.
+    """
+    try:
+        version = await service.archive(session, content_id, version_number)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"detail": str(exc)},
+        ) from exc
+    return VersionRead.model_validate(version)
+
+
+@router.get(
+    "/{content_type}/{content_id}/history",
+    response_model=list[VersionRead],
+)
+async def get_version_history(
+    content_type: str,
+    content_id: str,
+    limit: int = 50,
+    session: AsyncSession = Depends(_get_session),
+    service: VersioningService = Depends(_get_service),
+) -> list[VersionRead]:
+    """Return the version history for a content item.
+
+    Args:
+        content_type: Lowercase content type name.
+        content_id: Opaque string ID of the content item.
+        limit: Maximum number of versions to return (default 50).
+        session: Injected async DB session.
+        service: VersioningService instance.
+
+    Returns:
+        List of VersionRead instances, newest first.
+    """
+    versions = await service.get_history(session, content_id, limit=limit)
+    return [VersionRead.model_validate(v) for v in versions]
+
+
+@router.get(
+    "/{content_type}/{content_id}/diff/{v1}/{v2}",
+    response_model=VersionDiff,
+)
+async def diff_versions(
+    content_type: str,
+    content_id: str,
+    v1: int,
+    v2: int,
+    session: AsyncSession = Depends(_get_session),
+    service: VersioningService = Depends(_get_service),
+) -> VersionDiff:
+    """Return a field-level diff between two version numbers.
+
+    Args:
+        content_type: Lowercase content type name.
+        content_id: Opaque string ID of the content item.
+        v1: Earlier version number.
+        v2: Later version number.
+        session: Injected async DB session.
+        service: VersioningService instance.
+
+    Returns:
+        VersionDiff with added, removed, and changed fields.
+
+    Raises:
+        HTTPException 404: If either version does not exist.
+    """
+    try:
+        result = await service.diff(session, content_id, v1, v2)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"detail": str(exc)},
+        ) from exc
+    return VersionDiff(
+        content_id=content_id, v1=v1, v2=v2, **result
+    )

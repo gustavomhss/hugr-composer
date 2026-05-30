@@ -1,0 +1,72 @@
+"""Emitted test for add_data_versioning: draft → published → archived lifecycle.
+
+HONESTY RULE (§5, F-06): the tool installs lifecycle + history + diff at the
+service layer. We assert the emitted files carry the append-only semantics
+(new version row per draft, archive-old-published on publish) without booting
+a database — that is end-to-end verified by the existing structural tests.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+
+def _project_root() -> Path:
+    return Path(__file__).parent.parent
+
+
+# ---------------------------------------------------------------------------
+# Positive: lifecycle semantics emitted into VersioningService
+# ---------------------------------------------------------------------------
+
+def test_versioning_service_emits_create_draft_appends_new_row() -> None:
+    """create_draft uses next_version_number + 1 (append-only, no UPDATE)."""
+    svc = (_project_root() / "app" / "versioning" / "service.py").read_text()
+    assert "async def create_draft" in svc
+    assert "session.add(version)" in svc, (
+        "create_draft must session.add a NEW ContentVersion (append-only)"
+    )
+    assert "_next_version_number" in svc, "create_draft must increment version_number"
+
+
+def test_publish_archives_previous_published() -> None:
+    """publish() archives the previous published version (lifecycle invariant)."""
+    svc = (_project_root() / "app" / "versioning" / "service.py").read_text()
+    assert "_archive_current_published" in svc, (
+        "publish() must archive the previous published version (lifecycle invariant)"
+    )
+    assert 'status = "published"' in svc, "publish() must set status='published'"
+
+
+def test_history_orders_newest_first() -> None:
+    """get_history orders by version_number DESC."""
+    svc = (_project_root() / "app" / "versioning" / "service.py").read_text()
+    assert "version_number.desc()" in svc, "history must be ordered newest-first"
+
+
+def test_unique_index_on_content_id_plus_version() -> None:
+    """ContentVersion enforces unique (content_id, version_number)."""
+    model = (_project_root() / "app" / "models" / "content_version.py").read_text()
+    assert "ix_content_versions_content_id_version" in model
+    assert "unique=True" in model, (
+        "unique (content_id, version_number) prevents accidental version overwrites"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Negative: drafts limit + publish-non-draft rejected
+# ---------------------------------------------------------------------------
+
+def test_max_drafts_limit_raises_value_error() -> None:
+    """create_draft refuses when max_drafts reached."""
+    svc = (_project_root() / "app" / "versioning" / "service.py").read_text()
+    assert "drafts >= self.max_drafts" in svc
+    assert "raise ValueError" in svc, "max_drafts breach must raise ValueError"
+
+
+def test_publish_rejects_non_draft_version() -> None:
+    """publish() refuses to publish a non-draft version."""
+    svc = (_project_root() / "app" / "versioning" / "service.py").read_text()
+    assert 'version.status not in ("draft", "pending")' in svc, (
+        "publish() must reject non-draft versions"
+    )

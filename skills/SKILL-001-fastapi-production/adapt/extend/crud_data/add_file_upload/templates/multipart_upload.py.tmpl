@@ -1,0 +1,121 @@
+"""S3 multipart upload helper for files larger than 5 MB.
+
+Aborts the multipart upload automatically on any error to prevent
+orphaned multipart uploads accumulating in the S3 bucket.
+"""
+
+from __future__ import annotations
+
+from typing import BinaryIO
+
+
+PART_SIZE_BYTES: int = 10 * 1024 * 1024  # 10 MB per part (S3 min is 5 MB)
+
+
+def upload_multipart(
+    file: BinaryIO,
+    stored_key: str,
+    content_type: str,
+) -> dict[str, str]:
+    """Upload a file to S3 using multipart upload for large files.
+
+    Reads *file* in ``PART_SIZE_BYTES`` chunks, uploading each part.
+    On any error, aborts the multipart upload and re-raises the exception.
+
+    Args:
+        file: Readable binary file-like object.
+        stored_key: S3 object key for the destination.
+        content_type: MIME type for the S3 object.
+
+    Returns:
+        Dict with ``ETag`` and ``VersionId`` from the complete response.
+
+    Raises:
+        Exception: Any error from S3 after aborting the multipart upload.
+    """
+    import boto3
+    from app.core.config import settings
+
+    client = boto3.client("s3", region_name=settings.AWS_REGION)
+    upload_id = _start_multipart(client, settings.S3_BUCKET, stored_key, content_type)
+    try:
+        parts = _upload_parts(client, file, settings.S3_BUCKET, stored_key, upload_id)
+        return _complete_multipart(client, settings.S3_BUCKET, stored_key, upload_id, parts)
+    except Exception:
+        client.abort_multipart_upload(
+            Bucket=settings.S3_BUCKET, Key=stored_key, UploadId=upload_id
+        )
+        raise
+
+
+def _start_multipart(client, bucket: str, key: str, content_type: str) -> str:
+    """Initiate a multipart upload and return the upload ID.
+
+    Args:
+        client: Boto3 S3 client.
+        bucket: S3 bucket name.
+        key: S3 object key.
+        content_type: MIME type for the uploaded object.
+
+    Returns:
+        The UploadId string from the S3 create_multipart_upload response.
+    """
+    mpu = client.create_multipart_upload(
+        Bucket=bucket,
+        Key=key,
+        ContentType=content_type,
+        ServerSideEncryption="AES256",
+    )
+    return mpu["UploadId"]
+
+
+def _upload_parts(
+    client, file: BinaryIO, bucket: str, key: str, upload_id: str
+) -> list[dict]:
+    """Upload all chunks of *file* and return the completed parts list.
+
+    Args:
+        client: Boto3 S3 client.
+        file: Readable binary file-like object.
+        bucket: S3 bucket name.
+        key: S3 object key.
+        upload_id: Active multipart upload ID.
+
+    Returns:
+        List of dicts with ``PartNumber`` and ``ETag`` for each chunk.
+    """
+    parts: list[dict] = []
+    part_number = 1
+    while True:
+        chunk = file.read(PART_SIZE_BYTES)
+        if not chunk:
+            break
+        response = client.upload_part(
+            Bucket=bucket, Key=key, UploadId=upload_id,
+            PartNumber=part_number, Body=chunk,
+        )
+        parts.append({"PartNumber": part_number, "ETag": response["ETag"]})
+        part_number += 1
+    return parts
+
+
+def _complete_multipart(
+    client, bucket: str, key: str, upload_id: str, parts: list[dict]
+) -> dict[str, str]:
+    """Finalise a multipart upload and return ETag/VersionId.
+
+    Args:
+        client: Boto3 S3 client.
+        bucket: S3 bucket name.
+        key: S3 object key.
+        upload_id: Active multipart upload ID.
+        parts: List of completed part dicts (PartNumber + ETag).
+
+    Returns:
+        Dict with ``ETag`` and ``VersionId`` from the S3 response.
+    """
+    complete = client.complete_multipart_upload(
+        Bucket=bucket, Key=key, UploadId=upload_id,
+        MultipartUpload={"Parts": parts},
+    )
+    return {"ETag": complete.get("ETag", ""), "VersionId": complete.get("VersionId", "")}

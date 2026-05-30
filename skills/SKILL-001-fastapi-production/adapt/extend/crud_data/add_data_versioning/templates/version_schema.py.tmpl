@@ -1,0 +1,67 @@
+"""Pydantic schemas for the content versioning API."""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class VersionCreate(BaseModel):
+    """Request body for creating a new draft version.
+
+    Attributes:
+        data: JSON-serialisable dict representing the full content snapshot.
+        author_id: UUID of the author creating the draft.
+    """
+
+    data: dict[str, Any] = Field(..., description="Full content snapshot as JSON object")
+    author_id: uuid.UUID | None = Field(None, description="Author user UUID")
+
+
+class VersionRead(BaseModel):
+    """Public representation of a ContentVersion.
+
+    Attributes:
+        id: UUID primary key.
+        content_id: Owning content item ID.
+        content_type: Lowercase content type name.
+        version_number: Monotonically increasing version counter.
+        status: Current lifecycle status.
+        published_at: UTC publish timestamp; None for non-published versions.
+        author_id: UUID of the version author.
+        created_at: UTC creation timestamp.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    content_id: str
+    content_type: str
+    version_number: int
+    status: str
+    published_at: datetime | None
+    author_id: uuid.UUID | None
+    created_at: datetime
+
+
+class VersionDiff(BaseModel):
+    """Response for a diff between two version numbers.
+
+    Attributes:
+        content_id: Owning content item ID.
+        v1: Earlier version number.
+        v2: Later version number.
+        added: Fields present in v2 but not v1.
+        removed: Fields present in v1 but not v2.
+        changed: Fields present in both with differing values (old, new).
+    """
+
+    content_id: str
+    v1: int
+    v2: int
+    added: dict[str, Any]
+    removed: dict[str, Any]
+    changed: dict[str, Any]

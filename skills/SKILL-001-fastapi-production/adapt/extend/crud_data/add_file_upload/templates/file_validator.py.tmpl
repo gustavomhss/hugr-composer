@@ -1,0 +1,83 @@
+"""File type validation by magic bytes — never by extension or Content-Type header.
+
+Imports python-magic (libmagic bindings).  Install with::
+
+    pip install python-magic>=0.4.27
+"""
+
+from __future__ import annotations
+
+from typing import BinaryIO
+
+
+SAFE_DEFAULTS: frozenset[str] = frozenset({
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "application/pdf",
+    "text/plain",
+})
+
+# Types blocked regardless of ALLOWED_FILE_TYPES override
+ALWAYS_BLOCKED: frozenset[str] = frozenset({
+    "application/x-msdownload",   # Windows PE executables
+    "application/x-executable",   # Linux ELF binaries
+    "application/x-dosexec",      # DOS executables
+    "text/x-shellscript",         # Shell scripts
+    "application/x-sh",           # Shell scripts (alternate MIME)
+})
+
+_HEAD_BYTES: int = 8192  # 8 KB is sufficient for libmagic identification
+
+
+def detect_mime(file: BinaryIO) -> str | None:
+    """Read the first 8 KB and detect MIME type via libmagic byte-signature analysis.
+
+    The file pointer is reset to its original position before returning, so
+    subsequent reads from the caller are not affected.
+
+    Args:
+        file: Readable binary file-like object.
+
+    Returns:
+        MIME type string, or ``None`` if libmagic cannot identify the content.
+    """
+    import magic
+    pos = file.tell()
+    head = file.read(_HEAD_BYTES)
+    file.seek(pos)
+    if not head:
+        return None
+    return magic.from_buffer(head, mime=True)
+
+
+def validate_file(
+    file: BinaryIO,
+    declared_content_type: str,
+    allowed_types: frozenset[str],
+) -> str:
+    """Detect actual MIME from magic bytes and validate against allowed list.
+
+    Args:
+        file: Readable binary file-like object.
+        declared_content_type: Client-supplied Content-Type (informational only).
+        allowed_types: Set of allowed MIME type strings.
+
+    Returns:
+        Detected MIME type (ground truth for DB storage).
+
+    Raises:
+        ValueError: If type cannot be detected, is in ``ALWAYS_BLOCKED``,
+            or not in ``allowed_types``.
+    """
+    actual = detect_mime(file)
+    if actual is None:
+        raise ValueError(
+            "Could not detect file type from content (empty or unknown bytes)"
+        )
+    if actual in ALWAYS_BLOCKED:
+        raise ValueError(f"File type '{actual}' is unconditionally blocked")
+    if actual not in allowed_types:
+        raise ValueError(f"File type '{actual}' is not in the allowed list")
+    return actual
