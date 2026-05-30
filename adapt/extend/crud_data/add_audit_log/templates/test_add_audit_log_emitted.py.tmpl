@@ -1,0 +1,80 @@
+"""Emitted test for add_audit_log: tamper-evident audit log scaffold.
+
+HONESTY RULE (§5, F-06): TamperEvidentAuditLog is hash-chained + HMAC-signed
+(TEAL_INV_01..06). The emitted glue resolves the HMAC key from
+AUDIT_LOG_HMAC_SECRET env (KMS-managed in prod) or derives a domain-separated
+key from settings.SECRET_KEY — never a hardcoded placeholder. These tests
+assert the wiring is in place; integrity-chain assertions live in the
+primitive's own test suite (not re-asserted in the emitted project).
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+
+# ---------------------------------------------------------------------------
+# Positive: glue file exists, wires adapter, exposes install_audit_log
+# ---------------------------------------------------------------------------
+
+def test_audit_log_glue_wires_adapter() -> None:
+    """app/audit_log.py imports AuditLogAdapter.install and exposes install_audit_log."""
+    glue = Path(__file__).parent.parent / "app" / "audit_log.py"
+    assert glue.exists(), "app/audit_log.py was not emitted"
+    body = glue.read_text()
+    assert (
+        "from core.venous._adapters.fastapi.AuditLogAdapter import install" in body
+    ), "glue must import AuditLogAdapter.install"
+    assert "def install_audit_log(" in body, "glue must expose install_audit_log(app)"
+
+
+def test_audit_log_wired_into_main() -> None:
+    """main.py imports + calls install_audit_log(app) — audit log is active on startup."""
+    main = Path(__file__).parent.parent / "app" / "main.py"
+    assert main.exists(), "app/main.py missing"
+    body = main.read_text()
+    assert "from app.audit_log import install_audit_log" in body, (
+        "main.py must import install_audit_log"
+    )
+    assert "install_audit_log(app)" in body, (
+        "main.py must call install_audit_log(app) — otherwise the audit log is inert"
+    )
+
+
+def test_audit_primitives_copied() -> None:
+    """AuditEvent + TamperEvidentAuditLog primitives + AuditLogAdapter shipped."""
+    root = Path(__file__).parent.parent
+    ae = root / "core" / "venous" / "compliance" / "AuditEvent" / "AuditEvent.py"
+    teal = (
+        root
+        / "core"
+        / "venous"
+        / "compliance"
+        / "TamperEvidentAuditLog"
+        / "TamperEvidentAuditLog.py"
+    )
+    adapter = (
+        root / "core" / "venous" / "_adapters" / "fastapi" / "AuditLogAdapter.py"
+    )
+    assert ae.exists(), "AuditEvent primitive missing"
+    assert teal.exists(), "TamperEvidentAuditLog primitive missing"
+    assert adapter.exists(), "AuditLogAdapter missing"
+
+
+# ---------------------------------------------------------------------------
+# Negative: no hardcoded HMAC placeholder; key derives from SECRET_KEY
+# ---------------------------------------------------------------------------
+
+def test_audit_log_no_hardcoded_secret() -> None:
+    """audit_log.py must NOT contain the 'change-me' placeholder secret.
+
+    The previous implementation silently fell back to a hardcoded placeholder
+    when AUDIT_LOG_HMAC_SECRET was absent — undermining tamper-evidence.
+    """
+    glue = Path(__file__).parent.parent / "app" / "audit_log.py"
+    body = glue.read_text()
+    assert "change-me" not in body, (
+        "audit_log.py must not contain 'change-me' placeholder secret"
+    )
+    assert "settings.SECRET_KEY" in body, "audit HMAC must derive from SECRET_KEY"
+    assert "AUDIT_LOG_HMAC_SECRET" in body, "env override must still be honored"

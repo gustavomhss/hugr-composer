@@ -1,0 +1,36 @@
+"""Wire the tamper-evident audit log into the FastAPI app.
+
+Delegates to the primitive + FastAPI adapter copied under `core/venous/`
+by the `add_audit_log` tool. Re-emitted idempotently.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import os
+
+from fastapi import FastAPI
+
+from app.core.config import settings
+from core.venous._adapters.fastapi.AuditLogAdapter import install
+
+
+def _audit_hmac_secret() -> bytes:
+    """Resolve the audit-log HMAC key — never hardcoded, never silently absent.
+
+    Precedence:
+      1. AUDIT_LOG_HMAC_SECRET env var (prod / KMS-managed), if set; else
+      2. a domain-separated key derived from the app's SECRET_KEY.
+    SECRET_KEY is required and entropy-checked by Settings (loaded from env or
+    .env), so the audit chain always has a real key and the app still boots in
+    the standard .env workflow — fail-closed, with no hardcoded placeholder.
+    """
+    override = os.getenv("AUDIT_LOG_HMAC_SECRET", "").strip()
+    if override:
+        return override.encode()
+    return hashlib.sha256(b"hugr-audit-log:" + settings.SECRET_KEY.encode()).digest()
+
+
+def install_audit_log(app: FastAPI) -> None:
+    """Attach a tamper-evident audit log + /audit-logs router to *app*."""
+    install(app, hmac_secret=_audit_hmac_secret())
