@@ -1,0 +1,123 @@
+"""Emitted test for add_data_export: streaming export pipeline.
+
+HONESTY RULE (§5, F-06): assertions inspect the static emitted code surface
+(export core, ARQ worker, storage, routes, migration). Streaming behaviour is
+anchored by code-shape assertions on the server-side cursor + batched yield
+pattern; live streaming is exercised by the kit's behaviour test
+(test_add_data_export_behavior.py).
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+
+# ---------------------------------------------------------------------------
+# Positive: streaming export utilities + ARQ worker + storage shipped
+# ---------------------------------------------------------------------------
+
+
+def test_export_core_present_with_streaming_helpers() -> None:
+    """app/core/export.py defines streaming generators for all 4 formats."""
+    core = Path(__file__).parent.parent / "app" / "core" / "export.py"
+    assert core.exists(), "app/core/export.py was not emitted"
+    body = core.read_text()
+    for fn in ("export_csv", "export_ndjson", "export_xlsx", "export_parquet"):
+        assert f"async def {fn}(" in body, f"missing streaming generator {fn}"
+    # Streaming invariant: server-side cursor + yield_per — NOT load-all-in-memory.
+    assert "yield_per=" in body, (
+        "export must use server-side cursor (yield_per) — silent loss vector if removed"
+    )
+    assert "session.stream(" in body, "export must use async session.stream() for partitions"
+
+
+def test_export_sensitive_columns_excluded() -> None:
+    """SENSITIVE_COLUMNS frozenset prevents leaking secrets in exports."""
+    core = Path(__file__).parent.parent / "app" / "core" / "export.py"
+    body = core.read_text()
+    assert "SENSITIVE_COLUMNS" in body, "SENSITIVE_COLUMNS constant must be defined"
+    assert "hashed_password" in body, "hashed_password must be in SENSITIVE_COLUMNS"
+    assert "api_key" in body and "secret" in body, (
+        "api_key + secret must be excluded from exports"
+    )
+
+
+def test_export_jobs_dispatcher_emitted() -> None:
+    """app/core/export_jobs.py dispatches large exports to ARQ background queue."""
+    jobs = Path(__file__).parent.parent / "app" / "core" / "export_jobs.py"
+    assert jobs.exists(), "export_jobs.py was not emitted"
+    body = jobs.read_text()
+    assert "async def dispatch_export_job(" in body, "dispatcher must be defined"
+    assert "enqueue_job" in body, "dispatcher must enqueue to ARQ"
+
+
+def test_export_storage_backend_with_local_fallback() -> None:
+    """Storage abstraction supports S3 + local fallback for tests/dev."""
+    storage = Path(__file__).parent.parent / "app" / "core" / "storage.py"
+    assert storage.exists(), "storage.py was not emitted"
+    body = storage.read_text()
+    assert "class S3StorageBackend" in body, "S3StorageBackend must be defined"
+    assert "class LocalStorageBackend" in body, "LocalStorageBackend must be defined"
+    assert "def get_storage(" in body, "get_storage factory must be defined"
+
+
+def test_export_routes_dispatch_sync_or_async() -> None:
+    """Routes dispatch < threshold synchronously, > threshold to ARQ queue."""
+    routes_dir = Path(__file__).parent.parent / "app" / "api" / "routes"
+    py_files = list(routes_dir.glob("*.py"))
+    matching = [f for f in py_files if "/export" in f.read_text()]
+    assert matching, "no route file declares /export"
+    body = matching[0].read_text()
+    assert "_EXPORT_ASYNC_THRESHOLD" in body, "async threshold gate missing"
+    assert "StreamingResponse" in body, "sync exports must stream — not load-all-in-memory"
+    assert "JSONResponse(status_code=202" in body, (
+        "large exports must return HTTP 202 with a job_id"
+    )
+
+
+def test_export_migration_emits_export_jobs_table() -> None:
+    """Alembic migration creates export_jobs table with status check constraint."""
+    versions = Path(__file__).parent.parent / "alembic" / "versions"
+    if not versions.exists():
+        return
+    migration = versions / "0006_add_export_jobs.py"
+    if not migration.exists():
+        # Migration is emission-conditional on a pre-existing versions dir.
+        return
+    body = migration.read_text()
+    assert 'create_table(\n        "export_jobs"' in body, "must create export_jobs table"
+    assert "CheckConstraint" in body, "status check constraint must be enforced"
+
+
+# ---------------------------------------------------------------------------
+# Negative: column whitelist rejects sensitive cols even when requested
+# ---------------------------------------------------------------------------
+
+
+def test_export_routes_reject_sensitive_columns_when_requested() -> None:
+    """Caller-supplied columns are intersected with _DEFAULT_EXPORT_COLUMNS.
+
+    A user requesting ``columns=hashed_password,id`` must NOT export the
+    secret — silent column-filter regression is a confidentiality breach.
+    """
+    routes_dir = Path(__file__).parent.parent / "app" / "api" / "routes"
+    py_files = list(routes_dir.glob("*.py"))
+    matching = [f for f in py_files if "/export" in f.read_text()]
+    body = matching[0].read_text()
+    assert "_DEFAULT_EXPORT_COLUMNS" in body, "default-columns whitelist required"
+    assert "safe_cols = [c for c in requested if c in _DEFAULT_EXPORT_COLUMNS]" in body, (
+        "column whitelist intersect missing — sensitive cols could leak"
+    )
+    assert "status_code=422" in body, (
+        "empty whitelist must reject with 422 — never fall through to broad export"
+    )
+
+
+def test_export_streaming_not_load_all() -> None:
+    """Export MUST NOT use list(query.all()) — that defeats memory bounds."""
+    core = Path(__file__).parent.parent / "app" / "core" / "export.py"
+    body = core.read_text()
+    # Forbidden patterns that would convert streaming into load-all-in-memory.
+    assert ".scalars().all()" not in body, (
+        "export must not materialise full result via .scalars().all() — OOM vector"
+    )

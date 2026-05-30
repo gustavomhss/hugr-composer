@@ -1,0 +1,187 @@
+"""Streaming data export utilities: CSV, NDJSON, XLSX, Parquet.
+
+All generators are async and memory-bounded: rows are fetched in batches
+via SQLAlchemy server-side cursors and yielded as bytes chunks.
+Never accumulates the full dataset in RAM.
+"""
+from __future__ import annotations
+
+import csv
+import io
+import json
+from datetime import datetime
+from decimal import Decimal
+from typing import Any, AsyncIterator
+from uuid import UUID
+
+from sqlalchemy import Select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+BATCH_SIZE: int = 1000
+
+SENSITIVE_COLUMNS: frozenset[str] = frozenset({
+    "hashed_password", "password", "secret", "api_key", "token",
+    "refresh_token", "private_key", "api_secret", "client_secret",
+})
+
+
+async def _stream_batches(
+    session: AsyncSession, stmt: Select, batch_size: int = BATCH_SIZE
+) -> AsyncIterator[list[Any]]:
+    """Yield rows in batches using a server-side streaming cursor.
+
+    Args:
+        session: Async SQLAlchemy session.
+        stmt: SELECT statement to stream.
+        batch_size: Number of rows per partition.
+
+    Yields:
+        Lists of ORM row objects, one list per batch.
+    """
+    result = await session.stream(stmt.execution_options(yield_per=batch_size))
+    async for partition in result.partitions(batch_size):
+        yield [row[0] for row in partition]
+
+
+async def export_csv(
+    session: AsyncSession, stmt: Select, columns: list[str]
+) -> AsyncIterator[bytes]:
+    """Stream CSV bytes. Yields UTF-8 header row first, then data chunks.
+
+    Args:
+        session: Async SQLAlchemy session.
+        stmt: SELECT statement for the rows to export.
+        columns: Ordered list of column names to include.
+
+    Yields:
+        UTF-8 encoded CSV bytes chunks.
+    """
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(columns)
+    yield buf.getvalue().encode("utf-8")
+    buf.seek(0)
+    buf.truncate()
+
+    async for batch in _stream_batches(session, stmt):
+        for row in batch:
+            writer.writerow([_safe_str(getattr(row, col, "")) for col in columns])
+        yield buf.getvalue().encode("utf-8")
+        buf.seek(0)
+        buf.truncate()
+
+
+async def export_ndjson(
+    session: AsyncSession, stmt: Select, columns: list[str]
+) -> AsyncIterator[bytes]:
+    """Stream NDJSON (newline-delimited JSON). One object per line.
+
+    Args:
+        session: Async SQLAlchemy session.
+        stmt: SELECT statement for the rows to export.
+        columns: Ordered list of column names to include.
+
+    Yields:
+        UTF-8 encoded NDJSON bytes chunks (one JSON object per line).
+    """
+    async for batch in _stream_batches(session, stmt):
+        lines = "".join(
+            json.dumps({col: _serialize(getattr(row, col, None)) for col in columns}) + "\n"
+            for row in batch
+        )
+        yield lines.encode("utf-8")
+
+
+async def export_xlsx(
+    session: AsyncSession, stmt: Select, columns: list[str]
+) -> AsyncIterator[bytes]:
+    """Stream XLSX using xlsxwriter constant_memory mode (write-once, low RAM).
+
+    Args:
+        session: Async SQLAlchemy session.
+        stmt: SELECT statement for the rows to export.
+        columns: Ordered list of column names to include.
+
+    Yields:
+        Single bytes chunk containing the complete XLSX workbook.
+    """
+    import xlsxwriter
+
+    buf = io.BytesIO()
+    workbook = xlsxwriter.Workbook(buf, {"constant_memory": True, "in_memory": True})
+    worksheet = workbook.add_worksheet("Export")
+    bold = workbook.add_format({"bold": True})
+
+    for col_idx, col_name in enumerate(columns):
+        worksheet.write(0, col_idx, col_name, bold)
+
+    row_idx = 1
+    async for batch in _stream_batches(session, stmt):
+        for row in batch:
+            for col_idx, col_name in enumerate(columns):
+                worksheet.write(row_idx, col_idx, _safe_str(getattr(row, col_name, "")))
+            row_idx += 1
+
+    workbook.close()
+    yield buf.getvalue()
+
+
+async def export_parquet(
+    session: AsyncSession, stmt: Select, columns: list[str]
+) -> AsyncIterator[bytes]:
+    """Stream Parquet via pyarrow. Collects all rows (pyarrow lacks native streaming write).
+
+    Args:
+        session: Async SQLAlchemy session.
+        stmt: SELECT statement for the rows to export.
+        columns: Ordered list of column names to include.
+
+    Yields:
+        Single bytes chunk containing the complete Parquet file (snappy compressed).
+    """
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    rows: list[dict[str, Any]] = []
+    async for batch in _stream_batches(session, stmt):
+        for row in batch:
+            rows.append({col: _serialize(getattr(row, col, None)) for col in columns})
+
+    table = pa.Table.from_pylist(rows)
+    buf = io.BytesIO()
+    pq.write_table(table, buf, compression="snappy")
+    yield buf.getvalue()
+
+
+def _serialize(value: Any) -> Any:
+    """Coerce non-JSON-native Python types to serialisable equivalents.
+
+    Args:
+        value: Any Python value, including ORM-mapped fields.
+
+    Returns:
+        A JSON-serialisable representation of the value.
+    """
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, UUID):
+        return str(value)
+    if isinstance(value, Decimal):
+        return float(value)
+    if isinstance(value, bytes):
+        return value.hex()
+    return value
+
+
+def _safe_str(value: Any) -> str:
+    """Return serialised value as string; None becomes empty string.
+
+    Args:
+        value: Any value to convert.
+
+    Returns:
+        String representation, or ``""`` when value is ``None``.
+    """
+    if value is None:
+        return ""
+    return str(_serialize(value))

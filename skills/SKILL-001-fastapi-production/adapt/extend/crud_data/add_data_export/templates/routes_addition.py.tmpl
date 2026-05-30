@@ -1,0 +1,99 @@
+
+
+# ---------------------------------------------------------------------------
+# Data export endpoint — added by add_data_export tool
+# ---------------------------------------------------------------------------
+from fastapi.responses import JSONResponse as _JSONResponse, StreamingResponse as _StreamingResponse
+from fastapi import Query as _ExportQuery
+from sqlalchemy import func as _func, select as _select
+
+from app.core.export import (
+    SENSITIVE_COLUMNS as _SENSITIVE_COLUMNS,
+    export_csv as _export_csv,
+    export_ndjson as _export_ndjson,
+    export_xlsx as _export_xlsx,
+    export_parquet as _export_parquet,
+)
+from app.core.export_jobs import dispatch_export_job as _dispatch_export_job
+from app.models.${lower} import ${model_name} as _${model_name}
+
+_EXPORT_ASYNC_THRESHOLD: int = int(__import__("os").getenv("EXPORT_ASYNC_THRESHOLD", "10000"))
+
+_FORMAT_META: dict = {
+    "csv":     (_export_csv,     "text/csv",                   "${lower}s.csv"),
+    "json":    (_export_ndjson,  "application/x-ndjson",       "${lower}s.ndjson"),
+    "xlsx":    (_export_xlsx,    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "${lower}s.xlsx"),
+    "parquet": (_export_parquet, "application/octet-stream",   "${lower}s.parquet"),
+}
+
+_DEFAULT_EXPORT_COLUMNS: list[str] = [
+    c.name for c in _${model_name}.__table__.columns
+    if c.name not in _SENSITIVE_COLUMNS
+]
+
+
+async def _build_export_base_stmt_${lower}(session, current_user):
+    """Build scoped base SELECT statement and count for ${model_name} export.
+
+    Args:
+        session: Async SQLAlchemy session.
+        current_user: Authenticated user (scopes query via owner_id and tenant_id).
+
+    Returns:
+        Tuple of (base_stmt, total_row_count).
+    """
+    base_stmt = _select(_${model_name}).where(_${model_name}.owner_id == current_user.id)
+    if hasattr(_${model_name}, "is_deleted"):
+        base_stmt = base_stmt.where(_${model_name}.is_deleted.is_(False))
+    if hasattr(_${model_name}, "tenant_id") and hasattr(current_user, "tenant_id"):
+        base_stmt = base_stmt.where(_${model_name}.tenant_id == current_user.tenant_id)
+    total: int = (await session.execute(_select(_func.count()).select_from(base_stmt.subquery()))).scalar_one()
+    return base_stmt, total
+
+
+@router.get("/export", response_model=None, summary="Export ${model_name} records (GDPR Art. 20 data portability)")
+async def export_${lower}s(
+    session: SessionDep,
+    current_user: CurrentUser,
+    format: str = _ExportQuery(default="csv", pattern="^(csv|json|xlsx|parquet)$$"),
+    columns: str | None = _ExportQuery(
+        default=None,
+        description="Comma-separated column names to include. Omit for all non-sensitive columns.",
+    ),
+) -> _StreamingResponse | _JSONResponse:
+    """Export the current user's ${model_name} records.
+
+    Small exports stream synchronously via StreamingResponse.
+    Large exports are queued as ARQ background jobs and return HTTP 202.
+    Sensitive columns are always excluded.
+
+    Args:
+        session: Injected async DB session.
+        current_user: Authenticated user (scopes the export query).
+        format: Export format — csv, json, xlsx, or parquet.
+        columns: Optional comma-separated column whitelist.
+
+    Returns:
+        StreamingResponse for sync exports or JSONResponse (202) for async jobs.
+    """
+    from fastapi import HTTPException
+
+    base_stmt, total = await _build_export_base_stmt_${lower}(session, current_user)
+    if total > _EXPORT_ASYNC_THRESHOLD:
+        job_id = await _dispatch_export_job(
+            user_id=current_user.id, model="${model_name}", format=format,
+            filters={"owner_id": str(current_user.id)},
+        )
+        return _JSONResponse(status_code=202, content={
+            "status": "queued", "job_id": str(job_id), "row_estimate": total,
+            "message": f"Export queued ({total:,} rows). You will receive an email with a download link.",
+        })
+    requested = [c.strip() for c in columns.split(",")] if columns else _DEFAULT_EXPORT_COLUMNS
+    safe_cols = [c for c in requested if c in _DEFAULT_EXPORT_COLUMNS]
+    if not safe_cols:
+        raise HTTPException(status_code=422, detail="No valid columns selected after security filtering.")
+    gen_fn, media_type, filename = _FORMAT_META[format]
+    return _StreamingResponse(
+        gen_fn(session, base_stmt, safe_cols), media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

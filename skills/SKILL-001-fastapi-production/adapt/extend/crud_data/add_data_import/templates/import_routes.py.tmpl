@@ -1,0 +1,142 @@
+"""Data import endpoints.
+
+Endpoints
+---------
+POST /imports/upload        — upload CSV or Excel file, returns job ID
+GET  /imports/{id}/status   — poll job status and progress counters
+GET  /imports/{id}/errors   — retrieve per-row validation errors
+"""
+
+from __future__ import annotations
+
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.crud.import_job import create_import_job, get_import_job
+from app.schemas.import_job import ImportJobCreated, ImportJobStatus
+
+router = APIRouter(prefix="/imports", tags=["imports"])
+
+
+async def _get_session() -> AsyncSession:
+    """FastAPI dependency placeholder — replaced by real session dep on boot.
+
+    Raises:
+        RuntimeError: Always — callers must override this dependency.
+    """
+    raise RuntimeError("Inject get_async_session via app.dependency_overrides")
+
+
+@router.post(
+    "/upload",
+    response_model=ImportJobCreated,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def upload_import_file(
+    file: UploadFile,
+    session: AsyncSession = Depends(_get_session),
+) -> ImportJobCreated:
+    """Upload a CSV or Excel file and start an async import job.
+
+    Validates file size against IMPORT_MAX_FILE_SIZE_MB from settings.
+    Returns a job ID immediately; processing continues in the background.
+
+    Args:
+        file: Uploaded file (CSV or XLSX).
+        session: Injected async DB session.
+
+    Returns:
+        ImportJobCreated with job id, status, and filename.
+
+    Raises:
+        HTTPException 400: If file extension is not allowed.
+        HTTPException 413: If file exceeds IMPORT_MAX_FILE_SIZE_MB.
+    """
+    from app.core.config import settings  # noqa: PLC0415
+
+    allowed = {".csv", ".xlsx", ".xls"}
+    ext = "." + (file.filename or "").rsplit(".", 1)[-1].lower()
+    if ext not in allowed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"detail": f"File type not allowed. Accepted: {', '.join(sorted(allowed))}"},
+        )
+
+    content = await file.read()
+    max_bytes = settings.IMPORT_MAX_FILE_SIZE_MB * 1024 * 1024
+    if len(content) > max_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail={"detail": f"File exceeds maximum size of {settings.IMPORT_MAX_FILE_SIZE_MB} MB"},
+        )
+
+    job = await create_import_job(session, file_name=file.filename or "upload")
+    return ImportJobCreated.model_validate(job)
+
+
+@router.get("/{job_id}/status", response_model=ImportJobStatus)
+async def get_import_status(
+    job_id: uuid.UUID,
+    session: AsyncSession = Depends(_get_session),
+) -> ImportJobStatus:
+    """Return the current status and progress of an import job.
+
+    Args:
+        job_id: UUID of the import job.
+        session: Injected async DB session.
+
+    Returns:
+        ImportJobStatus with counters and current lifecycle state.
+
+    Raises:
+        HTTPException 404: If the job does not exist.
+    """
+    job = await get_import_job(session, job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"detail": "Import job not found"},
+        )
+    return ImportJobStatus.model_validate(job)
+
+
+@router.get("/{job_id}/errors")
+async def get_import_errors(
+    job_id: uuid.UUID,
+    session: AsyncSession = Depends(_get_session),
+) -> dict:
+    """Return per-row validation errors for a completed import job.
+
+    Args:
+        job_id: UUID of the import job.
+        session: Injected async DB session.
+
+    Returns:
+        Dict with ``job_id``, ``failed`` count, and ``errors`` list.
+
+    Raises:
+        HTTPException 404: If the job does not exist.
+        HTTPException 400: If the job has not yet finished.
+    """
+    import json  # noqa: PLC0415
+
+    job = await get_import_job(session, job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"detail": "Import job not found"},
+        )
+    if job.status not in ("done", "failed"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"detail": f"Job is still {job.status}; errors not available yet"},
+        )
+    errors: list = []
+    if job.error_report_url and job.error_report_url.startswith("inline:"):
+        try:
+            errors = json.loads(job.error_report_url[len("inline:"):])
+        except (ValueError, KeyError):
+            errors = []
+    return {"job_id": str(job_id), "failed": job.failed, "errors": errors}

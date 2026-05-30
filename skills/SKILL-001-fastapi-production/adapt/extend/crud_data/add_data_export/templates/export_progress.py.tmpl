@@ -1,0 +1,78 @@
+"""Lightweight export job progress tracker backed by Redis.
+
+Writes progress keys so clients can poll /exports/{job_id}/status.
+Each key has a TTL slightly over 24 h to cover the presigned URL lifetime.
+"""
+from __future__ import annotations
+
+import json
+from enum import Enum
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import redis.asyncio as aioredis
+
+JOB_TTL_SECONDS: int = 90_000  # 25 h — covers presigned URL lifetime
+
+
+class ExportStatus(str, Enum):
+    """Lifecycle states for an async export job."""
+
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETE = "complete"
+    FAILED = "failed"
+
+
+async def set_export_progress(
+    redis: "aioredis.Redis",
+    job_id: str,
+    status: ExportStatus,
+    *,
+    rows_written: int = 0,
+    total_rows: int = 0,
+    download_url: str | None = None,
+    error: str | None = None,
+) -> None:
+    """Write job progress to Redis with a 25-hour TTL.
+
+    Args:
+        redis: Async Redis client.
+        job_id: Unique export job identifier.
+        status: Current lifecycle state.
+        rows_written: Rows streamed to storage so far.
+        total_rows: Total rows expected (0 if unknown).
+        download_url: Presigned download URL, set when status=COMPLETE.
+        error: Error message, set when status=FAILED.
+    """
+    key = f"export_job:{job_id}"
+    payload: dict[str, Any] = {
+        "job_id": job_id,
+        "status": status.value,
+        "rows_written": rows_written,
+        "total_rows": total_rows,
+    }
+    if download_url:
+        payload["download_url"] = download_url
+    if error:
+        payload["error"] = error
+    await redis.setex(key, JOB_TTL_SECONDS, json.dumps(payload))
+
+
+async def get_export_progress(
+    redis: "aioredis.Redis", job_id: str
+) -> dict[str, Any] | None:
+    """Fetch current job progress. Returns None if job_id unknown or expired.
+
+    Args:
+        redis: Async Redis client.
+        job_id: Unique export job identifier.
+
+    Returns:
+        Progress dict or ``None`` if the job key has expired or never existed.
+    """
+    key = f"export_job:{job_id}"
+    raw = await redis.get(key)
+    if raw is None:
+        return None
+    return json.loads(raw)

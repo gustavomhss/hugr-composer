@@ -1,0 +1,52 @@
+"""Pydantic schemas for the data import API."""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict
+
+
+class ImportJobStatus(BaseModel):
+    """Public status snapshot of an ImportJob.
+
+    Attributes:
+        id: UUID of the import job.
+        status: Current lifecycle state.
+        file_name: Original uploaded filename.
+        total_rows: Total rows in the uploaded file.
+        processed: Rows successfully committed.
+        failed: Rows rejected by validation.
+        error_report_url: URL to the NDJSON error report; None until complete.
+        created_at: UTC creation timestamp.
+        updated_at: UTC last-update timestamp.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    status: str
+    file_name: str
+    total_rows: int
+    processed: int
+    failed: int
+    error_report_url: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class ImportJobCreated(BaseModel):
+    """Minimal response returned immediately after file upload.
+
+    Attributes:
+        id: UUID of the newly created import job.
+        status: Initial status (always 'pending').
+        file_name: Name of the uploaded file.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    status: str
+    file_name: str

@@ -1,0 +1,114 @@
+"""Emitted test for add_bulk_operations: HTTP 207 bulk endpoints.
+
+HONESTY RULE (§5, F-06): assertions inspect the static emitted code surface
+(schemas, CRUD, routes, migration, idempotency module). The emitted FastAPI
+project here is not booted with a live DB, so behaviour is asserted via
+file-content checks against the artefacts the tool wrote. Transaction
+semantics (all_or_nothing / best_effort) are anchored by code-shape
+assertions; the live transaction-boundary behaviour is exercised by the
+behaviour test in the kit (test_add_bulk_operations_behavior.py).
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+
+# ---------------------------------------------------------------------------
+# Positive: bulk routes + schemas + CRUD + idempotency module shipped
+# ---------------------------------------------------------------------------
+
+
+def test_idempotency_module_present_with_cache() -> None:
+    """app/core/idempotency.py defines IdempotencyCache + init_idempotency_cache."""
+    idem = Path(__file__).parent.parent / "app" / "core" / "idempotency.py"
+    assert idem.exists(), "app/core/idempotency.py was not emitted"
+    body = idem.read_text()
+    assert "class IdempotencyCache" in body, "IdempotencyCache class must be defined"
+    assert "def init_idempotency_cache(" in body, "init_idempotency_cache must be defined"
+    assert "get_idempotency_cache" in body, "get_idempotency_cache must be defined"
+
+
+def test_bulk_schemas_emitted_with_size_cap() -> None:
+    """BulkCreate/Update/Delete schemas exist with max_length cap and validator."""
+    schemas_dir = Path(__file__).parent.parent / "app" / "schemas"
+    py_files = list(schemas_dir.glob("*.py"))
+    matching = [
+        f for f in py_files
+        if "BulkCreate" in f.read_text() and "BulkResponse" in f.read_text()
+    ]
+    assert matching, "no schema file contains BulkCreate + BulkResponse"
+    body = matching[0].read_text()
+    assert "max_length=" in body, "Bulk schemas must enforce max_length cap"
+    assert "each_update_has_id" in body, "Bulk update must reject items missing 'id'"
+    assert "all_or_nothing" in body, "Bulk mode literal must include all_or_nothing"
+    assert "best_effort" in body, "Bulk mode literal must include best_effort"
+
+
+def test_bulk_crud_helpers_preserve_transaction_semantics() -> None:
+    """CRUD module emits all-or-nothing + best-effort helpers with rollback markers."""
+    crud_dir = Path(__file__).parent.parent / "app" / "crud"
+    py_files = list(crud_dir.glob("*.py"))
+    matching = [f for f in py_files if "bulk_create_" in f.read_text()]
+    assert matching, "no crud file contains bulk_create_*"
+    body = matching[0].read_text()
+    # Transaction-boundary anchors — these must survive any future refactor.
+    assert "_bulk_insert_all_or_nothing_" in body, (
+        "all_or_nothing helper missing — single-tx semantics broken"
+    )
+    assert "_bulk_insert_best_effort_" in body, (
+        "best_effort helper missing — per-item SAVEPOINT semantics broken"
+    )
+    assert "session.rollback()" in body, "rollback path must remain on IntegrityError"
+    assert "session.begin_nested()" in body, "best_effort must use SAVEPOINT"
+
+
+def test_bulk_routes_return_207_multi_status() -> None:
+    """Routes return HTTP 207 + use Idempotency-Key header for retry safety."""
+    routes_dir = Path(__file__).parent.parent / "app" / "api" / "routes"
+    py_files = list(routes_dir.glob("*.py"))
+    matching = [f for f in py_files if '"/bulk"' in f.read_text()]
+    assert matching, "no route file declares /bulk endpoints"
+    body = matching[0].read_text()
+    assert "status_code=207" in body, "bulk routes must return 207 Multi-Status"
+    assert "Idempotency-Key" in body, "Idempotency-Key header must be honored"
+
+
+def test_bulk_migration_creates_owner_index() -> None:
+    """Migration creates composite (owner_id, id) index for sargable scans."""
+    versions = Path(__file__).parent.parent / "alembic" / "versions"
+    if not versions.exists():
+        return  # migration emission is opt-in per project shape
+    matching = [f for f in versions.glob("0007_bulk_ops_index_*.py")]
+    assert matching, "bulk_ops_index migration missing"
+    body = matching[0].read_text()
+    assert "create_index" in body and "owner_id" in body, (
+        "composite owner_id index missing — bulk scans will degrade"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Negative: hard cap enforced, schema rejects missing id
+# ---------------------------------------------------------------------------
+
+
+def test_bulk_hard_cap_not_unbounded() -> None:
+    """Bulk schemas MUST cap items — unbounded lists are OOM/table-lock vectors."""
+    schemas_dir = Path(__file__).parent.parent / "app" / "schemas"
+    py_files = list(schemas_dir.glob("*.py"))
+    matching = [f for f in py_files if "BulkCreate" in f.read_text()]
+    body = matching[0].read_text()
+    assert "max_length=" in body, "Bulk schemas MUST have max_length cap"
+    # No accidental unbounded literal.
+    assert "max_length=None" not in body, "max_length must not be None (unbounded)"
+
+
+def test_idempotency_no_redis_does_not_raise() -> None:
+    """IdempotencyCache(None) does NOT raise on get/set — graceful degradation."""
+    idem = Path(__file__).parent.parent / "app" / "core" / "idempotency.py"
+    body = idem.read_text()
+    # Confirm the None-guard remains in both paths — losing it would convert
+    # Redis outages into 500s instead of "no-cache pass-through".
+    assert "if self._redis is None:" in body, (
+        "IdempotencyCache must short-circuit when Redis is unavailable"
+    )

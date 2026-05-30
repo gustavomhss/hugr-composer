@@ -1,0 +1,69 @@
+"""Model registry: maps string model names to SQLAlchemy classes.
+
+Populated at app startup. Used by the background export worker to
+reconstruct export queries without coupling to specific model imports.
+"""
+from __future__ import annotations
+
+from typing import Any, Type
+
+from sqlalchemy import select, Select
+from sqlalchemy.orm import DeclarativeBase
+
+_MODEL_REGISTRY: dict[str, Type[DeclarativeBase]] = {}
+
+
+def register_model(model_cls: Type[DeclarativeBase]) -> None:
+    """Register a model class under its ``__name__``.
+
+    Args:
+        model_cls: SQLAlchemy mapped class to register.
+    """
+    _MODEL_REGISTRY[model_cls.__name__] = model_cls
+
+
+def get_model_class(name: str) -> Type[DeclarativeBase]:
+    """Return model class by name. Raises KeyError if not registered.
+
+    Args:
+        name: Model class name (e.g. ``"Item"``).
+
+    Returns:
+        The registered model class.
+
+    Raises:
+        KeyError: If ``name`` has not been registered.
+    """
+    if name not in _MODEL_REGISTRY:
+        raise KeyError(
+            f"Model {name!r} not in registry. "
+            f"Available: {sorted(_MODEL_REGISTRY.keys())}"
+        )
+    return _MODEL_REGISTRY[name]
+
+
+def build_filtered_stmt(
+    model_cls: Type[DeclarativeBase],
+    filters: dict[str, Any],
+) -> Select:
+    """Build a SELECT statement applying all supported filters.
+
+    Supported filter keys: owner_id, tenant_id.
+    ``is_deleted`` is always forced to ``False`` when the column exists.
+
+    Args:
+        model_cls: SQLAlchemy mapped class to query.
+        filters: Dict of column name -> value to filter on.
+
+    Returns:
+        Configured SELECT statement.
+    """
+    stmt = select(model_cls)
+    for col_name, col_value in filters.items():
+        col = getattr(model_cls, col_name, None)
+        if col is None:
+            continue
+        stmt = stmt.where(col == col_value)
+    if hasattr(model_cls, "is_deleted"):
+        stmt = stmt.where(model_cls.is_deleted.is_(False))
+    return stmt

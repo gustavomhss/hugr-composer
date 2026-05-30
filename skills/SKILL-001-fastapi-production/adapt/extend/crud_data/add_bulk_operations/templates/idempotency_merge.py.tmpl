@@ -1,0 +1,58 @@
+
+# ---------------------------------------------------------------------------
+# IdempotencyCache — added by add_bulk_operations tool
+# ---------------------------------------------------------------------------
+import json as _idem_json
+import logging as _idem_logging
+from typing import TYPE_CHECKING as _idem_TC, Any as _idem_Any
+
+if _idem_TC:
+    import redis.asyncio as _idem_aioredis
+
+_idem_logger = _idem_logging.getLogger(__name__)
+_idem_redis: "_idem_aioredis.Redis | None" = None
+
+
+def init_idempotency_cache(redis_url: str) -> None:
+    """Initialise the global idempotency Redis client.
+
+    Args:
+        redis_url: Redis connection URL.
+    """
+    global _idem_redis
+    import redis.asyncio as _idem_aioredis
+    _idem_redis = _idem_aioredis.from_url(redis_url, decode_responses=True)
+
+
+def get_idempotency_cache() -> "IdempotencyCache":
+    """Return a cache wrapper bound to the current Redis client.
+
+    Returns:
+        ``IdempotencyCache`` instance (safe when Redis is None).
+    """
+    return IdempotencyCache(_idem_redis)
+
+
+class IdempotencyCache:
+    """Thin wrapper around Redis providing get/set for idempotency keys."""
+
+    def __init__(self, redis: "_idem_aioredis.Redis | None") -> None:
+        self._redis = redis
+
+    async def get(self, key: str) -> dict | None:
+        if self._redis is None:
+            return None
+        try:
+            raw = await self._redis.get(f"idem:{key}")
+            return _idem_json.loads(raw) if raw else None
+        except Exception as exc:
+            _idem_logger.warning("idempotency_cache_get_failed key=%s exc=%s", key, exc)
+            return None
+
+    async def set(self, key: str, value: _idem_Any, ttl: int = 86400) -> None:
+        if self._redis is None:
+            return
+        try:
+            await self._redis.setex(f"idem:{key}", ttl, _idem_json.dumps(value))
+        except Exception as exc:
+            _idem_logger.warning("idempotency_cache_set_failed key=%s exc=%s", key, exc)
