@@ -9,7 +9,7 @@ class OnboardingRequest(BaseModel):
     """Request body for POST /onboarding/start."""
 
     tenant_name: str = Field(..., min_length=1, max_length=128)
-    admin_email: str = Field(..., description="Email for the initial admin user")
+    admin_email: EmailStr = Field(..., description="Email for the initial admin user")
 
 
 class OnboardingStatusResponse(BaseModel):
