@@ -1,0 +1,63 @@
+"""Schema coverage orchestrator — analyzes Pydantic field test coverage.
+
+Usage::
+
+    python scripts/schema_coverage.py [--threshold-pct 80] [--fail-on-orphans]
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).parent.parent
+
+# Inline the analyzer to keep the script self-contained at runtime
+sys.path.insert(0, str(ROOT))
+from adapt.verify.schema_coverage import _run_analysis  # noqa: E402
+
+
+class SchemaCoverageAnalyzer:
+    """Orchestrate schema coverage analysis and gate evaluation."""
+
+    def __init__(
+        self,
+        project_dir: Path = ROOT,
+        threshold_pct: float = 80.0,
+        fail_on_orphans: bool = True,
+    ) -> None:
+        self.project_dir = project_dir
+        self.threshold_pct = threshold_pct
+        self.fail_on_orphans = fail_on_orphans
+
+    def run(self) -> dict:
+        """Run analysis, apply gate, return results with exit_code."""
+        data = _run_analysis(
+            self.project_dir / "app",
+            self.project_dir / "tests",
+        )
+        failing = data["overall_coverage_pct"] < self.threshold_pct
+        orphan_count = sum(
+            len(v["orphan_fields"]) for v in data["schemas"].values()
+        )
+        if self.fail_on_orphans and orphan_count:
+            failing = True
+        data["exit_code"] = 1 if failing else 0
+        return data
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Schema field coverage")
+    parser.add_argument("--threshold-pct", type=float, default=80.0)
+    parser.add_argument("--fail-on-orphans", action="store_true", default=True)
+    args = parser.parse_args()
+
+    analyzer = SchemaCoverageAnalyzer(
+        threshold_pct=args.threshold_pct,
+        fail_on_orphans=args.fail_on_orphans,
+    )
+    results = analyzer.run()
+    print(json.dumps({"overall": results["overall_coverage_pct"], "schemas": len(results["schemas"])}, indent=2))
+    sys.exit(results["exit_code"])

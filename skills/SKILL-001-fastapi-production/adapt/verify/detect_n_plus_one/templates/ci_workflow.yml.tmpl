@@ -1,0 +1,30 @@
+# .github/workflows/nplusone.yml
+# Runs N+1 detection tests on every PR.
+name: N+1 Query Detection
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+jobs:
+  nplusone:
+    runs-on: ubuntu-latest
+    env:
+      NPLUSONE_ENABLED: "1"
+      NPLUSONE_MODE: fail_fast
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest
+      - name: Run N+1 detection tests
+        run: |
+          PYTHONPATH=. pytest tests/ -m nplusone -v --tb=short
+      - name: Annotate PR on failure
+        if: failure()
+        run: echo "::error::N+1 query threshold exceeded. Check X-Query-Count headers."

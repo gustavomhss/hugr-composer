@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "613bff5",
-  "generated_at": "2026-05-30T03:25:27+00:00",
+  "kit_commit": "69ad70b",
+  "generated_at": "2026-05-30T03:51:33+00:00",
   "verbs": [
     "add",
     "generate",
@@ -864,10 +864,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/verify/dependency_audit.py",
-      "test_paths": [
-        "adapt/verify/test_dependency_audit.py"
-      ],
+      "module_path": "adapt/verify/dependency_audit/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3689,10 +3687,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/verify/api_spec_compliance.py",
-      "test_paths": [
-        "adapt/verify/test_api_spec_compliance.py"
-      ],
+      "module_path": "adapt/verify/api_spec_compliance/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3799,10 +3795,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/verify/detect_n_plus_one.py",
-      "test_paths": [
-        "adapt/verify/test_detect_n_plus_one.py"
-      ],
+      "module_path": "adapt/verify/detect_n_plus_one/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3909,10 +3903,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/verify/performance_baseline.py",
-      "test_paths": [
-        "adapt/verify/test_performance_baseline.py"
-      ],
+      "module_path": "adapt/verify/performance_baseline/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3955,10 +3947,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/verify/schema_coverage.py",
-      "test_paths": [
-        "adapt/verify/test_schema_coverage.py"
-      ],
+      "module_path": "adapt/verify/schema_coverage/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3977,10 +3967,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/verify/security_scan.py",
-      "test_paths": [
-        "adapt/verify/test_security_scan.py"
-      ],
+      "module_path": "adapt/verify/security_scan/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -12139,5 +12127,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "a1ea6f80783f36f086b5517cb700fd0460cccda5b4db5447223bbd9097acd2b6"
+  "stable_hash": "e7e26fe1ae586cdde6417bd603e41b0c136f25cc049c503e830b782d7dbc1857"
 }

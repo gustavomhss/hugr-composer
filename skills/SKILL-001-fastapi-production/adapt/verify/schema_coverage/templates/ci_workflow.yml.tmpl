@@ -1,0 +1,24 @@
+# .github/workflows/schema-coverage.yml
+name: Schema Coverage
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+jobs:
+  schema-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run schema coverage
+        run: |
+          PYTHONPATH=. python scripts/schema_coverage.py \
+            --threshold-pct 80 --fail-on-orphans

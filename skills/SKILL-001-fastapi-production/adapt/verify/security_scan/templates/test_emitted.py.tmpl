@@ -1,0 +1,62 @@
+"""Emitted test for security_scan — asserts the audit infrastructure runs.
+
+Verify-tool semantic per WP-14 §5:
+* Positive: scripts/security_scan.py, semgrep rules, bandit config, and
+  SARIF merge utility exist and parse.
+* Negative: SARIF merge handles findings dicts and emits a 2.1.0-shaped
+  document; the severity ranking logic flags HIGH above LOW. This test
+  asserts the CHECK reports; it does NOT assert OWASP top 10 coverage or
+  CI blocking — bandit runs with the project's default ruleset only.
+"""
+
+from __future__ import annotations
+
+import ast
+import json
+from pathlib import Path
+
+ROOT = Path(__file__).parent.parent
+SCRIPT = ROOT / "scripts" / "security_scan.py"
+SARIF_UTIL = ROOT / ".security" / "sarif_merge.py"
+
+
+def test_orchestrator_exists_and_parses() -> None:
+    """Positive: scripts/security_scan.py is importable."""
+    assert SCRIPT.exists()
+    src = SCRIPT.read_text()
+    ast.parse(src)
+    assert "SecurityScanOrchestrator" in src
+
+
+def test_semgrep_rules_present() -> None:
+    """Positive: FastAPI-specific semgrep rules are committed."""
+    assert (ROOT / ".security" / "semgrep-rules.yaml").exists()
+
+
+def test_bandit_config_present() -> None:
+    """Positive: bandit config is committed."""
+    assert (ROOT / ".security" / "bandit.yaml").exists()
+
+
+def test_sarif_merge_exists_and_parses() -> None:
+    """Positive: SARIF merge utility is importable."""
+    assert SARIF_UTIL.exists()
+    src = SARIF_UTIL.read_text()
+    ast.parse(src)
+    assert "merge_sarif" in src
+    assert "findings_to_sarif" in src
+
+
+def test_sarif_emit_shape() -> None:
+    """Negative: findings_to_sarif emits a SARIF 2.1.0-shaped run with a result."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("sarif_merge", SARIF_UTIL)
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    finding = {"severity": "HIGH", "message": "hardcoded secret", "file": "app/main.py", "line": 42}
+    run = mod.findings_to_sarif([finding], "bandit")
+    assert run["tool"]["driver"]["name"] == "bandit"
+    assert len(run["results"]) == 1
+    assert run["results"][0]["level"] == "error"  # HIGH -> error

@@ -1,0 +1,83 @@
+"""Emitted test for schema_coverage — asserts the audit infrastructure runs.
+
+Verify-tool semantic per WP-14 §5:
+* Positive: scripts/schema_coverage.py exists and parses.
+* Negative: walker over a synthetic BaseModel class reports orphan fields
+  when none are referenced in tests, and zero orphans when all are. This
+  test asserts the CHECK reports — it does NOT assert CI blocks. The
+  walker counts a Pydantic field once regardless of Optional/Union
+  branches, so a "100% coverage" claim would be overclaim.
+"""
+
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+ROOT = Path(__file__).parent.parent
+SCRIPT = ROOT / "scripts" / "schema_coverage.py"
+
+
+def test_orchestrator_exists_and_parses() -> None:
+    """Positive: scripts/schema_coverage.py is importable."""
+    assert SCRIPT.exists()
+    src = SCRIPT.read_text()
+    ast.parse(src)
+    assert "SchemaCoverageAnalyzer" in src
+
+
+def test_report_present() -> None:
+    """Positive: schema-coverage.json is committed."""
+    assert (ROOT / "schema-coverage.json").exists()
+
+
+def test_walker_reports_orphans(tmp_path) -> None:
+    """Negative: a field never referenced in tests appears in orphan_fields."""
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from adapt.verify.schema_coverage import _run_analysis
+
+    app_dir = tmp_path / "app" / "schemas"
+    app_dir.mkdir(parents=True)
+    (app_dir / "__init__.py").write_text("")
+    (app_dir / "user.py").write_text(
+        "from pydantic import BaseModel\n"
+        "class User(BaseModel):\n"
+        "    name: str\n"
+        "    secret_field: str\n"
+    )
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir()
+    (tests_dir / "test_user.py").write_text(
+        "def test_x():\n"
+        "    u = {'name': 'x'}\n"
+        "    assert u['name'] == 'x'\n"
+    )
+    data = _run_analysis(tmp_path / "app", tests_dir)
+    assert "User" in data["schemas"]
+    assert "secret_field" in data["schemas"]["User"]["orphan_fields"]
+
+
+def test_walker_clean_fixture(tmp_path) -> None:
+    """Negative-clean: all fields referenced => zero orphans."""
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from adapt.verify.schema_coverage import _run_analysis
+
+    app_dir = tmp_path / "app" / "schemas"
+    app_dir.mkdir(parents=True)
+    (app_dir / "__init__.py").write_text("")
+    (app_dir / "user.py").write_text(
+        "from pydantic import BaseModel\n"
+        "class User(BaseModel):\n"
+        "    name: str\n"
+    )
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir()
+    (tests_dir / "test_user.py").write_text(
+        "def test_x():\n"
+        "    u = {'name': 'x'}\n"
+        "    assert u['name']\n"
+    )
+    data = _run_analysis(tmp_path / "app", tests_dir)
+    assert data["schemas"]["User"]["orphan_fields"] == []

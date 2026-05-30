@@ -1,0 +1,51 @@
+"""Merge multiple SARIF 2.1.0 files into a single output file."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+
+def merge_sarif(sarif_files: list[Path], output: Path) -> None:
+    """Merge *sarif_files* into a single SARIF document at *output*."""
+    merged: dict[str, Any] = {
+        "$$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+        "version": "2.1.0",
+        "runs": [],
+    }
+    for sarif_file in sarif_files:
+        if not sarif_file.exists():
+            continue
+        try:
+            doc = json.loads(sarif_file.read_text())
+            merged["runs"].extend(doc.get("runs", []))
+        except (json.JSONDecodeError, OSError):
+            continue
+    output.write_text(json.dumps(merged, indent=2))
+
+
+def findings_to_sarif(findings: list[dict], tool_name: str) -> dict[str, Any]:
+    """Convert a list of findings dicts to a minimal SARIF 2.1.0 run."""
+    results = [
+        {
+            "ruleId": f.get("rule_id", f"{tool_name}-finding"),
+            "level": _sarif_level(f.get("severity", "LOW")),
+            "message": {"text": f.get("message", "")},
+            "locations": [{"physicalLocation": {
+                "artifactLocation": {"uri": f.get("file", "unknown")},
+                "region": {"startLine": max(1, f.get("line", 1))},
+            }}],
+        }
+        for f in findings
+    ]
+    return {
+        "tool": {"driver": {"name": tool_name, "version": "1.0.0"}},
+        "results": results,
+    }
+
+
+def _sarif_level(severity: str) -> str:
+    mapping = {"CRITICAL": "error", "HIGH": "error", "MEDIUM": "warning",
+               "LOW": "note", "INFORMATIONAL": "none"}
+    return mapping.get(severity.upper(), "note")

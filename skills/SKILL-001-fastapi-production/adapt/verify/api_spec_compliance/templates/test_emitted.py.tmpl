@@ -1,0 +1,62 @@
+"""Emitted test for api_spec_compliance — asserts the audit infrastructure runs.
+
+Verify-tool semantic per WP-14 §5:
+* Positive: scripts/api_spec_compliance.py is importable and runs against a
+  minimal fixture, returning a structured result.
+* Negative: diff_openapi reports a BREAKING finding on a known-bad fixture
+  (route removed), and check_documentation reports a violation when summary
+  is missing. The check itself does NOT block CI — the emitted workflow has
+  no required-status gate, so this test asserts "the check reports", not
+  "the check blocks merge".
+"""
+
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+ROOT = Path(__file__).parent.parent
+SCRIPT = ROOT / "scripts" / "api_spec_compliance.py"
+
+
+def test_orchestrator_exists_and_parses() -> None:
+    """Positive: emitted orchestrator script is importable."""
+    assert SCRIPT.exists(), "scripts/api_spec_compliance.py missing"
+    ast.parse(SCRIPT.read_text())
+
+
+def test_diff_reports_breaking_on_removed_route() -> None:
+    """Negative: known-bad fixture (removed route) produces BREAKING finding."""
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from adapt.verify.api_spec_compliance import diff_openapi, suggest_semver
+
+    old = {"paths": {"/items/": {"get": {}}}, "info": {}}
+    new = {"paths": {}, "info": {}}
+    changes = diff_openapi(old, new)
+    breaking = [c for c in changes if c["type"] == "BREAKING"]
+    assert breaking, "diff_openapi must report BREAKING when a route is removed"
+    assert suggest_semver(changes) == "major"
+
+
+def test_clean_fixture_no_findings() -> None:
+    """Negative-clean: identical schemas produce zero findings."""
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from adapt.verify.api_spec_compliance import diff_openapi
+
+    schema = {"paths": {"/items/": {"get": {}}}, "info": {}}
+    assert diff_openapi(schema, schema) == []
+
+
+def test_doc_gate_flags_missing_summary() -> None:
+    """Negative: doc gate reports violation on missing summary."""
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from adapt.verify.api_spec_compliance import check_documentation
+
+    schema = {
+        "paths": {"/x/": {"get": {"description": "a" * 30, "tags": ["x"], "responses": {"200": {}}}}}
+    }
+    violations = check_documentation(schema)
+    assert any("summary" in " ".join(v["violations"]) for v in violations)

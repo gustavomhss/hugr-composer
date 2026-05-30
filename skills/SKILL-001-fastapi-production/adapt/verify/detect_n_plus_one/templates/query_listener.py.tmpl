@@ -1,0 +1,37 @@
+"""SQLAlchemy event-based query counter using ContextVar (async-safe).
+
+Import this module once at startup to register the SQLAlchemy event
+listeners.  The ``query_count`` ContextVar is incremented by
+``before_cursor_execute`` and reset by the middleware at the start of
+each request so concurrent async requests never share state.
+"""
+
+from __future__ import annotations
+
+from contextvars import ContextVar
+from typing import Any
+
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+
+# Per-request query count (ContextVar = async-safe, no thread-local leakage)
+query_count: ContextVar[int] = ContextVar("query_count", default=0)
+# Per-request query stack for reporting
+query_stack: ContextVar[list[str]] = ContextVar("query_stack", default=[])
+
+
+def install_listener(engine: Engine) -> None:
+    """Register before_cursor_execute listener on *engine*."""
+
+    @event.listens_for(engine.sync_engine if hasattr(engine, "sync_engine") else engine, "before_cursor_execute")
+    def _count(conn: Any, cursor: Any, statement: str, *args: Any, **kw: Any) -> None:
+        query_count.set(query_count.get() + 1)
+        stack = list(query_stack.get())
+        stack.append(statement[:120])
+        query_stack.set(stack)
+
+
+def reset_counters() -> None:
+    """Reset query_count and query_stack for a new request context."""
+    query_count.set(0)
+    query_stack.set([])

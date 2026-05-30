@@ -1,0 +1,10 @@
+# .perf-exclude.yaml — endpoints excluded from performance baseline measurement.
+# These are typically health checks, monitoring endpoints, and documentation.
+version: "1.0"
+excluded_prefixes:
+  - /health
+  - /metrics
+  - /docs
+  - /redoc
+  - /openapi.json
+  - /favicon.ico

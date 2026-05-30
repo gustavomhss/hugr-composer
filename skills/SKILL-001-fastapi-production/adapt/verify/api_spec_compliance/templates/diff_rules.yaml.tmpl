@@ -1,0 +1,19 @@
+# .api-diff-rules.yaml — OpenAPI diff classification rules
+version: "1.0"
+breaking:
+  - removed_route
+  - removed_method
+  - added_required_parameter
+  - narrowed_type
+  - removed_response_field
+  - removed_enum_value
+non_breaking:
+  - added_route
+  - added_optional_parameter
+  - added_response_field
+  - added_enum_value
+metadata:
+  - description_change
+  - tag_rename
+  - operation_id_change
+  - example_change
