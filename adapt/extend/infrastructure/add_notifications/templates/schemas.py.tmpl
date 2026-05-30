@@ -1,0 +1,45 @@
+"""Pydantic schemas for the notification endpoints."""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class NotificationCreate(BaseModel):
+    """Input for creating a new notification (internal use)."""
+
+    user_id: uuid.UUID
+    title: str = Field(..., max_length=255)
+    body: str = Field(default="")
+    channel: str = Field(default="in_app", max_length=32)
+
+
+class NotificationRead(BaseModel):
+    """Single notification as returned to API consumers."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    user_id: uuid.UUID
+    title: str
+    body: str
+    channel: str
+    read_at: datetime | None
+    created_at: datetime
+
+
+class NotificationList(BaseModel):
+    """Paginated list of notifications."""
+
+    items: list[NotificationRead]
+    total: int
+    unread_count: int
+
+
+class UnreadCount(BaseModel):
+    """Unread-badge response."""
+
+    unread_count: int

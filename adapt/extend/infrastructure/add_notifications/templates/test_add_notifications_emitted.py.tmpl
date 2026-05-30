@@ -1,0 +1,70 @@
+"""Emitted test for add_notifications — runs inside the generated project.
+
+Validates:
+* Positive — in_app dispatch is a no-op (notification already persisted).
+* Negative — an unknown channel is logged but does not raise.
+* Honesty — push channel is best-effort: when ``firebase_admin`` is absent
+  the call MUST NOT raise (silent log only). This asserts the advisory
+  semantics promised by the tool's ``warnings`` (no guaranteed delivery).
+
+Run from the generated project root:
+    pytest tests/test_add_notifications_emitted.py -q
+"""
+from __future__ import annotations
+
+import asyncio
+import logging
+import sys
+
+import pytest
+
+
+class _FakeNotif:
+    user_id = "00000000-0000-0000-0000-000000000001"
+    title = "hi"
+    body = "body"
+
+
+def test_dispatch_in_app_is_noop() -> None:
+    """Positive: dispatch(channel='in_app') completes without side-effects."""
+    from app.notifications.channels import dispatch
+
+    async def _go() -> None:
+        await dispatch(_FakeNotif(), channel="in_app")
+
+    asyncio.run(_go())
+
+
+def test_dispatch_unknown_channel_is_logged_not_raised(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Negative: unknown channel must NOT raise — it logs a warning instead."""
+    from app.notifications.channels import dispatch
+
+    caplog.set_level(logging.WARNING)
+
+    async def _go() -> None:
+        await dispatch(_FakeNotif(), channel="not_a_real_channel")
+
+    asyncio.run(_go())
+    assert any("Unknown notification channel" in r.message for r in caplog.records), (
+        "unknown channel must log a WARNING"
+    )
+
+
+def test_dispatch_push_without_firebase_does_not_raise(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Honesty: push fan-out is best-effort — missing firebase_admin must not crash."""
+    from app.notifications.channels import dispatch
+
+    sys.modules.pop("firebase_admin", None)
+    sys.modules["firebase_admin"] = None  # type: ignore[assignment]
+    caplog.set_level(logging.WARNING)
+    try:
+        async def _go() -> None:
+            await dispatch(_FakeNotif(), channel="push")
+
+        asyncio.run(_go())
+    finally:
+        sys.modules.pop("firebase_admin", None)

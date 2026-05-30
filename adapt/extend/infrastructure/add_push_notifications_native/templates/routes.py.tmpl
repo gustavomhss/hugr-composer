@@ -1,0 +1,148 @@
+"""HTTP routes for push notification device management and sending.
+
+POST   /push/register-device    — register a device push token.
+POST   /push/send               — send a push notification.
+DELETE /push/devices/{id}       — unregister a device token.
+"""
+
+from __future__ import annotations
+
+import logging
+import uuid
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.schemas.push import (
+    DeviceTokenCreate,
+    DeviceTokenRead,
+    PushSendRequest,
+    PushSendResult,
+)
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/push", tags=["push"])
+
+
+async def _get_session() -> Any:
+    """Database session dependency — resolved at runtime from app.core.session.
+
+    Yields:
+        An active ``AsyncSession``.
+    """
+    from app.core.session import get_session
+    async for session in get_session():
+        yield session
+
+
+@router.post(
+    "/register-device",
+    response_model=DeviceTokenRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register a device push token",
+)
+async def register_device(
+    data: DeviceTokenCreate,
+    session: AsyncSession = Depends(_get_session),
+) -> DeviceTokenRead:
+    """Register a device push token for a user.
+
+    Args:
+        data: Device token registration payload.
+        session: Active async database session.
+
+    Returns:
+        The created ``DeviceTokenRead`` schema.
+    """
+    from app.crud.device_token import create_device_token
+    token = await create_device_token(session, data)
+    return DeviceTokenRead.model_validate(token)
+
+
+@router.post(
+    "/send",
+    response_model=PushSendResult,
+    summary="Send a push notification",
+)
+async def send_push(
+    req: PushSendRequest,
+    session: AsyncSession = Depends(_get_session),
+) -> PushSendResult:
+    """Send a push notification to a device or FCM topic.
+
+    Provide either ``device_token_id`` (single device) or ``topic``
+    (FCM broadcast).  Returns ``{"sent": true}`` on success.
+
+    Args:
+        req: Push send request payload.
+        session: Active async database session.
+
+    Returns:
+        ``PushSendResult`` with ``sent`` flag.
+
+    Raises:
+        HTTPException 404: When ``device_token_id`` is set but not found.
+        HTTPException 422: When neither ``device_token_id`` nor ``topic`` is set.
+    """
+    from app.push.service import PushService
+    svc = PushService()
+
+    if req.topic:
+        sent = await svc.send_to_topic(
+            topic=req.topic, title=req.title, body=req.body, data=req.data,
+        )
+        return PushSendResult(sent=sent)
+
+    if req.device_token_id:
+        from app.crud.device_token import get_device_token
+        token_row = await get_device_token(session, req.device_token_id)
+        if not token_row:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"detail": "Device token not found."},
+            )
+        sent = await svc.send_to_device(
+            token=token_row.token,
+            platform=token_row.platform,
+            title=req.title,
+            body=req.body,
+            data=req.data,
+        )
+        return PushSendResult(sent=sent)
+
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail={"detail": "Provide either device_token_id or topic."},
+    )
+
+
+@router.delete(
+    "/devices/{token_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Unregister a device push token",
+)
+async def delete_device(
+    token_id: uuid.UUID,
+    session: AsyncSession = Depends(_get_session),
+) -> dict[str, bool]:
+    """Unregister a device push token.
+
+    Args:
+        token_id: UUID of the device token to delete.
+        session: Active async database session.
+
+    Returns:
+        ``{"deleted": true}`` if the token was found and removed.
+
+    Raises:
+        HTTPException 404: When no token with *token_id* exists.
+    """
+    from app.crud.device_token import delete_device_token
+    deleted = await delete_device_token(session, token_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"detail": "Device token not found."},
+        )
+    return {"deleted": True}

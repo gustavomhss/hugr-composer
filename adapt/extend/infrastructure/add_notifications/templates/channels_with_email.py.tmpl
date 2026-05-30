@@ -1,0 +1,67 @@
+"""Channel registry — routes notifications to the correct delivery handler.
+
+Channels:
+    in_app  — DB insert only (no external dependency).
+    push    — FCM stub; requires ``firebase_admin`` (lazy-imported).
+    email   — Bridges to ``app.email.service.EmailService`` (add_email_templates).
+"""
+
+from __future__ import annotations
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+async def dispatch(notification: object, *, channel: str = "in_app") -> None:
+    """Route *notification* to the handler registered for *channel*.
+
+    Args:
+        notification: The persisted ``Notification`` ORM instance.
+        channel: Delivery channel — one of ``"in_app"``, ``"push"``,
+            ``"email"``.  Unknown channels are logged and ignored.
+    """
+    if channel == "in_app":
+        return
+    if channel == "push":
+        await _send_push(notification)
+    elif channel == "email":
+        await _send_email(notification)
+    else:
+        logger.warning("Unknown notification channel %r — ignored.", channel)
+
+
+async def _send_push(notification: object) -> None:
+    """Send a push notification via FCM (lazy import).
+
+    Args:
+        notification: The persisted ``Notification`` ORM instance.
+    """
+    try:
+        import firebase_admin  # noqa: F401
+        from firebase_admin import messaging  # noqa: F401
+    except ImportError:
+        logger.warning(
+            "firebase_admin not installed — push notification skipped. "
+            "Run: pip install firebase-admin"
+        )
+        return
+    logger.info("FCM push stub — would send to user_id=%s", getattr(notification, "user_id", "?"))
+
+
+async def _send_email(notification: object) -> None:
+    """Bridge to app.email.service (add_email_templates) for email channel.
+
+    Args:
+        notification: The persisted ``Notification`` ORM instance.
+    """
+    try:
+        from app.email.service import EmailService  # noqa: F401 — bridge import
+    except ImportError:
+        logger.warning("app.email.service not available — email channel skipped.")
+        return
+    logger.info(
+        "Email bridge stub — user_id=%s title=%r",
+        getattr(notification, "user_id", "?"),
+        getattr(notification, "title", ""),
+    )

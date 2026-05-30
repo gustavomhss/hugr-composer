@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "e27191c",
-  "generated_at": "2026-05-30T04:55:23+00:00",
+  "kit_commit": "ae8ec20",
+  "generated_at": "2026-05-30T11:50:26+00:00",
   "verbs": [
     "add",
     "generate",
@@ -3237,10 +3237,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_notifications.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_notifications.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_notifications/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3279,10 +3277,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_push_notifications_native.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_push_notifications_native.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_push_notifications_native/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -12067,5 +12063,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "cad75acea6bda996d6bd238720ff757d308494eb9511491e0497c57a06f1ec1d"
+  "stable_hash": "eb2aa1bfa7fc357e690f8a8ef777245650a53b4222eabf033dd96ce8bed19852"
 }
