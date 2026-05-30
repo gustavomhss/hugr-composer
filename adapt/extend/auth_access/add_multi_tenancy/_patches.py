@@ -212,25 +212,75 @@ def patch_signup_tenant(users_file: Path) -> bool:
     return True
 
 
+class ConftestPatchAnchorMismatchError(RuntimeError):
+    """Raised when patch_test_conftest cannot locate one of its anchor strings.
+
+    The conftest patcher relies on exact-string ``str.replace`` calls
+    against the base scaffold's emitted conftest. If upstream changes a
+    single byte in the anchor, ``replace`` silently returns the original
+    string and the patch becomes a no-op — the tool would then report
+    success while the conftest stays unpatched (so multi-tenant tests
+    would fail with cryptic ``tenant_id`` AttributeErrors at runtime).
+
+    This exception names the specific anchor that failed so a maintainer
+    can diff the scaffold against the patcher and fix one or the other.
+    """
+
+
+def _replace_or_raise(src: str, anchor: str, replacement: str, anchor_name: str) -> str:
+    """Run ``src.replace(anchor, replacement, 1)`` and raise on no-op.
+
+    Args:
+        src: Current source text.
+        anchor: Exact-match anchor to look for.
+        replacement: Replacement text.
+        anchor_name: Human-readable name of the anchor (used in the
+            exception message when the replace is a silent no-op).
+
+    Returns:
+        Modified source text.
+
+    Raises:
+        ConftestPatchAnchorMismatchError: When ``anchor`` is not present in
+            ``src`` (the replace would be a no-op).
+    """
+    new = src.replace(anchor, replacement, 1)
+    if new == src:
+        raise ConftestPatchAnchorMismatchError(
+            f"patch_test_conftest: anchor '{anchor_name}' not found in conftest — "
+            f"upstream scaffold likely drifted. Re-align the anchor in "
+            f"add_multi_tenancy/_patches.py::patch_test_conftest against the "
+            f"current conftest emitted by generators.orchestrator."
+        )
+    return new
+
+
 def patch_test_conftest(conftest_file: Path) -> bool:
     src = conftest_file.read_text()
     if "_MT_TENANT_SLUG" in src:
         return False
+    # F-E: each str.replace below MUST actually change the source.
+    # A silent no-op (anchor drifted upstream) would leave the conftest
+    # half-patched and tests would explode with confusing errors. Raise
+    # immediately with the specific anchor name so the failure is
+    # actionable instead of mysterious.
     if "from app.models.user import User" in src:
-        src = src.replace(
+        src = _replace_or_raise(
+            src,
             "from app.models.user import User",
             "from app.models.user import User\n"
             "from app.models.tenant import Tenant\n"
             '\n_MT_TENANT_SLUG = "test-tenant"',
-            1,
+            "user_import",
         )
     else:
-        src = src.replace(
+        src = _replace_or_raise(
+            src,
             "from app.main import app",
             "from app.main import app\n"
             "from app.models.tenant import Tenant\n"
             '\n_MT_TENANT_SLUG = "test-tenant"',
-            1,
+            "main_import",
         )
     create_all_anchor = (
         "    async with engine_test.begin() as conn:\n"
@@ -253,21 +303,26 @@ def patch_test_conftest(conftest_file: Path) -> bool:
         '        sess.info["mt_tenant_id"] = _mt_tenant.id\n'
         "        yield sess"
     )
+    # This anchor is OPTIONAL — older conftests may not emit the
+    # session fixture in this exact form. Use the silent variant.
     if create_all_anchor in src:
         src = src.replace(create_all_anchor, create_all_replacement, 1)
-    src = src.replace(
+    src = _replace_or_raise(
+        src,
         "        is_active=True,\n        is_superuser=True,\n    )",
         "        is_active=True,\n        is_superuser=True,\n"
         '        tenant_id=session.info.get("mt_tenant_id"),\n    )',
-        1,
+        "superuser_fixture",
     )
-    src = src.replace(
+    src = _replace_or_raise(
+        src,
         "        is_active=True,\n        is_superuser=False,\n    )",
         "        is_active=True,\n        is_superuser=False,\n"
         '        tenant_id=session.info.get("mt_tenant_id"),\n    )',
-        1,
+        "regularuser_fixture",
     )
-    src = src.replace(
+    src = _replace_or_raise(
+        src,
         "    transport = ASGITransport(app=app)\n"
         '    async with AsyncClient(transport=transport, base_url="http://test") as ac:',
         "    transport = ASGITransport(app=app)\n"
@@ -275,7 +330,7 @@ def patch_test_conftest(conftest_file: Path) -> bool:
         '        transport=transport, base_url="http://test",\n'
         '        headers={"X-Tenant-ID": _MT_TENANT_SLUG},\n'
         "    ) as ac:",
-        1,
+        "asgi_transport",
     )
     conftest_file.write_text(src)
     return True
