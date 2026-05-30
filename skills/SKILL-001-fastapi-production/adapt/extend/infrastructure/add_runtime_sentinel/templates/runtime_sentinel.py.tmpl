@@ -1,0 +1,261 @@
+"""Runtime Application Self-Protection (RASP) middleware.
+
+Detects SQL injection, command injection, and SSRF at request time
+with full application context — operates beyond WAF capabilities.
+
+Modes:
+    learning  — logs all detections, never blocks (24h baseline)
+    enforcing — blocks detected attacks with HTTP 400
+
+Register in app/main.py::
+
+    from app.middleware.runtime_sentinel import RuntimeSentinelMiddleware
+    app.add_middleware(RuntimeSentinelMiddleware)
+"""
+
+from __future__ import annotations
+
+import ipaddress
+import logging
+import os
+import re
+import urllib.parse
+from typing import Any
+
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
+
+from app.core.sentinel_registry import AttackPatternRegistry, SecurityEvent, get_registry
+
+logger = logging.getLogger(__name__)
+
+# SQL injection patterns: tautology, UNION, stacked, comment
+_SQL_PATTERNS = re.compile(
+    '(\\b(?:OR|AND)\\b\\s+\\w+\\s*=\\s*\\w+)|\\bUNION\\b.{0,30}\\bSELECT\\b|;\\s*\\b(?:DROP|INSERT|UPDATE|DELETE|EXEC)\\b|(/\\*.*?\\*/|--\\s|#\\s)',
+    re.IGNORECASE | re.DOTALL,
+)
+
+# Command injection: shell metacharacters and dangerous commands
+_CMD_PATTERNS = re.compile(
+    '[;&|!`$$()\\[\\]{}<>\\\\]|\\b(?:wget|curl|nc|bash|sh|python|perl|ruby)\\b',
+    re.IGNORECASE,
+)
+
+# Internal/reserved IP ranges to block for SSRF
+_INTERNAL_NETWORKS = [
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+    ipaddress.ip_network("127.0.0.0/8"),
+    ipaddress.ip_network("169.254.0.0/16"),   # link-local + cloud metadata
+    ipaddress.ip_network("::1/128"),
+    ipaddress.ip_network("fc00::/7"),
+]
+_METADATA_HOSTNAMES = frozenset({"169.254.169.254", "metadata.google.internal"})
+
+
+class InjectionDetector:
+    """Stateless injection detector for request parameters and bodies."""
+
+    def check_sql(self, value: str) -> bool:
+        """Return True if *value* contains SQL injection patterns.
+
+        Args:
+            value: String to inspect (query param, form field, JSON value).
+
+        Returns:
+            True when a SQL injection pattern is detected.
+        """
+        return bool(_SQL_PATTERNS.search(value))
+
+    def check_command(self, value: str) -> bool:
+        """Return True if *value* contains command injection metacharacters.
+
+        Args:
+            value: String to inspect.
+
+        Returns:
+            True when shell metacharacters or dangerous commands are found.
+        """
+        return bool(_CMD_PATTERNS.search(value))
+
+    def check_ssrf(self, url_value: str, allowed_hosts: frozenset[str]) -> bool:
+        """Return True if *url_value* targets an internal/blocked host.
+
+        Args:
+            url_value: URL string extracted from request parameter.
+            allowed_hosts: Frozenset of explicitly allowed external hostnames.
+
+        Returns:
+            True when the URL targets an internal network or metadata endpoint.
+        """
+        try:
+            parsed = urllib.parse.urlparse(url_value)
+            host = parsed.hostname or ""
+        except Exception:
+            return False
+
+        if host in _METADATA_HOSTNAMES:
+            return True
+        if allowed_hosts and host and host not in allowed_hosts:
+            try:
+                addr = ipaddress.ip_address(host)
+                return any(addr in net for net in _INTERNAL_NETWORKS)
+            except ValueError:
+                pass
+        try:
+            addr = ipaddress.ip_address(host)
+            return any(addr in net for net in _INTERNAL_NETWORKS)
+        except ValueError:
+            return False
+
+
+def _get_mode() -> str:
+    """Return current sentinel mode from env (learning or enforcing).
+
+    Returns:
+        'learning' or 'enforcing' (defaults to 'learning').
+    """
+    return os.getenv("SENTINEL_MODE", "learning").lower()
+
+
+def _get_allowed_hosts() -> frozenset[str]:
+    """Return frozenset of allowed outbound hosts from env.
+
+    Returns:
+        Frozenset of hostname strings.
+    """
+    raw = os.getenv("SENTINEL_ALLOWED_HOSTS", "")
+    return frozenset(h.strip() for h in raw.split(",") if h.strip())
+
+
+def _extract_string_values(data: Any, depth: int = 0) -> list[str]:
+    """Recursively extract string leaf values from parsed JSON/dict.
+
+    Args:
+        data: Parsed request body (dict, list, or scalar).
+        depth: Current recursion depth (max 5 to avoid DoS).
+
+    Returns:
+        List of string values found.
+    """
+    if depth > 5:
+        return []
+    if isinstance(data, str):
+        return [data]
+    if isinstance(data, dict):
+        result = []
+        for v in data.values():
+            result.extend(_extract_string_values(v, depth + 1))
+        return result
+    if isinstance(data, list):
+        result = []
+        for v in data:
+            result.extend(_extract_string_values(v, depth + 1))
+        return result
+    return []
+
+
+class RuntimeSentinelMiddleware(BaseHTTPMiddleware):
+    """RASP middleware that inspects every request for injection patterns.
+
+    In learning mode: records events, never blocks.
+    In enforcing mode: returns HTTP 400 on detected attacks.
+    """
+
+    def __init__(
+        self,
+        app: Any,
+        registry: AttackPatternRegistry | None = None,
+    ) -> None:
+        """Initialise middleware with optional custom registry.
+
+        Args:
+            app: ASGI application.
+            registry: Optional custom registry; defaults to global singleton.
+        """
+        super().__init__(app)
+        self._detector = InjectionDetector()
+        self._registry = registry or get_registry()
+
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
+    ) -> Response:
+        """Inspect request and either block or pass through based on mode.
+
+        Args:
+            request: Incoming HTTP request.
+            call_next: Next middleware/handler in chain.
+
+        Returns:
+            HTTP 400 when attack detected in enforcing mode, else proxied response.
+        """
+        if os.getenv("SENTINEL_ENABLED", "true").lower() != "true":
+            return await call_next(request)
+
+        mode = _get_mode()
+        allowed_hosts = _get_allowed_hosts()
+        client_ip = request.client.host if request.client else "unknown"
+
+        attack = await self._inspect(request, allowed_hosts, client_ip)
+        if attack:
+            event = SecurityEvent(
+                attack_type=attack["type"],
+                request_path=request.url.path,
+                payload_snippet=attack["snippet"],
+                client_ip=client_ip,
+                blocked=(mode == "enforcing"),
+            )
+            self._registry.record(event)
+            if mode == "enforcing":
+                return JSONResponse(
+                    status_code=400,
+                    content={"detail": "Request blocked by security policy"},
+                )
+
+        return await call_next(request)
+
+    async def _inspect(
+        self,
+        request: Request,
+        allowed_hosts: frozenset[str],
+        client_ip: str,
+    ) -> dict | None:
+        """Return attack dict or None after scanning query params and body.
+
+        Args:
+            request: HTTP request to inspect.
+            allowed_hosts: Allowed outbound hosts for SSRF check.
+            client_ip: Client IP for logging.
+
+        Returns:
+            Dict with 'type' and 'snippet' if attack detected, else None.
+        """
+        # Check query parameters
+        for key, value in request.query_params.items():
+            if self._detector.check_sql(value):
+                return {"type": "sql_injection", "snippet": value[:120]}
+            if self._detector.check_command(value):
+                return {"type": "command_injection", "snippet": value[:120]}
+            if "url" in key.lower() and self._detector.check_ssrf(value, allowed_hosts):
+                return {"type": "ssrf", "snippet": value[:120]}
+
+        # Check JSON body (best-effort, swallow decode errors)
+        content_type = request.headers.get("content-type", "")
+        if "application/json" in content_type:
+            try:
+                import json as _json
+                body_bytes = await request.body()
+                body = _json.loads(body_bytes)
+                for val in _extract_string_values(body):
+                    if self._detector.check_sql(val):
+                        return {"type": "sql_injection", "snippet": val[:120]}
+                    if self._detector.check_command(val):
+                        return {"type": "command_injection", "snippet": val[:120]}
+            except Exception:
+                pass
+
+        return None

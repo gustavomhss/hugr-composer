@@ -1,0 +1,7 @@
+
+# Prometheus middleware + /metrics endpoint — added by add_prometheus_metrics tool
+if _prom_os.getenv("PROMETHEUS_ENABLED", "true").lower() != "false":
+    _prom_prefix = _prom_os.getenv("PROMETHEUS_PREFIX", "http")
+    _init_metrics(prefix=_prom_prefix)
+    app.add_middleware(PrometheusMiddleware)
+app.include_router(_metrics_router)

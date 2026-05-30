@@ -1,0 +1,12 @@
+"""Structured logging layer — public API."""
+
+from app.logging.context import bind_context, get_correlation_id
+from app.logging.redactor import Redactor
+from app.logging.setup import configure_structlog
+
+__all__ = [
+    "configure_structlog",
+    "Redactor",
+    "get_correlation_id",
+    "bind_context",
+]
