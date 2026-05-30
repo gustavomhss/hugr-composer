@@ -71,6 +71,7 @@ from .phase4_release import (
 from .r_admin_routes_auth import _r_admin_routes_require_auth
 from .r_no_dead_security_features import _r_no_dead_security_features
 from .r_no_module_state import _r_no_module_state_in_templates
+from .r_notes_match_behaviour import _r_notes_match_emitted_behaviour
 from .r_write_schemas_strict import _r_write_schemas_strict
 
 # ---------------------------------------------------------------------------
@@ -108,6 +109,12 @@ RULES: list[Rule] = [
         0,
         "no module-level mutable state in adapt/ templates",
         _r_no_module_state_in_templates,
+    ),
+    Rule(
+        "B0.13",
+        0,
+        "notes match emitted behaviour (claim → paired test or escape)",
+        _r_notes_match_emitted_behaviour,
     ),
     Rule(
         "B0.14",
