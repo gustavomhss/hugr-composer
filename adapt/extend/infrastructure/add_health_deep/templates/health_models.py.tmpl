@@ -1,0 +1,43 @@
+"""Pydantic models for health-check API responses."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from pydantic import BaseModel, Field
+
+
+class HealthStatus(str):
+    """Health check status values."""
+
+    HEALTHY = "healthy"
+    DEGRADED = "degraded"
+    UNHEALTHY = "unhealthy"
+
+
+class DependencyCheck(BaseModel):
+    """Result of a single dependency health check.
+
+    Attributes:
+        name: Dependency name (e.g. 'database', 'redis').
+        status: One of 'healthy', 'degraded', 'unhealthy'.
+        latency_ms: Round-trip time in milliseconds.
+        details: Optional key/value metadata (pool stats, memory, etc.).
+    """
+
+    name: str
+    status: str = HealthStatus.HEALTHY
+    latency_ms: int = 0
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+class HealthReport(BaseModel):
+    """Aggregated health report returned by /health endpoints.
+
+    Attributes:
+        status: Worst-case status across all checks.
+        checks: Ordered list of individual DependencyCheck results.
+    """
+
+    status: str = HealthStatus.HEALTHY
+    checks: list[DependencyCheck] = Field(default_factory=list)

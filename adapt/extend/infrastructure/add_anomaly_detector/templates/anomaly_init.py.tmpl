@@ -1,0 +1,11 @@
+"""Anomaly detection — public API."""
+
+from app.anomaly.detector import AnomalyDetector, get_detector, init_detector
+from app.anomaly.alerter import AlertDispatcher
+
+__all__ = [
+    "AnomalyDetector",
+    "get_detector",
+    "init_detector",
+    "AlertDispatcher",
+]

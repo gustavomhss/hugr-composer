@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "88d16ff",
-  "generated_at": "2026-05-30T04:40:44+00:00",
+  "kit_commit": "e27191c",
+  "generated_at": "2026-05-30T04:55:23+00:00",
   "verbs": [
     "add",
     "generate",
@@ -2660,10 +2660,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_anomaly_detector.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_anomaly_detector.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_anomaly_detector/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -2937,10 +2935,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_dependency_health_map.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_dependency_health_map.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_dependency_health_map/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3043,10 +3039,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_health_deep.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_health_deep.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_health_deep/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -12073,5 +12067,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "61634354c52b55e65e53646486c5af507dcaacbb0aa58e0c89bc43e6e46e016d"
+  "stable_hash": "cad75acea6bda996d6bd238720ff757d308494eb9511491e0497c57a06f1ec1d"
 }

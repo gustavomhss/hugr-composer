@@ -1,0 +1,45 @@
+"""Pydantic schemas for the anomaly detection API."""
+
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class MetricBaseline(BaseModel):
+    """Current baseline statistics for a single metric."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    mean: float = Field(..., description="Mean value over the window.")
+    std: float = Field(..., description="Standard deviation over the window.")
+    ema: float | None = Field(None, description="Exponential moving average.")
+    count: int = Field(..., description="Number of samples in window.")
+
+
+class AnomalyEvent(BaseModel):
+    """A single detected anomaly."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    metric: str = Field(..., description="Metric name (e.g. latency_ms).")
+    value: float = Field(..., description="Observed value.")
+    z_score: float = Field(..., description="Z-score of the observation.")
+    ts: float = Field(..., description="Unix timestamp of detection.")
+
+
+class AnomalyStatus(BaseModel):
+    """Full anomaly detection status response."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    sensitivity: float = Field(..., description="Z-score alert threshold.")
+    window_size: int = Field(..., description="Sliding window sample count.")
+    baselines: dict[str, MetricBaseline] = Field(
+        default_factory=dict,
+        description="Current baseline per metric.",
+    )
+    recent_anomalies: list[AnomalyEvent] = Field(
+        default_factory=list,
+        description="Up to 20 most recent anomaly events.",
+    )
+    total_anomalies: int = Field(default=0, description="Total anomalies detected.")
