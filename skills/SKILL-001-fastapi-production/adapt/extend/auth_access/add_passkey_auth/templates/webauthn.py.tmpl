@@ -1,0 +1,170 @@
+"""WebAuthn/FIDO2 registration and authentication manager."""
+
+from __future__ import annotations
+
+import logging
+import os
+
+logger = logging.getLogger(__name__)
+
+
+class WebAuthnManager:
+    """Manage WebAuthn registration and authentication ceremonies.
+
+    Uses lazy import of ``py_webauthn`` so the application boots
+    without the library installed.
+    """
+
+    def __init__(self) -> None:
+        """Initialize manager using environment settings."""
+        self._rp_id = os.environ.get("WEBAUTHN_RP_ID", "localhost")
+        self._rp_name = os.environ.get("WEBAUTHN_RP_NAME", "My App")
+        self._origin = os.environ.get("WEBAUTHN_ORIGIN", "http://localhost:8000")
+        self._challenge_ttl = int(
+            os.environ.get("WEBAUTHN_CHALLENGE_TTL_SECONDS", "300")
+        )
+
+    def generate_registration_options(self, user_id: str, username: str) -> dict:
+        """Generate WebAuthn registration options for the client.
+
+        Args:
+            user_id: String representation of the user's UUID.
+            username: Display name for the authenticator prompt.
+
+        Returns:
+            Dict with challenge, rp, user, and pubKeyCredParams fields.
+        """
+        from py_webauthn import generate_registration_options
+        from py_webauthn.helpers.structs import (
+            AuthenticatorSelectionCriteria,
+            ResidentKeyRequirement,
+            UserVerificationRequirement,
+        )
+
+        options = generate_registration_options(
+            rp_id=self._rp_id,
+            rp_name=self._rp_name,
+            user_id=user_id.encode(),
+            user_name=username,
+            authenticator_selection=AuthenticatorSelectionCriteria(
+                resident_key=ResidentKeyRequirement.REQUIRED,
+                user_verification=UserVerificationRequirement.REQUIRED,
+            ),
+        )
+        return _options_to_dict(options)
+
+    def verify_registration_response(
+        self, credential: dict, challenge: bytes
+    ) -> dict:
+        """Verify the client's registration response.
+
+        Args:
+            credential: JSON body from the client's navigator.credentials.create().
+            challenge: Expected challenge bytes from the session.
+
+        Returns:
+            Dict with credential_id, public_key, sign_count, aaguid.
+
+        Raises:
+            ValueError: If verification fails.
+        """
+        from py_webauthn import verify_registration_response
+        from py_webauthn.helpers.structs import RegistrationCredential
+
+        reg_cred = RegistrationCredential.parse_raw(
+            _to_json(credential)
+        )
+        verification = verify_registration_response(
+            credential=reg_cred,
+            expected_challenge=challenge,
+            expected_rp_id=self._rp_id,
+            expected_origin=self._origin,
+        )
+        return {
+            "credential_id": verification.credential_id,
+            "public_key": verification.credential_public_key,
+            "sign_count": verification.sign_count,
+            "aaguid": str(verification.aaguid) if verification.aaguid else None,
+        }
+
+    def generate_authentication_options(self) -> dict:
+        """Generate WebAuthn authentication options for the client.
+
+        Returns:
+            Dict with challenge and userVerification fields.
+        """
+        from py_webauthn import generate_authentication_options
+        from py_webauthn.helpers.structs import UserVerificationRequirement
+
+        options = generate_authentication_options(
+            rp_id=self._rp_id,
+            user_verification=UserVerificationRequirement.REQUIRED,
+        )
+        return _options_to_dict(options)
+
+    def verify_authentication_response(
+        self,
+        credential: dict,
+        challenge: bytes,
+        stored_public_key: bytes,
+        stored_sign_count: int,
+    ) -> int:
+        """Verify the client's authentication response.
+
+        Args:
+            credential: JSON body from navigator.credentials.get().
+            challenge: Expected challenge bytes from the session.
+            stored_public_key: COSE public key from the passkey row.
+            stored_sign_count: Current sign_count from the passkey row.
+
+        Returns:
+            New sign_count to persist (must be > stored_sign_count).
+
+        Raises:
+            ValueError: If verification fails or sign_count is invalid.
+        """
+        from py_webauthn import verify_authentication_response
+        from py_webauthn.helpers.structs import AuthenticationCredential
+
+        auth_cred = AuthenticationCredential.parse_raw(
+            _to_json(credential)
+        )
+        verification = verify_authentication_response(
+            credential=auth_cred,
+            expected_challenge=challenge,
+            expected_rp_id=self._rp_id,
+            expected_origin=self._origin,
+            credential_public_key=stored_public_key,
+            credential_current_sign_count=stored_sign_count,
+            require_user_verification=True,
+        )
+        return verification.new_sign_count
+
+
+def _options_to_dict(options: object) -> dict:
+    """Serialize py_webauthn options object to a plain dict.
+
+    Args:
+        options: py_webauthn options dataclass/object.
+
+    Returns:
+        JSON-serializable dict.
+    """
+    import json
+
+    return json.loads(
+        options.json() if hasattr(options, "json") else "{}"
+    )
+
+
+def _to_json(data: dict) -> str:
+    """Convert a dict to a JSON string for py_webauthn parsing.
+
+    Args:
+        data: Dictionary to serialize.
+
+    Returns:
+        JSON string representation.
+    """
+    import json
+    return json.dumps(data)

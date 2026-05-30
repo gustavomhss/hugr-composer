@@ -1,0 +1,119 @@
+"""DB helpers for social login routes (not a public API)."""
+
+from __future__ import annotations
+
+import logging
+import uuid
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.social_account import SocialAccount
+
+logger = logging.getLogger(__name__)
+
+
+async def find_social_account(
+    session: AsyncSession,
+    provider: str,
+    provider_user_id: str,
+) -> SocialAccount | None:
+    """Return an existing SocialAccount row or None.
+
+    Args:
+        session: Active async database session.
+        provider: Provider name string.
+        provider_user_id: Provider's stable user identifier.
+
+    Returns:
+        ``SocialAccount`` row if found, else ``None``.
+    """
+    stmt = select(SocialAccount).where(
+        SocialAccount.provider == provider,
+        SocialAccount.provider_user_id == provider_user_id,
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def create_social_account(
+    session: AsyncSession,
+    provider: str,
+    provider_user_id: str,
+    provider_email: str | None,
+    user_id: uuid.UUID,
+) -> SocialAccount:
+    """Insert a new SocialAccount row and flush.
+
+    Args:
+        session: Active async database session.
+        provider: Provider name string.
+        provider_user_id: Provider's stable user identifier.
+        provider_email: Email address from the provider (may be None).
+        user_id: UUID of the user to link to.
+
+    Returns:
+        The newly created ``SocialAccount`` instance.
+    """
+    account = SocialAccount(
+        provider=provider,
+        provider_user_id=provider_user_id,
+        provider_email=provider_email,
+        user_id=user_id,
+    )
+    session.add(account)
+    await session.flush()
+    return account
+
+
+async def find_user_by_email(
+    session: AsyncSession, email: str
+) -> uuid.UUID | None:
+    """Return the user UUID matching *email*, or None.
+
+    Args:
+        session: Active async database session.
+        email: Email address to look up.
+
+    Returns:
+        User UUID if found, else ``None``.
+    """
+    from sqlalchemy import text
+
+    result = await session.execute(
+        text("SELECT id FROM users WHERE email = :email LIMIT 1"),
+        {"email": email},
+    )
+    row = result.fetchone()
+    if row is None:
+        return None
+    return uuid.UUID(str(row[0]))
+
+
+async def create_user_for_social(
+    session: AsyncSession,
+    email: str | None,
+    name: str | None,
+) -> uuid.UUID:
+    """Create a minimal user row for a social-only account.
+
+    Args:
+        session: Active async database session.
+        email: Email from the provider (may be None for Apple).
+        name: Display name from the provider (may be None).
+
+    Returns:
+        UUID of the newly created user.
+    """
+    from sqlalchemy import text
+
+    new_id = uuid.uuid4()
+    await session.execute(
+        text(
+            "INSERT INTO users (id, email, full_name, hashed_password, is_active)"
+            " VALUES (:id, :email, :name, '', true)"
+        ),
+        {"id": str(new_id), "email": email or "", "name": name or ""},
+    )
+    await session.flush()
+    return new_id

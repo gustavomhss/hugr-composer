@@ -1,0 +1,182 @@
+"""Social login routes: redirect and callback."""
+
+from __future__ import annotations
+
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import RedirectResponse
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.session import get_session
+from app.schemas.social import SocialLoginCallbackResponse
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/auth", tags=["social-login"])
+
+_VALID_PROVIDERS = frozenset({"google", "github", "apple"})
+
+
+@router.get("/{provider}/login")
+async def social_login(
+    provider: str,
+    return_to: str = Query(default="/", description="Post-login redirect path"),
+) -> RedirectResponse:
+    """Redirect user to the provider's OAuth2 authorization page.
+
+    Args:
+        provider: One of google, github, apple.
+        return_to: Path to redirect to after login (must start with '/').
+
+    Returns:
+        RedirectResponse to the provider authorization URL.
+
+    Raises:
+        HTTPException 400: Unknown provider or unsafe return_to.
+    """
+    if provider not in _VALID_PROVIDERS:
+        raise HTTPException(status_code=400, detail=f"Unknown provider: {provider}")
+    if not return_to.startswith("/"):
+        raise HTTPException(status_code=400, detail="return_to must start with '/'")
+    base_url = _get_callback_base()
+    redirect_uri = f"{base_url}/auth/{provider}/callback"
+    from app.auth.social import SocialAuthProvider
+    auth_url, _state = SocialAuthProvider(provider).build_authorization_url(
+        redirect_uri
+    )
+    return RedirectResponse(url=auth_url)
+
+
+@router.get("/{provider}/callback", response_model=SocialLoginCallbackResponse)
+async def social_callback(
+    provider: str,
+    code: str = Query(..., description="Authorization code from provider"),
+    state: str = Query(default="", description="CSRF state token"),
+    session: AsyncSession = Depends(get_session),
+) -> SocialLoginCallbackResponse:
+    """Handle OAuth2 callback, link or create user, and return JWT.
+
+    Args:
+        provider: One of google, github, apple.
+        code: Authorization code from the provider callback.
+        state: CSRF state token.
+        session: SQLAlchemy async session dependency.
+
+    Returns:
+        'SocialLoginCallbackResponse' with JWT and user metadata.
+
+    Raises:
+        HTTPException 400: Unknown provider or unverified email.
+        HTTPException 500: Provider exchange failed.
+    """
+    if provider not in _VALID_PROVIDERS:
+        raise HTTPException(status_code=400, detail=f"Unknown provider: {provider}")
+    user_info = await _exchange_social_code(
+        provider, code, _get_callback_base()
+    )
+    if not user_info.email_verified and user_info.email:
+        raise HTTPException(
+            status_code=400,
+            detail={"detail": "Provider email is not verified"},
+        )
+    return await _resolve_social_user(session, provider, user_info)
+
+
+async def _exchange_social_code(
+    provider: str, code: str, base_url: str
+) -> object:
+    """Exchange authorization code for user info.
+
+    Args:
+        provider: Provider name string.
+        code: Authorization code from callback.
+        base_url: Base URL for building redirect_uri.
+
+    Returns:
+        SocialUserInfo from the provider.
+
+    Raises:
+        HTTPException 500: If the exchange fails.
+    """
+    from app.auth.social import SocialAuthProvider
+    redirect_uri = f"{base_url}/auth/{provider}/callback"
+    try:
+        return await SocialAuthProvider(provider).exchange_code(code, redirect_uri)
+    except Exception as exc:
+        logger.error("Social login exchange failed: %s", exc)
+        raise HTTPException(
+            status_code=500,
+            detail={"detail": "Provider token exchange failed"},
+        ) from exc
+
+
+async def _resolve_social_user(
+    session: AsyncSession,
+    provider: str,
+    user_info: object,
+) -> SocialLoginCallbackResponse:
+    """Find or create user and social account, return JWT.
+
+    Args:
+        session: Active async session.
+        provider: Provider name string.
+        user_info: SocialUserInfo from provider exchange.
+
+    Returns:
+        SocialLoginCallbackResponse with JWT and user metadata.
+    """
+    from app.api.routes._social_crud import (
+        find_social_account,
+        create_social_account,
+        find_user_by_email,
+        create_user_for_social,
+    )
+    existing = await find_social_account(
+        session, provider, user_info.provider_user_id  # type: ignore[union-attr]
+    )
+    if existing:
+        return SocialLoginCallbackResponse(
+            access_token=_mint_jwt(existing.user_id),
+            user_id=existing.user_id,
+            is_new_user=False,
+        )
+    user_id = None
+    is_new = False
+    if user_info.email:  # type: ignore[union-attr]
+        user_id = await find_user_by_email(session, user_info.email)  # type: ignore[union-attr]
+    if user_id is None:
+        user_id = await create_user_for_social(
+            session, user_info.email, user_info.name  # type: ignore[union-attr]
+        )
+        is_new = True
+    await create_social_account(
+        session, provider,
+        user_info.provider_user_id,  # type: ignore[union-attr]
+        user_info.email, user_id,  # type: ignore[union-attr]
+    )
+    return SocialLoginCallbackResponse(
+        access_token=_mint_jwt(user_id), user_id=user_id, is_new_user=is_new
+    )
+
+
+def _get_callback_base() -> str:
+    """Return the configured callback base URL.
+
+    Returns:
+        Base URL string from environment or settings.
+    """
+    import os
+    return os.environ.get("SOCIAL_LOGIN_CALLBACK_BASE_URL", "http://localhost:8000")
+
+
+def _mint_jwt(user_id: object) -> str:
+    """Create a JWT access token for the authenticated user.
+
+    Args:
+        user_id: UUID of the user to encode in the token.
+
+    Returns:
+        Signed JWT string.
+    """
+    from app.core.security import create_access_token
+    return create_access_token(subject=str(user_id))

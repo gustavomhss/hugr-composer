@@ -1,0 +1,240 @@
+"""Social authentication provider with lazy httpx import."""
+
+from __future__ import annotations
+
+import logging
+import os
+import secrets
+from dataclasses import dataclass
+from urllib.parse import urlencode
+
+from app.auth.social_config import get_provider_config
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class SocialUserInfo:
+    """Normalized user information from a social provider.
+
+    Attributes:
+        provider: Provider name (google, github, apple).
+        provider_user_id: Stable unique identifier from provider.
+        email: User email address (may be None for Apple).
+        email_verified: Whether the provider verified this email.
+        name: Display name from provider (may be None).
+    """
+
+    provider: str
+    provider_user_id: str
+    email: str | None
+    email_verified: bool
+    name: str | None
+
+
+class SocialAuthProvider:
+    """OAuth2 social login provider.
+
+    Handles authorization URL generation and token exchange for
+    Google, GitHub, and Apple. Uses lazy httpx import so the app
+    boots without the library installed.
+
+    Args:
+        provider: Provider name (google, github, apple).
+    """
+
+    def __init__(self, provider: str) -> None:
+        """Initialize provider.
+
+        Args:
+            provider: One of 'google', 'github', 'apple'.
+        """
+        self._config = get_provider_config(provider)
+        self._provider = provider
+
+    def build_authorization_url(self, redirect_uri: str) -> tuple[str, str]:
+        """Build the provider's OAuth2 authorization redirect URL.
+
+        Args:
+            redirect_uri: Callback URL registered with the provider.
+
+        Returns:
+            Tuple of (authorization_url, state_token).
+        """
+        state = secrets.token_urlsafe(32)
+        client_id = os.environ.get(
+            f"{self._provider.upper()}_CLIENT_ID", ""
+        )
+        params: dict[str, str] = {
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "scope": " ".join(self._config.scopes),
+            "state": state,
+            "response_type": "code",
+        }
+        if self._provider == "google":
+            params["access_type"] = "offline"
+            params["prompt"] = "consent"
+        if self._provider == "apple":
+            params["response_mode"] = "form_post"
+        url = f"{self._config.auth_url}?{urlencode(params)}"
+        return url, state
+
+    async def exchange_code(
+        self, code: str, redirect_uri: str
+    ) -> SocialUserInfo:
+        """Exchange an authorization code for user info.
+
+        Calls the provider's token endpoint then userinfo endpoint.
+        httpx is imported lazily inside this method.
+
+        Args:
+            code: Authorization code from the callback query string.
+            redirect_uri: Must match the value used in build_authorization_url.
+
+        Returns:
+            ``SocialUserInfo`` with normalized user data.
+
+        Raises:
+            ValueError: If the provider returns an error.
+        """
+        import httpx  # lazy import — not required at app boot
+
+        client_id = os.environ.get(f"{self._provider.upper()}_CLIENT_ID", "")
+        client_secret = os.environ.get(
+            f"{self._provider.upper()}_CLIENT_SECRET", ""
+        )
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            token_data = await _fetch_token(
+                client, self._config.token_url,
+                client_id, client_secret, code, redirect_uri,
+                self._provider,
+            )
+            access_token = token_data.get("access_token", "")
+            if self._provider == "apple":
+                return _parse_apple_id_token(token_data, self._provider)
+            return await _fetch_userinfo(
+                client, self._config.userinfo_url,
+                access_token, self._provider,
+            )
+
+
+async def _fetch_token(
+    client: object,
+    token_url: str,
+    client_id: str,
+    client_secret: str,
+    code: str,
+    redirect_uri: str,
+    provider: str,
+) -> dict:
+    """POST to the token endpoint and return the JSON response.
+
+    Args:
+        client: httpx.AsyncClient instance.
+        token_url: Provider's token endpoint URL.
+        client_id: OAuth2 client identifier.
+        client_secret: OAuth2 client secret.
+        code: Authorization code to exchange.
+        redirect_uri: Redirect URI matching the authorization request.
+        provider: Provider name for header selection.
+
+    Returns:
+        Parsed JSON response dict from the token endpoint.
+    """
+    headers: dict[str, str] = {}
+    if provider == "github":
+        headers["Accept"] = "application/json"
+    resp = await client.post(  # type: ignore[union-attr]
+        token_url,
+        data={
+            "grant_type": "authorization_code",
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "code": code,
+            "redirect_uri": redirect_uri,
+        },
+        headers=headers,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+async def _fetch_userinfo(
+    client: object,
+    userinfo_url: str,
+    access_token: str,
+    provider: str,
+) -> SocialUserInfo:
+    """Fetch normalized user info from the provider's userinfo endpoint.
+
+    Args:
+        client: httpx.AsyncClient instance.
+        userinfo_url: Provider's userinfo endpoint URL.
+        access_token: Access token from token exchange.
+        provider: Provider name for field mapping.
+
+    Returns:
+        ``SocialUserInfo`` with provider, id, email, verified, name.
+    """
+    resp = await client.get(  # type: ignore[union-attr]
+        userinfo_url,
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    if provider == "google":
+        return SocialUserInfo(
+            provider=provider,
+            provider_user_id=data["sub"],
+            email=data.get("email"),
+            email_verified=data.get("email_verified", False),
+            name=data.get("name"),
+        )
+    # GitHub
+    email = data.get("email") or ""
+    return SocialUserInfo(
+        provider=provider,
+        provider_user_id=str(data["id"]),
+        email=email or None,
+        email_verified=bool(email),
+        name=data.get("name"),
+    )
+
+
+def _parse_apple_id_token(token_data: dict, provider: str) -> SocialUserInfo:
+    """Extract user info from Apple's id_token JWT (no userinfo endpoint).
+
+    Apple returns user info inside the id_token JWT claims.  We decode
+    only the payload (no signature verification — server-side flow).
+
+    Args:
+        token_data: Full response dict from Apple's token endpoint.
+        provider: Always 'apple'.
+
+    Returns:
+        ``SocialUserInfo`` parsed from id_token claims.
+    """
+    import base64
+    import json
+
+    id_token = token_data.get("id_token", "")
+    parts = id_token.split(".")
+    if len(parts) < 2:
+        return SocialUserInfo(
+            provider=provider,
+            provider_user_id="",
+            email=None,
+            email_verified=False,
+            name=None,
+        )
+    padding = 4 - len(parts[1]) % 4
+    payload_bytes = base64.urlsafe_b64decode(parts[1] + "=" * padding)
+    claims = json.loads(payload_bytes)
+    return SocialUserInfo(
+        provider=provider,
+        provider_user_id=claims.get("sub", ""),
+        email=claims.get("email"),
+        email_verified=claims.get("email_verified", False),
+        name=None,
+    )

@@ -1,0 +1,115 @@
+"""API key generation and constant-time secret verification.
+
+Two strategies are supported:
+
+- ``argon2id``: GPU-resistant, ~50 ms.  Best for low-volume keys.
+- ``sha256_pepper``: < 1 ms.  Suitable for high-volume keys; requires a
+  server-side pepper stored in ``settings.API_KEY_PEPPER`` (never in DB).
+
+Token format: ``sk_{environment}_{key_id}_{secret}``
+Environment prefix: ``sk_live_`` or ``sk_test_`` — distinguishes environment.
+
+A ``DUMMY_HASH`` is verified when an unknown ``key_id`` is presented so
+the response time is indistinguishable from a wrong-secret attempt, closing
+the timing-based key-id enumeration oracle.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import hmac
+import os
+import secrets
+from typing import Literal
+
+try:
+    from argon2 import PasswordHasher
+    from argon2.exceptions import VerifyMismatchError
+    _ph = PasswordHasher(time_cost=2, memory_cost=19 * 1024, parallelism=1)
+    _ARGON2_AVAILABLE = True
+except ImportError:
+    _ph = None  # type: ignore[assignment]
+    VerifyMismatchError = Exception  # type: ignore[assignment,misc]
+    _ARGON2_AVAILABLE = False
+
+_PEPPER: bytes = os.environ.get("API_KEY_PEPPER", "dev-pepper-change-in-production").encode("utf-8")
+_KEY_BYTES = 32  # 256 bits of entropy
+_PREFIX_LEN = 8
+
+# Pre-computed dummy hash for constant-time fake check on unknown key_id.
+DUMMY_HASH: str = "sha256$$$$" + "0" * 64
+
+
+def generate_secret() -> str:
+    """Return a 256-bit URL-safe random secret string.
+
+    Returns:
+        URL-safe base64-encoded 32-byte random string.
+    """
+    return secrets.token_urlsafe(_KEY_BYTES)
+
+
+def generate_key_id() -> str:
+    """Return a 16-character lowercase alphanumeric key_id.
+
+    Returns:
+        16-character hex string suitable for the ``key_id`` column.
+    """
+    return secrets.token_hex(8)
+
+
+def hash_secret(
+    secret: str,
+    algorithm: Literal["argon2id", "sha256_pepper"] = "sha256_pepper",
+) -> str:
+    """Hash a raw API-key secret for safe storage.
+
+    Args:
+        secret: The raw plaintext secret to hash.
+        algorithm: Hashing algorithm.  ``argon2id`` is GPU-resistant;
+            ``sha256_pepper`` is fast with server-side pepper.
+
+    Returns:
+        Prefixed hash string (``argon2$$$$...`` or ``sha256$$$$...``).
+
+    Raises:
+        RuntimeError: If argon2id is requested but argon2-cffi is not installed.
+    """
+    if algorithm == "argon2id":
+        if not _ARGON2_AVAILABLE:
+            raise RuntimeError("argon2-cffi is required for argon2id hashing")
+        return "argon2$$$$" + _ph.hash(secret)
+    digest = hmac.new(_PEPPER, secret.encode("utf-8"), hashlib.sha256).hexdigest()
+    return "sha256$$$$" + digest
+
+
+def verify_secret(secret: str, stored_hash: str) -> bool:
+    """Constant-time verification of a raw secret against its stored hash.
+
+    Always performs the full verification work even on mismatch to prevent
+    timing oracles.  Falls back to DUMMY_HASH comparison when stored_hash is
+    empty so callers can safely verify unknown key_ids.
+
+    Args:
+        secret: The raw plaintext secret from the Authorization header.
+        stored_hash: The ``secret_hash`` column value from the database.
+
+    Returns:
+        ``True`` if the secret matches the stored hash, ``False`` otherwise.
+    """
+    if not stored_hash:
+        # Constant-time dummy path — still burns time
+        hmac.new(_PEPPER, secret.encode("utf-8"), hashlib.sha256).hexdigest()
+        return False
+    if stored_hash.startswith("argon2$$$$"):
+        if not _ARGON2_AVAILABLE:
+            return False
+        try:
+            _ph.verify(stored_hash[len("argon2$$$$"):], secret)
+            return True
+        except VerifyMismatchError:
+            return False
+    if stored_hash.startswith("sha256$$$$"):
+        expected = hmac.new(_PEPPER, secret.encode("utf-8"), hashlib.sha256).hexdigest()
+        return hmac.compare_digest(expected, stored_hash[len("sha256$$$$"):])
+    return False

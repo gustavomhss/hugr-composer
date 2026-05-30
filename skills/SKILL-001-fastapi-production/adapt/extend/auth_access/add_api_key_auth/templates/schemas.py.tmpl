@@ -1,0 +1,97 @@
+"""Pydantic schemas for API key endpoints.
+
+``APIKeyPublic`` intentionally omits ``secret_hash`` and any plaintext.
+``APIKeyCreatedResponse`` is the ONLY schema that carries the plaintext token
+and is only returned by the POST /api-keys/ endpoint.
+"""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class APIKeyCreate(BaseModel):
+    """Input schema for creating a new API key.
+
+    Attributes:
+        name: Short human-readable label.
+        description: Optional extended description.
+        scopes: List of resource:action scope strings.
+        expires_at: Optional hard expiry timestamp.
+        environment: Key environment prefix (live or test).
+    """
+
+    name: str = Field(..., min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=500)
+    scopes: list[str] = Field(default_factory=lambda: ["read"])
+    expires_at: datetime | None = None
+    environment: Literal["live", "test"] = "live"
+
+
+class APIKeyUpdate(BaseModel):
+    """Input schema for updating an existing API key.
+
+    Attributes:
+        name: New human-readable label.
+        description: New optional description.
+        scopes: Replacement list of scope strings.
+    """
+
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    description: str | None = None
+    scopes: list[str] | None = None
+
+
+class APIKeyPublic(BaseModel):
+    """Public read schema for API keys.
+
+    Deliberately excludes ``secret_hash`` and any plaintext secret.
+
+    Attributes:
+        id: UUID primary key.
+        key_id: Short public identifier.
+        name: Human-readable label.
+        description: Optional description.
+        scopes: Granted scope list.
+        status: active | revoked | expired.
+        user_id: Owner user UUID.
+        expires_at: Optional hard expiry.
+        last_used_at: Last successful authentication timestamp.
+        revoked_at: Revocation timestamp.
+        created_at: Creation timestamp.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    key_id: str
+    name: str
+    description: str | None = None
+    scopes: list[str]
+    status: str
+    user_id: uuid.UUID
+    expires_at: datetime | None = None
+    last_used_at: datetime | None = None
+    revoked_at: datetime | None = None
+    created_at: datetime
+
+
+class APIKeyCreatedResponse(BaseModel):
+    """Response schema returned ONCE at key creation.
+
+    Contains the plaintext token which is never returned again after this
+    single response.  Clients MUST store it immediately.
+
+    Attributes:
+        api_key: Public metadata for the new key.
+        plaintext_token: Full token string to use in Authorization header.
+        warning: Reminder that the token will not be shown again.
+    """
+
+    api_key: APIKeyPublic
+    plaintext_token: str
+    warning: str = "Store this token now. It will NOT be shown again."

@@ -1,0 +1,47 @@
+"""Add passkeys table for WebAuthn/FIDO2 authentication.
+
+Revision ID: 0075_add_passkey_auth
+Revises: ${down_rev}
+"""
+
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "0075_add_passkey_auth"
+down_revision = "${down_rev}"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    """Create passkeys table."""
+    op.create_table(
+        "passkeys",
+        sa.Column("id", sa.Uuid(), nullable=False),
+        sa.Column("credential_id", sa.LargeBinary(), nullable=False),
+        sa.Column("public_key", sa.LargeBinary(), nullable=False),
+        sa.Column("sign_count", sa.BigInteger(), nullable=False, server_default="0"),
+        sa.Column("aaguid", sa.String(64), nullable=True),
+        sa.Column("user_id", sa.Uuid(), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column("last_used_at", sa.DateTime(timezone=True), nullable=True),
+        sa.ForeignKeyConstraint(
+            ["user_id"], ["users.id"], ondelete="CASCADE"
+        ),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("credential_id", name="uq_passkey_credential_id"),
+    )
+    op.create_index("ix_passkeys_user_id", "passkeys", ["user_id"])
+
+
+def downgrade() -> None:
+    """Drop passkeys table."""
+    op.drop_index("ix_passkeys_user_id", table_name="passkeys")
+    op.drop_table("passkeys")

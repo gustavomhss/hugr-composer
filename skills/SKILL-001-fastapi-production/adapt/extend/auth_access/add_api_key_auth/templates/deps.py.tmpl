@@ -1,0 +1,181 @@
+"""FastAPI dependencies for API-key authentication.
+
+``get_current_api_key``: validates the ``Authorization: Bearer api_<key_id>_<secret>``
+header, performs constant-time verification, checks status and expiry, enforces
+per-key rate limiting, and updates audit fields.
+
+``require_scope``: higher-order dependency factory that checks the API key holds
+the required scope (or ``*:*``).
+
+Constant-time safety: when the ``key_id`` is not found in the database the
+dependency still runs a fake verification against ``DUMMY_HASH`` so the response
+time is indistinguishable from a wrong-secret attempt.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Annotated
+
+from fastapi import Depends, HTTPException, Request, status
+from fastapi.security import APIKeyHeader
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.deps import SessionDep
+from app.core.api_key_hasher import DUMMY_HASH, verify_secret
+from app.core.api_key_rate_limit import check_rate_limit
+from app.models.api_key import APIKey
+
+_api_key_header = APIKeyHeader(name="Authorization", auto_error=False)
+
+
+def _parse_header(header_value: str | None) -> tuple[str, str] | None:
+    """Parse ``Authorization: Bearer api_<key_id>_<secret>`` into components.
+
+    Args:
+        header_value: Raw value of the Authorization header.
+
+    Returns:
+        ``(key_id, secret)`` tuple, or ``None`` if the format is invalid.
+    """
+    if not header_value or not header_value.startswith("Bearer "):
+        return None
+    token = header_value[len("Bearer "):]
+    if not token.startswith("api_"):
+        return None
+    parts = token.split("_", 2)
+    if len(parts) != 3 or not parts[1] or not parts[2]:
+        return None
+    return parts[1], parts[2]
+
+
+async def _fetch_api_key(
+    session: AsyncSession,
+    key_id: str,
+    secret: str,
+) -> APIKey:
+    """Fetch and secret-verify an APIKey row; raises 401 on any mismatch.
+
+    Uses a constant-time dummy hash when the key_id is not found to prevent
+    enumeration timing oracles.
+
+    Args:
+        session: Async SQLAlchemy session.
+        key_id: Public key identifier portion.
+        secret: Raw secret portion to verify.
+
+    Returns:
+        APIKey ORM instance with matching key_id.
+
+    Raises:
+        HTTPException 401: key_id not found or secret mismatch.
+    """
+    stmt = select(APIKey).where(APIKey.key_id == key_id)
+    api_key = (await session.execute(stmt)).scalar_one_or_none()
+    if api_key is None:
+        verify_secret(secret, DUMMY_HASH)  # constant-time dummy
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+    if not verify_secret(secret, api_key.secret_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+    return api_key
+
+
+async def _check_api_key_validity(api_key: APIKey, session: AsyncSession) -> None:
+    """Enforce status, expiry, and rate-limit constraints on an API key.
+
+    Args:
+        api_key: Fetched and secret-verified APIKey ORM instance.
+        session: Async SQLAlchemy session (needed to flush expiry status update).
+
+    Raises:
+        HTTPException 401: Key is not active or has expired.
+        HTTPException 429: Per-key rate limit exceeded.
+    """
+    if api_key.status != "active":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API key is not active",
+        )
+    if api_key.expires_at and api_key.expires_at < datetime.now(timezone.utc):
+        api_key.status = "expired"
+        await session.flush()
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="API key expired")
+    if not await check_rate_limit(api_key.id):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Rate limit exceeded",
+            headers={"Retry-After": "60"},
+        )
+
+
+async def get_current_api_key(
+    request: Request,
+    session: SessionDep,
+    header_value: Annotated[str | None, Depends(_api_key_header)],
+) -> APIKey:
+    """Validate the API key from the Authorization header.
+
+    Delegates to ``_fetch_api_key`` (DB + secret check) and
+    ``_check_api_key_validity`` (status, expiry, rate-limit), then updates
+    audit fields before returning the authenticated key.
+
+    Args:
+        request: Incoming FastAPI request (for IP and user-agent capture).
+        session: Injected async database session.
+        header_value: Raw Authorization header value.
+
+    Returns:
+        The authenticated ``APIKey`` ORM instance.
+
+    Raises:
+        HTTPException 401: Missing, malformed, invalid, revoked, or expired key.
+        HTTPException 429: Per-key rate limit exceeded.
+    """
+    parsed = _parse_header(header_value)
+    if parsed is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing API key",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    key_id, secret = parsed
+    api_key = await _fetch_api_key(session, key_id, secret)
+    await _check_api_key_validity(api_key, session)
+    api_key.last_used_at = datetime.now(timezone.utc)
+    api_key.last_used_ip = request.client.host if request.client else None  # type: ignore[attr-defined]
+    api_key.last_used_ua = (request.headers.get("user-agent", "") or "")[:500]
+    await session.flush()
+    return api_key
+
+
+def require_scope(scope: str):
+    """Return a FastAPI dependency that enforces a required scope.
+
+    The dependency passes if the API key holds the exact scope, a wildcard
+    scope that covers it (e.g. ``orders:*`` covers ``orders:read``), or ``*:*``.
+
+    Args:
+        scope: Required ``resource:action`` scope string.
+
+    Returns:
+        A FastAPI-compatible async dependency callable.
+
+    Example::
+
+        @router.post("/orders/", dependencies=[Depends(require_scope("orders:write"))])
+        async def create_order(...): ...
+    """
+    from app.auth.api_key_scopes import evaluate_scope
+
+    async def _dep(
+        api_key: Annotated[APIKey, Depends(get_current_api_key)],
+    ) -> None:
+        result = evaluate_scope(api_key.scopes or [], scope)
+        if not result.allowed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"API key missing required scope: {scope}",
+            )
+
+    return _dep
