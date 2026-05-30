@@ -1,0 +1,24 @@
+# .github/workflows/api-spec-compliance.yml
+name: API Spec Compliance
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+jobs:
+  api-compliance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Check API spec compliance
+        run: |
+          PYTHONPATH=. python scripts/api_spec_compliance.py \
+            --fail-on-breaking --fail-on-undocumented

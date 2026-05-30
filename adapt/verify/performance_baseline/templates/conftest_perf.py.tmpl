@@ -1,0 +1,44 @@
+"""pytest-benchmark conftest for per-endpoint performance tests.
+
+Include in conftest.py::
+
+    from tests.conftest_perf import *  # noqa: F401,F403
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from adapt.verify.performance_baseline import compute_percentiles, check_regression
+
+
+@pytest.fixture
+def perf_client(app):
+    """Return a TestClient that measures response latencies."""
+    from fastapi.testclient import TestClient
+    with TestClient(app, raise_server_exceptions=False) as client:
+        yield client
+
+
+@pytest.fixture
+def assert_latency_p99():
+    """Return a helper that asserts p99 latency is below *max_ms*."""
+
+    def _check(client, path: str, method: str = "GET", max_ms: float = 100.0, n: int = 100) -> None:
+        import time
+        fn = getattr(client, method.lower(), client.get)
+        latencies = []
+        for _ in range(n):
+            t0 = time.perf_counter()
+            try:
+                fn(path)
+            except Exception:  # noqa: BLE001
+                pass
+            latencies.append((time.perf_counter() - t0) * 1000)
+        percs = compute_percentiles(latencies)
+        assert percs["p99"] <= max_ms, (
+            f"p99 latency for {method} {path} is {percs['p99']:.1f}ms "
+            f"(max allowed: {max_ms}ms)"
+        )
+
+    return _check

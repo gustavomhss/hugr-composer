@@ -1,0 +1,10 @@
+# .audit-ignore — reviewed dependency audit suppressions.
+# Format: <kind>: <identifier>
+# Kinds: cve, license, unused
+# Every entry MUST be followed by: reason, reviewer, expiry comment.
+#
+# Example:
+#   cve: GHSA-xxxx-xxxx-xxxx
+#   # reason: Only exploitable on Windows; we deploy Linux-only.
+#   # reviewer: @security-team
+#   # expiry: 2026-12-31

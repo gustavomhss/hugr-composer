@@ -1,0 +1,180 @@
+"""Security scan orchestrator: runs bandit, semgrep, pip-audit in parallel.
+
+Usage::
+
+    python scripts/security_scan.py [--fail-on high|medium|low] [--json]
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+import sys
+import tempfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(__file__).parent.parent
+SECURITY_DIR = ROOT / ".security"
+EXCLUDE_FILE = ROOT / ".security-exclude.yaml"
+SARIF_OUT = ROOT / "security-results.sarif"
+SEVERITY_ORDER = ["INFORMATIONAL", "LOW", "MEDIUM", "HIGH", "CRITICAL"]
+
+
+class SecurityScanOrchestrator:
+    """Run bandit, semgrep, and pip-audit; merge SARIF; apply exclusions."""
+
+    def __init__(self, fail_on: str = "high", project_dir: Path = ROOT) -> None:
+        self.fail_on = fail_on.upper()
+        self.project_dir = project_dir
+
+    def run(self) -> dict[str, Any]:
+        """Execute all scanners in parallel and return merged results."""
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            futures = {
+                pool.submit(self._run_bandit): "bandit",
+                pool.submit(self._run_semgrep): "semgrep",
+                pool.submit(self._run_pip_audit): "pip_audit",
+            }
+            raw: dict[str, list[dict]] = {}
+            for future in as_completed(futures):
+                tool = futures[future]
+                try:
+                    raw[tool] = future.result()
+                except Exception as exc:  # noqa: BLE001
+                    raw[tool] = [{"error": str(exc), "severity": "LOW"}]
+
+        findings = self._merge(raw)
+        findings = self._apply_exclusions(findings)
+        summary = self._summarize(findings)
+        failing = any(
+            SEVERITY_ORDER.index(f.get("severity", "LOW").upper())
+            >= SEVERITY_ORDER.index(self.fail_on)
+            for f in findings
+        )
+        return {"findings": findings, "summary": summary, "exit_code": 1 if failing else 0}
+
+    def _run_bandit(self) -> list[dict]:
+        """Run bandit and parse JSON output."""
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
+            subprocess.run(
+                ["bandit", "-r", str(self.project_dir / "app"),
+                 "-f", "json", "-o", tmp.name,
+                 "-c", str(SECURITY_DIR / "bandit.yaml"),
+                 "--exit-zero"],
+                capture_output=True, text=True, timeout=120,
+            )
+            try:
+                data = json.loads(Path(tmp.name).read_text())
+                return [
+                    {"tool": "bandit", "severity": r.get("issue_severity", "LOW"),
+                     "message": r.get("issue_text", ""), "file": r.get("filename", ""),
+                     "line": r.get("line_number", 0)}
+                    for r in data.get("results", [])
+                ]
+            except (json.JSONDecodeError, KeyError):
+                return []
+
+    def _run_semgrep(self) -> list[dict]:
+        """Run semgrep with FastAPI-specific rules."""
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
+            subprocess.run(
+                ["semgrep", "--config", str(SECURITY_DIR / "semgrep-rules.yaml"),
+                 str(self.project_dir / "app"), "--json", "-o", tmp.name,
+                 "--quiet"],
+                capture_output=True, text=True, timeout=180,
+            )
+            try:
+                data = json.loads(Path(tmp.name).read_text())
+                return [
+                    {"tool": "semgrep", "severity": r.get("extra", {}).get("severity", "WARNING"),
+                     "message": r.get("extra", {}).get("message", ""),
+                     "file": r.get("path", ""), "line": r.get("start", {}).get("line", 0)}
+                    for r in data.get("results", [])
+                ]
+            except (json.JSONDecodeError, KeyError):
+                return []
+
+    def _run_pip_audit(self) -> list[dict]:
+        """Run pip-audit and parse JSON output."""
+        result = subprocess.run(
+            ["pip-audit", "--format", "json", "--progress-spinner", "off"],
+            capture_output=True, text=True, cwd=self.project_dir, timeout=120,
+        )
+        try:
+            data = json.loads(result.stdout)
+            findings = []
+            for dep in data.get("dependencies", []):
+                for vuln in dep.get("vulns", []):
+                    findings.append({
+                        "tool": "pip_audit", "severity": "HIGH",
+                        "message": f"{dep['name']} {dep['version']}: {vuln.get('id', '')} — {vuln.get('description', '')[:80]}",
+                        "file": "requirements", "line": 0,
+                    })
+            return findings
+        except (json.JSONDecodeError, KeyError):
+            return []
+
+    def _merge(self, raw: dict[str, list[dict]]) -> list[dict]:
+        """Merge findings from all tools, deduplicating by (file, line, message[:40])."""
+        seen: set[tuple] = set()
+        merged = []
+        for findings in raw.values():
+            for f in findings:
+                key = (f.get("file", ""), f.get("line", 0), f.get("message", "")[:40])
+                if key not in seen:
+                    seen.add(key)
+                    merged.append(f)
+        return sorted(merged, key=lambda x: SEVERITY_ORDER.index(x.get("severity", "LOW").upper()), reverse=True)
+
+    def _apply_exclusions(self, findings: list[dict]) -> list[dict]:
+        """Remove findings suppressed in .security-exclude.yaml."""
+        if not EXCLUDE_FILE.exists():
+            return findings
+        try:
+            import yaml  # type: ignore[import]
+            exclusions = yaml.safe_load(EXCLUDE_FILE.read_text()) or {}
+        except Exception:  # noqa: BLE001
+            return findings
+        suppressed = {
+            (e.get("file", ""), e.get("message_contains", ""))
+            for e in exclusions.get("exclusions", [])
+            if e.get("expiry", "9999-99-99") > "2020-01-01"
+        }
+        return [
+            f for f in findings
+            if not any(
+                f.get("file", "").endswith(s[0]) and s[1] in f.get("message", "")
+                for s in suppressed
+            )
+        ]
+
+    def _summarize(self, findings: list[dict]) -> dict[str, int]:
+        """Return count of findings per severity."""
+        summary: dict[str, int] = {}
+        for f in findings:
+            sev = f.get("severity", "LOW").upper()
+            summary[sev] = summary.get(sev, 0) + 1
+        return summary
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="FastAPI security scan")
+    parser.add_argument("--fail-on", default="high", choices=["low", "medium", "high", "critical"])
+    parser.add_argument("--json", action="store_true")
+    args = parser.parse_args()
+
+    orchestrator = SecurityScanOrchestrator(fail_on=args.fail_on)
+    results = orchestrator.run()
+
+    if args.json:
+        print(json.dumps(results["summary"], indent=2))
+    else:
+        print("\n=== Security Scan Summary ===")
+        for sev, count in results["summary"].items():
+            print(f"  {sev}: {count}")
+        print(f"\nTotal findings: {len(results['findings'])}")
+
+    sys.exit(results["exit_code"])

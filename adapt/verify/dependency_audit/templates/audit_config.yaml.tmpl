@@ -1,0 +1,18 @@
+# .audit.yaml — dependency audit configuration
+version: "1.0"
+fail_on_cve: true
+fail_on_unused: false
+check_licenses: true
+allowed_licenses:
+  - MIT
+  - BSD
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - Apache-2.0
+  - Apache Software License
+  - ISC
+  - MPL-2.0
+  - PSF
+  - Python Software Foundation License
+cache_validity_hours: 24
+network_retries: 3

@@ -1,0 +1,11 @@
+
+# N+1 query detection middleware (active when NPLUSONE_ENABLED=1)
+import os as _os
+if _os.getenv("NPLUSONE_ENABLED") == "1":
+    from app.api.middleware.query_counter import QueryCounterMiddleware
+    from app.core.query_listener import install_listener
+    app.add_middleware(
+        QueryCounterMiddleware,
+        threshold=int(_os.getenv("NPLUSONE_THRESHOLD", "10")),
+        mode=_os.getenv("NPLUSONE_MODE", "warn"),
+    )

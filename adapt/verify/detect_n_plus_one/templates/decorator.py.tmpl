@@ -1,0 +1,49 @@
+"""@max_queries decorator for per-route N+1 query budgets.
+
+Use on FastAPI route functions to declare an explicit query budget that
+overrides the global middleware threshold for that route only.
+
+Example::
+
+    from app.core.nplusone import max_queries
+
+    @router.get("/items/")
+    @max_queries(5)
+    async def list_items(session: SessionDep) -> list[ItemPublic]:
+        ...
+"""
+
+from __future__ import annotations
+
+import functools
+import logging
+from typing import Any, Callable, TypeVar
+
+from app.core.query_listener import query_count, query_stack
+
+logger = logging.getLogger(__name__)
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def max_queries(limit: int, mode: str = "warn") -> Callable[[F], F]:
+    """Decorator that enforces a per-endpoint SQL query budget."""
+
+    def decorator(func: F) -> F:
+        @functools.wraps(func)
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
+            result = await func(*args, **kwargs)
+            count = query_count.get()
+            if count > limit:
+                queries = query_stack.get()
+                msg = (
+                    f"@max_queries({limit}) exceeded on {func.__name__}: "
+                    f"{count} queries. Queries: {queries[:5]}"
+                )
+                if mode == "fail_fast":
+                    raise AssertionError(msg)
+                logger.warning(msg)
+            return result
+
+        return wrapper  # type: ignore[return-value]
+
+    return decorator

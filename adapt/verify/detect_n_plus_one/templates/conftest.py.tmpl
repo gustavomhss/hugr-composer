@@ -1,0 +1,33 @@
+"""pytest plugin: autouse fixture that enforces N+1 query budgets in tests.
+
+Include in conftest.py::
+
+    from tests.conftest_nplusone import *  # noqa: F401,F403
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from app.core.query_listener import query_count, reset_counters
+
+
+@pytest.fixture(autouse=True)
+def reset_query_counter() -> None:
+    """Reset query counter before every test to prevent leakage."""
+    reset_counters()
+    yield
+    reset_counters()
+
+
+@pytest.fixture
+def assert_query_count():
+    """Return a helper that asserts the current query count equals *expected*."""
+
+    def _check(expected: int) -> None:
+        actual = query_count.get()
+        assert actual == expected, (
+            f"Expected {expected} queries, got {actual}"
+        )
+
+    return _check

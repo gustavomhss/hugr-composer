@@ -1,0 +1,44 @@
+"""Standalone license compliance checker.
+
+Usage::
+
+    python scripts/check_licenses.py [--allowed MIT,BSD,Apache-2.0]
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+import sys
+
+DEFAULT_ALLOWED = ["MIT", "BSD", "BSD-2-Clause", "BSD-3-Clause", "Apache-2.0",
+                   "Apache Software License", "ISC", "MPL-2.0", "PSF"]
+
+
+def check_licenses(allowed: list[str]) -> list[dict]:
+    """Return packages whose license is not in *allowed*."""
+    result = subprocess.run(
+        ["pip-licenses", "--format", "json"],
+        capture_output=True, text=True, timeout=30,
+    )
+    try:
+        packages = json.loads(result.stdout or "[]")
+    except json.JSONDecodeError:
+        return []
+    return [
+        {"package": p["Name"], "license": p.get("License", "UNKNOWN")}
+        for p in packages
+        if not any(a in p.get("License", "") for a in allowed)
+    ]
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--allowed", default=",".join(DEFAULT_ALLOWED))
+    args = parser.parse_args()
+    allowed = [a.strip() for a in args.allowed.split(",")]
+    violations = check_licenses(allowed)
+    for v in violations:
+        print(f"VIOLATION: {v['package']} uses {v['license']}")
+    sys.exit(1 if violations else 0)

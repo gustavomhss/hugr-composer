@@ -1,0 +1,13 @@
+# .nplusone-budgets.yaml — per-route N+1 query budgets
+# Every exception must have: route, budget, reason, reviewer, expiry.
+# Routes not listed here use the global threshold from settings.
+#
+# Example:
+#   - route: /api/v1/reports/summary
+#     budget: 50
+#     reason: "Aggregation report intentionally queries all org rows"
+#     reviewer: "@eng-team"
+#     expiry: "2026-12-31"
+version: "1.0"
+global_threshold: 10
+exceptions: []

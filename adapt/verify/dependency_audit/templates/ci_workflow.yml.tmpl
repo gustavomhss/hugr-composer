@@ -1,0 +1,26 @@
+# .github/workflows/dependency-audit.yml
+name: Dependency Audit
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+  schedule:
+    - cron: "0 4 * * *"  # Daily CVE check
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install audit tools
+        run: pip install pip-audit deptry pip-licenses
+      - name: Install project dependencies
+        run: pip install -r requirements.txt
+      - name: Run dependency audit
+        run: python scripts/run_audit.py --fail-on-cve --check-licenses

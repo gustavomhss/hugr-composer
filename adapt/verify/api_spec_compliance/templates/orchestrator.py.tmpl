@@ -1,0 +1,102 @@
+"""API spec compliance orchestrator — diff + documentation gate.
+
+Usage::
+
+    python scripts/api_spec_compliance.py [--fail-on-breaking] [--update-snapshot]
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(ROOT))
+from adapt.verify.api_spec_compliance import (  # noqa: E402
+    diff_openapi, suggest_semver, check_documentation, _try_extract_schema
+)
+
+
+class APISpecComplianceChecker:
+    """Run OpenAPI diff and documentation gate."""
+
+    def __init__(
+        self,
+        project_dir: Path = ROOT,
+        spec_file: str = "openapi.json",
+        fail_on_breaking: bool = True,
+        fail_on_undocumented: bool = True,
+        allow_additions: bool = True,
+    ) -> None:
+        self.project_dir = project_dir
+        self.snapshot_path = project_dir / spec_file
+        self.fail_on_breaking = fail_on_breaking
+        self.fail_on_undocumented = fail_on_undocumented
+        self.allow_additions = allow_additions
+
+    def run(self) -> dict:
+        """Run diff and doc gate; return results with exit_code."""
+        live = _try_extract_schema(self.project_dir)
+        if not live:
+            return {"error": "Could not extract live OpenAPI schema", "exit_code": 1}
+
+        doc_violations = check_documentation(live)
+        changes, semver = [], "patch"
+
+        if self.snapshot_path.exists():
+            try:
+                baseline = json.loads(self.snapshot_path.read_text())
+                changes = diff_openapi(baseline, live)
+                if not self.allow_additions:
+                    changes = [c for c in changes if c["type"] != "NON_BREAKING"]
+                semver = suggest_semver(changes)
+            except (json.JSONDecodeError, KeyError):
+                pass
+
+        breaking = [c for c in changes if c["type"] == "BREAKING"]
+        exit_code = 0
+        if self.fail_on_breaking and breaking:
+            exit_code = 1
+        if self.fail_on_undocumented and doc_violations:
+            exit_code = 1
+
+        return {
+            "changes": changes,
+            "breaking_count": len(breaking),
+            "doc_violations": doc_violations,
+            "semver_suggestion": semver,
+            "exit_code": exit_code,
+        }
+
+    def update_snapshot(self) -> bool:
+        """Refresh openapi.json with the current live schema."""
+        live = _try_extract_schema(self.project_dir)
+        if not live:
+            return False
+        self.snapshot_path.write_text(json.dumps(live, indent=2, sort_keys=True))
+        return True
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="API spec compliance")
+    parser.add_argument("--fail-on-breaking", action="store_true", default=True)
+    parser.add_argument("--fail-on-undocumented", action="store_true", default=True)
+    parser.add_argument("--update-snapshot", action="store_true")
+    args = parser.parse_args()
+
+    checker = APISpecComplianceChecker(
+        fail_on_breaking=args.fail_on_breaking,
+        fail_on_undocumented=args.fail_on_undocumented,
+    )
+    if args.update_snapshot:
+        ok = checker.update_snapshot()
+        print("Snapshot updated." if ok else "Failed to extract schema.")
+        sys.exit(0 if ok else 1)
+
+    results = checker.run()
+    print(f"Breaking changes: {results.get('breaking_count', 0)}")
+    print(f"Doc violations: {len(results.get('doc_violations', []))}")
+    print(f"Semver suggestion: {results.get('semver_suggestion', 'patch')}")
+    sys.exit(results.get("exit_code", 0))

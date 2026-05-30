@@ -1,0 +1,73 @@
+"""ASGI middleware that enforces per-request SQL query budgets.
+
+Wrap the FastAPI app with ``QueryCounterMiddleware`` (activated only when
+``NPLUSONE_ENABLED=1``) to count every SQL query emitted during a single
+HTTP request and fail/warn when the count exceeds *threshold*.
+"""
+
+from __future__ import annotations
+
+import logging
+import os
+from typing import Awaitable, Callable
+
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
+
+from app.core.query_listener import query_count, query_stack, reset_counters
+
+logger = logging.getLogger(__name__)
+
+
+class NPlusOneDetected(Exception):
+    """Raised in fail_fast mode when query budget is exceeded."""
+
+    def __init__(self, route: str, count: int, threshold: int, queries: list[str]) -> None:
+        self.route = route
+        self.count = count
+        self.threshold = threshold
+        self.queries = queries
+        super().__init__(
+            f"N+1 detected on {route}: {count} queries (threshold={threshold})"
+        )
+
+
+class QueryCounterMiddleware(BaseHTTPMiddleware):
+    """Count SQL queries per request; fail or warn on budget breach."""
+
+    def __init__(
+        self,
+        app,  # type: ignore[override]
+        threshold: int = 10,
+        mode: str = "warn",
+        excluded_routes: list[str] | None = None,
+    ) -> None:
+        super().__init__(app)
+        self.threshold = threshold
+        self.mode = mode
+        self.excluded_routes = excluded_routes or ["/health", "/metrics", "/docs", "/openapi.json"]
+
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        """Wrap each request: reset counters, call next, check budget."""
+        path = request.url.path
+        if any(path.startswith(exc) for exc in self.excluded_routes):
+            return await call_next(request)
+
+        reset_counters()
+        response = await call_next(request)
+        count = query_count.get()
+
+        if count > self.threshold:
+            queries = query_stack.get()
+            if self.mode == "fail_fast":
+                raise NPlusOneDetected(path, count, self.threshold, queries)
+            logger.warning(
+                "N+1 detected: %s issued %d queries (threshold=%d). "
+                "Top queries: %s",
+                path, count, self.threshold, queries[:3],
+            )
+        response.headers["X-Query-Count"] = str(count)
+        return response

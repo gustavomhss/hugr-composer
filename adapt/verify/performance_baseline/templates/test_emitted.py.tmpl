@@ -1,0 +1,61 @@
+"""Emitted test for performance_baseline — asserts the audit infrastructure runs.
+
+Verify-tool semantic per WP-14 §5:
+* Positive: scripts/perf_baseline.py and conftest_perf.py exist and parse.
+* Negative: check_regression flags a known-bad fixture (p99 5x slower)
+  and passes a clean fixture. This test asserts the check REPORTS, not
+  that CI blocks — the emitted workflow has no required-status gate and
+  the baseline is initially empty, so any "regression blocks PRs" claim
+  would be overclaim until a real baseline is committed and tolerance is
+  manually calibrated.
+"""
+
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+ROOT = Path(__file__).parent.parent
+SCRIPT = ROOT / "scripts" / "perf_baseline.py"
+CONFTEST = ROOT / "tests" / "conftest_perf.py"
+
+
+def test_orchestrator_exists_and_parses() -> None:
+    """Positive: scripts/perf_baseline.py is importable."""
+    assert SCRIPT.exists()
+    src = SCRIPT.read_text()
+    ast.parse(src)
+    assert "PerformanceBaselineRunner" in src
+
+
+def test_conftest_exists_and_parses() -> None:
+    """Positive: tests/conftest_perf.py is importable."""
+    assert CONFTEST.exists()
+    ast.parse(CONFTEST.read_text())
+
+
+def test_baseline_file_present() -> None:
+    """Positive: .perf.baseline.json is committed."""
+    assert (ROOT / ".perf.baseline.json").exists()
+
+
+def test_regression_check_flags_slow() -> None:
+    """Negative: check_regression returns the regressed metric."""
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from adapt.verify.performance_baseline import check_regression
+
+    current = {"p50": 10.0, "p95": 50.0, "p99": 500.0}
+    baseline = {"p50": 10.0, "p95": 50.0, "p99": 100.0}
+    regressions = check_regression(current, baseline, tolerance_pct=10.0)
+    assert "p99" in regressions, "p99 regression must be flagged"
+
+
+def test_regression_check_passes_clean() -> None:
+    """Negative-clean: identical values produce no regression."""
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from adapt.verify.performance_baseline import check_regression
+
+    current = {"p50": 10.0, "p95": 50.0, "p99": 100.0}
+    assert check_regression(current, current, tolerance_pct=10.0) == []

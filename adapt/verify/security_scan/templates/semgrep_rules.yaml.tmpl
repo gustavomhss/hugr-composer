@@ -1,0 +1,39 @@
+# FastAPI-specific semgrep security rules
+rules:
+  - id: fastapi-cors-wildcard
+    patterns:
+      - pattern: |
+          CORSMiddleware(..., allow_origins=["*"], ...)
+    message: "CORS wildcard allows any origin — restrict to known domains."
+    severity: WARNING
+    languages: [python]
+
+  - id: fastapi-unparameterized-sql
+    patterns:
+      - pattern: |
+          session.execute(f"...")
+      - pattern: |
+          session.execute("..." + ...)
+    message: "Potential SQL injection via f-string or concatenation in execute()."
+    severity: ERROR
+    languages: [python]
+
+  - id: fastapi-assert-auth
+    pattern: assert $$USER.is_superuser, ...
+    message: "Do not use assert for access control — it is disabled with -O."
+    severity: ERROR
+    languages: [python]
+
+  - id: fastapi-jwt-none-algorithm
+    pattern: jwt.encode(..., algorithm="none")
+    message: "JWT signed with 'none' algorithm is unsigned and trivially forgeable."
+    severity: ERROR
+    languages: [python]
+
+  - id: fastapi-hardcoded-secret
+    patterns:
+      - pattern: SECRET_KEY = "..."
+      - pattern: secret_key = "..."
+    message: "Hardcoded secret key detected — use environment variable."
+    severity: WARNING
+    languages: [python]
