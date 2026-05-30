@@ -1,6 +1,10 @@
 from __future__ import annotations
 import asyncio
+import logging
+import signal
 import time
+
+logger = logging.getLogger(__name__)
 
 
 class GracefulShutdown:
