@@ -182,13 +182,18 @@ def add_compliance_engine(inp: ToolInput) -> ToolResult:
             "DELETE /compliance/erasure/{user_id} (cascade + certificate),",
             "GET /compliance/evidence/soc2 (SOC2 exporter),",
             "GET /compliance/article30 (GDPR Article 30 auto-gen).",
-            "⚠ Field encryption IS NOT enforced when COMPLIANCE_ENCRYPTION_KEY is empty — "
-            "you must set a Fernet key for encrypt/decrypt helpers to actually encrypt.",
-            "⚠ The retention worker is NOT auto-scheduled — you must wire it into your "
-            "lifespan or external scheduler for retention to be enforced.",
-            "⚠ Policies emitted here are ADVISORY: the engine logs/audits, it does NOT "
-            "act as a blocking middleware. Erasure and retention only run when the "
-            "exposed endpoints or the worker are called.",
+        ],
+        warnings=[
+            "COMPLIANCE_ENCRYPTION_KEY env var must be set — encrypt_field "
+            "raises RuntimeError otherwise (fail-closed by design). Generate "
+            "with `python -c \"from cryptography.fernet import Fernet; "
+            "print(Fernet.generate_key().decode())\"`.",
+            "The retention worker is NOT auto-scheduled — you must wire it "
+            "into your lifespan or external scheduler for retention to be "
+            "enforced.",
+            "Policies emitted here are ADVISORY: the engine logs/audits, it "
+            "does NOT act as a blocking middleware. Erasure and retention "
+            "only run when the exposed endpoints or the worker are called.",
         ],
         next_steps=[
             "pip install -r requirements.txt  # installs cryptography",

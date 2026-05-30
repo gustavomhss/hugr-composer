@@ -93,18 +93,31 @@ class ComplianceEngine:
 def encrypt_field(plaintext: str) -> str:
     """Encrypt *plaintext* with Fernet (lazy import).
 
-    Reads ``settings.COMPLIANCE_ENCRYPTION_KEY``; returns plaintext
-    unchanged if the key is empty (non-production fallback).
+    Reads ``settings.COMPLIANCE_ENCRYPTION_KEY``. **Fails CLOSED**: raises
+    ``RuntimeError`` when the key is empty/unset rather than returning
+    plaintext silently (which would be a compliance overclaim — callers
+    believe data is encrypted at rest but it is not).
 
     Args:
         plaintext: The string value to encrypt.
 
     Returns:
-        Fernet token (URL-safe base64) or original plaintext when key absent.
+        Fernet token (URL-safe base64) string.
+
+    Raises:
+        RuntimeError: When ``COMPLIANCE_ENCRYPTION_KEY`` is unset/empty.
+            Set a Fernet key (``Fernet.generate_key().decode()``) in the
+            environment to enable encryption.
     """
     key = settings.COMPLIANCE_ENCRYPTION_KEY
     if not key:
-        return plaintext
+        raise RuntimeError(
+            "COMPLIANCE_ENCRYPTION_KEY not configured — refusing to store "
+            "plaintext PII. Generate a key with "
+            "`python -c \"from cryptography.fernet import Fernet; "
+            "print(Fernet.generate_key().decode())\"` and set it in the "
+            "environment before calling encrypt_field()."
+        )
     from cryptography.fernet import Fernet  # lazy import
     return Fernet(key.encode()).encrypt(plaintext.encode()).decode()
 
