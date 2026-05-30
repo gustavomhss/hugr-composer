@@ -1,9 +1,12 @@
-"""Generator for baseline Alembic migration (0001_initial_schema.py).
+"""Generator for baseline Alembic migration (0002_baseline_schema.py).
 
 Produces a ready-to-run baseline migration that creates all tables for
 the current model set.  Without this, a freshly generated project has
 no way to bootstrap its schema (the old `Base.metadata.create_all` path
 was removed from initial_data.py because Alembic is the source of truth).
+
+Chains off ``0001_initial`` (the no-op chain root emitted by
+``generators.database.alembic.generate_alembic``).  See R6-O4-A1.
 """
 
 from __future__ import annotations
@@ -169,7 +172,7 @@ def generate_baseline_migration(
     owner_models: dict[str, str] | None = None,
     with_auth: bool = True,
 ) -> dict:
-    """Generate alembic/versions/0001_initial_schema.py.
+    """Generate alembic/versions/0002_baseline_schema.py.
 
     Args:
         output_dir: Project root (the directory that contains ``alembic/``).
@@ -262,11 +265,16 @@ def generate_baseline_migration(
     downgrade_body = "\n".join(downgrade_lines) if downgrade_lines else "    pass"
 
     content = textwrap.dedent('''\
-        """initial schema
+        """baseline schema
 
-        Revision ID: 0001_initial
-        Revises:
+        Revision ID: 0002_baseline_schema
+        Revises: 0001_initial
         Create Date: auto-generated baseline
+
+        Chains off ``0001_initial`` (the no-op chain root emitted by
+        ``generators.database.alembic.generate_alembic``).  Closes R6-O4-A1 —
+        every extend tool falls back to ``down_revision = "0001_initial"``,
+        which must always exist on disk.
         """
 
         from __future__ import annotations
@@ -278,8 +286,8 @@ def generate_baseline_migration(
 
 
         # revision identifiers, used by Alembic.
-        revision: str = "0001_initial"
-        down_revision: Union[str, None] = None
+        revision: str = "0002_baseline_schema"
+        down_revision: Union[str, None] = "0001_initial"
         branch_labels: Union[str, Sequence[str], None] = None
         depends_on: Union[str, Sequence[str], None] = None
 
@@ -292,13 +300,14 @@ def generate_baseline_migration(
         {downgrade_body}
     ''').format(upgrade_body=upgrade_body, downgrade_body=downgrade_body)
 
-    file_path = versions_dir / "0001_initial_schema.py"
+    file_path = versions_dir / "0002_baseline_schema.py"
     file_path.write_text(content)
 
     return {
         "files_created": [str(file_path)],
         "notes": [
-            f"Baseline migration 0001_initial created for {len(tables_in_order)} table(s).",
+            f"Baseline migration 0002_baseline_schema created for {len(tables_in_order)} table(s).",
+            "Chains off 0001_initial (no-op chain root from generate_alembic).",
             "FKs auto-detected from *_id field names; users.email has UNIQUE constraint.",
             "Tables created in FK-safe order (users first, then independents, then dependents).",
         ],

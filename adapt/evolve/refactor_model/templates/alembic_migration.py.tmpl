@@ -8,7 +8,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "$rev_id"
-down_revision = None  # auto-detected by alembic from revision chain
+down_revision = "$down_rev"  # chained to current HEAD via find_migration_head (closes R6-O4-A2)
 branch_labels = None
 depends_on = None
 

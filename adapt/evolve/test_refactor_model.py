@@ -47,8 +47,20 @@ def _make_project(tmp: Path, with_model: bool = True) -> Path:
         model_file.write_text(
             "from app.models.base import Base\n\nclass User(Base):\n    email: str\n"
         )
-    (project / "alembic" / "versions").mkdir(parents=True, exist_ok=True)
-    (project / "alembic" / "versions" / ".gitkeep").write_text("")
+    versions = project / "alembic" / "versions"
+    versions.mkdir(parents=True, exist_ok=True)
+    # Emit the no-op chain root that the real scaffold (generate_alembic)
+    # always writes — required so find_migration_head doesn't raise
+    # MigrationChainError (R6-O4-A1).
+    (versions / "0001_initial.py").write_text(
+        'revision = "0001_initial"\n'
+        'down_revision = None\n'
+        'branch_labels = None\n'
+        'depends_on = None\n'
+        '\n'
+        'def upgrade() -> None: pass\n'
+        'def downgrade() -> None: pass\n'
+    )
     return project
 
 

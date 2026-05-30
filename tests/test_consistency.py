@@ -802,12 +802,14 @@ def test_4_route_consistency(project_dir: Path) -> tuple[bool, str]:
 
 # Matches both:  revision = "foo"  and  revision: str = "foo"
 _REVISION_RE = re.compile(
-    r'^revision\s*(?::\s*\S+\s*)?\s*=\s*["\']([^"\']+)["\']',
+    r'^revision\s*(?::\s*[^=]+?)?\s*=\s*["\']([^"\']+)["\']',
     re.MULTILINE,
 )
 # Matches: down_revision = "foo" | down_revision = None | down_revision: ... = None
+# ``[^=]+?`` tolerates multi-token annotations like ``Union[str, None]``
+# (the prior ``\S+`` stopped at the first space inside the annotation).
 _DOWN_REVISION_RE = re.compile(
-    r'^down_revision\s*(?::\s*\S+\s*)?\s*=\s*(?:["\']([^"\']*)["\']|(None))',
+    r'^down_revision\s*(?::\s*[^=]+?)?\s*=\s*(?:["\']([^"\']*)["\']|(None))',
     re.MULTILINE,
 )
 
@@ -914,9 +916,18 @@ def test_5_migration_chain(project_dir: Path) -> tuple[bool, str]:
             failures.append(f"{mf.name}: missing downgrade() function")
 
         if info["has_downgrade"] and info["downgrade_is_pass_only"]:
-            failures.append(
-                f"{mf.name}: downgrade() body is pass-only — must contain actual undo logic"
+            # The no-op chain root (0001_initial, down_revision=None) is
+            # intentionally empty — there is nothing to undo at the root.
+            # Other migrations must still implement a real downgrade.
+            # See R6-O4-A1.
+            is_chain_root = (
+                info.get("down_revision") is None
+                and info.get("revision") == "0001_initial"
             )
+            if not is_chain_root:
+                failures.append(
+                    f"{mf.name}: downgrade() body is pass-only — must contain actual undo logic"
+                )
 
     # Check for fork: two migrations pointing to same down_revision
     down_rev_to_files: dict[str | None, list[str]] = defaultdict(list)
