@@ -46,7 +46,7 @@ HuGR_Arsenal/
     └── SKILL-001-fastapi-production/
         ├── SKILL.md              # skill manifest (Anthropic Agent Skills format)
         ├── INVENTORY.md          # machine-verified on-disk counts
-        ├── adapt/                # 126 tools (99 extend + 27 other)
+        ├── adapt/                # 131 tools (104 extend + 27 other)
         ├── generators/           # 56 macro scaffold helpers
         ├── core/venous/          # 124 primitives + 17 FastAPI adapters (+2 provider) + 175 staged
         ├── mcp_tools/            # MCP server + tier-1 meta + tree dispatchers

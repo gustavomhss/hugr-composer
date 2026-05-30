@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "d2de703",
-  "generated_at": "2026-05-30T14:55:15+00:00",
+  "kit_commit": "1f51f77",
+  "generated_at": "2026-05-30T15:06:36+00:00",
   "verbs": [
     "add",
     "generate",
@@ -2432,10 +2432,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/realtime/add_sse.py",
-      "test_paths": [
-        "adapt/extend/realtime/test_add_sse.py"
-      ],
+      "module_path": "adapt/extend/realtime/add_sse/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -2456,10 +2454,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/realtime/add_webhook_receiver.py",
-      "test_paths": [
-        "adapt/extend/realtime/test_add_webhook_receiver.py"
-      ],
+      "module_path": "adapt/extend/realtime/add_webhook_receiver/__init__.py",
+      "test_paths": [],
       "primitives_used": [
         "AuditEvent",
         "IdempotentConsumer",
@@ -2486,10 +2482,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/realtime/add_webhook_sender.py",
-      "test_paths": [
-        "adapt/extend/realtime/test_add_webhook_sender.py"
-      ],
+      "module_path": "adapt/extend/realtime/add_webhook_sender/__init__.py",
+      "test_paths": [],
       "primitives_used": [
         "RetryPolicy",
         "SignatureVerifier"
@@ -2513,10 +2507,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/realtime/add_websocket_chat.py",
-      "test_paths": [
-        "adapt/extend/realtime/test_add_websocket_chat.py"
-      ],
+      "module_path": "adapt/extend/realtime/add_websocket_chat/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -2538,10 +2530,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/realtime/add_websocket_presence.py",
-      "test_paths": [
-        "adapt/extend/realtime/test_add_websocket_presence.py"
-      ],
+      "module_path": "adapt/extend/realtime/add_websocket_presence/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -12015,5 +12005,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "582ca691042aef3ee973972f2b3443a63444733fa8b542e07d8c8c9e0f52fbf0"
+  "stable_hash": "fc66e5fdf6fbe39a2df032debad8c8a1409b4df61bacc1a3d800195593bfa196"
 }

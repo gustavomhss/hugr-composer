@@ -1,0 +1,82 @@
+"""Redis-backed SSE connection registry that enforces per-user caps.
+
+Each connection is stored in a Redis set under ``sse:connections:{user_id}``.
+The TTL is refreshed by the heartbeat loop so a worker restart does not
+permanently leak a connection slot.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import redis.asyncio as aioredis
+
+
+CONNECTION_KEY = "sse:connections:{user_id}"
+CONNECTION_TTL_SECONDS = 30  # refreshed by heartbeat every SSE_HEARTBEAT_SECONDS
+
+
+@dataclass(frozen=True)
+class ConnectionSlot:
+    """Identifies a single SSE connection.
+
+    Attributes:
+        user_id: UUID string of the connected user.
+        connection_id: Unique identifier for this specific connection.
+        worker_id: Worker-process identifier (e.g. hostname + PID).
+    """
+
+    user_id: str
+    connection_id: str
+    worker_id: str
+
+
+class ConnectionRegistry:
+    """Register and release SSE connections against per-user caps.
+
+    Args:
+        client: Async Redis client.
+        max_per_user: Maximum simultaneous connections allowed (default 5).
+    """
+
+    def __init__(self, client: "aioredis.Redis", max_per_user: int = 5) -> None:
+        self._redis = client
+        self._max = max_per_user
+
+    async def try_register(self, slot: ConnectionSlot) -> bool:
+        """Attempt to register a new connection slot.
+
+        Args:
+            slot: The connection to register.
+
+        Returns:
+            ``True`` if there was room under the cap and the slot was stored.
+        """
+        key = CONNECTION_KEY.format(user_id=slot.user_id)
+        current = await self._redis.scard(key)
+        if current >= self._max:
+            return False
+        member = f"{slot.worker_id}:{slot.connection_id}"
+        await self._redis.sadd(key, member)
+        await self._redis.expire(key, CONNECTION_TTL_SECONDS)
+        return True
+
+    async def refresh(self, slot: ConnectionSlot) -> None:
+        """Refresh the TTL of the connection set (called by heartbeat loop).
+
+        Args:
+            slot: The connection whose TTL should be refreshed.
+        """
+        key = CONNECTION_KEY.format(user_id=slot.user_id)
+        await self._redis.expire(key, CONNECTION_TTL_SECONDS)
+
+    async def release(self, slot: ConnectionSlot) -> None:
+        """Remove a connection slot from Redis when the connection closes.
+
+        Args:
+            slot: The connection to remove.
+        """
+        key = CONNECTION_KEY.format(user_id=slot.user_id)
+        member = f"{slot.worker_id}:{slot.connection_id}"
+        await self._redis.srem(key, member)

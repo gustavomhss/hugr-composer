@@ -1,0 +1,266 @@
+"""WebSocket chat endpoint: WS /ws/chat/{room_id}.
+
+Auth: JWT is accepted via ``?token=`` query parameter OR via the
+``Authorization: Bearer <token>`` subprotocol header.  Failed auth
+closes the socket with ``1008 Policy Violation`` BEFORE any DB write.
+
+Flow:
+
+1. Accept the socket and authenticate.
+2. Register with the ``WebSocketManager`` (enforces per-user cap).
+3. Check room membership (public / owner of private room).
+4. Start the Redis subscribe loop in a background task.
+5. Loop on ``ws.receive_text``, validate via ``ChatMessageIn``,
+   rate-limit, persist, and broadcast.
+6. On disconnect: cancel the subscribe task, release the slot.
+
+Warnings:
+    WebSocket fan-out does not guarantee delivery to all peers — Redis
+    pub/sub is fire-and-forget; a disconnected peer silently misses messages.
+"""
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+import uuid as _uuid
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
+
+from app.core.session import async_session as async_session_maker
+from app.core.redis import get_redis
+from app.crud import chat as crud_chat
+from app.schemas.chat import ChatMessageIn
+from app.ws.connection_manager import WebSocketManager, get_ws_manager
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter()
+
+_RATE_LIMIT_PER_MINUTE = ${rate_limit_per_minute}
+_MESSAGE_MAX_LENGTH = ${message_max_length}
+_RATE_KEY = "ws:chat:rl:{user_id}:{room_id}"
+
+
+def _extract_token(ws: WebSocket) -> str | None:
+    """Return the JWT from either ``?token=`` or ``Authorization`` header.
+
+    Args:
+        ws: The incoming ``WebSocket`` (before ``accept``).
+
+    Returns:
+        The raw token string, or ``None`` if no token was provided.
+    """
+    token = ws.query_params.get("token")
+    if token:
+        return token
+    auth = ws.headers.get("authorization", "")
+    if auth.lower().startswith("bearer "):
+        return auth.split(" ", 1)[1].strip()
+    return None
+
+
+def _authenticate_token(token: str) -> tuple[str, str] | None:
+    """Verify *token* and return ``(user_id, user_name)`` on success.
+
+    Uses ``app.core.jwt.verify_access_token`` which is installed by the
+    scaffold.  Returns ``None`` on any verification failure.
+
+    Args:
+        token: The raw JWT string.
+
+    Returns:
+        ``(user_id, user_name)`` tuple, or ``None`` on failure.
+    """
+    try:
+        from app.core.jwt import verify_access_token
+        payload = verify_access_token(token)
+    except Exception:  # noqa: BLE001
+        return None
+    user_id = payload.get("sub")
+    if not user_id:
+        return None
+    user_name = payload.get("name") or payload.get("email") or str(user_id)
+    return str(user_id), str(user_name)
+
+
+async def _rate_limit_ok(user_id: str, room_id: str) -> bool:
+    """Return ``True`` if the user is within the per-room rate budget.
+
+    Uses a 60-second sliding window via a Redis INCR + EXPIRE keyed on
+    ``(user_id, room_id)``.  Falls back to *allow* on Redis errors so
+    a Redis outage does not silently break the chat endpoint.
+
+    Args:
+        user_id: UUID string of the sender.
+        room_id: UUID string of the target room.
+
+    Returns:
+        ``True`` if the sender may emit another message right now.
+    """
+    try:
+        redis = await get_redis()
+        key = _RATE_KEY.format(user_id=user_id, room_id=room_id)
+        count = await redis.incr(key)
+        if count == 1:
+            await redis.expire(key, 60)
+        return count <= _RATE_LIMIT_PER_MINUTE
+    except Exception:  # noqa: BLE001
+        logger.warning("rate-limit check failed; allowing message")
+        return True
+
+
+async def _send_error(ws: WebSocket, code: str, detail: str) -> None:
+    """Send a structured error frame without closing the socket.
+
+    Args:
+        ws: The target ``WebSocket``.
+        code: Short machine code (e.g. ``"rate_limited"``).
+        detail: Human-readable explanation.
+    """
+    try:
+        await ws.send_text(
+            json.dumps({"type": "error", "code": code, "detail": detail})
+        )
+    except Exception:  # noqa: BLE001
+        return
+
+
+async def _handle_incoming(
+    raw: str,
+    *,
+    user_id: str,
+    user_name: str,
+    room_id: str,
+    manager: WebSocketManager,
+    ws: WebSocket,
+) -> None:
+    """Validate, persist, and broadcast a single inbound chat message.
+
+    Args:
+        raw: Raw text received from the socket.
+        user_id: UUID string of the sender.
+        user_name: Display name of the sender.
+        room_id: UUID string of the target room.
+        manager: The active ``WebSocketManager``.
+        ws: The sending socket (used for error responses).
+    """
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        await _send_error(ws, "invalid_json", "Payload is not valid JSON")
+        return
+    try:
+        parsed = ChatMessageIn.model_validate(payload)
+    except Exception as exc:  # noqa: BLE001
+        await _send_error(ws, "invalid_message", repr(exc)[:200])
+        return
+    if not await _rate_limit_ok(user_id, room_id):
+        await _send_error(ws, "rate_limited", "Message rate limit exceeded")
+        return
+    async with async_session_maker() as session:
+        msg = await crud_chat.save_message(
+            session,
+            room_id=_uuid.UUID(room_id),
+            user_id=_uuid.UUID(user_id),
+            content=parsed.content,
+        )
+        await session.commit()
+        event = {
+            "type": "message",
+            "id": str(msg.id),
+            "room_id": room_id,
+            "user_id": user_id,
+            "user_name": user_name,
+            "content": parsed.content,
+            "created_at": msg.created_at.isoformat(),
+        }
+    await manager.broadcast(room_id=room_id, payload=event)
+
+
+async def _run_chat_session(
+    ws: WebSocket,
+    *,
+    user_id: str,
+    user_name: str,
+    room_id: str,
+    manager: WebSocketManager,
+) -> None:
+    """Run the receive/broadcast loop for a single accepted socket.
+
+    Args:
+        ws: The accepted ``WebSocket``.
+        user_id: UUID string of the authenticated user.
+        user_name: Display name of the authenticated user.
+        room_id: UUID string of the target room.
+        manager: Shared ``WebSocketManager`` instance.
+    """
+    subscribe_task: asyncio.Task[None] = asyncio.create_task(
+        manager.subscribe_loop(ws=ws, room_id=room_id)
+    )
+    try:
+        while True:
+            raw = await ws.receive_text()
+            if len(raw) > _MESSAGE_MAX_LENGTH * 2:
+                await _send_error(ws, "payload_too_large", "Frame exceeds cap")
+                continue
+            await _handle_incoming(
+                raw,
+                user_id=user_id,
+                user_name=user_name,
+                room_id=room_id,
+                manager=manager,
+                ws=ws,
+            )
+    except WebSocketDisconnect:
+        return
+    finally:
+        subscribe_task.cancel()
+        try:
+            await subscribe_task
+        except (asyncio.CancelledError, Exception):  # noqa: BLE001
+            pass
+
+
+@router.websocket("/ws/chat/{room_id}")
+async def chat_endpoint(ws: WebSocket, room_id: str) -> None:
+    """Open a WebSocket chat session on *room_id*.
+
+    Auth: JWT via ``?token=`` or ``Authorization: Bearer``.
+    Rejection uses close code ``1008 Policy Violation``.
+    """
+    token = _extract_token(ws)
+    if token is None:
+        await ws.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+    auth = _authenticate_token(token)
+    if auth is None:
+        await ws.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+    user_id, user_name = auth
+    try:
+        room_uuid = _uuid.UUID(room_id)
+    except ValueError:
+        await ws.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+    async with async_session_maker() as session:
+        allowed = await crud_chat.check_user_can_join(
+            session, room_id=room_uuid, user_id=_uuid.UUID(user_id),
+        )
+    if not allowed:
+        await ws.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+    await ws.accept()
+    manager = get_ws_manager()
+    registered = await manager.connect(ws, room_id=room_id, user_id=user_id)
+    if not registered:
+        await _send_error(ws, "connection_limit", "Per-user connection cap reached")
+        await ws.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+    try:
+        await _run_chat_session(
+            ws, user_id=user_id, user_name=user_name,
+            room_id=room_id, manager=manager,
+        )
+    finally:
+        await manager.disconnect(ws, room_id=room_id, user_id=user_id)

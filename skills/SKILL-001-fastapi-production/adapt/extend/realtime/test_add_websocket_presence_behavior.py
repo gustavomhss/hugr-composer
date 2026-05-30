@@ -103,6 +103,15 @@ _PASSTHROUGH_IDEMPOTENCY_PY = textwrap.dedent("""\
             return await call_next(request)
 """)
 
+_MEMORY_RATE_LIMIT_PY = textwrap.dedent("""\
+    \"\"\"Patched rate_limit.py — in-memory limiter, no Redis required.\"\"\"
+    from slowapi import Limiter
+    from slowapi.util import get_remote_address
+
+    limiter = Limiter(key_func=get_remote_address, storage_uri="memory://", default_limits=[], enabled=False)
+    __all__ = ["limiter"]
+""")
+
 
 # ---------------------------------------------------------------------------
 # Project setup helpers
@@ -118,6 +127,10 @@ def _patch_project(project_dir: Path) -> None:
     idempotency_file = project_dir / "app" / "middleware" / "idempotency.py"
     if idempotency_file.exists():
         idempotency_file.write_text(_PASSTHROUGH_IDEMPOTENCY_PY)
+
+    rate_limit_file = project_dir / "app" / "core" / "rate_limit.py"
+    if rate_limit_file.exists():
+        rate_limit_file.write_text(_MEMORY_RATE_LIMIT_PY)
 
 
 def _clear_app_modules() -> None:
@@ -453,7 +466,9 @@ def test_b10_delivery_contract(behavior_project: Path) -> None:
 
     from tests.contracts.delivery_contract import BehaviorEvidence, ToolDelivery
 
-    tool_file = skill_root / "adapt" / "extend" / "realtime" / "add_websocket_presence.py"
+    tool_file = (
+        skill_root / "adapt" / "extend" / "realtime" / "add_websocket_presence" / "__init__.py"
+    )
     test_file = skill_root / "adapt" / "extend" / "realtime" / "test_add_websocket_presence.py"
     behavior_file = Path(__file__)
 

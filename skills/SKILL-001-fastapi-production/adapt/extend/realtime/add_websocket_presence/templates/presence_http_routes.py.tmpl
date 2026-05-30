@@ -1,0 +1,59 @@
+"""REST companion routes for presence: GET /presence/online, GET /presence/{user_id}."""
+from __future__ import annotations
+
+import uuid
+
+from fastapi import APIRouter
+
+from app.schemas.presence import PresenceList, PresenceOut
+from app.ws.presence import PRESENCE_KEY, get_presence_manager
+
+router = APIRouter(prefix="/presence", tags=["presence"])
+
+
+@router.get("/online", response_model=PresenceList)
+async def list_online_users() -> PresenceList:
+    """Return a list of all currently online user UUIDs.
+
+    Scans Redis for ``presence:user:*`` keys and returns the user
+    UUIDs with active TTL.  Designed for polling by mobile clients
+    that cannot hold a long-lived WebSocket.
+
+    Returns:
+        ``PresenceList`` with ``online`` user UUID list and ``count``.
+    """
+    from app.core.redis import get_redis
+    redis = await get_redis()
+    pattern = PRESENCE_KEY.replace("{user_id}", "*")
+    keys = await redis.keys(pattern)
+    prefix = PRESENCE_KEY.split("{")[0]
+    online = [
+        uuid.UUID(k[len(prefix):]) for k in keys if k.startswith(prefix)
+    ]
+    return PresenceList(online=online, count=len(online))
+
+
+@router.get("/{user_id}", response_model=PresenceOut)
+async def get_user_presence(user_id: uuid.UUID) -> PresenceOut:
+    """Return the current presence state for a specific user.
+
+    Args:
+        user_id: UUID of the user to query.
+
+    Returns:
+        ``PresenceOut`` with current status, last_seen, and device.
+    """
+    import datetime as _dt
+    manager = get_presence_manager()
+    is_online = await manager.is_online(str(user_id))
+    from app.core.redis import get_redis
+    redis = await get_redis()
+    from app.ws.presence import DEVICE_KEY
+    members = await redis.smembers(DEVICE_KEY.format(user_id=str(user_id)))
+    device = next(iter(members), "unknown") if members else "unknown"
+    return PresenceOut(
+        user_id=user_id,
+        status="online" if is_online else "offline",
+        last_seen=_dt.datetime.now(_dt.timezone.utc),
+        device=device,
+    )

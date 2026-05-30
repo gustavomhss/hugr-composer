@@ -1,0 +1,50 @@
+"""SSE streaming endpoint.
+
+GET /events/stream?channel=<name> opens a text/event-stream connection.
+The ``Last-Event-ID`` header is forwarded to the manager for gap-free replay.
+"""
+from __future__ import annotations
+
+from typing import Annotated
+
+from fastapi import APIRouter, Header, Query
+from fastapi.responses import StreamingResponse
+
+from app.api.deps import CurrentUser
+from app.core.sse.access import authorize_channel
+from app.core.sse.manager import get_sse_manager
+
+router = APIRouter(prefix="/events", tags=["events"])
+
+
+@router.get("/stream", response_model=None)
+async def stream_events(
+    current_user: CurrentUser,
+    channel: Annotated[str, Query(min_length=3, max_length=255)],
+    last_event_id: Annotated[str | None, Header(alias="Last-Event-ID")] = None,
+) -> StreamingResponse:
+    """Open an SSE stream on *channel*.
+
+    Args:
+        current_user: Authenticated requesting user.
+        channel: Logical channel name (``user:<uuid>``, ``public:<topic>``, etc.).
+        last_event_id: Optional ``Last-Event-ID`` header for gap-free reconnect.
+
+    Returns:
+        A ``StreamingResponse`` emitting ``text/event-stream`` bytes.
+    """
+    authorize_channel(current_user, channel)
+    manager = get_sse_manager()
+    return StreamingResponse(
+        manager.stream(
+            user_id=current_user.id,
+            channel=channel,
+            last_event_id=last_event_id,
+        ),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )

@@ -6,7 +6,7 @@
 
 ## Headline
 
-- **258 files carry `MCP_TOOL` metadata** (agent-visible surface).
+- **263 files carry `MCP_TOOL` metadata** (agent-visible surface).
 - **Catalog:** 1 skill, 6 bundles, 201 tools (201 local + 0 federated), 299 primitives, 392 recipes.
 - **124 registered primitives** (`core/venous/<ns>/<Name>/`).
 - **175 staged primitives** in `_staging/` (plus 42 quarantined).
@@ -16,27 +16,27 @@
 
 ---
 
-## 1. adapt/ — 126 tools
+## 1. adapt/ — 131 tools
 
 | bucket | count |
 |---|---:|
-| `extend` | 99 |
+| `extend` | 104 |
 | `verify` | 6 |
 | `operate` | 8 |
 | `evolve` | 8 |
 | `proactive` | 1 |
 | `contracts` | 4 |
 
-### adapt/extend/ sub-domains (99 tools)
+### adapt/extend/ sub-domains (104 tools)
 
 | domain | count |
 |---|---:|
 | `api_design` | 7 |
-| `auth_access` | 15 |
-| `crud_data` | 9 |
+| `auth_access` | 17 |
+| `crud_data` | 10 |
 | `infrastructure` | 53 |
 | `realtime` | 5 |
-| `testing_tools` | 10 |
+| `testing_tools` | 12 |
 
 ## 2. Skills × Bundles
 

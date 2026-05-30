@@ -1,0 +1,21 @@
+"""Async Redis client factory for realtime features (SSE, webhooks)."""
+
+from __future__ import annotations
+
+from app.core.config import settings
+
+
+async def get_redis():
+    """Return a connected async Redis client.
+
+    Uses ``settings.REDIS_URL``.  Caller is responsible for closing
+    the connection via ``await client.aclose()`` when done.
+
+    Returns:
+        Connected ``redis.asyncio.Redis`` instance.
+    """
+    import redis.asyncio as _redis
+    return _redis.from_url(
+        getattr(settings, "REDIS_URL", "redis://localhost:6379/0"),
+        decode_responses=True,
+    )

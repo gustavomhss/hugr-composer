@@ -15,6 +15,9 @@ Security guarantees (delivered by the primitives, NOT re-implemented here):
 
 Idempotent: a second run detects the import chain in
 ``app/webhook_receiver.py`` and returns ``status="no_op"``.
+
+Templates in ``templates/`` emit all generated source; this file contains only
+orchestration.
 """
 
 from __future__ import annotations
@@ -23,7 +26,10 @@ import ast
 import time
 from pathlib import Path
 
+from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+
+_HERE = Path(__file__).parent
 
 MCP_TOOL = {
     "name": "fastapi_realtime_add_webhook_receiver",
@@ -47,36 +53,13 @@ MCP_TOOL = {
 }
 
 
-_GLUE = '''\
-"""Wire the inbound-webhook pipeline into the FastAPI app.
-
-Delegates to the primitives + FastAPI adapter copied under `core/venous/`
-by the `add_webhook_receiver` tool. Re-emitted idempotently on subsequent
-tool runs; hand-editing is safe.
-"""
-
-from __future__ import annotations
-
-import os
-
-from fastapi import FastAPI
-
-from core.venous._adapters.fastapi.WebhookReceiverAdapter import install
-
-
-def install_webhook_receiver(app: FastAPI) -> None:
-    """Attach the verify → dedup → audit pipeline to *app*."""
-    install(
-        app,
-        hmac_key=os.getenv("WEBHOOK_HMAC_KEY", "change-me-hmac-secret-bytes").encode(),
-        key_id=os.getenv("WEBHOOK_KEY_ID", "default"),
-        path=os.getenv("WEBHOOK_PATH", "/webhooks/in"),
-    )
-'''
-
-
 def add_webhook_receiver(inp: ToolInput) -> ToolResult:
-    """Add a webhook receiver by delegating to shipped primitives + adapter."""
+    """Add a webhook receiver by delegating to shipped primitives + adapter.
+
+    Warnings:
+        HMAC verification and replay deduplication are enforced by the copied
+        primitives; this tool does not re-implement them.
+    """
     start = time.monotonic()
     project = Path(inp.project_dir)
 
@@ -101,11 +84,6 @@ def add_webhook_receiver(inp: ToolInput) -> ToolResult:
 
     files_created: list[str] = list(scaffolded or [])
     app_dir = project / "app"
-    # NOTE: app/webhook_receiver.py, NOT app/webhooks.py. add_webhook_sender
-    # emits an app/webhooks/ PACKAGE; a sibling app/webhooks.py MODULE would be
-    # shadowed by that package on import (packages win), making
-    # install_webhook_receiver unreachable when both tools are applied. The
-    # distinct filename keeps send + receive composable.
     glue_file = app_dir / "webhook_receiver.py"
 
     if glue_file.exists() and "WebhookReceiverAdapter" in glue_file.read_text():
@@ -136,8 +114,10 @@ def add_webhook_receiver(inp: ToolInput) -> ToolResult:
     files_created.append(manifest.path)
 
     app_dir.mkdir(parents=True, exist_ok=True)
-    glue_file.write_text(_GLUE)
+    render_to(_HERE, "glue.py.tmpl", dest=glue_file, substitutions={})
     files_created.append(str(glue_file))
+
+    _emit_project_test(project, files_created)
 
     for path_str in files_created:
         p = Path(path_str)
@@ -166,6 +146,16 @@ def add_webhook_receiver(inp: ToolInput) -> ToolResult:
         ],
         execution_time_ms=_elapsed_ms(start),
     )
+
+
+def _emit_project_test(project: Path, created: list[str]) -> None:
+    tests_dir = project / "tests"
+    tests_dir.mkdir(parents=True, exist_ok=True)
+    emitted = tests_dir / "test_add_webhook_receiver_emitted.py"
+    if emitted.exists():
+        return
+    render_to(_HERE, "test_add_webhook_receiver_emitted.py.tmpl", dest=emitted, substitutions={})
+    created.append(str(emitted))
 
 
 def _elapsed_ms(start: float) -> int:

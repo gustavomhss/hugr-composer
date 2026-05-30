@@ -1,0 +1,138 @@
+"""ARQ worker for outbound webhook delivery.
+
+``deliver_webhook`` loads the delivery row, attempts an HTTP POST with
+an HMAC-signed body, persists the outcome, and enqueues a retry if the
+attempt failed and there are remaining schedule slots.
+
+Endpoints with too many consecutive failures are auto-disabled.
+"""
+from __future__ import annotations
+
+import json
+import logging
+from datetime import datetime, timezone
+
+import httpx
+from arq.connections import RedisSettings
+
+from app.core.db import async_session_maker
+from app.core.webhooks.backoff import delay_for_attempt
+from app.core.webhooks.signer import sign_payload
+from app.crud import webhook as crud_wh
+
+logger = logging.getLogger(__name__)
+
+_HTTP_TIMEOUT = ${http_timeout_seconds}
+_DISABLE_AFTER = ${disable_after_consecutive_failures}
+
+
+async def _attempt_delivery(delivery: object, endpoint: object) -> None:
+    """Perform one HTTP POST attempt and record the outcome on ``delivery``.
+
+    Args:
+        delivery: The ``WebhookDelivery`` ORM row being processed.
+        endpoint: The parent ``WebhookEndpoint`` ORM row.
+    """
+    delivery.attempt_number += 1  # type: ignore[attr-defined]
+    body_bytes = json.dumps(
+        delivery.payload, separators=(",", ":"), sort_keys=True  # type: ignore[attr-defined]
+    ).encode("utf-8")
+    sig_header = sign_payload(endpoint.secret, body_bytes).to_header_value()  # type: ignore[attr-defined]
+    headers = {
+        "Content-Type": "application/json",
+        "X-Signature": sig_header,
+        "X-Event-Id": str(delivery.event_id),  # type: ignore[attr-defined]
+        "X-Event-Type": delivery.event_type,  # type: ignore[attr-defined]
+        "X-Attempt": str(delivery.attempt_number),  # type: ignore[attr-defined]
+    }
+    try:
+        async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT) as client:
+            resp = await client.post(endpoint.url, content=body_bytes, headers=headers)  # type: ignore[attr-defined]
+        delivery.http_status = resp.status_code  # type: ignore[attr-defined]
+        delivery.response_body = resp.text[:4096]  # type: ignore[attr-defined]
+        if 200 <= resp.status_code < 300:
+            delivery.status = "succeeded"  # type: ignore[attr-defined]
+            delivery.delivered_at = datetime.now(timezone.utc)  # type: ignore[attr-defined]
+            endpoint.last_success_at = delivery.delivered_at  # type: ignore[attr-defined]
+            endpoint.consecutive_failures = 0  # type: ignore[attr-defined]
+        else:
+            _mark_failure(delivery, endpoint, f"HTTP {resp.status_code}")
+    except (httpx.RequestError, httpx.TimeoutException) as exc:
+        _mark_failure(delivery, endpoint, repr(exc)[:500])
+
+
+async def deliver_webhook(ctx: dict, delivery_id: str) -> None:
+    """ARQ task: attempt delivery, persist outcome, retry if needed.
+
+    Args:
+        ctx: ARQ context dict (contains ``redis`` key for enqueuing retries).
+        delivery_id: UUID string of the ``WebhookDelivery`` row to process.
+    """
+    async with async_session_maker() as session:
+        delivery = await crud_wh.get_delivery(session, id=delivery_id)
+        if not delivery or delivery.status not in ("pending",):
+            return
+        endpoint = await crud_wh.get_endpoint(session, id=delivery.endpoint_id)
+        if not endpoint or endpoint.status != "active":
+            delivery.status = "dead"
+            await session.commit()
+            return
+
+        await _attempt_delivery(delivery, endpoint)
+        await session.commit()
+
+    if delivery.status == "pending":
+        next_delay = delay_for_attempt(delivery.attempt_number + 1)
+        if next_delay >= 0:
+            await ctx["redis"].enqueue_job(
+                "deliver_webhook",
+                str(delivery.id),
+                _defer_by=next_delay,
+            )
+
+
+def _mark_failure(delivery: object, endpoint: object, error: str) -> None:
+    """Update delivery and endpoint fields after a failed attempt.
+
+    Args:
+        delivery: The ``WebhookDelivery`` ORM instance.
+        endpoint: The parent ``WebhookEndpoint`` ORM instance.
+        error: Short error description string.
+    """
+    delivery.error = error[:500]  # type: ignore[attr-defined]
+    endpoint.consecutive_failures += 1  # type: ignore[attr-defined]
+    endpoint.last_failure_at = datetime.now(timezone.utc)  # type: ignore[attr-defined]
+
+    from app.core.config import settings as _settings
+    max_attempts = getattr(_settings, "WEBHOOK_MAX_ATTEMPTS", 7)
+    if delivery.attempt_number >= max_attempts:  # type: ignore[attr-defined]
+        delivery.status = "dead"  # type: ignore[attr-defined]
+    else:
+        delivery.status = "pending"  # type: ignore[attr-defined]
+
+    if endpoint.consecutive_failures >= _DISABLE_AFTER:  # type: ignore[attr-defined]
+        endpoint.status = "disabled"  # type: ignore[attr-defined]
+        delivery.status = "dead"  # type: ignore[attr-defined]
+
+
+class WorkerSettings:
+    """ARQ worker configuration.
+
+    Register this class when starting the worker::
+
+        arq app.workers.webhook_worker.WorkerSettings
+    """
+
+    functions = [deliver_webhook]
+    job_timeout = _HTTP_TIMEOUT + 5
+    max_jobs = 100
+
+    @staticmethod
+    def redis_settings() -> RedisSettings:
+        """Build Redis settings from the application config.
+
+        Returns:
+            ARQ ``RedisSettings`` for the configured ``REDIS_URL``.
+        """
+        from app.core.config import settings as _settings
+        return RedisSettings.from_dsn(getattr(_settings, "REDIS_URL", "redis://localhost"))
