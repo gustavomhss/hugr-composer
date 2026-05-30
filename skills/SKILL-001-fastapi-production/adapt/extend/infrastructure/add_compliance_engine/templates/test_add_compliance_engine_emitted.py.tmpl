@@ -73,35 +73,40 @@ def test_retention_worker_present() -> None:
     assert "retention" in body.lower(), "retention worker missing retention logic"
 
 
-def test_engine_advisory_warning_no_key() -> None:
-    """Negative: when COMPLIANCE_ENCRYPTION_KEY is empty, encrypt() must NOT
-    return a value that looks encrypted — it must clearly fail or be a no-op
-    that the caller can detect.
+def test_engine_fails_closed_when_no_key() -> None:
+    """Negative: when COMPLIANCE_ENCRYPTION_KEY is empty, encrypt_field()
+    MUST raise RuntimeError — it MUST NOT silently return plaintext.
 
-    The compliance engine warns that field encryption is advisory unless a
-    key is set; this test asserts the warning surface (log or raise) so a
-    silent plaintext fallback does not ship as a compliance overclaim.
+    A silent plaintext fallback would be a compliance overclaim: callers
+    (PII columns, audit code) believe data is encrypted at rest when it
+    is not. The engine fails CLOSED so misconfiguration surfaces loudly
+    in staging instead of leaking plaintext PII in production.
     """
     import os
+
+    import pytest
 
     prior = os.environ.get("COMPLIANCE_ENCRYPTION_KEY")
     os.environ.pop("COMPLIANCE_ENCRYPTION_KEY", None)
     try:
         mod = _load("app/core/compliance_engine.py", "app.core.compliance_engine")
-        # The contract: a missing key should either raise OR return a sentinel
-        # that signals "not encrypted" (e.g. empty string). It MUST NOT
-        # silently return the plaintext as if it were ciphertext.
         if not hasattr(mod, "encrypt_field"):
             return  # API may be named differently — pass; routes/worker tests cover the surface
+        # Reload settings so the popped env var is observed.
         try:
-            out = mod.encrypt_field("plaintext-secret")
+            from app.core import config as _cfg  # type: ignore[import-not-found]
+
+            _cfg.settings = _cfg.Settings()  # type: ignore[attr-defined]
         except Exception:
-            return  # explicit refusal is the honest behaviour
-        # If it didn't raise, the result must NOT equal the plaintext.
-        assert out != "plaintext-secret", (
-            "encrypt_field returned the plaintext when no key is set — "
-            "silent compliance overclaim"
-        )
+            pass
+        with pytest.raises(RuntimeError, match="COMPLIANCE_ENCRYPTION_KEY"):
+            mod.encrypt_field("plaintext-secret")
     finally:
         if prior is not None:
             os.environ["COMPLIANCE_ENCRYPTION_KEY"] = prior
+            try:
+                from app.core import config as _cfg  # type: ignore[import-not-found]
+
+                _cfg.settings = _cfg.Settings()  # type: ignore[attr-defined]
+            except Exception:
+                pass
