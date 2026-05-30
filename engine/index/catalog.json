@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "4519cac",
-  "generated_at": "2026-05-30T13:32:24+00:00",
+  "kit_commit": "3156af4",
+  "generated_at": "2026-05-30T13:41:32+00:00",
   "verbs": [
     "add",
     "generate",
@@ -3473,10 +3473,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_stripe_checkout.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_stripe_checkout.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_stripe_checkout/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3495,10 +3493,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_stripe_refund_flow.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_stripe_refund_flow.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_stripe_refund_flow/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -3517,10 +3513,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/infrastructure/add_stripe_subscription.py",
-      "test_paths": [
-        "adapt/extend/infrastructure/test_add_stripe_subscription.py"
-      ],
+      "module_path": "adapt/extend/infrastructure/add_stripe_subscription/__init__.py",
+      "test_paths": [],
       "primitives_used": [
         "Billing"
       ],
@@ -12051,5 +12045,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "51193ad5831d7da40bc547e0832e2ba8cf639982f9650be81b4b17a0133a58f7"
+  "stable_hash": "87d3708f97155ef32024ec55f35fa39225129eba82f6d302f675a140309bdab6"
 }

@@ -1,0 +1,259 @@
+"""HTTP routes for the Stripe subscription billing flow.
+
+Endpoints:
+    POST /subscriptions
+        Create a Stripe Subscription + Subscription row for the
+        current user.  Requires authentication.
+
+    GET /subscriptions/me
+        Paginated list of the current user's subscriptions.
+        Requires authentication.
+
+    POST /subscriptions/{subscription_id}/cancel
+        Schedule a subscription for cancellation at period end.
+        Requires authentication and ownership.
+
+    POST /subscriptions/{subscription_id}/change-plan
+        Change the plan on an existing subscription (with proration).
+        Requires authentication and ownership.
+
+    POST /subscriptions/webhook/stripe
+        Stripe webhook receiver.  Unauthenticated at HTTP level;
+        authenticated via ``Stripe-Signature`` HMAC-SHA256.
+"""
+from __future__ import annotations
+
+import logging
+import uuid
+from datetime import datetime, timezone
+from typing import Any
+
+from fastapi import APIRouter, HTTPException, Query, Request, status
+
+from app.api.deps import CurrentUser
+from app.core.session import SessionDep
+from app.core.stripe_billing import get_stripe_billing
+from app.crud.subscription import (
+    cancel,
+    create_subscription,
+    get_by_stripe_id,
+    get_by_user,
+    list_active,
+    update_status,
+)
+from app.schemas.subscription import (
+    ChangePlanRequest,
+    SubscriptionCreate,
+    SubscriptionListResponse,
+    SubscriptionPublic,
+)
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
+
+
+def _owner_guard(sub: Any, current_user: Any) -> None:
+    """Raise 404 unless *current_user* owns *sub* (or is superuser)."""
+    is_superuser = getattr(current_user, "is_superuser", False)
+    if is_superuser:
+        return
+    if sub.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="subscription not found",
+        )
+
+
+@router.post(
+    "",
+    response_model=SubscriptionPublic,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_subscription_endpoint(
+    body: SubscriptionCreate,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> SubscriptionPublic:
+    """Create a Stripe Subscription + pending Subscription row."""
+    billing = get_stripe_billing()
+    try:
+        customer = billing.create_customer(
+            email=getattr(current_user, "email", ""),
+        )
+        stripe_sub = billing.create_subscription(
+            customer_id=customer["id"],
+            price_id=body.price_id,
+            trial_period_days=body.trial_period_days,
+        )
+    except Exception as exc:
+        logger.warning("stripe subscription create failed")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="stripe subscription create failed",
+        ) from exc
+    sub = await create_subscription(
+        session,
+        user_id=current_user.id,
+        stripe_subscription_id=stripe_sub["id"],
+        stripe_customer_id=customer["id"],
+        plan_id=body.price_id,
+        status=stripe_sub.get("status", "incomplete"),
+    )
+    await session.commit()
+    return SubscriptionPublic.model_validate(sub)
+
+
+@router.get("/me", response_model=SubscriptionListResponse)
+async def list_my_subscriptions(
+    current_user: CurrentUser,
+    session: SessionDep,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=20, ge=1, le=100),
+) -> SubscriptionListResponse:
+    """Return the current user's subscriptions, newest first."""
+    rows, total = await get_by_user(
+        session, current_user.id, limit=limit, offset=skip
+    )
+    data = [SubscriptionPublic.model_validate(r) for r in rows]
+    return SubscriptionListResponse(data=data, count=total)
+
+
+@router.post("/{subscription_id}/cancel", response_model=SubscriptionPublic)
+async def cancel_subscription_endpoint(
+    subscription_id: uuid.UUID,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> SubscriptionPublic:
+    """Schedule a subscription for cancellation at period end."""
+    from sqlalchemy import select
+    from app.models.subscription import Subscription as SubscriptionModel
+    stmt = select(SubscriptionModel).where(SubscriptionModel.id == subscription_id)
+    result = await session.execute(stmt)
+    sub = result.scalar_one_or_none()
+    if sub is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="subscription not found",
+        )
+    _owner_guard(sub, current_user)
+    billing = get_stripe_billing()
+    try:
+        billing.cancel_subscription(sub.stripe_subscription_id)
+    except Exception as exc:
+        logger.warning("stripe subscription cancel failed")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="stripe subscription cancel failed",
+        ) from exc
+    updated = await update_status(
+        session,
+        stripe_subscription_id=sub.stripe_subscription_id,
+        status=sub.status,
+        cancel_at_period_end=True,
+    )
+    await session.commit()
+    return SubscriptionPublic.model_validate(updated)
+
+
+@router.post(
+    "/{subscription_id}/change-plan",
+    response_model=SubscriptionPublic,
+)
+async def change_plan_endpoint(
+    subscription_id: uuid.UUID,
+    body: ChangePlanRequest,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> SubscriptionPublic:
+    """Change the plan for an existing subscription (with proration)."""
+    from sqlalchemy import select
+    from app.models.subscription import Subscription as SubscriptionModel
+    stmt = select(SubscriptionModel).where(SubscriptionModel.id == subscription_id)
+    result = await session.execute(stmt)
+    sub = result.scalar_one_or_none()
+    if sub is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="subscription not found",
+        )
+    _owner_guard(sub, current_user)
+    billing = get_stripe_billing()
+    try:
+        billing.change_plan(sub.stripe_subscription_id, body.new_price_id)
+    except Exception as exc:
+        logger.warning("stripe subscription change-plan failed")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="stripe subscription change-plan failed",
+        ) from exc
+    updated = await update_status(
+        session,
+        stripe_subscription_id=sub.stripe_subscription_id,
+        status=sub.status,
+    )
+    if updated is not None:
+        updated.plan_id = body.new_price_id
+    await session.commit()
+    return SubscriptionPublic.model_validate(updated)
+
+
+async def _handle_subscription_event(
+    session: Any,
+    event: dict[str, Any],
+) -> None:
+    """Dispatch a verified Stripe subscription event to the right CRUD call.
+
+    Unknown event types are silently acked.  Each branch is idempotent.
+    """
+    event_type = event.get("type", "")
+    data_obj = event.get("data", {}).get("object", {}) or {}
+    stripe_sub_id = data_obj.get("id", "")
+    if not stripe_sub_id:
+        return
+
+    def _parse_ts(val: int | None) -> datetime | None:
+        """Convert a Unix timestamp to a UTC-aware datetime or None."""
+        if val is None:
+            return None
+        return datetime.fromtimestamp(val, tz=timezone.utc)
+
+    if event_type in (
+        "customer.subscription.created",
+        "customer.subscription.updated",
+    ):
+        await update_status(
+            session,
+            stripe_subscription_id=stripe_sub_id,
+            status=data_obj.get("status", "incomplete"),
+            current_period_start=_parse_ts(data_obj.get("current_period_start")),
+            current_period_end=_parse_ts(data_obj.get("current_period_end")),
+            cancel_at_period_end=bool(data_obj.get("cancel_at_period_end", False)),
+        )
+    elif event_type == "customer.subscription.deleted":
+        await cancel(
+            session,
+            stripe_subscription_id=stripe_sub_id,
+        )
+
+
+@router.post("/webhook/stripe")
+async def stripe_webhook(
+    request: Request,
+    session: SessionDep,
+) -> dict[str, bool]:
+    """Receive and verify a Stripe webhook, then dispatch the event."""
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature", "")
+    billing = get_stripe_billing()
+    try:
+        event = billing.construct_webhook_event(payload, sig_header)
+    except Exception as exc:
+        logger.warning("stripe webhook signature verification failed")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="invalid stripe signature",
+        ) from exc
+    await _handle_subscription_event(session, event)
+    await session.commit()
+    return {"received": True}

@@ -1,0 +1,126 @@
+"""Async CRUD helpers for the ``subscriptions`` table.
+
+Status transitions (active → canceled, past_due, etc.) happen only
+via webhook handlers — never from client-facing endpoints.
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.subscription import Subscription
+
+
+async def create_subscription(
+    session: AsyncSession,
+    *,
+    user_id: uuid.UUID | None,
+    stripe_subscription_id: str,
+    stripe_customer_id: str | None,
+    plan_id: str,
+    status: str = "incomplete",
+) -> Subscription:
+    """Insert a new Subscription row."""
+    sub = Subscription(
+        user_id=user_id,
+        stripe_subscription_id=stripe_subscription_id,
+        stripe_customer_id=stripe_customer_id,
+        plan_id=plan_id,
+        status=status,
+        cancel_at_period_end=False,
+    )
+    session.add(sub)
+    await session.flush()
+    return sub
+
+
+async def get_by_user(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    limit: int = 20,
+    offset: int = 0,
+) -> tuple[list[Subscription], int]:
+    """Return (rows, total_count) for a user's subscriptions."""
+    total_stmt = (
+        select(func.count())
+        .select_from(Subscription)
+        .where(Subscription.user_id == user_id)
+    )
+    total = int((await session.execute(total_stmt)).scalar_one() or 0)
+    page_stmt = (
+        select(Subscription)
+        .where(Subscription.user_id == user_id)
+        .order_by(Subscription.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    rows = list((await session.execute(page_stmt)).scalars().all())
+    return rows, total
+
+
+async def get_by_stripe_id(
+    session: AsyncSession,
+    stripe_subscription_id: str,
+) -> Subscription | None:
+    """Return the Subscription row by Stripe id or ``None``."""
+    stmt = select(Subscription).where(
+        Subscription.stripe_subscription_id == stripe_subscription_id
+    )
+    return (await session.execute(stmt)).scalar_one_or_none()
+
+
+async def update_status(
+    session: AsyncSession,
+    *,
+    stripe_subscription_id: str,
+    status: str,
+    current_period_start: datetime | None = None,
+    current_period_end: datetime | None = None,
+    cancel_at_period_end: bool | None = None,
+) -> Subscription | None:
+    """Update status and billing period fields (idempotent)."""
+    sub = await get_by_stripe_id(session, stripe_subscription_id)
+    if sub is None:
+        return None
+    sub.status = status
+    if current_period_start is not None:
+        sub.current_period_start = current_period_start
+    if current_period_end is not None:
+        sub.current_period_end = current_period_end
+    if cancel_at_period_end is not None:
+        sub.cancel_at_period_end = cancel_at_period_end
+    await session.flush()
+    return sub
+
+
+async def cancel(
+    session: AsyncSession,
+    *,
+    stripe_subscription_id: str,
+) -> Subscription | None:
+    """Mark a subscription as canceled (idempotent)."""
+    return await update_status(
+        session,
+        stripe_subscription_id=stripe_subscription_id,
+        status="canceled",
+        cancel_at_period_end=False,
+    )
+
+
+async def list_active(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+) -> list[Subscription]:
+    """Return all active or trialing subscriptions for *user_id*."""
+    stmt = (
+        select(Subscription)
+        .where(
+            Subscription.user_id == user_id,
+            Subscription.status.in_(["active", "trialing"]),
+        )
+        .order_by(Subscription.created_at.desc())
+    )
+    return list((await session.execute(stmt)).scalars().all())
