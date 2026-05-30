@@ -1,0 +1,39 @@
+"""Pydantic schemas for social login endpoints."""
+
+from __future__ import annotations
+
+import uuid
+
+from pydantic import BaseModel, ConfigDict
+
+
+class SocialAccountRead(BaseModel):
+    """Public representation of a linked social account.
+
+    Attributes:
+        id: Primary key UUID.
+        provider: Provider name (google, github, apple).
+        provider_email: Email reported by the provider.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    provider: str
+    provider_email: str | None
+
+
+class SocialLoginCallbackResponse(BaseModel):
+    """Response returned after a successful social login callback.
+
+    Attributes:
+        access_token: JWT access token.
+        token_type: Always 'bearer'.
+        user_id: UUID of the authenticated (or newly created) user.
+        is_new_user: True when a new account was created.
+    """
+
+    access_token: str
+    token_type: str = "bearer"
+    user_id: uuid.UUID
+    is_new_user: bool

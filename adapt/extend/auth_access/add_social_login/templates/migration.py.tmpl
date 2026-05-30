@@ -1,0 +1,57 @@
+"""Add social_accounts table for social login.
+
+Revision ID: 0074_add_social_login
+Revises: ${down_rev}
+"""
+
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "0074_add_social_login"
+down_revision = "${down_rev}"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    """Create social_accounts table."""
+    op.create_table(
+        "social_accounts",
+        sa.Column("id", sa.Uuid(), nullable=False),
+        sa.Column("provider", sa.String(32), nullable=False),
+        sa.Column("provider_user_id", sa.String(255), nullable=False),
+        sa.Column("provider_email", sa.String(320), nullable=True),
+        sa.Column("user_id", sa.Uuid(), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(
+            ["user_id"], ["users.id"], ondelete="CASCADE"
+        ),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint(
+            "provider", "provider_user_id", name="uq_social_provider_user"
+        ),
+        sa.CheckConstraint(
+            "provider IN ('google','github','apple')",
+            name="ck_social_provider",
+        ),
+    )
+    op.create_index("ix_social_accounts_user_id", "social_accounts", ["user_id"])
+
+
+def downgrade() -> None:
+    """Drop social_accounts table."""
+    op.drop_index("ix_social_accounts_user_id", table_name="social_accounts")
+    op.drop_table("social_accounts")

@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "1d5a9a6",
-  "generated_at": "2026-05-30T02:06:24+00:00",
+  "kit_commit": "613bff5",
+  "generated_at": "2026-05-30T03:25:27+00:00",
   "verbs": [
     "add",
     "generate",
@@ -415,10 +415,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/auth_access/add_api_key_auth.py",
-      "test_paths": [
-        "adapt/extend/auth_access/test_add_api_key_auth.py"
-      ],
+      "module_path": "adapt/extend/auth_access/add_api_key_auth/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -651,10 +649,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/auth_access/add_passkey_auth.py",
-      "test_paths": [
-        "adapt/extend/auth_access/test_add_passkey_auth.py"
-      ],
+      "module_path": "adapt/extend/auth_access/add_passkey_auth/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -746,10 +742,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/auth_access/add_social_login.py",
-      "test_paths": [
-        "adapt/extend/auth_access/test_add_social_login.py"
-      ],
+      "module_path": "adapt/extend/auth_access/add_social_login/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -12145,5 +12139,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "afabc61d15b3f18d898141be71b785f4497ec628603dfa0702f26651a6aff028"
+  "stable_hash": "a1ea6f80783f36f086b5517cb700fd0460cccda5b4db5447223bbd9097acd2b6"
 }

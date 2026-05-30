@@ -1,0 +1,98 @@
+"""Per-key rate limiting for API keys.
+
+Primary path: atomic Redis INCR + EXPIRE in a pipeline (p99 < 1 ms).
+Fallback path: in-process counter per worker (best-effort, no cross-worker
+coordination).  The fallback activates automatically when Redis is
+unavailable so the API does not go down if Redis has a transient outage.
+
+Limit is read from ``settings.API_KEY_RATE_LIMIT_PER_MINUTE`` (default 600).
+"""
+
+from __future__ import annotations
+
+import os
+import time
+from uuid import UUID
+
+_WINDOW_SECONDS = 60
+_DEFAULT_LIMIT = int(os.environ.get("API_KEY_RATE_LIMIT_PER_MINUTE", "600"))
+
+
+async def check_rate_limit(key_id: UUID, *, limit: int | None = None) -> bool:
+    """Return True if the key is under its rate limit, False if exceeded.
+
+    Tries Redis first; falls back to an in-process counter when Redis is
+    unavailable.  The fallback is per-worker and best-effort.
+
+    Args:
+        key_id: The UUID primary key of the APIKey record.
+        limit: Requests-per-minute cap.  Uses ``_DEFAULT_LIMIT`` when None.
+
+    Returns:
+        ``True`` if the request may proceed, ``False`` if rate-limited.
+    """
+    effective_limit = limit if limit is not None else _DEFAULT_LIMIT
+    redis = await _get_redis_or_none()
+    if redis is not None:
+        return await _check_redis(redis, key_id, effective_limit)
+    return _check_in_process(key_id, effective_limit)
+
+
+async def _get_redis_or_none():
+    """Return a Redis client or None when Redis is unavailable.
+
+    Returns:
+        Async Redis client, or ``None`` if connection fails or redis-py is absent.
+    """
+    try:
+        from app.core.redis import get_redis_or_none  # type: ignore[import]
+        return await get_redis_or_none()
+    except Exception:
+        return None
+
+
+async def _check_redis(redis, key_id: UUID, limit: int) -> bool:
+    """Atomic INCR + EXPIRE on a per-key per-bucket Redis key.
+
+    Args:
+        redis: Async Redis client.
+        key_id: UUID of the API key.
+        limit: Per-minute request limit.
+
+    Returns:
+        ``True`` if under limit, ``False`` if exceeded.
+    """
+    bucket = int(time.time() // _WINDOW_SECONDS)
+    redis_key = f"api_key:rate:{key_id}:{bucket}"
+    pipe = redis.pipeline()
+    pipe.incr(redis_key)
+    pipe.expire(redis_key, _WINDOW_SECONDS * 2)
+    count, _ = await pipe.execute()
+    return count <= limit
+
+
+# In-process fallback storage (per-worker, best-effort)
+_local_counters: dict[tuple[str, int], int] = {}
+
+
+def _check_in_process(key_id: UUID, limit: int) -> bool:
+    """In-process fallback rate counter.
+
+    Garbage-collects stale buckets to prevent unbounded memory growth.
+
+    Args:
+        key_id: UUID of the API key.
+        limit: Per-minute request limit.
+
+    Returns:
+        ``True`` if under limit, ``False`` if exceeded.
+    """
+    bucket = int(time.time() // _WINDOW_SECONDS)
+    key = (str(key_id), bucket)
+    # GC: drop all entries from previous buckets
+    for k in list(_local_counters):
+        if k[1] != bucket:
+            _local_counters.pop(k, None)
+    cur = _local_counters.get(key, 0) + 1
+    _local_counters[key] = cur
+    return cur <= limit

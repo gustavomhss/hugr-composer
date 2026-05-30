@@ -1,0 +1,98 @@
+"""Pydantic schemas for WebAuthn/FIDO2 passkey endpoints."""
+
+from __future__ import annotations
+
+import uuid
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict
+
+
+class PasskeyRead(BaseModel):
+    """Public view of a stored passkey credential.
+
+    Attributes:
+        id: Primary key UUID.
+        aaguid: Authenticator model identifier (may be None).
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    aaguid: str | None
+
+
+class RegistrationBeginRequest(BaseModel):
+    """Request body for beginning passkey registration.
+
+    Attributes:
+        user_id: UUID of the user registering the passkey.
+        username: Display name shown in the authenticator.
+    """
+
+    user_id: uuid.UUID
+    username: str
+
+
+class RegistrationBeginResponse(BaseModel):
+    """Response containing WebAuthn registration options.
+
+    Attributes:
+        options: py_webauthn registration options as a JSON-serializable dict.
+        session_id: Opaque session identifier for the challenge.
+    """
+
+    options: dict[str, Any]
+    session_id: str
+
+
+class RegistrationCompleteRequest(BaseModel):
+    """Request body for completing passkey registration.
+
+    Attributes:
+        session_id: Session identifier from the begin response.
+        credential: navigator.credentials.create() output.
+        user_id: UUID of the user completing registration.
+    """
+
+    session_id: str
+    credential: dict[str, Any]
+    user_id: uuid.UUID
+
+
+class AuthenticationBeginResponse(BaseModel):
+    """Response containing WebAuthn authentication options.
+
+    Attributes:
+        options: py_webauthn authentication options as a JSON-serializable dict.
+        session_id: Opaque session identifier for the challenge.
+    """
+
+    options: dict[str, Any]
+    session_id: str
+
+
+class AuthenticationCompleteRequest(BaseModel):
+    """Request body for completing passkey authentication.
+
+    Attributes:
+        session_id: Session identifier from the begin response.
+        credential: navigator.credentials.get() output.
+    """
+
+    session_id: str
+    credential: dict[str, Any]
+
+
+class AuthenticationCompleteResponse(BaseModel):
+    """Response returned after successful passkey authentication.
+
+    Attributes:
+        access_token: JWT access token.
+        token_type: Always 'bearer'.
+        user_id: UUID of the authenticated user.
+    """
+
+    access_token: str
+    token_type: str = "bearer"
+    user_id: uuid.UUID

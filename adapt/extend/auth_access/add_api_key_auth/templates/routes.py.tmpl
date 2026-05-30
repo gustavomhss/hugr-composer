@@ -1,0 +1,143 @@
+"""API-key management endpoints.
+
+Owners may create, list, rotate, and revoke their own API keys.
+The plaintext token is shown exactly once on creation.
+"""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, HTTPException, status
+
+from app.api.deps import CurrentUser, SessionDep
+from app.core.api_key_hasher import generate_key_id, generate_secret, hash_secret
+from app.crud import api_key as crud_api_key
+from app.schemas.api_key import (
+    APIKeyCreate,
+    APIKeyCreatedResponse,
+    APIKeyPublic,
+)
+
+router = APIRouter(prefix="/api-keys", tags=["api-keys"])
+
+
+@router.post("/", response_model=APIKeyCreatedResponse, status_code=status.HTTP_201_CREATED)
+async def create_api_key(
+    key_in: APIKeyCreate,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> APIKeyCreatedResponse:
+    """Create a new API key for the authenticated user.
+
+    Returns the plaintext token exactly once.  The token format is
+    ``api_<key_id>_<secret>``; pass it as ``Authorization: Bearer <token>``.
+
+    Args:
+        key_in: Key creation parameters (name, scopes, expiry, environment).
+        session: Injected async database session.
+        current_user: Authenticated user who will own the key.
+
+    Returns:
+        ``APIKeyCreatedResponse`` with the single-use plaintext token and warning.
+    """
+    key_id = generate_key_id()
+    secret = generate_secret()
+    secret_hash = hash_secret(secret)
+    plaintext_token = f"api_{key_id}_{secret}"
+
+    api_key = await crud_api_key.create(
+        session,
+        key_in=key_in,
+        user_id=current_user.id,
+        key_id=key_id,
+        secret_hash=secret_hash,
+    )
+    return APIKeyCreatedResponse(
+        api_key=APIKeyPublic.model_validate(api_key),
+        plaintext_token=plaintext_token,
+        warning="Store this token now. It will NOT be shown again.",
+    )
+
+
+@router.get("/", response_model=list[APIKeyPublic])
+async def list_my_api_keys(
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> list[APIKeyPublic]:
+    """List all API keys owned by the authenticated user.
+
+    Args:
+        session: Injected async database session.
+        current_user: Authenticated user.
+
+    Returns:
+        List of ``APIKeyPublic`` — never includes plaintext secrets.
+    """
+    keys = await crud_api_key.list_for_user(session, user_id=current_user.id)
+    return [APIKeyPublic.model_validate(k) for k in keys]
+
+
+@router.post("/{key_id}/rotate", response_model=APIKeyCreatedResponse)
+async def rotate_api_key(
+    key_id: str,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> APIKeyCreatedResponse:
+    """Rotate the secret for an API key owned by the authenticated user.
+
+    The old secret is invalidated immediately.  The new plaintext token is
+    shown exactly once in the response.
+
+    Args:
+        key_id: Short identifier of the key to rotate.
+        session: Injected async database session.
+        current_user: Must be the owner of the key.
+
+    Returns:
+        ``APIKeyCreatedResponse`` with the new single-use plaintext token.
+
+    Raises:
+        HTTPException 404: Key not found or not owned by current user.
+    """
+    api_key = await crud_api_key.get_by_key_id(session, key_id=key_id)
+    if not api_key or api_key.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    new_secret = generate_secret()
+    api_key.secret_hash = hash_secret(new_secret)
+    await session.flush()
+    plaintext_token = f"api_{api_key.key_id}_{new_secret}"
+    return APIKeyCreatedResponse(
+        api_key=APIKeyPublic.model_validate(api_key),
+        plaintext_token=plaintext_token,
+        warning="Old secret is now invalid. Update your client immediately.",
+    )
+
+
+@router.post("/{key_id}/revoke", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
+async def revoke_api_key(
+    key_id: str,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> None:
+    """Revoke an API key immediately.
+
+    The key becomes unusable on the very next request.  Revocation is
+    irreversible; a new key must be created to restore access.
+
+    Args:
+        key_id: Short identifier of the key to revoke.
+        session: Injected async database session.
+        current_user: Must be the owner of the key.
+
+    Raises:
+        HTTPException 404: Key not found or not owned by current user.
+        HTTPException 409: Key is already revoked.
+    """
+    api_key = await crud_api_key.get_by_key_id(session, key_id=key_id)
+    if not api_key or api_key.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    if api_key.status == "revoked":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Key already revoked",
+        )
+    await crud_api_key.revoke(session, api_key=api_key)

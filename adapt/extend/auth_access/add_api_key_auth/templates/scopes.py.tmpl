@@ -1,0 +1,82 @@
+"""Scope evaluator for API keys.
+
+Scopes are strings of the form ``resource:action`` (e.g. ``orders:read``,
+``billing:write``, ``admin:*``, ``*:*``).  Wildcards are supported on
+either or both segments.  A key is denied by default; it must have an
+explicit grant that matches the required scope.
+
+Example::
+
+    result = evaluate_scope(["orders:read", "billing:*"], "billing:write")
+    assert result.allowed is True
+    assert result.matched_scope == "billing:*"
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Iterable
+
+
+@dataclass(frozen=True)
+class ScopeCheckResult:
+    """Result of a single scope evaluation.
+
+    Attributes:
+        allowed: Whether the key has a matching granted scope.
+        matched_scope: The specific scope string that matched, or None.
+        reason: Human-readable explanation of the decision.
+    """
+
+    allowed: bool
+    matched_scope: str | None
+    reason: str
+
+
+def _scope_matches(granted: str, required: str) -> bool:
+    """Return True if *granted* satisfies *required* using wildcard rules.
+
+    Args:
+        granted: A scope string from the key's granted list.
+        required: The scope the route requires.
+
+    Returns:
+        ``True`` if the granted scope covers the required scope.
+    """
+    g_resource, _, g_action = granted.partition(":")
+    r_resource, _, r_action = required.partition(":")
+    resource_ok = g_resource == "*" or g_resource == r_resource
+    action_ok = g_action == "*" or g_action == r_action
+    return resource_ok and action_ok
+
+
+def evaluate_scope(
+    granted_scopes: Iterable[str], required_scope: str
+) -> ScopeCheckResult:
+    """Evaluate whether any granted scope satisfies the required scope.
+
+    Deny-by-default: the key must have an explicit grant that matches.
+    Wildcards are expanded on both resource and action segments.
+
+    Args:
+        granted_scopes: Iterable of scope strings from the API key record.
+        required_scope: The ``resource:action`` scope the route requires.
+
+    Returns:
+        ``ScopeCheckResult`` with ``allowed``, ``matched_scope``, and ``reason``.
+    """
+    required_scope = required_scope.strip()
+    if ":" not in required_scope:
+        return ScopeCheckResult(
+            allowed=False,
+            matched_scope=None,
+            reason=f"required scope must be 'resource:action', got {required_scope!r}",
+        )
+    for scope in granted_scopes:
+        if _scope_matches(scope, required_scope):
+            return ScopeCheckResult(allowed=True, matched_scope=scope, reason="matched")
+    return ScopeCheckResult(
+        allowed=False,
+        matched_scope=None,
+        reason=f"no granted scope matches {required_scope!r}",
+    )

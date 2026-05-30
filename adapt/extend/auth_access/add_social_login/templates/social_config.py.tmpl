@@ -1,0 +1,66 @@
+"""Social login provider configuration."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class ProviderConfig:
+    """OAuth2 provider configuration.
+
+    Attributes:
+        name: Provider identifier (google, github, apple).
+        auth_url: Provider's authorization endpoint.
+        token_url: Provider's token endpoint.
+        userinfo_url: Provider's userinfo endpoint.
+        scopes: List of OAuth2 scopes to request.
+    """
+
+    name: str
+    auth_url: str
+    token_url: str
+    userinfo_url: str
+    scopes: list[str]
+
+
+PROVIDER_CONFIGS: dict[str, ProviderConfig] = {
+    "google": ProviderConfig(
+        name="google",
+        auth_url="https://accounts.google.com/o/oauth2/v2/auth",
+        token_url="https://oauth2.googleapis.com/token",
+        userinfo_url="https://www.googleapis.com/oauth2/v3/userinfo",
+        scopes=["openid", "email", "profile"],
+    ),
+    "github": ProviderConfig(
+        name="github",
+        auth_url="https://github.com/login/oauth/authorize",
+        token_url="https://github.com/login/oauth/access_token",
+        userinfo_url="https://api.github.com/user",
+        scopes=["read:user", "user:email"],
+    ),
+    "apple": ProviderConfig(
+        name="apple",
+        auth_url="https://appleid.apple.com/auth/authorize",
+        token_url="https://appleid.apple.com/auth/token",
+        userinfo_url="",
+        scopes=["name", "email"],
+    ),
+}
+
+
+def get_provider_config(provider: str) -> ProviderConfig:
+    """Return config for the named provider.
+
+    Args:
+        provider: Provider name (google, github, or apple).
+
+    Returns:
+        ``ProviderConfig`` for the given provider.
+
+    Raises:
+        ValueError: If the provider name is not recognized.
+    """
+    if provider not in PROVIDER_CONFIGS:
+        raise ValueError(f"Unknown social provider: {provider!r}")
+    return PROVIDER_CONFIGS[provider]
