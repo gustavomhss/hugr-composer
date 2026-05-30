@@ -1,17 +1,34 @@
 """Global tenant query filter via SQLAlchemy session event.
 
 Import this module once at application startup (main.py) to activate
-the filter.  Every SELECT against a TenantScopedMixin model will
-automatically receive a ``WHERE tenant_id = :current_tenant_id``
-predicate unless the execution option ``skip_tenant_filter=True`` is set.
+the filter.  Every SELECT, UPDATE, and DELETE against a
+TenantScopedMixin model will automatically receive a
+``WHERE tenant_id = :current_tenant_id`` predicate unless the execution
+option ``skip_tenant_filter=True`` is set.
 
 FAIL-CLOSED CONTRACT
 --------------------
-If no tenant is present in the request context, a tenant-scoped SELECT
-returns ZERO rows — it does NOT skip the filter. Skipping would FAIL
-OPEN and leak every tenant's data to a context-less query. The ONLY
-escape hatch is the explicit ``skip_tenant_filter=True`` execution
-option, reserved for trusted admin/system paths (e.g. listing tenants).
+If no tenant is present in the request context, a tenant-scoped
+statement matches ZERO rows — it does NOT skip the filter. Skipping
+would FAIL OPEN and leak (or mutate) every tenant's data on a
+context-less query. The ONLY escape hatch is the explicit
+``skip_tenant_filter=True`` execution option, reserved for trusted
+admin/system paths (e.g. listing tenants).
+
+CROSS-TENANT WRITE GUARD (F-A)
+------------------------------
+``with_loader_criteria`` covers ORM-style SELECTs but does NOT apply to
+SQLAlchemy Core ``update()`` / ``delete()`` constructs (which the
+``add_bulk_operations`` tool emits as
+``_sql_update(Model).where(Model.id == row_id)``). Without the
+Core-level guard below, a caller in tenant A could UPDATE or DELETE a
+row owned by tenant B by guessing the row's UUID — the SELECT-only
+filter is bypassed entirely.
+
+The fix is to also intercept ``is_update`` / ``is_delete`` execute
+states and rewrite the statement's WHERE clause programmatically with
+``stmt.where(table.c.tenant_id == tenant_id)`` (or an always-false
+predicate when no tenant context is set).
 
 Example::
 
@@ -26,9 +43,45 @@ from app.core.tenant_context import get_current_tenant
 from app.models.mixins import TenantScopedMixin
 
 
+def _tenant_scoped_table(stmt):
+    """Return the bound Table if the Core stmt targets a TenantScopedMixin model.
+
+    Args:
+        stmt: SQLAlchemy Core update()/delete() construct.
+
+    Returns:
+        The mapped ``Table`` object when the stmt targets a tenant-scoped
+        model, otherwise ``None``. Falls back to checking for a
+        ``tenant_id`` column when the mapper lookup fails (some
+        emitted code references the Core Table directly rather than the
+        ORM class).
+    """
+    from sqlalchemy import inspect as _sa_inspect
+
+    # Modern SQLAlchemy 2.x: ``UpdateBase.entity_description`` exposes the
+    # ORM entity for Core update/delete constructs created via
+    # ``update(Model)``. Older form: walk ``stmt.table``.
+    table = getattr(stmt, "table", None)
+    if table is None:
+        return None
+    # ORM mapped class lookup
+    try:
+        for mapper in _sa_inspect(TenantScopedMixin, raiseerr=False).mappers:  # type: ignore[union-attr]
+            if mapper.local_table is table:
+                return table
+    except Exception:  # noqa: BLE001 — defensive: any inspect failure → fall through
+        pass
+    # Fallback: any table that carries a ``tenant_id`` column is treated
+    # as tenant-scoped (matches what add_multi_tenancy emits on every
+    # business model).
+    if "tenant_id" in getattr(table, "c", {}):
+        return table
+    return None
+
+
 @event.listens_for(Session, "do_orm_execute")
 def _enforce_tenant_filter(execute_state) -> None:
-    """Inject WHERE tenant_id = current_tenant for every default SELECT.
+    """Inject WHERE tenant_id = current_tenant on every SELECT/UPDATE/DELETE.
 
     Args:
         execute_state: SQLAlchemy ORM execute state object.
@@ -37,32 +90,49 @@ def _enforce_tenant_filter(execute_state) -> None:
 
         stmt = select(Item).execution_options(skip_tenant_filter=True)
     """
-    if not execute_state.is_select:
-        return
     if execute_state.execution_options.get("skip_tenant_filter"):
         return
 
     tenant_id = get_current_tenant()
-    if tenant_id is None:
-        # FAIL CLOSED: no tenant context -> a tenant-scoped query must
-        # return nothing rather than every tenant's rows. We inject an
-        # always-false predicate (not a no-op return).
+
+    if execute_state.is_select:
+        if tenant_id is None:
+            # FAIL CLOSED: no tenant context -> a tenant-scoped query must
+            # return nothing rather than every tenant's rows. We inject an
+            # always-false predicate (not a no-op return).
+            execute_state.statement = execute_state.statement.options(
+                with_loader_criteria(
+                    TenantScopedMixin,
+                    lambda cls: false(),
+                    include_aliases=True,
+                )
+            )
+            return
         execute_state.statement = execute_state.statement.options(
             with_loader_criteria(
                 TenantScopedMixin,
-                lambda cls: false(),
+                lambda cls: cls.tenant_id == tenant_id,
                 include_aliases=True,
             )
         )
         return
 
-    execute_state.statement = execute_state.statement.options(
-        with_loader_criteria(
-            TenantScopedMixin,
-            lambda cls: cls.tenant_id == tenant_id,
-            include_aliases=True,
-        )
-    )
+    # F-A: Core UPDATE / DELETE constructs bypass with_loader_criteria.
+    # Rewrite the statement to append a tenant_id predicate (or an
+    # always-false predicate when no tenant context is set).
+    if execute_state.is_update or execute_state.is_delete:
+        stmt = execute_state.statement
+        table = _tenant_scoped_table(stmt)
+        if table is None:
+            # Not a tenant-scoped model — nothing to enforce.
+            return
+        if tenant_id is None:
+            # FAIL CLOSED: zero-row match prevents context-less writes
+            # from touching any tenant's data.
+            execute_state.statement = stmt.where(false())
+            return
+        execute_state.statement = stmt.where(table.c.tenant_id == tenant_id)
+        return
 
 
 @event.listens_for(Session, "before_flush")

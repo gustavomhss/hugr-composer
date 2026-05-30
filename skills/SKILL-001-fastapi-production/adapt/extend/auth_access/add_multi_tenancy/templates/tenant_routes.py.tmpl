@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query, status
+from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import CurrentSuperuser, SessionDep
 from app.crud import tenant as crud_tenant
@@ -25,12 +26,24 @@ async def create_tenant(
         current_user: Must be a superuser.
 
     Raises:
-        HTTPException: 409 if slug already exists.
+        HTTPException: 409 if slug already exists (resolved either by
+            the pre-check or by the IntegrityError race-recovery path).
     """
     existing = await crud_tenant.get_by_slug(session, slug=tenant_in.slug)
     if existing:
         raise HTTPException(status_code=409, detail="Tenant slug already exists")
-    tenant = await crud_tenant.create(session, tenant_in=tenant_in)
+    # F-D: Two concurrent POSTs with the same slug both pass the
+    # ``get_by_slug → None`` check and race the INSERT. The DB UNIQUE
+    # constraint stops the loser → without this guard the loser surfaces
+    # as a 500 + raw "duplicate key" message. Catch IntegrityError,
+    # roll back the failed transaction, and return the canonical 409.
+    try:
+        tenant = await crud_tenant.create(session, tenant_in=tenant_in)
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=409, detail="Tenant slug already exists"
+        ) from None
     return TenantPublic.model_validate(tenant)
 
 

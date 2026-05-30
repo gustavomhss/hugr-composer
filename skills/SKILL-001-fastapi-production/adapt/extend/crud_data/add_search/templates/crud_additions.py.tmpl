@@ -6,6 +6,7 @@ import re as _re
 import uuid as _search_uuid
 from sqlalchemy import func as _func, select as _select, text as _text, or_ as _or
 from sqlalchemy.dialects.postgresql import REGCONFIG as _REGCONFIG
+from sqlalchemy.exc import ProgrammingError as _ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncSession as _SearchSession
 
 # Columns used for search (same as tsvector fields, for LIKE fallback)
@@ -233,11 +234,20 @@ async def autocomplete(
         return await _autocomplete_like(session, q, owner_id)
 
     first_token = q.strip().split()[0]
-    # Strip tsquery meta-characters (&, |, !, :, *, (, ), ') so the
-    # token cannot break out of the tsquery expression. Pass the
-    # sanitized token as a bound parameter (NOT wrapped in _text) so
-    # SQLAlchemy emits CAST($$1 AS regconfig), $$2 — no inline SQL literal.
+    # F-B: Strip tsquery meta-characters (&, |, !, :, *, (, ), ', emoji,
+    # combining marks, etc.) so the token cannot break out of the
+    # tsquery expression — ``re.sub(r"[^\w]+", " ", token).strip()``
+    # collapses everything that is not a unicode word char.
+    #
+    # FAIL-CLOSED on empty: if the sanitized token is empty (raw input
+    # was pure punctuation / emoji / whitespace), passing ``":*"`` to
+    # ``to_tsquery`` raises ``ProgrammingError: syntax error in tsquery``
+    # and leaks the raw DB exception to the client. Return [] BEFORE
+    # touching the DB. This is the trivial DoS surface flagged in
+    # Phase-5 Round-3.
     _safe_token = _re.sub(r"[^\w]+", " ", first_token).strip()
+    if not _safe_token:
+        return []
     prefix_query = _func.to_tsquery(
         _func.cast(language, _REGCONFIG),
         _safe_token + ":*",
@@ -253,5 +263,12 @@ async def autocomplete(
         stmt = stmt.where(${model_name}.is_deleted == False)  # noqa: E712
     if owner_id is not None and hasattr(${model_name}, "owner_id"):
         stmt = stmt.where(${model_name}.owner_id == owner_id)
-    result = await session.execute(stmt)
+    # F-B: Defence-in-depth — any residual tsquery parse error (e.g.
+    # an exotic input pattern the regex did not foresee) must NOT leak
+    # a raw SQL traceback. Swallow ProgrammingError and return [] so
+    # autocomplete remains a soft-fail UI contract.
+    try:
+        result = await session.execute(stmt)
+    except _ProgrammingError:
+        return []
     return [row[0] for row in result.all() if row[0]]

@@ -17,6 +17,16 @@ Usage::
         current_user: User = Depends(get_current_user),
     ) -> OrderRead:
         ...
+
+BOLA-disconnect fix (Phase-5 Round-3)
+-------------------------------------
+The verifier reads the authenticated user through
+``Depends(get_current_user)`` — the standard FastAPI pattern the
+scaffold's auth stack already uses. The previous implementation read
+``request.state.user``, which is NEVER set by the scaffold (no
+middleware writes to ``request.state``); the guard would therefore see
+``None`` and return 401 for every protected route — fail-safe but
+permanently broken.
 """
 
 from __future__ import annotations
@@ -28,6 +38,16 @@ from typing import Any, Type
 
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
+try:
+    # The scaffold's standard auth dependency. Imported lazily-by-name
+    # because some retrofit projects scaffolded before secure-by-default
+    # may not have the deps module wired exactly this way; if the
+    # import fails the verifier falls back to ``request.state.user``
+    # (the legacy path) so the guard still loads.
+    from app.api.deps import get_current_user as _scaffold_get_current_user
+except Exception:  # noqa: BLE001 — retrofit safety; see comment above
+    _scaffold_get_current_user = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
 
@@ -70,12 +90,25 @@ class OwnershipVerifier:
     async def __call__(
         self,
         request: Request,
+        current_user: Any = Depends(_scaffold_get_current_user)
+        if _scaffold_get_current_user is not None
+        else None,
         session: AsyncSession = Depends(lambda: None),
     ) -> None:
         """Verify ownership; raises 403/401 on violation.
 
+        BOLA-disconnect fix: the authenticated user is now resolved via
+        ``Depends(get_current_user)`` — the standard FastAPI auth
+        pattern the scaffold already uses. Reading
+        ``request.state.user`` (the previous implementation) is broken
+        because no middleware sets it; every protected route would
+        return 401 fail-safe-but-broken.
+
         Args:
-            request: The current HTTP request.
+            request: The current HTTP request (still used for path
+                parameter extraction).
+            current_user: The authenticated user, injected by FastAPI
+                via the scaffold's ``get_current_user`` dependency.
             session: Optional async DB session for ownership query.
         """
         if not _bola_enabled():
@@ -88,7 +121,7 @@ class OwnershipVerifier:
                     detail={"detail": "Resource ID not found in path"},
                 )
             return
-        current_user_id = _get_current_user_id(request)
+        current_user_id = _resolve_current_user_id(current_user, request)
         if current_user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -167,15 +200,33 @@ def _extract_resource_id(request: Request, model_name: str) -> int | str | None:
     return None
 
 
-def _get_current_user_id(request: Request) -> Any:
-    """Extract current user ID from request state (set by auth middleware).
+def _resolve_current_user_id(current_user: Any, request: Request) -> Any:
+    """Extract current user ID from the injected user or (legacy) request.state.
+
+    BOLA-disconnect fix: prefers the ``Depends(get_current_user)``
+    injected ``current_user`` (the standard FastAPI auth pattern).
+    Falls back to ``request.state.user`` only when the dependency
+    injection was unavailable (legacy retrofit projects that never
+    wired ``app.api.deps.get_current_user``).
 
     Args:
-        request: HTTP request.
+        current_user: User object injected by FastAPI via
+            ``Depends(get_current_user)``. May be ``None`` when the
+            scaffold dependency could not be imported.
+        request: HTTP request (used only for the legacy fallback).
 
     Returns:
-        User ID or None if not authenticated.
+        User ID (``id`` or ``user_id`` attribute), or ``None`` when
+        not authenticated.
     """
+    if current_user is not None:
+        uid = getattr(current_user, "id", None) or getattr(current_user, "user_id", None)
+        if uid is not None:
+            return uid
+    # Legacy fallback for retrofit projects whose deps module isn't
+    # wired to ``app.api.deps.get_current_user``. Documented as a
+    # transitional path — the primary contract is the Depends-injected
+    # current_user above.
     user = getattr(request.state, "user", None)
     if user is None:
         return None
