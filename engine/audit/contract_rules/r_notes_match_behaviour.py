@@ -1,0 +1,505 @@
+"""B0.13 — ``notes_match_emitted_behaviour`` (honesty meta-rule).
+
+CONTRACT.md scope: §B0.13 (Wave-0.5 anti-pattern P4 — "notes claim
+properties the template never enforces"). Closes the *honesty gap*
+between what a tool *says* in its ``ToolResult(notes=[...])`` and
+what the emitted template *actually* does at runtime.
+
+Background — why this exists
+============================
+
+Agents read ``notes`` as success prose: when a notes line says
+*"signed"*, *"verified"*, *"append-only"*, *"hash-chained"*,
+*"idempotent"*, … the agent treats that as a guarantee and stops
+auditing. Round-6-S12-F4 / Round-5 audit cluster P4 documented ~12
+tools whose notes assert properties the templates can demonstrably NOT
+deliver under the documented deployment shape (single-worker only,
+best-effort, opt-in flag never set, …).
+
+This rule does NOT verify the claim itself — it cannot, claims like
+"hash-chained" are correctness properties not lint targets. Instead
+it enforces the **pair invariant**: every claim-bearing notes line
+must have a *paired honesty test* — an engine-level test asserting
+the claim holds against the template's actual emitted shape — OR
+the notes line must carry an explicit escape phrase that downgrades
+the claim ("only when", "requires manual", "see next_steps", "⚠").
+
+Tools whose notes claim properties that no paired test demonstrates
+AND that carry no escape language are added to :pydata:`_WAIVED_TOOLS`
+(Wave-0.5 grandfathering). The waiver list IS the Wave-1 honesty-test
+backlog: each tool migrated out is one fewer P4 finding.
+
+Approach
+========
+
+1. Walk every ``adapt/**/<tool>/__init__.py`` (depth ≥ 3 under
+   ``adapt/`` — category ``__init__``s at depth ≤ 2 are skipped).
+2. AST-collect every string that ends up in a
+   ``ToolResult(notes=[…])`` keyword — direct list-literal AND
+   indirect Name → module-level constant List. ``warnings=`` entries
+   are NEVER scanned (those ARE the disclosure surface — they
+   already disclose; scanning them would defeat the bypass).
+3. For each note string, if it contains a *claim-token* AND does
+   NOT contain an *escape phrase*, mark the tool as "needs honesty
+   evidence".
+4. Honesty evidence = an engine-level test file at one of:
+     - ``engine/tests/test_<tool>_notes_invariants.py``
+     - ``engine/tests/test_<tool>_emitted.py``
+   ``<tool>`` is the leaf tool directory name (the last segment of
+   the tool key). Fuzzy match: any ``def test_*`` whose function name
+   OR docstring contains the offending claim-token (case-insensitive)
+   counts as paired evidence.
+5. If the tool key is in :pydata:`_WAIVED_TOOLS`, skip (Wave-0.5
+   grandfathering — see waiver list comments for the finding each
+   tool discloses).
+6. Otherwise REJECT with a copy-pasteable offender list.
+
+What this rule deliberately does NOT do
+========================================
+
+* **Does NOT scan ``warnings=`` entries.** Those are meant to disclose
+  the gap a claim might leave open ("WARNING: fan-out is best-effort
+  — no per-channel retry budget"). Treating them as claims would
+  invert the bypass.
+* **Does NOT scan ``next_steps=`` entries.** Those describe operator
+  TODOs, not finished behaviour.
+* **Does NOT verify the claim itself.** Whether the "hash-chained
+  ledger" template is *actually* hash-chained is a property the
+  paired honesty test asserts — this rule just enforces the pair
+  exists. A vacuous honesty test (``def test_signed(): assert True``)
+  passes B0.13 and would be caught by code review / mutation testing.
+* **Does NOT scan tool docstrings.** Module-level docstrings are
+  developer-facing prose, not agent-facing tool output. Only
+  ``ToolResult(notes=…)`` strings are scanned.
+
+Tool-key resolution
+===================
+
+Same shape as B0.10 / B0.12: ``adapt/<bundle>/<category>/<tool>/__init__.py``
+↦ ``"<bundle>/<category>/<tool>"`` relative to ``ADAPT_ROOT``. The
+``verify/`` bundle uses two-segment keys (``verify/<tool>``) because
+its tools live at ``adapt/verify/<tool>/__init__.py`` with no
+``<category>`` middle segment.
+
+Trade-offs (declared, not hidden)
+=================================
+
+* **Token list is hand-curated.** The 15 claim-tokens were chosen from
+  the audit cluster P4 review. A future tool that lies in a different
+  vocabulary (``"tamper-proof"``, ``"durable"``, ``"exactly-once"``,
+  ``"strongly consistent"``) slips through until the token list grows.
+  Token list is in this file (not a YAML) so adding tokens is a
+  reviewable code change with a test diff.
+* **Pair-test name match is fuzzy.** ``test_signed_token_validates``
+  satisfies the "signed" claim by name alone — we do not parse the
+  test body. This buys speed (no test execution) at the cost of a
+  vacuous-test loophole. Documented; mitigated by mutation testing
+  and PR review.
+* **Escape phrases are substring-matched.** A note containing
+  ``"only when X"`` for any X passes the escape gate, including
+  pathological cases like ``"only when running tests"``. We accept
+  this — the alternative (regex constraint on the escape clause) is
+  brittle and the false-negative rate from over-broad escapes is
+  bounded by reviewer attention on the diff.
+* **Grandfathering is per-tool, not per-line.** A waived tool gets
+  ALL its notes skipped even for additional claim tokens added later.
+  This is intentional: the unit of fix is a *paired test file*, not a
+  *paired test per claim token*. When the tool's pair test lands, the
+  waiver is removed and the rule re-scans ALL claims.
+* **The escape ``⚠`` is exact-character-matched.** Non-ASCII; one
+  byte. We rely on UTF-8 reads (default). Templates emitted on
+  Windows with cp1252 are NOT a supported authoring shape.
+
+Bypass mechanism (for *new* tools added post-Wave-0.5)
+======================================================
+
+A new tool MUST either:
+
+* Ship a paired test file at one of the two pair-test paths AND that
+  test must contain ``def test_*`` whose name or docstring references
+  the claim token; OR
+* Add the escape phrase (``"only when"`` / ``"requires manual"`` /
+  ``"see next_steps"`` / ``"⚠"``) to the offending notes line; OR
+* Be added to :pydata:`_WAIVED_TOOLS` with an inline citation
+  pointing to the audit finding the waiver discloses — reviewer
+  approval required, same shape as B0.12's waiver expansion gate.
+"""
+
+from __future__ import annotations
+
+import ast
+import re
+from pathlib import Path
+
+from ._common import SKILL_ROOT
+
+# --- Public knobs --------------------------------------------------------
+
+#: Tokens that, when present in a notes string, mark it as a "claim"
+#: requiring paired honesty evidence. All matched case-insensitively.
+#: Curated from Round-5 / Round-6 audit cluster P4.
+_CLAIM_TOKENS: frozenset[str] = frozenset({
+    "automatically",
+    "never trusts",
+    "append-only",
+    "fan-out",
+    "hot reload",
+    "verified",
+    "encrypted",
+    "hash-chained",
+    "distributed",
+    "cross-worker",
+    "production-grade",
+    "tamper-evident",
+    "single-use",
+    "idempotent",
+    "signed",
+})
+
+#: Phrases that, when present in the SAME notes string, downgrade the
+#: claim to a conditional / qualified statement and exempt the line
+#: from requiring paired evidence. Substring-matched case-insensitively
+#: (except ``⚠`` which is matched as-is).
+_ESCAPE_PHRASES: tuple[str, ...] = (
+    "only when",
+    "requires manual",
+    "see next_steps",
+    "⚠",
+)
+
+#: Test-file name templates probed for honesty evidence. ``{tool}`` is
+#: the leaf tool directory name (e.g. ``add_dpop_tokens``).
+_PAIR_TEST_PATTERNS: tuple[str, ...] = (
+    "test_{tool}_notes_invariants.py",
+    "test_{tool}_emitted.py",
+)
+
+# --- Tool waivers --------------------------------------------------------
+#
+# Tool keys (format: ``<bundle>/<category>/<tool>`` for extend/evolve/
+# operate/proactive, ``<bundle>/<tool>`` for verify) that are
+# grandfathered under Wave-0.5: their notes carry claim tokens AND no
+# paired engine-level test exists yet. Each entry MUST cite the
+# audit finding the waiver discloses; the waiver list IS the Wave-1
+# honesty-test backlog (one PR per tool migrating out).
+#
+# NO new tool may be added to this set without reviewer approval — the
+# rule rejects regressions everywhere else.
+_WAIVED_TOOLS: frozenset[str] = frozenset({
+    # P4 — "fan-out" claim; no engine-level pair test asserts Redis
+    # pubsub invalidation actually fans out cross-worker.
+    "extend/auth_access/add_feature_flags",
+    # P4 — "verified email" claim; no engine-level test asserts the
+    # account-linking branch actually checks email_verified=true.
+    "extend/auth_access/add_social_login",
+    # P4 — "hash-chained, signed, append-only" ledger claim; no
+    # engine-level test asserts chain integrity / append-only DDL.
+    "extend/crud_data/add_audit_log",
+    # P4 — "never trusts Content-Type" + "presigned URL workflow"
+    # claims; no engine-level test asserts magic-byte validation or
+    # the no-buffering S3 path.
+    "extend/crud_data/add_file_upload",
+    # P4 — "distributed" / "fan-out" claims; no engine-level test
+    # asserts the wired primitives actually coordinate cross-worker.
+    "extend/infrastructure/add_cache_layer",
+    # P4 — "signed token" claim; no engine-level test asserts the
+    # CSRF token signature is verified on submit.
+    "extend/infrastructure/add_csrf_protection",
+    # P4 — "fan-out" claim survives the in-line WARNING because the
+    # warning is also in notes (not warnings=); will move to warnings=
+    # in Wave-1 honesty-test PR.
+    "extend/infrastructure/add_notifications",
+    # P4 — "idempotent" claim survives the in-line WARNING for the
+    # same reason as add_notifications above.
+    "extend/infrastructure/add_outbox_pattern",
+    # P4 — "automatically" 429 emission claim; no engine-level test
+    # asserts the middleware always sets Retry-After on 429.
+    "extend/infrastructure/add_rate_limiting",
+    # P4 — "idempotent" deduplication claim; no engine-level test
+    # asserts the Idempotent-Replayed header path.
+    "extend/infrastructure/add_request_fingerprint",
+    # P4 — "automatically" Cache-Control claim; no engine-level test
+    # asserts no-store is applied to ALL 4xx/5xx.
+    "extend/infrastructure/add_response_armor",
+    # P4 — "signed" presigned URL claim; no engine-level test asserts
+    # the no-proxy direct-to-S3 path or quota enforcement.
+    "extend/infrastructure/add_s3_storage",
+    # P4 — "signature-verified" webhook claim; no engine-level test
+    # asserts the verification branch rejects forged signatures.
+    "extend/infrastructure/add_stripe_refund_flow",
+    # P4 — same as add_stripe_refund_flow but on the subscription
+    # webhook.
+    "extend/infrastructure/add_stripe_subscription",
+    # P4 — "idempotent" consumer claim; no engine-level test asserts
+    # the IdempotentConsumer drops replays.
+    "extend/realtime/add_webhook_receiver",
+    # P4 — "fan-out" Redis claim; no engine-level test asserts
+    # multi-worker delivery in the chat path.
+    "extend/realtime/add_websocket_chat",
+    # P4 — same as add_websocket_chat for presence.
+    "extend/realtime/add_websocket_presence",
+    # P4 — "automatically" SARIF upload claim; no engine-level test
+    # asserts the SARIF artefact lands in the GitHub Security tab path.
+    "verify/security_scan",
+})
+
+# --- Scanner -------------------------------------------------------------
+
+ADAPT_ROOT = SKILL_ROOT / "adapt"
+TESTS_ROOT = SKILL_ROOT / "engine" / "tests"
+
+
+def _tool_key_for_init(init_path: Path, adapt_root: Path) -> str:
+    """Map ``adapt/extend/auth_access/add_dpop_tokens/__init__.py``
+    ↦ ``"extend/auth_access/add_dpop_tokens"`` (relative to
+    ``adapt_root``).
+
+    Category-level ``__init__.py`` files (depth < 3) return ``""``
+    so the caller can skip them.
+    """
+    try:
+        rel = init_path.relative_to(adapt_root)
+    except ValueError:
+        return ""
+    parts = list(rel.parts)
+    if parts[-1] != "__init__.py":
+        return ""
+    parts = parts[:-1]
+    if len(parts) < 2:
+        # depth 0/1 — adapt/__init__.py or adapt/extend/__init__.py
+        return ""
+    return "/".join(parts)
+
+
+def _string_lists_at_module_level(tree: ast.Module) -> dict[str, list[tuple[int, str]]]:
+    """Collect module-level ``NAME = [str, str, …]`` constants.
+
+    Used to follow indirect ``ToolResult(notes=_NOTES_SUCCESS)`` refs.
+    Only Lists whose elements are ALL string constants are collected.
+    """
+    out: dict[str, list[tuple[int, str]]] = {}
+    for stmt in tree.body:
+        target_name: str | None = None
+        value: ast.AST | None = None
+        if (
+            isinstance(stmt, ast.Assign)
+            and len(stmt.targets) == 1
+            and isinstance(stmt.targets[0], ast.Name)
+        ):
+            target_name = stmt.targets[0].id
+            value = stmt.value
+        elif isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
+            target_name = stmt.target.id
+            value = stmt.value
+        if target_name is None or not isinstance(value, ast.List):
+            continue
+        items: list[tuple[int, str]] = []
+        all_strings = True
+        for el in value.elts:
+            if isinstance(el, ast.Constant) and isinstance(el.value, str):
+                items.append((el.lineno, el.value))
+            else:
+                all_strings = False
+                break
+        if all_strings and items:
+            out[target_name] = items
+    return out
+
+
+def _toolresult_func_name(call: ast.Call) -> str:
+    """Return the trailing identifier of ``call.func``, or ``""``."""
+    func = call.func
+    if isinstance(func, ast.Name):
+        return func.id
+    if isinstance(func, ast.Attribute):
+        return func.attr
+    return ""
+
+
+def extract_notes_strings(src: str) -> list[tuple[int, str]]:
+    """Return ``[(lineno, note_string), …]`` for every string passed
+    as ``ToolResult(notes=…)`` anywhere in the module.
+
+    Handles both shapes:
+
+    * Direct list literal: ``ToolResult(notes=["…", "…"])``
+    * Indirect Name: ``ToolResult(notes=_NOTES_SUCCESS)`` where
+      ``_NOTES_SUCCESS = ["…", "…"]`` is a module-level constant.
+
+    Modules that fail to parse return ``[]`` (a tool ``__init__.py``
+    that doesn't parse can't actually run — it's a different bug).
+    """
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return []
+    name_to_strings = _string_lists_at_module_level(tree)
+    collected: list[tuple[int, str]] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        if _toolresult_func_name(node) != "ToolResult":
+            continue
+        for kw in node.keywords:
+            if kw.arg != "notes":
+                continue
+            v = kw.value
+            if isinstance(v, ast.List):
+                for el in v.elts:
+                    if isinstance(el, ast.Constant) and isinstance(el.value, str):
+                        collected.append((el.lineno, el.value))
+            elif isinstance(v, ast.Name) and v.id in name_to_strings:
+                collected.extend(name_to_strings[v.id])
+    return collected
+
+
+def _note_has_escape(note: str) -> bool:
+    """Substring match (case-insensitive for ASCII phrases)."""
+    if "⚠" in note:
+        return True
+    low = note.lower()
+    return any(esc.lower() in low for esc in _ESCAPE_PHRASES if esc != "⚠")
+
+
+def find_claim_tokens(note: str) -> list[str]:
+    """Return matched claim tokens (lowercase) — case-insensitive."""
+    low = note.lower()
+    return [tok for tok in _CLAIM_TOKENS if tok in low]
+
+
+_TEST_FUNC_RE = re.compile(r"def\s+(test_\w+)\s*\(")
+
+
+def _pair_test_files_for(tool_leaf: str, tests_root: Path) -> list[Path]:
+    """Return existing pair-test paths for a tool, in lookup order."""
+    return [
+        tests_root / pat.format(tool=tool_leaf)
+        for pat in _PAIR_TEST_PATTERNS
+        if (tests_root / pat.format(tool=tool_leaf)).exists()
+    ]
+
+
+def _claim_covered_by_test(test_src: str, claim: str) -> bool:
+    """Fuzzy: any ``def test_*`` whose name OR docstring contains
+    ``claim`` (case-insensitive) covers it.
+
+    Hyphens in claim tokens (``"append-only"``) are normalised to
+    underscores when matching against function names; underscores
+    match either form.
+    """
+    claim_low = claim.lower()
+    claim_underscored = claim_low.replace("-", "_").replace(" ", "_")
+    try:
+        tree = ast.parse(test_src)
+    except SyntaxError:
+        # Fall back to regex so a partial-edit doesn't crash the rule.
+        for m in _TEST_FUNC_RE.finditer(test_src):
+            fname = m.group(1).lower()
+            if claim_low in fname or claim_underscored in fname:
+                return True
+        return False
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        if not node.name.startswith("test_"):
+            continue
+        name_low = node.name.lower()
+        if claim_low in name_low or claim_underscored in name_low:
+            return True
+        ds = ast.get_docstring(node) or ""
+        if claim_low in ds.lower():
+            return True
+    return False
+
+
+def _audit_tool_init(
+    init_path: Path,
+    tool_key: str,
+    tests_root: Path,
+) -> list[tuple[int, str, list[str]]]:
+    """Return offending claims for one tool ``__init__.py``.
+
+    Returns ``[(lineno, note, [unmatched_claims]), …]``. Empty list
+    means OK — either no claims OR all claims have either an escape
+    phrase OR a paired test covering them.
+    """
+    try:
+        src = init_path.read_text(encoding="utf-8")
+    except OSError:
+        # File became unreadable mid-run — treat as offender so CI
+        # surfaces it rather than silently passing.
+        return [(0, f"<unreadable: {init_path}>", ["<read-error>"])]
+    notes = extract_notes_strings(src)
+    if not notes:
+        return []
+
+    tool_leaf = tool_key.rsplit("/", 1)[-1]
+    pair_files = _pair_test_files_for(tool_leaf, tests_root)
+    pair_srcs = [p.read_text(encoding="utf-8") for p in pair_files]
+
+    offenders: list[tuple[int, str, list[str]]] = []
+    for lineno, note in notes:
+        if _note_has_escape(note):
+            continue
+        claims = find_claim_tokens(note)
+        if not claims:
+            continue
+        unmatched = [c for c in claims if not any(_claim_covered_by_test(s, c) for s in pair_srcs)]
+        if unmatched:
+            offenders.append((lineno, note, unmatched))
+    return offenders
+
+
+def _r_notes_match_emitted_behaviour() -> tuple[bool, str]:
+    """B0.13 — every claim in ``notes`` must have paired honesty evidence
+    OR an escape phrase OR a waiver entry."""
+    if not ADAPT_ROOT.exists():
+        return False, f"missing: {ADAPT_ROOT}"
+    if not TESTS_ROOT.exists():
+        return False, f"missing: {TESTS_ROOT}"
+
+    offenders: list[tuple[str, Path, list[tuple[int, str, list[str]]]]] = []
+    for init in sorted(ADAPT_ROOT.rglob("__init__.py")):
+        tool_key = _tool_key_for_init(init, ADAPT_ROOT)
+        if not tool_key:
+            continue
+        if tool_key in _WAIVED_TOOLS:
+            continue
+        result = _audit_tool_init(init, tool_key, TESTS_ROOT)
+        if result:
+            offenders.append((tool_key, init, result))
+
+    if not offenders:
+        return True, (
+            f"{len(_WAIVED_TOOLS)} tool(s) waived; all other notes "
+            "claims either carry escape phrases or are covered by "
+            "paired honesty tests"
+        )
+
+    lines: list[str] = [
+        f"{len(offenders)} tool(s) ship `ToolResult(notes=…)` claims "
+        "without paired honesty evidence and without escape language "
+        "(see CONTRACT §B0.13 / audit cluster P4):",
+    ]
+    rel_root = SKILL_ROOT.parent.parent
+    for tool_key, init_path, items in offenders:
+        try:
+            rel = init_path.relative_to(rel_root)
+        except ValueError:
+            rel = init_path
+        for lineno, note, claims in items:
+            preview = note if len(note) <= 80 else note[:77] + "…"
+            lines.append(
+                f"  {rel}:{lineno}  claim(s)={claims!r}  note={preview!r}"
+            )
+    lines.append(
+        "Fix by EITHER (a) adding an engine-level pair test at "
+        "`engine/tests/test_<tool>_notes_invariants.py` OR "
+        "`engine/tests/test_<tool>_emitted.py` with `def test_*` whose "
+        "name or docstring references the claim token, OR (b) "
+        "qualifying the notes line with an escape phrase "
+        "(\"only when\" / \"requires manual\" / \"see next_steps\" / "
+        "\"⚠\"), OR (c) adding the tool key to `_WAIVED_TOOLS` in "
+        "`r_notes_match_behaviour.py` with an inline citation."
+    )
+    return False, "\n".join(lines)
