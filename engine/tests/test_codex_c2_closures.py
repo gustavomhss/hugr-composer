@@ -64,8 +64,17 @@ def test_b06_pointer_file_is_committed() -> None:
 def test_b06_fails_loudly_when_pointer_loses_canonical_refs(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """If the pointer file silently drops PRODUCT/CONTRACT refs, B0.6 fails."""
-    from engine.audit import contract_check as mod
+    """If the pointer file silently drops PRODUCT/CONTRACT refs, B0.6 fails.
+
+    Post WP-16 split (PR #57): the rule callback ``_r_agent_memory_pointer``
+    lives in ``engine.audit.contract_rules.phase0_identity`` and reads its
+    own module's ``SKILL_ROOT`` binding (imported once at module top from
+    ``_common``). The shared ``_exists`` helper, which the rule calls,
+    reads ``REPO_ROOT`` from its own module — ``_common``. So both
+    bindings need to be patched to keep the test deterministic.
+    """
+    from engine.audit.contract_rules import _common
+    from engine.audit.contract_rules import phase0_identity as mod
 
     fake_skill_root = tmp_path / "skill"
     (fake_skill_root / "engine" / "audit").mkdir(parents=True)
@@ -73,6 +82,7 @@ def test_b06_fails_loudly_when_pointer_loses_canonical_refs(
     pointer.write_text("x" * 500 + "\nno canonical refs here\n")
     monkeypatch.setattr(mod, "SKILL_ROOT", fake_skill_root)
     monkeypatch.setattr(mod, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(_common, "REPO_ROOT", tmp_path)
     ok, msg = mod._r_agent_memory_pointer()
     assert not ok
     assert "PRODUCT.md" in msg and "CONTRACT.md" in msg
