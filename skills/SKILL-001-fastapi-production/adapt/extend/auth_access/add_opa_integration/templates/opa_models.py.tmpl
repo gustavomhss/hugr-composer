@@ -1,0 +1,46 @@
+"""Pydantic models for OPA (Open Policy Agent) requests and responses."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class OPAInput(BaseModel):
+    """Input document sent to OPA for policy evaluation.
+
+    Attributes:
+        subject: Authenticated user identifier (e.g. user UUID or email).
+        action: HTTP method or domain action (e.g. 'GET', 'write').
+        resource: Resource path or type (e.g. '/api/v1/items').
+        context: Optional free-form context (tenant ID, IP, etc.).
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    subject: str = Field(..., description="Authenticated user identifier.")
+    action: str = Field(..., description="Action being performed.")
+    resource: str = Field(..., description="Resource being accessed.")
+    context: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Optional extra context passed verbatim to OPA.",
+    )
+
+
+class OPADecision(BaseModel):
+    """Decision returned by OPA policy evaluation.
+
+    Attributes:
+        allow: True when the policy grants access.
+        reason: Optional human-readable explanation from the policy.
+        policy_path: OPA policy rule that was queried.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    allow: bool = Field(..., description="True when the policy grants access.")
+    reason: str | None = Field(
+        default=None, description="Optional explanation from the policy."
+    )
+    policy_path: str = Field(..., description="OPA rule path that was evaluated.")

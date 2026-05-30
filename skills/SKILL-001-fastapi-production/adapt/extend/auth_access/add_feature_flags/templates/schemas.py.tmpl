@@ -1,0 +1,71 @@
+"""Pydantic schemas for the feature-flag subsystem."""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class FeatureFlagBase(BaseModel):
+    """Shared fields for flag create/update.
+
+    Attributes:
+        key: URL/code-safe flag identifier.
+        description: Optional human-readable description.
+        flag_type: One of 'boolean', 'variant', 'json'.
+        enabled: Master on/off switch.
+        rollout_percentage: 0-100 percentage rollout.
+        targeting_rules: List of attribute-based rule dicts.
+        variants: List of variant weight dicts.
+        kill_switch: Override that forces evaluation to False.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    key: str = Field(..., min_length=1, max_length=127)
+    description: str | None = Field(default=None, max_length=500)
+    flag_type: str = Field(default="boolean")
+    enabled: bool = Field(default=False)
+    rollout_percentage: int = Field(default=0, ge=0, le=100)
+    targeting_rules: list[dict[str, Any]] = Field(default_factory=list)
+    variants: list[dict[str, Any]] = Field(default_factory=list)
+    kill_switch: bool = Field(default=False)
+
+
+class FeatureFlagCreate(FeatureFlagBase):
+    """Input schema for creating a new feature flag."""
+
+
+class FeatureFlagUpdate(BaseModel):
+    """Input schema for partially updating a feature flag.
+
+    All fields are optional — only provided fields are applied.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    description: str | None = Field(default=None)
+    enabled: bool | None = Field(default=None)
+    rollout_percentage: int | None = Field(default=None, ge=0, le=100)
+    targeting_rules: list[dict[str, Any]] | None = Field(default=None)
+    variants: list[dict[str, Any]] | None = Field(default=None)
+    kill_switch: bool | None = Field(default=None)
+
+
+class FeatureFlagPublic(FeatureFlagBase):
+    """Output schema for feature-flag API responses.
+
+    Attributes:
+        id: UUID primary key.
+        created_at: UTC creation timestamp.
+        updated_at: UTC last-updated timestamp.
+        updated_by: UUID of the last actor.
+    """
+
+    id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+    updated_by: uuid.UUID | None = None

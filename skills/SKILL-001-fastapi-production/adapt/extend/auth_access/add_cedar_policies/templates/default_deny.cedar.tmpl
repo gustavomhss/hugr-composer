@@ -1,0 +1,9 @@
+// Default deny — all requests not explicitly permitted are forbidden.
+// This policy is implicit when no other permit applies; keep it for clarity.
+forbid(
+    principal,
+    action,
+    resource
+) unless {
+    principal in Role::"admin"
+};

@@ -1,0 +1,8 @@
+// Owners may read and write their own resources.
+permit(
+    principal,
+    action in [Action::"get", Action::"post", Action::"put", Action::"patch", Action::"delete"],
+    resource
+) when {
+    resource.owner == principal
+};

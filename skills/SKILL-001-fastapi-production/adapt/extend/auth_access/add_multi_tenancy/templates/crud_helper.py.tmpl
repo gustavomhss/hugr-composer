@@ -1,0 +1,34 @@
+
+# ---------------------------------------------------------------------------
+# Tenant-scoped create helper — added by add_multi_tenancy tool
+# ---------------------------------------------------------------------------
+import uuid as _mt_uuid
+from sqlalchemy.ext.asyncio import AsyncSession as _MTSession
+
+from app.core.tenant_context import require_current_tenant as _require_tenant
+from app.models.$lower import $model as _$model
+
+
+async def create_tenant_scoped(
+    session: _MTSession,
+    *,
+    obj_in: dict,
+) -> "$model":
+    """Create a new $model row stamped with the current request's tenant.
+
+    Args:
+        session: Async SQLAlchemy session.
+        obj_in: Field dict for the new row (must NOT include tenant_id).
+
+    Returns:
+        The newly created ORM instance.
+
+    Raises:
+        RuntimeError: If no tenant is in context.
+    """
+    tenant_id = _require_tenant()
+    obj = _$model(**obj_in, tenant_id=tenant_id)
+    session.add(obj)
+    await session.flush()
+    await session.refresh(obj)
+    return obj

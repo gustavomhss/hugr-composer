@@ -1,0 +1,56 @@
+"""Thin glue that wires the FeatureToggle + FeatureFlagCache primitives.
+
+Delegates to the primitives copied under `core/venous/flags/FeatureToggle/`
+and `core/venous/auth/FeatureFlagCache/` by the `add_feature_flags` tool.
+Re-emitted idempotently on subsequent runs. This file contains NO flag
+semantics — off-by-default (FT-INV-02), key uniqueness (FT-INV-03), audit
+recording (FT-INV-04), and bounded LRU caching all live in the primitives.
+"""
+
+from __future__ import annotations
+
+import os
+from typing import Any
+
+from fastapi import Depends, HTTPException, status
+
+from core.venous.flags.FeatureToggle.FeatureToggle import (
+    FeatureToggleRegistry,
+    ToggleContext,
+)
+from core.venous.auth.FeatureFlagCache.FeatureFlagCache import FeatureFlagCache
+
+_registry: FeatureToggleRegistry | None = None
+_cache: FeatureFlagCache | None = None
+
+
+def get_registry() -> FeatureToggleRegistry:
+    """Return the process-global FeatureToggleRegistry (lazy init)."""
+    global _registry
+    if _registry is None: _registry = FeatureToggleRegistry()
+    return _registry
+
+
+def get_cache() -> FeatureFlagCache:
+    """Return the process-global FeatureFlagCache (lazy init)."""
+    global _cache
+    if _cache is None: _cache = FeatureFlagCache()
+    return _cache
+
+
+def require_flag(flag_name: str) -> Any:
+    """FastAPI dependency that 404s when `flag_name` is disabled."""
+    def _dep(registry: FeatureToggleRegistry = Depends(get_registry)) -> None:
+        ctx = ToggleContext(principal_id=None, tenant_id=None, environment=os.getenv("APP_ENV", "production"))
+        if not registry.is_active(flag_name, ctx): raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return _dep
+
+
+__all__ = [
+    "FeatureToggleRegistry",
+    "FeatureFlagCache",
+    "ToggleContext",
+    "get_registry",
+    "get_cache",
+    "require_flag",
+]

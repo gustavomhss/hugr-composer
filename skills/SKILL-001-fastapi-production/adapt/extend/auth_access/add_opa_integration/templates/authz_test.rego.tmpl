@@ -1,0 +1,44 @@
+# authz_test.rego — OPA unit tests for the authz policy.
+#
+# Run:  opa test authz.rego data.json authz_test.rego -v
+
+package authz_test
+
+import rego.v1
+import data.authz
+
+# Superuser is always allowed.
+test_superuser_allowed if {
+    authz.allow with input as {
+        "subject": "admin@example.com",
+        "action": "DELETE",
+        "resource": "/api/v1/items",
+    } with data.roles as {"admin@example.com": "superuser"}
+}
+
+# Anonymous GET is denied (not authenticated).
+test_anonymous_get_denied if {
+    not authz.allow with input as {
+        "subject": "anonymous",
+        "action": "GET",
+        "resource": "/api/v1/items",
+    }
+}
+
+# Authenticated GET is allowed.
+test_reader_get_allowed if {
+    authz.allow with input as {
+        "subject": "reader@example.com",
+        "action": "GET",
+        "resource": "/api/v1/items",
+    } with data.roles as {"reader@example.com": "reader"}
+}
+
+# Non-writer POST is denied.
+test_reader_post_denied if {
+    not authz.allow with input as {
+        "subject": "reader@example.com",
+        "action": "POST",
+        "resource": "/api/v1/items",
+    } with data.roles as {"reader@example.com": "reader"}
+}

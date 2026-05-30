@@ -1,0 +1,103 @@
+"""Per-request tenant-context lifecycle middleware.
+
+IMPORTANT — security model
+--------------------------
+This middleware does NOT decide which tenant a request belongs to and
+it NEVER rejects a request on its own. Tenant authority is bound to
+IDENTITY and resolved in the auth dependency (see
+``app.api.deps.get_current_user`` / ``resolve_tenant``), AFTER the
+caller has been authenticated. A blind, header-driven pre-auth
+middleware that 400s every request without ``X-Tenant-ID`` is both
+insecure (any caller who knows a slug operates in that tenant) and
+breaks every auth/public/CRUD route + bootstrap.
+
+What this middleware DOES:
+  * Reset the per-request tenant ContextVar to ``None`` at ingress so
+    tenant context never leaks across requests sharing a worker.
+  * Clear it again on the way out (defence in depth).
+
+The X-Tenant-ID header is read and validated downstream, in the auth
+dependency, against the authenticated user's membership.
+
+TENANT_FREE_PATHS documents the public/auth/util/bootstrap routes that
+legitimately run with NO tenant context (the auth dependency exempts
+the same set by simply not requiring a tenant there).
+"""
+
+from __future__ import annotations
+
+from fastapi import Request
+from starlette.middleware.base import BaseHTTPMiddleware
+
+from app.core.tenant_context import set_current_tenant
+
+# Public / auth / utility / bootstrap paths that operate with NO tenant.
+# These are the routes that must work before (or without) a tenant
+# context: login, self-service signup, "who am I", health, docs, and
+# the POST /tenants bootstrap endpoint (a fresh DB has no tenant yet).
+TENANT_FREE_PATHS = {
+    "/api/v1/login/access-token",
+    "/api/v1/login/test-token",
+    "/api/v1/users/signup",
+    "/api/v1/users/me",
+    "/api/v1/auth/register",
+    "/health",
+    "/healthz",
+    "/readyz",
+    "/startupz",
+    "/docs",
+    "/redoc",
+    "/openapi.json",
+    "/api/v1/openapi.json",
+}
+
+# Prefixes whose every sub-path is tenant-free (utils, login flows).
+TENANT_FREE_PREFIXES = (
+    "/api/v1/login",
+    "/api/v1/utils",
+)
+
+
+def is_tenant_free_path(path: str) -> bool:
+    """Return True if *path* legitimately runs with no tenant context."""
+    if path in TENANT_FREE_PATHS:
+        return True
+    return any(path.startswith(p) for p in TENANT_FREE_PREFIXES)
+
+
+class TenantMiddleware(BaseHTTPMiddleware):
+    """Reset/clear the per-request tenant ContextVar around each request.
+
+    Args:
+        app: ASGI application.
+        resolver: Retained for backward compatibility / configurability.
+            The authoritative tenant is resolved from IDENTITY in the
+            auth dependency regardless of this value.
+            'header' (default) means the auth dep honours X-Tenant-ID for
+            superuser tenant-switching; 'subdomain'/'jwt' are reserved.
+    """
+
+    def __init__(self, app, resolver: str = "header") -> None:
+        super().__init__(app)
+        self.resolver = resolver
+
+    async def dispatch(self, request: Request, call_next):
+        """Reset tenant context, run the request, then clear context.
+
+        Args:
+            request: Incoming HTTP request.
+            call_next: Next ASGI handler.
+
+        Returns:
+            The downstream HTTP response. This middleware never short-
+            circuits with its own error response — authorization is the
+            auth dependency's job.
+        """
+        # Always start each request with a clean, tenant-less context.
+        # The auth dependency sets the real tenant after authenticating.
+        set_current_tenant(None)
+        try:
+            return await call_next(request)
+        finally:
+            # Defence in depth: never let a tenant id outlive the request.
+            set_current_tenant(None)

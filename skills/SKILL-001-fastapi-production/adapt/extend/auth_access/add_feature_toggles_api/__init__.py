@@ -16,7 +16,10 @@ import ast
 import time
 from pathlib import Path
 
+from adapt._base import load_template
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+
+_HERE = Path(__file__).parent
 
 MCP_TOOL = {
     "name": "fastapi_auth_add_feature_toggles_api",
@@ -35,31 +38,10 @@ MCP_TOOL = {
 }
 
 
-_GLUE = '''\
-"""Wire feature toggles into the FastAPI app.
-
-Delegates to `FeatureToggleAdapter` copied under `core/venous/` by
-`add_feature_toggles_api`. Hand-editing is safe but the file is
-re-emitted idempotently on subsequent tool runs.
-"""
-
-from __future__ import annotations
-
-from fastapi import FastAPI
-
-from core.venous._adapters.fastapi.FeatureToggleAdapter import (
-    install as _install,
-    is_active,
-)
-
-
-def install_feature_toggles(app: FastAPI):
-    """Attach a FeatureToggleRegistry to app.state.toggles; return it."""
-    return _install(app)
-
-
-__all__ = ["install_feature_toggles", "is_active"]
-'''
+def _glue_body() -> str:
+    # Template has zero substitutions; load via _base.load_template and emit
+    # the raw template text (string.Template.template == file content).
+    return load_template(_HERE, "glue.py.tmpl").template
 
 
 def add_feature_toggles_api(inp: ToolInput) -> ToolResult:
@@ -70,7 +52,7 @@ def add_feature_toggles_api(inp: ToolInput) -> ToolResult:
     if err:
         return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
-    from adapt.contracts.prerequisites import ensure_prerequisites, Prereq
+    from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -100,7 +82,9 @@ def add_feature_toggles_api(inp: ToolInput) -> ToolResult:
     if inp.dry_run:
         return ToolResult(
             status="success",
-            notes=["[dry_run] Would copy FeatureToggle primitive + adapter and write app/feature_toggles.py."],
+            notes=[
+                "[dry_run] Would copy FeatureToggle primitive + adapter and write app/feature_toggles.py."
+            ],
             next_steps=["Re-run without dry_run=True to apply."],
             execution_time_ms=_elapsed_ms(start),
         )
@@ -115,7 +99,7 @@ def add_feature_toggles_api(inp: ToolInput) -> ToolResult:
     files_created.append(manifest.path)
 
     app_dir.mkdir(parents=True, exist_ok=True)
-    glue_file.write_text(_GLUE)
+    glue_file.write_text(_glue_body())
     files_created.append(str(glue_file))
 
     for path_str in files_created:

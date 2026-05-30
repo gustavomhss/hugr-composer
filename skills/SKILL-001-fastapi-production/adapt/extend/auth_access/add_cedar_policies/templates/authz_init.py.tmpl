@@ -1,0 +1,16 @@
+"""Cedar policy-as-code authorization sub-package.
+
+Re-exports the public API so callers can write::
+
+    from app.authz import CedarEngine, AuthzRequest, AuthzResponse
+"""
+
+from app.authz.engine import CedarEngine, get_cedar_engine
+from app.authz.models import AuthzRequest, AuthzResponse
+
+__all__ = [
+    "CedarEngine",
+    "get_cedar_engine",
+    "AuthzRequest",
+    "AuthzResponse",
+]

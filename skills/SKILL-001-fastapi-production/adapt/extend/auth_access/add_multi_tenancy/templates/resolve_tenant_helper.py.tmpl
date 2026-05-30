@@ -1,0 +1,71 @@
+
+
+# ---------------------------------------------------------------------------
+# Identity-bound tenant resolution — added by add_multi_tenancy tool
+# ---------------------------------------------------------------------------
+from sqlalchemy import select as _mt_select  # noqa: E402
+
+from app.core.tenant_context import set_current_tenant as _mt_set_tenant  # noqa: E402
+from app.models.tenant import Tenant as _MTTenant  # noqa: E402
+
+
+async def resolve_tenant(session, user: "User", request: "Request") -> None:
+    """Bind the request to a tenant, derived from the authenticated user.
+
+    Security contract:
+      * The user's ``tenant_id`` is authoritative.
+      * ``X-Tenant-ID`` (a tenant *slug*) is only a hint and is VALIDATED:
+          - normal user: header slug must resolve to the user's own
+            tenant, else ``403`` (no cross-tenant access by knowing a slug);
+          - superuser: header slug may name ANY active tenant -> switches
+            context to it (admin acting within a tenant).
+      * No tenant + no header -> tenant-less context. The global filter
+        FAILS CLOSED, so tenant-scoped reads return nothing.
+
+    Args:
+        session: Active async DB session (override-aware in tests).
+        user: The authenticated user.
+        request: The incoming request (for the X-Tenant-ID header).
+
+    Raises:
+        HTTPException 403: header names a tenant the user may not access.
+        HTTPException 400: header names an unknown/inactive tenant.
+    """
+    header_slug = request.headers.get("X-Tenant-ID")
+
+    async def _lookup(slug: str):
+        stmt = (
+            _mt_select(_MTTenant)
+            .where(_MTTenant.slug == slug)
+            .execution_options(skip_tenant_filter=True)
+        )
+        return (await session.execute(stmt)).scalar_one_or_none()
+
+    # Superuser may switch into any active tenant named by the header.
+    if user.is_superuser and header_slug:
+        tenant = await _lookup(header_slug)
+        if tenant is None or tenant.status != "active":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unknown or inactive tenant",
+            )
+        _mt_set_tenant(tenant.id)
+        return
+
+    # Normal user (and superuser without a switch header): bind to the
+    # user's own tenant.
+    if user.tenant_id is not None:
+        if header_slug:
+            tenant = await _lookup(header_slug)
+            # The header, if present, MUST match the user's own tenant.
+            if tenant is None or tenant.id != user.tenant_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="X-Tenant-ID does not match your tenant membership",
+                )
+        _mt_set_tenant(user.tenant_id)
+        return
+
+    # No membership and not a superuser switch: leave context tenant-less.
+    # The global filter fails closed, so tenant-scoped reads see nothing.
+    _mt_set_tenant(None)

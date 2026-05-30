@@ -1,0 +1,232 @@
+"""OPA HTTP client with lazy httpx import and circuit breaker.
+
+OPA runs as a sidecar at OPA_URL.  The circuit breaker trips after
+OPA_CB_THRESHOLD consecutive failures and stays open for OPA_CB_RESET_S
+seconds before allowing a probe.  On open circuit, behaviour is
+controlled by OPA_FAIL_OPEN: True allows, False denies.
+
+httpx is imported lazily inside async methods so ``app.main`` boots
+without it installed (though it is listed in requirements.txt).
+"""
+
+from __future__ import annotations
+
+import logging
+import time
+from typing import Any
+
+from app.authz.opa_models import OPADecision, OPAInput
+
+logger = logging.getLogger(__name__)
+
+_DEFAULT_POLICY_PATH = "authz/allow"
+
+
+def _parse_opa_result(data: dict[str, Any], path: str) -> OPADecision:
+    """Extract allow flag and reason from an OPA /v1/data response body.
+
+    Args:
+        data: Parsed JSON response from OPA (must contain a 'result' key).
+        path: Policy path that was evaluated (for the returned OPADecision).
+
+    Returns:
+        OPADecision with allow and optional reason.
+    """
+    result = data.get("result", False)
+    if isinstance(result, dict):
+        allow = bool(result.get("allow", False))
+        reason: str | None = result.get("reason")
+    else:
+        allow = bool(result)
+        reason = None
+    return OPADecision(allow=allow, reason=reason, policy_path=path)
+
+
+async def _post_opa(url: str, payload: dict[str, Any], timeout: float) -> Any:
+    """Send a JSON POST to OPA and return the parsed response body.
+
+    Args:
+        url: Full OPA data endpoint URL (e.g. http://localhost:8181/v1/data/authz/allow).
+        payload: JSON body to send (typically {"input": {...}}).
+        timeout: Request timeout in seconds.
+
+    Returns:
+        Parsed JSON dict from OPA.
+
+    Raises:
+        Exception: On network error or non-2xx response.
+    """
+    import httpx  # lazy import — optional SDK
+
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        resp = await client.post(url, json=payload)
+    resp.raise_for_status()
+    return resp.json()
+
+
+class _CircuitBreaker:
+    """Lightweight circuit breaker: closed → half-open → open.
+
+    Attributes:
+        threshold: Consecutive failure count before opening.
+        reset_s: Seconds to wait before half-open probe.
+    """
+
+    def __init__(self, threshold: int = 3, reset_s: float = 30.0) -> None:
+        """Initialise the circuit breaker.
+
+        Args:
+            threshold: Failures before opening.
+            reset_s: Cooldown before half-open attempt.
+        """
+        self.threshold = threshold
+        self.reset_s = reset_s
+        self._failures = 0
+        self._opened_at: float | None = None
+
+    def is_open(self) -> bool:
+        """Return True when the circuit is open (OPA unreachable).
+
+        Returns:
+            True if open and cooldown has not expired yet.
+        """
+        if self._opened_at is None:
+            return False
+        if time.monotonic() - self._opened_at >= self.reset_s:
+            self._opened_at = None
+            self._failures = 0
+            return False
+        return True
+
+    def record_success(self) -> None:
+        """Reset failure counter on a successful call."""
+        self._failures = 0
+        self._opened_at = None
+
+    def record_failure(self) -> None:
+        """Increment failure counter; open circuit if threshold reached."""
+        self._failures += 1
+        if self._failures >= self.threshold:
+            self._opened_at = time.monotonic()
+            logger.warning(
+                "OPA circuit breaker opened after %d consecutive failures",
+                self._failures,
+            )
+
+
+class OPAClient:
+    """Async OPA HTTP client.
+
+    Sends JSON POST requests to ``{opa_url}/v1/data/{policy_path}``.
+    Uses a circuit breaker to avoid hammering an unavailable sidecar.
+
+    Attributes:
+        opa_url: Base URL of the OPA sidecar (e.g. http://localhost:8181).
+        policy_path: Default Rego rule path (e.g. authz/allow).
+        timeout_ms: Request timeout in milliseconds.
+        fail_open: Allow access when OPA is unreachable (True) or deny (False).
+    """
+
+    def __init__(
+        self,
+        opa_url: str,
+        policy_path: str = _DEFAULT_POLICY_PATH,
+        timeout_ms: int = 500,
+        fail_open: bool = False,
+    ) -> None:
+        """Initialise the OPA client.
+
+        Args:
+            opa_url: Base URL of the OPA sidecar.
+            policy_path: Default Rego rule path used when query() is called
+                without an explicit path override.
+            timeout_ms: Per-request timeout in milliseconds.
+            fail_open: When True, allow access if OPA is unreachable.
+                When False (default), deny access on circuit-open.
+        """
+        self.opa_url = opa_url.rstrip("/")
+        self.policy_path = policy_path
+        self.timeout_ms = timeout_ms
+        self.fail_open = fail_open
+        self._cb = _CircuitBreaker()
+
+    async def query(
+        self,
+        opa_input: OPAInput,
+        policy_path: str | None = None,
+    ) -> OPADecision:
+        """Evaluate a policy rule against the given input document.
+
+        Args:
+            opa_input: Input document (subject, action, resource, context).
+            policy_path: Override the default rule path (e.g. 'rbac/allow').
+
+        Returns:
+            OPADecision with allow=True/False and optional reason.
+        """
+        path = (policy_path or self.policy_path).strip("/")
+        url = f"{self.opa_url}/v1/data/{path}"
+
+        if self._cb.is_open():
+            logger.warning("OPA circuit open — fail_open=%s", self.fail_open)
+            return OPADecision(
+                allow=self.fail_open,
+                reason="circuit_open",
+                policy_path=path,
+            )
+
+        payload: dict[str, Any] = {"input": opa_input.model_dump()}
+        try:
+            data = await _post_opa(url, payload, self.timeout_ms / 1000.0)
+            self._cb.record_success()
+        except Exception as exc:
+            self._cb.record_failure()
+            logger.warning("OPA request failed: %s", exc)
+            return OPADecision(
+                allow=self.fail_open,
+                reason="opa_unavailable",
+                policy_path=path,
+            )
+
+        decision = _parse_opa_result(data, path)
+        logger.info(
+            "OPA decision subject=%s action=%s resource=%s allow=%s",
+            opa_input.subject, opa_input.action, opa_input.resource,
+            decision.allow,
+        )
+        return decision
+
+    async def health(self) -> bool:
+        """Check OPA sidecar health via GET /health.
+
+        Returns:
+            True when OPA responds 200, False otherwise.
+        """
+        import httpx  # lazy import — optional SDK
+
+        try:
+            async with httpx.AsyncClient(timeout=2.0) as client:
+                resp = await client.get(f"{self.opa_url}/health")
+            return resp.status_code == 200
+        except Exception:
+            return False
+
+
+def get_opa_client() -> OPAClient:
+    """FastAPI dependency that returns the configured OPA client singleton.
+
+    Reads OPA_URL, OPA_POLICY_PATH, OPA_TIMEOUT_MS, OPA_FAIL_OPEN from
+    app settings.  The client is constructed on every call; production code
+    should cache via ``lru_cache`` or an app-level lifespan store if needed.
+
+    Returns:
+        Configured ``OPAClient`` instance.
+    """
+    from app.core.config import settings  # type: ignore[import]
+
+    return OPAClient(
+        opa_url=getattr(settings, "OPA_URL", "http://localhost:8181"),
+        policy_path=getattr(settings, "OPA_POLICY_PATH", _DEFAULT_POLICY_PATH),
+        timeout_ms=int(getattr(settings, "OPA_TIMEOUT_MS", 500)),
+        fail_open=bool(getattr(settings, "OPA_FAIL_OPEN", False)),
+    )

@@ -1,0 +1,60 @@
+"""Request-scoped tenant context via ContextVar.
+
+Set once by TenantMiddleware at request ingress; read by CRUD helpers
+and the ORM auto-filter throughout the request lifecycle.
+
+Example::
+
+    # In background jobs that scan all tenants:
+    set_current_tenant(tenant_id)
+    try:
+        await process_tenant(session)
+    finally:
+        set_current_tenant(None)
+"""
+
+from __future__ import annotations
+
+import uuid
+from contextvars import ContextVar
+
+_current_tenant_id: ContextVar[uuid.UUID | None] = ContextVar(
+    "current_tenant_id", default=None
+)
+
+
+def set_current_tenant(tenant_id: uuid.UUID | None) -> None:
+    """Set the current request's tenant ID in context.
+
+    Args:
+        tenant_id: Tenant UUID, or None for system/unauthenticated context.
+    """
+    _current_tenant_id.set(tenant_id)
+
+
+def get_current_tenant() -> uuid.UUID | None:
+    """Return the current tenant ID, or None if not set.
+
+    Returns:
+        Tenant UUID or None.
+    """
+    return _current_tenant_id.get()
+
+
+def require_current_tenant() -> uuid.UUID:
+    """Return the current tenant ID, raising if not set.
+
+    Returns:
+        Tenant UUID.
+
+    Raises:
+        RuntimeError: If no tenant is in context (TenantContextMissing).
+    """
+    tid = _current_tenant_id.get()
+    if tid is None:
+        raise RuntimeError(
+            "TenantContextMissing: no tenant in context. "
+            "Either the request did not pass through TenantMiddleware, "
+            "or this code path runs outside a tenant scope."
+        )
+    return tid

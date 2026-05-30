@@ -1,0 +1,86 @@
+"""Global tenant query filter via SQLAlchemy session event.
+
+Import this module once at application startup (main.py) to activate
+the filter.  Every SELECT against a TenantScopedMixin model will
+automatically receive a ``WHERE tenant_id = :current_tenant_id``
+predicate unless the execution option ``skip_tenant_filter=True`` is set.
+
+FAIL-CLOSED CONTRACT
+--------------------
+If no tenant is present in the request context, a tenant-scoped SELECT
+returns ZERO rows — it does NOT skip the filter. Skipping would FAIL
+OPEN and leak every tenant's data to a context-less query. The ONLY
+escape hatch is the explicit ``skip_tenant_filter=True`` execution
+option, reserved for trusted admin/system paths (e.g. listing tenants).
+
+Example::
+
+    # main.py — side-effect import (no symbol needed)
+    import app.core.tenant_filter  # noqa: F401
+"""
+
+from sqlalchemy import event, false
+from sqlalchemy.orm import Session, with_loader_criteria
+
+from app.core.tenant_context import get_current_tenant
+from app.models.mixins import TenantScopedMixin
+
+
+@event.listens_for(Session, "do_orm_execute")
+def _enforce_tenant_filter(execute_state) -> None:
+    """Inject WHERE tenant_id = current_tenant for every default SELECT.
+
+    Args:
+        execute_state: SQLAlchemy ORM execute state object.
+
+    Skip by passing execution option ``skip_tenant_filter=True``::
+
+        stmt = select(Item).execution_options(skip_tenant_filter=True)
+    """
+    if not execute_state.is_select:
+        return
+    if execute_state.execution_options.get("skip_tenant_filter"):
+        return
+
+    tenant_id = get_current_tenant()
+    if tenant_id is None:
+        # FAIL CLOSED: no tenant context -> a tenant-scoped query must
+        # return nothing rather than every tenant's rows. We inject an
+        # always-false predicate (not a no-op return).
+        execute_state.statement = execute_state.statement.options(
+            with_loader_criteria(
+                TenantScopedMixin,
+                lambda cls: false(),
+                include_aliases=True,
+            )
+        )
+        return
+
+    execute_state.statement = execute_state.statement.options(
+        with_loader_criteria(
+            TenantScopedMixin,
+            lambda cls: cls.tenant_id == tenant_id,
+            include_aliases=True,
+        )
+    )
+
+
+@event.listens_for(Session, "before_flush")
+def _auto_populate_tenant_id(session, flush_context, instances) -> None:
+    """Auto-populate tenant_id on INSERT for every TenantScopedMixin row.
+
+    The CRUD code typically does ``session.add(Model(**data))`` without
+    an explicit tenant_id; the middleware has already set the
+    current_tenant_id ContextVar, so we inject it here right before the
+    flush hits the database. This means route handlers NEVER need to
+    pass tenant_id — the framework does it invisibly.
+
+    Skipped when there is no current tenant (e.g. system/background job)
+    or when the caller explicitly set tenant_id already.
+    """
+    tenant_id = get_current_tenant()
+    if tenant_id is None:
+        return
+    for obj in session.new:
+        if isinstance(obj, TenantScopedMixin) and getattr(obj, "tenant_id", None) is None:
+            obj.tenant_id = tenant_id

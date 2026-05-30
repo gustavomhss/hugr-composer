@@ -1,0 +1,67 @@
+"""Wire RBAC into the FastAPI app.
+
+Primitives shipped by add_rbac:
+  - core/venous/auth/RequestGuard/      — composable guard predicates
+  - core/venous/auth/CurrentPrincipal/  — immutable identity value
+  - core/venous/_adapters/fastapi/RequestGuardAdapter.py — HTTP bridge
+
+⚠ RBAC IS NOT ENFORCED: add_rbac does NOT touch any existing route.
+  Zero routes are protected until you explicitly add Depends(require_roles(...)).
+  See app/api/routes/_rbac_example.py for a copy-paste wired example.
+
+One-liner to protect a route::
+
+    @router.delete("/{id}", dependencies=[Depends(require_roles("admin"))])
+    async def delete_item(...): ...
+
+Role mapping (edit _user_to_principal to customise):
+  is_superuser=True  → roles={"admin"}
+  is_superuser=False → roles={"user"}
+"""
+
+from __future__ import annotations
+
+from typing import Annotated
+
+from fastapi import Depends, HTTPException
+
+# `require` is available for advanced guard composition; require_roles uses
+# get_current_user directly so DB access is handled by the existing auth stack.
+from core.venous._adapters.fastapi.RequestGuardAdapter import require  # noqa: F401
+from core.venous.auth.CurrentPrincipal.CurrentPrincipal import CurrentPrincipal, authenticated
+from core.venous.auth.RequestGuard.RequestGuard import RoleGuard
+
+from app.api.deps import get_current_user
+from app.models.user import User
+
+
+class _RbacCtx:
+    """Minimal request-context stub; RoleGuard only reads principal, not ctx."""
+
+    request_id = "-"
+    headers: dict = {}
+    assigns: dict = {}
+
+
+# Edit this function to add fine-grained roles as your User model grows.
+def _user_to_principal(user: User) -> CurrentPrincipal:
+    roles = frozenset({"admin"} if user.is_superuser else {"user"})
+    return authenticated(str(user.id), roles=roles)
+
+
+# NOT applied automatically — add to every route you want to protect:
+#    dependencies=[Depends(require_roles("admin"))]
+# Admitted: principal carries all roles → returns CurrentPrincipal.
+# Denied:   wrong role → HTTP 403; no token → HTTP 401 via get_current_user.
+def require_roles(*roles: str):
+    _guard = RoleGuard(*roles)
+
+    async def _dep(
+        current_user: Annotated[User, Depends(get_current_user)],
+    ) -> CurrentPrincipal:
+        principal = _user_to_principal(current_user)
+        if not await _guard.allow(_RbacCtx(), principal):
+            raise HTTPException(status_code=403, detail="forbidden")
+        return principal
+
+    return _dep
