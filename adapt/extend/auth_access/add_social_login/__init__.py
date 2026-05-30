@@ -34,11 +34,12 @@ _NOTES_SUCCESS = [
     "New users auto-provisioned when no email match found.",
     "httpx imported lazily inside provider methods (no top-level SDK import).",
     "Tokens never stored; only JWT issued after successful OAuth exchange.",
+    "Apple id_token RS256 signature verified against appleid.apple.com/auth/keys "
+    "JWKS (cached 1h); iss/aud/exp claims enforced. Requires APPLE_CLIENT_ID "
+    "to be set (callback refuses to verify without an audience).",
     "⚠ STATE PARAMETER IS NOT VALIDATED on the callback (CSRF protection is "
     "advisory-only — state is generated at /{provider}/login but the "
-    "/{provider}/callback endpoint accepts any value).",
-    "⚠ Apple id_token signature IS NOT VERIFIED (payload decoded base64 only); "
-    "trust is assumed from the TLS exchange with appleid.apple.com.",
+    "/{provider}/callback endpoint accepts any value). Tracked: R5-O4-C1.",
 ]
 _NEXT_STEPS = [
     "Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, "
