@@ -1,0 +1,120 @@
+"""CLI script for migration CI checks — pending, rollback, diff, safety.
+
+Usage::
+
+    python scripts/check_migrations.py --pending
+    python scripts/check_migrations.py --rollback
+    python scripts/check_migrations.py --diff
+    python scripts/check_migrations.py --safety
+    python scripts/check_migrations.py
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import sys
+from pathlib import Path
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+logger = logging.getLogger(__name__)
+
+_PROJECT_DIR = Path(__file__).parent.parent
+
+
+def _get_runner() -> object:
+    """Import and return a MigrationCIRunner for the project."""
+    sys.path.insert(0, str(_PROJECT_DIR))
+    from app.migrations.ci_runner import MigrationCIRunner
+    return MigrationCIRunner(_PROJECT_DIR)
+
+
+def _get_checker() -> object:
+    """Import and return a SafetyChecker for the alembic versions directory."""
+    sys.path.insert(0, str(_PROJECT_DIR))
+    from app.migrations.safety_checker import SafetyChecker
+    versions_dir = _PROJECT_DIR / "alembic" / "versions"
+    return SafetyChecker(versions_dir)
+
+
+def cmd_pending(runner: object) -> int:
+    """Run the pending migrations check and exit with code 1 if any found."""
+    result = runner.check_pending()
+    print(json.dumps(result, indent=2))
+    if not result["is_up_to_date"]:
+        logger.error("FAIL: %d pending migration(s)", result["pending_count"])
+        return 1
+    logger.info("PASS: database is up to date")
+    return 0
+
+
+def cmd_rollback(runner: object) -> int:
+    """Run the rollback dry-run and exit with code 1 if unsafe."""
+    result = runner.verify_rollback()
+    if not result["rollback_safe"]:
+        logger.error("FAIL: rollback check failed: %s", result.get("error"))
+        return 1
+    logger.info("PASS: rollback dry-run succeeded")
+    return 0
+
+
+def cmd_diff(runner: object) -> int:
+    """Run the schema diff check and exit with code 1 if out of sync."""
+    result = runner.schema_diff()
+    print(result.get("output", ""))
+    if not result["in_sync"]:
+        logger.error("FAIL: schema drift detected: %s", result.get("error"))
+        return 1
+    logger.info("PASS: schema is in sync")
+    return 0
+
+
+def cmd_safety(checker: object) -> int:
+    """Scan migration files for destructive operations."""
+    result = checker.detect_destructive()
+    print(json.dumps(result, indent=2))
+    if result["destructive_found"]:
+        logger.error("FAIL: destructive operations found — review before merging")
+        return 1
+    logger.info(
+        "PASS: no destructive operations in %d migration files",
+        result["files_scanned"],
+    )
+    return 0
+
+
+def main() -> None:
+    """Parse CLI arguments and run selected migration checks."""
+    parser = argparse.ArgumentParser(
+        description="Migration CI checks: pending, rollback, diff, safety"
+    )
+    parser.add_argument("--pending", action="store_true",
+                        help="Check for unapplied migrations")
+    parser.add_argument("--rollback", action="store_true",
+                        help="Verify rollback safety (dry-run)")
+    parser.add_argument("--diff", action="store_true",
+                        help="Detect schema drift")
+    parser.add_argument("--safety", action="store_true",
+                        help="Scan for destructive operations")
+    args = parser.parse_args()
+
+    run_all = not (args.pending or args.rollback or args.diff or args.safety)
+    runner = _get_runner()
+    checker = _get_checker()
+    exit_code = 0
+
+    if args.pending or run_all:
+        exit_code |= cmd_pending(runner)
+    if args.rollback or run_all:
+        exit_code |= cmd_rollback(runner)
+    if args.diff or run_all:
+        exit_code |= cmd_diff(runner)
+    if args.safety or run_all:
+        exit_code |= cmd_safety(checker)
+
+    sys.exit(exit_code)
+
+
+if __name__ == "__main__":
+    main()

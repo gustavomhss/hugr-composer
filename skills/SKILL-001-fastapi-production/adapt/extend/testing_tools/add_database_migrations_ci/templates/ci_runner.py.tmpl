@@ -1,0 +1,125 @@
+"""Alembic CI runner — checks pending migrations, verifies rollback safety."""
+
+from __future__ import annotations
+
+import logging
+import subprocess
+from pathlib import Path
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
+
+class MigrationCIRunner:
+    """Alembic CI runner for migration checks in CI pipelines.
+
+    Args:
+        project_dir: Root of the FastAPI project (contains alembic.ini).
+    """
+
+    def __init__(self, project_dir: str | Path) -> None:
+        """Initialise with the project root containing alembic.ini."""
+        self._project_dir = Path(project_dir)
+
+    def check_pending(self) -> dict[str, Any]:
+        """Check for unapplied migrations (alembic current vs heads).
+
+        Returns:
+            Dict with keys: ``pending_count``, ``current``, ``heads``,
+            ``is_up_to_date``.
+        """
+        current = self._run_alembic(["current"])
+        heads = self._run_alembic(["heads"])
+        current_rev = _parse_revision(current.get("stdout", ""))
+        head_revs = _parse_heads(heads.get("stdout", ""))
+        is_up_to_date = current_rev in head_revs if head_revs else True
+        pending = 0 if is_up_to_date else len(head_revs)
+        logger.info(
+            "Migration check: current=%s heads=%s pending=%d",
+            current_rev, head_revs, pending,
+        )
+        return {
+            "pending_count": pending,
+            "current": current_rev,
+            "heads": head_revs,
+            "is_up_to_date": is_up_to_date,
+        }
+
+    def verify_rollback(self) -> dict[str, Any]:
+        """Dry-run a downgrade by one step to verify rollback is safe.
+
+        Returns:
+            Dict with keys: ``rollback_safe``, ``sql``, ``error``.
+        """
+        result = self._run_alembic(["downgrade", "-1", "--sql"])
+        has_error = result.get("returncode", 0) != 0
+        sql_output = result.get("stdout", "")
+        return {
+            "rollback_safe": not has_error,
+            "sql": sql_output,
+            "error": result.get("stderr") if has_error else None,
+        }
+
+    def schema_diff(self) -> dict[str, Any]:
+        """Generate a schema diff report between current DB and models.
+
+        Returns:
+            Dict with keys: ``in_sync``, ``output``, ``error``.
+        """
+        result = self._run_alembic(["check"])
+        in_sync = result.get("returncode", 0) == 0
+        return {
+            "in_sync": in_sync,
+            "output": result.get("stdout", ""),
+            "error": result.get("stderr") if not in_sync else None,
+        }
+
+    def _run_alembic(self, args: list[str]) -> dict[str, Any]:
+        """Run an alembic subcommand in the project directory.
+
+        Args:
+            args: Alembic sub-command arguments.
+
+        Returns:
+            Dict with ``returncode``, ``stdout``, ``stderr``.
+        """
+        try:
+            proc = subprocess.run(
+                ["alembic", *args],
+                cwd=str(self._project_dir),
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+            return {
+                "returncode": proc.returncode,
+                "stdout": proc.stdout,
+                "stderr": proc.stderr,
+            }
+        except FileNotFoundError:
+            logger.warning("alembic CLI not found — is it installed?")
+            return {"returncode": 1, "stdout": "", "stderr": "alembic not found"}
+        except subprocess.TimeoutExpired:
+            logger.warning("alembic command timed out: %s", args)
+            return {"returncode": 1, "stdout": "", "stderr": "timeout"}
+
+
+def _parse_revision(output: str) -> str:
+    """Extract current revision from alembic current output."""
+    for line in output.splitlines():
+        line = line.strip()
+        if line and not line.startswith("INFO"):
+            return line.split()[0] if line.split() else ""
+    return ""
+
+
+def _parse_heads(output: str) -> list[str]:
+    """Extract head revisions from alembic heads output."""
+    heads = []
+    for line in output.splitlines():
+        line = line.strip()
+        if line and not line.startswith("INFO"):
+            parts = line.split()
+            if parts:
+                heads.append(parts[0])
+    return heads

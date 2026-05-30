@@ -1,0 +1,155 @@
+"""Wiring assertions for add_sbom_guardian — emitted by the tool.
+
+Asserts that the emitted SBOM guardian infrastructure exists at expected
+paths, AST-parses cleanly, and key functions/constants are declared.
+Does NOT invoke the scripts as sub-runners (wiring assertion only).
+"""
+
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+_PROJECT = Path(__file__).parent.parent
+_SCRIPTS = _PROJECT / "scripts"
+
+
+def test_scripts_package_exists() -> None:
+    """Positive: scripts/__init__.py exists."""
+    p = _SCRIPTS / "__init__.py"
+    assert p.exists(), f"scripts/__init__.py not found at {p}"
+
+
+def test_generate_sbom_exists() -> None:
+    """Positive: scripts/generate_sbom.py exists."""
+    p = _SCRIPTS / "generate_sbom.py"
+    assert p.exists(), f"scripts/generate_sbom.py not found at {p}"
+
+
+def test_generate_sbom_has_cyclonedx() -> None:
+    """Positive: generate_sbom.py references CycloneDX format."""
+    p = _SCRIPTS / "generate_sbom.py"
+    src = p.read_text()
+    assert "CycloneDX" in src, "CycloneDX format marker not found in generate_sbom.py"
+
+
+def test_generate_sbom_has_generate_function() -> None:
+    """Positive: generate_sbom.py declares generate_sbom function."""
+    p = _SCRIPTS / "generate_sbom.py"
+    src = p.read_text()
+    assert "def generate_sbom" in src, "generate_sbom function not declared"
+
+
+def test_generate_sbom_has_purl() -> None:
+    """Positive: generate_sbom.py includes purl (Package URL) in components."""
+    p = _SCRIPTS / "generate_sbom.py"
+    src = p.read_text()
+    assert "purl" in src, "purl (Package URL) not found in generate_sbom.py"
+
+
+def test_generate_sbom_has_sha256() -> None:
+    """Positive: generate_sbom.py supports SHA-256 integrity signing."""
+    p = _SCRIPTS / "generate_sbom.py"
+    src = p.read_text()
+    assert "sha256" in src.lower() or "SHA-256" in src, (
+        "SHA-256 integrity signing not found in generate_sbom.py"
+    )
+
+
+def test_generate_sbom_ast_parses() -> None:
+    """Positive: generate_sbom.py is valid Python."""
+    p = _SCRIPTS / "generate_sbom.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in generate_sbom.py: {exc}") from exc
+
+
+def test_verify_lockfile_exists() -> None:
+    """Positive: scripts/verify_lockfile.py exists."""
+    p = _SCRIPTS / "verify_lockfile.py"
+    assert p.exists(), f"scripts/verify_lockfile.py not found at {p}"
+
+
+def test_verify_lockfile_has_confusion_detection() -> None:
+    """Positive: verify_lockfile.py includes dependency confusion detection."""
+    p = _SCRIPTS / "verify_lockfile.py"
+    src = p.read_text()
+    assert "confusion" in src.lower() or "CONFUSION" in src, (
+        "Dependency confusion detection not found in verify_lockfile.py"
+    )
+
+
+def test_verify_lockfile_has_osv() -> None:
+    """Positive: verify_lockfile.py queries OSV API for vulnerability scanning."""
+    p = _SCRIPTS / "verify_lockfile.py"
+    src = p.read_text()
+    assert "osv" in src.lower() or "OSV" in src, (
+        "OSV vulnerability scanning not found in verify_lockfile.py"
+    )
+
+
+def test_verify_lockfile_has_hash_function() -> None:
+    """Positive: verify_lockfile.py includes a hash function for integrity."""
+    p = _SCRIPTS / "verify_lockfile.py"
+    src = p.read_text()
+    assert "hashlib" in src or "sha256" in src.lower(), (
+        "hashlib/sha256 not found in verify_lockfile.py"
+    )
+
+
+def test_verify_lockfile_no_external_top_level_imports() -> None:
+    """Negative: verify_lockfile.py must not have third-party top-level imports."""
+    _STDLIB = {
+        "json", "subprocess", "sys", "pathlib", "hashlib", "logging",
+        "argparse", "datetime", "re", "urllib", "ipaddress", "importlib",
+        "__future__", "collections", "typing", "os",
+    }
+    p = _SCRIPTS / "verify_lockfile.py"
+    tree = ast.parse(p.read_text())
+    for node in tree.body:
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                top = alias.name.split(".")[0]
+                assert top in _STDLIB or top.startswith("_"), (
+                    f"Non-stdlib top-level import in verify_lockfile.py: {alias.name}"
+                )
+        elif isinstance(node, ast.ImportFrom):
+            if node.module:
+                top = node.module.split(".")[0]
+                assert top in _STDLIB or top.startswith("_"), (
+                    f"Non-stdlib top-level from-import in verify_lockfile.py: {node.module}"
+                )
+
+
+def test_verify_lockfile_ast_parses() -> None:
+    """Positive: verify_lockfile.py is valid Python."""
+    p = _SCRIPTS / "verify_lockfile.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in verify_lockfile.py: {exc}") from exc
+
+
+def test_generate_sbom_no_external_top_level_imports() -> None:
+    """Negative: generate_sbom.py must not have third-party top-level imports."""
+    _STDLIB = {
+        "json", "subprocess", "sys", "pathlib", "hashlib", "logging",
+        "argparse", "datetime", "re", "urllib", "__future__",
+        "collections", "typing", "os",
+    }
+    p = _SCRIPTS / "generate_sbom.py"
+    tree = ast.parse(p.read_text())
+    for node in tree.body:
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                top = alias.name.split(".")[0]
+                assert top in _STDLIB or top.startswith("_"), (
+                    f"Non-stdlib top-level import in generate_sbom.py: {alias.name}"
+                )
+        elif isinstance(node, ast.ImportFrom):
+            if node.module:
+                top = node.module.split(".")[0]
+                assert top in _STDLIB or top.startswith("_"), (
+                    f"Non-stdlib top-level from-import in generate_sbom.py: {node.module}"
+                )

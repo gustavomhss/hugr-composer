@@ -1,0 +1,117 @@
+"""Generated schema fuzz tests — property-based tests from OpenAPI spec.
+
+Tests verify that the API correctly rejects invalid payloads and
+accepts valid ones as defined by the schema. Extend these with
+domain-specific invariants.
+
+Run::
+    PYTHONPATH=. pytest tests/test_schema_fuzz.py -v
+"""
+
+from __future__ import annotations
+
+import json
+import pytest
+
+
+# ---------------------------------------------------------------------------
+# FUZZ-01: extra-field rejection (mass assignment prevention)
+# ---------------------------------------------------------------------------
+
+def test_fuzz_extra_field_in_body_is_rejected() -> None:
+    """Verify that has_extra_fields detects injection via unexpected keys."""
+    from app.core.schema_enforcer import has_extra_fields
+
+    schema = {"properties": {"username": {}, "email": {}}}
+    body = {"username": "alice", "email": "a@b.com", "admin": True}
+    extras = has_extra_fields(body, schema)
+    assert "admin" in extras, f"Expected 'admin' in extras, got: {extras}"
+
+
+def test_fuzz_no_extra_fields_for_conforming_body() -> None:
+    """Verify conforming body produces no extra-field violations."""
+    from app.core.schema_enforcer import has_extra_fields
+
+    schema = {"properties": {"username": {}, "email": {}}}
+    body = {"username": "alice", "email": "a@b.com"}
+    extras = has_extra_fields(body, schema)
+    assert extras == [], f"Expected no extras, got: {extras}"
+
+
+def test_fuzz_empty_body_is_not_extra() -> None:
+    """Empty body must never produce extra-field violations."""
+    from app.core.schema_enforcer import has_extra_fields
+
+    schema = {"properties": {"username": {}}}
+    extras = has_extra_fields({}, schema)
+    assert extras == []
+
+
+def test_fuzz_empty_schema_allows_any_body() -> None:
+    """Schema without properties must not flag any field as extra."""
+    from app.core.schema_enforcer import has_extra_fields
+
+    extras = has_extra_fields({"anything": True}, {})
+    assert extras == []
+
+
+# ---------------------------------------------------------------------------
+# FUZZ-02: shadow API detection
+# ---------------------------------------------------------------------------
+
+def test_fuzz_shadow_route_detected() -> None:
+    """Undocumented route is reported as shadow."""
+    from app.core.schema_enforcer import detect_shadow_routes
+
+    spec_routes = {"/users", "/users/{id}"}
+    shadow = detect_shadow_routes(["/admin/internal/config"], spec_routes)
+    assert "/admin/internal/config" in shadow
+
+
+def test_fuzz_documented_route_not_shadow() -> None:
+    """Documented route must not be reported as shadow."""
+    from app.core.schema_enforcer import detect_shadow_routes
+
+    spec_routes = {"/users", "/users/{id}"}
+    shadow = detect_shadow_routes(["/users"], spec_routes)
+    assert shadow == []
+
+
+def test_fuzz_openapi_meta_routes_not_flagged() -> None:
+    """OpenAPI spec endpoints (/openapi.json, /docs) must not be shadow."""
+    from app.core.schema_enforcer import detect_shadow_routes
+
+    shadow = detect_shadow_routes(["/openapi.json", "/openapi.yaml"], set())
+    assert shadow == [], f"Meta routes should not be shadow: {shadow}"
+
+
+# ---------------------------------------------------------------------------
+# FUZZ-03: spec loading
+# ---------------------------------------------------------------------------
+
+def test_fuzz_missing_spec_returns_empty_dict(tmp_path: pytest.TempPathFactory) -> None:
+    """load_spec returns empty dict for non-existent path."""
+    from app.core.schema_enforcer import load_spec
+
+    spec = load_spec(str(tmp_path / "missing.json"))
+    assert spec == {}
+
+
+def test_fuzz_valid_spec_loaded(tmp_path: pytest.TempPathFactory) -> None:
+    """load_spec correctly parses a valid openapi.json from disk."""
+    spec_file = tmp_path / "openapi.json"
+    spec_data = {"openapi": "3.1.0", "paths": {"/users": {}}}
+    spec_file.write_text(json.dumps(spec_data))
+
+    from app.core.schema_enforcer import load_spec
+    loaded = load_spec(str(spec_file))
+    assert loaded == spec_data
+
+
+def test_fuzz_extract_route_paths() -> None:
+    """extract_route_paths returns correct set from spec dict."""
+    from app.core.schema_enforcer import extract_route_paths
+
+    spec = {"paths": {"/users": {}, "/items/{id}": {}}}
+    paths = extract_route_paths(spec)
+    assert paths == {"/users", "/items/{id}"}

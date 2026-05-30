@@ -1,0 +1,96 @@
+"""Schema enforcer engine — spec loader, validator, drift detector.
+
+Modes:
+  enforce — validate every req/resp, reject non-conforming (403/422)
+  detect  — log violations but let requests through (shadow API alerts)
+  fuzz    — generate random valid/invalid payloads for testing
+
+The spec is loaded once at startup from SCHEMA_ENFORCER_SPEC_PATH or
+directly from the FastAPI app via ``/openapi.json``.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+from pathlib import Path
+from typing import Any
+
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+
+def load_spec(spec_path: str | None = None) -> dict[str, Any]:
+    """Load the OpenAPI spec from disk or return an empty spec.
+
+    Args:
+        spec_path: Optional filesystem path to an openapi.json file.
+            Falls back to settings.SCHEMA_ENFORCER_SPEC_PATH.
+
+    Returns:
+        Parsed OpenAPI spec dict, or empty dict when unavailable.
+    """
+    path_str = spec_path or getattr(settings, "SCHEMA_ENFORCER_SPEC_PATH", "")
+    if not path_str:
+        return {}
+    p = Path(path_str)
+    if not p.is_file():
+        logger.warning("schema_enforcer.spec_not_found", extra={"path": path_str})
+        return {}
+    try:
+        return json.loads(p.read_text())
+    except json.JSONDecodeError as exc:
+        logger.error("schema_enforcer.spec_parse_error", extra={"exc": str(exc)})
+        return {}
+
+
+def extract_route_paths(spec: dict[str, Any]) -> set[str]:
+    """Return the set of documented route paths from the spec.
+
+    Args:
+        spec: Parsed OpenAPI dict.
+
+    Returns:
+        Set of path strings (e.g. {"/users", "/users/{id}"}).
+    """
+    return set(spec.get("paths", {}).keys())
+
+
+def detect_shadow_routes(
+    app_routes: list[str],
+    spec_routes: set[str],
+) -> list[str]:
+    """Return routes present in *app_routes* but absent from *spec_routes*.
+
+    Args:
+        app_routes: List of route paths registered in the ASGI app.
+        spec_routes: Set of documented paths from the OpenAPI spec.
+
+    Returns:
+        List of undocumented (shadow) route paths.
+    """
+    shadow: list[str] = []
+    for route in app_routes:
+        if route not in spec_routes and not route.startswith("/openapi"):
+            shadow.append(route)
+    return shadow
+
+
+def has_extra_fields(
+    body: dict[str, Any],
+    schema: dict[str, Any],
+) -> list[str]:
+    """Return field names present in *body* but not in *schema* properties.
+
+    Args:
+        body: Parsed JSON request body.
+        schema: JSON Schema object with ``properties`` key.
+
+    Returns:
+        List of extra field names not defined in the schema.
+    """
+    allowed = set(schema.get("properties", {}).keys())
+    if not allowed:
+        return []
+    return [k for k in body if k not in allowed]

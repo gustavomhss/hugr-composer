@@ -1,0 +1,166 @@
+"""FuzzRunner — hits each endpoint with adversarial payloads and reports issues."""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+import os
+import time
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
+
+class FuzzResult:
+    """Container for a single fuzz attempt result.
+
+    Attributes:
+        method: HTTP method used.
+        path: Endpoint path tested.
+        payload: The adversarial payload sent.
+        status_code: HTTP response status code.
+        is_json: Whether the response body was valid JSON.
+        elapsed_ms: Round-trip latency in milliseconds.
+        error: Exception message if the request itself failed.
+    """
+
+    def __init__(
+        self,
+        method: str,
+        path: str,
+        payload: dict,
+        status_code: int,
+        is_json: bool,
+        elapsed_ms: int,
+        error: str | None = None,
+    ) -> None:
+        self.method = method
+        self.path = path
+        self.payload = payload
+        self.status_code = status_code
+        self.is_json = is_json
+        self.elapsed_ms = elapsed_ms
+        self.error = error
+
+    def is_finding(self) -> bool:
+        """Return True when this result represents a fuzz finding.
+
+        A finding is a non-JSON 5xx, a request timeout, or a crash.
+        """
+        if self.error:
+            return True
+        if self.status_code >= 500 and not self.is_json:
+            return True
+        return False
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialise this result to a plain dict."""
+        return {
+            "method": self.method,
+            "path": self.path,
+            "status_code": self.status_code,
+            "is_json": self.is_json,
+            "elapsed_ms": self.elapsed_ms,
+            "is_finding": self.is_finding(),
+            "error": self.error,
+        }
+
+
+class FuzzRunner:
+    """Orchestrates fuzzing: fetch schema, generate payloads, run requests.
+
+    Args:
+        base_url: Target server base URL.
+        iterations: Number of payloads to try per endpoint.
+        timeout_s: Per-request timeout in seconds.
+    """
+
+    def __init__(
+        self,
+        base_url: str,
+        iterations: int | None = None,
+        timeout_s: int | None = None,
+    ) -> None:
+        self.base_url = base_url.rstrip("/")
+        self.iterations = iterations or int(os.getenv("FUZZ_ITERATIONS", "10"))
+        self.timeout_s = timeout_s or int(os.getenv("FUZZ_TIMEOUT_S", "5"))
+
+    async def run(self) -> list[FuzzResult]:
+        """Fetch the schema, generate payloads, and run all fuzz requests.
+
+        Returns:
+            List of FuzzResult objects.  Filter with ``.is_finding()`` for
+            actionable issues only.
+        """
+        import httpx  # noqa: PLC0415
+
+        from app.fuzzer import APIFuzzer
+
+        async with httpx.AsyncClient(
+            base_url=self.base_url,
+            timeout=self.timeout_s,
+        ) as client:
+            schema = await self._fetch_schema(client)
+            fuzzer = APIFuzzer(self.base_url, schema=schema)
+            endpoints = fuzzer.endpoint_list()
+            logger.info("Fuzzing %d endpoints (%d iterations each)",
+                        len(endpoints), self.iterations)
+            results: list[FuzzResult] = []
+            for ep in endpoints:
+                payloads = fuzzer.generate_payloads(ep["body_schema"])
+                for payload in payloads[: self.iterations]:
+                    result = await self._fuzz_one(
+                        client, ep["method"], ep["path"], payload
+                    )
+                    results.append(result)
+            return results
+
+    async def _fetch_schema(self, client: Any) -> dict[str, Any]:
+        """Download the OpenAPI schema from the target server.
+
+        Args:
+            client: Async httpx client.
+
+        Returns:
+            OpenAPI schema dict.
+        """
+        try:
+            resp = await client.get("/openapi.json")
+            return resp.json()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Failed to fetch schema: %s", exc)
+            return {}
+
+    async def _fuzz_one(
+        self,
+        client: Any,
+        method: str,
+        path: str,
+        payload: dict[str, Any],
+    ) -> FuzzResult:
+        """Send one adversarial request and return a FuzzResult.
+
+        Args:
+            client: Async httpx client.
+            method: HTTP method (POST, PUT, PATCH).
+            path: Endpoint path to target.
+            payload: Adversarial body payload.
+
+        Returns:
+            FuzzResult describing the outcome.
+        """
+        t0 = time.monotonic()
+        try:
+            resp = await client.request(method, path, json=payload)
+            elapsed = int((time.monotonic() - t0) * 1000)
+            is_json = True
+            try:
+                resp.json()
+            except Exception:  # noqa: BLE001
+                is_json = False
+            return FuzzResult(method, path, payload, resp.status_code,
+                              is_json, elapsed)
+        except Exception as exc:  # noqa: BLE001
+            elapsed = int((time.monotonic() - t0) * 1000)
+            return FuzzResult(method, path, payload, 0, False, elapsed,
+                              error=str(exc))

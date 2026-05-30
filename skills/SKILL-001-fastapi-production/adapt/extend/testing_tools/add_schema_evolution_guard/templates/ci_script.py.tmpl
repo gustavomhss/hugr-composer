@@ -1,0 +1,154 @@
+"""CI script: compare current OpenAPI schema against baseline.
+
+Exit codes:
+    0 — no breaking changes (or SCHEMA_GUARD_FAIL_ON_BREAKING=false)
+    1 — breaking changes detected (when SCHEMA_GUARD_FAIL_ON_BREAKING=true)
+
+Usage::
+
+    # Standard CI run (exit 1 on breaking changes)
+    python scripts/check_schema_compat.py
+
+    # Export current schema as the new baseline
+    python scripts/check_schema_compat.py --export-baseline
+
+    # Warn only (never exit 1)
+    SCHEMA_GUARD_FAIL_ON_BREAKING=false python scripts/check_schema_compat.py
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+from pathlib import Path
+
+
+def _load_app_schema() -> dict:
+    """Load the current OpenAPI schema from the running FastAPI app.
+
+    Returns:
+        The OpenAPI schema dict from the app's /openapi.json route.
+
+    Raises:
+        SystemExit: When the app cannot be imported or schema loading fails.
+    """
+    project_root = Path(__file__).parent.parent
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+    try:
+        import importlib
+        app_module = importlib.import_module("app.main")
+        return app_module.app.openapi()
+    except Exception as exc:
+        print(f"ERROR: Cannot load app schema: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+
+def _load_baseline(baseline_path: str) -> dict | None:
+    """Load baseline OpenAPI schema from file.
+
+    Args:
+        baseline_path: Path to the baseline JSON file.
+
+    Returns:
+        Parsed schema dict, or None when the file does not exist.
+    """
+    p = Path(baseline_path)
+    if not p.exists():
+        return None
+    try:
+        return json.loads(p.read_text())
+    except json.JSONDecodeError as exc:
+        print(f"ERROR: Invalid JSON in baseline {p}: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+
+def _export_baseline(schema: dict, baseline_path: str) -> None:
+    """Write schema dict to baseline JSON file.
+
+    Args:
+        schema: Current OpenAPI schema dict.
+        baseline_path: Destination file path.
+    """
+    p = Path(baseline_path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(schema, indent=2) + "\n")
+    print(f"Baseline exported to {p}")
+
+
+def _run_check(
+    baseline: dict,
+    current: dict,
+    fail_on_breaking: bool,
+) -> int:
+    """Run schema comparison and return exit code.
+
+    Args:
+        baseline: Baseline OpenAPI schema dict.
+        current: Current OpenAPI schema dict.
+        fail_on_breaking: When True, return 1 on breaking changes.
+
+    Returns:
+        0 on no breaking changes, 1 if breaking and fail_on_breaking.
+    """
+    from app.schema_guard.comparator import SchemaComparator
+
+    comparator = SchemaComparator()
+    result = comparator.compare(baseline, current)
+
+    print(f"Schema check: {result.summary}")
+    for msg in result.breaking:
+        print(f"  {msg}")
+    for msg in result.additive:
+        print(f"  {msg}")
+
+    if result.is_breaking:
+        if fail_on_breaking:
+            print(
+                "FAIL: Breaking changes detected. "
+                "Set SCHEMA_GUARD_FAIL_ON_BREAKING=false to warn only."
+            )
+            return 1
+        print("WARN: Breaking changes detected (fail_on_breaking=false).")
+    return 0
+
+
+def main() -> None:
+    """Entry point: parse args and run the schema compatibility check."""
+    parser = argparse.ArgumentParser(description="Check OpenAPI schema compatibility.")
+    parser.add_argument(
+        "--export-baseline",
+        action="store_true",
+        help="Export current schema as the new baseline file.",
+    )
+    args = parser.parse_args()
+
+    baseline_path = os.environ.get(
+        "SCHEMA_GUARD_BASELINE_PATH", ".schema_baseline.json"
+    )
+    fail_on_breaking = (
+        os.environ.get("SCHEMA_GUARD_FAIL_ON_BREAKING", "true").lower() != "false"
+    )
+
+    current_schema = _load_app_schema()
+
+    if args.export_baseline:
+        _export_baseline(current_schema, baseline_path)
+        sys.exit(0)
+
+    baseline = _load_baseline(baseline_path)
+    if baseline is None:
+        print(
+            f"No baseline found at '{baseline_path}'. "
+            "Export one with --export-baseline."
+        )
+        sys.exit(0)
+
+    exit_code = _run_check(baseline, current_schema, fail_on_breaking)
+    sys.exit(exit_code)
+
+
+if __name__ == "__main__":
+    main()

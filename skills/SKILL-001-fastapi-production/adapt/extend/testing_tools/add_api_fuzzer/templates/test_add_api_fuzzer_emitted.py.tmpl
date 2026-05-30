@@ -1,0 +1,111 @@
+"""Wiring assertions for add_api_fuzzer — emitted by the tool.
+
+Asserts that the emitted fuzzer infrastructure exists at the expected paths,
+is importable, and key classes/functions are declared.  Does NOT invoke the
+fuzzer as a sub-runner (per §11 D-00 resolution: wiring assertion only).
+"""
+
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+
+_PROJECT = Path(__file__).parent.parent
+
+
+def test_fuzzer_package_exists() -> None:
+    """Positive: app/fuzzer/__init__.py exists at expected path."""
+    p = _PROJECT / "app" / "fuzzer" / "__init__.py"
+    assert p.exists(), f"app/fuzzer/__init__.py not found at {p}"
+
+
+def test_fuzzer_init_has_api_fuzzer_class() -> None:
+    """Positive: APIFuzzer class declared in app/fuzzer/__init__.py."""
+    p = _PROJECT / "app" / "fuzzer" / "__init__.py"
+    src = p.read_text()
+    assert "APIFuzzer" in src, "APIFuzzer class missing from app/fuzzer/__init__.py"
+    assert "endpoint_list" in src, "endpoint_list method missing"
+    assert "generate_payloads" in src, "generate_payloads method missing"
+
+
+def test_fuzzer_init_ast_parses() -> None:
+    """Positive: app/fuzzer/__init__.py is valid Python (AST-parses)."""
+    p = _PROJECT / "app" / "fuzzer" / "__init__.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in app/fuzzer/__init__.py: {exc}") from exc
+
+
+def test_generators_file_exists() -> None:
+    """Positive: app/fuzzer/generators.py exists and declares generators."""
+    p = _PROJECT / "app" / "fuzzer" / "generators.py"
+    assert p.exists(), f"generators.py not found at {p}"
+    src = p.read_text()
+    assert "build_payloads_for_schema" in src, "build_payloads_for_schema missing"
+    assert "string_values" in src, "string_values missing"
+    assert "int_values" in src, "int_values missing"
+
+
+def test_generators_ast_parses() -> None:
+    """Positive: app/fuzzer/generators.py is valid Python."""
+    p = _PROJECT / "app" / "fuzzer" / "generators.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in generators.py: {exc}") from exc
+
+
+def test_runner_file_exists() -> None:
+    """Positive: app/fuzzer/runner.py exists and declares FuzzRunner/FuzzResult."""
+    p = _PROJECT / "app" / "fuzzer" / "runner.py"
+    assert p.exists(), f"runner.py not found at {p}"
+    src = p.read_text()
+    assert "FuzzRunner" in src, "FuzzRunner missing"
+    assert "FuzzResult" in src, "FuzzResult missing"
+    assert "is_finding" in src, "is_finding method missing"
+
+
+def test_runner_ast_parses() -> None:
+    """Positive: app/fuzzer/runner.py is valid Python."""
+    p = _PROJECT / "app" / "fuzzer" / "runner.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in runner.py: {exc}") from exc
+
+
+def test_cli_script_exists() -> None:
+    """Positive: scripts/run_fuzz.py exists."""
+    p = _PROJECT / "scripts" / "run_fuzz.py"
+    assert p.exists(), f"scripts/run_fuzz.py not found at {p}"
+    src = p.read_text()
+    assert "FuzzRunner" in src or "run_fuzz" in src.lower(), "CLI script missing FuzzRunner ref"
+    assert "__main__" in src, "CLI script missing __main__ guard"
+
+
+def test_cli_ast_parses() -> None:
+    """Positive: scripts/run_fuzz.py is valid Python."""
+    p = _PROJECT / "scripts" / "run_fuzz.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in run_fuzz.py: {exc}") from exc
+
+
+def test_no_top_level_httpx_import_in_runner() -> None:
+    """Negative: httpx must NOT be imported at module top level in runner.py."""
+    p = _PROJECT / "app" / "fuzzer" / "runner.py"
+    tree = ast.parse(p.read_text())
+    for node in tree.body:
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            names = (
+                [a.name for a in node.names]
+                if isinstance(node, ast.Import)
+                else [node.module or ""]
+            )
+            for name in names:
+                assert "httpx" not in name, (
+                    "httpx must be lazily imported inside function body, not at module top"
+                )

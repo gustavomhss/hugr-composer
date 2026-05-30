@@ -1,0 +1,128 @@
+"""Wiring assertions for add_schema_enforcer — emitted by the tool.
+
+Asserts that the emitted schema enforcer infrastructure exists at expected
+paths, AST-parses cleanly, and key classes/functions are declared.
+Does NOT invoke the middleware or run live HTTP tests (wiring assertion only).
+"""
+
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+_PROJECT = Path(__file__).parent.parent
+_APP = _PROJECT / "app"
+_TESTS = _PROJECT / "tests"
+
+
+def test_core_schema_enforcer_exists() -> None:
+    """Positive: app/core/schema_enforcer.py exists."""
+    p = _APP / "core" / "schema_enforcer.py"
+    assert p.exists(), f"app/core/schema_enforcer.py not found at {p}"
+
+
+def test_core_schema_enforcer_declares_load_spec() -> None:
+    """Positive: schema_enforcer.py declares load_spec function."""
+    p = _APP / "core" / "schema_enforcer.py"
+    src = p.read_text()
+    assert "def load_spec" in src, "load_spec not declared in app/core/schema_enforcer.py"
+
+
+def test_core_schema_enforcer_declares_detect_shadow() -> None:
+    """Positive: schema_enforcer.py declares detect_shadow_routes function."""
+    p = _APP / "core" / "schema_enforcer.py"
+    src = p.read_text()
+    assert "def detect_shadow_routes" in src, "detect_shadow_routes not declared"
+
+
+def test_core_schema_enforcer_declares_has_extra_fields() -> None:
+    """Positive: schema_enforcer.py declares has_extra_fields function."""
+    p = _APP / "core" / "schema_enforcer.py"
+    src = p.read_text()
+    assert "def has_extra_fields" in src, "has_extra_fields not declared"
+
+
+def test_core_schema_enforcer_ast_parses() -> None:
+    """Positive: app/core/schema_enforcer.py is valid Python."""
+    p = _APP / "core" / "schema_enforcer.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in app/core/schema_enforcer.py: {exc}") from exc
+
+
+def test_middleware_package_exists() -> None:
+    """Positive: app/middleware/__init__.py exists."""
+    p = _APP / "middleware" / "__init__.py"
+    assert p.exists(), f"app/middleware/__init__.py not found at {p}"
+
+
+def test_middleware_schema_enforcer_exists() -> None:
+    """Positive: app/middleware/schema_enforcer.py exists."""
+    p = _APP / "middleware" / "schema_enforcer.py"
+    assert p.exists(), f"app/middleware/schema_enforcer.py not found at {p}"
+
+
+def test_middleware_declares_enforcer_class() -> None:
+    """Positive: middleware declares SchemaEnforcerMiddleware class."""
+    p = _APP / "middleware" / "schema_enforcer.py"
+    src = p.read_text()
+    assert "class SchemaEnforcerMiddleware" in src, (
+        "SchemaEnforcerMiddleware class not declared in middleware"
+    )
+
+
+def test_middleware_declares_register_function() -> None:
+    """Positive: middleware declares register_schema_enforcer function."""
+    p = _APP / "middleware" / "schema_enforcer.py"
+    src = p.read_text()
+    assert "def register_schema_enforcer" in src, (
+        "register_schema_enforcer not declared in middleware"
+    )
+
+
+def test_middleware_references_enforce_mode() -> None:
+    """Positive: middleware references 'enforce' mode string."""
+    p = _APP / "middleware" / "schema_enforcer.py"
+    src = p.read_text()
+    assert '"enforce"' in src or "'enforce'" in src, (
+        "enforce mode not referenced in middleware"
+    )
+
+
+def test_middleware_returns_403_on_shadow() -> None:
+    """Negative: middleware returns 403 for shadow routes in enforce mode."""
+    p = _APP / "middleware" / "schema_enforcer.py"
+    src = p.read_text()
+    assert "status_code=403" in src, "403 response missing from middleware shadow route handler"
+
+
+def test_middleware_ast_parses() -> None:
+    """Positive: app/middleware/schema_enforcer.py is valid Python."""
+    p = _APP / "middleware" / "schema_enforcer.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in middleware: {exc}") from exc
+
+
+def test_fuzz_tests_file_exists() -> None:
+    """Positive: tests/test_schema_fuzz.py exists."""
+    p = _TESTS / "test_schema_fuzz.py"
+    assert p.exists(), f"tests/test_schema_fuzz.py not found at {p}"
+
+
+def test_fuzz_tests_has_test_functions() -> None:
+    """Positive: test_schema_fuzz.py declares test_ functions."""
+    p = _TESTS / "test_schema_fuzz.py"
+    src = p.read_text()
+    assert "def test_fuzz_" in src, "No test_fuzz_ functions in test_schema_fuzz.py"
+
+
+def test_fuzz_tests_ast_parses() -> None:
+    """Positive: tests/test_schema_fuzz.py is valid Python."""
+    p = _TESTS / "test_schema_fuzz.py"
+    try:
+        ast.parse(p.read_text())
+    except SyntaxError as exc:
+        raise AssertionError(f"SyntaxError in test_schema_fuzz.py: {exc}") from exc
