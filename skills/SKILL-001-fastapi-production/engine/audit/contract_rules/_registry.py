@@ -69,6 +69,7 @@ from .phase4_release import (
     _r_version_sync,
 )
 from .r_admin_routes_auth import _r_admin_routes_require_auth
+from .r_init_inside_lifespan import _r_init_inside_lifespan_only
 from .r_no_dead_security_features import _r_no_dead_security_features
 from .r_no_module_state import _r_no_module_state_in_templates
 from .r_notes_match_behaviour import _r_notes_match_emitted_behaviour
@@ -121,6 +122,12 @@ RULES: list[Rule] = [
         0,
         "write schemas declare extra=\"forbid\" + no bare-Any fields (P5)",
         _r_write_schemas_strict,
+    ),
+    Rule(
+        "B0.15",
+        0,
+        "init/create/configure calls in main-patch templates live inside lifespan (P6)",
+        _r_init_inside_lifespan_only,
     ),
     Rule("B1.0", 1, "core.venous copy-in distribution", _r_core_venous_distribution),
     Rule("B1.0.1", 1, "adapter layer + framework-free primitives", _r_adapter_layer_invariant),
