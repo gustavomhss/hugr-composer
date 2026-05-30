@@ -68,6 +68,7 @@ from .phase4_release import (
     _r_install_docker_ci,
     _r_version_sync,
 )
+from .r_no_dead_security_features import _r_no_dead_security_features
 
 # ---------------------------------------------------------------------------
 # RULES — explicit literal, CONTRACT.md order (NOT a sum-of-phase-lists).
@@ -87,6 +88,12 @@ RULES: list[Rule] = [
     Rule("B0.7", 0, "No stub tests under /benchmark/", _r_benchmark_no_stubs),
     Rule("B0.8", 0, ".gitignore covers artefacts", _r_gitignore_artefacts),
     Rule("B0.9", 0, "no discontinued 'Maestro' terminology in live tree", _r_no_legacy_terminology),
+    Rule(
+        "B0.10",
+        0,
+        "no dead security features in templates (ROUND5_6_TRIAGE P1)",
+        _r_no_dead_security_features,
+    ),
     Rule("B1.0", 1, "core.venous copy-in distribution", _r_core_venous_distribution),
     Rule("B1.0.1", 1, "adapter layer + framework-free primitives", _r_adapter_layer_invariant),
     Rule("B1.1", 1, "primitives_by_concern.yaml registry", _r_registry_exists),
