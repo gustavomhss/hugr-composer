@@ -1,0 +1,39 @@
+"""Pydantic models for Cedar authorization requests and responses."""
+
+from __future__ import annotations
+
+from pydantic import BaseModel, Field
+
+
+class AuthzRequest(BaseModel):
+    """Payload for a Cedar authorization check.
+
+    Attributes:
+        principal: Entity string for the principal, e.g. ``'User::"alice"'``.
+        action: Entity string for the action, e.g. ``'Action::"read"'``.
+        resource: Entity string for the resource, e.g. ``'Resource::"doc-1"'``.
+        context: Arbitrary key/value attributes injected into the Cedar context.
+    """
+
+    principal: str = Field(..., examples=['User::"alice"'])
+    action: str = Field(..., examples=['Action::"read"'])
+    resource: str = Field(..., examples=['Resource::"report-42"'])
+    context: dict = Field(default_factory=dict)
+
+
+class AuthzResponse(BaseModel):
+    """Response from a Cedar authorization check.
+
+    Attributes:
+        allowed: ``True`` when the policy set permits the request.
+        principal: Echo of the evaluated principal.
+        action: Echo of the evaluated action.
+        resource: Echo of the evaluated resource.
+        reason: Human-readable explanation of the decision.
+    """
+
+    allowed: bool
+    principal: str
+    action: str
+    resource: str
+    reason: str

@@ -1,0 +1,243 @@
+"""Feature-flag evaluator: is_enabled, get_variant, deterministic bucketing.
+
+Design decisions:
+- All public functions are non-raising (return default on any error).
+- Hard latency cap via asyncio.wait_for (circuit-breaker pattern).
+- SHA-256 bucketing: same (user_id, flag_key) always maps to same bucket.
+- Kill switch overrides enabled=True unconditionally.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import hashlib
+import logging
+from typing import Any
+from uuid import UUID
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.feature_flag_cache import get_flag_cache
+from app.models.feature_flag import FeatureFlag
+
+logger = logging.getLogger(__name__)
+
+EVAL_TIMEOUT_S: float = 0.005  # 5 ms hard cap
+
+
+class FlagContext:
+    """Caller-provided evaluation context for targeting rules.
+
+    Attributes:
+        user_id: UUID of the requesting user (used for bucketing).
+        tenant_id: UUID of the requesting tenant (optional).
+        environment: Runtime environment string, e.g. 'production'.
+        attributes: Arbitrary extra attributes for custom rules.
+    """
+
+    __slots__ = ("user_id", "tenant_id", "environment", "attributes")
+
+    def __init__(
+        self,
+        user_id: UUID | None = None,
+        tenant_id: UUID | None = None,
+        environment: str = "production",
+        attributes: dict[str, Any] | None = None,
+    ) -> None:
+        self.user_id = user_id
+        self.tenant_id = tenant_id
+        self.environment = environment
+        self.attributes = attributes or {}
+
+
+async def is_enabled(
+    session: AsyncSession,
+    key: str,
+    context: FlagContext,
+    default: bool = False,
+) -> bool:
+    """Evaluate a boolean feature flag. Never raises; returns *default* on error.
+
+    Args:
+        session: Async SQLAlchemy session for DB fallback.
+        key: Flag key string.
+        context: Evaluation context (user, tenant, environment).
+        default: Value returned when flag is missing or evaluation fails.
+
+    Returns:
+        True if the flag is enabled for this context, False otherwise.
+    """
+    try:
+        return await asyncio.wait_for(
+            _evaluate_boolean(session, key, context, default),
+            timeout=EVAL_TIMEOUT_S,
+        )
+    except (asyncio.TimeoutError, Exception) as exc:
+        logger.warning("flag.eval_failed key=%s err=%r default=%s", key, exc, default)
+        return default
+
+
+async def get_variant(
+    session: AsyncSession,
+    key: str,
+    context: FlagContext,
+    default: str = "control",
+) -> str:
+    """Evaluate a multi-variant flag. Never raises; returns *default* on error.
+
+    Args:
+        session: Async SQLAlchemy session for DB fallback.
+        key: Flag key string.
+        context: Evaluation context (user, tenant, environment).
+        default: Variant name returned when flag is missing or evaluation fails.
+
+    Returns:
+        Variant name string (e.g. 'A', 'B', 'control').
+    """
+    try:
+        return await asyncio.wait_for(
+            _evaluate_variant(session, key, context, default),
+            timeout=EVAL_TIMEOUT_S,
+        )
+    except Exception as exc:
+        logger.warning("flag.variant_failed key=%s err=%r default=%s", key, exc, default)
+        return default
+
+
+def bucket_for_user(flag_key: str, user_id: str) -> int:
+    """Deterministic 0..99 bucket via SHA-256 of (flag_key | user_id).
+
+    Args:
+        flag_key: Flag key string.
+        user_id: User UUID as string.
+
+    Returns:
+        Integer in range [0, 99].
+
+    Raises:
+        ValueError: If flag_key or user_id is empty.
+    """
+    if not flag_key or not user_id:
+        raise ValueError("flag_key and user_id must be non-empty")
+    payload = f"{flag_key}|{user_id}".encode("utf-8")
+    digest = hashlib.sha256(payload).digest()
+    bucket_int = int.from_bytes(digest[:4], byteorder="big", signed=False)
+    return bucket_int % 100
+
+
+async def _load_flag(session: AsyncSession, key: str) -> dict | None:
+    """Load flag payload from cache, falling back to DB.
+
+    Args:
+        session: Async SQLAlchemy session.
+        key: Flag key to load.
+
+    Returns:
+        Serialised flag payload dict, or None if not found.
+    """
+    cache = get_flag_cache()
+    cached = await cache.get(key)
+    if cached is not None:
+        return cached
+
+    stmt = select(FeatureFlag).where(FeatureFlag.key == key)
+    flag = (await session.execute(stmt)).scalar_one_or_none()
+    if flag is None:
+        return None
+
+    payload: dict[str, Any] = {
+        "id": str(flag.id),
+        "key": flag.key,
+        "flag_type": flag.flag_type,
+        "enabled": flag.enabled,
+        "rollout_percentage": flag.rollout_percentage,
+        "targeting_rules": flag.targeting_rules,
+        "variants": flag.variants,
+        "kill_switch": flag.kill_switch,
+        "default_value": flag.default_value,
+    }
+    await cache.set(key, payload)
+    return payload
+
+
+async def _evaluate_boolean(
+    session: AsyncSession, key: str, context: FlagContext, default: bool
+) -> bool:
+    flag = await _load_flag(session, key)
+    if flag is None:
+        return default
+    if flag["kill_switch"]:
+        return False
+    if not flag["enabled"]:
+        return False
+    matched = _match_targeting(flag["targeting_rules"], context)
+    if matched is not None:
+        return bool(matched)
+    if flag["rollout_percentage"] > 0 and context.user_id is not None:
+        bucket = bucket_for_user(key, str(context.user_id))
+        if bucket < flag["rollout_percentage"]:
+            return True
+    return False
+
+
+async def _evaluate_variant(
+    session: AsyncSession, key: str, context: FlagContext, default: str
+) -> str:
+    flag = await _load_flag(session, key)
+    if flag is None:
+        return default
+    if flag["kill_switch"] or not flag["enabled"]:
+        return default
+    matched = _match_targeting(flag["targeting_rules"], context)
+    if isinstance(matched, str):
+        return matched
+    if not flag["variants"] or context.user_id is None:
+        return default
+    bucket = bucket_for_user(key, str(context.user_id))
+    cumulative = 0
+    for variant in flag["variants"]:
+        cumulative += variant.get("weight", 0)
+        if bucket < cumulative:
+            return variant["name"]
+    return default
+
+
+def _match_targeting(rules: list, context: FlagContext) -> Any:
+    """Evaluate targeting rules; return matched value or None.
+
+    Args:
+        rules: List of rule dicts with 'attribute', 'operator', 'value', 'return_value'.
+        context: Evaluation context.
+
+    Returns:
+        The ``return_value`` of the first matching rule, or None.
+    """
+    for rule in rules:
+        attr = rule.get("attribute", "")
+        op = rule.get("operator", "equals")
+        target = rule.get("value")
+        actual = _resolve_attr(attr, context)
+        if _check_op(op, actual, target):
+            return rule.get("return_value", True)
+    return None
+
+
+def _resolve_attr(attr: str, context: FlagContext) -> Any:
+    if attr == "user_id":
+        return str(context.user_id) if context.user_id else None
+    if attr == "tenant_id":
+        return str(context.tenant_id) if context.tenant_id else None
+    if attr == "environment":
+        return context.environment
+    return context.attributes.get(attr)
+
+
+def _check_op(op: str, actual: Any, target: Any) -> bool:
+    if op == "equals":
+        return actual == target
+    if op == "in":
+        return actual in target
+    if op == "not_in":
+        return actual not in target
+    return False

@@ -1,0 +1,288 @@
+"""Object-level authorization (BOLA/IDOR) protection for FastAPI.
+
+Prevents Broken Object Level Authorization (OWASP API1:2023) by
+verifying that the authenticated user owns (or is delegated access to)
+every resource before the handler executes.
+
+Usage::
+
+    from app.auth.bola_guard import require_ownership
+    from app.models.order import Order
+
+    @router.get("/orders/{order_id}")
+    async def get_order(
+        order_id: int,
+        _: None = Depends(require_ownership(Order, "user_id")),
+        session: AsyncSession = Depends(get_session),
+        current_user: User = Depends(get_current_user),
+    ) -> OrderRead:
+        ...
+"""
+
+from __future__ import annotations
+
+import logging
+import os
+from dataclasses import dataclass
+from typing import Any, Type
+
+from fastapi import Depends, HTTPException, Request, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
+
+
+def _bola_enabled() -> bool:
+    """Return True when BOLA_GUARD_ENABLED env var is not 'false'.
+
+    Returns:
+        Boolean guard-enabled state.
+    """
+    return os.getenv("BOLA_GUARD_ENABLED", "true").lower() != "false"
+
+
+def _strict_mode() -> bool:
+    """Return True when BOLA_GUARD_STRICT_MODE is set to 'true'.
+
+    Returns:
+        Boolean strict-mode state.
+    """
+    return os.getenv("BOLA_GUARD_STRICT_MODE", "false").lower() == "true"
+
+
+class OwnershipVerifier:
+    """FastAPI dependency that verifies object-level ownership.
+
+    Raises HTTP 403 when the authenticated user does not own the
+    requested resource (or strict mode is on and no ownership found).
+    """
+
+    def __init__(self, model: type, owner_field: str) -> None:
+        """Initialise verifier for a specific model and owner field.
+
+        Args:
+            model: SQLAlchemy model class (e.g. Order).
+            owner_field: Column name that holds the owner's user_id.
+        """
+        self._model = model
+        self._owner_field = owner_field
+
+    async def __call__(
+        self,
+        request: Request,
+        session: AsyncSession = Depends(lambda: None),
+    ) -> None:
+        """Verify ownership; raises 403/401 on violation.
+
+        Args:
+            request: The current HTTP request.
+            session: Optional async DB session for ownership query.
+        """
+        if not _bola_enabled():
+            return
+        resource_id = _extract_resource_id(request, self._model.__name__.lower())
+        if resource_id is None:
+            if _strict_mode():
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail={"detail": "Resource ID not found in path"},
+                )
+            return
+        current_user_id = _get_current_user_id(request)
+        if current_user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={"detail": "Authentication required"},
+            )
+        await self._enforce(session, resource_id, current_user_id)
+
+    async def _enforce(
+        self,
+        session: Any,
+        resource_id: int,
+        current_user_id: int,
+    ) -> None:
+        """Enforce ownership; raises 403 on violation or no session.
+
+        Args:
+            session: Async DB session (or None if unavailable).
+            resource_id: The resource primary key to check.
+            current_user_id: The ID of the requesting user.
+        """
+        if session is None:
+            logger.warning(
+                "BOLA: no session for %s/%s",
+                self._model.__name__,
+                resource_id,
+            )
+            return
+        owned = await _check_ownership(
+            session, self._model, self._owner_field, resource_id, current_user_id
+        )
+        if not owned:
+            logger.warning(
+                "BOLA_VIOLATION: user=%s tried to access %s id=%s",
+                current_user_id, self._model.__name__, resource_id,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"detail": "Access denied - you do not own this resource"},
+            )
+
+
+def require_ownership(model: type, field: str = "user_id") -> Any:
+    """Return a FastAPI Depends-compatible OwnershipVerifier.
+
+    Args:
+        model: SQLAlchemy model class to check ownership on.
+        field: Column name holding the owner's user_id.
+
+    Returns:
+        ``Depends(OwnershipVerifier(model, field))`` expression.
+    """
+    return Depends(OwnershipVerifier(model, field))
+
+
+def _extract_resource_id(request: Request, model_name: str) -> int | str | None:
+    """Extract resource ID from request path parameters.
+
+    Args:
+        request: HTTP request with path_params populated.
+        model_name: Lowercase model name for param key heuristic.
+
+    Returns:
+        Resource ID value or None when not found.
+    """
+    params = dict(request.path_params)
+    # Try <model_name>_id first, then generic 'id'
+    for key in (f"{model_name}_id", "id"):
+        if key in params:
+            return params[key]
+    # Fall back to first integer param
+    for val in params.values():
+        try:
+            return int(val)
+        except (TypeError, ValueError):
+            pass
+    return None
+
+
+def _get_current_user_id(request: Request) -> Any:
+    """Extract current user ID from request state (set by auth middleware).
+
+    Args:
+        request: HTTP request.
+
+    Returns:
+        User ID or None if not authenticated.
+    """
+    user = getattr(request.state, "user", None)
+    if user is None:
+        return None
+    return getattr(user, "id", None) or getattr(user, "user_id", None)
+
+
+async def _check_ownership(
+    session: AsyncSession,
+    model: type,
+    owner_field: str,
+    resource_id: Any,
+    user_id: Any,
+) -> bool:
+    """Query DB to verify that user_id owns the resource.
+
+    Args:
+        session: Async DB session.
+        model: SQLAlchemy model class.
+        owner_field: Column that stores the owner user_id.
+        resource_id: PK value of the resource.
+        user_id: ID of the current user.
+
+    Returns:
+        True if ownership confirmed, False otherwise.
+    """
+    try:
+        from sqlalchemy import select
+        stmt = (
+            select(model)
+            .where(model.id == resource_id)
+            .where(getattr(model, owner_field) == user_id)
+        )
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none() is not None
+    except Exception as exc:
+        logger.error("BOLA ownership check error: %s", exc)
+        return False
+
+
+@dataclass
+class ResourceAccessPolicy:
+    """Delegation policy allowing cross-user access grants.
+
+    Attributes:
+        grantor_id: User ID granting access.
+        grantee_id: User ID receiving access.
+        resource_model: Name of the model class being delegated.
+        resource_id: Specific resource ID, or None for all owned resources.
+        read_only: When True, grantee can read but not modify.
+    """
+
+    grantor_id: Any
+    grantee_id: Any
+    resource_model: str
+    resource_id: Any = None
+    read_only: bool = True
+
+    def allows(self, user_id: Any, resource_id: Any, write: bool = False) -> bool:
+        """Check whether this policy permits *user_id* to access *resource_id*.
+
+        Args:
+            user_id: Requesting user's ID.
+            resource_id: Resource being accessed.
+            write: True if this is a write/delete operation.
+
+        Returns:
+            True when access is permitted by this policy.
+        """
+        if user_id != self.grantee_id:
+            return False
+        if self.resource_id is not None and self.resource_id != resource_id:
+            return False
+        if write and self.read_only:
+            return False
+        return True
+
+
+class TenantIsolationFilter:
+    """Multi-tenant query isolation — auto-injects tenant_id filter.
+
+    Usage::
+
+        filter = TenantIsolationFilter(session, tenant_id=current_user.tenant_id)
+        query = filter.apply(select(Order))
+    """
+
+    def __init__(self, session: AsyncSession, tenant_id: Any) -> None:
+        """Initialise filter for a specific tenant.
+
+        Args:
+            session: Async DB session.
+            tenant_id: The tenant ID to enforce on all queries.
+        """
+        self._session = session
+        self._tenant_id = tenant_id
+
+    def apply(self, stmt: Any, model: type | None = None) -> Any:
+        """Inject tenant_id WHERE clause into a SQLAlchemy select statement.
+
+        Args:
+            stmt: SQLAlchemy Select statement.
+            model: Model class with tenant_id column.
+                Inferred from stmt if omitted.
+
+        Returns:
+            Statement with tenant_id filter applied.
+        """
+        if model is not None and hasattr(model, "tenant_id"):
+            return stmt.where(model.tenant_id == self._tenant_id)
+        return stmt

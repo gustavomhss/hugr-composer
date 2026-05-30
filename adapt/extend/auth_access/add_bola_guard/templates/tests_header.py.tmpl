@@ -1,0 +1,32 @@
+"""Auto-generated BOLA test suite.
+
+Emitted by ``add_bola_guard`` for every owner-bearing model discovered
+under ``app/models/``. Each model gets test cases that prove cross-user
+access is blocked.
+
+Replace OWNER_TOKEN_PLACEHOLDER / ATTACKER_TOKEN_PLACEHOLDER with real
+per-user JWTs (and the placeholder owner-resource fixture) from your
+test setup, then remove ``pytestmark = pytest.mark.skip(...)`` below
+to enable the suite.
+
+Run::
+
+    PYTHONPATH=. pytest tests/test_bola_generated.py -v
+"""
+
+from __future__ import annotations
+
+import pytest
+
+# Skipped by default — the per-model fixtures below are placeholders
+# (OWNER_TOKEN_PLACEHOLDER / id=1) and the suite will fail until the
+# caller wires in real auth tokens and an owned-resource id. Remove
+# this line after replacing the placeholders.
+pytestmark = pytest.mark.skip(
+    reason=(
+        "BOLA placeholders not wired — replace OWNER_TOKEN_PLACEHOLDER, "
+        "ATTACKER_TOKEN_PLACEHOLDER and owner_<model>_id fixtures, "
+        "then delete this pytestmark."
+    )
+)
+

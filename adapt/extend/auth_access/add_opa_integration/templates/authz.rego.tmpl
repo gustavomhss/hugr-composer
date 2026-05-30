@@ -1,0 +1,28 @@
+# authz.rego — Example OPA policy for HTTP API authorization.
+#
+# Load into OPA:  opa run --server authz.rego data.json
+# Query:          POST /v1/data/authz/allow  { "input": { ... } }
+
+package authz
+
+import rego.v1
+
+# Default: deny all requests.
+default allow := false
+
+# Allow superusers unconditionally.
+allow if {
+    data.roles[input.subject] == "superuser"
+}
+
+# Allow GET requests for authenticated (non-anonymous) users.
+allow if {
+    input.action == "GET"
+    input.subject != "anonymous"
+}
+
+# Allow POST/PUT/DELETE for users with write role.
+allow if {
+    input.action in {"POST", "PUT", "DELETE", "PATCH"}
+    data.roles[input.subject] == "writer"
+}

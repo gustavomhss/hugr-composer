@@ -1,0 +1,100 @@
+"""Admin-only CRUD endpoints for Tenant management."""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, HTTPException, Query, status
+
+from app.api.deps import CurrentSuperuser, SessionDep
+from app.crud import tenant as crud_tenant
+from app.schemas.tenant import TenantCreate, TenantPublic, TenantUpdate
+
+router = APIRouter(prefix="/tenants", tags=["tenants"])
+
+
+@router.post("/", response_model=TenantPublic, status_code=status.HTTP_201_CREATED)
+async def create_tenant(
+    tenant_in: TenantCreate,
+    session: SessionDep,
+    current_user: CurrentSuperuser,
+) -> TenantPublic:
+    """Create a new tenant. Superuser only.
+
+    Args:
+        tenant_in: Validated tenant create payload.
+        session: Injected async DB session.
+        current_user: Must be a superuser.
+
+    Raises:
+        HTTPException: 409 if slug already exists.
+    """
+    existing = await crud_tenant.get_by_slug(session, slug=tenant_in.slug)
+    if existing:
+        raise HTTPException(status_code=409, detail="Tenant slug already exists")
+    tenant = await crud_tenant.create(session, tenant_in=tenant_in)
+    return TenantPublic.model_validate(tenant)
+
+
+@router.get("/", response_model=list[TenantPublic])
+async def list_tenants(
+    session: SessionDep,
+    current_user: CurrentSuperuser,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=20, ge=1, le=100),
+) -> list[TenantPublic]:
+    """List all tenants. Superuser only.
+
+    Args:
+        session: Injected async DB session.
+        current_user: Must be a superuser.
+        skip: Pagination offset.
+        limit: Page size (1-100).
+    """
+    tenants = await crud_tenant.list_tenants(session, skip=skip, limit=limit)
+    return [TenantPublic.model_validate(t) for t in tenants]
+
+
+@router.get("/{slug}", response_model=TenantPublic)
+async def get_tenant(
+    slug: str,
+    session: SessionDep,
+    current_user: CurrentSuperuser,
+) -> TenantPublic:
+    """Fetch a tenant by slug. Superuser only.
+
+    Args:
+        slug: URL-safe tenant slug.
+        session: Injected async DB session.
+        current_user: Must be a superuser.
+
+    Raises:
+        HTTPException: 404 if tenant not found.
+    """
+    tenant = await crud_tenant.get_by_slug(session, slug=slug)
+    if tenant is None:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    return TenantPublic.model_validate(tenant)
+
+
+@router.patch("/{slug}", response_model=TenantPublic)
+async def update_tenant(
+    slug: str,
+    tenant_in: TenantUpdate,
+    session: SessionDep,
+    current_user: CurrentSuperuser,
+) -> TenantPublic:
+    """Update a tenant by slug. Superuser only.
+
+    Args:
+        slug: URL-safe tenant slug.
+        tenant_in: Validated partial update payload.
+        session: Injected async DB session.
+        current_user: Must be a superuser.
+
+    Raises:
+        HTTPException: 404 if tenant not found.
+    """
+    tenant = await crud_tenant.get_by_slug(session, slug=slug)
+    if tenant is None:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    tenant = await crud_tenant.update(session, tenant=tenant, tenant_in=tenant_in)
+    return TenantPublic.model_validate(tenant)

@@ -1,0 +1,58 @@
+"""Pydantic schemas for the Tenant model.
+
+Note: tenant_id is intentionally NOT exposed in TenantPublic so that
+multi-tenant details are never leaked in API responses.
+"""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class TenantBase(BaseModel):
+    """Shared fields for Tenant create/update.
+
+    Attributes:
+        slug: URL-safe unique identifier for the tenant.
+        name: Human-readable display name.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    slug: str = Field(..., min_length=1, max_length=63)
+    name: str = Field(..., min_length=1, max_length=255)
+
+
+class TenantCreate(TenantBase):
+    """Input schema for creating a new Tenant."""
+
+
+class TenantUpdate(BaseModel):
+    """Input schema for partially updating a Tenant.
+
+    Attributes:
+        name: New display name (optional).
+        status: New status — one of 'active', 'suspended', 'archived' (optional).
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    status: str | None = Field(default=None)
+
+
+class TenantPublic(TenantBase):
+    """Output schema for Tenant API responses.
+
+    Attributes:
+        id: Tenant UUID primary key.
+        status: Current lifecycle status.
+        created_at: UTC creation timestamp.
+    """
+
+    id: uuid.UUID
+    status: str
+    created_at: datetime

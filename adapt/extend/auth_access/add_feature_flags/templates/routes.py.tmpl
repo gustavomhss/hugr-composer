@@ -1,0 +1,109 @@
+"""Admin-only CRUD endpoints for feature-flag management."""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, HTTPException, status
+
+from app.api.deps import CurrentSuperuser, SessionDep
+from app.crud import feature_flag as crud_flag
+from app.schemas.feature_flag import (
+    FeatureFlagCreate,
+    FeatureFlagPublic,
+    FeatureFlagUpdate,
+)
+
+router = APIRouter(prefix="/feature-flags", tags=["feature-flags"])
+
+
+@router.post("/", response_model=FeatureFlagPublic, status_code=status.HTTP_201_CREATED)
+async def create_flag(
+    flag_in: FeatureFlagCreate,
+    session: SessionDep,
+    current_user: CurrentSuperuser,
+) -> FeatureFlagPublic:
+    """Create a new feature flag. Superuser only.
+
+    Args:
+        flag_in: Validated flag create payload.
+        session: Injected async DB session.
+        current_user: Must be a superuser.
+
+    Raises:
+        HTTPException: 409 if flag key already exists.
+    """
+    existing = await crud_flag.get_by_key(session, key=flag_in.key)
+    if existing:
+        raise HTTPException(status_code=409, detail="Flag key already exists")
+    flag = await crud_flag.create(session, flag_in=flag_in, actor_id=current_user.id)
+    return FeatureFlagPublic.model_validate(flag)
+
+
+@router.get("/{key}", response_model=FeatureFlagPublic)
+async def get_flag(
+    key: str,
+    session: SessionDep,
+    current_user: CurrentSuperuser,
+) -> FeatureFlagPublic:
+    """Fetch a feature flag by key. Superuser only.
+
+    Args:
+        key: Flag key string.
+        session: Injected async DB session.
+        current_user: Must be a superuser.
+
+    Raises:
+        HTTPException: 404 if not found.
+    """
+    flag = await crud_flag.get_by_key(session, key=key)
+    if not flag:
+        raise HTTPException(status_code=404, detail="Flag not found")
+    return FeatureFlagPublic.model_validate(flag)
+
+
+@router.patch("/{key}", response_model=FeatureFlagPublic)
+async def update_flag(
+    key: str,
+    flag_in: FeatureFlagUpdate,
+    session: SessionDep,
+    current_user: CurrentSuperuser,
+) -> FeatureFlagPublic:
+    """Update a feature flag. Superuser only. Publishes cache invalidation.
+
+    Args:
+        key: Flag key string.
+        flag_in: Validated partial update payload.
+        session: Injected async DB session.
+        current_user: Must be a superuser.
+
+    Raises:
+        HTTPException: 404 if not found.
+    """
+    flag = await crud_flag.get_by_key(session, key=key)
+    if not flag:
+        raise HTTPException(status_code=404)
+    flag = await crud_flag.update(
+        session, flag=flag, flag_in=flag_in, actor_id=current_user.id
+    )
+    return FeatureFlagPublic.model_validate(flag)
+
+
+@router.delete("/{key}", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
+async def delete_flag(
+    key: str,
+    session: SessionDep,
+    current_user: CurrentSuperuser,
+) -> None:
+    """Delete a feature flag. Superuser only. Publishes cache invalidation.
+
+    Args:
+        key: Flag key string.
+        session: Injected async DB session.
+        current_user: Must be a superuser.
+
+    Raises:
+        HTTPException: 404 if not found.
+    """
+    flag = await crud_flag.get_by_key(session, key=key)
+    if not flag:
+        raise HTTPException(status_code=404)
+    await crud_flag.delete(session, flag=flag, actor_id=current_user.id)

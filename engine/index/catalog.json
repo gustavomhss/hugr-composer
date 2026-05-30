@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "69ad70b",
-  "generated_at": "2026-05-30T03:51:33+00:00",
+  "kit_commit": "c2faa2d",
+  "generated_at": "2026-05-30T04:01:11+00:00",
   "verbs": [
     "add",
     "generate",
@@ -435,10 +435,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/auth_access/add_bola_guard.py",
-      "test_paths": [
-        "adapt/extend/auth_access/test_add_bola_guard.py"
-      ],
+      "module_path": "adapt/extend/auth_access/add_bola_guard/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -459,10 +457,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/auth_access/add_cedar_policies.py",
-      "test_paths": [
-        "adapt/extend/auth_access/test_add_cedar_policies.py"
-      ],
+      "module_path": "adapt/extend/auth_access/add_cedar_policies/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -503,10 +499,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/auth_access/add_feature_flags.py",
-      "test_paths": [
-        "adapt/extend/auth_access/test_add_feature_flags.py"
-      ],
+      "module_path": "adapt/extend/auth_access/add_feature_flags/__init__.py",
+      "test_paths": [],
       "primitives_used": [
         "FeatureFlagCache",
         "FeatureToggle"
@@ -528,10 +522,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/auth_access/add_feature_toggles_api.py",
-      "test_paths": [
-        "adapt/extend/auth_access/test_add_feature_toggles_api.py"
-      ],
+      "module_path": "adapt/extend/auth_access/add_feature_toggles_api/__init__.py",
+      "test_paths": [],
       "primitives_used": [
         "FeatureToggle"
       ],
@@ -578,10 +570,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/auth_access/add_multi_tenancy.py",
-      "test_paths": [
-        "adapt/extend/auth_access/test_add_multi_tenancy.py"
-      ],
+      "module_path": "adapt/extend/auth_access/add_multi_tenancy/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -627,10 +617,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/auth_access/add_opa_integration.py",
-      "test_paths": [
-        "adapt/extend/auth_access/test_add_opa_integration.py"
-      ],
+      "module_path": "adapt/extend/auth_access/add_opa_integration/__init__.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -671,10 +659,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/auth_access/add_rbac.py",
-      "test_paths": [
-        "adapt/extend/auth_access/test_add_rbac.py"
-      ],
+      "module_path": "adapt/extend/auth_access/add_rbac/__init__.py",
+      "test_paths": [],
       "primitives_used": [
         "CurrentPrincipal",
         "RequestGuard"
@@ -12127,5 +12113,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "e7e26fe1ae586cdde6417bd603e41b0c136f25cc049c503e830b782d7dbc1857"
+  "stable_hash": "99be4b84c0c10ba81460348093f66ffa036442745c7ef2fcaef4e0f86e6ccf0c"
 }

@@ -1,0 +1,13 @@
+"""Authorization package: OPA (Open Policy Agent) integration."""
+
+from app.authz.opa_client import OPAClient, get_opa_client
+from app.authz.opa_models import OPADecision, OPAInput
+from app.authz.opa_middleware import OPAMiddleware
+
+__all__ = [
+    "OPAClient",
+    "get_opa_client",
+    "OPADecision",
+    "OPAInput",
+    "OPAMiddleware",
+]

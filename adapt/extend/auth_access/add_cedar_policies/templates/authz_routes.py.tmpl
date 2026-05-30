@@ -1,0 +1,77 @@
+"""Cedar authz API endpoints.
+
+POST /authz/check  — evaluate a Cedar policy decision on demand.
+GET  /authz/policies — list the names of all loaded .cedar policy files.
+"""
+
+from __future__ import annotations
+
+import logging
+from pathlib import Path
+
+from fastapi import APIRouter, HTTPException, status
+
+from app.authz.engine import get_cedar_engine
+from app.authz.models import AuthzRequest, AuthzResponse
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/authz", tags=["authz"])
+
+
+@router.post(
+    "/check",
+    response_model=AuthzResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Evaluate a Cedar policy decision",
+)
+def check_authorization(payload: AuthzRequest) -> AuthzResponse:
+    """Evaluate a Cedar authorization decision for the given request.
+
+    Args:
+        payload: ``AuthzRequest`` with principal, action, resource, context.
+
+    Returns:
+        ``AuthzResponse`` with ``allowed`` bool and human-readable ``reason``.
+    """
+    engine = get_cedar_engine()
+    allowed = engine.is_authorized(
+        principal=payload.principal,
+        action=payload.action,
+        resource=payload.resource,
+        context=payload.context,
+    )
+    reason = "permit" if allowed else "forbid (no matching permit policy)"
+    logger.info(
+        "Cedar check: allowed=%s principal=%s action=%s resource=%s",
+        allowed,
+        payload.principal,
+        payload.action,
+        payload.resource,
+    )
+    return AuthzResponse(
+        allowed=allowed,
+        principal=payload.principal,
+        action=payload.action,
+        resource=payload.resource,
+        reason=reason,
+    )
+
+
+@router.get(
+    "/policies",
+    response_model=list[str],
+    status_code=status.HTTP_200_OK,
+    summary="List loaded Cedar policy files",
+)
+def list_policies() -> list[str]:
+    """Return the names of all .cedar policy files currently loaded.
+
+    Returns:
+        Sorted list of policy file stem names (without extension).
+    """
+    engine = get_cedar_engine()
+    if not engine._policy_dir.is_dir():
+        return []
+    return sorted(
+        p.stem for p in engine._policy_dir.glob("*.cedar")
+    )
