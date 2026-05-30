@@ -70,6 +70,7 @@ from .phase4_release import (
 )
 from .r_admin_routes_auth import _r_admin_routes_require_auth
 from .r_no_dead_security_features import _r_no_dead_security_features
+from .r_write_schemas_strict import _r_write_schemas_strict
 
 # ---------------------------------------------------------------------------
 # RULES — explicit literal, CONTRACT.md order (NOT a sum-of-phase-lists).
@@ -100,6 +101,12 @@ RULES: list[Rule] = [
         0,
         "admin/diagnostic routes require auth (ROUND5_6_TRIAGE P2)",
         _r_admin_routes_require_auth,
+    ),
+    Rule(
+        "B0.14",
+        0,
+        "write schemas declare extra=\"forbid\" + no bare-Any fields (P5)",
+        _r_write_schemas_strict,
     ),
     Rule("B1.0", 1, "core.venous copy-in distribution", _r_core_venous_distribution),
     Rule("B1.0.1", 1, "adapter layer + framework-free primitives", _r_adapter_layer_invariant),
