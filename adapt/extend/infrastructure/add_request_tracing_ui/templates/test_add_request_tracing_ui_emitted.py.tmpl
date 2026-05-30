@@ -1,0 +1,52 @@
+"""Emitted tests for add_request_tracing_ui — added by add_request_tracing_ui tool."""
+
+from __future__ import annotations
+
+
+def test_tracing_buffer_importable() -> None:
+    """TracingBuffer can be imported without error."""
+    from app.tracing_ui import TracingBuffer, get_tracing_buffer
+
+    assert TracingBuffer is not None
+    assert callable(get_tracing_buffer)
+
+
+def test_tracing_buffer_record_and_get_all() -> None:
+    """TracingBuffer.record() stores entry and get_all() returns it (positive)."""
+    from app.tracing_ui import TracingBuffer
+
+    buf = TracingBuffer(maxlen=10)
+    buf.record({"id": "abc", "method": "GET", "path": "/test", "status_code": 200,
+                "total_ms": 50, "spans": []})
+    entries = buf.get_all()
+    assert len(entries) == 1
+    assert entries[0]["id"] == "abc"
+
+
+def test_tracing_buffer_get_by_id_not_found() -> None:
+    """TracingBuffer.get_by_id() returns None for unknown ID (negative)."""
+    from app.tracing_ui import TracingBuffer
+
+    buf = TracingBuffer(maxlen=10)
+    result = buf.get_by_id("nonexistent-id")
+    assert result is None
+
+
+def test_timing_collector_span_records_ms() -> None:
+    """TimingCollector.span() records a non-negative duration (positive)."""
+    from app.tracing_ui.collector import TimingCollector
+
+    collector = TimingCollector("test-req-id")
+    with collector.span("db"):
+        pass  # instant operation
+    spans = collector.flush()
+    assert len(spans) == 1
+    assert spans[0]["name"] == "db"
+    assert spans[0]["ms"] >= 0
+
+
+def test_tracing_middleware_importable() -> None:
+    """TracingMiddleware can be imported without error."""
+    from app.tracing_ui.middleware import TracingMiddleware
+
+    assert TracingMiddleware is not None

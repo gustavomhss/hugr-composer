@@ -1,0 +1,75 @@
+"""Tracing endpoints: list, detail, slow, and HTML dashboard."""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+from typing import Any
+
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import HTMLResponse
+
+from app.tracing_ui import get_tracing_buffer
+
+router = APIRouter(prefix="/tracing", tags=["tracing"])
+
+_TEMPLATES_DIR = Path(__file__).parent.parent.parent / "tracing_ui" / "templates"
+
+
+@router.get("/requests", response_model=list[dict[str, Any]])
+async def list_requests() -> list[dict[str, Any]]:
+    """Return all buffered request traces, newest-first.
+
+    Returns:
+        List of trace entries with id, method, path, status_code,
+        total_ms, and spans.
+    """
+    buf = get_tracing_buffer()
+    return buf.get_all()
+
+
+@router.get("/requests/{request_id}", response_model=dict[str, Any])
+async def get_request(request_id: str) -> dict[str, Any]:
+    """Return the full trace for a specific request ID.
+
+    Args:
+        request_id: UUID string from the trace list.
+
+    Returns:
+        Detailed trace entry including all recorded spans.
+
+    Raises:
+        HTTPException: 404 if the request ID is not found.
+    """
+    buf = get_tracing_buffer()
+    entry = buf.get_by_id(request_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Request trace not found")
+    return entry
+
+
+@router.get("/slow", response_model=list[dict[str, Any]])
+async def slow_requests() -> list[dict[str, Any]]:
+    """Return p99 slowest requests in the buffer.
+
+    Returns:
+        Requests at or above the 99th latency percentile.
+    """
+    buf = get_tracing_buffer()
+    return buf.get_slow(percentile=0.99)
+
+
+@router.get("/dashboard", response_class=HTMLResponse)
+async def dashboard() -> HTMLResponse:
+    """Serve the self-contained tracing HTML dashboard.
+
+    Returns:
+        HTMLResponse with the vanilla-JS dashboard page.
+
+    Raises:
+        HTTPException: 503 when dashboard template is missing.
+    """
+    html_file = _TEMPLATES_DIR / "dashboard.html"
+    if not html_file.exists():
+        raise HTTPException(status_code=503, detail="Dashboard template missing")
+    return HTMLResponse(content=html_file.read_text(encoding="utf-8"))

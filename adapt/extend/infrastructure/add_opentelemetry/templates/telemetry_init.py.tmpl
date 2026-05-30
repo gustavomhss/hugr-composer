@@ -1,0 +1,21 @@
+"""OpenTelemetry instrumentation — traces, metrics, and logs.
+
+Public API:
+    init_telemetry: Bootstrap TracerProvider, MeterProvider, LoggerProvider.
+    OTELMiddleware: ASGI middleware for per-request tracing.
+    get_tracer:     Return the configured OpenTelemetry tracer.
+    get_meter:      Return the configured OpenTelemetry meter.
+"""
+
+from app.telemetry.metrics import get_meter, record_error, record_request
+from app.telemetry.middleware import OTELMiddleware
+from app.telemetry.setup import get_tracer, init_telemetry
+
+__all__ = [
+    "init_telemetry",
+    "OTELMiddleware",
+    "get_tracer",
+    "get_meter",
+    "record_request",
+    "record_error",
+]

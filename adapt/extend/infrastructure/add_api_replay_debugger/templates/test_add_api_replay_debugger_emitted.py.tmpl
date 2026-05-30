@@ -1,0 +1,51 @@
+"""Emitted tests for add_api_replay_debugger — added by add_api_replay_debugger tool."""
+
+from __future__ import annotations
+
+
+def test_recorder_importable() -> None:
+    """RequestRecorder can be imported without error."""
+    from app.debug.recorder import RequestRecorder, get_recorder
+
+    assert RequestRecorder is not None
+    assert callable(get_recorder)
+
+
+def test_recorder_make_id_stable() -> None:
+    """RequestRecorder._make_id returns a 16-char hex string (positive)."""
+    from app.debug.recorder import RequestRecorder
+    from unittest.mock import MagicMock
+
+    rec = RequestRecorder(redis=MagicMock())
+    rec_id = rec._make_id("GET", "/api/items", 1234567890.0)
+    assert isinstance(rec_id, str)
+    assert len(rec_id) == 16
+
+
+def test_diff_bodies_detects_changed_key() -> None:
+    """_diff_bodies detects changed JSON keys (positive)."""
+    import json
+    from app.debug.replayer import _diff_bodies
+
+    orig = json.dumps({"status": "ok", "count": 5})
+    new = json.dumps({"status": "ok", "count": 10})
+    diffs = _diff_bodies(orig, new)
+    assert any("count" in d for d in diffs)
+
+
+def test_diff_bodies_no_diff_on_equal() -> None:
+    """_diff_bodies returns empty list for identical bodies (negative)."""
+    import json
+    from app.debug.replayer import _diff_bodies
+
+    body = json.dumps({"status": "ok"})
+    diffs = _diff_bodies(body, body)
+    assert diffs == []
+
+
+def test_recorded_request_model_importable() -> None:
+    """RecordedRequest model can be imported without error."""
+    from app.debug.models import RecordedRequest, ReplayResult
+
+    assert RecordedRequest is not None
+    assert ReplayResult is not None
