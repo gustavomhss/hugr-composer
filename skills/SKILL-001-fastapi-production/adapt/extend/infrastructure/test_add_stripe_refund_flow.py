@@ -340,6 +340,122 @@ def test_stripe_not_top_level_in_routes() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Category D — Regression: R5-O3-F3 / R5-S7-S03
+# (refund route MUST call Stripe — not just persist a pending row)
+# ---------------------------------------------------------------------------
+
+def _request_refund_fn(route_file: Path) -> ast.AsyncFunctionDef:
+    """Locate the ``request_refund`` async handler in the route AST."""
+    tree = ast.parse(route_file.read_text())
+    for node in ast.walk(tree):
+        if isinstance(node, ast.AsyncFunctionDef) and node.name == "request_refund":
+            return node
+    raise AssertionError("request_refund handler not found in refunds.py")
+
+
+def test_r5_o3_f3_route_imports_create_refund() -> None:
+    """R5-O3-F3: refunds.py must import ``create_refund`` from the helper.
+
+    Pre-fix, ``create_refund`` was never referenced from the route file —
+    only the pending DB row was persisted, so Stripe was never called.
+    """
+    project_dir = create_fixture_project(name="refund_r5_o3_f3_imp")
+    add_stripe_refund_flow(ToolInput(project_dir=str(project_dir)))
+    route_file = project_dir / "app" / "api" / "routes" / "refunds.py"
+    tree = ast.parse(route_file.read_text())
+    found = False
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module:
+            if "stripe_refunds" in node.module:
+                for alias in node.names:
+                    if alias.name == "create_refund":
+                        found = True
+    assert found, (
+        "refunds.py does not import create_refund from "
+        "app.core.stripe_refunds — the route can never call Stripe."
+    )
+
+
+def test_r5_o3_f3_request_refund_calls_stripe() -> None:
+    """R5-O3-F3: refunds.py route module must invoke ``create_refund``.
+
+    Pre-fix the handler inserted a ``pending`` Refund row and returned 201
+    without ever invoking the Stripe API.  Customer would see
+    "refund requested", no money would ever be returned, and the
+    ``charge.refund.updated`` webhook could never fire because Stripe
+    had no record of the refund.
+
+    The call may live directly in ``request_refund`` or in a private
+    helper called by ``request_refund`` (split for the 50-LOC ceiling).
+    Either way, the route's transitive call graph must touch
+    ``create_refund``.
+    """
+    project_dir = create_fixture_project(name="refund_r5_o3_f3_call")
+    add_stripe_refund_flow(ToolInput(project_dir=str(project_dir)))
+    route_file = project_dir / "app" / "api" / "routes" / "refunds.py"
+    tree = ast.parse(route_file.read_text())
+
+    # Walk the whole module — handler may delegate to a helper inside the
+    # same module to stay under the 50-LOC contract limit.
+    call_names: list[str] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name):
+                call_names.append(node.func.id)
+            elif isinstance(node.func, ast.Attribute):
+                call_names.append(node.func.attr)
+
+    assert "create_refund" in call_names, (
+        "refunds.py never calls create_refund — Stripe API is never "
+        f"invoked. Calls found: {sorted(set(call_names))}"
+    )
+
+
+def test_r5_o3_f3_idempotency_key_seeded_by_row_uuid() -> None:
+    """R5-S7-S03: idempotency key must derive from the pending row UUID.
+
+    The original ``(payment_id, amount)`` seed collided on retries; the
+    fix re-seeds with the freshly inserted refund row UUID
+    (``f"refund-{refund.id}"``) so each request gets a unique key.
+    """
+    project_dir = create_fixture_project(name="refund_r5_s7_s03_key")
+    add_stripe_refund_flow(ToolInput(project_dir=str(project_dir)))
+    helper_file = project_dir / "app" / "core" / "stripe_refunds.py"
+    content = helper_file.read_text()
+    # Helper must keep an idempotency_key kwarg on the Stripe call.
+    assert "idempotency_key" in content, (
+        "create_refund() no longer passes idempotency_key to Stripe"
+    )
+
+
+def test_r5_o3_f3_error_path_marks_failed_and_502() -> None:
+    """R5-O3-F3: if Stripe raises, route must mark row failed and 502.
+
+    Verifies the route module does NOT leave a ``pending`` row orphaned
+    when the Stripe call raises an exception.  The try/except may live in
+    the handler or in a helper it delegates to.
+    """
+    project_dir = create_fixture_project(name="refund_r5_o3_f3_err")
+    add_stripe_refund_flow(ToolInput(project_dir=str(project_dir)))
+    route_file = project_dir / "app" / "api" / "routes" / "refunds.py"
+    tree = ast.parse(route_file.read_text())
+
+    has_try = any(isinstance(node, ast.Try) for node in ast.walk(tree))
+    assert has_try, (
+        "refunds.py missing try/except around Stripe call — a Stripe "
+        "failure would leave the row pending forever and bubble a 500."
+    )
+
+    content = route_file.read_text()
+    assert "502" in content or "BAD_GATEWAY" in content, (
+        "refunds.py does not surface 502/BAD_GATEWAY on Stripe error"
+    )
+    assert "mark_refund_failed" in content or '"failed"' in content, (
+        "refunds.py does not mark the refund row as failed on error"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
 
@@ -367,6 +483,10 @@ if __name__ == "__main__":
         test_next_steps_present,
         test_idempotent_project_still_parses,
         test_stripe_not_top_level_in_routes,
+        test_r5_o3_f3_route_imports_create_refund,
+        test_r5_o3_f3_request_refund_calls_stripe,
+        test_r5_o3_f3_idempotency_key_seeded_by_row_uuid,
+        test_r5_o3_f3_error_path_marks_failed_and_502,
     ]
 
     passed = failed = 0

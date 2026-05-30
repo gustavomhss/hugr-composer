@@ -27,6 +27,7 @@ from fastapi import APIRouter, HTTPException, Query, Request, status
 from app.api.deps import CurrentUser
 from app.core.config import settings
 from app.core.session import SessionDep
+from app.core.stripe_refunds import create_refund
 from app.crud.refund import (
     create_pending_refund,
     get_refund_by_id,
@@ -63,19 +64,111 @@ def _check_auto_approve(amount_cents: int, current_user: Any) -> None:
         )
 
 
+async def _resolve_payment_intent(session: Any, payment_id: uuid.UUID) -> str:
+    """Look up the Stripe PaymentIntent id for an internal Payment row.
+
+    Imported lazily so this route file remains importable in projects
+    that have not (yet) installed the Stripe Checkout flow.
+    """
+    from app.crud.payment import get_payment_by_id  # lazy: optional dep
+
+    payment = await get_payment_by_id(session, payment_id)
+    if payment is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="payment not found",
+        )
+    intent_id = getattr(payment, "stripe_payment_intent_id", None)
+    if not intent_id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="payment has no Stripe PaymentIntent — cannot refund",
+        )
+    return intent_id
+
+
+async def _mark_refund_failed_by_id(
+    session: Any,
+    *,
+    refund_id: uuid.UUID,
+) -> None:
+    """Mark a Refund row ``failed`` keyed by its internal UUID.
+
+    Used by the error-path of ``request_refund`` when the Stripe API
+    raises before a ``stripe_refund_id`` has been attached, so the
+    webhook-keyed ``mark_refund_failed`` cannot help us reconcile.
+    """
+    refund = await get_refund_by_id(session, refund_id)
+    if refund is None or refund.status == "failed":
+        return
+    refund.status = "failed"
+    await session.flush()
+
+
+async def _call_stripe_and_persist(
+    session: Any,
+    *,
+    refund: Any,
+    payment_intent_id: str,
+    amount_cents: int,
+    reason: str | None,
+) -> None:
+    """Call Stripe Refund API, attach stripe_refund_id, or mark failed + 502.
+
+    Splits the Stripe interaction out of ``request_refund`` to keep the
+    handler under the 50-LOC ceiling enforced by the contract check.
+    """
+    try:
+        stripe_refund = create_refund(
+            payment_intent_id=payment_intent_id,
+            amount_cents=amount_cents,
+            refund_id=refund.id,
+            reason=reason,
+        )
+    except Exception as exc:  # noqa: BLE001 — any Stripe failure is terminal here
+        logger.warning(
+            "stripe refund create failed for refund_id=%s: %s",
+            refund.id,
+            exc.__class__.__name__,
+        )
+        await _mark_refund_failed_by_id(session, refund_id=refund.id)
+        await session.commit()
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="stripe refund call failed",
+        ) from exc
+    stripe_refund_id = str(stripe_refund.get("id", ""))
+    if stripe_refund_id:
+        await mark_refund_stripe_id(
+            session,
+            refund_id=refund.id,
+            stripe_refund_id=stripe_refund_id,
+        )
+        await session.commit()
+        await session.refresh(refund)
+
+
 @router.post("", response_model=RefundPublic, status_code=status.HTTP_201_CREATED)
 async def request_refund(
     body: RefundRequest,
     current_user: CurrentUser,
     session: SessionDep,
 ) -> RefundPublic:
-    """Issue a Stripe refund for a payment."""
+    """Issue a Stripe refund for a payment.
+
+    Persists a ``pending`` Refund row, commits it (so the row exists
+    for the ``charge.refund.updated`` webhook to reconcile against),
+    then calls ``create_refund`` to invoke the Stripe API.  On a
+    Stripe failure the row is transitioned to ``failed`` and the
+    caller receives 502 — never leaving an orphan ``pending`` row.
+    """
     _check_auto_approve(body.amount_cents, current_user)
     if body.amount_cents > settings.REFUND_MAX_AMOUNT_CENTS:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="refund amount exceeds maximum",
         )
+    payment_intent_id = await _resolve_payment_intent(session, body.payment_id)
     refund = await create_pending_refund(
         session,
         payment_id=body.payment_id,
@@ -83,7 +176,17 @@ async def request_refund(
         reason=body.reason,
         requested_by=current_user.id,
     )
+    # Commit the pending row BEFORE the Stripe call so the row exists
+    # if the webhook fires (or if the Stripe call hangs and we crash).
     await session.commit()
+    await session.refresh(refund)
+    await _call_stripe_and_persist(
+        session,
+        refund=refund,
+        payment_intent_id=payment_intent_id,
+        amount_cents=body.amount_cents,
+        reason=body.reason,
+    )
     return RefundPublic.model_validate(refund)
 
 
