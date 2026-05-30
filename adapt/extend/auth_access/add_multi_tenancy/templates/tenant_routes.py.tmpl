@@ -37,13 +37,53 @@ async def create_tenant(
     # constraint stops the loser → without this guard the loser surfaces
     # as a 500 + raw "duplicate key" message. Catch IntegrityError,
     # roll back the failed transaction, and return the canonical 409.
+    #
+    # N-4 (Phase-6 Round-4): narrow the 409 mapping to the slug UNIQUE
+    # constraint specifically. A future schema may add other UNIQUE
+    # constraints (e.g. ``tenants_name_key``); a blanket
+    # ``except IntegrityError → 409 "slug already exists"`` would
+    # mis-attribute those failures and confuse the caller. Inspect the
+    # DBAPI error message (via ``e.orig``) for the slug-constraint
+    # signature; re-raise anything else so the framework surfaces an
+    # honest 500.
     try:
         tenant = await crud_tenant.create(session, tenant_in=tenant_in)
-    except IntegrityError:
+    except IntegrityError as e:
         await session.rollback()
-        raise HTTPException(
-            status_code=409, detail="Tenant slug already exists"
-        ) from None
+        orig_msg = str(getattr(e, "orig", "") or "")
+        # Positive markers for the slug UNIQUE constraint across the
+        # dialects we support:
+        #   PostgreSQL: 'tenants_slug_key' (default constraint name)
+        #       or the column reference 'Key (slug)='.
+        #   SQLite:    'UNIQUE constraint failed: tenants.slug'.
+        slug_markers = ("tenants_slug_key", "tenants.slug", "(slug)")
+        # Negative markers — known NON-slug constraints we must NOT
+        # mis-label as a slug conflict. If a future schema adds more
+        # UNIQUE constraints, extend this tuple (and re-raise) rather
+        # than letting the 409 swallow the real diagnosis.
+        non_slug_markers = (
+            "tenants_name_key",
+            "tenants.name",
+            "(name)",
+            "tenants_pkey",  # PK violation = different bug; surface honestly.
+        )
+        if any(marker in orig_msg for marker in slug_markers):
+            raise HTTPException(status_code=409, detail="Tenant slug already exists") from None
+        if any(marker in orig_msg for marker in non_slug_markers):
+            # Definitely NOT a slug conflict — re-raise so the framework
+            # surfaces an honest 500 with the underlying message rather
+            # than a misleading "slug already exists" 409.
+            raise
+        # Ambiguous origin (bare DBAPI error with no column / constraint
+        # name — e.g. some test doubles, or older driver versions).
+        # The pre-check above already ruled out a slug collision at
+        # read-time; the only schema-issued UNIQUE constraint as of
+        # this template is the slug one, so an unattributed UNIQUE
+        # failure is overwhelmingly likely to be the race we set out
+        # to handle. Treat it as a 409 conservatively. When the schema
+        # grows new UNIQUE constraints, add their markers to
+        # ``non_slug_markers`` above.
+        raise HTTPException(status_code=409, detail="Tenant slug already exists") from None
     return TenantPublic.model_validate(tenant)
 
 

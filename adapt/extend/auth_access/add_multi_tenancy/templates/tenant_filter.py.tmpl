@@ -1,10 +1,22 @@
 """Global tenant query filter via SQLAlchemy session event.
 
 Import this module once at application startup (main.py) to activate
-the filter.  Every SELECT, UPDATE, and DELETE against a
+the filter.  Every ORM-issued SELECT, UPDATE, and DELETE against a
 TenantScopedMixin model will automatically receive a
 ``WHERE tenant_id = :current_tenant_id`` predicate unless the execution
 option ``skip_tenant_filter=True`` is set.
+
+RAW-TEXT ESCAPE HATCH (limitation)
+----------------------------------
+The listener registers against the ORM ``do_orm_execute`` event, which
+only fires for ORM-issued constructs (``select(Model)``,
+``update(Model)``, ``delete(Model)``, and ORM unit-of-work flushes).
+Raw textual SQL issued via ``session.execute(text("UPDATE ..."))`` is
+dispatched at the Core/engine layer and BYPASSES this listener — the
+filter has no opportunity to inject ``WHERE tenant_id = …``. If your
+project has paths that issue raw text() against tenant-scoped tables,
+register an additional Core-level listener on the ``before_execute``
+engine event to cover that surface as well.
 
 FAIL-CLOSED CONTRACT
 --------------------

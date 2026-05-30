@@ -27,6 +27,24 @@ scaffold's auth stack already uses. The previous implementation read
 middleware writes to ``request.state``); the guard would therefore see
 ``None`` and return 401 for every protected route — fail-safe but
 permanently broken.
+
+Session-binding fix (Phase-6 Round-4)
+-------------------------------------
+The previous implementation defaulted ``session`` to
+``Depends(lambda: None)``. At runtime FastAPI invoked ``lambda: None``
+and ``_enforce`` saw ``session is None``, logged at warning level, and
+**returned silently** — every protected route was a fail-OPEN no-op
+unless the integrator manually overrode the Depends in their route
+signature. The fix:
+
+1. Try to import the scaffold's standard session dependency
+   (``app.core.session.get_session``) at module load time and use it
+   as the ``Depends`` default. Emit a LOUD ``logger.error`` at import
+   time if the import fails — the verifier still loads but degrades to
+   fail-CLOSED on every request rather than silently fail-open.
+2. ``_enforce`` raises ``HTTPException(503)`` when no session is
+   available — fail-CLOSED. The whole point of the guard is to refuse
+   access we cannot verify, not to allow it.
 """
 
 from __future__ import annotations
@@ -39,17 +57,37 @@ from typing import Any, Type
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+logger = logging.getLogger(__name__)
+
 try:
-    # The scaffold's standard auth dependency. Imported lazily-by-name
-    # because some retrofit projects scaffolded before secure-by-default
-    # may not have the deps module wired exactly this way; if the
-    # import fails the verifier falls back to ``request.state.user``
-    # (the legacy path) so the guard still loads.
+    # The scaffold's standard auth dependency. Narrow except to
+    # ``ImportError`` so SyntaxError or other transitive failures in
+    # ``app.api.deps`` are NOT silently swallowed — they were swallowed
+    # by the pre-fix ``except Exception`` and that pattern produced the
+    # Round-3 BOLA disconnect.
     from app.api.deps import get_current_user as _scaffold_get_current_user
-except Exception:  # noqa: BLE001 — retrofit safety; see comment above
+except ImportError as _exc:
+    logger.warning(
+        "BOLA guard: scaffold get_current_user not importable (%s) — "
+        "falling back to request.state.user (legacy path)",
+        _exc,
+    )
     _scaffold_get_current_user = None  # type: ignore[assignment]
 
-logger = logging.getLogger(__name__)
+try:
+    # The scaffold's standard async session dependency. When present
+    # we bind it as the Depends default on the verifier so FastAPI
+    # gives us a real AsyncSession at request time. If absent, the
+    # verifier degrades to fail-CLOSED (503) — never fail-open.
+    from app.core.session import get_session as _scaffold_session_dep
+except ImportError as _exc:
+    logger.error(
+        "BOLA guard: scaffold session dep (app.core.session.get_session) "
+        "not importable (%s) — ownership checks will fail-CLOSED with 503 "
+        "until a session dep is wired",
+        _exc,
+    )
+    _scaffold_session_dep = None  # type: ignore[assignment]
 
 
 def _bola_enabled() -> bool:
@@ -93,7 +131,9 @@ class OwnershipVerifier:
         current_user: Any = Depends(_scaffold_get_current_user)
         if _scaffold_get_current_user is not None
         else None,
-        session: AsyncSession = Depends(lambda: None),
+        session: AsyncSession = Depends(_scaffold_session_dep)
+        if _scaffold_session_dep is not None
+        else Depends(lambda: None),
     ) -> None:
         """Verify ownership; raises 403/401 on violation.
 
@@ -129,33 +169,57 @@ class OwnershipVerifier:
             )
         await self._enforce(session, resource_id, current_user_id)
 
+    def _fail_closed_no_session(self, resource_id: int) -> None:
+        """Raise 503 when session is None — fail-CLOSED."""
+        logger.error(
+            "BOLA: no session for %s/%s — refusing access (fail-CLOSED). "
+            "Wire app.core.session.get_session or override the verifier's "
+            "session Depends in your route.",
+            self._model.__name__,
+            resource_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"detail": "ownership service unavailable"},
+        )
+
     async def _enforce(
         self,
         session: Any,
         resource_id: int,
         current_user_id: int,
     ) -> None:
-        """Enforce ownership; raises 403 on violation or no session.
+        """Enforce ownership; raises 403 on violation, 503 on no session.
+
+        FAIL-CLOSED contract (Phase-6 Round-4): when ``session is None``
+        the guard cannot perform the DB ownership check. Pre-fix this
+        path returned silently — every protected route was a fail-OPEN
+        no-op invisible to pentest / SOC2 audit. Post-fix we raise
+        ``503 Service Unavailable`` so the route refuses rather than
+        allows. The whole point of the guard is to refuse access we
+        cannot verify, not to allow it.
 
         Args:
             session: Async DB session (or None if unavailable).
             resource_id: The resource primary key to check.
             current_user_id: The ID of the requesting user.
+
+        Raises:
+            HTTPException: 503 when session is unavailable
+                (fail-CLOSED); 403 when the user does not own the
+                resource.
         """
         if session is None:
-            logger.warning(
-                "BOLA: no session for %s/%s",
-                self._model.__name__,
-                resource_id,
-            )
-            return
+            self._fail_closed_no_session(resource_id)
         owned = await _check_ownership(
             session, self._model, self._owner_field, resource_id, current_user_id
         )
         if not owned:
             logger.warning(
                 "BOLA_VIOLATION: user=%s tried to access %s id=%s",
-                current_user_id, self._model.__name__, resource_id,
+                current_user_id,
+                self._model.__name__,
+                resource_id,
             )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -254,6 +318,7 @@ async def _check_ownership(
     """
     try:
         from sqlalchemy import select
+
         stmt = (
             select(model)
             .where(model.id == resource_id)
