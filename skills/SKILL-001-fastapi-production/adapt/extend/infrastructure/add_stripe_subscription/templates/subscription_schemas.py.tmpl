@@ -1,0 +1,117 @@
+"""Pydantic schemas for the Stripe subscription billing flow.
+
+``SubscriptionPublic`` deliberately omits ``stripe_customer_id`` to
+avoid leaking PII via list endpoints.  Webhook handlers read the
+underlying ORM rows directly — they never round-trip through these
+schemas.
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from enum import Enum
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class SubscriptionStatus(str, Enum):
+    """Lifecycle status of a Stripe Subscription.
+
+    Values:
+        active: Subscription is active and billing normally.
+        trialing: Subscription is in a free trial period.
+        past_due: Most recent payment failed; Stripe is retrying.
+        canceled: Subscription was canceled.
+        incomplete: Initial payment failed; awaiting retry.
+        unpaid: All retries exhausted; subscription unpaid.
+    """
+
+    active = "active"
+    trialing = "trialing"
+    past_due = "past_due"
+    canceled = "canceled"
+    incomplete = "incomplete"
+    unpaid = "unpaid"
+
+
+class SubscriptionCreate(BaseModel):
+    """Request body for POST /subscriptions.
+
+    Attributes:
+        price_id: Stripe Price id to subscribe to.
+        trial_period_days: Optional trial period length in days.
+    """
+
+    price_id: str = Field(min_length=1, max_length=255)
+    trial_period_days: int | None = Field(default=None, ge=1, le=365)
+
+
+class SubscriptionRead(BaseModel):
+    """Full subscription view (internal use — includes stripe fields).
+
+    Attributes:
+        id: Internal UUID.
+        user_id: Owner UUID.
+        stripe_subscription_id: Stripe Subscription id.
+        stripe_customer_id: Stripe Customer id (PII).
+        plan_id: Stripe Price id.
+        status: Current lifecycle status.
+        current_period_start: Billing period start.
+        current_period_end: Billing period end.
+        cancel_at_period_end: Whether cancellation is scheduled.
+        created_at: Row creation timestamp.
+        updated_at: Last update timestamp.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    user_id: uuid.UUID | None
+    stripe_subscription_id: str
+    stripe_customer_id: str | None
+    plan_id: str
+    status: SubscriptionStatus
+    current_period_start: datetime | None
+    current_period_end: datetime | None
+    cancel_at_period_end: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class SubscriptionPublic(BaseModel):
+    """PII-safe public view of a subscription record.
+
+    ``stripe_customer_id`` is intentionally omitted.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    plan_id: str
+    status: SubscriptionStatus
+    current_period_start: datetime | None = None
+    current_period_end: datetime | None = None
+    cancel_at_period_end: bool
+    created_at: datetime
+
+
+class ChangePlanRequest(BaseModel):
+    """Request body for POST /subscriptions/{id}/change-plan.
+
+    Attributes:
+        new_price_id: Stripe Price id to switch to.
+    """
+
+    new_price_id: str = Field(min_length=1, max_length=255)
+
+
+class SubscriptionListResponse(BaseModel):
+    """Envelope for GET /subscriptions/me.
+
+    Attributes:
+        data: Page of public subscription views.
+        count: Total rows for the user (NOT just the page).
+    """
+
+    data: list[SubscriptionPublic]
+    count: int

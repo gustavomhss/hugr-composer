@@ -1,0 +1,85 @@
+"""Pydantic schemas for the Stripe refund flow.
+
+``RefundPublic`` deliberately omits ``stripe_refund_id`` to avoid
+leaking Stripe's internal refund identifier via list endpoints.
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from enum import Enum
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class RefundStatus(str, Enum):
+    """Lifecycle status of a Stripe refund.
+
+    Values:
+        pending: Refund requested, awaiting Stripe confirmation.
+        succeeded: Refund completed (confirmed via webhook).
+        failed: Refund declined by Stripe.
+    """
+
+    pending = "pending"
+    succeeded = "succeeded"
+    failed = "failed"
+
+
+class RefundRequest(BaseModel):
+    """Request body for POST /refunds.
+
+    Attributes:
+        payment_id: Internal UUID of the Payment to refund.
+        amount_cents: Amount to refund in the smallest currency unit.
+            Must be > 0 and <= 99_999_999.
+        reason: Optional Stripe-accepted reason
+            (duplicate, fraudulent, requested_by_customer).
+    """
+
+    payment_id: uuid.UUID
+    amount_cents: int = Field(gt=0, le=99_999_999)
+    reason: str | None = Field(
+        default=None,
+        pattern="^(duplicate|fraudulent|requested_by_customer)$$",
+    )
+
+
+class RefundRead(BaseModel):
+    """Full internal view of a Refund row (includes stripe_refund_id)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    payment_id: uuid.UUID
+    stripe_refund_id: str | None
+    amount_cents: int
+    reason: str | None
+    status: RefundStatus
+    requested_by: uuid.UUID | None
+    created_at: datetime
+
+
+class RefundPublic(BaseModel):
+    """PII-safe public view of a refund — omits stripe_refund_id."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    payment_id: uuid.UUID
+    amount_cents: int
+    reason: str | None
+    status: RefundStatus
+    created_at: datetime
+
+
+class RefundListResponse(BaseModel):
+    """Envelope for GET /refunds/payment/{payment_id}.
+
+    Attributes:
+        data: List of public refund views for a payment.
+        count: Total number of refunds for this payment.
+    """
+
+    data: list[RefundPublic]
+    count: int

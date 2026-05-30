@@ -1,0 +1,228 @@
+"""HTTP routes for the Stripe Checkout flow.
+
+Endpoints:
+    POST /payments/checkout
+        Create a Stripe Checkout Session and a pending Payment row.
+        Requires authentication.
+
+    GET /payments/{payment_id}
+        Fetch a single Payment owned by the current user
+        (superusers can fetch any).  Requires authentication.
+
+    GET /payments/me
+        Paginated list of the current user's payments.
+        Requires authentication.
+
+    POST /payments/webhook/stripe
+        Stripe webhook receiver.  UNAUTHENTICATED by HTTP standards;
+        the request is authenticated via the ``Stripe-Signature``
+        header using ``stripe.Webhook.construct_event`` (HMAC-SHA256
+        with a 5-minute replay window).
+"""
+from __future__ import annotations
+
+import logging
+import uuid
+from typing import Any
+
+from fastapi import APIRouter, HTTPException, Query, Request, status
+
+from app.api.deps import CurrentUser
+from app.core.config import settings
+from app.core.session import SessionDep
+from app.core.stripe_client import get_stripe
+from app.crud.payment import (
+    create_pending_payment,
+    get_payment_by_id,
+    list_user_payments,
+    mark_payment_failed,
+    mark_payment_refunded,
+    mark_payment_succeeded,
+)
+from app.schemas.payment import (
+    CheckoutSessionCreate,
+    CheckoutSessionResponse,
+    PaymentListResponse,
+    PaymentPublic,
+)
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/payments", tags=["payments"])
+
+
+def _build_line_items(body: CheckoutSessionCreate) -> list[dict[str, Any]]:
+    """Build the Stripe Checkout ``line_items`` list from a request body.
+
+    Extracted so the ``create_checkout_session`` handler stays small
+    and so tests can exercise the line-item shape directly.
+    """
+    return [
+        {
+            "price_data": {
+                "currency": body.currency.lower(),
+                "product_data": {"name": body.product_name},
+                "unit_amount": body.amount_cents,
+            },
+            "quantity": body.quantity,
+        }
+    ]
+
+
+def _resolve_urls(body: CheckoutSessionCreate) -> tuple[str, str]:
+    """Resolve success/cancel URLs, falling back to settings defaults."""
+    success = str(body.success_url) if body.success_url else settings.STRIPE_CHECKOUT_SUCCESS_URL
+    cancel = str(body.cancel_url) if body.cancel_url else settings.STRIPE_CHECKOUT_CANCEL_URL
+    return success, cancel
+
+
+@router.post(
+    "/checkout",
+    response_model=CheckoutSessionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_checkout_session(
+    body: CheckoutSessionCreate,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> CheckoutSessionResponse:
+    """Create a Stripe Checkout Session + pending Payment row."""
+    stripe = get_stripe()
+    success_url, cancel_url = _resolve_urls(body)
+    try:
+        checkout = stripe.checkout.Session.create(
+            mode="payment",
+            line_items=_build_line_items(body),
+            success_url=success_url,
+            cancel_url=cancel_url,
+            customer_email=body.customer_email,
+            metadata=body.metadata_json or {},
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("stripe checkout session create failed")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="stripe checkout session create failed",
+        ) from exc
+    payment = await create_pending_payment(
+        session,
+        user_id=current_user.id,
+        amount_cents=body.amount_cents,
+        currency=body.currency,
+        stripe_session_id=checkout.id,
+        product_name=body.product_name,
+        customer_email=body.customer_email,
+        metadata_json=body.metadata_json,
+    )
+    await session.commit()
+    return CheckoutSessionResponse(
+        session_id=checkout.id,
+        checkout_url=checkout.url,
+        payment_id=payment.id,
+    )
+
+
+def _owner_guard(payment, current_user) -> None:
+    """Raise 404 unless *current_user* owns *payment* (or is superuser)."""
+    is_superuser = getattr(current_user, "is_superuser", False)
+    if is_superuser:
+        return
+    if payment.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="payment not found",
+        )
+
+
+@router.get("/me", response_model=PaymentListResponse)
+async def list_my_payments(
+    current_user: CurrentUser,
+    session: SessionDep,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+) -> PaymentListResponse:
+    """Return the current user's payments, newest first."""
+    rows, total = await list_user_payments(
+        session, current_user.id, limit=limit, offset=skip
+    )
+    data = [PaymentPublic.model_validate(r) for r in rows]
+    return PaymentListResponse(data=data, count=total)
+
+
+@router.get("/{payment_id}", response_model=PaymentPublic)
+async def get_payment(
+    payment_id: uuid.UUID,
+    current_user: CurrentUser,
+    session: SessionDep,
+) -> PaymentPublic:
+    """Fetch a single Payment owned by the current user."""
+    payment = await get_payment_by_id(session, payment_id)
+    if payment is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="payment not found",
+        )
+    _owner_guard(payment, current_user)
+    return PaymentPublic.model_validate(payment)
+
+
+async def _handle_stripe_event(
+    session,
+    event: dict[str, Any],
+) -> None:
+    """Dispatch a verified Stripe event to the right CRUD transition.
+
+    Unknown event types are silently acked.  Each branch is
+    idempotent — second deliveries of the same event are safe.
+    """
+    event_type = event.get("type", "")
+    data = event.get("data", {}).get("object", {}) or {}
+    session_id = data.get("id") or data.get("payment_intent") or ""
+    if not session_id:
+        return
+    if event_type in ("checkout.session.completed",
+                      "checkout.session.async_payment_succeeded"):
+        await mark_payment_succeeded(
+            session,
+            stripe_session_id=session_id,
+            payment_intent_id=data.get("payment_intent"),
+            stripe_customer_id=data.get("customer"),
+        )
+    elif event_type == "checkout.session.async_payment_failed":
+        reason = (data.get("last_payment_error") or {}).get("message", "payment failed")
+        await mark_payment_failed(
+            session,
+            stripe_session_id=session_id,
+            reason=str(reason),
+        )
+    elif event_type == "charge.refunded":
+        # For charge.refunded the session id lives on the charge's
+        # payment_intent metadata — callers must set metadata[session_id]
+        # when creating the Checkout Session if they need refund linkage.
+        linked = (data.get("metadata") or {}).get("session_id", "")
+        if linked:
+            await mark_payment_refunded(session, stripe_session_id=linked)
+
+
+@router.post("/webhook/stripe")
+async def stripe_webhook(
+    request: Request,
+    session: SessionDep,
+) -> dict[str, bool]:
+    """Receive and verify a Stripe webhook, then dispatch the event."""
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature", "")
+    stripe = get_stripe()
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+        )
+    except Exception as exc:  # noqa: BLE001 — SDK raises multiple types
+        logger.warning("stripe webhook signature verification failed")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="invalid stripe signature",
+        ) from exc
+    await _handle_stripe_event(session, event)
+    await session.commit()
+    return {"received": True}

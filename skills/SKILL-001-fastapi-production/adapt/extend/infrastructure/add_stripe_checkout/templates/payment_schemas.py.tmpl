@@ -1,0 +1,102 @@
+"""Pydantic schemas for the Stripe Checkout payment flow.
+
+``PaymentPublic`` deliberately omits ``stripe_customer_id``,
+``stripe_session_id``, ``customer_email``, and ``metadata_json`` to
+avoid leaking PII via list endpoints.  Webhook handlers read the
+underlying ORM rows directly — they never round-trip through these
+schemas.
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from enum import Enum
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl
+
+
+class PaymentStatus(str, Enum):
+    """Lifecycle status of a Stripe Checkout payment.
+
+    Values:
+        pending: Checkout Session opened, awaiting customer action.
+        succeeded: Payment cleared (confirmed via webhook).
+        failed: Async payment method declined.
+        refunded: Payment fully or partially refunded via charge.refunded.
+        cancelled: Customer abandoned checkout or session expired.
+    """
+
+    pending = "pending"
+    succeeded = "succeeded"
+    failed = "failed"
+    refunded = "refunded"
+    cancelled = "cancelled"
+
+
+class CheckoutSessionCreate(BaseModel):
+    """Request body for POST /payments/checkout.
+
+    Attributes:
+        amount_cents: Unit amount in the smallest currency unit.
+            Bounded ``> 0`` and ``<= 99_999_999`` to prevent overflow
+            and to reject accidental zero-charges.
+        currency: ISO 4217 three-letter currency code, uppercase.
+        product_name: Human-readable product label shown in Checkout.
+        quantity: Number of units purchased (1..999).
+        customer_email: Optional email pre-filled on the Checkout page.
+        success_url: Optional per-request override of the default
+            redirect URL.
+        cancel_url: Optional per-request override of the default
+            cancel URL.
+        metadata_json: Optional free-form metadata forwarded to Stripe
+            as the Session ``metadata`` dict (max 50 keys).
+    """
+
+    amount_cents: int = Field(gt=0, le=99_999_999)
+    currency: str = Field(min_length=3, max_length=3, pattern="^[A-Z]{3}$$")
+    product_name: str = Field(min_length=1, max_length=255)
+    quantity: int = Field(default=1, ge=1, le=999)
+    customer_email: EmailStr | None = None
+    success_url: HttpUrl | None = None
+    cancel_url: HttpUrl | None = None
+    metadata_json: dict[str, str] | None = Field(default=None, max_length=50)
+
+
+class CheckoutSessionResponse(BaseModel):
+    """Response body for POST /payments/checkout.
+
+    Attributes:
+        session_id: Stripe Checkout Session id.
+        checkout_url: Hosted URL the client should redirect to.
+        payment_id: Internal ``Payment.id`` UUID for later lookups.
+    """
+
+    session_id: str
+    checkout_url: str
+    payment_id: uuid.UUID
+
+
+class PaymentPublic(BaseModel):
+    """PII-safe public view of a payment record."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    amount_cents: int
+    currency: str
+    status: PaymentStatus
+    product_name: str | None = None
+    created_at: datetime
+    succeeded_at: datetime | None = None
+
+
+class PaymentListResponse(BaseModel):
+    """Envelope for GET /payments/me.
+
+    Attributes:
+        data: Page of public payment views.
+        count: Total rows in the filtered query (NOT just the page).
+    """
+
+    data: list[PaymentPublic]
+    count: int
