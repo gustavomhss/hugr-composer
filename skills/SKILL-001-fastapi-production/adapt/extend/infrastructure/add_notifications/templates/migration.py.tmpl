@@ -1,0 +1,48 @@
+"""add_notifications — Alembic migration.
+
+Revision ID: add_notifications
+Revises: $down_rev
+Create Date: 2026-04-15
+"""
+
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision: str = "add_notifications"
+down_revision: str = "$down_rev"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    """Create the notifications table."""
+    op.create_table(
+        "notifications",
+        sa.Column("id", sa.Uuid(), primary_key=True, nullable=False),
+        sa.Column(
+            "user_id",
+            sa.Uuid(),
+            sa.ForeignKey("users.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column("title", sa.String(255), nullable=False),
+        sa.Column("body", sa.Text(), nullable=False, server_default=""),
+        sa.Column("channel", sa.String(32), nullable=False, server_default="in_app"),
+        sa.Column("read_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
+    )
+    op.create_index("ix_notifications_user_id_read_at", "notifications", ["user_id", "read_at"])
+
+
+def downgrade() -> None:
+    """Drop the notifications table."""
+    op.drop_index("ix_notifications_user_id_read_at", table_name="notifications")
+    op.drop_table("notifications")

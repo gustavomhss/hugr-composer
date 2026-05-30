@@ -1,0 +1,11 @@
+"""Notification layer — in-app, push (FCM stub), and email channels.
+
+Public API:
+    NotificationService:  create / mark_read / mark_all_read / list_unread
+    dispatch:             channel router (in_app | push | email)
+"""
+
+from app.notifications.service import NotificationService
+from app.notifications.channels import dispatch
+
+__all__ = ["NotificationService", "dispatch"]

@@ -1,0 +1,46 @@
+"""Pydantic schemas for push notification endpoints."""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict
+
+
+class DeviceTokenCreate(BaseModel):
+    """Schema for registering a device push token."""
+
+    user_id: uuid.UUID
+    platform: Literal["ios", "android"]
+    token: str
+
+
+class DeviceTokenRead(BaseModel):
+    """Schema for reading a registered device token."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    user_id: uuid.UUID
+    platform: str
+    token: str
+    created_at: datetime
+
+
+class PushSendRequest(BaseModel):
+    """Schema for sending a push notification."""
+
+    device_token_id: uuid.UUID | None = None
+    topic: str | None = None
+    title: str
+    body: str
+    data: dict[str, str] = {}
+
+
+class PushSendResult(BaseModel):
+    """Result of a push notification send attempt."""
+
+    sent: bool
+    detail: str = ""

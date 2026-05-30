@@ -1,0 +1,66 @@
+"""Emitted test for add_push_notifications_native — runs inside the generated project.
+
+Validates:
+* Positive — DeviceTokenCreate schema accepts an ios/android registration round-trip.
+* Negative — DeviceTokenCreate rejects an unknown platform (e.g. ``"windows"``)
+  with a pydantic validation error.
+* Honesty — when ``firebase_admin`` is missing, the FCM provider returns
+  ``False`` without raising. The advisory ``warning`` log is the only signal;
+  no retry, no token-refresh on a stale token.
+
+Run from the generated project root:
+    pytest tests/test_add_push_notifications_native_emitted.py -q
+"""
+from __future__ import annotations
+
+import asyncio
+import logging
+import sys
+import uuid
+
+import pytest
+
+
+def test_device_token_create_accepts_ios_and_android() -> None:
+    """Positive: schema accepts both supported platforms."""
+    from app.schemas.push import DeviceTokenCreate
+
+    for platform in ("ios", "android"):
+        reg = DeviceTokenCreate(
+            user_id=uuid.uuid4(), platform=platform, token=f"tok-{platform}"
+        )
+        assert reg.platform == platform
+        assert reg.token == f"tok-{platform}"
+
+
+def test_device_token_create_rejects_unknown_platform() -> None:
+    """Negative: schema must reject an unknown platform (Literal["ios","android"])."""
+    from pydantic import ValidationError
+
+    from app.schemas.push import DeviceTokenCreate
+
+    with pytest.raises(ValidationError):
+        DeviceTokenCreate(user_id=uuid.uuid4(), platform="windows", token="t")
+
+
+def test_fcm_provider_returns_false_when_firebase_missing(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Honesty: missing firebase_admin → False + WARNING log. No raise, no retry."""
+    sys.modules.pop("firebase_admin", None)
+    sys.modules["firebase_admin"] = None  # type: ignore[assignment]
+    sys.modules.pop("app.push.providers.fcm", None)
+    import importlib
+
+    fcm_mod = importlib.import_module("app.push.providers.fcm")
+    caplog.set_level(logging.WARNING)
+    try:
+        provider = fcm_mod.FCMProvider()
+
+        async def _go() -> bool:
+            return await provider.send_to_device(token="t", title="x", body="y")
+
+        result = asyncio.run(_go())
+        assert result is False, "FCM must return False when firebase_admin missing"
+    finally:
+        sys.modules.pop("firebase_admin", None)

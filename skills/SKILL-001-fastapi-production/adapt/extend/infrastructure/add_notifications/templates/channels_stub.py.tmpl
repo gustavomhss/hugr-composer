@@ -1,0 +1,63 @@
+"""Channel registry — routes notifications to the correct delivery handler.
+
+Channels:
+    in_app  — DB insert only (no external dependency).
+    push    — FCM stub; requires ``firebase_admin`` (lazy-imported).
+    email   — Stub; install add_email_templates to enable the bridge.
+"""
+
+from __future__ import annotations
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+async def dispatch(notification: object, *, channel: str = "in_app") -> None:
+    """Route *notification* to the handler registered for *channel*.
+
+    The ``in_app`` channel is a no-op here because the row is already
+    persisted by the CRUD layer before ``dispatch`` is called.  External
+    channels (push, email) are where real side-effects happen.
+
+    Args:
+        notification: The persisted ``Notification`` ORM instance.
+        channel: Delivery channel — one of ``"in_app"``, ``"push"``,
+            ``"email"``.  Unknown channels are logged and ignored.
+    """
+    if channel == "in_app":
+        return  # already in DB — nothing more to do
+    if channel == "push":
+        await _send_push(notification)
+    elif channel == "email":
+        logger.warning(
+            "email channel requested but add_email_templates is not installed; "
+            "notification stored in-app only."
+        )
+    else:
+        logger.warning("Unknown notification channel %r — ignored.", channel)
+
+
+async def _send_push(notification: object) -> None:
+    """Send a push notification via FCM (firebase_admin stub).
+
+    ``firebase_admin`` is imported lazily so the app boots without it.
+    If not installed, a WARNING is logged and the notification is silently
+    stored in-app only.
+
+    Args:
+        notification: The persisted ``Notification`` ORM instance.
+    """
+    try:
+        import firebase_admin  # noqa: F401 — lazy optional dependency
+        from firebase_admin import messaging  # noqa: F401 — held for future stub fill-in
+    except ImportError:
+        logger.warning(
+            "firebase_admin not installed — push notification skipped. "
+            "Run: pip install firebase-admin"
+        )
+        return
+
+    # Stub: real FCM send would go here. `messaging` is imported above for
+    # the future fill-in (e.g. messaging.Message(...)) and held with noqa.
+    logger.info("FCM push stub — would send to user_id=%s", getattr(notification, "user_id", "?"))

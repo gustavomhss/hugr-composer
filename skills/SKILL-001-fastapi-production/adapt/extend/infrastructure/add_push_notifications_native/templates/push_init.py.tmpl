@@ -1,0 +1,10 @@
+"""Push notification layer — APNs (iOS) + FCM (Android/web).
+
+Public API:
+    PushService:  send_to_device(token, platform, title, body)
+                  send_to_topic(topic, title, body)
+"""
+
+from app.push.service import PushService
+
+__all__ = ["PushService"]
