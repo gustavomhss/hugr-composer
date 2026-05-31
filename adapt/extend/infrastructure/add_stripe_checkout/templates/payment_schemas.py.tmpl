@@ -52,6 +52,8 @@ class CheckoutSessionCreate(BaseModel):
             as the Session ``metadata`` dict (max 50 keys).
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     amount_cents: int = Field(gt=0, le=99_999_999)
     currency: str = Field(min_length=3, max_length=3, pattern="^[A-Z]{3}$$")
     product_name: str = Field(min_length=1, max_length=255)

@@ -16,11 +16,13 @@ from pydantic import BaseModel, ConfigDict, Field
 class MLModelCreate(BaseModel):
     """Payload for registering a new model version."""
 
+    model_config = ConfigDict(extra="forbid")
+
     name: str = Field(..., max_length=128, description="Logical model name")
     version: str = Field(..., max_length=64, description="Semantic version string")
     artifact_path: str = Field(default="", max_length=512)
     framework: str = Field(default="sklearn", max_length=64)
-    metrics_json: dict[str, Any] | None = Field(
+    metrics_json: dict[str, Any] | None = Field(  # pragma: schema-any: metric blobs are framework-specific (sklearn/xgboost/torch emit different metric keys + value shapes); stored opaquely in JSONB and not interpreted by the API
         default=None, description="accuracy, f1, latency, etc."
     )
 
@@ -44,6 +46,8 @@ class MLModelRead(BaseModel):
 class MLModelPromote(BaseModel):
     """Payload for promoting a version to production."""
 
+    model_config = ConfigDict(extra="forbid")
+
     version: str = Field(..., description="Version to promote to production")
 
 
@@ -55,8 +59,8 @@ class MLModelCompare(BaseModel):
     name: str
     version_a: str
     version_b: str
-    metrics_a: dict[str, Any] | None
-    metrics_b: dict[str, Any] | None
+    metrics_a: dict[str, Any] | None  # pragma: schema-any: same framework-specific metric blob as MLModelCreate.metrics_json — opaque on read too
+    metrics_b: dict[str, Any] | None  # pragma: schema-any: same framework-specific metric blob as MLModelCreate.metrics_json — opaque on read too
     winner: str | None = Field(
         default=None, description="Version with higher primary metric, or None if tied"
     )

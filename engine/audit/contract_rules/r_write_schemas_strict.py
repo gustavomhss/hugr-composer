@@ -138,13 +138,22 @@ _WAIVED_TOOLS: frozenset[str] = frozenset(
         #   strict ${Model}Update, plus a required `id`). See triage
         #   R5-O2-D8 — the original "updates: list[dict]" mass-assignment
         #   surface is now bound by Pydantic-v2 strict validation.
-        "add_compliance_engine",
+        # "add_compliance_engine" — closed Wave-2
+        # (fix/w2-batch-b014-all-schemas): ErasureRequest now declares
+        # ``model_config = ConfigDict(extra="forbid")``. Other classes in
+        # the template are READ-suffix (Public/Response/Record/Certificate)
+        # and exempt by spec.
         # "add_data_versioning" — removed by R6-O3-P1 cluster fix-PR:
         # ``VersionCreate`` now declares ``extra="forbid"`` and replaces
         # the bare ``dict[str, Any]`` snapshot with a JSON-scalar bound
         # (``dict[str, str | int | float | bool | None]``). ``VersionDiff``
         # response fields use the same bound.
-        "add_email_templates",
+        # "add_email_templates" — closed Wave-2
+        # (fix/w2-batch-b014-all-schemas): EmailPreviewRequest now
+        # declares extra="forbid"; the ``context: dict`` field carries a
+        # ``# pragma: schema-any: ...`` bypass because Jinja2 template
+        # context is arbitrary per template and validated downstream by
+        # the renderer.
         # "add_feature_flags" — closed Wave-2 (B0.14) in
         # fix/w2-feature-flags-close-waivers:
         #   schemas.py.tmpl now ships ``model_config = ConfigDict(extra=
@@ -156,9 +165,25 @@ _WAIVED_TOOLS: frozenset[str] = frozenset(
         #   extra=forbid). Cites R6-O3-P9. The strict bounds match the
         #   evaluator runtime keys (``attribute``/``operator``/``value``/
         #   ``return_value`` + ``name``/``weight``).
-        "add_file_upload",
-        "add_ml_model_registry",
-        "add_ml_model_server",
+        # "add_file_upload" — closed Wave-2
+        # (fix/w2-batch-b014-all-schemas): PresignedUploadRequest +
+        # UploadConfirmRequest now declare extra="forbid".
+        # PresignedUploadResponse keeps ``fields: dict`` (it's a
+        # Response → READ-suffix → exempt).
+        # "add_ml_model_registry" — closed Wave-2
+        # (fix/w2-batch-b014-all-schemas): MLModelCreate + MLModelPromote
+        # declare extra="forbid". ``metrics_json: dict[str, Any] | None``
+        # on Create + ``metrics_a/_b`` on the Compare response carry
+        # ``# pragma: schema-any: ...`` bypasses because metric blobs are
+        # framework-specific (sklearn/xgboost/torch emit different keys
+        # and value shapes) and stored opaquely in JSONB.
+        # "add_ml_model_server" — closed Wave-2
+        # (fix/w2-batch-b014-all-schemas): PredictionRequest +
+        # BatchPredictionRequest declare extra="forbid"; ``input: Any``
+        # and ``inputs: list[Any]`` carry ``# pragma: schema-any: ...``
+        # bypasses because model input is framework-defined (sklearn
+        # array, torch tensor JSON, dict-of-features) and shape-checked
+        # by the loaded model at predict time.
         # "add_multi_tenancy" — closed Wave-2
         # (fix/w2-multi-tenancy-close-waivers): TenantCreate/Update now
         # declare extra="forbid"; status Literal-bound. Closes R6-O3-P13.
@@ -179,11 +204,29 @@ _WAIVED_TOOLS: frozenset[str] = frozenset(
         # verify_{registration,authentication}_response — signature,
         # attestation, RP-ID hash, origin, challenge, sign-count, UV
         # flag). Closes R6-O3-P2.
-        "add_pdf_reports",
-        "add_push_notifications_native",
-        "add_sms_otp",
-        "add_stripe_checkout",
-        "add_stripe_refund_flow",
+        # "add_pdf_reports" — closed Wave-2
+        # (fix/w2-batch-b014-all-schemas): ReportRequest now declares
+        # ``model_config = ConfigDict(extra="forbid")`` (previously
+        # carried only the wrong-shape ``from_attributes=True``).
+        # ``context: dict`` carries a ``# pragma: schema-any: ...`` bypass
+        # because the Jinja2 template context is template-defined and
+        # validated by the renderer.
+        # "add_push_notifications_native" — closed Wave-2
+        # (fix/w2-batch-b014-all-schemas): DeviceTokenCreate +
+        # PushSendRequest declare extra="forbid". ``data: dict[str, str]``
+        # is already concrete-typed (value type bound to str) — no pragma
+        # needed.
+        # "add_sms_otp" — closed Wave-2
+        # (fix/w2-batch-b014-all-schemas): OtpSendRequest +
+        # OtpVerifyRequest declare extra="forbid". ConfigDict imported.
+        # "add_stripe_checkout" — closed Wave-2
+        # (fix/w2-batch-b014-all-schemas): CheckoutSessionCreate declares
+        # extra="forbid". ``metadata_json: dict[str, str] | None`` is
+        # already concrete-typed (value bound to str) — no pragma needed.
+        # Money field already int cents (mirrors PR #102).
+        # "add_stripe_refund_flow" — closed Wave-2
+        # (fix/w2-batch-b014-all-schemas): RefundRequest declares
+        # extra="forbid". Money field already int cents.
         # add_stripe_subscription — closed in W2 PR
         # (fix/w2-stripe-subscription-close-waivers): SubscriptionCreate
         # and ChangePlanRequest now carry ``model_config =
@@ -194,7 +237,9 @@ _WAIVED_TOOLS: frozenset[str] = frozenset(
         # (fix/w2-tenant-onboarding-close-waivers): OnboardingRequest now
         # carries ``model_config = ConfigDict(extra="forbid")``; sibling
         # response schemas are READ-suffix (exempt by spec).
-        "add_webhook_sender",
+        # "add_webhook_sender" — closed Wave-2
+        # (fix/w2-batch-b014-all-schemas): WebhookCreate + WebhookUpdate
+        # declare extra="forbid". ``events: list[str]`` already concrete.
     }
 )
 

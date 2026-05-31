@@ -19,6 +19,8 @@ class PresignedUploadRequest(BaseModel):
         resource_id: Optional polymorphic association ID.
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     filename: str = Field(..., max_length=255)
     content_type: str = Field(..., max_length=255)
     size_bytes: int = Field(..., gt=0)
@@ -46,6 +48,8 @@ class PresignedUploadResponse(BaseModel):
 
 class UploadConfirmRequest(BaseModel):
     """Request body for POST /files/{id}/confirm."""
+
+    model_config = ConfigDict(extra="forbid")
 
     checksum_md5: str | None = Field(
         default=None,

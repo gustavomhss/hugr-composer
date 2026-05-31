@@ -37,6 +37,8 @@ class RefundRequest(BaseModel):
             (duplicate, fraudulent, requested_by_customer).
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     payment_id: uuid.UUID
     amount_cents: int = Field(gt=0, le=99_999_999)
     reason: str | None = Field(

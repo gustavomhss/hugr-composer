@@ -14,10 +14,10 @@ class ReportRequest(BaseModel):
         output_filename: Optional filename for the generated PDF.
     """
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(extra="forbid")
 
     template_name: str = Field(..., description="Template name without extension.")
-    context: dict = Field(default_factory=dict, description="Template context data.")
+    context: dict = Field(default_factory=dict, description="Template context data.")  # pragma: schema-any: Jinja2 template context is arbitrary per template — keys/values are template-defined and validated downstream by the renderer
     output_filename: str | None = Field(
         default=None,
         description="Optional output filename (without .pdf extension).",
