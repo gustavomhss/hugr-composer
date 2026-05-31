@@ -17,6 +17,8 @@ class WebhookCreate(BaseModel):
         events: List of event type strings to subscribe to.
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     url: AnyHttpUrl
     description: str | None = None
     events: list[str] = Field(default_factory=list)
@@ -32,6 +34,8 @@ class WebhookUpdate(BaseModel):
         events: Replacement event list.
         status: New status (active / disabled / suspended).
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     description: str | None = None
     events: list[str] | None = None

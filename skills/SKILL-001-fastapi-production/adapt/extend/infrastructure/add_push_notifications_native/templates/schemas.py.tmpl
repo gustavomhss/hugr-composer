@@ -12,6 +12,8 @@ from pydantic import BaseModel, ConfigDict
 class DeviceTokenCreate(BaseModel):
     """Schema for registering a device push token."""
 
+    model_config = ConfigDict(extra="forbid")
+
     user_id: uuid.UUID
     platform: Literal["ios", "android"]
     token: str
@@ -31,6 +33,8 @@ class DeviceTokenRead(BaseModel):
 
 class PushSendRequest(BaseModel):
     """Schema for sending a push notification."""
+
+    model_config = ConfigDict(extra="forbid")
 
     device_token_id: uuid.UUID | None = None
     topic: str | None = None

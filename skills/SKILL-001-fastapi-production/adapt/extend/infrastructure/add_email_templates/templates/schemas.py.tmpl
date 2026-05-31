@@ -65,6 +65,8 @@ class EmailDeliveryListResponse(BaseModel):
 class EmailPreviewRequest(BaseModel):
     """Optional body for POST /email/preview."""
 
+    model_config = ConfigDict(extra="forbid")
+
     template: str
-    context: dict = Field(default_factory=dict)
+    context: dict = Field(default_factory=dict)  # pragma: schema-any: Jinja2 template context is arbitrary per template — keys/values validated downstream by the renderer
     locale: str = "en"

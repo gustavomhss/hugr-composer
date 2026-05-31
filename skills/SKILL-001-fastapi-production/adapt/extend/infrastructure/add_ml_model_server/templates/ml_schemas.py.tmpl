@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PredictionRequest(BaseModel):
@@ -17,7 +17,9 @@ class PredictionRequest(BaseModel):
         model_version: Model version.  Defaults to ``"latest"``.
     """
 
-    input: Any = Field(..., description="Input data for the model.")
+    model_config = ConfigDict(extra="forbid")
+
+    input: Any = Field(..., description="Input data for the model.")  # pragma: schema-any: model input shape is framework-defined (sklearn array, torch tensor JSON, dict-of-features, etc.); shape-checked by the loaded model at predict time
     model_name: str = Field(..., description="Registered model name.")
     model_version: str = Field(
         default="latest", description="Model version (default: latest)."
@@ -49,7 +51,9 @@ class BatchPredictionRequest(BaseModel):
         model_version: Model version.  Defaults to ``"latest"``.
     """
 
-    inputs: list[Any] = Field(..., description="List of inputs to predict on.")
+    model_config = ConfigDict(extra="forbid")
+
+    inputs: list[Any] = Field(..., description="List of inputs to predict on.")  # pragma: schema-any: each batch item mirrors PredictionRequest.input (framework-defined); shape-checked per-row by the loaded model
     model_name: str = Field(..., description="Registered model name.")
     model_version: str = Field(
         default="latest", description="Model version (default: latest)."

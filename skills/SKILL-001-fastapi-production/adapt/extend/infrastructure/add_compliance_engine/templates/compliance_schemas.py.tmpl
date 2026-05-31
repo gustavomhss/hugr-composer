@@ -23,6 +23,8 @@ class ComplianceEventPublic(BaseModel):
 class ErasureRequest(BaseModel):
     """Request body for a GDPR right-to-erasure operation."""
 
+    model_config = ConfigDict(extra="forbid")
+
     reason: str = Field(default="user_request", max_length=256)
 
 
