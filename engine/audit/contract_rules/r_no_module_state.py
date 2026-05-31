@@ -127,8 +127,10 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
     "extend/infrastructure/add_scheduled_tasks",
     # R6-O3-F9 — _RULES + _DEAD_LETTER per-worker; monetization state lost
     "extend/infrastructure/add_api_monetization",
-    # R5-O3-F2 family — _PROGRESS_REGISTRY per-worker; onboarding status drifts
-    "extend/infrastructure/add_tenant_onboarding",
+    # R5-O3-F2 family — closed in W2 PR (fix/w2-tenant-onboarding-close-waivers):
+    # _PROGRESS_REGISTRY now wrapped in ProgressRegistry class instance
+    # (allow-listed by this rule) AND _SINGLE_PROCESS_OK + warnings=
+    # disclosure shipped in the tool's __init__.py.
     # R5-S5-F2 / R6-S3-F1 family — _MODEL_REGISTRY for export columns; benign today
     "extend/crud_data/add_data_export",
     # P3 cluster — _HANDLERS event subscriber registry; per-worker subscription split

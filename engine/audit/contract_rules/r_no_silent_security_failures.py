@@ -161,10 +161,12 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
     # dropped → sentinel reports no finding.
     # Offender: runtime_sentinel.py.tmpl:258 (`except Exception: pass`)
     "extend/infrastructure/add_runtime_sentinel",
-    # P7-F4 — compensation step failure swallow; saga marked
-    # COMPENSATED even when state is half-rolled-back.
-    # Offender: orchestrator.py.tmpl:150 (log-only, no raise)
-    "extend/infrastructure/add_tenant_onboarding",
+    # P7-F4 — closed in W2 PR (fix/w2-tenant-onboarding-close-waivers):
+    # orchestrator.py.tmpl _compensate() now bumps a metric counter
+    # (compensation_failures.inc()) AND records failed_compensations
+    # on progress AND transitions to a distinct
+    # OnboardingStatus.COMPENSATION_FAILED terminal state so callers
+    # never see a misleading COMPENSATED on partial rollback.
 })
 
 # --- AST helpers ---------------------------------------------------------

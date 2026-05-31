@@ -46,6 +46,22 @@ async def start_onboarding(body: OnboardingRequest) -> OnboardingStartResponse:
         admin_email=body.admin_email,
     )
 
+    if progress.status.value == "compensation_failed":
+        # B0.16: partial-rollback. State is half-cleaned; surface the
+        # failed-compensations list so operators know the blast radius
+        # (this is the documented loud-failure path — never swallow).
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "message": (
+                    "Onboarding failed AND compensation was incomplete — "
+                    "manual cleanup required"
+                ),
+                "failed_step": progress.failed_step,
+                "error": progress.error,
+                "failed_compensations": progress.failed_compensations,
+            },
+        )
     if progress.status.value in ("failed", "compensated"):
         raise HTTPException(
             status_code=500,

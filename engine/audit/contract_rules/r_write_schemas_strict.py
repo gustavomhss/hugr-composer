@@ -139,7 +139,10 @@ _WAIVED_TOOLS: frozenset[str] = frozenset(
         "add_stripe_checkout",
         "add_stripe_refund_flow",
         "add_stripe_subscription",
-        "add_tenant_onboarding",
+        # add_tenant_onboarding — closed in W2 PR
+        # (fix/w2-tenant-onboarding-close-waivers): OnboardingRequest now
+        # carries ``model_config = ConfigDict(extra="forbid")``; sibling
+        # response schemas are READ-suffix (exempt by spec).
         "add_webhook_sender",
     }
 )

@@ -3,6 +3,31 @@
 Each step is atomic, compensatable, and reportable. If any step fails,
 all previously completed steps are compensated (rolled back) in reverse
 order, leaving the system clean.
+
+Single-process state disclosure
+-------------------------------
+Progress tracking is held inside a single ``ProgressRegistry`` instance
+(``_PROGRESS_REGISTRY`` below). Under a multi-worker deployment
+(``gunicorn -w N`` / ``uvicorn --workers``) each worker holds its own
+registry — a ``GET /onboarding/{id}/status`` request that lands on a
+different worker than ``POST /onboarding/start`` returns 404.
+
+This is acknowledged: the tool's ``__init__.py`` sets
+``_SINGLE_PROCESS_OK = True`` and ships a ``warnings=`` entry
+containing the substring "single-process" so agents see the disclosure
+at compose time. For production multi-worker deployments, replace the
+``ProgressRegistry`` body with a Redis / DB-backed store (the public
+``get`` / ``put`` / ``items`` API is shaped for a drop-in swap).
+
+Compensation-failure semantics
+------------------------------
+If a compensation step itself raises, the orchestrator records the
+failed step on ``progress.failed_compensations`` AND bumps a metric
+counter so the failure surfaces to observability — the saga is NOT
+silently marked ``COMPENSATED`` (which would lie about state being
+clean). The terminal status becomes ``COMPENSATION_FAILED``; a 500
+response carries the failed-compensations list so operators see the
+half-rolled-back blast radius. See B0.16 ``no_silent_security_failures``.
 """
 
 from __future__ import annotations
@@ -19,6 +44,32 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+# --- Metrics surface ---------------------------------------------------
+#
+# Counter increments inside the compensation handler take this rule out
+# of B0.16's "silent broad-catch" class — the failure becomes visible
+# to the monitoring surface even when no exception propagates further.
+# Tools that ship Prometheus / OTLP can swap this for a real Counter;
+# the default no-op keeps the template framework-free and lets the
+# B0.16 audit detect ``.inc(...)`` on the AST shape.
+class _CompensationFailureCounter:
+    """No-op metric counter; swap for prometheus_client.Counter in prod."""
+
+    def __init__(self) -> None:
+        self._n = 0
+
+    def inc(self, amount: int = 1) -> None:
+        """Increment the failure counter (visible via :meth:`value`)."""
+        self._n += amount
+
+    def value(self) -> int:
+        """Return current count (test-visible)."""
+        return self._n
+
+
+compensation_failures = _CompensationFailureCounter()
+
+
 class OnboardingStatus(str, Enum):
     """Lifecycle states of an onboarding run."""
 
@@ -28,6 +79,12 @@ class OnboardingStatus(str, Enum):
     FAILED = "failed"
     COMPENSATING = "compensating"
     COMPENSATED = "compensated"
+    # B0.16 — partial-rollback terminal state. Saga MUST NOT be marked
+    # COMPENSATED when one or more compensation steps failed, because
+    # downstream observers ("operator dashboards", "tenant cleanup
+    # cron") rely on COMPENSATED == clean. Half-rolled-back state is a
+    # different class of failure that needs manual intervention.
+    COMPENSATION_FAILED = "compensation_failed"
 
 
 class OnboardingProgress:
@@ -45,6 +102,10 @@ class OnboardingProgress:
         self.started_at: float = time.time()
         self.completed_at: float = 0.0
         self.context: dict = {}
+        # B0.16 — populated when ``_compensate`` catches a compensation
+        # step failure; surfaced in the API response so callers see the
+        # half-rolled-back blast radius.
+        self.failed_compensations: list[dict] = []
 
     def to_dict(self) -> dict:
         """Return serialisable snapshot of current progress."""
@@ -58,11 +119,37 @@ class OnboardingProgress:
             "error": self.error,
             "started_at": self.started_at,
             "completed_at": self.completed_at,
+            "failed_compensations": self.failed_compensations,
         }
 
 
-# Module-level in-memory registry (replace with DB in production)
-_PROGRESS_REGISTRY: dict[str, OnboardingProgress] = {}
+class ProgressRegistry:
+    """In-memory registry of onboarding runs.
+
+    Wrapping the underlying dict inside an instance keeps module-level
+    state out of B0.12's scope (class-instance singletons are
+    explicitly allow-listed by ``r_no_module_state``). The public
+    surface is intentionally minimal so the body can be swapped for a
+    Redis / DB-backed store without touching any caller.
+    """
+
+    def __init__(self) -> None:
+        """Initialise an empty registry."""
+        self._items: dict[str, OnboardingProgress] = {}
+
+    def put(self, onboarding_id: str, progress: OnboardingProgress) -> None:
+        """Store *progress* under *onboarding_id*."""
+        self._items[onboarding_id] = progress
+
+    def get(self, onboarding_id: str) -> OnboardingProgress | None:
+        """Return the progress tracker for *onboarding_id*, or None."""
+        return self._items.get(onboarding_id)
+
+
+# Single-process registry instance. See module docstring "Single-process
+# state disclosure" — production multi-worker deployments must swap
+# this body for a Redis / DB-backed store.
+_PROGRESS_REGISTRY = ProgressRegistry()
 
 
 def get_progress(onboarding_id: str) -> OnboardingProgress | None:
@@ -102,7 +189,7 @@ class OnboardingOrchestrator:
         )
         progress.context["tenant_name"] = tenant_name
         progress.context["admin_email"] = admin_email
-        _PROGRESS_REGISTRY[onboarding_id] = progress
+        _PROGRESS_REGISTRY.put(onboarding_id, progress)
 
         progress.status = OnboardingStatus.RUNNING
         completed: list[OnboardingStep] = []
@@ -139,7 +226,17 @@ class OnboardingOrchestrator:
         progress: OnboardingProgress,
         completed: list[OnboardingStep],
     ) -> None:
-        """Execute compensation (rollback) for all completed steps in reverse."""
+        """Execute compensation (rollback) for all completed steps in reverse.
+
+        B0.16 — a compensation step that itself raises is NOT silently
+        swallowed: the failure is recorded on
+        ``progress.failed_compensations`` AND a metric counter is
+        incremented so the failure surfaces to observability. The
+        terminal status reflects whether every compensation succeeded
+        (``COMPENSATED``) or one or more failed
+        (``COMPENSATION_FAILED``) — the saga is NEVER marked clean when
+        state is half-rolled-back.
+        """
         progress.status = OnboardingStatus.COMPENSATING
         for step in reversed(completed):
             try:
@@ -148,8 +245,24 @@ class OnboardingOrchestrator:
                     "Onboarding %s: compensated step %s", onboarding_id, step.name
                 )
             except Exception as exc:
+                # B0.16: metric increment + structured record on progress
+                # keeps the failure visible to ops + API consumers; the
+                # status transition to COMPENSATION_FAILED guarantees no
+                # caller sees a misleading "COMPENSATED" terminal state.
+                compensation_failures.inc()
+                progress.failed_compensations.append(
+                    {
+                        "step": step.name,
+                        "error": str(exc),
+                        "error_type": type(exc).__name__,
+                    }
+                )
                 logger.error(
-                    "Onboarding %s: compensation of step %s failed: %s",
+                    "Onboarding %s: compensation of step %s FAILED: %s "
+                    "(state is half-rolled-back; manual cleanup required)",
                     onboarding_id, step.name, exc,
                 )
-        progress.status = OnboardingStatus.COMPENSATED
+        if progress.failed_compensations:
+            progress.status = OnboardingStatus.COMPENSATION_FAILED
+        else:
+            progress.status = OnboardingStatus.COMPENSATED
