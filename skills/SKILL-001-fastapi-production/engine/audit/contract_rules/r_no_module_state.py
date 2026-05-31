@@ -136,8 +136,13 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
     # the class). Closes R6-O1-F10/F14/F15.
     # R6-S5-F5 — _JOBS dict mutated without lock; cron state not shared
     "extend/infrastructure/add_scheduled_tasks",
-    # R6-O3-F9 — _RULES + _DEAD_LETTER per-worker; monetization state lost
-    "extend/infrastructure/add_api_monetization",
+    # "extend/infrastructure/add_api_monetization" — closed in W2 PR
+    # (fix/w2-api-monetization-close-waivers): _RULES is now wrapped
+    # in a _RulesRegistry class instance and _DEAD_LETTER in a
+    # _DeadLetterQueue class instance (both allow-listed by this
+    # rule), AND the tool ships _SINGLE_PROCESS_OK = True + a
+    # warnings= entry containing "single-process" in its __init__.py.
+    # Closes R6-O3-F9 family.
     # R5-O3-F2 family — closed in W2 PR (fix/w2-tenant-onboarding-close-waivers):
     # _PROGRESS_REGISTRY now wrapped in ProgressRegistry class instance
     # (allow-listed by this rule) AND _SINGLE_PROCESS_OK + warnings=
