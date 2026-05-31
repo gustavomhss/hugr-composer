@@ -1,7 +1,11 @@
 
 # Prometheus middleware + /metrics endpoint — added by add_prometheus_metrics tool
+# NOTE: `_init_metrics(prefix=...)` is spliced INSIDE `async def lifespan(...)`
+# by `add_prometheus_metrics._patch_main` (see CONTRACT §B0.15 + triage
+# R5-S5-F2 — re-registering the metrics registry at module-import time
+# crashes the second importer with "Duplicated timeseries"). When no
+# lifespan is present in the host main.py, the patcher falls back to a
+# pragma-tagged module-top init at the very end of this snippet.
 if _prom_os.getenv("PROMETHEUS_ENABLED", "true").lower() != "false":
-    _prom_prefix = _prom_os.getenv("PROMETHEUS_PREFIX", "http")
-    _init_metrics(prefix=_prom_prefix)
     app.add_middleware(PrometheusMiddleware)
 app.include_router(_metrics_router)

@@ -213,7 +213,32 @@ def _patch_config(config_file: Path) -> None:
 
 
 def _patch_main(main_file: Path) -> None:
-    """Inject configure_structlog() call into app/main.py."""
+    """Inject ``configure_structlog()`` call into ``app/main.py``.
+
+    The call is spliced INSIDE ``async def lifespan(...)`` (before the
+    ``yield``) — mirrors ``add_arq_worker`` / ``add_bulk_operations``.
+    Closes CONTRACT §B0.15 (P6-adjacent — ``_configure_structlog`` is
+    not the literal ``configure_logging`` name the spec allowlists, so
+    it lands here for shape consistency with the rest of the lifespan
+    cluster).
+
+    Trade-off: structlog's bind/contextvars processors are *registry*
+    state, NOT import-time state — the global structlog config is
+    rewritten on every ``configure_structlog`` call (see
+    ``structlog.configure(...)`` semantics). Moving the call from
+    module-import to lifespan-startup means log records emitted DURING
+    import (a handful of module-level ``logger.info`` calls in scaffold
+    code) use stdlib-logging defaults instead of the JSON renderer.
+    That's the documented cost of lifespan-gating; the request path is
+    unaffected because lifespan-startup completes before the first
+    request handler runs.
+
+    When ``async def lifespan(...)`` is NOT present in the host
+    ``main.py`` (non-standard shape), the patcher falls back to a
+    module-top ``_configure_structlog(...)`` call carrying
+    ``# pragma: B0.15: ...`` so the contract rule still allows the
+    literal line.
+    """
     src = main_file.read_text()
     if "configure_structlog" in src:
         return
@@ -233,8 +258,53 @@ def _patch_main(main_file: Path) -> None:
     else:
         src = logging_import + src
 
+    # Append the (now doc-only) snippet so a downstream reader sees
+    # the rationale next to the lifespan-spliced call.
     src = src.rstrip("\n") + "\n" + configure_snippet
-    main_file.write_text(src)
+
+    # Splice `_configure_structlog(...)` INSIDE `async def lifespan(...)`
+    # before the `yield` — CONTRACT §B0.15.
+    lines = src.splitlines()
+    yield_idx = next(
+        (i for i, ln in enumerate(lines) if ln.strip() == "yield"), -1
+    )
+    if yield_idx != -1:
+        raw = lines[yield_idx]
+        indent = raw[: len(raw) - len(raw.lstrip())]
+        startup_lines = [
+            f"{indent}# --- add_structured_logging: configure structlog (B0.15) ---",
+            f"{indent}_configure_structlog(",
+            f'{indent}    level=_log_os.getenv("LOG_LEVEL", "INFO"),',
+            f'{indent}    fmt=_log_os.getenv("LOG_FORMAT", "json"),',
+            f"{indent}    redaction_enabled="
+            f'_log_os.getenv("LOG_REDACTION_ENABLED", "true").lower() != "false",',
+            f"{indent})",
+        ]
+        for offset, ln in enumerate(startup_lines):
+            lines.insert(yield_idx + offset, ln)
+        main_file.write_text("\n".join(lines) + ("\n" if src.endswith("\n") else ""))
+    else:
+        # Fallback for non-standard main.py shapes — module-top call
+        # carrying the per-line B0.15 pragma. NOTE: the rule keys the
+        # pragma lookup off the Call's start line (ast.Call.lineno),
+        # so the pragma MUST live on the `_configure_structlog(` line
+        # — a single-line call form is the cleanest way to guarantee
+        # that. We collapse the kwargs onto one long line; ruff/E501
+        # is a project-side concern in the host scaffold, not ours.
+        fallback = (
+            "\n"
+            "# Structured logging — no `async def lifespan(...)` found in "
+            "this main.py; fallback retains legacy module-top configure.\n"
+            "_configure_structlog("
+            'level=_log_os.getenv("LOG_LEVEL", "INFO"), '
+            'fmt=_log_os.getenv("LOG_FORMAT", "json"), '
+            "redaction_enabled="
+            '_log_os.getenv("LOG_REDACTION_ENABLED", "true").lower() != "false"'
+            ")"
+            "  # pragma: B0.15: non-standard main.py has no `lifespan`; "
+            "fallback retains legacy module-top configure\n"
+        )
+        main_file.write_text(src.rstrip("\n") + fallback)
 
 
 # ---------------------------------------------------------------------------

@@ -209,7 +209,22 @@ def _patch_config(config_file: Path) -> None:
 
 
 def _patch_main(main_file: Path) -> None:
-    """Inject PrometheusMiddleware and /metrics router into app/main.py."""
+    """Inject PrometheusMiddleware + /metrics router into app/main.py.
+
+    The ``_init_metrics(prefix=...)`` call is spliced INSIDE
+    ``async def lifespan(...)`` (before the ``yield``) — mirrors the
+    ``add_arq_worker`` / ``add_bulk_operations`` pattern. Closes
+    CONTRACT §B0.15 (triage R5-S5-F2): re-registering the Prometheus
+    registry at module-import time crashes a second importer with
+    "Duplicated timeseries". Lifespan gating binds the registry once
+    per worker startup instead.
+
+    When ``async def lifespan(...)`` is NOT present in the host
+    ``main.py`` (non-standard shape), the patcher falls back to a
+    module-top ``_init_metrics(...)`` call carrying
+    ``# pragma: B0.15: ...`` so the contract rule still allows the
+    line — same fallback shape ``add_bulk_operations._patch_main`` uses.
+    """
     src = main_file.read_text()
     if "PrometheusMiddleware" in src:
         return
@@ -231,8 +246,41 @@ def _patch_main(main_file: Path) -> None:
     else:
         src = metrics_import + src
 
+    # Always append the middleware/router snippet at EOF (these are NOT
+    # init-class calls; the snippet no longer carries `_init_metrics`).
     src = src.rstrip("\n") + "\n" + add_middleware_snippet
-    main_file.write_text(src)
+
+    # Splice `_init_metrics(prefix=...)` INSIDE `async def lifespan(...)`
+    # before the `yield` — CONTRACT §B0.15.
+    lines = src.splitlines()
+    yield_idx = next(
+        (i for i, ln in enumerate(lines) if ln.strip() == "yield"), -1
+    )
+    if yield_idx != -1:
+        raw = lines[yield_idx]
+        indent = raw[: len(raw) - len(raw.lstrip())]
+        startup_lines = [
+            f"{indent}# --- add_prometheus_metrics: registry startup (B0.15) ---",
+            f'{indent}_prom_prefix = _prom_os.getenv("PROMETHEUS_PREFIX", "http")',
+            f"{indent}_init_metrics(prefix=_prom_prefix)",
+        ]
+        for offset, ln in enumerate(startup_lines):
+            lines.insert(yield_idx + offset, ln)
+        main_file.write_text("\n".join(lines) + ("\n" if src.endswith("\n") else ""))
+    else:
+        # Fallback for non-standard main.py shapes — module-top init
+        # carrying the per-line B0.15 pragma so the contract rule allows
+        # the literal fallback line (same posture as add_bulk_operations).
+        fallback = (
+            "\n"
+            "# Prometheus registry init — no `async def lifespan(...)` "
+            "found in this main.py; fallback retains legacy module-top init.\n"
+            '_prom_prefix = _prom_os.getenv("PROMETHEUS_PREFIX", "http")\n'
+            "_init_metrics(prefix=_prom_prefix)"
+            "  # pragma: B0.15: non-standard main.py has no `lifespan`; "
+            "fallback retains legacy module-top init\n"
+        )
+        main_file.write_text(src.rstrip("\n") + fallback)
 
 
 # ---------------------------------------------------------------------------

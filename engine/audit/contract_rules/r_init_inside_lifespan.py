@@ -125,22 +125,27 @@ from ._common import SKILL_ROOT
 # and ``verify/`` paths.
 # ---------------------------------------------------------------------------
 _WAIVED_TOOLS: frozenset[str] = frozenset({
-    # "extend/crud_data/add_bulk_operations" — closed Wave-2 (B0.15):
-    #   `add_bulk_operations._patch_main` now splices
-    #   `init_idempotency_cache(...)` INSIDE `async def lifespan(...)`
-    #   (mirroring the `add_arq_worker` pattern), and shutdown calls
-    #   `await close_idempotency_cache()` after the `yield`. The
-    #   `main_patch.py.tmpl` is reduced to a doc-only stub. See triage
-    #   R5-O2-D12 + R6-O2-O2-2.
-    # R5-S5-F2 — _init_metrics() re-registers globally; needs lifespan
-    # gating to bind the metrics registry once per worker startup.
-    "extend/infrastructure/add_prometheus_metrics",
-    # P6-adjacent — _configure_structlog is logging-configuration but
-    # not the exact ``configure_logging`` name the spec allowlists.
-    # Tool ships structured-logging setup at module top because the
-    # log pipeline must be live before any request handler imports;
-    # not technically a lifespan concern but lands here for shape.
-    "extend/infrastructure/add_structured_logging",
+    # All B0.15 waivers closed.
+    #
+    # Historical entries (kept as breadcrumbs for the next auditor):
+    #
+    # * "extend/crud_data/add_bulk_operations" — closed Wave-2 (PR #98):
+    #   `_patch_main` now splices `init_idempotency_cache(...)` INSIDE
+    #   `async def lifespan(...)` (mirroring `add_arq_worker`), and
+    #   shutdown calls `await close_idempotency_cache()` after the
+    #   `yield`. Triage R5-O2-D12 + R6-O2-O2-2.
+    # * "extend/infrastructure/add_prometheus_metrics" — closed Wave-2
+    #   (W2 FINAL B0.15 PR): `_patch_main` now splices
+    #   `_init_metrics(prefix=...)` INSIDE `async def lifespan(...)`
+    #   (registry bound once per worker startup, fixing R5-S5-F2
+    #   "Duplicated timeseries" on hot-reload). Fallback for shapes
+    #   without `lifespan` uses module-top init + per-line pragma.
+    # * "extend/infrastructure/add_structured_logging" — closed Wave-2
+    #   (W2 FINAL B0.15 PR): `_patch_main` now splices
+    #   `_configure_structlog(...)` INSIDE `async def lifespan(...)`.
+    #   Trade-off documented in the tool: module-import log records
+    #   use stdlib defaults until lifespan-startup completes; request
+    #   path is unaffected.
 })
 
 # ---------------------------------------------------------------------------
