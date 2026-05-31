@@ -1,24 +1,55 @@
-"""Pydantic schemas for the content versioning API."""
+"""Pydantic schemas for the content versioning API.
+
+Notes
+-----
+* Write schemas (``VersionCreate``) declare ``extra="forbid"`` (B0.14 /
+  R6-O3-P1) so unknown body keys are rejected — closes mass-assignment.
+* ``VersionCreate`` does NOT carry ``author_id``: identity is bound to
+  the authenticated session server-side (R5-O2-D2). A client-supplied
+  ``author_id`` would let any caller publish drafts as another user.
+* ``data`` uses ``dict[str, str | int | float | bool | None]`` instead
+  of ``dict[str, Any]`` (B0.14 bare-Any rule): JSON scalars are the
+  only values a content snapshot may carry through the API boundary;
+  nested objects/arrays must be flattened by the caller, or the
+  application schema must declare a typed sub-model. The
+  ``# pragma: schema-any`` bypass is intentionally NOT used — the
+  bound widens cleanly with no observed loss of expressiveness across
+  the catalog's snapshot payloads.
+* ``VersionDiff`` is a response schema; its ``added`` / ``removed`` /
+  ``changed`` fields are pre-projected by ``VersioningService.diff``
+  to the same JSON-scalar bound, so the contract scan stays clean.
+"""
 
 from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
+
+# JSON-scalar bound used by both VersionCreate.data and the diff fields.
+# Replaces the prior unbounded ``dict[str, Any]`` (B0.14 / R6-O3-P14).
+_JsonScalar = str | int | float | bool | None
 
 
 class VersionCreate(BaseModel):
     """Request body for creating a new draft version.
 
     Attributes:
-        data: JSON-serialisable dict representing the full content snapshot.
-        author_id: UUID of the author creating the draft.
+        data: JSON-serialisable mapping of field name → JSON scalar
+            representing the content snapshot.
+
+    Notes:
+        ``author_id`` is intentionally absent — the server binds the
+        author to the authenticated session (R5-O2-D2). A client-
+        supplied author_id would defeat the auth check.
     """
 
-    data: dict[str, Any] = Field(..., description="Full content snapshot as JSON object")
-    author_id: uuid.UUID | None = Field(None, description="Author user UUID")
+    model_config = ConfigDict(extra="forbid")
+
+    data: dict[str, _JsonScalar] = Field(
+        ..., description="Content snapshot as a flat mapping of JSON scalars"
+    )
 
 
 class VersionRead(BaseModel):
@@ -62,6 +93,7 @@ class VersionDiff(BaseModel):
     content_id: str
     v1: int
     v2: int
-    added: dict[str, Any]
-    removed: dict[str, Any]
-    changed: dict[str, Any]
+    added: dict[str, _JsonScalar]
+    removed: dict[str, _JsonScalar]
+    # ``changed`` maps field name → [old, new] scalar pair (list of length 2).
+    changed: dict[str, list[_JsonScalar]]

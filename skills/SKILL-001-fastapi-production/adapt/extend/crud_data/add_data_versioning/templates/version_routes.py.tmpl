@@ -7,6 +7,12 @@ POST /versions/{content_type}/{id}/publish/{version_number} — publish a draft
 POST /versions/{content_type}/{id}/archive/{version_number} — archive a version
 GET  /versions/{content_type}/{id}/history — list all versions
 GET  /versions/{content_type}/{id}/diff/{v1}/{v2} — field-level diff
+
+Auth
+----
+All routes require an authenticated user (closes R5-O2-D2). The author of
+a new draft is bound to ``current_user.id`` server-side — the request
+body cannot name a different author (mass-assignment defence).
 """
 
 from __future__ import annotations
@@ -14,6 +20,8 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.schemas.version import VersionCreate, VersionDiff, VersionRead
 from app.versioning.service import VersioningService
 
@@ -44,11 +52,13 @@ def _get_service() -> VersioningService:
     "/{content_type}/{content_id}/draft",
     response_model=VersionRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(get_current_user)],
 )
 async def create_draft(
     content_type: str,
     content_id: str,
     body: VersionCreate,
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(_get_session),
     service: VersioningService = Depends(_get_service),
 ) -> VersionRead:
@@ -57,9 +67,11 @@ async def create_draft(
     Args:
         content_type: Lowercase content type name.
         content_id: Opaque string ID of the content item.
-        body: VersionCreate with data and optional author_id.
+        body: VersionCreate carrying the new content snapshot.
         session: Injected async DB session.
         service: VersioningService instance.
+        current_user: Authenticated user; author of the new draft
+            (server-side, not body-controlled — R5-O2-D2).
 
     Returns:
         The newly created draft as VersionRead.
@@ -73,7 +85,7 @@ async def create_draft(
             content_id=content_id,
             content_type=content_type,
             data=body.data,
-            author_id=body.author_id,
+            author_id=current_user.id,
         )
     except ValueError as exc:
         raise HTTPException(
@@ -86,11 +98,13 @@ async def create_draft(
 @router.post(
     "/{content_type}/{content_id}/publish/{version_number}",
     response_model=VersionRead,
+    dependencies=[Depends(get_current_user)],
 )
 async def publish_version(
     content_type: str,
     content_id: str,
     version_number: int,
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(_get_session),
     service: VersioningService = Depends(_get_service),
 ) -> VersionRead:
@@ -102,6 +116,7 @@ async def publish_version(
         version_number: Version number of the draft to publish.
         session: Injected async DB session.
         service: VersioningService instance.
+        current_user: Authenticated user (R5-O2-D2).
 
     Returns:
         The published ContentVersion as VersionRead.
@@ -123,11 +138,13 @@ async def publish_version(
 @router.post(
     "/{content_type}/{content_id}/archive/{version_number}",
     response_model=VersionRead,
+    dependencies=[Depends(get_current_user)],
 )
 async def archive_version(
     content_type: str,
     content_id: str,
     version_number: int,
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(_get_session),
     service: VersioningService = Depends(_get_service),
 ) -> VersionRead:
@@ -139,6 +156,7 @@ async def archive_version(
         version_number: Version number to archive.
         session: Injected async DB session.
         service: VersioningService instance.
+        current_user: Authenticated user (R5-O2-D2).
 
     Returns:
         The archived ContentVersion as VersionRead.
@@ -159,11 +177,13 @@ async def archive_version(
 @router.get(
     "/{content_type}/{content_id}/history",
     response_model=list[VersionRead],
+    dependencies=[Depends(get_current_user)],
 )
 async def get_version_history(
     content_type: str,
     content_id: str,
     limit: int = 50,
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(_get_session),
     service: VersioningService = Depends(_get_service),
 ) -> list[VersionRead]:
@@ -175,6 +195,7 @@ async def get_version_history(
         limit: Maximum number of versions to return (default 50).
         session: Injected async DB session.
         service: VersioningService instance.
+        current_user: Authenticated user (R5-O2-D2).
 
     Returns:
         List of VersionRead instances, newest first.
@@ -186,12 +207,14 @@ async def get_version_history(
 @router.get(
     "/{content_type}/{content_id}/diff/{v1}/{v2}",
     response_model=VersionDiff,
+    dependencies=[Depends(get_current_user)],
 )
 async def diff_versions(
     content_type: str,
     content_id: str,
     v1: int,
     v2: int,
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(_get_session),
     service: VersioningService = Depends(_get_service),
 ) -> VersionDiff:
@@ -204,6 +227,7 @@ async def diff_versions(
         v2: Later version number.
         session: Injected async DB session.
         service: VersioningService instance.
+        current_user: Authenticated user (R5-O2-D2).
 
     Returns:
         VersionDiff with added, removed, and changed fields.

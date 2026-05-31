@@ -242,3 +242,140 @@ async def test_b05_versions_route_registered(asgi_app: Any) -> None:
     assert response.status_code != 404, (
         f"/versions/.../history not registered: {response.status_code}: {response.text}"
     )
+
+
+# ---------------------------------------------------------------------------
+# B-06..B-10: Regression — every /versions/* route returns 401 without auth.
+#
+# Closes R5-O2-D2 (5 versioning routes accepted unauthenticated traffic).
+# Each call below carries NO Authorization header; FastAPI's
+# ``OAuth2PasswordBearer`` (the dependency wired into ``get_current_user``)
+# must short-circuit the request with 401 BEFORE any handler runs.
+#
+# We assert ``in {401, 403}`` because some auth deps return 403 on a missing
+# Bearer token instead of 401; either status proves the route is gated.
+# 404 / 422 / 5xx would mean the handler executed unauthenticated and is a
+# hard regression.
+# ---------------------------------------------------------------------------
+
+
+_AUTH_DENIED: frozenset[int] = frozenset({401, 403})
+
+
+@pytest.mark.anyio
+async def test_b06_draft_route_requires_auth(asgi_app: Any) -> None:
+    """B-06 / R5-O2-D2: POST /versions/.../draft must 401 without auth."""
+    transport = httpx.ASGITransport(app=asgi_app, raise_app_exceptions=False)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/versions/article/abc/draft",
+            json={"data": {"title": "x"}},
+        )
+    assert response.status_code in _AUTH_DENIED, (
+        f"create_draft should reject unauth (R5-O2-D2): {response.status_code} {response.text}"
+    )
+
+
+@pytest.mark.anyio
+async def test_b07_publish_route_requires_auth(asgi_app: Any) -> None:
+    """B-07 / R5-O2-D2: POST /versions/.../publish/N must 401 without auth."""
+    transport = httpx.ASGITransport(app=asgi_app, raise_app_exceptions=False)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post("/api/v1/versions/article/abc/publish/1")
+    assert response.status_code in _AUTH_DENIED, (
+        f"publish_version should reject unauth (R5-O2-D2): {response.status_code} {response.text}"
+    )
+
+
+@pytest.mark.anyio
+async def test_b08_archive_route_requires_auth(asgi_app: Any) -> None:
+    """B-08 / R5-O2-D2: POST /versions/.../archive/N must 401 without auth."""
+    transport = httpx.ASGITransport(app=asgi_app, raise_app_exceptions=False)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post("/api/v1/versions/article/abc/archive/1")
+    assert response.status_code in _AUTH_DENIED, (
+        f"archive_version should reject unauth (R5-O2-D2): {response.status_code} {response.text}"
+    )
+
+
+@pytest.mark.anyio
+async def test_b09_history_route_requires_auth(asgi_app: Any) -> None:
+    """B-09 / R5-O2-D2: GET /versions/.../history must 401 without auth."""
+    transport = httpx.ASGITransport(app=asgi_app, raise_app_exceptions=False)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/v1/versions/article/abc/history")
+    assert response.status_code in _AUTH_DENIED, (
+        f"get_version_history should reject unauth (R5-O2-D2): {response.status_code} {response.text}"
+    )
+
+
+@pytest.mark.anyio
+async def test_b10_diff_route_requires_auth(asgi_app: Any) -> None:
+    """B-10 / R5-O2-D2: GET /versions/.../diff/v1/v2 must 401 without auth."""
+    transport = httpx.ASGITransport(app=asgi_app, raise_app_exceptions=False)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/v1/versions/article/abc/diff/1/2")
+    assert response.status_code in _AUTH_DENIED, (
+        f"diff_versions should reject unauth (R5-O2-D2): {response.status_code} {response.text}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# B-11 / B-12: Regression — VersionCreate rejects extra fields (closes
+# R6-O3-P1 cluster: ``extra="forbid"``) and no longer carries
+# ``author_id`` (closes R5-O2-D2 mass-assignment vector).
+# ---------------------------------------------------------------------------
+
+
+def test_b11_version_create_rejects_extra_fields(project_dir: Path) -> None:
+    """B-11 / R6-O3-P1: VersionCreate must reject unknown body keys."""
+    from pydantic import ValidationError
+
+    _orig_path = sys.path.copy()
+    sys.path.insert(0, str(project_dir))
+    stale = [k for k in sys.modules if k == "app" or k.startswith("app.")]
+    for key in stale:
+        del sys.modules[key]
+    try:
+        from app.schemas.version import VersionCreate
+
+        # Valid baseline — known field only.
+        VersionCreate(data={"title": "x"})
+
+        # Extra field must be rejected (extra="forbid" → ValidationError).
+        with pytest.raises(ValidationError) as exc:
+            VersionCreate.model_validate({"data": {"title": "x"}, "hijack": "rogue"})
+        assert "hijack" in str(exc.value) or "extra" in str(exc.value).lower(), (
+            f"expected extra=forbid rejection, got: {exc.value}"
+        )
+    finally:
+        sys.path[:] = _orig_path
+
+
+def test_b12_version_create_has_no_author_id(project_dir: Path) -> None:
+    """B-12 / R5-O2-D2: ``author_id`` removed from VersionCreate.
+
+    A body-supplied author_id was the mass-assignment vector the original
+    finding called out; the field must NOT be a model field, AND with
+    ``extra="forbid"`` a request that names it must be rejected.
+    """
+    from pydantic import ValidationError
+
+    _orig_path = sys.path.copy()
+    sys.path.insert(0, str(project_dir))
+    stale = [k for k in sys.modules if k == "app" or k.startswith("app.")]
+    for key in stale:
+        del sys.modules[key]
+    try:
+        from app.schemas.version import VersionCreate
+
+        assert "author_id" not in VersionCreate.model_fields, (
+            "VersionCreate.author_id must be removed (R5-O2-D2): identity "
+            "comes from current_user, not request body"
+        )
+        with pytest.raises(ValidationError):
+            VersionCreate.model_validate(
+                {"data": {"k": "v"}, "author_id": "00000000-0000-0000-0000-000000000000"}
+            )
+    finally:
+        sys.path[:] = _orig_path
