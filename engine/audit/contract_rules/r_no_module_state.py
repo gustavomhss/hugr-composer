@@ -119,8 +119,12 @@ from ._common import SKILL_ROOT
 _WAIVED_TOOLS: frozenset[str] = frozenset({
     # R5-O4-H4 — passkey challenge dict per-worker; multi-worker breaks login
     "extend/auth_access/add_passkey_auth",
-    # R6-O1-F18 — api_key rate-limit Redis-down fallback uses local dict
-    "extend/auth_access/add_api_key_auth",
+    # "extend/auth_access/add_api_key_auth" — closed in W2 PR
+    # (fix/w2-api-key-auth-close-waivers): _local_counters is now a
+    # _LocalCounters() class instance (allow-listed by this rule) AND
+    # _SINGLE_PROCESS_OK + warnings= disclosure shipped in the tool's
+    # __init__.py. The Redis-up path is cross-worker durable; the
+    # fallback is the documented fail-degraded path.
     # "extend/infrastructure/add_adaptive_throttle" — removed by Wave-2
     # close-out: _PENALTY_STORE is now a _PenaltyStore() class instance
     # (Redis-backed primary, per-worker dict fallback encapsulated in

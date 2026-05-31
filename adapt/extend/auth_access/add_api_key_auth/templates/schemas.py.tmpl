@@ -3,13 +3,17 @@
 ``APIKeyPublic`` intentionally omits ``secret_hash`` and any plaintext.
 ``APIKeyCreatedResponse`` is the ONLY schema that carries the plaintext token
 and is only returned by the POST /api-keys/ endpoint.
+
+Both write schemas (``APIKeyCreate``, ``APIKeyUpdate``) declare
+``model_config = ConfigDict(extra="forbid")`` per CONTRACT §B0.14
+(write_schemas_strict_forbid) so unknown keys are rejected at the
+input boundary — defends against mass-assignment / key-smuggling.
 """
 
 from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -17,29 +21,42 @@ from pydantic import BaseModel, ConfigDict, Field
 class APIKeyCreate(BaseModel):
     """Input schema for creating a new API key.
 
+    Unknown keys are rejected (``extra="forbid"``) — the input boundary
+    will not silently accept fields the API does not understand. An
+    earlier draft accepted an ``environment`` field that was never
+    persisted or honoured downstream (R6-O3 schema-drift cluster); the
+    field has been removed rather than left as a silent no-op. If
+    live/test key segregation is needed later it must be wired through
+    the model + hasher + CRUD + token format end-to-end.
+
     Attributes:
         name: Short human-readable label.
         description: Optional extended description.
         scopes: List of resource:action scope strings.
         expires_at: Optional hard expiry timestamp.
-        environment: Key environment prefix (live or test).
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     name: str = Field(..., min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=500)
     scopes: list[str] = Field(default_factory=lambda: ["read"])
     expires_at: datetime | None = None
-    environment: Literal["live", "test"] = "live"
 
 
 class APIKeyUpdate(BaseModel):
     """Input schema for updating an existing API key.
+
+    Unknown keys are rejected (``extra="forbid"``) — see ``APIKeyCreate``
+    for the rationale.
 
     Attributes:
         name: New human-readable label.
         description: New optional description.
         scopes: Replacement list of scope strings.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     name: str | None = Field(default=None, min_length=1, max_length=255)
     description: str | None = None

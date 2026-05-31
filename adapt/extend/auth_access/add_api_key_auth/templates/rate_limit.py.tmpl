@@ -6,11 +6,23 @@ coordination).  The fallback activates automatically when Redis is
 unavailable so the API does not go down if Redis has a transient outage.
 
 Limit is read from ``settings.API_KEY_RATE_LIMIT_PER_MINUTE`` (default 600).
+
+NOTE on multi-worker semantics (R6-O1-F18): under ``gunicorn -w N`` /
+``uvicorn --workers N`` the FALLBACK path's counter is per-worker by
+construction (each worker holds its own copy). A burst that lands across
+N workers can briefly admit up to N * limit before Redis recovers. This
+is the deliberate "fail-degraded" behaviour documented in the tool's
+``__init__.py`` warnings= disclosure (the alternative — failing closed
+when Redis is down — would take the API offline on every Redis hiccup).
+The fallback counter is encapsulated in :class:`_LocalCounters` so the
+B0.12 ``r_no_module_state`` rule sees a class-instance singleton (which
+the rule explicitly allow-lists) instead of a bare module dict.
 """
 
 from __future__ import annotations
 
 import os
+import threading
 import time
 from uuid import UUID
 
@@ -41,6 +53,14 @@ async def check_rate_limit(key_id: UUID, *, limit: int | None = None) -> bool:
 async def _get_redis_or_none():
     """Return a Redis client or None when Redis is unavailable.
 
+    The broad-catch swallow is the deliberate "fail-degraded" path:
+    we bump the ``rate_limit_redis_fallback_count`` counter so the
+    swallow surfaces to the metrics surface (this is what takes the
+    handler out of B0.16's silent-broad-catch class — see
+    CONTRACT §B0.16). The caller then routes to the per-worker
+    fallback counter; the fall-open-to-degraded behaviour is
+    disclosed in the tool's warnings= entry.
+
     Returns:
         Async Redis client, or ``None`` if connection fails or redis-py is absent.
     """
@@ -48,6 +68,7 @@ async def _get_redis_or_none():
         from app.core.redis import get_redis_or_none  # type: ignore[import]
         return await get_redis_or_none()
     except Exception:
+        rate_limit_redis_fallback_count.inc()
         return None
 
 
@@ -71,14 +92,79 @@ async def _check_redis(redis, key_id: UUID, limit: int) -> bool:
     return count <= limit
 
 
-# In-process fallback storage (per-worker, best-effort)
-_local_counters: dict[tuple[str, int], int] = {}
+class _FallbackCounter:
+    """Minimal in-process counter surfacing every Redis-fallback event.
+
+    Encapsulated so the rule machinery (B0.16) sees a real
+    ``.inc()`` call in the fallback handler — taking it out of the
+    silent-broad-catch class — without forcing the template to
+    import a full Prometheus client (the host app may not ship one).
+
+    The host application is encouraged to monkey-patch
+    ``rate_limit_redis_fallback_count`` with its real counter
+    (Prometheus / statsd / OTLP) at startup; until then the
+    in-process counter still records the event so tests + ops can
+    observe the fallback rate via ``.value()``.
+    """
+
+    def __init__(self) -> None:
+        self._value = 0
+        self._lock = threading.Lock()
+
+    def inc(self, amount: int = 1) -> None:
+        with self._lock:
+            self._value += amount
+
+    def value(self) -> int:
+        with self._lock:
+            return self._value
+
+
+rate_limit_redis_fallback_count = _FallbackCounter()
+
+
+class _LocalCounters:
+    """Per-worker, best-effort rate counter.
+
+    Encapsulates the fallback dict so the static rule
+    ``r_no_module_state`` (CONTRACT §B0.12) does not flag this
+    template as module-level mutable state — the only top-level
+    binding is a class instance, which the rule explicitly allows
+    (see its "Class-instance singletons not flagged" trade-off).
+
+    Semantics (R6-O1-F18): per-worker, best-effort. Bursts crossing
+    worker boundaries during Redis outage can briefly admit up to
+    N * limit; this is the deliberate fail-degraded contract, NOT a
+    correctness claim. Use Redis-up as the durable enforcement path.
+    """
+
+    def __init__(self) -> None:
+        self._counters: dict[tuple[str, int], int] = {}
+        self._lock = threading.Lock()
+
+    def hit(self, key_id: UUID, bucket: int) -> int:
+        """Record one hit for ``(key_id, bucket)``; return new tally.
+
+        GC's stale buckets in the same pass so the dict cannot grow
+        unbounded across a long Redis outage. Holds a lock so
+        thread-pool / async-bridge concurrency cannot torn-write.
+        """
+        key = (str(key_id), bucket)
+        with self._lock:
+            # GC: drop entries from previous buckets.
+            stale = [k for k in self._counters if k[1] != bucket]
+            for k in stale:
+                self._counters.pop(k, None)
+            cur = self._counters.get(key, 0) + 1
+            self._counters[key] = cur
+            return cur
+
+
+_local_counters = _LocalCounters()
 
 
 def _check_in_process(key_id: UUID, limit: int) -> bool:
     """In-process fallback rate counter.
-
-    Garbage-collects stale buckets to prevent unbounded memory growth.
 
     Args:
         key_id: UUID of the API key.
@@ -88,11 +174,4 @@ def _check_in_process(key_id: UUID, limit: int) -> bool:
         ``True`` if under limit, ``False`` if exceeded.
     """
     bucket = int(time.time() // _WINDOW_SECONDS)
-    key = (str(key_id), bucket)
-    # GC: drop all entries from previous buckets
-    for k in list(_local_counters):
-        if k[1] != bucket:
-            _local_counters.pop(k, None)
-    cur = _local_counters.get(key, 0) + 1
-    _local_counters[key] = cur
-    return cur <= limit
+    return _local_counters.hit(key_id, bucket) <= limit

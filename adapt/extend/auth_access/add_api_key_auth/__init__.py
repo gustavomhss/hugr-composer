@@ -18,6 +18,12 @@ from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 _HERE = Path(__file__).parent
 
+# B0.12 bypass — the rate-limit fallback counter is per-worker by
+# construction (each worker holds its own _LocalCounters instance).
+# The Redis-primary path IS cross-worker durable; the fallback is the
+# fail-degraded path documented in the warnings= disclosure below.
+_SINGLE_PROCESS_OK: bool = True
+
 MCP_TOOL = {
     "name": "fastapi_auth_add_api_key_auth",
     "description": "Add API key authentication alongside the existing JWT auth.",
@@ -36,6 +42,16 @@ _NOTES_SUCCESS = [
     "argon2id branch relies on argon2-cffi internal compare.",
     "⚠ In-process rate-limit fallback is PER-WORKER only — cross-worker limits "
     "ARE NOT ENFORCED when Redis is absent.",
+]
+# B0.12 bypass disclosure — the rule's docstring requires a warnings=
+# entry containing the substring "single-process" (case-insensitive).
+# Surfaces the multi-worker degradation contract to agents at compose
+# time so they cannot ship the tool blind to the trade-off.
+_WARNINGS_SUCCESS = [
+    "single-process fallback: rate-limit counter is per-worker when Redis is "
+    "down (gunicorn -w N admits up to N * limit briefly during a Redis outage). "
+    "Watch the rate_limit_redis_fallback_count metric to detect sustained "
+    "fallback windows; for strict cross-worker enforcement keep Redis up.",
 ]
 _NEXT_STEPS = [
     "Add API_KEY_PEPPER and API_KEY_RATE_LIMIT_PER_MINUTE to app/core/config.py settings.",
@@ -167,6 +183,7 @@ def add_api_key_auth(inp: ToolInput) -> ToolResult:
         files_created=files_created,
         files_modified=files_modified,
         notes=_NOTES_SUCCESS,
+        warnings=_WARNINGS_SUCCESS,
         next_steps=_NEXT_STEPS,
         execution_time_ms=_ms(start),
     )
