@@ -8,8 +8,15 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+# Single source of truth for the tenant lifecycle states. The ORM
+# CheckConstraint in tenant_model.py ("status IN ('active', 'suspended',
+# 'archived')") MUST match this tuple — if a state is ever added, both
+# the constraint AND this Literal alias have to be updated in lockstep.
+TenantStatus = Literal["active", "suspended", "archived"]
 
 
 class TenantBase(BaseModel):
@@ -20,7 +27,11 @@ class TenantBase(BaseModel):
         name: Human-readable display name.
     """
 
-    model_config = ConfigDict(from_attributes=True)
+    # B0.14 (CONTRACT §B0.14 / R6-O3-P13): WRITE schemas at the input
+    # boundary MUST declare ``extra="forbid"`` so unknown keys are
+    # rejected at parse time (mass-assignment defence). Subclasses
+    # (TenantCreate) inherit this config.
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
 
     slug: str = Field(..., min_length=1, max_length=63)
     name: str = Field(..., min_length=1, max_length=255)
@@ -38,10 +49,19 @@ class TenantUpdate(BaseModel):
         status: New status — one of 'active', 'suspended', 'archived' (optional).
     """
 
-    model_config = ConfigDict(from_attributes=True)
+    # B0.14 (R6-O3-P13): close the mass-assignment surface on PATCH.
+    # Pre-fix the schema accepted arbitrary extras, so a smuggled
+    # ``id`` / ``created_at`` / ``slug`` slipped through model_dump and
+    # was setattr'd onto the ORM row in tenant_crud.update().
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
 
     name: str | None = Field(default=None, min_length=1, max_length=255)
-    status: str | None = Field(default=None)
+    # R6-O3-P13: status was ``str | None`` — any string was accepted at
+    # the API boundary and only the DB CheckConstraint (status IN (...))
+    # rejected the bad value, surfacing as an IntegrityError on flush
+    # instead of a 422. Constrain at the boundary with a Literal that
+    # mirrors the constraint enum verbatim.
+    status: TenantStatus | None = Field(default=None)
 
 
 class TenantPublic(TenantBase):
@@ -53,6 +73,11 @@ class TenantPublic(TenantBase):
         created_at: UTC creation timestamp.
     """
 
+    # Response schema — relax the strictness inherited from TenantBase
+    # so additional ORM attributes (e.g. future audit columns) don't
+    # break read paths. Read shapes are out of scope for B0.14.
+    model_config = ConfigDict(from_attributes=True, extra="ignore")
+
     id: uuid.UUID
-    status: str
+    status: TenantStatus
     created_at: datetime
