@@ -233,9 +233,16 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
     # P4 — "signature-verified" webhook claim; no engine-level test
     # asserts the verification branch rejects forged signatures.
     "extend/infrastructure/add_stripe_refund_flow",
-    # P4 — same as add_stripe_refund_flow but on the subscription
-    # webhook.
-    "extend/infrastructure/add_stripe_subscription",
+    # add_stripe_subscription — closed in W2 PR
+    # (fix/w2-stripe-subscription-close-waivers): pair test at
+    # engine/tests/test_add_stripe_subscription_notes_invariants.py
+    # asserts (a) the emitted stripe_webhook route calls
+    # billing.construct_webhook_event(payload, sig_header), (b) the call
+    # is wrapped in try/except that re-raises HTTPException(400) on
+    # verification failure, and (c) the StripeBillingAdapter wrapper
+    # delegates to stripe.Webhook.construct_event so the chain anchors
+    # to the SDK primitive named in the notes line. Closes
+    # R6-S2-F11 / R5-O3-F5 cluster for this tool.
     # P4 — "idempotent" consumer claim; no engine-level test asserts
     # the IdempotentConsumer drops replays.
     "extend/realtime/add_webhook_receiver",
