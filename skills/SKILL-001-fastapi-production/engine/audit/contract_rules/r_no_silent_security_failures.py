@@ -147,10 +147,14 @@ from ._common import SKILL_ROOT
 #
 # Format: { "extend/<wp>/<tool_name>", ... }  (relative to ADAPT_ROOT)
 _WAIVED_TOOLS: frozenset[str] = frozenset({
-    # P7-F1 — _get_redis_or_none returns None on any failure; caller
-    # then skips rate limiting (Redis-down → fail-open).
-    # Offender: rate_limit.py.tmpl:50 (`except Exception: return None`)
-    "extend/auth_access/add_api_key_auth",
+    # "extend/auth_access/add_api_key_auth" — closed in W2 PR
+    # (fix/w2-api-key-auth-close-waivers): _get_redis_or_none() now
+    # bumps the rate_limit_redis_fallback_count counter inside the
+    # broad-catch handler so the swallow surfaces to the metrics
+    # surface (takes it out of B0.16's silent class). The
+    # "fail-degraded" semantic (per-worker fallback admits up to
+    # N * limit during a Redis outage) is documented in the tool's
+    # warnings= disclosure under the B0.12 _SINGLE_PROCESS_OK bypass.
     # P7-F2 — SQLAlchemy mapper inspect swallow in tenant_filter; if
     # mapper introspection fails AND column dict is missing,
     # cross-tenant rows leak.

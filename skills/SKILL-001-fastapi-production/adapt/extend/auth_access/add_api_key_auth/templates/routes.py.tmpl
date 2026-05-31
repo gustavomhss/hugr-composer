@@ -32,7 +32,7 @@ async def create_api_key(
     ``api_<key_id>_<secret>``; pass it as ``Authorization: Bearer <token>``.
 
     Args:
-        key_in: Key creation parameters (name, scopes, expiry, environment).
+        key_in: Key creation parameters (name, scopes, expiry).
         session: Injected async database session.
         current_user: Authenticated user who will own the key.
 
