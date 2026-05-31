@@ -1,16 +1,81 @@
-"""Pydantic schemas for the feature-flag subsystem."""
+"""Pydantic schemas for the feature-flag subsystem.
+
+CONTRACT §B0.14 (Pattern P5) — write schemas (``Create`` / ``Update``) carry
+``model_config = ConfigDict(extra="forbid")`` and replace the legacy
+``list[dict[str, Any]]`` mass-assignment surface for ``targeting_rules`` /
+``variants`` with typed sub-models (``TargetingRule`` / ``Variant``). This
+closes R6-O3-P9 — see ``r_write_schemas_strict.py`` for the rule scope.
+
+The sub-model field names mirror the keys the evaluator actually reads
+(``attribute`` / ``operator`` / ``value`` / ``return_value`` for rules;
+``name`` / ``weight`` for variants — see ``evaluator.py.tmpl::_match_targeting``
+and ``_evaluate_variant``). Keeping schema and runtime in lockstep removes
+the silent-coercion class of bug where Pydantic accepts a key the evaluator
+ignores.
+"""
 
 from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
+# ---------------------------------------------------------------------------
+# Sub-models for the structured columns (targeting_rules + variants).
+# Both carry extra="forbid" so unknown keys raise on the input boundary.
+# ---------------------------------------------------------------------------
+
+
+# Scalar values accepted by targeting comparisons. ``list[...]`` is allowed
+# so ``operator="in"`` / ``"not_in"`` can carry a multi-value target
+# (matches the runtime in ``evaluator._check_op``).
+_ScalarValue = str | int | float | bool
+_RuleValue = _ScalarValue | list[_ScalarValue]
+
+
+class TargetingRule(BaseModel):
+    """A single attribute-based targeting rule.
+
+    The evaluator reads ``attribute`` from :class:`FlagContext`, applies
+    ``operator`` against ``value``, and (on match) returns ``return_value``
+    as the flag result. Operators are bounded by what
+    ``evaluator._check_op`` actually implements; adding a new operator is
+    a coordinated runtime+schema change.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    attribute: str = Field(..., min_length=1, max_length=64)
+    operator: Literal["equals", "in", "not_in"] = "equals"
+    value: _RuleValue
+    return_value: _ScalarValue | None = None
+
+
+class Variant(BaseModel):
+    """A single variant entry for multivariate flags.
+
+    ``weight`` is an integer percentage 0..100; the evaluator bucketises
+    on the cumulative sum (see ``_evaluate_variant``). ``name`` is the
+    string the evaluator returns when a user's bucket falls in this
+    variant's slice.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(..., min_length=1, max_length=64)
+    weight: int = Field(..., ge=0, le=100)
+
+
+# ---------------------------------------------------------------------------
+# Read shape — exempt from extra="forbid" per spec; ships from_attributes.
+# ---------------------------------------------------------------------------
+
+
 class FeatureFlagBase(BaseModel):
-    """Shared fields for flag create/update.
+    """Shared fields for flag read/write.
 
     Attributes:
         key: URL/code-safe flag identifier.
@@ -18,8 +83,8 @@ class FeatureFlagBase(BaseModel):
         flag_type: One of 'boolean', 'variant', 'json'.
         enabled: Master on/off switch.
         rollout_percentage: 0-100 percentage rollout.
-        targeting_rules: List of attribute-based rule dicts.
-        variants: List of variant weight dicts.
+        targeting_rules: Typed list of :class:`TargetingRule`.
+        variants: Typed list of :class:`Variant`.
         kill_switch: Override that forces evaluation to False.
     """
 
@@ -30,28 +95,44 @@ class FeatureFlagBase(BaseModel):
     flag_type: str = Field(default="boolean")
     enabled: bool = Field(default=False)
     rollout_percentage: int = Field(default=0, ge=0, le=100)
-    targeting_rules: list[dict[str, Any]] = Field(default_factory=list)
-    variants: list[dict[str, Any]] = Field(default_factory=list)
+    targeting_rules: list[TargetingRule] = Field(default_factory=list)
+    variants: list[Variant] = Field(default_factory=list)
     kill_switch: bool = Field(default=False)
 
 
+# ---------------------------------------------------------------------------
+# Write shapes — extra="forbid" required. Both schemas are inputs to the
+# admin API; an attacker who can POST to /feature-flags can mass-assign
+# fields the rule rejects (e.g. attempts to smuggle ``updated_by`` or
+# ``id`` into a Create). The forbid kw plus typed sub-models is what
+# B0.14 enforces.
+# ---------------------------------------------------------------------------
+
+
 class FeatureFlagCreate(FeatureFlagBase):
-    """Input schema for creating a new feature flag."""
+    """Input schema for creating a new feature flag.
+
+    Inherits ``FeatureFlagBase`` for field shape; the local ``model_config``
+    overrides the base's ``from_attributes`` to add ``extra="forbid"``.
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class FeatureFlagUpdate(BaseModel):
     """Input schema for partially updating a feature flag.
 
-    All fields are optional — only provided fields are applied.
+    All fields are optional — only provided fields are applied. Mirrors
+    the write-side bounds (typed sub-models, no ``dict[..., Any]``).
     """
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(extra="forbid")
 
     description: str | None = Field(default=None)
     enabled: bool | None = Field(default=None)
     rollout_percentage: int | None = Field(default=None, ge=0, le=100)
-    targeting_rules: list[dict[str, Any]] | None = Field(default=None)
-    variants: list[dict[str, Any]] | None = Field(default=None)
+    targeting_rules: list[TargetingRule] | None = Field(default=None)
+    variants: list[Variant] | None = Field(default=None)
     kill_switch: bool | None = Field(default=None)
 
 
