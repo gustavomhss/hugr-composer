@@ -1,4 +1,16 @@
-"""Pydantic schemas for API billing/metering endpoints."""
+"""Pydantic schemas for API billing/metering endpoints.
+
+Money fields use **integer cents** (``int``), not ``float`` — Pydantic's
+default float behaviour silently loses precision around 1e-2 (one US
+cent) and round-tripping breaks Stripe's required exact-amount
+semantics (R6-O3-P14). The Stripe ``amount_cents`` pattern used
+elsewhere in this codebase is mirrored here for consistency.
+
+Write schemas (``*Request`` / ``*In`` / ``*Create`` / etc.) declare
+``model_config = ConfigDict(extra="forbid")`` to block mass-assignment
+and key-smuggling (B0.14 / R6-S8-F2). Read schemas keep the
+``from_attributes=True`` ORM-mode pattern and are exempt.
+"""
 
 from __future__ import annotations
 
@@ -32,18 +44,42 @@ class UsageHistoryItem(BaseModel):
     created_at: datetime
 
 
+class TopConsumer(BaseModel):
+    """One entry in the admin analytics top-consumers list."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    tenant_id: str
+    calls: int
+
+
 class PlanInfo(BaseModel):
-    """Information about an available billing plan."""
+    """Information about an available billing plan.
+
+    ``price_monthly_cents`` is an integer count of US cents (e.g. 2900
+    for USD 29.00) — see module docstring on why money is never ``float``.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
 
     plan_id: str
     name: str
     monthly_limit: int
-    price_monthly_usd: float
+    price_monthly_cents: int = Field(
+        ..., ge=0, description="Monthly price in US cents (integer, no float)."
+    )
     stripe_price_id: str
 
 
 class UpgradeRequest(BaseModel):
-    """Request body for self-serve plan upgrade."""
+    """Request body for self-serve plan upgrade.
+
+    ``extra="forbid"`` blocks the mass-assignment / key-smuggling class
+    of finding (B0.14 / R6-S8-F2): a client cannot smuggle extra
+    fields into the request envelope.
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
     plan_id: str = Field(..., description="Target plan identifier")
     stripe_payment_method_id: str = Field(
@@ -54,6 +90,8 @@ class UpgradeRequest(BaseModel):
 class UpgradeResponse(BaseModel):
     """Response after a successful plan upgrade."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     tenant_id: str
     new_plan: str
     effective_date: str
@@ -61,10 +99,18 @@ class UpgradeResponse(BaseModel):
 
 
 class RevenueAnalytics(BaseModel):
-    """Admin-only revenue analytics snapshot."""
+    """Admin-only revenue analytics snapshot.
 
-    mrr_usd: float
+    ``mrr_cents`` is an integer count of US cents — see module
+    docstring on why money is never ``float``.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    mrr_cents: int = Field(
+        ..., ge=0, description="Monthly recurring revenue in US cents (integer)."
+    )
     total_active_tenants: int
     total_api_calls_this_month: int
-    top_consumers: list[dict]
+    top_consumers: list[TopConsumer]
     churn_risk_tenants: list[str]

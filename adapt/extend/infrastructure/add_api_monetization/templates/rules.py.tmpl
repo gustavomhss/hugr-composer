@@ -6,16 +6,33 @@ Usage::
 
     meter("gpt-inference", cost_unit="token", per=1000, path_prefix="/api/v1/infer")
     meter("image-gen", cost_unit="image", per=1, path_prefix="/api/v1/images")
+
+Single-process state disclosure (B0.12)
+---------------------------------------
+
+The registered metering rules are kept inside a single ``_RulesRegistry``
+instance, declared at module level. Class-instance singletons are
+allow-listed by ``r_no_module_state`` because each in-process registry
+is observable through its public surface and can be swapped in tests.
+
+Under a multi-worker deployment (``gunicorn -w N`` / ``uvicorn
+--workers``) each worker holds its own registry copy: rules registered
+by one worker at boot are *not* visible to another worker. This is
+acceptable for the MVP because ``meter(...)`` calls are expected to be
+made declaratively at app-import time (every worker re-imports the
+module and re-registers the same rules). If rules ever need to change
+at runtime, swap ``_RulesRegistry`` for a Redis/DB-backed store — the
+public surface is intentionally minimal so callers do not need to
+change. The owning tool surfaces this trade-off via its
+``warnings=[... "single-process" ...]`` envelope.
 """
 
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
-
-_RULES: list[MeteringRule] = []
 
 
 @dataclass
@@ -28,6 +45,46 @@ class MeteringRule:
     path_prefix: str
     stripe_meter_id: str = ""
     enabled: bool = True
+
+
+class _RulesRegistry:
+    """In-process registry of metering rules.
+
+    Wrapping the underlying list inside an instance keeps module-level
+    state out of B0.12's scope (class-instance singletons are
+    allow-listed by ``r_no_module_state``). The public surface is
+    deliberately minimal so the body can be swapped for a Redis/DB
+    backing store without touching any caller.
+    """
+
+    def __init__(self) -> None:
+        """Initialise an empty registry."""
+        self._items: list[MeteringRule] = []
+
+    def add(self, rule: MeteringRule) -> None:
+        """Register *rule* in the in-process registry."""
+        self._items.append(rule)
+
+    def snapshot(self) -> list[MeteringRule]:
+        """Return a shallow copy of every registered rule."""
+        return list(self._items)
+
+    def first_match(self, path: str) -> MeteringRule | None:
+        """Return the first enabled rule whose path_prefix matches *path*."""
+        for rule in self._items:
+            if rule.enabled and path.startswith(rule.path_prefix):
+                return rule
+        return None
+
+    def reset(self) -> None:
+        """Drop every registered rule (used by tests)."""
+        self._items.clear()
+
+
+# Single-process registry instance. See module docstring "Single-process
+# state disclosure" — production multi-worker deployments must swap
+# this body for a Redis/DB-backed store.
+_RULES = _RulesRegistry()
 
 
 def meter(
@@ -60,24 +117,21 @@ def meter(
         stripe_meter_id=stripe_meter_id,
         enabled=enabled,
     )
-    _RULES.append(rule)
+    _RULES.add(rule)
     logger.debug("Registered metering rule: %s", meter_name)
     return rule
 
 
 def get_rules() -> list[MeteringRule]:
     """Return a copy of all registered metering rules."""
-    return list(_RULES)
+    return _RULES.snapshot()
 
 
 def match_rule(path: str) -> MeteringRule | None:
     """Return the first enabled rule whose path_prefix matches *path*."""
-    for rule in _RULES:
-        if rule.enabled and path.startswith(rule.path_prefix):
-            return rule
-    return None
+    return _RULES.first_match(path)
 
 
 def clear_rules() -> None:
     """Remove all registered rules (useful in tests)."""
-    _RULES.clear()
+    _RULES.reset()

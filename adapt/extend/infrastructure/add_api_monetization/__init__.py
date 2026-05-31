@@ -23,6 +23,19 @@ from adapt.contracts.migration_helper import find_migration_head
 
 _HERE = Path(__file__).parent
 
+# B0.12 — emitted ``rules.py`` keeps the registered metering rules
+# inside a ``_RulesRegistry`` instance, and emitted
+# ``stripe_meter_sync.py`` keeps the dead-letter queue inside a
+# ``_DeadLetterQueue`` instance. Both bodies are in-process; under a
+# multi-worker deployment each worker has its own copy. The
+# class-instance wrapping keeps these off B0.12's ``no_module_state``
+# AST radar (instance state is allow-listed), and this flag + the
+# ``single-process`` ``warnings=`` entry below disclose the trade-off
+# explicitly. Production multi-worker deployments should swap the
+# registry / queue bodies for Redis or DB-backed storage — see each
+# emitted module's docstring.
+_SINGLE_PROCESS_OK: bool = True
+
 MCP_TOOL = {
     "name": "fastapi_resiliency_add_api_monetization",
     "description": (
@@ -198,6 +211,26 @@ def add_api_monetization(inp: ToolInput) -> ToolResult:
             "GET /billing/usage, GET /billing/history, GET /billing/limits,",
             "POST /billing/upgrade, GET /billing/plans,",
             "Usage alerts at 80/90/100%, admin revenue analytics.",
+            "Money fields use integer US cents (int), not float — see "
+            "app/schemas/billing.py module docstring.",
+        ],
+        warnings=[
+            # B0.12 disclosure — paired with _SINGLE_PROCESS_OK = True
+            # in this module. The emitted _RulesRegistry and
+            # _DeadLetterQueue are single-process; under multi-worker
+            # (gunicorn -w N / uvicorn --workers) each worker has its
+            # own registry/queue copy. Rules registered declaratively
+            # at app-import time re-populate on every worker so that
+            # path is safe, but dead-lettered events are visible only
+            # on the worker that recorded them — operators must drain
+            # via an out-of-band cron (single-process) or swap the
+            # _DeadLetterQueue body for Redis/DB-backed storage for
+            # cross-worker visibility.
+            "Metering rules registry and Stripe dead-letter queue are "
+            "single-process (in-memory). Multi-worker deployments: "
+            "register rules declaratively at import-time on every "
+            "worker, and replace _DeadLetterQueue with Redis/DB-backed "
+            "storage if cross-worker visibility is required.",
         ],
         next_steps=[
             "alembic upgrade head",

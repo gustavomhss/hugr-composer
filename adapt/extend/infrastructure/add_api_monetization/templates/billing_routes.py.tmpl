@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.schemas.billing import (
     PlanInfo,
     RevenueAnalytics,
+    TopConsumer,
     UpgradeRequest,
     UpgradeResponse,
     UsageHistoryItem,
@@ -24,33 +25,36 @@ router = APIRouter(prefix="/billing", tags=["billing"])
 # Hard-coded plan catalogue (replace with DB or config in production)
 # ---------------------------------------------------------------------------
 
+# Prices are in integer US cents (e.g. 2_900 = USD 29.00). See
+# ``app.schemas.billing`` module docstring on why money is never
+# stored as ``float``.
 _PLANS: list[PlanInfo] = [
     PlanInfo(
         plan_id="free",
         name="Free",
         monthly_limit=1_000,
-        price_monthly_usd=0.0,
+        price_monthly_cents=0,
         stripe_price_id="",
     ),
     PlanInfo(
         plan_id="starter",
         name="Starter",
         monthly_limit=50_000,
-        price_monthly_usd=29.0,
+        price_monthly_cents=2_900,
         stripe_price_id="price_starter_placeholder",
     ),
     PlanInfo(
         plan_id="growth",
         name="Growth",
         monthly_limit=500_000,
-        price_monthly_usd=99.0,
+        price_monthly_cents=9_900,
         stripe_price_id="price_growth_placeholder",
     ),
     PlanInfo(
         plan_id="enterprise",
         name="Enterprise",
         monthly_limit=10_000_000,
-        price_monthly_usd=499.0,
+        price_monthly_cents=49_900,
         stripe_price_id="price_enterprise_placeholder",
     ),
 ]
@@ -145,10 +149,12 @@ async def revenue_analytics() -> RevenueAnalytics:
     top = sorted(cache.items(), key=lambda kv: kv[1].current_usage, reverse=True)[:5]
 
     return RevenueAnalytics(
-        mrr_usd=0.0,
+        mrr_cents=0,
         total_active_tenants=len(cache),
         total_api_calls_this_month=total_calls,
-        top_consumers=[{"tenant_id": k, "calls": v.current_usage} for k, v in top],
+        top_consumers=[
+            TopConsumer(tenant_id=k, calls=v.current_usage) for k, v in top
+        ],
         churn_risk_tenants=[],
     )
 

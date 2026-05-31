@@ -120,14 +120,16 @@ _PRAGMA_RE = re.compile(r"#\s*pragma:\s*schema-any:\s*(.+?)\s*$")
 # removed → next CI run keeps the rule green).
 _WAIVED_TOOLS: frozenset[str] = frozenset(
     {
-        # "add_api_key_auth" — closed in W2 PR
+        # "add_api_key_auth" — closed Wave-2
         # (fix/w2-api-key-auth-close-waivers): APIKeyCreate + APIKeyUpdate
-        # now declare ``model_config = ConfigDict(extra="forbid")``. The
-        # drift field ``environment`` (accepted but never persisted) has
-        # been removed rather than left as a silent no-op — if live/test
-        # segregation is needed later it must be wired through model +
-        # hasher + CRUD + token format end-to-end.
-        "add_api_monetization",
+        # now declare ``model_config = ConfigDict(extra="forbid")``. Drift
+        # field ``environment`` removed.
+        # "add_api_monetization" — closed Wave-2
+        # (fix/w2-api-monetization-close-waivers): UpgradeRequest now
+        # carries ``model_config = ConfigDict(extra="forbid")``,
+        # RevenueAnalytics replaces ``list[dict]`` with typed
+        # ``list[TopConsumer]``, money fields migrated to integer cents.
+        # Closes R6-O3-P14 + R6-S8-F2.
         # "add_bulk_operations" — closed Wave-2 (B0.14):
         #   schema_addition.py.tmpl now ships `model_config =
         #   ConfigDict(extra="forbid")` on every Bulk{Create,Update,Delete}
