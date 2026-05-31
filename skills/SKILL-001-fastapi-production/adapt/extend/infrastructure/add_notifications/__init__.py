@@ -1,8 +1,21 @@
 """TOOL-063: add_notifications — in-app notification layer with channel dispatch.
 
-Honesty (§11 N1-N2, F-06): fan-out is best-effort (no retry budget, no exactly-once);
-``firebase_admin`` is lazy and missing-SDK is silent stub log; channel iteration
-order (in_app→push→email) is fixed by the if/elif ladder in the emitted template.
+Honesty (§11 N1-N2, F-06): the emitted ``channels.dispatch()`` is
+SINGLE-CHANNEL (the caller picks one of ``in_app | push | email``); there
+is NO fan-out loop and NO channel-order iteration. ``firebase_admin`` is
+lazy-imported and missing-SDK is a silent stub log; ``app.email.service``
+is imported lazily and missing-bridge is also a silent stub log. These
+honest limits are mirrored in the ``warnings=`` block of the success
+ToolResult (B0.13 disclosure surface) and are asserted by the paired
+honesty test at
+``engine/tests/test_add_notifications_notes_invariants.py``.
+
+Auth (closes R5-O3-F1 / R5-O3-F2): the emitted ``/notifications/*``
+routes carry ``Depends(get_current_user)`` and use ``current_user.id``
+server-side; the legacy ``user_id`` query parameter is removed. The
+``_get_session`` placeholder now yields a real ``AsyncSession`` from
+``app.core.session.get_session`` so the routes work without an
+override.
 """
 
 from __future__ import annotations
@@ -144,14 +157,32 @@ def add_notifications(inp: ToolInput, *, max_per_page: int = 50) -> ToolResult:
                 if has_email
                 else "email channel stub (add_email_templates not detected)."
             ),
-            "GET /notifications — paginated list (newest first).",
-            "POST /notifications/{id}/read — mark single notification read.",
-            "POST /notifications/read-all — bulk mark-all-read (single UPDATE).",
-            "GET /notifications/unread-count — fast COUNT(*) badge query.",
-            "WARNING: fan-out is best-effort — no per-channel retry budget, no exactly-once "
-            "guarantee. Unknown channels and missing firebase_admin log a warning and drop.",
-            "WARNING: emitted test asserts advisory signal (no crash + log) only — "
-            "not delivery; this matches the actual emitted dispatch semantics.",
+            "GET /notifications — paginated list (newest first), auth-required.",
+            "POST /notifications/{id}/read — mark single notification read, auth-required.",
+            "POST /notifications/read-all — bulk mark-all-read (single UPDATE), auth-required.",
+            "GET /notifications/unread-count — fast COUNT(*) badge query, auth-required.",
+            "All routes carry Depends(get_current_user); the owning user is bound to "
+            "current_user.id server-side (no user_id query parameter) — closes R5-O3-F1.",
+        ],
+        warnings=[
+            # B0.13 honest disclosure (replaces the pre-fix in-line "fan-out"
+            # claim in notes=). The emitted dispatch picks ONE channel per
+            # call — there is no multi-channel iteration. Paired test:
+            # engine/tests/test_add_notifications_notes_invariants.py.
+            "single-channel delivery: channels.dispatch() takes one of "
+            "{in_app, push, email} per call — there is NO fan-out loop and "
+            "NO channel-order iteration; the caller decides which channel "
+            "to send through (R5-O3-F9). Composite multi-channel delivery "
+            "is a downstream feature, see next_steps.",
+            "best-effort dispatch: no per-channel retry budget, no "
+            "exactly-once guarantee. Unknown channels, missing "
+            "firebase_admin, and missing app.email.service all log a "
+            "WARNING and silently drop the side-effect (the DB row is "
+            "still persisted because in_app writes happen before "
+            "dispatch).",
+            "Settings.NOTIFICATION_CHANNELS is currently advisory only — "
+            "the emitted dispatch ladder is hard-coded; the setting is "
+            "exposed for future use by an operator-built fan-out wrapper.",
         ],
         next_steps=[
             "alembic upgrade head",
@@ -160,6 +191,11 @@ def add_notifications(inp: ToolInput, *, max_per_page: int = 50) -> ToolResult:
             "Inject NotificationService where needed: "
             "from app.notifications import NotificationService",
             "Restart the FastAPI app so /notifications routes are loaded.",
+            "For multi-channel fan-out (one notification → in_app + push + "
+            "email): wrap NotificationService.send() in a loop over "
+            "settings.NOTIFICATION_CHANNELS — the per-channel dispatch is "
+            "already best-effort so a wrapper does not need new error "
+            "handling beyond logging.",
         ],
         execution_time_ms=_elapsed_ms(start),
     )

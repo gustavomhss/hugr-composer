@@ -9,7 +9,15 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class NotificationCreate(BaseModel):
-    """Input for creating a new notification (internal use)."""
+    """Input for creating a new notification (internal use).
+
+    Carries ``extra="forbid"`` (B0.14 / R6-O3 P5 cluster): the write
+    surface refuses unknown keys at parse time so an attacker (or a
+    careless caller) cannot smuggle ORM columns (``id``, ``read_at``,
+    ``created_at``) into a fresh row via mass-assignment.
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
     user_id: uuid.UUID
     title: str = Field(..., max_length=255)

@@ -160,15 +160,11 @@ _WAIVED_TOOLS: frozenset[str] = frozenset(
         "add_ml_model_registry",
         "add_ml_model_server",
         # "add_multi_tenancy" — closed Wave-2
-        # (fix/w2-multi-tenancy-close-waivers): TenantCreate (via
-        # TenantBase) AND TenantUpdate now declare ``model_config =
-        # ConfigDict(extra="forbid")`` so unknown keys are rejected at
-        # the input boundary. The PATCH ``status`` field is now bound
-        # to ``Literal["active", "suspended", "archived"] | None``
-        # (mirrors the DB CheckConstraint enum) so invalid statuses
-        # 422 at parse time instead of raising IntegrityError on flush.
-        # Closes R6-O3-P13.
-        "add_notifications",
+        # (fix/w2-multi-tenancy-close-waivers): TenantCreate/Update now
+        # declare extra="forbid"; status Literal-bound. Closes R6-O3-P13.
+        # "add_notifications" — closed Wave-2 (B0.14) in
+        # fix/w2-notifications-close-waivers: NotificationCreate declares
+        # extra="forbid". Closes the R6-O3 P5 cluster on this surface.
         # add_passkey_auth — closed Wave-2
         # (fix/w2-passkey-auth-close-waivers): every WRITE schema
         # (RegistrationBeginRequest / RegistrationCompleteRequest /
