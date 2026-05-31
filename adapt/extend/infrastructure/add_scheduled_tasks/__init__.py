@@ -33,6 +33,19 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 _HERE = Path(__file__).parent
 
+# B0.12 — emitted ``cron_jobs.py`` keeps declared @scheduled_job
+# entries inside a ``_JobsRegistry`` instance (class-instance
+# singleton, allow-listed by ``r_no_module_state``). The body is
+# in-process; under a multi-worker deployment each worker has its own
+# copy. Decorators run at module-import time on every worker so the
+# registry contents are identical across workers. The separate
+# "scheduler runs IN-PROCESS / not clustered" warning (already in this
+# tool's notes and in the emitted scheduler.py banner) covers the
+# distinct duplicate-fire risk. This flag + the ``single-process``
+# ``warnings=`` entry below disclose the registry trade-off
+# explicitly.
+_SINGLE_PROCESS_OK: bool = True
+
 MCP_TOOL = {
     "name": "fastapi_resiliency_add_scheduled_tasks",
     "description": (
@@ -162,6 +175,24 @@ def add_scheduled_tasks(inp: ToolInput) -> ToolResult:
             "Cron jobs registered via @scheduled_job decorator auto-start in main.py lifespan.",
             "3 example jobs generated: cleanup_expired_sessions, refresh_materialized_view, "
             "health_heartbeat.",
+        ],
+        warnings=[
+            # B0.12 disclosure — paired with _SINGLE_PROCESS_OK = True
+            # above. The emitted cron_jobs._JobsRegistry is
+            # in-process; under multi-worker (gunicorn -w N / uvicorn
+            # --workers) each worker has its own copy. Decorators run
+            # at import time on every worker so registry contents
+            # match across workers. The separate "scheduler runs
+            # IN-PROCESS / not clustered" risk (duplicate job
+            # execution across workers) is a distinct concern,
+            # mitigated by configuring SCHEDULER_JOBSTORE_URL — see
+            # scheduler.py and the not-clustered warning in this
+            # tool's notes.
+            "Cron jobs registry is single-process (in-memory) — the "
+            "@scheduled_job decorator populates it at import time on "
+            "every worker. Multi-worker scheduler execution remains a "
+            "separate concern: configure SCHEDULER_JOBSTORE_URL to a "
+            "Redis DSN to avoid duplicate firing across workers.",
         ],
         next_steps=[
             "pip install 'apscheduler>=3.10.0'",
