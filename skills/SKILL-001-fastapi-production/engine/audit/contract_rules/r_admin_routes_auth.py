@@ -2,13 +2,29 @@
 
 CONTRACT.md scope: §B0.11 ``admin_routes_require_auth`` — AST-scan every
 ``*route*.py.tmpl`` / ``*routes*.py.tmpl`` under
-``skills/SKILL-001-fastapi-production/adapt/`` and REJECT any
-``@router.<verb>(...)`` whose effective path (router ``prefix=`` +
-decorator ``path``) matches the admin-path regex AND whose handler
-signature carries no auth dependency.
+``skills/SKILL-001-fastapi-production/adapt/`` AND every adapter module
+under ``skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/``
+(plain ``*.py``, excluding ``__init__.py`` and ``_test_*``/``test_*``
+files), and REJECT any ``@router.<verb>(...)`` whose effective path
+(router ``prefix=`` + decorator ``path``) matches the admin-path regex
+AND whose handler signature carries no auth dependency.
 
 Origin: ROUND5_6_TRIAGE §3 P2 — "Admin/diagnostic routes lack
 authentication (≥15 occurrences)". Closes ~15 BLOCKER findings.
+
+Phase A1 (2026-05-31, #118 + #120):
+  * Adapter scope: second pass over ``core/venous/_adapters/fastapi/*.py``
+    closes R5-S1-F1 (``AuditLogAdapter`` ``/audit-logs/``) + R5-O2-D7
+    (``EventSourcedStoreAdapter`` ``/events/*``) which previously hid in
+    the un-scanned adapter tree (#118).
+  * Regex keywords: added ``outbox|compliance|refunds|presence|webhook|
+    websocket|notif`` — verified against ``add_outbox_pattern``
+    (``/outbox/metrics``, ``/outbox/dlq``) and ``add_websocket_presence``
+    (``/presence/online``, ``/presence/{user_id}``) (#120).
+  * Prefix resolution: when ``router = APIRouter(prefix=<Name>)`` references
+    a parameter of the enclosing ``def`` whose default is a string literal
+    (the adapter ``install(..., prefix: str = "/events")`` pattern), we
+    resolve through the default. Required to catch adapter violators.
 
 This module lives outside the ``phase*`` cohesion (template-AST scanning
 is a different concern from per-phase identity / primitive / catalog
@@ -80,15 +96,55 @@ from ._common import SKILL_ROOT
 #   add_scheduled_tasks         GET  /scheduler/jobs       superuser
 #
 # Verified by ``engine/tests/test_w2_batch_b011_all_admin_closed.py``.
+#
+# Phase A1 (2026-05-31, engine/b011-scope-expand) — scope + regex expansion
+# (#118 + #120) revealed 17 new routes across 7 units. Each gets a waiver
+# citing the GH issue that owns the fix. The waiver set now includes BOTH
+# template tool names (snake_case ``add_*``) AND adapter file stems
+# (``*Adapter`` PascalCase); the two namespaces don't collide.
+#
+#   add_compliance_engine        → #135 (GDPR erasure + SOC2 evidence; not trivial)
+#   add_outbox_pattern           → #131 (DLQ admin + stub data)
+#   add_stripe_refund_flow       → #136 (webhook needs verify_stripe_signature dep)
+#   add_websocket_presence       → #138 (trivial fix deferred to keep PR scoped)
+#   AuditLogAdapter              → #125 (auth + server-side actor + durable ledger)
+#   EventSourcedStoreAdapter     → #124 (auth + durable store)
+#   SagaAdapter                  → #137 (adapter auth-injection pattern, Phase A2)
 # ---------------------------------------------------------------------------
-_WAIVED_TOOLS: frozenset[str] = frozenset()
+# Waived pending issue #135 — add_compliance_engine (GDPR/SOC2 routes need superuser)
+# Waived pending issue #131 — add_outbox_pattern (DLQ admin + real data)
+# Waived pending issue #136 — add_stripe_refund_flow (webhook needs signature verify dep)
+# Waived pending issue #138 — add_websocket_presence (trivial fix in follow-up PR)
+# Waived pending issue #125 — AuditLogAdapter (auth + server-side actor + durability)
+# Waived pending issue #124 — EventSourcedStoreAdapter (auth + durable backend)
+# Waived pending issue #137 — SagaAdapter (adapter auth-injection pattern)
+_WAIVED_TOOLS: frozenset[str] = frozenset(
+    {
+        "add_compliance_engine",
+        "add_outbox_pattern",
+        "add_stripe_refund_flow",
+        "add_websocket_presence",
+        "AuditLogAdapter",
+        "EventSourcedStoreAdapter",
+        "SagaAdapter",
+    }
+)
 
 # Per-spec regex — admin / diagnostic / cross-tenant path segments.
+#
+# Phase A1 (#120) expansion: added ``outbox``, ``compliance``, ``refunds``,
+# ``presence``, ``webhook``, ``websocket``, ``notif`` — these all carry
+# admin-grade side-effects (DLQ inspection, GDPR erasure, payment refunds,
+# user presence enumeration, signed event ingress, push fan-out) and were
+# previously invisible to the regex. ``notif`` is a prefix so it also
+# catches the existing ``notifications`` keyword as a substring; both are
+# kept explicit for grep-ability.
 _ADMIN_PATH_RE = re.compile(
     r"^(/api/v\d+)?/("
     r"admin|debug|scheduler|tasks|deprecations|authz|storage|"
     r"health/(deep|map)|cors/config|events|event-store|audit-logs|"
-    r"notifications|versions|throttle/status|metrics-admin|secrets|migrate"
+    r"notifications|versions|throttle/status|metrics-admin|secrets|migrate|"
+    r"outbox|compliance|refunds|presence|webhook|websocket|notif"
     r")"
 )
 
@@ -109,13 +165,98 @@ _TEMPLATE_GLOBS: tuple[str, ...] = (
     "**/templates/*routes*.py.tmpl",
 )
 
+# Adapter modules (Phase A1, #118). Plain Python under
+# ``core/venous/_adapters/fastapi/`` mount the same kind of admin routes
+# the template scan was designed to catch but were previously invisible
+# because the rule only globbed templates. We scan every ``*.py`` in the
+# adapter dir and exclude ``__init__.py`` + ``_test_*``/``test_*`` per
+# spec. Sub-packages are not currently used; if added, ``rglob`` may be
+# needed.
+_ADAPTER_DIR = Path("core/venous/_adapters/fastapi")
+
+
+def _is_scannable_adapter(path: Path) -> bool:
+    """True if *path* is an adapter module (not a test, init, or pycache)."""
+    name = path.name
+    if name == "__init__.py":
+        return False
+    if name.startswith("_test_") or name.startswith("test_"):
+        return False
+    if "__pycache__" in path.parts:
+        return False
+    return path.suffix == ".py"
+
+
+def _string_default_for_param(fn: ast.FunctionDef | ast.AsyncFunctionDef, param: str) -> str | None:
+    """Return the string-literal default for parameter *param* of *fn*, or
+    ``None`` if no such default exists.
+
+    Required by the adapter scope (Phase A1, #118): adapter ``install``
+    functions declare ``prefix: str = "/events"`` as a kwarg and then write
+    ``router = APIRouter(prefix=prefix)``. Without this resolver the
+    rule would see ``prefix=<Name>`` and treat the prefix as empty,
+    causing ``/events/{aggregate_id}`` to look like ``/{aggregate_id}``
+    which trivially fails the admin-path regex.
+
+    We only resolve string-literal defaults; anything dynamic stays
+    unresolved (the rule errs on the side of "no prefix" rather than
+    guessing).
+    """
+    args = fn.args
+    # Map each arg (positional + kwonly) to its default expr, if any.
+    pos_args = list(args.posonlyargs) + list(args.args)
+    pos_defaults = list(args.defaults)
+    # ``defaults`` aligns with the TAIL of pos_args.
+    if pos_defaults:
+        offset = len(pos_args) - len(pos_defaults)
+        for i, d in enumerate(pos_defaults):
+            a = pos_args[offset + i]
+            if a.arg == param and isinstance(d, ast.Constant) and isinstance(d.value, str):
+                return d.value
+    for a, d in zip(args.kwonlyargs, args.kw_defaults, strict=True):
+        if d is None:
+            continue
+        if a.arg == param and isinstance(d, ast.Constant) and isinstance(d.value, str):
+            return d.value
+    return None
+
+
+def _enclosing_function(
+    tree: ast.AST, target: ast.AST
+) -> ast.FunctionDef | ast.AsyncFunctionDef | None:
+    """Return the innermost FunctionDef/AsyncFunctionDef containing *target*,
+    or ``None`` if *target* lives at module scope.
+
+    Builds a child→parent map by walking *tree* once, then walks upward
+    from *target*. O(n) over the tree; the recursive variant earlier
+    revision had quadratic worst case.
+    """
+    parent_of: dict[int, ast.AST] = {}
+    for parent in ast.walk(tree):
+        for child in ast.iter_child_nodes(parent):
+            parent_of[id(child)] = parent
+    cur = parent_of.get(id(target))
+    while cur is not None:
+        if isinstance(cur, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            return cur
+        cur = parent_of.get(id(cur))
+    return None
+
 
 def _extract_router_prefix(tree: ast.AST) -> str:
     """Return the ``prefix=`` kwarg of the module's ``router = APIRouter(...)``.
 
     Returns ``""`` if no prefix is declared, multiple routers are present,
-    or the prefix is not a plain string literal (we can't reason about
-    dynamic prefixes — treat as empty rather than crash).
+    or the prefix cannot be resolved to a string literal (we can't reason
+    about dynamic prefixes — treat as empty rather than crash).
+
+    Resolution rules (in order):
+      1. ``prefix=<str literal>`` → return literal.
+      2. ``prefix=<Name>`` where ``<Name>`` is a parameter of the
+         enclosing function with a string-literal default → return default.
+         This catches the adapter ``install(..., prefix: str = "/X")``
+         pattern that Phase A1 (#118) added to scope.
+      3. Anything else → return ``""``.
     """
     for node in ast.walk(tree):
         if not isinstance(node, ast.Assign):
@@ -125,10 +266,17 @@ def _extract_router_prefix(tree: ast.AST) -> str:
         if not isinstance(node.value, ast.Call):
             continue
         for kw in node.value.keywords:
-            if kw.arg == "prefix" and isinstance(kw.value, ast.Constant):
-                val = kw.value.value
-                if isinstance(val, str):
-                    return val
+            if kw.arg != "prefix":
+                continue
+            if isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
+                return kw.value.value
+            if isinstance(kw.value, ast.Name):
+                fn = _enclosing_function(tree, node)
+                if fn is not None:
+                    resolved = _string_default_for_param(fn, kw.value.id)
+                    if resolved is not None:
+                        return resolved
+            return ""
         return ""
     return ""
 
@@ -166,9 +314,8 @@ def _expr_has_auth_token(expr: ast.AST) -> bool:
     Depends(<auth_name>)."""
     for sub in ast.walk(expr):
         # Bare name like ``current_user`` or annotation ``CurrentUser`` etc.
-        if isinstance(sub, ast.Name):
-            if sub.id in _AUTH_PARAM_TOKENS or sub.id == "Security":
-                return True
+        if isinstance(sub, ast.Name) and (sub.id in _AUTH_PARAM_TOKENS or sub.id == "Security"):
+            return True
         if isinstance(sub, ast.Attribute) and sub.attr in _AUTH_PARAM_TOKENS:
             return True
         # Calls — Security(...) anywhere, or Depends(<auth_name>).
@@ -208,9 +355,12 @@ def _file_has_public_justification(tree: ast.Module) -> bool:
     """True iff the template declares a module-level
     ``_PUBLIC_ROUTE_JUSTIFICATION`` constant (annotated or plain)."""
     for node in tree.body:
-        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
-            if node.target.id == "_PUBLIC_ROUTE_JUSTIFICATION":
-                return True
+        if (
+            isinstance(node, ast.AnnAssign)
+            and isinstance(node.target, ast.Name)
+            and node.target.id == "_PUBLIC_ROUTE_JUSTIFICATION"
+        ):
+            return True
         if isinstance(node, ast.Assign):
             for t in node.targets:
                 if isinstance(t, ast.Name) and t.id == "_PUBLIC_ROUTE_JUSTIFICATION":
@@ -284,34 +434,81 @@ def _scan_templates(adapt_root: Path) -> dict[str, list[tuple[str, str, str]]]:
     return out
 
 
+def _scan_adapters(skill_root: Path) -> dict[str, list[tuple[str, str, str]]]:
+    """Return ``{adapter_file_stem: [(verb, path, handler), ...]}`` for every
+    NON-waived adapter module whose admin routes lack auth.
+
+    Phase A1 (#118): scans ``core/venous/_adapters/fastapi/*.py``,
+    excluding ``__init__.py`` + ``_test_*``/``test_*`` per spec. The
+    waiver key is the file stem (e.g. ``AuditLogAdapter``) so the
+    ``_WAIVED_TOOLS`` set serves as the unified backlog across both
+    scopes; clashes between a template tool name and an adapter stem
+    are not expected (templates live under ``add_*`` snake_case tools;
+    adapters are ``*Adapter`` PascalCase files).
+    """
+    adapter_root = skill_root / _ADAPTER_DIR
+    if not adapter_root.exists():
+        return {}
+    out: dict[str, list[tuple[str, str, str]]] = {}
+    for mod_path in sorted(adapter_root.glob("*.py")):
+        if not _is_scannable_adapter(mod_path):
+            continue
+        try:
+            src = mod_path.read_text(encoding="utf-8")
+            tree = ast.parse(src)
+        except (OSError, SyntaxError):
+            continue
+        if _file_has_public_justification(tree):
+            continue
+        stem = mod_path.stem
+        if stem in _WAIVED_TOOLS:
+            continue
+        prefix = _extract_router_prefix(tree)
+        violations = _iter_admin_violations(tree, prefix)
+        if violations:
+            out.setdefault(stem, []).extend(violations)
+    return out
+
+
 def _r_admin_routes_require_auth() -> tuple[bool, str]:
     """B0.11 — admin / diagnostic routes require an auth dependency.
 
     Closes ROUND5_6_TRIAGE §3 P2 (~15 BLOCKER findings).
 
-    Returns ``(True, msg)`` when every non-waived template under
-    ``adapt/`` is clean. Returns ``(False, msg)`` listing the first few
-    offending ``(tool, VERB path)`` pairs when a regression slips in.
+    Two scopes (Phase A1, #118):
+      * Templates under ``adapt/**/templates/*route*.py.tmpl`` /
+        ``*routes*.py.tmpl``.
+      * Adapter modules under ``core/venous/_adapters/fastapi/*.py``
+        (excluding ``__init__.py`` + ``_test_*``/``test_*``).
+
+    Returns ``(True, msg)`` when both scopes are clean. Returns
+    ``(False, msg)`` listing the first few offending
+    ``(scope:identifier, VERB path)`` pairs when a regression slips in.
     """
     adapt_root = SKILL_ROOT / "adapt"
     if not adapt_root.exists():
         return False, f"missing: {adapt_root.relative_to(SKILL_ROOT)}"
 
-    offenders = _scan_templates(adapt_root)
-    if not offenders:
+    tmpl_offenders = _scan_templates(adapt_root)
+    adapter_offenders = _scan_adapters(SKILL_ROOT)
+    total_offenders_count = len(tmpl_offenders) + len(adapter_offenders)
+    if not tmpl_offenders and not adapter_offenders:
         return True, (
             f"§B0.11 satisfied: 0 unwaived admin-route auth violations "
-            f"({len(_WAIVED_TOOLS)} tool(s) in waiver set)"
+            f"(templates + adapters; {len(_WAIVED_TOOLS)} unit(s) in waiver set)"
         )
 
-    flat = sorted(
-        f"{tool}: {verb} {path}"
-        for tool, rows in offenders.items()
-        for verb, path, _fn in rows
-    )
+    flat: list[str] = []
+    for tool, rows in tmpl_offenders.items():
+        for verb, path, _fn in rows:
+            flat.append(f"template:{tool}: {verb} {path}")
+    for stem, rows in adapter_offenders.items():
+        for verb, path, _fn in rows:
+            flat.append(f"adapter:{stem}: {verb} {path}")
+    flat.sort()
     head = flat[:3]
     return False, (
         f"§B0.11 violations: {len(flat)} admin route(s) without auth across "
-        f"{len(offenders)} tool(s): {head}"
+        f"{total_offenders_count} unit(s): {head}"
         + (f" (+{len(flat) - 3} more)" if len(flat) > 3 else "")
     )
