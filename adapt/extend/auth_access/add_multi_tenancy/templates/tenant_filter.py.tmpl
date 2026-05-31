@@ -56,36 +56,37 @@ from app.models.mixins import TenantScopedMixin
 
 
 def _tenant_scoped_table(stmt):
-    """Return the bound Table if the Core stmt targets a TenantScopedMixin model.
+    """Return the bound Table if the Core stmt targets a tenant-scoped model.
 
     Args:
         stmt: SQLAlchemy Core update()/delete() construct.
 
     Returns:
         The mapped ``Table`` object when the stmt targets a tenant-scoped
-        model, otherwise ``None``. Falls back to checking for a
-        ``tenant_id`` column when the mapper lookup fails (some
-        emitted code references the Core Table directly rather than the
-        ORM class).
-    """
-    from sqlalchemy import inspect as _sa_inspect
+        model, otherwise ``None``.
 
-    # Modern SQLAlchemy 2.x: ``UpdateBase.entity_description`` exposes the
-    # ORM entity for Core update/delete constructs created via
-    # ``update(Model)``. Older form: walk ``stmt.table``.
+    Implementation note (B0.16 / R5-O1-F4):
+        An earlier revision attempted an ORM mapper-inspection path
+        (``inspect(TenantScopedMixin).mappers``) wrapped in a broad
+        ``except Exception: pass``. That branch was dead code:
+        ``TenantScopedMixin`` is a NON-mapped mixin, so the mapper
+        registry never contained an entry for it AND the surrounding
+        ``except`` was unreachable on a happy-path inspect; the
+        AttributeError-on-None case was the only realistic failure mode
+        and it was being swallowed silently — exactly the silent-class
+        shape CONTRACT §B0.16 forbids. The mapper branch has been
+        removed; the column-fallback below is the actual recognition
+        path (every model patched by ``add_multi_tenancy`` carries a
+        ``tenant_id`` column, which is the structural fingerprint of a
+        tenant-scoped table).
+    """
     table = getattr(stmt, "table", None)
     if table is None:
         return None
-    # ORM mapped class lookup
-    try:
-        for mapper in _sa_inspect(TenantScopedMixin, raiseerr=False).mappers:  # type: ignore[union-attr]
-            if mapper.local_table is table:
-                return table
-    except Exception:  # noqa: BLE001 — defensive: any inspect failure → fall through
-        pass
-    # Fallback: any table that carries a ``tenant_id`` column is treated
-    # as tenant-scoped (matches what add_multi_tenancy emits on every
-    # business model).
+    # Recognise any table that carries a ``tenant_id`` column as
+    # tenant-scoped (matches what add_multi_tenancy emits on every
+    # business model). No broad-except: a missing ``c`` mapping is
+    # already handled by ``getattr(..., {})``.
     if "tenant_id" in getattr(table, "c", {}):
         return table
     return None

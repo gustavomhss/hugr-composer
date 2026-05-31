@@ -155,11 +155,15 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
     # "fail-degraded" semantic (per-worker fallback admits up to
     # N * limit during a Redis outage) is documented in the tool's
     # warnings= disclosure under the B0.12 _SINGLE_PROCESS_OK bypass.
-    # P7-F2 — SQLAlchemy mapper inspect swallow in tenant_filter; if
-    # mapper introspection fails AND column dict is missing,
-    # cross-tenant rows leak.
-    # Offender: tenant_filter.py.tmpl:84 (`except Exception: pass`)
-    "extend/auth_access/add_multi_tenancy",
+    # "extend/auth_access/add_multi_tenancy" — closed Wave-2
+    # (fix/w2-multi-tenancy-close-waivers): R5-O1-F4 / P7-F2 — the
+    # SQLAlchemy mapper-inspect branch in ``_tenant_scoped_table`` was
+    # dead code (TenantScopedMixin is a non-mapped mixin, so
+    # ``inspect(...).mappers`` was empty and the AttributeError-on-None
+    # case was the only realistic failure — silently swallowed). The
+    # entire mapper branch (and its ``except Exception: pass``) has been
+    # removed; the column-fallback (``"tenant_id" in table.c``) is the
+    # actual recognition path used by every model patched by this tool.
     # P7-F3 — JSON body parse swallow in detection middleware; a
     # malformed body that also trips the SQL/command detector is
     # dropped → sentinel reports no finding.
