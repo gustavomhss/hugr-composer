@@ -227,7 +227,7 @@ async def test_healthz_returns_200(client) -> None:
 async def test_list_notifications_empty(client) -> None:
     """GET /notifications returns 200 with empty items for a new user."""
     c, fake_user, _ = client
-    resp = await c.get("/notifications", params={"user_id": str(fake_user.id)})
+    resp = await c.get("/notifications")
     assert resp.status_code == 200, (
         f"Expected 200 from GET /notifications, got {resp.status_code}: {resp.text}"
     )
@@ -245,7 +245,7 @@ async def test_list_notifications_empty(client) -> None:
 async def test_unread_count_zero_for_new_user(client) -> None:
     """GET /notifications/unread-count returns 0 for a user with no notifications."""
     c, fake_user, _ = client
-    resp = await c.get("/notifications/unread-count", params={"user_id": str(fake_user.id)})
+    resp = await c.get("/notifications/unread-count")
     assert resp.status_code == 200, (
         f"Expected 200 from GET /notifications/unread-count, got {resp.status_code}: {resp.text}"
     )
@@ -262,7 +262,7 @@ async def test_unread_count_zero_for_new_user(client) -> None:
 async def test_mark_all_read_when_nothing_to_read(client) -> None:
     """POST /notifications/read-all returns 200 with updated=0 when no notifications exist."""
     c, fake_user, _ = client
-    resp = await c.post("/notifications/read-all", params={"user_id": str(fake_user.id)})
+    resp = await c.post("/notifications/read-all")
     assert resp.status_code == 200, (
         f"Expected 200 from POST /notifications/read-all, got {resp.status_code}: {resp.text}"
     )
@@ -294,7 +294,7 @@ async def test_create_and_list_notification(client) -> None:
         await create_notification(session, data)
 
     # Now list should return it
-    resp = await c.get("/notifications", params={"user_id": str(fake_user.id)})
+    resp = await c.get("/notifications")
     assert resp.status_code == 200
     body = resp.json()
     assert len(body["items"]) >= 1, f"Expected >= 1 notifications, got: {body['items']}"
@@ -311,7 +311,7 @@ async def test_create_and_list_notification(client) -> None:
 async def test_unread_count_reflects_notification(client) -> None:
     """GET /notifications/unread-count returns >= 1 after inserting a notification."""
     c, fake_user, _ = client
-    resp = await c.get("/notifications/unread-count", params={"user_id": str(fake_user.id)})
+    resp = await c.get("/notifications/unread-count")
     assert resp.status_code == 200
     body = resp.json()
     assert body["unread_count"] >= 1, (
@@ -328,10 +328,7 @@ async def test_mark_read_nonexistent_returns_404(client) -> None:
     """POST /notifications/{id}/read returns 404 for a random non-existent ID."""
     c, fake_user, _ = client
     random_id = uuid.uuid4()
-    resp = await c.post(
-        f"/notifications/{random_id}/read",
-        params={"user_id": str(fake_user.id)},
-    )
+    resp = await c.post(f"/notifications/{random_id}/read")
     assert resp.status_code == 404, (
         f"Expected 404 for missing notification, got {resp.status_code}: {resp.text}"
     )
@@ -347,17 +344,17 @@ async def test_mark_all_read_sets_unread_to_zero(client) -> None:
     c, fake_user, _ = client
 
     # Confirm there is at least one unread
-    resp = await c.get("/notifications/unread-count", params={"user_id": str(fake_user.id)})
+    resp = await c.get("/notifications/unread-count")
     assert resp.status_code == 200
     assert resp.json()["unread_count"] >= 1
 
     # Mark all read
-    resp = await c.post("/notifications/read-all", params={"user_id": str(fake_user.id)})
+    resp = await c.post("/notifications/read-all")
     assert resp.status_code == 200
     assert resp.json()["updated"] >= 1
 
     # Unread count should now be 0
-    resp = await c.get("/notifications/unread-count", params={"user_id": str(fake_user.id)})
+    resp = await c.get("/notifications/unread-count")
     assert resp.status_code == 200
     assert resp.json()["unread_count"] == 0, (
         f"Expected 0 unread after mark-all-read, got {resp.json()['unread_count']}"
@@ -423,6 +420,98 @@ async def test_dispatch_push_handles_missing_firebase(behavior_project: Path) ->
 
 
 # ---------------------------------------------------------------------------
+# B-AUTH-01..04  Regression — every /notifications/* route returns 401 / 403
+# without an Authorization header.
+#
+# Closes R5-O3-F1: pre-fix every route accepted ``user_id`` as an attacker-
+# controlled Query parameter AND none of them required authentication. The
+# fix wires ``Depends(get_current_user)`` onto every decorator AND binds
+# ownership to ``current_user.id`` server-side; an anonymous request now
+# short-circuits with 401 BEFORE any handler runs.
+#
+# We assert ``status_code in {401, 403}`` because some auth deps return
+# 403 on a missing Bearer token instead of 401; either status proves the
+# route is gated. 404 / 422 / 5xx would mean the handler executed
+# unauthenticated and is a hard regression.
+# ---------------------------------------------------------------------------
+
+
+_AUTH_DENIED: frozenset[int] = frozenset({401, 403})
+
+
+@pytest_asyncio.fixture
+async def unauth_client(behavior_project: Path):
+    """Async httpx client wired to the ASGI app WITHOUT the get_current_user
+    override that ``booted_app`` installs. Anonymous requests should be
+    rejected by FastAPI's OAuth2PasswordBearer dependency."""
+    project_str = str(behavior_project)
+    if project_str not in sys.path:
+        sys.path.insert(0, project_str)
+
+    # Force a fresh module graph so dependency_overrides on the booted_app
+    # variant don't leak into this client.
+    _clear_project_modules()
+    app_module = importlib.import_module("app.main")
+    fastapi_app = app_module.app
+
+    # Register the notifications router (no auth override → real
+    # get_current_user runs and rejects anonymous requests).
+    notifications_mod = importlib.import_module("app.api.routes.notifications")
+    fastapi_app.include_router(notifications_mod.router)
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=fastapi_app),
+        base_url="http://test",
+    ) as c:
+        yield c
+
+    _clear_project_modules()
+    if project_str in sys.path:
+        sys.path.remove(project_str)
+
+
+@pytest.mark.asyncio
+async def test_list_notifications_requires_auth(unauth_client) -> None:
+    """R5-O3-F1: GET /notifications must reject anonymous requests."""
+    resp = await unauth_client.get("/notifications")
+    assert resp.status_code in _AUTH_DENIED, (
+        f"GET /notifications should reject unauth (R5-O3-F1): "
+        f"{resp.status_code} {resp.text}"
+    )
+
+
+@pytest.mark.asyncio
+async def test_unread_count_requires_auth(unauth_client) -> None:
+    """R5-O3-F1: GET /notifications/unread-count must reject anonymous."""
+    resp = await unauth_client.get("/notifications/unread-count")
+    assert resp.status_code in _AUTH_DENIED, (
+        f"GET /notifications/unread-count should reject unauth "
+        f"(R5-O3-F1): {resp.status_code} {resp.text}"
+    )
+
+
+@pytest.mark.asyncio
+async def test_mark_read_requires_auth(unauth_client) -> None:
+    """R5-O3-F1: POST /notifications/{id}/read must reject anonymous."""
+    random_id = uuid.uuid4()
+    resp = await unauth_client.post(f"/notifications/{random_id}/read")
+    assert resp.status_code in _AUTH_DENIED, (
+        f"POST /notifications/{{id}}/read should reject unauth "
+        f"(R5-O3-F1): {resp.status_code} {resp.text}"
+    )
+
+
+@pytest.mark.asyncio
+async def test_mark_all_read_requires_auth(unauth_client) -> None:
+    """R5-O3-F1: POST /notifications/read-all must reject anonymous."""
+    resp = await unauth_client.post("/notifications/read-all")
+    assert resp.status_code in _AUTH_DENIED, (
+        f"POST /notifications/read-all should reject unauth "
+        f"(R5-O3-F1): {resp.status_code} {resp.text}"
+    )
+
+
+# ---------------------------------------------------------------------------
 # B-11  Delivery contract — final validation
 # ---------------------------------------------------------------------------
 
@@ -452,8 +541,8 @@ def test_delivery_contract(behavior_project: Path) -> None:
         test_file="adapt/extend/infrastructure/test_add_notifications.py",
         tool_loc=tool_loc,
         test_loc=test_loc + behavior_loc,  # combined: structural + behavior
-        test_count=24 + 11,  # 24 structural + 11 behavior tests
-        tests_passed=24 + 11,
+        test_count=24 + 15,  # 24 structural + 15 behavior tests (11 happy-path + 4 auth-regression)
+        tests_passed=24 + 15,
         tests_failed=0,
         has_mcp_tool=True,
         has_ensure_prerequisites=True,

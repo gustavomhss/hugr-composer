@@ -219,60 +219,17 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
     # asserts the wired primitives actually coordinate cross-worker.
     "extend/infrastructure/add_cache_layer",
     # add_csrf_protection — closed Wave-2 (B0.13) in
-    # fix/w2-batch-b013-honesty-tests:
-    #   pair test at
-    #   engine/tests/test_add_csrf_protection_notes_invariants.py
-    #   asserts (a) `CSRFProtection._sign` calls `hmac.new(secret,
-    #   payload, hashlib.sha256)` (keyed HMAC, not unkeyed hash);
-    #   (b) `validate_token` uses `hmac.compare_digest` for
-    #   constant-time signature comparison (blocks CWE-208 timing
-    #   leak); and (c) a behavioural exec of the template confirms a
-    #   tampered signature is rejected — anchoring the `signed` token
-    #   in both shape and behaviour.
-    # P4 — "fan-out" claim survives the in-line WARNING because the
-    # warning is also in notes (not warnings=); will move to warnings=
-    # in Wave-1 honesty-test PR.
-    "extend/infrastructure/add_notifications",
+    # fix/w2-batch-b013-honesty-tests
+    # add_notifications — closed Wave-2 (B0.13) in
+    # fix/w2-notifications-close-waivers: notes no longer claim
+    # "fan-out"; honest single-channel disclosure moved to warnings=.
+    # Paired test: engine/tests/test_add_notifications_notes_invariants.py
     # add_outbox_pattern — closed Wave-2 (B0.13) in
-    # fix/w2-batch-b013-honesty-tests:
-    #   pair test at
-    #   engine/tests/test_add_outbox_pattern_notes_invariants.py
-    #   asserts the producer-side dedup primitive backing the
-    #   "consumers must be idempotent" warning: (a) `OutboxEvent`
-    #   model declares `idempotency_key` with `unique=True`; (b) the
-    #   Alembic migration includes `sa.UniqueConstraint(
-    #   "idempotency_key")` so DDL enforces dedup even when callers
-    #   bypass the ORM; (c) `OutboxService.emit` threads
-    #   `idempotency_key` through to the `OutboxEvent(...)` row
-    #   construction — anchoring `idempotent` end-to-end at the
-    #   producer boundary.
+    # fix/w2-batch-b013-honesty-tests
     # add_rate_limiting — closed Wave-2 (B0.13) in
-    # fix/w2-batch-b013-honesty-tests:
-    #   pair test at
-    #   engine/tests/test_add_rate_limiting_notes_invariants.py
-    #   asserts (a) the FastAPI adapter registers an
-    #   `@app.middleware("http")` async function whose body returns
-    #   `JSONResponse(..., status_code=429, ...)` on the
-    #   bucket-empty branch; (b) that same 429 response includes a
-    #   `Retry-After` header in its `headers=` dict (RFC-6585 §4);
-    #   and (c) the emitted glue's `install_rate_limiting(app)`
-    #   calls the adapter's `install(...)` so the middleware is
-    #   wired automatically — anchoring `automatically` end-to-end.
+    # fix/w2-batch-b013-honesty-tests
     # add_request_fingerprint — closed Wave-2 (B0.13) in
-    # fix/w2-batch-b013-honesty-tests:
-    #   pair test at
-    #   engine/tests/test_add_request_fingerprint_notes_invariants.py
-    #   asserts (a) `FingerprintMiddleware._replay_cached`
-    #   constructs a `Response(..., headers={"Idempotent-Replayed":
-    #   "true"})` on the duplicate branch; (b) the middleware
-    #   extracts `request.state.user` and threads `user_id` into the
-    #   compute call, and the hasher uses `"anonymous"` strictly as
-    #   an OR-fallback (`user_id or "anonymous"`) — without this
-    #   isolation two different users with the same body would
-    #   collide on the same cache entry; (c) the hasher calls
-    #   `hashlib.sha256(...)` so the idempotency key is
-    #   collision-resistant — anchoring `idempotent` and the
-    #   Idempotent-Replayed header surface end-to-end.
+    # fix/w2-batch-b013-honesty-tests
     # P4 — "automatically" Cache-Control claim; no engine-level test
     # asserts no-store is applied to ALL 4xx/5xx.
     "extend/infrastructure/add_response_armor",

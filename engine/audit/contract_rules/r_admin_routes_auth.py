@@ -69,7 +69,14 @@ _WAIVED_TOOLS: frozenset[str] = frozenset(
         "add_dependency_health_map",
         "add_health_deep",
         "add_long_running_task",
-        "add_notifications",
+        # "add_notifications" — removed by Wave-2 close-out
+        # (fix/w2-notifications-close-waivers): all 4 /notifications/*
+        # routes now declare ``dependencies=[Depends(get_current_user)]``
+        # AND expose ``current_user: User`` so the owning user is bound
+        # server-side. The legacy ``user_id`` query parameter is removed
+        # (R5-O3-F1 IDOR). The ``_get_session`` placeholder now yields a
+        # real session from ``app.core.session.get_session`` so the routes
+        # work out-of-the-box without dependency_overrides (R5-O3-F2).
         "add_opa_integration",
         # "add_s3_storage" — removed by R6-S6-F1/F5/F6/F7 fix-PR (juror
         # a077cc434dd7a8155): all three /storage routes now require
