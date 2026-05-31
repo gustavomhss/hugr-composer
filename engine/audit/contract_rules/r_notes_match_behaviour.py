@@ -198,9 +198,19 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
     # P4 — "verified email" claim; no engine-level test asserts the
     # account-linking branch actually checks email_verified=true.
     "extend/auth_access/add_social_login",
-    # P4 — "hash-chained, signed, append-only" ledger claim; no
-    # engine-level test asserts chain integrity / append-only DDL.
-    "extend/crud_data/add_audit_log",
+    # add_audit_log — closed Wave-2 (B0.13) in
+    # fix/w2-batch-b013-honesty-tests:
+    #   pair test at
+    #   engine/tests/test_add_audit_log_notes_invariants.py asserts
+    #   (a) emitted glue wires `core.venous._adapters.fastapi.AuditLogAdapter.install`
+    #   (not a placeholder InMemoryAuditLog); (b) the adapter
+    #   instantiates `InMemoryTamperEvidentAuditLog` with an
+    #   `HmacReferenceSigner`; (c) primitive append builds a SHA-256
+    #   `prev_hash` chain; (d) `_signer.sign(payload)` is called and
+    #   `HmacReferenceSigner.verify` uses `hmac.compare_digest`; and
+    #   (e) the impl exposes no `update`/`delete`/`pop`/`__setitem__`
+    #   mutators — anchoring `hash-chained`, `signed`, and
+    #   `append-only` end-to-end. Closes R5-S1-F5 regression guard.
     # P4 — "never trusts Content-Type" + "presigned URL workflow"
     # claims; no engine-level test asserts magic-byte validation or
     # the no-buffering S3 path.
@@ -208,22 +218,61 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
     # P4 — "distributed" / "fan-out" claims; no engine-level test
     # asserts the wired primitives actually coordinate cross-worker.
     "extend/infrastructure/add_cache_layer",
-    # P4 — "signed token" claim; no engine-level test asserts the
-    # CSRF token signature is verified on submit.
-    "extend/infrastructure/add_csrf_protection",
+    # add_csrf_protection — closed Wave-2 (B0.13) in
+    # fix/w2-batch-b013-honesty-tests:
+    #   pair test at
+    #   engine/tests/test_add_csrf_protection_notes_invariants.py
+    #   asserts (a) `CSRFProtection._sign` calls `hmac.new(secret,
+    #   payload, hashlib.sha256)` (keyed HMAC, not unkeyed hash);
+    #   (b) `validate_token` uses `hmac.compare_digest` for
+    #   constant-time signature comparison (blocks CWE-208 timing
+    #   leak); and (c) a behavioural exec of the template confirms a
+    #   tampered signature is rejected — anchoring the `signed` token
+    #   in both shape and behaviour.
     # P4 — "fan-out" claim survives the in-line WARNING because the
     # warning is also in notes (not warnings=); will move to warnings=
     # in Wave-1 honesty-test PR.
     "extend/infrastructure/add_notifications",
-    # P4 — "idempotent" claim survives the in-line WARNING for the
-    # same reason as add_notifications above.
-    "extend/infrastructure/add_outbox_pattern",
-    # P4 — "automatically" 429 emission claim; no engine-level test
-    # asserts the middleware always sets Retry-After on 429.
-    "extend/infrastructure/add_rate_limiting",
-    # P4 — "idempotent" deduplication claim; no engine-level test
-    # asserts the Idempotent-Replayed header path.
-    "extend/infrastructure/add_request_fingerprint",
+    # add_outbox_pattern — closed Wave-2 (B0.13) in
+    # fix/w2-batch-b013-honesty-tests:
+    #   pair test at
+    #   engine/tests/test_add_outbox_pattern_notes_invariants.py
+    #   asserts the producer-side dedup primitive backing the
+    #   "consumers must be idempotent" warning: (a) `OutboxEvent`
+    #   model declares `idempotency_key` with `unique=True`; (b) the
+    #   Alembic migration includes `sa.UniqueConstraint(
+    #   "idempotency_key")` so DDL enforces dedup even when callers
+    #   bypass the ORM; (c) `OutboxService.emit` threads
+    #   `idempotency_key` through to the `OutboxEvent(...)` row
+    #   construction — anchoring `idempotent` end-to-end at the
+    #   producer boundary.
+    # add_rate_limiting — closed Wave-2 (B0.13) in
+    # fix/w2-batch-b013-honesty-tests:
+    #   pair test at
+    #   engine/tests/test_add_rate_limiting_notes_invariants.py
+    #   asserts (a) the FastAPI adapter registers an
+    #   `@app.middleware("http")` async function whose body returns
+    #   `JSONResponse(..., status_code=429, ...)` on the
+    #   bucket-empty branch; (b) that same 429 response includes a
+    #   `Retry-After` header in its `headers=` dict (RFC-6585 §4);
+    #   and (c) the emitted glue's `install_rate_limiting(app)`
+    #   calls the adapter's `install(...)` so the middleware is
+    #   wired automatically — anchoring `automatically` end-to-end.
+    # add_request_fingerprint — closed Wave-2 (B0.13) in
+    # fix/w2-batch-b013-honesty-tests:
+    #   pair test at
+    #   engine/tests/test_add_request_fingerprint_notes_invariants.py
+    #   asserts (a) `FingerprintMiddleware._replay_cached`
+    #   constructs a `Response(..., headers={"Idempotent-Replayed":
+    #   "true"})` on the duplicate branch; (b) the middleware
+    #   extracts `request.state.user` and threads `user_id` into the
+    #   compute call, and the hasher uses `"anonymous"` strictly as
+    #   an OR-fallback (`user_id or "anonymous"`) — without this
+    #   isolation two different users with the same body would
+    #   collide on the same cache entry; (c) the hasher calls
+    #   `hashlib.sha256(...)` so the idempotency key is
+    #   collision-resistant — anchoring `idempotent` and the
+    #   Idempotent-Replayed header surface end-to-end.
     # P4 — "automatically" Cache-Control claim; no engine-level test
     # asserts no-store is applied to ALL 4xx/5xx.
     "extend/infrastructure/add_response_armor",
