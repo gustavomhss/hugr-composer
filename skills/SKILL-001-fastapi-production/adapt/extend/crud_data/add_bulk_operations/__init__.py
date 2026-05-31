@@ -262,20 +262,101 @@ def _append_if_missing(
 
 
 def _patch_main(main_file: Path, modified: list[str]) -> None:
-    """Wire ``init_idempotency_cache`` into ``app/main.py`` startup — idempotent."""
+    """Wire ``init_idempotency_cache`` + ``close_idempotency_cache`` into
+    ``app/main.py``'s ``async def lifespan(...)`` — idempotent.
+
+    Mirrors the ``add_arq_worker._patch_main`` pattern (insert before the
+    ``yield`` for startup, after for shutdown). Closes CONTRACT §B0.15
+    (triage R5-O2-D12 + R6-O2-O2-2): the previous EOF-append shape built
+    the Redis client at module import time, with no startup gate and no
+    shutdown.
+
+    When ``async def lifespan(...)`` is NOT present (a non-standard
+    main.py shape), the patcher falls back to the historical EOF-append
+    behaviour so the tool still completes; ``# pragma: B0.15: ...`` is
+    attached so the contract rule allows the literal fallback line.
+    """
     src = main_file.read_text()
     if "init_idempotency_cache" in src:
         return
-    import_line = "from app.core.idempotency import init_idempotency_cache  # noqa: F401"
-    if "from app.core.logging import configure_logging" in src:
-        src = src.replace(
-            "from app.core.logging import configure_logging",
-            f"from app.core.logging import configure_logging\n{import_line}",
-        )
+
+    import_line = (
+        "from app.core.idempotency import close_idempotency_cache, init_idempotency_cache"
+    )
+    lines = src.splitlines()
+
+    # 1. Insert the import — prefer right after the last `from app.` line
+    #    (matches the add_arq_worker pattern), else after the configure_logging
+    #    import (legacy anchor), else at the very top.
+    last_from_app = max(
+        (i for i, ln in enumerate(lines) if ln.startswith("from app.")),
+        default=-1,
+    )
+    if last_from_app != -1:
+        lines.insert(last_from_app + 1, import_line)
     else:
-        src = f"{import_line}\n" + src
-    init_block = render(_HERE, "main_patch.py.tmpl", {})
-    main_file.write_text(src.rstrip("\n") + "\n" + init_block)
+        logging_anchor = next(
+            (
+                i
+                for i, ln in enumerate(lines)
+                if ln.strip() == "from app.core.logging import configure_logging"
+            ),
+            -1,
+        )
+        if logging_anchor != -1:
+            lines.insert(logging_anchor + 1, import_line)
+        else:
+            lines.insert(0, import_line)
+
+    # 2. Splice the startup + shutdown calls into the `lifespan` body.
+    yield_idx = next((i for i, ln in enumerate(lines) if ln.strip() == "yield"), -1)
+    if yield_idx != -1:
+        raw = lines[yield_idx]
+        indent = raw[: len(raw) - len(raw.lstrip())]
+        startup_lines = [
+            f"{indent}# --- add_bulk_operations: idempotency cache startup ---",
+            f'{indent}_idem_redis_url = _os.getenv("REDIS_URL", "redis://localhost:6379/0")',
+            f"{indent}init_idempotency_cache(_idem_redis_url)",
+        ]
+        # `os` is needed in the lifespan body for REDIS_URL lookup; alias to
+        # `_os` so we don't collide with any existing `os` import.
+        os_import = "import os as _os  # add_bulk_operations: REDIS_URL lookup"
+        if os_import not in src and "import os as _os" not in "\n".join(lines):
+            # Insert near the other stdlib imports — top of file is safest.
+            insert_at = 0
+            for i, ln in enumerate(lines[:30]):
+                if ln.startswith(("import ", "from ")) and "app." not in ln:
+                    insert_at = i + 1
+            lines.insert(insert_at, os_import)
+            yield_idx += 1  # shift after inserting at top
+        # Splice startup BEFORE yield, shutdown AFTER.
+        for offset, ln in enumerate(startup_lines):
+            lines.insert(yield_idx + offset, ln)
+        shutdown_at = yield_idx + len(startup_lines) + 1  # after `yield`
+        shutdown_lines = [
+            f"{indent}# --- add_bulk_operations: idempotency cache shutdown ---",
+            f"{indent}await close_idempotency_cache()",
+        ]
+        for offset, ln in enumerate(shutdown_lines):
+            lines.insert(shutdown_at + offset, ln)
+        main_file.write_text("\n".join(lines) + ("\n" if src.endswith("\n") else ""))
+    else:
+        # Fallback for non-standard main.py shapes — keep the legacy
+        # EOF-append behaviour but pragma it so B0.15 allows the line.
+        fallback = (
+            "\n\n"
+            "# Idempotency cache — added by add_bulk_operations tool\n"
+            "# (no `async def lifespan(...)` found in this main.py — see "
+            "CONTRACT §B0.15 fallback note in `_patch_main`).\n"
+            "import os as _os\n"
+            '_idem_redis_url = _os.getenv("REDIS_URL", "redis://localhost:6379/0")\n'
+            "init_idempotency_cache(_idem_redis_url)"
+            "  # pragma: B0.15: non-standard main.py has no `lifespan`; "
+            "fallback retains legacy module-top init\n"
+        )
+        main_file.write_text(
+            "\n".join(lines).rstrip("\n") + fallback
+        )
     modified.append(str(main_file))
 
 

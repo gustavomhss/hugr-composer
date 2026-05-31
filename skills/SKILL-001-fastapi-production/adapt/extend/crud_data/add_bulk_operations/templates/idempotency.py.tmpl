@@ -21,7 +21,9 @@ _redis: "aioredis.Redis | None" = None
 def init_idempotency_cache(redis_url: str) -> None:
     """Initialise the global idempotency Redis client.
 
-    Call once at application startup (e.g. in lifespan context).
+    Call once at application startup INSIDE the FastAPI ``lifespan``
+    context manager (see CONTRACT §B0.15 / triage R5-O2-D12 +
+    R6-O2-O2-2 — module-import-time init is prohibited).
 
     Args:
         redis_url: Redis connection URL (e.g. ``redis://localhost:6379/0``).
@@ -29,6 +31,24 @@ def init_idempotency_cache(redis_url: str) -> None:
     global _redis
     import redis.asyncio as aioredis
     _redis = aioredis.from_url(redis_url, decode_responses=True)
+
+
+async def close_idempotency_cache() -> None:
+    """Close the global idempotency Redis client (lifespan shutdown).
+
+    Mirrors :func:`init_idempotency_cache`; safe to call when Redis was
+    never initialised (no-op) or when the client errors on close
+    (we swallow + log — shutdown must not raise).
+    """
+    global _redis
+    if _redis is None:
+        return
+    try:
+        await _redis.aclose()
+    except Exception as exc:  # noqa: BLE001 — shutdown must not raise
+        logger.warning("idempotency_cache_close_failed exc=%s", exc)
+    finally:
+        _redis = None
 
 
 def get_idempotency_cache() -> "IdempotencyCache":

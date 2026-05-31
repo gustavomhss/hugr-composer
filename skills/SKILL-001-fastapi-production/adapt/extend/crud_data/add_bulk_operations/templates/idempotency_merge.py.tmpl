@@ -16,12 +16,28 @@ _idem_redis: "_idem_aioredis.Redis | None" = None
 def init_idempotency_cache(redis_url: str) -> None:
     """Initialise the global idempotency Redis client.
 
+    Call once INSIDE the FastAPI ``lifespan`` context manager
+    (CONTRACT §B0.15 / triage R5-O2-D12 + R6-O2-O2-2).
+
     Args:
         redis_url: Redis connection URL.
     """
     global _idem_redis
     import redis.asyncio as _idem_aioredis
     _idem_redis = _idem_aioredis.from_url(redis_url, decode_responses=True)
+
+
+async def close_idempotency_cache() -> None:
+    """Close the global idempotency Redis client (lifespan shutdown)."""
+    global _idem_redis
+    if _idem_redis is None:
+        return
+    try:
+        await _idem_redis.aclose()
+    except Exception as exc:  # noqa: BLE001 — shutdown must not raise
+        _idem_logger.warning("idempotency_cache_close_failed exc=%s", exc)
+    finally:
+        _idem_redis = None
 
 
 def get_idempotency_cache() -> "IdempotencyCache":
