@@ -243,19 +243,78 @@ class RuntimeSentinelMiddleware(BaseHTTPMiddleware):
             if "url" in key.lower() and self._detector.check_ssrf(value, allowed_hosts):
                 return {"type": "ssrf", "snippet": value[:120]}
 
-        # Check JSON body (best-effort, swallow decode errors)
+        # Check JSON body. Parse failures are surfaced via a registry
+        # counter + WARNING log (see _parse_json_body) so an attacker
+        # who slips in malformed JSON to bypass detection shows up on
+        # the metrics surface instead of being silently dropped.
+        # Closes B0.16 / P7-F3.
         content_type = request.headers.get("content-type", "")
         if "application/json" in content_type:
-            try:
-                import json as _json
-                body_bytes = await request.body()
-                body = _json.loads(body_bytes)
-                for val in _extract_string_values(body):
-                    if self._detector.check_sql(val):
-                        return {"type": "sql_injection", "snippet": val[:120]}
-                    if self._detector.check_command(val):
-                        return {"type": "command_injection", "snippet": val[:120]}
-            except Exception:
-                pass
+            body = await self._parse_json_body(request, client_ip)
+            if body is None:
+                return None
+            for val in _extract_string_values(body):
+                if self._detector.check_sql(val):
+                    return {"type": "sql_injection", "snippet": val[:120]}
+                if self._detector.check_command(val):
+                    return {"type": "command_injection", "snippet": val[:120]}
 
         return None
+
+    async def _parse_json_body(
+        self,
+        request: Request,
+        client_ip: str,
+    ) -> Any | None:
+        """Parse the JSON request body, surfacing failures to the registry.
+
+        Returns the parsed object on success, or ``None`` when the body
+        cannot be read / decoded. In the ``None`` case the registry's
+        ``body_parse_failure`` counter is bumped (keyed by reason) and a
+        WARNING line is logged — both of which are how B0.16 keeps the
+        prior silent-swallow off the silent-failure rule.
+
+        Args:
+            request: Incoming HTTP request whose body to parse.
+            client_ip: Remote IP for log enrichment.
+
+        Returns:
+            Parsed JSON object (dict / list / scalar) or ``None`` on failure.
+        """
+        import json as _json
+        try:
+            body_bytes = await request.body()
+            return _json.loads(body_bytes)
+        except _json.JSONDecodeError as exc:
+            self._note_body_parse_failure(
+                "json_decode_error", request, client_ip, str(exc)[:120]
+            )
+            return None
+        except Exception as exc:  # body read errors (disconnects, size cap, …)
+            detail = f"{type(exc).__name__}: {str(exc)[:80]}"
+            self._note_body_parse_failure(
+                "body_read_error", request, client_ip, detail
+            )
+            return None
+
+    def _note_body_parse_failure(
+        self,
+        reason: str,
+        request: Request,
+        client_ip: str,
+        detail: str,
+    ) -> None:
+        """Record + log a body-parse failure (B0.16 closure: no silent swallow)."""
+        self._registry.record_body_parse_failure(
+            reason=reason,
+            request_path=request.url.path,
+            client_ip=client_ip,
+            detail=detail,
+        )
+        logger.warning(
+            "SENTINEL_BODY_PARSE_FAIL reason=%s path=%s ip=%s detail=%s",
+            reason,
+            request.url.path,
+            client_ip,
+            detail,
+        )

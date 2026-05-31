@@ -205,18 +205,51 @@ def add_cache_layer(inp: ToolInput) -> ToolResult:
         files_created=files_created,
         files_modified=files_modified,
         notes=[
-            "Shipped primitives: core.venous.cache.KeyValueBucket, SessionCache, DistributedLock.",
-            "Glue: app/cache/primitives.py wires KeyValueBucket + DistributedLock + SessionCache.",
+            "Shipped primitives: core.venous.cache.KeyValueBucket, SessionCache, DistributedLock "
+            "(⚠ in-memory fallback variants — distributed coordination only when swapped for "
+            "Redis-backed implementations, see warnings).",
+            "Glue: app/cache/primitives.py wires KeyValueBucket + DistributedLock + SessionCache "
+            "as in-memory fallbacks (⚠ in-memory variants are per-process only — see warnings).",
             "Redis cache layer added: @cached decorator, key isolation, msgpack serialization.",
-            "Invalidation strategy: hybrid TTL + pub/sub fan-out to all workers.",
+            "Invalidation: TTL expiry per key, plus a publish-only Redis pub/sub emit "
+            "on `cache:invalidation` (⚠ no in-tool subscriber is wired — see warnings + "
+            "next_steps for the subscriber loop the operator must add for true cross-worker "
+            "fan-out).",
             "Key pattern: cache:{tenant}:resource:{id}",
             "/cache/stats endpoint added (requires require_admin dep).",
+        ],
+        warnings=[
+            # B0.13 honest disclosure for the "fan-out to all workers" claim.
+            # Closes the over-claim noted in r_notes_match_behaviour._WAIVED_TOOLS:
+            #   `"distributed" / "fan-out" claims; no engine-level test
+            #    asserts the wired primitives actually coordinate cross-worker.`
+            "Publish-only invalidation: `invalidate_resource()` calls "
+            "`redis.publish('cache:invalidation', ...)` but the tool emits NO "
+            "subscriber. Other workers will NOT drop their local KeyValueBucket "
+            "entries automatically — TTL expiry is the only cross-worker "
+            "convergence mechanism in the box. To get true fan-out you must "
+            "either (a) wire a startup task that runs "
+            "`redis.pubsub().subscribe('cache:invalidation')` and calls "
+            "`bucket.delete(...)` on each message, or (b) move the canonical "
+            "store off the in-memory `KeyValueBucket` onto Redis itself so "
+            "every worker reads the same row.",
+            "In-memory primitives are per-process: `InMemoryKeyValueBucket`, "
+            "`InMemorySessionCache`, and `InMemoryDistributedLock` from "
+            "`core.venous.cache` do NOT share state across uvicorn workers. "
+            "Swap to a Redis-backed implementation before scaling beyond a "
+            "single worker — otherwise `cache_aside()` stampede prevention "
+            "is local-only and cached values diverge per worker.",
         ],
         next_steps=[
             "pip install 'redis[hiredis]' msgpack",
             "Set REDIS_URL in .env (e.g. redis://localhost:6379/0).",
             "Decorate GET handlers: @cached(ttl=300, key_pattern='items:{item_id}')",
             "Call invalidate_resource('items', item_id) in POST/PUT/DELETE handlers.",
+            "For multi-worker correctness: wire a startup pubsub subscriber on "
+            "`cache:invalidation` that calls `bucket.delete(...)` on each "
+            "incoming message, OR swap the in-memory primitives for Redis-backed "
+            "ones (TTL-only fan-out is the default; explicit invalidation "
+            "requires the subscriber).",
         ],
         execution_time_ms=_ms(start),
     )

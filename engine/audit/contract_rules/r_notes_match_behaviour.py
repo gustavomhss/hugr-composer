@@ -195,9 +195,20 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
     #   reality and the gap was moved to warnings=. Paired test:
     #   engine/tests/test_add_feature_flags_notes_invariants.py asserts
     #   the disclosure shape against the template content.
-    # P4 — "verified email" claim; no engine-level test asserts the
-    # account-linking branch actually checks email_verified=true.
-    "extend/auth_access/add_social_login",
+    # add_social_login — closed Wave-2 (B0.13) in
+    # fix/w2-final-honesty-and-sentinel: pair test at
+    #   engine/tests/test_add_social_login_notes_invariants.py
+    # AST-anchors the "verified" claim against
+    # `social_auth.py.tmpl::_decode_apple_id_token`: PyJWT
+    # `jwt.decode(id_token, public_key, algorithms=["RS256"],
+    # audience=..., issuer=..., options={"require": ["exp","iat",
+    # "iss","aud","sub"]})` is the exact call shape, and
+    # `_verify_apple_id_token` is wired to call `_fetch_apple_jwks`,
+    # `_select_apple_jwk`, and `_decode_apple_id_token` in sequence
+    # so the verification chain cannot be short-circuited. Also
+    # asserts the audience-refuses-empty-APPLE_CLIENT_ID guard so
+    # the claim stays true in mis-configured deployments. Closes
+    # the R5-O4-C2 / PR #91 regression guard at the engine layer.
     # add_audit_log — closed Wave-2 (B0.13) in
     # fix/w2-batch-b013-honesty-tests:
     #   pair test at
@@ -211,26 +222,43 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
     #   (e) the impl exposes no `update`/`delete`/`pop`/`__setitem__`
     #   mutators — anchoring `hash-chained`, `signed`, and
     #   `append-only` end-to-end. Closes R5-S1-F5 regression guard.
-    # add_file_upload — REMAINS WAIVED after Wave-2
-    # fix/w2-batch-b013-honesty-cluster-2 review:
-    #   the "never trusts Content-Type" claim is TRUE for the
-    #   LocalStorage path (``upload_file_local`` calls
-    #   ``validate_file`` on ``UploadFile.file`` via libmagic byte
-    #   signature) but FALSE for the S3 confirm path
-    #   (``confirm_upload`` only calls ``s3.head_object`` — the bytes
-    #   uploaded directly to S3 via the presigned URL are NEVER
-    #   fetched back and re-validated). R5-S1-F6 was correct.
-    #   Closing this waiver requires either (a) a real S3-confirm-side
-    #   magic-byte fetch (significant template change, out of scope
-    #   for the honesty-test PR), or (b) qualifying the notes line
-    #   ("⚠ S3 path validates only object metadata"). Tracked as a
-    #   tool-fix follow-up; shipping a vacuous honesty test would let
-    #   the gap regress silently — which the rule's docstring
-    #   §"Trade-offs" explicitly forbids.
-    "extend/crud_data/add_file_upload",
-    # P4 — "distributed" / "fan-out" claims; no engine-level test
-    # asserts the wired primitives actually coordinate cross-worker.
-    "extend/infrastructure/add_cache_layer",
+    # add_file_upload — closed Wave-2 (B0.13) in
+    # fix/w2-final-honesty-and-sentinel via option (b) from the
+    # briefing: the "never trusts Content-Type" notes line was
+    # qualified with "ON THE LOCAL STORAGE PATH (⚠ S3 presign-
+    # confirm path validates only S3 metadata via head_object —
+    # bytes uploaded via presigned URL are NOT re-fetched and
+    # magic-byte verified; see warnings)" AND a `warnings=` entry
+    # was added detailing the S3-confirm magic-byte gap and the
+    # closure path (GetObject Range bytes=0-8191 + libmagic).
+    # Pair test at
+    #   engine/tests/test_add_file_upload_notes_invariants.py
+    # AST-anchors (a) `upload_file_local` calls
+    # `validate_file(file.file, ...)` (LocalStorage path honest),
+    # (b) `detect_mime` calls `magic.from_buffer(head, mime=True)`
+    # (libmagic primitive named in notes), and (c) `confirm_upload`
+    # calls `s3.head_object` BUT does NOT call `get_object` /
+    # `download_fileobj` (S3-gap shape pinned). The moment a future
+    # PR closes the S3 gap with a real byte re-fetch, the third
+    # assertion fails loudly and the warning MUST be removed.
+    # add_cache_layer — closed Wave-2 (B0.13) in
+    # fix/w2-final-honesty-and-sentinel: the "fan-out to all
+    # workers" over-claim was the bug. Notes now read "publish-only
+    # Redis pub/sub emit (⚠ no in-tool subscriber is wired — see
+    # warnings + next_steps for the subscriber loop the operator
+    # must add for true cross-worker fan-out)" and a `warnings=`
+    # entry details (a) the publish-only invalidation reality and
+    # the two closure options (wire a `redis.pubsub().subscribe(...)`
+    # task OR move the canonical store off InMemoryKeyValueBucket
+    # onto Redis), and (b) the per-process nature of the in-memory
+    # primitives. Pair test at
+    #   engine/tests/test_add_cache_layer_notes_invariants.py
+    # AST-anchors `_publish_invalidation` calls `redis.publish` on
+    # `_INVALIDATION_CHANNEL`, asserts NO template under
+    # `add_cache_layer/templates/` contains `pubsub(`, `.subscribe(`,
+    # or `psubscribe(`, pins out the pre-fix "Workers subscribe to"
+    # docstring lie, and anchors `primitives.py.tmpl` to the in-memory
+    # variants so the per-process warning cannot silently desync.
     # add_csrf_protection — closed Wave-2 (B0.13) in
     # fix/w2-batch-b013-honesty-tests
     # add_notifications — closed Wave-2 (B0.13) in

@@ -1,8 +1,10 @@
-"""Cache invalidation via TTL expiry and Redis pub/sub fan-out.
+"""Cache invalidation via TTL expiry plus a publish-only Redis pub/sub emit.
 
-Workers subscribe to ``cache:invalidation`` channel and delete local
-keys when a mutation event arrives, ensuring all pods see consistent
-state within < 100 ms.
+This module *publishes* mutation events to the ``cache:invalidation``
+channel. It does NOT ship a subscriber — operators must wire one
+(e.g. a startup task running ``redis.pubsub().subscribe(...)``) for
+other workers to drop their local entries on mutation. Until then,
+cross-worker convergence is bounded by TTL expiry only.
 """
 
 from __future__ import annotations

@@ -466,13 +466,17 @@ def test_b0_13_callback_against_live_catalog_passes() -> None:
 
 
 def test_waiver_list_does_not_drift_unilaterally() -> None:
-    """Sanity guard: the shipped waiver set is non-empty (Wave-0.5
-    grandfathering) AND every entry is a valid path under ``adapt/``.
+    """Sanity guard: every entry in the waiver set is a valid path under
+    ``adapt/``. Catches accidental waiver typos (wrong slashes, wrong
+    bundle name) that would silently bypass the rule.
 
-    Catches accidental waiver typos (wrong slashes, wrong bundle name)
-    that would silently bypass the rule.
+    Note: as of Wave-2 closure
+    fix/w2-final-honesty-and-sentinel, the waiver set is *empty* —
+    every grandfathered tool has a paired honesty test. We no longer
+    assert non-emptiness (that was the Wave-0.5 backlog signal); the
+    valid-path invariant remains and protects any future waiver from
+    silent typos.
     """
-    assert len(M._WAIVED_TOOLS) > 0
     for tool_key in M._WAIVED_TOOLS:
         candidate = M.ADAPT_ROOT.joinpath(*tool_key.split("/")) / "__init__.py"
         assert candidate.exists(), f"waiver points at missing tool: {tool_key}"
