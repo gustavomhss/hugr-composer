@@ -1,15 +1,24 @@
-"""GET /throttle/status — report the caller's current adaptive throttle state."""
+"""GET /throttle/status — report the caller's current adaptive throttle state.
+
+Auth required (CONTRACT §B0.11 / R6-O1-F12): throttle state leaks the
+caller's behavioral fingerprint and current penalty tier — both are
+defensive signals that must not be exposed to an unauthenticated
+attacker probing for active mitigations. Bound to the authenticated
+session via ``get_current_user``.
+"""
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
+from app.api.deps import get_current_user
 from app.core.adaptive_throttle import (
     build_config,
     fingerprint_request,
 )
-from app.middleware.adaptive_throttle import _PENALTY_STORE, _get_tier
+from app.middleware.adaptive_throttle import _get_tier
+from app.models.user import User
 
 router = APIRouter(prefix="/throttle", tags=["throttle"])
 
@@ -26,18 +35,23 @@ class ThrottleStatus(BaseModel):
 
 
 @router.get("/status", response_model=ThrottleStatus)
-async def get_throttle_status(request: Request) -> ThrottleStatus:
+async def get_throttle_status(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+) -> ThrottleStatus:
     """Return the current adaptive throttle state for the caller.
 
     Args:
         request: Incoming request used to derive behavioral fingerprint.
+        current_user: Authenticated user (B0.11 — defensive signal,
+            must not leak to unauthenticated probes).
 
     Returns:
         ThrottleStatus describing the caller's current throttle state.
     """
     cfg = build_config()
     fp = fingerprint_request(request)
-    tier = _get_tier(fp)
+    tier = await _get_tier(fp)
     return ThrottleStatus(
         enabled=cfg.enabled,
         fingerprint=fp,
