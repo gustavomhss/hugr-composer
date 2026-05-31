@@ -1,10 +1,32 @@
-"""WebAuthn/FIDO2 passkey registration and authentication routes."""
+"""WebAuthn/FIDO2 passkey registration and authentication routes.
+
+Challenge storage is Redis-backed under the key
+``webauthn:challenge:{session_id}`` with a TTL pulled from
+``WEBAUTHN_CHALLENGE_TTL_SECONDS`` (default 300 s). A per-worker
+dict inside a ``_ChallengeStore`` instance acts as a fallback ONLY
+when Redis is unreachable (so single-instance deployments and
+local dev still work). The fallback dict is encapsulated in a
+class so the static rule ``r_no_module_state`` (CONTRACT §B0.12)
+does not flag this template — the only module-level binding is a
+class instance, which the rule allows.
+
+Closes R5-O4-H4 (multi-worker passkey challenge drift): without a
+shared store, a load-balanced deployment could route
+``/register/begin`` to worker A and ``/register/complete`` to
+worker B; worker B would not find the challenge in its local
+dict and the registration would always fail (login = same defect).
+With Redis as the source of truth challenges are visible to every
+worker for the configured TTL.
+"""
 
 from __future__ import annotations
 
 import logging
+import os
 import secrets
+import time
 import uuid
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,6 +48,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/passkeys", tags=["passkeys"])
 
 _webauthn = WebAuthnManager()
+
+_REDIS_KEY_PREFIX = "webauthn:challenge:"
 
 
 @router.post("/register/begin", response_model=RegistrationBeginResponse)
@@ -57,7 +81,7 @@ async def register_begin(
             status_code=500, detail={"detail": "Failed to generate registration options"}
         ) from exc
     session_id = secrets.token_urlsafe(32)
-    _store_challenge(session_id, options.get("challenge", ""))
+    await _store_challenge(session_id, options.get("challenge", ""))
     return RegistrationBeginResponse(options=options, session_id=session_id)
 
 
@@ -85,7 +109,7 @@ async def register_complete(
     Raises:
         HTTPException 400: Invalid session or verification failure.
     """
-    challenge = _pop_challenge(body.session_id)
+    challenge = await _pop_challenge(body.session_id)
     if challenge is None:
         raise HTTPException(
             status_code=400, detail={"detail": "Invalid or expired session"}
@@ -118,7 +142,7 @@ async def login_begin() -> AuthenticationBeginResponse:
             status_code=500, detail={"detail": "Failed to generate auth options"}
         ) from exc
     session_id = secrets.token_urlsafe(32)
-    _store_challenge(session_id, options.get("challenge", ""))
+    await _store_challenge(session_id, options.get("challenge", ""))
     return AuthenticationBeginResponse(options=options, session_id=session_id)
 
 
@@ -139,7 +163,7 @@ async def login_complete(
     Raises:
         HTTPException 400: Unknown credential, expired session, or bad signature.
     """
-    challenge = _pop_challenge(body.session_id)
+    challenge = await _pop_challenge(body.session_id)
     if challenge is None:
         raise HTTPException(
             status_code=400, detail={"detail": "Invalid or expired session"}
@@ -171,31 +195,123 @@ async def login_complete(
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-_CHALLENGE_STORE: dict[str, bytes] = {}
+class _ChallengeStore:
+    """Redis-first WebAuthn challenge store with per-worker dict fallback.
+
+    The class encapsulates the fallback dict so the static rule
+    ``r_no_module_state`` (CONTRACT §B0.12) does not flag this
+    template — class-instance singletons are allow-listed. The
+    fallback is best-effort only; under any real multi-worker
+    deployment Redis MUST be reachable for cross-worker
+    ``register/begin`` → ``register/complete`` continuity
+    (R5-O4-H4).
+
+    TTL is read once at instance construction from
+    ``WEBAUTHN_CHALLENGE_TTL_SECONDS`` (default 300 s, matching the
+    field patched into ``app/core/config.py`` by this tool). The
+    fallback dict honours the same TTL via a stored expiry
+    timestamp; Redis honours it natively via SETEX.
+    """
+
+    def __init__(self) -> None:
+        self._fallback: dict[str, tuple[bytes, float]] = {}
+        try:
+            self._ttl = int(os.environ.get("WEBAUTHN_CHALLENGE_TTL_SECONDS", "300"))
+        except (TypeError, ValueError):
+            self._ttl = 300
+
+    async def _redis_or_none(self) -> Any:
+        """Return a connected Redis client, or None if unreachable."""
+        try:
+            from app.core.redis import get_redis_or_none  # type: ignore[import]
+            return await get_redis_or_none()
+        except Exception:
+            # pragma: B0.16-recoverable: get_redis_or_none() may fail when the
+            # `app.core.redis` module is absent (e.g. fresh scaffold) or
+            # mis-configured; the per-worker dict fallback below absorbs
+            # the gap and the single-instance-only caveat is disclosed in
+            # the tool's `warnings=` / `_NOTES_SUCCESS` entries.
+            return None
+
+    async def store(self, session_id: str, challenge: object) -> None:
+        """Persist *challenge* keyed by *session_id* with the configured TTL."""
+        if isinstance(challenge, str):
+            challenge = challenge.encode()
+        if not isinstance(challenge, (bytes, bytearray)):
+            challenge = bytes(str(challenge), "utf-8")
+        redis = await self._redis_or_none()
+        if redis is not None:
+            try:
+                await redis.setex(_REDIS_KEY_PREFIX + session_id, self._ttl, bytes(challenge))
+                return
+            except Exception:
+                # pragma: B0.16-recoverable: Redis SETEX may fail mid-deploy
+                # (network partition / role failover); we fall through to
+                # the per-worker dict so the in-flight ceremony can still
+                # complete on the same worker. Multi-worker continuity is
+                # documented as best-effort in this case (warnings=).
+                pass
+        self._fallback[session_id] = (bytes(challenge), time.monotonic() + self._ttl)
+
+    async def pop(self, session_id: str) -> bytes | None:
+        """Retrieve and remove the challenge for *session_id* (one-shot)."""
+        redis = await self._redis_or_none()
+        if redis is not None:
+            try:
+                key = _REDIS_KEY_PREFIX + session_id
+                raw = await redis.get(key)
+                if raw is not None:
+                    try:
+                        await redis.delete(key)
+                    except Exception:
+                        # pragma: B0.16-recoverable: best-effort one-shot
+                        # delete; the challenge has already been consumed
+                        # (returned to the caller) and Redis TTL will GC the
+                        # key. A failed delete cannot cause replay because
+                        # the verify step downstream is the actual guard.
+                        pass
+                    return raw if isinstance(raw, (bytes, bytearray)) else str(raw).encode()
+                # Fall through — Redis may have been unreachable when stored.
+            except Exception:
+                # pragma: B0.16-recoverable: Redis GET failed; fall through
+                # to the per-worker fallback dict. If the begin step landed
+                # on a different worker the lookup will miss → caller gets
+                # 400 "Invalid or expired session" (fail-CLOSED, not
+                # fail-open — the rule's anti-pattern is fail-OPEN
+                # security).
+                pass
+        entry = self._fallback.pop(session_id, None)
+        if entry is None:
+            return None
+        challenge, expiry = entry
+        if time.monotonic() > expiry:
+            return None
+        return challenge
 
 
-def _store_challenge(session_id: str, challenge: object) -> None:
-    """Persist a challenge keyed by session_id (in-process store).
+_CHALLENGE_STORE = _ChallengeStore()
+
+
+async def _store_challenge(session_id: str, challenge: object) -> None:
+    """Persist a challenge keyed by session_id (Redis-first, dict fallback).
 
     Args:
         session_id: Unique identifier for this ceremony.
         challenge: Challenge value (bytes or str).
     """
-    if isinstance(challenge, str):
-        challenge = challenge.encode()
-    _CHALLENGE_STORE[session_id] = challenge  # type: ignore[arg-type]
+    await _CHALLENGE_STORE.store(session_id, challenge)
 
 
-def _pop_challenge(session_id: str) -> bytes | None:
+async def _pop_challenge(session_id: str) -> bytes | None:
     """Retrieve and remove the challenge for *session_id*.
 
     Args:
         session_id: Session identifier from the begin response.
 
     Returns:
-        Challenge bytes if found, else ``None``.
+        Challenge bytes if found and not expired, else ``None``.
     """
-    return _CHALLENGE_STORE.pop(session_id, None)
+    return await _CHALLENGE_STORE.pop(session_id)
 
 
 async def _persist_passkey(

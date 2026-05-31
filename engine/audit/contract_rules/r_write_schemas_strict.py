@@ -149,7 +149,20 @@ _WAIVED_TOOLS: frozenset[str] = frozenset(
         "add_ml_model_server",
         "add_multi_tenancy",
         "add_notifications",
-        "add_passkey_auth",
+        # add_passkey_auth — closed Wave-2
+        # (fix/w2-passkey-auth-close-waivers): every WRITE schema
+        # (RegistrationBeginRequest / RegistrationCompleteRequest /
+        # AuthenticationCompleteRequest) now declares
+        # ``model_config = ConfigDict(extra="forbid")`` so the outer
+        # envelope rejects key smuggling at parse time. The
+        # ``credential: dict[str, Any]`` field on the two CompleteRequest
+        # schemas carries a ``# pragma: schema-any: ...`` bypass because
+        # the WebAuthn payload shape is validated end-to-end downstream
+        # by ``py_webauthn`` (RegistrationCredential.parse_raw /
+        # AuthenticationCredential.parse_raw +
+        # verify_{registration,authentication}_response — signature,
+        # attestation, RP-ID hash, origin, challenge, sign-count, UV
+        # flag). Closes R6-O3-P2.
         "add_pdf_reports",
         "add_push_notifications_native",
         "add_sms_otp",

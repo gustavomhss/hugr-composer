@@ -30,9 +30,16 @@ class RegistrationBeginRequest(BaseModel):
     so an attacker cannot pin the new credential to a victim's
     account by submitting the victim's UUID (R5-O4-C5, ATO).
 
+    ``extra="forbid"`` blocks mass-assignment / key smuggling: a
+    request body that adds e.g. ``user_id`` or ``is_admin`` fields
+    is rejected at parse time rather than silently ignored
+    (R6-O3-P2 / CONTRACT §B0.14).
+
     Attributes:
         username: Display name shown in the authenticator prompt.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     username: str
 
@@ -56,13 +63,31 @@ class RegistrationCompleteRequest(BaseModel):
     (``Depends(get_current_user)``) server-side — the client cannot
     name a different owner (R5-O4-C5, ATO).
 
+    ``extra="forbid"`` blocks key smuggling at the outer envelope
+    (R6-O3-P2 / CONTRACT §B0.14). The ``credential`` field itself
+    is intentionally left as a free-form mapping at the Pydantic
+    boundary — its shape is the full WebAuthn
+    ``PublicKeyCredential`` JSON (``id``, ``rawId``, ``type``,
+    ``response.{clientDataJSON,attestationObject}``,
+    ``clientExtensionResults`` …) and is validated downstream by
+    ``py_webauthn.RegistrationCredential.parse_raw`` /
+    ``verify_registration_response``, which enforce the WebAuthn
+    spec end-to-end (signature, attestation, RP-ID hash, origin,
+    challenge match, user-verification flag). A second
+    Pydantic-side schema would duplicate ~150 LOC of spec-tracking
+    that py_webauthn already owns and would drift on every
+    WebAuthn-Level-3 extension. The pragma is the intended bypass
+    (see ``r_write_schemas_strict`` module docstring).
+
     Attributes:
         session_id: Session identifier from the begin response.
         credential: navigator.credentials.create() output.
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     session_id: str
-    credential: dict[str, Any]
+    credential: dict[str, Any]  # pragma: schema-any: WebAuthn payload validated by py_webauthn (R6-O3-P2)
 
 
 class AuthenticationBeginResponse(BaseModel):
@@ -80,13 +105,26 @@ class AuthenticationBeginResponse(BaseModel):
 class AuthenticationCompleteRequest(BaseModel):
     """Request body for completing passkey authentication.
 
+    ``extra="forbid"`` blocks key smuggling at the outer envelope
+    (R6-O3-P2 / CONTRACT §B0.14). The ``credential`` field is the
+    full WebAuthn ``PublicKeyCredential`` JSON
+    (``id``/``rawId``/``response.{clientDataJSON,authenticatorData,
+    signature,userHandle}``/``clientExtensionResults``) and is
+    validated by ``py_webauthn.AuthenticationCredential.parse_raw``
+    + ``verify_authentication_response`` (signature, RP-ID hash,
+    origin, challenge, sign-count, UV flag). The pragma is the
+    intended bypass for shapes the WebAuthn library already
+    enforces end-to-end.
+
     Attributes:
         session_id: Session identifier from the begin response.
         credential: navigator.credentials.get() output.
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     session_id: str
-    credential: dict[str, Any]
+    credential: dict[str, Any]  # pragma: schema-any: WebAuthn payload validated by py_webauthn (R6-O3-P2)
 
 
 class AuthenticationCompleteResponse(BaseModel):
