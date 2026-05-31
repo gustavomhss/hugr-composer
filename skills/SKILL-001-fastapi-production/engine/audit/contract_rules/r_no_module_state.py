@@ -121,8 +121,10 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
     "extend/auth_access/add_passkey_auth",
     # R6-O1-F18 — api_key rate-limit Redis-down fallback uses local dict
     "extend/auth_access/add_api_key_auth",
-    # R6-O1-F10/F14/F15 — _PENALTY_STORE per-worker, bypass via round-robin
-    "extend/infrastructure/add_adaptive_throttle",
+    # "extend/infrastructure/add_adaptive_throttle" — removed by Wave-2
+    # close-out: _PENALTY_STORE is now a _PenaltyStore() class instance
+    # (Redis-backed primary, per-worker dict fallback encapsulated in
+    # the class). Closes R6-O1-F10/F14/F15.
     # R6-S5-F5 — _JOBS dict mutated without lock; cron state not shared
     "extend/infrastructure/add_scheduled_tasks",
     # R6-O3-F9 — _RULES + _DEAD_LETTER per-worker; monetization state lost

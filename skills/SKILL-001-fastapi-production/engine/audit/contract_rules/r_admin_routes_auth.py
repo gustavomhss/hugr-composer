@@ -55,7 +55,8 @@ from ._common import SKILL_ROOT
 # ---------------------------------------------------------------------------
 _WAIVED_TOOLS: frozenset[str] = frozenset(
     {
-        "add_adaptive_throttle",
+        # "add_adaptive_throttle" — removed by Wave-2 close-out:
+        # /throttle/status now requires get_current_user (R6-O1-F12).
         "add_api_deprecation",
         "add_api_replay_debugger",
         "add_canary_tokens",  # honeypot — needs _PUBLIC_ROUTE_JUSTIFICATION
