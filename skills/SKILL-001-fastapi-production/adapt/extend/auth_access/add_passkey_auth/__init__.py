@@ -30,8 +30,12 @@ _NOTES_SUCCESS = [
     "WebAuthn/FIDO2 passkey registration and login implemented.",
     "py_webauthn imported lazily inside WebAuthnManager methods.",
     "Credential public keys stored as LargeBinary (raw bytes).",
-    "⚠ Registration/login challenges stored IN-PROCESS (per-worker dict) — single-instance only; "
-    "cross-worker replay protection IS NOT ENFORCED.",
+    "Registration/login challenges are Redis-backed under "
+    "webauthn:challenge:{session_id} with TTL=WEBAUTHN_CHALLENGE_TTL_SECONDS "
+    "(default 300 s). A per-worker dict fallback (encapsulated in "
+    "_ChallengeStore) is used ONLY when Redis is unreachable; for any "
+    "multi-worker deployment Redis must be reachable for begin→complete "
+    "continuity across workers (closes R5-O4-H4).",
     "Sign count validated on every login to detect cloned credentials.",
     "⚠ require_user_verification=True is asserted by py_webauthn at verify time; if "
     "py_webauthn is absent at runtime the lazy import fails (no silent bypass).",
@@ -41,12 +45,22 @@ _NOTES_SUCCESS = [
     "\"add a passkey to my logged-in account\" flow; first-time passkey-only "
     "signup (no prior session) is OUT OF SCOPE and would need a separate "
     "partial-credential dep (R5-O4-C5).",
+    "Write schemas declare ConfigDict(extra=\"forbid\") to block "
+    "mass-assignment / key smuggling (R6-O3-P2). The credential field on "
+    "Registration/Authentication CompleteRequest is intentionally typed "
+    "dict[str, Any] (pragma: schema-any); the WebAuthn payload is "
+    "validated end-to-end by py_webauthn (signature, RP-ID hash, "
+    "origin, challenge, sign-count, UV flag).",
 ]
 _NEXT_STEPS = [
     "pip install py_webauthn",
     "Add WEBAUTHN_RP_ID, WEBAUTHN_RP_NAME, WEBAUTHN_ORIGIN to settings.",
     "alembic upgrade head",
     "Set WEBAUTHN_RP_ID to your domain (e.g. 'example.com').",
+    "Configure REDIS_URL so app.core.redis.get_redis_or_none() returns a "
+    "live client — required for cross-worker challenge continuity. "
+    "Single-instance deployments can omit Redis (the per-worker dict "
+    "fallback honours WEBAUTHN_CHALLENGE_TTL_SECONDS).",
 ]
 _PREREQ_NOTES = [
     "These prerequisites cannot be auto-created.",

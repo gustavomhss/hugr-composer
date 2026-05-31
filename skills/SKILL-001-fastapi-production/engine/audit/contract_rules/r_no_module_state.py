@@ -117,9 +117,14 @@ from ._common import SKILL_ROOT
 #
 # Format: { "extend/<wp>/<tool_name>", ... }  (relative to ADAPT_ROOT)
 _WAIVED_TOOLS: frozenset[str] = frozenset({
-    # R5-O4-H4 — passkey challenge dict per-worker; multi-worker breaks login
-    "extend/auth_access/add_passkey_auth",
-    # "extend/auth_access/add_api_key_auth" — closed in W2 PR
+    # "extend/auth_access/add_passkey_auth" — closed Wave-2
+    # (fix/w2-passkey-auth-close-waivers): the module-level
+    # ``_CHALLENGE_STORE: dict[str, bytes] = {}`` is replaced by a
+    # ``_ChallengeStore()`` class instance whose primary backend is Redis
+    # (``webauthn:challenge:{session_id}`` SETEX with TTL =
+    # ``WEBAUTHN_CHALLENGE_TTL_SECONDS``) and whose per-worker dict
+    # fallback is encapsulated inside the class. Closes R5-O4-H4.
+    # "extend/auth_access/add_api_key_auth" — closed Wave-2
     # (fix/w2-api-key-auth-close-waivers): _local_counters is now a
     # _LocalCounters() class instance (allow-listed by this rule) AND
     # _SINGLE_PROCESS_OK + warnings= disclosure shipped in the tool's
