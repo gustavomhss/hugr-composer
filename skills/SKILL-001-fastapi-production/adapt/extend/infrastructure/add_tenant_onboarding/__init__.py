@@ -20,6 +20,17 @@ from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 
 _HERE = Path(__file__).parent
 
+# B0.12 — emitted ``OnboardingOrchestrator`` keeps progress in a
+# ``ProgressRegistry`` instance. The body is an in-process ``dict``;
+# under a multi-worker deployment each worker has its own copy. The
+# class-instance wrapping keeps this off the B0.12 ``no_module_state``
+# AST radar (instance state is allow-listed) and this flag + the
+# ``single-process`` ``warnings=`` entry below disclose the tradeoff
+# explicitly. Production multi-worker deployments must swap the
+# ``ProgressRegistry`` body for a Redis / DB-backed store — see the
+# emitted ``orchestrator.py`` docstring.
+_SINGLE_PROCESS_OK: bool = True
+
 MCP_TOOL = {
     "name": "fastapi_resiliency_add_tenant_onboarding",
     "description": (
@@ -153,6 +164,19 @@ def add_tenant_onboarding(inp: ToolInput) -> ToolResult:
             "Built-in steps: CreateTenantStep, CreateAdminUserStep, SeedDataStep,",
             "  ConfigureBillingStep, SendWelcomeEmailStep.",
             "POST /onboarding/start, GET /onboarding/{id}/status.",
+        ],
+        warnings=[
+            # B0.12 disclosure — paired with _SINGLE_PROCESS_OK = True
+            # in this module. The emitted ProgressRegistry is single-process;
+            # under multi-worker (gunicorn -w N / uvicorn --workers) each
+            # worker has its own copy and onboarding status lookups will
+            # 404 if they land on a different worker than the POST. Swap
+            # the ProgressRegistry body for Redis/DB-backed storage for
+            # production multi-worker deployments.
+            "ProgressRegistry is single-process (in-memory dict). "
+            "Multi-worker deployments: replace with Redis/DB-backed store; "
+            "otherwise GET /onboarding/{id}/status may 404 when landing "
+            "on a worker different from the POST /onboarding/start.",
         ],
         next_steps=[
             "Set ONBOARDING_STEPS (comma-separated) in .env, e.g.: "

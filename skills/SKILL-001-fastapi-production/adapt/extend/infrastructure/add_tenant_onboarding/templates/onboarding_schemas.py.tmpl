@@ -2,11 +2,18 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class OnboardingRequest(BaseModel):
-    """Request body for POST /onboarding/start."""
+    """Request body for POST /onboarding/start.
+
+    B0.14 — ``extra="forbid"`` rejects unknown keys at the input boundary
+    (mass-assignment / key-smuggling defence). The two declared fields
+    are both bounded; no bare ``dict`` / ``Any`` slips through.
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
     tenant_name: str = Field(..., min_length=1, max_length=128)
     admin_email: EmailStr = Field(..., description="Email for the initial admin user")
@@ -24,6 +31,12 @@ class OnboardingStatusResponse(BaseModel):
     error: str
     started_at: float
     completed_at: float
+    # B0.16 — surface partial-rollback details to API consumers so
+    # operators see the half-rolled-back blast radius (populated by
+    # OnboardingOrchestrator._compensate when a compensation step
+    # itself raises). Each entry is ``{"step": str, "error": str,
+    # "error_type": str}``; concrete value types means no bare-Any.
+    failed_compensations: list[dict[str, str]] = Field(default_factory=list)
 
 
 class OnboardingStartResponse(BaseModel):
