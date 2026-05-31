@@ -1,6 +1,16 @@
 
-
-# Idempotency cache — added by add_bulk_operations tool
-import os as _os
-_redis_url = _os.getenv("REDIS_URL", "redis://localhost:6379/0")
-init_idempotency_cache(_redis_url)
+# NOTE: this template intentionally has no module-top code.
+#
+# The patcher (`add_bulk_operations._patch_main`) splices the
+# idempotency cache lifecycle INSIDE the FastAPI `lifespan` context
+# manager — startup before `yield`, shutdown after — to satisfy
+# CONTRACT §B0.15 (no init-class calls at module import; see triage
+# R5-O2-D12 + R6-O2-O2-2). The previous version of this template
+# appended:
+#
+#     _redis_url = _os.getenv("REDIS_URL", ...)
+#     init_idempotency_cache(_redis_url)
+#
+# at module-top, which built a Redis client at import time with no
+# startup gate and no shutdown — exactly the anti-pattern B0.15
+# rejects. Lifespan wiring is now done in-place by the patcher.

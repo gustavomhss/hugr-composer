@@ -54,6 +54,25 @@ class BulkResponse(BaseModel):
     results: list[BulkResultItem]
 
 
+class ${model_name}BulkUpdateItem(${model_name}Update):
+    """Per-item PATCH payload for ``PATCH /${lower}s/bulk``.
+
+    Inherits the mutable-field whitelist + ``extra="forbid"`` from the
+    project-generated ``${model_name}Update`` schema (all fields optional
+    with the same validators / constraints), and pins the required ``id``
+    used to resolve the target row.
+
+    Closes B0.14 mass-assignment surface: the previous shape was
+    ``updates: list[dict]`` (raw dict), which allowed callers to set
+    server-controlled columns like ``owner_id`` / ``tenant_id`` /
+    ``created_at`` / ``is_deleted``. By composing against
+    ``${model_name}Update`` (already strict) and adding only ``id``,
+    only the business-mutable subset is accepted.
+    """
+
+    id: _bulk_uuid.UUID
+
+
 class ${model_name}BulkCreate(BaseModel):
     """Request body for ``POST /${lower}s/bulk``.
 
@@ -65,6 +84,8 @@ class ${model_name}BulkCreate(BaseModel):
         mode: Transaction isolation — all_or_nothing or best_effort.
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     items: Annotated[list[${model_name}Create], Field(min_length=1, max_length=${max_batch})]
     mode: Literal["all_or_nothing", "best_effort"] = "all_or_nothing"
 
@@ -72,32 +93,43 @@ class ${model_name}BulkCreate(BaseModel):
 class ${model_name}BulkUpdate(BaseModel):
     """Request body for ``PATCH /${lower}s/bulk``.
 
-    Each update dict MUST include ``id`` to resolve the target row.
+    Each update item is a strict ``${model_name}BulkUpdateItem`` (mutable
+    fields only + required ``id``); mass-assignment of server-controlled
+    columns is rejected by Pydantic with HTTP 422.
 
     Attributes:
-        updates: List of partial update dicts, each containing ``id`` (1–${max_batch}).
+        updates: List of partial update items (1–${max_batch}).
         mode: Transaction isolation — all_or_nothing or best_effort.
     """
 
-    updates: Annotated[list[dict], Field(min_length=1, max_length=${max_batch})]
+    model_config = ConfigDict(extra="forbid")
+
+    updates: Annotated[
+        list[${model_name}BulkUpdateItem],
+        Field(min_length=1, max_length=${max_batch}),
+    ]
     mode: Literal["all_or_nothing", "best_effort"] = "all_or_nothing"
 
     @field_validator("updates")
     @classmethod
-    def each_update_has_id(cls, v: list[dict]) -> list[dict]:
-        """Reject any update dict that omits the ``id`` key.
+    def each_update_has_id(
+        cls, v: list["${model_name}BulkUpdateItem"]
+    ) -> list["${model_name}BulkUpdateItem"]:
+        """Validator retained for spec parity (CC-03).
+
+        ``id`` is already required by ``${model_name}BulkUpdateItem`` so
+        Pydantic raises ``ValidationError`` before this runs; the
+        check is kept as a defence-in-depth backstop for any future
+        refactor that loosens the per-item schema.
 
         Args:
-            v: List of update dicts to validate.
+            v: List of typed update items.
 
         Returns:
             The validated list.
-
-        Raises:
-            ValueError: If any dict is missing the ``id`` key.
         """
         for idx, u in enumerate(v):
-            if "id" not in u:
+            if getattr(u, "id", None) is None:
                 raise ValueError(
                     f"Update at index {idx} is missing required 'id' field"
                 )
@@ -111,6 +143,8 @@ class ${model_name}BulkDelete(BaseModel):
         ids: List of item UUIDs to delete (1–${max_batch}).
         mode: Transaction isolation — all_or_nothing or best_effort.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     ids: Annotated[list[_bulk_uuid.UUID], Field(min_length=1, max_length=${max_batch})]
     mode: Literal["all_or_nothing", "best_effort"] = "all_or_nothing"

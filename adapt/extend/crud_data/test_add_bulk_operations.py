@@ -414,6 +414,120 @@ def test_multiword_model_bulk_ops_not_skipped() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Wave-2 regression — close B0.14 (write_schemas_strict_forbid) + B0.15
+# (init_inside_lifespan_only) waivers for add_bulk_operations.
+# ---------------------------------------------------------------------------
+
+
+def test_b014_bulk_request_schemas_declare_extra_forbid() -> None:
+    """B0.14: ItemBulkCreate / Update / Delete carry extra="forbid".
+
+    Mass-assignment via unbounded ``updates: list[dict]`` was the
+    original B0.14 / R5-O2-D8 finding. Each bulk-request schema MUST
+    now declare ``model_config = ConfigDict(extra="forbid")`` so
+    Pydantic-v2 rejects unknown keys at validation time (HTTP 422),
+    not silently swallow them.
+    """
+    project_dir = create_fixture_project(name="bulk_b014_extra_forbid")
+    add_bulk_operations(ToolInput(project_dir=str(project_dir)))
+    schema_text = (project_dir / "app" / "schemas" / "item.py").read_text()
+    # Each bulk request class block must contain extra="forbid" before
+    # the next class keyword arrives.
+    for cls in ("ItemBulkCreate", "ItemBulkUpdate", "ItemBulkDelete"):
+        head = schema_text.find(f"class {cls}(")
+        assert head != -1, f"missing class {cls} in schema file"
+        # Look at the next ~25 lines of the class body for the marker.
+        body_window = schema_text[head : head + 1500]
+        assert 'extra="forbid"' in body_window, (
+            f"{cls} must declare model_config = ConfigDict(extra=\"forbid\") "
+            "(B0.14 / R5-O2-D8)"
+        )
+
+
+def test_b014_bulk_update_uses_typed_item_not_raw_dict() -> None:
+    """B0.14: ``updates`` field is typed as a Pydantic model, not ``list[dict]``.
+
+    The old shape ``updates: Annotated[list[dict], ...]`` allowed
+    callers to set server-controlled columns (``owner_id``,
+    ``tenant_id``, ``created_at``, ``is_deleted``). The new shape
+    composes a per-item ``ItemBulkUpdateItem`` that inherits the
+    project-generated ``ItemUpdate`` (already mutable-only + strict).
+    """
+    project_dir = create_fixture_project(name="bulk_b014_typed_updates")
+    add_bulk_operations(ToolInput(project_dir=str(project_dir)))
+    schema_text = (project_dir / "app" / "schemas" / "item.py").read_text()
+    assert "class ItemBulkUpdateItem(ItemUpdate)" in schema_text, (
+        "ItemBulkUpdateItem must subclass ItemUpdate (which already ships "
+        "extra=\"forbid\" + mutable-field whitelist) — B0.14 / R5-O2-D8"
+    )
+    # The bulk_update.updates field must reference the typed item.
+    assert "list[ItemBulkUpdateItem]" in schema_text, (
+        "ItemBulkUpdate.updates must be list[ItemBulkUpdateItem], "
+        "not list[dict] (B0.14 / R5-O2-D8)"
+    )
+    # And the legacy raw-dict shape MUST NOT be present.
+    assert "list[dict]" not in schema_text.split("class ItemBulkUpdate(")[1].split(
+        "class "
+    )[0], "ItemBulkUpdate must no longer accept list[dict] (B0.14 / R5-O2-D8)"
+
+
+def test_b015_init_idempotency_cache_called_inside_lifespan() -> None:
+    """B0.15: ``init_idempotency_cache(...)`` lives INSIDE ``async def lifespan(...)``.
+
+    Closes R5-O2-D12 + R6-O2-O2-2. The previous patcher appended the
+    call at module-top, which built the Redis client at import time
+    with no startup gate. The patcher now splices the call before the
+    ``yield`` of the FastAPI ``lifespan`` context manager and the
+    matching ``await close_idempotency_cache()`` after.
+    """
+    import ast as _ast
+
+    project_dir = create_fixture_project(name="bulk_b015_lifespan")
+    result = add_bulk_operations(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success"
+    main_src = (project_dir / "app" / "main.py").read_text()
+    assert "init_idempotency_cache" in main_src, "init call missing"
+    assert "close_idempotency_cache" in main_src, "shutdown call missing"
+
+    tree = _ast.parse(main_src)
+    # Find every Call to init_idempotency_cache; track which scope
+    # contains it (module-top vs `async def lifespan(...)`).
+    lifespan_calls: list[int] = []
+    top_calls: list[int] = []
+
+    class _Visitor(_ast.NodeVisitor):
+        def __init__(self) -> None:
+            self._in_lifespan = False
+
+        def visit_AsyncFunctionDef(self, node: _ast.AsyncFunctionDef) -> None:  # noqa: N802
+            prior = self._in_lifespan
+            if node.name == "lifespan":
+                self._in_lifespan = True
+            self.generic_visit(node)
+            self._in_lifespan = prior
+
+        def visit_Call(self, node: _ast.Call) -> None:  # noqa: N802
+            fn = node.func
+            name = (
+                fn.id
+                if isinstance(fn, _ast.Name)
+                else (fn.attr if isinstance(fn, _ast.Attribute) else "")
+            )
+            if name == "init_idempotency_cache":
+                (lifespan_calls if self._in_lifespan else top_calls).append(node.lineno)
+            self.generic_visit(node)
+
+    _Visitor().visit(tree)
+    assert lifespan_calls, (
+        "init_idempotency_cache(...) must be called INSIDE async def lifespan(...) "
+        "— see CONTRACT §B0.15 / triage R5-O2-D12 + R6-O2-O2-2"
+    )
+    assert not top_calls, (
+        f"init_idempotency_cache(...) must NOT appear at module top; found at lines {top_calls}"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner (fallback when pytest is unavailable)
 # ---------------------------------------------------------------------------
 
@@ -453,6 +567,10 @@ if __name__ == "__main__":
         test_no_models_returns_error,
         test_bulk_routes_in_same_router_file,
         test_schema_bulk_response_has_config_dict,
+        test_multiword_model_bulk_ops_not_skipped,
+        test_b014_bulk_request_schemas_declare_extra_forbid,
+        test_b014_bulk_update_uses_typed_item_not_raw_dict,
+        test_b015_init_idempotency_cache_called_inside_lifespan,
     ]
 
     passed = 0

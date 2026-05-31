@@ -122,7 +122,14 @@ _WAIVED_TOOLS: frozenset[str] = frozenset(
     {
         "add_api_key_auth",
         "add_api_monetization",
-        "add_bulk_operations",
+        # "add_bulk_operations" — closed Wave-2 (B0.14):
+        #   schema_addition.py.tmpl now ships `model_config =
+        #   ConfigDict(extra="forbid")` on every Bulk{Create,Update,Delete}
+        #   request schema, and replaces `updates: list[dict]` with the
+        #   typed `list[${Model}BulkUpdateItem]` (subclass of the existing
+        #   strict ${Model}Update, plus a required `id`). See triage
+        #   R5-O2-D8 — the original "updates: list[dict]" mass-assignment
+        #   surface is now bound by Pydantic-v2 strict validation.
         "add_compliance_engine",
         "add_data_versioning",
         "add_email_templates",

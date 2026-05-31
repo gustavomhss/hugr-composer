@@ -125,9 +125,13 @@ from ._common import SKILL_ROOT
 # and ``verify/`` paths.
 # ---------------------------------------------------------------------------
 _WAIVED_TOOLS: frozenset[str] = frozenset({
-    # R5-O2-D12 / R6-O2-O2-2 — init_idempotency_cache patched at EOF
-    # of main; Redis built at import time, no startup gate.
-    "extend/crud_data/add_bulk_operations",
+    # "extend/crud_data/add_bulk_operations" — closed Wave-2 (B0.15):
+    #   `add_bulk_operations._patch_main` now splices
+    #   `init_idempotency_cache(...)` INSIDE `async def lifespan(...)`
+    #   (mirroring the `add_arq_worker` pattern), and shutdown calls
+    #   `await close_idempotency_cache()` after the `yield`. The
+    #   `main_patch.py.tmpl` is reduced to a doc-only stub. See triage
+    #   R5-O2-D12 + R6-O2-O2-2.
     # R5-S5-F2 — _init_metrics() re-registers globally; needs lifespan
     # gating to bind the metrics registry once per worker startup.
     "extend/infrastructure/add_prometheus_metrics",

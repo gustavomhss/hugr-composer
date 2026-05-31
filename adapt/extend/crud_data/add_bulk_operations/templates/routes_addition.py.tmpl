@@ -88,8 +88,12 @@ async def bulk_update_${lower}(
         if cached is not None:
             return BulkResponse.model_validate(cached)
 
+    # Materialise the strict per-item Pydantic models into dicts the CRUD
+    # helper consumes. ``exclude_unset=True`` keeps the PATCH semantics —
+    # only fields the caller actually sent end up in the UPDATE statement.
+    _updates_dicts = [u.model_dump(exclude_unset=True) for u in payload.updates]
     result_dict = await _crud_bulk_update(
-        session, updates=payload.updates, owner_id=current_user.id, mode=payload.mode
+        session, updates=_updates_dicts, owner_id=current_user.id, mode=payload.mode
     )
 
     if idempotency_key:
