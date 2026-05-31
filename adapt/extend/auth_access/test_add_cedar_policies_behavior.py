@@ -133,6 +133,25 @@ async def _make_sqlite_client(project_dir: Path):
 
     app.dependency_overrides[get_session_mod.get_session] = _override
 
+    # B0.11 close-out: /authz/check and /authz/policies are now gated on
+    # ``get_current_superuser`` (policy oracle + layout disclosure).
+    # Override the dep so behavior tests can still assert the 200 happy
+    # path without provisioning a real JWT.
+    import uuid as _uuid
+
+    deps_mod = importlib.import_module("app.api.deps")
+    user_mod = importlib.import_module("app.models.user")
+    _fake_super = user_mod.User()
+    _fake_super.id = _uuid.uuid4()
+    _fake_super.email = "cedar_behavior@test"
+    _fake_super.is_active = True
+    _fake_super.is_superuser = True
+
+    async def _fake_superuser():
+        return _fake_super
+
+    app.dependency_overrides[deps_mod.get_current_superuser] = _fake_superuser
+
     # Disable idempotency middleware if present (requires Redis)
     try:
         idempotency_mod = importlib.import_module("app.middleware.idempotency")

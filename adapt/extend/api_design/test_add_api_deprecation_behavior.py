@@ -107,9 +107,16 @@ def behavior_project(tmp_path_factory: pytest.TempPathFactory) -> Path:
 def booted_app(behavior_project: Path):
     """Import the ASGI app from the behavior_project.
 
+    Installs a ``get_current_user`` dependency override so the auth-gated
+    ``/api/v1/deprecations`` route (B0.11 close-out — deprecation
+    metadata is a lifecycle fingerprint) can be reached by behavior
+    tests without provisioning a real JWT.
+
     Returns:
         The FastAPI app instance.
     """
+    import uuid as _uuid
+
     project_str = str(behavior_project)
     if project_str not in sys.path:
         sys.path.insert(0, project_str)
@@ -117,6 +124,21 @@ def booted_app(behavior_project: Path):
     _clear_modules()
     app_module = importlib.import_module("app.main")
     app = app_module.app
+
+    # Override get_current_user for the gated /deprecations endpoint.
+    deps_mod = importlib.import_module("app.api.deps")
+    user_mod = importlib.import_module("app.models.user")
+    fake = user_mod.User()
+    fake.id = _uuid.uuid4()
+    fake.email = "deprecation_behavior@test"
+    fake.is_active = True
+    fake.is_superuser = False
+
+    async def _fake_current_user():
+        return fake
+
+    app.dependency_overrides[deps_mod.get_current_user] = _fake_current_user
+
     yield app
     _clear_modules()
     if project_str in sys.path:

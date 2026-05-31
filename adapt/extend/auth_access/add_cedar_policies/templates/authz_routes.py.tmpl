@@ -1,18 +1,35 @@
 """Cedar authz API endpoints.
 
-POST /authz/check  — evaluate a Cedar policy decision on demand.
+POST /authz/check    — evaluate a Cedar policy decision on demand.
 GET  /authz/policies — list the names of all loaded .cedar policy files.
+
+Auth (CONTRACT §B0.11)
+----------------------
+Both endpoints are administrative / policy-introspection surfaces and
+require an authenticated superuser:
+
+* ``POST /authz/check`` lets the caller supply an arbitrary
+  ``(principal, action, resource, context)`` tuple and observe the
+  Cedar decision. Without auth, attackers can probe the policy
+  engine to enumerate which actions any principal is allowed to
+  take on any resource — effectively an unauthenticated read of the
+  authorisation matrix. Restrict to superusers.
+* ``GET /authz/policies`` lists loaded policy file names, which leaks
+  the application's authorisation layout (e.g. presence of an
+  ``admin_full_access`` policy is itself a signal). Restrict to
+  superusers.
 """
 
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
+from app.api.deps import get_current_superuser
 from app.authz.engine import get_cedar_engine
 from app.authz.models import AuthzRequest, AuthzResponse
+from app.models.user import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/authz", tags=["authz"])
@@ -24,11 +41,16 @@ router = APIRouter(prefix="/authz", tags=["authz"])
     status_code=status.HTTP_200_OK,
     summary="Evaluate a Cedar policy decision",
 )
-def check_authorization(payload: AuthzRequest) -> AuthzResponse:
+def check_authorization(
+    payload: AuthzRequest,
+    current_user: User = Depends(get_current_superuser),
+) -> AuthzResponse:
     """Evaluate a Cedar authorization decision for the given request.
 
     Args:
         payload: ``AuthzRequest`` with principal, action, resource, context.
+        current_user: Authenticated superuser (B0.11 — policy evaluation
+            is an authorisation-matrix oracle; restrict to admins).
 
     Returns:
         ``AuthzResponse`` with ``allowed`` bool and human-readable ``reason``.
@@ -42,11 +64,12 @@ def check_authorization(payload: AuthzRequest) -> AuthzResponse:
     )
     reason = "permit" if allowed else "forbid (no matching permit policy)"
     logger.info(
-        "Cedar check: allowed=%s principal=%s action=%s resource=%s",
+        "Cedar check: allowed=%s principal=%s action=%s resource=%s caller=%s",
         allowed,
         payload.principal,
         payload.action,
         payload.resource,
+        current_user.id,
     )
     return AuthzResponse(
         allowed=allowed,
@@ -63,8 +86,14 @@ def check_authorization(payload: AuthzRequest) -> AuthzResponse:
     status_code=status.HTTP_200_OK,
     summary="List loaded Cedar policy files",
 )
-def list_policies() -> list[str]:
+def list_policies(
+    current_user: User = Depends(get_current_superuser),
+) -> list[str]:
     """Return the names of all .cedar policy files currently loaded.
+
+    Args:
+        current_user: Authenticated superuser (B0.11 — policy filenames
+            leak authorisation layout; restrict to admins).
 
     Returns:
         Sorted list of policy file stem names (without extension).

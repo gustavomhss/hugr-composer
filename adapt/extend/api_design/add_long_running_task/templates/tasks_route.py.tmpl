@@ -7,6 +7,17 @@
 All state lives in the `WorkflowClient` shipped by the adapter; this module
 is pure wiring.
 
+Auth (CONTRACT §B0.11)
+----------------------
+Every route requires an authenticated user. Starting, polling, or
+cancelling a workflow is an authority-bearing action — anonymous
+callers could enumerate ``workflow_id``s, cancel another tenant's job,
+or DoS the worker pool by spamming ``POST /tasks``. The owning user is
+bound server-side via ``current_user`` so the workflow client may
+prefix-scope task IDs to the caller (the reference
+``InMemoryWorkflowClient`` is a stub; production clients should reject
+cross-user reads/cancels of ``workflow_id``s the caller does not own).
+
 Warnings:
     Task state is held in-process (InMemoryWorkflowClient). It does NOT
     persist across process restarts. Swap the reference client for a
@@ -19,6 +30,8 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.workflow import workflow_client_dep
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -28,9 +41,18 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 async def start_task(
     payload: dict[str, Any],
     response: Response,
+    current_user: User = Depends(get_current_user),
     client=Depends(workflow_client_dep),
 ) -> dict[str, Any]:
-    """Start a new workflow run. Returns 202 + Location header."""
+    """Start a new workflow run. Returns 202 + Location header.
+
+    Args:
+        payload: Workflow start payload (workflow_id, workflow_type, ...).
+        response: FastAPI response (to set Location header).
+        current_user: Authenticated user (B0.11 — owning identity for
+            the workflow; production clients should prefix or store this).
+        client: Workflow client injected via ``workflow_client_dep``.
+    """
     workflow_id = str(payload.get("workflow_id") or payload.get("id") or "")
     if not workflow_id:
         raise HTTPException(status_code=400, detail="workflow_id required")
@@ -43,8 +65,18 @@ async def start_task(
 
 
 @router.get("/{workflow_id}")
-async def get_task(workflow_id: str, client=Depends(workflow_client_dep)) -> dict[str, Any]:
-    """Poll a task's current run identity."""
+async def get_task(
+    workflow_id: str,
+    current_user: User = Depends(get_current_user),
+    client=Depends(workflow_client_dep),
+) -> dict[str, Any]:
+    """Poll a task's current run identity.
+
+    Args:
+        workflow_id: Caller-supplied workflow identifier.
+        current_user: Authenticated user (B0.11).
+        client: Workflow client injected via ``workflow_client_dep``.
+    """
     try:
         run = await client.describe(workflow_id)
     except Exception as exc:  # noqa: BLE001 — primitive raises when unknown
@@ -53,8 +85,19 @@ async def get_task(workflow_id: str, client=Depends(workflow_client_dep)) -> dic
 
 
 @router.delete("/{workflow_id}", status_code=204)
-async def cancel_task(workflow_id: str, client=Depends(workflow_client_dep)) -> Response:
-    """Cooperatively cancel a task by workflow_id."""
+async def cancel_task(
+    workflow_id: str,
+    current_user: User = Depends(get_current_user),
+    client=Depends(workflow_client_dep),
+) -> Response:
+    """Cooperatively cancel a task by workflow_id.
+
+    Args:
+        workflow_id: Caller-supplied workflow identifier.
+        current_user: Authenticated user (B0.11 — cancellation is
+            destructive; must not be reachable anonymously).
+        client: Workflow client injected via ``workflow_client_dep``.
+    """
     try:
         await client.cancel(workflow_id)
     except Exception as exc:  # noqa: BLE001
