@@ -62,7 +62,10 @@ _WAIVED_TOOLS: frozenset[str] = frozenset(
         "add_canary_tokens",  # honeypot — needs _PUBLIC_ROUTE_JUSTIFICATION
         "add_cedar_policies",
         "add_cors_config",
-        "add_data_versioning",
+        # "add_data_versioning" — removed by R5-O2-D2 fix-PR: all 5 /versions
+        # routes now require ``Depends(get_current_user)`` and the draft
+        # author is bound to ``current_user.id`` server-side (no longer
+        # taken from request body).
         "add_dependency_health_map",
         "add_health_deep",
         "add_long_running_task",

@@ -131,7 +131,11 @@ _WAIVED_TOOLS: frozenset[str] = frozenset(
         #   R5-O2-D8 — the original "updates: list[dict]" mass-assignment
         #   surface is now bound by Pydantic-v2 strict validation.
         "add_compliance_engine",
-        "add_data_versioning",
+        # "add_data_versioning" — removed by R6-O3-P1 cluster fix-PR:
+        # ``VersionCreate`` now declares ``extra="forbid"`` and replaces
+        # the bare ``dict[str, Any]`` snapshot with a JSON-scalar bound
+        # (``dict[str, str | int | float | bool | None]``). ``VersionDiff``
+        # response fields use the same bound.
         "add_email_templates",
         "add_feature_flags",
         "add_file_upload",
