@@ -186,9 +186,15 @@ _PAIR_TEST_PATTERNS: tuple[str, ...] = (
 # NO new tool may be added to this set without reviewer approval — the
 # rule rejects regressions everywhere else.
 _WAIVED_TOOLS: frozenset[str] = frozenset({
-    # P4 — "fan-out" claim; no engine-level pair test asserts Redis
-    # pubsub invalidation actually fans out cross-worker.
-    "extend/auth_access/add_feature_flags",
+    # add_feature_flags — closed Wave-2 (B0.13) in
+    # fix/w2-feature-flags-close-waivers:
+    #   notes are now honest about the single-node 60s-TTL cache, the
+    #   commented-out invalidation listener (R5-S2-F7), and the kill-
+    #   switch TTL race (R5-S2-F8). The over-claim "Redis pubsub
+    #   invalidation (< 1s fan-out)" was replaced with the per-worker
+    #   reality and the gap was moved to warnings=. Paired test:
+    #   engine/tests/test_add_feature_flags_notes_invariants.py asserts
+    #   the disclosure shape against the template content.
     # P4 — "verified email" claim; no engine-level test asserts the
     # account-linking branch actually checks email_verified=true.
     "extend/auth_access/add_social_login",

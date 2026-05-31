@@ -192,16 +192,42 @@ def add_feature_flags(inp: ToolInput) -> ToolResult:
             "Shipped primitives: core.venous.flags.FeatureToggle, core.venous.auth.FeatureFlagCache.",
             "Glue: app/feature_flags.py wires FeatureToggleRegistry + FeatureFlagCache + require_flag.",
             "Feature-flag subsystem added: model, cache, evaluator, deps, CRUD, routes, schemas.",
-            "in-process LRU cache with Redis pubsub invalidation (< 1s fan-out).",
+            # Honest disclosure (B0.13 / R5-S2-F7+F8): the in-process cache is
+            # per-worker single-node with a 60s TTL; the Redis pubsub
+            # ``publish_invalidation`` helper and ``start_invalidation_listener``
+            # ship but are NOT wired by this tool (main.py patch is commented
+            # out; CRUD never calls publish). See warnings= below.
+            "single-node in-process LRU cache, 60s TTL — see next_steps for invalidation wiring.",
             "SHA-256 deterministic bucketing for percentage rollouts.",
-            "Kill switch overrides all other evaluation logic.",
+            "Kill switch overrides all other evaluation logic at the per-worker cache level.",
             "Every flag mutation writes an audit row in the same transaction.",
+        ],
+        warnings=[
+            # R5-S2-F7: invalidation listener startup is shipped as a
+            # commented stub in _patch_main; operators must uncomment +
+            # provide app/core/redis.py for cross-worker fan-out to occur.
+            "Cache invalidation listener is NOT auto-wired: app/main.py "
+            "lifespan ships a commented-out start_invalidation_listener "
+            "stub. Until uncommented, mutations propagate only after the "
+            "60s TTL expires on each worker.",
+            # R5-S2-F8: cache TTL race — even with the listener wired, a
+            # second between publish and per-worker invalidate means stale
+            # reads. Kill-switch flips are subject to the same lag.
+            "Kill-switch flips can lag up to 60s on workers that have a "
+            "cached entry — the per-worker TTL is the upper bound; "
+            "operators needing immediate effect must also bounce workers "
+            "or call cache.clear() out-of-band.",
+            "CRUD does not auto-publish invalidation events; wiring "
+            "publish_invalidation into create/update/delete is left to "
+            "the integrator (see app/core/feature_flag_cache.py).",
         ],
         next_steps=[
             "alembic upgrade head",
             "Set FEATURE_FLAG_CACHE_TTL=60 and FEATURE_FLAG_EVAL_TIMEOUT_MS=5 in .env",
             "Wire require_flag: @router.get('/beta', dependencies=[Depends(require_flag('my_flag'))])",
-            "Restart workers so lifespan wires up the Redis invalidation listener.",
+            "OPTIONAL cross-worker invalidation: provision Redis + app/core/redis.py, "
+            "uncomment the start_invalidation_listener block in app/main.py lifespan, "
+            "and call publish_invalidation(redis, key) inside crud.update/delete.",
         ],
         execution_time_ms=_elapsed_ms(start),
     )

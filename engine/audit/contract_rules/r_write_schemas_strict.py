@@ -143,7 +143,17 @@ _WAIVED_TOOLS: frozenset[str] = frozenset(
         # (``dict[str, str | int | float | bool | None]``). ``VersionDiff``
         # response fields use the same bound.
         "add_email_templates",
-        "add_feature_flags",
+        # "add_feature_flags" — closed Wave-2 (B0.14) in
+        # fix/w2-feature-flags-close-waivers:
+        #   schemas.py.tmpl now ships ``model_config = ConfigDict(extra=
+        #   "forbid")`` on both ``FeatureFlagCreate`` and
+        #   ``FeatureFlagUpdate``, and replaces the legacy
+        #   ``targeting_rules: list[dict[str, Any]]`` / ``variants:
+        #   list[dict[str, Any]]`` mass-assignment surface with typed
+        #   sub-models (``TargetingRule`` / ``Variant``, both also
+        #   extra=forbid). Cites R6-O3-P9. The strict bounds match the
+        #   evaluator runtime keys (``attribute``/``operator``/``value``/
+        #   ``return_value`` + ``name``/``weight``).
         "add_file_upload",
         "add_ml_model_registry",
         "add_ml_model_server",
