@@ -52,38 +52,36 @@ from ._common import SKILL_ROOT
 # Populated by running this rule against the catalog on 2026-05-30 at base
 # commit 636ab57; 14 tools / 31 routes flagged. See PR body for the per-tool
 # violating-route table.
+#
+# Wave-2 BATCH close-out (2026-05-31, fix/w2-batch-b011-all-admin-auth):
+# All 11 remaining waivers closed in one PR — 10 tools gain
+# ``Depends(get_current_user|get_current_superuser)`` on the handler
+# signature; the 11th (``add_canary_tokens``) is exempted via the
+# documented ``_PUBLIC_ROUTE_JUSTIFICATION`` bypass because honeypots
+# are public BY DESIGN (adding auth would defeat the trap). Per-tool
+# fix table:
+#
+#   add_api_deprecation         GET  /deprecations         current_user
+#   add_api_replay_debugger     GET  /debug/requests       superuser (sig)
+#                               POST /debug/replay/{id}    superuser (sig)
+#                               DELETE /debug/flush        superuser (sig)
+#   add_canary_tokens           (3 honeypots)              _PUBLIC_ROUTE_JUSTIFICATION
+#   add_cedar_policies          POST /authz/check          superuser
+#                               GET  /authz/policies       superuser
+#   add_cors_config             GET  /cors/config          superuser
+#   add_dependency_health_map   GET  /health/map           superuser
+#                               GET  /health/map.html      superuser
+#   add_health_deep             GET  /health/deep          superuser (/live + /ready stay public)
+#   add_long_running_task       POST /tasks                current_user
+#                               GET  /tasks/{wid}          current_user
+#                               DELETE /tasks/{wid}        current_user
+#   add_opa_integration         POST /authz/opa/check      superuser
+#                               GET  /authz/opa/health     superuser
+#   add_scheduled_tasks         GET  /scheduler/jobs       superuser
+#
+# Verified by ``engine/tests/test_w2_batch_b011_all_admin_closed.py``.
 # ---------------------------------------------------------------------------
-_WAIVED_TOOLS: frozenset[str] = frozenset(
-    {
-        # "add_adaptive_throttle" — removed by Wave-2 close-out:
-        # /throttle/status now requires get_current_user (R6-O1-F12).
-        "add_api_deprecation",
-        "add_api_replay_debugger",
-        "add_canary_tokens",  # honeypot — needs _PUBLIC_ROUTE_JUSTIFICATION
-        "add_cedar_policies",
-        "add_cors_config",
-        # "add_data_versioning" — removed by R5-O2-D2 fix-PR: all 5 /versions
-        # routes now require ``Depends(get_current_user)`` and the draft
-        # author is bound to ``current_user.id`` server-side (no longer
-        # taken from request body).
-        "add_dependency_health_map",
-        "add_health_deep",
-        "add_long_running_task",
-        # "add_notifications" — removed by Wave-2 close-out
-        # (fix/w2-notifications-close-waivers): all 4 /notifications/*
-        # routes now declare ``dependencies=[Depends(get_current_user)]``
-        # AND expose ``current_user: User`` so the owning user is bound
-        # server-side. The legacy ``user_id`` query parameter is removed
-        # (R5-O3-F1 IDOR). The ``_get_session`` placeholder now yields a
-        # real session from ``app.core.session.get_session`` so the routes
-        # work out-of-the-box without dependency_overrides (R5-O3-F2).
-        "add_opa_integration",
-        # "add_s3_storage" — removed by R6-S6-F1/F5/F6/F7 fix-PR (juror
-        # a077cc434dd7a8155): all three /storage routes now require
-        # CurrentUser + are prefix-scoped to users/{current_user.id}/.
-        "add_scheduled_tasks",
-    }
-)
+_WAIVED_TOOLS: frozenset[str] = frozenset()
 
 # Per-spec regex — admin / diagnostic / cross-tenant path segments.
 _ADMIN_PATH_RE = re.compile(

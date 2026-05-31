@@ -1,4 +1,14 @@
-"""Admin routes: GET /debug/requests, POST /debug/replay/{id}, DELETE /debug/flush."""
+"""Admin routes: GET /debug/requests, POST /debug/replay/{id}, DELETE /debug/flush.
+
+Auth (CONTRACT §B0.11)
+----------------------
+Every route binds ``current_user`` via ``get_current_superuser`` in the
+handler signature. Previously only the decorator-level
+``dependencies=[Depends(get_current_superuser)]`` was used, which the
+B0.11 AST-scanner cannot detect (it inspects handler signatures only).
+Keeping ``current_user`` in the signature both satisfies the contract
+rule and makes the caller identity available for audit logging.
+"""
 
 from __future__ import annotations
 
@@ -8,22 +18,25 @@ from app.api.deps import get_current_superuser
 from app.debug.models import RecordedRequest, ReplayResult
 from app.debug.recorder import get_recorder
 from app.debug.replayer import RequestReplayer
+from app.models.user import User
 
 router = APIRouter(prefix="/debug", tags=["debug"])
-
-_SUPERUSER_DEP = [Depends(get_current_superuser)]
 
 
 @router.get(
     "/requests",
     response_model=list[RecordedRequest],
-    dependencies=_SUPERUSER_DEP,
 )
-async def list_requests(limit: int = 50) -> list[dict]:
+async def list_requests(
+    limit: int = 50,
+    current_user: User = Depends(get_current_superuser),
+) -> list[dict]:
     """List the most recent recorded requests.
 
     Args:
         limit: Maximum records to return (default 50).
+        current_user: Authenticated superuser (B0.11 — recorded request
+            bodies may contain PII / secrets; restrict to admins).
 
     Returns:
         List of RecordedRequest dicts ordered newest-first.
@@ -40,14 +53,19 @@ async def list_requests(limit: int = 50) -> list[dict]:
 @router.post(
     "/replay/{rec_id}",
     response_model=ReplayResult,
-    dependencies=_SUPERUSER_DEP,
 )
-async def replay_request(rec_id: str, http_request: Request) -> dict:
+async def replay_request(
+    rec_id: str,
+    http_request: Request,
+    current_user: User = Depends(get_current_superuser),
+) -> dict:
     """Re-execute a recorded request and return a diff of the response.
 
     Args:
         rec_id: 16-char hex record id from GET /debug/requests.
         http_request: Starlette Request (to access the ASGI app).
+        current_user: Authenticated superuser (B0.11 — replay re-executes
+            arbitrary recorded requests against the live app).
 
     Returns:
         ReplayResult with original vs replayed status codes and body diff.
@@ -66,9 +84,15 @@ async def replay_request(rec_id: str, http_request: Request) -> dict:
     return await replayer.replay(record)
 
 
-@router.delete("/flush", dependencies=_SUPERUSER_DEP)
-async def flush_records() -> dict:
+@router.delete("/flush")
+async def flush_records(
+    current_user: User = Depends(get_current_superuser),
+) -> dict:
     """Delete all recorded requests from the ring buffer.
+
+    Args:
+        current_user: Authenticated superuser (B0.11 — destructive admin
+            action that wipes the audit-replay buffer).
 
     Returns:
         Dict with ``deleted`` key indicating number of keys removed.

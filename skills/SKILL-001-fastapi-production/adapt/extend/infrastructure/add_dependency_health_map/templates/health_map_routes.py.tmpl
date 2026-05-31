@@ -1,4 +1,21 @@
-"""Dependency health map endpoints: JSON graph and SVG visualization."""
+"""Dependency health map endpoints: JSON graph and SVG visualization.
+
+Auth (CONTRACT §B0.11)
+----------------------
+Both endpoints expose the full dependency graph (database, cache,
+queue, external APIs, per-dep latency + status). That graph is an
+attacker's wish-list:
+
+* It enumerates every downstream the API talks to.
+* It identifies degraded dependencies — prime targets for
+  amplification or denial-of-service.
+* The HTML view is a self-contained SVG dashboard, so a leaked URL is
+  enough to give an attacker live operational visibility.
+
+The Kubernetes liveness / readiness probes live in
+``add_health_deep``'s ``/health/live`` and ``/health/ready`` (which
+remain public) — this richer map endpoint is admin-only.
+"""
 
 from __future__ import annotations
 
@@ -6,17 +23,26 @@ import json
 import math
 from typing import Any
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Depends, Response
 from fastapi.responses import HTMLResponse
 
+from app.api.deps import get_current_superuser
 from app.health_map import get_health_map_builder
+from app.models.user import User
 
 router = APIRouter(prefix="/health", tags=["health-map"])
 
 
 @router.get("/map", response_model=dict[str, Any])
-async def dependency_map() -> dict[str, Any]:
+async def dependency_map(
+    current_user: User = Depends(get_current_superuser),
+) -> dict[str, Any]:
     """Return the dependency health graph as JSON.
+
+    Args:
+        current_user: Authenticated superuser (B0.11 — the dependency
+            graph enumerates every downstream and exposes per-dep
+            health; restrict to admins, not anonymous callers).
 
     Returns:
         Dict with 'status', 'nodes' (per-dep status+latency),
@@ -27,13 +53,18 @@ async def dependency_map() -> dict[str, Any]:
 
 
 @router.get("/map.html", response_class=HTMLResponse)
-async def dependency_map_html(response: Response) -> HTMLResponse:
+async def dependency_map_html(
+    response: Response,
+    current_user: User = Depends(get_current_superuser),
+) -> HTMLResponse:
     """Return a self-contained SVG visualization of the dependency health map.
 
     Sets HTTP 503 when any dependency is unhealthy.
 
     Args:
         response: FastAPI Response for setting the status code.
+        current_user: Authenticated superuser (B0.11 — the SVG dashboard
+            is a live operations view; do not expose to anonymous callers).
 
     Returns:
         HTMLResponse with inline SVG dependency graph.

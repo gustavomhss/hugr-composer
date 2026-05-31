@@ -1,12 +1,30 @@
-"""GET /scheduler/jobs — report registered cron jobs and next run time."""
+"""GET /scheduler/jobs — report registered cron jobs and next run time.
+
+Auth (CONTRACT §B0.11)
+----------------------
+Cron-job introspection is an admin diagnostic. The job list reveals
+the application's internal automation surface — names, cron
+expressions, and exact next-run timestamps. Two attack vectors:
+
+* Knowing the next-run time of, say, a billing reconciliation job
+  lets an attacker time fraudulent transactions to land in a
+  predictable window.
+* The job-name list itself enumerates internal cron handlers
+  (``send_weekly_invoices``, ``rotate_api_keys``, ...) which seeds
+  targeted secondary attacks.
+
+Restrict to authenticated superusers.
+"""
 
 from __future__ import annotations
 
 from datetime import datetime
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
+from app.api.deps import get_current_superuser
+from app.models.user import User
 from app.workers.cron_jobs import list_jobs
 from app.workers.scheduler import get_scheduler
 
@@ -22,8 +40,15 @@ class JobInfo(BaseModel):
 
 
 @router.get("/jobs", response_model=list[JobInfo])
-async def get_jobs() -> list[JobInfo]:
+async def get_jobs(
+    current_user: User = Depends(get_current_superuser),
+) -> list[JobInfo]:
     """Return the currently registered cron jobs and their next run times.
+
+    Args:
+        current_user: Authenticated superuser (B0.11 — cron metadata
+            leaks internal automation surface and next-run timing;
+            restrict to admins).
 
     Returns:
         A list of ``JobInfo`` entries sorted by job name.

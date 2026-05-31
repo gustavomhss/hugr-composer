@@ -1,4 +1,18 @@
-"""OPA management endpoints: policy check and sidecar health."""
+"""OPA management endpoints: policy check and sidecar health.
+
+Auth (CONTRACT §B0.11)
+----------------------
+Both endpoints require an authenticated superuser:
+
+* ``POST /authz/opa/check`` — caller supplies an arbitrary OPA input
+  document; the response reveals which actions any subject is allowed
+  to take on any resource (an authorisation-matrix oracle).
+* ``GET  /authz/opa/health`` — sidecar reachability is a defensive
+  signal; if the OPA sidecar is down and ``fail_open=False``, an
+  attacker who can read this endpoint knows authorisation is
+  currently denying everything (or, worse, fail-open is allowing
+  everything). Restrict to admins.
+"""
 
 from __future__ import annotations
 
@@ -6,8 +20,10 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.api.deps import get_current_superuser
 from app.authz.opa_client import OPAClient, get_opa_client
 from app.authz.opa_models import OPADecision, OPAInput
+from app.models.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +37,14 @@ router = APIRouter(prefix="/authz/opa", tags=["opa"])
 )
 async def check_policy(
     opa_input: OPAInput,
+    current_user: User = Depends(get_current_superuser),
     client: OPAClient = Depends(get_opa_client),
 ) -> OPADecision:
     """Evaluate an OPA policy rule for the given input document.
 
     Args:
         opa_input: Subject, action, resource and optional context.
+        current_user: Authenticated superuser (B0.11 — policy oracle).
         client: OPA HTTP client (injected by FastAPI DI).
 
     Returns:
@@ -49,11 +67,15 @@ async def check_policy(
     summary="OPA sidecar health check",
 )
 async def opa_health(
+    current_user: User = Depends(get_current_superuser),
     client: OPAClient = Depends(get_opa_client),
 ) -> dict[str, str]:
     """Probe the OPA sidecar's /health endpoint.
 
     Args:
+        current_user: Authenticated superuser (B0.11 — sidecar reachability
+            is a defensive signal that aids attackers in timing fail-open
+            windows).
         client: OPA HTTP client (injected by FastAPI DI).
 
     Returns:

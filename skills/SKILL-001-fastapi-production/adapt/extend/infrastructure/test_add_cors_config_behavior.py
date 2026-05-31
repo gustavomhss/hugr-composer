@@ -121,6 +121,32 @@ def _load_app(project_dir: Path) -> Any:
     return app_module.app
 
 
+def _install_superuser_override(asgi_app: Any) -> None:
+    """Override ``get_current_superuser`` so behavior tests can reach the
+    auth-gated ``/cors/config`` endpoint without a real JWT.
+
+    B0.11 close-out: ``cors_config`` now requires
+    ``Depends(get_current_superuser)`` because CORS posture is a
+    security-relevant fingerprint. Behavior tests must stub the dep so
+    they can still assert the 200 happy path.
+    """
+    import uuid
+
+    from app.api import deps
+    from app.models.user import User
+
+    fake = User()
+    fake.id = uuid.uuid4()
+    fake.email = "cors_behavior@test"
+    fake.is_active = True
+    fake.is_superuser = True
+
+    async def _fake_superuser() -> User:
+        return fake
+
+    asgi_app.dependency_overrides[deps.get_current_superuser] = _fake_superuser
+
+
 def _setup_project() -> tuple[Path, Any]:
     """Create, patch, apply tool, and load app."""
     project_dir = create_fixture_project(name="cors_behavior")
@@ -130,6 +156,7 @@ def _setup_project() -> tuple[Path, Any]:
     )
     _patch_project(project_dir)
     asgi_app = _load_app(project_dir)
+    _install_superuser_override(asgi_app)
     return project_dir, asgi_app
 
 

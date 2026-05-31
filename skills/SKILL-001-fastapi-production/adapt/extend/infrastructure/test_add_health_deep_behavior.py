@@ -132,6 +132,32 @@ def _load_app(project_dir: Path) -> Any:
     return app_module.app
 
 
+def _install_superuser_override(asgi_app: Any) -> None:
+    """Override ``get_current_superuser`` so the auth-gated ``/health/deep``
+    endpoint can be reached by behavior tests without a real JWT.
+
+    B0.11 close-out: ``/health/deep`` is now gated on
+    ``get_current_superuser`` (deep matrix enumerates every downstream
+    and per-dep latency). ``/health/live`` and ``/health/ready`` remain
+    public — they are k8s probes that must work without credentials.
+    """
+    import importlib as _importlib
+    import uuid as _uuid
+
+    deps_mod = _importlib.import_module("app.api.deps")
+    user_mod = _importlib.import_module("app.models.user")
+    fake = user_mod.User()
+    fake.id = _uuid.uuid4()
+    fake.email = "health_behavior@test"
+    fake.is_active = True
+    fake.is_superuser = True
+
+    async def _fake_superuser():
+        return fake
+
+    asgi_app.dependency_overrides[deps_mod.get_current_superuser] = _fake_superuser
+
+
 def _setup_project() -> tuple[Path, Any]:
     """Create, patch, apply tool, and load app. Returns (project_dir, asgi_app)."""
     project_dir = create_fixture_project(name="health_behavior")
@@ -149,6 +175,7 @@ def _setup_project() -> tuple[Path, Any]:
     # The tool patches main.py with an import but does NOT call include_router.
     # We do it explicitly here at the module level so the ASGI app has the routes.
     asgi_app = _load_app(project_dir)
+    _install_superuser_override(asgi_app)
 
     return project_dir, asgi_app
 

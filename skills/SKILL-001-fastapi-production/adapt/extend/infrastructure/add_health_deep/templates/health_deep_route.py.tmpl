@@ -1,11 +1,33 @@
-"""Deep health endpoints: /health/live, /health/ready, /health/deep."""
+"""Deep health endpoints: /health/live, /health/ready, /health/deep.
+
+Auth (CONTRACT §B0.11)
+----------------------
+Only ``/health/deep`` requires authentication. The split is:
+
+* ``/health/live`` — Kubernetes liveness probe. MUST be public; the
+  kubelet has no credentials and must be able to decide whether to
+  restart the pod.
+* ``/health/ready`` — Kubernetes readiness probe. MUST be public for
+  the same reason — the kubelet uses it to gate traffic.
+* ``/health/deep`` — full per-dependency matrix with latencies. This
+  is an operational dashboard endpoint that enumerates every
+  downstream and its current latency / failure mode; it is an
+  attacker fingerprint and is restricted to authenticated
+  superusers.
+
+The B0.11 admin-path regex matches ``/health/deep`` (via
+``health/(deep|map)``) but NOT ``/health/live`` or ``/health/ready``,
+so the split is naturally enforced by the rule itself.
+"""
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Depends, Response
 
+from app.api.deps import get_current_superuser
 from app.health.models import HealthReport, HealthStatus
 from app.health.registry import get_registry
+from app.models.user import User
 
 router = APIRouter(prefix="/health", tags=["health"])
 
@@ -45,7 +67,10 @@ async def readiness(response: Response) -> HealthReport:
 
 
 @router.get("/deep", response_model=HealthReport, summary="Full dependency matrix")
-async def deep_check(response: Response) -> HealthReport:
+async def deep_check(
+    response: Response,
+    current_user: User = Depends(get_current_superuser),
+) -> HealthReport:
     """Full dependency matrix — all checks with per-check latency.
 
     Intended for dashboards, on-call tooling, and manual debugging.
@@ -53,6 +78,10 @@ async def deep_check(response: Response) -> HealthReport:
 
     Args:
         response: FastAPI Response for setting status code.
+        current_user: Authenticated superuser (B0.11 — the deep matrix
+            enumerates every downstream and per-dep latency; only
+            ``/health/live`` and ``/health/ready`` are public for
+            kubelet probes).
 
     Returns:
         HealthReport with all dependency results and latencies.

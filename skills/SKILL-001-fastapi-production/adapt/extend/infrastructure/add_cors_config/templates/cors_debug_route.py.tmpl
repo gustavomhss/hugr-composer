@@ -1,11 +1,29 @@
-"""GET /cors/config — debug endpoint showing active CORS configuration."""
+"""GET /cors/config — debug endpoint showing active CORS configuration.
+
+Auth (CONTRACT §B0.11)
+----------------------
+This is a diagnostic endpoint that surfaces the deployment's CORS
+posture — origin allow-list, credential mode, max-age, and a
+wildcard-warning flag. That posture is itself a security-relevant
+fingerprint:
+
+* A wildcard origin in production is a high-signal target.
+* Knowing whether credentials are allowed tells an attacker whether a
+  cross-origin attack can carry cookies / auth headers.
+
+Gate behind ``get_current_superuser`` so production CORS posture is
+never readable by anonymous callers.
+"""
 
 from __future__ import annotations
 
 import logging
 import os
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from app.api.deps import get_current_superuser
+from app.models.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -13,8 +31,15 @@ router = APIRouter(prefix="/cors", tags=["cors"])
 
 
 @router.get("/config")
-async def cors_config() -> dict:
+async def cors_config(
+    current_user: User = Depends(get_current_superuser),
+) -> dict:
     """Return the active CORS configuration from environment variables.
+
+    Args:
+        current_user: Authenticated superuser (B0.11 — CORS posture is a
+            security-relevant fingerprint and must not be exposed to
+            unauthenticated callers).
 
     Returns:
         Dict with ``allowed_origins``, ``allow_credentials``, ``max_age``,
