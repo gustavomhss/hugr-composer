@@ -134,8 +134,14 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
     # close-out: _PENALTY_STORE is now a _PenaltyStore() class instance
     # (Redis-backed primary, per-worker dict fallback encapsulated in
     # the class). Closes R6-O1-F10/F14/F15.
-    # R6-S5-F5 — _JOBS dict mutated without lock; cron state not shared
-    "extend/infrastructure/add_scheduled_tasks",
+    # "extend/infrastructure/add_scheduled_tasks" — closed Wave-2
+    # (fix/w2-final-b012-all-module-state): _JOBS is now a
+    # _JobsRegistry() class instance (allow-listed by this rule) AND
+    # _SINGLE_PROCESS_OK + warnings= disclosure shipped in the tool's
+    # __init__.py. Decorator-registered jobs re-populate identically
+    # on every worker at module-import time; the duplicate-fire risk
+    # across multiple scheduler instances remains a separate concern
+    # mitigated by SCHEDULER_JOBSTORE_URL. Closes R6-S5-F5.
     # "extend/infrastructure/add_api_monetization" — closed in W2 PR
     # (fix/w2-api-monetization-close-waivers): _RULES is now wrapped
     # in a _RulesRegistry class instance and _DEAD_LETTER in a
@@ -147,12 +153,23 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
     # _PROGRESS_REGISTRY now wrapped in ProgressRegistry class instance
     # (allow-listed by this rule) AND _SINGLE_PROCESS_OK + warnings=
     # disclosure shipped in the tool's __init__.py.
-    # R5-S5-F2 / R6-S3-F1 family — _MODEL_REGISTRY for export columns; benign today
-    "extend/crud_data/add_data_export",
-    # P3 cluster — _HANDLERS event subscriber registry; per-worker subscription split
-    "evolve/add_event_driven",
-    # R6-S8 — _CATALOGS i18n catalog cache; reload not propagated cross-worker
-    "evolve/add_i18n",
+    # "extend/crud_data/add_data_export" — closed Wave-2
+    # (fix/w2-final-b012-all-module-state): _MODEL_REGISTRY is now a
+    # _ModelRegistry() class instance (allow-listed by this rule) AND
+    # _SINGLE_PROCESS_OK + warnings= disclosure shipped in the tool's
+    # __init__.py. Every worker (including the ARQ background worker
+    # that runs the export jobs) re-registers models identically at
+    # module-import time. Closes R5-S5-F2 / R6-S3-F1 family.
+    # "evolve/add_event_driven" — closed Wave-2
+    # (fix/w2-final-b012-all-module-state): _HANDLERS is now a
+    # _HandlerRegistry() class instance (allow-listed by this rule)
+    # AND _SINGLE_PROCESS_OK + warnings= disclosure shipped in the
+    # tool's __init__.py. Closes P3-cluster handler-registry waiver.
+    # "evolve/add_i18n" — closed Wave-2
+    # (fix/w2-final-b012-all-module-state): _CATALOGS is now a
+    # _CatalogCache() class instance (allow-listed by this rule) AND
+    # _SINGLE_PROCESS_OK + warnings= disclosure shipped in the tool's
+    # __init__.py. Closes R6-S8.
 })
 
 # --- AST helpers ---------------------------------------------------------

@@ -8,6 +8,29 @@ Usage::
 
 The ``register_jobs`` function is called by ``start_scheduler`` at
 startup and installs every decorated function on the scheduler.
+
+Single-process state disclosure (B0.12)
+---------------------------------------
+
+The declared job table lives inside a single ``_JobsRegistry`` instance
+declared at module level. Class-instance singletons are allow-listed by
+``r_no_module_state`` because the in-process registry is observable
+through its public surface and can be swapped in tests.
+
+Under a multi-worker deployment (``gunicorn -w N`` / ``uvicorn
+--workers``) each worker holds its own jobs registry copy. The
+``@scheduled_job`` decorator runs at module-import time on every
+worker, so the registry contents are identical across workers.
+However the APScheduler instance itself ALSO runs in-process and is
+NOT clustered by default — without a shared job store (``Redis``,
+``SQLAlchemy``) every worker will independently fire each job, causing
+duplicate execution. See ``app/workers/scheduler.py`` for the
+``SCHEDULER_JOBSTORE_URL`` setting that enables a Redis-backed job
+store with a single-leader lock. The owning tool surfaces this
+single-process registry trade-off via its
+``warnings=[... "single-process" ...]`` envelope; the duplicate-fire
+risk on multi-worker without a shared job store is called out in the
+emitted ``scheduler.py`` warning banner.
 """
 
 from __future__ import annotations
@@ -28,7 +51,39 @@ class ScheduledJob:
     func: Callable[[], Awaitable[None]]
 
 
-_JOBS: list[ScheduledJob] = []
+class _JobsRegistry:
+    """In-process registry of declared cron jobs.
+
+    Wrapping the underlying list inside an instance keeps module-level
+    state out of B0.12's scope (class-instance singletons are
+    allow-listed by ``r_no_module_state``). The public surface is
+    deliberately minimal so the body can be swapped for a Redis/DB
+    backing store without touching any caller.
+    """
+
+    def __init__(self) -> None:
+        """Initialise an empty jobs registry."""
+        self._d: list[ScheduledJob] = []
+
+    def add(self, job: ScheduledJob) -> None:
+        """Append *job* to the registry."""
+        self._d.append(job)
+
+    def all(self) -> list[ScheduledJob]:
+        """Return a shallow copy of every declared job."""
+        return list(self._d)
+
+    def clear(self) -> None:
+        """Drop every declared job (used by tests)."""
+        self._d.clear()
+
+
+# Single-process jobs registry. See module docstring "Single-process
+# state disclosure" — production multi-worker deployments rely on each
+# worker re-running the @scheduled_job decorator at import time, AND
+# on configuring SCHEDULER_JOBSTORE_URL so APScheduler itself shares a
+# single source of truth across workers.
+_JOBS = _JobsRegistry()
 
 
 def scheduled_job(
@@ -45,7 +100,7 @@ def scheduled_job(
     """
 
     def wrap(fn: Callable[[], Awaitable[None]]) -> Callable[[], Awaitable[None]]:
-        _JOBS.append(ScheduledJob(cron=cron, name=name or fn.__name__, func=fn))
+        _JOBS.add(ScheduledJob(cron=cron, name=name or fn.__name__, func=fn))
         return fn
 
     return wrap
@@ -58,7 +113,7 @@ def register_jobs(scheduler: Any) -> None:
         scheduler: The running APScheduler instance.
     """
     from apscheduler.triggers.cron import CronTrigger
-    for job in _JOBS:
+    for job in _JOBS.all():
         trigger = CronTrigger.from_crontab(job.cron)
         scheduler.add_job(
             job.func, trigger=trigger, id=job.name, replace_existing=True
@@ -68,7 +123,7 @@ def register_jobs(scheduler: Any) -> None:
 
 def list_jobs() -> list[dict[str, str]]:
     """Return a serialisable list of declared jobs."""
-    return [{"name": j.name, "cron": j.cron} for j in _JOBS]
+    return [{"name": j.name, "cron": j.cron} for j in _JOBS.all()]
 
 
 # ---------------------------------------------------------------------

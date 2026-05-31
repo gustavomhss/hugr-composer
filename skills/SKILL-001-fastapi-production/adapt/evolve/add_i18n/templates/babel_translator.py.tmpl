@@ -1,7 +1,29 @@
 """Babel/gettext translation catalog manager.
 
 Catalogs are loaded once at startup from ``$translation_dir/<locale>/LC_MESSAGES/messages.mo``
-and cached in a module-level dict for < 10 µs per lookup.
+and cached in a single-process registry for < 10 µs per lookup.
+
+Single-process state disclosure (B0.12)
+---------------------------------------
+
+The loaded translation catalogs are kept inside a single
+``_CatalogCache`` instance declared at module level. Class-instance
+singletons are allow-listed by ``r_no_module_state`` because the
+in-process cache is observable through its public surface and can be
+swapped in tests.
+
+Under a multi-worker deployment (``gunicorn -w N`` / ``uvicorn
+--workers``) each worker holds its own catalog cache: ``load_catalogs``
+re-populates from the compiled ``.mo`` files on every worker boot, so
+steady-state read traffic is correct on all workers. Cache reloads
+triggered at runtime (e.g. after redeploying translations) are *not*
+broadcast across workers — a hot reload requires re-importing the
+module on every worker (typically via a restart). If cross-worker
+runtime invalidation is ever required, swap ``_CatalogCache`` for a
+Redis-backed pubsub invalidator — the public surface (``_`` /
+``ngettext`` / ``load_catalogs``) does not change. The owning tool
+surfaces this trade-off via its ``warnings=[... "single-process" ...]``
+envelope.
 """
 from __future__ import annotations
 
@@ -15,7 +37,39 @@ logger = logging.getLogger(__name__)
 
 _LOCALE_DIR = Path(__file__).parent.parent.parent / "$translation_dir"
 _DEFAULT_LOCALE = "$default_locale"
-_CATALOGS: dict[str, gettext.GNUTranslations] = {}
+
+
+class _CatalogCache:
+    """In-process cache of compiled gettext catalogs keyed by locale.
+
+    Wrapping the underlying dict inside an instance keeps module-level
+    state out of B0.12's scope (class-instance singletons are
+    allow-listed by ``r_no_module_state``). The public surface is
+    deliberately minimal so the body can be swapped for a Redis-backed
+    invalidator without touching any caller.
+    """
+
+    def __init__(self) -> None:
+        """Initialise an empty catalog cache."""
+        self._d: dict[str, gettext.GNUTranslations] = {}
+
+    def set(self, locale: str, catalog: gettext.GNUTranslations) -> None:
+        """Cache *catalog* for *locale* (overwrites any prior)."""
+        self._d[locale] = catalog
+
+    def get(self, locale: str) -> gettext.GNUTranslations | None:
+        """Return the catalog for *locale* or ``None`` if not loaded."""
+        return self._d.get(locale)
+
+    def clear(self) -> None:
+        """Drop every cached catalog (used by tests / hot reload)."""
+        self._d.clear()
+
+
+# Single-process catalog cache. See module docstring "Single-process
+# state disclosure" — production multi-worker deployments rely on each
+# worker re-running ``load_catalogs`` at boot.
+_CATALOGS = _CatalogCache()
 
 
 def load_catalogs(supported_locales: list[str]) -> None:
@@ -31,7 +85,7 @@ def load_catalogs(supported_locales: list[str]) -> None:
                 localedir=str(_LOCALE_DIR),
                 languages=[locale],
             )
-            _CATALOGS[locale] = translation
+            _CATALOGS.set(locale, translation)
             logger.info("Loaded translation catalog for %s", locale)
         except FileNotFoundError:
             logger.warning("No compiled .mo for locale %s — falling back to default", locale)

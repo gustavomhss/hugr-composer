@@ -22,6 +22,19 @@ from adapt.contracts.migration_helper import find_migration_head
 
 _HERE = Path(__file__).parent
 
+# B0.12 — emitted ``model_registry.py`` keeps registered SQLAlchemy
+# model classes inside a ``_ModelRegistry`` instance (class-instance
+# singleton, allow-listed by ``r_no_module_state``). The body is
+# in-process; under a multi-worker deployment each worker has its own
+# copy. ``register_model(...)`` is called declaratively at app-import
+# time so every worker (including the ARQ background worker that runs
+# the export jobs) populates the registry identically at boot. This
+# flag + the ``single-process`` ``warnings=`` entry below disclose the
+# trade-off explicitly. Swap the registry body for a Redis/DB-backed
+# store if dynamic runtime registration across workers is ever
+# required (public surface unchanged).
+_SINGLE_PROCESS_OK: bool = True
+
 MCP_TOOL = {
     "name": "fastapi_data_add_data_export",
     "description": "Add CSV/XLSX data export endpoints for all major resources.",
@@ -170,6 +183,24 @@ def add_data_export(inp: ToolInput) -> ToolResult:
             "Streaming export uses server-side cursors — never loads full dataset in RAM.",
             "Exports above EXPORT_ASYNC_THRESHOLD rows are dispatched as ARQ background jobs.",
             "SENSITIVE_COLUMNS (hashed_password, api_key, etc.) always excluded.",
+        ],
+        warnings=[
+            # B0.12 disclosure — paired with _SINGLE_PROCESS_OK = True
+            # above. The emitted model_registry's _ModelRegistry is
+            # in-process; under multi-worker (gunicorn -w N / uvicorn
+            # --workers) each worker has its own copy. register_model
+            # is called declaratively at import time on every worker
+            # (including the ARQ worker process that runs the export
+            # jobs), so the registry is fully populated identically
+            # on every worker. Swap the registry body for a Redis/DB
+            # store if dynamic runtime registration across workers is
+            # required.
+            "Export model registry is single-process (in-memory). "
+            "Multi-worker deployments: every worker (including the ARQ "
+            "background worker) re-runs register_model declaratively "
+            "at import time, so registry contents stay consistent. "
+            "For runtime cross-worker dynamic registration swap "
+            "_ModelRegistry for a Redis/DB-backed store.",
         ],
         next_steps=[
             "alembic upgrade head",

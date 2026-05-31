@@ -29,6 +29,19 @@ from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 _HERE = Path(__file__).parent
 
+# B0.12 — emitted ``babel_translator.py`` keeps the loaded gettext
+# catalogs inside a ``_CatalogCache`` instance (class-instance
+# singleton, allow-listed by ``r_no_module_state``). The body is
+# in-process; under a multi-worker deployment each worker has its own
+# copy. ``load_catalogs`` is called at app startup on every worker so
+# steady-state reads are correct, but a hot-reload of catalogs at
+# runtime is NOT broadcast across workers (operators must restart).
+# This flag + the ``single-process`` ``warnings=`` entry below
+# disclose the trade-off explicitly. Swap the cache body for a
+# Redis-backed pubsub invalidator if cross-worker runtime
+# invalidation is required (public surface unchanged).
+_SINGLE_PROCESS_OK: bool = True
+
 # Locales with RTL text direction
 _RTL_LOCALES = frozenset({"ar", "he", "fa", "ur", "ar_SA", "ar_EG", "he_IL"})
 
@@ -231,6 +244,20 @@ def add_i18n(
             f"Translation catalogs: {translation_dir}/<locale>/LC_MESSAGES/messages.po",
             "RTL detection enabled for: ar, he, fa, ur",
             "Locale resolution: ?lang > X-Locale > session > Accept-Language > default",
+        ],
+        warnings=[
+            # B0.12 disclosure — paired with _SINGLE_PROCESS_OK = True
+            # above. The emitted babel_translator's _CatalogCache is
+            # in-process; under multi-worker (gunicorn -w N / uvicorn
+            # --workers) each worker has its own copy. Catalogs are
+            # loaded at app startup on every worker so steady-state
+            # reads are correct; runtime hot-reload of catalogs is NOT
+            # broadcast cross-worker (operators must restart, or swap
+            # the cache body for a Redis-backed pubsub invalidator).
+            "Translation catalog cache is single-process (in-memory). "
+            "Multi-worker deployments: catalogs reload only on restart; "
+            "swap _CatalogCache for a Redis pubsub invalidator if "
+            "cross-worker runtime invalidation is required.",
         ],
         next_steps=[
             "pip install Babel",

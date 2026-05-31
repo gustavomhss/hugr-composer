@@ -32,6 +32,18 @@ from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 _HERE = Path(__file__).parent
 
+# B0.12 — emitted ``consumer.py`` keeps the registered event handlers
+# inside a ``_HandlerRegistry`` instance (class-instance singleton,
+# allow-listed by ``r_no_module_state``). The body is in-process; under
+# a multi-worker deployment each worker has its own copy. This flag +
+# the ``single-process`` ``warnings=`` entry below disclose the
+# trade-off explicitly. Production multi-worker deployments must
+# re-register handlers declaratively at import-time on every worker
+# (the consumer module already does this) — see the emitted module's
+# docstring for swapping the registry body for Redis if cross-worker
+# dynamic registration is ever required.
+_SINGLE_PROCESS_OK: bool = True
+
 _VALID_BROKERS = frozenset({"redis_streams", "kafka", "nats"})
 
 
@@ -222,6 +234,22 @@ def add_event_driven(
             "Outbox pattern: business row + outbox_events written atomically.",
             "Consumer idempotency: Redis seen-cache with 7-day TTL.",
             "DLQ: events written after max_attempts exhausted.",
+        ],
+        warnings=[
+            # B0.12 disclosure — paired with _SINGLE_PROCESS_OK = True
+            # above. The emitted consumer's _HandlerRegistry is
+            # in-process; under multi-worker (gunicorn -w N / uvicorn
+            # --workers) each worker has its own copy. Handlers
+            # registered declaratively at app-import time re-populate
+            # on every worker so steady-state dispatch is safe; if
+            # handlers must be wired dynamically at runtime across
+            # workers, swap the _HandlerRegistry body for a
+            # Redis-backed store (public surface unchanged).
+            "Consumer handler registry is single-process (in-memory). "
+            "Multi-worker deployments: register handlers declaratively "
+            "at import-time on every worker, or swap _HandlerRegistry "
+            "for a Redis-backed store for cross-worker dynamic "
+            "registration.",
         ],
         next_steps=[
             "docker compose up redis -d  # ensure Redis is running",

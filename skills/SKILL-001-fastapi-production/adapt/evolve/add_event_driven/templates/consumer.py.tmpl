@@ -2,6 +2,26 @@
 
 Dispatches incoming events to registered handlers with retry logic,
 idempotency checking, and DLQ quarantine on exhaustion.
+
+Single-process state disclosure (B0.12)
+---------------------------------------
+
+Registered handlers live inside a single ``_HandlerRegistry`` instance
+declared at module level. Class-instance singletons are allow-listed by
+``r_no_module_state`` because the in-process registry is observable
+through its public surface and can be swapped in tests.
+
+Under a multi-worker deployment (``gunicorn -w N`` / ``uvicorn
+--workers``) each worker holds its own registry copy: handlers
+registered on one worker are *not* visible to another worker. This is
+acceptable for the MVP because ``register_handler(...)`` calls are
+expected to be made declaratively at app-import time (every worker
+re-imports the consumer module and re-registers the same handlers).
+If handlers must be wired dynamically at runtime across workers,
+publish handler registration via the broker or swap the registry body
+for a Redis-backed store — the public surface (``register_handler`` /
+``dispatch_event``) does not change. The owning tool surfaces this
+trade-off via its ``warnings=[... "single-process" ...]`` envelope.
 """
 from __future__ import annotations
 
@@ -14,8 +34,41 @@ from events.dlq import send_to_dlq
 
 logger = logging.getLogger(__name__)
 
-# Handler registry: event_type → async handler function
-_HANDLERS: dict[str, Callable] = {}
+
+class _HandlerRegistry:
+    """In-process registry of event-type → async handler.
+
+    Wrapping the underlying dict inside an instance keeps module-level
+    state out of B0.12's scope (class-instance singletons are
+    allow-listed by ``r_no_module_state``). The public surface is
+    deliberately minimal so the body can be swapped for a Redis/DB
+    backing store without touching any caller.
+    """
+
+    def __init__(self) -> None:
+        """Initialise an empty handler registry."""
+        self._d: dict[str, Callable] = {}
+
+    def set(self, event_type: str, handler: Callable) -> None:
+        """Register *handler* for *event_type* (overwrites any prior)."""
+        self._d[event_type] = handler
+
+    def get(self, event_type: str) -> Callable | None:
+        """Return the handler for *event_type* or ``None`` if unregistered."""
+        return self._d.get(event_type)
+
+    def keys(self) -> list[str]:
+        """Return a snapshot of every registered event type."""
+        return list(self._d.keys())
+
+    def clear(self) -> None:
+        """Drop every registered handler (used by tests)."""
+        self._d.clear()
+
+
+# Handler registry: event_type → async handler function. Single-process
+# instance (see module docstring "Single-process state disclosure").
+_HANDLERS = _HandlerRegistry()
 
 # INV-ED-07: highest schema version this consumer understands
 SUPPORTED_SCHEMA_VERSION: int = 1
@@ -28,7 +81,7 @@ def register_handler(event_type: str, handler: Callable) -> None:
         event_type: Event discriminator string (e.g. 'OrderCreated').
         handler: Async callable accepting a single event dict.
     """
-    _HANDLERS[event_type] = handler
+    _HANDLERS.set(event_type, handler)
     logger.info("Registered handler for %s", event_type)
 
 

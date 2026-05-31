@@ -2,6 +2,27 @@
 
 Populated at app startup. Used by the background export worker to
 reconstruct export queries without coupling to specific model imports.
+
+Single-process state disclosure (B0.12)
+---------------------------------------
+
+The registered model classes live inside a single ``_ModelRegistry``
+instance declared at module level. Class-instance singletons are
+allow-listed by ``r_no_module_state`` because the in-process registry
+is observable through its public surface and can be swapped in tests.
+
+Under a multi-worker deployment (``gunicorn -w N`` / ``uvicorn
+--workers``) each worker holds its own registry copy. This is
+acceptable because ``register_model(...)`` is expected to be called
+declaratively at app-import time (every worker re-imports the model
+package and re-registers the same classes). The ARQ worker that
+consumes the registry runs as its own process and likewise re-imports
+the model package at boot, so the registry is fully populated before
+any export job runs. If models must be registered dynamically at
+runtime across workers, swap the registry body for a Redis/DB-backed
+store — the public surface (``register_model`` / ``get_model_class`` /
+``build_filtered_stmt``) does not change. The owning tool surfaces this
+trade-off via its ``warnings=[... "single-process" ...]`` envelope.
 """
 from __future__ import annotations
 
@@ -10,7 +31,46 @@ from typing import Any, Type
 from sqlalchemy import select, Select
 from sqlalchemy.orm import DeclarativeBase
 
-_MODEL_REGISTRY: dict[str, Type[DeclarativeBase]] = {}
+
+class _ModelRegistry:
+    """In-process registry of model name → SQLAlchemy mapped class.
+
+    Wrapping the underlying dict inside an instance keeps module-level
+    state out of B0.12's scope (class-instance singletons are
+    allow-listed by ``r_no_module_state``). The public surface is
+    deliberately minimal so the body can be swapped for a Redis/DB
+    backing store without touching any caller.
+    """
+
+    def __init__(self) -> None:
+        """Initialise an empty model registry."""
+        self._d: dict[str, Type[DeclarativeBase]] = {}
+
+    def set(self, name: str, model_cls: Type[DeclarativeBase]) -> None:
+        """Register *model_cls* under *name* (overwrites any prior)."""
+        self._d[name] = model_cls
+
+    def get(self, name: str) -> Type[DeclarativeBase] | None:
+        """Return the model class for *name* or ``None`` if not registered."""
+        return self._d.get(name)
+
+    def __contains__(self, name: str) -> bool:
+        """Whether *name* is registered."""
+        return name in self._d
+
+    def names(self) -> list[str]:
+        """Return a sorted snapshot of every registered model name."""
+        return sorted(self._d.keys())
+
+    def clear(self) -> None:
+        """Drop every registered model (used by tests)."""
+        self._d.clear()
+
+
+# Single-process model registry. See module docstring "Single-process
+# state disclosure" — production multi-worker deployments rely on each
+# worker re-running ``register_model`` declaratively at import time.
+_MODEL_REGISTRY = _ModelRegistry()
 
 
 def register_model(model_cls: Type[DeclarativeBase]) -> None:
@@ -19,7 +79,7 @@ def register_model(model_cls: Type[DeclarativeBase]) -> None:
     Args:
         model_cls: SQLAlchemy mapped class to register.
     """
-    _MODEL_REGISTRY[model_cls.__name__] = model_cls
+    _MODEL_REGISTRY.set(model_cls.__name__, model_cls)
 
 
 def get_model_class(name: str) -> Type[DeclarativeBase]:
@@ -34,12 +94,13 @@ def get_model_class(name: str) -> Type[DeclarativeBase]:
     Raises:
         KeyError: If ``name`` has not been registered.
     """
-    if name not in _MODEL_REGISTRY:
+    cls = _MODEL_REGISTRY.get(name)
+    if cls is None:
         raise KeyError(
             f"Model {name!r} not in registry. "
-            f"Available: {sorted(_MODEL_REGISTRY.keys())}"
+            f"Available: {_MODEL_REGISTRY.names()}"
         )
-    return _MODEL_REGISTRY[name]
+    return cls
 
 
 def build_filtered_stmt(
