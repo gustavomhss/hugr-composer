@@ -162,11 +162,35 @@ def add_file_upload(inp: ToolInput) -> ToolResult:
         files_modified=files_modified,
         notes=[
             "File upload system enabled: FileMetadata model, LocalStorage + S3Storage.",
-            "MIME validation uses magic bytes — never trusts Content-Type header or extension.",
+            "MIME validation uses magic bytes — never trusts Content-Type header or "
+            "extension ON THE LOCAL STORAGE PATH (⚠ S3 presign-confirm path validates "
+            "only S3 metadata via head_object — bytes uploaded via presigned URL are "
+            "NOT re-fetched and magic-byte verified; see warnings).",
             "Files are never proxied through the server on the S3 path (presigned URL workflow).",
             "LocalStorage uses atomic temp-file rename: no partial writes visible to readers.",
             "Per-user quota enforced with Redis advisory lock to prevent race conditions.",
             "FileMetadataPublic does NOT expose stored_key or tenant_id.",
+        ],
+        warnings=[
+            # B0.13 honest disclosure for the "never trusts Content-Type"
+            # claim. Pre-fix the notes line was unconditional; R5-S1-F6
+            # noted it is TRUE for the LocalStorage path (validate_file
+            # runs libmagic over UploadFile.file) but FALSE for the S3
+            # confirm path (confirm_upload only inspects S3 object
+            # metadata via head_object — the bytes uploaded directly to
+            # S3 via the presigned URL are NEVER fetched back and
+            # re-validated).
+            "S3 presign-confirm magic-byte gap: confirm_upload calls "
+            "s3.head_object(...) but does NOT GetObject + libmagic the "
+            "first 8 KB of the uploaded bytes. The presign step pins "
+            "Content-Type and max size via S3 conditions, and SSE is "
+            "forced server-side — but a client that uploads bytes "
+            "whose MIME differs from the presigned Content-Type "
+            "(e.g. a PDF uploaded against an image/png presign) will "
+            "be confirmed as long as head_object succeeds. To close: "
+            "extend confirm_upload to GetObject Range bytes=0-8191 "
+            "and call file_validator.detect_mime(...) before "
+            "transitioning to confirmed.",
         ],
         next_steps=[
             "alembic upgrade head",

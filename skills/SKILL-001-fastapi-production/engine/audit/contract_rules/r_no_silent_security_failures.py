@@ -164,11 +164,24 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
     # entire mapper branch (and its ``except Exception: pass``) has been
     # removed; the column-fallback (``"tenant_id" in table.c``) is the
     # actual recognition path used by every model patched by this tool.
-    # P7-F3 — JSON body parse swallow in detection middleware; a
-    # malformed body that also trips the SQL/command detector is
-    # dropped → sentinel reports no finding.
-    # Offender: runtime_sentinel.py.tmpl:258 (`except Exception: pass`)
-    "extend/infrastructure/add_runtime_sentinel",
+    # "extend/infrastructure/add_runtime_sentinel" — closed Wave-2 (B0.16)
+    # in fix/w2-final-honesty-and-sentinel: the bare
+    # `except Exception: pass` at runtime_sentinel.py.tmpl:258 was
+    # replaced with a narrow `except _json.JSONDecodeError` +
+    # broader `except Exception` (body-read) ladder, each handler
+    # calling `self._note_body_parse_failure(reason, ...)` which
+    # (a) bumps `AttackPatternRegistry._body_parse_failure_counts[reason]`
+    # via the new `record_body_parse_failure(reason, ...)` method
+    # AND (b) emits a `logger.warning(SENTINEL_BODY_PARSE_FAIL ...)`
+    # line — so attacker probes of the parser surface (malformed
+    # JSON designed to bypass detection) now show up on both the
+    # metrics surface and stderr. Regression guard at
+    # engine/tests/test_add_runtime_sentinel_body_parse_observability.py
+    # AST-asserts the middleware module contains NO bare
+    # `except: pass`, every handler in `_parse_json_body` calls
+    # `_note_body_parse_failure`, the helper calls both
+    # `record_body_parse_failure` and `logger.warning`, and an
+    # end-to-end exec proves per-reason counters increment.
     # P7-F4 — closed in W2 PR (fix/w2-tenant-onboarding-close-waivers):
     # orchestrator.py.tmpl _compensate() now bumps a metric counter
     # (compensation_failures.inc()) AND records failed_compensations

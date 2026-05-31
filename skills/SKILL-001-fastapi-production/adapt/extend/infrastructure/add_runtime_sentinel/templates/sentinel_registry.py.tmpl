@@ -51,6 +51,11 @@ class AttackPatternRegistry:
         self._events: list[SecurityEvent] = []
         self._counts: dict[str, int] = defaultdict(int)
         self._max_events = max_events
+        # B0.16 (P7-F3) — counters for JSON / body parse failures in
+        # the middleware. Keyed by reason ("json_decode_error",
+        # "body_read_error", …) so an attacker probing the parser
+        # surfaces on metrics instead of being silently dropped.
+        self._body_parse_failure_counts: dict[str, int] = defaultdict(int)
 
     def record(self, event: SecurityEvent) -> None:
         """Record a security event, evicting oldest when capacity exceeded.
@@ -89,6 +94,55 @@ class AttackPatternRegistry:
             Integer count of events of that type.
         """
         return self._counts[attack_type]
+
+    def record_body_parse_failure(
+        self,
+        reason: str,
+        request_path: str = "unknown",
+        client_ip: str = "unknown",
+        detail: str = "",
+    ) -> None:
+        """Record a JSON / body parse failure observed by the middleware.
+
+        Closes B0.16 (P7-F3): the prior implementation caught every
+        ``Exception`` and ``pass``-swallowed it, so a malformed body
+        that ALSO carried a SQL/command injection payload would slip
+        past detection silently. The counter exposes the rate of
+        parse failures to the operator (and to any metrics scraper
+        that reads from this registry) so probe-and-bypass attacks
+        surface above the noise floor.
+
+        Args:
+            reason: Stable bucket key (e.g. ``json_decode_error``,
+                ``body_read_error``). Drives the counter dict so a
+                future Prometheus exporter can label by reason.
+            request_path: Path of the failing request (for logs).
+            client_ip: Remote IP (for logs).
+            detail: Truncated exception detail (for logs).
+        """
+        self._body_parse_failure_counts[reason] += 1
+        logger.info(
+            "SENTINEL_BODY_PARSE_FAIL_RECORDED reason=%s path=%s ip=%s detail=%s",
+            reason,
+            request_path,
+            client_ip,
+            detail,
+        )
+
+    def body_parse_failure_count(self, reason: str | None = None) -> int:
+        """Return total body parse failures.
+
+        Args:
+            reason: When provided, return the count for that bucket
+                only. When ``None``, return the sum across all
+                reason buckets.
+
+        Returns:
+            Integer count.
+        """
+        if reason is not None:
+            return self._body_parse_failure_counts[reason]
+        return sum(self._body_parse_failure_counts.values())
 
     def recent(self, attack_type: str, since_seconds: float = 3600.0) -> list[SecurityEvent]:
         """Return events of *attack_type* newer than *since_seconds*.
