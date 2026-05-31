@@ -178,7 +178,12 @@ _WAIVED_TOOLS: frozenset[str] = frozenset(
         "add_sms_otp",
         "add_stripe_checkout",
         "add_stripe_refund_flow",
-        "add_stripe_subscription",
+        # add_stripe_subscription — closed in W2 PR
+        # (fix/w2-stripe-subscription-close-waivers): SubscriptionCreate
+        # and ChangePlanRequest now carry ``model_config =
+        # ConfigDict(extra="forbid")``; sibling Read/Public/List response
+        # schemas are READ-suffix (exempt by spec). Closes R6-O3-P10
+        # write-side mass-assignment surface on the Stripe input boundary.
         # add_tenant_onboarding — closed in W2 PR
         # (fix/w2-tenant-onboarding-close-waivers): OnboardingRequest now
         # carries ``model_config = ConfigDict(extra="forbid")``; sibling

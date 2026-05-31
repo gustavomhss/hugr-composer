@@ -42,6 +42,8 @@ class SubscriptionCreate(BaseModel):
         trial_period_days: Optional trial period length in days.
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     price_id: str = Field(min_length=1, max_length=255)
     trial_period_days: int | None = Field(default=None, ge=1, le=365)
 
@@ -101,6 +103,8 @@ class ChangePlanRequest(BaseModel):
     Attributes:
         new_price_id: Stripe Price id to switch to.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     new_price_id: str = Field(min_length=1, max_length=255)
 
