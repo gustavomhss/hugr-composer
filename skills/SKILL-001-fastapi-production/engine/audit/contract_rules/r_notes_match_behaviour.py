@@ -211,9 +211,22 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
     #   (e) the impl exposes no `update`/`delete`/`pop`/`__setitem__`
     #   mutators — anchoring `hash-chained`, `signed`, and
     #   `append-only` end-to-end. Closes R5-S1-F5 regression guard.
-    # P4 — "never trusts Content-Type" + "presigned URL workflow"
-    # claims; no engine-level test asserts magic-byte validation or
-    # the no-buffering S3 path.
+    # add_file_upload — REMAINS WAIVED after Wave-2
+    # fix/w2-batch-b013-honesty-cluster-2 review:
+    #   the "never trusts Content-Type" claim is TRUE for the
+    #   LocalStorage path (``upload_file_local`` calls
+    #   ``validate_file`` on ``UploadFile.file`` via libmagic byte
+    #   signature) but FALSE for the S3 confirm path
+    #   (``confirm_upload`` only calls ``s3.head_object`` — the bytes
+    #   uploaded directly to S3 via the presigned URL are NEVER
+    #   fetched back and re-validated). R5-S1-F6 was correct.
+    #   Closing this waiver requires either (a) a real S3-confirm-side
+    #   magic-byte fetch (significant template change, out of scope
+    #   for the honesty-test PR), or (b) qualifying the notes line
+    #   ("⚠ S3 path validates only object metadata"). Tracked as a
+    #   tool-fix follow-up; shipping a vacuous honesty test would let
+    #   the gap regress silently — which the rule's docstring
+    #   §"Trade-offs" explicitly forbids.
     "extend/crud_data/add_file_upload",
     # P4 — "distributed" / "fan-out" claims; no engine-level test
     # asserts the wired primitives actually coordinate cross-worker.
@@ -230,15 +243,40 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
     # fix/w2-batch-b013-honesty-tests
     # add_request_fingerprint — closed Wave-2 (B0.13) in
     # fix/w2-batch-b013-honesty-tests
-    # P4 — "automatically" Cache-Control claim; no engine-level test
-    # asserts no-store is applied to ALL 4xx/5xx.
-    "extend/infrastructure/add_response_armor",
-    # P4 — "signed" presigned URL claim; no engine-level test asserts
-    # the no-proxy direct-to-S3 path or quota enforcement.
-    "extend/infrastructure/add_s3_storage",
-    # P4 — "signature-verified" webhook claim; no engine-level test
-    # asserts the verification branch rejects forged signatures.
-    "extend/infrastructure/add_stripe_refund_flow",
+    # add_response_armor — closed Wave-2 (B0.13) in
+    # fix/w2-batch-b013-honesty-cluster-2: pair test at
+    #   engine/tests/test_add_response_armor_notes_invariants.py
+    # AST-anchors the "automatically" Cache-Control claim against the
+    # emitted ``ResponseArmorMiddleware._apply_cache_control``: the
+    # gate is ``response.status_code >= 400`` (covers ALL 4xx AND 5xx,
+    # not 5xx-only) and the assigned header value contains the literal
+    # ``no-store``. Also asserts ``dispatch`` actually invokes
+    # ``_apply_cache_control`` so the gate is reachable from the
+    # request boundary.
+    # add_s3_storage — closed Wave-2 (B0.13) in
+    # fix/w2-batch-b013-honesty-cluster-2: pair test at
+    #   engine/tests/test_add_s3_storage_notes_invariants.py
+    # AST-anchors the "presigned" / "signed" URL claim against
+    # ``S3Client.presigned_upload_url`` and ``presigned_download_url``:
+    # both MUST call ``self._client.generate_presigned_url(...)`` with
+    # ``"put_object"`` / ``"get_object"`` (the boto3 entry point that
+    # signs the URL via AWS Sigv4). Also asserts the emitted routes
+    # delegate to ``presigned_upload_url`` AND do NOT call
+    # ``upload_fileobj`` / ``download_fileobj`` (the boto3 methods
+    # that would proxy bytes through the API process and break the
+    # "never buffers binary data" half of the claim). SSE stays
+    # disclosed in ``warnings=`` — out of scope of the B0.13 tokens.
+    # add_stripe_refund_flow — closed Wave-2 (B0.13) in
+    # fix/w2-batch-b013-honesty-cluster-2: pair test at
+    #   engine/tests/test_add_stripe_refund_flow_notes_invariants.py
+    # mirrors the add_stripe_subscription pattern shipped in PR #103:
+    # AST-asserts the emitted ``stripe_refund_webhook`` handler in
+    # ``refunds_routes.py.tmpl`` (a) calls
+    # ``stripe.Webhook.construct_event(payload, sig_header, secret)``,
+    # (b) wraps it in try/except that re-raises ``HTTPException(400)``
+    # on verification failure (blocks the B0.16-style silent-fail
+    # pattern), and (c) reads the ``stripe-signature`` header before
+    # the verify call so the SDK has a signature to validate against.
     # add_stripe_subscription — closed in W2 PR
     # (fix/w2-stripe-subscription-close-waivers): pair test at
     # engine/tests/test_add_stripe_subscription_notes_invariants.py
@@ -249,17 +287,52 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
     # delegates to stripe.Webhook.construct_event so the chain anchors
     # to the SDK primitive named in the notes line. Closes
     # R6-S2-F11 / R5-O3-F5 cluster for this tool.
-    # P4 — "idempotent" consumer claim; no engine-level test asserts
-    # the IdempotentConsumer drops replays.
-    "extend/realtime/add_webhook_receiver",
-    # P4 — "fan-out" Redis claim; no engine-level test asserts
-    # multi-worker delivery in the chat path.
-    "extend/realtime/add_websocket_chat",
-    # P4 — same as add_websocket_chat for presence.
-    "extend/realtime/add_websocket_presence",
-    # P4 — "automatically" SARIF upload claim; no engine-level test
-    # asserts the SARIF artefact lands in the GitHub Security tab path.
-    "verify/security_scan",
+    # add_webhook_receiver — closed Wave-2 (B0.13) in
+    # fix/w2-batch-b013-honesty-cluster-2: pair test at
+    #   engine/tests/test_add_webhook_receiver_notes_invariants.py
+    # AST-asserts the "idempotent" consumer claim against (a) the
+    # emitted ``glue.py.tmpl`` (imports ``install`` from
+    # ``WebhookReceiverAdapter`` and calls it inside
+    # ``install_webhook_receiver``), and (b) the adapter source
+    # (``WebhookReceiverAdapter.install`` constructs its consumer
+    # with ``inbox=InMemoryInboxDeduplicator(...)`` — the primitive
+    # enforcing IDC-INV-02 — and the consumer class inherits from
+    # ``BaseIdempotentConsumer`` so IDC-INV-01 cached-retry semantics
+    # apply).
+    # add_websocket_chat — closed Wave-2 (B0.13) in
+    # fix/w2-batch-b013-honesty-cluster-2: pair test at
+    #   engine/tests/test_add_websocket_chat_notes_invariants.py
+    # AST-asserts the "Redis fan-out, multi-worker safe" claim:
+    # ``WebSocketManager.broadcast`` calls ``redis.publish(...)`` (the
+    # publish half), ``subscribe_loop`` calls ``redis.pubsub()`` +
+    # ``pubsub.subscribe(...)`` and forwards via ``ws.send_text``,
+    # and the chat endpoint spawns the subscribe loop per accepted
+    # socket via ``asyncio.create_task``. The fire-and-forget
+    # disclosure remains in the function docstrings (already shipped).
+    # add_websocket_presence — closed Wave-2 (B0.13) in
+    # fix/w2-batch-b013-honesty-cluster-2: pair test at
+    #   engine/tests/test_add_websocket_presence_notes_invariants.py
+    # AST-asserts the "Fan-out via Redis pub/sub — multi-worker safe"
+    # claim against ``PresenceManager``: ``mark_online`` and
+    # ``mark_offline`` call ``self._publish_event(..., status, ...)``
+    # with literal "online"/"offline"; ``_publish_event`` calls
+    # ``redis.publish(channel, payload)``; and the "multi-worker safe"
+    # half is anchored by ``mark_online`` persisting state through
+    # ``redis.sadd`` + ``redis.set`` (shared Redis, not per-process
+    # dicts). Intentionally does NOT assert an in-tool subscribe loop:
+    # presence is fire-and-forget publish for downstream consumers
+    # (notification services, the chat tool's presence overlay), not
+    # in-tool consumption.
+    # verify/security_scan — closed Wave-2 (B0.13) in
+    # fix/w2-batch-b013-honesty-cluster-2: pair test at
+    #   engine/tests/test_security_scan_notes_invariants.py
+    # asserts the "uploads to GitHub Security tab automatically" claim
+    # against ``ci_workflow.yml.tmpl``: an ``upload-sarif@v<N>`` step
+    # exists with a ``.sarif`` ``with.sarif_file`` path, that step
+    # carries ``if: always()`` so failed scans still upload, the job
+    # grants ``security-events: write`` (required for upload-sarif),
+    # and the orchestrator emits the SARIF filename the workflow
+    # references (no path mismatch).
 })
 
 # --- Scanner -------------------------------------------------------------
