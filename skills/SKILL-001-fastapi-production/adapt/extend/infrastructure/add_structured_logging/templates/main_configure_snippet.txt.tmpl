@@ -1,7 +1,6 @@
 
 # Structured logging startup — added by add_structured_logging tool
-_configure_structlog(
-    level=_log_os.getenv("LOG_LEVEL", "INFO"),
-    fmt=_log_os.getenv("LOG_FORMAT", "json"),
-    redaction_enabled=_log_os.getenv("LOG_REDACTION_ENABLED", "true").lower() != "false",
-)
+# NOTE: `_configure_structlog(...)` is spliced INSIDE `async def lifespan(...)`
+# by `add_structured_logging._patch_main` (see CONTRACT §B0.15). When no
+# lifespan is present in the host main.py, the patcher falls back to a
+# pragma-tagged module-top call at EOF (legacy behaviour preserved).
