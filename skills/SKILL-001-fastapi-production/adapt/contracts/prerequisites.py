@@ -28,8 +28,10 @@ import textwrap
 from enum import Enum
 from pathlib import Path
 
+from adapt.contracts.migration_helper import write_chain_root
 
-class Prereq(str, Enum):
+
+class Prereq(str, Enum):  # noqa: UP042  # pre-existing; StrEnum migration is out of scope for this fix
     """Prerequisites that adapt tools may require."""
 
     BASE_MODEL = "base_model"
@@ -123,10 +125,7 @@ def check_prerequisites(project_dir: str | Path, *prereqs: Prereq) -> list[str]:
         if marker:
             content = target.read_text(errors="replace")
             if marker not in content:
-                errors.append(
-                    f"Found {rel_path} but missing '{marker}' — "
-                    f"expected: {description}"
-                )
+                errors.append(f"Found {rel_path} but missing '{marker}' — expected: {description}")
 
     return errors
 
@@ -335,16 +334,19 @@ def scaffold_prerequisites(
         target = root / rel_path
 
         if prereq == Prereq.ALEMBIC_VERSIONS:
-            versions_dir = root / "alembic" / "versions"
-            if not versions_dir.is_dir():
-                versions_dir.mkdir(parents=True, exist_ok=True)
-                (versions_dir / ".gitkeep").write_text("")
-                # Directory created, but NOT appended to ``created``: the
-                # list is consumed by downstream tools that iterate it and
-                # call ``ast.parse(p.read_text())``. A directory path or a
-                # non-Python placeholder file would crash that loop. The
-                # scaffolded directory is represented implicitly by the
-                # absence of the crash, not by a list entry.
+            # Emit the no-op 0001_initial.py chain root (idempotent), not a
+            # bare .gitkeep: extend tools chain migrations off
+            # ``down_revision="0001_initial"`` and find_migration_head() RAISES
+            # if the root is absent, so a versions/ dir with no parseable
+            # revision is worse than no dir at all. write_chain_root keeps this
+            # path consistent with the production generator's invariant.
+            #
+            # NOT appended to ``created``: downstream tools iterate the list and
+            # ``ast.parse`` each entry. 0001_initial.py is valid Python and
+            # lives on disk regardless; omitting it from the list preserves the
+            # prior contract (scaffold artefacts aren't reported) and avoids
+            # perturbing tools' files_created counts.
+            write_chain_root(root / "alembic" / "versions")
             continue
 
         if target.exists():
