@@ -22,10 +22,10 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_adaptive_throttle import add_adaptive_throttle
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _all_py_files(root: Path) -> list[Path]:
     """Return all .py files under *root*."""
@@ -54,10 +54,11 @@ def _max_function_loc(root: Path, subdir: str = "app") -> int:
         except SyntaxError:
             continue
         for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                if hasattr(node, "end_lineno") and node.end_lineno:
-                    loc = node.end_lineno - node.lineno + 1
-                    max_loc = max(max_loc, loc)
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and getattr(
+                node, "end_lineno", None
+            ):
+                loc = node.end_lineno - node.lineno + 1
+                max_loc = max(max_loc, loc)
     return max_loc
 
 
@@ -65,18 +66,18 @@ def _max_function_loc(root: Path, subdir: str = "app") -> int:
 # CC-01 — success status
 # ---------------------------------------------------------------------------
 
+
 def test_success_status() -> None:
     """CC-01: Tool returns status='success' on a fresh project."""
     project_dir = create_fixture_project(name="at_t01")
     result = add_adaptive_throttle(ToolInput(project_dir=str(project_dir)))
-    assert result.status == "success", (
-        f"Expected success, got {result.status}: {result.error}"
-    )
+    assert result.status == "success", f"Expected success, got {result.status}: {result.error}"
 
 
 # ---------------------------------------------------------------------------
 # CC-02 — idempotent
 # ---------------------------------------------------------------------------
+
 
 def test_idempotent() -> None:
     """CC-02: Second run returns status='no_op' without touching files."""
@@ -92,6 +93,7 @@ def test_idempotent() -> None:
 # ---------------------------------------------------------------------------
 # CC-03 — dry_run
 # ---------------------------------------------------------------------------
+
 
 def test_dry_run() -> None:
     """CC-03: dry_run=True returns success but writes no files."""
@@ -109,6 +111,7 @@ def test_dry_run() -> None:
 # CC-04 — files created count
 # ---------------------------------------------------------------------------
 
+
 def test_files_created_count() -> None:
     """CC-04: Tool creates at least 3 new files (core, middleware, status route)."""
     project_dir = create_fixture_project(name="at_t04")
@@ -124,6 +127,7 @@ def test_files_created_count() -> None:
 # ---------------------------------------------------------------------------
 # CC-05 — files modified count
 # ---------------------------------------------------------------------------
+
 
 def test_files_modified_count() -> None:
     """CC-05: Tool modifies at least 2 files (config, main)."""
@@ -141,6 +145,7 @@ def test_files_modified_count() -> None:
 # CC-06 — all py parse
 # ---------------------------------------------------------------------------
 
+
 def test_all_py_parse() -> None:
     """CC-06: Every generated .py file AST-parses clean."""
     project_dir = create_fixture_project(name="at_t06")
@@ -151,6 +156,7 @@ def test_all_py_parse() -> None:
 # ---------------------------------------------------------------------------
 # CC-07 — no function over 50 LOC
 # ---------------------------------------------------------------------------
+
 
 def test_no_function_over_50_loc() -> None:
     """CC-07: No function in generated app/ exceeds 50 LOC."""
@@ -163,6 +169,7 @@ def test_no_function_over_50_loc() -> None:
 # ---------------------------------------------------------------------------
 # CC-08 — config fields patched
 # ---------------------------------------------------------------------------
+
 
 def test_config_fields_patched() -> None:
     """CC-08: ADAPTIVE_THROTTLE_* settings exist inside Settings class body."""
@@ -189,6 +196,7 @@ def test_config_fields_patched() -> None:
 # ---------------------------------------------------------------------------
 # Domain tests — CC-11+
 # ---------------------------------------------------------------------------
+
 
 def test_core_module_created() -> None:
     """T-09: app/core/adaptive_throttle.py exists with AdaptiveThrottleConfig."""
@@ -289,6 +297,7 @@ def test_penalty_seconds_for_tier_function_present() -> None:
 # CC-N-1 — execution time
 # ---------------------------------------------------------------------------
 
+
 def test_execution_time_recorded() -> None:
     """CC-N-1: execution_time_ms must be a positive integer."""
     project_dir = create_fixture_project(name="at_t18")
@@ -299,6 +308,7 @@ def test_execution_time_recorded() -> None:
 # ---------------------------------------------------------------------------
 # CC-N — next_steps
 # ---------------------------------------------------------------------------
+
 
 def test_next_steps_present() -> None:
     """CC-N: next_steps mentions REDIS_URL and adaptive throttle config."""
@@ -315,6 +325,7 @@ def test_next_steps_present() -> None:
 # CC-LAST — idempotent project still parses
 # ---------------------------------------------------------------------------
 
+
 def test_idempotent_project_still_parses() -> None:
     """CC-LAST: After two runs all .py files remain parseable."""
     project_dir = create_fixture_project(name="at_t20")
@@ -326,6 +337,7 @@ def test_idempotent_project_still_parses() -> None:
 # ---------------------------------------------------------------------------
 # Mutation-killing regression tests
 # ---------------------------------------------------------------------------
+
 
 def test_five_penalty_tiers_distinct() -> None:
     """T-21: PENALTY_SECONDS must have exactly 5 entries with distinct values."""
@@ -355,16 +367,17 @@ def test_five_penalty_tiers_distinct() -> None:
                 if isinstance(target, ast.Name) and target.id == "PENALTY_SECONDS":
                     name = "PENALTY_SECONDS"
                     value_node = node.value
-        elif isinstance(node, ast.AnnAssign):
-            if isinstance(node.target, ast.Name) and node.target.id == "PENALTY_SECONDS":
-                name = "PENALTY_SECONDS"
-                value_node = node.value
+        elif (
+            isinstance(node, ast.AnnAssign)
+            and isinstance(node.target, ast.Name)
+            and node.target.id == "PENALTY_SECONDS"
+        ):
+            name = "PENALTY_SECONDS"
+            value_node = node.value
         if name and value_node is not None:
             values = _extract_list_value(value_node)
             assert values is not None, "PENALTY_SECONDS is not a list literal"
-            assert len(values) == 5, (
-                f"Expected 5 penalty tiers, got {len(values)}: {values}"
-            )
+            assert len(values) == 5, f"Expected 5 penalty tiers, got {len(values)}: {values}"
             assert values[0] == 0, "Tier 0 must be 0 seconds (no penalty)"
             assert values[-1] == 86400, "Tier 4 must be 86400 seconds (24h)"
             return
@@ -396,8 +409,13 @@ def test_register_throttle_positioned_after_fastapi() -> None:
     )
 
 
-def test_config_has_five_fields() -> None:
-    """T-24: config.py must have exactly 5 ADAPTIVE_THROTTLE_* fields."""
+def test_config_has_six_fields() -> None:
+    """T-24: config.py must have exactly 6 ADAPTIVE_THROTTLE_* fields.
+
+    The 6th field (TRUSTED_PROXIES) was added in R7-N3 to make the throttle
+    fingerprint proxy-aware (resolve real client IP from X-Forwarded-For only
+    via trusted proxies).
+    """
     project_dir = create_fixture_project(name="at_t24")
     add_adaptive_throttle(ToolInput(project_dir=str(project_dir)))
     content = (project_dir / "app" / "core" / "config.py").read_text()
@@ -407,16 +425,36 @@ def test_config_has_five_fields() -> None:
         "ADAPTIVE_THROTTLE_LEARNING_PERIOD_H",
         "ADAPTIVE_THROTTLE_BASE_QUOTA",
         "ADAPTIVE_THROTTLE_PENALTY_ESCALATION",
+        "ADAPTIVE_THROTTLE_TRUSTED_PROXIES",
     ]
     for field in expected:
         assert field in content, f"Config field {field} missing"
     distinct = {
-        line.strip() for line in content.splitlines()
+        line.strip()
+        for line in content.splitlines()
         if any(f in line for f in expected) and ":" in line and "=" in line
     }
-    assert len(distinct) == 5, (
-        f"Expected 5 ADAPTIVE_THROTTLE_* field lines, got {len(distinct)}: {distinct}"
+    assert len(distinct) == 6, (
+        f"Expected 6 ADAPTIVE_THROTTLE_* field lines, got {len(distinct)}: {distinct}"
     )
+
+
+def test_fingerprint_is_proxy_aware() -> None:
+    """T-26 (R7-N3): emitted core resolves client IP via trusted proxies only.
+
+    Guards the DoS-amplifier fix: fingerprint must NOT hash request.client.host
+    directly, must define client_ip(), and must gate X-Forwarded-For on a
+    trusted-proxy check so an unproxied caller cannot spoof an IP.
+    """
+    project_dir = create_fixture_project(name="at_t26")
+    add_adaptive_throttle(ToolInput(project_dir=str(project_dir)))
+    content = (project_dir / "app" / "core" / "adaptive_throttle.py").read_text()
+    assert "def client_ip" in content, "client_ip() resolver missing"
+    assert "ADAPTIVE_THROTTLE_TRUSTED_PROXIES" in content, "trusted-proxy setting not read"
+    assert "x-forwarded-for" in content, "X-Forwarded-For not consulted"
+    assert "ipaddress" in content, "ipaddress-based trust check missing"
+    # fingerprint must route through client_ip, not the raw peer host.
+    assert "client_ip(request)" in content, "fingerprint must use client_ip(request)"
 
 
 def test_no_files_mutated_outside_scope() -> None:
@@ -426,8 +464,7 @@ def test_no_files_mutated_outside_scope() -> None:
     result = add_adaptive_throttle(ToolInput(project_dir=str(project_dir)))
     assert result.status == "success"
     changed: set[Path] = {
-        Path(s).resolve()
-        for s in list(result.files_created) + list(result.files_modified)
+        Path(s).resolve() for s in list(result.files_created) + list(result.files_modified)
     }
     for p, original in before.items():
         if p.resolve() in changed:
@@ -466,7 +503,8 @@ if __name__ == "__main__":
         test_five_penalty_tiers_distinct,
         test_escalation_caps_at_tier_4,
         test_register_throttle_positioned_after_fastapi,
-        test_config_has_five_fields,
+        test_config_has_six_fields,
+        test_fingerprint_is_proxy_aware,
         test_no_files_mutated_outside_scope,
     ]
 
@@ -480,7 +518,7 @@ if __name__ == "__main__":
             print(f"  FAIL  {test_fn.__name__}: {exc}")
             failed += 1
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"TOOL-116 add_adaptive_throttle: {passed} passed, {failed} failed")
     if failed:
         sys.exit(1)
