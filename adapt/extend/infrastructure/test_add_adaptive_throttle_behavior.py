@@ -501,6 +501,45 @@ def _run_async_test(coro_fn: Any, *args: Any) -> None:
         coro_fn(*args)
 
 
+@pytest.mark.anyio
+async def test_b12_quota_escalation_fires_on_volume(project_dir: Path) -> None:
+    """B-12 (R7-N4): exceeding base_quota escalates WITHOUT a downstream 429.
+
+    Exercises the emitted middleware's behavioral path directly: record_request
+    counts a fingerprint's weighted volume, and _quota_exceeded flips True once
+    the count passes base_quota — independent of any downstream rate limiter
+    (the pre-fix middleware only escalated when the downstream returned 429).
+    """
+    import importlib
+    import types
+
+    _orig_path = sys.path.copy()
+    sys.path.insert(0, str(project_dir))
+    stale = [k for k in sys.modules if k == "app" or k.startswith("app.")]
+    for key in stale:
+        del sys.modules[key]
+    try:
+        mw = importlib.import_module("app.middleware.adaptive_throttle")
+
+        # record_request counts up within the window (Redis absent → local).
+        store = mw._PenaltyStore()
+        counts = [await store.record_request("fp-vol", 1, 60) for _ in range(3)]
+        assert counts == [1, 2, 3], counts
+
+        # _quota_exceeded flips True once the running count passes base_quota.
+        orig_store = mw._PENALTY_STORE
+        mw._PENALTY_STORE = mw._PenaltyStore()
+        try:
+            cfg = types.SimpleNamespace(base_quota=2)
+            req = types.SimpleNamespace(url=types.SimpleNamespace(path="/x"))
+            verdicts = [await mw._quota_exceeded("fp-q", req, cfg) for _ in range(4)]
+            assert verdicts == [False, False, True, True], verdicts
+        finally:
+            mw._PENALTY_STORE = orig_store
+    finally:
+        sys.path[:] = _orig_path
+
+
 # ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
@@ -526,6 +565,10 @@ if __name__ == "__main__":
         ("B-09: config 4-space indent", lambda: test_b09_config_fields_4space_indent(_pd)),
         ("B-10: generated files parse clean", lambda: test_b10_generated_files_parse_clean(_pd)),
         ("B-11: client_ip is proxy-aware", lambda: test_b11_client_ip_is_proxy_aware(_pd)),
+        (
+            "B-12: quota escalation fires on volume",
+            lambda: _run_async_test(test_b12_quota_escalation_fires_on_volume, _pd),
+        ),
     ]
 
     passed = failed = 0

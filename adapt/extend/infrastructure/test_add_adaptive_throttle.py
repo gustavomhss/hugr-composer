@@ -395,6 +395,36 @@ def test_escalation_caps_at_tier_4() -> None:
     )
 
 
+def test_escalation_on_quota_not_only_downstream_429() -> None:
+    """R7-N4: the middleware must escalate on its OWN per-window quota, not only
+    when a downstream handler returns 429.
+
+    Pre-fix, escalation fired solely on ``response.status_code == 429``; the
+    documented behavioral fingerprint detection never ran. The middleware must
+    now count requests per fingerprint (record_request), weight them by
+    cost_weight, and escalate when the count exceeds base_quota.
+    """
+    project_dir = create_fixture_project(name="at_quota")
+    add_adaptive_throttle(ToolInput(project_dir=str(project_dir)))
+    content = (project_dir / "app" / "middleware" / "adaptive_throttle.py").read_text()
+    assert "def record_request" in content, "missing per-window request counter (R7-N4)"
+    assert "cost_weight" in content, "middleware must weight requests via cost_weight"
+    assert "base_quota" in content, "middleware must compare the count against base_quota"
+    # The quota escalation must run BEFORE call_next (block on volume, not only
+    # after a downstream 429).
+    tree = ast.parse(content)
+    dispatch = next(
+        n for n in ast.walk(tree) if isinstance(n, ast.AsyncFunctionDef) and n.name == "dispatch"
+    )
+    body = ast.unparse(dispatch)
+    assert "_quota_exceeded" in body, "dispatch must run the quota check (not only react to a 429)"
+    # The quota check must precede the downstream dispatch (block on volume,
+    # before forwarding) — it appears above the `response = await call_next` line.
+    assert body.index("_quota_exceeded") < body.index("response = await call_next"), (
+        "quota escalation must be evaluated before the downstream call_next"
+    )
+
+
 def test_register_throttle_positioned_after_fastapi() -> None:
     """T-23: register_adaptive_throttle(app) must appear AFTER app = FastAPI(...)."""
     project_dir = create_fixture_project(name="at_t23")
@@ -502,6 +532,7 @@ if __name__ == "__main__":
         test_idempotent_project_still_parses,
         test_five_penalty_tiers_distinct,
         test_escalation_caps_at_tier_4,
+        test_escalation_on_quota_not_only_downstream_429,
         test_register_throttle_positioned_after_fastapi,
         test_config_has_six_fields,
         test_fingerprint_is_proxy_aware,
