@@ -215,3 +215,64 @@ async def test_b04_search_and_autocomplete_routes_registered(asgi_app: Any) -> N
     # Either reachable (401 because no auth) OR success — but NOT 404 (route missing).
     assert s.status_code != 404, f"/items/search not registered: {s.status_code}: {s.text}"
     assert a.status_code != 404, f"/items/autocomplete not registered: {a.status_code}"
+
+
+# ---------------------------------------------------------------------------
+# B-05: R5-S8-F2 — LIKE escaping prevents wildcard bleed (functional, SQLite)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_b05_like_escape_prevents_wildcard_bleed() -> None:
+    """B-05 (R5-S8-F2): escaped ILIKE matches %/_ literally, not as wildcards.
+
+    Proves against a real SQLite engine that the fix's escaping strategy
+    (``_like_escape`` + ``escape="\\\\"``) makes a user ``%`` match the literal
+    character instead of every row, while the pre-fix raw pattern bleeds.
+    """
+    from sqlalchemy import Column, Integer, String, select
+    from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+    from sqlalchemy.orm import declarative_base
+
+    base = declarative_base()
+
+    class _Row(base):
+        __tablename__ = "rows_b05"
+        id = Column(Integer, primary_key=True)
+        title = Column(String)
+
+    def _like_escape(term: str) -> str:
+        return term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(base.metadata.create_all)
+        async with AsyncSession(engine) as session:
+            session.add_all([_Row(id=1, title="apple"), _Row(id=2, title="100% juice")])
+            await session.commit()
+
+            term = "%"
+            # Pre-fix (raw) pattern bleeds to ALL rows.
+            raw = (
+                (await session.execute(select(_Row).where(_Row.title.ilike(f"%{term}%"))))
+                .scalars()
+                .all()
+            )
+            assert len(raw) == 2, "sanity: a raw % pattern bleeds to every row"
+            # Post-fix (escaped) pattern matches only the row with a literal %.
+            safe = _like_escape(term)
+            escaped = (
+                (
+                    await session.execute(
+                        select(_Row).where(_Row.title.ilike(f"%{safe}%", escape="\\"))
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            assert {r.id for r in escaped} == {2}, (
+                f"escaped % must match only the literal-% row, got {[r.id for r in escaped]}"
+            )
+    finally:
+        await engine.dispose()

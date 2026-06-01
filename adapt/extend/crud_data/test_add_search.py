@@ -22,10 +22,10 @@ from adapt.contracts import ToolInput
 from adapt.extend.crud_data.add_search import add_search
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _all_py_files(root: Path) -> list[Path]:
     return sorted(root.rglob("*.py"))
@@ -43,6 +43,7 @@ def _assert_parse(root: Path) -> None:
 # ---------------------------------------------------------------------------
 # Test cases
 # ---------------------------------------------------------------------------
+
 
 def test_success_status() -> None:
     """T-01: Tool returns status='success' on a fresh project."""
@@ -120,7 +121,7 @@ def test_crud_no_fstring_sql() -> None:
     search_end = content.find("\nasync def autocomplete", search_start)
     search_body = content[search_start:search_end]
     # q must not appear inside an f-string used for SQL
-    assert "f\"" + "q" not in search_body.replace(" ", ""), "q must not be f-string interpolated"
+    assert 'f"' + "q" not in search_body.replace(" ", ""), "q must not be f-string interpolated"
     assert "f'{q}" not in search_body, "q must not be f-string interpolated"
 
 
@@ -161,7 +162,9 @@ def test_crud_autocomplete_uses_prefix_tsquery() -> None:
     crud_file = project_dir / "app" / "crud" / "item.py"
     content = crud_file.read_text()
     autocomplete_start = content.find("async def autocomplete")
-    assert '":*"' in content[autocomplete_start:], "Autocomplete must use prefix :* tsquery as bound param"
+    assert '":*"' in content[autocomplete_start:], (
+        "Autocomplete must use prefix :* tsquery as bound param"
+    )
 
 
 def test_schema_search_schemas_added() -> None:
@@ -318,6 +321,7 @@ def test_next_steps_present() -> None:
 # Regression tests for confirmed bugs
 # ---------------------------------------------------------------------------
 
+
 def test_multiword_model_is_covered() -> None:
     """BUG B regression: multiword model (VaccineLot in vaccinelot.py) must be covered.
 
@@ -353,19 +357,19 @@ def test_no_sqli_via_language_concat() -> None:
     crud_file = project_dir / "app" / "crud" / "item.py"
     content = crud_file.read_text()
     # Old unsafe pattern must be absent
-    assert "_text(\"'\" + language + \"'\")" not in content, (
+    assert '_text("\'" + language + "\'")' not in content, (
         "Emitted code still contains unsafe language string concatenation into _text()"
     )
-    assert "_text(\"'\" + lang + \"'\")" not in content, (
+    assert '_text("\'" + lang + "\'")' not in content, (
         "Emitted code still contains unsafe lang string concatenation into _text()"
     )
     # Safe REGCONFIG cast must be present
     assert "_REGCONFIG" in content, (
         "Emitted code must import and use REGCONFIG for safe language binding"
     )
-    assert "_func.cast(language, _REGCONFIG)" in content or "_func.cast(lang, _REGCONFIG)" in content, (
-        "Emitted code must use _func.cast(language, _REGCONFIG) — not string concatenation"
-    )
+    assert (
+        "_func.cast(language, _REGCONFIG)" in content or "_func.cast(lang, _REGCONFIG)" in content
+    ), "Emitted code must use _func.cast(language, _REGCONFIG) — not string concatenation"
 
 
 def test_regconfig_import_in_emitted_crud() -> None:
@@ -401,7 +405,7 @@ def test_no_sqli_via_autocomplete_first_token() -> None:
     assert '_text("\'" + first_token' not in autocomplete_body, (
         "Emitted autocomplete still concatenates first_token into _text() — SQL injection risk"
     )
-    assert "_text(\"'\" + first_token" not in autocomplete_body, (
+    assert '_text("\'" + first_token' not in autocomplete_body, (
         "Emitted autocomplete still concatenates first_token into _text() — SQL injection risk"
     )
 
@@ -413,9 +417,11 @@ def test_no_sqli_via_autocomplete_first_token() -> None:
     # The token must be passed as a plain Python string (bound param), not _text()
     # Verify that the :* suffix is NOT preceded by a closing quote (which would mean
     # it's still being concatenated as an inline literal).
-    assert "_text(" not in autocomplete_body.split("_safe_token")[1].split("to_tsquery")[0] if "_safe_token" in autocomplete_body else True, (
-        "Emitted autocomplete must not wrap the safe token in _text()"
-    )
+    assert (
+        "_text(" not in autocomplete_body.split("_safe_token")[1].split("to_tsquery")[0]
+        if "_safe_token" in autocomplete_body
+        else True
+    ), "Emitted autocomplete must not wrap the safe token in _text()"
 
     # The import of re must be present in the emitted CRUD
     assert "import re" in content, (
@@ -464,6 +470,7 @@ def test_autocomplete_bound_param_not_inline_literal() -> None:
 
     # Confirm a malicious q value is sanitized: re.sub strips tsquery operators
     import re
+
     malicious_q = "x':*) --"
     first_token = malicious_q.strip().split()[0]
     safe_token = re.sub(r"[^\w]+", " ", first_token).strip()
@@ -498,9 +505,49 @@ def test_search_covers_all_models_in_multi_model_project() -> None:
     for stem in ("item", "product"):
         crud_file = project_dir / "app" / "crud" / f"{stem}.py"
         assert crud_file.exists(), f"CRUD for {stem} not found"
-        assert "async def search" in crud_file.read_text(), (
-            f"search() not added to {stem} CRUD"
-        )
+        assert "async def search" in crud_file.read_text(), f"search() not added to {stem} CRUD"
+
+
+def test_search_strips_nul_bytes() -> None:
+    """R5-S8-F1: search() must strip NUL bytes from q before querying.
+
+    A NUL (\\x00) in the query reaches websearch_to_tsquery on PostgreSQL and
+    raises a DataError that surfaces as an uncaught 500. The fix drops \\x00 for
+    every backend up front, then re-validates the min-length.
+    """
+    project_dir = create_fixture_project(name="search_nul_strip")
+    add_search(ToolInput(project_dir=str(project_dir)))
+    crud_src = (project_dir / "app" / "crud" / "item.py").read_text()
+    search_start = crud_src.find("async def search(")
+    search_end = crud_src.find("\nasync def _autocomplete_like(", search_start)
+    search_body = crud_src[search_start:search_end]
+    assert '"\\x00"' in search_body or "'\\x00'" in search_body, (
+        "search() does not strip NUL bytes from q (PostgreSQL DataError 500 open)"
+    )
+    assert ".replace(" in search_body, "search() must replace/strip NUL before querying"
+
+
+def test_like_fallback_escapes_wildcards() -> None:
+    """R5-S8-F2: LIKE fallback + autocomplete must escape %/_ metacharacters.
+
+    Pre-fix the LIKE fallback interpolated user terms into ``ilike(f"%{term}%")``
+    so a bare ``%`` matched every row (wildcard bleed). Both LIKE paths must now
+    route the term through ``_like_escape`` and pass ``escape="\\\\"``.
+    """
+    project_dir = create_fixture_project(name="search_like_escape")
+    add_search(ToolInput(project_dir=str(project_dir)))
+    crud_src = (project_dir / "app" / "crud" / "item.py").read_text()
+    assert "def _like_escape(" in crud_src, "_like_escape helper missing"
+    # Both LIKE paths must use the escaper and pass escape= to ilike.
+    assert crud_src.count("_like_escape(") >= 2, (
+        "both _search_like_fallback and _autocomplete_like must escape LIKE wildcards"
+    )
+    assert 'escape="\\\\"' in crud_src, (
+        "ilike() calls must pass escape= for the backslash escape char"
+    )
+    # The escaper must neutralise the LIKE metacharacters % and _ via .replace().
+    assert '.replace("%"' in crud_src, "_like_escape must escape % (percent wildcard)"
+    assert '.replace("_"' in crud_src, "_like_escape must escape _ (single-char wildcard)"
 
 
 # ---------------------------------------------------------------------------
@@ -544,6 +591,9 @@ if __name__ == "__main__":
         # P0 SQL injection fix — autocomplete first_token
         test_no_sqli_via_autocomplete_first_token,
         test_autocomplete_bound_param_not_inline_literal,
+        # R5-S8 — NUL strip + LIKE wildcard escaping
+        test_search_strips_nul_bytes,
+        test_like_fallback_escapes_wildcards,
     ]
 
     passed = 0
