@@ -30,6 +30,7 @@ Exit 2 → Postgres skipped (no container)
 from __future__ import annotations
 
 import os
+
 os.environ.setdefault("RATE_LIMITING_ENABLED", "false")
 os.environ.setdefault("ENVIRONMENT", "local")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-e2e-must-be-32-chars-long!!")
@@ -66,40 +67,46 @@ POSTGRES_URL = os.environ.get(
 
 # Models — simple e-commerce domain
 ECOMMERCE_MODELS = {
-    "Product":  {"name": "str", "description": "text", "price": "float", "sku": "str", "stock": "int"},
-    "Order":    {"status": "str", "total": "float", "notes": "text"},
+    "Product": {
+        "name": "str",
+        "description": "text",
+        "price": "float",
+        "sku": "str",
+        "stock": "int",
+    },
+    "Order": {"status": "str", "total": "float", "notes": "text"},
     "Customer": {"name": "str", "email": "email", "phone": "str", "tier": "str"},
 }
 
 # All 27 EXTEND tools — the full set
 ALL_TOOLS: list[tuple[str, str]] = [
-    ("add_soft_delete",       "adapt.extend.crud_data.add_soft_delete"),
+    ("add_soft_delete", "adapt.extend.crud_data.add_soft_delete"),
     ("add_cursor_pagination", "adapt.extend.crud_data.add_cursor_pagination"),
-    ("add_search",            "adapt.extend.crud_data.add_search"),
-    ("add_audit_log",         "adapt.extend.crud_data.add_audit_log"),
-    ("add_bulk_operations",   "adapt.extend.crud_data.add_bulk_operations"),
-    ("add_data_export",       "adapt.extend.crud_data.add_data_export"),
-    ("add_file_upload",       "adapt.extend.crud_data.add_file_upload"),
-    ("add_multi_tenancy",     "adapt.extend.auth_access.add_multi_tenancy"),
-    ("add_rbac",              "adapt.extend.auth_access.add_rbac"),
-    ("add_mfa",               "adapt.extend.auth_access.add_mfa"),
-    ("add_api_key_auth",      "adapt.extend.auth_access.add_api_key_auth"),
-    ("add_feature_flags",     "adapt.extend.auth_access.add_feature_flags"),
-    ("add_oauth2_provider",   "adapt.extend.auth_access.add_oauth2_provider"),
-    ("add_cache_layer",       "adapt.extend.infrastructure.add_cache_layer"),
-    ("add_circuit_breaker",   "adapt.extend.infrastructure.add_circuit_breaker"),
-    ("add_outbox_pattern",    "adapt.extend.infrastructure.add_outbox_pattern"),
-    ("add_saga",              "adapt.extend.infrastructure.add_saga"),
-    ("add_sse",               "adapt.extend.realtime.add_sse"),
-    ("add_webhook_receiver",  "adapt.extend.realtime.add_webhook_receiver"),
-    ("add_webhook_sender",    "adapt.extend.realtime.add_webhook_sender"),
-    ("add_api_versioning",    "adapt.extend.api_design.add_api_versioning"),
-    ("add_batch_endpoint",    "adapt.extend.api_design.add_batch_endpoint"),
-    ("add_graphql",           "adapt.extend.api_design.add_graphql"),
+    ("add_search", "adapt.extend.crud_data.add_search"),
+    ("add_audit_log", "adapt.extend.crud_data.add_audit_log"),
+    ("add_bulk_operations", "adapt.extend.crud_data.add_bulk_operations"),
+    ("add_data_export", "adapt.extend.crud_data.add_data_export"),
+    ("add_file_upload", "adapt.extend.crud_data.add_file_upload"),
+    ("add_multi_tenancy", "adapt.extend.auth_access.add_multi_tenancy"),
+    ("add_rbac", "adapt.extend.auth_access.add_rbac"),
+    ("add_mfa", "adapt.extend.auth_access.add_mfa"),
+    ("add_api_key_auth", "adapt.extend.auth_access.add_api_key_auth"),
+    ("add_feature_flags", "adapt.extend.auth_access.add_feature_flags"),
+    ("add_oauth2_provider", "adapt.extend.auth_access.add_oauth2_provider"),
+    ("add_cache_layer", "adapt.extend.infrastructure.add_cache_layer"),
+    ("add_circuit_breaker", "adapt.extend.infrastructure.add_circuit_breaker"),
+    ("add_outbox_pattern", "adapt.extend.infrastructure.add_outbox_pattern"),
+    ("add_saga", "adapt.extend.infrastructure.add_saga"),
+    ("add_sse", "adapt.extend.realtime.add_sse"),
+    ("add_webhook_receiver", "adapt.extend.realtime.add_webhook_receiver"),
+    ("add_webhook_sender", "adapt.extend.realtime.add_webhook_sender"),
+    ("add_api_versioning", "adapt.extend.api_design.add_api_versioning"),
+    ("add_batch_endpoint", "adapt.extend.api_design.add_batch_endpoint"),
+    ("add_graphql", "adapt.extend.api_design.add_graphql"),
     ("add_long_running_task", "adapt.extend.api_design.add_long_running_task"),
-    ("add_contract_tests",    "adapt.extend.testing_tools.add_contract_tests"),
-    ("add_factory",           "adapt.extend.testing_tools.add_factory"),
-    ("add_load_profile",      "adapt.extend.testing_tools.add_load_profile"),
+    ("add_contract_tests", "adapt.extend.testing_tools.add_contract_tests"),
+    ("add_factory", "adapt.extend.testing_tools.add_factory"),
+    ("add_load_profile", "adapt.extend.testing_tools.add_load_profile"),
 ]
 
 
@@ -117,8 +124,8 @@ def _setup() -> Path:
     if _PROJECT_DIR is not None:
         return _PROJECT_DIR
 
-    from tests.common.fixture_factory import create_fixture_project
     from adapt.contracts import ToolInput
+    from tests.common.fixture_factory import create_fixture_project
 
     _TMPDIR = tempfile.TemporaryDirectory()
     project_dir = create_fixture_project(
@@ -144,8 +151,9 @@ def _setup() -> Path:
 async def _precheck_postgres() -> bool:
     """Verify PostgreSQL is reachable before running tests."""
     try:
-        from sqlalchemy.ext.asyncio import create_async_engine
         from sqlalchemy import text
+        from sqlalchemy.ext.asyncio import create_async_engine
+
         engine = create_async_engine(POSTGRES_URL, echo=False)
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
@@ -171,6 +179,7 @@ def _load_app(project_dir: Path):
 async def _reset_schema(engine) -> None:
     """Drop all tables and recreate the schema from scratch."""
     from sqlalchemy import text
+
     async with engine.begin() as conn:
         await conn.execute(text("DROP SCHEMA public CASCADE"))
         await conn.execute(text("CREATE SCHEMA public"))
@@ -183,8 +192,8 @@ async def _make_client(app, project_dir: Path, tenant_slug: str = "acme"):
     add_multi_tenancy was not applied. The returned client should always
     send X-Tenant-ID: {tenant_slug} when multi-tenancy is active.
     """
-    from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
     from httpx import ASGITransport, AsyncClient
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
     get_session_mod = importlib.import_module("app.core.session")
     base_mod = importlib.import_module("app.models.base")
@@ -225,7 +234,9 @@ async def _seed_tenant(session, slug: str) -> uuid.UUID | None:
     except ModuleNotFoundError:
         return None
     tid = uuid.uuid4()
-    tenant = tenant_mod.Tenant(id=tid, name="Acme Corp", slug=slug, status="active")
+    tenant = tenant_mod.Tenant(
+        id=tid, name="Acme Corp", slug=slug, status="active", allow_public_signup=True
+    )
     session.add(tenant)
     await session.commit()
     return tid
@@ -247,13 +258,24 @@ def _th(token: str | None = None, tenant: str = "acme") -> dict[str, str]:
 
 
 async def _signup_and_login(client, email: str, password: str, name: str = "Test") -> str:
-    r = await client.post("/api/v1/users/signup", json={
-        "email": email, "password": password, "full_name": name,
-    }, headers=_th())
+    r = await client.post(
+        "/api/v1/users/signup",
+        json={
+            "email": email,
+            "password": password,
+            "full_name": name,
+        },
+        headers=_th(),
+    )
     assert r.status_code in (200, 201), f"signup {email} failed: {r.status_code} {r.text[:300]}"
-    r = await client.post("/api/v1/login/access-token", data={
-        "username": email, "password": password,
-    }, headers=_th())
+    r = await client.post(
+        "/api/v1/login/access-token",
+        data={
+            "username": email,
+            "password": password,
+        },
+        headers=_th(),
+    )
     assert r.status_code == 200, f"login {email} failed: {r.status_code} {r.text[:300]}"
     return r.json()["access_token"]
 
@@ -261,6 +283,7 @@ async def _signup_and_login(client, email: str, password: str, name: str = "Test
 # ---------------------------------------------------------------------------
 # Test 01 — Auth works end-to-end through the tenant middleware
 # ---------------------------------------------------------------------------
+
 
 async def test_01_tenant_aware_auth(pd: Path) -> tuple[bool, str]:
     """Signup → login → protected endpoint, all with X-Tenant-ID header."""
@@ -272,7 +295,9 @@ async def test_01_tenant_aware_auth(pd: Path) -> tuple[bool, str]:
             fails.append("tenants table not present — add_multi_tenancy did not run")
             return (False, "tenant_aware_auth: " + "; ".join(fails))
 
-        token = await _signup_and_login(client, "owner@acme.example.com", "OwnerPass123!", "Acme Owner")
+        token = await _signup_and_login(
+            client, "owner@acme.example.com", "OwnerPass123!", "Acme Owner"
+        )
 
         # Valid token + header naming the user's own tenant → 200.
         r = await client.get("/api/v1/products/", headers=_th(token))
@@ -285,7 +310,9 @@ async def test_01_tenant_aware_auth(pd: Path) -> tuple[bool, str]:
         # model 400'd here — that was insecure AND broke every public route.)
         r = await client.get("/api/v1/products/", headers={"Authorization": f"Bearer {token}"})
         if r.status_code != 200:
-            fails.append(f"no header but valid token: expected 200 (tenant from identity), got {r.status_code}")
+            fails.append(
+                f"no header but valid token: expected 200 (tenant from identity), got {r.status_code}"
+            )
 
         # Spoofed header: a normal user naming a tenant that is NOT their own is
         # rejected 403 — knowing a slug must never grant cross-tenant access.
@@ -304,12 +331,17 @@ async def test_01_tenant_aware_auth(pd: Path) -> tuple[bool, str]:
     finally:
         await _teardown(app, client, session, engine)
 
-    return (not fails, "tenant_aware_auth: " + ("; ".join(fails) if fails else "PASS — signup/login/protected + tenant enforcement"))
+    return (
+        not fails,
+        "tenant_aware_auth: "
+        + ("; ".join(fails) if fails else "PASS — signup/login/protected + tenant enforcement"),
+    )
 
 
 # ---------------------------------------------------------------------------
 # Test 02 — PostgreSQL full-text search actually finds documents
 # ---------------------------------------------------------------------------
+
 
 async def test_02_postgres_fts_search(pd: Path) -> tuple[bool, str]:
     """Real FTS path: create products, search by term, verify ranked results."""
@@ -322,12 +354,27 @@ async def test_02_postgres_fts_search(pd: Path) -> tuple[bool, str]:
 
         # Create 3 products with distinct searchable names
         products = [
-            {"name": "Wireless Headphones", "description": "Noise-cancelling bluetooth",
-             "price": 199.0, "sku": "WHP-001", "stock": 50},
-            {"name": "Mechanical Keyboard", "description": "Tactile switches for coding",
-             "price": 149.0, "sku": "KBD-001", "stock": 30},
-            {"name": "Gaming Mouse", "description": "Wireless ergonomic precision",
-             "price": 89.0, "sku": "MSE-001", "stock": 100},
+            {
+                "name": "Wireless Headphones",
+                "description": "Noise-cancelling bluetooth",
+                "price": 199.0,
+                "sku": "WHP-001",
+                "stock": 50,
+            },
+            {
+                "name": "Mechanical Keyboard",
+                "description": "Tactile switches for coding",
+                "price": 149.0,
+                "sku": "KBD-001",
+                "stock": 30,
+            },
+            {
+                "name": "Gaming Mouse",
+                "description": "Wireless ergonomic precision",
+                "price": 89.0,
+                "sku": "MSE-001",
+                "stock": 100,
+            },
         ]
         for p in products:
             r = await client.post("/api/v1/products/", json=p, headers=h)
@@ -343,17 +390,22 @@ async def test_02_postgres_fts_search(pd: Path) -> tuple[bool, str]:
             results = body.get("data") or body.get("items") or body.get("results") or []
             # Should find 2 (Wireless Headphones + Gaming Mouse with "wireless" in desc)
             if len(results) < 1:
-                fails.append(f"FTS search 'wireless': 0 results (expected ≥1)")
+                fails.append("FTS search 'wireless': 0 results (expected ≥1)")
 
     finally:
         await _teardown(app, client, session, engine)
 
-    return (not fails, "postgres_fts_search: " + ("; ".join(fails) if fails else f"PASS — FTS returned {len(results)} matches"))
+    return (
+        not fails,
+        "postgres_fts_search: "
+        + ("; ".join(fails) if fails else f"PASS — FTS returned {len(results)} matches"),
+    )
 
 
 # ---------------------------------------------------------------------------
 # Test 03 — RBAC: permissions table exists, roles can be created
 # ---------------------------------------------------------------------------
+
 
 async def test_03_rbac_guard(pd: Path) -> tuple[bool, str]:
     """RBAC role guard admits a principal carrying the role, denies otherwise.
@@ -365,14 +417,15 @@ async def test_03_rbac_guard(pd: Path) -> tuple[bool, str]:
     and assert admit (200) / forbidden (403) / unauthenticated (401|403).
     """
     app = _load_app(pd)
-    from fastapi import Depends, Request
     from app.rbac import require_roles  # the tool's wiring helper must import
+    from fastapi import Depends, Request
+
     from core.venous._adapters.fastapi.RequestGuardAdapter import require
-    from core.venous.auth.RequestGuard.RequestGuard import RoleGuard
     from core.venous.auth.CurrentPrincipal.CurrentPrincipal import (
         CurrentPrincipal,
         anonymous,
     )
+    from core.venous.auth.RequestGuard.RequestGuard import RoleGuard
 
     def _resolver(request: Request):
         role = request.headers.get("X-Role")
@@ -405,12 +458,16 @@ async def test_03_rbac_guard(pd: Path) -> tuple[bool, str]:
     finally:
         await _teardown(app, client, session, engine)
 
-    return (not fails, "rbac_guard: " + ("; ".join(fails) if fails else "PASS — role admit/deny enforced"))
+    return (
+        not fails,
+        "rbac_guard: " + ("; ".join(fails) if fails else "PASS — role admit/deny enforced"),
+    )
 
 
 # ---------------------------------------------------------------------------
 # Test 04 — MFA: TOTP secret generation works
 # ---------------------------------------------------------------------------
+
 
 async def test_04_mfa_totp(pd: Path) -> tuple[bool, str]:
     """TOTP verifier accepts a valid code, rejects replay and a wrong code.
@@ -430,9 +487,9 @@ async def test_04_mfa_totp(pd: Path) -> tuple[bool, str]:
     fails: list[str] = []
     try:
         from core.venous.auth.TotpVerifier.TotpVerifier import (
-            _hotp,
             TotpInvalidCodeError,
             TotpReplayError,
+            _hotp,
         )
 
         verifier = app.state.totp
@@ -459,12 +516,17 @@ async def test_04_mfa_totp(pd: Path) -> tuple[bool, str]:
     finally:
         await _teardown(app, client, session, engine)
 
-    return (not fails, "mfa_totp: " + ("; ".join(fails) if fails else "PASS — code accepted, replay + wrong code rejected"))
+    return (
+        not fails,
+        "mfa_totp: "
+        + ("; ".join(fails) if fails else "PASS — code accepted, replay + wrong code rejected"),
+    )
 
 
 # ---------------------------------------------------------------------------
 # Test 05 — OAuth2 provider: authorization endpoint exists
 # ---------------------------------------------------------------------------
+
 
 async def test_05_oauth2_introspection(pd: Path) -> tuple[bool, str]:
     """OAuth2 bearer introspection admits a valid token, rejects bad/missing.
@@ -476,8 +538,9 @@ async def test_05_oauth2_introspection(pd: Path) -> tuple[bool, str]:
     catalog Protocol and assert the current_claims dependency enforces it.
     """
     app = _load_app(pd)
-    from fastapi import Depends
     from app.oauth2 import current_claims, install_oauth2  # tool wiring helper
+    from fastapi import Depends
+
     from core.venous.auth.SessionStore.SessionStore import InMemorySessionStore
     from core.venous.auth.TokenIntrospector.TokenIntrospector import (
         InvalidTokenError,
@@ -507,9 +570,13 @@ async def test_05_oauth2_introspection(pd: Path) -> tuple[bool, str]:
     client, session, engine, _ = await _make_client(app, pd)
     fails: list[str] = []
     try:
-        r = await client.get("/_oauth_probe", headers={**_th(), "Authorization": "Bearer good-token"})
+        r = await client.get(
+            "/_oauth_probe", headers={**_th(), "Authorization": "Bearer good-token"}
+        )
         if r.status_code != 200 or r.json().get("subject") != "oauth-user":
-            fails.append(f"valid token: expected 200/oauth-user, got {r.status_code} {r.text[:120]}")
+            fails.append(
+                f"valid token: expected 200/oauth-user, got {r.status_code} {r.text[:120]}"
+            )
 
         r = await client.get("/_oauth_probe", headers={**_th(), "Authorization": "Bearer nope"})
         if r.status_code != 401:
@@ -522,12 +589,17 @@ async def test_05_oauth2_introspection(pd: Path) -> tuple[bool, str]:
     finally:
         await _teardown(app, client, session, engine)
 
-    return (not fails, "oauth2_introspection: " + ("; ".join(fails) if fails else "PASS — bearer introspection enforced"))
+    return (
+        not fails,
+        "oauth2_introspection: "
+        + ("; ".join(fails) if fails else "PASS — bearer introspection enforced"),
+    )
 
 
 # ---------------------------------------------------------------------------
 # Test 06 — Multi-tenant isolation: tenant A cannot read tenant B's data
 # ---------------------------------------------------------------------------
+
 
 async def test_06_tenant_isolation(pd: Path) -> tuple[bool, str]:
     """Two tenants, same model, each sees only their own rows."""
@@ -538,15 +610,28 @@ async def test_06_tenant_isolation(pd: Path) -> tuple[bool, str]:
         # Seed a second tenant
         tenant_mod = importlib.import_module("app.models.tenant")
         beta_id = uuid.uuid4()
-        session.add(tenant_mod.Tenant(id=beta_id, name="Beta LLC", slug="beta", status="active"))
+        session.add(
+            tenant_mod.Tenant(
+                id=beta_id, name="Beta LLC", slug="beta", status="active", allow_public_signup=True
+            )
+        )
         await session.commit()
 
         # User in Acme creates a product
-        token_a = await _signup_and_login(client, "alice@acme.example.com", "AlicePass123!", "Alice")
-        r = await client.post("/api/v1/products/", json={
-            "name": "Acme Widget", "description": "acme only", "price": 10.0,
-            "sku": "ACM-001", "stock": 5,
-        }, headers=_th(token_a, tenant="acme"))
+        token_a = await _signup_and_login(
+            client, "alice@acme.example.com", "AlicePass123!", "Alice"
+        )
+        r = await client.post(
+            "/api/v1/products/",
+            json={
+                "name": "Acme Widget",
+                "description": "acme only",
+                "price": 10.0,
+                "sku": "ACM-001",
+                "stock": 5,
+            },
+            headers=_th(token_a, tenant="acme"),
+        )
         if r.status_code not in (200, 201):
             fails.append(f"Acme create: {r.status_code} {r.text[:200]}")
             return (False, "tenant_isolation: " + "; ".join(fails))
@@ -558,7 +643,9 @@ async def test_06_tenant_isolation(pd: Path) -> tuple[bool, str]:
         r = await client.get("/api/v1/products/", headers=_th(token_b, tenant="beta"))
         if r.status_code == 200:
             body = r.json()
-            items = body.get("data") or body.get("items") or (body if isinstance(body, list) else [])
+            items = (
+                body.get("data") or body.get("items") or (body if isinstance(body, list) else [])
+            )
             skus = [item.get("sku") for item in items if isinstance(item, dict)]
             if "ACM-001" in skus:
                 fails.append("TENANT BREACH: Beta user sees Acme product")
@@ -566,12 +653,16 @@ async def test_06_tenant_isolation(pd: Path) -> tuple[bool, str]:
     finally:
         await _teardown(app, client, session, engine)
 
-    return (not fails, "tenant_isolation: " + ("; ".join(fails) if fails else "PASS — tenant boundary enforced"))
+    return (
+        not fails,
+        "tenant_isolation: " + ("; ".join(fails) if fails else "PASS — tenant boundary enforced"),
+    )
 
 
 # ---------------------------------------------------------------------------
 # Test 07 — Bulk create actually persists rows in PostgreSQL
 # ---------------------------------------------------------------------------
+
 
 async def test_07_bulk_create_persists(pd: Path) -> tuple[bool, str]:
     """Bulk create 10 products, verify all 10 are queryable via GET /products/."""
@@ -583,13 +674,23 @@ async def test_07_bulk_create_persists(pd: Path) -> tuple[bool, str]:
         h = _th(token)
 
         items = [
-            {"name": f"Bulk-{i:03d}", "description": f"batch item {i}",
-             "price": float(i), "sku": f"BLK-{i:03d}", "stock": i}
+            {
+                "name": f"Bulk-{i:03d}",
+                "description": f"batch item {i}",
+                "price": float(i),
+                "sku": f"BLK-{i:03d}",
+                "stock": i,
+            }
             for i in range(10)
         ]
-        r = await client.post("/api/v1/products/bulk", json={
-            "items": items, "mode": "all_or_nothing",
-        }, headers=h)
+        r = await client.post(
+            "/api/v1/products/bulk",
+            json={
+                "items": items,
+                "mode": "all_or_nothing",
+            },
+            headers=h,
+        )
         if r.status_code not in (200, 201, 207):
             fails.append(f"bulk create: {r.status_code} {r.text[:200]}")
             return (False, "bulk_create_persists: " + "; ".join(fails))
@@ -599,6 +700,7 @@ async def test_07_bulk_create_persists(pd: Path) -> tuple[bool, str]:
 
         # Count via the same session (same transaction context)
         from sqlalchemy import text
+
         result = await session.execute(text("SELECT COUNT(*) FROM products WHERE sku LIKE 'BLK-%'"))
         count = result.scalar()
         if count != 10:
@@ -607,12 +709,16 @@ async def test_07_bulk_create_persists(pd: Path) -> tuple[bool, str]:
     finally:
         await _teardown(app, client, session, engine)
 
-    return (not fails, "bulk_create_persists: " + ("; ".join(fails) if fails else "PASS — 10/10 persisted"))
+    return (
+        not fails,
+        "bulk_create_persists: " + ("; ".join(fails) if fails else "PASS — 10/10 persisted"),
+    )
 
 
 # ---------------------------------------------------------------------------
 # Test 08 — Audit log captures bulk operations
 # ---------------------------------------------------------------------------
+
 
 async def test_08_audit_log_tamper_evident(pd: Path) -> tuple[bool, str]:
     """The tamper-evident audit log appends, verifies its hash chain, exports.
@@ -635,10 +741,16 @@ async def test_08_audit_log_tamper_evident(pd: Path) -> tuple[bool, str]:
 
         # Append two audit entries through the REST router.
         for resource in ("product/AUD-001", "product/AUD-002"):
-            r = await client.post("/audit-logs/", params={
-                "actor": "audit@acme.example.com", "action": "create",
-                "resource": resource, "outcome": "success",
-            }, headers=h)
+            r = await client.post(
+                "/audit-logs/",
+                params={
+                    "actor": "audit@acme.example.com",
+                    "action": "create",
+                    "resource": resource,
+                    "outcome": "success",
+                },
+                headers=h,
+            )
             if r.status_code not in (200, 201):
                 fails.append(f"append {resource}: {r.status_code} {r.text[:150]}")
 
@@ -657,7 +769,11 @@ async def test_08_audit_log_tamper_evident(pd: Path) -> tuple[bool, str]:
     finally:
         await _teardown(app, client, session, engine)
 
-    return (not fails, "audit_log_tamper_evident: " + ("; ".join(fails) if fails else f"PASS — {n} entries, hash chain valid"))
+    return (
+        not fails,
+        "audit_log_tamper_evident: "
+        + ("; ".join(fails) if fails else f"PASS — {n} entries, hash chain valid"),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -665,13 +781,13 @@ async def test_08_audit_log_tamper_evident(pd: Path) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 TESTS = [
-    ("01_tenant_aware_auth",      test_01_tenant_aware_auth),
-    ("02_postgres_fts_search",    test_02_postgres_fts_search),
-    ("03_rbac_guard",             test_03_rbac_guard),
-    ("04_mfa_totp",               test_04_mfa_totp),
-    ("05_oauth2_introspection",   test_05_oauth2_introspection),
-    ("06_tenant_isolation",       test_06_tenant_isolation),
-    ("07_bulk_create_persists",   test_07_bulk_create_persists),
+    ("01_tenant_aware_auth", test_01_tenant_aware_auth),
+    ("02_postgres_fts_search", test_02_postgres_fts_search),
+    ("03_rbac_guard", test_03_rbac_guard),
+    ("04_mfa_totp", test_04_mfa_totp),
+    ("05_oauth2_introspection", test_05_oauth2_introspection),
+    ("06_tenant_isolation", test_06_tenant_isolation),
+    ("07_bulk_create_persists", test_07_bulk_create_persists),
     ("08_audit_log_tamper_evident", test_08_audit_log_tamper_evident),
 ]
 

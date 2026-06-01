@@ -213,8 +213,12 @@ def add_multi_tenancy(inp: ToolInput) -> ToolResult:
             "alembic upgrade head",
             "Restart the application so tenant_filter side-effect import runs.",
             "Bootstrap: as the superuser, POST /api/v1/tenants {slug:'default', name:'Default'}.",
-            "Assign users to a tenant by setting User.tenant_id (signup joins the "
-            "tenant named in X-Tenant-ID automatically).",
+            "Public signup binds a tenant from X-Tenant-ID ONLY when that "
+            "tenant has Tenant.allow_public_signup=True (R7-N1: deny-by-default "
+            "so a known slug alone cannot self-enroll a user). Tenants default "
+            "to allow_public_signup=False; flip it on for tenants that offer "
+            "open self-service signup, or assign User.tenant_id via an "
+            "authenticated admin/invite flow.",
         ],
         execution_time_ms=_elapsed_ms(start),
     )

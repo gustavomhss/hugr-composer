@@ -23,6 +23,7 @@ Run:
 from __future__ import annotations
 
 import os
+
 os.environ.setdefault("RATE_LIMITING_ENABLED", "false")
 os.environ.setdefault("ENVIRONMENT", "local")
 os.environ.setdefault("SECRET_KEY", "behavior-scenarios-secret-key-32+chars-ok!")
@@ -40,9 +41,9 @@ import tempfile
 import time
 import traceback
 import uuid
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Awaitable, Callable
 
 # ---------------------------------------------------------------------------
 # Scenario framework
@@ -70,7 +71,7 @@ class ScenarioContext:
 
     client: object  # httpx.AsyncClient
     session: object  # AsyncSession
-    engine: object   # AsyncEngine
+    engine: object  # AsyncEngine
     project_dir: Path
     tenant_slug: str
     report_section: list[tuple[str, bool, str]] = field(default_factory=list)
@@ -95,8 +96,9 @@ POSTGRES_URL = os.environ.get(
 
 async def _precheck_postgres() -> bool:
     try:
-        from sqlalchemy.ext.asyncio import create_async_engine
         from sqlalchemy import text
+        from sqlalchemy.ext.asyncio import create_async_engine
+
         e = create_async_engine(POSTGRES_URL, echo=False)
         async with e.connect() as c:
             await c.execute(text("SELECT 1"))
@@ -108,6 +110,7 @@ async def _precheck_postgres() -> bool:
 
 async def _reset_schema(engine) -> None:
     from sqlalchemy import text
+
     async with engine.begin() as c:
         await c.execute(text("DROP SCHEMA public CASCADE"))
         await c.execute(text("CREATE SCHEMA public"))
@@ -147,10 +150,10 @@ def _load_app(project_dir: Path):
 
 
 async def _make_client(project_dir: Path, tenant_slug: str, needs_multi_tenancy: bool):
-    from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-    from sqlalchemy.pool import NullPool
-    from sqlalchemy import text
     from httpx import ASGITransport, AsyncClient
+    from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+    from sqlalchemy.pool import NullPool
 
     app = _load_app(project_dir)
     # Importing app.models triggers every model file registration via
@@ -178,10 +181,12 @@ async def _make_client(project_dir: Path, tenant_slug: str, needs_multi_tenancy:
     if "audit_logs" in base_mod.Base.metadata.tables:
         try:
             async with engine.begin() as c:
-                await c.execute(text(
-                    "CREATE TABLE IF NOT EXISTS audit_logs_default "
-                    "PARTITION OF audit_logs DEFAULT"
-                ))
+                await c.execute(
+                    text(
+                        "CREATE TABLE IF NOT EXISTS audit_logs_default "
+                        "PARTITION OF audit_logs DEFAULT"
+                    )
+                )
         except Exception:
             pass
 
@@ -191,10 +196,15 @@ async def _make_client(project_dir: Path, tenant_slug: str, needs_multi_tenancy:
         try:
             tenant_mod = importlib.import_module("app.models.tenant")
             tid = uuid.uuid4()
-            session.add(tenant_mod.Tenant(
-                id=tid, name=tenant_slug.upper(),
-                slug=tenant_slug, status="active",
-            ))
+            session.add(
+                tenant_mod.Tenant(
+                    id=tid,
+                    name=tenant_slug.upper(),
+                    slug=tenant_slug,
+                    status="active",
+                    allow_public_signup=True,
+                )
+            )
             await session.commit()
         except ModuleNotFoundError:
             pass
@@ -222,19 +232,31 @@ def _th(token: str | None, tenant: str = "acme") -> dict[str, str]:
 
 
 async def _signup(client, email: str, pwd: str, name: str, tenant: str) -> str:
-    r = await client.post("/api/v1/users/signup", json={
-        "email": email, "password": pwd, "full_name": name,
-    }, headers=_th(None, tenant))
+    r = await client.post(
+        "/api/v1/users/signup",
+        json={
+            "email": email,
+            "password": pwd,
+            "full_name": name,
+        },
+        headers=_th(None, tenant),
+    )
     assert r.status_code in (200, 201), f"signup {email}: {r.status_code} {r.text[:200]}"
-    r = await client.post("/api/v1/login/access-token", data={
-        "username": email, "password": pwd,
-    }, headers=_th(None, tenant))
+    r = await client.post(
+        "/api/v1/login/access-token",
+        data={
+            "username": email,
+            "password": pwd,
+        },
+        headers=_th(None, tenant),
+    )
     assert r.status_code == 200, f"login {email}: {r.status_code} {r.text[:200]}"
     return r.json()["access_token"]
 
 
 async def _promote_superuser(session, email: str) -> None:
     from sqlalchemy import text
+
     await session.execute(
         text("UPDATE users SET is_superuser = true WHERE email = :e"),
         {"e": email},
@@ -246,23 +268,32 @@ async def _promote_superuser(session, email: str) -> None:
 # SCENARIO 1 — E-commerce storefront
 # ===========================================================================
 
+
 async def flow_ecommerce(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     """Seller creates products, buyer browses + orders, admin audits."""
     client, session = ctx.client, ctx.session
 
-    seller = await _signup(client, "seller@shop.example.com", "SellerPass123!", "Seller", ctx.tenant_slug)
-    buyer = await _signup(client, "buyer@shop.example.com", "BuyerPass123!", "Buyer", ctx.tenant_slug)
+    seller = await _signup(
+        client, "seller@shop.example.com", "SellerPass123!", "Seller", ctx.tenant_slug
+    )
+    buyer = await _signup(
+        client, "buyer@shop.example.com", "BuyerPass123!", "Buyer", ctx.tenant_slug
+    )
 
     # Seller creates 5 products
     created = 0
     for i in range(5):
-        r = await client.post("/api/v1/products/", json={
-            "name": f"Item {i}",
-            "description": f"Description of item {i}",
-            "price": 10.0 + i,
-            "sku": f"SKU-{i:03}",
-            "stock": 100,
-        }, headers=_th(seller, ctx.tenant_slug))
+        r = await client.post(
+            "/api/v1/products/",
+            json={
+                "name": f"Item {i}",
+                "description": f"Description of item {i}",
+                "price": 10.0 + i,
+                "sku": f"SKU-{i:03}",
+                "stock": 100,
+            },
+            headers=_th(seller, ctx.tenant_slug),
+        )
         if r.status_code in (200, 201):
             created += 1
     ctx.record("seller_creates_products", created == 5, f"{created}/5 products")
@@ -284,11 +315,15 @@ async def flow_ecommerce(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     ctx.record("owner_isolation", buyer_sees == 0, f"buyer sees {buyer_sees} (expected 0)")
 
     # Seller places an order
-    r = await client.post("/api/v1/orders/", json={
-        "reference": f"ORD-{uuid.uuid4().hex[:8]}",
-        "status": "pending",
-        "total": 99.99,
-    }, headers=_th(seller, ctx.tenant_slug))
+    r = await client.post(
+        "/api/v1/orders/",
+        json={
+            "reference": f"ORD-{uuid.uuid4().hex[:8]}",
+            "status": "pending",
+            "total": 99.99,
+        },
+        headers=_th(seller, ctx.tenant_slug),
+    )
     ctx.record("order_placed", r.status_code in (200, 201), f"status={r.status_code}")
 
     return ctx.report_section
@@ -298,15 +333,21 @@ ECOMMERCE = Scenario(
     name="ecommerce_storefront",
     archetype="Owner-scoped e-commerce with search + orders",
     models={
-        "Product": {"name": "str", "description": "text", "price": "float", "sku": "str", "stock": "int"},
+        "Product": {
+            "name": "str",
+            "description": "text",
+            "price": "float",
+            "sku": "str",
+            "stock": "int",
+        },
         # `reference` instead of `order_id` avoids the generator's `*_id` → FK
         # heuristic which would self-reference orders.id → FK violation.
-        "Order":   {"reference": "str", "status": "str", "total": "float"},
+        "Order": {"reference": "str", "status": "str", "total": "float"},
     },
     tools=[
-        ("add_multi_tenancy",  "adapt.extend.auth_access.add_multi_tenancy"),
-        ("add_search",         "adapt.extend.crud_data.add_search"),
-        ("add_audit_log",      "adapt.extend.crud_data.add_audit_log"),
+        ("add_multi_tenancy", "adapt.extend.auth_access.add_multi_tenancy"),
+        ("add_search", "adapt.extend.crud_data.add_search"),
+        ("add_audit_log", "adapt.extend.crud_data.add_audit_log"),
     ],
     flow=flow_ecommerce,
 )
@@ -316,28 +357,41 @@ ECOMMERCE = Scenario(
 # SCENARIO 2 — SaaS B2B (multi-tenant + RBAC + API keys)
 # ===========================================================================
 
+
 async def flow_saas_b2b(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     """Org admin invites members, assigns roles, creates API keys."""
     client, session = ctx.client, ctx.session
 
-    admin = await _signup(client, "admin@org.example.com", "AdminPass123!", "Org Admin", ctx.tenant_slug)
+    admin = await _signup(
+        client, "admin@org.example.com", "AdminPass123!", "Org Admin", ctx.tenant_slug
+    )
     await _promote_superuser(session, "admin@org.example.com")
-    member = await _signup(client, "member@org.example.com", "MemberPass123!", "Member", ctx.tenant_slug)
+    member = await _signup(
+        client, "member@org.example.com", "MemberPass123!", "Member", ctx.tenant_slug
+    )
 
     # Admin creates a workspace
-    r = await client.post("/api/v1/workspaces/", json={
-        "name": "Engineering",
-        "description": "Core engineering workspace",
-        "plan": "pro",
-    }, headers=_th(admin, ctx.tenant_slug))
+    r = await client.post(
+        "/api/v1/workspaces/",
+        json={
+            "name": "Engineering",
+            "description": "Core engineering workspace",
+            "plan": "pro",
+        },
+        headers=_th(admin, ctx.tenant_slug),
+    )
     ctx.record("workspace_created", r.status_code in (200, 201), f"status={r.status_code}")
 
     # Feature flags table present
-    from sqlalchemy import text, inspect
+    from sqlalchemy import inspect, text
+
     async with ctx.engine.connect() as conn:
         tables = await conn.run_sync(lambda sc: inspect(sc).get_table_names())
-    ctx.record("feature_flags_table", "feature_flags" in tables or "feature_flag" in tables,
-               f"tables found: {sorted(t for t in tables if 'flag' in t)}")
+    ctx.record(
+        "feature_flags_table",
+        "feature_flags" in tables or "feature_flag" in tables,
+        f"tables found: {sorted(t for t in tables if 'flag' in t)}",
+    )
     rbac_ok, rbac_detail = _tool_deliverable("app.rbac", "require_roles")
     ctx.record("rbac_guard", rbac_ok, rbac_detail)
     ctx.record("api_keys_table", "api_keys" in tables, "api_keys present")
@@ -349,15 +403,15 @@ SAAS_B2B = Scenario(
     name="saas_b2b",
     archetype="Multi-tenant B2B with RBAC + feature flags + API keys",
     models={
-        "Workspace":  {"name": "str", "description": "text", "plan": "str"},
+        "Workspace": {"name": "str", "description": "text", "plan": "str"},
         "Invitation": {"email": "email", "role": "str", "status": "str"},
     },
     tools=[
-        ("add_multi_tenancy",  "adapt.extend.auth_access.add_multi_tenancy"),
-        ("add_rbac",           "adapt.extend.auth_access.add_rbac"),
-        ("add_api_key_auth",   "adapt.extend.auth_access.add_api_key_auth"),
-        ("add_feature_flags",  "adapt.extend.auth_access.add_feature_flags"),
-        ("add_audit_log",      "adapt.extend.crud_data.add_audit_log"),
+        ("add_multi_tenancy", "adapt.extend.auth_access.add_multi_tenancy"),
+        ("add_rbac", "adapt.extend.auth_access.add_rbac"),
+        ("add_api_key_auth", "adapt.extend.auth_access.add_api_key_auth"),
+        ("add_feature_flags", "adapt.extend.auth_access.add_feature_flags"),
+        ("add_audit_log", "adapt.extend.crud_data.add_audit_log"),
     ],
     flow=flow_saas_b2b,
 )
@@ -367,20 +421,27 @@ SAAS_B2B = Scenario(
 # SCENARIO 3 — Healthcare (HIPAA-compliant)
 # ===========================================================================
 
+
 async def flow_healthcare(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     """Every PHI access must be captured in tamper-evident audit log."""
     client, session = ctx.client, ctx.session
     from sqlalchemy import text
 
-    provider = await _signup(client, "dr@clinic.example.com", "DoctorPass123!", "Dr Smith", ctx.tenant_slug)
+    provider = await _signup(
+        client, "dr@clinic.example.com", "DoctorPass123!", "Dr Smith", ctx.tenant_slug
+    )
 
     # Provider creates a patient
-    r = await client.post("/api/v1/patients/", json={
-        "mrn": "MRN-00001",
-        "full_name": "John Doe",
-        "dob": "1980-01-15",
-        "phone": "+1-555-0100",
-    }, headers=_th(provider, ctx.tenant_slug))
+    r = await client.post(
+        "/api/v1/patients/",
+        json={
+            "mrn": "MRN-00001",
+            "full_name": "John Doe",
+            "dob": "1980-01-15",
+            "phone": "+1-555-0100",
+        },
+        headers=_th(provider, ctx.tenant_slug),
+    )
     patient_created = r.status_code in (200, 201)
     ctx.record("patient_created", patient_created, f"status={r.status_code}")
 
@@ -392,14 +453,24 @@ async def flow_healthcare(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     audit_app = importlib.import_module("app.main").app
     importlib.import_module("app.audit_log").install_audit_log(audit_app)
     audit_log = audit_app.state.audit_log
-    audit_log.append(actor="dr@clinic.example.com", action="read",
-                     resource="patient/MRN-00001", outcome="success", attributes={})
+    audit_log.append(
+        actor="dr@clinic.example.com",
+        action="read",
+        resource="patient/MRN-00001",
+        outcome="success",
+        attributes={},
+    )
     exported = audit_log.export(since_seq=1)
-    ctx.record("phi_access_audited",
-               len([ln for ln in exported.splitlines() if ln.strip()]) >= 1,
-               "PHI access captured in tamper-evident log")
-    ctx.record("audit_hash_chain_complete", audit_log.verify_chain(),
-               "HMAC hash chain verifies (no tampering)")
+    ctx.record(
+        "phi_access_audited",
+        len([ln for ln in exported.splitlines() if ln.strip()]) >= 1,
+        "PHI access captured in tamper-evident log",
+    )
+    ctx.record(
+        "audit_hash_chain_complete",
+        audit_log.verify_chain(),
+        "HMAC hash chain verifies (no tampering)",
+    )
 
     # MFA capability present (HIPAA requires 2FA for PHI access). add_mfa ships
     # an in-memory TOTP verifier (install_mfa), not an mfa_devices table.
@@ -413,16 +484,16 @@ HEALTHCARE = Scenario(
     name="healthcare_hipaa",
     archetype="HIPAA-compliant EHR with MFA + tamper-evident audit",
     models={
-        "Patient":     {"mrn": "str", "full_name": "str", "dob": "date", "phone": "str"},
-        "Visit":       {"visit_date": "datetime", "notes": "text", "diagnosis": "str"},
-        "Prescription":{"drug_name": "str", "dosage": "str", "refills": "int"},
+        "Patient": {"mrn": "str", "full_name": "str", "dob": "date", "phone": "str"},
+        "Visit": {"visit_date": "datetime", "notes": "text", "diagnosis": "str"},
+        "Prescription": {"drug_name": "str", "dosage": "str", "refills": "int"},
     },
     tools=[
-        ("add_multi_tenancy",  "adapt.extend.auth_access.add_multi_tenancy"),
-        ("add_audit_log",      "adapt.extend.crud_data.add_audit_log"),
-        ("add_mfa",            "adapt.extend.auth_access.add_mfa"),
-        ("add_rbac",           "adapt.extend.auth_access.add_rbac"),
-        ("add_soft_delete",    "adapt.extend.crud_data.add_soft_delete"),
+        ("add_multi_tenancy", "adapt.extend.auth_access.add_multi_tenancy"),
+        ("add_audit_log", "adapt.extend.crud_data.add_audit_log"),
+        ("add_mfa", "adapt.extend.auth_access.add_mfa"),
+        ("add_rbac", "adapt.extend.auth_access.add_rbac"),
+        ("add_soft_delete", "adapt.extend.crud_data.add_soft_delete"),
     ],
     flow=flow_healthcare,
 )
@@ -432,20 +503,23 @@ HEALTHCARE = Scenario(
 # SCENARIO 4 — Fintech payments
 # ===========================================================================
 
+
 async def flow_fintech(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     """Outbox + saga + circuit breaker for distributed payment flow."""
-    from sqlalchemy import text, inspect
+    from sqlalchemy import inspect, text
 
     # Verify outbox + saga + webhook tables are wired
     async with ctx.engine.connect() as conn:
         tables = await conn.run_sync(lambda sc: inspect(sc).get_table_names())
 
-    ctx.record("outbox_table", "outbox_events" in tables,
-               "outbox_events present")
+    ctx.record("outbox_table", "outbox_events" in tables, "outbox_events present")
     saga_ok, saga_detail = _tool_deliverable("app.saga", "install_saga")
     ctx.record("saga_orchestrator", saga_ok, saga_detail)
-    ctx.record("webhook_endpoints", "webhook_endpoints" in tables,
-               "webhook_endpoints for outbound delivery")
+    ctx.record(
+        "webhook_endpoints",
+        "webhook_endpoints" in tables,
+        "webhook_endpoints for outbound delivery",
+    )
     audit_ok, audit_detail = _tool_deliverable("app.audit_log", "install_audit_log")
     ctx.record("audit_trail", audit_ok, audit_detail)
 
@@ -464,16 +538,16 @@ FINTECH = Scenario(
     name="fintech_payments",
     archetype="Financial ledger with outbox + saga + webhook reconciliation",
     models={
-        "Account":     {"account_number": "str", "balance": "float", "currency": "str"},
+        "Account": {"account_number": "str", "balance": "float", "currency": "str"},
         "Transaction": {"amount": "float", "status": "str", "reference": "str", "tx_type": "str"},
     },
     tools=[
-        ("add_multi_tenancy",    "adapt.extend.auth_access.add_multi_tenancy"),
-        ("add_outbox_pattern",   "adapt.extend.infrastructure.add_outbox_pattern"),
-        ("add_saga",             "adapt.extend.infrastructure.add_saga"),
-        ("add_circuit_breaker",  "adapt.extend.infrastructure.add_circuit_breaker"),
-        ("add_webhook_sender",   "adapt.extend.realtime.add_webhook_sender"),
-        ("add_audit_log",        "adapt.extend.crud_data.add_audit_log"),
+        ("add_multi_tenancy", "adapt.extend.auth_access.add_multi_tenancy"),
+        ("add_outbox_pattern", "adapt.extend.infrastructure.add_outbox_pattern"),
+        ("add_saga", "adapt.extend.infrastructure.add_saga"),
+        ("add_circuit_breaker", "adapt.extend.infrastructure.add_circuit_breaker"),
+        ("add_webhook_sender", "adapt.extend.realtime.add_webhook_sender"),
+        ("add_audit_log", "adapt.extend.crud_data.add_audit_log"),
     ],
     flow=flow_fintech,
 )
@@ -483,22 +557,29 @@ FINTECH = Scenario(
 # SCENARIO 5 — Content publishing / blog
 # ===========================================================================
 
+
 async def flow_blog(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     """Author publishes posts, readers paginate + search."""
     client, session = ctx.client, ctx.session
 
-    author = await _signup(client, "author@blog.example.com", "AuthorPass123!", "Author", ctx.tenant_slug)
+    author = await _signup(
+        client, "author@blog.example.com", "AuthorPass123!", "Author", ctx.tenant_slug
+    )
     await _promote_superuser(session, "author@blog.example.com")
 
     # Create 10 posts
     created = 0
     for i in range(10):
-        r = await client.post("/api/v1/posts/", json={
-            "title": f"Post {i}: Thoughts on FastAPI",
-            "slug": f"post-{i}",
-            "body": f"This is post number {i} with interesting content about FastAPI.",
-            "published": True,
-        }, headers=_th(author, ctx.tenant_slug))
+        r = await client.post(
+            "/api/v1/posts/",
+            json={
+                "title": f"Post {i}: Thoughts on FastAPI",
+                "slug": f"post-{i}",
+                "body": f"This is post number {i} with interesting content about FastAPI.",
+                "published": True,
+            },
+            headers=_th(author, ctx.tenant_slug),
+        )
         if r.status_code in (200, 201):
             created += 1
     ctx.record("posts_created", created == 10, f"{created}/10 posts")
@@ -532,8 +613,7 @@ async def flow_blog(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
         deleted_ok = r.status_code in (200, 204)
         r = await client.get(f"/api/v1/posts/{first_id}", headers=_th(author, ctx.tenant_slug))
         hidden = r.status_code == 404
-        ctx.record("soft_delete_hides", deleted_ok and hidden,
-                   f"del={deleted_ok}, hidden={hidden}")
+        ctx.record("soft_delete_hides", deleted_ok and hidden, f"del={deleted_ok}, hidden={hidden}")
 
     return ctx.report_section
 
@@ -542,15 +622,15 @@ BLOG = Scenario(
     name="blog_cms",
     archetype="Content publishing with pagination + search + soft delete",
     models={
-        "Post":    {"title": "str", "slug": "str", "body": "text", "published": "bool"},
+        "Post": {"title": "str", "slug": "str", "body": "text", "published": "bool"},
         "Comment": {"author_name": "str", "body": "text", "approved": "bool"},
     },
     tools=[
-        ("add_multi_tenancy",     "adapt.extend.auth_access.add_multi_tenancy"),
-        ("add_search",            "adapt.extend.crud_data.add_search"),
+        ("add_multi_tenancy", "adapt.extend.auth_access.add_multi_tenancy"),
+        ("add_search", "adapt.extend.crud_data.add_search"),
         ("add_cursor_pagination", "adapt.extend.crud_data.add_cursor_pagination"),
-        ("add_soft_delete",       "adapt.extend.crud_data.add_soft_delete"),
-        ("add_audit_log",         "adapt.extend.crud_data.add_audit_log"),
+        ("add_soft_delete", "adapt.extend.crud_data.add_soft_delete"),
+        ("add_audit_log", "adapt.extend.crud_data.add_audit_log"),
     ],
     flow=flow_blog,
 )
@@ -560,11 +640,14 @@ BLOG = Scenario(
 # SCENARIO 6 — Analytics / event ingestion
 # ===========================================================================
 
+
 async def flow_analytics(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     """Bulk ingestion + data export + long-running async report."""
     client, session = ctx.client, ctx.session
 
-    analyst = await _signup(client, "analyst@analytics.example.com", "AnalystPass123!", "Analyst", ctx.tenant_slug)
+    analyst = await _signup(
+        client, "analyst@analytics.example.com", "AnalystPass123!", "Analyst", ctx.tenant_slug
+    )
 
     # Bulk create 100 events
     items = [
@@ -576,21 +659,30 @@ async def flow_analytics(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
         }
         for i in range(100)
     ]
-    r = await client.post("/api/v1/events/bulk", json={
-        "items": items, "mode": "all_or_nothing",
-    }, headers=_th(analyst, ctx.tenant_slug))
+    r = await client.post(
+        "/api/v1/events/bulk",
+        json={
+            "items": items,
+            "mode": "all_or_nothing",
+        },
+        headers=_th(analyst, ctx.tenant_slug),
+    )
     bulk_ok = r.status_code in (200, 201, 207)
     bulk_count = 0
     if bulk_ok:
         body = r.json()
         bulk_count = len([r for r in body.get("results", []) if r.get("success")])
-    ctx.record("bulk_ingestion", bulk_ok and bulk_count >= 90,
-               f"{bulk_count}/100 events ingested via /bulk")
+    ctx.record(
+        "bulk_ingestion",
+        bulk_ok and bulk_count >= 90,
+        f"{bulk_count}/100 events ingested via /bulk",
+    )
 
     await session.commit()
 
     # Verify persistence
     from sqlalchemy import text
+
     result = await session.execute(text("SELECT COUNT(*) FROM events"))
     stored = result.scalar() or 0
     ctx.record("events_persisted", stored >= 90, f"{stored} events in DB")
@@ -599,8 +691,9 @@ async def flow_analytics(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     r = await client.get("/api/v1/openapi.json")
     paths = r.json().get("paths", {}) if r.status_code == 200 else {}
     export_paths = [p for p in paths if "export" in p.lower()]
-    ctx.record("export_endpoint_registered", len(export_paths) > 0,
-               f"export paths: {export_paths[:3]}")
+    ctx.record(
+        "export_endpoint_registered", len(export_paths) > 0, f"export paths: {export_paths[:3]}"
+    )
 
     return ctx.report_section
 
@@ -611,15 +704,20 @@ ANALYTICS = Scenario(
     models={
         # `source` instead of `user_id_ext` to avoid the `*_id` FK heuristic.
         # `recorded_at_str` instead of `timestamp_str` to avoid datetime parsing.
-        "Event":  {"event_name": "str", "source": "str", "recorded_at_str": "str", "payload": "text"},
+        "Event": {
+            "event_name": "str",
+            "source": "str",
+            "recorded_at_str": "str",
+            "payload": "text",
+        },
         "Metric": {"name": "str", "value": "float", "tags": "str"},
     },
     tools=[
-        ("add_multi_tenancy",     "adapt.extend.auth_access.add_multi_tenancy"),
-        ("add_bulk_operations",   "adapt.extend.crud_data.add_bulk_operations"),
-        ("add_data_export",       "adapt.extend.crud_data.add_data_export"),
+        ("add_multi_tenancy", "adapt.extend.auth_access.add_multi_tenancy"),
+        ("add_bulk_operations", "adapt.extend.crud_data.add_bulk_operations"),
+        ("add_data_export", "adapt.extend.crud_data.add_data_export"),
         ("add_long_running_task", "adapt.extend.api_design.add_long_running_task"),
-        ("add_cache_layer",       "adapt.extend.infrastructure.add_cache_layer"),
+        ("add_cache_layer", "adapt.extend.infrastructure.add_cache_layer"),
     ],
     flow=flow_analytics,
 )
@@ -629,19 +727,24 @@ ANALYTICS = Scenario(
 # SCENARIO 7 — Content moderation / trust & safety
 # ===========================================================================
 
+
 async def flow_moderation(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     """Inbound reports → moderator actions → outbound webhooks → audit."""
-    from sqlalchemy import text, inspect
+    from sqlalchemy import inspect, text
 
     async with ctx.engine.connect() as conn:
         tables = await conn.run_sync(lambda sc: inspect(sc).get_table_names())
 
     ctx.record("reports_table", "reports" in tables, "reports table exists")
     # Generator lowercases PascalCase without underscores → "moderatoractions"
-    ctx.record("moderator_actions_table", "moderatoractions" in tables or "moderator_actions" in tables,
-               f"moderator action table present: {[t for t in tables if 'moderator' in t]}")
-    ctx.record("webhook_endpoints_table", "webhook_endpoints" in tables,
-               "outbound webhook sender wired")
+    ctx.record(
+        "moderator_actions_table",
+        "moderatoractions" in tables or "moderator_actions" in tables,
+        f"moderator action table present: {[t for t in tables if 'moderator' in t]}",
+    )
+    ctx.record(
+        "webhook_endpoints_table", "webhook_endpoints" in tables, "outbound webhook sender wired"
+    )
     wh_ok, wh_detail = _tool_deliverable("app.webhook_receiver", "install_webhook_receiver")
     ctx.record("inbound_webhook_receiver", wh_ok, wh_detail)
     rbac_ok, rbac_detail = _tool_deliverable("app.rbac", "require_roles")
@@ -667,16 +770,16 @@ MODERATION = Scenario(
         # content_ref / target_ref avoid the generator's `*_id` → FK heuristic
         # which would otherwise create FKs to "contents" / "targets" tables
         # that do not exist in this scenario.
-        "Report":          {"content_ref": "str", "reason": "str", "status": "str"},
+        "Report": {"content_ref": "str", "reason": "str", "status": "str"},
         "ModeratorAction": {"action": "str", "reason": "str", "target_ref": "str"},
     },
     tools=[
-        ("add_multi_tenancy",     "adapt.extend.auth_access.add_multi_tenancy"),
-        ("add_rbac",              "adapt.extend.auth_access.add_rbac"),
-        ("add_audit_log",         "adapt.extend.crud_data.add_audit_log"),
-        ("add_webhook_sender",    "adapt.extend.realtime.add_webhook_sender"),
-        ("add_webhook_receiver",  "adapt.extend.realtime.add_webhook_receiver"),
-        ("add_circuit_breaker",   "adapt.extend.infrastructure.add_circuit_breaker"),
+        ("add_multi_tenancy", "adapt.extend.auth_access.add_multi_tenancy"),
+        ("add_rbac", "adapt.extend.auth_access.add_rbac"),
+        ("add_audit_log", "adapt.extend.crud_data.add_audit_log"),
+        ("add_webhook_sender", "adapt.extend.realtime.add_webhook_sender"),
+        ("add_webhook_receiver", "adapt.extend.realtime.add_webhook_receiver"),
+        ("add_circuit_breaker", "adapt.extend.infrastructure.add_circuit_breaker"),
     ],
     flow=flow_moderation,
 )
@@ -686,17 +789,25 @@ MODERATION = Scenario(
 # SCENARIO 8 — Real-time chat (WebSocket)
 # ===========================================================================
 
+
 async def flow_chat(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     """Users create rooms, post messages via HTTP, load history, verify WS route."""
     client, session = ctx.client, ctx.session
 
-    alice = await _signup(client, "alice@chat.example.com", "AlicePass123!", "Alice", ctx.tenant_slug)
+    alice = await _signup(
+        client, "alice@chat.example.com", "AlicePass123!", "Alice", ctx.tenant_slug
+    )
     bob = await _signup(client, "bob@chat.example.com", "BobPass123!", "Bob", ctx.tenant_slug)
 
     # Alice creates a public room
-    r = await client.post("/api/v1/chat/rooms", json={
-        "name": "General", "is_private": False,
-    }, headers=_th(alice, ctx.tenant_slug))
+    r = await client.post(
+        "/api/v1/chat/rooms",
+        json={
+            "name": "General",
+            "is_private": False,
+        },
+        headers=_th(alice, ctx.tenant_slug),
+    )
     room_created = r.status_code in (200, 201)
     room_id = r.json().get("id") if room_created else None
     ctx.record("room_created", room_created, f"status={r.status_code}")
@@ -706,29 +817,41 @@ async def flow_chat(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     alice_rooms: list = []
     if r.status_code == 200:
         body = r.json()
-        alice_rooms = body if isinstance(body, list) else (body.get("data") or body.get("items") or [])
-    ctx.record("alice_lists_own_rooms", len(alice_rooms) >= 1, f"{len(alice_rooms)} rooms visible to Alice")
+        alice_rooms = (
+            body if isinstance(body, list) else (body.get("data") or body.get("items") or [])
+        )
+    ctx.record(
+        "alice_lists_own_rooms", len(alice_rooms) >= 1, f"{len(alice_rooms)} rooms visible to Alice"
+    )
 
     # Empty history
     if room_id:
-        r = await client.get(f"/api/v1/chat/rooms/{room_id}/history", headers=_th(alice, ctx.tenant_slug))
+        r = await client.get(
+            f"/api/v1/chat/rooms/{room_id}/history", headers=_th(alice, ctx.tenant_slug)
+        )
         hist_ok = r.status_code == 200
         ctx.record("empty_history_fetch", hist_ok, f"status={r.status_code}")
 
     # Verify schema: chat_rooms + chat_messages tables present
     from sqlalchemy import inspect
+
     async with ctx.engine.connect() as conn:
         tables = await conn.run_sync(lambda sc: inspect(sc).get_table_names())
-    ctx.record("chat_schema_present", {"chat_rooms", "chat_messages"}.issubset(set(tables)),
-               f"tables: {sorted(t for t in tables if 'chat' in t)}")
+    ctx.record(
+        "chat_schema_present",
+        {"chat_rooms", "chat_messages"}.issubset(set(tables)),
+        f"tables: {sorted(t for t in tables if 'chat' in t)}",
+    )
 
     # WebSocket route must be registered on the app
     ws_routes = [
-        rt for rt in ctx.client._transport.app.routes
+        rt
+        for rt in ctx.client._transport.app.routes
         if getattr(rt, "path", "").startswith("/ws/chat/")
     ]
-    ctx.record("ws_route_registered", len(ws_routes) == 1,
-               f"/ws/chat/{{room_id}} route: {len(ws_routes)}")
+    ctx.record(
+        "ws_route_registered", len(ws_routes) == 1, f"/ws/chat/{{room_id}} route: {len(ws_routes)}"
+    )
 
     # Config fields were patched into settings
     config_mod = importlib.import_module("app.core.config")
@@ -738,8 +861,7 @@ async def flow_chat(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
         and hasattr(settings, "WEBSOCKET_CHAT_MESSAGE_MAX_LENGTH")
         and hasattr(settings, "WEBSOCKET_CHAT_RATE_LIMIT_PER_MINUTE")
     )
-    ctx.record("config_fields_patched", has_cfg,
-               "WEBSOCKET_CHAT_* fields present on settings")
+    ctx.record("config_fields_patched", has_cfg, "WEBSOCKET_CHAT_* fields present on settings")
 
     return ctx.report_section
 
@@ -753,8 +875,8 @@ WEBSOCKET_CHAT = Scenario(
         "Note": {"title": "str", "body": "text"},
     },
     tools=[
-        ("add_multi_tenancy",    "adapt.extend.auth_access.add_multi_tenancy"),
-        ("add_websocket_chat",   "adapt.extend.realtime.add_websocket_chat"),
+        ("add_multi_tenancy", "adapt.extend.auth_access.add_multi_tenancy"),
+        ("add_websocket_chat", "adapt.extend.realtime.add_websocket_chat"),
     ],
     flow=flow_chat,
 )
@@ -763,6 +885,7 @@ WEBSOCKET_CHAT = Scenario(
 # ===========================================================================
 # SCENARIO 9 — Background job queue (arq)
 # ===========================================================================
+
 
 async def flow_arq(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     """Verify arq worker infra: schema, settings, worker module, routes."""
@@ -778,22 +901,32 @@ async def flow_arq(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     ws_cls = worker_mod.WorkerSettings
     ctx.record(
         "worker_settings_shape",
-        hasattr(ws_cls, "functions") and hasattr(ws_cls, "redis_settings") and hasattr(ws_cls, "max_jobs"),
+        hasattr(ws_cls, "functions")
+        and hasattr(ws_cls, "redis_settings")
+        and hasattr(ws_cls, "max_jobs"),
         f"functions={len(ws_cls.functions)}, max_jobs={ws_cls.max_jobs}",
     )
 
     # TASK_REGISTRY has the 3 example tasks
     tasks_mod = importlib.import_module("app.workers.tasks")
     task_names = [getattr(fn, "__name__", "?") for fn in tasks_mod.TASK_REGISTRY]
-    has_expected = {"send_email_task", "cleanup_task", "webhook_retry_task"}.issubset(set(task_names))
+    has_expected = {"send_email_task", "cleanup_task", "webhook_retry_task"}.issubset(
+        set(task_names)
+    )
     ctx.record("task_registry_populated", has_expected, f"tasks: {sorted(task_names)}")
 
     # Config fields patched
     cfg_mod = importlib.import_module("app.core.config")
     s = cfg_mod.settings
-    has_cfg = all(hasattr(s, f) for f in [
-        "ARQ_MAX_JOBS", "ARQ_JOB_TIMEOUT_SECONDS", "ARQ_MAX_TRIES", "ARQ_KEEP_RESULTS_SECONDS"
-    ])
+    has_cfg = all(
+        hasattr(s, f)
+        for f in [
+            "ARQ_MAX_JOBS",
+            "ARQ_JOB_TIMEOUT_SECONDS",
+            "ARQ_MAX_TRIES",
+            "ARQ_KEEP_RESULTS_SECONDS",
+        ]
+    )
     ctx.record(
         "arq_settings_patched",
         has_cfg,
@@ -805,8 +938,11 @@ async def flow_arq(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     paths = r.json().get("paths", {}) if r.status_code == 200 else {}
     has_status = any("/jobs/{job_id}/status" in p for p in paths)
     has_active = any("/jobs/active" in p for p in paths)
-    ctx.record("jobs_routes_registered", has_status and has_active,
-               f"status+active routes: {has_status and has_active}")
+    ctx.record(
+        "jobs_routes_registered",
+        has_status and has_active,
+        f"status+active routes: {has_status and has_active}",
+    )
 
     # Enqueue helper is importable (but we don't actually connect to Redis here)
     enqueue_mod = importlib.import_module("app.workers.enqueue")
@@ -820,8 +956,11 @@ async def flow_arq(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
 
     # Dockerfile.worker was emitted
     dockerfile_worker = ctx.project_dir / "Dockerfile.worker"
-    ctx.record("dockerfile_worker_emitted", dockerfile_worker.exists(),
-               f"Dockerfile.worker: {dockerfile_worker.exists()}")
+    ctx.record(
+        "dockerfile_worker_emitted",
+        dockerfile_worker.exists(),
+        f"Dockerfile.worker: {dockerfile_worker.exists()}",
+    )
 
     return ctx.report_section
 
@@ -833,8 +972,8 @@ ARQ_WORKER = Scenario(
         "Note": {"title": "str", "body": "text"},
     },
     tools=[
-        ("add_multi_tenancy",    "adapt.extend.auth_access.add_multi_tenancy"),
-        ("add_arq_worker",       "adapt.extend.infrastructure.add_arq_worker"),
+        ("add_multi_tenancy", "adapt.extend.auth_access.add_multi_tenancy"),
+        ("add_arq_worker", "adapt.extend.infrastructure.add_arq_worker"),
     ],
     flow=flow_arq,
 )
@@ -843,6 +982,7 @@ ARQ_WORKER = Scenario(
 # ===========================================================================
 # SCENARIO 10 — Stripe Checkout payments
 # ===========================================================================
+
 
 async def flow_stripe(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     """Verify Stripe Checkout infra: schema, settings, routes, lazy import."""
@@ -857,8 +997,12 @@ async def flow_stripe(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     cfg_mod = importlib.import_module("app.core.config")
     s = cfg_mod.settings
     required = [
-        "STRIPE_SECRET_KEY", "STRIPE_PUBLISHABLE_KEY", "STRIPE_WEBHOOK_SECRET",
-        "STRIPE_API_VERSION", "STRIPE_CHECKOUT_SUCCESS_URL", "STRIPE_CHECKOUT_CANCEL_URL",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_PUBLISHABLE_KEY",
+        "STRIPE_WEBHOOK_SECRET",
+        "STRIPE_API_VERSION",
+        "STRIPE_CHECKOUT_SUCCESS_URL",
+        "STRIPE_CHECKOUT_CANCEL_URL",
     ]
     missing = [f for f in required if not hasattr(s, f)]
     ctx.record(
@@ -870,8 +1014,11 @@ async def flow_stripe(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     # Lazy stripe import — module loads without `stripe` package installed
     stripe_client_mod = importlib.import_module("app.core.stripe_client")
     has_get_stripe = callable(getattr(stripe_client_mod, "get_stripe", None))
-    ctx.record("stripe_client_lazy_importable", has_get_stripe,
-               "app.core.stripe_client.get_stripe is callable")
+    ctx.record(
+        "stripe_client_lazy_importable",
+        has_get_stripe,
+        "app.core.stripe_client.get_stripe is callable",
+    )
 
     # HTTP routes registered via OpenAPI
     r = await ctx.client.get("/api/v1/openapi.json")
@@ -891,18 +1038,29 @@ async def flow_stripe(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
 
     # CRUD helpers importable (business logic layer)
     crud_mod = importlib.import_module("app.crud.payment")
-    crud_fns = ["create_pending_payment", "mark_payment_succeeded",
-                "mark_payment_failed", "get_payment_by_session_id", "list_user_payments"]
+    crud_fns = [
+        "create_pending_payment",
+        "mark_payment_succeeded",
+        "mark_payment_failed",
+        "get_payment_by_session_id",
+        "list_user_payments",
+    ]
     missing_crud = [fn for fn in crud_fns if not callable(getattr(crud_mod, fn, None))]
-    ctx.record("crud_helpers_present", not missing_crud,
-               f"{len(crud_fns) - len(missing_crud)}/{len(crud_fns)} CRUD helpers callable")
+    ctx.record(
+        "crud_helpers_present",
+        not missing_crud,
+        f"{len(crud_fns) - len(missing_crud)}/{len(crud_fns)} CRUD helpers callable",
+    )
 
     # Payment model has tenant_id FK (we applied add_multi_tenancy first)
     payment_mod = importlib.import_module("app.models.payment")
     payment_cls = payment_mod.Payment
     has_tenant_col = "tenant_id" in payment_cls.__table__.columns
-    ctx.record("payment_tenant_id_column", has_tenant_col,
-               "Payment.tenant_id column present (tenant-aware)")
+    ctx.record(
+        "payment_tenant_id_column",
+        has_tenant_col,
+        "Payment.tenant_id column present (tenant-aware)",
+    )
 
     return ctx.report_section
 
@@ -914,8 +1072,8 @@ STRIPE_CHECKOUT = Scenario(
         "Subscription": {"plan": "str", "status": "str"},
     },
     tools=[
-        ("add_multi_tenancy",     "adapt.extend.auth_access.add_multi_tenancy"),
-        ("add_stripe_checkout",   "adapt.extend.infrastructure.add_stripe_checkout"),
+        ("add_multi_tenancy", "adapt.extend.auth_access.add_multi_tenancy"),
+        ("add_stripe_checkout", "adapt.extend.infrastructure.add_stripe_checkout"),
     ],
     flow=flow_stripe,
 )
@@ -925,6 +1083,7 @@ STRIPE_CHECKOUT = Scenario(
 # SCENARIO 11 — Email templates (Jinja2 + pluggable provider)
 # ===========================================================================
 
+
 async def flow_email(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     """Verify email infra: schema, config, templates, rendering, provider."""
     from sqlalchemy import inspect
@@ -932,15 +1091,23 @@ async def flow_email(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     # email_deliveries table exists
     async with ctx.engine.connect() as conn:
         tables = await conn.run_sync(lambda sc: inspect(sc).get_table_names())
-    ctx.record("email_deliveries_table", "email_deliveries" in tables,
-               f"email_deliveries in DB: {'email_deliveries' in tables}")
+    ctx.record(
+        "email_deliveries_table",
+        "email_deliveries" in tables,
+        f"email_deliveries in DB: {'email_deliveries' in tables}",
+    )
 
     # 8 email settings fields reachable
     cfg_mod = importlib.import_module("app.core.config")
     s = cfg_mod.settings
     required = [
-        "EMAIL_PROVIDER", "EMAIL_FROM", "EMAIL_FROM_NAME", "EMAIL_REPLY_TO",
-        "EMAIL_DEFAULT_LOCALE", "RESEND_API_KEY", "POSTMARK_API_KEY",
+        "EMAIL_PROVIDER",
+        "EMAIL_FROM",
+        "EMAIL_FROM_NAME",
+        "EMAIL_REPLY_TO",
+        "EMAIL_DEFAULT_LOCALE",
+        "RESEND_API_KEY",
+        "POSTMARK_API_KEY",
         "EMAIL_PREVIEW_ENABLED_IN_PROD",
     ]
     missing = [f for f in required if not hasattr(s, f)]
@@ -953,7 +1120,10 @@ async def flow_email(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     # All 4 templates × 3 variants = 12 files present
     tpl_dir = ctx.project_dir / "app/email/templates/en"
     expected = {
-        "welcome", "password_reset", "email_verification", "receipt",
+        "welcome",
+        "password_reset",
+        "email_verification",
+        "receipt",
     }
     missing_tpl: list[str] = []
     for name in expected:
@@ -972,20 +1142,26 @@ async def flow_email(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     registry_mod = importlib.import_module("app.email.registry")
     contexts = {
         registry_mod.TemplateName.WELCOME: {
-            "app_name": "Acme", "user_name": "Alice",
+            "app_name": "Acme",
+            "user_name": "Alice",
             "activation_url": "https://acme.test/a?t=abc",
         },
         registry_mod.TemplateName.PASSWORD_RESET: {
-            "app_name": "Acme", "user_name": "Bob",
-            "reset_url": "https://acme.test/r?t=xyz", "expires_in_hours": 24,
+            "app_name": "Acme",
+            "user_name": "Bob",
+            "reset_url": "https://acme.test/r?t=xyz",
+            "expires_in_hours": 24,
         },
         registry_mod.TemplateName.EMAIL_VERIFICATION: {
-            "app_name": "Acme", "user_name": "Carol",
+            "app_name": "Acme",
+            "user_name": "Carol",
             "verification_url": "https://acme.test/v?t=abc",
         },
         registry_mod.TemplateName.RECEIPT: {
-            "app_name": "Acme", "user_name": "Dave",
-            "amount_formatted": "$29.99", "item_name": "Pro Plan",
+            "app_name": "Acme",
+            "user_name": "Dave",
+            "amount_formatted": "$29.99",
+            "item_name": "Pro Plan",
             "receipt_url": "https://acme.test/r/1",
         },
     }
@@ -999,7 +1175,9 @@ async def flow_email(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     ctx.record(
         "all_templates_render",
         not render_failures,
-        f"4/4 templates rendered ({render_failures})" if render_failures else "4/4 templates render",
+        f"4/4 templates rendered ({render_failures})"
+        if render_failures
+        else "4/4 templates render",
     )
 
     # Missing context raises proper error
@@ -1012,8 +1190,9 @@ async def flow_email(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
         )
     except Exception as exc:
         raised_correctly = "MissingContextError" in type(exc).__name__ or "Missing" in str(exc)
-    ctx.record("missing_context_raises", raised_correctly,
-               "render_email rejects incomplete context")
+    ctx.record(
+        "missing_context_raises", raised_correctly, "render_email rejects incomplete context"
+    )
 
     # Locale fallback to 'en' works
     fallback_ok = False
@@ -1026,22 +1205,25 @@ async def flow_email(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
         fallback_ok = r.subject.startswith("Welcome")
     except Exception:
         pass
-    ctx.record("locale_fallback_works", fallback_ok,
-               "pt-BR → en fallback chain")
+    ctx.record("locale_fallback_works", fallback_ok, "pt-BR → en fallback chain")
 
     # Preview + deliveries routes registered
     r = await ctx.client.get("/api/v1/openapi.json")
     paths = r.json().get("paths", {}) if r.status_code == 200 else {}
     has_preview = any("/email/preview" in p for p in paths)
     has_deliveries = any("/email/deliveries" in p for p in paths)
-    ctx.record("email_routes_registered", has_preview and has_deliveries,
-               f"preview={has_preview}, deliveries={has_deliveries}")
+    ctx.record(
+        "email_routes_registered",
+        has_preview and has_deliveries,
+        f"preview={has_preview}, deliveries={has_deliveries}",
+    )
 
     # Provider selector exists (lazy — does not actually import resend)
     providers_mod = importlib.import_module("app.email.providers")
     has_selector = callable(getattr(providers_mod, "get_provider", None))
-    ctx.record("provider_selector_present", has_selector,
-               "app.email.providers.get_provider is callable")
+    ctx.record(
+        "provider_selector_present", has_selector, "app.email.providers.get_provider is callable"
+    )
 
     return ctx.report_section
 
@@ -1053,8 +1235,8 @@ EMAIL_TEMPLATES = Scenario(
         "Notification": {"kind": "str", "title": "str"},
     },
     tools=[
-        ("add_multi_tenancy",     "adapt.extend.auth_access.add_multi_tenancy"),
-        ("add_email_templates",   "adapt.extend.infrastructure.add_email_templates"),
+        ("add_multi_tenancy", "adapt.extend.auth_access.add_multi_tenancy"),
+        ("add_email_templates", "adapt.extend.infrastructure.add_email_templates"),
     ],
     flow=flow_email,
 )
@@ -1068,40 +1250,47 @@ EMAIL_TEMPLATES = Scenario(
 # SCENARIO 12 — Admin panel (SQLAdmin)
 # ===========================================================================
 
+
 async def flow_sqladmin(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     """Verify admin panel infra: setup module, auth, views, config."""
 
     # Config fields patched into Settings
     cfg_mod = importlib.import_module("app.core.config")
     s = cfg_mod.settings
-    has_cfg = all(hasattr(s, f) for f in [
-        "ADMIN_PATH", "ADMIN_TITLE", "ADMIN_REQUIRE_SUPERUSER",
-    ])
-    ctx.record("admin_settings_patched", has_cfg,
-               f"ADMIN_PATH={getattr(s, 'ADMIN_PATH', None)}")
+    has_cfg = all(
+        hasattr(s, f)
+        for f in [
+            "ADMIN_PATH",
+            "ADMIN_TITLE",
+            "ADMIN_REQUIRE_SUPERUSER",
+        ]
+    )
+    ctx.record("admin_settings_patched", has_cfg, f"ADMIN_PATH={getattr(s, 'ADMIN_PATH', None)}")
 
     # Setup module is importable with lazy sqladmin
     setup_mod = importlib.import_module("app.admin.setup")
     has_setup = callable(getattr(setup_mod, "setup_admin", None))
-    ctx.record("setup_admin_callable", has_setup,
-               "app.admin.setup.setup_admin is callable")
+    ctx.record("setup_admin_callable", has_setup, "app.admin.setup.setup_admin is callable")
 
     # Auth backend is importable
     auth_mod = importlib.import_module("app.admin.auth")
     has_auth = hasattr(auth_mod, "AdminAuthBackend")
-    ctx.record("auth_backend_present", has_auth,
-               "AdminAuthBackend class present")
+    ctx.record("auth_backend_present", has_auth, "AdminAuthBackend class present")
 
     # Views module has MODEL_ADMINS
     views_mod = importlib.import_module("app.admin.views")
     model_admins = getattr(views_mod, "MODEL_ADMINS", [])
-    ctx.record("model_admins_discovered", len(model_admins) >= 2,
-               f"{len(model_admins)} ModelAdmin classes generated")
+    ctx.record(
+        "model_admins_discovered",
+        len(model_admins) >= 2,
+        f"{len(model_admins)} ModelAdmin classes generated",
+    )
 
     # main.py has setup_admin(app) call
     main_src = (ctx.project_dir / "app/main.py").read_text()
-    ctx.record("main_py_patched", "setup_admin(app)" in main_src,
-               "setup_admin(app) present in main.py")
+    ctx.record(
+        "main_py_patched", "setup_admin(app)" in main_src, "setup_admin(app) present in main.py"
+    )
 
     return ctx.report_section
 
@@ -1114,7 +1303,7 @@ SQLADMIN = Scenario(
     },
     tools=[
         ("add_multi_tenancy", "adapt.extend.auth_access.add_multi_tenancy"),
-        ("add_sqladmin",      "adapt.extend.infrastructure.add_sqladmin"),
+        ("add_sqladmin", "adapt.extend.infrastructure.add_sqladmin"),
     ],
     flow=flow_sqladmin,
 )
@@ -1138,8 +1327,8 @@ SCENARIOS: list[Scenario] = [
 
 def _build_project(scenario: Scenario, tmp: Path) -> Path:
     """Generate project with scenario models and apply its tools."""
-    from tests.common.fixture_factory import create_fixture_project
     from adapt.contracts import ToolInput
+    from tests.common.fixture_factory import create_fixture_project
 
     project_dir = create_fixture_project(
         name=f"scn_{scenario.name}",
@@ -1167,14 +1356,19 @@ async def _run_scenario(scenario: Scenario) -> tuple[int, int, list[tuple[str, b
 
         try:
             app, client, session, engine = await _make_client(
-                project_dir, scenario.tenant_slug, scenario.needs_multi_tenancy,
+                project_dir,
+                scenario.tenant_slug,
+                scenario.needs_multi_tenancy,
             )
         except Exception as exc:
             return 0, 1, [("boot", False, f"{type(exc).__name__}: {str(exc)[:200]}")]
 
         ctx = ScenarioContext(
-            client=client, session=session, engine=engine,
-            project_dir=project_dir, tenant_slug=scenario.tenant_slug,
+            client=client,
+            session=session,
+            engine=engine,
+            project_dir=project_dir,
+            tenant_slug=scenario.tenant_slug,
         )
         try:
             await scenario.flow(ctx)
@@ -1229,8 +1423,10 @@ def main() -> int:
 
     elapsed = time.monotonic() - t_start
     print("=" * 74)
-    print(f"  OVERALL: {overall_passed}/{overall_total} assertions "
-          f"across {len(SCENARIOS)} scenarios  ({elapsed:.1f}s)")
+    print(
+        f"  OVERALL: {overall_passed}/{overall_total} assertions "
+        f"across {len(SCENARIOS)} scenarios  ({elapsed:.1f}s)"
+    )
     print("=" * 74)
 
     failed_scenarios = [r for r in scenario_results if r[1] < r[2]]

@@ -157,7 +157,13 @@ ignore = [
 
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["B011", "F401"]
+# F841: behavior/e2e scenarios bind intermediate vars (session, signup
+# tokens) that document the flow even when a later step doesn't consume
+# them; assert-driven test bodies tolerate this.
+# B008: e2e probe endpoints define inline FastAPI routes where `Depends(...)`
+# in argument defaults is the framework's required idiom, not a mutable-default
+# bug (B008's real target). Matches add_circuit_breaker + engine/tests probes.
+"tests/**" = ["B008", "B011", "F401", "F841"]
 # engine/discovery/* + mcp_tools/* place `MCP_TOOL` dict at top of file (Maestro-facing
 # discovery contract); imports follow. Pattern is intentional + documented.
 "engine/discovery/**" = ["E402"]
