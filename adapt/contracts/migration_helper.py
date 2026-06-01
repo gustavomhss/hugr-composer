@@ -137,3 +137,64 @@ def find_migration_head(alembic_dir: Path) -> str | None:
     # All revisions are referenced — circular chain?  Fall back to last file stem.
     last = sorted(alembic_dir.glob("*.py"))
     return last[-1].stem if last else None
+
+
+# Canonical no-op chain root. Mirrors the baseline emitted by
+# ``generators.database.alembic.generate_alembic`` so that EVERY scaffold path —
+# the production generator AND the prerequisite auto-scaffold — upholds the same
+# invariant this module enforces: ``alembic/versions/0001_initial.py`` always
+# exists with a parseable ``revision = "0001_initial"`` (down_revision = None)
+# before any extend tool chains a migration off it.
+CHAIN_ROOT_FILENAME = "0001_initial.py"
+
+_CHAIN_ROOT_TEMPLATE = '''\
+"""initial revision — chain root (no-op).
+
+Revision ID: 0001_initial
+Revises:
+Create Date: scaffold
+
+No-op baseline so extend tools that chain off
+``down_revision = "0001_initial"`` always have a valid parent revision.
+Real schema is created by subsequent migrations.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+
+revision: str = "0001_initial"
+down_revision: str | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
+
+
+def upgrade() -> None:
+    """No-op: chain root exists solely so downstream migrations chain."""
+
+
+def downgrade() -> None:
+    """No-op: nothing to undo at the chain root."""
+'''
+
+
+def write_chain_root(versions_dir: Path) -> Path:
+    """Emit the no-op ``0001_initial.py`` chain root if it is absent.
+
+    Idempotent: creates *versions_dir* (and parents) when missing and writes
+    the chain root only when it does not already exist. This is the single
+    scaffold guarantee :func:`find_migration_head` relies on, shared by the
+    production generator and the prerequisite auto-scaffold so the invariant
+    holds uniformly.
+
+    Args:
+        versions_dir: Path to ``alembic/versions/`` (created if missing).
+
+    Returns:
+        Path to the ``0001_initial.py`` chain root on disk.
+    """
+    versions_dir.mkdir(parents=True, exist_ok=True)
+    root = versions_dir / CHAIN_ROOT_FILENAME
+    if not root.exists():
+        root.write_text(_CHAIN_ROOT_TEMPLATE)
+    return root
