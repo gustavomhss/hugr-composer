@@ -80,7 +80,14 @@ async def request_presigned_upload(
         size_bytes=body.size_bytes, uploaded_by=current_user.id,
         resource_type=body.resource_type, resource_id=body.resource_id,
     )
-    return PresignedUploadResponse(file_id=file_id, **result)
+    # Build the response explicitly — stored_key stays server-side (R5-S1-F8);
+    # it was used above for create_pending and is never returned to the client.
+    return PresignedUploadResponse(
+        file_id=file_id,
+        upload_url=result["upload_url"],
+        fields=result["fields"],
+        expires_in=result["expires_in"],
+    )
 
 
 @router.post(

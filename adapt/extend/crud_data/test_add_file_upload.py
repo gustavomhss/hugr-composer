@@ -22,10 +22,10 @@ from adapt.contracts import ToolInput
 from adapt.extend.crud_data.add_file_upload import add_file_upload
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _all_py_files(root: Path) -> list[Path]:
     return sorted(root.rglob("*.py"))
@@ -43,6 +43,7 @@ def _assert_parse(root: Path) -> None:
 # ---------------------------------------------------------------------------
 # Test cases
 # ---------------------------------------------------------------------------
+
 
 def test_success_status() -> None:
     """T-01: Tool returns status='success' on a fresh project."""
@@ -277,6 +278,7 @@ def test_public_schema_excludes_stored_key() -> None:
     assert schema_file.exists(), "app/schemas/file.py not created"
 
     import ast as _ast
+
     tree = _ast.parse(schema_file.read_text())
     field_names: list[str] = []
     for node in _ast.walk(tree):
@@ -288,6 +290,40 @@ def test_public_schema_excludes_stored_key() -> None:
     assert field_names, "FileMetadataPublic must have field declarations"
     assert "stored_key" not in field_names, "FileMetadataPublic must NOT declare stored_key field"
     assert "tenant_id" not in field_names, "FileMetadataPublic must NOT declare tenant_id field"
+
+
+def test_presign_response_excludes_stored_key() -> None:
+    """R5-S1-F8: PresignedUploadResponse must NOT expose the internal stored_key.
+
+    Mirrors FileMetadataPublic's exclusion. The client uploads via ``fields``
+    (S3 injects the object key there) and confirms via ``file_id`` (the server
+    re-derives the key from the owned row), so the storage path must never be a
+    first-class response field. The route must also not spread it back via
+    ``**result``.
+    """
+    project_dir = create_fixture_project(name="fu_presign_no_key")
+    add_file_upload(ToolInput(project_dir=str(project_dir)))
+
+    import ast as _ast
+
+    schema_src = (project_dir / "app" / "schemas" / "file.py").read_text()
+    tree = _ast.parse(schema_src)
+    field_names: list[str] = []
+    for node in _ast.walk(tree):
+        if isinstance(node, _ast.ClassDef) and node.name == "PresignedUploadResponse":
+            for item in node.body:
+                if isinstance(item, _ast.AnnAssign) and isinstance(item.target, _ast.Name):
+                    field_names.append(item.target.id)
+    assert field_names, "PresignedUploadResponse must have field declarations"
+    assert "stored_key" not in field_names, (
+        "PresignedUploadResponse must NOT declare stored_key (R5-S1-F8 leak)"
+    )
+    # The route must build the response explicitly, not spread result (which
+    # still carries stored_key for the internal create_pending call).
+    routes_src = (project_dir / "app" / "api" / "routes" / "files.py").read_text()
+    assert "PresignedUploadResponse(file_id=file_id, **result)" not in routes_src, (
+        "route still spreads stored_key into the presign response via **result"
+    )
 
 
 def test_presigned_urls_module_created() -> None:
