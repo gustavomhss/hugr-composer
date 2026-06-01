@@ -38,7 +38,14 @@ MCP_TOOL = {
 
 
 def add_compliance_engine(inp: ToolInput) -> ToolResult:
-    """Add a production-grade compliance engine to a FastAPI project."""
+    """Add a GDPR/SOC2 compliance scaffold to a FastAPI project.
+
+    Ships the PII registry, Fernet field encryption, audit-log table, retention
+    worker and erasure/evidence/Article-30 endpoints — but it is NOT a turnkey
+    production engine: the retention worker is not auto-scheduled and nothing
+    runs as blocking middleware (see ``warnings``). Erasure/retention act only
+    when the endpoints or the worker are invoked; wire them before relying on it.
+    """
     start = time.monotonic()
     err = validate_project_dir(inp.project_dir)
     if err:
@@ -186,8 +193,8 @@ def add_compliance_engine(inp: ToolInput) -> ToolResult:
         warnings=[
             "COMPLIANCE_ENCRYPTION_KEY env var must be set — encrypt_field "
             "raises RuntimeError otherwise (fail-closed by design). Generate "
-            "with `python -c \"from cryptography.fernet import Fernet; "
-            "print(Fernet.generate_key().decode())\"`.",
+            'with `python -c "from cryptography.fernet import Fernet; '
+            'print(Fernet.generate_key().decode())"`.',
             "The retention worker is NOT auto-scheduled — you must wire it "
             "into your lifespan or external scheduler for retention to be "
             "enforced.",

@@ -1,4 +1,8 @@
-"""TOOL-021: add_cache_layer — Redis-backed caching backed by primitives.
+"""TOOL-021: add_cache_layer — Redis-pluggable caching backed by primitives.
+
+The emitted primitives ship with an IN-MEMORY fallback and establish no Redis
+connection by default (see Warnings); swap in real Redis-backed implementations
+for production. "Redis-pluggable", not Redis-backed out of the box.
 
 Follows the CONTRACT §B1.0 + §B1.0.1 pattern (Rails-style wiring):
 
@@ -10,7 +14,7 @@ Follows the CONTRACT §B1.0 + §B1.0.1 pattern (Rails-style wiring):
 2. Emit a thin ``app/cache.py`` glue file (≤ 20 logic lines, AST verified)
    that instantiates a ``KeyValueBucket`` + exposes a ``cache_aside`` helper
    gated by ``DistributedLock`` and a ``get_session_cache`` factory.
-3. Emit the Redis-backed ``@cached`` decorator, invalidation, stats route
+3. Emit the Redis-pluggable ``@cached`` decorator, invalidation, stats route
    — the *semantics* (revision-tracked KV, read-through loader, mutex
    lease validity) live in the primitives.
 

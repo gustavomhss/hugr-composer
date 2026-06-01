@@ -40,7 +40,15 @@ MCP_TOOL = {
 
 
 def add_secret_rotation(inp: ToolInput) -> ToolResult:
-    """Add production-grade secret rotation to a FastAPI project."""
+    """Add a secret-rotation scaffold to a FastAPI project.
+
+    Ships the secret-manager abstraction (Vault/AWS SM/env), dual-key rotation
+    windows, log-based leak detection and startup validation — but the pieces
+    are NOT auto-active: LeakDetectorMiddleware is not auto-wired, EnvSecret
+    provider.set() only mutates the running process (not persisted), and you
+    must call the startup validator from your lifespan for the refuse-to-boot
+    guarantee. See ``warnings`` and complete the wiring before production.
+    """
     start = time.monotonic()
     err = validate_project_dir(inp.project_dir)
     if err:
