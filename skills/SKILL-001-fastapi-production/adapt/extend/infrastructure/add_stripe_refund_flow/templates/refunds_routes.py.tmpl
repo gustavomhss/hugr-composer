@@ -2,15 +2,16 @@
 
 Endpoints:
     POST /refunds
-        Issue a refund for a payment.  Requires authentication.
-        Refunds below REFUND_AUTO_APPROVE_THRESHOLD_CENTS are
-        issued immediately; larger amounts require superuser.
+        Issue a refund for a payment the caller OWNS (or any payment for a
+        superuser).  Requires authentication.  Refunds below
+        REFUND_AUTO_APPROVE_THRESHOLD_CENTS are issued immediately; larger
+        amounts require superuser.
 
     GET /refunds/{refund_id}
-        Fetch a single Refund by id.  Requires authentication.
+        Fetch a single Refund owned by the caller.  Requires authentication.
 
     GET /refunds/payment/{payment_id}
-        List all refunds for a payment.  Requires authentication.
+        List refunds for a payment the caller OWNS.  Requires authentication.
 
     POST /refunds/webhook/stripe
         Stripe webhook receiver for refund events.
@@ -64,11 +65,19 @@ def _check_auto_approve(amount_cents: int, current_user: Any) -> None:
         )
 
 
-async def _resolve_payment_intent(session: Any, payment_id: uuid.UUID) -> str:
-    """Look up the Stripe PaymentIntent id for an internal Payment row.
+async def _load_owned_payment(
+    session: Any, payment_id: uuid.UUID, current_user: Any
+) -> Any:
+    """Load a Payment the caller is allowed to act on, or raise 404 (R5-O3-F4).
 
-    Imported lazily so this route file remains importable in projects
-    that have not (yet) installed the Stripe Checkout flow.
+    Ownership is enforced here: a non-superuser may only touch a payment whose
+    ``user_id`` is their own. A cross-user (or orphaned ``user_id IS NULL``)
+    payment returns 404 — never 403 — so the endpoint does not confirm the
+    existence of another user's payment. Without this check any authenticated
+    user could refund (or enumerate refunds for) an arbitrary payment_id.
+
+    Imported lazily so this route file remains importable in projects that
+    have not (yet) installed the Stripe Checkout flow.
     """
     from app.crud.payment import get_payment_by_id  # lazy: optional dep
 
@@ -78,6 +87,25 @@ async def _resolve_payment_intent(session: Any, payment_id: uuid.UUID) -> str:
             status_code=status.HTTP_404_NOT_FOUND,
             detail="payment not found",
         )
+    is_superuser = getattr(current_user, "is_superuser", False)
+    if not is_superuser and getattr(payment, "user_id", None) != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="payment not found",
+        )
+    return payment
+
+
+async def _resolve_payment_intent(
+    session: Any, payment_id: uuid.UUID, current_user: Any
+) -> str:
+    """Look up the Stripe PaymentIntent id for a Payment the caller owns.
+
+    Ownership is validated by ``_load_owned_payment`` BEFORE the PaymentIntent
+    is resolved, so a non-owner gets 404 without learning whether the payment
+    is refundable.
+    """
+    payment = await _load_owned_payment(session, payment_id, current_user)
     intent_id = getattr(payment, "stripe_payment_intent_id", None)
     if not intent_id:
         raise HTTPException(
@@ -168,7 +196,9 @@ async def request_refund(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="refund amount exceeds maximum",
         )
-    payment_intent_id = await _resolve_payment_intent(session, body.payment_id)
+    payment_intent_id = await _resolve_payment_intent(
+        session, body.payment_id, current_user
+    )
     refund = await create_pending_refund(
         session,
         payment_id=body.payment_id,
@@ -198,7 +228,13 @@ async def list_payment_refunds(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
 ) -> RefundListResponse:
-    """Return all refunds for a payment, newest first."""
+    """Return all refunds for a payment the caller owns, newest first.
+
+    Ownership is enforced first (R5-O3-F4): listing refunds for a payment you
+    do not own returns 404, so the endpoint cannot be used to enumerate other
+    users' refund history.
+    """
+    await _load_owned_payment(session, payment_id, current_user)
     rows, total = await list_refunds_for_payment(
         session, payment_id, limit=limit, offset=skip
     )
