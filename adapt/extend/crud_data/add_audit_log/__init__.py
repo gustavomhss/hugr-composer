@@ -138,11 +138,16 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
             "Shipped adapter: AuditLogAdapter.",
             "Wrote app/audit_log.py and wired install_audit_log(app) in main.py.",
             "Hash-chained, signed, append-only ledger (TEAL_INV_01..06).",
+            "Ledger is IN-MEMORY (InMemoryTamperEvidentAuditLog): it does NOT persist "
+            "across restarts and is per-process. The hash chain is tamper-EVIDENT, not "
+            "durable — back it with a persistent store before relying on the trail.",
             "Audit log is active on startup — no manual wiring required.",
         ],
         next_steps=[
             "Audit HMAC key derives from SECRET_KEY by default; set AUDIT_LOG_HMAC_SECRET to override (KMS-managed in prod).",
-            "POST /audit-logs/ to append; POST /audit-logs/verify to assert chain integrity.",
+            "The /audit-logs routes are superuser-only and record the actor from the "
+            "authenticated principal; in-process code appends via app.state.audit_log.append(...). "
+            "POST /audit-logs/verify (superuser) asserts chain integrity.",
         ],
         execution_time_ms=_elapsed_ms(start),
     )
