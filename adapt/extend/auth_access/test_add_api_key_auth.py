@@ -18,10 +18,10 @@ from adapt.contracts import ToolInput
 from adapt.extend.auth_access.add_api_key_auth import add_api_key_auth
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _all_py_files(root: Path) -> list[Path]:
     return sorted(root.rglob("*.py"))
@@ -45,6 +45,7 @@ def _run(name: str) -> tuple[Path, object]:
 # ---------------------------------------------------------------------------
 # Test cases
 # ---------------------------------------------------------------------------
+
 
 def test_success_status() -> None:
     """T-01: Tool returns status='success' on a fresh project."""
@@ -146,6 +147,90 @@ def test_scope_wildcard_supported() -> None:
     assert '"*"' in content or "'*'" in content, "Wildcard logic missing in scope evaluator"
 
 
+# ---------------------------------------------------------------------------
+# R7-N2 (CRITICAL): grantable-scope allow-list / privilege-escalation guard
+# ---------------------------------------------------------------------------
+
+
+def _load_emitted_scopes_module(project_dir: Path):
+    """Import the emitted ``app/auth/api_key_scopes.py`` as a standalone module.
+
+    Loads it under a unique name (per project) so repeated tests don't collide
+    in ``sys.modules`` and so the env-driven allow-list is re-read.
+    """
+    import importlib.util
+
+    scopes_file = project_dir / "app" / "auth" / "api_key_scopes.py"
+    mod_name = f"_emitted_scopes_{project_dir.name}"
+    spec = importlib.util.spec_from_file_location(mod_name, scopes_file)
+    assert spec and spec.loader, "could not build import spec for emitted scopes module"
+    mod = importlib.util.module_from_spec(spec)
+    # Register before exec so the module's @dataclass can resolve its own
+    # module via sys.modules (dataclasses looks the class's module up there).
+    sys.modules[mod_name] = mod
+    try:
+        spec.loader.exec_module(mod)
+    finally:
+        sys.modules.pop(mod_name, None)
+    return mod
+
+
+def test_scope_allowlist_emitted() -> None:
+    """R7-N2: emitted scopes module exposes the grantable-scope guard API."""
+    project_dir, _ = _run("t010_14_allowlist_emitted")
+    content = (project_dir / "app" / "auth" / "api_key_scopes.py").read_text()
+    assert "def validate_grantable_scopes" in content, (
+        "R7-N2: grantable-scope validator missing from emitted scopes module"
+    )
+    assert "ScopeNotGrantableError" in content
+    assert "GRANTABLE_SCOPES" in content
+
+
+def test_routes_enforce_scope_allowlist() -> None:
+    """R7-N2: POST /api-keys/ wires the validator before key material is made."""
+    project_dir, _ = _run("t010_15_routes_enforce")
+    routes = (project_dir / "app" / "api" / "routes" / "api_keys.py").read_text()
+    assert "validate_grantable_scopes(key_in.scopes)" in routes, (
+        "R7-N2: create_api_key does not validate requested scopes"
+    )
+    # The guard must run BEFORE the secret/token is generated.
+    guard_idx = routes.index("validate_grantable_scopes(key_in.scopes)")
+    gen_idx = routes.index("generate_secret()")
+    assert guard_idx < gen_idx, "R7-N2: scope validation must precede key-material generation"
+    assert "422" in routes or "HTTP_422" in routes, "R7-N2: invalid scope must surface as 422"
+
+
+def test_wildcard_scope_rejected_at_grant() -> None:
+    """R7-N2: a self-service caller cannot mint a wildcard-scoped key."""
+    project_dir, _ = _run("t010_16_wildcard_rejected")
+    mod = _load_emitted_scopes_module(project_dir)
+    for bad in ("*:*", "admin:*", "*:write"):
+        try:
+            mod.validate_grantable_scopes([bad])
+        except mod.ScopeNotGrantableError:
+            continue
+        raise AssertionError(f"R7-N2: wildcard scope {bad!r} was wrongly accepted")
+
+
+def test_unlisted_scope_rejected_at_grant() -> None:
+    """R7-N2: a scope outside the allow-list is rejected (deny-by-default)."""
+    project_dir, _ = _run("t010_17_unlisted_rejected")
+    mod = _load_emitted_scopes_module(project_dir)
+    try:
+        mod.validate_grantable_scopes(["billing:delete"])
+    except mod.ScopeNotGrantableError:
+        return
+    raise AssertionError("R7-N2: unlisted scope 'billing:delete' was wrongly accepted")
+
+
+def test_default_scopes_grantable() -> None:
+    """R7-N2: the schema-default scopes (read/write) remain grantable."""
+    project_dir, _ = _run("t010_18_default_grantable")
+    mod = _load_emitted_scopes_module(project_dir)
+    assert mod.validate_grantable_scopes(["read"]) == ["read"]
+    assert mod.validate_grantable_scopes(["read", "write", "read"]) == ["read", "write"]
+
+
 def test_deps_file_created() -> None:
     """CC-03: app/core/api_key_deps.py exists with get_current_api_key + require_scope."""
     project_dir, _ = _run("t010_13_deps")
@@ -169,7 +254,12 @@ def test_crud_file_created() -> None:
     crud_file = project_dir / "app" / "crud" / "api_key.py"
     assert crud_file.exists(), "crud/api_key.py not created"
     content = crud_file.read_text()
-    for fn in ("async def create", "async def get_by_key_id", "async def list_for_user", "async def revoke"):
+    for fn in (
+        "async def create",
+        "async def get_by_key_id",
+        "async def list_for_user",
+        "async def revoke",
+    ):
         assert fn in content, f"Missing CRUD function: {fn}"
 
 

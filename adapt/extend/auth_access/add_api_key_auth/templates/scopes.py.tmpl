@@ -14,8 +14,97 @@ Example::
 
 from __future__ import annotations
 
+import os
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
+
+# ---------------------------------------------------------------------------
+# Grantable-scope allow-list (R7-N2 — privilege-escalation guard)
+# ---------------------------------------------------------------------------
+# ``evaluate_scope`` (below) honours wildcards (``*:*``, ``admin:*``) when a
+# route CHECKS a key — that is correct for evaluation. But CREATING a key is a
+# different trust boundary: an ordinary authenticated user must NOT be able to
+# mint a key carrying scopes they were never granted. Without this guard,
+# ``POST /api-keys/`` accepted ``scopes: ["*:*"]`` unchecked and the holder
+# bypassed every ``require_scope(...)`` in the app.
+#
+# Policy (deny-by-default):
+#   * Wildcards (``*`` in resource OR action) are NEVER grantable through the
+#     self-service endpoint — they are reserved for privileged provisioning
+#     paths that are not exposed here.
+#   * Only scopes in ``GRANTABLE_SCOPES`` may be granted. The default set is
+#     intentionally minimal (``read``, ``write``); widen it for your app by
+#     editing this set or the ``API_KEY_GRANTABLE_SCOPES`` env var
+#     (comma-separated), and wire the matching ``require_scope(...)`` guards.
+#
+# Each entry is a literal ``resource:action`` (or bare ``read``/``write``)
+# string — no wildcards in the allow-list itself.
+_DEFAULT_GRANTABLE_SCOPES: frozenset[str] = frozenset({"read", "write"})
+
+
+def _load_grantable_scopes() -> frozenset[str]:
+    """Return the configured allow-list of grantable scope strings.
+
+    Reads ``API_KEY_GRANTABLE_SCOPES`` (comma-separated) when set, else the
+    minimal default. Wildcards in the env value are ignored — the allow-list
+    is literal-only by design.
+
+    Returns:
+        Frozenset of literal scope strings that may be granted to a new key.
+    """
+    raw = os.getenv("API_KEY_GRANTABLE_SCOPES")
+    if not raw:
+        return _DEFAULT_GRANTABLE_SCOPES
+    entries = {s.strip() for s in raw.split(",") if s.strip()}
+    return frozenset(s for s in entries if "*" not in s) or _DEFAULT_GRANTABLE_SCOPES
+
+
+GRANTABLE_SCOPES: frozenset[str] = _load_grantable_scopes()
+
+
+class ScopeNotGrantableError(ValueError):
+    """Raised when a requested scope may not be granted to a new API key.
+
+    Carries the offending scope so the caller (route handler) can surface a
+    precise 422 without leaking the full allow-list.
+    """
+
+    def __init__(self, scope: str, reason: str) -> None:
+        self.scope = scope
+        self.reason = reason
+        super().__init__(f"{scope!r}: {reason}")
+
+
+def validate_grantable_scopes(requested: Iterable[str]) -> list[str]:
+    """Validate that every requested scope may be granted; return the clean list.
+
+    Deny-by-default. Rejects (a) wildcard scopes — an ordinary user must never
+    mint ``*:*`` / ``admin:*`` — and (b) any scope outside ``GRANTABLE_SCOPES``.
+
+    Args:
+        requested: Scope strings from the API-key create/update request.
+
+    Returns:
+        The validated scope list (de-duplicated, order preserved).
+
+    Raises:
+        ScopeNotGrantableError: On the first scope that is a wildcard or not
+            in the allow-list.
+    """
+    seen: set[str] = set()
+    clean: list[str] = []
+    for raw in requested:
+        scope = raw.strip()
+        if not scope:
+            raise ScopeNotGrantableError(scope, "empty scope is not grantable")
+        if "*" in scope:
+            raise ScopeNotGrantableError(scope, "wildcard scopes cannot be self-granted")
+        if scope not in GRANTABLE_SCOPES:
+            raise ScopeNotGrantableError(scope, "scope is not in the grantable allow-list")
+        if scope not in seen:
+            seen.add(scope)
+            clean.append(scope)
+    return clean
 
 
 @dataclass(frozen=True)
@@ -50,9 +139,7 @@ def _scope_matches(granted: str, required: str) -> bool:
     return resource_ok and action_ok
 
 
-def evaluate_scope(
-    granted_scopes: Iterable[str], required_scope: str
-) -> ScopeCheckResult:
+def evaluate_scope(granted_scopes: Iterable[str], required_scope: str) -> ScopeCheckResult:
     """Evaluate whether any granted scope satisfies the required scope.
 
     Deny-by-default: the key must have an explicit grant that matches.
