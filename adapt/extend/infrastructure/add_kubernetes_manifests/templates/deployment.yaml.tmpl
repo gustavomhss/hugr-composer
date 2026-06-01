@@ -36,13 +36,19 @@ spec:
             limits:
               cpu: "${K8S_CPU_LIMIT:-1000m}"
               memory: "${K8S_MEMORY_LIMIT:-512Mi}"
+          # Readiness gates traffic: /readyz is the DEEP check (DB reachable,
+          # returns 503 when not) so a dependency outage removes the pod from
+          # the Service endpoints WITHOUT restarting it (R6-S11-F1).
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /readyz
               port: 8000
             initialDelaySeconds: 10
             periodSeconds: 10
             failureThreshold: 3
+          # Liveness only asks "is the process alive?" — /healthz is the SHALLOW
+          # check with no dependency calls, so a transient DB outage never
+          # triggers a pod restart loop.
           livenessProbe:
             httpGet:
               path: /healthz
@@ -50,3 +56,11 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 30
             failureThreshold: 3
+          # Startup gates liveness/readiness until the app has booted (migrations,
+          # warmup): up to 30 * 5s = 150s before liveness may begin killing.
+          startupProbe:
+            httpGet:
+              path: /startupz
+              port: 8000
+            periodSeconds: 5
+            failureThreshold: 30
