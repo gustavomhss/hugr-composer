@@ -20,6 +20,17 @@ from app.schemas.${lower} import (
 )
 
 
+def _scoped_idem_key(current_user: object, idempotency_key: str) -> str:
+    """Namespace the client Idempotency-Key by the authenticated user (R5-O2-D9).
+
+    The cache key was the raw header value, so the same key value reused by a
+    DIFFERENT user replayed the first user's cached bulk result — a cross-user
+    (and, since a user belongs to exactly one tenant, cross-tenant) data leak.
+    Scoping by the user's globally-unique id isolates each principal's cache.
+    """
+    return f"{getattr(current_user, 'id', 'anon')}:{idempotency_key}"
+
+
 @router.post("/bulk", response_model=BulkResponse, status_code=207)
 async def bulk_create_${lower}(
     payload: ${model_name}BulkCreate,
@@ -45,7 +56,7 @@ async def bulk_create_${lower}(
     from fastapi import HTTPException
 
     if idempotency_key:
-        cached = await _get_idem_cache().get(idempotency_key)
+        cached = await _get_idem_cache().get(_scoped_idem_key(current_user, idempotency_key))
         if cached is not None:
             return BulkResponse.model_validate(cached)
 
@@ -54,7 +65,9 @@ async def bulk_create_${lower}(
     )
 
     if idempotency_key:
-        await _get_idem_cache().set(idempotency_key, result_dict, ttl=86400)
+        await _get_idem_cache().set(
+            _scoped_idem_key(current_user, idempotency_key), result_dict, ttl=86400
+        )
 
     result = BulkResponse.model_validate(result_dict)
     if result.failed > 0 and payload.mode == "all_or_nothing":
@@ -84,7 +97,7 @@ async def bulk_update_${lower}(
         BulkResponse with per-item status.
     """
     if idempotency_key:
-        cached = await _get_idem_cache().get(idempotency_key)
+        cached = await _get_idem_cache().get(_scoped_idem_key(current_user, idempotency_key))
         if cached is not None:
             return BulkResponse.model_validate(cached)
 
@@ -97,7 +110,9 @@ async def bulk_update_${lower}(
     )
 
     if idempotency_key:
-        await _get_idem_cache().set(idempotency_key, result_dict, ttl=86400)
+        await _get_idem_cache().set(
+            _scoped_idem_key(current_user, idempotency_key), result_dict, ttl=86400
+        )
 
     return BulkResponse.model_validate(result_dict)
 
