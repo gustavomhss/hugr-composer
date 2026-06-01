@@ -99,6 +99,16 @@ def add_event_sourcing(inp: ToolInput) -> ToolResult:
     render_to(_HERE, "event_store_glue.py.tmpl", dest=glue_file, substitutions={})
     files_created.append(str(glue_file))
 
+    # R5-O2-D7: emit the durable SQL-backed store (opt-in via EVENT_STORE_DURABLE).
+    store_file = app_dir / "event_store_store.py"
+    render_to(_HERE, "event_store_store.py.tmpl", dest=store_file, substitutions={})
+    files_created.append(str(store_file))
+
+    files_modified: list[str] = []
+    config_file = app_dir / "core" / "config.py"
+    if config_file.exists() and _patch_config(config_file):
+        files_modified.append(str(config_file))
+
     _emit_project_test(project, files_created)
 
     for path_str in files_created:
@@ -116,19 +126,47 @@ def add_event_sourcing(inp: ToolInput) -> ToolResult:
     return ToolResult(
         status="success",
         files_created=files_created,
+        files_modified=files_modified,
         notes=[
             "Shipped primitives: EventSourcedStore, DomainEvent.",
             "Shipped adapter: EventSourcedStoreAdapter.",
             "Wrote app/event_store.py — call install_event_store(app) from main.py.",
             "Optimistic-concurrency append returns 409 on stale expected_version (ESS-INV-01).",
+            "Store is IN-MEMORY BY DEFAULT (per-process, lost on restart). It is durable "
+            "and cross-worker ONLY WHEN you set EVENT_STORE_DURABLE=true (see next_steps): "
+            "app/event_store_store.py (SqlEventSourcedStore) then persists events to the "
+            "event_store_events table (created on first use), keeping the same optimistic "
+            "concurrency.",
         ],
         next_steps=[
             "Import install_event_store in app/main.py and invoke it after FastAPI() construction.",
             "POST /events/{aggregate_id}?expected_version=N with a JSON event list to append.",
             "GET /events/{aggregate_id} to load the stream.",
+            "For durability set EVENT_STORE_DURABLE=true; PostgreSQL needs a SYNC driver "
+            "(e.g. `psycopg`) — SQLite works out of the box. Tables self-create on first append.",
         ],
         execution_time_ms=_elapsed_ms(start),
     )
+
+
+def _patch_config(config_file: Path) -> bool:
+    """Add ``EVENT_STORE_DURABLE`` to the Settings class body — idempotent (R5-O2-D7).
+
+    Off by default: the event store stays the in-memory reference unless an
+    operator opts into the durable SQL-backed store. Inserted after the standard
+    ``ACCESS_TOKEN_EXPIRE_MINUTES`` field when present, else appended.
+    """
+    src = config_file.read_text()
+    if "EVENT_STORE_DURABLE" in src:
+        return False
+    field = "    EVENT_STORE_DURABLE: bool = False\n"
+    anchor = "ACCESS_TOKEN_EXPIRE_MINUTES: int = 30"
+    if anchor in src:
+        src = src.replace(anchor, anchor + "\n" + field.rstrip(), 1)
+    else:
+        src = src.rstrip("\n") + "\n" + field + "\n"
+    config_file.write_text(src)
+    return True
 
 
 def _emit_project_test(project: Path, created: list[str]) -> None:
