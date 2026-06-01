@@ -215,6 +215,37 @@ def test_b03_export_utilities_import(project_dir: Path) -> None:
         sys.path[:] = _orig_path
 
 
+def test_b03b_csv_formula_injection_neutralized(project_dir: Path) -> None:
+    """B-03b (R5-S4-F6): _csv_cell neutralizes formula-trigger cells.
+
+    A CSV/XLSX cell beginning with = + - @ TAB or CR is executed as a formula
+    when the export is opened in Excel/Sheets/LibreOffice. The exporter must
+    prefix such cells with a single quote (render as text) WITHOUT over-quoting
+    safe values or values whose trigger char is not the first character.
+    """
+    _orig_path = sys.path.copy()
+    sys.path.insert(0, str(project_dir))
+    stale = [k for k in sys.modules if k == "app" or k.startswith("app.")]
+    for key in stale:
+        del sys.modules[key]
+    try:
+        from app.core.export import _csv_cell  # type: ignore[import-not-found]
+
+        for payload in ("=cmd|'/c calc'!A1", "+1+1", "-2+3", "@SUM(A1)", "\tTAB", "\rCR"):
+            out = _csv_cell(payload)
+            assert out.startswith("'"), f"formula payload not neutralized: {payload!r} -> {out!r}"
+            assert out[1:] == payload, (
+                "neutralized cell must preserve the original text after the quote"
+            )
+        # No over-quoting: safe values and non-leading triggers pass through.
+        assert _csv_cell("alice and bob") == "alice and bob"
+        assert _csv_cell("a=b+c") == "a=b+c"
+        assert _csv_cell("") == ""
+        assert _csv_cell(None) == ""
+    finally:
+        sys.path[:] = _orig_path
+
+
 # ---------------------------------------------------------------------------
 # B-04: rerun is no_op (idempotency invariant)
 # ---------------------------------------------------------------------------

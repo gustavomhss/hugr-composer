@@ -22,10 +22,10 @@ from adapt.contracts import ToolInput
 from adapt.extend.crud_data.add_data_export import add_data_export
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _all_py_files(root: Path) -> list[Path]:
     return sorted(root.rglob("*.py"))
@@ -40,9 +40,20 @@ def _assert_parse(root: Path) -> None:
             raise AssertionError(f"SyntaxError in {f}: {exc}") from exc
 
 
+def _function_source(tree: ast.Module, source: str, fn_name: str) -> str:
+    """Return the exact source of a top-level (async) function by name."""
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == fn_name:
+            segment = ast.get_source_segment(source, node)
+            if segment is not None:
+                return segment
+    raise AssertionError(f"function {fn_name} not found in export.py")
+
+
 # ---------------------------------------------------------------------------
 # Test cases
 # ---------------------------------------------------------------------------
+
 
 def test_success_status() -> None:
     """T-01: Tool returns status='success' on a fresh project."""
@@ -179,8 +190,9 @@ def test_default_columns_excludes_sensitive() -> None:
     add_data_export(ToolInput(project_dir=str(project_dir)))
     route_file = project_dir / "app" / "api" / "routes" / "item.py"
     content = route_file.read_text()
-    assert "SENSITIVE_COLUMNS" in content or "_SENSITIVE_COLUMNS" in content, \
+    assert "SENSITIVE_COLUMNS" in content or "_SENSITIVE_COLUMNS" in content, (
         "Route must filter against SENSITIVE_COLUMNS"
+    )
 
 
 def test_preflight_count_before_streaming() -> None:
@@ -189,8 +201,9 @@ def test_preflight_count_before_streaming() -> None:
     add_data_export(ToolInput(project_dir=str(project_dir)))
     route_file = project_dir / "app" / "api" / "routes" / "item.py"
     content = route_file.read_text()
-    assert "func.count()" in content or "_func.count()" in content, \
+    assert "func.count()" in content or "_func.count()" in content, (
         "Route must execute COUNT(*) preflight"
+    )
 
 
 def test_async_dispatch_returns_202() -> None:
@@ -366,6 +379,7 @@ def test_no_models_returns_error() -> None:
 # BUG B regression — multiword model discovery
 # ---------------------------------------------------------------------------
 
+
 def test_multiword_model_export_not_skipped() -> None:
     """Regression: multiword model (VaccineLot in vaccinelot.py) must get export route.
 
@@ -387,6 +401,32 @@ def test_multiword_model_export_not_skipped() -> None:
     assert "/export" in route_files[0].read_text(), (
         "VaccineLot route file missing export endpoint — multiword model was skipped"
     )
+
+
+def test_csv_formula_injection_neutralized_in_spreadsheet_paths() -> None:
+    """R5-S4-F6: CSV + XLSX cell writes must route through a formula neutralizer.
+
+    Pre-fix the CSV writer and the xlsxwriter cell write emitted ``_safe_str``
+    values verbatim, so a row value like ``=cmd|'/c calc'!A1`` executed as a
+    formula when the export was opened in Excel/Sheets. The fix wraps both
+    spreadsheet write paths in ``_csv_cell`` (single-quote prefix for cells
+    starting with = + - @ TAB CR). NDJSON/JSON must NOT be neutralized — they
+    are not a formula-injection vector and keep raw values.
+    """
+    project_dir = create_fixture_project(name="export_csv_injection")
+    add_data_export(ToolInput(project_dir=str(project_dir)))
+    export_src = (project_dir / "app" / "core" / "export.py").read_text()
+    tree = ast.parse(export_src)
+
+    # The neutralizer must exist and the CSV + XLSX paths must call it.
+    assert "def _csv_cell" in export_src, "_csv_cell neutralizer not defined"
+    csv_fn = _function_source(tree, export_src, "export_csv")
+    xlsx_fn = _function_source(tree, export_src, "export_xlsx")
+    ndjson_fn = _function_source(tree, export_src, "export_ndjson")
+    assert "_csv_cell(" in csv_fn, "export_csv does not neutralize cells (CSV injection open)"
+    assert "_csv_cell(" in xlsx_fn, "export_xlsx does not neutralize cells (XLSX injection open)"
+    # NDJSON must stay raw — neutralizing it would corrupt JSON values.
+    assert "_csv_cell(" not in ndjson_fn, "export_ndjson must not formula-escape JSON values"
 
 
 # ---------------------------------------------------------------------------
