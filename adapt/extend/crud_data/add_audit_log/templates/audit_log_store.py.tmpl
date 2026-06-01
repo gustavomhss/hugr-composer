@@ -1,0 +1,273 @@
+"""Durable SQL-backed tamper-evident audit log (R5-S1-F5).
+
+The reference ``InMemoryTamperEvidentAuditLog`` loses its ledger on restart and
+is per-process. ``SqlTamperEvidentAuditLog`` persists the same hash-chained,
+signed, append-only ledger to a relational table via a dedicated SYNCHRONOUS
+SQLAlchemy engine, so entries survive restarts and are shared across workers.
+
+It reuses the reference primitive's canonical serialization, hash and ``Signer``
+verbatim, so an entry written here verifies byte-identically to the in-memory
+reference (and to an off-box re-hash of ``export()``).
+
+Concurrency: ``append`` serializes the chain by selecting the latest row
+``with_for_update()`` inside a transaction — effective on PostgreSQL row locks,
+and a no-op under SQLite (whose database-level write lock already serializes
+writers). A UNIQUE constraint on ``seq`` is the backstop: a racer that computed
+a duplicate seq fails the INSERT rather than forking the chain.
+
+The append surface stays SYNCHRONOUS (matching the ``TamperEvidentAuditLog``
+Protocol) so existing callers — ``app.state.audit_log.append(...)`` and the
+sync ``/audit-logs`` routes — need no change. For PostgreSQL durability install
+a synchronous driver (e.g. ``psycopg``); SQLite works out of the box.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+from datetime import UTC, datetime
+from typing import Any
+
+from sqlalchemy import (
+    JSON,
+    Column,
+    DateTime,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    Text,
+    UniqueConstraint,
+    insert,
+    select,
+)
+from sqlalchemy.engine import Engine
+
+from core.venous.compliance.TamperEvidentAuditLog.TamperEvidentAuditLog import (
+    ALLOWED_OUTCOMES,
+    GENESIS_PREV_HASH,
+    Signer,
+    TamperEvidentAuditLogError,
+    _canonical_bytes,
+    _compute_entry_hash,
+)
+
+_METADATA = MetaData()
+
+audit_log_entries = Table(
+    "audit_log_entries",
+    _METADATA,
+    Column("seq", Integer, primary_key=True, autoincrement=False),
+    Column("timestamp", DateTime(timezone=True), nullable=False),
+    Column("actor", String(320), nullable=False),
+    Column("action", String(128), nullable=False),
+    Column("resource", String(512), nullable=False),
+    Column("outcome", String(16), nullable=False),
+    Column("attributes", JSON, nullable=False),
+    Column("prev_hash", String(64), nullable=False),
+    Column("entry_hash", String(64), nullable=False),
+    Column("signature", Text, nullable=False),
+    Column("key_id", String(128), nullable=False),
+    UniqueConstraint("seq", name="uq_audit_log_entries_seq"),
+    UniqueConstraint("entry_hash", name="uq_audit_log_entries_entry_hash"),
+)
+
+
+class SqlTamperEvidentAuditLog:
+    """Durable ``TamperEvidentAuditLog`` backed by a synchronous SQLAlchemy engine."""
+
+    def __init__(self, signer: Signer, engine: Engine, *, create: bool = True) -> None:
+        if not isinstance(signer, Signer):
+            raise TamperEvidentAuditLogError(
+                "TEAL_INV_03: log MUST be constructed with an external Signer."
+            )
+        self._signer = signer
+        self._engine = engine
+        if create:
+            _METADATA.create_all(engine, tables=[audit_log_entries])
+
+    def append(
+        self,
+        actor: str,
+        action: str,
+        resource: str,
+        outcome: str,
+        attributes: Mapping[str, Any],
+    ) -> str:
+        """Append one entry durably; return its hex ``entry_hash``."""
+        if not isinstance(actor, str) or not actor.strip():
+            raise TamperEvidentAuditLogError("TEAL_INV_05: actor MUST be a non-empty string.")
+        if not isinstance(action, str) or not action.strip():
+            raise TamperEvidentAuditLogError("TEAL_INV_05: action MUST be a non-empty string.")
+        if not isinstance(resource, str) or not resource.strip():
+            raise TamperEvidentAuditLogError("TEAL_INV_05: resource MUST be a non-empty string.")
+        if outcome not in ALLOWED_OUTCOMES:
+            raise TamperEvidentAuditLogError(
+                f"TEAL_INV_05: outcome MUST be one of {sorted(ALLOWED_OUTCOMES)}; got {outcome!r}."
+            )
+        if not isinstance(attributes, Mapping):
+            raise TamperEvidentAuditLogError("TEAL_INV_05: attributes MUST be a Mapping.")
+
+        ts = datetime.now(UTC)  # TEAL_INV_06: server-side clock.
+        snapshot = dict(attributes)
+        with self._engine.begin() as conn:
+            # Serialize the chain: lock the latest row (PG row lock; SQLite's
+            # write lock already serializes). The next seq + prev_hash are read
+            # under that lock so concurrent appends cannot fork the chain.
+            last = conn.execute(
+                select(audit_log_entries.c.seq, audit_log_entries.c.entry_hash)
+                .order_by(audit_log_entries.c.seq.desc())
+                .limit(1)
+                .with_for_update()
+            ).first()
+            seq = (last.seq + 1) if last else 1
+            prev_hash = last.entry_hash if last else GENESIS_PREV_HASH
+            payload = _canonical_bytes(
+                seq=seq,
+                timestamp=ts,
+                actor=actor,
+                action=action,
+                resource=resource,
+                outcome=outcome,
+                attributes=snapshot,
+                prev_hash=prev_hash,
+            )
+            entry_hash = _compute_entry_hash(payload)
+            signature = self._signer.sign(payload)
+            conn.execute(
+                insert(audit_log_entries).values(
+                    seq=seq,
+                    timestamp=ts,
+                    actor=actor,
+                    action=action,
+                    resource=resource,
+                    outcome=outcome,
+                    attributes=snapshot,
+                    prev_hash=prev_hash,
+                    entry_hash=entry_hash,
+                    signature=signature,
+                    key_id=self._signer.key_id(),
+                )
+            )
+        return entry_hash
+
+    def _row_to_dict(self, row: Any) -> dict[str, Any]:
+        ts = row.timestamp
+        if ts.tzinfo is None:  # SQLite returns naive UTC datetimes.
+            ts = ts.replace(tzinfo=UTC)
+        return {
+            "seq": row.seq,
+            "timestamp": ts.isoformat(),
+            "actor": row.actor,
+            "action": row.action,
+            "resource": row.resource,
+            "outcome": row.outcome,
+            "attributes": dict(row.attributes),
+            "prev_hash": row.prev_hash,
+            "entry_hash": row.entry_hash,
+            "signature": row.signature,
+            "key_id": row.key_id,
+        }
+
+    def verify_chain(
+        self,
+        start_seq: int | None = None,
+        end_seq: int | None = None,
+    ) -> bool:
+        """Walk the slice and verify hash link, entry hash, and signature."""
+        with self._engine.connect() as conn:
+            rows = conn.execute(
+                select(audit_log_entries).order_by(audit_log_entries.c.seq.asc())
+            ).all()
+        if not rows:
+            return True
+        max_seq = rows[-1].seq
+        lo = 1 if start_seq is None else start_seq
+        hi = max_seq if end_seq is None else end_seq
+        if lo < 1 or hi > max_seq or lo > hi:
+            return False
+        prev_hash = GENESIS_PREV_HASH if lo == 1 else rows[lo - 2].entry_hash
+        for idx in range(lo - 1, hi):
+            row = rows[idx]
+            if row.seq != idx + 1:  # TEAL_INV_04: monotonic, no gaps.
+                return False
+            ts = row.timestamp
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=UTC)
+            payload = _canonical_bytes(
+                seq=row.seq,
+                timestamp=ts,
+                actor=row.actor,
+                action=row.action,
+                resource=row.resource,
+                outcome=row.outcome,
+                attributes=dict(row.attributes),
+                prev_hash=row.prev_hash,
+            )
+            if row.prev_hash != prev_hash:
+                return False
+            if _compute_entry_hash(payload) != row.entry_hash:
+                return False
+            if not self._signer.verify(payload, row.signature):
+                return False
+            prev_hash = row.entry_hash
+        return True
+
+    def get(self, seq: int) -> Mapping[str, Any]:
+        """Return a read-only view of entry ``seq`` (1-indexed)."""
+        if not isinstance(seq, int) or seq < 1:
+            raise TamperEvidentAuditLogError(f"TEAL_INV_04: seq {seq!r} MUST be an int >= 1.")
+        with self._engine.connect() as conn:
+            row = conn.execute(
+                select(audit_log_entries).where(audit_log_entries.c.seq == seq)
+            ).first()
+        if row is None:
+            raise TamperEvidentAuditLogError(f"TEAL_INV_04: seq {seq!r} not found.")
+        return self._row_to_dict(row)
+
+    def export(self, since_seq: int) -> bytes:
+        """Export entries with seq >= since_seq as NDJSON bytes for off-box replay."""
+        import json
+
+        if not isinstance(since_seq, int) or since_seq < 1:
+            raise TamperEvidentAuditLogError("TEAL_INV_04: since_seq MUST be an int >= 1.")
+        with self._engine.connect() as conn:
+            rows = conn.execute(
+                select(audit_log_entries)
+                .where(audit_log_entries.c.seq >= since_seq)
+                .order_by(audit_log_entries.c.seq.asc())
+            ).all()
+        lines = [
+            json.dumps(
+                self._row_to_dict(r), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+            )
+            for r in rows
+        ]
+        return ("\n".join(lines) + ("\n" if lines else "")).encode("utf-8")
+
+
+def build_durable_audit_log(hmac_secret: bytes) -> SqlTamperEvidentAuditLog:
+    """Construct the durable audit log from application settings (R5-S1-F5).
+
+    Derives a SYNCHRONOUS SQLAlchemy URL from ``settings.SQLALCHEMY_DATABASE_URI``
+    (async drivers swapped: ``asyncpg`` -> ``psycopg``, ``aiosqlite`` -> sqlite).
+    A synchronous driver must be installed for the target DB — ``psycopg`` for
+    PostgreSQL; SQLite needs nothing extra. The table is created on first use.
+    """
+    from sqlalchemy import create_engine
+
+    from app.core.config import settings
+    from core.venous.compliance.TamperEvidentAuditLog.TamperEvidentAuditLog import (
+        HmacReferenceSigner,
+    )
+
+    url = str(settings.SQLALCHEMY_DATABASE_URI)
+    sync_url = url.replace("+asyncpg", "+psycopg").replace("+aiosqlite", "")
+    engine = create_engine(sync_url, pool_pre_ping=True)
+    return SqlTamperEvidentAuditLog(HmacReferenceSigner(hmac_secret), engine)
+
+
+__all__ = [
+    "SqlTamperEvidentAuditLog",
+    "audit_log_entries",
+    "build_durable_audit_log",
+]
