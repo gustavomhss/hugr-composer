@@ -1,6 +1,13 @@
-"""Tests for the FastAPI `EventSourcedStoreAdapter`."""
+"""Tests for the FastAPI `EventSourcedStoreAdapter` (auth-gated)."""
 
 from __future__ import annotations
+
+from types import SimpleNamespace
+
+
+def _fake_auth() -> object:
+    """Stand-in auth dependency returning a superuser principal."""
+    return SimpleNamespace(email="admin@example.com", id="u-1")
 
 
 def test_adapter_imports_cleanly() -> None:
@@ -15,7 +22,7 @@ def test_install_attaches_store_and_router() -> None:
     from core.venous._adapters.fastapi.EventSourcedStoreAdapter import install
 
     app = FastAPI()
-    store = install(app)
+    store = install(app, auth_dependency=_fake_auth)
     assert app.state.event_store is store
     paths = [r.path for r in app.router.routes]
     assert any("/events" in p for p in paths)
@@ -28,10 +35,12 @@ def test_append_and_load_roundtrip() -> None:
     from core.venous._adapters.fastapi.EventSourcedStoreAdapter import install
 
     app = FastAPI()
-    install(app)
+    install(app, auth_dependency=_fake_auth)
     client = TestClient(app)
 
-    r = client.post("/events/agg-1?expected_version=0", json=[{"type": "created", "data": {"x": 1}}])
+    r = client.post(
+        "/events/agg-1?expected_version=0", json=[{"type": "created", "data": {"x": 1}}]
+    )
     assert r.status_code == 200, r.text
     assert r.json()["version"] == 1
 
@@ -47,20 +56,48 @@ def test_concurrency_conflict_returns_409() -> None:
     from core.venous._adapters.fastapi.EventSourcedStoreAdapter import install
 
     app = FastAPI()
-    install(app)
+    install(app, auth_dependency=_fake_auth)
     client = TestClient(app)
     client.post("/events/agg-2?expected_version=0", json=[{"type": "a", "data": {}}])
     r = client.post("/events/agg-2?expected_version=0", json=[{"type": "a", "data": {}}])
     assert r.status_code == 409
 
 
+def test_routes_require_auth() -> None:
+    """R5-O2-D6: a failing auth dependency blocks read AND append."""
+    from fastapi import FastAPI, HTTPException
+    from fastapi.testclient import TestClient
+
+    from core.venous._adapters.fastapi.EventSourcedStoreAdapter import install
+
+    def _deny() -> object:
+        raise HTTPException(status_code=401, detail="unauthenticated")
+
+    app = FastAPI()
+    install(app, auth_dependency=_deny)
+    client = TestClient(app)
+
+    assert client.get("/events/agg-x").status_code == 401
+    post = client.post("/events/agg-x?expected_version=0", json=[{"type": "a", "data": {}}])
+    assert post.status_code == 401
+
+
 if __name__ == "__main__":
     import sys
-    tests = [test_adapter_imports_cleanly, test_install_attaches_store_and_router, test_append_and_load_roundtrip, test_concurrency_conflict_returns_409]
+
+    tests = [
+        test_adapter_imports_cleanly,
+        test_install_attaches_store_and_router,
+        test_append_and_load_roundtrip,
+        test_concurrency_conflict_returns_409,
+        test_routes_require_auth,
+    ]
     failed = 0
     for t in tests:
         try:
-            t(); print(f"  PASS  {t.__name__}")
+            t()
+            print(f"  PASS  {t.__name__}")
         except Exception as exc:  # noqa: BLE001
-            print(f"  FAIL  {t.__name__}: {exc}"); failed += 1
+            print(f"  FAIL  {t.__name__}: {exc}")
+            failed += 1
     sys.exit(1 if failed else 0)

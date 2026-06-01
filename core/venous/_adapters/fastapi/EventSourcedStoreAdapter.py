@@ -15,9 +15,10 @@ Usage::
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
-from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, HTTPException
 
 from core.venous.events.EventSourcedStore.EventSourcedStore import (
     ConcurrencyError,
@@ -25,18 +26,38 @@ from core.venous.events.EventSourcedStore.EventSourcedStore import (
 )
 
 
-def install(app: FastAPI, *, prefix: str = "/events") -> InMemoryEventSourcedStore:
-    """Attach an event-sourced store + REST router to *app*; return store."""
+def install(
+    app: FastAPI,
+    *,
+    auth_dependency: Callable[..., Any],
+    prefix: str = "/events",
+) -> InMemoryEventSourcedStore:
+    """Attach an event-sourced store + auth-gated router to *app*; return store.
+
+    The ``/events`` router reads and appends raw events for ANY aggregate id, so
+    every route requires the injected ``auth_dependency`` (R5-O2-D6): anonymous
+    access would let a caller read another aggregate's full event stream or
+    append forged events. ``auth_dependency`` is REQUIRED — pass the app's
+    ``get_current_superuser`` (this is a raw, cross-aggregate admin surface;
+    application code uses ``app.state.event_store`` directly).
+    """
     store = InMemoryEventSourcedStore()
     router = APIRouter(prefix=prefix, tags=["events"])
 
     @router.get("/{aggregate_id}")
-    def _load(aggregate_id: str) -> dict:
-        events = [dict(e) if isinstance(e, dict) else {"event": repr(e)} for e in store.load(aggregate_id)]
+    def _load(aggregate_id: str, principal: object = Depends(auth_dependency)) -> dict:
+        events = [
+            dict(e) if isinstance(e, dict) else {"event": repr(e)} for e in store.load(aggregate_id)
+        ]
         return {"aggregate_id": aggregate_id, "events": events, "version": len(events)}
 
     @router.post("/{aggregate_id}")
-    def _append(aggregate_id: str, expected_version: int, events: list[dict[str, Any]]) -> dict:
+    def _append(
+        aggregate_id: str,
+        expected_version: int,
+        events: list[dict[str, Any]],
+        principal: object = Depends(auth_dependency),
+    ) -> dict:
         try:
             new_version = store.append(aggregate_id, expected_version, events)
         except ConcurrencyError as exc:

@@ -128,6 +128,18 @@ def _setup_project() -> tuple[Path, Any]:
     )
     _patch_project(project_dir)
     asgi_app = _load_app(project_dir)
+    # /events routes are superuser-gated (R5-O2-D6). Override the auth dependency
+    # with a fake superuser so the behavior tests can exercise read/append
+    # without standing up a full login flow — the standard FastAPI test seam.
+    from types import SimpleNamespace
+
+    from app.api.deps import get_current_superuser  # cached in sys.modules by _load_app
+
+    asgi_app.dependency_overrides[get_current_superuser] = lambda: SimpleNamespace(
+        id="00000000-0000-0000-0000-000000000001",
+        email="superuser@test.local",
+        is_superuser=True,
+    )
     return project_dir, asgi_app
 
 
