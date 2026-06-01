@@ -56,7 +56,14 @@ def test_primitives_copied_into_project() -> None:
     project_dir = create_fixture_project(name="al_t04")
     add_audit_log(ToolInput(project_dir=str(project_dir)))
     ae = project_dir / "core" / "venous" / "compliance" / "AuditEvent" / "AuditEvent.py"
-    teal = project_dir / "core" / "venous" / "compliance" / "TamperEvidentAuditLog" / "TamperEvidentAuditLog.py"
+    teal = (
+        project_dir
+        / "core"
+        / "venous"
+        / "compliance"
+        / "TamperEvidentAuditLog"
+        / "TamperEvidentAuditLog.py"
+    )
     assert ae.exists()
     assert teal.exists()
 
@@ -88,6 +95,24 @@ def test_glue_imports_adapter() -> None:
     body = glue.read_text()
     assert "from core.venous._adapters.fastapi.AuditLogAdapter import install" in body
     assert "def install_audit_log" in body
+
+
+def test_glue_superuser_gates_audit_routes() -> None:
+    """R5-S1-F1: the /audit-logs router must be auth-gated, not anonymous.
+
+    The glue must hand the adapter a superuser auth dependency so append /
+    verify / export are superuser-only (the in-process app records entries via
+    app.state.audit_log.append directly, bypassing the HTTP surface).
+    """
+    project_dir = create_fixture_project(name="al_auth_gate")
+    add_audit_log(ToolInput(project_dir=str(project_dir)))
+    glue = (project_dir / "app" / "audit_log.py").read_text()
+    assert "from app.api.deps import get_current_superuser" in glue, (
+        "glue must import the superuser auth dependency"
+    )
+    assert "auth_dependency=get_current_superuser" in glue, (
+        "install() must receive the superuser auth dependency (R5-S1-F1)"
+    )
 
 
 def test_glue_body_under_20_loc() -> None:
@@ -126,6 +151,7 @@ def test_execution_time_recorded() -> None:
 # ---------------------------------------------------------------------------
 # BUG A regression tests — audit log must be wired, not just copied
 # ---------------------------------------------------------------------------
+
 
 def test_main_py_calls_install_audit_log() -> None:
     """Regression: app/main.py must call install_audit_log(app) after tool runs.
@@ -218,8 +244,11 @@ if __name__ == "__main__":
     passed = failed = 0
     for fn in tests:
         try:
-            fn(); passed += 1; print(f"  PASS  {fn.__name__}")
+            fn()
+            passed += 1
+            print(f"  PASS  {fn.__name__}")
         except Exception as exc:  # noqa: BLE001
-            failed += 1; print(f"  FAIL  {fn.__name__}: {exc}")
+            failed += 1
+            print(f"  FAIL  {fn.__name__}: {exc}")
     print(f"\n{passed}/{passed + failed} passed")
     sys.exit(0 if not failed else 1)

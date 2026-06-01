@@ -167,6 +167,10 @@ ignore = [
 # engine/discovery/* + mcp_tools/* place `MCP_TOOL` dict at top of file (Maestro-facing
 # discovery contract); imports follow. Pattern is intentional + documented.
 "engine/discovery/**" = ["E402"]
+# core/venous/_adapters/** modules are deliberately PascalCase to mirror the
+# adapter class they wrap (AuditLogAdapter, SagaAdapter, ...) — the same naming
+# convention as the _staging primitives. N999 (module-name casing) is expected.
+"core/venous/_adapters/**" = ["N999"]
 # Tests + bench files use short loop vars (l for ledger, l for line) idiomatically.
 # Nested with-statements in bench snapshots/process_rewards are required by context
 # manager ordering. Ignored explicitly.
