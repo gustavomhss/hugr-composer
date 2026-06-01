@@ -60,9 +60,13 @@ class ContentVersion(Base):
     )
 
     __table_args__ = (
+        # Unique per (content_type, content_id, version_number): content_id is an
+        # opaque per-type identifier, so two types sharing a content_id (article 5
+        # / product 5) must each keep an independent version sequence (R5-O2-D3).
         Index(
             "ix_content_versions_content_id_version",
             "content_id",
+            "content_type",
             "version_number",
             unique=True,
         ),

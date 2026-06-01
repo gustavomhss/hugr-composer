@@ -5,8 +5,14 @@ Lifecycle
 create_draft  → status=draft   (version_number auto-incremented)
 publish       → status=published, published_at=now(), previous published → archived
 archive       → status=archived  (idempotent)
-get_history   → all versions for a content_id, newest first
+get_history   → all versions for a (content_type, content_id), newest first
 diff          → field-level diff between two version numbers
+
+Every query is scoped by BOTH content_type AND content_id (R5-O2-D3): the
+route key is ``/{content_type}/{content_id}/...`` and content_id is an opaque,
+per-type identifier, so two different types that happen to share a content_id
+(e.g. article id="5" and product id="5") must NOT see each other's versions,
+draft counts, version numbers, or published state.
 """
 
 from __future__ import annotations
@@ -23,7 +29,7 @@ from app.models.content_version import ContentVersion
 
 logger = logging.getLogger(__name__)
 
-# Maximum number of active drafts per content_id (overridden by settings).
+# Maximum number of active drafts per (content_type, content_id).
 _DEFAULT_MAX_DRAFTS: int = 10
 
 
@@ -31,7 +37,7 @@ class VersioningService:
     """Service layer for content version lifecycle management.
 
     Attributes:
-        max_drafts: Maximum concurrent drafts allowed per content_id.
+        max_drafts: Maximum concurrent drafts allowed per content item.
     """
 
     def __init__(self, max_drafts: int = _DEFAULT_MAX_DRAFTS) -> None:
@@ -65,14 +71,14 @@ class VersioningService:
             The newly created ContentVersion with status='draft'.
 
         Raises:
-            ValueError: If max_drafts limit is reached for this content_id.
+            ValueError: If max_drafts limit is reached for this content item.
         """
-        drafts = await self._count_drafts(session, content_id)
+        drafts = await self._count_drafts(session, content_id, content_type)
         if drafts >= self.max_drafts:
             raise ValueError(
                 f"Max drafts ({self.max_drafts}) reached for content_id={content_id}"
             )
-        next_version = await self._next_version_number(session, content_id)
+        next_version = await self._next_version_number(session, content_id, content_type)
         version = ContentVersion(
             content_id=content_id,
             content_type=content_type,
@@ -90,16 +96,18 @@ class VersioningService:
         self,
         session: AsyncSession,
         content_id: str,
+        content_type: str,
         version_number: int,
     ) -> ContentVersion:
         """Publish a specific draft version.
 
         Transitions the target version to published and archives any
-        currently published version for the same content_id.
+        currently published version for the same content item.
 
         Args:
             session: Async SQLAlchemy session.
             content_id: Opaque string ID of the content item.
+            content_type: Lowercase content type name.
             version_number: Version number of the draft to publish.
 
         Returns:
@@ -108,7 +116,7 @@ class VersioningService:
         Raises:
             ValueError: If the target version does not exist or is not a draft.
         """
-        version = await self._get_version(session, content_id, version_number)
+        version = await self._get_version(session, content_id, content_type, version_number)
         if version is None:
             raise ValueError(
                 f"Version {version_number} not found for content_id={content_id}"
@@ -118,7 +126,7 @@ class VersioningService:
                 f"Only draft versions can be published; current status={version.status}"
             )
         # Archive the currently published version
-        await self._archive_current_published(session, content_id)
+        await self._archive_current_published(session, content_id, content_type)
         version.status = "published"
         version.published_at = datetime.now(timezone.utc)
         await session.commit()
@@ -129,6 +137,7 @@ class VersioningService:
         self,
         session: AsyncSession,
         content_id: str,
+        content_type: str,
         version_number: int,
     ) -> ContentVersion:
         """Archive a specific version (idempotent).
@@ -136,6 +145,7 @@ class VersioningService:
         Args:
             session: Async SQLAlchemy session.
             content_id: Opaque string ID of the content item.
+            content_type: Lowercase content type name.
             version_number: Version number to archive.
 
         Returns:
@@ -144,7 +154,7 @@ class VersioningService:
         Raises:
             ValueError: If the target version does not exist.
         """
-        version = await self._get_version(session, content_id, version_number)
+        version = await self._get_version(session, content_id, content_type, version_number)
         if version is None:
             raise ValueError(
                 f"Version {version_number} not found for content_id={content_id}"
@@ -159,6 +169,7 @@ class VersioningService:
         self,
         session: AsyncSession,
         content_id: str,
+        content_type: str,
         limit: int = 50,
     ) -> list[ContentVersion]:
         """Return all versions for a content item, newest first.
@@ -166,6 +177,7 @@ class VersioningService:
         Args:
             session: Async SQLAlchemy session.
             content_id: Opaque string ID of the content item.
+            content_type: Lowercase content type name.
             limit: Maximum number of versions to return.
 
         Returns:
@@ -173,7 +185,10 @@ class VersioningService:
         """
         stmt = (
             select(ContentVersion)
-            .where(ContentVersion.content_id == content_id)
+            .where(
+                ContentVersion.content_id == content_id,
+                ContentVersion.content_type == content_type,
+            )
             .order_by(ContentVersion.version_number.desc())
             .limit(limit)
         )
@@ -184,6 +199,7 @@ class VersioningService:
         self,
         session: AsyncSession,
         content_id: str,
+        content_type: str,
         v1: int,
         v2: int,
     ) -> dict[str, Any]:
@@ -195,6 +211,7 @@ class VersioningService:
         Args:
             session: Async SQLAlchemy session.
             content_id: Opaque string ID of the content item.
+            content_type: Lowercase content type name.
             v1: Earlier version number.
             v2: Later version number.
 
@@ -204,46 +221,54 @@ class VersioningService:
         Raises:
             ValueError: If either version is not found.
         """
-        ver1 = await self._get_version(session, content_id, v1)
-        ver2 = await self._get_version(session, content_id, v2)
+        ver1 = await self._get_version(session, content_id, content_type, v1)
+        ver2 = await self._get_version(session, content_id, content_type, v2)
         if ver1 is None:
             raise ValueError(f"Version {v1} not found for content_id={content_id}")
         if ver2 is None:
             raise ValueError(f"Version {v2} not found for content_id={content_id}")
         return _compute_diff(ver1.data_json or {}, ver2.data_json or {})
 
-    async def _count_drafts(self, session: AsyncSession, content_id: str) -> int:
+    async def _count_drafts(
+        self, session: AsyncSession, content_id: str, content_type: str
+    ) -> int:
         """Count active draft versions for a content item.
 
         Args:
             session: Async SQLAlchemy session.
             content_id: Opaque string ID of the content item.
+            content_type: Lowercase content type name.
 
         Returns:
             Number of versions with status='draft'.
         """
         stmt = select(ContentVersion).where(
             ContentVersion.content_id == content_id,
+            ContentVersion.content_type == content_type,
             ContentVersion.status == "draft",
         )
         result = await session.execute(stmt)
         return len(result.scalars().all())
 
     async def _next_version_number(
-        self, session: AsyncSession, content_id: str
+        self, session: AsyncSession, content_id: str, content_type: str
     ) -> int:
         """Compute the next version number for a content item.
 
         Args:
             session: Async SQLAlchemy session.
             content_id: Opaque string ID of the content item.
+            content_type: Lowercase content type name.
 
         Returns:
             Current max version_number + 1, or 1 if no versions exist.
         """
         stmt = (
             select(ContentVersion.version_number)
-            .where(ContentVersion.content_id == content_id)
+            .where(
+                ContentVersion.content_id == content_id,
+                ContentVersion.content_type == content_type,
+            )
             .order_by(ContentVersion.version_number.desc())
             .limit(1)
         )
@@ -252,13 +277,18 @@ class VersioningService:
         return (current or 0) + 1
 
     async def _get_version(
-        self, session: AsyncSession, content_id: str, version_number: int
+        self,
+        session: AsyncSession,
+        content_id: str,
+        content_type: str,
+        version_number: int,
     ) -> ContentVersion | None:
-        """Fetch a specific version by content_id and version_number.
+        """Fetch a specific version by content item and version_number.
 
         Args:
             session: Async SQLAlchemy session.
             content_id: Opaque string ID of the content item.
+            content_type: Lowercase content type name.
             version_number: The version to fetch.
 
         Returns:
@@ -266,22 +296,25 @@ class VersioningService:
         """
         stmt = select(ContentVersion).where(
             ContentVersion.content_id == content_id,
+            ContentVersion.content_type == content_type,
             ContentVersion.version_number == version_number,
         )
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
 
     async def _archive_current_published(
-        self, session: AsyncSession, content_id: str
+        self, session: AsyncSession, content_id: str, content_type: str
     ) -> None:
         """Archive any currently published version for a content item.
 
         Args:
             session: Async SQLAlchemy session.
             content_id: Opaque string ID of the content item.
+            content_type: Lowercase content type name.
         """
         stmt = select(ContentVersion).where(
             ContentVersion.content_id == content_id,
+            ContentVersion.content_type == content_type,
             ContentVersion.status == "published",
         )
         result = await session.execute(stmt)

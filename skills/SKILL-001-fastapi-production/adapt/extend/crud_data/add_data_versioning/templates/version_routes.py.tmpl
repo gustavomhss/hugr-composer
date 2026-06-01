@@ -126,7 +126,7 @@ async def publish_version(
         HTTPException 404: If the version does not exist.
     """
     try:
-        version = await service.publish(session, content_id, version_number)
+        version = await service.publish(session, content_id, content_type, version_number)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -165,7 +165,7 @@ async def archive_version(
         HTTPException 404: If the version does not exist.
     """
     try:
-        version = await service.archive(session, content_id, version_number)
+        version = await service.archive(session, content_id, content_type, version_number)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -200,7 +200,7 @@ async def get_version_history(
     Returns:
         List of VersionRead instances, newest first.
     """
-    versions = await service.get_history(session, content_id, limit=limit)
+    versions = await service.get_history(session, content_id, content_type, limit=limit)
     return [VersionRead.model_validate(v) for v in versions]
 
 
@@ -236,7 +236,7 @@ async def diff_versions(
         HTTPException 404: If either version does not exist.
     """
     try:
-        result = await service.diff(session, content_id, v1, v2)
+        result = await service.diff(session, content_id, content_type, v1, v2)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

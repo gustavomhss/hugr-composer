@@ -22,10 +22,10 @@ from adapt.contracts import ToolInput
 from adapt.extend.crud_data.add_data_versioning import add_data_versioning
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _all_py_files(root: Path) -> list[Path]:
     return sorted(root.rglob("*.py"))
@@ -44,6 +44,7 @@ def _assert_parse(root: Path) -> None:
 # CC-01: success status
 # ---------------------------------------------------------------------------
 
+
 def test_success_status() -> None:
     """CC-01: Tool returns status='success' on a fresh project."""
     project_dir = create_fixture_project(name="ver_t01_success")
@@ -54,6 +55,7 @@ def test_success_status() -> None:
 # ---------------------------------------------------------------------------
 # CC-02: idempotency
 # ---------------------------------------------------------------------------
+
 
 def test_idempotent() -> None:
     """CC-02: Second run returns status='no_op' with no files created or modified."""
@@ -69,6 +71,7 @@ def test_idempotent() -> None:
 # ---------------------------------------------------------------------------
 # CC-03: dry_run
 # ---------------------------------------------------------------------------
+
 
 def test_dry_run() -> None:
     """CC-03: dry_run=True returns success but writes nothing to disk."""
@@ -86,6 +89,7 @@ def test_dry_run() -> None:
 # CC-04: files_created
 # ---------------------------------------------------------------------------
 
+
 def test_files_created_count() -> None:
     """CC-04: At least 7 files created and all exist on disk."""
     project_dir = create_fixture_project(name="ver_t04_created_count")
@@ -99,6 +103,7 @@ def test_files_created_count() -> None:
 # ---------------------------------------------------------------------------
 # CC-05: files_modified
 # ---------------------------------------------------------------------------
+
 
 def test_files_modified_count() -> None:
     """CC-05: At least 1 file modified and all exist on disk."""
@@ -114,6 +119,7 @@ def test_files_modified_count() -> None:
 # CC-06: all .py files parse
 # ---------------------------------------------------------------------------
 
+
 def test_all_py_parse() -> None:
     """CC-06: All .py files in the project parse without SyntaxError after tool runs."""
     project_dir = create_fixture_project(name="ver_t06_parse_all")
@@ -124,6 +130,7 @@ def test_all_py_parse() -> None:
 # ---------------------------------------------------------------------------
 # CC-07: no function over 50 LOC
 # ---------------------------------------------------------------------------
+
 
 def test_no_function_over_50_loc() -> None:
     """CC-07: No generated function exceeds 50 lines of code."""
@@ -144,6 +151,7 @@ def test_no_function_over_50_loc() -> None:
 # CC-08: config fields patched
 # ---------------------------------------------------------------------------
 
+
 def test_config_fields_patched() -> None:
     """CC-08: VERSIONING_MAX_DRAFTS appears in config.py with 4-space indent."""
     project_dir = create_fixture_project(name="ver_t08_config")
@@ -160,18 +168,21 @@ def test_config_fields_patched() -> None:
 # CC-09: ContentVersion in models/__init__.py
 # ---------------------------------------------------------------------------
 
+
 def test_models_init_patched() -> None:
     """CC-09: ContentVersion is imported in app/models/__init__.py."""
     project_dir = create_fixture_project(name="ver_t09_models_init")
     add_data_versioning(ToolInput(project_dir=str(project_dir)))
     models_init = project_dir / "app" / "models" / "__init__.py"
-    assert "ContentVersion" in models_init.read_text(), \
+    assert "ContentVersion" in models_init.read_text(), (
         "ContentVersion not registered in models/__init__.py"
+    )
 
 
 # ---------------------------------------------------------------------------
 # CC-10: routes registered
 # ---------------------------------------------------------------------------
+
 
 def test_routes_registered() -> None:
     """CC-10: versions_router is registered in app/routes/__init__.py."""
@@ -180,13 +191,15 @@ def test_routes_registered() -> None:
     routes_init = project_dir / "app" / "routes" / "__init__.py"
     if routes_init.exists():
         content = routes_init.read_text()
-        assert "versions_router" in content or "versions" in content, \
+        assert "versions_router" in content or "versions" in content, (
             "versions router not registered in routes/__init__.py"
+        )
 
 
 # ---------------------------------------------------------------------------
 # CC-11+: domain-specific tests
 # ---------------------------------------------------------------------------
+
 
 def test_content_version_model_created() -> None:
     """Domain: app/models/content_version.py exists with ContentVersion class."""
@@ -315,6 +328,7 @@ def test_versioning_package_init_exports() -> None:
 # CC-N-1: execution time
 # ---------------------------------------------------------------------------
 
+
 def test_execution_time_recorded() -> None:
     """CC-N-1: execution_time_ms is a positive integer after a successful run."""
     project_dir = create_fixture_project(name="ver_t22_timing")
@@ -325,6 +339,7 @@ def test_execution_time_recorded() -> None:
 # ---------------------------------------------------------------------------
 # CC-N: next_steps
 # ---------------------------------------------------------------------------
+
 
 def test_next_steps_present() -> None:
     """CC-N: next_steps must not be empty on success and mention alembic."""
@@ -339,6 +354,7 @@ def test_next_steps_present() -> None:
 # CC-LAST: idempotent project still parses
 # ---------------------------------------------------------------------------
 
+
 def test_idempotent_project_still_parses() -> None:
     """CC-LAST: After two runs the project must still be fully parseable."""
     project_dir = create_fixture_project(name="ver_t24_idem_parse")
@@ -350,6 +366,7 @@ def test_idempotent_project_still_parses() -> None:
 # ---------------------------------------------------------------------------
 # Additional structural tests
 # ---------------------------------------------------------------------------
+
 
 def test_error_return_on_invalid_dir() -> None:
     """Tool returns error status when project_dir does not exist."""
@@ -383,8 +400,7 @@ def test_crud_version_file_created() -> None:
     crud_file = project_dir / "app" / "crud" / "version.py"
     assert crud_file.exists(), "crud/version.py not created"
     content = crud_file.read_text()
-    assert "async def list_versions_for_content" in content, \
-        "list_versions_for_content missing"
+    assert "async def list_versions_for_content" in content, "list_versions_for_content missing"
     assert "async def get_version_by_id" in content, "get_version_by_id missing"
 
 
@@ -400,9 +416,60 @@ def test_max_drafts_enforced_in_service() -> None:
 
 def test_mcp_tool_entry_matches_function() -> None:
     """INV-10: MCP_TOOL['entry'] must match the actual function name."""
-    from adapt.extend.crud_data.add_data_versioning import MCP_TOOL, add_data_versioning as fn
+    from adapt.extend.crud_data.add_data_versioning import MCP_TOOL
+    from adapt.extend.crud_data.add_data_versioning import add_data_versioning as fn
+
     assert MCP_TOOL["entry"] == fn.__name__, (
         f"MCP_TOOL entry={MCP_TOOL['entry']!r} != function name={fn.__name__!r}"
+    )
+
+
+def test_version_lookups_scoped_by_content_type() -> None:
+    """R5-O2-D3: every version query must filter by content_type, not content_id alone.
+
+    content_id is an opaque per-type identifier and the route key is
+    /{content_type}/{content_id}/...; pre-fix the service + CRUD filtered by
+    content_id only, so two types sharing a content_id (article 5 / product 5)
+    saw each other's versions, draft counts, version numbers, and published
+    state. Every lifecycle method and the CRUD list helper must now thread
+    content_type and constrain ContentVersion.content_type in the query.
+    """
+    import ast
+
+    project_dir = create_fixture_project(name="ver_content_type_scope")
+    add_data_versioning(ToolInput(project_dir=str(project_dir)))
+    svc_src = (project_dir / "app" / "versioning" / "service.py").read_text()
+    crud_src = (project_dir / "app" / "crud" / "version.py").read_text()
+
+    # Every public + private method that runs a per-content query must take a
+    # content_type parameter and constrain it.
+    svc_tree = ast.parse(svc_src)
+    queried = (
+        "publish",
+        "archive",
+        "get_history",
+        "diff",
+        "_count_drafts",
+        "_next_version_number",
+        "_get_version",
+        "_archive_current_published",
+    )
+    for node in ast.walk(svc_tree):
+        if isinstance(node, ast.AsyncFunctionDef) and node.name in queried:
+            params = {a.arg for a in node.args.args}
+            assert "content_type" in params, (
+                f"VersioningService.{node.name} ignores content_type (cross-type collision)"
+            )
+    # The scoping predicate must appear for both the service and the CRUD lookup.
+    assert "ContentVersion.content_type == content_type" in svc_src, (
+        "service queries do not constrain content_type"
+    )
+    assert "ContentVersion.content_type == content_type" in crud_src, (
+        "list_versions_for_content does not constrain content_type"
+    )
+    # The old content_id-only history query must be gone.
+    assert ".where(ContentVersion.content_id == content_id)\n    )" not in svc_src, (
+        "a content_id-only query still remains in the service"
     )
 
 
@@ -442,6 +509,7 @@ if __name__ == "__main__":
         test_crud_version_file_created,
         test_max_drafts_enforced_in_service,
         test_mcp_tool_entry_matches_function,
+        test_version_lookups_scoped_by_content_type,
     ]
 
     passed = 0

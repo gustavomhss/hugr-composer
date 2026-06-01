@@ -42,7 +42,7 @@ def upgrade() -> None:
     op.create_index(
         "ix_content_versions_content_id_version",
         "content_versions",
-        ["content_id", "version_number"],
+        ["content_id", "content_type", "version_number"],
         unique=True,
     )
 
