@@ -6,9 +6,11 @@ The plaintext token is shown exactly once on creation.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status
-
 from app.api.deps import CurrentUser, SessionDep
+from app.auth.api_key_scopes import (
+    ScopeNotGrantableError,
+    validate_grantable_scopes,
+)
 from app.core.api_key_hasher import generate_key_id, generate_secret, hash_secret
 from app.crud import api_key as crud_api_key
 from app.schemas.api_key import (
@@ -16,6 +18,7 @@ from app.schemas.api_key import (
     APIKeyCreatedResponse,
     APIKeyPublic,
 )
+from fastapi import APIRouter, HTTPException, status
 
 router = APIRouter(prefix="/api-keys", tags=["api-keys"])
 
@@ -38,7 +41,23 @@ async def create_api_key(
 
     Returns:
         ``APIKeyCreatedResponse`` with the single-use plaintext token and warning.
+
+    Raises:
+        HTTPException 422: A requested scope is a wildcard or is not in the
+            grantable allow-list (R7-N2 privilege-escalation guard).
     """
+    # R7-N2: a self-service caller must not mint a key with scopes they were
+    # never granted. Reject wildcards and any scope outside the allow-list
+    # BEFORE any key material is generated or persisted.
+    try:
+        granted_scopes = validate_grantable_scopes(key_in.scopes)
+    except ScopeNotGrantableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Scope not grantable: {exc.scope!r} — {exc.reason}.",
+        ) from exc
+    key_in = key_in.model_copy(update={"scopes": granted_scopes})
+
     key_id = generate_key_id()
     secret = generate_secret()
     secret_hash = hash_secret(secret)
