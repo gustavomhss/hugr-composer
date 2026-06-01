@@ -730,6 +730,8 @@ async def test_08_audit_log_tamper_evident(pd: Path) -> tuple[bool, str]:
     delivers end-to-end over HTTP: append two entries, verify the chain is
     intact, and confirm export streams them back.
     """
+    from sqlalchemy import text
+
     app = _load_app(pd)
     importlib.import_module("app.audit_log").install_audit_log(app)
     client, session, engine, _ = await _make_client(app, pd)
@@ -737,14 +739,21 @@ async def test_08_audit_log_tamper_evident(pd: Path) -> tuple[bool, str]:
     n = 0
     try:
         token = await _signup_and_login(client, "audit@acme.example.com", "AuditPass123!")
+        # The /audit-logs router is superuser-only (R5-S1-F1) and records the
+        # actor from the authenticated principal (R5-S1-F2), so promote the
+        # caller to superuser and let the server attribute the entries.
+        await session.execute(
+            text("UPDATE users SET is_superuser = true WHERE email = :e"),
+            {"e": "audit@acme.example.com"},
+        )
+        await session.commit()
         h = _th(token)
 
-        # Append two audit entries through the REST router.
+        # Append two audit entries through the REST router (actor is server-side).
         for resource in ("product/AUD-001", "product/AUD-002"):
             r = await client.post(
                 "/audit-logs/",
                 params={
-                    "actor": "audit@acme.example.com",
                     "action": "create",
                     "resource": resource,
                     "outcome": "success",

@@ -115,7 +115,9 @@ from ._common import SKILL_ROOT
 # Waived pending issue #131 — add_outbox_pattern (DLQ admin + real data)
 # Waived pending issue #136 — add_stripe_refund_flow (webhook needs signature verify dep)
 # Waived pending issue #138 — add_websocket_presence (trivial fix in follow-up PR)
-# Waived pending issue #125 — AuditLogAdapter (auth + server-side actor + durability)
+# RESOLVED (R5-S1-F1/F2) — AuditLogAdapter now superuser-gates every route and
+# records the actor from the authenticated principal; un-waived so the rule
+# enforces it.
 # Waived pending issue #124 — EventSourcedStoreAdapter (auth + durable backend)
 # Waived pending issue #137 — SagaAdapter (adapter auth-injection pattern)
 _WAIVED_TOOLS: frozenset[str] = frozenset(
@@ -124,7 +126,6 @@ _WAIVED_TOOLS: frozenset[str] = frozenset(
         "add_outbox_pattern",
         "add_stripe_refund_flow",
         "add_websocket_presence",
-        "AuditLogAdapter",
         "EventSourcedStoreAdapter",
         "SagaAdapter",
     }
