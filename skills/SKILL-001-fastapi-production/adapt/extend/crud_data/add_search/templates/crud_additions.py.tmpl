@@ -22,6 +22,16 @@ def _get_dialect_name(session: _SearchSession) -> str:
     return str(bind.dialect.name) if bind else "unknown"
 
 
+def _like_escape(term: str) -> str:
+    """Escape LIKE metacharacters so user %/_ match literally (R5-S8-F2).
+
+    Used with ``ilike(..., escape="\\\\")``. Escape the escape char first, then
+    % and _, otherwise a bare ``%`` in user input acts as a wildcard and the
+    pattern matches every row.
+    """
+    return term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 def _build_search_tsvector(language: str = "english"):
     """Build weighted tsvector expression for ${model_name}.
 
@@ -101,7 +111,7 @@ async def _search_like_fallback(
         if col is None:
             continue
         for term in terms:
-            conditions.append(col.ilike(f"%{term}%"))
+            conditions.append(col.ilike(f"%{_like_escape(term)}%", escape="\\"))
     if conditions:
         stmt = _select(${model_name}).where(_or(*conditions))
     else:
@@ -179,7 +189,11 @@ async def search(
     Raises:
         ValueError: If query is shorter than 2 characters.
     """
-    if not q or len(q.strip()) < 2:
+    # Strip NUL bytes first (R5-S8-F1): PostgreSQL text / websearch_to_tsquery
+    # rejects \x00 with a DataError that surfaces as an uncaught 500. NUL carries
+    # no search meaning, so drop it for every backend before validating length.
+    q = (q or "").replace("\x00", "")
+    if len(q.strip()) < 2:
         raise ValueError("Search query must be at least 2 characters.")
     if _get_dialect_name(session) != "postgresql":
         return await _search_like_fallback(session, q=q, page_size=page_size, owner_id=owner_id)
@@ -191,9 +205,16 @@ async def _autocomplete_like(
 ) -> list[str]:
     """LIKE-based autocomplete fallback for non-PostgreSQL databases."""
     first_token = q.strip().split()[0]
+    # Escape LIKE metacharacters (R5-S8-F2): the PG path sanitizes via _safe_token,
+    # but this fallback interpolates the token into an ILIKE prefix pattern.
     first_col_name = _SEARCH_TEXT_COLUMNS[0] if _SEARCH_TEXT_COLUMNS else "id"
     col = getattr(${model_name}, first_col_name, ${model_name}.id)
-    stmt = _select(col).where(col.ilike(f"{first_token}%")).order_by(${model_name}.id.desc()).limit(5)
+    stmt = (
+        _select(col)
+        .where(col.ilike(f"{_like_escape(first_token)}%", escape="\\"))
+        .order_by(${model_name}.id.desc())
+        .limit(5)
+    )
     if hasattr(${model_name}, "is_deleted"):
         stmt = stmt.where(${model_name}.is_deleted == False)  # noqa: E712
     if owner_id is not None and hasattr(${model_name}, "owner_id"):
