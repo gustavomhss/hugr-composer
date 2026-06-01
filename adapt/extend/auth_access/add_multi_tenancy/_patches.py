@@ -167,6 +167,26 @@ def patch_auth_deps(here: Path, deps_file: Path) -> None:
 
 
 def patch_signup_tenant(users_file: Path) -> bool:
+    """Make the public signup route tenancy-safe via per-tenant opt-in (R7-N1).
+
+    The earlier version of this patch read ``X-Tenant-ID`` from the
+    *anonymous* signup request and auto-enrolled the new user into the
+    tenant named by that slug — unconditionally. That is a self-enrollment
+    vulnerability: tenant slugs are not secrets (they appear in URLs,
+    emails, error messages), so anyone who learns a slug (e.g. ``acme``)
+    could register a user *inside* that tenant and read/write its scoped
+    data.
+
+    Fix (deny-by-default, per-tenant opt-in): the signup route still
+    supports the legitimate "self-service signup into my tenant" flow, but
+    only when the target tenant has **explicitly** opted in via
+    ``Tenant.allow_public_signup = True``. A slug alone is not enough — the
+    tenant owner must turn open enrollment on. Tenants default to
+    ``allow_public_signup = False``, so the attack (enrolling into a tenant
+    you merely know the slug of) is closed out of the box.
+
+    Idempotent via the ``_mt_signup_tenant`` sentinel.
+    """
     src = users_file.read_text()
     if "_mt_signup_tenant" in src:
         return False
@@ -193,7 +213,10 @@ def patch_signup_tenant(users_file: Path) -> bool:
     inject = (
         "    obj_in = body.model_dump()\n"
         '    obj_in["hashed_password"] = get_password_hash(obj_in.pop("password"))\n'
-        "    # _mt_signup_tenant: bind the new user to the tenant named in X-Tenant-ID.\n"
+        "    # _mt_signup_tenant (R7-N1): bind to the tenant named in X-Tenant-ID\n"
+        "    # ONLY when that tenant has explicitly opted into public signup. A\n"
+        "    # tenant slug is not a secret, so deny-by-default: anonymous callers\n"
+        "    # cannot self-enroll into a tenant they merely know the slug of.\n"
         '    _mt_slug = request.headers.get("X-Tenant-ID")\n'
         "    if _mt_slug:\n"
         "        _mt_stmt = (\n"
@@ -202,7 +225,11 @@ def patch_signup_tenant(users_file: Path) -> bool:
         "            .execution_options(skip_tenant_filter=True)\n"
         "        )\n"
         "        _mt_tenant = (await session.execute(_mt_stmt)).scalar_one_or_none()\n"
-        '        if _mt_tenant is not None and _mt_tenant.status == "active":\n'
+        "        if (\n"
+        "            _mt_tenant is not None\n"
+        '            and _mt_tenant.status == "active"\n'
+        "            and _mt_tenant.allow_public_signup\n"
+        "        ):\n"
         '            obj_in["tenant_id"] = _mt_tenant.id'
     )
     if anchor not in src:

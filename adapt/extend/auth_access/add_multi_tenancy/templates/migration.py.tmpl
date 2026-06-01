@@ -30,6 +30,12 @@ def upgrade() -> None:
             "status", sa.String(16), server_default="active", nullable=False
         ),
         sa.Column(
+            "allow_public_signup",
+            sa.Boolean(),
+            server_default="false",
+            nullable=False,
+        ),
+        sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
             server_default=sa.func.now(),

@@ -22,10 +22,10 @@ from adapt.contracts import ToolInput
 from adapt.extend.auth_access.add_multi_tenancy import add_multi_tenancy
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _all_py_files(root: Path) -> list[Path]:
     return sorted(root.rglob("*.py"))
@@ -43,6 +43,7 @@ def _assert_parse(root: Path) -> None:
 # ---------------------------------------------------------------------------
 # Test cases
 # ---------------------------------------------------------------------------
+
 
 def test_success_status() -> None:
     """T-01: Tool returns status='success' on a fresh project."""
@@ -208,6 +209,53 @@ def test_tenant_routes_require_superuser() -> None:
     routes_file = project_dir / "app" / "api" / "routes" / "tenant.py"
     content = routes_file.read_text()
     assert "CurrentSuperuser" in content
+
+
+def test_signup_self_enroll_gated_by_opt_in() -> None:
+    """R7-N1: signup binds a tenant from X-Tenant-ID ONLY with opt-in.
+
+    The earlier patch enrolled the new user into the tenant named by the
+    anonymous ``X-Tenant-ID`` header unconditionally — anyone who knew a
+    slug (not a secret) could self-enroll. The fix gates the bind on the
+    tenant's explicit ``allow_public_signup`` flag (deny-by-default).
+    """
+    project_dir = create_fixture_project(name="mt16_signup_optin")
+    result = add_multi_tenancy(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success", f"tool failed: {result.error}"
+    users_file = project_dir / "app" / "api" / "routes" / "users.py"
+    assert users_file.exists(), "users.py route not found"
+    src = users_file.read_text()
+    # The signup patch must have run (idempotency sentinel present).
+    assert "_mt_signup_tenant" in src, "signup tenant-safety patch did not run"
+    # The bind must be GATED on the per-tenant opt-in flag — a known slug
+    # plus active status is NOT sufficient on its own.
+    assert "_mt_tenant.allow_public_signup" in src, (
+        "R7-N1: signup does not gate tenant binding on allow_public_signup"
+    )
+    # The opt-in check must guard the tenant_id assignment (deny-by-default):
+    # the assignment line must come AFTER the allow_public_signup check.
+    optin_idx = src.index("_mt_tenant.allow_public_signup")
+    bind_idx = src.index('obj_in["tenant_id"]')
+    assert optin_idx < bind_idx, "R7-N1: tenant_id is bound before the allow_public_signup gate"
+
+
+def test_tenant_model_has_allow_public_signup_default_false() -> None:
+    """R7-N1: Tenant model carries allow_public_signup defaulting to false."""
+    project_dir = create_fixture_project(name="mt17_tenant_optin_field")
+    add_multi_tenancy(ToolInput(project_dir=str(project_dir)))
+    tenant_file = project_dir / "app" / "models" / "tenant.py"
+    content = tenant_file.read_text()
+    assert "allow_public_signup" in content, "R7-N1: Tenant model missing allow_public_signup field"
+    assert 'server_default="false"' in content, (
+        "R7-N1: allow_public_signup must default to false (deny-by-default)"
+    )
+    migration = project_dir / "alembic" / "versions"
+    mig_files = list(migration.glob("*multi_tenancy*.py")) if migration.exists() else []
+    if mig_files:
+        mig_src = mig_files[0].read_text()
+        assert "allow_public_signup" in mig_src, (
+            "R7-N1: migration missing allow_public_signup column"
+        )
 
 
 def test_main_imports_tenant_filter() -> None:
@@ -388,7 +436,9 @@ def test_table_args_inside_class_scope() -> None:
             if not isinstance(node, ast.ClassDef):
                 continue
             base_ids = [
-                b.id if isinstance(b, ast.Name) else (b.attr if isinstance(b, ast.Attribute) else "")
+                b.id
+                if isinstance(b, ast.Name)
+                else (b.attr if isinstance(b, ast.Attribute) else "")
                 for b in node.bases
             ]
             if "TenantScopedMixin" not in base_ids:
@@ -404,9 +454,7 @@ def test_table_args_inside_class_scope() -> None:
     assert not module_scope_violations, (
         f"__table_args__ at MODULE scope (index not registered): {module_scope_violations}"
     )
-    assert not missing_class_scope, (
-        f"__table_args__ missing from class body: {missing_class_scope}"
-    )
+    assert not missing_class_scope, f"__table_args__ missing from class body: {missing_class_scope}"
 
 
 def test_tenant_router_registered_in_routes_init() -> None:
@@ -497,6 +545,8 @@ if __name__ == "__main__":
         test_table_args_inside_class_scope,
         test_tenant_router_registered_in_routes_init,
         test_multiword_boot,
+        test_signup_self_enroll_gated_by_opt_in,
+        test_tenant_model_has_allow_public_signup_default_false,
     ]
 
     passed = 0
