@@ -158,7 +158,9 @@ def add_runtime_sentinel(inp: ToolInput) -> ToolResult:
             "Runtime sentinel RASP middleware added.",
             "InjectionDetector: SQL (tautology/UNION/stacked/comment), command (metacharacters), SSRF (allow-list).",
             "AttackPatternRegistry: records SecurityEvent per attack type with timestamps.",
-            "Learning mode: logs detections without blocking for 24h, then switches to enforcing.",
+            "Learning mode: logs detections without blocking. There is NO auto-promotion "
+            "timer — switching to enforcing is manual (set SENTINEL_MODE=enforcing) after a "
+            "baseline you choose (~24h recommended).",
             "Config: SENTINEL_ENABLED, SENTINEL_MODE (learning/enforcing), SENTINEL_ALLOWED_HOSTS.",
             "Register RuntimeSentinelMiddleware in app/main.py lifespan or add_middleware().",
             *config_notes,

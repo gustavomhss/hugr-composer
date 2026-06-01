@@ -195,18 +195,22 @@ def add_data_export(inp: ToolInput) -> ToolResult:
             # on every worker. Swap the registry body for a Redis/DB
             # store if dynamic runtime registration across workers is
             # required.
-            "Export model registry is single-process (in-memory). "
-            "Multi-worker deployments: every worker (including the ARQ "
-            "background worker) re-runs register_model declaratively "
-            "at import time, so registry contents stay consistent. "
-            "For runtime cross-worker dynamic registration swap "
-            "_ModelRegistry for a Redis/DB-backed store.",
+            "Export model registry is single-process (in-memory). It stays "
+            "consistent across workers ONLY IF each worker imports the modules "
+            "that call register_model at startup — the ARQ background worker in "
+            "particular must import app.models (or app.core.model_registry) so its "
+            "registry is populated; otherwise async export jobs see an empty "
+            "registry (see next_steps). For runtime cross-worker dynamic "
+            "registration swap _ModelRegistry for a Redis/DB-backed store.",
         ],
         next_steps=[
             "alembic upgrade head",
             "Set EXPORT_ASYNC_THRESHOLD in your .env (default: 10000 rows).",
             "Set STORAGE_BACKEND=s3 and AWS_S3_BUCKET for async export storage.",
             "Register run_export in your ARQ WorkerSettings.functions list.",
+            "Ensure the ARQ worker imports app.models (or app.core.model_registry) "
+            "at startup so the export model registry is populated in the worker "
+            "process — without it, async exports find no registered models.",
             "Restart the application.",
         ],
         execution_time_ms=_ms(start),
