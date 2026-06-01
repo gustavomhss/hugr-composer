@@ -49,6 +49,8 @@ _SUCCESS_NOTES = [
     "POST /refunds/webhook/stripe (signature-verified).",
     "Alembic migration for `refunds` table.",
     "Auto-approve threshold: refunds <= REFUND_AUTO_APPROVE_THRESHOLD_CENTS are issued immediately.",
+    "Ownership-scoped: a non-superuser may only refund/list payments whose user_id is their own; "
+    "a cross-user payment_id returns 404 (R5-O3-F4).",
     "Stripe SDK is imported lazily inside create_refund() — the app boots cleanly without `stripe` installed.",
 ]
 _NEXT_STEPS = [

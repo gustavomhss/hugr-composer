@@ -22,10 +22,10 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_stripe_refund_flow import add_stripe_refund_flow
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _all_py_files(root: Path) -> list[Path]:
     return sorted(root.rglob("*.py"))
@@ -52,10 +52,11 @@ def _max_function_loc(root: Path, subdir: str = "app") -> int:
         except SyntaxError:
             continue
         for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                if hasattr(node, "end_lineno") and node.end_lineno:
-                    loc = node.end_lineno - node.lineno + 1
-                    max_loc = max(max_loc, loc)
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and getattr(
+                node, "end_lineno", None
+            ):
+                loc = node.end_lineno - node.lineno + 1
+                max_loc = max(max_loc, loc)
     return max_loc
 
 
@@ -63,13 +64,12 @@ def _max_function_loc(root: Path, subdir: str = "app") -> int:
 # Category A — Tool execution
 # ---------------------------------------------------------------------------
 
+
 def test_success_status() -> None:
     """Tool returns status='success' on a fresh project."""
     project_dir = create_fixture_project(name="refund_t01")
     result = add_stripe_refund_flow(ToolInput(project_dir=str(project_dir)))
-    assert result.status == "success", (
-        f"Expected success, got {result.status}: {result.error}"
-    )
+    assert result.status == "success", f"Expected success, got {result.status}: {result.error}"
 
 
 def test_idempotent() -> None:
@@ -87,9 +87,7 @@ def test_dry_run() -> None:
     """dry_run=True returns success but writes no files."""
     project_dir = create_fixture_project(name="refund_t03")
     before = {f: f.read_text() for f in _all_py_files(project_dir)}
-    result = add_stripe_refund_flow(
-        ToolInput(project_dir=str(project_dir), dry_run=True)
-    )
+    result = add_stripe_refund_flow(ToolInput(project_dir=str(project_dir), dry_run=True))
     assert result.status == "success"
     assert not result.files_created
     assert not result.files_modified
@@ -103,8 +101,7 @@ def test_files_created_count() -> None:
     result = add_stripe_refund_flow(ToolInput(project_dir=str(project_dir)))
     assert result.status == "success"
     assert len(result.files_created) >= 5, (
-        f"Expected >= 5 files_created, got {len(result.files_created)}: "
-        f"{result.files_created}"
+        f"Expected >= 5 files_created, got {len(result.files_created)}: {result.files_created}"
     )
     for path_str in result.files_created:
         assert Path(path_str).exists(), f"Created file missing: {path_str}"
@@ -116,8 +113,7 @@ def test_files_modified_count() -> None:
     result = add_stripe_refund_flow(ToolInput(project_dir=str(project_dir)))
     assert result.status == "success"
     assert len(result.files_modified) >= 2, (
-        f"Expected >= 2 files_modified, got {len(result.files_modified)}: "
-        f"{result.files_modified}"
+        f"Expected >= 2 files_modified, got {len(result.files_modified)}: {result.files_modified}"
     )
     for path_str in result.files_modified:
         assert Path(path_str).exists(), f"Modified file missing: {path_str}"
@@ -126,6 +122,7 @@ def test_files_modified_count() -> None:
 # ---------------------------------------------------------------------------
 # Category B — Generated code quality
 # ---------------------------------------------------------------------------
+
 
 def test_all_py_parse() -> None:
     """Every generated .py file AST-parses clean."""
@@ -180,14 +177,13 @@ def test_routes_registered() -> None:
     routes_init = project_dir / "app" / "routes" / "__init__.py"
     if routes_init.exists():
         content = routes_init.read_text()
-        assert "refund" in content.lower(), (
-            "Refunds router not registered in routes __init__"
-        )
+        assert "refund" in content.lower(), "Refunds router not registered in routes __init__"
 
 
 # ---------------------------------------------------------------------------
 # Category C — Domain-specific
 # ---------------------------------------------------------------------------
+
 
 def test_refund_model_created() -> None:
     """app/models/refund.py exists with Refund class."""
@@ -205,8 +201,15 @@ def test_refund_model_has_required_columns() -> None:
     add_stripe_refund_flow(ToolInput(project_dir=str(project_dir)))
     model_file = project_dir / "app" / "models" / "refund.py"
     content = model_file.read_text()
-    for col in ["payment_id", "stripe_refund_id", "amount_cents", "reason",
-                "status", "requested_by", "created_at"]:
+    for col in [
+        "payment_id",
+        "stripe_refund_id",
+        "amount_cents",
+        "reason",
+        "status",
+        "requested_by",
+        "created_at",
+    ]:
         assert col in content, f"Column '{col}' not found in refund model"
 
 
@@ -291,9 +294,7 @@ def test_idempotency_key_in_refund_helper() -> None:
     add_stripe_refund_flow(ToolInput(project_dir=str(project_dir)))
     helper_file = project_dir / "app" / "core" / "stripe_refunds.py"
     content = helper_file.read_text()
-    assert "idempotency_key" in content, (
-        "idempotency_key not found in stripe_refunds.py"
-    )
+    assert "idempotency_key" in content, "idempotency_key not found in stripe_refunds.py"
 
 
 def test_execution_time_recorded() -> None:
@@ -330,19 +331,16 @@ def test_stripe_not_top_level_in_routes() -> None:
     for node in tree.body:
         if isinstance(node, ast.Import):
             for alias in node.names:
-                assert alias.name != "stripe", (
-                    "stripe imported at module top level in refunds.py"
-                )
+                assert alias.name != "stripe", "stripe imported at module top level in refunds.py"
         elif isinstance(node, ast.ImportFrom):
-            assert node.module != "stripe", (
-                "from stripe ... at module top level in refunds.py"
-            )
+            assert node.module != "stripe", "from stripe ... at module top level in refunds.py"
 
 
 # ---------------------------------------------------------------------------
 # Category D — Regression: R5-O3-F3 / R5-S7-S03
 # (refund route MUST call Stripe — not just persist a pending row)
 # ---------------------------------------------------------------------------
+
 
 def _request_refund_fn(route_file: Path) -> ast.AsyncFunctionDef:
     """Locate the ``request_refund`` async handler in the route AST."""
@@ -365,11 +363,10 @@ def test_r5_o3_f3_route_imports_create_refund() -> None:
     tree = ast.parse(route_file.read_text())
     found = False
     for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom) and node.module:
-            if "stripe_refunds" in node.module:
-                for alias in node.names:
-                    if alias.name == "create_refund":
-                        found = True
+        if isinstance(node, ast.ImportFrom) and node.module and "stripe_refunds" in node.module:
+            for alias in node.names:
+                if alias.name == "create_refund":
+                    found = True
     assert found, (
         "refunds.py does not import create_refund from "
         "app.core.stripe_refunds — the route can never call Stripe."
@@ -456,6 +453,87 @@ def test_r5_o3_f3_error_path_marks_failed_and_502() -> None:
 
 
 # ---------------------------------------------------------------------------
+# R5-O3-F4 — payment ownership enforcement (cross-user refund)
+# ---------------------------------------------------------------------------
+
+
+def _refund_route_tree(name: str) -> ast.Module:
+    """Emit a fixture project and return the parsed refunds.py AST."""
+    project_dir = create_fixture_project(name=name)
+    add_stripe_refund_flow(ToolInput(project_dir=str(project_dir)))
+    route_file = project_dir / "app" / "api" / "routes" / "refunds.py"
+    return ast.parse(route_file.read_text())
+
+
+def _func_node(tree: ast.Module, fn_name: str) -> ast.AsyncFunctionDef | ast.FunctionDef:
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.AsyncFunctionDef, ast.FunctionDef)) and node.name == fn_name:
+            return node
+    raise AssertionError(f"function {fn_name} not found in refunds.py")
+
+
+def test_r5_o3_f4_ownership_guard_present() -> None:
+    """R5-O3-F4: refunds.py must compare payment ownership and raise 404.
+
+    Pre-fix, ``request_refund`` resolved the PaymentIntent for ANY payment_id
+    with no ownership check, so any authenticated user could refund another
+    user's payment. The guard must (a) read the payment's ``user_id``, (b)
+    compare it to ``current_user.id``, and (c) raise 404 on mismatch (404 not
+    403 so a non-owner can't confirm the payment exists).
+    """
+    tree = _refund_route_tree("refund_r5_o3_f4_guard")
+    content = ast.unparse(tree)
+    assert "user_id" in content, "refunds.py never inspects payment.user_id for ownership"
+    assert "is_superuser" in content, "ownership guard must exempt superusers"
+    # The comparison current_user.id must exist alongside a 404 raise.
+    assert "current_user.id" in content, "ownership guard never compares to current_user.id"
+    assert "404" in content or "NOT_FOUND" in content, "ownership mismatch must raise 404"
+
+
+def test_r5_o3_f4_request_refund_passes_current_user() -> None:
+    """R5-O3-F4: the create path must thread current_user into the ownership check.
+
+    ``request_refund`` must pass ``current_user`` to the intent resolver (or a
+    helper) so ownership is verified before the Stripe refund is issued.
+    """
+    tree = _refund_route_tree("refund_r5_o3_f4_create")
+    fn = _func_node(tree, "request_refund")
+    body_src = ast.unparse(fn)
+    assert "current_user" in body_src, "request_refund does not use current_user"
+    # The resolver/loader call inside request_refund must receive current_user.
+    passes_user = any(
+        isinstance(node, ast.Call)
+        and any(
+            (isinstance(a, ast.Name) and a.id == "current_user")
+            or (isinstance(a, ast.Attribute) and a.attr == "id")
+            for a in node.args
+        )
+        for node in ast.walk(fn)
+    )
+    assert passes_user, "request_refund never forwards current_user to the ownership check"
+
+
+def test_r5_o3_f4_list_refunds_enforces_ownership() -> None:
+    """R5-O3-F4: GET /refunds/payment/{id} must enforce ownership too.
+
+    Listing refunds for an arbitrary payment_id leaked other users' refund
+    history. ``list_payment_refunds`` must call the ownership loader before
+    returning rows.
+    """
+    tree = _refund_route_tree("refund_r5_o3_f4_list")
+    fn = _func_node(tree, "list_payment_refunds")
+    calls = {
+        node.func.id
+        for node in ast.walk(fn)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+    }
+    assert "_load_owned_payment" in calls, (
+        "list_payment_refunds does not verify payment ownership before listing "
+        f"refunds. Calls found: {sorted(calls)}"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
 
@@ -487,6 +565,9 @@ if __name__ == "__main__":
         test_r5_o3_f3_request_refund_calls_stripe,
         test_r5_o3_f3_idempotency_key_seeded_by_row_uuid,
         test_r5_o3_f3_error_path_marks_failed_and_502,
+        test_r5_o3_f4_ownership_guard_present,
+        test_r5_o3_f4_request_refund_passes_current_user,
+        test_r5_o3_f4_list_refunds_enforces_ownership,
     ]
 
     passed = failed = 0
@@ -499,7 +580,7 @@ if __name__ == "__main__":
             print(f"  FAIL  {test_fn.__name__}: {exc}")
             failed += 1
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"TOOL-066 add_stripe_refund_flow: {passed} passed, {failed} failed")
     if failed:
         sys.exit(1)
