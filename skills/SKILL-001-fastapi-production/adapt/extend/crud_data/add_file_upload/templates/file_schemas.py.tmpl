@@ -31,18 +31,22 @@ class PresignedUploadRequest(BaseModel):
 class PresignedUploadResponse(BaseModel):
     """Response body for POST /files/presign.
 
+    The internal ``stored_key`` is deliberately NOT exposed (R5-S1-F8): the
+    client uploads via ``fields`` (S3 already injects the object key there) and
+    confirms via ``file_id`` (the server re-derives the key from the owned row),
+    so echoing the storage path back as a first-class field only couples the API
+    to the internal key scheme — the same reason ``FileMetadataPublic`` omits it.
+
     Attributes:
         file_id: UUID assigned to this upload (used in /confirm).
         upload_url: S3 presigned POST URL.
-        fields: Form fields required in the POST to S3.
-        stored_key: Object key that will be used in S3.
+        fields: Form fields required in the POST to S3 (includes the object key).
         expires_in: Seconds until the presigned URL expires.
     """
 
     file_id: uuid.UUID
     upload_url: str
     fields: dict
-    stored_key: str
     expires_in: int
 
 
