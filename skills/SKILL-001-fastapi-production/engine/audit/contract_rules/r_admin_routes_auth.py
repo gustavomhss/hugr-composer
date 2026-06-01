@@ -118,7 +118,8 @@ from ._common import SKILL_ROOT
 # RESOLVED (R5-S1-F1/F2) — AuditLogAdapter now superuser-gates every route and
 # records the actor from the authenticated principal; un-waived so the rule
 # enforces it.
-# Waived pending issue #124 — EventSourcedStoreAdapter (auth + durable backend)
+# RESOLVED (R5-O2-D6) — EventSourcedStoreAdapter now requires an injected auth
+# dependency on every /events route; un-waived so the rule enforces it.
 # Waived pending issue #137 — SagaAdapter (adapter auth-injection pattern)
 _WAIVED_TOOLS: frozenset[str] = frozenset(
     {
@@ -126,7 +127,6 @@ _WAIVED_TOOLS: frozenset[str] = frozenset(
         "add_outbox_pattern",
         "add_stripe_refund_flow",
         "add_websocket_presence",
-        "EventSourcedStoreAdapter",
         "SagaAdapter",
     }
 )
