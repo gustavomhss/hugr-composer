@@ -124,29 +124,31 @@ from ._common import SKILL_ROOT
 # prefix is preserved so the same key shape matches both ``extend/``
 # and ``verify/`` paths.
 # ---------------------------------------------------------------------------
-_WAIVED_TOOLS: frozenset[str] = frozenset({
-    # All B0.15 waivers closed.
-    #
-    # Historical entries (kept as breadcrumbs for the next auditor):
-    #
-    # * "extend/crud_data/add_bulk_operations" — closed Wave-2 (PR #98):
-    #   `_patch_main` now splices `init_idempotency_cache(...)` INSIDE
-    #   `async def lifespan(...)` (mirroring `add_arq_worker`), and
-    #   shutdown calls `await close_idempotency_cache()` after the
-    #   `yield`. Triage R5-O2-D12 + R6-O2-O2-2.
-    # * "extend/infrastructure/add_prometheus_metrics" — closed Wave-2
-    #   (W2 FINAL B0.15 PR): `_patch_main` now splices
-    #   `_init_metrics(prefix=...)` INSIDE `async def lifespan(...)`
-    #   (registry bound once per worker startup, fixing R5-S5-F2
-    #   "Duplicated timeseries" on hot-reload). Fallback for shapes
-    #   without `lifespan` uses module-top init + per-line pragma.
-    # * "extend/infrastructure/add_structured_logging" — closed Wave-2
-    #   (W2 FINAL B0.15 PR): `_patch_main` now splices
-    #   `_configure_structlog(...)` INSIDE `async def lifespan(...)`.
-    #   Trade-off documented in the tool: module-import log records
-    #   use stdlib defaults until lifespan-startup completes; request
-    #   path is unaffected.
-})
+_WAIVED_TOOLS: frozenset[str] = frozenset(
+    {
+        # All B0.15 waivers closed.
+        #
+        # Historical entries (kept as breadcrumbs for the next auditor):
+        #
+        # * "extend/crud_data/add_bulk_operations" — closed Wave-2 (PR #98):
+        #   `_patch_main` now splices `init_idempotency_cache(...)` INSIDE
+        #   `async def lifespan(...)` (mirroring `add_arq_worker`), and
+        #   shutdown calls `await close_idempotency_cache()` after the
+        #   `yield`. Triage R5-O2-D12 + R6-O2-O2-2.
+        # * "extend/infrastructure/add_prometheus_metrics" — closed Wave-2
+        #   (W2 FINAL B0.15 PR): `_patch_main` now splices
+        #   `_init_metrics(prefix=...)` INSIDE `async def lifespan(...)`
+        #   (registry bound once per worker startup, fixing R5-S5-F2
+        #   "Duplicated timeseries" on hot-reload). Fallback for shapes
+        #   without `lifespan` uses module-top init + per-line pragma.
+        # * "extend/infrastructure/add_structured_logging" — closed Wave-2
+        #   (W2 FINAL B0.15 PR): `_patch_main` now splices
+        #   `_configure_structlog(...)` INSIDE `async def lifespan(...)`.
+        #   Trade-off documented in the tool: module-import log records
+        #   use stdlib defaults until lifespan-startup completes; request
+        #   path is unaffected.
+    }
+)
 
 # ---------------------------------------------------------------------------
 # Pattern matching — offending function names
@@ -156,10 +158,12 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
 # Per spec:
 #   * ``configure_logging`` — logging configuration is benign at top level
 #   * ``register_router`` — registering a single APIRouter is benign
-_ALLOWED_NAMES: frozenset[str] = frozenset({
-    "configure_logging",
-    "register_router",
-})
+_ALLOWED_NAMES: frozenset[str] = frozenset(
+    {
+        "configure_logging",
+        "register_router",
+    }
+)
 
 # Patterns whose match-on-tail means the call is an init-class offence.
 # Tail = function-name with leading underscores stripped (so
@@ -201,7 +205,7 @@ ADAPT_ROOT = SKILL_ROOT / "adapt"
 # via a set in the caller.
 _TEMPLATE_GLOBS: tuple[str, ...] = (
     "**/main_patch.py.tmpl",
-    "**/main_*_snippet*.tmpl",      # main_middleware_snippet.txt.tmpl etc.
+    "**/main_*_snippet*.tmpl",  # main_middleware_snippet.txt.tmpl etc.
     "**/_patch_main.py.tmpl",
 )
 
@@ -301,6 +305,92 @@ def _line_has_pragma(line: str) -> bool:
     return bool(_PRAGMA_RE.search(line))
 
 
+def _collect_indirect_init_funcs(tree: ast.Module) -> dict[str, str]:
+    """Build a one-hop indirection map for top-level functions.
+
+    Round-7 O3-F32/F33 (HIGH): two evasion shapes converge on this map.
+
+      1. **Bootstrap indirection** — a top-level function (often
+         ``_bootstrap`` / ``_setup`` / ``_init``) calls an offending
+         ``init_X(...)`` / ``create_X_pool(...)`` and is then invoked
+         at module top:
+
+            def _bootstrap() -> None:
+                init_idempotency_cache("redis://...")
+
+            _bootstrap()  # <-- module-top call → effectively init at import
+
+      2. **Decorator side-effect** — a top-level decorator whose body
+         calls an offending name fires at import time:
+
+            def some_init(fn):
+                init_idempotency_cache("redis://...")
+                return fn
+
+            @some_init
+            def health(): ...
+
+    For every top-level FunctionDef / AsyncFunctionDef whose body
+    contains an offending Call (NOT itself inside a ``lifespan``), we
+    record ``{func_name: representative_offence_name}``. The walker
+    consults this map: a module-top Call to ``Name(_bootstrap)`` or
+    a module-top decorator naming ``some_init`` is reported under the
+    *original* offence name (so the error message points at the real
+    regression, not the indirection wrapper).
+
+    Lifespan exemption is respected — if the wrapped offending call is
+    inside ``async def lifespan(...)`` nested in the helper, we don't
+    record it. Class bodies are skipped (consistent with the main
+    walker's scope rules).
+    """
+    indirect: dict[str, str] = {}
+    for node in tree.body:
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        # Don't index lifespans themselves — by spec, calls inside a
+        # lifespan are the legitimate end state.
+        if _is_lifespan_func(node):
+            continue
+        hit = _first_offence_call_in_function(node)
+        if hit is not None:
+            indirect[node.name] = hit
+    return indirect
+
+
+def _first_offence_call_in_function(
+    fn: ast.FunctionDef | ast.AsyncFunctionDef,
+) -> str | None:
+    """Return the name of the first offending Call inside ``fn``'s body,
+    skipping nested lifespan scopes and nested class bodies.
+
+    Used by :func:`_collect_indirect_init_funcs` to keep the indirection
+    map shallow (one hop only). Nested function bodies are walked so a
+    helper that defines a sub-helper and then calls it at its own body
+    top is still detected — but we never cross a lifespan boundary.
+    """
+    found: list[str] = []
+
+    def walk(node: ast.AST, *, in_lifespan: bool) -> None:
+        for child in ast.iter_child_nodes(node):
+            if isinstance(child, ast.Call) and not in_lifespan:
+                name = _call_name(child)
+                if _is_offence_name(name):
+                    found.append(name)
+                    return
+            if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                child_in_lifespan = in_lifespan or _is_lifespan_func(child)
+                walk(child, in_lifespan=child_in_lifespan)
+            elif isinstance(child, ast.ClassDef):
+                walk(child, in_lifespan=in_lifespan)
+            else:
+                walk(child, in_lifespan=in_lifespan)
+            if found:
+                return
+
+    walk(fn, in_lifespan=False)
+    return found[0] if found else None
+
+
 def _find_offences_in_tree(
     tree: ast.Module,
     source_lines: list[str],
@@ -317,8 +407,27 @@ def _find_offences_in_tree(
         used for ``_patches.py``'s ``patch_main`` family), AND
       * No ancestor scope is a ``lifespan`` async function body, AND
       * The Call's source line does NOT carry the per-line pragma.
+
+    Additionally, Round-7 O3-F32/F33 (HIGH):
+
+      * A module-top Call whose target Name is a same-module function
+        that itself contains an offending init call is reported under
+        the inner offence name (``_bootstrap`` indirection).
+      * A module-top function decorator whose name resolves to a
+        same-module function that contains an offending init call is
+        likewise flagged — the decorator runs at import time.
+
+    Both indirections are one hop only; deeper chains can still evade,
+    but the catalog has no observed evidence of >1-hop bootstrap so we
+    keep the rule cheap.
     """
     offences: list[tuple[str, int]] = []
+    indirect = _collect_indirect_init_funcs(tree)
+
+    def _emit(name: str, lineno: int) -> None:
+        line = source_lines[lineno - 1] if 0 < lineno <= len(source_lines) else ""
+        if not _line_has_pragma(line):
+            offences.append((name, lineno))
 
     def walk(node: ast.AST, *, in_top: bool, in_lifespan: bool) -> None:
         # ``in_top``  : True iff every ancestor up to the module root
@@ -332,14 +441,26 @@ def _find_offences_in_tree(
             if isinstance(child, ast.Call) and in_top and not in_lifespan:
                 name = _call_name(child)
                 if _is_offence_name(name):
-                    lineno = child.lineno
-                    line = (
-                        source_lines[lineno - 1]
-                        if 0 < lineno <= len(source_lines)
-                        else ""
-                    )
-                    if not _line_has_pragma(line):
-                        offences.append((name, lineno))
+                    _emit(name, child.lineno)
+                elif name in indirect:
+                    # Bootstrap indirection (O3-F32): top-level call to
+                    # a helper whose body fires an init.
+                    _emit(indirect[name], child.lineno)
+            # Decorator side-effects (O3-F33) — module-top function /
+            # class decorators whose name resolves to a same-module
+            # helper that contains an init.
+            if (
+                in_top
+                and not in_lifespan
+                and isinstance(
+                    child,
+                    (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef),
+                )
+            ):
+                for dec in child.decorator_list:
+                    dec_name = _decorator_name(dec)
+                    if dec_name and dec_name in indirect:
+                        _emit(indirect[dec_name], dec.lineno)
             # Recurse with updated context.
             if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 child_in_lifespan = in_lifespan or _is_lifespan_func(child)
@@ -350,8 +471,7 @@ def _find_offences_in_tree(
                 # via in_lifespan — so propagate in_top unchanged
                 # for lifespan, and grant in_top for patch_main-like.
                 child_in_top = in_top and (
-                    child.name in treat_function_bodies_as_top
-                    or _is_lifespan_func(child)
+                    child.name in treat_function_bodies_as_top or _is_lifespan_func(child)
                 )
                 walk(child, in_top=child_in_top, in_lifespan=child_in_lifespan)
             elif isinstance(child, ast.ClassDef):
@@ -366,6 +486,27 @@ def _find_offences_in_tree(
     # Deterministic ordering.
     offences.sort(key=lambda t: (t[1], t[0]))
     return offences
+
+
+def _decorator_name(dec: ast.expr) -> str:
+    """Resolve a decorator expression to its leftmost callable name.
+
+    ``@foo``        → ``"foo"``
+    ``@foo()``      → ``"foo"``
+    ``@mod.foo``    → ``"foo"`` (tail)
+    ``@mod.foo()``  → ``"foo"``
+
+    Used by the decorator-side-effect detection. The tail-name match
+    is consistent with :func:`_call_name`.
+    """
+    target: ast.AST = dec
+    if isinstance(dec, ast.Call):
+        target = dec.func
+    if isinstance(target, ast.Name):
+        return target.id
+    if isinstance(target, ast.Attribute):
+        return target.attr
+    return ""
 
 
 # ---------------------------------------------------------------------------
@@ -408,7 +549,9 @@ def find_offences_in_patches(src: str) -> list[tuple[str, int]]:
     # Collect the names of ``patch_main``-like functions at any scope.
     patch_main_names: list[str] = []
     for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and _PATCH_MAIN_FN_RE.match(node.name):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and _PATCH_MAIN_FN_RE.match(
+            node.name
+        ):
             patch_main_names.append(node.name)
     if not patch_main_names:
         return []
@@ -443,7 +586,11 @@ def _tool_declares_lifespan_exempt(init_path: Path) -> bool:
         if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
             target = node.target.id
             value = node.value
-        elif isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+        elif (
+            isinstance(node, ast.Assign)
+            and len(node.targets) == 1
+            and isinstance(node.targets[0], ast.Name)
+        ):
             target = node.targets[0].id
             value = node.value
         if target != "_LIFESPAN_EXEMPT":

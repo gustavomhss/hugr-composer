@@ -119,6 +119,13 @@ _WAIVED_TOOLS: frozenset[str] = frozenset()
 # Markers that indicate an unresolved placeholder.
 _MARKER_RE = re.compile(r"#\s*(TODO|FIXME|XXX)\b", re.IGNORECASE)
 
+# Marker scan for docstring-embedded "future work" disclosures. Round-7
+# O3-F2 (HIGH) showed that the body-comment rule (``# TODO``) is evaded
+# by hoisting the marker into the function's docstring — the same
+# disclosure shape, but invisible to a comment-only scan. Pattern does
+# NOT require a leading ``#`` since docstrings are string-literal text.
+_DOCSTRING_MARKER_RE = re.compile(r"\b(TODO|FIXME|XXX)\b", re.IGNORECASE)
+
 # Test-template content sentinels.
 _TEST_CONTENT_SENTINELS: tuple[str, ...] = (
     "@pytest.fixture",
@@ -173,9 +180,7 @@ def _security_tool_dirs() -> list[Path]:
             if not mp:
                 continue
             tool_path = SKILL_ROOT / mp
-            tool_dir = (
-                tool_path.parent if tool_path.suffix == ".py" else tool_path
-            )
+            tool_dir = tool_path.parent if tool_path.suffix == ".py" else tool_path
             if tool_dir.is_dir() and tool_dir not in seen:
                 dirs.append(tool_dir)
                 seen.add(tool_dir)
@@ -194,9 +199,7 @@ def _is_in_scope(path: Path) -> bool:
     name = path.name
     if name.endswith(".py.tmpl"):
         return True
-    if name in ("_patches.py", "_helpers.py"):
-        return True
-    return False
+    return name in ("_patches.py", "_helpers.py")
 
 
 def _is_test_template(path: Path, body: str) -> bool:
@@ -213,10 +216,7 @@ def _is_test_template(path: Path, body: str) -> bool:
     if name.startswith("test_") or "_test." in name or name.startswith("test."):
         return True
     head = body[:4000]
-    for sentinel in _TEST_CONTENT_SENTINELS:
-        if sentinel in head:
-            return True
-    return False
+    return any(sentinel in head for sentinel in _TEST_CONTENT_SENTINELS)
 
 
 # ---------------------------------------------------------------------------
@@ -271,9 +271,7 @@ def _function_body_line_ranges(
     return ranges
 
 
-def _enclosing_function_for_line(
-    lineno: int, ranges: list[tuple[int, int, str]]
-) -> str | None:
+def _enclosing_function_for_line(lineno: int, ranges: list[tuple[int, int, str]]) -> str | None:
     """Return the innermost enclosing function name for a source line.
 
     "Innermost" matters when a security tool has nested defs: we
@@ -282,20 +280,33 @@ def _enclosing_function_for_line(
     """
     best: tuple[int, str] | None = None  # (start_line, name)
     for start, end, name in ranges:
-        if start <= lineno <= end:
-            if best is None or start > best[0]:
-                best = (start, name)
+        if start <= lineno <= end and (best is None or start > best[0]):
+            best = (start, name)
     return None if best is None else best[1]
 
 
-def _pass_only_functions(tree: ast.Module) -> list[tuple[str, int]]:
-    """Return (function_name, lineno) for every function whose body is
-    only ``pass`` (with optional leading docstring).
+def _pass_only_functions(tree: ast.Module) -> list[tuple[str, int, str]]:
+    """Return (function_name, lineno, shape) for every function whose body
+    is a placeholder shape.
+
+    Placeholder shapes (all strictly worse than a real implementation in
+    a security context):
+
+    * ``pass`` — the documented Round-5/6 regression (P1).
+    * ``raise NotImplementedError`` / ``raise NotImplementedError(...)``
+      — closes Round-7 O3-F1 (HIGH). Substituting NotImplementedError
+      for ``pass`` is strictly WORSE semantics (runtime crash instead
+      of silent no-op) but evaded the rule that only checked for
+      ``ast.Pass``. A function whose only statement raises NotImplemented
+      is a placeholder — the security path documented in the tool's
+      notes does not run.
 
     Skips ``@abstractmethod``-decorated methods — those are legitimate
-    abstract declarations, NOT security placeholders.
+    abstract declarations, NOT security placeholders. Both shapes
+    (``pass`` and ``raise NotImplementedError``) are idiomatic in
+    abstract bases.
     """
-    hits: list[tuple[str, int]] = []
+    hits: list[tuple[str, int, str]] = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
             continue
@@ -310,7 +321,70 @@ def _pass_only_functions(tree: ast.Module) -> list[tuple[str, int]]:
             and isinstance(body[0].value.value, str)
         ):
             body = body[1:]
-        if len(body) == 1 and isinstance(body[0], ast.Pass):
+        if len(body) != 1:
+            continue
+        only = body[0]
+        if isinstance(only, ast.Pass):
+            hits.append((node.name, node.lineno, "pass"))
+        elif _is_raise_notimplemented(only):
+            hits.append((node.name, node.lineno, "raise NotImplementedError"))
+    return hits
+
+
+def _is_raise_notimplemented(stmt: ast.stmt) -> bool:
+    """True iff ``stmt`` is ``raise NotImplementedError`` / ``raise NotImplementedError(...)``.
+
+    Also matches attribute-qualified forms (``raise builtins.NotImplementedError``)
+    via tail-name resolution. A bare ``raise`` (re-raise) is NOT matched —
+    that has a real semantic meaning.
+    """
+    if not isinstance(stmt, ast.Raise):
+        return False
+    exc = stmt.exc
+    if exc is None:  # bare ``raise`` (re-raise) is not a placeholder.
+        return False
+    target: ast.AST = exc
+    if isinstance(exc, ast.Call):
+        target = exc.func
+    tail = ""
+    if isinstance(target, ast.Name):
+        tail = target.id
+    elif isinstance(target, ast.Attribute):
+        tail = target.attr
+    return tail == "NotImplementedError"
+
+
+def _docstring_marker_functions(
+    tree: ast.Module,
+) -> list[tuple[str, int]]:
+    """Return ``(function_name, lineno)`` for every function whose
+    docstring carries a ``TODO`` / ``FIXME`` / ``XXX`` marker.
+
+    Round-7 O3-F2 (HIGH): the body-comment rule (``# TODO``) is evaded
+    by hoisting the marker into the docstring. For the security surface
+    we treat a docstring-embedded marker as the same regression as the
+    ``# TODO`` comment — the prose acknowledges the gap but the rule
+    used to allow it (the original docstring even said docstring TODOs
+    were "allowed", which is wrong on the security surface).
+
+    Scope: this scanner is invoked only for files inside the
+    security-tagged tool surface (the same scope as the comment-based
+    marker scan), so general library helpers are unaffected.
+
+    Skips ``@abstractmethod`` declarations — those are abstract, not
+    placeholders. A docstring TODO on an abstract method is read as a
+    "subclasses must wire this" hint and is allowed.
+    """
+    hits: list[tuple[str, int]] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            continue
+        if _has_abstractmethod_decorator(node):
+            continue
+        doc = ast.get_docstring(node)
+        if not doc:
+            continue
+        if _DOCSTRING_MARKER_RE.search(doc):
             hits.append((node.name, node.lineno))
     return hits
 
@@ -354,18 +428,21 @@ def _bypass_features(init_path: Path) -> dict[str, str]:
             targets = [node.target]
             value = node.value
         for t in targets:
-            if isinstance(t, ast.Name) and t.id == "_FEATURE_INCOMPLETE":
-                if isinstance(value, ast.Dict):
-                    out: dict[str, str] = {}
-                    for k, v in zip(value.keys, value.values, strict=False):
-                        if (
-                            isinstance(k, ast.Constant)
-                            and isinstance(k.value, str)
-                            and isinstance(v, ast.Constant)
-                            and isinstance(v.value, str)
-                        ):
-                            out[k.value] = v.value
-                    return out
+            if (
+                isinstance(t, ast.Name)
+                and t.id == "_FEATURE_INCOMPLETE"
+                and isinstance(value, ast.Dict)
+            ):
+                out: dict[str, str] = {}
+                for k, v in zip(value.keys, value.values, strict=False):
+                    if (
+                        isinstance(k, ast.Constant)
+                        and isinstance(k.value, str)
+                        and isinstance(v, ast.Constant)
+                        and isinstance(v.value, str)
+                    ):
+                        out[k.value] = v.value
+                return out
     return {}
 
 
@@ -485,17 +562,30 @@ def _scan_file(
         if fn_name is not None and _name_matches_bypass(fn_name, bypass_keys):
             continue
         violations.append(
-            f"{path.name}:{idx}: {m.group(0)} marker in function body — "
-            f"`{line.strip()[:100]}`"
+            f"{path.name}:{idx}: {m.group(0)} marker in function body — `{line.strip()[:100]}`"
         )
 
-    # pass-only function bodies.
+    # Placeholder function bodies (pass / raise NotImplementedError).
     if tree is not None:
-        for fn_name, fn_line in _pass_only_functions(tree):
+        for fn_name, fn_line, shape in _pass_only_functions(tree):
+            if _name_matches_bypass(fn_name, bypass_keys):
+                continue
+            violations.append(f"{path.name}:{fn_line}: function `{fn_name}` body is only `{shape}`")
+
+    # TODO/FIXME/XXX markers smuggled inside a function docstring
+    # (Round-7 O3-F2). Comment-based detection misses these because
+    # docstring text is a string literal, not a ``#`` comment. For the
+    # security surface a TODO inside a docstring is the same regression
+    # class as a ``# TODO`` in the body — the security path documented
+    # in the prose is acknowledged-as-incomplete but the rule used to
+    # let it through.
+    if tree is not None:
+        for fn_name, fn_line in _docstring_marker_functions(tree):
             if _name_matches_bypass(fn_name, bypass_keys):
                 continue
             violations.append(
-                f"{path.name}:{fn_line}: function `{fn_name}` body is only `pass`"
+                f"{path.name}:{fn_line}: function `{fn_name}` docstring "
+                f"contains TODO/FIXME/XXX marker (security surface)"
             )
 
     return violations
