@@ -16,6 +16,7 @@ Penalty ladder (configurable):
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import logging
 import time
 from dataclasses import dataclass, field
@@ -58,12 +59,68 @@ def build_config() -> AdaptiveThrottleConfig:
     )
 
 
-def fingerprint_request(request: Request) -> str:
-    """Build a behavioral fingerprint from header order and timing.
+def _trusted_proxy_networks() -> list[ipaddress.IPv4Network | ipaddress.IPv6Network]:
+    """Parse ADAPTIVE_THROTTLE_TRUSTED_PROXIES (CSV of IPs/CIDRs) into networks.
 
-    Combines the ordered header names (not values) with the remote
-    IP to create a fingerprint that detects IP rotation while rotating
-    clients that reuse the same header pattern.
+    Invalid tokens are skipped with a warning rather than crashing the
+    request path. An empty/unset setting yields an empty list, which keeps
+    the fingerprint pinned to the peer IP (pre-proxy-awareness behaviour).
+    """
+    raw = getattr(settings, "ADAPTIVE_THROTTLE_TRUSTED_PROXIES", "") or ""
+    nets: list[ipaddress.IPv4Network | ipaddress.IPv6Network] = []
+    for token in raw.split(","):
+        token = token.strip()
+        if not token:
+            continue
+        try:
+            nets.append(ipaddress.ip_network(token, strict=False))
+        except ValueError:
+            logger.warning("adaptive_throttle: ignoring invalid trusted proxy %r", token)
+    return nets
+
+
+def _is_trusted(ip_str: str, nets: list) -> bool:
+    """True when *ip_str* parses and falls inside any trusted-proxy network."""
+    try:
+        ip = ipaddress.ip_address(ip_str)
+    except ValueError:
+        return False
+    return any(ip in net for net in nets)
+
+
+def client_ip(request: Request) -> str:
+    """Resolve the real client IP, honouring X-Forwarded-For ONLY via trusted proxies.
+
+    ``request.client.host`` is the *immediate peer*. Behind a load balancer
+    or CDN that peer is the proxy — identical for every user — so hashing it
+    directly collapses all clients into one throttle bucket (collateral
+    throttling) and lets a caller exhaust a victim's quota by mimicking
+    header order.
+
+    X-Forwarded-For is attacker-controllable, so it is trusted ONLY when the
+    peer is a configured trusted proxy. We then walk the XFF chain
+    right-to-left and return the right-most address that is not itself a
+    trusted proxy (the real client as seen by our edge). If the peer is not
+    trusted, XFF is ignored entirely and the peer IP is used — preventing an
+    unproxied caller from spoofing an arbitrary IP to evade throttling.
+    """
+    peer = request.client.host if request.client else "unknown"
+    nets = _trusted_proxy_networks()
+    if not nets or not _is_trusted(peer, nets):
+        return peer
+    xff = request.headers.get("x-forwarded-for", "")
+    for hop in reversed([h.strip() for h in xff.split(",") if h.strip()]):
+        if not _is_trusted(hop, nets):
+            return hop
+    return peer
+
+
+def fingerprint_request(request: Request) -> str:
+    """Build a behavioral fingerprint from header order and resolved client IP.
+
+    Combines the ordered header names (not values) with the proxy-aware
+    client IP (see :func:`client_ip`) to create a fingerprint that detects
+    IP rotation while grouping clients that reuse the same header pattern.
 
     Args:
         request: Incoming Starlette request.
@@ -72,7 +129,7 @@ def fingerprint_request(request: Request) -> str:
         A hex fingerprint string.
     """
     header_order = ",".join(k.lower() for k in request.headers.keys())
-    raw = f"{request.client.host if request.client else 'unknown'}|{header_order}"
+    raw = f"{client_ip(request)}|{header_order}"
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 

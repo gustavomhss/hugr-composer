@@ -46,7 +46,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_adaptive_throttle import add_adaptive_throttle
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Patch helpers
 # ---------------------------------------------------------------------------
@@ -161,6 +160,7 @@ def asgi_app(project_dir_and_app: tuple[Path, Any]) -> Any:
 # BEHAVIOR-01: GET /healthz → 200
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.anyio
 async def test_b01_healthz_returns_200(asgi_app: Any) -> None:
     """B-01: GET /healthz must return 200 — base liveness probe."""
@@ -175,6 +175,7 @@ async def test_b01_healthz_returns_200(asgi_app: Any) -> None:
 # ---------------------------------------------------------------------------
 # BEHAVIOR-02: Throttle middleware registered on the app
 # ---------------------------------------------------------------------------
+
 
 def test_b02_middleware_registered(asgi_app: Any) -> None:
     """B-02: AdaptiveThrottleMiddleware must appear in the app via main.py."""
@@ -196,11 +197,13 @@ def test_b02_middleware_registered(asgi_app: Any) -> None:
     # If not found via stack walk, verify main.py source registered it
     if not seen_adaptive:
         import sys as _sys
+
         for mod_name, mod in list(_sys.modules.items()):
             if mod_name.endswith("app.main") or mod_name == "app.main":
                 src = getattr(mod, "__file__", None)
                 if src:
                     from pathlib import Path as _Path
+
                     content = _Path(src).read_text()
                     assert "register_adaptive_throttle" in content, (
                         "register_adaptive_throttle not found in loaded main.py"
@@ -213,20 +216,20 @@ def test_b02_middleware_registered(asgi_app: Any) -> None:
 # BEHAVIOR-03: Throttle disabled → requests pass through
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.anyio
 async def test_b03_disabled_throttle_passes_requests(asgi_app: Any) -> None:
     """B-03: With ADAPTIVE_THROTTLE_ENABLED=false, requests must pass through."""
     transport = httpx.ASGITransport(app=asgi_app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get("/healthz")
-    assert response.status_code != 429, (
-        "Throttle is disabled but returned 429"
-    )
+    assert response.status_code != 429, "Throttle is disabled but returned 429"
 
 
 # ---------------------------------------------------------------------------
 # BEHAVIOR-04: Core module has expected symbols (AST-based, no runtime import)
 # ---------------------------------------------------------------------------
+
 
 def test_b04_core_has_expected_symbols(project_dir: Path) -> None:
     """B-04: app/core/adaptive_throttle.py must define key symbols via AST."""
@@ -250,6 +253,7 @@ def test_b04_core_has_expected_symbols(project_dir: Path) -> None:
 # BEHAVIOR-05: fingerprint_request returns hex string
 # ---------------------------------------------------------------------------
 
+
 def test_b05_fingerprint_returns_hex(project_dir: Path) -> None:
     """B-05: fingerprint_request must return a non-empty hex string."""
     core_file = project_dir / "app" / "core" / "adaptive_throttle.py"
@@ -268,6 +272,7 @@ def test_b05_fingerprint_returns_hex(project_dir: Path) -> None:
 # BEHAVIOR-06: penalty_seconds_for_tier clamps at tier 4
 # ---------------------------------------------------------------------------
 
+
 def test_b06_penalty_tier_clamps(project_dir: Path) -> None:
     """B-06: penalty_seconds_for_tier must clamp at the maximum tier."""
     core_file = project_dir / "app" / "core" / "adaptive_throttle.py"
@@ -281,6 +286,7 @@ def test_b06_penalty_tier_clamps(project_dir: Path) -> None:
 # ---------------------------------------------------------------------------
 # BEHAVIOR-07: lazy SDK imports in generated files only
 # ---------------------------------------------------------------------------
+
 
 def test_b07_no_optional_sdks_at_module_level(project_dir: Path) -> None:
     """B-07: Generated adaptive_throttle files must not import optional SDKs at module level."""
@@ -303,14 +309,20 @@ def test_b07_no_optional_sdks_at_module_level(project_dir: Path) -> None:
         for child in tree.body:
             if isinstance(child, ast.Import):
                 for alias in child.names:
-                    if any(alias.name == sdk or alias.name.startswith(sdk + ".") for sdk in optional_sdks):
+                    if any(
+                        alias.name == sdk or alias.name.startswith(sdk + ".")
+                        for sdk in optional_sdks
+                    ):
                         violations.append(f"{py_file.name}:{child.lineno}: import {alias.name}")
-            elif isinstance(child, ast.ImportFrom):
-                if child.module and any(
+            elif (
+                isinstance(child, ast.ImportFrom)
+                and child.module
+                and any(
                     child.module == sdk or child.module.startswith(sdk + ".")
                     for sdk in optional_sdks
-                ):
-                    violations.append(f"{py_file.name}:{child.lineno}: from {child.module} import ...")
+                )
+            ):
+                violations.append(f"{py_file.name}:{child.lineno}: from {child.module} import ...")
 
     assert not violations, (
         "Optional SDK imported at module level in generated files:\n"
@@ -322,6 +334,7 @@ def test_b07_no_optional_sdks_at_module_level(project_dir: Path) -> None:
 # BEHAVIOR-08: all functions <= 50 LOC
 # ---------------------------------------------------------------------------
 
+
 def test_b08_all_functions_50_loc_or_less(project_dir: Path) -> None:
     """B-08: All generated functions in app/ must be <= 50 LOC."""
     app_dir = project_dir / "app"
@@ -332,13 +345,12 @@ def test_b08_all_functions_50_loc_or_less(project_dir: Path) -> None:
         except SyntaxError:
             continue
         for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                if hasattr(node, "end_lineno") and node.end_lineno:
-                    loc = node.end_lineno - node.lineno + 1
-                    if loc > 50:
-                        violations.append(
-                            f"{py_file.name}:{node.lineno}: {node.name} ({loc} LOC)"
-                        )
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and getattr(
+                node, "end_lineno", None
+            ):
+                loc = node.end_lineno - node.lineno + 1
+                if loc > 50:
+                    violations.append(f"{py_file.name}:{node.lineno}: {node.name} ({loc} LOC)")
     assert not violations, "Functions over 50 LOC:\n" + "\n".join(violations)
 
 
@@ -346,15 +358,14 @@ def test_b08_all_functions_50_loc_or_less(project_dir: Path) -> None:
 # BEHAVIOR-09: config fields have 4-space indent
 # ---------------------------------------------------------------------------
 
+
 def test_b09_config_fields_4space_indent(project_dir: Path) -> None:
     """B-09: ADAPTIVE_THROTTLE_* fields must be inside Settings class body."""
     config_file = project_dir / "app" / "core" / "config.py"
     content = config_file.read_text()
     for line in content.splitlines():
         if "ADAPTIVE_THROTTLE_ENABLED" in line and "=" in line:
-            assert line.startswith("    "), (
-                f"Field not indented inside Settings: {line!r}"
-            )
+            assert line.startswith("    "), f"Field not indented inside Settings: {line!r}"
             return
     raise AssertionError("ADAPTIVE_THROTTLE_ENABLED not found in config.py")
 
@@ -362,6 +373,7 @@ def test_b09_config_fields_4space_indent(project_dir: Path) -> None:
 # ---------------------------------------------------------------------------
 # BEHAVIOR-10: All generated .py files parse without errors
 # ---------------------------------------------------------------------------
+
 
 def test_b10_generated_files_parse_clean(project_dir: Path) -> None:
     """B-10: All generated adaptive_throttle .py files must parse without SyntaxError."""
@@ -380,8 +392,101 @@ def test_b10_generated_files_parse_clean(project_dir: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# BEHAVIOR-11: client_ip() is proxy-aware (R7-N3 DoS-amplifier fix)
+# ---------------------------------------------------------------------------
+
+
+def _load_core_with_proxies(project_dir: Path, trusted_proxies: str) -> Any:
+    """Exec the emitted core module with a controllable fake settings object.
+
+    Injects ``ADAPTIVE_THROTTLE_TRUSTED_PROXIES=trusted_proxies`` and restores
+    sys.modules afterwards so the module-scoped real app is not poisoned.
+    """
+    import importlib.util
+    import types
+
+    core_path = project_dir / "app" / "core" / "adaptive_throttle.py"
+    fake_settings = types.SimpleNamespace(
+        ADAPTIVE_THROTTLE_ENABLED=False,
+        ADAPTIVE_THROTTLE_SENSITIVITY=0.8,
+        ADAPTIVE_THROTTLE_LEARNING_PERIOD_H=24,
+        ADAPTIVE_THROTTLE_BASE_QUOTA=200,
+        ADAPTIVE_THROTTLE_PENALTY_ESCALATION=True,
+        ADAPTIVE_THROTTLE_TRUSTED_PROXIES=trusted_proxies,
+        REDIS_URL="redis://localhost:6379/0",
+    )
+    mod_name = "at_core_proxytest"
+    saved = {k: sys.modules.get(k) for k in ("app", "app.core", "app.core.config", mod_name)}
+    fake_cfg = types.ModuleType("app.core.config")
+    fake_cfg.settings = fake_settings  # type: ignore[attr-defined]
+    sys.modules.setdefault("app", types.ModuleType("app"))
+    sys.modules.setdefault("app.core", types.ModuleType("app.core"))
+    sys.modules["app.core.config"] = fake_cfg
+    try:
+        spec = importlib.util.spec_from_file_location(mod_name, core_path)
+        assert spec is not None and spec.loader is not None
+        mod = importlib.util.module_from_spec(spec)
+        # Register BEFORE exec: @dataclass introspection resolves the defining
+        # module via sys.modules[cls.__module__] (dataclasses._is_type), which
+        # is None — and crashes — if the module isn't registered yet.
+        sys.modules[mod_name] = mod
+        spec.loader.exec_module(mod)
+        return mod
+    finally:
+        for key, val in saved.items():
+            if val is None:
+                sys.modules.pop(key, None)
+            else:
+                sys.modules[key] = val
+
+
+def _fake_request(peer_host: str, headers: dict[str, str]) -> Any:
+    import types
+
+    from starlette.datastructures import Headers
+
+    return types.SimpleNamespace(
+        client=types.SimpleNamespace(host=peer_host),
+        headers=Headers(headers),
+    )
+
+
+def test_b11_client_ip_is_proxy_aware(project_dir: Path) -> None:
+    """B-11 (R7-N3): client_ip honours X-Forwarded-For only via trusted proxies.
+
+    Closes the DoS-amplifier: behind a load balancer, distinct real clients
+    must NOT collapse into one fingerprint, and an unproxied caller must NOT
+    be able to spoof an arbitrary client IP via a forged XFF header.
+    """
+    # Case 1 — no trusted proxies: peer IP wins, XFF ignored (safe default).
+    mod = _load_core_with_proxies(project_dir, "")
+    r1 = _fake_request("203.0.113.9", {"x-forwarded-for": "1.2.3.4"})
+    assert mod.client_ip(r1) == "203.0.113.9"
+
+    # Case 2 — peer IS a trusted proxy: rightmost untrusted XFF hop is the client.
+    mod = _load_core_with_proxies(project_dir, "10.0.0.0/8")
+    r2 = _fake_request("10.0.0.5", {"x-forwarded-for": "198.51.100.7, 10.0.0.9"})
+    assert mod.client_ip(r2) == "198.51.100.7"
+
+    # Case 3 — untrusted peer with spoofed XFF: peer wins (cannot forge client IP).
+    mod = _load_core_with_proxies(project_dir, "10.0.0.0/8")
+    r3 = _fake_request("203.0.113.50", {"x-forwarded-for": "10.0.0.1"})
+    assert mod.client_ip(r3) == "203.0.113.50"
+
+    # Case 4 — the crux: two distinct clients behind the SAME trusted proxy must
+    # produce DIFFERENT fingerprints (pre-fix both hashed the proxy IP → same).
+    mod = _load_core_with_proxies(project_dir, "10.0.0.0/8")
+    ra = _fake_request("10.0.0.5", {"x-forwarded-for": "198.51.100.7", "user-agent": "x"})
+    rb = _fake_request("10.0.0.5", {"x-forwarded-for": "198.51.100.8", "user-agent": "x"})
+    assert mod.fingerprint_request(ra) != mod.fingerprint_request(rb), (
+        "distinct clients behind one proxy collapsed into the same fingerprint"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Shared runner helper
 # ---------------------------------------------------------------------------
+
 
 def _run_async_test(coro_fn: Any, *args: Any) -> None:
     """Run an async test function synchronously via anyio.run."""
@@ -406,14 +511,21 @@ if __name__ == "__main__":
     _TESTS: list[tuple[str, Any]] = [
         ("B-01: /healthz → 200", lambda: _run_async_test(test_b01_healthz_returns_200, _app)),
         ("B-02: middleware registered", lambda: test_b02_middleware_registered(_app)),
-        ("B-03: disabled throttle passes", lambda: _run_async_test(test_b03_disabled_throttle_passes_requests, _app)),
+        (
+            "B-03: disabled throttle passes",
+            lambda: _run_async_test(test_b03_disabled_throttle_passes_requests, _app),
+        ),
         ("B-04: core has expected symbols", lambda: test_b04_core_has_expected_symbols(_pd)),
         ("B-05: fingerprint returns hex", lambda: test_b05_fingerprint_returns_hex(_pd)),
         ("B-06: penalty tier clamps", lambda: test_b06_penalty_tier_clamps(_pd)),
-        ("B-07: no optional sdks at module level", lambda: test_b07_no_optional_sdks_at_module_level(_pd)),
+        (
+            "B-07: no optional sdks at module level",
+            lambda: test_b07_no_optional_sdks_at_module_level(_pd),
+        ),
         ("B-08: all functions <= 50 LOC", lambda: test_b08_all_functions_50_loc_or_less(_pd)),
         ("B-09: config 4-space indent", lambda: test_b09_config_fields_4space_indent(_pd)),
         ("B-10: generated files parse clean", lambda: test_b10_generated_files_parse_clean(_pd)),
+        ("B-11: client_ip is proxy-aware", lambda: test_b11_client_ip_is_proxy_aware(_pd)),
     ]
 
     passed = failed = 0
@@ -442,9 +554,9 @@ if __name__ == "__main__":
         "failures": failures,
     }
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"TOOL-116 BEHAVIOR: {passed}/{total} passed")
-    print(f"\nDelivery contract JSON:")
+    print("\nDelivery contract JSON:")
     print(json.dumps(contract, indent=2))
 
     if failed:

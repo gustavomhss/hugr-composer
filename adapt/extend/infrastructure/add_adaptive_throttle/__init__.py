@@ -145,6 +145,9 @@ def add_adaptive_throttle(inp: ToolInput) -> ToolResult:
             "Decorate expensive endpoints with @throttle_cost(weight=5) to consume more quota.",
             "Monitor penalty events via GET /throttle/status (returns client penalty tier).",
             "Set ADAPTIVE_THROTTLE_LEARNING_PERIOD_H to baseline window in hours (default 24).",
+            "Behind a load balancer/CDN, set ADAPTIVE_THROTTLE_TRUSTED_PROXIES to your "
+            "proxy egress IPs/CIDRs so the throttle fingerprint resolves the real client "
+            "IP from X-Forwarded-For (left empty, it safely pins to the peer IP).",
         ],
         execution_time_ms=_ms(start),
     )
@@ -162,6 +165,10 @@ def _patch_config(config_file: Path) -> None:
         "    ADAPTIVE_THROTTLE_LEARNING_PERIOD_H: int = 24\n"
         "    ADAPTIVE_THROTTLE_BASE_QUOTA: int = 200\n"
         "    ADAPTIVE_THROTTLE_PENALTY_ESCALATION: bool = True\n"
+        # CSV of trusted proxy IPs/CIDRs (e.g. your LB/CDN egress ranges).
+        # The throttle fingerprint trusts X-Forwarded-For ONLY when the peer
+        # is in this list; empty (default) pins the fingerprint to the peer IP.
+        '    ADAPTIVE_THROTTLE_TRUSTED_PROXIES: str = ""\n'
     )
 
     anchor = "ACCESS_TOKEN_EXPIRE_MINUTES: int = 30"

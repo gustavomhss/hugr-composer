@@ -55,6 +55,7 @@ def test_penalty_seconds_zero_for_tier_0() -> None:
         ADAPTIVE_THROTTLE_LEARNING_PERIOD_H=24,
         ADAPTIVE_THROTTLE_BASE_QUOTA=200,
         ADAPTIVE_THROTTLE_PENALTY_ESCALATION=True,
+        ADAPTIVE_THROTTLE_TRUSTED_PROXIES="",
         REDIS_URL="redis://localhost:6379/0",
     )
     fake_app_core = types.ModuleType("app.core.config")
