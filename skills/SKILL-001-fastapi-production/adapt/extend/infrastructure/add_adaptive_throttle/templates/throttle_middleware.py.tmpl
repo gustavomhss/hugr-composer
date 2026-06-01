@@ -11,8 +11,13 @@ Closes R6-O1-F10 (multi-worker penalty drift): under multi-worker
 deployments, Redis is now the source of truth — escalations persist
 across workers as long as Redis is reachable. Cite also F14/F15.
 
-Middleware raises 429 with Retry-After when the client is in a
-penalty window or when a downstream handler returns 429 (escalation).
+Middleware raises 429 with Retry-After when the client is in a penalty
+window, when a fingerprint exceeds its per-window request quota
+(``ADAPTIVE_THROTTLE_BASE_QUOTA`` weighted by ``cost_weight``), or when a
+downstream handler returns 429 — each path escalates the penalty tier. The
+quota path is the behavioral detection the tool advertises: it fires on the
+fingerprint's own request volume, independent of any downstream rate limiter
+(R7-N4 — escalation no longer depends solely on a downstream 429).
 """
 
 from __future__ import annotations
@@ -29,6 +34,7 @@ from starlette.responses import JSONResponse, Response
 from app.core.adaptive_throttle import (
     AdaptiveThrottleConfig,
     build_config,
+    cost_weight,
     fingerprint_request,
     penalty_seconds_for_tier,
 )
@@ -36,6 +42,10 @@ from app.core.adaptive_throttle import (
 logger = logging.getLogger(__name__)
 
 _REDIS_KEY_PREFIX = "athrottle:penalty:"
+_REDIS_COUNT_PREFIX = "athrottle:count:"
+# Sliding window over which a fingerprint's weighted request count is compared
+# against ADAPTIVE_THROTTLE_BASE_QUOTA before the penalty tier escalates.
+_QUOTA_WINDOW_SECONDS = 60
 
 
 class _PenaltyStore:
@@ -54,6 +64,7 @@ class _PenaltyStore:
 
     def __init__(self) -> None:
         self._fallback: dict[str, tuple[int, float]] = {}
+        self._counts: dict[str, tuple[int, float]] = {}
 
     async def _redis_or_none(self) -> Any:
         """Return a connected Redis client, or None if unreachable."""
@@ -94,6 +105,31 @@ class _PenaltyStore:
                 pass  # fall through to local
         self._fallback[fp] = (tier, time.monotonic() + ttl)
 
+    async def record_request(self, fp: str, cost: int, window: int) -> int:
+        """Add *cost* to *fp*'s windowed request count; return the new total.
+
+        Redis-first (INCRBY + EXPIRE on the first hit of a fresh window) so the
+        count is shared across workers; falls back to a per-worker windowed
+        counter when Redis is unavailable.
+        """
+        redis = await self._redis_or_none()
+        if redis is not None:
+            try:
+                key = _REDIS_COUNT_PREFIX + fp
+                total = int(await redis.incrby(key, cost))
+                if total <= cost:  # first increment of a fresh window
+                    await redis.expire(key, window)
+                return total
+            except Exception:
+                pass  # fall through to local
+        now = time.monotonic()
+        count, expiry = self._counts.get(fp, (0, now + window))
+        if now > expiry:
+            count, expiry = 0, now + window
+        count += cost
+        self._counts[fp] = (count, expiry)
+        return count
+
 
 _PENALTY_STORE = _PenaltyStore()
 
@@ -126,6 +162,35 @@ async def _escalate_tier(fp: str) -> int:
     return new_tier
 
 
+def _throttle_429(tier: int, detail: str) -> JSONResponse:
+    """Build the standard 429 throttle response for a penalty *tier*."""
+    wait = penalty_seconds_for_tier(tier)
+    return JSONResponse(
+        status_code=429,
+        content={"detail": detail, "penalty_tier": tier, "retry_after_seconds": wait},
+        headers={"Retry-After": str(wait)},
+    )
+
+
+async def _quota_exceeded(
+    fp: str, request: Request, cfg: AdaptiveThrottleConfig
+) -> bool:
+    """Record this request against *fp*'s window quota; True if it now exceeds.
+
+    This is the behavioral detection (R7-N4): escalation fires on the
+    fingerprint's own weighted request volume, not only on a downstream 429.
+    """
+    cost = cost_weight(request.url.path)
+    count = await _PENALTY_STORE.record_request(fp, cost, _QUOTA_WINDOW_SECONDS)
+    if count <= cfg.base_quota:
+        return False
+    logger.warning(
+        "adaptive_throttle.quota_exceeded",
+        extra={"fp": fp, "count": count, "quota": cfg.base_quota},
+    )
+    return True
+
+
 class AdaptiveThrottleMiddleware(BaseHTTPMiddleware):
     """ASGI middleware enforcing adaptive throttle rules.
 
@@ -153,20 +218,14 @@ class AdaptiveThrottleMiddleware(BaseHTTPMiddleware):
         tier = await _get_tier(fp)
 
         if tier > 0:
-            wait = penalty_seconds_for_tier(tier)
-            logger.warning(
-                "adaptive_throttle.blocked",
-                extra={"fp": fp, "tier": tier, "retry_after": wait},
-            )
-            return JSONResponse(
-                status_code=429,
-                content={
-                    "detail": "Too many requests — adaptive throttle active",
-                    "penalty_tier": tier,
-                    "retry_after_seconds": wait,
-                },
-                headers={"Retry-After": str(wait)},
-            )
+            logger.warning("adaptive_throttle.blocked", extra={"fp": fp, "tier": tier})
+            return _throttle_429(tier, "Too many requests — adaptive throttle active")
+
+        # Behavioral detection (R7-N4): escalate + block NOW when the fingerprint
+        # exceeds its per-window quota — independent of any downstream limiter.
+        if await _quota_exceeded(fp, request, cfg):
+            new_tier = await _escalate_tier(fp)
+            return _throttle_429(new_tier, "Too many requests — request quota exceeded")
 
         response = await call_next(request)
 
