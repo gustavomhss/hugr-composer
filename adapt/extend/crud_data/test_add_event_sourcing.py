@@ -109,6 +109,75 @@ def test_glue_superuser_gates_event_routes() -> None:
     )
 
 
+def test_durable_store_emitted_and_opt_in_wired() -> None:
+    """R5-O2-D7: a durable SQL-backed event store ships and is opt-in via config.
+
+    Emits app/event_store_store.py (SqlEventSourcedStore), adds the
+    EVENT_STORE_DURABLE config flag (default False = in-memory, no regression),
+    and the glue builds the durable store only when that flag is set.
+    """
+    project_dir = create_fixture_project(name="es_durable_wire")
+    add_event_sourcing(ToolInput(project_dir=str(project_dir)))
+    store = project_dir / "app" / "event_store_store.py"
+    assert store.exists(), "durable store app/event_store_store.py not emitted"
+    store_src = store.read_text()
+    assert "class SqlEventSourcedStore" in store_src
+    assert "with_for_update" in store_src, "append must serialize the tail (with_for_update)"
+    assert "ConcurrencyError" in store_src, "durable append must enforce optimistic concurrency"
+    config = (project_dir / "app" / "core" / "config.py").read_text()
+    assert "EVENT_STORE_DURABLE: bool = False" in config, "durable must default OFF (no regression)"
+    glue = (project_dir / "app" / "event_store.py").read_text()
+    assert "EVENT_STORE_DURABLE" in glue and "build_durable_event_store" in glue, (
+        "glue must build the durable store only when EVENT_STORE_DURABLE is set"
+    )
+
+
+def test_durable_store_persists_and_enforces_concurrency() -> None:
+    """R5-O2-D7: the emitted durable store persists events + enforces ESS-INV-01.
+
+    Runs the emitted SqlEventSourcedStore against a real on-disk SQLite DB:
+    appends survive a fresh instance (durability) and a stale expected_version
+    raises ConcurrencyError without writing.
+    """
+    import sys
+    import tempfile
+
+    from sqlalchemy import create_engine
+
+    project_dir = create_fixture_project(name="es_durable_run")
+    add_event_sourcing(ToolInput(project_dir=str(project_dir)))
+
+    _orig = sys.path.copy()
+    sys.path.insert(0, str(project_dir))
+    for m in [k for k in sys.modules if k in ("app", "core") or k.startswith(("app.", "core."))]:
+        del sys.modules[m]
+    try:
+        from app.event_store_store import SqlEventSourcedStore
+
+        from core.venous.events.EventSourcedStore.EventSourcedStore import ConcurrencyError
+
+        d = tempfile.mkdtemp()
+        url = f"sqlite:///{d}/events.db"
+        st = SqlEventSourcedStore(create_engine(url))
+        assert st.append("agg-1", 0, [{"t": "created"}, {"t": "updated"}]) == 2
+        assert [e["t"] for e in st.load("agg-1")] == ["created", "updated"]
+
+        # Optimistic concurrency: a stale expected_version raises, writes nothing.
+        try:
+            st.append("agg-1", 0, [{"t": "stale"}])
+            raise AssertionError("stale append must raise ConcurrencyError")
+        except ConcurrencyError as exc:
+            assert exc.actual_version == 2
+        assert len(list(st.load("agg-1"))) == 2, "rejected append must not write events"
+
+        # Durability: a NEW instance over the same DB sees the prior events.
+        st2 = SqlEventSourcedStore(create_engine(url), create=False)
+        assert len(list(st2.load("agg-1"))) == 2
+        assert st2.append("agg-1", 2, [{"t": "third"}]) == 3
+    finally:
+        sys.path[:] = _orig
+
+
 def test_glue_body_under_20_loc() -> None:
     project_dir = create_fixture_project(name="es_t08")
     add_event_sourcing(ToolInput(project_dir=str(project_dir)))

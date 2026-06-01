@@ -1,0 +1,159 @@
+"""Durable SQL-backed event-sourced store (R5-O2-D7).
+
+The reference ``InMemoryEventSourcedStore`` loses every aggregate's event log on
+restart and is per-process. ``SqlEventSourcedStore`` persists the same ordered,
+optimistic-concurrency event log to relational tables via a dedicated
+SYNCHRONOUS SQLAlchemy engine, so events survive restarts and are shared across
+workers.
+
+Optimistic concurrency (ESS-INV-01): ``append`` reads the aggregate's current
+tail ``with_for_update()`` (effective on PostgreSQL row locks; a no-op under
+SQLite's database-level write lock) and raises ``ConcurrencyError`` when
+``expected_version`` does not match — no events are written. A UNIQUE constraint
+on ``(aggregate_id, version)`` is the backstop: a racer that computed a
+duplicate version fails the INSERT rather than forking the log.
+
+The store keeps the synchronous ``EventSourcedStore`` surface so existing
+callers — ``app.state.event_store`` and the sync ``/events`` routes — need no
+change. PostgreSQL durability needs a synchronous driver (e.g. ``psycopg``);
+SQLite works out of the box. Tables self-create on first use.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterable
+from typing import Any
+
+from sqlalchemy import (
+    JSON,
+    Column,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    UniqueConstraint,
+    func,
+    insert,
+    select,
+)
+from sqlalchemy.engine import Engine
+
+from core.venous.events.EventSourcedStore.EventSourcedStore import ConcurrencyError
+
+_METADATA = MetaData()
+
+event_store_events = Table(
+    "event_store_events",
+    _METADATA,
+    Column("aggregate_id", String(512), primary_key=True),
+    Column("version", Integer, primary_key=True),
+    Column("event", JSON, nullable=False),
+    UniqueConstraint("aggregate_id", "version", name="uq_event_store_aggregate_version"),
+)
+
+event_store_snapshots = Table(
+    "event_store_snapshots",
+    _METADATA,
+    Column("aggregate_id", String(512), primary_key=True),
+    Column("version", Integer, nullable=False),
+    Column("state", JSON, nullable=False),
+)
+
+
+class SqlEventSourcedStore:
+    """Durable ``EventSourcedStore`` backed by a synchronous SQLAlchemy engine."""
+
+    def __init__(self, engine: Engine, *, create: bool = True) -> None:
+        self._engine = engine
+        if create:
+            _METADATA.create_all(engine, tables=[event_store_events, event_store_snapshots])
+
+    def load(self, aggregate_id: str) -> Iterable[Any]:
+        """Return every event for *aggregate_id* in ascending version order."""
+        with self._engine.connect() as conn:
+            rows = conn.execute(
+                select(event_store_events.c.event)
+                .where(event_store_events.c.aggregate_id == aggregate_id)
+                .order_by(event_store_events.c.version.asc())
+            ).all()
+        return [row.event for row in rows]
+
+    def append(
+        self,
+        aggregate_id: str,
+        expected_version: int,
+        events: Iterable[Any],
+    ) -> int:
+        """Append *events*; return the new tail version (ESS-INV-01)."""
+        batch = list(events)
+        with self._engine.begin() as conn:
+            # Lock the aggregate's tail so a concurrent append cannot read the
+            # same version (PG row lock; SQLite's write lock serializes).
+            actual = conn.execute(
+                select(func.max(event_store_events.c.version))
+                .where(event_store_events.c.aggregate_id == aggregate_id)
+                .with_for_update()
+            ).scalar()
+            actual = int(actual) if actual is not None else 0
+            if expected_version != actual:
+                raise ConcurrencyError(aggregate_id, expected_version, actual)
+            if not batch:
+                return actual  # empty append is a no-op (matches the reference)
+            conn.execute(
+                insert(event_store_events),
+                [
+                    {"aggregate_id": aggregate_id, "version": actual + i, "event": ev}
+                    for i, ev in enumerate(batch, start=1)
+                ],
+            )
+            return actual + len(batch)
+
+    def snapshot(self, aggregate_id: str, version: int, state: Any) -> None:
+        """Persist (or replace) the latest snapshot for *aggregate_id*."""
+        with self._engine.begin() as conn:
+            conn.execute(
+                event_store_snapshots.delete().where(
+                    event_store_snapshots.c.aggregate_id == aggregate_id
+                )
+            )
+            conn.execute(
+                insert(event_store_snapshots).values(
+                    aggregate_id=aggregate_id, version=version, state=state
+                )
+            )
+
+    def latest_snapshot(self, aggregate_id: str) -> Any:
+        """Return the latest snapshot state for *aggregate_id*, or None."""
+        with self._engine.connect() as conn:
+            row = conn.execute(
+                select(event_store_snapshots.c.state).where(
+                    event_store_snapshots.c.aggregate_id == aggregate_id
+                )
+            ).first()
+        return row.state if row is not None else None
+
+
+def build_durable_event_store() -> SqlEventSourcedStore:
+    """Construct the durable event store from application settings (R5-O2-D7).
+
+    Derives a SYNCHRONOUS SQLAlchemy URL from ``settings.SQLALCHEMY_DATABASE_URI``
+    (async drivers swapped: ``asyncpg`` -> ``psycopg``, ``aiosqlite`` -> sqlite).
+    A synchronous driver must be installed for the target DB — ``psycopg`` for
+    PostgreSQL; SQLite needs nothing extra. Tables are created on first use.
+    """
+    from sqlalchemy import create_engine
+
+    from app.core.config import settings
+
+    url = str(settings.SQLALCHEMY_DATABASE_URI)
+    sync_url = url.replace("+asyncpg", "+psycopg").replace("+aiosqlite", "")
+    engine = create_engine(sync_url, pool_pre_ping=True)
+    return SqlEventSourcedStore(engine)
+
+
+__all__ = [
+    "SqlEventSourcedStore",
+    "build_durable_event_store",
+    "event_store_events",
+    "event_store_snapshots",
+]

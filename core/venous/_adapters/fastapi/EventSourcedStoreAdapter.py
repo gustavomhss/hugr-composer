@@ -31,7 +31,8 @@ def install(
     *,
     auth_dependency: Callable[..., Any],
     prefix: str = "/events",
-) -> InMemoryEventSourcedStore:
+    store: Any = None,
+) -> Any:
     """Attach an event-sourced store + auth-gated router to *app*; return store.
 
     The ``/events`` router reads and appends raw events for ANY aggregate id, so
@@ -40,8 +41,13 @@ def install(
     append forged events. ``auth_dependency`` is REQUIRED — pass the app's
     ``get_current_superuser`` (this is a raw, cross-aggregate admin surface;
     application code uses ``app.state.event_store`` directly).
+
+    *store* is an optional pre-built ``EventSourcedStore`` (e.g. the durable
+    ``SqlEventSourcedStore``). When omitted, an in-memory reference store is
+    created — NON-durable, lost on restart.
     """
-    store = InMemoryEventSourcedStore()
+    if store is None:
+        store = InMemoryEventSourcedStore()
     router = APIRouter(prefix=prefix, tags=["events"])
 
     @router.get("/{aggregate_id}")

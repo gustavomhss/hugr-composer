@@ -9,9 +9,19 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from app.api.deps import get_current_superuser
+from app.core.config import settings
 from core.venous._adapters.fastapi.EventSourcedStoreAdapter import install
 
 
 def install_event_store(app: FastAPI) -> None:
-    """Attach a superuser-gated event-sourced store + /events router (R5-O2-D6)."""
-    install(app, auth_dependency=get_current_superuser)
+    """Attach a superuser-gated event-sourced store + /events router (R5-O2-D6).
+
+    Durable (SQL-backed) when EVENT_STORE_DURABLE is set; otherwise an in-memory
+    store that does NOT persist across restarts (R5-O2-D7).
+    """
+    store = None
+    if getattr(settings, "EVENT_STORE_DURABLE", False):
+        from app.event_store_store import build_durable_event_store
+
+        store = build_durable_event_store()
+    install(app, auth_dependency=get_current_superuser, store=store)
