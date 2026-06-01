@@ -22,10 +22,10 @@ from adapt.contracts import ToolInput
 from adapt.extend.crud_data.add_bulk_operations import add_bulk_operations
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _all_py_files(root: Path) -> list[Path]:
     return sorted(root.rglob("*.py"))
@@ -43,6 +43,7 @@ def _assert_parse(root: Path) -> None:
 # ---------------------------------------------------------------------------
 # Test cases
 # ---------------------------------------------------------------------------
+
 
 def test_success_status() -> None:
     """T-01: Tool returns status='success' on a fresh project."""
@@ -149,8 +150,7 @@ def test_bulk_create_all_or_nothing_uses_pg_insert() -> None:
     add_bulk_operations(ToolInput(project_dir=str(project_dir)))
     crud_file = project_dir / "app" / "crud" / "item.py"
     content = crud_file.read_text()
-    assert "_pg_insert" in content or "pg_insert" in content, \
-        "all_or_nothing must use pg_insert"
+    assert "_pg_insert" in content or "pg_insert" in content, "all_or_nothing must use pg_insert"
 
 
 def test_bulk_create_best_effort_uses_begin_nested() -> None:
@@ -178,8 +178,9 @@ def test_bulk_update_uses_sql_update() -> None:
     add_bulk_operations(ToolInput(project_dir=str(project_dir)))
     crud_file = project_dir / "app" / "crud" / "item.py"
     content = crud_file.read_text()
-    assert "_sql_update" in content or "sql_update" in content, \
+    assert "_sql_update" in content or "sql_update" in content, (
         "bulk_update must use SQLAlchemy UPDATE statement"
+    )
 
 
 def test_bulk_delete_crud_uses_single_delete_statement() -> None:
@@ -189,8 +190,9 @@ def test_bulk_delete_crud_uses_single_delete_statement() -> None:
     crud_file = project_dir / "app" / "crud" / "item.py"
     content = crud_file.read_text()
     assert "async def bulk_delete_items" in content
-    assert "_sql_delete" in content or "sql_delete" in content, \
+    assert "_sql_delete" in content or "sql_delete" in content, (
         "bulk_delete must use sql_delete (single statement)"
+    )
     assert ".in_(" in content, "bulk_delete must use id.in_() for batch"
 
 
@@ -232,6 +234,34 @@ def test_routes_accept_idempotency_key_header() -> None:
     route_file = project_dir / "app" / "api" / "routes" / "item.py"
     content = route_file.read_text()
     assert 'alias="Idempotency-Key"' in content, "Routes must accept Idempotency-Key header"
+
+
+def test_idempotency_key_scoped_by_user() -> None:
+    """R5-O2-D9: the idempotency cache key must be namespaced by the user.
+
+    Pre-fix the route passed the RAW Idempotency-Key header straight to
+    cache.get/.set, so the same key value reused by a different user replayed the
+    first user's cached bulk result (cross-user / cross-tenant cache replay).
+    The cache calls must route the header through a per-user scoping helper.
+    """
+    project_dir = create_fixture_project(name="bulk_idem_scope")
+    add_bulk_operations(ToolInput(project_dir=str(project_dir)))
+    content = (project_dir / "app" / "api" / "routes" / "item.py").read_text()
+    assert "def _scoped_idem_key" in content, "missing per-user idempotency key scoper"
+    assert "current_user" in content and "_scoped_idem_key(current_user" in content, (
+        "cache calls must scope the Idempotency-Key by current_user"
+    )
+    # The raw header must NOT be handed to the cache unscoped anymore.
+    assert "get(idempotency_key)" not in content, (
+        "cache.get still uses the RAW Idempotency-Key (cross-user replay open)"
+    )
+    assert "set(idempotency_key," not in content, (
+        "cache.set still uses the RAW Idempotency-Key (cross-user replay open)"
+    )
+    # The scoper must derive from the user id.
+    assert "getattr(current_user, 'id'" in content or "current_user.id" in content, (
+        "_scoped_idem_key must derive the namespace from the user id"
+    )
 
 
 def test_idempotency_module_created() -> None:
@@ -390,6 +420,7 @@ def test_schema_bulk_response_has_config_dict() -> None:
 # BUG B regression — multiword model discovery
 # ---------------------------------------------------------------------------
 
+
 def test_multiword_model_bulk_ops_not_skipped() -> None:
     """Regression: multiword model (VaccineLot in vaccinelot.py) must be patched.
 
@@ -439,8 +470,7 @@ def test_b014_bulk_request_schemas_declare_extra_forbid() -> None:
         # Look at the next ~25 lines of the class body for the marker.
         body_window = schema_text[head : head + 1500]
         assert 'extra="forbid"' in body_window, (
-            f"{cls} must declare model_config = ConfigDict(extra=\"forbid\") "
-            "(B0.14 / R5-O2-D8)"
+            f'{cls} must declare model_config = ConfigDict(extra="forbid") (B0.14 / R5-O2-D8)'
         )
 
 
@@ -458,17 +488,16 @@ def test_b014_bulk_update_uses_typed_item_not_raw_dict() -> None:
     schema_text = (project_dir / "app" / "schemas" / "item.py").read_text()
     assert "class ItemBulkUpdateItem(ItemUpdate)" in schema_text, (
         "ItemBulkUpdateItem must subclass ItemUpdate (which already ships "
-        "extra=\"forbid\" + mutable-field whitelist) — B0.14 / R5-O2-D8"
+        'extra="forbid" + mutable-field whitelist) — B0.14 / R5-O2-D8'
     )
     # The bulk_update.updates field must reference the typed item.
     assert "list[ItemBulkUpdateItem]" in schema_text, (
-        "ItemBulkUpdate.updates must be list[ItemBulkUpdateItem], "
-        "not list[dict] (B0.14 / R5-O2-D8)"
+        "ItemBulkUpdate.updates must be list[ItemBulkUpdateItem], not list[dict] (B0.14 / R5-O2-D8)"
     )
     # And the legacy raw-dict shape MUST NOT be present.
-    assert "list[dict]" not in schema_text.split("class ItemBulkUpdate(")[1].split(
-        "class "
-    )[0], "ItemBulkUpdate must no longer accept list[dict] (B0.14 / R5-O2-D8)"
+    assert "list[dict]" not in schema_text.split("class ItemBulkUpdate(")[1].split("class ")[0], (
+        "ItemBulkUpdate must no longer accept list[dict] (B0.14 / R5-O2-D8)"
+    )
 
 
 def test_b015_init_idempotency_cache_called_inside_lifespan() -> None:
@@ -552,6 +581,7 @@ if __name__ == "__main__":
         test_patch_bulk_route_exists_with_207,
         test_delete_bulk_route_exists_with_207,
         test_routes_accept_idempotency_key_header,
+        test_idempotency_key_scoped_by_user,
         test_idempotency_module_created,
         test_idempotency_cache_wrapped_in_try_except,
         test_main_patched_with_init_idempotency_cache,
