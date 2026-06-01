@@ -183,6 +183,31 @@ def test_bulk_update_uses_sql_update() -> None:
     )
 
 
+def test_bulk_update_checks_rowcount_before_success() -> None:
+    """R7-N5: bulk update must verify the UPDATE rowcount, not blindly succeed.
+
+    A row that passes the ownership SELECT but whose UPDATE matches no row (a
+    global tenant filter rewriting it to a no-op, or a concurrent delete) must be
+    reported NOT_FOUND — never counted as a false success.
+    """
+    project_dir = create_fixture_project(name="bulk_rowcount")
+    add_bulk_operations(ToolInput(project_dir=str(project_dir)))
+    content = (project_dir / "app" / "crud" / "item.py").read_text()
+    tree = ast.parse(content)
+    fn = next(
+        n
+        for n in ast.walk(tree)
+        if isinstance(n, ast.AsyncFunctionDef) and n.name == "_apply_bulk_updates_item"
+    )
+    body = ast.unparse(fn)
+    assert "rowcount" in body, "_apply_bulk_updates must inspect the UPDATE rowcount (R7-N5)"
+    assert "rowcount == 0" in body, "must branch on a zero-rowcount (no-op) UPDATE"
+    # The no-op path reports NOT_FOUND via the shared helper (kept the function
+    # under the 50-LOC cap); the helper emits the NOT_FOUND error_code.
+    assert "_bulk_not_found" in body, "a no-op UPDATE must be reported NOT_FOUND, not success"
+    assert "NOT_FOUND" in content, "NOT_FOUND result item must exist in the emitted CRUD"
+
+
 def test_bulk_delete_crud_uses_single_delete_statement() -> None:
     """CC-12: bulk_delete issues single sql_delete(Item).where(Item.id.in_(...))."""
     project_dir = create_fixture_project(name="bulk_t15_delete_in")
@@ -576,6 +601,7 @@ if __name__ == "__main__":
         test_bulk_create_best_effort_uses_begin_nested,
         test_bulk_update_crud_function_with_ownership_check,
         test_bulk_update_uses_sql_update,
+        test_bulk_update_checks_rowcount_before_success,
         test_bulk_delete_crud_uses_single_delete_statement,
         test_post_bulk_route_exists_with_207,
         test_patch_bulk_route_exists_with_207,

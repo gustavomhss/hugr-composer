@@ -125,6 +125,19 @@ async def bulk_create_${lower}s(
     ).model_dump()
 
 
+def _bulk_not_found_${lower}(idx: int, row_id: "_bulk_uuid.UUID"):
+    """Standard NOT_FOUND result item for a bulk-update row (unowned or no-op)."""
+    from app.schemas.${lower} import BulkResultItem  # type: ignore[import]
+
+    return BulkResultItem(
+        index=idx,
+        id=row_id,
+        success=False,
+        error="Item not found or not owned by caller",
+        error_code="NOT_FOUND",
+    )
+
+
 async def _apply_bulk_updates_${lower}(
     session: _BulkSession, updates: list[dict], found_ids: set
 ) -> tuple[list, int, int]:
@@ -145,17 +158,23 @@ async def _apply_bulk_updates_${lower}(
     for idx, upd in enumerate(updates):
         row_id = _bulk_uuid.UUID(str(upd.get("id")))
         if row_id not in found_ids:
-            results.append(BulkResultItem(
-                index=idx, id=row_id, success=False,
-                error="Item not found or not owned by caller", error_code="NOT_FOUND",
-            ))
+            results.append(_bulk_not_found_${lower}(idx, row_id))
             failed += 1
             continue
         try:
             sp = await session.begin_nested()
             patch = {k: v for k, v in upd.items() if k != "id"}
             stmt = _sql_update(${model_name}).where(${model_name}.id == row_id).values(**patch)
-            await session.execute(stmt)
+            res = await session.execute(stmt)
+            # rowcount==0 means the UPDATE matched no row even though the SELECT
+            # found it — e.g. a global tenant filter rewrote the statement to a
+            # no-op, or a concurrent delete removed it. Never claim success on a
+            # write that did not happen (R7-N5).
+            if res.rowcount == 0:
+                await sp.rollback()
+                results.append(_bulk_not_found_${lower}(idx, row_id))
+                failed += 1
+                continue
             await sp.commit()
             results.append(BulkResultItem(index=idx, id=row_id, success=True))
             succeeded += 1
